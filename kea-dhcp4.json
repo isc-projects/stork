@@ -223,7 +223,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kea_dhcp4_packets_received_total{operation=\"discover\"} or kea_dhcp4_packets_received_total{operation=\"offer\"}\nor kea_dhcp4_packets_received_total{operation=\"request\"} or kea_dhcp4_packets_received_total{operation=\"ack\"}",
+          "expr": "kea_dhcp4_packets_received_total{operation=\"discover\"} or kea_dhcp4_packets_sent_total{operation=\"offer\"}\nor kea_dhcp4_packets_received_total{operation=\"request\"} or kea_dhcp4_packets_sent_total{operation=\"ack\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -234,7 +234,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Actual number of DORA received packets",
+      "title": "Actual number of DORA  packets",
       "tooltip": {
         "shared": false,
         "sort": 0,
@@ -645,5 +645,5 @@
   "timezone": "",
   "title": "Kea-dhcp4",
   "uid": "hRf18FvWz",
-  "version": 14
+  "version": 15
 }
