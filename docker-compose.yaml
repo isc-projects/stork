@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  server:
+    restart: always
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    expose:
+      - "5000"
+    ports:
+      - "5000:5000"
+    environment:
+      DB_URL: "postgresql://stork:stork123@postgres:5432/stork"
+    depends_on:
+      - postgres
+
+  ui:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      API_HOST: server
+      API_PORT: 5000
+    depends_on:
+      - server
+
+  postgres:
+    image: postgres:11
+    environment:
+      POSTGRES_USER: stork
+      POSTGRES_PASSWORD: stork123
+      POSTGRES_DB: stork
+
+volumes:
+  db-data:
+  web-data:

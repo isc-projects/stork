@@ -1,0 +1,52 @@
+---
+swagger: "2.0"
+info:
+  description: From the todo list tutorial on goswagger.io
+  title: A Todo list application
+  version: 1.0.0
+schemes:
+- http
+basePath: /api
+
+
+paths:
+  /version:
+    get:
+      responses:
+        200:
+          description: list the todo operations
+          schema:
+            $ref: "#/definitions/version"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/error"
+
+
+definitions:
+  version:
+    type: object
+    required:
+      - version
+      - date
+      - type
+    properties:
+      version:
+        type: string
+      date:
+        type: string
+        format: date-time
+      type:
+        type: string
+        enum: [stable, release-candidate, development]
+
+  error:
+    type: object
+    required:
+      - message
+    properties:
+      code:
+        type: integer
+        format: int64
+      message:
+        type: string
