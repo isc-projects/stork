@@ -10,7 +10,7 @@ import { DefaultService } from './backend/api/default.service';
 export class AppComponent {
     title = 'Stork';
 
-    version = 'not yet';
+    version = 'not available';
 
     constructor(protected api: DefaultService) {
     }
