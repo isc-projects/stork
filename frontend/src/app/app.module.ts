@@ -24,7 +24,7 @@ export function cfgFactory() {
 
         ApiModule.forRoot(cfgFactory),
     ],
-    providers: [{ provide: BASE_PATH, useValue: 'http://localhost:5000/api' }],
+    providers: [{ provide: BASE_PATH, useValue: 'http://localhost:8080/api' }],
     bootstrap: [AppComponent]
 })
 export class AppModule { }
