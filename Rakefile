@@ -1,5 +1,5 @@
 SWAGGER_FILE = "../swagger.yaml"
-NG = "../node_modules/.bin/ng"
+NG = File.expand_path("node_modules/.bin/ng")
 
 task :gen_server => 'backend/swagger_linux_amd64' do
   Dir.chdir('backend') do
@@ -34,7 +34,11 @@ file 'frontend/swagger-codegen-cli-2.4.8.jar' do
   sh "wget http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.8/swagger-codegen-cli-2.4.8.jar -O frontend/swagger-codegen-cli-2.4.8.jar"
 end
 
-task :build_ui => :gen_client do
+file "#{NG}" do
+  sh "npm install @angular/cli"
+end
+
+task :build_ui => ["#{NG}", :gen_client] do
   Dir.chdir('frontend') do
     sh "#{NG} build --prod"
   end
