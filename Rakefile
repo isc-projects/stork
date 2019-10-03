@@ -1,11 +1,11 @@
 TOOLS_DIR = File.expand_path('tools')
 NODE_VER = 'node-v10.16.3-linux-x64'
 ENV['PATH'] = "#{TOOLS_DIR}/#{NODE_VER}/bin:#{ENV['PATH']}"
-NPM = "#{TOOLS_DIR}/#{NODE_VER}/bin/npm"
+NPX = "#{TOOLS_DIR}/#{NODE_VER}/bin/npx"
 SWAGGER_CODEGEN = "#{TOOLS_DIR}/swagger-codegen-cli-2.4.8.jar"
 GOSWAGGER = "#{TOOLS_DIR}/swagger_linux_amd64"
 SWAGGER_FILE = File.expand_path('swagger.yaml')
-NG = File.expand_path('node_modules/.bin/ng')
+NG = File.expand_path('webui/node_modules/.bin/ng')
 
 # SERVER
 task :gen_server => GOSWAGGER do
@@ -40,7 +40,7 @@ file SWAGGER_CODEGEN do
   sh "wget http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.8/swagger-codegen-cli-2.4.8.jar -O #{SWAGGER_CODEGEN}"
 end
 
-file NPM do
+file NPX do
   sh "mkdir -p #{TOOLS_DIR}"
   Dir.chdir(TOOLS_DIR) do
     sh "wget https://nodejs.org/dist/v10.16.3/#{NODE_VER}.tar.xz -O #{TOOLS_DIR}/node.tar.xz"
@@ -48,19 +48,21 @@ file NPM do
   end
 end
 
-file NG => NPM do
-  sh "#{NPM} install @angular/cli"
+file NG => NPX do
+  Dir.chdir('webui') do
+    sh 'npm install'
+  end
 end
 
 task :build_ui => [NG, :gen_client] do
   Dir.chdir('webui') do
-    sh "#{NG} build --prod"
+    sh 'npx ng build --prod'
   end
 end
 
 task :serve_ui => [NG, :gen_client] do
   Dir.chdir('webui') do
-    sh "#{NG} serve"
+    sh 'npx ng serve'
   end
 end
 
