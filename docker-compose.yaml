@@ -4,7 +4,7 @@ services:
   server:
     restart: always
     build:
-      context: backend
+      context: server
       dockerfile: Dockerfile
     expose:
       - "5000"
@@ -15,9 +15,9 @@ services:
     depends_on:
       - postgres
 
-  ui:
+  webui:
     build:
-      context: frontend
+      context: webui
       dockerfile: Dockerfile
     ports:
       - "8080:80"

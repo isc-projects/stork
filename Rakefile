@@ -9,7 +9,7 @@ NG = File.expand_path('node_modules/.bin/ng')
 
 # SERVER
 task :gen_server => GOSWAGGER do
-  Dir.chdir('backend') do
+  Dir.chdir('server') do
     sh "#{GOSWAGGER} generate server --target gen --name Stork --spec #{SWAGGER_FILE}"
   end
 end
@@ -21,16 +21,16 @@ file GOSWAGGER do
 end
 
 task :build_server => :gen_server do
-  sh "cd backend && go build -v gen/cmd/stork-server/main.go"
+  sh "cd server && go build -v gen/cmd/stork-server/main.go"
 end
 
 task :run_server => :gen_server do
-  sh "cd backend && go run gen/cmd/stork-server/main.go --port 8765"
+  sh "cd server && go run gen/cmd/stork-server/main.go --port 8765"
 end
 
 # CLIENT
 task :gen_client => SWAGGER_CODEGEN do
-  Dir.chdir('frontend') do
+  Dir.chdir('webui') do
     sh "java -jar #{SWAGGER_CODEGEN} generate -l typescript-angular -i #{SWAGGER_FILE} -o src/app/backend --additional-properties snapshot=true,ngVersion=8.2.8"
   end
 end
@@ -53,7 +53,7 @@ file NG => NPM do
 end
 
 task :build_ui => [NG, :gen_client] do
-  Dir.chdir('frontend') do
+  Dir.chdir('webui') do
     sh "#{NG} build --prod"
   end
 end
@@ -68,5 +68,5 @@ task :docker_down do
 end
 
 task :clean do
-  sh "rm -rf #{TOOLS_DIR} backend/main"
+  sh "rm -rf #{TOOLS_DIR} server/main"
 end
