@@ -6,8 +6,17 @@ SWAGGER_CODEGEN = "#{TOOLS_DIR}/swagger-codegen-cli-2.4.8.jar"
 GOSWAGGER = "#{TOOLS_DIR}/swagger_linux_amd64"
 SWAGGER_FILE = File.expand_path('swagger.yaml')
 NG = File.expand_path('webui/node_modules/.bin/ng')
+GO = "#{TOOLS_DIR}/go/bin/go"
 
 # SERVER
+
+file GO do
+  Dir.chdir(TOOLS_DIR) do
+    sh 'wget https://dl.google.com/go/go1.13.1.linux-amd64.tar.gz -O go.tar.gz'
+    sh 'tar -zxf go.tar.gz'
+  end
+end
+
 task :gen_server => GOSWAGGER do
   Dir.chdir('server') do
     sh "#{GOSWAGGER} generate server --target gen --name Stork --spec #{SWAGGER_FILE}"
@@ -20,12 +29,12 @@ file GOSWAGGER do
   sh "chmod a+x #{GOSWAGGER}"
 end
 
-task :build_server => :gen_server do
-  sh "cd server && go build -v gen/cmd/stork-server/main.go"
+task :build_server => [:gen_server, GO] do
+  sh "cd server && #{GO} build -v gen/cmd/stork-server/main.go"
 end
 
-task :run_server => :gen_server do
-  sh "cd server && go run gen/cmd/stork-server/main.go --port 8765"
+task :run_server => [:gen_server, GO] do
+  sh "cd server && #{GO} run gen/cmd/stork-server/main.go --port 8765"
 end
 
 # CLIENT
