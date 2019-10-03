@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 
-import { DefaultService } from './backend/api/default.service';
+import { AuthService, User } from './auth.service';
 
 @Component({
   selector: 'app-root',
@@ -9,16 +10,17 @@ import { DefaultService } from './backend/api/default.service';
 })
 export class AppComponent {
     title = 'Stork';
+    currentUser = null;
 
-    version = 'not available';
-
-    constructor(protected api: DefaultService) {
+    constructor(
+        private router: Router,
+        private auth: AuthService
+    ) {
+        this.auth.currentUser.subscribe(x => this.currentUser = x);
     }
 
-    ngOnInit() {
-        this.api.versionGet().subscribe(data => {
-            console.info(data);
-            this.version = data.version;
-        });
+    signOut() {
+        this.auth.logout();
+        this.router.navigate(['/login']);
     }
 }

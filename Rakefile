@@ -58,6 +58,12 @@ task :build_ui => [NG, :gen_client] do
   end
 end
 
+task :serve_ui => [NG, :gen_client] do
+  Dir.chdir('webui') do
+    sh "#{NG} serve"
+  end
+end
+
 # DOCKER
 task :docker_up => [:build_server, :build_ui] do
   sh "docker-compose up"

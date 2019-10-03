@@ -8,13 +8,19 @@ import { AppComponent } from './app.component';
 
 import { ApiModule, BASE_PATH, Configuration } from './backend';
 
+import {ButtonModule} from 'primeng/button';
+import { LoginScreenComponent } from './login-screen/login-screen.component';
+import { DashboardComponent } from './dashboard/dashboard.component';
+
 export function cfgFactory() {
     return new Configuration();
 }
 
 @NgModule({
     declarations: [
-        AppComponent
+        AppComponent,
+        LoginScreenComponent,
+        DashboardComponent
     ],
     imports: [
         BrowserModule,
@@ -23,6 +29,8 @@ export function cfgFactory() {
         AppRoutingModule,
 
         ApiModule.forRoot(cfgFactory),
+
+        ButtonModule,
     ],
     providers: [{ provide: BASE_PATH, useValue: 'http://localhost:8080/api' }],
     bootstrap: [AppComponent]

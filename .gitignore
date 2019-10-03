@@ -1,2 +1,6 @@
 *~
 /package-lock.json
+/node_modules
+
+# this folder is populated by Rakefile with various tools needed for development
+/tools

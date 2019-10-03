@@ -1,42 +1,12 @@
-
-<div style="color: white; display: flex; flex-direction: column; align-items: center; align-content: space-between; height: 98vh; width: 98vw;">
-
-  <div style="display: flex; flex-direction: column; align-items: center;">
-
-    <div style="font-family: 'Mansalva', cursive; font-size: 14rem; margin-top: 5vh;">
-      Stork
-    </div>
-    <div style="font-style: italic;">
-      ver: {{version}}
-    </div>
-
-    <div style="font-size: 2rem;">
-      IPAM for
-    <a href="https://kea.isc.org" target="blank" style="color: white;text-decoration: underline;">ISC Kea</a>
-    and
-    <a href="https://bind.isc.org" target="blank" style="color: white;text-decoration: underline;">ISC BIND</a>
-    </div>
-
-    <div style="margin-top: 10vh;">
-      <form>
-        <div>
-          <input type="text" name="username" placeholder="User name">
-        </div>
-
-        <div style="margin-top: 8px;">
-        <input type="password" name="password" placeholder="Password">
-        </div>
-      </form>
-    </div>
+<div *ngIf="currentUser" style="background-color: #005B9F; margin: -8px -8px 0 -8px; display: flex; justify-content: space-between;">
+  <div style="font-family: 'Mansalva', cursive; font-size: 1.5rem; color: white; margin: 4px;">
+    Stork
   </div>
-
-
-  <div style="font-size: 0.7rem; margin-top: auto;padding-top: 8px;">
-    Copyright 2019 by ISC. All Rights Reserved.
+  <div style="margin: 4px 0;">
+    <button pButton type="button" label="{{currentUser.firstName}} {{currentUser.lastName}}" (click)="signOut()"></button>
   </div>
 
 </div>
-
 
 
 <router-outlet></router-outlet>

@@ -4,9 +4,20 @@
 *.dll
 *.so
 *.dylib
+main
 
 # Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# generated code by goswagger
+/gen/cmd/
+/gen/models/
+/gen/restapi/doc.go
+/gen/restapi/embedded_spec.go
+/gen/restapi/operations/
+/gen/restapi/server.go
+
+
