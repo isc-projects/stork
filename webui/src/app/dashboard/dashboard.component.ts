@@ -9,9 +9,11 @@ import {PanelModule} from 'primeng/panel';
 })
 export class DashboardComponent implements OnInit {
 
-  constructor() { }
+    constructor() { }
 
-  ngOnInit() {
-  }
+    ngOnInit() {
+    }
 
+    handler() {
+    }
 }
