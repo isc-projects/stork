@@ -1,0 +1,14 @@
+<p-table [value]="hosts">
+    <ng-template pTemplate="header">
+        <tr>
+            <th>MAC Address</th>
+            <th>IP Address</th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-host>
+        <tr>
+            <td>{{host.mac_address}}</td>
+            <td>{{host.ip_address}}</td>
+        </tr>
+    </ng-template>
+</p-table>
