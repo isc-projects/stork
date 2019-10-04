@@ -1,3 +1,27 @@
-<div style="">
-Dashboard
+<div style="margin: 4px -4px;" class="p-grid p-align-stretch">
+  <p-panel header="Actions" class="p-col-fixed" [style]="{width: '200px'}">
+    <button class="action-button" pButton type="button" label="Add Networks" (click)="signOut()"></button>
+    <button class="action-button" pButton type="button" label="Add Hosts" (click)="signOut()"></button>
+    <button class="action-button" pButton type="button" label="Add Fixed Addresses" (click)="signOut()"></button>
+    <button class="action-button" pButton type="button" label="Add A Record" (click)="signOut()"></button>
+    <button class="action-button" pButton type="button" label="Add CNAME Record" (click)="signOut()"></button>
+    <button class="action-button" pButton type="button" label="Add MX Record" (click)="signOut()"></button>
+    <button class="action-button" pButton type="button" label="Add TXT Record" (click)="signOut()"></button>
+  </p-panel>
+
+  <p-panel header="Main" class="p-col main-panel">
+    Content
+  </p-panel>
+
+  <hosts-table class="p-col-4"></hosts-table>
+
+  <p-panel header="Alerts" class="p-col-2">
+    <div style="border: 1px solid #c8c8c8; border-radius: 3px; padding: 6px; margin: 4px 0;">
+      Subnet A depleted.
+    </div>
+
+    <div style="border: 1px solid #c8c8c8; border-radius: 3px; padding: 6px;">
+      Subnet B depleted.
+    </div>
+  </p-panel>
 </div>

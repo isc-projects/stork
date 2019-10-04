@@ -1,8 +1,19 @@
-<div *ngIf="currentUser" style="background-color: #005B9F; margin: -8px -8px 0 -8px; display: flex; justify-content: space-between;">
-  <div style="font-family: 'Mansalva', cursive; font-size: 1.5rem; color: white; margin: 4px;">
-    Stork
+<div *ngIf="currentUser" style="background-color: #005B9F; margin: -8px -8px 0 -8px; display: flex; justify-content: space-between; align-items: center;">
+  <div style="display: flex; justify-content: flex-start; align-items: center;">
+    <div style="font-family: 'Mansalva', cursive; font-size: 2.3rem; color: white; margin: 4px 20px 4px 4px;">
+      Stork
+    </div>
+
+    <div style="margin: 0 8px;">
+      <button pButton type="button" label="DHCP" (click)="signOut()"></button>
+    </div>
+    <div style="margin: 0 8px;">
+      <button pButton type="button" label="DNS" (click)="signOut()"></button>
+    </div>
   </div>
-  <div style="margin: 4px 0;">
+
+
+  <div style="margin: 4px;">
     <button pButton type="button" label="{{currentUser.firstName}} {{currentUser.lastName}}" (click)="signOut()"></button>
   </div>
 
