@@ -8,7 +8,7 @@ export interface Host {
 }
 
 @Component({
-  selector: 'hosts-table',
+  selector: 'app-hosts-table',
   templateUrl: './hosts-table.component.html',
   styleUrls: ['./hosts-table.component.sass']
 })
@@ -20,21 +20,21 @@ export class HostsTableComponent implements OnInit {
 
     ngOnInit() {
         this.hosts = [];
-        for (var i = 0; i < 10; i++) {
-            var mac = [];
-            for (var j = 0; j < 6; j++) {
-                var n = Math.floor(Math.random() * 99);
+        for (let i = 0; i < 10; i++) {
+            const mac = [];
+            for (let j = 0; j < 6; j++) {
+                const n = Math.floor(Math.random() * 99);
                 mac.push(n);
             }
-            var ip = [];
-            for (var j = 0; j < 4; j++) {
-                var n = Math.floor(Math.random() * 256);
+            const ip = [];
+            for (let j = 0; j < 4; j++) {
+                const n = Math.floor(Math.random() * 256);
                 ip.push(n);
             }
-            var rec = {
+            const rec = {
                 mac_address: mac.join(':'),
                 ip_address: ip.join('.')
-            }
+            };
             this.hosts.push(rec);
         }
     }

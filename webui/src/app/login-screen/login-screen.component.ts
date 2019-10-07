@@ -6,7 +6,7 @@ import {ButtonModule} from 'primeng/button';
 import { DefaultService } from '../backend/api/default.service';
 
 @Component({
-  selector: 'login-screen',
+  selector: 'app-login-screen',
   templateUrl: './login-screen.component.html',
   styleUrls: ['./login-screen.component.sass']
 })
@@ -24,7 +24,7 @@ export class LoginScreenComponent implements OnInit {
             this.version = data.version;
         });
 
-        this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+        this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/';
     }
 
     signIn() {

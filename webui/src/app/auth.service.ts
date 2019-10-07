@@ -25,12 +25,12 @@ export class AuthService {
     }
 
     public get currentUserValue(): User {
-        var u = new User();
-        u.firstName = "Jan";
-        u.lastName = "Kowalski";
+        const u = new User();
+        u.firstName = 'Jan';
+        u.lastName = 'Kowalski';
         this.currentUserSubject.next(u);
         return this.currentUserSubject.value;
-        //return new User();
+        // return new User();
     }
 
     login(username: string, password: string) {

@@ -3,6 +3,7 @@
 package restapi
 
 import (
+	"fmt"
 	"crypto/tls"
 	"net/http"
 
@@ -42,6 +43,7 @@ func configureAPI(api *operations.StorkAPI) http.Handler {
 		v := "0.1"
 		d, err := strfmt.ParseDateTime("0001-01-01T00:00:00.000Z")
 		if err != nil {
+			fmt.Printf("problem\n")
 		}
 		var ver models.Version
 		ver.Date = &d

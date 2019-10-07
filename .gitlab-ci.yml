@@ -1,0 +1,70 @@
+image: ubuntu:18.04
+
+# cache:
+#   paths:
+#     - /apt-cache
+#     - /go/src/github.com
+#     - /go/src/golang.org
+#     - /go/src/google.golang.org
+#     - /go/src/gopkg.in
+
+stages:
+  - test
+  - build
+
+cache:
+  key: one-shared-key
+  paths:
+  - webui/node_modules/
+  - tools/
+
+before_script:
+  #   - mkdir -p /go/src/gitlab.com/pantomath-io /go/src/_/builds
+  #   - cp -r $CI_PROJECT_DIR /go/src/gitlab.com/pantomath-io/pantomath
+  #   - ln -s /go/src/gitlab.com/pantomath-io /go/src/_/builds/pantomath-io
+  #   - make dep
+  - apt-get update
+  - apt-get install -y wget xz-utils rake openjdk-11-jre-headless gcc chromium-browser
+  - rake prepare_env
+
+# unit_tests:
+#   stage: test
+#   script:
+#     - make test
+
+# race_detector:
+#   stage: test
+#   script:
+#     - make race
+
+# memory_sanitizer:
+#   stage: test
+#   script:
+#     - make msan
+
+# code_coverage:
+#   stage: test
+#   script:
+#     - make coverage
+
+# code_coverage_report:
+#   stage: test
+#   script:
+#     - make coverhtml
+#   only:
+#   - master
+
+lint_go:
+  stage: test
+  script:
+    - rake lint_go
+
+ci_ui:
+  stage: test
+  script:
+    - rake ci_ui
+
+build_webui:
+  stage: build
+  script:
+    - rake build_ui

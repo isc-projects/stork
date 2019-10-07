@@ -45,12 +45,7 @@
     ],
     "no-consecutive-blank-lines": false,
     "no-console": [
-      true,
-      "debug",
-      "info",
-      "time",
-      "timeEnd",
-      "trace"
+      false
     ],
     "no-empty": false,
     "no-inferrable-types": [
@@ -88,5 +83,10 @@
   },
   "rulesDirectory": [
     "codelyzer"
-  ]
+  ],
+  "linterOptions": {
+    "exclude": [
+        "src/app/backend/**"
+      ]
+  }
 }

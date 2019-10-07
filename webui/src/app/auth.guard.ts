@@ -9,7 +9,7 @@ import { AuthService } from './auth.service';
 })
 export class AuthGuard implements CanActivate {
 
-    isAppInitialized: boolean = false;
+    isAppInitialized = false;
     user: any;
 
     constructor(private router: Router, private auth: AuthService) {}
