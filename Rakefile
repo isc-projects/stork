@@ -21,6 +21,7 @@ file GO do
   end
 end
 
+desc 'Generate server part of REST API using goswagger based on swagger.yml'
 task :gen_server => [GO, GOSWAGGER] do
   Dir.chdir('backend/server') do
     sh "#{GOSWAGGER} generate server --target gen --name Stork --spec #{SWAGGER_FILE}"
@@ -33,10 +34,12 @@ file GOSWAGGER do
   sh "chmod a+x #{GOSWAGGER}"
 end
 
+desc 'Compile server part'
 task :build_server => [:gen_server, GO] do
   sh "cd backend/server && #{GO} build -v gen/cmd/stork-server/main.go"
 end
 
+desc 'Build and run server'
 task :run_server => [:gen_server, GO] do
   sh "cd backend/server && #{GO} run gen/cmd/stork-server/main.go --port 8765"
 end
@@ -49,6 +52,7 @@ file GOLANGCILINT do
   end
 end
 
+desc 'Check backend source code'
 task :lint_go => [GO, GOLANGCILINT, :gen_server] do
   Dir.chdir('backend/server') do
     sh 'echo $PATH'
@@ -58,6 +62,7 @@ end
 
 
 # WEBUI
+desc 'Generate client part of REST API using swagger_codegen based on swagger.yml'
 task :gen_client => SWAGGER_CODEGEN do
   Dir.chdir('webui') do
     sh "java -jar #{SWAGGER_CODEGEN} generate -l typescript-angular -i #{SWAGGER_FILE} -o src/app/backend --additional-properties snapshot=true,ngVersion=8.2.8"
@@ -83,18 +88,21 @@ file NG => NPX do
   end
 end
 
+desc 'Build angular application'
 task :build_ui => [NG, :gen_client] do
   Dir.chdir('webui') do
     sh 'npx ng build --prod'
   end
 end
 
+desc 'Serve angular app'
 task :serve_ui => [NG, :gen_client] do
   Dir.chdir('webui') do
     sh 'npx ng serve'
   end
 end
 
+desc 'Check frontend source code'
 task :lint_ui => [NG, :gen_client] do
   Dir.chdir('webui') do
     sh 'npx ng lint'
@@ -112,20 +120,24 @@ end
 
 
 # DOCKER
+desc 'Build containers with everything and statup all services using docker-compose'
 task :docker_up => [:build_server, :build_ui] do
   sh "docker-compose up"
 end
 
+desc 'Shut down all containers'
 task :docker_down do
   sh "docker-compose down"
 end
 
 
 # OTHER
+desc 'Remove tools and other build or generated files'
 task :clean do
   sh "rm -rf #{TOOLS_DIR} server/main"
 end
 
+desc 'Download all dependencies'
 task :prepare_env => [GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX] do
   sh "mkdir -p $HOME/go"
 end
