@@ -1,9 +1,9 @@
 ---
 swagger: "2.0"
 info:
-  description: From the todo list tutorial on goswagger.io
-  title: A Todo list application
-  version: 1.0.0
+  description: An API for Stork
+  title: Stork API
+  version: 1
 schemes:
 - http
 basePath: /api
@@ -14,7 +14,7 @@ paths:
     get:
       responses:
         200:
-          description: list the todo operations
+          description: Version of Stork
           schema:
             $ref: "#/definitions/version"
         default:
