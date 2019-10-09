@@ -4,7 +4,7 @@ ENV['PATH'] = "#{TOOLS_DIR}/#{NODE_VER}/bin:#{ENV['PATH']}"
 NPX = "#{TOOLS_DIR}/#{NODE_VER}/bin/npx"
 SWAGGER_CODEGEN = "#{TOOLS_DIR}/swagger-codegen-cli-2.4.8.jar"
 GOSWAGGER = "#{TOOLS_DIR}/swagger_linux_amd64"
-SWAGGER_FILE = File.expand_path('swagger.yaml')
+SWAGGER_FILE = File.expand_path('api/swagger.yaml')
 NG = File.expand_path('webui/node_modules/.bin/ng')
 ENV['PATH'] = "#{TOOLS_DIR}/go/bin:#{ENV['PATH']}"
 GO = "#{TOOLS_DIR}/go/bin/go"
@@ -22,7 +22,7 @@ file GO do
 end
 
 task :gen_server => [GO, GOSWAGGER] do
-  Dir.chdir('server') do
+  Dir.chdir('backend/server') do
     sh "#{GOSWAGGER} generate server --target gen --name Stork --spec #{SWAGGER_FILE}"
   end
 end
@@ -34,11 +34,11 @@ file GOSWAGGER do
 end
 
 task :build_server => [:gen_server, GO] do
-  sh "cd server && #{GO} build -v gen/cmd/stork-server/main.go"
+  sh "cd backend/server && #{GO} build -v gen/cmd/stork-server/main.go"
 end
 
 task :run_server => [:gen_server, GO] do
-  sh "cd server && #{GO} run gen/cmd/stork-server/main.go --port 8765"
+  sh "cd backend/server && #{GO} run gen/cmd/stork-server/main.go --port 8765"
 end
 
 file GOLANGCILINT do
@@ -50,7 +50,7 @@ file GOLANGCILINT do
 end
 
 task :lint_go => [GO, GOLANGCILINT, :gen_server] do
-  Dir.chdir('server') do
+  Dir.chdir('backend/server') do
     sh 'echo $PATH'
     sh "#{GOLANGCILINT} run gen/restapi"
   end
