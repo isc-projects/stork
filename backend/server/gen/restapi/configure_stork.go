@@ -14,8 +14,8 @@ import (
 
 	"github.com/rs/cors"
 
-	"isc.org/stork/gen/restapi/operations"
-	models "isc.org/stork/gen/models"
+	"isc.org/stork/server/gen/restapi/operations"
+	models "isc.org/stork/server/gen/models"
 )
 
 //go:generate swagger generate server --target ../../gen --name Stork --spec ../../../swagger.yaml

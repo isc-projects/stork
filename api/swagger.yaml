@@ -3,7 +3,7 @@ swagger: "2.0"
 info:
   description: An API for Stork
   title: Stork API
-  version: 1
+  version: 0.1.0
 schemes:
 - http
 basePath: /api
