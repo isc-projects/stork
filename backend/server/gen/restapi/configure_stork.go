@@ -18,7 +18,7 @@ import (
 	models "isc.org/stork/server/gen/models"
 )
 
-//go:generate swagger generate server --target ../../gen --name Stork --spec ../../../swagger.yaml
+//go:generate swagger generate server --target ../../../../backend --name Stork --spec ../../../../api/swagger.yaml --model-package server/gen/models --server-package server/gen/restapi
 
 func configureFlags(api *operations.StorkAPI) {
 	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }

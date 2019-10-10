@@ -23,8 +23,8 @@ end
 
 desc 'Generate server part of REST API using goswagger based on swagger.yml'
 task :gen_server => [GO, GOSWAGGER] do
-  Dir.chdir('backend/server') do
-    sh "#{GOSWAGGER} generate server --target gen --name Stork --spec #{SWAGGER_FILE}"
+  Dir.chdir('backend') do
+    sh "#{GOSWAGGER} generate server -s server/gen/restapi -m server/gen/models --name Stork --spec #{SWAGGER_FILE}"
   end
 end
 
@@ -36,12 +36,12 @@ end
 
 desc 'Compile server part'
 task :build_server => [:gen_server, GO] do
-  sh "cd backend/server && #{GO} build -v gen/cmd/stork-server/main.go"
+  sh "cd backend/cmd/stork-server/ && #{GO} build"
 end
 
 desc 'Build and run server'
-task :run_server => [:gen_server, GO] do
-  sh "cd backend/server && #{GO} run gen/cmd/stork-server/main.go --port 8765"
+task :run_server => [:build_server, GO] do
+  sh "backend/cmd/stork-server/stork-server --port 8765"
 end
 
 file GOLANGCILINT do
