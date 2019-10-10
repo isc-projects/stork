@@ -109,6 +109,7 @@ task :lint_ui => [NG, :gen_client] do
   end
 end
 
+# internal task used in ci for running npm ci command with lint and tests together
 task :ci_ui => [:gen_client] do
   Dir.chdir('webui') do
     sh 'npm ci'
