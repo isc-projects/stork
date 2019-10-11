@@ -44,6 +44,11 @@ task :run_server => [:build_server, GO] do
   sh "backend/cmd/stork-server/stork-server --port 8765"
 end
 
+desc 'Compile database migrations tool'
+task :build_migrations =>  [GO] do
+  sh "cd backend/cmd/stork-db-migrate/ && #{GO} build"
+end
+
 file GOLANGCILINT do
   sh "mkdir -p #{TOOLS_DIR}"
   Dir.chdir(TOOLS_DIR) do
