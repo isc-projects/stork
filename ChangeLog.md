@@ -3,7 +3,7 @@
    Added initial framework for backend, using go and gin-gonic.
    (Gitlab #missing)
 
-* 1 [func] Franek
+* 1 [func] franek
 
    Added initial proposal for Grafana dashboard.
    (Gitlab #6)
