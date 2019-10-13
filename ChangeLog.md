@@ -1,11 +1,13 @@
+* 2 [build] godfryd
 
-2. [build] godfryd
    Added initial framework for backend, using go and gin-gonic.
    (Gitlab #missing)
 
-1. [func] Franek
+* 1 [func] Franek
+
    Added initial proposal for Grafana dashboard.
    (Gitlab #6)
+
 
 For complete code revision history, see
 	http://gitlab.isc.org/isc-projects/stork
