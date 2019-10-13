@@ -11,6 +11,8 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+// Usage text displayed when invalid command line arguments
+// were provided or when help was requested.
 const usageText = `usage: stork-db-migrate options action
 
  options:
@@ -30,58 +32,84 @@ const usageText = `usage: stork-db-migrate options action
 
 func main() {
 
+	// Replace standard usage text which would lack the descriptions
+	// of migration actions.
 	flag.Usage = usage
 
+	// Bind variables to command line parameters and parse the command
+	// line.
 	var database_name string
 	var user_name string
-
 	flag.StringVar(&database_name, "d", "", "database name")
 	flag.StringVar(&user_name, "u", "", "database user name")
-
-	required := []string{"d", "u"}
-
 	flag.Parse()
 
-	seen := make(map[string]bool)
-	flag.Visit(func(f *flag.Flag) { seen[f.Name] = true })
-	for _, req := range required {
-		if !seen[req] {
-			usage()
-			os.Exit(2)
+	// Specifying default values for the database name and the user
+	// name doesn't make sense. Therefore, we have to check if the
+	// user explicitly specified them.
+
+	// Database and user name are required and we have to check if
+	// they were specified.
+	requiredFlags := []string{"d", "u"}
+	seenFlags := make(map[string]bool)
+
+	// Visit walks over the specified flags. For each such flag
+	// we mark it as "seen".
+	flag.Visit(func(f *flag.Flag) { seenFlags[f.Name] = true })
+	for _, req := range requiredFlags {
+		if !seenFlags[req] {
+			exitf(usage, "The -%s option is mandatory!", req)
 		}
 	}
 
-	fmt.Printf("password: ")
-	password, _ := terminal.ReadPassword(0)
+	// Prompt the user for database password.
+	fmt.Printf("database password: ")
+	password, err := terminal.ReadPassword(0)
 	fmt.Printf("\n")
 
+	if err != nil {
+		exitf(nil, err.Error())
+	}
+
+	// Use the provided credentials to connect to the database.
 	db := pg.Connect(&pg.Options{
 		User:     user_name,
 		Password: string(password),
 		Database: database_name,
 	})
 
+	defer db.Close()
+
+	// Run migrations using this connection.
 	oldVersion, newVersion, err := migrations.Run(db, flag.Args()...)
 	if err != nil {
-		exitf(err.Error())
+		exitf(nil, err.Error())
 	}
+
 	if newVersion != oldVersion {
-		fmt.Printf("migrated from version %d to %d\n", oldVersion, newVersion)
+		fmt.Printf("Migrated database from version %d to %d\n", oldVersion, newVersion)
 	} else {
-		fmt.Printf("version is %d\n", oldVersion)
+		fmt.Printf("Database version is %d\n", oldVersion)
 	}
 }
 
+// Prints usage text for the migrations tool.
 func usage() {
 	fmt.Print(usageText)
-//	os.Exit(2)
 }
 
+// Prints error string to stderr.
 func errorf(s string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, s+"\n", args...)
 }
 
-func exitf(s string, args ...interface{}) {
+// Prints error string to stderr and exists with exit code 1.
+// If the usagefn is not nil it is invoked to present program
+// usage information.
+func exitf(usagefn func(), s string, args ...interface{}) {
 	errorf(s, args...)
+	if usagefn != nil {
+		usagefn()
+	}
 	os.Exit(1)
 }
