@@ -1,3 +1,10 @@
+* 3 [func] godfryd
+
+   Added Swagger-based API for defining ReST API to Stork server.
+   Added initial Web UI based on Angular and PrimeNG. Added Rakefile
+   for building whole solution. Removed gin-gonic dependency.
+   (Gitlab #19)
+
 * 2 [build] godfryd
 
    Added initial framework for backend, using go and gin-gonic.
