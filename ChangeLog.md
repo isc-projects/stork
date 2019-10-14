@@ -1,3 +1,9 @@
+* 4 [doc] tomek
+    Added several text files: AUTHORS (lists project authors and contributors), ChangeLog.md
+    (contains all new user visible changes) and CONTRIBUTING.md (Contributor's guide, explains how
+    to get your patches accepted in Stork project in a seamless and easy way.
+    (Gitlab #17)
+
 * 3 [func] godfryd
 
    Added Swagger-based API for defining ReST API to Stork server.
