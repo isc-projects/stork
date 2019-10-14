@@ -158,7 +158,7 @@ your patch being ignored are really high. Anyway, here they are:
   through issues unassigned to any milestone. Stork developers review new issues once a week and
   assign them to specific milestones. Having an issue in gitlab ensures that the patch will never be
   forgotten and it will show up on our gitlab reports. It's not required, but much appreciated if
-  you send a short note to the kea-dev mailing list explaining what you did with the code and
+  you send a short note to the stork-dev mailing list explaining what you did with the code and
   announce the issue number.
 
 - Send a patch to the stork-dev list. This is the third preferred method, if you can't or don't want
