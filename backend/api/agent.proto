@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package agentapi;
+
+service Agent {
+    rpc getVersion(Empty) returns (AgentVersion) {}
+    rpc detectServices(DetectServicesReq) returns (DetectServicesRsp) {}
+    rpc restartKea(RestartKeaReq) returns (RestartKeaRsp) {}
+}
+
+message Empty {
+}
+
+message AgentVersion {
+    string version = 1;
+}
+
+message DetectServicesReq {
+  string abc = 1;
+}
+
+message DetectServicesRsp {
+  string abc = 1;
+}
+
+message RestartKeaReq {
+  string xyz = 1;
+}
+
+message RestartKeaRsp {
+  string xyz = 1;
+}

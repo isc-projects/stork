@@ -41,7 +41,7 @@ export function cfgFactory() {
         PanelModule,
         TableModule,
     ],
-    providers: [{ provide: BASE_PATH, useValue: 'http://localhost:8080/api' }],
+    providers: [{ provide: BASE_PATH, useValue: 'http://localhost:8088/api' }],
     bootstrap: [AppComponent]
 })
 export class AppModule { }

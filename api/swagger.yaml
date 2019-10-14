@@ -16,15 +16,35 @@ paths:
         200:
           description: Version of Stork
           schema:
-            $ref: "#/definitions/version"
+            $ref: "#/definitions/Version"
         default:
           description: generic error response
           schema:
-            $ref: "#/definitions/error"
+            $ref: "#/definitions/Error"
+
+  /agents/{agentIp}/version:
+    get:
+      summary: Get agent's version.
+      operationId: getAgentVersion
+      parameters:
+        - in: path
+          name: agentIp
+          type: string
+          required: true
+          description: IP address of agent.
+      responses:
+        200:
+          description: Agent's version
+          schema:
+            $ref: "#/definitions/AgentVersion"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/Error"
 
 
 definitions:
-  version:
+  Version:
     type: object
     required:
       - version
@@ -40,7 +60,15 @@ definitions:
         type: string
         enum: [stable, release-candidate, development]
 
-  error:
+  AgentVersion:
+    type: object
+    required:
+      - version
+    properties:
+      version:
+        type: string
+
+  Error:
     type: object
     required:
       - message

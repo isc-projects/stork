@@ -1,47 +1,128 @@
+require 'rake'
+
+# Tool Versions
+NODE_VER = '10.16.3'
+SWAGGER_CODEGEN_VER = '2.4.8'
+GOSWAGGER_VER = 'v0.20.1'
+GOLANGCILINT_VER = '1.21.0'
+GO_VER = '1.13.1'
+PROTOC_VER = '3.10.0'
+
+# Tool URLs
+GOSWAGGER_URL = "https://github.com/go-swagger/go-swagger/releases/download/#{GOSWAGGER_VER}/swagger_linux_amd64"
+GOLANGCILINT_URL = "https://github.com/golangci/golangci-lint/releases/download/v#{GOLANGCILINT_VER}/golangci-lint-#{GOLANGCILINT_VER}-linux-amd64.tar.gz"
+GO_URL = "https://dl.google.com/go/go#{GO_VER}.linux-amd64.tar.gz"
+PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v#{PROTOC_VER}/protoc-#{PROTOC_VER}-linux-x86_64.zip"
+PROTOC_GEN_GO_URL = 'github.com/golang/protobuf/protoc-gen-go'
+SWAGGER_CODEGEN_URL = "http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/#{SWAGGER_CODEGEN_VER}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
+NODE_URL = "https://nodejs.org/dist/v#{NODE_VER}/node-v#{NODE_VER}-linux-x64.tar.xz"
+MOCKERY_URL = 'github.com/vektra/mockery/.../'
+MOCKGEN_URL = 'github.com/golang/mock/mockgen'
+RICHGO_URL = 'github.com/kyoh86/richgo'
+
+# Tools and Other Paths
 TOOLS_DIR = File.expand_path('tools')
-NODE_VER = 'node-v10.16.3-linux-x64'
-ENV['PATH'] = "#{TOOLS_DIR}/#{NODE_VER}/bin:#{ENV['PATH']}"
-NPX = "#{TOOLS_DIR}/#{NODE_VER}/bin/npx"
-SWAGGER_CODEGEN = "#{TOOLS_DIR}/swagger-codegen-cli-2.4.8.jar"
+NPX = "#{TOOLS_DIR}/node-v#{NODE_VER}-linux-x64/bin/npx"
+SWAGGER_CODEGEN = "#{TOOLS_DIR}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
 GOSWAGGER = "#{TOOLS_DIR}/swagger_linux_amd64"
-SWAGGER_FILE = File.expand_path('api/swagger.yaml')
 NG = File.expand_path('webui/node_modules/.bin/ng')
-ENV['PATH'] = "#{TOOLS_DIR}/go/bin:#{ENV['PATH']}"
+GOHOME_DIR = File.expand_path('~/go')
+GOBIN = "#{GOHOME_DIR}/bin"
 GO = "#{TOOLS_DIR}/go/bin/go"
-GOLANGCILINT = "#{TOOLS_DIR}/golangci-lint-1.19.1-linux-amd64/golangci-lint"
+GOLANGCILINT = "#{TOOLS_DIR}/golangci-lint-#{GOLANGCILINT_VER}-linux-amd64/golangci-lint"
+PROTOC = "#{TOOLS_DIR}/protoc/bin/protoc"
+PROTOC_GEN_GO = "#{GOBIN}/protoc-gen-go"
+MOCKERY = "#{GOBIN}/mockery"
+MOCKGEN = "#{GOBIN}/mockgen"
+RICHGO = "#{GOBIN}/richgo"
+
+# Patch PATH env
+ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-linux-x64/bin:#{ENV['PATH']}"
+ENV['PATH'] = "#{TOOLS_DIR}/go/bin:#{ENV['PATH']}"
+ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
+
+# Files
+SWAGGER_FILE = File.expand_path('api/swagger.yaml')
+AGENT_PROTO_FILE = File.expand_path('backend/api/agent.proto')
+AGENT_PB_GO_FILE = File.expand_path('backend/api/agent.pb.go')
+
+SERVER_GEN_FILES = Rake::FileList[
+  File.expand_path('backend/server/gen/restapi/configure_stork.go'),
+]
+
+# Directories
+directory GOHOME_DIR
+directory TOOLS_DIR
 
 
-# SERVER
-file GO do
-  sh "mkdir -p $HOME/go"
-  sh "mkdir -p #{TOOLS_DIR}"
+# Server Rules
+file GO => [TOOLS_DIR, GOHOME_DIR] do
   Dir.chdir(TOOLS_DIR) do
-    sh 'wget https://dl.google.com/go/go1.13.1.linux-amd64.tar.gz -O go.tar.gz'
+    sh "wget #{GO_URL} -O go.tar.gz"
     sh 'tar -zxf go.tar.gz'
   end
 end
 
-desc 'Generate server part of REST API using goswagger based on swagger.yml'
-task :gen_server => [GO, GOSWAGGER] do
+file SERVER_GEN_FILES => SWAGGER_FILE do
   Dir.chdir('backend') do
-    sh "#{GOSWAGGER} generate server -s server/gen/restapi -m server/gen/models --name Stork --spec #{SWAGGER_FILE}"
+    sh "#{GOSWAGGER} generate server -s server/gen/restapi -m server/gen/models --name Stork --exclude-main --spec #{SWAGGER_FILE} --template stratoscale --regenerate-configureapi"
   end
 end
 
-file GOSWAGGER do
-  sh "mkdir -p #{TOOLS_DIR}"
-  sh "wget https://github.com/go-swagger/go-swagger/releases/download/v0.20.1/swagger_linux_amd64 -O #{GOSWAGGER}"
+desc 'Generate server part of REST API using goswagger based on swagger.yml'
+task :gen_server => [GO, GOSWAGGER, SERVER_GEN_FILES]
+
+file GOSWAGGER => TOOLS_DIR do
+  sh "wget #{GOSWAGGER_URL} -O #{GOSWAGGER}"
   sh "chmod a+x #{GOSWAGGER}"
 end
 
 desc 'Compile server part'
-task :build_server => [:gen_server, GO] do
+task :build_server => [GO, :gen_server, :gen_agent] do
   sh "cd backend/cmd/stork-server/ && #{GO} build"
 end
 
-desc 'Build and run server'
+file PROTOC do
+  sh "mkdir -p #{TOOLS_DIR}/protoc"
+  Dir.chdir("#{TOOLS_DIR}/protoc") do
+    sh "wget #{PROTOC_URL} -O protoc.zip"
+    sh 'unzip protoc.zip'
+  end
+end
+
+file PROTOC_GEN_GO do
+  sh "#{GO} get -u #{PROTOC_GEN_GO_URL}"
+end
+
+file MOCKERY do
+  sh "#{GO} get -u #{MOCKERY_URL}"
+end
+
+file MOCKGEN do
+  sh "#{GO} get -u #{MOCKGEN_URL}"
+end
+
+file RICHGO do
+  sh "#{GO} get -u #{RICHGO_URL}"
+end
+
+file AGENT_PB_GO_FILE => [GO, PROTOC, PROTOC_GEN_GO, AGENT_PROTO_FILE] do
+  Dir.chdir('backend') do
+    sh "#{PROTOC} -I api api/agent.proto --go_out=plugins=grpc:api"
+  end
+end
+
+desc 'Generate API sources from agent.proto'
+task :gen_agent => [AGENT_PB_GO_FILE]
+
+desc 'Compile agent part'
+file :build_agent => [GO, AGENT_PB_GO_FILE] do
+  sh "cd backend/cmd/stork-agent/ && #{GO} build"
+end
+
+desc 'Run server'
 task :run_server => [:build_server, GO] do
-  sh "backend/cmd/stork-server/stork-server --port 8765"
+  sh "backend/cmd/stork-server/stork-server/"
 end
 
 desc 'Compile database migrations tool'
@@ -49,10 +130,12 @@ task :build_migrations =>  [GO] do
   sh "cd backend/cmd/stork-db-migrate/ && #{GO} build"
 end
 
-file GOLANGCILINT do
-  sh "mkdir -p #{TOOLS_DIR}"
+desc 'Compile whole backend: server, migrations and agent'
+task :build_backend => [:build_agent, :build_server, :build_migrations]
+
+file GOLANGCILINT => TOOLS_DIR do
   Dir.chdir(TOOLS_DIR) do
-    sh "wget https://github.com/golangci/golangci-lint/releases/download/v1.19.1/golangci-lint-1.19.1-linux-amd64.tar.gz -O golangci-lint.tar.gz"
+    sh "wget #{GOLANGCILINT_URL} -O golangci-lint.tar.gz"
     sh "tar -zxf golangci-lint.tar.gz"
   end
 end
@@ -60,18 +143,20 @@ end
 desc 'Check backend source code'
 task :lint_go => [GO, GOLANGCILINT, :gen_server] do
   Dir.chdir('backend/server') do
-    sh 'echo $PATH'
     sh "#{GOLANGCILINT} run gen/restapi"
   end
 end
 
-desc 'Run server unit tests'
-task :unittest_server => [:build_server, GO] do
-  sh "cd backend && #{GO} test -v ./..."
+desc 'Run backend unit tests'
+task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_agent] do
+  Dir.chdir('backend') do
+    sh "#{GO} generate -v ./..."
+    sh "#{RICHGO} test -v ./..."
+  end
 end
 
 
-# WEBUI
+# Web UI Rules
 desc 'Generate client part of REST API using swagger_codegen based on swagger.yml'
 task :gen_client => SWAGGER_CODEGEN do
   Dir.chdir('webui') do
@@ -79,15 +164,13 @@ task :gen_client => SWAGGER_CODEGEN do
   end
 end
 
-file SWAGGER_CODEGEN do
-  sh "mkdir -p #{TOOLS_DIR}"
-  sh "wget http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.8/swagger-codegen-cli-2.4.8.jar -O #{SWAGGER_CODEGEN}"
+file SWAGGER_CODEGEN => TOOLS_DIR do
+  sh "wget #{SWAGGER_CODEGEN_URL} -O #{SWAGGER_CODEGEN}"
 end
 
-file NPX do
-  sh "mkdir -p #{TOOLS_DIR}"
+file NPX => TOOLS_DIR do
   Dir.chdir(TOOLS_DIR) do
-    sh "wget https://nodejs.org/dist/v10.16.3/#{NODE_VER}.tar.xz -O #{TOOLS_DIR}/node.tar.xz"
+    sh "wget #{NODE_URL} -O #{TOOLS_DIR}/node.tar.xz"
     sh "tar -Jxf node.tar.xz"
   end
 end
@@ -130,9 +213,9 @@ task :ci_ui => [:gen_client] do
 end
 
 
-# DOCKER
+# Docker Rules
 desc 'Build containers with everything and statup all services using docker-compose'
-task :docker_up => [:build_server, :build_ui] do
+task :docker_up => [:build_backend, :build_ui] do
   sh "docker-compose up"
 end
 
@@ -142,13 +225,14 @@ task :docker_down do
 end
 
 
-# OTHER
+# Other Rules
 desc 'Remove tools and other build or generated files'
 task :clean do
-  sh "rm -rf #{TOOLS_DIR} server/main"
+  sh "rm -rf #{AGENT_PB_GO_FILE} backend/gen/*"
+  sh 'rm -f backend/cmd/stork-agent/stork-agent'
+  sh 'rm -f backend/cmd/stork-server/stork-server'
+  sh 'rm -f backend/cmd/stork-db-migrate/stork-db-migrate'
 end
 
 desc 'Download all dependencies'
-task :prepare_env => [GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX] do
-  sh "mkdir -p $HOME/go"
-end
+task :prepare_env => [GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX]
