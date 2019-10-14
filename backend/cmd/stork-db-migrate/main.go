@@ -3,12 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-
-	"github.com/go-pg/migrations/v7"
-	"github.com/go-pg/pg/v9"
-
 	"golang.org/x/crypto/ssh/terminal"
+	"isc.org/stork/server/database"
+	"os"
 )
 
 // Usage text displayed when invalid command line arguments
@@ -72,16 +69,12 @@ func main() {
 	}
 
 	// Use the provided credentials to connect to the database.
-	db := pg.Connect(&pg.Options{
+	oldVersion, newVersion, err := storkdb.Migrate(&storkdb.DbConnOptions{
 		User:     user_name,
 		Password: string(password),
 		Database: database_name,
 	})
 
-	defer db.Close()
-
-	// Run migrations using this connection.
-	oldVersion, newVersion, err := migrations.Run(db, flag.Args()...)
 	if err != nil {
 		exitf(nil, err.Error())
 	}
