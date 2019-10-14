@@ -1,4 +1,5 @@
 * 4 [doc] tomek
+
     Added several text files: AUTHORS (lists project authors and contributors), ChangeLog.md
     (contains all new user visible changes) and CONTRIBUTING.md (Contributor's guide, explains how
     to get your patches accepted in Stork project in a seamless and easy way.
