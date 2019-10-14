@@ -1,21 +1,21 @@
 # Stork Contributor's Guide
 
-So you found a bug in Stork or plan to develop an extension and want to send us a patch? Great! This
+So you found a bug in Stork or plan to develop a feature and want to send us a patch? Great! This
 page will explain how to contribute your changes smoothly.
 
 Here's a quick list of how to contribute a patch:
 
 1. **create account** on [gitlab](https://gitlab.isc.org)
-2. **open an issue** in [Kea project](https://gitlab.isc.org/isc-projects/stork/issues/new), make sure
-   it describes what you want to fix and **why**
-3. **ask someone from the ISC team to give you permission to fork Kea** (ask @tomek, @vicky, @ondrej
-   or @godfryd or basically anyone from the Kea dev team). You can ask
+2. **open an issue** in [Stork project](https://gitlab.isc.org/isc-projects/stork/issues/new), make sure
+   it describes what you want to change and **why**
+3. **ask someone from the ISC team to give you permission to fork Stork** (ask @tomek, @vicky, @ondrej
+   or @godfryd or basically anyone from the Stork dev team). You can ask
    access to the project. Someone will grant you a right to fork projects.
 4. **fork Stork code**: go to Stork project page, click [Fork button](https://gitlab.isc.org/isc-projects/stork/forks/new).
    If you can't, you didn't complete step 3.
 5. **Implement your fix or feature, push code** to your repo. Make sure it compiles, has unit-tests,
    is documented and does what it's supposed to do.
-6. **Open Merge Request**: go to Kea project [merge requests page](https://gitlab.isc.org/isc-projects/stork/merge_requests),
+6. **Open Merge Request**: go to Stork project [merge requests page](https://gitlab.isc.org/isc-projects/stork/merge_requests),
    click [New merge request](https://gitlab.isc.org/isc-projects/stork/merge_requests/new). If you
    don't see the button, you didn't complete step 3.
 7. **Participate in the code review**: Once you submit the MR, someone from ISC will eventually get
@@ -40,7 +40,7 @@ other architectures.
 Does your patch conform to the
 [Stork coding guidelines](https://gitlab.isc.org/isc-projects/stork/wikis/processes/coding-guidelines)?
 You can submit a patch that does not adhere to them, but that will reduce its chances of being
-accepted.  If the deviations are minor, one of the Kea engineers who does the review will likely fix
+accepted.  If the deviations are minor, one of the Stork engineers who does the review will likely fix
 the issues.  However, if there are lots of issues, the reviewer may simply reject the patch and ask
 you to fix it before re-submitting.
 
@@ -48,7 +48,7 @@ you to fix it before re-submitting.
 
 One of the ground rules in Stork development is that every piece of code has to be tested. Stork is
 still very early in its development, but we want to get to the position that
-[Kea](https://gitlab.isc.org/isc-projects/kea) is now (tons of unit and system tests, being run on
+[Kea](https://gitlab.isc.org/isc-projects/kea) is in now (tons of unit and system tests, being run on
 many platforms automatically). We hope to have an extensive set of unit-tests for every non-trivial
 function or method. Even if you are fixing something small, like a single line fix, you are
 encouraged to write unit-tests for that change. That is even more true for new code: if you write a
@@ -99,7 +99,7 @@ if it is for latest code from the Git master branch.
 
 ISC uses [gitlab](https://gitlab.isc.org) to manage its source code. While we also maintain presence
 on [github](https://github.com/isc-projects/stork), the process of syncing gitlab to github is mostly
-automated and Kea devs rarely look at github.
+automated and Stork devs rarely look at github.
 
 ISC's gitlab has been a target for spammers in the past, so it is now set up defensively. In
 particular, new users can't fork the code on their own and it requires someone from ISC to manually
@@ -111,7 +111,7 @@ in a comment in your issue. Make sure you put a name tag (@tomek, @godfryd, @mar
 automatically notified.
 
 Once you fork the Stork code in gitlab, you have your own copy and you can commit your changes there
-and push them to your copy of Stork repo. Once you feel that your patch is ready, go to Kea project
+and push them to your copy of Stork repo. Once you feel that your patch is ready, go to Stork project
 and [submit a Merge Request](https://gitlab.isc.org/isc-projects/Stork/merge_requests/new).
 
 ## Send Pull Request on github
@@ -216,4 +216,4 @@ Outstanding, select a small number of them and move them to whatever the current
 that in mind if you plan to submit a patch and forget about it. We may accept it eventually, but
 it's much, much faster process if you participate in it.
 
-#### Thank you for contributing your time and experience to the Kea project!
+#### Thank you for contributing your time and experience to the Stork project!
