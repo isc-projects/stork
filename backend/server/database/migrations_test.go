@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 	// running the database should be set to "postgres".
 	// See https://docs.gitlab.com/ee/ci/services/postgres.html.
 	if _, ok := os.LookupEnv("POSTGRES_DB"); ok {
-		testConnOptions.Addr = "postgres"
+		testConnOptions.Addr = "postgres:5432"
 	}
 
 	// Get the absolute path to the binary.
