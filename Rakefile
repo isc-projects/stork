@@ -67,7 +67,7 @@ end
 
 desc 'Run server unit tests'
 task :unittest_server => [:build_server, GO] do
-  sh "cd backend && #{GO} test ./..."
+  sh "cd backend && #{GO} test -v ./..."
 end
 
 
