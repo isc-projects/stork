@@ -19,6 +19,13 @@ var migrationsPath string = "."
 
 // Common function which cleans the environment before the tests.
 func TestMain(m *testing.M) {
+	// Check if we're running tests in Gitlab CI. If so, the host
+	// running the database should be set to "postgres".
+	// See https://docs.gitlab.com/ee/ci/services/postgres.html.
+	if _, ok := os.LookupEnv("POSTGRES_DB"); ok {
+		testConnOptions.Addr = "postgres"
+	}
+
 	// Get the absolute path to the binary.
 	_, filename, _, _ := runtime.Caller(0)
 
