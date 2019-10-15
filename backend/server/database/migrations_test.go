@@ -2,6 +2,8 @@ package storkdb
 
 import (
 	"os"
+	"path"
+	"runtime"
 	"testing"
 )
 
@@ -11,14 +13,19 @@ var testConnOptions = DbConnOptions{
 	Password: "storktest",
 }
 
+var migrationsPath string = "."
+
 func TestMain(m *testing.M) {
-	Toss(&testConnOptions)
+	_, filename, _, _ := runtime.Caller(0)
+	migrationsPath = path.Join(path.Dir(filename), "schema/")
+
+	Toss(&testConnOptions, migrationsPath)
 	c := m.Run()
 	os.Exit(c)
 }
 
 func testMigrateAction(t *testing.T, expectedOldVersion, expectedNewVersion int64, action ...string) {
-	oldVersion, newVersion, err := Migrate(&testConnOptions, action...)
+	oldVersion, newVersion, err := Migrate(&testConnOptions, migrationsPath, action...)
 	if err != nil {
 		t.Fatalf("migration failed with error %s", err.Error())
 	}

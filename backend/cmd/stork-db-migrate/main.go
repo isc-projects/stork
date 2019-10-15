@@ -73,7 +73,7 @@ func main() {
 		User:     user_name,
 		Password: string(password),
 		Database: database_name,
-	})
+	}, ".", flag.Args()...)
 
 	if err != nil {
 		exitf(nil, err.Error())
