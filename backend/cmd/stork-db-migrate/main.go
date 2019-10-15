@@ -14,6 +14,7 @@ const usageText = `usage: stork-db-migrate options action
 
  options:
   -d <database name>
+  -m <migration files location defaulting to current directory>
   -u <database user name>
 
  actions:
@@ -35,10 +36,12 @@ func main() {
 
 	// Bind variables to command line parameters and parse the command
 	// line.
-	var database_name string
-	var user_name string
-	flag.StringVar(&database_name, "d", "", "database name")
-	flag.StringVar(&user_name, "u", "", "database user name")
+	var databaseName string
+	var migrationsDirectory string
+	var userName string
+	flag.StringVar(&databaseName, "d", "", "database name")
+	flag.StringVar(&migrationsDirectory, "m", ".", "location of the directory including migration files")
+	flag.StringVar(&userName, "u", "", "database user name")
 	flag.Parse()
 
 	// Specifying default values for the database name and the user
@@ -70,10 +73,10 @@ func main() {
 
 	// Use the provided credentials to connect to the database.
 	oldVersion, newVersion, err := storkdb.Migrate(&storkdb.DbConnOptions{
-		User:     user_name,
+		User:     userName,
 		Password: string(password),
-		Database: database_name,
-	}, ".", flag.Args()...)
+		Database: databaseName,
+	}, migrationsDirectory, flag.Args()...)
 
 	if err != nil {
 		exitf(nil, err.Error())
