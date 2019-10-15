@@ -8,6 +8,14 @@ image: ubuntu:18.04
 #     - /go/src/google.golang.org
 #     - /go/src/gopkg.in
 
+services:
+  - postgres:latest
+
+variables:
+  POSTGRES_DB: storktest
+  POSTGRES_USER: storktest
+  POSTGRES_PASSWORD: storktest
+
 stages:
   - test
   - build
@@ -58,6 +66,11 @@ lint_go:
   stage: test
   script:
     - rake lint_go
+
+unittest_server:
+  stage: test
+  script:
+    - rake unittest_server
 
 ci_ui:
   stage: test

@@ -65,6 +65,11 @@ task :lint_go => [GO, GOLANGCILINT, :gen_server] do
   end
 end
 
+desc 'Run server unit tests'
+task :unittest_server => [:build_server, GO] do
+  sh "cd backend && #{GO} test ./..."
+end
+
 
 # WEBUI
 desc 'Generate client part of REST API using swagger_codegen based on swagger.yml'
