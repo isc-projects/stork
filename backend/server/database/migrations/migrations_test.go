@@ -2,8 +2,6 @@ package dbmigs
 
 import (
 	"os"
-	_ "path"
-	_ "runtime"
 	"testing"
 )
 
