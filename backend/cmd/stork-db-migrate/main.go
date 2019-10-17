@@ -72,8 +72,14 @@ func main() {
 
 	if newVersion != oldVersion {
 		fmt.Printf("Migrated database from version %d to %d\n", oldVersion, newVersion)
+
 	} else {
-		fmt.Printf("Database version is %d\n", oldVersion)
+		availVersion := dbmigs.AvailableVersion()
+		if availVersion == oldVersion {
+			fmt.Printf("Database version is %d (up to date)\n", oldVersion)
+		} else {
+			fmt.Printf("Database version is %d (new version %d available)\n", oldVersion, availVersion)
+		}
 	}
 }
 
