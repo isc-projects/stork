@@ -1,3 +1,11 @@
+* 5 [func] marcin
+
+    Added stork-db-migrate tool to be used for migrating the database
+    schema between versions and returning the current schema version
+    number. Also, added basic schema with SQL tables holding system
+    users and session information.
+    (Gitlab #20)
+
 * 4 [doc] tomek
 
     Added several text files: AUTHORS (lists project authors and contributors), ChangeLog.md
