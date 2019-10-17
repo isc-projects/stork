@@ -1,9 +1,9 @@
-package storkdb
+package dbmigs
 
 import (
 	"os"
-	"path"
-	"runtime"
+	_ "path"
+	_ "runtime"
 	"testing"
 )
 
@@ -14,9 +14,6 @@ var testConnOptions = DbConnOptions{
 	Password: "storktest",
 }
 
-// The migrations path defaults to current directory.
-var migrationsPath string = "."
-
 // Common function which cleans the environment before the tests.
 func TestMain(m *testing.M) {
 	// Check if we're running tests in Gitlab CI. If so, the host
@@ -26,14 +23,8 @@ func TestMain(m *testing.M) {
 		testConnOptions.Addr = "postgres:5432"
 	}
 
-	// Get the absolute path to the binary.
-	_, filename, _, _ := runtime.Caller(0)
-
-	// The schema files are in the schema subdirectory.
-	migrationsPath = path.Join(path.Dir(filename), "schema/")
-
 	// Toss the schema, including removal of the versioning table.
-	Toss(&testConnOptions, migrationsPath)
+	Toss(&testConnOptions)
 
 	// Run tests.
 	c := m.Run()
@@ -42,7 +33,7 @@ func TestMain(m *testing.M) {
 
 // Common function which tests a selected migration action.
 func testMigrateAction(t *testing.T, expectedOldVersion, expectedNewVersion int64, action ...string) {
-	oldVersion, newVersion, err := Migrate(&testConnOptions, migrationsPath, action...)
+	oldVersion, newVersion, err := Migrate(&testConnOptions, action...)
 	if err != nil {
 		t.Fatalf("migration failed with error %s", err.Error())
 	}

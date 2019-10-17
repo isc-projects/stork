@@ -4,29 +4,9 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh/terminal"
 	"github.com/jessevdk/go-flags"
-	"isc.org/stork/server/database"
+	"isc.org/stork/server/database/migrations"
 	"os"
 )
-
-// Usage text displayed when invalid command line arguments
-// were provided or when help was requested.
-const usageText = `usage: stork-db-migrate options action
-
- options:
-  -d <database name>
-  -m <migration files location defaulting to current directory>
-  -u <database user name>
-
- actions:
-   init         creates versioning table in the database
-   up           runs all available mirations
-   up <target>  runs migrations up to the target version
-   down         reverts last migration
-   reset        reverts all migrations
-   version      prints current version
-   set_version  sets database version without running migrations
-
-`
 
 type cmdOpts struct {
 }
@@ -37,7 +17,6 @@ type upOpts struct {
 
 type Opts struct{
 	DatabaseName string `short:"d" long:"database" description:"database name" required:"true"`
-	MigrationsDirectory string `short:"m" long:"migrations" description:"location of the directory including migration files" required:"false"`
 	UserName string `short:"u" long:"user" description:"database user name" required:"true"`
 	Init cmdOpts `command:"init" description:"Create schema versioning table in the database"`
 	Up upOpts `command:"up" description:"Run all available migrations"`
@@ -74,11 +53,11 @@ func main() {
 	}
 
 	// Use the provided credentials to connect to the database.
-	oldVersion, newVersion, err := storkdb.Migrate(&storkdb.DbConnOptions{
+	oldVersion, newVersion, err := dbmigs.Migrate(&dbmigs.DbConnOptions{
 		User:     opts.UserName,
 		Password: string(password),
 		Database: opts.DatabaseName,
-	}, opts.MigrationsDirectory, args...)
+	}, args...)
 
 	if err != nil {
 		exitf(nil, err.Error())
@@ -89,11 +68,6 @@ func main() {
 	} else {
 		fmt.Printf("Database version is %d\n", oldVersion)
 	}
-}
-
-// Prints usage text for the migrations tool.
-func usage() {
-	fmt.Print(usageText)
 }
 
 // Prints error string to stderr.

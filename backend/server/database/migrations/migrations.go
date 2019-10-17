@@ -1,4 +1,4 @@
-package storkdb
+package dbmigs
 
 import (
 	"github.com/go-pg/migrations/v7"
@@ -10,9 +10,9 @@ type DbConnOptions = pg.Options
 
 // Migrates the database version down to 0 and then removes the gopg_migrations
 // table.
-func Toss(dbopts *DbConnOptions, migrationsdir string) error {
+func Toss(dbopts *DbConnOptions) error {
 	// Migrate the database down to 0.
-	db, _, _, err := migrateAndStayConnected(dbopts, migrationsdir, "reset")
+	db, _, _, err := migrateAndStayConnected(dbopts, "reset")
 	defer db.Close()
 
 	if err != nil {
@@ -29,8 +29,8 @@ func Toss(dbopts *DbConnOptions, migrationsdir string) error {
 // the location of the migration files. The args specify one of the
 // migration operations supported by go-pg/migrations. The returned arguments
 // contain new and old database version as well as an error.
-func Migrate(dbopts *DbConnOptions, migrationsdir string, args ...string) (oldVersion, newVersion int64, err error) {
-	db, oldVersion, newVersion, err := migrateAndStayConnected(dbopts, migrationsdir, args...)
+func Migrate(dbopts *DbConnOptions, args ...string) (oldVersion, newVersion int64, err error) {
+	db, oldVersion, newVersion, err := migrateAndStayConnected(dbopts, args...)
 	db.Close()
 
 	return oldVersion, newVersion, err
@@ -38,17 +38,11 @@ func Migrate(dbopts *DbConnOptions, migrationsdir string, args ...string) (oldVe
 
 // Migrates the database using provided credentials and returns the connection
 // to the database.
-func migrateAndStayConnected(dbopts *DbConnOptions, migrationsdir string, args ...string) (db *pg.DB, oldVersion, newVersion int64, err error) {
-	// Read migration files from the specified location.
-	m := migrations.NewCollection()
-	if err = m.DiscoverSQLMigrations(migrationsdir); err != nil {
-		return nil, 0, 0, err
-	}
-
+func migrateAndStayConnected(dbopts *DbConnOptions, args ...string) (db *pg.DB, oldVersion, newVersion int64, err error) {
 	// Connect to the database.
 	db = pg.Connect(dbopts)
 
 	// Run migrations.
-	oldVersion, newVersion, err = m.Run(db, args...)
+	oldVersion, newVersion, err = migrations.Run(db, args...)
 	return db, oldVersion, newVersion, err
 }

@@ -1,3 +1,10 @@
+package dbmigs
+
+import (
+	"github.com/go-pg/migrations/v7"
+)
+
+var up = `
 --
 -- PostgreSQL database dump
 --
@@ -118,4 +125,20 @@ CREATE INDEX sessions_expiry_idx ON public.sessions USING btree (expiry);
 --
 -- PostgreSQL database dump complete
 --
+`
 
+var down = `
+DROP TABLE public.sessions;
+DROP TABLE public.system_user;
+`
+
+func init() {
+	migrations.MustRegister(func(db migrations.DB) error {
+		_, err := db.Exec(up)
+		return err
+
+	}, func(db migrations.DB) error {
+		_, err := db.Exec(down)
+		return err
+	})
+}
