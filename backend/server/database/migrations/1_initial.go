@@ -52,7 +52,7 @@ CREATE TABLE public.system_user (
     lastname text NOT NULL,
     login text NOT NULL,
     name text NOT NULL,
-    pswhash text NOT NULL,
+    password_hash text NOT NULL,
     email text NOT NULL
 );
 
@@ -61,7 +61,7 @@ CREATE TABLE public.system_user (
 -- Name: TABLE system_user; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.system_user IS 'Table holding a list of users which can log into the system.';
+COMMENT ON TABLE public.system_user IS 'Table holding a list of users which are known to the system.';
 
 
 --
