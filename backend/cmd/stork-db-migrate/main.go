@@ -8,18 +8,21 @@ import (
 	"os"
 )
 
+// Structure defining options for all commands except "up".
 type cmdOpts struct {
 }
 
+// Structure defining options for "up" command.
 type upOpts struct {
 	Target string `short:"t" long:"target" description:"Target database schema version"`
 }
 
+// Common application options.
 type Opts struct{
 	DatabaseName string `short:"d" long:"database" description:"database name" required:"true"`
 	UserName string `short:"u" long:"user" description:"database user name" required:"true"`
 	Init cmdOpts `command:"init" description:"Create schema versioning table in the database"`
-	Up upOpts `command:"up" description:"Run all available migrations"`
+	Up upOpts `command:"up" description:"Run all available migrations or up to a selected version"`
 	Down cmdOpts `command:"down" description:"Revert last migration"`
 	Reset cmdOpts `command:"reset" description:"Revert all migrations"`
 	Version cmdOpts `command:"version" description:"Print current migration version"`
@@ -27,9 +30,11 @@ type Opts struct{
 }
 
 func main() {
+	// Parse command line options and commands.
 	opts := Opts{}
 	parser := flags.NewParser(&opts, flags.Default)
 	if _, err := parser.Parse(); err != nil {
+		// Printing help is not an error.
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
 		} else {
@@ -43,9 +48,11 @@ func main() {
 	fmt.Printf("\n")
 
 	if err != nil {
-		exitf(nil, err.Error())
+		exitf(err.Error())
 	}
 
+	// The up command requires special treatment. If the target version is specified
+	// it must be appended to the arguments we pass to the go-pg migrations.
 	var args []string
 	args = append(args, parser.Active.Name)
 	if parser.Active.Name == "up" && len(opts.Up.Target) > 0 {
@@ -60,7 +67,7 @@ func main() {
 	}, args...)
 
 	if err != nil {
-		exitf(nil, err.Error())
+		exitf(err.Error())
 	}
 
 	if newVersion != oldVersion {
@@ -76,12 +83,7 @@ func errorf(s string, args ...interface{}) {
 }
 
 // Prints error string to stderr and exists with exit code 1.
-// If the usagefn is not nil it is invoked to present program
-// usage information.
-func exitf(usagefn func(), s string, args ...interface{}) {
+func exitf(s string, args ...interface{}) {
 	errorf(s, args...)
-	if usagefn != nil {
-		usagefn()
-	}
 	os.Exit(1)
 }
