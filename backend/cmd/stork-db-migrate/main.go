@@ -43,7 +43,7 @@ func main() {
 	}
 
 	// Password from the environment variable takes precedence.
-	password := os.Getenv("STORK_DATABASE_PASS")
+	password := os.Getenv("STORK_DATABASE_PASSWORD")
 	if len(password) == 0 {
 		// Prompt the user for database password.
 		fmt.Printf("database password: ")

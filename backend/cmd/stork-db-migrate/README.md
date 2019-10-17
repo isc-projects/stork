@@ -7,7 +7,7 @@ are written in individual .go files and must be placed in the
 backend/server/database/migrations directory.
 
 This program prompts for the database user password. It is possible to set
-the password in the STORK_DATABASE_PASS in which case the user won't be
+the password in the STORK_DATABASE_PASSWORD in which case the user won't be
 prompted. This is particularly useful for testing purposes.
 
 
