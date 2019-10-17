@@ -1,9 +1,9 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"golang.org/x/crypto/ssh/terminal"
+	"github.com/jessevdk/go-flags"
 	"isc.org/stork/server/database"
 	"os"
 )
@@ -28,37 +28,33 @@ const usageText = `usage: stork-db-migrate options action
 
 `
 
+type cmdOpts struct {
+}
+
+type upOpts struct {
+	Target string `short:"t" long:"target" description:"Target database schema version"`
+}
+
+type Opts struct{
+	DatabaseName string `short:"d" long:"database" description:"database name" required:"true"`
+	MigrationsDirectory string `short:"m" long:"migrations" description:"location of the directory including migration files" required:"false"`
+	UserName string `short:"u" long:"user" description:"database user name" required:"true"`
+	Init cmdOpts `command:"init" description:"Create schema versioning table in the database"`
+	Up upOpts `command:"up" description:"Run all available migrations"`
+	Down cmdOpts `command:"down" description:"Revert last migration"`
+	Reset cmdOpts `command:"reset" description:"Revert all migrations"`
+	Version cmdOpts `command:"version" description:"Print current migration version"`
+	SetVersion cmdOpts `command:"set_version" description:"Set database version without running migrations"`
+}
+
 func main() {
-
-	// Replace standard usage text which would lack the descriptions
-	// of migration actions.
-	flag.Usage = usage
-
-	// Bind variables to command line parameters and parse the command
-	// line.
-	var databaseName string
-	var migrationsDirectory string
-	var userName string
-	flag.StringVar(&databaseName, "d", "", "database name")
-	flag.StringVar(&migrationsDirectory, "m", ".", "location of the directory including migration files")
-	flag.StringVar(&userName, "u", "", "database user name")
-	flag.Parse()
-
-	// Specifying default values for the database name and the user
-	// name doesn't make sense. Therefore, we have to check if the
-	// user explicitly specified them.
-
-	// Database and user name are required and we have to check if
-	// they were specified.
-	requiredFlags := []string{"d", "u"}
-	seenFlags := make(map[string]bool)
-
-	// Visit walks over the specified flags. For each such flag
-	// we mark it as "seen".
-	flag.Visit(func(f *flag.Flag) { seenFlags[f.Name] = true })
-	for _, req := range requiredFlags {
-		if !seenFlags[req] {
-			exitf(usage, "The -%s option is mandatory!", req)
+	opts := Opts{}
+	parser := flags.NewParser(&opts, flags.Default)
+	if _, err := parser.Parse(); err != nil {
+		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+			os.Exit(0)
+		} else {
+			os.Exit(1)
 		}
 	}
 
@@ -71,12 +67,18 @@ func main() {
 		exitf(nil, err.Error())
 	}
 
+	var args []string
+	args = append(args, parser.Active.Name)
+	if parser.Active.Name == "up" && len(opts.Up.Target) > 0 {
+		args = append(args, opts.Up.Target)
+	}
+
 	// Use the provided credentials to connect to the database.
 	oldVersion, newVersion, err := storkdb.Migrate(&storkdb.DbConnOptions{
-		User:     userName,
+		User:     opts.UserName,
 		Password: string(password),
-		Database: databaseName,
-	}, migrationsDirectory, flag.Args()...)
+		Database: opts.DatabaseName,
+	}, opts.MigrationsDirectory, args...)
 
 	if err != nil {
 		exitf(nil, err.Error())
