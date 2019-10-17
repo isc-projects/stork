@@ -49,6 +49,19 @@ func testMigrateAction(t *testing.T, expectedOldVersion, expectedNewVersion int6
 	}
 }
 
+// Checks that schema version can be fetched from the database and
+// that it is set to an expected value.
+func testCurrentVersion(t *testing.T, expected int64) {
+	current, err := CurrentVersion(&testConnOptions)
+	if err != nil {
+		t.Fatalf("getting current version failed with error %s", err.Error())
+	}
+
+	if current != expected {
+		t.Errorf("expected current version %d, got %d", expected, current)
+	}
+}
+
 // Test migrations between different database versions.
 func TestMigrate(t *testing.T) {
 	// Create versioning table in the database.
@@ -63,4 +76,24 @@ func TestMigrate(t *testing.T) {
 	testMigrateAction(t, 1, 1, "version")
 	// Reset to the initial version.
 	testMigrateAction(t, 1, 0, "reset")
+}
+
+// Test that available schema version is returned as expected.
+func TestAvailableVersion(t *testing.T) {
+	avail := AvailableVersion()
+
+	var expected int64 = 1
+	if avail != expected {
+		t.Errorf("expected available version %d, got %d", expected, avail)
+	}
+}
+
+// Test that current version is returned from the database.
+func TestCurrentVersion(t *testing.T) {
+	// Initally, the version should be set to 0.
+	testCurrentVersion(t, 0)
+	// Go one version up.
+	testMigrateAction(t, 0, 1, "up", "1")
+	// Check that the current version is now set to 1.
+	testCurrentVersion(t, 1)
 }

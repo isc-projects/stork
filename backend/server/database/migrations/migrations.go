@@ -46,3 +46,19 @@ func migrateAndStayConnected(dbopts *DbConnOptions, args ...string) (db *pg.DB, 
 	oldVersion, newVersion, err = migrations.Run(db, args...)
 	return db, oldVersion, newVersion, err
 }
+
+// Checks what is the highest available schema version.
+func AvailableVersion() int64 {
+	if regm := migrations.RegisteredMigrations(); len(regm) > 0 {
+		return regm[len(regm)-1].Version
+	}
+
+	return 0
+}
+
+// Returns current schema version.
+func CurrentVersion(dbopts *DbConnOptions) (int64, error) {
+	// Connect to the database.
+	db := pg.Connect(dbopts)
+	return migrations.Version(db)
+}
