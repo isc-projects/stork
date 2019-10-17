@@ -49,11 +49,10 @@ COMMENT ON TABLE public.sessions IS 'Table storing sessions according for scs.';
 
 CREATE TABLE public.system_user (
     id integer NOT NULL,
+    email text NOT NULL,
     lastname text NOT NULL,
-    login text NOT NULL,
     name text NOT NULL,
-    password_hash text NOT NULL,
-    email text NOT NULL
+    password_hash text NOT NULL
 );
 
 
@@ -104,7 +103,7 @@ ALTER TABLE ONLY public.sessions
 --
 
 ALTER TABLE ONLY public.system_user
-    ADD CONSTRAINT system_user_login_unique_idx UNIQUE (login);
+    ADD CONSTRAINT system_user_email_unique_idx UNIQUE (email);
 
 
 --
