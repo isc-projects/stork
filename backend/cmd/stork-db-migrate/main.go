@@ -42,13 +42,19 @@ func main() {
 		}
 	}
 
-	// Prompt the user for database password.
-	fmt.Printf("database password: ")
-	password, err := terminal.ReadPassword(0)
-	fmt.Printf("\n")
+	// Password from the environment variable takes precedence.
+	password := os.Getenv("STORK_DATABASE_PASS")
+	if len(password) == 0 {
+		// Prompt the user for database password.
+		fmt.Printf("database password: ")
+		pass, err := terminal.ReadPassword(0)
+		fmt.Printf("\n")
 
-	if err != nil {
-		exitf(err.Error())
+		if err != nil {
+			exitf(err.Error())
+		}
+
+		password = string(pass)
 	}
 
 	// The up command requires special treatment. If the target version is specified
