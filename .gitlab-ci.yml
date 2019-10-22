@@ -62,3 +62,18 @@ build_webui:
   stage: build
   script:
     - rake build_ui
+
+danger:
+  stage: build
+  image: inloopx/danger-gitlab
+  before_script:
+    - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
+    - export CI_PROJECT_PATH=$CI_PROJECT_ID #some version of gitlab has problems with searching by project path
+    - export DANGER_GITLAB_HOST=gitlab.isc.org
+    - export DANGER_GITLAB_API_BASE_URL=https://gitlab.isc.org/api/v4
+    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+  script:
+    - echo '149.20.48.126 gitlab.isc.org' >> /etc/hosts
+    - gem install danger-commit_lint
+    - danger --fail-on-errors=true --new-comment
