@@ -10,13 +10,39 @@ produces:
   - application/json
 schemes:
 - http
+host: localhost:8765
 basePath: /api
 
+securityDefinitions:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: Stork-Auth-Key
 paths:
+  /user/login:
+    get:
+      summary: Logs in a user to the system
+      parameters:
+        - in: query
+          name: useremail
+          type: string
+          description: E-mail of the user logging to the system
+        - in: query
+          name: userpassword
+          type: string
+          description: User password to log in to the system
+      responses:
+        200:
+          description: Login successful
+        400:
+          description: Invalid user email or password supplied
+
   /version:
     get:
       summary: Get version.
       operationId: getVersion
+      security:
+        - ApiKeyAuth: []
       tags:
         - General
       responses:
@@ -213,3 +239,7 @@ definitions:
         type: integer
       message:
         type: string
+
+  principal:
+    type: string
+

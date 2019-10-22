@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
+import { HttpResponse } from "@angular/common/http";
 
 import {ButtonModule} from 'primeng/button';
 
@@ -28,6 +29,8 @@ export class LoginScreenComponent implements OnInit {
     }
 
     signIn() {
+        this.api.userLoginGet("xyz", "xyz", "response").subscribe(resp => { 
+        });
         this.router.navigate([this.returnUrl]);
     }
 }

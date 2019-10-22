@@ -36,7 +36,10 @@ import { MachinesPageComponent } from './machines-page/machines-page.component';
 import { LocaltimePipe } from './localtime.pipe';
 
 export function cfgFactory() {
-    return new Configuration();
+    const params: ConfigurationParameters = {
+        withCredentials: true
+    }
+    return new Configuration(params);
 }
 
 @NgModule({
