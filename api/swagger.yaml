@@ -14,10 +14,10 @@ host: localhost:8765
 basePath: /api
 
 securityDefinitions:
-  ApiKeyAuth:
+  Token:
     type: apiKey
     in: header
-    name: Stork-Auth-Key
+    name: Cookie
 paths:
   /user/login:
     get:
@@ -42,7 +42,7 @@ paths:
       summary: Get version.
       operationId: getVersion
       security:
-        - ApiKeyAuth: []
+        - Token: []
       tags:
         - General
       responses:
