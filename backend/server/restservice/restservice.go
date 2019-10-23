@@ -65,7 +65,7 @@ func (r *RestAPI) Init(agents *agentcomm.ConnectedAgents) error {
 		Logger: log.Printf,
 	})
 	if err != nil {
-		return errors.Wrap(err, "cannot setup rest api handler")
+		return errors.Wrap(err, "cannot setup ReST API handler")
 	}
 	r.handler = h
 	return nil
@@ -84,7 +84,7 @@ func (r *RestAPI) Serve() (err error) {
 	// set default handler, if none is set
 	if r.handler == nil {
 		if r.api == nil {
-			return errors.New("can't create the default handler, as no api is set")
+			return errors.New("can't create the default handler, as no API is set")
 		}
 
 		r.handler = r.api.Serve(nil)
@@ -135,7 +135,7 @@ func (r *RestAPI) Serve() (err error) {
 			httpServer.TLSConfig.Certificates = make([]tls.Certificate, 1)
 			httpServer.TLSConfig.Certificates[0], err = tls.LoadX509KeyPair(string(s.TLSCertificate), string(s.TLSCertificateKey))
 			if err != nil {
-				return errors.Wrap(err, "problem with setting up certs")
+				return errors.Wrap(err, "problem with setting up certificates")
 			}
 		}
 
@@ -143,7 +143,7 @@ func (r *RestAPI) Serve() (err error) {
 			// include specified CA certificate
 			caCert, caCertErr := ioutil.ReadFile(string(s.TLSCACertificate))
 			if caCertErr != nil {
-				return errors.Wrap(caCertErr, "problem with setting up certs")
+				return errors.Wrap(caCertErr, "problem with setting up certificates")
 			}
 			caCertPool := x509.NewCertPool()
 			ok := caCertPool.AppendCertsFromPEM(caCert)
@@ -213,7 +213,7 @@ func (r *RestAPI) Listen() error {
 		// TLS disabled
 		listener, err := net.Listen("tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
 		if err != nil {
-			return errors.Wrap(err, "problem with listen")
+			return errors.Wrap(err, "problem occurred while starting to listen using ReST API")
 		}
 
 		h, p, err := swag.SplitHostPort(listener.Addr().String())
@@ -228,7 +228,7 @@ func (r *RestAPI) Listen() error {
 
 		tlsListener, err := net.Listen("tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
 		if err != nil {
-			return errors.Wrap(err, "problem with listen")
+			return errors.Wrap(err, "problem occurred while starting to listen using ReST API")
 		}
 
 		sh, sp, err := swag.SplitHostPort(tlsListener.Addr().String())

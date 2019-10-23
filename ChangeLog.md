@@ -1,3 +1,10 @@
+* 6 [func] godfryd
+
+    Added initial implementation of Stork Agent. Implemented basic communication
+    between Stork Agent and Stork Server using gRPC (Server initiates connection
+    to Agent).
+    (Gitlab #26)
+
 * 5 [func] marcin
 
     Added stork-db-migrate tool to be used for migrating the database

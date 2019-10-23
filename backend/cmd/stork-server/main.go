@@ -25,7 +25,7 @@ func main() {
 	parser.ShortDescription = "Stork Server"
 	parser.LongDescription = "Stork Server is a Kea and BIND Dashboard"
 
-	// Process rest api specific args.
+	// Process ReST API specific args.
 	_, err := parser.AddGroup("ReST Server Flags", "", &storkServer.RestAPI.Settings)
 	if err != nil {
 		log.Fatalf("FATAL error: %+v", err)
