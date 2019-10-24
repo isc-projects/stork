@@ -27,9 +27,9 @@ type StorkAgent struct {
 // API exposed to Stork Server
 
 // Get version of Agent
-func (s *StorkAgent) GetVersion(ctx context.Context, in *agentapi.Empty) (*agentapi.AgentVersion, error) {
+func (s *StorkAgent) GetVersion(ctx context.Context, in *agentapi.GetVersionReq) (*agentapi.GetVersionRsp, error) {
 	log.Printf("Received: GetVersion %v", in)
-	return &agentapi.AgentVersion{Version: "1.0.9a"}, nil
+	return &agentapi.GetVersionRsp{Version: "1.0.9a"}, nil
 }
 
 // Detect services (Kea, Bind)

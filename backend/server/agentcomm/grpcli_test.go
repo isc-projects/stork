@@ -29,7 +29,7 @@ func TestGetVersion(t *testing.T) {
 	// Call GetVersion
 	expVer := "123"
 	mockAgentClient.EXPECT().GetVersion(gomock.Any(), gomock.Any()).
-		Return(&agentapi.AgentVersion{Version: expVer}, nil)
+		Return(&agentapi.GetVersionRsp{Version: expVer}, nil)
 
 	// Check response
 	ver, err := agents.GetVersion(addr)

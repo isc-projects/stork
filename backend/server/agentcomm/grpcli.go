@@ -20,7 +20,7 @@ func (agents *ConnectedAgents) GetVersion(address string) (string, error) {
 
 	// Call agent for version.
 	ctx, _ := context.WithTimeout(context.Background(), 10 * time.Second)
-	ver, err := agent.Client.GetVersion(ctx, &agentapi.Empty{})
+	ver, err := agent.Client.GetVersion(ctx, &agentapi.GetVersionReq{})
 	if err != nil {
 		// Problem with connection, try to reconnect and retry the call
 		log.Infof("problem with connection to agent %v, reconnecting", err)
@@ -29,7 +29,7 @@ func (agents *ConnectedAgents) GetVersion(address string) (string, error) {
 			return "", errors.Wrap(err2, "problem with connection to agent")
 		}
 		ctx, _ = context.WithTimeout(context.Background(), 10 * time.Second)
-		ver, err = agent.Client.GetVersion(ctx, &agentapi.Empty{})
+		ver, err = agent.Client.GetVersion(ctx, &agentapi.GetVersionReq{})
 		if err != nil {
 			return "", errors.Wrap(err, "problem with connection to agent")
 		}
