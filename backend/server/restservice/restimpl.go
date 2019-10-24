@@ -16,7 +16,7 @@ import (
 // Get version of Stork server.
 func (r *RestAPI) GetVersion(ctx context.Context, params operations.GetVersionParams) middleware.Responder {
 	t := "stable"
-	v := "0.1"
+	v := "0.1.0"
 	d, err := strfmt.ParseDateTime("0001-01-01T00:00:00.000Z")
 	if err != nil {
 		fmt.Printf("problem\n")
