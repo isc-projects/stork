@@ -3,10 +3,12 @@ package dbmigs
 import (
 	"os"
 	"testing"
+
+	"isc.org/stork/server/database"
 )
 
 // Expecting storktest database and the storktest user to have full privileges to it.
-var testConnOptions = DbConnOptions{
+var testConnOptions = dbops.PgOptions{
 	Database: "storktest",
 	User: "storktest",
 	Password: "storktest",

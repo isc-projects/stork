@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh/terminal"
 	"github.com/jessevdk/go-flags"
+	"isc.org/stork/server/database"
 	"isc.org/stork/server/database/migrations"
 	"os"
 )
@@ -66,7 +67,7 @@ func main() {
 	}
 
 	// Use the provided credentials to connect to the database.
-	oldVersion, newVersion, err := dbmigs.Migrate(&dbmigs.DbConnOptions{
+	oldVersion, newVersion, err := dbmigs.Migrate(&dbops.PgOptions{
 		User:     opts.UserName,
 		Password: string(password),
 		Database: opts.DatabaseName,

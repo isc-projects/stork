@@ -3,14 +3,13 @@ package dbmigs
 import (
 	"github.com/go-pg/migrations/v7"
 	"github.com/go-pg/pg/v9"
-)
 
-// Alias to pg.Options.
-type DbConnOptions = pg.Options
+	"isc.org/stork/server/database"
+)
 
 // Migrates the database version down to 0 and then removes the gopg_migrations
 // table.
-func Toss(dbopts *DbConnOptions) error {
+func Toss(dbopts *dbops.PgOptions) error {
 	// Migrate the database down to 0.
 	db, _, _, err := migrateAndStayConnected(dbopts, "reset")
 	defer db.Close()
@@ -29,7 +28,7 @@ func Toss(dbopts *DbConnOptions) error {
 // the location of the migration files. The args specify one of the
 // migration operations supported by go-pg/migrations. The returned arguments
 // contain new and old database version as well as an error.
-func Migrate(dbopts *DbConnOptions, args ...string) (oldVersion, newVersion int64, err error) {
+func Migrate(dbopts *dbops.PgOptions, args ...string) (oldVersion, newVersion int64, err error) {
 	db, oldVersion, newVersion, err := migrateAndStayConnected(dbopts, args...)
 	db.Close()
 
@@ -38,7 +37,7 @@ func Migrate(dbopts *DbConnOptions, args ...string) (oldVersion, newVersion int6
 
 // Migrates the database using provided credentials and returns the connection
 // to the database.
-func migrateAndStayConnected(dbopts *DbConnOptions, args ...string) (db *pg.DB, oldVersion, newVersion int64, err error) {
+func migrateAndStayConnected(dbopts *dbops.PgOptions, args ...string) (db *pg.DB, oldVersion, newVersion int64, err error) {
 	// Connect to the database.
 	db = pg.Connect(dbopts)
 
@@ -57,7 +56,7 @@ func AvailableVersion() int64 {
 }
 
 // Returns current schema version.
-func CurrentVersion(dbopts *DbConnOptions) (int64, error) {
+func CurrentVersion(dbopts *dbops.PgOptions) (int64, error) {
 	// Connect to the database.
 	db := pg.Connect(dbopts)
 	return migrations.Version(db)

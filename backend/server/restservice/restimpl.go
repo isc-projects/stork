@@ -147,3 +147,8 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 	return rsp
 }
+
+// Attempts to login the user to the system.
+func (r *RestAPI) GetUserLogin(ctx context.Context, params operations.GetUserLoginParams) middleware.Responder {
+	return operations.NewGetUserLoginOK()
+}

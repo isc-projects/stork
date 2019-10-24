@@ -19,6 +19,8 @@ import (
 	"isc.org/stork/server/gen/restapi"
 	"isc.org/stork/server/gen/restapi/operations"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/database"
+	"isc.org/stork/server/database/session"
 )
 
 type RestApiSettings struct {
@@ -86,6 +88,19 @@ func loggingMiddleware(next http.Handler) http.Handler {
 // Do API initialization, create a new API http handler.
 func (r *RestAPI) Init(agents agentcomm.ConnectedAgents) error {
 	r.Agents = agents
+
+	// Initialize sessions with access to the database.
+	dbconn := dbops.NewGenericConn()
+	*dbconn = dbops.GenericConn{
+		User: "storktest",
+		Password: "storktest",
+		DbName: "storktest",
+	}
+	sm, err := dbsession.NewSessionMgr(dbconn);
+
+	if err != nil {
+		return errors.Wrap(err, "unable to establish connection to the session database")
+	}
 
 	// Initiate the http handler, with the objects that are implementing the business logic.
 	h, err := restapi.Handler(restapi.Config{

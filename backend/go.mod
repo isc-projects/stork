@@ -3,6 +3,8 @@ module isc.org/stork
 go 1.13
 
 require (
+	github.com/alexedwards/scs/postgresstore v0.0.0-20191019164820-acb041f89bc3
+	github.com/alexedwards/scs/v2 v2.2.0
 	github.com/go-openapi/errors v0.19.2
 	github.com/go-openapi/loads v0.19.3
 	github.com/go-openapi/runtime v0.19.6
@@ -15,6 +17,7 @@ require (
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2
 	github.com/jessevdk/go-flags v1.4.0
+	github.com/lib/pq v1.2.0
 	github.com/pkg/errors v0.8.1
 	github.com/shirou/gopsutil v2.19.9+incompatible
 	github.com/sirupsen/logrus v1.4.2
