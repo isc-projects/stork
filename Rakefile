@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'rake'
 
 # Tool Versions
@@ -122,7 +123,7 @@ end
 
 desc 'Run server'
 task :run_server => [:build_server, GO] do
-  sh "backend/cmd/stork-server/stork-server/"
+  sh "backend/cmd/stork-server/stork-server"
 end
 
 desc 'Compile database migrations tool'
@@ -191,7 +192,7 @@ end
 desc 'Serve angular app'
 task :serve_ui => [NG, :gen_client] do
   Dir.chdir('webui') do
-    sh 'npx ng serve'
+    sh 'npx ng serve --disable-host-check --proxy-config proxy.conf.json'
   end
 end
 
@@ -216,6 +217,7 @@ end
 # Docker Rules
 desc 'Build containers with everything and statup all services using docker-compose'
 task :docker_up => [:build_backend, :build_ui] do
+  sh "docker-compose build"
   sh "docker-compose up"
 end
 

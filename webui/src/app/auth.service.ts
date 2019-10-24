@@ -30,7 +30,6 @@ export class AuthService {
         u.lastName = 'Kowalski';
         this.currentUserSubject.next(u);
         return this.currentUserSubject.value;
-        // return new User();
     }
 
     login(username: string, password: string) {

@@ -20,10 +20,12 @@
     "@angular/platform-browser": "^8.2.9",
     "@angular/platform-browser-dynamic": "^8.2.9",
     "@angular/router": "^8.2.9",
+    "path": "^0.12.7",
     "primeflex": "^1.0.0-rc.1",
     "primeicons": "^2.0.0",
     "primeng": "^8.0.4",
     "rxjs": "~6.4.0",
+    "swagger-ui-dist": "^3.24.0",
     "tslib": "^1.10.0",
     "zone.js": "~0.9.1"
   },

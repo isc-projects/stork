@@ -4,6 +4,7 @@ import { Routes, RouterModule } from '@angular/router';
 import { AuthGuard } from './auth.guard';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { LoginScreenComponent } from './login-screen/login-screen.component';
+import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component';
 
 
 const routes: Routes = [
@@ -16,6 +17,11 @@ const routes: Routes = [
     {
         path: 'login',
         component: LoginScreenComponent
+    },
+    {
+        path: 'swagger-ui',
+        component: SwaggerUiComponent,
+        canActivate: [AuthGuard],
     },
 
 

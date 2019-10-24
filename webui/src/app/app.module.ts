@@ -3,6 +3,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 
+import { environment } from './../environments/environment';
+
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 
@@ -16,6 +18,7 @@ import {TableModule} from 'primeng/table';
 import { LoginScreenComponent } from './login-screen/login-screen.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { HostsTableComponent } from './hosts-table/hosts-table.component';
+import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component';
 
 export function cfgFactory() {
     return new Configuration();
@@ -26,7 +29,8 @@ export function cfgFactory() {
         AppComponent,
         LoginScreenComponent,
         DashboardComponent,
-        HostsTableComponent
+        HostsTableComponent,
+        SwaggerUiComponent
     ],
     imports: [
         BrowserModule,
@@ -41,7 +45,7 @@ export function cfgFactory() {
         PanelModule,
         TableModule,
     ],
-    providers: [{ provide: BASE_PATH, useValue: 'http://localhost:8088/api' }],
+    providers: [{ provide: BASE_PATH, useValue: environment.apiUrl }],
     bootstrap: [AppComponent]
 })
 export class AppModule { }

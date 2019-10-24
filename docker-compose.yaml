@@ -4,12 +4,12 @@ services:
   server:
     restart: always
     build:
-      context: server
-      dockerfile: Dockerfile
+      context: backend
+      dockerfile: docker-server.txt
     expose:
-      - "5000"
+      - "8080"
     ports:
-      - "5000:5000"
+      - "8088:8080"
     environment:
       DB_URL: "postgresql://stork:stork123@postgres:5432/stork"
     depends_on:
@@ -23,7 +23,7 @@ services:
       - "8080:80"
     environment:
       API_HOST: server
-      API_PORT: 5000
+      API_PORT: 8080
     depends_on:
       - server
 
