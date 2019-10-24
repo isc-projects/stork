@@ -26,8 +26,8 @@ export class AuthService {
 
     public get currentUserValue(): User {
         const u = new User();
-        u.firstName = 'Jan';
-        u.lastName = 'Kowalski';
+        u.firstName = 'John';
+        u.lastName = 'Doe';
         this.currentUserSubject.next(u);
         return this.currentUserSubject.value;
     }
