@@ -14,16 +14,15 @@ type StorkServer struct {
 }
 
 // Init for Stork Server state
-func (ss *StorkServer) Init() {
-	err := ss.Agents.Init()
-	if err != nil {
-		log.Fatalf("FATAL error: %+v", err)
-	}
+func NewStorkServer() *StorkServer {
+	ss := StorkServer{}
+	ss.Agents = agentcomm.NewConnectedAgents()
 
-	err = ss.RestAPI.Init(&ss.Agents)
+	err := ss.RestAPI.Init(ss.Agents)
 	if err != nil {
 		log.Fatalf("FATAL error: %+v", err)
 	}
+	return &ss
 }
 
 // Run Stork Server

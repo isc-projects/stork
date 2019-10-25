@@ -3,16 +3,48 @@ syntax = "proto3";
 package agentapi;
 
 service Agent {
-    rpc getVersion(GetVersionReq) returns (GetVersionRsp) {}
-    rpc detectServices(DetectServicesReq) returns (DetectServicesRsp) {}
-    rpc restartKea(RestartKeaReq) returns (RestartKeaRsp) {}
+  rpc getState(GetStateReq) returns (GetStateRsp) {}
+  rpc detectServices(DetectServicesReq) returns (DetectServicesRsp) {}
+  rpc restartKea(RestartKeaReq) returns (RestartKeaRsp) {}
 }
 
-message GetVersionReq {
+message GetStateReq {
 }
 
-message GetVersionRsp {
-    string version = 1;
+message GetStateRsp {
+  string agentVersion = 1;
+  repeated Service services = 2;
+  string hostname = 3;
+  int64 cpus = 4;
+  string cpusLoad = 5;
+  int64 memory = 6;
+  int64 usedMemory = 7;
+  int64 uptime = 8;
+  string error = 9;
+  string os = 10;
+  string platform = 11;
+  string platformFamily = 12;
+  string platformVersion = 13;
+  string kernelVersion = 14;
+  string kernelArch = 15;
+  string virtualizationSystem = 16;
+  string virtualizationRole = 17;
+  string hostID = 18;
+}
+
+message Service {
+  oneof serviceType {
+    ServiceKea kea = 1;
+    ServiceBind bind = 2;
+  }
+}
+
+message ServiceKea {
+  string version = 1;
+}
+
+message ServiceBind {
+  string version = 1;
 }
 
 message DetectServicesReq {

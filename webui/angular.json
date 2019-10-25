@@ -32,6 +32,7 @@
                 "node_modules/primeng/resources/themes/nova-light/theme.css",
                 "node_modules/primeng/resources/primeng.min.css",
                 "node_modules/primeflex/primeflex.css",
+                "node_modules/@fortawesome/fontawesome-free/css/all.css",
                 "node_modules/swagger-ui-dist/swagger-ui.css",
                 "src/styles.sass"
             ],
@@ -60,8 +61,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "2mb",
-                  "maximumError": "5mb"
+                  "maximumWarning": "5mb",
+                  "maximumError": "10mb"
                 },
                 {
                   "type": "anyComponentStyle",

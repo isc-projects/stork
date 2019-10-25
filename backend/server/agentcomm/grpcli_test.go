@@ -12,8 +12,7 @@ import (
 //go:generate mockgen -package=agentcomm -destination=api_mock.go isc.org/stork/api AgentClient
 
 func TestGetVersion(t *testing.T) {
-	var agents ConnectedAgents
-	agents.Init()
+	agents := NewConnectedAgents()
 
 	// pre-add an agent
 	addr := "127.0.0.1:8080"
@@ -28,11 +27,11 @@ func TestGetVersion(t *testing.T) {
 
 	// Call GetVersion
 	expVer := "123"
-	mockAgentClient.EXPECT().GetVersion(gomock.Any(), gomock.Any()).
-		Return(&agentapi.GetVersionRsp{Version: expVer}, nil)
+	mockAgentClient.EXPECT().GetState(gomock.Any(), gomock.Any()).
+		Return(&agentapi.GetStateRsp{AgentVersion: expVer}, nil)
 
 	// Check response
-	ver, err := agents.GetVersion(addr)
+	state, err := agents.GetState(addr)
 	require.NoError(t, err)
-	require.Equal(t, ver, expVer)
+	require.Equal(t, state.AgentVersion, expVer)
 }

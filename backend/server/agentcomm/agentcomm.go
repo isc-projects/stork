@@ -21,6 +21,7 @@ type Agent struct {
 	GrpcConn *grpc.ClientConn
 }
 
+// Prepare gRPC connection to agent.
 func (agent *Agent) MakeGrpcConnection() error {
 	// If there is any old connection then clean it up
 	if agent.GrpcConn != nil {
@@ -42,26 +43,43 @@ func (agent *Agent) MakeGrpcConnection() error {
 	return nil
 }
 
+// Interface for interacting with Agents via gRPC.
+type ConnectedAgents interface {
+	GetSettings() *AgentsSettings
+	Shutdown()
+	GetConnectedAgent(address string) (*Agent, error)
+	GetState(address string) (*State, error)
+}
+
 // Agents management map. It tracks Agents currently connected to the Server.
-type ConnectedAgents struct {
+type connectedAgentsData struct {
 	Settings AgentsSettings
 	AgentsMap map[string]*Agent
 }
 
-// Initialize Agents map
-func (agents *ConnectedAgents) Init() error {
-	agents.AgentsMap = make(map[string]*Agent)
-	return nil
+// Create new ConnectedAgents objects.
+func NewConnectedAgents() *connectedAgentsData {
+	agents := connectedAgentsData{
+		AgentsMap: make(map[string]*Agent),
+	}
+	return &agents
 }
 
-// Shutdown agents in agents map
-func (agents *ConnectedAgents) Shutdown() {
+// Get settings related to agents.
+func (agents *connectedAgentsData) GetSettings() *AgentsSettings {
+	return &agents.Settings
+}
+
+
+// Shutdown agents in agents map.
+func (agents *connectedAgentsData) Shutdown() {
 	for _, agent := range agents.AgentsMap {
 		agent.GrpcConn.Close()
 	}
 }
 
-func (agents *ConnectedAgents) GetConnectedAgent(address string) (*Agent, error) {
+// Get Agent object by its address.
+func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, error) {
 	// Look for agent in Agents map and if found then return it
 	agent, ok := agents.AgentsMap[address]
 	if ok {
@@ -76,7 +94,7 @@ func (agents *ConnectedAgents) GetConnectedAgent(address string) (*Agent, error)
 
 	// Store it in Agents map
 	agents.AgentsMap[address] = agent
-	log.Printf("connecting to new agent from %v", address)
+	log.Printf("connecting to new agent on %v", address)
 
 	return agent, nil
 }

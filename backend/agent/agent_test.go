@@ -7,14 +7,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"isc.org/stork/api"
+	"isc.org/stork"
 )
 
 
-func TestGetVersion(t *testing.T) {
+func TestGetState(t *testing.T) {
 	sa := StorkAgent{}
 
 	ctx := context.Background()
-	rsp, err := sa.GetVersion(ctx, &agentapi.GetVersionReq{})
+	rsp, err := sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
-	require.Equal(t, *rsp, agentapi.GetVersionRsp{Version: "1.0.9a"})
+	require.Equal(t, rsp.AgentVersion, stork.Version)
 }

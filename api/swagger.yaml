@@ -4,14 +4,21 @@ info:
   description: An API for Stork
   title: Stork API
   version: 0.1.0
+consumes:
+  - application/json
+produces:
+  - application/json
 schemes:
 - http
 basePath: /api
 
-
 paths:
   /version:
     get:
+      summary: Get version.
+      operationId: getVersion
+      tags:
+        - General
       responses:
         200:
           description: Version of Stork
@@ -20,27 +27,92 @@ paths:
         default:
           description: generic error response
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/ApiError"
 
-  /agents/{agentIp}/version:
+  /machines:
     get:
-      summary: Get agent's version.
-      operationId: getAgentVersion
+      summary: Get list of machines.
+      description: >-
+        It is possible to filter list of machines be a few fields. It is also always paged.
+        Default page size is 10.
+        A list of machines is returned in items field accompanied with total
+        which indicate total available number of records for given filtering
+        parameters.
+      operationId: getMachines
+      tags:
+        - Services
       parameters:
-        - in: path
-          name: agentIp
+        - name: start
+          in: query
+          description: First record to retrieve.
+          type: integer
+        - name: limit
+          in: query
+          description: Number of records to retrieve.
+          type: integer
+        - name: text
+          in: query
+          description: Text that is used to query any field of machines.
           type: string
-          required: true
-          description: IP address of agent.
+        - name: service
+          in: query
+          description: Limit returned list of machine to these which provide given service, possible values 'bind' or 'kea'.
+          type: string
       responses:
         200:
-          description: Agent's version
+          description: List of machines
           schema:
-            $ref: "#/definitions/AgentVersion"
+            $ref: "#/definitions/Machines"
         default:
           description: generic error response
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/ApiError"
+    post:
+      summary: Add new machine.
+      description: >-
+        To create new machine at lease one parameter is needed: address.
+        There are optional parameters as well.
+      operationId: createMachine
+      tags:
+        - Services
+      parameters:
+        - name: machine
+          in: body
+          description: Machine
+          schema:
+            $ref: '#/definitions/Machine'
+      responses:
+        200:
+          description: Machine information
+          schema:
+            $ref: "#/definitions/Machine"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /machines/{address}/state:
+    get:
+      summary: Get machine's runtime state.
+      operationId: getMachineState
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: address
+          type: string
+          required: true
+          description: IP address of machine.
+      responses:
+        200:
+          description: Machine
+          schema:
+            $ref: "#/definitions/Machine"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
 
 
 definitions:
@@ -60,21 +132,84 @@ definitions:
         type: string
         enum: [stable, release-candidate, development]
 
-  AgentVersion:
+  Machine:
     type: object
     required:
-      - version
+      - address
     properties:
-      version:
+      address:
         type: string
+      agentVersion:
+        type: string
+        readOnly: true
+      hostname:
+        type: string
+        readOnly: true
+      cpus:
+        type: integer
+        readOnly: true
+      cpusLoad:
+        type: string
+        readOnly: true
+      memory:
+        type: integer
+        readOnly: true
+      usedMemory:
+        type: integer
+        readOnly: true
+      uptime:
+        type: integer
+        readOnly: true
+      os:
+        type: string
+        readOnly: true
+      platform:
+        type: string
+        readOnly: true
+      platformFamily:
+        type: string
+        readOnly: true
+      platformVersion:
+        type: string
+        readOnly: true
+      kernelVersion:
+        type: string
+        readOnly: true
+      kernelArch:
+        type: string
+        readOnly: true
+      virtualizationSystem:
+        type: string
+        readOnly: true
+      virtualizationRole:
+        type: string
+        readOnly: true
+      hostID:
+        type: string
+        readOnly: true
+      lastVisited:
+        type: string
+        format: date-time
+        readOnly: true
+      error:
+        type: string
+        readOnly: true
+  Machines:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Machine'
+      total:
+        type: integer
 
-  Error:
+  ApiError:
     type: object
     required:
       - message
     properties:
       code:
         type: integer
-        format: int64
       message:
         type: string

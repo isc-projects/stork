@@ -3,12 +3,17 @@ package agent
 import (
 	"net"
 	"fmt"
+	"runtime"
 	"context"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"github.com/shirou/gopsutil/mem"
+	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/load"
 
 	"isc.org/stork/api"
+	"isc.org/stork"
 )
 
 
@@ -26,10 +31,36 @@ type StorkAgent struct {
 
 // API exposed to Stork Server
 
-// Get version of Agent
-func (s *StorkAgent) GetVersion(ctx context.Context, in *agentapi.GetVersionReq) (*agentapi.GetVersionRsp, error) {
-	log.Printf("Received: GetVersion %v", in)
-	return &agentapi.GetVersionRsp{Version: "1.0.9a"}, nil
+// Get state of Agent
+func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*agentapi.GetStateRsp, error) {
+	log.Printf("Received: GetState %v", in)
+
+	vm, _ := mem.VirtualMemory()
+	hostInfo, _ := host.Info()
+	load, _ := load.Avg()
+	loadStr := fmt.Sprintf("%.2f %.2f %.2f", load.Load1, load.Load5, load.Load15)
+
+	state := agentapi.GetStateRsp{
+		AgentVersion: stork.Version,
+		//Services             []*Service
+		Hostname: hostInfo.Hostname,
+		Cpus: int64(runtime.NumCPU()),
+		CpusLoad: loadStr,
+		Memory: int64(vm.Total / (1024 * 1024 * 1024)), // in GiB
+		UsedMemory: int64(vm.UsedPercent),
+		Uptime: int64(hostInfo.Uptime / (60 * 60 * 24)), // in days
+		Os: hostInfo.OS,
+		Platform: hostInfo.Platform,
+		PlatformFamily: hostInfo.PlatformFamily,
+		PlatformVersion: hostInfo.PlatformVersion,
+		KernelVersion: hostInfo.KernelVersion,
+		KernelArch: hostInfo.KernelArch,
+		VirtualizationSystem: hostInfo.VirtualizationSystem,
+		VirtualizationRole: hostInfo.VirtualizationRole,
+		HostID: hostInfo.HostID,
+		Error: "",
+	}
+	return &state, nil
 }
 
 // Detect services (Kea, Bind)

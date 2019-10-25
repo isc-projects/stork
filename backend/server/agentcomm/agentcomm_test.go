@@ -7,8 +7,7 @@ import (
 )
 
 func TestConnectingToAgent(t *testing.T) {
-	var agents ConnectedAgents
-	agents.Init()
+	agents := NewConnectedAgents()
 
 	// connect one agent and check if it is in agents map
 	agents.GetConnectedAgent("127.0.0.1:8080")

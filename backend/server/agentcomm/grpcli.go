@@ -10,32 +10,76 @@ import (
 	"isc.org/stork/api"
 )
 
+type State struct {
+	Address string
+	AgentVersion string
+	Cpus int64
+	CpusLoad string
+	Memory int64
+	Hostname string
+	Uptime int64
+	UsedMemory int64
+	Os string
+	Platform string
+	PlatformFamily string
+	PlatformVersion string
+	KernelVersion string
+	KernelArch string
+	VirtualizationSystem string
+	VirtualizationRole string
+	HostID string
+	LastVisited time.Time
+	Error string
+}
+
 // Get version from agent.
-func (agents *ConnectedAgents) GetVersion(address string) (string, error) {
+func (agents *connectedAgentsData) GetState(address string) (*State, error) {
 	// Find agent in map.
 	agent, err := agents.GetConnectedAgent(address)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Call agent for version.
 	ctx, _ := context.WithTimeout(context.Background(), 10 * time.Second)
-	ver, err := agent.Client.GetVersion(ctx, &agentapi.GetVersionReq{})
+	grpcState, err := agent.Client.GetState(ctx, &agentapi.GetStateReq{})
 	if err != nil {
 		// Problem with connection, try to reconnect and retry the call
 		log.Infof("problem with connection to agent %v, reconnecting", err)
 		err2 := agent.MakeGrpcConnection()
 		if err2 != nil {
-			return "", errors.Wrap(err2, "problem with connection to agent")
+			return nil, errors.Wrap(err2, "problem with connection to agent")
 		}
 		ctx, _ = context.WithTimeout(context.Background(), 10 * time.Second)
-		ver, err = agent.Client.GetVersion(ctx, &agentapi.GetVersionReq{})
+		grpcState, err = agent.Client.GetState(ctx, &agentapi.GetStateReq{})
 		if err != nil {
-			return "", errors.Wrap(err, "problem with connection to agent")
+			return nil, errors.Wrap(err, "problem with connection to agent")
 		}
 	}
 
-	log.Printf("version returned is %s", ver.Version)
+	log.Printf("state returned is %+v", grpcState)
 
-	return ver.Version, nil
+	state := State{
+		Address: address,
+		AgentVersion: grpcState.AgentVersion,
+		Cpus: grpcState.Cpus,
+		CpusLoad: grpcState.CpusLoad,
+		Memory: grpcState.Memory,
+		Hostname: grpcState.Hostname,
+		Uptime: grpcState.Uptime,
+		UsedMemory: grpcState.UsedMemory,
+		Os: grpcState.Os,
+		Platform: grpcState.Platform,
+		PlatformFamily: grpcState.PlatformFamily,
+		PlatformVersion: grpcState.PlatformVersion,
+		KernelVersion: grpcState.KernelVersion,
+		KernelArch: grpcState.KernelArch,
+		VirtualizationSystem: grpcState.VirtualizationSystem,
+		VirtualizationRole: grpcState.VirtualizationRole,
+		HostID: grpcState.HostID,
+		LastVisited: time.Now().UTC(),
+		Error: grpcState.Error,
+	}
+
+	return &state, nil
 }

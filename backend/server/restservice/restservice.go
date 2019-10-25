@@ -42,7 +42,7 @@ type RestApiSettings struct {
 type RestAPI struct {
 	Settings     RestApiSettings
 
-	Agents       *agentcomm.ConnectedAgents
+	Agents       agentcomm.ConnectedAgents
 
 	TLS          bool
 	srvListener  net.Listener
@@ -54,15 +54,44 @@ type RestAPI struct {
 	Port         int     // actual port for listening
 }
 
+func loggingMiddleware(next http.Handler) http.Handler {
+	log.Info("installed logging middleware");
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		remoteAddr := r.RemoteAddr
+		if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
+			remoteAddr = realIP
+		}
+		entry := log.WithFields(log.Fields{
+			"path": r.RequestURI,
+			"method": r.Method,
+			"remote": remoteAddr,
+		})
+
+		start := time.Now()
+
+		next.ServeHTTP(w, r)
+
+		duration := time.Since(start)
+
+		entry = entry.WithFields(log.Fields{
+			//"status":      w.Status(),
+			//"text_status": http.StatusText(w.Status()),
+			"took":        duration,
+		})
+		entry.Info("served request")
+	})
+}
 
 // Do API initialization, create a new API http handler.
-func (r *RestAPI) Init(agents *agentcomm.ConnectedAgents) error {
+func (r *RestAPI) Init(agents agentcomm.ConnectedAgents) error {
 	r.Agents = agents
 
 	// Initiate the http handler, with the objects that are implementing the business logic.
 	h, err := restapi.Handler(restapi.Config{
-		OperationsAPI: r,
-		Logger: log.Printf,
+		GeneralAPI: r,
+		ServicesAPI: r,
+		Logger: log.Infof,
+		InnerMiddleware: loggingMiddleware,
 	})
 	if err != nil {
 		return errors.Wrap(err, "cannot setup ReST API handler")

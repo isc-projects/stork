@@ -15,7 +15,7 @@ export class AppComponent implements OnInit {
     title = 'Stork';
     currentUser = null;
 
-    items: MenuItem[];
+    menuItems: MenuItem[];
 
     constructor(
         private router: Router,
@@ -25,14 +25,22 @@ export class AppComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.items = [
-            {
-                label: 'DHCP',
-            },
-            {
-                label: 'DNS',
-            }
-        ];
+        this.menuItems = [{
+            label: 'DHCP',
+        }, {
+            label: 'DNS',
+        }, {
+            label: 'Services',
+            items: [{
+                label: 'Kea DHCP'
+            }, {
+                label: 'BIND DNS'
+            }, {
+                label: 'Machines',
+                icon: 'fa fa-server',
+                routerLink: '/machines'
+            }]
+        }];
     }
 
     signOut() {

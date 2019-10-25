@@ -3,7 +3,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 
 import {ButtonModule} from 'primeng/button';
 
-import { DefaultService } from '../backend/api/default.service';
+import { GeneralService } from '../backend/api/api';
 
 @Component({
   selector: 'app-login-screen',
@@ -15,11 +15,11 @@ export class LoginScreenComponent implements OnInit {
     version = 'not available';
     returnUrl: string;
 
-    constructor(protected api: DefaultService, private route: ActivatedRoute, private router: Router) {
+    constructor(protected api: GeneralService, private route: ActivatedRoute, private router: Router) {
     }
 
     ngOnInit() {
-        this.api.versionGet().subscribe(data => {
+        this.api.getVersion().subscribe(data => {
             console.info(data);
             this.version = data.version;
         });

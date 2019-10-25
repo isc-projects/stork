@@ -11,10 +11,11 @@ import (
 
 func main() {
 	// Initialize global state of Stork Server
-	storkServer := server.StorkServer{}
+	storkServer := server.NewStorkServer()
 	defer storkServer.Shutdown()
 
 	// Setup logging
+	log.SetLevel(log.DebugLevel)
 	log.SetOutput(os.Stdout)
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp: true,
@@ -32,7 +33,7 @@ func main() {
 	}
 
 	// Process agent comm specific args.
-	_, err = parser.AddGroup("Agents Communication Flags", "", &storkServer.Agents.Settings)
+	_, err = parser.AddGroup("Agents Communication Flags", "", storkServer.Agents.GetSettings())
 	if err != nil {
 		log.Fatalf("FATAL error: %+v", err)
 	}
@@ -47,8 +48,6 @@ func main() {
 		}
 		os.Exit(code)
 	}
-
-	storkServer.Init()
 
 	storkServer.Serve();
 }

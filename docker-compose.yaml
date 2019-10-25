@@ -15,6 +15,14 @@ services:
     depends_on:
       - postgres
 
+  agent-kea:
+    restart: always
+    build:
+      context: backend
+      dockerfile: docker-agent-kea.txt
+    expose:
+      - "8080"
+
   webui:
     build:
       context: webui

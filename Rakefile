@@ -121,6 +121,12 @@ file :build_agent => [GO, AGENT_PB_GO_FILE] do
   sh "cd backend/cmd/stork-agent/ && #{GO} build"
 end
 
+desc 'Run agent'
+task :run_agent => [:build_agent, GO] do
+  sh "backend/cmd/stork-agent/stork-agent --port 8888"
+end
+
+
 desc 'Run server'
 task :run_server => [:build_server, GO] do
   sh "backend/cmd/stork-server/stork-server"

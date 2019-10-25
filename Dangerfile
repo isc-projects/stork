@@ -5,8 +5,8 @@ if git.modified_files.include? "Dangerfile"
 end
 
 # Checking MR size
-warn("Split the MR into separate ones. It's really big.") if git.lines_of_code > 400
-fail("Do not submit MRs over 1000 lines of code.") if git.lines_of_code > 1000
+warn("Split the MR into separate ones. It's really big.") if git.lines_of_code > 1000
+fail("Do not submit MRs over 1000 lines of code.") if git.lines_of_code > 3000
 
 # Note when MRs don't reference a milestone, make the warning stick around on subsequent runs
 has_milestone = gitlab.mr_json["milestone"] != nil
