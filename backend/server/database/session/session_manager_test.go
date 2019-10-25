@@ -9,19 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"isc.org/stork/server/database"
-	"isc.org/stork/server/database/migrations"
+	"isc.org/stork/server/database/test"
 )
-
-var genericConnOptions = dbops.GenericConn{
-	DbName: "storktest",
-	User: "storktest",
-	Password: "storktest",
-	Host: "localhost",
-	Port: 5432,
-}
-
-var pgConnOptions dbops.PgOptions
 
 func getCookie(response *http.Response, name string) (bool, string) {
 	for _, c := range response.Cookies() {
@@ -35,20 +24,8 @@ func getCookie(response *http.Response, name string) (bool, string) {
 
 // Common function which cleans the environment before the tests.
 func TestMain(m *testing.M) {
-	pgConnOptions := genericConnOptions.PgParams()
-
-	// Check if we're running tests in Gitlab CI. If so, the host
-	// running the database should be set to "postgres".
-	// See https://docs.gitlab.com/ee/ci/services/postgres.html.
-	if _, ok := os.LookupEnv("POSTGRES_DB"); ok {
-		genericConnOptions.Host = "postgres"
-		pgConnOptions.Addr = "postgres:5432"
-	}
-
 	// Toss the schema, including removal of the versioning table.
-	dbmigs.Toss(pgConnOptions)
-	dbmigs.Migrate(pgConnOptions, "init")
-	dbmigs.Migrate(pgConnOptions, "up")
+	dbtest.RecreateSchema()
 
 	// Run tests.
 	c := m.Run()
@@ -56,7 +33,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestMiddlewareNewSession(t *testing.T) {
-	mgr, _ := NewSessionMgr(&genericConnOptions)
+	mgr, _ := NewSessionMgr(&dbtest.GenericConnOptions)
 
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
