@@ -42,18 +42,20 @@ type RestApiSettings struct {
 
 // Runtime information and settings for ReST API service.
 type RestAPI struct {
-	Settings     RestApiSettings
+	Settings       RestApiSettings
 
+	SessionManager *dbsession.SessionMgr
 	Agents       agentcomm.ConnectedAgents
 
-	TLS          bool
-	srvListener  net.Listener
-	api          *operations.StorkAPI
-	handler      http.Handler
-	hasListeners bool
-	shuttingDown int32
-	Host         string  // actual host for listening
-	Port         int     // actual port for listening
+
+	TLS            bool
+	srvListener    net.Listener
+	api            *operations.StorkAPI
+	handler        http.Handler
+	hasListeners   bool
+	shuttingDown   int32
+	Host           string  // actual host for listening
+	Port           int     // actual port for listening
 }
 
 // It installs a middleware that traces ReST calls using logrus.
@@ -97,10 +99,10 @@ func (r *RestAPI) Init(agents agentcomm.ConnectedAgents) error {
 		DbName: "storktest",
 	}
 	sm, err := dbsession.NewSessionMgr(dbconn);
-
 	if err != nil {
 		return errors.Wrap(err, "unable to establish connection to the session database")
 	}
+	r.SessionManager = sm
 
 	// Initiate the http handler, with the objects that are implementing the business logic.
 	h, err := restapi.Handler(restapi.Config{

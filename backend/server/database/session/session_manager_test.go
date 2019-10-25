@@ -63,6 +63,11 @@ func TestMiddlewareNewSession(t *testing.T) {
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		mgr.LoginHandler(r.Context())
+		logged, id, login := mgr.Logged(r.Context())
+
+		require.True(t, logged)
+		require.Equal(t, id, 1)
+		require.Equal(t, login, "admin")
 	}
 
 	middlewareFunc := mgr.SessionMiddleware(http.HandlerFunc(handler))

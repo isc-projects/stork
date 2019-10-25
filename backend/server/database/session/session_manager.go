@@ -38,7 +38,8 @@ func (s *SessionMgr) LoginHandler(ctx context.Context) error {
 		return errors.Wrapf(err, "error while creating new session identifier")
 	}
 
-	s.scsSessionMgr.Put(ctx, "userID", 123)
+	s.scsSessionMgr.Put(ctx, "userLogin", "admin")
+	s.scsSessionMgr.Put(ctx, "userID", 1)
 	return nil
 }
 
@@ -49,4 +50,10 @@ func (s *SessionMgr) SessionMiddleware(handler http.Handler) http.Handler {
 func (s *SessionMgr) HasToken(token string) bool {
 	_, exists, _ := s.scsSessionMgr.Store.Find(token)
 	return exists
+}
+
+func (s *SessionMgr) Logged(ctx context.Context) (bool, int, string) {
+	id := s.scsSessionMgr.GetInt(ctx, "userID")
+	email := s.scsSessionMgr.GetString(ctx, "userLogin")
+	return id > 0, id, email
 }

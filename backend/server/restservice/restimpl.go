@@ -150,5 +150,14 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 // Attempts to login the user to the system.
 func (r *RestAPI) GetUserLogin(ctx context.Context, params operations.GetUserLoginParams) middleware.Responder {
+	login := *params.Useremail
+	password := *params.Userpassword
+
+	if login != "admin" || password != "123" {
+		return operations.NewGetUserLoginBadRequest()
+	}
+
+	r.SessionManager.LoginHandler(ctx)
+
 	return operations.NewGetUserLoginOK()
 }
