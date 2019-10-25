@@ -13,6 +13,7 @@ require (
 	github.com/go-openapi/swag v0.19.5
 	github.com/go-openapi/validate v0.19.3
 	github.com/go-pg/migrations/v7 v7.1.6
+	github.com/go-pg/pg v8.0.6+incompatible
 	github.com/go-pg/pg/v9 v9.0.0-beta.15
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2

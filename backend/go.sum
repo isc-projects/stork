@@ -77,6 +77,8 @@ github.com/go-openapi/validate v0.19.3 h1:PAH/2DylwWcIU1s0Y7k3yNmeAgWOcKrNE2Q7Ww
 github.com/go-openapi/validate v0.19.3/go.mod h1:90Vh6jjkTn+OT1Eefm0ZixWNFjhtOH7vS9k0lo6zwJo=
 github.com/go-pg/migrations/v7 v7.1.6 h1:M+mC6qFZaX6bPaj4S3MTcI1rqW/9RxnZ+l3xciCua4Q=
 github.com/go-pg/migrations/v7 v7.1.6/go.mod h1:ycN6RqhOqa3km5KVLvRyESYP+lvqhrGYZxAIQ5HPPMM=
+github.com/go-pg/pg v8.0.6+incompatible h1:Hi7yUJ2zwmHFq1Mar5XqhCe3NJ7j9r+BaiNmd+vqf+A=
+github.com/go-pg/pg v8.0.6+incompatible/go.mod h1:a2oXow+aFOrvwcKs3eIA0lNFmMilrxK2sOkB5NWe0vA=
 github.com/go-pg/pg/v9 v9.0.0-beta.14/go.mod h1:T2Sr6bpTCOr2lUqOUMiXLMJqZHSUBKk1LdgSqjwhZfA=
 github.com/go-pg/pg/v9 v9.0.0-beta.15 h1:fcwHlBivDKP+ILdcv49bRApfb1fmQgxB9RnFXtzLbPI=
 github.com/go-pg/pg/v9 v9.0.0-beta.15/go.mod h1:JtAtFggZZ97a9GoyKBYWYO9Vd4zWyk4DQ/2EONhmlIs=

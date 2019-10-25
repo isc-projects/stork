@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v9/orm"
 )
 
 type GenericConn struct {
@@ -17,6 +18,12 @@ type GenericConn struct {
 
 // Alias to pg.Options.
 type PgOptions = pg.Options
+
+func init() {
+    orm.SetTableNameInflector(func(s string) string {
+        return s
+    })
+}
 
 func NewGenericConn() *GenericConn {
 	conn := &GenericConn{Port: 5432}
