@@ -83,7 +83,7 @@ func TestMigrate(t *testing.T) {
 func TestAvailableVersion(t *testing.T) {
 	avail := AvailableVersion()
 
-	var expected int64 = 1
+	var expected int64 = 2
 	if avail != expected {
 		t.Errorf("expected available version %d, got %d", expected, avail)
 	}
