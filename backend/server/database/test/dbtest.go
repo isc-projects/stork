@@ -6,6 +6,8 @@ import(
 	"isc.org/stork/server/database/migrations"
 )
 
+// Common set of database connection options which may be converted to a string
+// of space separated options used by SQL drivers.
 var GenericConnOptions = dbops.GenericConn{
 	DbName: "storktest",
 	User: "storktest",
@@ -14,10 +16,12 @@ var GenericConnOptions = dbops.GenericConn{
 	Port: 5432,
 }
 
+// go-pg specific database connection options.
 var PgConnOptions dbops.PgOptions
 
 
 func init() {
+	// Convert generic options to go-pg options.
 	PgConnOptions = *GenericConnOptions.PgParams()
 
 	// Check if we're running tests in Gitlab CI. If so, the host
@@ -29,13 +33,12 @@ func init() {
 	}
 }
 
-func RecreateSchema() {
-	// Toss the schema, including removal of the versioning table.
-	dbmigs.Toss(&PgConnOptions)
-	dbmigs.Migrate(&PgConnOptions, "init")
-	dbmigs.Migrate(&PgConnOptions, "up")
+// Reset the database schema to the latest version and remove any data added by tests.
+func ResetSchema() {
+	dbmigs.ResetToLatest(&PgConnOptions)
 }
 
+// Remove the database schema.
 func TossSchema() {
 	dbmigs.Toss(&PgConnOptions)
 }

@@ -24,8 +24,9 @@ func getCookie(response *http.Response, name string) (bool, string) {
 
 // Common function which cleans the environment before the tests.
 func TestMain(m *testing.M) {
-	// Toss the schema, including removal of the versioning table.
-	dbtest.RecreateSchema()
+	// Cleanup the database before and after the test.
+	dbtest.ResetSchema()
+	defer dbtest.ResetSchema()
 
 	// Run tests.
 	c := m.Run()

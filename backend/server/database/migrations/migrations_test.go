@@ -25,6 +25,7 @@ func TestMain(m *testing.M) {
 
 	// Toss the schema, including removal of the versioning table.
 	Toss(&testConnOptions)
+	defer Toss(&testConnOptions)
 
 	// Run tests.
 	c := m.Run()
