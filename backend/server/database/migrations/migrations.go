@@ -1,7 +1,6 @@
 package dbmigs
 
 import (
-	"github.com/pkg/errors"
 	"github.com/go-pg/migrations/v7"
 	"github.com/go-pg/pg/v9"
 
@@ -23,22 +22,6 @@ func Toss(dbopts *dbops.PgOptions) error {
 	_, err = db.Exec("DROP TABLE IF EXISTS gopg_migrations")
 
 	return err
-}
-
-// Resets the schema and leaves it at the latest available version.
-func ResetToLatest(dbopts *dbops.PgOptions) error {
-	db, _, _, err := migrateAndStayConnected(dbopts, "reset")
-	if err != nil {
-		db.Close()
-		return errors.Wrap(err, "error while resetting database to initial version")
-	}
-
-	_, _, err = Migrate(dbopts, "up")
-	if err != nil {
-		return errors.Wrap(err, "error while resetting database schema to the latest version")
-	}
-
-	return nil
 }
 
 // Migrates the database using provided credentials. The migrationsdir specifies

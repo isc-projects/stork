@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"os"
 
 	"github.com/stretchr/testify/require"
 
@@ -22,18 +21,10 @@ func getCookie(response *http.Response, name string) (bool, string) {
 	return false, ""
 }
 
-// Common function which cleans the environment before the tests.
-func TestMain(m *testing.M) {
-	// Cleanup the database before and after the test.
-	dbtest.ResetSchema()
-	defer dbtest.ResetSchema()
-
-	// Run tests.
-	c := m.Run()
-	os.Exit(c)
-}
-
 func TestMiddlewareNewSession(t *testing.T) {
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
+
 	mgr, _ := NewSessionMgr(&dbtest.GenericConnOptions)
 
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)

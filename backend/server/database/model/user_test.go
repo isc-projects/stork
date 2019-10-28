@@ -1,7 +1,6 @@
 package dbmodel
 
 import (
-	"os"
 	"testing"
 
 	"github.com/go-pg/pg/v9"
@@ -10,36 +9,66 @@ import (
 	"isc.org/stork/server/database/test"
 )
 
-// Common function which cleans the environment before the tests.
-func TestMain(m *testing.M) {
-	// Cleanup the database before and after the test.
-	dbtest.ResetSchema()
-	defer dbtest.ResetSchema()
+// Tests that default system user can be authenticated.
+func TestDefaultUserAuthenticate(t *testing.T) {
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
 
-	// Run tests.
-	c := m.Run()
-	os.Exit(c)
+	db := pg.Connect(&dbtest.PgConnOptions)
+
+	// Use default credentials of the admin user.
+    user := &SystemUser{
+		Login: "admin",
+		Password: "admin",
+    }
+	authOk, err := Authenticate(db, user)
+	require.NoError(t, err)
+	require.True(t, authOk)
+
+	// Using wrong password should cause the authentication to fail.
+	user.Password = "wrong"
+	authOk, err = Authenticate(db, user)
+	require.NoError(t, err)
+	require.False(t, authOk)
 }
 
-// Tests that system user can be added an fetched using go-pg ORM.
-func TestUserAddGet(t *testing.T) {
+// Tests that system user can be added an authenticated.
+func TestNewUserAuthenticate(t *testing.T) {
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
+
 	db := pg.Connect(&dbtest.PgConnOptions)
 
 	// Create new user.
-    user1 := &SystemUser{
+    user := &SystemUser{
 		Email: "jan@example.org",
 		Lastname: "Kowalski",
         Name:     "Jan",
-		PasswordHash: "hash",
+		Password: "pass",
     }
-    err := db.Insert(user1)
-
+    err := user.Persist(db)
 	require.NoError(t, err)
 
-	// Fetch the user and verify that it matches the inserted user.
-	user1Reflect := &SystemUser{Email: "xyz@info"}
-	err = db.Model(user1Reflect).Where("email = ?", user1.Email).Select()
+	authOk, err := Authenticate(db, user)
+	require.NoError(t, err)
+	require.True(t, authOk)
+	// Returned password should be empty.
+	require.Empty(t, user.Password)
+
+	// Modifying user's password should be possible.
+	user.Password = "new password"
+	err = user.Persist(db)
 	require.NoError(t, err)
 
-	require.Equal(t, user1.Lastname, user1Reflect.Lastname)
+	// Authentciation using old password should fail.
+	user.Password = "pass"
+	authOk, err = Authenticate(db, user)
+	require.NoError(t, err)
+	require.False(t, authOk)
+
+	// But it should pass with the new password.
+	user.Password = "new password"
+	authOk, err = Authenticate(db, user)
+	require.NoError(t, err)
+	require.True(t, authOk)
 }

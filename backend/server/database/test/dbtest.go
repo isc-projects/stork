@@ -2,6 +2,8 @@ package dbtest
 
 import(
 	"os"
+	"testing"
+	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/database"
 	"isc.org/stork/server/database/migrations"
 )
@@ -19,7 +21,6 @@ var GenericConnOptions = dbops.GenericConn{
 // go-pg specific database connection options.
 var PgConnOptions dbops.PgOptions
 
-
 func init() {
 	// Convert generic options to go-pg options.
 	PgConnOptions = *GenericConnOptions.PgParams()
@@ -33,12 +34,23 @@ func init() {
 	}
 }
 
-// Reset the database schema to the latest version and remove any data added by tests.
-func ResetSchema() {
-	dbmigs.ResetToLatest(&PgConnOptions)
+func SetupDatabaseTestCase(t *testing.T) func (t *testing.T) {
+	CreateSchema(t)
+	return func (t *testing.T) {
+		TossSchema(t)
+	}
+}
+
+// Create the database schema to the latest version.
+func CreateSchema(t *testing.T) {
+	_, _, err := dbmigs.Migrate(&PgConnOptions, "init")
+	require.NoError(t, err)
+	_, _, err = dbmigs.Migrate(&PgConnOptions, "up")
+	require.NoError(t, err)
 }
 
 // Remove the database schema.
-func TossSchema() {
-	dbmigs.Toss(&PgConnOptions)
+func TossSchema(t * testing.T) {
+	err := dbmigs.Toss(&PgConnOptions)
+	require.NoError(t, err)
 }
