@@ -4,11 +4,13 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/database"
 	"isc.org/stork/server/restservice"
 )
 
 // Global Stork Server state
 type StorkServer struct {
+	Database dbops.DatabaseSettings
 	Agents agentcomm.ConnectedAgents
 	RestAPI restservice.RestAPI
 }
@@ -18,7 +20,7 @@ func NewStorkServer() *StorkServer {
 	ss := StorkServer{}
 	ss.Agents = agentcomm.NewConnectedAgents()
 
-	err := ss.RestAPI.Init(ss.Agents)
+	err := ss.RestAPI.Init(&ss.Database, ss.Agents)
 	if err != nil {
 		log.Fatalf("FATAL error: %+v", err)
 	}

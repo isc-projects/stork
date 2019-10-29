@@ -14,6 +14,7 @@ import (
 	"golang.org/x/net/netutil"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/runtime/flagext"
+	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
 
 	"isc.org/stork/server/gen/restapi"
@@ -43,9 +44,11 @@ type RestApiSettings struct {
 // Runtime information and settings for ReST API service.
 type RestAPI struct {
 	Settings       RestApiSettings
+	DBSettings     *dbops.DatabaseSettings
 
 	SessionManager *dbsession.SessionMgr
 	Agents       agentcomm.ConnectedAgents
+	PgDB           *pg.DB
 
 
 	TLS            bool
@@ -88,21 +91,21 @@ func loggingMiddleware(next http.Handler) http.Handler {
 }
 
 // Do API initialization, create a new API http handler.
-func (r *RestAPI) Init(agents agentcomm.ConnectedAgents) error {
+func (r *RestAPI) Init(database *dbops.DatabaseSettings, agents agentcomm.ConnectedAgents) error {
+	r.DBSettings = database
 	r.Agents = agents
 
 	// Initialize sessions with access to the database.
-	dbconn := dbops.NewGenericConn()
-	*dbconn = dbops.GenericConn{
-		User: "storktest",
-		Password: "storktest",
-		DbName: "storktest",
-	}
-	sm, err := dbsession.NewSessionMgr(dbconn);
+	sm, err := dbsession.NewSessionMgr(r.DBSettings);
 	if err != nil {
 		return errors.Wrap(err, "unable to establish connection to the session database")
 	}
 	r.SessionManager = sm
+
+	r.PgDB = pg.Connect(r.DBSettings.PgParams())
+	if !dbops.TestPgConnection(r.PgDB) {
+		return errors.Errorf("unable to connect to the database using provided credentials")
+	}
 
 	// Initiate the http handler, with the objects that are implementing the business logic.
 	h, err := restapi.Handler(restapi.Config{
@@ -127,6 +130,8 @@ func (r *RestAPI) Serve() (err error) {
 			return err
 		}
 	}
+
+	defer r.PgDB.Close()
 
 	// set default handler, if none is set
 	if r.handler == nil {

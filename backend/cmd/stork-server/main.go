@@ -7,6 +7,7 @@ import (
 	flags "github.com/jessevdk/go-flags"
 
 	"isc.org/stork/server"
+	"isc.org/stork/server/database"
 )
 
 func main() {
@@ -26,8 +27,14 @@ func main() {
 	parser.ShortDescription = "Stork Server"
 	parser.LongDescription = "Stork Server is a Kea and BIND Dashboard"
 
+	// Process Database specific args.
+	_, err := parser.AddGroup("Database ConnectionFlags", "", &storkServer.Database)
+	if err != nil {
+		log.Fatalf("FATAL error: %+v", err)
+	}
+
 	// Process ReST API specific args.
-	_, err := parser.AddGroup("ReST Server Flags", "", &storkServer.RestAPI.Settings)
+	_, err = parser.AddGroup("ReST Server Flags", "", &storkServer.RestAPI.Settings)
 	if err != nil {
 		log.Fatalf("FATAL error: %+v", err)
 	}
@@ -48,6 +55,9 @@ func main() {
 		}
 		os.Exit(code)
 	}
+
+	// Fetch password from the env variable or prompt for password.
+	dbops.Password(&storkServer.Database)
 
 	storkServer.Serve();
 }

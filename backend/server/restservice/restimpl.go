@@ -3,12 +3,14 @@ package restservice
 import (
 	"fmt"
 	"context"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/runtime/middleware"
 
 	"isc.org/stork"
+	"isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
@@ -150,14 +152,23 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 // Attempts to login the user to the system.
 func (r *RestAPI) GetUserLogin(ctx context.Context, params operations.GetUserLoginParams) middleware.Responder {
+	user := &dbmodel.SystemUser{}
 	login := *params.Useremail
-	password := *params.Userpassword
+	if strings.Contains(login, "@") {
+		user.Email = login
+	} else {
+		user.Login = login
+	}
+	user.Password = *params.Userpassword
 
-	if login != "admin" || password != "123" {
+	ok, err := dbmodel.Authenticate(r.PgDB, user);
+
+	if !ok || err != nil {
+		if err != nil {
+			log.Printf("%+v", err)
+		}
 		return operations.NewGetUserLoginBadRequest()
 	}
-
-	r.SessionManager.LoginHandler(ctx)
 
 	return operations.NewGetUserLoginOK()
 }

@@ -19,7 +19,7 @@ type SessionMgr struct {
 
 // Creates new session manager instance. The new connection is created using the
 // lib/pq driver via scs.SessionManager.
-func NewSessionMgr(conn *dbops.GenericConn) (*SessionMgr, error) {
+func NewSessionMgr(conn *dbops.DatabaseSettings) (*SessionMgr, error) {
 	connParams := conn.ConnectionParams()
 	db, err := sql.Open("postgres", connParams)
 	if err != nil {

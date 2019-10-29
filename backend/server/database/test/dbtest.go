@@ -10,7 +10,7 @@ import(
 
 // Common set of database connection options which may be converted to a string
 // of space separated options used by SQL drivers.
-var GenericConnOptions = dbops.GenericConn{
+var GenericConnOptions = dbops.DatabaseSettings{
 	DbName: "storktest",
 	User: "storktest",
 	Password: "storktest",
