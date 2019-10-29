@@ -71,4 +71,15 @@ func TestNewUserAuthenticate(t *testing.T) {
 	authOk, err = Authenticate(db, user)
 	require.NoError(t, err)
 	require.True(t, authOk)
+
+	// If password is empty, it should remain unmodified in the database.
+	user.Password = ""
+    err = user.Persist(db)
+	require.NoError(t, err)
+
+	// Make sure that we can still authenticate (because the password hasn't changed).
+	user.Password = "new password"
+	authOk, err = Authenticate(db, user)
+	require.NoError(t, err)
+	require.True(t, authOk)
 }

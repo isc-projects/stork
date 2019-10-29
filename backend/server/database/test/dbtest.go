@@ -43,6 +43,7 @@ func SetupDatabaseTestCase(t *testing.T) func (t *testing.T) {
 
 // Create the database schema to the latest version.
 func CreateSchema(t *testing.T) {
+	TossSchema(t)
 	_, _, err := dbmigs.Migrate(&PgConnOptions, "init")
 	require.NoError(t, err)
 	_, _, err = dbmigs.Migrate(&PgConnOptions, "up")
@@ -51,6 +52,5 @@ func CreateSchema(t *testing.T) {
 
 // Remove the database schema.
 func TossSchema(t * testing.T) {
-	err := dbmigs.Toss(&PgConnOptions)
-	require.NoError(t, err)
+	_ = dbmigs.Toss(&PgConnOptions)
 }
