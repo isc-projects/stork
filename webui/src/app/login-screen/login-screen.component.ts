@@ -23,6 +23,8 @@ export class LoginScreenComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/';
+
         this.loginForm = this.formBuilder.group({
             username: ['', Validators.required],
             password: ['', Validators.required]
@@ -32,14 +34,12 @@ export class LoginScreenComponent implements OnInit {
             console.info(data);
             this.version = data.version;
         });
-
-        this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/';
     }
 
     get f() { return this.loginForm.controls; }
 
     signIn() {
-        this.auth.login(this.f.username.value, this.f.password.value);
+        this.auth.login(this.f.username.value, this.f.password.value, this.returnUrl);
         this.router.navigate([this.returnUrl]);
     }
 }
