@@ -4,6 +4,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms'
 
 // Other 3rd-party modules
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -58,6 +59,8 @@ export function cfgFactory() {
         HttpClientModule,
         FormsModule,
         AppRoutingModule,
+        FormsModule,
+        ReactiveFormsModule,
 
         FontAwesomeModule,
 

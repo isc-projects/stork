@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { HttpResponse } from "@angular/common/http";
 
 import {ButtonModule} from 'primeng/button';
 
 import { GeneralService } from '../backend/api/api';
+import { AuthService } from '../auth.service'
 
 @Component({
   selector: 'app-login-screen',
@@ -12,15 +14,21 @@ import { GeneralService } from '../backend/api/api';
   styleUrls: ['./login-screen.component.sass']
 })
 export class LoginScreenComponent implements OnInit {
-
     version = 'not available';
     returnUrl: string;
+    loginForm: FormGroup;
 
-    constructor(protected api: GeneralService, private route: ActivatedRoute, private router: Router) {
+    constructor(protected api: GeneralService, private auth: AuthService, private route: ActivatedRoute,
+                private router: Router), private formBuilder: FormBuilder) {
     }
 
     ngOnInit() {
-        this.api.getVersion().subscribe(data => {
+        this.loginForm = this.formBuilder.group({
+            username: ['', Validators.required],
+            password: ['', Validators.required]
+        });
+
+        this.api.getVersion().subscribe(data => 
             console.info(data);
             this.version = data.version;
         });
@@ -28,9 +36,10 @@ export class LoginScreenComponent implements OnInit {
         this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/';
     }
 
+    get f() { return this.loginForm.controls; }
+
     signIn() {
-        this.api.userLoginGet("xyz", "xyz", "response").subscribe(resp => { 
-        });
+        this.auth.login(this.f.username.value, this.f.password.value);
         this.router.navigate([this.returnUrl]);
     }
 }
