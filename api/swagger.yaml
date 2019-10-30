@@ -19,8 +19,8 @@ securityDefinitions:
     in: header
     name: Cookie
 paths:
-  /user/login:
-    get:
+  /session:
+    post:
       summary: Logs in a user to the system
       parameters:
         - in: query
@@ -34,8 +34,12 @@ paths:
       responses:
         200:
           description: Login successful
+          schema:
+            $ref: "#/definitions/SystemUser"
         400:
           description: Invalid user email or password supplied
+          schema:
+            $ref: "#/definitions/Error"
 
   /version:
     get:
@@ -142,6 +146,26 @@ paths:
 
 
 definitions:
+  SystemUser:
+    type: object
+    required:
+      - id
+      - login
+      - email
+      - firstname
+      - lastname
+    properties:
+      id:
+        type: integer
+      login:
+        type: string
+      email:
+        type: string
+      firstname:
+        type: string
+      lastname:
+        type: string
+
   Version:
     type: object
     required:

@@ -151,7 +151,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 }
 
 // Attempts to login the user to the system.
-func (r *RestAPI) GetUserLogin(ctx context.Context, params operations.GetUserLoginParams) middleware.Responder {
+func (r *RestAPI) PostSession(ctx context.Context, params operations.PostSessionParams) middleware.Responder {
 	user := &dbmodel.SystemUser{}
 	login := *params.Useremail
 	if strings.Contains(login, "@") {
@@ -162,13 +162,25 @@ func (r *RestAPI) GetUserLogin(ctx context.Context, params operations.GetUserLog
 	user.Password = *params.Userpassword
 
 	ok, err := dbmodel.Authenticate(r.PgDB, user);
+	if ok {
+		err = r.SessionManager.LoginHandler(ctx)
+	}
 
 	if !ok || err != nil {
 		if err != nil {
 			log.Printf("%+v", err)
 		}
-		return operations.NewGetUserLoginBadRequest()
+		return operations.NewPostSessionBadRequest()
 	}
 
-	return operations.NewGetUserLoginOK()
+	rspUserId := int64(user.Id)
+	rspUser := models.SystemUser{
+		ID: &rspUserId,
+		Login: &user.Login,
+		Email: &user.Email,
+		Firstname: &user.Name,
+		Lastname: &user.Lastname,
+	}
+
+	return operations.NewPostSessionOK().WithPayload(&rspUser)
 }
