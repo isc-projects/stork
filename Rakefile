@@ -42,6 +42,9 @@ ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-linux-x64/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{TOOLS_DIR}/go/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
 
+# Documentation
+SPHINXOPTS = "-v -E -a -W -j 2"
+
 # Files
 SWAGGER_FILE = File.expand_path('api/swagger.yaml')
 AGENT_PROTO_FILE = File.expand_path('backend/api/agent.proto')
@@ -254,3 +257,9 @@ end
 
 desc 'Download all dependencies'
 task :prepare_env => [GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX]
+
+# Documentation
+desc 'Builds Stork documentation, using Sphinx'
+task :docs do
+  sh "sphinx-build -M singlehtml docs/ docs/ #{SPHINXOPTS}"
+end

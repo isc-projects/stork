@@ -20,3 +20,7 @@
 
 # vagrant
 /.vagrant
+
+# generated documentation
+/docs/singlehtml
+/docs/doctrees
