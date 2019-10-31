@@ -13,7 +13,7 @@ has_milestone = gitlab.mr_json["milestone"] != nil
 warn("This MR does not refer to an existing milestone", sticky: true) unless has_milestone
 
 # check commits' comments
-commit_lint.check
+commit_lint.check warn: :all
 
 # check gitlab issue in commit message
 git.commits.each do |c|
