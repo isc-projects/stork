@@ -1,9 +1,9 @@
 * 7 [func] godfryd
 
-    Added initial implementation of machines web page. It allows adding new machines
-    and listing current machines. Still there is missing part: storing machines
-    in database. Additionally, agent has been extended to return state of the machine
-    where it is running.
+    Added initial implementation of the page which allows for adding new machines
+    and listing them. The missing part of this implementation is the actual storage
+    of the machines in the database. In addition, the agent has been extended to
+    return a state of the machine.
     (Gitlab #23)
 
 * 6 [func] godfryd

@@ -52,7 +52,7 @@ paths:
           type: integer
         - name: text
           in: query
-          description: Text that is used to match against any field of machines.
+          description: Text that is used to match against any field of machines e.g. hostname or address.
           type: string
         - name: service
           in: query
