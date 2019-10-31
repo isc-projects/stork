@@ -4,8 +4,8 @@ services:
   server:
     restart: always
     build:
-      context: backend
-      dockerfile: docker-server.txt
+      context: .
+      dockerfile: docker/docker-server.txt
     expose:
       - "8080"
     ports:
@@ -18,15 +18,15 @@ services:
   agent-kea:
     restart: always
     build:
-      context: backend
-      dockerfile: docker-agent-kea.txt
+      context: .
+      dockerfile: docker/docker-agent-kea.txt
     expose:
       - "8080"
 
   webui:
     build:
-      context: webui
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: docker/docker-webui.txt
     ports:
       - "8080:80"
     environment:

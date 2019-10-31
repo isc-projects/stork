@@ -33,10 +33,10 @@ paths:
     get:
       summary: Get list of machines.
       description: >-
-        It is possible to filter list of machines be a few fields. It is also always paged.
+        It is possible to filter list of machines by several fields. It is also always paged.
         Default page size is 10.
-        A list of machines is returned in items field accompanied with total
-        which indicate total available number of records for given filtering
+        A list of machines is returned in items field accompanied by total count
+        which indicates total available number of records for given filtering
         parameters.
       operationId: getMachines
       tags:
@@ -52,11 +52,11 @@ paths:
           type: integer
         - name: text
           in: query
-          description: Text that is used to query any field of machines.
+          description: Text that is used to match against any field of machines.
           type: string
         - name: service
           in: query
-          description: Limit returned list of machine to these which provide given service, possible values 'bind' or 'kea'.
+          description: Limit returned list of machines to these which provide given service, possible values 'bind' or 'kea'.
           type: string
       responses:
         200:
@@ -70,7 +70,7 @@ paths:
     post:
       summary: Add new machine.
       description: >-
-        To create new machine at lease one parameter is needed: address.
+        To create new machine at least one parameter is needed: address.
         There are optional parameters as well.
       operationId: createMachine
       tags:

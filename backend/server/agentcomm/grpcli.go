@@ -10,6 +10,8 @@ import (
 	"isc.org/stork/api"
 )
 
+// State of machine. It describe multiple aspect of machine like its number of CPUs
+// or operating system name and version.
 type State struct {
 	Address string
 	AgentVersion string

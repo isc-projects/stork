@@ -54,6 +54,7 @@ type RestAPI struct {
 	Port         int     // actual port for listening
 }
 
+// It installs a middleware that traces ReST calls using logrus.
 func loggingMiddleware(next http.Handler) http.Handler {
 	log.Info("installed logging middleware");
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

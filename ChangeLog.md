@@ -1,3 +1,11 @@
+* 7 [func] godfryd
+
+    Added initial implementation of machines web page. It allows adding new machines
+    and listing current machines. Still there is missing part: storing machines
+    in database. Additionally, agent has been extended to return state of the machine
+    where it is running.
+    (Gitlab #23)
+
 * 6 [func] godfryd
 
     Added initial implementation of Stork Agent. Implemented basic communication

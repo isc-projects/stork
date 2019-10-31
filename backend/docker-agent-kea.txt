@@ -1,4 +1,0 @@
-FROM ubuntu:19.10
-WORKDIR /agent
-COPY cmd/stork-agent/stork-agent /agent/
-CMD  /agent/stork-agent

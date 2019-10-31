@@ -31,7 +31,7 @@ type StorkAgent struct {
 
 // API exposed to Stork Server
 
-// Get state of Agent
+// Get state of machine.
 func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*agentapi.GetStateRsp, error) {
 	log.Printf("Received: GetState %v", in)
 
@@ -63,7 +63,7 @@ func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*a
 	return &state, nil
 }
 
-// Detect services (Kea, Bind)
+// Detect services (Kea, Bind).
 func (s *StorkAgent) DetectServices(ctx context.Context, in *agentapi.DetectServicesReq) (*agentapi.DetectServicesRsp, error) {
 	log.Printf("Received: DetectServices %v", in)
 	return &agentapi.DetectServicesRsp{Abc: "321"}, nil

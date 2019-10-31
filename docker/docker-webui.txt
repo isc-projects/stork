@@ -1,7 +1,7 @@
 FROM nginx
 
-COPY dist/stork /usr/share/nginx/html
-COPY nginx.conf /tmp/nginx.conf.tpl
+COPY webui/dist/stork /usr/share/nginx/html
+COPY webui/nginx.conf /tmp/nginx.conf.tpl
 
 EXPOSE 80
 
