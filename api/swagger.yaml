@@ -19,7 +19,7 @@ securityDefinitions:
     in: header
     name: Cookie
 paths:
-  /session:
+  /sessions:
     post:
       summary: Logs in a user to the system
       parameters:
@@ -38,6 +38,15 @@ paths:
             $ref: "#/definitions/SystemUser"
         400:
           description: Invalid user email or password supplied
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: Logs out a user from the system
+      responses:
+        200:
+          description: Logout successful
+        400:
+          description: generic error response
           schema:
             $ref: "#/definitions/Error"
 

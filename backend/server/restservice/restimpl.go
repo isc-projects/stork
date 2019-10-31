@@ -151,7 +151,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 }
 
 // Attempts to login the user to the system.
-func (r *RestAPI) PostSession(ctx context.Context, params operations.PostSessionParams) middleware.Responder {
+func (r *RestAPI) PostSessions(ctx context.Context, params operations.PostSessionsParams) middleware.Responder {
 	user := &dbmodel.SystemUser{}
 	login := *params.Useremail
 	if strings.Contains(login, "@") {
@@ -182,5 +182,15 @@ func (r *RestAPI) PostSession(ctx context.Context, params operations.PostSession
 		Lastname: &user.Lastname,
 	}
 
-	return operations.NewPostSessionOK().WithPayload(&rspUser)
+	return operations.NewPostSessionsOK().WithPayload(&rspUser)
+}
+
+// Attempts to logout a user from the system.
+func (r *RestAPI) DeleteSessions(ctx context.Context, params operations.DeleteSessionsParams) middleware.Responder {
+	err := r.SessionManager.LogoutHandler(ctx)
+	if err != nil {
+		log.Printf("%+v", err)
+		return operations.NewDeleteSessionsBadRequest()
+	}
+	return operations.NewDeleteSessionsOK()
 }

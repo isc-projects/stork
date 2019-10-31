@@ -48,6 +48,16 @@ func (s *SessionMgr) LoginHandler(ctx context.Context) error {
 	return nil
 }
 
+// Destroys user session as a result of logout.
+func (s *SessionMgr) LogoutHandler(ctx context.Context) error {
+	err := s.scsSessionMgr.Destroy(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "error while destroying a user session")
+	}
+
+	return nil
+}
+
 // Implements middleware which reads the session cookie, loads session data for the
 // user and stores the token/ in the Cookie being sent to the user.
 func (s *SessionMgr) SessionMiddleware(handler http.Handler) http.Handler {

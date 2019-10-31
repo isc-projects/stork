@@ -3,7 +3,7 @@ package dbmigs
 import (
 	"os"
 	"testing"
-
+	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/database"
 )
 
@@ -14,6 +14,27 @@ var testConnOptions = dbops.PgOptions{
 	Password: "storktest",
 }
 
+func SetupDatabaseTestCase(t *testing.T) func (t *testing.T) {
+	CreateSchema(t)
+	return func (t *testing.T) {
+		TossSchema(t)
+	}
+}
+
+// Create the database schema to the latest version.
+func CreateSchema(t *testing.T) {
+	TossSchema(t)
+	_, _, err := Migrate(&testConnOptions, "init")
+	require.NoError(t, err)
+	_, _, err = Migrate(&testConnOptions, "up")
+	require.NoError(t, err)
+}
+
+// Remove the database schema.
+func TossSchema(t * testing.T) {
+	_ = Toss(&testConnOptions)
+}
+
 // Common function which cleans the environment before the tests.
 func TestMain(m *testing.M) {
 	// Check if we're running tests in Gitlab CI. If so, the host
@@ -22,14 +43,6 @@ func TestMain(m *testing.M) {
 	if addr, ok := os.LookupEnv("POSTGRES_ADDR"); ok {
 		testConnOptions.Addr = addr
 	}
-
-	// Toss the schema, including removal of the versioning table.
-	Toss(&testConnOptions)
-	defer Toss(&testConnOptions)
-
-	// Run tests.
-	c := m.Run()
-	os.Exit(c)
 }
 
 // Common function which tests a selected migration action.
@@ -65,6 +78,9 @@ func testCurrentVersion(t *testing.T, expected int64) {
 
 // Test migrations between different database versions.
 func TestMigrate(t *testing.T) {
+	teardown := SetupDatabaseTestCase(t)
+	defer teardown(t)
+
 	// Create versioning table in the database.
 	testMigrateAction(t, 0, 0, "init")
 	// Migrate from version 0 to version 1.
@@ -81,6 +97,9 @@ func TestMigrate(t *testing.T) {
 
 // Test that available schema version is returned as expected.
 func TestAvailableVersion(t *testing.T) {
+	teardown := SetupDatabaseTestCase(t)
+	defer teardown(t)
+
 	avail := AvailableVersion()
 
 	var expected int64 = 2
@@ -91,6 +110,9 @@ func TestAvailableVersion(t *testing.T) {
 
 // Test that current version is returned from the database.
 func TestCurrentVersion(t *testing.T) {
+	teardown := SetupDatabaseTestCase(t)
+	defer teardown(t)
+
 	// Initally, the version should be set to 0.
 	testCurrentVersion(t, 0)
 	// Go one version up.
