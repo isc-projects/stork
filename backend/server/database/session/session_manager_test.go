@@ -31,7 +31,8 @@ func TestMiddlewareNewSession(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		mgr.LoginHandler(r.Context())
+		err := mgr.LoginHandler(r.Context())
+		require.NoError(t, err)
 		logged, id, login := mgr.Logged(r.Context())
 
 		require.True(t, logged)
