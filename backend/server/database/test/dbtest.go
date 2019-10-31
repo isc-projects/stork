@@ -2,6 +2,8 @@ package dbtest
 
 import(
 	"os"
+	"strconv"
+	"strings"
 	"testing"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/database"
@@ -28,9 +30,17 @@ func init() {
 	// Check if we're running tests in Gitlab CI. If so, the host
 	// running the database should be set to "postgres".
 	// See https://docs.gitlab.com/ee/ci/services/postgres.html.
-	if _, ok := os.LookupEnv("POSTGRES_DB"); ok {
-		GenericConnOptions.Host = "postgres"
-		PgConnOptions.Addr = "postgres:5432"
+	if addr, ok := os.LookupEnv("POSTGRES_ADDR"); ok {
+		splitAddr := strings.Split(addr, ":")
+		if len(splitAddr) > 0 {
+			GenericConnOptions.Host = splitAddr[0]
+		}
+		if len(splitAddr) > 1 {
+			if p, err := strconv.Atoi(splitAddr[1]); err == nil {
+				GenericConnOptions.Port = p
+			}
+		}
+		PgConnOptions.Addr = addr
 	}
 }
 
