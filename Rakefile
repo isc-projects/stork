@@ -156,6 +156,16 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
   end
 end
 
+desc 'Run backend unit tests with local postgres docker container'
+task :unittest_backend_db do
+  at_exit {
+    sh "docker rm -f stork-ut-pgsql"
+  }
+  sh "docker run --name stork-ut-pgsql -d -p 5678:5432 -e POSTGRES_DB=storktest -e POSTGRES_USER=storktest -e POSTGRES_PASSWORD=storktest postgres:11"
+  ENV['POSTGRES_ADDR'] = "localhost:5678"
+  Rake::Task["unittest_backend"].invoke
+end
+
 
 # Web UI Rules
 desc 'Generate client part of REST API using swagger_codegen based on swagger.yml'

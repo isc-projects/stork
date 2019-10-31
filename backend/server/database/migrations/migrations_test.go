@@ -17,8 +17,8 @@ func TestMain(m *testing.M) {
 	// Check if we're running tests in Gitlab CI. If so, the host
 	// running the database should be set to "postgres".
 	// See https://docs.gitlab.com/ee/ci/services/postgres.html.
-	if _, ok := os.LookupEnv("POSTGRES_DB"); ok {
-		testConnOptions.Addr = "postgres:5432"
+	if addr, ok := os.LookupEnv("POSTGRES_ADDR"); ok {
+		testConnOptions.Addr = addr
 	}
 
 	// Toss the schema, including removal of the versioning table.

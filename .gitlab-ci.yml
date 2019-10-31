@@ -1,6 +1,7 @@
 image: registry.gitlab.isc.org/isc-projects/stork/ci-base:latest
 
 variables:
+  POSTGRES_ADDR: postgres:5432
   POSTGRES_DB: storktest
   POSTGRES_USER: storktest
   POSTGRES_PASSWORD: storktest
@@ -49,7 +50,8 @@ lint_go:
 unittest_backend:
   stage: build
   services:
-    - postgres:latest
+    - name: registry.gitlab.isc.org/isc-projects/stork/ci-postgres:11
+      alias: postgres
   script:
     - rake unittest_backend
 
@@ -65,7 +67,7 @@ build_webui:
 
 danger:
   stage: build
-  image: inloopx/danger-gitlab
+  image: registry.gitlab.isc.org/isc-projects/stork/ci-danger
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
     - export CI_PROJECT_PATH=$CI_PROJECT_ID #some version of gitlab has problems with searching by project path
