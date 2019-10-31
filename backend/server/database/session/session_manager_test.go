@@ -1,13 +1,10 @@
 package dbsession
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
 	"github.com/stretchr/testify/require"
-
 	"isc.org/stork/server/database/test"
 )
 
@@ -48,7 +45,6 @@ func TestMiddlewareNewSession(t *testing.T) {
 	require.Equal(t, resp.StatusCode, 200)
 
 	hasCookie, value := getCookie(resp, "session")
-	fmt.Println(value)
 	require.True(t, hasCookie)
 	require.True(t, mgr.HasToken(value))
 }

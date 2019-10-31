@@ -27,8 +27,10 @@ func Toss(dbopts *dbops.PgOptions) error {
 		return err
 	}
 
-	// Remove the versioning table.
-	_, err = db.Exec("DROP TABLE IF EXISTS gopg_migrations")
+	// Remove the versioning table and id sequence.
+	_, err = db.Exec(
+		`DROP TABLE IF EXISTS gopg_migrations;
+         DROP SEQUENCE IF EXISTS gopg_migrations_id_seq`)
 
 	return err
 }
