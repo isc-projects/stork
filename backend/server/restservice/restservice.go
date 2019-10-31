@@ -113,6 +113,7 @@ func (r *RestAPI) Init(database *dbops.DatabaseSettings, agents agentcomm.Connec
 		ServicesAPI: r,
 		Logger: log.Infof,
 		InnerMiddleware: loggingMiddleware,
+		Authorizer: r.Authorizer,
 	})
 	if err != nil {
 		return errors.Wrap(err, "cannot setup ReST API handler")
