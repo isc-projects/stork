@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { HttpResponse } from "@angular/common/http";
+import { HttpResponse } from '@angular/common/http';
 
 import {ButtonModule} from 'primeng/button';
 
 import { GeneralService } from '../backend/api/api';
-import { AuthService } from '../auth.service'
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-login-screen',

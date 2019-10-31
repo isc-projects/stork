@@ -32,8 +32,8 @@ export class AuthService {
     }
 
     login(username: string, password: string, returnUrl: string) {
-        var user: User;
-        this.api.sessionPost(username, password).subscribe(data => {
+        let user: User;
+        this.api.sessionsPost(username, password).subscribe(data => {
             if (data.id != null) {
                 user = new User();
 
@@ -43,17 +43,17 @@ export class AuthService {
                 user.firstName = data.firstname;
                 user.lastName = data.lastname;
                 this.currentUserSubject.next(user);
-                localStorage.setItem('currentUser', JSON.stringify(user))
-                this.router.navigate([returnUrl])
-                
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                this.router.navigate([returnUrl]);
             }
         });
         return user;
     }
 
     logout() {
-        // remove user from local storage to log user out
-        localStorage.removeItem('currentUser');
-        this.currentUserSubject.next(null);
+        this.api.sessionsDelete('response').subscribe(resp => {
+            localStorage.removeItem('currentUser');
+            this.currentUserSubject.next(null);
+        });
     }
 }
