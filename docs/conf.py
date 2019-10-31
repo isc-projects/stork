@@ -88,7 +88,7 @@ pygments_style = None
 #
 #html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
-html_logo = 'static/stork-imageonly-100bw.png'
+html_logo = 'static/stork-square-100px.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

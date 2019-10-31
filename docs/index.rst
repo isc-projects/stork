@@ -1,4 +1,4 @@
-.. figure:: static/stork-logo-200.png
+.. figure:: static/stork-square-200px.png
    :align: right
 
 ####################################
