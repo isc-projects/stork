@@ -61,35 +61,6 @@ type RestAPI struct {
 	Port           int     // actual port for listening
 }
 
-// It installs a middleware that traces ReST calls using logrus.
-func loggingMiddleware(next http.Handler) http.Handler {
-	log.Info("installed logging middleware");
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		remoteAddr := r.RemoteAddr
-		if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
-			remoteAddr = realIP
-		}
-		entry := log.WithFields(log.Fields{
-			"path": r.RequestURI,
-			"method": r.Method,
-			"remote": remoteAddr,
-		})
-
-		start := time.Now()
-
-		next.ServeHTTP(w, r)
-
-		duration := time.Since(start)
-
-		entry = entry.WithFields(log.Fields{
-			//"status":      w.Status(),
-			//"text_status": http.StatusText(w.Status()),
-			"took":        duration,
-		})
-		entry.Info("served request")
-	})
-}
-
 // Do API initialization, create a new API http handler.
 func (r *RestAPI) Init(database *dbops.DatabaseSettings, agents agentcomm.ConnectedAgents) error {
 	r.DBSettings = database
@@ -112,7 +83,7 @@ func (r *RestAPI) Init(database *dbops.DatabaseSettings, agents agentcomm.Connec
 		GeneralAPI: r,
 		ServicesAPI: r,
 		Logger: log.Infof,
-		InnerMiddleware: loggingMiddleware,
+		InnerMiddleware: r.GlobalMiddleware,
 		Authorizer: r.Authorizer,
 	})
 	if err != nil {
