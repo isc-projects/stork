@@ -14,6 +14,8 @@ var testConnOptions = dbops.PgOptions{
 	Password: "storktest",
 }
 
+// Recreate the schema before the test and return a teardown function to be
+// executed after the test.
 func SetupDatabaseTestCase(t *testing.T) func (t *testing.T) {
 	CreateSchema(t)
 	return func (t *testing.T) {

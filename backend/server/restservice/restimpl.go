@@ -163,7 +163,7 @@ func (r *RestAPI) PostSessions(ctx context.Context, params operations.PostSessio
 
 	ok, err := dbmodel.Authenticate(r.PgDB, user);
 	if ok {
-		err = r.SessionManager.LoginHandler(ctx)
+		err = r.SessionManager.LoginHandler(ctx, user)
 	}
 
 	if !ok || err != nil {

@@ -9,6 +9,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	"isc.org/stork/server/database"
+	"isc.org/stork/server/database/model"
 )
 
 // Provides session management mechanisms for Stork. It wraps the scs.SessionManager
@@ -37,14 +38,17 @@ func NewSessionMgr(conn *dbops.DatabaseSettings) (*SessionMgr, error) {
 // This function should be invoked upon successful authentication of the user which
 // is logging in to the system. It renews or creates a new session token for the user.
 // The user's login and identifier are stored in the session.
-func (s *SessionMgr) LoginHandler(ctx context.Context) error {
+func (s *SessionMgr) LoginHandler(ctx context.Context, user *dbmodel.SystemUser) error {
 	err := s.scsSessionMgr.RenewToken(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "error while creating new session identifier")
 	}
 
-	s.scsSessionMgr.Put(ctx, "userLogin", "admin")
-	s.scsSessionMgr.Put(ctx, "userID", 1)
+	s.scsSessionMgr.Put(ctx, "userID", user.Id)
+	s.scsSessionMgr.Put(ctx, "userLogin", user.Login)
+	s.scsSessionMgr.Put(ctx, "userEmail", user.Email)
+	s.scsSessionMgr.Put(ctx, "userLastname", user.Lastname)
+	s.scsSessionMgr.Put(ctx, "userName", user.Name)
 	return nil
 }
 
@@ -75,8 +79,18 @@ func (s *SessionMgr) HasToken(token string) bool {
 // is already fetched from the database and is stored in the request context.
 // The returned values are: ok - if the user is logged, user identifier and user
 // login.
-func (s *SessionMgr) Logged(ctx context.Context) (ok bool, id int, login string) {
-	id  = s.scsSessionMgr.GetInt(ctx, "userID")
-	login = s.scsSessionMgr.GetString(ctx, "userLogin")
-	return id > 0, id, login
+func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemUser) {
+	id := s.scsSessionMgr.GetInt(ctx, "userID")
+	// User has no session.
+	if id == 0 {
+		return false, nil
+	}
+
+	// User has a session.
+	user = &dbmodel.SystemUser{Id: id}
+	user.Login = s.scsSessionMgr.GetString(ctx, "userLogin")
+	user.Email = s.scsSessionMgr.GetString(ctx, "userEmail")
+	user.Lastname = s.scsSessionMgr.GetString(ctx, "userLastname")
+	user.Name = s.scsSessionMgr.GetString(ctx, "userName")
+	return true, user
 }
