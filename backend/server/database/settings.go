@@ -41,6 +41,7 @@ func (c *DatabaseSettings) ConnectionParams() string {
 	s = strings.ReplaceAll(s, ":", "=")
 	s = strings.Trim(s, "{}")
 	s = strings.ToLower(s)
+	s += " sslmode=disable"
 	return s
 }
 
