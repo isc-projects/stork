@@ -8,7 +8,7 @@
   <div style="flex-grow: 1;">
     <p-menubar [model]="menuItems" styleClass="stork-menubar">
       <input type="text" pInputText placeholder="Search">
-      <button pButton label="Logout {{currentUser.firstName}} {{currentUser.lastName}}" (click)="signOut()" icon="pi pi-sign-out" style="margin-left:.25em">
+      <button pButton label="Logout ({{currentUser.identifier}})" (click)="signOut()" icon="pi pi-sign-out" style="margin-left:.25em">
       </button>
     </p-menubar>
   </div>

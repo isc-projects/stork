@@ -12,6 +12,10 @@ export class User {
     email: string;
     firstName: string;
     lastName: string;
+
+    public get identifier(): string {
+        return this.username || this.email
+    }
 }
 
 @Injectable({
