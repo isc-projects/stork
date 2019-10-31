@@ -170,7 +170,7 @@ func (r *RestAPI) PostSessions(ctx context.Context, params operations.PostSessio
 		if err != nil {
 			log.Printf("%+v", err)
 		}
-		return operations.NewPostSessionBadRequest()
+		return operations.NewPostSessionsBadRequest()
 	}
 
 	rspUserId := int64(user.Id)
