@@ -10,8 +10,17 @@ import (
 // Migrates the database version down to 0 and then removes the gopg_migrations
 // table.
 func Toss(dbopts *dbops.PgOptions) error {
+	db := pg.Connect(dbopts)
+
+	// Check if the migrations table exists. If it doesn't, there is nothing to do.
+	var n int
+	_, err := db.QueryOne(pg.Scan(&n), "SELECT count(*) FROM gopg_migrations")
+	if err != nil {
+		return nil
+	}
+
 	// Migrate the database down to 0.
-	db, _, _, err := migrateAndStayConnected(dbopts, "reset")
+	_, _, err = migrateAndStayConnected(db, "reset")
 	defer db.Close()
 
 	if err != nil {
@@ -29,21 +38,18 @@ func Toss(dbopts *dbops.PgOptions) error {
 // migration operations supported by go-pg/migrations. The returned arguments
 // contain new and old database version as well as an error.
 func Migrate(dbopts *dbops.PgOptions, args ...string) (oldVersion, newVersion int64, err error) {
-	db, oldVersion, newVersion, err := migrateAndStayConnected(dbopts, args...)
+	db := pg.Connect(dbopts)
+	oldVersion, newVersion, err = migrateAndStayConnected(db, args...)
 	db.Close()
 
 	return oldVersion, newVersion, err
 }
 
-// Migrates the database using provided credentials and returns the connection
-// to the database.
-func migrateAndStayConnected(dbopts *dbops.PgOptions, args ...string) (db *pg.DB, oldVersion, newVersion int64, err error) {
-	// Connect to the database.
-	db = pg.Connect(dbopts)
-
+// Migrates the database and returns the connection.
+func migrateAndStayConnected(db *pg.DB, args ...string) (oldVersion, newVersion int64, err error) {
 	// Run migrations.
 	oldVersion, newVersion, err = migrations.Run(db, args...)
-	return db, oldVersion, newVersion, err
+	return oldVersion, newVersion, err
 }
 
 // Checks what is the highest available schema version.

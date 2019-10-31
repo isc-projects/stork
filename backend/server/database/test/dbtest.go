@@ -61,6 +61,6 @@ func CreateSchema(t *testing.T) {
 }
 
 // Remove the database schema.
-func TossSchema(t * testing.T) {
+func TossSchema(t *testing.T) {
 	_ = dbmigs.Toss(&PgConnOptions)
 }
