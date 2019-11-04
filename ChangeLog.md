@@ -1,3 +1,9 @@
+* 8 [func] marcin
+
+    Enabled sign-in/sign-out mechanism with HTTP sessions based on cookies.
+    The default admin account has been created with default credentials.
+    (Gitlab #22)
+
 * 7 [func] godfryd
 
     Added initial implementation of the page which allows for adding new machines
