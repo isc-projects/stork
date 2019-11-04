@@ -29,6 +29,15 @@ author = 'Internet Systems Consortium'
 
 # get current stork version
 release = '0.1.0-git'
+
+version_file = '../backend/version.go'
+release = 'UNRELEASED'
+with open(version_file) as f:
+    for line in f.readlines():
+        if line.startswith('const Version'):
+            parts = line.split('"')
+            release = parts[1]
+
 version = release
 
 # -- General configuration ---------------------------------------------------
