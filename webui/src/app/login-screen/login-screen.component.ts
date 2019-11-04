@@ -4,7 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { HttpResponse } from '@angular/common/http';
 
 import {ButtonModule} from 'primeng/button';
-import {MessageService}  from 'primeng/api';
+import {MessageService} from 'primeng/api';
 
 import { GeneralService } from '../backend/api/api';
 import { AuthService } from '../auth.service';
