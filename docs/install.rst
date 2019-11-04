@@ -37,33 +37,11 @@ any browser to connect.
 
 .. note::
 
-   The installation procedure will create 3 Docker images: stork_webui, stork_server and postgres.
+   The installation procedure will create 3 Docker images: `stork_webui`, `stork_server` and `postgres`.
    If you run unit-tests, also `stork-ui-pgsql` image will be created. The installation
    procedure assumes those images are fully under Stork control. If there are existing images,
    they will be overwritten.
 
-There are several other rake targets. To get an up to date list, use `rake --list`. You will get
-a list similar to the following:
-
-.. code-block:: console
-
-    $ rake --tasks
-    rake build_agent          # Compile agent part
-    rake build_backend        # Compile whole backend: server, migrations and agent
-    rake build_migrations     # Compile database migrations tool
-    rake build_server         # Compile server part
-    rake build_ui             # Build angular application
-    rake clean                # Remove tools and other build or generated files
-    rake docker_down          # Shut down all containers
-    rake docker_up            # Build containers with everything and statup all services using docker-compose
-    rake docs                 # Builds Stork documentation, using Sphinx
-    rake gen_agent            # Generate API sources from agent.proto
-    rake gen_client           # Generate client part of REST API using swagger_codegen based on swagger.yml
-    rake gen_server           # Generate server part of REST API using goswagger based on swagger.yml
-    rake lint_go              # Check backend source code
-    rake lint_ui              # Check frontend source code
-    rake prepare_env          # Download all dependencies
-    rake run_server           # Run server
-    rake serve_ui             # Serve angular app
-    rake unittest_backend     # Run backend unit tests
-    rake unittest_backend_db  # Run backend unit tests with local postgres docker container
+There are several other rake targets. For a complete list of available tasks, use `rake -T`.
+Also see `wiki <https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment#building-testing-and-running-stork>`_
+for detailed build instructions.
