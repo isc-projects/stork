@@ -19,7 +19,7 @@ export class LoginScreenComponent implements OnInit {
     loginForm: FormGroup;
 
     constructor(protected api: GeneralService, private auth: AuthService, private route: ActivatedRoute,
-                private router: Router), private formBuilder: FormBuilder) {
+                private router: Router, private formBuilder: FormBuilder) {
     }
 
     ngOnInit() {
@@ -30,7 +30,7 @@ export class LoginScreenComponent implements OnInit {
             password: ['', Validators.required]
         });
 
-        this.api.getVersion().subscribe(data => 
+        this.api.getVersion().subscribe(data => {
             console.info(data);
             this.version = data.version;
         });

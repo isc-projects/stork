@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/services"
 	"isc.org/stork/server/agentcomm"
@@ -35,7 +36,7 @@ func (fa *FakeAgents) GetState(address string) (*agentcomm.State, error) {
 func TestCreateMachine(t *testing.T) {
 	rapi := RestAPI{}
 	fa := FakeAgents{}
-	rapi.Init(&fa)
+	rapi.Init(&dbtest.GenericConnOptions, &fa)
 	ctx := context.Background()
 
 	addr := "1.2.3.4"

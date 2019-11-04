@@ -23,7 +23,7 @@ import {MessageService} from 'primeng/api';
 import {ToastModule} from 'primeng/toast';
 
 // Generated API modules
-import { ApiModule, BASE_PATH, Configuration } from './backend';
+import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend';
 
 // Stork modules
 import { environment } from './../environments/environment';

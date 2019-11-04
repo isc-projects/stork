@@ -66,17 +66,23 @@ func (r *RestAPI) Init(database *dbops.DatabaseSettings, agents agentcomm.Connec
 	r.DBSettings = database
 	r.Agents = agents
 
+	return nil
+}
+
+// Serve the API
+func (r *RestAPI) Serve() (err error) {
+
+	r.PgDB = pg.Connect(r.DBSettings.PgParams())
+	if !dbops.TestPgConnection(r.PgDB) {
+		return errors.Errorf("unable to connect to the database using provided credentials")
+	}
+
 	// Initialize sessions with access to the database.
 	sm, err := dbsession.NewSessionMgr(r.DBSettings);
 	if err != nil {
 		return errors.Wrap(err, "unable to establish connection to the session database")
 	}
 	r.SessionManager = sm
-
-	r.PgDB = pg.Connect(r.DBSettings.PgParams())
-	if !dbops.TestPgConnection(r.PgDB) {
-		return errors.Errorf("unable to connect to the database using provided credentials")
-	}
 
 	// Initiate the http handler, with the objects that are implementing the business logic.
 	h, err := restapi.Handler(restapi.Config{
@@ -90,12 +96,6 @@ func (r *RestAPI) Init(database *dbops.DatabaseSettings, agents agentcomm.Connec
 		return errors.Wrap(err, "cannot setup ReST API handler")
 	}
 	r.handler = h
-	return nil
-}
-
-
-// Serve the API
-func (r *RestAPI) Serve() (err error) {
 
 	if !r.hasListeners {
 		if err = r.Listen(); err != nil {

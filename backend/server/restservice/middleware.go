@@ -3,6 +3,8 @@ package restservice
 import(
 	"fmt"
 	"net/http"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -38,7 +40,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 // Global middleware function provides a common place to setup middlewares for
 // the server.
 func (r *RestAPI) GlobalMiddleware(handler http.Handler) http.Handler {
-	handler := loggingMiddleware(handler)
+	handler = loggingMiddleware(handler)
 	return r.SessionManager.SessionMiddleware(handler);
 };
 

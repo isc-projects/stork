@@ -22,6 +22,8 @@ paths:
   /sessions:
     post:
       summary: Logs in a user to the system
+      tags:
+        - Services
       parameters:
         - in: query
           name: useremail
@@ -39,16 +41,18 @@ paths:
         400:
           description: Invalid user email or password supplied
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/ApiError"
     delete:
       summary: Logs out a user from the system
+      tags:
+        - Services
       responses:
         200:
           description: Logout successful
         400:
           description: generic error response
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/ApiError"
 
   /version:
     get:

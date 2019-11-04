@@ -4,7 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-import { DefaultService } from './backend/api/default.service';
+import { ServicesService } from './backend/api/services.service';
 
 export class User {
     id: number;
@@ -26,7 +26,7 @@ export class AuthService {
     public currentUser: Observable<User>;
     public user: User;
 
-    constructor(private http: HttpClient, private api: DefaultService, private router: Router) {
+    constructor(private http: HttpClient, private api: ServicesService, private router: Router) {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')));
         this.currentUser = this.currentUserSubject.asObservable();
     }
