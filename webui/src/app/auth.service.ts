@@ -35,7 +35,7 @@ export class AuthService {
         return this.currentUserSubject.value;
     }
 
-    login(username: string, password: string, returnUrl: string) {
+    login(username: string, password: string, returnUrl: string, msgSrv: MessageService) {
         let user: User;
         this.api.sessionsPost(username, password).subscribe(data => {
             if (data.id != null) {
@@ -50,6 +50,9 @@ export class AuthService {
                 localStorage.setItem('currentUser', JSON.stringify(user));
                 this.router.navigate([returnUrl]);
             }
+        },
+        err => {
+            msgSrv.add({severity: 'error', summary: 'Invalid login or password'});
         });
         return user;
     }

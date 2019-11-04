@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { HttpResponse } from '@angular/common/http';
 
 import {ButtonModule} from 'primeng/button';
+import {MessageService}  from 'primeng/api';
 
 import { GeneralService } from '../backend/api/api';
 import { AuthService } from '../auth.service';
@@ -18,9 +19,12 @@ export class LoginScreenComponent implements OnInit {
     returnUrl: string;
     loginForm: FormGroup;
 
-    constructor(protected api: GeneralService, private auth: AuthService, private route: ActivatedRoute,
-                private router: Router, private formBuilder: FormBuilder) {
-    }
+    constructor(protected api: GeneralService,
+                private auth: AuthService,
+                private route: ActivatedRoute,
+                private router: Router,
+                private formBuilder: FormBuilder,
+                private msgSrv: MessageService) { }
 
     ngOnInit() {
         this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/';
@@ -39,7 +43,8 @@ export class LoginScreenComponent implements OnInit {
     get f() { return this.loginForm.controls; }
 
     signIn() {
-        this.auth.login(this.f.username.value, this.f.password.value, this.returnUrl);
+        this.auth.login(this.f.username.value, this.f.password.value, this.returnUrl,
+                        this.msgSrv);
         this.router.navigate([this.returnUrl]);
     }
 }
