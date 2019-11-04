@@ -12,7 +12,7 @@ import (
 type StorkServer struct {
 	Database dbops.DatabaseSettings
 	Agents agentcomm.ConnectedAgents
-	RestAPI restservice.RestAPI
+	RestAPI *restservice.RestAPI
 }
 
 // Init for Stork Server state
@@ -20,10 +20,11 @@ func NewStorkServer() *StorkServer {
 	ss := StorkServer{}
 	ss.Agents = agentcomm.NewConnectedAgents()
 
-	err := ss.RestAPI.Init(&ss.Database, ss.Agents)
+	r, err := restservice.NewRestAPI(&ss.Database, ss.Agents)
 	if err != nil {
 		log.Fatalf("FATAL error: %+v", err)
 	}
+	ss.RestAPI = r
 	return &ss
 }
 

@@ -36,7 +36,7 @@ paths:
         200:
           description: Login successful
           schema:
-            $ref: "#/definitions/SystemUser"
+            $ref: "#/definitions/User"
         400:
           description: Invalid user email or password supplied
           schema:
@@ -158,7 +158,7 @@ paths:
 
 
 definitions:
-  SystemUser:
+  User:
     type: object
     required:
       - id

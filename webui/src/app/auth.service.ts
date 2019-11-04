@@ -28,7 +28,8 @@ export class AuthService {
     public currentUser: Observable<User>;
     public user: User;
 
-    constructor(private http: HttpClient, private api: ServicesService, private router: Router) {
+    constructor(private http: HttpClient, private api: ServicesService, private router: Router,
+                private msgSrv: MessageService) {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')));
         this.currentUser = this.currentUserSubject.asObservable();
     }
@@ -37,7 +38,7 @@ export class AuthService {
         return this.currentUserSubject.value;
     }
 
-    login(username: string, password: string, returnUrl: string, msgSrv: MessageService) {
+    login(username: string, password: string, returnUrl: string) {
         let user: User;
         this.api.sessionsPost(username, password).subscribe(data => {
             if (data.id != null) {
@@ -54,7 +55,7 @@ export class AuthService {
             }
         },
         err => {
-            msgSrv.add({severity: 'error', summary: 'Invalid login or password'});
+            this.msgSrv.add({severity: 'error', summary: 'Invalid login or password'});
         });
         return user;
     }

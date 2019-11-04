@@ -34,9 +34,9 @@ func (fa *FakeAgents) GetState(address string) (*agentcomm.State, error) {
 
 
 func TestCreateMachine(t *testing.T) {
-	rapi := RestAPI{}
 	fa := FakeAgents{}
-	rapi.Init(&dbtest.GenericConnOptions, &fa)
+	rapi, err := NewRestAPI(&dbtest.GenericConnOptions, &fa)
+	require.NoError(t, err)
 	ctx := context.Background()
 
 	addr := "1.2.3.4"

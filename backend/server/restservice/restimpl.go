@@ -174,7 +174,7 @@ func (r *RestAPI) PostSessions(ctx context.Context, params services.PostSessions
 	}
 
 	rspUserId := int64(user.Id)
-	rspUser := models.SystemUser{
+	rspUser := models.User{
 		ID: &rspUserId,
 		Login: &user.Login,
 		Email: &user.Email,

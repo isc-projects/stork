@@ -17,10 +17,10 @@ func TestDefaultUserAuthenticate(t *testing.T) {
 	db := pg.Connect(&dbtest.PgConnOptions)
 
 	// Use default credentials of the admin user.
-    user := &SystemUser{
+	user := &SystemUser{
 		Login: "admin",
 		Password: "admin",
-    }
+	}
 	authOk, err := Authenticate(db, user)
 	require.NoError(t, err)
 	require.True(t, authOk)
@@ -40,13 +40,13 @@ func TestNewUserAuthenticate(t *testing.T) {
 	db := pg.Connect(&dbtest.PgConnOptions)
 
 	// Create new user.
-    user := &SystemUser{
+	user := &SystemUser{
 		Email: "jan@example.org",
 		Lastname: "Kowalski",
-        Name:     "Jan",
+		Name:     "Jan",
 		Password: "pass",
-    }
-    err := user.Persist(db)
+	}
+	err := user.Persist(db)
 	require.NoError(t, err)
 
 	authOk, err := Authenticate(db, user)
@@ -74,7 +74,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 
 	// If password is empty, it should remain unmodified in the database.
 	user.Password = ""
-    err = user.Persist(db)
+	err = user.Persist(db)
 	require.NoError(t, err)
 
 	// Make sure that we can still authenticate (because the password hasn't changed).

@@ -61,12 +61,10 @@ type RestAPI struct {
 	Port           int     // actual port for listening
 }
 
-// Do API initialization, create a new API http handler.
-func (r *RestAPI) Init(database *dbops.DatabaseSettings, agents agentcomm.ConnectedAgents) error {
-	r.DBSettings = database
-	r.Agents = agents
-
-	return nil
+// Do API initialization.
+func NewRestAPI(database *dbops.DatabaseSettings, agents agentcomm.ConnectedAgents) (*RestAPI, error) {
+	r := &RestAPI{DBSettings: database, Agents: agents}
+	return r, nil
 }
 
 // Serve the API
@@ -74,7 +72,7 @@ func (r *RestAPI) Serve() (err error) {
 
 	r.PgDB = pg.Connect(r.DBSettings.PgParams())
 	if !dbops.TestPgConnection(r.PgDB) {
-		return errors.Errorf("unable to connect to the database using provided credentials")
+		log.Fatalf("unable to connect to the database using provided credentials")
 	}
 
 	// Initialize sessions with access to the database.

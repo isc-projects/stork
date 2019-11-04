@@ -23,8 +23,7 @@ export class LoginScreenComponent implements OnInit {
                 private auth: AuthService,
                 private route: ActivatedRoute,
                 private router: Router,
-                private formBuilder: FormBuilder,
-                private msgSrv: MessageService) { }
+                private formBuilder: FormBuilder) { }
 
     ngOnInit() {
         this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/';
@@ -43,8 +42,7 @@ export class LoginScreenComponent implements OnInit {
     get f() { return this.loginForm.controls; }
 
     signIn() {
-        this.auth.login(this.f.username.value, this.f.password.value, this.returnUrl,
-                        this.msgSrv);
+        this.auth.login(this.f.username.value, this.f.password.value, this.returnUrl);
         this.router.navigate([this.returnUrl]);
     }
 }
