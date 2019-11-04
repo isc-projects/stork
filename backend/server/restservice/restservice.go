@@ -86,6 +86,7 @@ func (r *RestAPI) Serve() (err error) {
 	h, err := restapi.Handler(restapi.Config{
 		GeneralAPI: r,
 		ServicesAPI: r,
+		UsersAPI: r,
 		Logger: log.Infof,
 		InnerMiddleware: r.GlobalMiddleware,
 		Authorizer: r.Authorizer,

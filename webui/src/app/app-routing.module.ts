@@ -11,9 +11,10 @@ import { MachinesPageComponent } from './machines-page/machines-page.component';
 const routes: Routes = [
     {
         path: '',
-        component: DashboardComponent,
+        // component: DashboardComponent,
         pathMatch: 'full',
-        canActivate: [AuthGuard],
+        // canActivate: [AuthGuard],
+        redirectTo: 'machines/',
     },
     {
         path: 'login',

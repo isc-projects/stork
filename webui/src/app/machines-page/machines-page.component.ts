@@ -28,7 +28,7 @@ export class MachinesPageComponent implements OnInit {
 
     // new machine
     newMachineDlgVisible = false
-    machineAddress = '127.0.0.1:8888'
+    machineAddress = 'agent-kea:8080'
 
     // machine tabs
     activeTabIdx = 0
@@ -142,7 +142,7 @@ export class MachinesPageComponent implements OnInit {
                     msg = err.error.detail;
                 }
                 this.msgSrv.add({severity: 'error', summary: 'Adding new machine erred',
-                                 detail: 'New branch operation erred: ' + msg, sticky: true});
+                                 detail: 'Adding new machine operation erred: ' + msg, sticky: true});
                 this.newMachineDlgVisible = false;
             })
     }

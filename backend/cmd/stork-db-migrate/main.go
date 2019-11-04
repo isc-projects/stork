@@ -20,8 +20,10 @@ type upOpts struct {
 
 // Common application options.
 type Opts struct{
-	DatabaseName string `short:"d" long:"database" description:"database name" required:"true"`
-	UserName string `short:"u" long:"user" description:"database user name" required:"true"`
+	DatabaseName string `short:"d" long:"database" description:"database name" env:"STORK_DATABASE_NAME" default:"stork"`
+	UserName string `short:"u" long:"user" description:"database user name" env:"STORK_DATABASE_USER_NAME" default:"stork"`
+	Host string `long:"host" description:"database user name" env:"STORK_DATABASE_HOST" default:"localhost"`
+	Port int `short:"p" long:"port" description:"database user name" env:"STORK_DATABASE_PORT" default:"5432"`
 	Init cmdOpts `command:"init" description:"Create schema versioning table in the database"`
 	Up upOpts `command:"up" description:"Run all available migrations or up to a selected version"`
 	Down cmdOpts `command:"down" description:"Revert last migration"`
@@ -71,6 +73,7 @@ func main() {
 		User:     opts.UserName,
 		Password: string(password),
 		Database: opts.DatabaseName,
+		Addr:     fmt.Sprintf("%s:%d", opts.Host, opts.Port),
 	}, args...)
 
 	if err != nil {

@@ -83,6 +83,7 @@ end
 
 desc 'Compile server part'
 task :build_server => [GO, :gen_server, :gen_agent] do
+  sh 'rm -f backend/server/agentcomm/api_mock.go'
   sh "cd backend/cmd/stork-server/ && #{GO} build"
 end
 
@@ -131,9 +132,32 @@ end
 
 
 desc 'Run server'
-task :run_server => [:build_server, GO] do
-  sh "backend/cmd/stork-server/stork-server"
+task :run_server, [:dbg] => [:build_server, GO] do |t, args|
+  args.with_defaults(:dbg => false)
+  if args[:dbg]
+    sh "cd backend/cmd/stork-server/ && dlv debug"
+  else
+    sh "backend/cmd/stork-server/stork-server"
+  end
 end
+
+desc 'Run server with local postgres docker container'
+task :run_server_db, [:dbg] do |t, args|
+  args.with_defaults(:dbg => false)
+  ENV['STORK_DATABASE_NAME'] = "storkapp"
+  ENV['STORK_DATABASE_USER_NAME'] = "storkapp"
+  ENV['STORK_DATABASE_PASSWORD'] = "storkapp"
+  ENV['STORK_DATABASE_HOST'] = "localhost"
+  ENV['STORK_DATABASE_PORT'] = "5678"
+  at_exit {
+    sh "docker rm -f stork-app-pgsql"
+  }
+  sh 'docker run --name stork-app-pgsql -d -p 5678:5432 -e POSTGRES_DB=storkapp -e POSTGRES_USER=storkapp -e POSTGRES_PASSWORD=storkapp postgres:11 && sleep 2'
+  sh 'backend/cmd/stork-db-migrate/stork-db-migrate -d storkapp -u storkapp -p 5678 init'
+  sh 'backend/cmd/stork-db-migrate/stork-db-migrate -d storkapp -u storkapp -p 5678 up'
+  Rake::Task["run_server"].invoke(args[:dbg])
+end
+
 
 desc 'Compile database migrations tool'
 task :build_migrations =>  [GO] do
@@ -159,6 +183,10 @@ end
 
 desc 'Run backend unit tests'
 task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_agent] do
+  at_exit {
+    sh 'rm -f backend/server/agentcomm/api_mock.go'
+  }
+  sh 'rm -f backend/server/agentcomm/api_mock.go'
   Dir.chdir('backend') do
     sh "#{GO} generate -v ./..."
     sh "#{RICHGO} test -v -p 1 ./..."
@@ -178,7 +206,7 @@ end
 
 # Web UI Rules
 desc 'Generate client part of REST API using swagger_codegen based on swagger.yml'
-task :gen_client => SWAGGER_CODEGEN do
+task :gen_client => [SWAGGER_CODEGEN, SWAGGER_FILE] do
   Dir.chdir('webui') do
     sh "java -jar #{SWAGGER_CODEGEN} generate -l typescript-angular -i #{SWAGGER_FILE} -o src/app/backend --additional-properties snapshot=true,ngVersion=8.2.8"
   end
@@ -236,6 +264,9 @@ end
 # Docker Rules
 desc 'Build containers with everything and statup all services using docker-compose'
 task :docker_up => [:build_backend, :build_ui] do
+  at_exit {
+    sh "docker-compose down"
+  }
   sh "docker-compose build"
   sh "docker-compose up"
 end
@@ -249,7 +280,9 @@ end
 # Other Rules
 desc 'Remove tools and other build or generated files'
 task :clean do
-  sh "rm -rf #{AGENT_PB_GO_FILE} backend/gen/*"
+  sh "rm -rf #{AGENT_PB_GO_FILE}"
+  sh 'rm -rf backend/server/gen/*'
+  sh 'rm -rf webui/src/app/backend/'
   sh 'rm -f backend/cmd/stork-agent/stork-agent'
   sh 'rm -f backend/cmd/stork-server/stork-server'
   sh 'rm -f backend/cmd/stork-db-migrate/stork-db-migrate'
