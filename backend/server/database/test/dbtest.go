@@ -62,5 +62,6 @@ func CreateSchema(t *testing.T) {
 
 // Remove the database schema.
 func TossSchema(t *testing.T) {
-	_ = dbmigs.Toss(&PgConnOptions)
+	err := dbmigs.Toss(&PgConnOptions)
+	require.NoError(t, err)
 }

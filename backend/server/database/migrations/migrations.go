@@ -11,6 +11,7 @@ import (
 // table.
 func Toss(dbopts *dbops.PgOptions) error {
 	db := pg.Connect(dbopts)
+	defer db.Close()
 
 	// Check if the migrations table exists. If it doesn't, there is nothing to do.
 	var n int
@@ -21,7 +22,6 @@ func Toss(dbopts *dbops.PgOptions) error {
 
 	// Migrate the database down to 0.
 	_, _, err = migrateAndStayConnected(db, "reset")
-	defer db.Close()
 
 	if err != nil {
 		return err
