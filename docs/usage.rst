@@ -9,7 +9,7 @@ Setting up users
 
 .. todo::
 
-   Describe how to set up new users (Postges management, how the details are stored, how users can
+   Describe how to set up new users (PostgreSQL management, how the details are stored, how users can
    log in, etc.)
 
 

@@ -8,6 +8,18 @@ Stork is in its very early stages of development. As such, it is currently only 
 18.04. It is likely that the code would work on many other systems, but for the time being we want
 to focus on the core development, rather than portability issues.
 
+There are several dependencies that needs to be installed:
+
+ - rake
+ - Java Runtime Environment
+ - Docker and Docker Compose
+
+For details, please see Stork wiki
+https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment .
+Note the Stork project is in very early stages and its building
+instructions change frequently. Please refer to the wiki page in case
+of problems.
+
 For ease of deployment, Stork uses Rake to automate compilation and installation. It currently
 requires Docker, but soon it will be optional. Technically, you can see how all Stork elements are
 built and conduct all of those steps manually (without using docker).
