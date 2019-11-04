@@ -38,6 +38,7 @@ import { LocaltimePipe } from './localtime.pipe';
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
+        apiKeys: {},
         withCredentials: true
     };
     return new Configuration(params);
