@@ -161,7 +161,7 @@ desc 'Run backend unit tests'
 task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_agent] do
   Dir.chdir('backend') do
     sh "#{GO} generate -v ./..."
-    sh "#{RICHGO} test -v ./..."
+    sh "#{RICHGO} test -v -p 1 ./..."
   end
 end
 
