@@ -4,9 +4,9 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-import {MessageService} from 'primeng/api';
+import { MessageService } from 'primeng/api';
 
-import { ServicesService } from './backend/api/services.service';
+import { UsersService } from './backend/api/users.service';
 
 export class User {
     id: number;
@@ -28,7 +28,7 @@ export class AuthService {
     public currentUser: Observable<User>;
     public user: User;
 
-    constructor(private http: HttpClient, private api: ServicesService, private router: Router,
+    constructor(private http: HttpClient, private api: UsersService, private router: Router,
                 private msgSrv: MessageService) {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')));
         this.currentUser = this.currentUserSubject.asObservable();
@@ -40,7 +40,7 @@ export class AuthService {
 
     login(username: string, password: string, returnUrl: string) {
         let user: User;
-        this.api.sessionsPost(username, password).subscribe(data => {
+        this.api.createSession(username, password).subscribe(data => {
             if (data.id != null) {
                 user = new User();
 
@@ -61,7 +61,7 @@ export class AuthService {
     }
 
     logout() {
-        this.api.sessionsDelete('response').subscribe(resp => {
+        this.api.deleteSession('response').subscribe(resp => {
             localStorage.removeItem('currentUser');
             this.currentUserSubject.next(null);
         });

@@ -14,6 +14,7 @@ import (
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
+	"isc.org/stork/server/gen/restapi/operations/users"
 )
 
 
@@ -151,7 +152,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 }
 
 // Attempts to login the user to the system.
-func (r *RestAPI) PostSessions(ctx context.Context, params services.PostSessionsParams) middleware.Responder {
+func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionParams) middleware.Responder {
 	user := &dbmodel.SystemUser{}
 	login := *params.Useremail
 	if strings.Contains(login, "@") {
@@ -170,7 +171,7 @@ func (r *RestAPI) PostSessions(ctx context.Context, params services.PostSessions
 		if err != nil {
 			log.Printf("%+v", err)
 		}
-		return services.NewPostSessionsBadRequest()
+		return users.NewCreateSessionBadRequest()
 	}
 
 	rspUserId := int64(user.Id)
@@ -182,15 +183,15 @@ func (r *RestAPI) PostSessions(ctx context.Context, params services.PostSessions
 		Lastname: &user.Lastname,
 	}
 
-	return services.NewPostSessionsOK().WithPayload(&rspUser)
+	return users.NewCreateSessionOK().WithPayload(&rspUser)
 }
 
 // Attempts to logout a user from the system.
-func (r *RestAPI) DeleteSessions(ctx context.Context, params services.DeleteSessionsParams) middleware.Responder {
+func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionParams) middleware.Responder {
 	err := r.SessionManager.LogoutHandler(ctx)
 	if err != nil {
 		log.Printf("%+v", err)
-		return services.NewDeleteSessionsBadRequest()
+		return users.NewDeleteSessionBadRequest()
 	}
-	return services.NewDeleteSessionsOK()
+	return users.NewDeleteSessionOK()
 }

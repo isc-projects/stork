@@ -21,8 +21,9 @@ paths:
   /sessions:
     post:
       summary: Logs in a user to the system
+      operationId: createSession
       tags:
-        - Services
+        - Users
       parameters:
         - in: query
           name: useremail
@@ -43,8 +44,9 @@ paths:
             $ref: "#/definitions/ApiError"
     delete:
       summary: Logs out a user from the system
+      operationId: deleteSession
       tags:
-        - Services
+        - Users
       responses:
         200:
           description: Logout successful
