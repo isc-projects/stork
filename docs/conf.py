@@ -130,11 +130,11 @@ latex_elements = {
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 # We don't have man pages yet.
+# TODO: Uncomment this once we get man pages.
 man_pages = [
-    ('man/agent.8', 'agent', 'Stork Agent', author, 8),
-    ('man/server.8', 'server', 'Stork Server', author, 8)
+    ('man/stork-agent.8', 'agent', 'Stork Agent', author, 8),
+    ('man/stork-server.8', 'server', 'Stork Server', author, 8)
 ]
-
 
 # -- Extension configuration -------------------------------------------------
 

@@ -24,6 +24,14 @@ Kea, can be found in ISC's `Stork project homepage  <https://gitlab.isc.org/isc-
    backend-api
    devel
 
+
+.. toctree::
+   :caption: Appendices
+   :name: appendices
+   :maxdepth: 1
+
+   manpages
+
 Indices and tables
 ==================
 
