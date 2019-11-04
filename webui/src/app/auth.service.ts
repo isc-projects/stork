@@ -4,7 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-import {MessageService}  from 'primeng/api';
+import {MessageService} from 'primeng/api';
 
 import { ServicesService } from './backend/api/services.service';
 
