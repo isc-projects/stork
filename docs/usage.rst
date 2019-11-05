@@ -7,10 +7,11 @@ Using Stork
 Setting up users
 ================
 
-.. todo::
-
-   Describe how to set up new users (PostgreSQL management, how the details are stored, how users can
-   log in, etc.)
+   As of Stork 0.1.0 release, there is no possibility to create new users. This
+   functionality will be added in the next release. Currently, the default
+   administrator's account is created and can be used to sign in to the
+   system via the web UI. Please use the login `admin` and password `admin` to
+   sign in to the system.
 
 
 Monitoring machines with BIND and Kea

@@ -1,3 +1,9 @@
+* 9 [doc] marcin
+
+    Updated ARM with a description how to sign in to the system using the
+    default administrator account.
+    (Gitlab #84)
+
 * 8 [func] marcin
 
     Enabled sign-in/sign-out mechanism with HTTP sessions based on cookies.

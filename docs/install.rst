@@ -38,6 +38,9 @@ any browser to connect.
 .. note::
 
    The installation procedure will create 3 Docker images: `stork_webui`, `stork_server` and `postgres`.
+   The PostgreSQL database schema will be automatically migrated to the latest version required
+   by the Stork server process.
+
    If you run unit-tests, also `stork-ui-pgsql` image will be created. The installation
    procedure assumes those images are fully under Stork control. If there are existing images,
    they will be overwritten.
