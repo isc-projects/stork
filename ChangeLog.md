@@ -1,8 +1,13 @@
-* 9 [doc] marcin
+* 10 [doc] marcin
 
     Updated ARM with a description how to sign in to the system using the
     default administrator account.
     (Gitlab #84)
+
+* 9 [doc] tomek
+
+    Initial ARM version added.
+    (Gitlab #27)
 
 * 8 [func] marcin
 
