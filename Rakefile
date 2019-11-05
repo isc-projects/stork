@@ -277,6 +277,28 @@ task :docker_down do
 end
 
 
+# Documentation
+desc 'Builds Stork documentation, using Sphinx'
+task :docs do
+  sh "sphinx-build -M singlehtml docs/ docs/ #{SPHINXOPTS}"
+end
+
+
+# Release Rules
+task :tarball do
+  version = 'unknown'
+  version_file = 'backend/version.go'
+  text = File.open(version_file).read
+  text.each_line do |line|
+    if line.start_with? 'const Version'
+      parts = line.split('"')
+      version = parts[1]
+    end
+  end
+  sh "git archive --prefix=stork-#{version}/ -o stork-#{version}.tar.gz HEAD"
+end
+
+
 # Other Rules
 desc 'Remove tools and other build or generated files'
 task :clean do
@@ -290,9 +312,3 @@ end
 
 desc 'Download all dependencies'
 task :prepare_env => [GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX]
-
-# Documentation
-desc 'Builds Stork documentation, using Sphinx'
-task :docs do
-  sh "sphinx-build -M singlehtml docs/ docs/ #{SPHINXOPTS}"
-end

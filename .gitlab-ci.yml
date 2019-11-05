@@ -79,3 +79,13 @@ danger:
     - echo '149.20.48.126 gitlab.isc.org' >> /etc/hosts
     - gem install danger-commit_lint
     - danger --fail-on-errors=true --new-comment
+
+
+tarball:
+  stage: build
+  script:
+    - rake tarball
+  artifacts:
+    paths:
+      - stork-*.tar.gz
+    expire_in: 1 week

@@ -10,20 +10,20 @@
 <p-tabView [(activeIndex)]="activeTabIdx" (onChange)="tabChange($event)">
     <p-tabPanel header="Machines">
       <div style="display: flex; justify-content: space-between; margin: 10px;">
-        <div>
-          <span>
-            <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
-            Filter machines:
-            <input type="text" pInputText [(ngModel)]="filterText" placeholder="name or ip" (keydown)="keyDownFilterText(machinesTable, $event)"/>
-          </span>
-          <span style="margin-left: 40px;">
-            Service:
-            <p-dropdown [options]="serviceTypes" [(ngModel)]="selectedServiceType" optionLabel="name" (onChange)="filterByService(machinesTable)"></p-dropdown>
-          </span>
-        </div>
+        <!-- <div> -->
+        <!--   <span> -->
+        <!--     <i class="fa fa-search" style="margin:4px 4px 0 0"></i> -->
+        <!--     Filter machines: -->
+        <!--     <input type="text" pInputText [(ngModel)]="filterText" placeholder="name or ip" (keydown)="keyDownFilterText(machinesTable, $event)"/> -->
+        <!--   </span> -->
+        <!--   <span style="margin-left: 40px;"> -->
+        <!--     Service: -->
+        <!--     <p-dropdown [options]="serviceTypes" [(ngModel)]="selectedServiceType" optionLabel="name" (onChange)="filterByService(machinesTable)"></p-dropdown> -->
+        <!--   </span> -->
+        <!-- </div> -->
         <div style="display: flex;">
           <button type="button" pButton label="Add New Machine" icon="pi pi-plus" style="margin-right: 20px;" (click)="showNewMachineDlg()"></button>
-          <button type="button" pButton label="Refresh" icon="pi pi-refresh" (click)="refresh(machinesTable)"></button>
+          <!-- <button type="button" pButton label="Refresh" icon="pi pi-refresh" (click)="refresh(machinesTable)"></button> -->
         </div>
       </div>
 
@@ -66,20 +66,20 @@
               <td>{{m.cpusLoad}}</td>
               <td>{{m.memory}}</td>
               <td><p-progressBar [value]="m.usedMemory"></p-progressBar></td>
-              <td>{{m.uptime}} days</td>
+              <td>{{m.uptime || '?'}} days</td>
               <td>{{m.lastVisited | localtime}}</td>
               <td>{{m.error}}</td>
             </tr>
           </ng-template>
-          <ng-template pTemplate="paginatorright" let-state>
-            Total: {{state.totalRecords}} machines
-          </ng-template>
+          <!-- <ng-template pTemplate="paginatorright" let-state> -->
+          <!--   Total: {{state.totalRecords}} machines -->
+          <!-- </ng-template> -->
         </p-table>
 
       </div>
     </p-tabPanel>
 
-    <p-tabPanel [header]="m.hostname" *ngFor="let m of individualMachines; let i = index"> <!-- [selected]="i == 0">-->
+    <p-tabPanel [header]="m.hostname || m.address" *ngFor="let m of individualMachines; let i = index"> <!-- [selected]="i == 0">-->
       <table>
         <tr><td>Hostame</td><td>{{m.hostname}}</td></tr>
         <tr><td>IP Address</td><td>{{m.address}}</td></tr>
@@ -87,9 +87,9 @@
 <!--          <tr><td>Service</td><td>{{m.}}</td></tr>-->
         <tr><td>CPUs</td><td>{{m.cpus}}</td></tr>
         <tr><td>CPUs Load</td><td>{{m.cpusLoad}}</td></tr>
-        <tr><td>Memory</td><td>{{m.memory}} GiB</td></tr>
+        <tr><td>Memory</td><td>{{m.memory || '?'}} GiB</td></tr>
         <tr><td>Used Memory</td><td>{{m.usedMemory}} %</td></tr>
-        <tr><td>Uptime</td><td>{{m.uptime}} days</td></tr>
+        <tr><td>Uptime</td><td>{{m.uptime || '?'}} days</td></tr>
         <tr><td>OS</td><td>{{m.os}}</td></tr>
         <tr><td>Platform Family</td><td>{{m.platformFamily}}</td></tr>
         <tr><td>Platform</td><td>{{m.platform}}</td></tr>

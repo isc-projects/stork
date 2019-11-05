@@ -17,6 +17,7 @@ securityDefinitions:
     type: apiKey
     in: header
     name: Cookie
+
 paths:
   /sessions:
     post:
@@ -59,8 +60,7 @@ paths:
     get:
       summary: Get version.
       operationId: getVersion
-      security:
-        - Token: []
+      security: []
       tags:
         - General
       responses:
@@ -280,4 +280,3 @@ definitions:
 
   principal:
     type: string
-
