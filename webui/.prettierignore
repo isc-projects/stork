@@ -7,5 +7,6 @@ nginx.conf
 .prettierignore
 *.sh
 .gitkeep
-src/app/backend/.swagger-codegen*
+src/app/backend/*
 *.ico
+dist
