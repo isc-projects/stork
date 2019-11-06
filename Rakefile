@@ -153,7 +153,6 @@ task :run_server_db, [:dbg] do |t, args|
     sh "docker rm -f stork-app-pgsql"
   }
   sh 'docker run --name stork-app-pgsql -d -p 5678:5432 -e POSTGRES_DB=storkapp -e POSTGRES_USER=storkapp -e POSTGRES_PASSWORD=storkapp postgres:11 && sleep 5'
-  sh 'backend/cmd/stork-db-migrate/stork-db-migrate -d storkapp -u storkapp -p 5678 init'
   sh 'backend/cmd/stork-db-migrate/stork-db-migrate -d storkapp -u storkapp -p 5678 up'
   Rake::Task["run_server"].invoke(args[:dbg])
 end
