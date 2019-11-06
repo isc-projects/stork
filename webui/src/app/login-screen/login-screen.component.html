@@ -1,41 +1,36 @@
+<div
+    style="background-color: #005B9F; color: white; display: flex; flex-direction: column; align-items: center; align-content: space-between; position: absolute; top: 0; right: 0; bottom: 0; left: 0;"
+>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="font-family: 'Mansalva', cursive; font-size: 14rem; margin-top: 5vh;">
+            <a href="https://stork.isc.org" target="blank" style="color: white;">Stork</a>
+        </div>
+        <div style="font-style: italic;">ver: {{ version }}</div>
 
-<div style="background-color: #005B9F; color: white; display: flex; flex-direction: column; align-items: center; align-content: space-between; position: absolute; top: 0; right: 0; bottom: 0; left: 0;">
-
-  <div style="display: flex; flex-direction: column; align-items: center;">
-
-    <div style="font-family: 'Mansalva', cursive; font-size: 14rem; margin-top: 5vh;">
-      <a href="https://stork.isc.org" target="blank" style="color: white;">Stork</a>
-    </div>
-    <div style="font-style: italic;">
-      ver: {{version}}
-    </div>
-
-    <div style="font-size: 2rem;">
-      Dashboard for
-    <a href="https://kea.isc.org" target="blank" style="color: white;text-decoration: underline;">ISC Kea</a>
-    and
-    <a href="https://bind.isc.org" target="blank" style="color: white;text-decoration: underline;">ISC BIND</a>
-    </div>
-
-    <div style="margin-top: 10vh;">
-      <form [formGroup]="loginForm">
-        <div>
-          <input type="text" formControlName="username" placeholder="User name" style="width: 100%;">
+        <div style="font-size: 2rem;">
+            Dashboard for
+            <a href="https://kea.isc.org" target="blank" style="color: white;text-decoration: underline;">ISC Kea</a>
+            and
+            <a href="https://bind.isc.org" target="blank" style="color: white;text-decoration: underline;">ISC BIND</a>
         </div>
 
-        <div style="margin-top: 8px;">
-          <input type="password" formControlName="password" placeholder="Password" style="width: 100%;">
+        <div style="margin-top: 10vh;">
+            <form [formGroup]="loginForm">
+                <div>
+                    <input type="text" formControlName="username" placeholder="User name" style="width: 100%;" />
+                </div>
+
+                <div style="margin-top: 8px;">
+                    <input type="password" formControlName="password" placeholder="Password" style="width: 100%;" />
+                </div>
+                <div style="margin-top: 18px;">
+                    <button pButton type="button" label="Sign In" style="width: 100%;" (click)="signIn()"></button>
+                </div>
+            </form>
         </div>
-        <div style="margin-top: 18px;">
-          <button pButton type="button" label="Sign In" style="width: 100%;" (click)="signIn()"></button>
-        </div>
-      </form>
     </div>
-  </div>
 
-
-  <div style="font-size: 0.7rem; margin: auto 0 5px 0; padding-top: 8px;">
-    Copyright 2019 by ISC. All Rights Reserved.
-  </div>
-
+    <div style="font-size: 0.7rem; margin: auto 0 5px 0; padding-top: 8px;">
+        Copyright 2019 by ISC. All Rights Reserved.
+    </div>
 </div>

@@ -245,14 +245,14 @@ desc 'Check frontend source code'
 task :lint_ui => [NG, :gen_client] do
   Dir.chdir('webui') do
     sh 'npx ng lint'
-    sh 'npx prettier --config .prettierrc --check **'
+    sh 'npx prettier --config .prettierrc --check \'**/*\''
   end
 end
 
 desc 'Make frontend source code prettier'
 task :prettier_ui => [NG, :gen_client] do
   Dir.chdir('webui') do
-    sh 'npx prettier --config .prettierrc --write **'
+    sh 'npx prettier --config .prettierrc --write \'**/*\''
   end
 end
 

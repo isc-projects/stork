@@ -1,2 +1,11 @@
 browserslist
 nginx.conf
+*~
+*sass
+.editorconfig
+.gitignore
+.prettierignore
+*.sh
+.gitkeep
+src/app/backend/.swagger-codegen*
+*.ico
