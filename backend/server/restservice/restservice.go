@@ -21,6 +21,7 @@ import (
 	"isc.org/stork/server/gen/restapi/operations"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/database"
+	"isc.org/stork/server/database/migrations"
 	"isc.org/stork/server/database/session"
 )
 
@@ -73,6 +74,17 @@ func (r *RestAPI) Serve() (err error) {
 	r.PgDB = pg.Connect(r.DBSettings.PgParams())
 	if !dbops.TestPgConnection(r.PgDB) {
 		log.Fatalf("unable to connect to the database using provided credentials")
+	}
+
+	// Ensure that the latest database schema is installed.
+	if oldVer, newVer, err := dbmigs.MigrateToLatest(r.PgDB); err != nil {
+		log.Fatalf("failed to migrate database schema to the latest version")
+
+	} else if oldVer != newVer {
+		log.WithFields(log.Fields{
+			"old-version": oldVer,
+			"new-version": newVer,
+		}).Info("successfully migrated database schema")
 	}
 
 	// Initialize sessions with access to the database.
