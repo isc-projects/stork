@@ -1,3 +1,9 @@
+* 11 [func] marcin
+
+    Stork server automatically migrates the database schema to the latest
+    version upon startup.
+    (Gitlab #33)
+
 * 10 [doc] marcin
 
     Updated ARM with a description how to sign in to the system using the
