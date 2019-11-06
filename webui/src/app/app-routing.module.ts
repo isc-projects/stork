@@ -1,12 +1,11 @@
-import { NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
+import { NgModule } from '@angular/core'
+import { Routes, RouterModule } from '@angular/router'
 
-import { AuthGuard } from './auth.guard';
-import { DashboardComponent } from './dashboard/dashboard.component';
-import { LoginScreenComponent } from './login-screen/login-screen.component';
-import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component';
-import { MachinesPageComponent } from './machines-page/machines-page.component';
-
+import { AuthGuard } from './auth.guard'
+import { DashboardComponent } from './dashboard/dashboard.component'
+import { LoginScreenComponent } from './login-screen/login-screen.component'
+import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component'
+import { MachinesPageComponent } from './machines-page/machines-page.component'
 
 const routes: Routes = [
     {
@@ -23,7 +22,7 @@ const routes: Routes = [
     {
         path: 'machines',
         redirectTo: 'machines/',
-        pathMatch: 'full'
+        pathMatch: 'full',
     },
     {
         path: 'machines/:id',
@@ -36,13 +35,12 @@ const routes: Routes = [
         canActivate: [AuthGuard],
     },
 
-
     // otherwise redirect to home
-    { path: '**', redirectTo: '' }
-];
+    { path: '**', redirectTo: '' },
+]
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+    imports: [RouterModule.forRoot(routes)],
+    exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

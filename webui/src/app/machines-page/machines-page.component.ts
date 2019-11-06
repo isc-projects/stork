@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, ParamMap, Router, NavigationEnd } from '@angular/router';
+import { Component, OnInit } from '@angular/core'
+import { ActivatedRoute, ParamMap, Router, NavigationEnd } from '@angular/router'
 
-import {MessageService} from 'primeng/api';
+import { MessageService } from 'primeng/api'
 
-import { ServicesService } from '../backend/api/api';
+import { ServicesService } from '../backend/api/api'
 
 interface ServiceType {
     name: string
@@ -11,12 +11,11 @@ interface ServiceType {
 }
 
 @Component({
-  selector: 'app-machines-page',
-  templateUrl: './machines-page.component.html',
-  styleUrls: ['./machines-page.component.sass']
+    selector: 'app-machines-page',
+    templateUrl: './machines-page.component.html',
+    styleUrls: ['./machines-page.component.sass'],
 })
 export class MachinesPageComponent implements OnInit {
-
     // machines table
     machines: any[]
     totalMachines: number
@@ -34,23 +33,23 @@ export class MachinesPageComponent implements OnInit {
     activeTabIdx = 0
     individualMachines: any[]
 
-    constructor(private route: ActivatedRoute,
-                private router: Router,
-                private servicesApi: ServicesService,
-                private msgSrv: MessageService) {}
+    constructor(
+        private route: ActivatedRoute,
+        private router: Router,
+        private servicesApi: ServicesService,
+        private msgSrv: MessageService
+    ) {}
 
     switchToTab(index) {
         // TODO: this is hack but I cannot find other way to activate newly added tab
         setTimeout(() => {
             this.activeTabIdx = index
-        }, 100);
+        }, 100)
     }
 
     ngOnInit() {
         this.machines = []
-        this.serviceTypes = [{name: 'any', value: ''},
-                             {name: 'BIND', value: 'bind'},
-                             {name: 'Kea', value: 'kea'}]
+        this.serviceTypes = [{ name: 'any', value: '' }, { name: 'BIND', value: 'bind' }, { name: 'Kea', value: 'kea' }]
         this.individualMachines = []
 
         this.route.paramMap.subscribe((params: ParamMap) => {
@@ -63,9 +62,9 @@ export class MachinesPageComponent implements OnInit {
                         console.info('found opened machine', mIdx)
                         this.switchToTab(Number(mIdx) + 1)
                         found = true
-                        return false;
+                        return false
                     }
-                    return true;
+                    return true
                 })
 
                 // if tab is not opened then search for list of machines if the one is present there,
@@ -88,7 +87,7 @@ export class MachinesPageComponent implements OnInit {
                     // TODO: needed proper ID of machine from DB
                 }
             }
-        });
+        })
     }
 
     loadMachines(event) {
@@ -110,10 +109,10 @@ export class MachinesPageComponent implements OnInit {
 
     tabChange(event) {
         if (event.index === 0) {
-            this.router.navigate(['/machines/']);
+            this.router.navigate(['/machines/'])
         } else {
             const m = this.individualMachines[event.index - 1]
-            this.router.navigate(['/machines/' + m.hostname]);
+            this.router.navigate(['/machines/' + m.hostname])
         }
     }
 
@@ -124,27 +123,36 @@ export class MachinesPageComponent implements OnInit {
     addNewMachine(machinesTable) {
         this.newMachineDlgVisible = false
 
-        const m = {address: this.machineAddress}
+        const m = { address: this.machineAddress }
 
         this.servicesApi.createMachine(m).subscribe(
             data => {
-                console.info(data);
-                this.msgSrv.add({severity: 'success', summary: 'New machine added', detail: 'Adding new machine succeeded.'});
-                this.newMachineDlgVisible = false;
+                console.info(data)
+                this.msgSrv.add({
+                    severity: 'success',
+                    summary: 'New machine added',
+                    detail: 'Adding new machine succeeded.',
+                })
+                this.newMachineDlgVisible = false
                 this.individualMachines.push(data)
                 this.switchToTab(this.individualMachines.length)
-                this.refresh(machinesTable);
+                this.refresh(machinesTable)
             },
             err => {
-                console.info(err);
-                let msg = err.statusText;
+                console.info(err)
+                let msg = err.statusText
                 if (err.error && err.error.detail) {
-                    msg = err.error.detail;
+                    msg = err.error.detail
                 }
-                this.msgSrv.add({severity: 'error', summary: 'Adding new machine erred',
-                                 detail: 'Adding new machine operation erred: ' + msg, sticky: true});
-                this.newMachineDlgVisible = false;
-            })
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Adding new machine erred',
+                    detail: 'Adding new machine operation erred: ' + msg,
+                    sticky: true,
+                })
+                this.newMachineDlgVisible = false
+            }
+        )
     }
 
     cancelNewMachine() {
@@ -158,7 +166,7 @@ export class MachinesPageComponent implements OnInit {
     }
 
     refresh(machinesTable) {
-        machinesTable.onLazyLoad.emit(machinesTable.createLazyLoadMetadata());
+        machinesTable.onLazyLoad.emit(machinesTable.createLazyLoadMetadata())
     }
 
     keyDownFilterText(machinesTable, event) {

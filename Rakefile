@@ -245,6 +245,14 @@ desc 'Check frontend source code'
 task :lint_ui => [NG, :gen_client] do
   Dir.chdir('webui') do
     sh 'npx ng lint'
+    sh 'npx prettier --config .prettierrc --check **'
+  end
+end
+
+desc 'Make frontend source code prettier'
+task :prettier_ui => [NG, :gen_client] do
+  Dir.chdir('webui') do
+    sh 'npx prettier --config .prettierrc --write **'
   end
 end
 
@@ -252,10 +260,14 @@ end
 task :ci_ui => [:gen_client] do
   Dir.chdir('webui') do
     sh 'npm ci'
-    sh 'npx ng lint'
+  end
+
+  Rake::Task["lint_ui"].invoke()
+
+#   Dir.chdir('webui') do
 #    sh 'CHROME_BIN=/usr/bin/chromium-browser npx ng test --progress false --watch false'
 #    sh 'npx ng e2e --progress false --watch false'
-  end
+#   end
 end
 
 

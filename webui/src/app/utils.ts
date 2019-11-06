@@ -1,8 +1,8 @@
-import moment from 'moment-timezone';
+import moment from 'moment-timezone'
 
 export function datetimeToLocal(d) {
     try {
-        let tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        let tz = Intl.DateTimeFormat().resolvedOptions().timeZone
         if (!tz) {
             tz = moment.tz.guess()
         }
@@ -14,8 +14,8 @@ export function datetimeToLocal(d) {
             tz = ' UTC'
         }
 
-        return d.format('YYYY-MM-DD hh:mm:ss') + tz;
+        return d.format('YYYY-MM-DD hh:mm:ss') + tz
     } catch (e) {
-        return d;
+        return d
     }
 }

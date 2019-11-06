@@ -1,18 +1,25 @@
-<div *ngIf="currentUser" style="background-color: #005B9F; margin: -8px -8px 0 -8px; display: flex; justify-content: space-between; align-items: center;">
-  <a routerLink="/">
-    <div style="font-family: 'Mansalva', cursive; font-size: 2.3rem; color: white; margin: 4px 20px 4px 4px;">
-      Stork
+<div
+    *ngIf="currentUser"
+    style="background-color: #005B9F; margin: -8px -8px 0 -8px; display: flex; justify-content: space-between; align-items: center;"
+>
+    <a routerLink="/">
+        <div style="font-family: 'Mansalva', cursive; font-size: 2.3rem; color: white; margin: 4px 20px 4px 4px;">
+            Stork
+        </div>
+    </a>
+
+    <div style="flex-grow: 1;">
+        <p-menubar [model]="menuItems" styleClass="stork-menubar">
+            <input type="text" pInputText placeholder="Search" />
+            <button
+                pButton
+                label="Logout ({{ currentUser.identifier }})"
+                (click)="signOut()"
+                icon="pi pi-sign-out"
+                style="margin-left:.25em"
+            ></button>
+        </p-menubar>
     </div>
-  </a>
-
-  <div style="flex-grow: 1;">
-    <p-menubar [model]="menuItems" styleClass="stork-menubar">
-      <input type="text" pInputText placeholder="Search">
-      <button pButton label="Logout ({{currentUser.identifier}})" (click)="signOut()" icon="pi pi-sign-out" style="margin-left:.25em">
-      </button>
-    </p-menubar>
-  </div>
-
 </div>
 
 <p-toast></p-toast>

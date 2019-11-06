@@ -1,13 +1,11 @@
-import { Pipe, PipeTransform } from '@angular/core';
-import { datetimeToLocal } from './utils';
+import { Pipe, PipeTransform } from '@angular/core'
+import { datetimeToLocal } from './utils'
 
 @Pipe({
-  name: 'localtime'
+    name: 'localtime',
 })
 export class LocaltimePipe implements PipeTransform {
-
     transform(value: any, ...args: any[]): any {
-        return datetimeToLocal(value);
+        return datetimeToLocal(value)
     }
-
 }
