@@ -1,6 +1,7 @@
 package dbtest
 
 import(
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -23,6 +24,8 @@ var GenericConnOptions = dbops.DatabaseSettings{
 // go-pg specific database connection options.
 var PgConnOptions dbops.PgOptions
 
+var TestDB *dbops.PgDB
+
 func init() {
 	// Convert generic options to go-pg options.
 	PgConnOptions = *GenericConnOptions.PgParams()
@@ -42,8 +45,16 @@ func init() {
 		}
 		PgConnOptions.Addr = addr
 	}
+
+	// Create an instance of the database using test credentials.
+	TestDB = dbops.NewPgDB(&PgConnOptions)
+	if TestDB == nil {
+		log.Fatal("unable to create database instance")
+	}
 }
 
+// Prepares unit test setup by re-creating the database schema and
+// returns pointer to the teardown function.
 func SetupDatabaseTestCase(t *testing.T) func (t *testing.T) {
 	CreateSchema(t)
 	return func (t *testing.T) {
@@ -54,14 +65,14 @@ func SetupDatabaseTestCase(t *testing.T) func (t *testing.T) {
 // Create the database schema to the latest version.
 func CreateSchema(t *testing.T) {
 	TossSchema(t)
-	_, _, err := dbmigs.Migrate(&PgConnOptions, "init")
+	_, _, err := dbmigs.Migrate(TestDB, "init")
 	require.NoError(t, err)
-	_, _, err = dbmigs.Migrate(&PgConnOptions, "up")
+	_, _, err = dbmigs.Migrate(TestDB, "up")
 	require.NoError(t, err)
 }
 
 // Remove the database schema.
 func TossSchema(t *testing.T) {
-	err := dbmigs.Toss(&PgConnOptions)
+	err := dbmigs.Toss(TestDB)
 	require.NoError(t, err)
 }

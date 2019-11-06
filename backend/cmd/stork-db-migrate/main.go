@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh/terminal"
 	"github.com/jessevdk/go-flags"
+	log "github.com/sirupsen/logrus"
 	"isc.org/stork/server/database"
 	"isc.org/stork/server/database/migrations"
 	"os"
@@ -54,7 +55,7 @@ func main() {
 		fmt.Printf("\n")
 
 		if err != nil {
-			exitf(err.Error())
+			log.Fatal(err.Error())
 		}
 
 		password = string(pass)
@@ -69,37 +70,34 @@ func main() {
 	}
 
 	// Use the provided credentials to connect to the database.
-	oldVersion, newVersion, err := dbmigs.Migrate(&dbops.PgOptions{
+	db := dbops.NewPgDB(&dbops.PgOptions{
 		User:     opts.UserName,
 		Password: string(password),
 		Database: opts.DatabaseName,
 		Addr:     fmt.Sprintf("%s:%d", opts.Host, opts.Port),
-	}, args...)
+	})
+	defer db.Close()
 
+	// Theoretically, it should not happen but let's make sure in case someone
+	// modifies the NewPgDB function.
+	if db == nil {
+		log.Fatal("unable to create database instance")
+	}
+
+	oldVersion, newVersion, err := dbmigs.Migrate(db, args...)
 	if err != nil {
-		exitf(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	if newVersion != oldVersion {
-		fmt.Printf("Migrated database from version %d to %d\n", oldVersion, newVersion)
+		log.Infof("Migrated database from version %d to %d\n", oldVersion, newVersion)
 
 	} else {
 		availVersion := dbmigs.AvailableVersion()
 		if availVersion == oldVersion {
-			fmt.Printf("Database version is %d (up to date)\n", oldVersion)
+			log.Infof("Database version is %d (up to date)\n", oldVersion)
 		} else {
-			fmt.Printf("Database version is %d (new version %d available)\n", oldVersion, availVersion)
+			log.Infof("Database version is %d (new version %d available)\n", oldVersion, availVersion)
 		}
 	}
-}
-
-// Prints error string to stderr.
-func errorf(s string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, s+"\n", args...)
-}
-
-// Prints error string to stderr and exists with exit code 1.
-func exitf(s string, args ...interface{}) {
-	errorf(s, args...)
-	os.Exit(1)
 }

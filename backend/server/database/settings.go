@@ -18,14 +18,20 @@ type DatabaseSettings struct {
 	Port      int `short:"p" long:"db-port" description:"the port on which the database is available" env:"STORK_DATABASE_PORT" default:"5432"`
 }
 
+// Alias to pg.DB
+type PgDB = pg.DB
+
+// Alias to pg.Conn
+type PgConn = pg.Conn
+
 // Alias to pg.Options.
 type PgOptions = pg.Options
 
 // Enables singular SQL table names for go-pg ORM.
 func init() {
-    orm.SetTableNameInflector(func(s string) string {
-        return s
-    })
+	orm.SetTableNameInflector(func(s string) string {
+		return s
+	})
 }
 
 // Creates new generic connection structure and sets the port to the default
@@ -33,6 +39,14 @@ func init() {
 func NewDatabaseSettings() *DatabaseSettings {
 	conn := &DatabaseSettings{Port: 5432}
 	return conn
+}
+
+// Create new database instance from the given connection parameters.
+func NewPgDB(opts interface{}) *PgDB {
+	if o, ok := opts.(*PgOptions); ok {
+		return pg.Connect(o)
+	}
+	return nil
 }
 
 // Returns generic connection parameters as a list of space separated name/value pairs.

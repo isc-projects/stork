@@ -7,21 +7,23 @@ import (
 	"isc.org/stork/server/database"
 )
 
-// Migrates the database version down to 0 and then removes the gopg_migrations
-// table.
-func Toss(dbopts *dbops.PgOptions) error {
-	db := pg.Connect(dbopts)
-	defer db.Close()
-
-	// Check if the migrations table exists. If it doesn't, there is nothing to do.
+// Checks if the migrations table exists, i.e. the 'init' command was called.
+func Initialized(db *dbops.PgDB) bool {
 	var n int
 	_, err := db.QueryOne(pg.Scan(&n), "SELECT count(*) FROM gopg_migrations")
-	if err != nil {
+	return err == nil
+}
+
+// Migrates the database version down to 0 and then removes the gopg_migrations
+// table.
+func Toss(db *dbops.PgDB) error {
+	// Check if the migrations table exists. If it doesn't, there is nothing to do.
+	if !Initialized(db) {
 		return nil
 	}
 
 	// Migrate the database down to 0.
-	_, _, err = migrateAndStayConnected(db, "reset")
+	_, _, err := Migrate(db, "reset")
 
 	if err != nil {
 		return err
@@ -35,23 +37,24 @@ func Toss(dbopts *dbops.PgOptions) error {
 	return err
 }
 
-// Migrates the database using provided credentials. The migrationsdir specifies
-// the location of the migration files. The args specify one of the
-// migration operations supported by go-pg/migrations. The returned arguments
-// contain new and old database version as well as an error.
-func Migrate(dbopts *dbops.PgOptions, args ...string) (oldVersion, newVersion int64, err error) {
-	db := pg.Connect(dbopts)
-	oldVersion, newVersion, err = migrateAndStayConnected(db, args...)
-	db.Close()
-
+// Migrates the database. The args specify one of the migration operations supported
+// by go-pg/migrations. The returned arguments contain new and old database version as
+// well as an error.
+func Migrate(db *dbops.PgDB, args ...string) (oldVersion, newVersion int64, err error) {
+	if len(args) > 0 && args[0] == "up" && !Initialized(db) {
+		if oldVersion, newVersion, err = migrations.Run(db, "init"); err != nil {
+			return oldVersion, newVersion, err
+		}
+	}
+	oldVersion, newVersion, err = migrations.Run(db, args...)
 	return oldVersion, newVersion, err
 }
 
-// Migrates the database and returns the connection.
-func migrateAndStayConnected(db *pg.DB, args ...string) (oldVersion, newVersion int64, err error) {
-	// Run migrations.
-	oldVersion, newVersion, err = migrations.Run(db, args...)
-	return oldVersion, newVersion, err
+// Migrates the database to the latest version. If the migrations are not initialized
+// in the database, it also performs initialization step prior to running the
+// migration.
+func MigrateToLatest(db *dbops.PgDB) (oldVersion, newVersion int64, err error) {
+	return Migrate(db, "up")
 }
 
 // Checks what is the highest available schema version.
@@ -64,8 +67,6 @@ func AvailableVersion() int64 {
 }
 
 // Returns current schema version.
-func CurrentVersion(dbopts *dbops.PgOptions) (int64, error) {
-	// Connect to the database.
-	db := pg.Connect(dbopts)
+func CurrentVersion(db *dbops.PgDB) (int64, error) {
 	return migrations.Version(db)
 }
