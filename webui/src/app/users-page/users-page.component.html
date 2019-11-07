@@ -1,0 +1,86 @@
+<p-tabView [(activeIndex)]="activeTabIdx" (onChange)="tabChange($event)">
+    <p-tabPanel header="Users">
+        <div style="display: flex; justify-content: space-between; margin: 10px;">
+            <!-- <div> -->
+            <!--   <span> -->
+            <!--     <i class="fa fa-search" style="margin:4px 4px 0 0"></i> -->
+            <!--     Filter machines: -->
+            <!--     <input type="text" pInputText [(ngModel)]="filterText" placeholder="name or ip" (keydown)="keyDownFilterText(machinesTable, $event)"/> -->
+            <!--   </span> -->
+            <!--   <span style="margin-left: 40px;"> -->
+            <!--     Service: -->
+            <!--     <p-dropdown [options]="serviceTypes" [(ngModel)]="selectedServiceType" optionLabel="name" (onChange)="filterByService(machinesTable)"></p-dropdown> -->
+            <!--   </span> -->
+            <!-- </div> -->
+            <div style="display: flex;">
+                <button
+                    type="button"
+                    pButton
+                    label="Add New User Account"
+                    icon="pi pi-plus"
+                    style="margin-right: 20px;"
+                    (click)="showNewUserDlg()"
+                ></button>
+                <!-- <button type="button" pButton label="Refresh" icon="pi pi-refresh" (click)="refresh(machinesTable)"></button> -->
+            </div>
+        </div>
+
+        <div>
+            <p-table
+                #usersTable
+                [value]="users"
+                [paginator]="true"
+                paginatorPosition="top"
+                [rows]="10"
+                [lazy]="true"
+                (onLazyLoad)="loadUsers($event)"
+                [totalRecords]="totalUsers"
+                [rowsPerPageOptions]="[10, 30, 100]"
+                [showCurrentPageReport]="true"
+                currentPageReportTemplate="{currentPage} of {totalPages} pages"
+            >
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>Login</th>
+                        <th>Email</th>
+                        <th>Firstname</th>
+                        <th>Lastname</th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-m>
+                    <tr>
+                        <td>{{ u.login }}</td>
+                        <td>{{ u.email }}</td>
+                        <td>{{ u.lastname }}</td>
+                        <td>{{ u.firstname }}</td>
+                    </tr>
+                </ng-template>
+                <!-- <ng-template pTemplate="paginatorright" let-state> -->
+                <!--   Total: {{state.totalRecords}} machines -->
+                <!-- </ng-template> -->
+            </p-table>
+        </div>
+    </p-tabPanel>
+
+    <p-tabPanel [header]="u.login || u.email" *ngFor="let u of individualUsers; let i = index">
+        <!-- [selected]="i == 0">-->
+        <table>
+            <tr>
+                <td>Login</td>
+                <td>{{ u.login }}</td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>{{ u.email }}</td>
+            </tr>
+            <tr>
+                <td>Lastname</td>
+                <td>{{ u.lastname }}</td>
+            </tr>
+            <tr>
+                <td>Firstname</td>
+                <td>{{ u.firstname }}</td>
+            </tr>
+        </table>
+    </p-tabPanel>
+</p-tabView>

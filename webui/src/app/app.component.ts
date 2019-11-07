@@ -24,24 +24,22 @@ export class AppComponent implements OnInit {
     ngOnInit() {
         this.menuItems = [
             {
-                //     label: 'DHCP',
-                // }, {
-                //     label: 'DNS',
-                // }, {
-                label: 'Services',
-                items: [
-                    {
-                        //     label: 'Kea DHCP'
-                        // }, {
-                        //     label: 'BIND DNS'
-                        // }, {
-                        label: 'Machines',
-                        icon: 'fa fa-server',
-                        routerLink: '/machines',
-                    },
-                ],
+                label: 'Configuration',
+                items: [{
+                    label: 'Users',
+                    icon: 'fa fa-user',
+                    routerLink: '/users',
+                }]
             },
-        ]
+            {
+                label: 'Services',
+                items: [{
+                    label: 'Machines',
+                    icon: 'fa fa-server',
+                    routerLink: '/machines',
+                }]
+            }
+        ];
     }
 
     signOut() {
