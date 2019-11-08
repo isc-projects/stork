@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
+import { UsersService } from '../backend/api/api'
+
 @Component({
     selector: 'app-users-page',
     templateUrl: './users-page.component.html',
@@ -10,14 +12,16 @@ export class UsersPageComponent implements OnInit {
     users: any[]
     totalUsers: number
 
-    constructor() { }
+    constructor(
+        private usersApi: UsersService
+    ) {}
 
     ngOnInit() {
         this.users = []
     }
 
     loadUsers(event) {
-        this.usersApi.getUsers().subscribe(data => {
+        this.usersApi.getUsers(event.first, event.rows, event.filters.text).subscribe(data => {
             this.users = data.items
             this.totalUsers = data.total
         })

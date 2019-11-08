@@ -102,6 +102,10 @@ func (r *RestAPI) Serve() (err error) {
 		Logger: log.Infof,
 		InnerMiddleware: r.GlobalMiddleware,
 		Authorizer: r.Authorizer,
+		AuthToken: func(token string) (interface{}, error) {
+			return "xyz", nil
+		},
+
 	})
 	if err != nil {
 		return errors.Wrap(err, "cannot setup ReST API handler")

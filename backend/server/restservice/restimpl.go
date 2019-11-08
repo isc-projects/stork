@@ -195,3 +195,29 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 	}
 	return users.NewDeleteSessionOK()
 }
+
+// Get users having an account in the system.
+func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) middleware.Responder {
+	usersList := []*models.User{}
+
+	email := "marcin@isc.org"
+	firstname := "Marcin"
+	var id int64 = 1
+	lastname := "Siodelski"
+	login := "msiodelski"
+	usersList = append(usersList, &models.User{
+		Email: &email,
+		Firstname: &firstname,
+		ID: &id,
+		Lastname: &lastname,
+		Login: &login,
+	})
+
+	u := models.Users{
+		Items: usersList,
+		Total: 10,
+	}
+	rsp := users.NewGetUsersOK().WithPayload(&u)
+	return rsp
+}
+

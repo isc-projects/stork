@@ -56,6 +56,30 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
+  /users:
+    get:
+      summary: Get the list of users.
+      description: >-
+        Returns all users having an account in the system.
+      operationId: getUsers
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/paginationTextParam'
+      responses:
+        200:
+          description: List of users returned.
+          schema:
+            $ref: "#/definitions/Users"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /version:
     get:
       summary: Get version.
@@ -86,18 +110,9 @@ paths:
       tags:
         - Services
       parameters:
-        - name: start
-          in: query
-          description: First record to retrieve.
-          type: integer
-        - name: limit
-          in: query
-          description: Number of records to retrieve.
-          type: integer
-        - name: text
-          in: query
-          description: Text that is used to match against any field of machines e.g. hostname or address.
-          type: string
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/paginationTextParam'
         - name: service
           in: query
           description: Limit returned list of machines to these which provide given service, possible values 'bind' or 'kea'.
@@ -157,7 +172,24 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
+parameters:
+  paginationStartParam:
+    name: start
+    in: query
+    description: First record to retrieve.
+    type: integer
 
+  paginationLimitParam:
+    name: limit
+    in: query
+    description: Number of records to retrieve.
+    type: integer
+
+  paginationTextParam:
+    name: text
+    in: query
+    description: Filtering text, e.g. hostname for the machines.
+    type: string
 
 definitions:
   User:
@@ -179,6 +211,15 @@ definitions:
         type: string
       lastname:
         type: string
+  Users:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/User'
+      total:
+        type: integer
 
   Version:
     type: object

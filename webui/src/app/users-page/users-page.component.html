@@ -47,7 +47,7 @@
                         <th>Lastname</th>
                     </tr>
                 </ng-template>
-                <ng-template pTemplate="body" let-m>
+                <ng-template pTemplate="body" let-u>
                     <tr>
                         <td>{{ u.login }}</td>
                         <td>{{ u.email }}</td>
@@ -62,9 +62,8 @@
         </div>
     </p-tabPanel>
 
-    <p-tabPanel [header]="u.login || u.email" *ngFor="let u of individualUsers; let i = index">
-        <!-- [selected]="i == 0">-->
-        <table>
+<!--    <p-tabPanel [header]="u.login || u.email" *ngFor="let u of individualUsers; let i = index">
+         <table>
             <tr>
                 <td>Login</td>
                 <td>{{ u.login }}</td>
@@ -82,5 +81,5 @@
                 <td>{{ u.firstname }}</td>
             </tr>
         </table>
-    </p-tabPanel>
+    </p-tabPanel> -->
 </p-tabView>
