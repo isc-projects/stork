@@ -25,21 +25,25 @@ export class AppComponent implements OnInit {
         this.menuItems = [
             {
                 label: 'Configuration',
-                items: [{
-                    label: 'Users',
-                    icon: 'fa fa-user',
-                    routerLink: '/users',
-                }]
+                items: [
+                    {
+                        label: 'Users',
+                        icon: 'fa fa-user',
+                        routerLink: '/users',
+                    },
+                ],
             },
             {
                 label: 'Services',
-                items: [{
-                    label: 'Machines',
-                    icon: 'fa fa-server',
-                    routerLink: '/machines',
-                }]
-            }
-        ];
+                items: [
+                    {
+                        label: 'Machines',
+                        icon: 'fa fa-server',
+                        routerLink: '/machines',
+                    },
+                ],
+            },
+        ]
     }
 
     signOut() {
