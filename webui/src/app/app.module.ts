@@ -1,8 +1,8 @@
 // Angular modules
 import { BrowserModule } from '@angular/platform-browser'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { NgModule } from '@angular/core'
-import { HttpClientModule } from '@angular/common/http'
+import { Injector, NgModule } from '@angular/core'
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 
 // Other 3rd-party modules
@@ -28,6 +28,7 @@ import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './
 import { environment } from './../environments/environment'
 import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
+import { AuthInterceptor } from './auth-interceptor'
 import { LoginScreenComponent } from './login-screen/login-screen.component'
 import { DashboardComponent } from './dashboard/dashboard.component'
 import { HostsTableComponent } from './hosts-table/hosts-table.component'
@@ -79,7 +80,18 @@ export function cfgFactory() {
         DropdownModule,
         ToastModule,
     ],
-    providers: [{ provide: BASE_PATH, useValue: environment.apiUrl }, MessageService],
+    providers: [
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: AuthInterceptor,
+            multi: true,
+        },
+        {
+            provide: BASE_PATH,
+            useValue: environment.apiUrl,
+        },
+        MessageService,
+    ],
     bootstrap: [AppComponent],
 })
 export class AppModule {}

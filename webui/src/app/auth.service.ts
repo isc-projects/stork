@@ -14,10 +14,6 @@ export class User {
     email: string
     firstName: string
     lastName: string
-
-    public get identifier(): string {
-        return this.username || this.email
-    }
 }
 
 @Injectable({
@@ -52,7 +48,7 @@ export class AuthService {
                     user.id = data.id
                     user.username = data.login
                     user.email = data.email
-                    user.firstName = data.firstname
+                    user.firstName = data.name
                     user.lastName = data.lastname
                     this.currentUserSubject.next(user)
                     localStorage.setItem('currentUser', JSON.stringify(user))
