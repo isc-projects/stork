@@ -34,8 +34,12 @@ func (fa *FakeAgents) GetState(address string) (*agentcomm.State, error) {
 
 
 func TestCreateMachine(t *testing.T) {
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
+
+	settings := RestApiSettings{}
 	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&dbtest.GenericConnOptions, &fa)
+	rapi, err := NewRestAPI(&settings, &dbtest.GenericConnOptions, dbtest.TestDB, &fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -55,15 +59,24 @@ func TestCreateMachine(t *testing.T) {
 }
 
 func TestGetMachines(t *testing.T) {
-	rapi := RestAPI{}
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
+
+	settings := RestApiSettings{}
+	fa := FakeAgents{}
+	rapi, err := NewRestAPI(&settings, &dbtest.GenericConnOptions, dbtest.TestDB, &fa)
+	require.NoError(t, err)
 	ctx := context.Background()
 
+	var start, limit int64 = 0, 10
 	params := services.GetMachinesParams{
+		Start: &start,
+		Limit: &limit,
 	}
 
 	rsp := rapi.GetMachines(ctx, params)
 	ms := rsp.(*services.GetMachinesOK).Payload
 	log.Printf("RESP: %+v", ms)
-	require.Greater(t, ms.Total, int64(0))
+	require.Equal(t, ms.Total, int64(0))
 	//require.Greater(t, ms.Items, )
 }

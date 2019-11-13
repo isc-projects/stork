@@ -5,7 +5,6 @@ import (
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	"isc.org/stork/server/database"
-	"isc.org/stork/server/database/migrations"
 	"os"
 )
 
@@ -68,7 +67,7 @@ func main() {
 		log.Fatal("unable to create database instance")
 	}
 
-	oldVersion, newVersion, err := dbmigs.Migrate(db, args...)
+	oldVersion, newVersion, err := dbops.Migrate(db, args...)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -77,7 +76,7 @@ func main() {
 		log.Infof("Migrated database from version %d to %d\n", oldVersion, newVersion)
 
 	} else {
-		availVersion := dbmigs.AvailableVersion()
+		availVersion := dbops.AvailableVersion()
 		if availVersion == oldVersion {
 			log.Infof("Database version is %d (up to date)\n", oldVersion)
 		} else {

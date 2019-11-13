@@ -8,17 +8,18 @@ import(
 	"testing"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/database"
-	"isc.org/stork/server/database/migrations"
 )
 
 // Common set of database connection options which may be converted to a string
 // of space separated options used by SQL drivers.
 var GenericConnOptions = dbops.DatabaseSettings{
-	DbName: "storktest",
-	User: "storktest",
-	Password: "storktest",
-	Host: "localhost",
-	Port: 5432,
+	BaseDatabaseSettings: dbops.BaseDatabaseSettings{
+		DbName: "storktest",
+		User: "storktest",
+		Password: "storktest",
+		Host: "localhost",
+		Port: 5432,
+	},
 }
 
 // go-pg specific database connection options.
@@ -65,14 +66,14 @@ func SetupDatabaseTestCase(t *testing.T) func (t *testing.T) {
 // Create the database schema to the latest version.
 func CreateSchema(t *testing.T) {
 	TossSchema(t)
-	_, _, err := dbmigs.Migrate(TestDB, "init")
+	_, _, err := dbops.Migrate(TestDB, "init")
 	require.NoError(t, err)
-	_, _, err = dbmigs.Migrate(TestDB, "up")
+	_, _, err = dbops.Migrate(TestDB, "up")
 	require.NoError(t, err)
 }
 
 // Remove the database schema.
 func TossSchema(t *testing.T) {
-	err := dbmigs.Toss(TestDB)
+	err := dbops.Toss(TestDB)
 	require.NoError(t, err)
 }

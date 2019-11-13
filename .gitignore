@@ -24,3 +24,9 @@
 # generated documentation
 /doc/singlehtml
 /doc/doctrees
+
+# output from backend unit tests coverage
+/backend/coverage.out
+
+# ctags
+TAGS

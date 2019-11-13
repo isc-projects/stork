@@ -14,7 +14,7 @@ const routes: Routes = [
         // component: DashboardComponent,
         pathMatch: 'full',
         // canActivate: [AuthGuard],
-        redirectTo: 'machines/',
+        redirectTo: 'machines/all',
     },
     {
         path: 'login',
@@ -22,8 +22,8 @@ const routes: Routes = [
     },
     {
         path: 'machines',
-        redirectTo: 'machines/',
         pathMatch: 'full',
+        redirectTo: 'machines/all',
     },
     {
         path: 'machines/:id',

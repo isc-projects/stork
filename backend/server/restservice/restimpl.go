@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"fmt"
+	"time"
 	"context"
 
 	log "github.com/sirupsen/logrus"
@@ -9,6 +10,9 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 
 	"isc.org/stork"
+	"isc.org/stork/server/database"
+	"isc.org/stork/server/database/model"
+	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
@@ -33,30 +37,49 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 
 // Get runtime state of indicated machine.
 func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachineStateParams) middleware.Responder {
-	state, err := r.Agents.GetState(params.Address)
+	dbMachine, err := dbmodel.GetMachineById(r.Db, params.ID)
 	if err != nil {
-		log.Printf("%+v", err)
-		msg := "problems with connecting to agent"
-		rspErr := models.APIError{
-			Code: 500,
+		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
+		log.Error(err)
+		rsp := services.NewGetMachineStateDefault(500).WithPayload(&models.APIError{
 			Message: &msg,
+		})
+		return rsp
+	}
+	if dbMachine == nil {
+		msg := fmt.Sprintf("cannot find machine with id %d", params.ID)
+		rsp := services.NewGetMachineStateDefault(404).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	state, err := r.Agents.GetState(dbMachine.Address)
+	if err != nil {
+		log.Warn(err)
+		dbMachine.Error = "cannot get state of machine"
+		err = r.Db.Update(dbMachine)
+		if err != nil {
+			log.Error(err)
 		}
-		return services.NewGetMachineStateDefault(500).WithPayload(&rspErr)
+		m := MachineToRestApi(*dbMachine)
+		rsp := services.NewGetMachineStateOK().WithPayload(m)
+		return rsp
 	}
 
-	rspState := models.Machine{
-		Address: &params.Address,
-		Cpus: state.Cpus,
-		CpusLoad: state.CpusLoad,
-		Memory: state.Memory,
-		Hostname: state.Hostname,
-		Uptime: state.Uptime,
-		UsedMemory: state.UsedMemory,
-		Error: state.Error,
-		LastVisited: strfmt.DateTime(state.LastVisited),
+	err = updateMachineFields(r.Db, dbMachine, state)
+	if err != nil {
+		rsp := services.NewGetMachineStateOK().WithPayload(&models.Machine{
+			ID: int64(dbMachine.Id),
+			Error: "cannot update machine in db",
+		})
+		return rsp
 	}
 
-	return services.NewGetMachineStateOK().WithPayload(&rspState)
+	m := MachineToRestApi(*dbMachine)
+	rsp := services.NewGetMachineStateOK().WithPayload(m)
+
+	return rsp
 }
 
 // Get machines where Stork Agent is running.
@@ -90,60 +113,220 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 		"service": service,
 	}).Info("query machines")
 
-	addr := "10.2.3.4"
-	machines = append(machines, &models.Machine{
-		Address: &addr,
-		Cpus: 4,
-		CpusLoad: "0.10 0.20 0.30",
-		Memory: 4,
-		Hostname: "mach1.isc.org",
-		Uptime: 123,
-		UsedMemory: 78,
-	})
+	log.Infof("DB1 %+v", r.Db)
+	dbMachines, total, err := dbmodel.GetMachines(r.Db, start, limit, text)
+	if err != nil {
+		log.Error(err)
+		msg := "cannot get machines from db"
+		rsp := services.NewCreateMachineDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+
+	for _, dbM := range dbMachines {
+		mm := MachineToRestApi(dbM)
+		machines = append(machines, mm)
+	}
 
 	m := models.Machines{
 		Items: machines,
-		Total: 10,
+		Total: int64(total),
 	}
 	rsp := services.NewGetMachinesOK().WithPayload(&m)
 	return rsp
 }
 
+// Get one machine by ID where Stork Agent is running.
+func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachineParams) middleware.Responder {
+	dbMachine, err := dbmodel.GetMachineById(r.Db, params.ID)
+	if err != nil {
+		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
+		log.Error(err)
+		rsp := services.NewGetMachineDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbMachine == nil {
+		msg := fmt.Sprintf("cannot find machine with id %d", params.ID)
+		rsp := services.NewGetMachineDefault(404).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	m := MachineToRestApi(*dbMachine)
+	rsp := services.NewGetMachineOK().WithPayload(m)
+	return rsp
+}
+
+// Get one machine by ID where Stork Agent is running.
+func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachineParams) middleware.Responder {
+	dbMachine, err := dbmodel.GetMachineById(r.Db, params.ID)
+	if err != nil {
+		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
+		log.Error(err)
+		rsp := services.NewUpdateMachineDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbMachine == nil {
+		msg := fmt.Sprintf("cannot find machine with id %d", params.ID)
+		rsp := services.NewUpdateMachineDefault(404).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	dbMachine.Address = *params.Machine.Address
+	err = r.Db.Update(dbMachine)
+	if err != nil {
+		msg := fmt.Sprintf("cannot update machine with id %d in db", params.ID)
+		log.Error(err)
+		rsp := services.NewUpdateMachineDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	m := MachineToRestApi(*dbMachine)
+	rsp := services.NewUpdateMachineOK().WithPayload(m)
+	return rsp
+}
+
+func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcomm.State) error {
+	dbMachine.AgentVersion = m.AgentVersion
+	dbMachine.Cpus = m.Cpus
+	dbMachine.CpusLoad = m.CpusLoad
+	dbMachine.Memory = m.Memory
+	dbMachine.Hostname = m.Hostname
+	dbMachine.Uptime = m.Uptime
+	dbMachine.UsedMemory = m.UsedMemory
+	dbMachine.Os = m.Os
+	dbMachine.Platform = m.Platform
+	dbMachine.PlatformFamily = m.PlatformFamily
+	dbMachine.PlatformVersion = m.PlatformVersion
+	dbMachine.KernelVersion = m.KernelVersion
+	dbMachine.KernelArch = m.KernelArch
+	dbMachine.VirtualizationSystem = m.VirtualizationSystem
+	dbMachine.VirtualizationRole = m.VirtualizationRole
+	dbMachine.HostID = m.HostID
+	dbMachine.LastVisited = m.LastVisited
+	dbMachine.Error = m.Error
+	return db.Update(dbMachine)
+}
+
+func MachineToRestApi(dbMachine dbmodel.Machine) *models.Machine {
+	m := models.Machine{
+		ID: int64(dbMachine.Id),
+		Address: &dbMachine.Address,
+		AgentVersion: dbMachine.AgentVersion,
+		Cpus: dbMachine.Cpus,
+		CpusLoad: dbMachine.CpusLoad,
+		Memory: dbMachine.Memory,
+		Hostname: dbMachine.Hostname,
+		Uptime: dbMachine.Uptime,
+		UsedMemory: dbMachine.UsedMemory,
+		Os: dbMachine.Os,
+		Platform: dbMachine.Platform,
+		PlatformFamily: dbMachine.PlatformFamily,
+		PlatformVersion: dbMachine.PlatformVersion,
+		KernelVersion: dbMachine.KernelVersion,
+		KernelArch: dbMachine.KernelArch,
+		VirtualizationSystem: dbMachine.VirtualizationSystem,
+		VirtualizationRole: dbMachine.VirtualizationRole,
+		HostID: dbMachine.HostID,
+		LastVisited: strfmt.DateTime(dbMachine.LastVisited),
+		Error: dbMachine.Error,
+	}
+	return &m
+}
+
 // Add a machine where Stork Agent is running.
 func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachineParams) middleware.Responder {
-	log.Info("create machine")
-
 	addr := params.Machine.Address
 
-	m := models.Machine{Address: addr}
+	dbMachine, err := dbmodel.GetMachineByAddress(r.Db, *addr, true)
+	if err == nil && dbMachine != nil && dbMachine.Deleted.IsZero() {
+		msg := fmt.Sprintf("machine %s already exists", *addr)
+		log.Warnf(msg)
+		rsp := services.NewCreateMachineDefault(400).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	if dbMachine == nil {
+		dbMachine = &dbmodel.Machine{Address: *addr}
+		err = dbmodel.AddMachine(r.Db, dbMachine)
+		if err != nil {
+			msg := fmt.Sprintf("cannot store machine %s", *addr)
+			log.Error(err)
+			rsp := services.NewCreateMachineDefault(500).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+	} else {
+		dbMachine.Deleted = time.Time{}
+	}
 
 	state, err := r.Agents.GetState(*addr)
 	if err != nil {
-		m.Error = "cannot get state of machine"
-		rsp := services.NewCreateMachineOK().WithPayload(&m)
+		log.Warn(err)
+		dbMachine.Error = "cannot get state of machine"
+		err = r.Db.Update(dbMachine)
+		if err != nil {
+			log.Error(err)
+		}
+		m := MachineToRestApi(*dbMachine)
+		rsp := services.NewCreateMachineOK().WithPayload(m)
 		return rsp
 	}
-	log.Infof("stat %+v", state)
 
-	m.AgentVersion = state.AgentVersion
-	m.Cpus = state.Cpus
-	m.CpusLoad = state.CpusLoad
-	m.Memory = state.Memory
-	m.Hostname = state.Hostname
-	m.Uptime = state.Uptime
-	m.UsedMemory = state.UsedMemory
-	m.Os = state.Os
-	m.Platform = state.Platform
-	m.PlatformFamily = state.PlatformFamily
-	m.PlatformVersion = state.PlatformVersion
-	m.KernelVersion = state.KernelVersion
-	m.KernelArch = state.KernelArch
-	m.VirtualizationSystem = state.VirtualizationSystem
-	m.VirtualizationRole = state.VirtualizationRole
-	m.HostID = state.HostID
-	m.LastVisited = strfmt.DateTime(state.LastVisited)
-	m.Error = state.Error
-	rsp := services.NewCreateMachineOK().WithPayload(&m)
+	err = updateMachineFields(r.Db, dbMachine, state)
+	if err != nil {
+		rsp := services.NewCreateMachineOK().WithPayload(&models.Machine{
+			ID: int64(dbMachine.Id),
+			Address: addr,
+			Error: "cannot update machine in db",
+		})
+		return rsp
+	}
+
+	m := MachineToRestApi(*dbMachine)
+	rsp := services.NewCreateMachineOK().WithPayload(m)
+
+	return rsp
+}
+
+
+// Add a machine where Stork Agent is running.
+func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachineParams) middleware.Responder {
+	dbMachine, err := dbmodel.GetMachineById(r.Db, params.ID)
+	if err == nil && dbMachine == nil {
+		rsp := services.NewDeleteMachineOK()
+		return rsp
+	} else if err != nil {
+		msg := fmt.Sprintf("cannot delete machine %d", params.ID)
+		log.Error(err)
+		rsp := services.NewDeleteMachineDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	err = dbmodel.DeleteMachine(r.Db, dbMachine)
+	if err != nil {
+		msg := fmt.Sprintf("cannot delete machine %d", params.ID)
+		log.Error(err)
+		rsp := services.NewDeleteMachineDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	rsp := services.NewDeleteMachineOK()
 
 	return rsp
 }

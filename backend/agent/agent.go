@@ -90,7 +90,7 @@ func (sa *StorkAgent) Serve() {
 	// Start serving gRPC
 	log.WithFields(log.Fields{
 		"address": lis.Addr(),
-	}).Infof("Started serving Stork Agent")
+	}).Infof("started serving Stork Agent")
 	if err := server.Serve(lis); err != nil {
 		log.Fatalf("Failed to listen on port: %+v", err)
 	}

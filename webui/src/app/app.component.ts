@@ -39,7 +39,7 @@ export class AppComponent implements OnInit {
                     {
                         label: 'Machines',
                         icon: 'fa fa-server',
-                        routerLink: '/machines',
+                        routerLink: '/machines/all',
                     },
                 ],
             },

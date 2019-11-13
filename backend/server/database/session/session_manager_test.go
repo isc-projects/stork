@@ -27,7 +27,7 @@ func TestMiddlewareNewSession(t *testing.T) {
 	teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown(t)
 
-	mgr, err := NewSessionMgr(&dbtest.GenericConnOptions)
+	mgr, err := NewSessionMgr(&dbtest.GenericConnOptions.BaseDatabaseSettings)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)

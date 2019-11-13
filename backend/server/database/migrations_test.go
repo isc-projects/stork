@@ -1,21 +1,20 @@
-package dbmigs
+package dbops
 
 import (
 	"log"
 	"os"
 	"testing"
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/server/database"
 )
 
 // Expecting storktest database and the storktest user to have full privileges to it.
-var testConnOptions = dbops.PgOptions{
+var testConnOptions = PgOptions{
 	Database: "storktest",
 	User: "storktest",
 	Password: "storktest",
 }
 
-var testDB *dbops.PgDB
+var testDB *PgDB
 
 // Setup a unit test with creating the schema.
 func setupCreateSchema(t *testing.T) func (t *testing.T) {
@@ -57,7 +56,7 @@ func TestMain(m *testing.M) {
 		testConnOptions.Addr = addr
 	}
 
-	if testDB = dbops.NewPgDB(&testConnOptions); testDB == nil {
+	if testDB = NewPgDB(&testConnOptions); testDB == nil {
 		log.Fatal("unable to create database instance")
 	}
 	defer testDB.Close()
@@ -122,7 +121,7 @@ func TestInitMigrateToLatest(t *testing.T) {
 	o, n, err := MigrateToLatest(testDB)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), o)
-	require.GreaterOrEqual(t, int64(2), n)
+	require.GreaterOrEqual(t, int64(3), n)
 }
 
 // Test that available schema version is returned as expected.

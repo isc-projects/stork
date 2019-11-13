@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 
+	"isc.org/stork"
 	"isc.org/stork/api"
 )
 
@@ -79,7 +80,7 @@ func (agents *connectedAgentsData) GetState(address string) (*State, error) {
 		VirtualizationSystem: grpcState.VirtualizationSystem,
 		VirtualizationRole: grpcState.VirtualizationRole,
 		HostID: grpcState.HostID,
-		LastVisited: time.Now().UTC(),
+		LastVisited: stork.UTCNow(),
 		Error: grpcState.Error,
 	}
 

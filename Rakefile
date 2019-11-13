@@ -173,7 +173,8 @@ task :run_server, [:dbg] => [:build_server, GO] do |t, args|
   if args[:dbg]
     sh "cd backend/cmd/stork-server/ && dlv debug"
   else
-    sh "backend/cmd/stork-server/stork-server"
+    # sh "backend/cmd/stork-server/stork-server"
+    sh "backend/cmd/stork-server/stork-server --db-trace-queries"
   end
 end
 
@@ -223,7 +224,8 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
   sh 'rm -f backend/server/agentcomm/api_mock.go'
   Dir.chdir('backend') do
     sh "#{GO} generate -v ./..."
-    sh "#{RICHGO} test -v -p 1 ./..."
+    sh "#{RICHGO} test -v -count=1 -p 1 -coverprofile=coverage.out  ./..."  # count=1 disables caching results
+    sh "#{GO} tool cover -func=coverage.out"
   end
 end
 
@@ -235,6 +237,17 @@ task :unittest_backend_db do
   sh "docker run --name stork-ut-pgsql -d -p 5678:5432 -e POSTGRES_DB=storktest -e POSTGRES_USER=storktest -e POSTGRES_PASSWORD=storktest postgres:11"
   ENV['POSTGRES_ADDR'] = "localhost:5678"
   Rake::Task["unittest_backend"].invoke
+end
+
+desc 'Show backend coverage of unit tests in web browser'
+task :show_cov do
+  at_exit {
+    sh 'rm -f backend/server/agentcomm/api_mock.go'
+  }
+  Dir.chdir('backend') do
+    sh "#{GO} generate -v ./..."
+    sh "#{GO} tool cover -html=coverage.out"
+  end
 end
 
 

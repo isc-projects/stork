@@ -1,14 +1,13 @@
-package dbmigs
+package dbops
 
 import (
 	"github.com/go-pg/migrations/v7"
 	"github.com/go-pg/pg/v9"
-
-	"isc.org/stork/server/database"
+	_ "isc.org/stork/server/database/migrations"
 )
 
 // Checks if the migrations table exists, i.e. the 'init' command was called.
-func Initialized(db *dbops.PgDB) bool {
+func Initialized(db *PgDB) bool {
 	var n int
 	_, err := db.QueryOne(pg.Scan(&n), "SELECT count(*) FROM gopg_migrations")
 	return err == nil
@@ -16,7 +15,7 @@ func Initialized(db *dbops.PgDB) bool {
 
 // Migrates the database version down to 0 and then removes the gopg_migrations
 // table.
-func Toss(db *dbops.PgDB) error {
+func Toss(db *PgDB) error {
 	// Check if the migrations table exists. If it doesn't, there is nothing to do.
 	if !Initialized(db) {
 		return nil
@@ -40,7 +39,7 @@ func Toss(db *dbops.PgDB) error {
 // Migrates the database. The args specify one of the migration operations supported
 // by go-pg/migrations. The returned arguments contain new and old database version as
 // well as an error.
-func Migrate(db *dbops.PgDB, args ...string) (oldVersion, newVersion int64, err error) {
+func Migrate(db *PgDB, args ...string) (oldVersion, newVersion int64, err error) {
 	if len(args) > 0 && args[0] == "up" && !Initialized(db) {
 		if oldVersion, newVersion, err = migrations.Run(db, "init"); err != nil {
 			return oldVersion, newVersion, err
@@ -53,7 +52,7 @@ func Migrate(db *dbops.PgDB, args ...string) (oldVersion, newVersion int64, err 
 // Migrates the database to the latest version. If the migrations are not initialized
 // in the database, it also performs initialization step prior to running the
 // migration.
-func MigrateToLatest(db *dbops.PgDB) (oldVersion, newVersion int64, err error) {
+func MigrateToLatest(db *PgDB) (oldVersion, newVersion int64, err error) {
 	return Migrate(db, "up")
 }
 
@@ -67,6 +66,6 @@ func AvailableVersion() int64 {
 }
 
 // Returns current schema version.
-func CurrentVersion(db *dbops.PgDB) (int64, error) {
+func CurrentVersion(db *PgDB) (int64, error) {
 	return migrations.Version(db)
 }

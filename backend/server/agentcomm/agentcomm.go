@@ -53,13 +53,14 @@ type ConnectedAgents interface {
 
 // Agents management map. It tracks Agents currently connected to the Server.
 type connectedAgentsData struct {
-	Settings AgentsSettings
+	Settings *AgentsSettings
 	AgentsMap map[string]*Agent
 }
 
 // Create new ConnectedAgents objects.
-func NewConnectedAgents() *connectedAgentsData {
+func NewConnectedAgents(settings *AgentsSettings) *connectedAgentsData {
 	agents := connectedAgentsData{
+		Settings: settings,
 		AgentsMap: make(map[string]*Agent),
 	}
 	return &agents
@@ -67,7 +68,7 @@ func NewConnectedAgents() *connectedAgentsData {
 
 // Get settings related to agents.
 func (agents *connectedAgentsData) GetSettings() *AgentsSettings {
-	return &agents.Settings
+	return agents.Settings
 }
 
 

@@ -1,172 +1,258 @@
 <p-dialog header="New Machine" [(visible)]="newMachineDlgVisible">
-    IP Address:
-    <input type="text" pInputText [(ngModel)]="machineAddress" (keydown)="keyDownNewMachine(machinesTable, $event)" />
+    Address:
+    <input type="text" pInputText [(ngModel)]="machineAddress" (keydown)="keyDownNewMachine($event)" />
     <p-footer>
         <button type="button" (click)="cancelNewMachine()" pButton icon="pi pi-times" label="Cancel"></button>
-        <button type="button" (click)="addNewMachine(machinesTable)" pButton icon="pi pi-check" label="Add"></button>
+        <button type="button" (click)="addNewMachine()" pButton icon="pi pi-check" label="Add"></button>
     </p-footer>
 </p-dialog>
 
-<p-tabView [(activeIndex)]="activeTabIdx" (onChange)="tabChange($event)">
-    <p-tabPanel header="Machines">
-        <div style="display: flex; justify-content: space-between; margin: 10px;">
-            <!-- <div> -->
-            <!--   <span> -->
-            <!--     <i class="fa fa-search" style="margin:4px 4px 0 0"></i> -->
-            <!--     Filter machines: -->
-            <!--     <input type="text" pInputText [(ngModel)]="filterText" placeholder="name or ip" (keydown)="keyDownFilterText(machinesTable, $event)"/> -->
-            <!--   </span> -->
-            <!--   <span style="margin-left: 40px;"> -->
-            <!--     Service: -->
-            <!--     <p-dropdown [options]="serviceTypes" [(ngModel)]="selectedServiceType" optionLabel="name" (onChange)="filterByService(machinesTable)"></p-dropdown> -->
-            <!--   </span> -->
-            <!-- </div> -->
-            <div style="display: flex;">
-                <button
-                    type="button"
-                    pButton
-                    label="Add New Machine"
-                    icon="pi pi-plus"
-                    style="margin-right: 20px;"
-                    (click)="showNewMachineDlg()"
-                ></button>
-                <!-- <button type="button" pButton label="Refresh" icon="pi pi-refresh" (click)="refresh(machinesTable)"></button> -->
+<p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
+    <ng-template pTemplate="item" let-item let-i="index">
+        <div style="display: flex; justify-content: space-between;">
+            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em"></div>
+            <div class="ui-menuitem-text">
+                <b>{{ item.label }}</b>
             </div>
+            <div
+                class="ui-menuitem-icon pi pi-times"
+                style="font-size: 1.3rem"
+                (click)="closeTab($event, i)"
+                *ngIf="i !== 0"
+            ></div>
         </div>
+    </ng-template>
+</p-tabMenu>
 
+<!-- Machines tab -->
+<div *ngIf="activeTabIdx == 0">
+    <div style="display: flex; justify-content: space-between; margin: 10px;">
         <div>
-            <p-table
-                #machinesTable
-                [value]="machines"
-                [paginator]="true"
-                paginatorPosition="top"
-                [rows]="10"
-                [lazy]="true"
-                (onLazyLoad)="loadMachines($event)"
-                [totalRecords]="totalMachines"
-                [rowsPerPageOptions]="[10, 30, 100]"
-                [showCurrentPageReport]="true"
-                currentPageReportTemplate="{currentPage} of {totalPages} pages"
-            >
-                <ng-template pTemplate="header">
-                    <tr>
-                        <th>Hostname</th>
-                        <th style="width: 10rem;">IP Address</th>
-                        <th style="width: 7rem;">Agent Version</th>
-                        <th style="width: 7rem;">Service</th>
-                        <th style="width: 4rem;">CPUs</th>
-                        <th style="width: 8rem;">CPUs Load</th>
-                        <th style="width: 5rem;">Memory</th>
-                        <th style="width: 7rem;">Used Memory</th>
-                        <th style="width: 6rem;">Uptime</th>
-                        <th style="width: 10rem;">Last Visited</th>
-                        <th style="width: 13rem;">Error</th>
-                    </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-m>
-                    <tr>
-                        <td>
-                            <a routerLink="/machines/{{ m.hostname }}">{{ m.hostname }}</a>
-                        </td>
-                        <td>{{ m.address }}</td>
-                        <td>{{ m.agentVersion }}</td>
-                        <td>{{ m.service }}</td>
-                        <td>{{ m.cpus }}</td>
-                        <td>{{ m.cpusLoad }}</td>
-                        <td>{{ m.memory }}</td>
-                        <td><p-progressBar [value]="m.usedMemory"></p-progressBar></td>
-                        <td>{{ m.uptime || '?' }} days</td>
-                        <td>{{ m.lastVisited | localtime }}</td>
-                        <td>{{ m.error }}</td>
-                    </tr>
-                </ng-template>
-                <!-- <ng-template pTemplate="paginatorright" let-state> -->
-                <!--   Total: {{state.totalRecords}} machines -->
-                <!-- </ng-template> -->
-            </p-table>
+            <span>
+                <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
+                Filter machines:
+                <input
+                    type="text"
+                    pInputText
+                    [(ngModel)]="filterText"
+                    placeholder="name or any other field"
+                    (keydown)="keyDownFilterText(machinesTable, $event)"
+                />
+            </span>
+            <!-- <span style="margin-left: 40px;"> -->
+            <!--   Service: -->
+            <!--   <p-dropdown [options]="serviceTypes" [(ngModel)]="selectedServiceType" optionLabel="name" (onChange)="filterByService(machinesTable)"></p-dropdown> -->
+            <!-- </span> -->
         </div>
-    </p-tabPanel>
 
-    <p-tabPanel [header]="m.hostname || m.address" *ngFor="let m of individualMachines; let i = index">
-        <!-- [selected]="i == 0">-->
-        <table>
+        <div style="display: flex;">
+            <button
+                type="button"
+                pButton
+                label="Add New Machine"
+                icon="pi pi-plus"
+                style="margin-right: 20px;"
+                (click)="showNewMachineDlg()"
+            ></button>
+            <button
+                type="button"
+                pButton
+                label="Refresh"
+                icon="pi pi-refresh"
+                (click)="refreshMachinesList(machinesTable)"
+            ></button>
+        </div>
+    </div>
+
+    <p-menu #machineMenu [popup]="true" [model]="machineMenuItems"></p-menu>
+    <p-table
+        #machinesTable
+        [value]="machines"
+        [paginator]="true"
+        paginatorPosition="top"
+        [rows]="10"
+        [lazy]="true"
+        (onLazyLoad)="loadMachines($event)"
+        [totalRecords]="totalMachines"
+        [rowsPerPageOptions]="[10, 30, 100]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="{currentPage} of {totalPages} pages"
+    >
+        <ng-template pTemplate="header">
             <tr>
-                <td>Hostame</td>
-                <td>{{ m.hostname }}</td>
+                <th>Hostname</th>
+                <th style="width: 10rem;">Address</th>
+                <th style="width: 7rem;">Agent Version</th>
+                <th style="width: 7rem;">Service</th>
+                <th style="width: 4rem;">CPUs</th>
+                <th style="width: 8rem;">CPUs Load</th>
+                <th style="width: 5rem;">Memory</th>
+                <th style="width: 7rem;">Used Memory</th>
+                <th style="width: 6rem;">Uptime</th>
+                <th style="width: 10rem;">Last Visited</th>
+                <th style="width: 13rem;">Error</th>
+                <th style="width: 4rem;">Action</th>
             </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-m>
             <tr>
-                <td>IP Address</td>
+                <td>
+                    <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
+                </td>
                 <td>{{ m.address }}</td>
-            </tr>
-            <tr>
-                <td>Agent Version</td>
                 <td>{{ m.agentVersion }}</td>
-            </tr>
-            <!--          <tr><td>Service</td><td>{{m.}}</td></tr>-->
-            <tr>
-                <td>CPUs</td>
+                <td>{{ m.service }}</td>
                 <td>{{ m.cpus }}</td>
-            </tr>
-            <tr>
-                <td>CPUs Load</td>
                 <td>{{ m.cpusLoad }}</td>
-            </tr>
-            <tr>
-                <td>Memory</td>
-                <td>{{ m.memory || '?' }} GiB</td>
-            </tr>
-            <tr>
-                <td>Used Memory</td>
-                <td>{{ m.usedMemory }} %</td>
-            </tr>
-            <tr>
-                <td>Uptime</td>
+                <td>{{ m.memory }}</td>
+                <td><p-progressBar [value]="m.usedMemory"></p-progressBar></td>
                 <td>{{ m.uptime || '?' }} days</td>
-            </tr>
-            <tr>
-                <td>OS</td>
-                <td>{{ m.os }}</td>
-            </tr>
-            <tr>
-                <td>Platform Family</td>
-                <td>{{ m.platformFamily }}</td>
-            </tr>
-            <tr>
-                <td>Platform</td>
-                <td>{{ m.platform }}</td>
-            </tr>
-            <tr>
-                <td>Platform Version</td>
-                <td>{{ m.platformVersion }}</td>
-            </tr>
-            <tr>
-                <td>Kernel Version</td>
-                <td>{{ m.kernelVersion }}</td>
-            </tr>
-            <tr>
-                <td>Kernel Arch</td>
-                <td>{{ m.kernelArch }}</td>
-            </tr>
-            <tr>
-                <td>Virtualization Role</td>
-                <td>{{ m.virtualizationRole }}</td>
-            </tr>
-            <tr *ngIf="m.virtualizationRole == 'guest'">
-                <td>Virtualization System</td>
-                <td>{{ m.virtualizationSystem }}</td>
-            </tr>
-            <tr>
-                <td>Host ID</td>
-                <td>{{ m.hostID }}</td>
-            </tr>
-            <tr>
-                <td>Last Visited</td>
                 <td>{{ m.lastVisited | localtime }}</td>
+                <td>
+                    <p-message *ngIf="m.error" severity="error" text="{{ m.error }}"></p-message>
+                </td>
+                <td>
+                    <button
+                        type="button"
+                        pButton
+                        icon="pi pi-bars"
+                        (click)="showMachineMenu($event, machineMenu, m)"
+                    ></button>
+                </td>
             </tr>
-            <tr>
-                <td>Error</td>
-                <td>{{ m.error || '-' }}</td>
-            </tr>
-        </table>
-    </p-tabPanel>
-</p-tabView>
+        </ng-template>
+        <!-- <ng-template pTemplate="paginatorright" let-state> -->
+        <!--   Total: {{state.totalRecords}} machines -->
+        <!-- </ng-template> -->
+    </p-table>
+</div>
+
+<div *ngIf="activeTabIdx != 0" class="ui-widget">
+    <div style="display: flex; margin: 10px;">
+        <div style="min-width: 400px;">
+            <table>
+                <tr>
+                    <td>Hostame</td>
+                    <td>{{ machineTab.machine.hostname }}</td>
+                </tr>
+                <tr>
+                    <td>Address</td>
+                    <td>
+                        <p-inplace
+                            [(active)]="machineTab.activeInplace"
+                            [closable]="true"
+                            (onActivate)="editAddress(machineTab)"
+                        >
+                            <span pInplaceDisplay>
+                                {{ machineTab.machine.address }}
+                                <i
+                                    class="pi pi-pencil"
+                                    style="font-size: 1.5em; vertical-align: middle; margin-left: 5px;"
+                                ></i>
+                            </span>
+                            <span pInplaceContent>
+                                <input
+                                    type="text"
+                                    [(ngModel)]="machineTab.address"
+                                    pInputText
+                                    (keydown)="machineAddressKeyDown($event, machineTab)"
+                                />
+                                <button
+                                    pButton
+                                    type="button"
+                                    icon="pi pi-check"
+                                    class="ui-button-success"
+                                    (click)="saveMachine(machineTab)"
+                                ></button>
+                            </span>
+                        </p-inplace>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Agent Version</td>
+                    <td>{{ machineTab.machine.agentVersion }}</td>
+                </tr>
+                <!--          <tr><td>Service</td><td>{{machineTab.}}</td></tr>-->
+                <tr>
+                    <td>CPUs</td>
+                    <td>{{ machineTab.machine.cpus }}</td>
+                </tr>
+                <tr>
+                    <td>CPUs Load</td>
+                    <td>{{ machineTab.machine.cpusLoad }}</td>
+                </tr>
+                <tr>
+                    <td>Memory</td>
+                    <td>{{ machineTab.machine.memory || '?' }} GiB</td>
+                </tr>
+                <tr>
+                    <td>Used Memory</td>
+                    <td>{{ machineTab.machine.usedMemory }} %</td>
+                </tr>
+                <tr>
+                    <td>Uptime</td>
+                    <td>{{ machineTab.machine.uptime || '?' }} days</td>
+                </tr>
+                <tr>
+                    <td>OS</td>
+                    <td>{{ machineTab.machine.os }}</td>
+                </tr>
+                <tr>
+                    <td>Platform Family</td>
+                    <td>{{ machineTab.machine.platformFamily }}</td>
+                </tr>
+                <tr>
+                    <td>Platform</td>
+                    <td>{{ machineTab.machine.platform }}</td>
+                </tr>
+                <tr>
+                    <td>Platform Version</td>
+                    <td>{{ machineTab.machine.platformVersion }}</td>
+                </tr>
+                <tr>
+                    <td>Kernel Version</td>
+                    <td>{{ machineTab.machine.kernelVersion }}</td>
+                </tr>
+                <tr>
+                    <td>Kernel Arch</td>
+                    <td>{{ machineTab.machine.kernelArch }}</td>
+                </tr>
+                <tr>
+                    <td>Virtualization Role</td>
+                    <td>{{ machineTab.machine.virtualizationRole }}</td>
+                </tr>
+                <tr *ngIf="machineTab.machine.virtualizationRole == 'guest'">
+                    <td>Virtualization System</td>
+                    <td>{{ machineTab.machine.virtualizationSystem }}</td>
+                </tr>
+                <tr>
+                    <td>Host ID</td>
+                    <td>{{ machineTab.machine.hostID }}</td>
+                </tr>
+                <tr>
+                    <td>Last Visited</td>
+                    <td>{{ machineTab.machine.lastVisited | localtime }}</td>
+                </tr>
+                <tr>
+                    <td>Error</td>
+                    <td>
+                        <p-message
+                            *ngIf="machineTab.machine.error"
+                            severity="error"
+                            text="{{ machineTab.machine.error }}"
+                        ></p-message>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div style="margin-left: 40px;">
+            <button
+                type="button"
+                pButton
+                label="Refresh State"
+                icon="pi pi-refresh"
+                (click)="refreshMachineState(machineTab)"
+            ></button>
+        </div>
+    </div>
+</div>

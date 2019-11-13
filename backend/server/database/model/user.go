@@ -70,7 +70,7 @@ func (user *SystemUser) Persist(db *pg.DB) (err error, conflict bool) {
 		pgErr, ok := err.(pg.Error); if ok {
 			conflict = pgErr.IntegrityViolation()
 		}
-		errors.Wrapf(err, "database operation error while trying to persist user %s", user.Identity())
+		err = errors.Wrapf(err, "database operation error while trying to persist user %s", user.Identity())
 	}
 	return err, conflict
 }
@@ -90,7 +90,7 @@ func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 			return false, nil
 		}
 		// Other types of errors have to be logged properly.
-		errors.Wrapf(err, "database operation error while trying to authenticate user %s", user.Identity())
+		err = errors.Wrapf(err, "database operation error while trying to authenticate user %s", user.Identity())
 		return false, err
 	}
 
@@ -139,4 +139,3 @@ func GetUserById(db *dbops.PgDB, id int) (*SystemUser, error) {
 	}
 	return user, err
 }
-

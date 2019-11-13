@@ -21,7 +21,6 @@ import (
 	"isc.org/stork/server/gen/restapi/operations"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/database"
-	"isc.org/stork/server/database/migrations"
 	"isc.org/stork/server/database/session"
 )
 
@@ -44,13 +43,12 @@ type RestApiSettings struct {
 
 // Runtime information and settings for ReST API service.
 type RestAPI struct {
-	Settings       RestApiSettings
-	DBSettings     *dbops.DatabaseSettings
-
+	Settings       *RestApiSettings
+	DbSettings     *dbops.DatabaseSettings
+	Db             *dbops.PgDB
 	SessionManager *dbsession.SessionMgr
-	Agents       agentcomm.ConnectedAgents
-	PgDB           *pg.DB
 
+	Agents         agentcomm.ConnectedAgents
 
 	TLS            bool
 	srvListener    net.Listener
@@ -63,32 +61,21 @@ type RestAPI struct {
 }
 
 // Do API initialization.
-func NewRestAPI(database *dbops.DatabaseSettings, agents agentcomm.ConnectedAgents) (*RestAPI, error) {
-	r := &RestAPI{DBSettings: database, Agents: agents}
+func NewRestAPI(settings *RestApiSettings, dbSettings *dbops.DatabaseSettings, db *pg.DB, agents agentcomm.ConnectedAgents) (*RestAPI, error) {
+	r := &RestAPI{
+		Settings: settings,
+		DbSettings: dbSettings,
+		Db: db,
+		Agents: agents,
+	}
 	return r, nil
 }
 
 // Serve the API
 func (r *RestAPI) Serve() (err error) {
 
-	r.PgDB = pg.Connect(r.DBSettings.PgParams())
-	if !dbops.TestPgConnection(r.PgDB) {
-		log.Fatalf("unable to connect to the database using provided credentials")
-	}
-
-	// Ensure that the latest database schema is installed.
-	if oldVer, newVer, err := dbmigs.MigrateToLatest(r.PgDB); err != nil {
-		log.Fatalf("failed to migrate database schema to the latest version")
-
-	} else if oldVer != newVer {
-		log.WithFields(log.Fields{
-			"old-version": oldVer,
-			"new-version": newVer,
-		}).Info("successfully migrated database schema")
-	}
-
 	// Initialize sessions with access to the database.
-	sm, err := dbsession.NewSessionMgr(r.DBSettings);
+	sm, err := dbsession.NewSessionMgr(&r.DbSettings.BaseDatabaseSettings);
 	if err != nil {
 		return errors.Wrap(err, "unable to establish connection to the session database")
 	}
@@ -122,8 +109,6 @@ func (r *RestAPI) Serve() (err error) {
 			return err
 		}
 	}
-
-	defer r.PgDB.Close()
 
 	// set default handler, if none is set
 	if r.handler == nil {
@@ -229,11 +214,11 @@ func (r *RestAPI) Serve() (err error) {
 
 	log.WithFields(log.Fields{
 		"address": scheme + lstnr.Addr().String(),
-	}).Infof("Started serving Stork Server")
+	}).Infof("started serving Stork Server")
 	if err := httpServer.Serve(lstnr); err != nil && err != http.ErrServerClosed {
 		return errors.Wrap(err, "problem with serving")
 	}
-	log.Info("Stopped serving Stork Server")
+	log.Info("stopped serving Stork Server")
 
 	return nil
 }

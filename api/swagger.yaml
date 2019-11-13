@@ -224,7 +224,74 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
-  /machines/{address}/state:
+  /machines/{id}:
+    get:
+      summary: Get machine by ID.
+      description: Get machine by indicated ID.
+      operationId: getMachine
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: ID of machine.
+      responses:
+        200:
+          description: A machine
+          schema:
+            $ref: "#/definitions/Machine"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+    put:
+      summary: Update machine address.
+      description: Update machine's address.
+      operationId: updateMachine
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: ID of machine.
+        - name: machine
+          in: body
+          description: Machine details
+          schema:
+            $ref: '#/definitions/Machine'
+      responses:
+        200:
+          description: A machine
+          schema:
+            $ref: "#/definitions/Machine"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+    delete:
+      summary: Delete machine by Id
+      operationId: deleteMachine
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: ID of machine.
+      responses:
+        200:
+          description: Delete successful
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /machines/{id}/state:
     get:
       summary: Get machine's runtime state.
       operationId: getMachineState
@@ -232,10 +299,10 @@ paths:
         - Services
       parameters:
         - in: path
-          name: address
-          type: string
+          name: id
+          type: integer
           required: true
-          description: IP address of machine.
+          description: ID of machine.
       responses:
         200:
           description: Machine
@@ -331,6 +398,9 @@ definitions:
     required:
       - address
     properties:
+      id:
+        type: integer
+        readOnly: true
       address:
         type: string
       agentVersion:
@@ -403,8 +473,6 @@ definitions:
     required:
       - message
     properties:
-      code:
-        type: integer
       message:
         type: string
 

@@ -12,7 +12,8 @@ import (
 //go:generate mockgen -package=agentcomm -destination=api_mock.go isc.org/stork/api AgentClient
 
 func TestGetVersion(t *testing.T) {
-	agents := NewConnectedAgents()
+	settings := AgentsSettings{}
+	agents := NewConnectedAgents(&settings)
 
 	// pre-add an agent
 	addr := "127.0.0.1:8080"
