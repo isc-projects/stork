@@ -198,7 +198,7 @@ definitions:
       - id
       - login
       - email
-      - firstname
+      - name
       - lastname
     properties:
       id:
@@ -207,7 +207,7 @@ definitions:
         type: string
       email:
         type: string
-      firstname:
+      name:
         type: string
       lastname:
         type: string

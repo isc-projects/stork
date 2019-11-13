@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/go-pg/pg/v9"
+	"isc.org/stork/server/database"
 )
 
 // Represents a user held in system_user table in the database.
@@ -15,6 +16,15 @@ type SystemUser struct {
 	Name         string
 	Password     string `pg:"password_hash"`
 }
+
+type SystemUsers []SystemUser
+
+type SystemUserOrderBy int
+
+const (
+	SystemUserOrderById SystemUserOrderBy = iota
+	SystemUserOrderByLoginEmail
+)
 
 // Returns user's identity for logging purposes. It includes login, email or both.
 func (u *SystemUser) Identity() string {
@@ -83,5 +93,19 @@ func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 	// as an indication that the old password must be preserved.
 	user.Password = ""
 	return true, err
+}
+
+// Fetches a collection of users from the database. The offset and limit specify the
+// beginning of the page and the maximum size of the page. If these values are set
+// to 0, all users are returned.
+func GetUsers(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users SystemUsers, err error) {
+	switch order {
+	case SystemUserOrderByLoginEmail:
+		err = db.Model(&users).OrderExpr("login ASC").OrderExpr("email ASC").Offset(offset).Limit(limit).Select()
+	default:
+		err = db.Model(&users).OrderExpr("id ASC").Offset(offset).Limit(limit).Select()
+	}
+
+	return users, err
 }
 
