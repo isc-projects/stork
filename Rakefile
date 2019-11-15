@@ -9,11 +9,36 @@ GOLANGCILINT_VER = '1.21.0'
 GO_VER = '1.13.1'
 PROTOC_VER = '3.10.0'
 
+# Check host OS
+UNAME=`uname -s`
+
+case UNAME.rstrip
+  when "Darwin"
+    OS="macos"
+    SWAGGER_BIN="swagger_darwin_amd64"
+    GO_BIN="darwin-amd64.tar.gz"
+    PROTOC_ZIP_SUFFIX="osx-x86_64.zip"
+  when "Linux"
+    OS="linux"
+    SWAGGER_BIN="swagger_linux_amd64"
+    GO_BIN="linux-amd64.tar.gz"
+    PROTOC_ZIP_SUFFIX="linux-x86_64.zip"
+  when "FreeBSD"
+    OS="FreeBSD"
+    SWAGGER_BIN=""
+    # Problem here: There are no packages for swagger for FreeBSD
+    puts "There are no FreeBSD packages for SWAGGER_BIN"
+  else
+    puts "Unknown OS: %s" % UNAME
+    fail
+  end
+puts "Detected OS: %s" % OS
+
 # Tool URLs
-GOSWAGGER_URL = "https://github.com/go-swagger/go-swagger/releases/download/#{GOSWAGGER_VER}/swagger_linux_amd64"
+GOSWAGGER_URL = "https://github.com/go-swagger/go-swagger/releases/download/#{GOSWAGGER_VER}/#{SWAGGER_BIN}"
 GOLANGCILINT_URL = "https://github.com/golangci/golangci-lint/releases/download/v#{GOLANGCILINT_VER}/golangci-lint-#{GOLANGCILINT_VER}-linux-amd64.tar.gz"
-GO_URL = "https://dl.google.com/go/go#{GO_VER}.linux-amd64.tar.gz"
-PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v#{PROTOC_VER}/protoc-#{PROTOC_VER}-linux-x86_64.zip"
+GO_URL = "https://dl.google.com/go/go#{GO_VER}.#{GO_BIN}"
+PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v#{PROTOC_VER}/protoc-#{PROTOC_VER}-#{PROTOC_ZIP_SUFFIX}"
 PROTOC_GEN_GO_URL = 'github.com/golang/protobuf/protoc-gen-go'
 SWAGGER_CODEGEN_URL = "http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/#{SWAGGER_CODEGEN_VER}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
 NODE_URL = "https://nodejs.org/dist/v#{NODE_VER}/node-v#{NODE_VER}-linux-x64.tar.xz"
