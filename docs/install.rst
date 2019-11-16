@@ -86,9 +86,9 @@ Now you need to build the migrations and use it to initialize and upgrade the DB
     $ backend/cmd/stork-db-migrate/stork-db-migrate init
     $ backend/cmd/stork-db-migrate/stork-db-migrate up
 
-Now you have the database environment, now you should build all the tools. Note it will download all the
-dependencies needed and install it in a local directory. This is done only once and is not needed for
-future rebuilds.
+Now that you have the database environment set up, the next step is to build all the tools. Note the first
+command will download some missing dependencies needed and will install it in a local directory. This is
+done only once and is not needed for future rebuilds. However, it's safe to rerun the command.
 
 .. code-block:: console
 
@@ -98,7 +98,8 @@ future rebuilds.
     $ rake build_server
     $ rake build_ui
 
-The environment should be ready to run! Open 3 consoles, and run the following 3 commands:
+The environment should be ready to run! Open 3 consoles, and run the following 3 commands, one in each
+console:
 
 .. code-block:: console
 
@@ -106,4 +107,4 @@ The environment should be ready to run! Open 3 consoles, and run the following 3
     $ rake serve_ui
     $ rake run_agent
 
-Once all is done, go ahead and connect to http://localhost:4200.
+Once all three processes are running, go ahead and connect to http://localhost:4200 with your web browser.
