@@ -24,6 +24,9 @@ For ease of deployment, Stork uses Rake to automate compilation and installation
 requires Docker, but soon it will be optional. Technically, you can see how all Stork elements are
 built and conduct all of those steps manually (without using docker).
 
+Installation using Docker
+=========================
+
 The following command will retrieve all required software (go, goswagger, nodejs, Angular
 dependencies, etc.) to local directory. No root password necessary.
 
@@ -48,3 +51,59 @@ any browser to connect.
 There are several other rake targets. For a complete list of available tasks, use `rake -T`.
 Also see `wiki <https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment#building-testing-and-running-stork>`_
 for detailed build instructions.
+
+Native Installation
+===================
+
+The following steps will install Stork and its dependencies natively, i.e. on the host machine
+rather than using Docker images.
+
+First, you need to install PostgreSQL. This is OS specific. Please follow up the instructions for your
+system.
+
+.. code-block:: console
+
+    $ psql postgres
+    psql (11.5)
+    Type "help" for help.
+
+    postgres=# CREATE USER stork WITH PASSWORD 'stork';
+    CREATE ROLE
+    postgres=# CREATE DATABASE stork;
+    CREATE DATABASE
+    postgres=# GRANT ALL PRIVILEGES ON DATABASE stork TO stork;
+    GRANT
+    postgres=# \c stork
+    You are now connected to database "stork" as user "thomson".
+    stork=# create extension pgcrypto;
+    CREATE EXTENSION
+
+Now you need to build the migrations and use it to initialize and upgrade the DB to the latest schema:
+
+.. code-block:: console
+
+    $ rake build_migrations
+    $ backend/cmd/stork-db-migrate/stork-db-migrate init
+    $ backend/cmd/stork-db-migrate/stork-db-migrate up
+
+Now you have the database environment, now you should build all the tools. Note it will download all the
+dependencies needed and install it in a local directory. This is done only once and is not needed for
+future rebuilds.
+
+.. code-block:: console
+
+    $ rake prepare_env
+    $ rake build_agent
+    $ rake build_backend
+    $ rake build_server
+    $ rake build_ui
+
+The environment should be ready to run! Open 3 consoles, and run the following 3 commands:
+
+.. code-block:: console
+
+    $ rake run_server
+    $ rake serve_ui
+    $ rake run_agent
+
+Once all is done, go ahead and connect to http://localhost:4200.
