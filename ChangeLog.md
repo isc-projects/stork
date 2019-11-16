@@ -1,3 +1,9 @@
+* 13 [build] tomek
+
+    Extended the build system to be able to run on MacOS. Also updated
+    installation instructions regarding how to build and run Stork natively.
+    (Gitlab #87)
+
 * 12 [func] marcin
 
     Enabled creation and editing of Stork user accounts in the UI.
