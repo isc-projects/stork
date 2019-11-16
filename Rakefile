@@ -20,6 +20,8 @@ case UNAME.rstrip
     PROTOC_ZIP_SUFFIX="osx-x86_64"
     NODE_SUFFIX="darwin-x64"
     GOLANGCILINT_SUFFIX="darwin-amd64"
+    puts "WARNING: MacOS is not officially supported, the provisions for building on MacOS are made"
+    puts "WARNING: for the developers' convenience only."
   when "Linux"
     OS="linux"
     SWAGGER_BIN="swagger_linux_amd64"
@@ -29,16 +31,17 @@ case UNAME.rstrip
     GOLANGCILINT_SUFFIX="linux-amd64"
   when "FreeBSD"
     OS="FreeBSD"
+    # TODO: there are no swagger built packages for FreeBSD
     SWAGGER_BIN=""
-    # Problem here: there are no swagger built packages for FreeBSD
-    puts "There are no FreeBSD packages for SWAGGER_BIN"
+    puts "WARNING: There are no FreeBSD packages for SWAGGER_BIN"
     GO_SUFFIX="freebsd-amd64"
-    # Problem here: there are no protoc built packages for FreeBSD (at least as of 3.10.0)
+    # TODO: there are no protoc built packages for FreeBSD (at least as of 3.10.0)
     PROTOC_ZIP_SUFFIX=""
+    puts "WARNING: There are no protoc packages built for FreeBSD"
     NODE_SUFFIX="node-v10.16.3.tar.xz"
     GOLANGCILINT_SUFFIX="freebsd-amd64"
   else
-    puts "Unknown OS: %s" % UNAME
+    puts "ERROR: Unknown/unsupported OS: %s" % UNAME
     fail
   end
 
