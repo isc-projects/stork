@@ -16,46 +16,54 @@ case UNAME.rstrip
   when "Darwin"
     OS="macos"
     SWAGGER_BIN="swagger_darwin_amd64"
-    GO_BIN="darwin-amd64.tar.gz"
-    PROTOC_ZIP_SUFFIX="osx-x86_64.zip"
+    GO_SUFFIX="darwin-amd64"
+    PROTOC_ZIP_SUFFIX="osx-x86_64"
+    NODE_SUFFIX="darwin-x64"
+    GOLANGCILINT_SUFFIX="darwin-amd64"
   when "Linux"
     OS="linux"
     SWAGGER_BIN="swagger_linux_amd64"
-    GO_BIN="linux-amd64.tar.gz"
-    PROTOC_ZIP_SUFFIX="linux-x86_64.zip"
+    GO_SUFFIX="linux-amd64"
+    PROTOC_ZIP_SUFFIX="linux-x86_64"
+    NODE_SUFFIX="linux-x64"
+    GOLANGCILINT_SUFFIX="linux-amd64"
   when "FreeBSD"
     OS="FreeBSD"
     SWAGGER_BIN=""
-    # Problem here: There are no packages for swagger for FreeBSD
+    # Problem here: there are no swagger built packages for FreeBSD
     puts "There are no FreeBSD packages for SWAGGER_BIN"
+    GO_SUFFIX="freebsd-amd64"
+    # Problem here: there are no protoc built packages for FreeBSD (at least as of 3.10.0)
+    PROTOC_ZIP_SUFFIX=""
+    NODE_SUFFIX="node-v10.16.3.tar.xz"
+    GOLANGCILINT_SUFFIX="freebsd-amd64"
   else
     puts "Unknown OS: %s" % UNAME
     fail
   end
-puts "Detected OS: %s" % OS
 
 # Tool URLs
 GOSWAGGER_URL = "https://github.com/go-swagger/go-swagger/releases/download/#{GOSWAGGER_VER}/#{SWAGGER_BIN}"
-GOLANGCILINT_URL = "https://github.com/golangci/golangci-lint/releases/download/v#{GOLANGCILINT_VER}/golangci-lint-#{GOLANGCILINT_VER}-linux-amd64.tar.gz"
-GO_URL = "https://dl.google.com/go/go#{GO_VER}.#{GO_BIN}"
-PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v#{PROTOC_VER}/protoc-#{PROTOC_VER}-#{PROTOC_ZIP_SUFFIX}"
+GOLANGCILINT_URL = "https://github.com/golangci/golangci-lint/releases/download/v#{GOLANGCILINT_VER}/golangci-lint-#{GOLANGCILINT_VER}-#{GOLANGCILINT_SUFFIX}.tar.gz"
+GO_URL = "https://dl.google.com/go/go#{GO_VER}.#{GO_SUFFIX}.tar.gz"
+PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v#{PROTOC_VER}/protoc-#{PROTOC_VER}-#{PROTOC_ZIP_SUFFIX}.zip"
 PROTOC_GEN_GO_URL = 'github.com/golang/protobuf/protoc-gen-go'
 SWAGGER_CODEGEN_URL = "http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/#{SWAGGER_CODEGEN_VER}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
-NODE_URL = "https://nodejs.org/dist/v#{NODE_VER}/node-v#{NODE_VER}-linux-x64.tar.xz"
+NODE_URL = "https://nodejs.org/dist/v#{NODE_VER}/node-v#{NODE_VER}-#{NODE_SUFFIX}.tar.xz"
 MOCKERY_URL = 'github.com/vektra/mockery/.../'
 MOCKGEN_URL = 'github.com/golang/mock/mockgen'
 RICHGO_URL = 'github.com/kyoh86/richgo'
 
 # Tools and Other Paths
 TOOLS_DIR = File.expand_path('tools')
-NPX = "#{TOOLS_DIR}/node-v#{NODE_VER}-linux-x64/bin/npx"
+NPX = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin/npx"
 SWAGGER_CODEGEN = "#{TOOLS_DIR}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
-GOSWAGGER = "#{TOOLS_DIR}/swagger_linux_amd64"
+GOSWAGGER = "#{TOOLS_DIR}/#{SWAGGER_BIN}"
 NG = File.expand_path('webui/node_modules/.bin/ng')
 GOHOME_DIR = File.expand_path('~/go')
 GOBIN = "#{GOHOME_DIR}/bin"
 GO = "#{TOOLS_DIR}/go/bin/go"
-GOLANGCILINT = "#{TOOLS_DIR}/golangci-lint-#{GOLANGCILINT_VER}-linux-amd64/golangci-lint"
+GOLANGCILINT = "#{TOOLS_DIR}/golangci-lint-#{GOLANGCILINT_VER}-#{GOLANGCILINT_SUFFIX}/golangci-lint"
 PROTOC = "#{TOOLS_DIR}/protoc/bin/protoc"
 PROTOC_GEN_GO = "#{GOBIN}/protoc-gen-go"
 MOCKERY = "#{GOBIN}/mockery"
@@ -63,7 +71,7 @@ MOCKGEN = "#{GOBIN}/mockgen"
 RICHGO = "#{GOBIN}/richgo"
 
 # Patch PATH env
-ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-linux-x64/bin:#{ENV['PATH']}"
+ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{TOOLS_DIR}/go/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
 
