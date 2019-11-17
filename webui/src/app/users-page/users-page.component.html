@@ -1,85 +1,153 @@
-<p-tabView [(activeIndex)]="activeTabIdx" (onChange)="tabChange($event)">
-    <p-tabPanel header="Users">
-        <div style="display: flex; justify-content: space-between; margin: 10px;">
-            <!-- <div> -->
-            <!--   <span> -->
-            <!--     <i class="fa fa-search" style="margin:4px 4px 0 0"></i> -->
-            <!--     Filter machines: -->
-            <!--     <input type="text" pInputText [(ngModel)]="filterText" placeholder="name or ip" (keydown)="keyDownFilterText(machinesTable, $event)"/> -->
-            <!--   </span> -->
-            <!--   <span style="margin-left: 40px;"> -->
-            <!--     Service: -->
-            <!--     <p-dropdown [options]="serviceTypes" [(ngModel)]="selectedServiceType" optionLabel="name" (onChange)="filterByService(machinesTable)"></p-dropdown> -->
-            <!--   </span> -->
-            <!-- </div> -->
-            <div style="display: flex;">
-                <button
-                    type="button"
-                    pButton
-                    label="Add New User Account"
-                    icon="pi pi-plus"
-                    style="margin-right: 20px;"
-                    (click)="showNewUserDlg()"
-                ></button>
-                <!-- <button type="button" pButton label="Refresh" icon="pi pi-refresh" (click)="refresh(machinesTable)"></button> -->
+<p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
+    <ng-template pTemplate="item" let-item let-i="index">
+        <div style="display: flex; justify-content: space-between;">
+            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em"></div>
+            <div class="ui-menuitem-text">
+                <b>{{ item.label }}</b>
             </div>
+            <div
+                class="ui-menuitem-icon pi pi-times"
+                style="font-size: 1.3rem"
+                (click)="closeTab($event, i)"
+                *ngIf="i !== 0"
+            ></div>
         </div>
+    </ng-template>
+</p-tabMenu>
 
+<!-- Machines tab -->
+<div *ngIf="activeTabIdx == 0">
+    <div style="display: flex; justify-content: space-between; margin: 10px;">
         <div>
-            <p-table
-                #usersTable
-                [value]="users"
-                [paginator]="true"
-                paginatorPosition="top"
-                [rows]="10"
-                [lazy]="true"
-                (onLazyLoad)="loadUsers($event)"
-                [totalRecords]="totalUsers"
-                [rowsPerPageOptions]="[10, 30, 100]"
-                [showCurrentPageReport]="true"
-                currentPageReportTemplate="{currentPage} of {totalPages} pages"
-            >
-                <ng-template pTemplate="header">
-                    <tr>
-                        <th>Login</th>
-                        <th>Email</th>
-                        <th>Firstname</th>
-                        <th>Lastname</th>
-                    </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-u>
-                    <tr>
-                        <td>{{ u.login }}</td>
-                        <td>{{ u.email }}</td>
-                        <td>{{ u.lastname }}</td>
-                        <td>{{ u.firstname }}</td>
-                    </tr>
-                </ng-template>
-                <!-- <ng-template pTemplate="paginatorright" let-state> -->
-                <!--   Total: {{state.totalRecords}} machines -->
-                <!-- </ng-template> -->
-            </p-table>
+            <span>
+                <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
+                Filter machines:
+                <input
+                    type="text"
+                    pInputText
+                    [(ngModel)]="filterText"
+                    placeholder="name or any other field"
+                    (keydown)="keyDownFilterText(usersTable, $event)"
+                />
+            </span>
         </div>
-    </p-tabPanel>
 
-    <!--    <p-tabPanel [header]="u.login || u.email" *ngFor="let u of individualUsers; let i = index">
-         <table>
+        <div style="display: flex;">
+            <button
+                type="button"
+                pButton
+                label="Create UserAccount"
+                icon="pi pi-plus"
+                style="margin-right: 20px;"
+                (click)="showNewUserTab()"
+            ></button>
+        </div>
+    </div>
+
+    <p-menu #userMenu [popup]="true" [model]="userMenuItems"></p-menu>
+    <p-table
+        #usersTable
+        [value]="users"
+        [paginator]="true"
+        paginatorPosition="top"
+        [rows]="10"
+        [lazy]="true"
+        (onLazyLoad)="loadUsers($event)"
+        [totalRecords]="totalUsers"
+        [rowsPerPageOptions]="[10, 30, 100]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="{currentPage} of {totalPages} pages"
+    >
+        <ng-template pTemplate="header">
             <tr>
-                <td>Login</td>
-                <td>{{ u.login }}</td>
+              <th>Login</th>
+              <th>Email</th>
+              <th>Firstname</th>
+              <th>Lastname</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-u>
+            <tr>
+              <td align="center">
+                <a routerLink="/users/{{ u.id }}">{{ u.login }}</a>
+              </td>
+              <td align="center">
+                <a routerLink="/users/{{ u.id }}">{{ u.email }}</a>
+              </td>
+              <td align="center">{{ u.lastname }}</td>
+              <td align="center">{{ u.firstname }}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<div *ngIf="existingUserTab" class="ui-widget">
+    <div style="display: flex; margin: 10px;">
+        <div style="min-width: 300px;">
+          <table>
+            <tr>
+              <td>Login</td>
+              <td>{{ userTab.user.login }}</td>
             </tr>
             <tr>
-                <td>Email</td>
-                <td>{{ u.email }}</td>
+              <td>Email</td>
+              <td>{{ userTab.user.email }}</td>
             </tr>
             <tr>
-                <td>Lastname</td>
-                <td>{{ u.lastname }}</td>
+              <td>Lastname</td>
+              <td>{{ userTab.user.lastname }}</td>
             </tr>
             <tr>
-                <td>Firstname</td>
-                <td>{{ u.firstname }}</td>
+              <td>Firstname</td>
+              <td>{{ userTab.user.firstname }}</td>
             </tr>
-        </table>
-    </p-tabPanel> -->
-</p-tabView>
+          </table>
+        </div>
+        <div style="margin-left: 40px;">
+          <button
+            type="button"
+            pButton
+            label="Edit"
+            icon="pi pi-pencil"
+            (click)="editUserInfo(userTab)"
+            ></button>
+        </div>
+     </div>
+</div>
+
+<div *ngIf="newUserTab" class="ui-widget">
+  <div style="display: flex; margin: 10px;">
+    <div style="min-width: 400px;">
+      <form [formGroup]="newUserForm">
+        <div>
+          <label for="userlogin">Login</label>
+          <input type="text" formControlName="userlogin" placeholder="stork82" style="width: 100%;" />
+        </div>
+
+        <div style="margin-top: 10px;">
+          <label for="useremail">Email</label>
+          <input type="text" formControlName="useremail" placeholder="jstork@example.org" style="width: 100%;" />
+        </div>
+
+        <div style="margin-top: 10px;">
+          <label for="userfirst">First Name</label>
+          <input type="text" formControlName="userfirst" placeholder="John" style="width: 100%;" />
+        </div>
+
+        <div style="margin-top: 10px;">
+          <label for="userlast">Last Name</label>
+          <input type="text" formControlName="userlast" placeholder="Stork" style="width: 100%;" />
+        </div>
+
+        <div style="margin-top: 10px;">
+          <button
+            type="button"
+            pButton
+            label="Submit"
+            icon="pi pi-pencil"
+            ></button>
+        </div>
+      </form>
+    </div>
+    </div>
+</div>

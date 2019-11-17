@@ -20,6 +20,10 @@ import { InputTextModule } from 'primeng/inputtext'
 import { DropdownModule } from 'primeng/dropdown'
 import { MessageService } from 'primeng/api'
 import { ToastModule } from 'primeng/toast'
+import { MessageModule } from 'primeng/message'
+import { TabMenuModule } from 'primeng/tabmenu'
+import { MenuModule } from 'primeng/menu'
+import { InplaceModule } from 'primeng/inplace'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -79,6 +83,10 @@ export function cfgFactory() {
         InputTextModule,
         DropdownModule,
         ToastModule,
+        MessageModule,
+        TabMenuModule,
+        MenuModule,
+        InplaceModule,
     ],
     providers: [
         {

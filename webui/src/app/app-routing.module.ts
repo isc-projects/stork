@@ -41,6 +41,11 @@ const routes: Routes = [
         canActivate: [AuthGuard],
     },
     {
+        path: 'users/new',
+        component: UsersPageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
         path: 'swagger-ui',
         component: SwaggerUiComponent,
         canActivate: [AuthGuard],
