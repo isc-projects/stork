@@ -5,6 +5,7 @@ import { MenubarModule } from 'primeng/menubar'
 import { MenuItem } from 'primeng/api'
 
 import { AuthService, User } from './auth.service'
+import { LoadingService } from './loading.service'
 
 @Component({
     selector: 'app-root',
@@ -14,14 +15,18 @@ import { AuthService, User } from './auth.service'
 export class AppComponent implements OnInit {
     title = 'Stork'
     currentUser = null
+    loadingInProgress: any
 
     menuItems: MenuItem[]
 
-    constructor(private router: Router, private auth: AuthService) {
+    constructor(private router: Router,
+                private auth: AuthService,
+                private loadingService: LoadingService) {
         this.auth.currentUser.subscribe(x => (this.currentUser = x))
     }
 
     ngOnInit() {
+        this.loadingInProgress = this.loadingService.getState()
         this.menuItems = [
             {
                 label: 'Configuration',

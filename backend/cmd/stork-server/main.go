@@ -26,8 +26,7 @@ func main() {
 		// 	FieldKeyMsg:   "@message",
 		// },
 		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-			//s := strings.Split(f.Function, ".")
-			//funcname := s[len(s)-1]
+			// Grab filename and line of current frame and add it to log entry
 			_, filename := path.Split(f.File)
 			return "", fmt.Sprintf("%20v:%-5d", filename, f.Line)
 		},

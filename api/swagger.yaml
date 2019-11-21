@@ -227,7 +227,7 @@ paths:
   /machines/{id}:
     get:
       summary: Get machine by ID.
-      description: Get machine by indicated ID.
+      description: Get machine by the database specific ID.
       operationId: getMachine
       tags:
         - Services
@@ -236,7 +236,7 @@ paths:
           name: id
           type: integer
           required: true
-          description: ID of machine.
+          description: Machine ID.
       responses:
         200:
           description: A machine
@@ -247,8 +247,8 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
     put:
-      summary: Update machine address.
-      description: Update machine's address.
+      summary: Update machine information.
+      description: Update machine information, e.g. IP address.
       operationId: updateMachine
       tags:
         - Services
@@ -257,7 +257,7 @@ paths:
           name: id
           type: integer
           required: true
-          description: ID of machine.
+          description: Machine ID.
         - name: machine
           in: body
           description: Machine details
@@ -265,7 +265,7 @@ paths:
             $ref: '#/definitions/Machine'
       responses:
         200:
-          description: A machine
+          description: Machine information.
           schema:
             $ref: "#/definitions/Machine"
         default:
@@ -282,7 +282,7 @@ paths:
           name: id
           type: integer
           required: true
-          description: ID of machine.
+          description: Machine ID.
       responses:
         200:
           description: Delete successful
@@ -302,7 +302,7 @@ paths:
           name: id
           type: integer
           required: true
-          description: ID of machine.
+          description: Machine ID.
       responses:
         200:
           description: Machine

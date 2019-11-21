@@ -2,12 +2,15 @@ package restservice
 
 import (
 	"fmt"
+	"net"
 	"time"
 	"context"
+	"net/url"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/pkg/errors"
 
 	"isc.org/stork"
 	"isc.org/stork/server/database"
@@ -54,7 +57,9 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
-	state, err := r.Agents.GetState(dbMachine.Address)
+	ctx2, cancel := context.WithTimeout(ctx, 2 * time.Second)
+	defer cancel()
+	state, err := r.Agents.GetState(ctx2, dbMachine.Address)
 	if err != nil {
 		log.Warn(err)
 		dbMachine.Error = "cannot get state of machine"
@@ -161,8 +166,38 @@ func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachinePara
 	return rsp
 }
 
+func checkMachineAddress(address string) (string, error, string) {
+	// Use net/url to parse the address. Trick: pretend http url address.
+	// This way we can parse any case of address:
+	// - localhost
+	// - localhost:8080
+	// - 127.0.0.1:8080
+	// - [2001:0db8:85a3:0000:0000:8a2e:0370:7334]:8080
+	httpAddr := "http://" + strings.TrimSpace(address)
+	u, err := url.Parse(httpAddr)
+	if err != nil {
+		return "", errors.Wrapf(err, "problem with parsing address %v", address), "cannot parse address"
+	}
+	host := u.Hostname()
+	port := u.Port()
+	if port == "" {
+		port = stork.DEFAULT_AGENT_PORT
+	}
+
+	return net.JoinHostPort(host, port), nil, ""
+}
+
 // Get one machine by ID where Stork Agent is running.
 func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachineParams) middleware.Responder {
+	address, err, errStr := checkMachineAddress(*params.Machine.Address)
+	if err != nil {
+		log.Warn(err)
+		rsp := services.NewUpdateMachineDefault(400).WithPayload(&models.APIError{
+			Message: &errStr,
+		})
+		return rsp
+	}
+
 	dbMachine, err := dbmodel.GetMachineById(r.Db, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
@@ -179,7 +214,21 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		})
 		return rsp
 	}
-	dbMachine.Address = *params.Machine.Address
+
+	// check if there is no duplicate
+	if dbMachine.Address != address {
+		dbMachine2, err := dbmodel.GetMachineByAddress(r.Db, address, false)
+		if err == nil && dbMachine2.Id != dbMachine.Id {
+			msg := fmt.Sprintf("machine with address %s already exists", *params.Machine.Address)
+			rsp := services.NewUpdateMachineDefault(400).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+	}
+
+	// copy fields
+	dbMachine.Address = address
 	err = r.Db.Update(dbMachine)
 	if err != nil {
 		msg := fmt.Sprintf("cannot update machine with id %d in db", params.ID)
@@ -195,22 +244,22 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 }
 
 func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcomm.State) error {
-	dbMachine.AgentVersion = m.AgentVersion
-	dbMachine.Cpus = m.Cpus
-	dbMachine.CpusLoad = m.CpusLoad
-	dbMachine.Memory = m.Memory
-	dbMachine.Hostname = m.Hostname
-	dbMachine.Uptime = m.Uptime
-	dbMachine.UsedMemory = m.UsedMemory
-	dbMachine.Os = m.Os
-	dbMachine.Platform = m.Platform
-	dbMachine.PlatformFamily = m.PlatformFamily
-	dbMachine.PlatformVersion = m.PlatformVersion
-	dbMachine.KernelVersion = m.KernelVersion
-	dbMachine.KernelArch = m.KernelArch
-	dbMachine.VirtualizationSystem = m.VirtualizationSystem
-	dbMachine.VirtualizationRole = m.VirtualizationRole
-	dbMachine.HostID = m.HostID
+	dbMachine.State.AgentVersion = m.AgentVersion
+	dbMachine.State.Cpus = m.Cpus
+	dbMachine.State.CpusLoad = m.CpusLoad
+	dbMachine.State.Memory = m.Memory
+	dbMachine.State.Hostname = m.Hostname
+	dbMachine.State.Uptime = m.Uptime
+	dbMachine.State.UsedMemory = m.UsedMemory
+	dbMachine.State.Os = m.Os
+	dbMachine.State.Platform = m.Platform
+	dbMachine.State.PlatformFamily = m.PlatformFamily
+	dbMachine.State.PlatformVersion = m.PlatformVersion
+	dbMachine.State.KernelVersion = m.KernelVersion
+	dbMachine.State.KernelArch = m.KernelArch
+	dbMachine.State.VirtualizationSystem = m.VirtualizationSystem
+	dbMachine.State.VirtualizationRole = m.VirtualizationRole
+	dbMachine.State.HostID = m.HostID
 	dbMachine.LastVisited = m.LastVisited
 	dbMachine.Error = m.Error
 	return db.Update(dbMachine)
@@ -220,22 +269,22 @@ func MachineToRestApi(dbMachine dbmodel.Machine) *models.Machine {
 	m := models.Machine{
 		ID: int64(dbMachine.Id),
 		Address: &dbMachine.Address,
-		AgentVersion: dbMachine.AgentVersion,
-		Cpus: dbMachine.Cpus,
-		CpusLoad: dbMachine.CpusLoad,
-		Memory: dbMachine.Memory,
-		Hostname: dbMachine.Hostname,
-		Uptime: dbMachine.Uptime,
-		UsedMemory: dbMachine.UsedMemory,
-		Os: dbMachine.Os,
-		Platform: dbMachine.Platform,
-		PlatformFamily: dbMachine.PlatformFamily,
-		PlatformVersion: dbMachine.PlatformVersion,
-		KernelVersion: dbMachine.KernelVersion,
-		KernelArch: dbMachine.KernelArch,
-		VirtualizationSystem: dbMachine.VirtualizationSystem,
-		VirtualizationRole: dbMachine.VirtualizationRole,
-		HostID: dbMachine.HostID,
+		AgentVersion: dbMachine.State.AgentVersion,
+		Cpus: dbMachine.State.Cpus,
+		CpusLoad: dbMachine.State.CpusLoad,
+		Memory: dbMachine.State.Memory,
+		Hostname: dbMachine.State.Hostname,
+		Uptime: dbMachine.State.Uptime,
+		UsedMemory: dbMachine.State.UsedMemory,
+		Os: dbMachine.State.Os,
+		Platform: dbMachine.State.Platform,
+		PlatformFamily: dbMachine.State.PlatformFamily,
+		PlatformVersion: dbMachine.State.PlatformVersion,
+		KernelVersion: dbMachine.State.KernelVersion,
+		KernelArch: dbMachine.State.KernelArch,
+		VirtualizationSystem: dbMachine.State.VirtualizationSystem,
+		VirtualizationRole: dbMachine.State.VirtualizationRole,
+		HostID: dbMachine.State.HostID,
 		LastVisited: strfmt.DateTime(dbMachine.LastVisited),
 		Error: dbMachine.Error,
 	}
@@ -244,11 +293,18 @@ func MachineToRestApi(dbMachine dbmodel.Machine) *models.Machine {
 
 // Add a machine where Stork Agent is running.
 func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachineParams) middleware.Responder {
-	addr := params.Machine.Address
+	addr, err, errStr := checkMachineAddress(*params.Machine.Address)
+	if err != nil {
+		log.Warn(err)
+		rsp := services.NewCreateMachineDefault(400).WithPayload(&models.APIError{
+			Message: &errStr,
+		})
+		return rsp
+	}
 
-	dbMachine, err := dbmodel.GetMachineByAddress(r.Db, *addr, true)
+	dbMachine, err := dbmodel.GetMachineByAddress(r.Db, addr, true)
 	if err == nil && dbMachine != nil && dbMachine.Deleted.IsZero() {
-		msg := fmt.Sprintf("machine %s already exists", *addr)
+		msg := fmt.Sprintf("machine %s already exists", addr)
 		log.Warnf(msg)
 		rsp := services.NewCreateMachineDefault(400).WithPayload(&models.APIError{
 			Message: &msg,
@@ -257,10 +313,10 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	}
 
 	if dbMachine == nil {
-		dbMachine = &dbmodel.Machine{Address: *addr}
+		dbMachine = &dbmodel.Machine{Address: addr}
 		err = dbmodel.AddMachine(r.Db, dbMachine)
 		if err != nil {
-			msg := fmt.Sprintf("cannot store machine %s", *addr)
+			msg := fmt.Sprintf("cannot store machine %s", addr)
 			log.Error(err)
 			rsp := services.NewCreateMachineDefault(500).WithPayload(&models.APIError{
 				Message: &msg,
@@ -271,7 +327,9 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		dbMachine.Deleted = time.Time{}
 	}
 
-	state, err := r.Agents.GetState(*addr)
+	ctx2, cancel := context.WithTimeout(ctx, 100 * time.Second)
+	defer cancel()
+	state, err := r.Agents.GetState(ctx2, addr)
 	if err != nil {
 		log.Warn(err)
 		dbMachine.Error = "cannot get state of machine"
@@ -288,7 +346,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	if err != nil {
 		rsp := services.NewCreateMachineOK().WithPayload(&models.Machine{
 			ID: int64(dbMachine.Id),
-			Address: addr,
+			Address: &addr,
 			Error: "cannot update machine in db",
 		})
 		return rsp

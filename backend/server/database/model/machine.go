@@ -10,12 +10,9 @@ import (
 	"isc.org/stork"
 )
 
-// Represents a user held in system_user table in the database.
-type Machine struct {
-	Id                   int
-	Created              time.Time
-	Deleted              time.Time
-	Address              string
+
+// Part of machine table in database that describes state of machine. In DB it is stored as JSONB.
+type MachineState struct {
 	AgentVersion         string
 	Cpus                 int64
 	CpusLoad             string
@@ -32,8 +29,17 @@ type Machine struct {
 	VirtualizationSystem string
 	VirtualizationRole   string
 	HostID               string
-	LastVisited          time.Time
-	Error                string
+}
+
+// Represents a machine held in machine table in the database.
+type Machine struct {
+	Id          int
+	Created     time.Time
+	Deleted     time.Time
+	Address     string
+	LastVisited time.Time
+	Error       string
+	State       MachineState
 }
 
 func AddMachine(db *pg.DB, machine *Machine) error {
@@ -87,18 +93,18 @@ func GetMachines(db *pg.DB, offset int64, limit int64, text string) ([]Machine, 
 	if text != "" {
 		text = "%" + text + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
-			qq = qq.WhereOr("address LIKE ?", text).
-				WhereOr("agent_version LIKE ?", text).
-				WhereOr("hostname LIKE ?", text).
-				WhereOr("os LIKE ?", text).
-				WhereOr("platform LIKE ?", text).
-				WhereOr("platform_family LIKE ?", text).
-				WhereOr("platform_version LIKE ?", text).
-				WhereOr("kernel_version LIKE ?", text).
-				WhereOr("kernel_arch LIKE ?", text).
-				WhereOr("virtualization_system LIKE ?", text).
-				WhereOr("virtualization_role LIKE ?", text).
-				WhereOr("host_id LIKE ?", text)
+			qq = qq.WhereOr("address ILIKE ?", text).
+				WhereOr("state->>'agent_version' ILIKE ?", text).
+				WhereOr("state->>'hostname' ILIKE ?", text).
+				WhereOr("state->>'os' ILIKE ?", text).
+				WhereOr("state->>'platform' ILIKE ?", text).
+				WhereOr("state->>'platform_family' ILIKE ?", text).
+				WhereOr("state->>'platform_version' ILIKE ?", text).
+				WhereOr("state->>'kernel_version' ILIKE ?", text).
+				WhereOr("state->>'kernel_arch' ILIKE ?", text).
+				WhereOr("state->>'virtualization_system' ILIKE ?", text).
+				WhereOr("state->>'virtualization_role' ILIKE ?", text).
+				WhereOr("state->>'host_id' ILIKE ?", text)
 			return qq, nil
 		})
 	}

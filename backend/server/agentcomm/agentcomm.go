@@ -1,6 +1,7 @@
 package agentcomm
 
 import (
+	"context"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"github.com/pkg/errors"
@@ -48,7 +49,7 @@ type ConnectedAgents interface {
 	GetSettings() *AgentsSettings
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
-	GetState(address string) (*State, error)
+	GetState(ctx context.Context, address string) (*State, error)
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.

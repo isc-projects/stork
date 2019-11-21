@@ -4,6 +4,7 @@ import { ActivatedRoute, ParamMap, Router, NavigationEnd } from '@angular/router
 import { MessageService, MenuItem } from 'primeng/api'
 
 import { ServicesService } from '../backend/api/api'
+import { LoadingService } from '../loading.service'
 
 interface ServiceType {
     name: string
@@ -41,7 +42,8 @@ export class MachinesPageComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private servicesApi: ServicesService,
-        private msgSrv: MessageService
+        private msgSrv: MessageService,
+        private loadingService: LoadingService
     ) {}
 
     switchToTab(index) {
@@ -168,12 +170,24 @@ export class MachinesPageComponent implements OnInit {
     }
 
     addNewMachine() {
+        if (this.machineAddress.trim() === '') {
+            this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Adding new machine erred',
+                    detail: 'Machine address cannot be empty.',
+                    life: 10000,
+                })
+            return
+        }
+
         this.newMachineDlgVisible = false
 
         const m = { address: this.machineAddress }
 
+        this.loadingService.start('adding new machine')
         this.servicesApi.createMachine(m).subscribe(
             data => {
+                this.loadingService.stop('adding new machine')
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'New machine added',
@@ -184,6 +198,7 @@ export class MachinesPageComponent implements OnInit {
                 this.router.navigate(['/machines/' + data.id])
             },
             err => {
+                this.loadingService.stop('adding new machine')
                 console.info(err)
                 let msg = err.statusText
                 if (err.error && err.error.message) {

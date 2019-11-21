@@ -36,7 +36,7 @@ type State struct {
 }
 
 // Get version from agent.
-func (agents *connectedAgentsData) GetState(address string) (*State, error) {
+func (agents *connectedAgentsData) GetState(ctx context.Context, address string) (*State, error) {
 	// Find agent in map.
 	agent, err := agents.GetConnectedAgent(address)
 	if err != nil {
@@ -44,20 +44,9 @@ func (agents *connectedAgentsData) GetState(address string) (*State, error) {
 	}
 
 	// Call agent for version.
-	ctx, _ := context.WithTimeout(context.Background(), 10 * time.Second)
 	grpcState, err := agent.Client.GetState(ctx, &agentapi.GetStateReq{})
 	if err != nil {
-		// Problem with connection, try to reconnect and retry the call
-		log.Infof("problem with connection to agent %v, reconnecting", err)
-		err2 := agent.MakeGrpcConnection()
-		if err2 != nil {
-			return nil, errors.Wrap(err2, "problem with connection to agent")
-		}
-		ctx, _ = context.WithTimeout(context.Background(), 10 * time.Second)
-		grpcState, err = agent.Client.GetState(ctx, &agentapi.GetStateReq{})
-		if err != nil {
-			return nil, errors.Wrap(err, "problem with connection to agent")
-		}
+		return nil, errors.Wrap(err, "problem with connection to agent")
 	}
 
 	log.Printf("state returned is %+v", grpcState)

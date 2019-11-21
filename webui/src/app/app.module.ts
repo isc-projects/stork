@@ -24,6 +24,8 @@ import { MessageModule } from 'primeng/message'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { MenuModule } from 'primeng/menu'
 import { InplaceModule } from 'primeng/inplace'
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TooltipModule } from 'primeng/tooltip';
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -87,6 +89,8 @@ export function cfgFactory() {
         TabMenuModule,
         MenuModule,
         InplaceModule,
+        ProgressSpinnerModule,
+        TooltipModule,
     ],
     providers: [
         {

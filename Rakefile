@@ -239,17 +239,6 @@ task :unittest_backend_db do
   Rake::Task["unittest_backend"].invoke
 end
 
-desc 'Show backend coverage of unit tests in web browser'
-task :show_cov do
-  at_exit {
-    sh 'rm -f backend/server/agentcomm/api_mock.go'
-  }
-  Dir.chdir('backend') do
-    sh "#{GO} generate -v ./..."
-    sh "#{GO} tool cover -html=coverage.out"
-  end
-end
-
 
 # Web UI Rules
 desc 'Generate client part of REST API using swagger_codegen based on swagger.yml'

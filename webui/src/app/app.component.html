@@ -10,6 +10,10 @@
 
     <div style="flex-grow: 1;">
         <p-menubar [model]="menuItems" styleClass="stork-menubar">
+            <p-progressSpinner *ngIf="(loadingInProgress | async).state"
+                               [pTooltip]="(loadingInProgress | async).text"
+                               [style]="{width: '30px', height: '30px', 'vertical-align': 'top', 'margin-right': '20px'}"
+                               strokeWidth="6" fill="#005B9F" animationDuration=".5s"></p-progressSpinner>
             <input type="text" pInputText placeholder="Search" />
             <button
                 pButton
@@ -21,6 +25,7 @@
         </p-menubar>
     </div>
 </div>
+
 
 <p-toast></p-toast>
 
