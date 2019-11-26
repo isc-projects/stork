@@ -232,7 +232,6 @@ export class UsersPageComponent implements OnInit {
         const password = this.userform.controls.userpassword.value
         const account = { user: user, password: password }
         this.usersApi.createUser(account).subscribe(data => {
-            console.info(data)
             this.msgSrv.add({
                 severity: 'success',
                 summary: 'New user account created',
@@ -265,6 +264,28 @@ export class UsersPageComponent implements OnInit {
         }
         const password = this.userform.controls.userpassword.value
         const account = { user: user, password: password }
+
+        this.usersApi.updateUser(account).subscribe(data => {
+            this.msgSrv.add({
+                severity: 'success',
+                summary: 'User account updated',
+                detail: 'Updating user account succeeeded',
+            })
+            this.closeActiveTab()
+            err => {
+                console.info(err)
+                let msg = err.StatusText
+                if (err.error && err.error.detail) {
+                    msg = err.error.detail
+                }
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Updating user account failed',
+                    detail: 'Updating user account failed: ' + msg,
+                    sticky: true,
+                })
+            }
+        })
     }
 
     userFormSave() {

@@ -105,6 +105,30 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
+    put:
+      summary: Updates existing user account.
+      description: >-
+        Updates exsiting user account in the system.
+      operationId: updateUser
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - name: account
+          in: body
+          description: Updated user account information and password
+          schema:
+            $ref: "#/definitions/UserAccount"
+
+      responses:
+        200:
+          description: User account successfully updated.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /version:
     get:
       summary: Get version.

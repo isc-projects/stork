@@ -124,3 +124,30 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 
 	return users.NewCreateUserOK().WithPayload(u)
 }
+
+// Updates existing user account in the database.
+func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams) middleware.Responder {
+	u := params.Account.User
+	p := params.Account.Password
+
+	su := &dbmodel.SystemUser{
+		Id: int(*u.ID),
+		Login: *u.Login,
+		Email: *u.Email,
+		Lastname: *u.Lastname,
+		Name: *u.Name,
+		Password: string(p),
+	}
+	err := su.Persist(r.PgDB)
+	if err != nil {
+		msg := err.Error()
+		rspErr := models.APIError{
+			Code: 500,
+			Message: &msg,
+		}
+		rsp := users.NewUpdateUserDefault(500).WithPayload(&rspErr)
+		return rsp
+	}
+
+	return users.NewUpdateUserOK()
+}
