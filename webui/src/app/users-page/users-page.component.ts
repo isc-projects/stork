@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core'
-import { FormBuilder, FormGroup, Validators } from '@angular/forms'
+import { FormBuilder, FormGroup, NgForm, Validators } from '@angular/forms'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
-import { MenuItem } from 'primeng/api'
+import { MenuItem, MessageService } from 'primeng/api'
 
 import { UsersService } from '../backend/api/api'
+import { UserAccount } from '../backend/model/models'
 
 export enum UserTabType {
     List = 1,
@@ -51,12 +52,13 @@ export class UsersPageComponent implements OnInit {
     userTab: UserTab
 
     // form
-    newUserForm: FormGroup
+    userform: FormGroup
 
     constructor(private route: ActivatedRoute,
                 private router: Router,
                 private formBuilder: FormBuilder,
-                private usersApi: UsersService) {}
+                private usersApi: UsersService,
+                private msgSrv: MessageService) {}
 
     get existingUserTab(): boolean {
         return this.userTab && this.userTab.tabType === UserTabType.User
@@ -96,12 +98,15 @@ export class UsersPageComponent implements OnInit {
     }
 
     showNewUserTab() {
-        this.newUserForm = this.formBuilder.group({
+        this.userform = this.formBuilder.group({
             userlogin: ['', Validators.required],
-            useremail: ['', Validators.required],
+            useremail: ['', Validators.email],
             userfirst: ['', Validators.required],
             userlast: ['', Validators.required],
+            userpassword: ['', Validators.compose([Validators.required, Validators.minLength(8),])],
+            userpassword2: ['', Validators.required],
         })
+
         for (let i in this.openedTabs) {
             if (this.openedTabs[i].tabType === UserTabType.NewUser) {
                 this.switchToTab(i)
@@ -161,6 +166,12 @@ export class UsersPageComponent implements OnInit {
         })
     }
 
+    closeActiveTab() {
+        this.openedTabs.splice(this.activeTabIdx, 1)
+        this.tabs.splice(this.activeTabIdx, 1)
+        this.switchToTab(0)
+    }
+
     closeTab(event, idx) {
         this.openedTabs.splice(idx, 1)
         this.tabs.splice(idx, 1)
@@ -173,5 +184,39 @@ export class UsersPageComponent implements OnInit {
         if (event) {
             event.preventDefault()
         }
+    }
+
+    newUserSubmit() {
+        const user = {
+            id: 0,
+            login: this.userform.controls.userlogin.value,
+            email: this.userform.controls.useremail.value,
+            name: this.userform.controls.userfirst.value,
+            lastname: this.userform.controls.userlast.value,
+        }
+        const password = this.userform.controls.userpassword.value
+        const account = { user: user, password: password }
+        this.usersApi.createUser(account).subscribe(data => {
+            console.info(data)
+            this.msgSrv.add({
+                severity: 'success',
+                summary: 'New user account created',
+                detail: 'Adding new user account succeeeded',
+            })
+            this.closeActiveTab()
+            err => {
+                console.info(err)
+                let msg = err.StatusText
+                if (err.error && err.error.detail) {
+                    msg = err.error.detail
+                }
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Creating new user account failed',
+                    detail: 'Creating new user account failed: ' + msg,
+                    sticky: true,
+                })
+            }
+        })
     }
 }

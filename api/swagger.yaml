@@ -79,6 +79,31 @@ paths:
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+    post:
+      summary: Creates new user account.
+      description: >-
+        Creates new user account in the system.
+      operationId: createUser
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - name: account
+          in: body
+          description: New user account including user information and password
+          schema:
+            $ref: "#/definitions/UserAccount"
+
+      responses:
+        200:
+          description: User account successfully created.
+          schema:
+            $ref: "#/definitions/User"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
 
   /version:
     get:
@@ -211,6 +236,21 @@ definitions:
         type: string
       lastname:
         type: string
+
+  Password:
+    type: string
+
+  UserAccount:
+    type: object
+    required:
+      - user
+      - password
+    properties:
+      user:
+        $ref: "#/definitions/User"
+      password:
+        $ref: "#/definitions/Password"
+
   Users:
     type: object
     properties:

@@ -69,6 +69,8 @@ func TestNewUserAuthenticate(t *testing.T) {
 	err := user.Persist(db)
 	require.NoError(t, err)
 
+	require.Greater(t, user.Id, 0)
+
 	authOk, err := Authenticate(db, user)
 	require.NoError(t, err)
 	require.True(t, authOk)

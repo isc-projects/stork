@@ -14,7 +14,7 @@ import (
 
 // Creates new instance of the user model used by REST API from the
 // user instance returned from the database.
-func NewRestUser(u *dbmodel.SystemUser) *models.User {
+func NewRestUser(u dbmodel.SystemUser) *models.User {
 	id := int64(u.Id)
 	r := &models.User{
 		Email: &u.Email,
@@ -86,7 +86,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 
 	usersList := []*models.User{}
 	for _, u := range system_users {
-		usersList = append(usersList, NewRestUser(&u))
+		usersList = append(usersList, NewRestUser(u))
 	}
 
 	u := models.Users{
@@ -97,3 +97,30 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 	return rsp
 }
 
+// Creates new user account in the database.
+func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams) middleware.Responder {
+	u := params.Account.User
+	p := params.Account.Password
+
+	su := &dbmodel.SystemUser{
+		Login: *u.Login,
+		Email: *u.Email,
+		Lastname: *u.Lastname,
+		Name: *u.Name,
+		Password: string(p),
+	}
+	err := su.Persist(r.PgDB)
+	if err != nil {
+		msg := err.Error()
+		rspErr := models.APIError{
+			Code: 500,
+			Message: &msg,
+		}
+		rsp := users.NewCreateUserDefault(500).WithPayload(&rspErr)
+		return rsp
+	}
+
+	*u.ID = int64(su.Id)
+
+	return users.NewCreateUserOK().WithPayload(u)
+}
