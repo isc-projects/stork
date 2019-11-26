@@ -1,6 +1,7 @@
 package agentcomm
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -32,7 +33,8 @@ func TestGetVersion(t *testing.T) {
 		Return(&agentapi.GetStateRsp{AgentVersion: expVer}, nil)
 
 	// Check response
-	state, err := agents.GetState(addr)
+	ctx := context.Background()
+	state, err := agents.GetState(ctx, addr)
 	require.NoError(t, err)
 	require.Equal(t, state.AgentVersion, expVer)
 }

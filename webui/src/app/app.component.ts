@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
+import { Observable } from 'rxjs'
 
 import { MenubarModule } from 'primeng/menubar'
 import { MenuItem } from 'primeng/api'
@@ -15,18 +16,16 @@ import { LoadingService } from './loading.service'
 export class AppComponent implements OnInit {
     title = 'Stork'
     currentUser = null
-    loadingInProgress: any
+    loadingInProgress = new Observable()
 
     menuItems: MenuItem[]
 
-    constructor(private router: Router,
-                private auth: AuthService,
-                private loadingService: LoadingService) {
+    constructor(private router: Router, private auth: AuthService, private loadingService: LoadingService) {
         this.auth.currentUser.subscribe(x => (this.currentUser = x))
+        this.loadingInProgress = this.loadingService.getState()
     }
 
     ngOnInit() {
-        this.loadingInProgress = this.loadingService.getState()
         this.menuItems = [
             {
                 label: 'Configuration',

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	faker "github.com/brianvoe/gofakeit"
-	"github.com/go-pg/pg/v9"
 	"github.com/stretchr/testify/require"
 
 	"isc.org/stork/server/database"
@@ -31,10 +30,8 @@ func generateTestUsers(t *testing.T, db *dbops.PgDB) {
 
 // Tests that default system user can be authenticated.
 func TestDefaultUserAuthenticate(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
-
-	db := pg.Connect(&dbtest.PgConnOptions)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	// Use default credentials of the admin user.
 	user := &SystemUser{
@@ -54,10 +51,8 @@ func TestDefaultUserAuthenticate(t *testing.T) {
 
 // Tests that system user can be added an authenticated.
 func TestNewUserAuthenticate(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
-
-	db := pg.Connect(&dbtest.PgConnOptions)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	// Create new user.
 	user := &SystemUser{

@@ -46,14 +46,6 @@ func NewDatabaseSettings() *DatabaseSettings {
 	return conn
 }
 
-// Create new database instance from the given connection parameters.
-func NewPgDB(opts interface{}) *PgDB {
-	if o, ok := opts.(*PgOptions); ok {
-		return pg.Connect(o)
-	}
-	return nil
-}
-
 // Returns generic connection parameters as a list of space separated name/value pairs.
 func (c *BaseDatabaseSettings) ConnectionParams() string {
 	s := fmt.Sprintf("%+v", *c)

@@ -3,6 +3,7 @@ package dbops
 import (
 	"context"
 	"github.com/go-pg/pg/v9"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,29 +21,34 @@ func (d dbLogger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
 	return nil
 }
 
+// Create only new PgDB instance.
+func NewPgDbConn(pgParams *pg.Options) (*PgDB, error) {
+	db := pg.Connect(pgParams)
 
-// Tests connection to the database by sending trivial query.
-func testPgConnection(db *pg.DB) error {
+	// Test connection to database.
 	var n int
 	_, err := db.QueryOne(pg.Scan(&n), "SELECT 1")
-	return err
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to connect to the database using provided credentials")
+	}
+	return db, nil
 }
 
-
-func NewPgDB2(settings *DatabaseSettings) *PgDB {
+// Create new instance of PgDB and migrate database if necessary to the latest schema version.
+func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 	// Fetch password from the env variable or prompt for password.
 	Password(settings)
 
 	// Make a connection to DB
-	db := pg.Connect(settings.PgParams())
-	if err := testPgConnection(db); err != nil {
-		log.Fatalf("unable to connect to the database using provided credentials: %v", err)
+	db, err := NewPgDbConn(settings.PgParams())
+	if err != nil {
+		return nil, err
 	}
 
 	// Ensure that the latest database schema is installed.
 	oldVer, newVer, err := MigrateToLatest(db)
 	if err != nil {
-		log.Fatalf("failed to migrate database schema to the latest version: %v", err)
+		return nil, err
 
 	} else if oldVer != newVer {
 		log.WithFields(log.Fields{
@@ -57,5 +63,5 @@ func NewPgDB2(settings *DatabaseSettings) *PgDB {
 	}
 
 	log.Infof("connected to database %s:%d, schema version: %d", settings.Host, settings.Port, newVer)
-	return db
+	return db, nil
 }

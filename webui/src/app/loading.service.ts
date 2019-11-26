@@ -1,17 +1,16 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable } from '@angular/core'
+import { BehaviorSubject } from 'rxjs'
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root',
 })
 export class LoadingService {
-
     counter = 0
     texts = []
 
-    constructor() { }
+    constructor() {}
 
-    private loadInProgress = new BehaviorSubject({state: false, text: ''});
+    private loadInProgress = new BehaviorSubject({ state: false, text: '' })
 
     start(text) {
         this.texts.push(text)
@@ -19,11 +18,11 @@ export class LoadingService {
         this.loadInProgress.next({
             state: true,
             text: this.texts.join('\n'),
-        });
+        })
     }
 
     stop(text) {
-        for(let i = 0; i < this.texts.length; i++){
+        for (let i = 0; i < this.texts.length; i++) {
             if (this.texts[i] === text) {
                 this.texts.splice(i, 1)
                 break
@@ -39,11 +38,11 @@ export class LoadingService {
             this.loadInProgress.next({
                 state: false,
                 text: '',
-            });
+            })
         }
     }
 
     getState() {
-        return this.loadInProgress.asObservable();
+        return this.loadInProgress.asObservable()
     }
 }

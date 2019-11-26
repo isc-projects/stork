@@ -34,7 +34,10 @@ func main() {
 
 
 	// Initialize global state of Stork Server
-	storkServer := server.NewStorkServer()
+	storkServer, err := server.NewStorkServer()
+	if err != nil {
+		log.Fatalf("unexpected error: %+v", err)
+	}
 	defer storkServer.Shutdown()
 
 	storkServer.Serve();

@@ -210,9 +210,14 @@ file GOLANGCILINT => TOOLS_DIR do
 end
 
 desc 'Check backend source code'
-task :lint_go => [GO, GOLANGCILINT, :gen_server] do
-  Dir.chdir('backend/server') do
-    sh "#{GOLANGCILINT} run gen/restapi"
+task :lint_go => [GO, GOLANGCILINT, MOCKERY, MOCKGEN, :gen_agent, :gen_server] do
+  at_exit {
+    sh 'rm -f backend/server/agentcomm/api_mock.go'
+  }
+  sh 'rm -f backend/server/agentcomm/api_mock.go'
+  Dir.chdir('backend') do
+    sh "#{GO} generate -v ./..."
+    sh "#{GOLANGCILINT} run"
   end
 end
 
@@ -224,8 +229,34 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
   sh 'rm -f backend/server/agentcomm/api_mock.go'
   Dir.chdir('backend') do
     sh "#{GO} generate -v ./..."
-    sh "#{RICHGO} test -v -count=1 -p 1 -coverprofile=coverage.out  ./..."  # count=1 disables caching results
-    sh "#{GO} tool cover -func=coverage.out"
+    sh "#{RICHGO} test -race -v -count=1 -p 1 -coverprofile=coverage.out  ./..."  # count=1 disables caching results
+    #sh "#{RICHGO} test -race -v -count=1 -p 1 -coverprofile=coverage.out  ./server/database/session"  # count=1 disables caching results
+    #sh "dlv test  ./server/database"  # count=1 disables caching results
+
+    # check coverage level
+    out = `#{GO} tool cover -func=coverage.out`
+    puts out, ''
+    problem = false
+    out.each_line do |line|
+      if line.start_with? 'total:' or line.include? 'api_mock.go'
+        next
+      end
+      items = line.gsub(/\s+/m, ' ').strip.split(" ")
+      file = items[0]
+      func = items[1]
+      cov = items[2].strip()[0..-2].to_f
+      ignore_list = ['DetectServices', 'RestartKea', 'Serve', 'BeforeQuery', 'AfterQuery',
+                     'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
+                     'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
+                     'CreateSession', 'DeleteSession', 'Listen', 'Shutdown']
+      if cov < 50 and not ignore_list.include? func
+        puts "FAIL: %-80s %5s%% < 50%%" % ["#{file} #{func}", "#{cov}"]
+        problem = true
+      end
+    end
+    if problem
+      fail("\nFAIL: Tests coverage is too low, add some tests\n\n")
+    end
   end
 end
 
@@ -237,6 +268,17 @@ task :unittest_backend_db do
   sh "docker run --name stork-ut-pgsql -d -p 5678:5432 -e POSTGRES_DB=storktest -e POSTGRES_USER=storktest -e POSTGRES_PASSWORD=storktest postgres:11"
   ENV['POSTGRES_ADDR'] = "localhost:5678"
   Rake::Task["unittest_backend"].invoke
+end
+
+desc 'Show backend coverage of unit tests in web browser'
+task :show_cov do
+  at_exit {
+    sh 'rm -f backend/server/agentcomm/api_mock.go'
+  }
+  Dir.chdir('backend') do
+    sh "#{GO} generate -v ./..."
+    sh "#{GO} tool cover -html=coverage.out"
+  end
 end
 
 
@@ -360,3 +402,8 @@ end
 
 desc 'Download all dependencies'
 task :prepare_env => [GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX]
+
+desc 'Generate ctags for Emacs'
+task :ctags do
+  sh 'etags.ctags -f TAGS -R --exclude=webui/node_modules --exclude=tools .'
+end

@@ -55,7 +55,6 @@ type RestAPI struct {
 	api            *operations.StorkAPI
 	handler        http.Handler
 	hasListeners   bool
-	shuttingDown   int32
 	Host           string  // actual host for listening
 	Port           int     // actual port for listening
 }

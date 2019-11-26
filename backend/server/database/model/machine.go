@@ -33,7 +33,7 @@ type MachineState struct {
 
 // Represents a machine held in machine table in the database.
 type Machine struct {
-	Id          int
+	Id          int64
 	Created     time.Time
 	Deleted     time.Time
 	Address     string
@@ -78,17 +78,13 @@ func GetMachineById(db *pg.DB, id int64) (*Machine, error) {
 	return &machine, nil
 }
 
-func GetMachines(db *pg.DB, offset int64, limit int64, text string) ([]Machine, int, error) {
+func GetMachines(db *pg.DB, offset int64, limit int64, text string) ([]Machine, int64, error) {
 	if limit == 0 {
 		limit = 10
 	}
 	var machines []Machine
 
-	total, err := db.Model(&machines).Count()
-	if err != nil {
-		return nil, 0, errors.Wrapf(err, "problem with getting machines total")
-	}
-
+	// prepare query
 	q := db.Model(&machines).Where("deleted is NULL")
 	if text != "" {
 		text = "%" + text + "%"
@@ -108,12 +104,20 @@ func GetMachines(db *pg.DB, offset int64, limit int64, text string) ([]Machine, 
 			return qq, nil
 		})
 	}
+
+	// and then, first get total count
+	total, err := q.Clone().Count()
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "problem with getting machines total")
+	}
+
+	// then retrive given page of rows
 	q = q.Order("id ASC").Offset(int(offset)).Limit(int(limit))
 	err = q.Select()
 	if err != nil {
 		return nil, 0, errors.Wrapf(err, "problem with getting machines")
 	}
-	return machines, total, nil
+	return machines, int64(total), nil
 }
 
 func DeleteMachine(db *pg.DB, machine *Machine) error {

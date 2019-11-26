@@ -59,20 +59,27 @@ func (ss *StorkServer) ParseArgs() {
 }
 
 // Init for Stork Server state
-func NewStorkServer() *StorkServer {
+func NewStorkServer() (*StorkServer, error) {
 	ss := StorkServer{}
 	ss.ParseArgs()
 
 	ss.Agents = agentcomm.NewConnectedAgents(&ss.AgentsSettings)
 
-	ss.Db = dbops.NewPgDB2(&ss.DbSettings)
+	var err error
+	ss.Db, err = dbops.NewPgDB(&ss.DbSettings)
+	if err != nil {
+		ss.Agents.Shutdown()
+		return nil, err
+	}
 
 	r, err := restservice.NewRestAPI(&ss.RestApiSettings, &ss.DbSettings, ss.Db, ss.Agents)
 	if err != nil {
-		log.Fatalf("FATAL error: %+v", err)
+		ss.Agents.Shutdown()
+		ss.Db.Close()
+		return nil, err
 	}
 	ss.RestAPI = r
-	return &ss
+	return &ss, nil
 }
 
 // Run Stork Server

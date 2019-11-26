@@ -46,7 +46,6 @@ func (agent *Agent) MakeGrpcConnection() error {
 
 // Interface for interacting with Agents via gRPC.
 type ConnectedAgents interface {
-	GetSettings() *AgentsSettings
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
 	GetState(ctx context.Context, address string) (*State, error)
@@ -67,12 +66,6 @@ func NewConnectedAgents(settings *AgentsSettings) *connectedAgentsData {
 	return &agents
 }
 
-// Get settings related to agents.
-func (agents *connectedAgentsData) GetSettings() *AgentsSettings {
-	return agents.Settings
-}
-
-
 // Shutdown agents in agents map.
 func (agents *connectedAgentsData) Shutdown() {
 	for _, agent := range agents.AgentsMap {
@@ -92,7 +85,10 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	// Agent not found so allocate agent and prepare connection
 	agent = new(Agent)
 	agent.Address = address
-	agent.MakeGrpcConnection()
+	err := agent.MakeGrpcConnection()
+	if err != nil {
+		log.Warn(err)
+	}
 
 	// Store it in Agents map
 	agents.AgentsMap[address] = agent

@@ -1,12 +1,18 @@
 <p-dialog header="New Machine" [(visible)]="newMachineDlgVisible">
-    Machine's address should be in form 'address[:port]' <br>
-    where 'address' is IP address or FQDN of machine, <br>
-    port is and Stork agent listening port. <br>
+    Machine's address should be in form 'address[:port]' <br />
+    where 'address' is IP address or FQDN of machine, <br />
+    port is and Stork agent listening port. <br />
     Port can be omitted, default value is 8080.
-    <br>
-    <br>
+    <br />
+    <br />
     Address:
-    <input type="text" style="width: 100%;" pInputText [(ngModel)]="machineAddress" (keydown)="keyDownNewMachine($event)" />
+    <input
+        type="text"
+        style="width: 100%;"
+        pInputText
+        [(ngModel)]="machineAddress"
+        (keydown)="keyDownNewMachine($event)"
+    />
     <p-footer>
         <button type="button" (click)="cancelNewMachine()" pButton icon="pi pi-times" label="Cancel"></button>
         <button type="button" (click)="addNewMachine()" pButton icon="pi pi-check" label="Add"></button>

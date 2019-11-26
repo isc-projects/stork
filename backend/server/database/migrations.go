@@ -3,6 +3,7 @@ package dbops
 import (
 	"github.com/go-pg/migrations/v7"
 	"github.com/go-pg/pg/v9"
+	"github.com/pkg/errors"
 	_ "isc.org/stork/server/database/migrations"
 )
 
@@ -16,6 +17,10 @@ func Initialized(db *PgDB) bool {
 // Migrates the database version down to 0 and then removes the gopg_migrations
 // table.
 func Toss(db *PgDB) error {
+	if db == nil {
+		return errors.New("database is nil")
+	}
+
 	// Check if the migrations table exists. If it doesn't, there is nothing to do.
 	if !Initialized(db) {
 		return nil
@@ -42,11 +47,14 @@ func Toss(db *PgDB) error {
 func Migrate(db *PgDB, args ...string) (oldVersion, newVersion int64, err error) {
 	if len(args) > 0 && args[0] == "up" && !Initialized(db) {
 		if oldVersion, newVersion, err = migrations.Run(db, "init"); err != nil {
-			return oldVersion, newVersion, err
+			return oldVersion, newVersion, errors.Wrapf(err, "problem with initiating database")
 		}
 	}
 	oldVersion, newVersion, err = migrations.Run(db, args...)
-	return oldVersion, newVersion, err
+	if err != nil {
+		return oldVersion, newVersion, errors.Wrapf(err, "problem with migrating database")
+	}
+	return oldVersion, newVersion, nil
 }
 
 // Migrates the database to the latest version. If the migrations are not initialized

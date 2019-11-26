@@ -24,10 +24,10 @@ func getCookie(response *http.Response, name string) (bool, string) {
 // Tests that new session is created via the middleware.
 func TestMiddlewareNewSession(t *testing.T) {
 	// Reset database schema.
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
+	_, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
-	mgr, err := NewSessionMgr(&dbtest.GenericConnOptions.BaseDatabaseSettings)
+	mgr, err := NewSessionMgr(&dbSettings.BaseDatabaseSettings)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)

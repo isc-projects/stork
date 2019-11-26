@@ -172,11 +172,11 @@ export class MachinesPageComponent implements OnInit {
     addNewMachine() {
         if (this.machineAddress.trim() === '') {
             this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Adding new machine erred',
-                    detail: 'Machine address cannot be empty.',
-                    life: 10000,
-                })
+                severity: 'error',
+                summary: 'Adding new machine erred',
+                detail: 'Machine address cannot be empty.',
+                life: 10000,
+            })
             return
         }
 

@@ -53,19 +53,21 @@ func main() {
 	}
 
 	// Use the provided credentials to connect to the database.
-	db := dbops.NewPgDB(&dbops.PgOptions{
+	db, err := dbops.NewPgDbConn(&dbops.PgOptions{
 		User:     opts.User,
 		Password: opts.Password,
 		Database: opts.DbName,
 		Addr:     fmt.Sprintf("%s:%d", opts.Host, opts.Port),
 	})
-	defer db.Close()
-
+	if err != nil {
+		log.Fatalf("unexpected error: %+v", err)
+	}
 	// Theoretically, it should not happen but let's make sure in case someone
 	// modifies the NewPgDB function.
 	if db == nil {
 		log.Fatal("unable to create database instance")
 	}
+	defer db.Close()
 
 	oldVersion, newVersion, err := dbops.Migrate(db, args...)
 	if err != nil {

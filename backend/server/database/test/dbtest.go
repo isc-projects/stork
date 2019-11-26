@@ -10,26 +10,24 @@ import(
 	"isc.org/stork/server/database"
 )
 
-// Common set of database connection options which may be converted to a string
-// of space separated options used by SQL drivers.
-var GenericConnOptions = dbops.DatabaseSettings{
-	BaseDatabaseSettings: dbops.BaseDatabaseSettings{
-		DbName: "storktest",
-		User: "storktest",
-		Password: "storktest",
-		Host: "localhost",
-		Port: 5432,
-	},
-}
-
 // go-pg specific database connection options.
-var PgConnOptions dbops.PgOptions
+// Prepares unit test setup by re-creating the database schema and
+// returns pointer to the teardown function.
+func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, func ()) {
+	// Common set of database connection options which may be converted to a string
+	// of space separated options used by SQL drivers.
+	genericConnOptions := dbops.DatabaseSettings{
+		BaseDatabaseSettings: dbops.BaseDatabaseSettings{
+			DbName: "storktest",
+			User: "storktest",
+			Password: "storktest",
+			Host: "localhost",
+			Port: 5432,
+		},
+	}
 
-var TestDB *dbops.PgDB
-
-func init() {
 	// Convert generic options to go-pg options.
-	PgConnOptions = *GenericConnOptions.PgParams()
+	pgConnOptions := *genericConnOptions.PgParams()
 
 	// Check if we're running tests in Gitlab CI. If so, the host
 	// running the database should be set to "postgres".
@@ -37,43 +35,40 @@ func init() {
 	if addr, ok := os.LookupEnv("POSTGRES_ADDR"); ok {
 		splitAddr := strings.Split(addr, ":")
 		if len(splitAddr) > 0 {
-			GenericConnOptions.Host = splitAddr[0]
+			genericConnOptions.Host = splitAddr[0]
 		}
 		if len(splitAddr) > 1 {
 			if p, err := strconv.Atoi(splitAddr[1]); err == nil {
-				GenericConnOptions.Port = p
+				genericConnOptions.Port = p
 			}
 		}
-		PgConnOptions.Addr = addr
+		pgConnOptions.Addr = addr
 	}
 
 	// Create an instance of the database using test credentials.
-	TestDB = dbops.NewPgDB(&PgConnOptions)
-	if TestDB == nil {
-		log.Fatal("unable to create database instance")
+	db, err := dbops.NewPgDbConn(&pgConnOptions)
+	if db == nil {
+		log.Fatalf("unable to create database instance: %+v", err)
 	}
-}
+	require.NoError(t, err)
 
-// Prepares unit test setup by re-creating the database schema and
-// returns pointer to the teardown function.
-func SetupDatabaseTestCase(t *testing.T) func (t *testing.T) {
-	CreateSchema(t)
-	return func (t *testing.T) {
-		TossSchema(t)
+	createSchema(t, db)
+	return db, &genericConnOptions, func () {
+		TossSchema(t, db)
 	}
 }
 
 // Create the database schema to the latest version.
-func CreateSchema(t *testing.T) {
-	TossSchema(t)
-	_, _, err := dbops.Migrate(TestDB, "init")
+func createSchema(t *testing.T, db *dbops.PgDB) {
+	TossSchema(t, db)
+	_, _, err := dbops.Migrate(db, "init")
 	require.NoError(t, err)
-	_, _, err = dbops.Migrate(TestDB, "up")
+	_, _, err = dbops.Migrate(db, "up")
 	require.NoError(t, err)
 }
 
 // Remove the database schema.
-func TossSchema(t *testing.T) {
-	err := dbops.Toss(TestDB)
+func TossSchema(t *testing.T, db *dbops.PgDB) {
+	err := dbops.Toss(db)
 	require.NoError(t, err)
 }
