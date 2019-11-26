@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { FormBuilder, FormGroup, NgForm, Validators } from '@angular/forms'
+import { FormBuilder, FormControl, FormGroup, NgForm, Validators } from '@angular/forms'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 import { MenuItem, MessageService } from 'primeng/api'
 
@@ -9,6 +9,7 @@ import { UserAccount } from '../backend/model/models'
 export enum UserTabType {
     List = 1,
     NewUser,
+    EditedUser,
     User,
 }
 
@@ -33,6 +34,19 @@ export class UserTab {
     }
 }
 
+function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
+    return (group: FormGroup): {[key: string]: any} => {
+        let password = group.controls[passwordKey];
+        let confirmPassword = group.controls[confirmPasswordKey];
+
+        if (password.value !== confirmPassword.value) {
+            return {
+                mismatchedPasswords: true
+            };
+        }
+    }
+}
+
 @Component({
     selector: 'app-users-page',
     templateUrl: './users-page.component.html',
@@ -52,7 +66,7 @@ export class UsersPageComponent implements OnInit {
     userTab: UserTab
 
     // form
-    userform: FormGroup
+    public userform: FormGroup
 
     constructor(private route: ActivatedRoute,
                 private router: Router,
@@ -62,6 +76,10 @@ export class UsersPageComponent implements OnInit {
 
     get existingUserTab(): boolean {
         return this.userTab && this.userTab.tabType === UserTabType.User
+    }
+
+    get editedUserTab(): boolean {
+        return this.userTab && this.userTab.tabType === UserTabType.EditedUser
     }
 
     get newUserTab(): boolean {
@@ -94,7 +112,22 @@ export class UsersPageComponent implements OnInit {
     }
 
     editUserInfo(tab) {
-        this.router.navigate(['/users/:id/edit', 1])
+        this.userform = this.formBuilder.group({
+            userlogin: ['', Validators.required],
+            useremail: ['', Validators.email],
+            userfirst: ['', Validators.required],
+            userlast: ['', Validators.required],
+            userpassword: ['', Validators.minLength(8)],
+            userpassword2: ['', Validators.minLength(8)],
+        }, {validators: [matchPasswords('userpassword', 'userpassword2')]})
+
+        tab.tabType = UserTabType.EditedUser
+        this.userform.patchValue({
+            userlogin: this.userTab.user.login,
+            useremail: this.userTab.user.email,
+            userfirst: this.userTab.user.name,
+            userlast: this.userTab.user.lastname,
+        })
     }
 
     showNewUserTab() {
@@ -103,7 +136,7 @@ export class UsersPageComponent implements OnInit {
             useremail: ['', Validators.email],
             userfirst: ['', Validators.required],
             userlast: ['', Validators.required],
-            userpassword: ['', Validators.compose([Validators.required, Validators.minLength(8),])],
+            userpassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
             userpassword2: ['', Validators.required],
         })
 
@@ -137,8 +170,10 @@ export class UsersPageComponent implements OnInit {
                 let found = false
                 for (let i in this.openedTabs) {
                     let tab = this.openedTabs[i]
-                    if (((userId > 0) && (tab.tabType === UserTabType.User) && tab.user &&
-                         (tab.user.id === userId)) ||
+                    if (((userId > 0) &&
+                         ((tab.tabType === UserTabType.User) ||
+                          (tab.tabType === UserTabType.EditedUser)) &&
+                         tab.user && (tab.user.id === userId)) ||
                         ((userId == 0) && tab.tabType === UserTabType.NewUser)) {
                         this.switchToTab(i)
                         found = true
@@ -186,7 +221,7 @@ export class UsersPageComponent implements OnInit {
         }
     }
 
-    newUserSubmit() {
+    newUserSave() {
         const user = {
             id: 0,
             login: this.userform.controls.userlogin.value,
@@ -218,5 +253,25 @@ export class UsersPageComponent implements OnInit {
                 })
             }
         })
+    }
+
+    editedUserSave() {
+        const user = {
+            id: this.userTab.user.id,
+            login: this.userform.controls.userlogin.value,
+            email: this.userform.controls.useremail.value,
+            name: this.userform.controls.userfirst.value,
+            lastname: this.userform.controls.userlast.value,
+        }
+        const password = this.userform.controls.userpassword.value
+        const account = { user: user, password: password }
+    }
+
+    userFormSave() {
+        if (this.newUserTab) {
+            this.newUserSave()
+        } else if (this.editedUserTab) {
+            this.editedUserSave()
+        }
     }
 }

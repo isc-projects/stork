@@ -82,44 +82,63 @@
 
 <div *ngIf="existingUserTab" class="ui-widget">
     <div style="display: flex; margin: 10px;">
-        <div style="min-width: 300px;">
-          <table>
-            <tr>
-              <td>Login</td>
-              <td>{{ userTab.user.login }}</td>
-            </tr>
-            <tr>
-              <td>Email</td>
-              <td>{{ userTab.user.email }}</td>
-            </tr>
-            <tr>
-              <td>Lastname</td>
-              <td>{{ userTab.user.lastname }}</td>
-            </tr>
-            <tr>
-              <td>Firstname</td>
-              <td>{{ userTab.user.firstname }}</td>
-            </tr>
-          </table>
+        <div style="min-width: 600px;">
+            <div class="ui-grid ui-grid-responsive ui-grid-pad ui-fluid" style="margin: 10px 0px">
+                <div class="ui-grid-row">
+                    <div class="ui-grid-col-2">
+                        Login:
+                    </div>
+                    <div class="ui-grid-col-10">
+                        {{ userTab.user.login }}
+                    </div>
+                </div>
+                <div class="ui-grid-row">
+                    <div class="ui-grid-col-2">
+                        Email:
+                    </div>
+                    <div class="ui-grid-col-10">
+                        {{ userTab.user.email }}
+                    </div>
+                </div>
+                <div class="ui-grid-row">
+                    <div class="ui-grid-col-2">
+                        Lastname:
+                    </div>
+                    <div class="ui-grid-col-10">
+                        {{ userTab.user.lastname }}
+                    </div>
+                </div>
+                <div class="ui-grid-row">
+                    <div class="ui-grid-col-2">
+                        Firstname:
+                    </div>
+                    <div class="ui-grid-col-10">
+                        {{ userTab.user.name }}
+                    </div>
+                </div>
+                <div class="ui-grid-row">
+                    <div class="ui-grid-col-2">
+                        <button
+                            type="button"
+                            pButton
+                            label="Edit"
+                            icon="pi pi-pencil"
+                            (click)="editUserInfo(userTab)"
+                            ></button>
+                    </div>
+                </div>
+                <div class="ui-grid-col-10"></div>
+            </div>
         </div>
-        <div style="margin-left: 40px;">
-          <button
-            type="button"
-            pButton
-            label="Edit"
-            icon="pi pi-pencil"
-            (click)="editUserInfo(userTab)"
-            ></button>
-        </div>
-     </div>
+    </div>
 </div>
 
-<div *ngIf="newUserTab" class="ui-widget">
+<div *ngIf="newUserTab||editedUserTab" class="ui-widget">
   <div style="display: flex; margin: 10px;">
     <div style="min-width: 1000px;">
 
       <form [formGroup]="userform">
-        <p-panel header="Validate">
+        <p-panel header="User account">
           <div class="ui-grid ui-grid-responsive ui-grid-pad ui-fluid" style="margin: 10px 0px">
             <div class="ui-grid-row">
               <div class="ui-grid-col-2">
@@ -185,7 +204,7 @@
                 <input pInputText type="password" formControlName="userpassword" pattern="[a-zA-Z0-9@.!\+\-]*"/>
               </div>
               <div class="ui-grid-col-6">
-                <p-message severity="error" text="Password must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long" *ngIf="!userform.controls['userpassword'].valid&&userform.controls['userpassword'].dirty&&userform.controls['userpassword'].touched"></p-message>
+                  <p-message severity="error" text="Password must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long" *ngIf="!userform.controls['userpassword'].valid&&userform.controls['userpassword'].dirty&&userform.controls['userpassword'].touched"></p-message>
               </div>
             </div>
           </div>
@@ -210,10 +229,10 @@
               <button
                 type="submit"
                 pButton
-                [disabled]="userform.pristine || userform.invalid" class="btn btn-success"
+                [disabled]="userform.invalid" class="btn btn-success"
                 icon="pi pi-pencil"
-                label="Submit"
-                (click)="newUserSubmit()"
+                label="Save"
+                (click)="userFormSave()"
                 ></button>
             </div>
             <div class="ui-grid-col-6"></div>
