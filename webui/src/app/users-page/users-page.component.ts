@@ -71,8 +71,8 @@ export class UserTab {
  */
 function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
     return (group: FormGroup): { [key: string]: any } => {
-        let password = group.controls[passwordKey]
-        let confirmPassword = group.controls[confirmPasswordKey]
+        const password = group.controls[passwordKey]
+        const confirmPassword = group.controls[confirmPasswordKey]
 
         if (password.value !== confirmPassword.value) {
             return {
@@ -166,12 +166,12 @@ export class UsersPageComponent implements OnInit {
      * @param user Structure holding user information
      */
     private addUserTab(tabType: UserTabType, user) {
-        let userTab = new UserTab(tabType, user)
+        const userTab = new UserTab(tabType, user)
         this.openedTabs.push(userTab)
         // The new tab is now current one
         this.userTab = userTab
         this.tabs.push({
-            label: tabType == UserTabType.NewUser ? 'new account' : user.login || user.email,
+            label: tabType === UserTabType.NewUser ? 'new account' : user.login || user.email,
             routerLink: userTab.tabRoute,
         })
         this.switchToTab(this.tabs.length - 1)
@@ -190,7 +190,7 @@ export class UsersPageComponent implements OnInit {
         // validator which checks if the password and confirmed password
         // match. The validator allows leaving an empty password in which
         // case the password won't be modified.
-        let userform = this.formBuilder.group(
+        const userform = this.formBuilder.group(
             {
                 userlogin: ['', Validators.required],
                 useremail: ['', Validators.email],
@@ -224,7 +224,7 @@ export class UsersPageComponent implements OnInit {
     showNewUserTab() {
         // Specify the validators for the new user form. The last two
         // validators require password and confirmed password to exist.
-        let userform = this.formBuilder.group({
+        const userform = this.formBuilder.group({
             userlogin: ['', Validators.required],
             useremail: ['', Validators.email],
             userfirst: ['', Validators.required],
@@ -234,7 +234,7 @@ export class UsersPageComponent implements OnInit {
         })
 
         // Search opened tabs for the 'new account' type.
-        for (let i in this.openedTabs) {
+        for (const i in this.openedTabs) {
             if (this.openedTabs[i].tabType === UserTabType.NewUser) {
                 // The tab exists, simply activate it.
                 this.switchToTab(i)
@@ -261,7 +261,7 @@ export class UsersPageComponent implements OnInit {
     closeTab(event, idx) {
         this.openedTabs.splice(idx, 1)
         this.tabs.splice(idx, 1)
-        if (this.activeTabIdx == idx) {
+        if (this.activeTabIdx === idx) {
             this.switchToTab(idx - 1)
         } else if (this.activeTabIdx > idx) {
             this.activeTabIdx = this.activeTabIdx - 1
@@ -300,7 +300,7 @@ export class UsersPageComponent implements OnInit {
 
         // Store the default tab on the list
         this.openedTabs = []
-        let defaultTab = new UserTab(UserTabType.List, null)
+        const defaultTab = new UserTab(UserTabType.List, null)
         this.openedTabs.push(defaultTab)
 
         this.route.paramMap.subscribe((params: ParamMap) => {
@@ -315,23 +315,25 @@ export class UsersPageComponent implements OnInit {
 
                 // Iterate over opened tabs and check if any of them matches the
                 // given user id or is for new user.
-                for (let i in this.openedTabs) {
-                    let tab = this.openedTabs[i]
-                    if (
-                        (userId > 0 &&
-                            (tab.tabType === UserTabType.User || tab.tabType === UserTabType.EditedUser) &&
-                            tab.user &&
-                            tab.user.id === userId) ||
-                        (userId == 0 && tab.tabType === UserTabType.NewUser)
-                    ) {
-                        this.switchToTab(i)
-                        return
+                for (const i in this.openedTabs) {
+                    if (this.openedTabs.hasOwnProperty(i)) {
+                        const tab = this.openedTabs[i]
+                        if (
+                            (userId > 0 &&
+                                (tab.tabType === UserTabType.User || tab.tabType === UserTabType.EditedUser) &&
+                                tab.user &&
+                                tab.user.id === userId) ||
+                            (userId === 0 && tab.tabType === UserTabType.NewUser)
+                        ) {
+                            this.switchToTab(i)
+                            return
+                        }
                     }
                 }
 
                 // If we are creating new user and the tab for the new user does not
                 // exist, let's open the tab and bail.
-                if (userId == 0) {
+                if (userId === 0) {
                     this.showNewUserTab()
                     return
                 }
@@ -371,14 +373,16 @@ export class UsersPageComponent implements OnInit {
             lastname: this.userform.controls.userlast.value,
         }
         const password = this.userform.controls.userpassword.value
-        const account = { user: user, password: password }
-        this.usersApi.createUser(account).subscribe(data => {
-            this.msgSrv.add({
-                severity: 'success',
-                summary: 'New user account created',
-                detail: 'Adding new user account succeeeded',
-            })
-            this.closeActiveTab()
+        const account = { user, password }
+        this.usersApi.createUser(account).subscribe(
+            data => {
+                this.msgSrv.add({
+                    severity: 'success',
+                    summary: 'New user account created',
+                    detail: 'Adding new user account succeeeded',
+                })
+                this.closeActiveTab()
+            },
             err => {
                 console.info(err)
                 let msg = err.StatusText
@@ -392,7 +396,7 @@ export class UsersPageComponent implements OnInit {
                     sticky: true,
                 })
             }
-        })
+        )
     }
 
     /**
@@ -409,15 +413,17 @@ export class UsersPageComponent implements OnInit {
             lastname: this.userform.controls.userlast.value,
         }
         const password = this.userform.controls.userpassword.value
-        const account = { user: user, password: password }
+        const account = { user, password }
 
-        this.usersApi.updateUser(account).subscribe(data => {
-            this.msgSrv.add({
-                severity: 'success',
-                summary: 'User account updated',
-                detail: 'Updating user account succeeeded',
-            })
-            this.closeActiveTab()
+        this.usersApi.updateUser(account).subscribe(
+            data => {
+                this.msgSrv.add({
+                    severity: 'success',
+                    summary: 'User account updated',
+                    detail: 'Updating user account succeeeded',
+                })
+                this.closeActiveTab()
+            },
             err => {
                 console.info(err)
                 let msg = err.StatusText
@@ -431,7 +437,7 @@ export class UsersPageComponent implements OnInit {
                     sticky: true,
                 })
             }
-        })
+        )
     }
 
     /**
