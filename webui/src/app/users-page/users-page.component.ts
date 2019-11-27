@@ -14,35 +14,35 @@ export enum UserTabType {
 }
 
 export class UserTab {
-    constructor(public tabType: UserTabType, public user: any) { }
+    constructor(public tabType: UserTabType, public user: any) {}
 
     get tabRoute(): string {
         switch (this.tabType) {
             case UserTabType.List: {
-                return "/users/list"
+                return '/users/list'
             }
             case UserTabType.NewUser: {
-                return "/users/new"
+                return '/users/new'
             }
             default: {
                 if (this.user) {
-                    return "/users/" + this.user.id
+                    return '/users/' + this.user.id
                 }
             }
         }
-        return "/users/list"
+        return '/users/list'
     }
 }
 
 function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
-    return (group: FormGroup): {[key: string]: any} => {
-        let password = group.controls[passwordKey];
-        let confirmPassword = group.controls[confirmPasswordKey];
+    return (group: FormGroup): { [key: string]: any } => {
+        let password = group.controls[passwordKey]
+        let confirmPassword = group.controls[confirmPasswordKey]
 
         if (password.value !== confirmPassword.value) {
             return {
-                mismatchedPasswords: true
-            };
+                mismatchedPasswords: true,
+            }
         }
     }
 }
@@ -68,11 +68,13 @@ export class UsersPageComponent implements OnInit {
     // form
     public userform: FormGroup
 
-    constructor(private route: ActivatedRoute,
-                private router: Router,
-                private formBuilder: FormBuilder,
-                private usersApi: UsersService,
-                private msgSrv: MessageService) {}
+    constructor(
+        private route: ActivatedRoute,
+        private router: Router,
+        private formBuilder: FormBuilder,
+        private usersApi: UsersService,
+        private msgSrv: MessageService
+    ) {}
 
     get existingUserTab(): boolean {
         return this.userTab && this.userTab.tabType === UserTabType.User
@@ -106,20 +108,23 @@ export class UsersPageComponent implements OnInit {
         this.openedTabs.push(userTab)
         this.userTab = userTab
         this.tabs.push({
-            label: (tabType == UserTabType.NewUser ? "new account" : user.login || user.email),
-            routerLink: userTab.tabRoute
+            label: tabType == UserTabType.NewUser ? 'new account' : user.login || user.email,
+            routerLink: userTab.tabRoute,
         })
     }
 
     editUserInfo(tab) {
-        this.userform = this.formBuilder.group({
-            userlogin: ['', Validators.required],
-            useremail: ['', Validators.email],
-            userfirst: ['', Validators.required],
-            userlast: ['', Validators.required],
-            userpassword: ['', Validators.minLength(8)],
-            userpassword2: ['', Validators.minLength(8)],
-        }, {validators: [matchPasswords('userpassword', 'userpassword2')]})
+        this.userform = this.formBuilder.group(
+            {
+                userlogin: ['', Validators.required],
+                useremail: ['', Validators.email],
+                userfirst: ['', Validators.required],
+                userlast: ['', Validators.required],
+                userpassword: ['', Validators.minLength(8)],
+                userpassword2: ['', Validators.minLength(8)],
+            },
+            { validators: [matchPasswords('userpassword', 'userpassword2')] }
+        )
 
         tab.tabType = UserTabType.EditedUser
         this.userform.patchValue({
@@ -154,7 +159,7 @@ export class UsersPageComponent implements OnInit {
         this.tabs = [{ label: 'Users', routerLink: '/users/list' }]
 
         let defaultTab = new UserTab(UserTabType.List, null)
-        this.openedTabs = [ ]
+        this.openedTabs = []
         this.openedTabs.push(defaultTab)
 
         this.users = []
@@ -163,22 +168,22 @@ export class UsersPageComponent implements OnInit {
             const userIdStr = params.get('id')
             if (userIdStr === 'list') {
                 this.switchToTab(0)
-
             } else {
-                const userId = (userIdStr === 'new') ? 0 : parseInt(userIdStr, 10)
+                const userId = userIdStr === 'new' ? 0 : parseInt(userIdStr, 10)
 
                 let found = false
                 for (let i in this.openedTabs) {
                     let tab = this.openedTabs[i]
-                    if (((userId > 0) &&
-                         ((tab.tabType === UserTabType.User) ||
-                          (tab.tabType === UserTabType.EditedUser)) &&
-                         tab.user && (tab.user.id === userId)) ||
-                        ((userId == 0) && tab.tabType === UserTabType.NewUser)) {
+                    if (
+                        (userId > 0 &&
+                            (tab.tabType === UserTabType.User || tab.tabType === UserTabType.EditedUser) &&
+                            tab.user &&
+                            tab.user.id === userId) ||
+                        (userId == 0 && tab.tabType === UserTabType.NewUser)
+                    ) {
                         this.switchToTab(i)
                         found = true
                         break
-
                     }
                 }
 
@@ -188,7 +193,7 @@ export class UsersPageComponent implements OnInit {
                             this.addUserTab(UserTabType.User, u)
                             this.switchToTab(this.tabs.length - 1)
                             found = true
-                            break;
+                            break
                         }
                     }
                 }
@@ -222,7 +227,6 @@ export class UsersPageComponent implements OnInit {
         this.tabs.splice(idx, 1)
         if (this.activeTabIdx == idx) {
             this.switchToTab(idx - 1)
-
         } else if (this.activeTabIdx > idx) {
             this.activeTabIdx = this.activeTabIdx - 1
         }
