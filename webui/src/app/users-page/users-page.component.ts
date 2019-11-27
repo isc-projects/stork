@@ -6,6 +6,15 @@ import { MenuItem, MessageService } from 'primeng/api'
 import { UsersService } from '../backend/api/api'
 import { UserAccount } from '../backend/model/models'
 
+/**
+ * An enum specifying tab types in the user view
+ *
+ * Currently supported types are:
+ * - list: including a list of users
+ * - new user: including a form for creating new user account
+ * - edited user: including a form for editing user account
+ * - user: including read only information about the user
+ */
 export enum UserTabType {
     List = 1,
     NewUser,
@@ -13,9 +22,25 @@ export enum UserTabType {
     User,
 }
 
+/**
+ * Class representing a single tab on the user page
+ */
 export class UserTab {
+    /**
+     * Instance of the reactive form belonging to the tab
+     */
+    public userform: FormGroup
+
+    /**
+     * Constructor
+     */
     constructor(public tabType: UserTabType, public user: any) {}
 
+    /**
+     * Returns route associated with this tab
+     *
+     * The returned value depends on the tab type.
+     */
     get tabRoute(): string {
         switch (this.tabType) {
             case UserTabType.List: {
@@ -34,6 +59,16 @@ export class UserTab {
     }
 }
 
+/**
+ * Form validator verifying if the confirmed password matches the password
+ * value.
+ *
+ * @param passwordKey Name of the key under which the password value can be
+ *                    found in the form.
+ * @param confirmPasswordKey Name of the key under which the confirmed
+ *                           password can be fiund in the form.
+ * @returns The validator function comparing the passwords.
+ */
 function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
     return (group: FormGroup): { [key: string]: any } => {
         let password = group.controls[passwordKey]
@@ -47,6 +82,9 @@ function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
     }
 }
 
+/**
+ * Component for managing system users.
+ */
 @Component({
     selector: 'app-users-page',
     templateUrl: './users-page.component.html',
@@ -65,9 +103,6 @@ export class UsersPageComponent implements OnInit {
     openedTabs: UserTab[]
     userTab: UserTab
 
-    // form
-    public userform: FormGroup
-
     constructor(
         private route: ActivatedRoute,
         private router: Router,
@@ -76,45 +111,86 @@ export class UsersPageComponent implements OnInit {
         private msgSrv: MessageService
     ) {}
 
+    get userform(): FormGroup {
+        return this.userTab ? this.userTab.userform : null
+    }
+
+    /**
+     * Checks if the current tab displays a single user
+     *
+     * @returns true if the current tab displays information about selected user
+     */
     get existingUserTab(): boolean {
         return this.userTab && this.userTab.tabType === UserTabType.User
     }
 
+    /**
+     * Checks if the current tab contains a form to edit user information
+     *
+     * @returns true if the current tab contains a form
+     */
     get editedUserTab(): boolean {
         return this.userTab && this.userTab.tabType === UserTabType.EditedUser
     }
 
+    /**
+     * Checks if the current tab is for creating new user account
+     *
+     * @returns true if the current tab is for creating new account
+     */
     get newUserTab(): boolean {
         return this.userTab && this.userTab.tabType === UserTabType.NewUser
     }
 
-    switchToTab(index) {
-        if (this.activeTabIdx === index) {
-            return
+    /**
+     * Actives a tab with the given index
+     */
+    private switchToTab(index) {
+        if (this.activeTabIdx !== index) {
+            this.activeTabIdx = index
+            if (index > 0) {
+                this.userTab = this.openedTabs[index]
+                this.router.navigate([this.userTab.tabRoute])
+            } else {
+                this.userTab = null
+                this.router.navigate(['/users/list'])
+            }
         }
-        this.activeTabIdx = index
         this.activeItem = this.tabs[index]
-        if (index > 0) {
-            this.userTab = this.openedTabs[index]
-            this.router.navigate([this.userTab.tabRoute])
-        } else {
-            this.userTab = null
-            this.router.navigate(['/users/list'])
-        }
     }
 
-    addUserTab(tabType: UserTabType, user) {
+    /**
+     * Opens new tab of the specified type and switches to it
+     *
+     * @param tabType Enumeration indicating type of the new tab
+     * @param user Structure holding user information
+     */
+    private addUserTab(tabType: UserTabType, user) {
         let userTab = new UserTab(tabType, user)
         this.openedTabs.push(userTab)
+        // The new tab is now current one
         this.userTab = userTab
         this.tabs.push({
             label: tabType == UserTabType.NewUser ? 'new account' : user.login || user.email,
             routerLink: userTab.tabRoute,
         })
+        this.switchToTab(this.tabs.length - 1)
     }
 
+    /**
+     * Turns the current user tab into a tab with the user editing form
+     *
+     * This function is invoked when the user clicks on Edit button in
+     * the user tab.
+     *
+     * @param tab Current tab
+     */
     editUserInfo(tab) {
-        this.userform = this.formBuilder.group(
+        // Specify validators for the form. The last validator is our custom
+        // validator which checks if the password and confirmed password
+        // match. The validator allows leaving an empty password in which
+        // case the password won't be modified.
+        let userform = this.formBuilder.group(
             {
                 userlogin: ['', Validators.required],
                 useremail: ['', Validators.email],
@@ -126,17 +202,29 @@ export class UsersPageComponent implements OnInit {
             { validators: [matchPasswords('userpassword', 'userpassword2')] }
         )
 
+        // Modify the current tab type to 'edit'.
         tab.tabType = UserTabType.EditedUser
-        this.userform.patchValue({
+
+        // Set default values for the fields which may be edited by the user.
+        userform.patchValue({
             userlogin: this.userTab.user.login,
             useremail: this.userTab.user.email,
             userfirst: this.userTab.user.name,
             userlast: this.userTab.user.lastname,
         })
+        this.userTab.userform = userform
     }
 
+    /**
+     * Opens a tab for creating new user account
+     *
+     * It first checks if such tab has been already opened and activates it
+     * if it has. If the tab hasn't been opened this function will open it.
+     */
     showNewUserTab() {
-        this.userform = this.formBuilder.group({
+        // Specify the validators for the new user form. The last two
+        // validators require password and confirmed password to exist.
+        let userform = this.formBuilder.group({
             userlogin: ['', Validators.required],
             useremail: ['', Validators.email],
             userfirst: ['', Validators.required],
@@ -145,83 +233,31 @@ export class UsersPageComponent implements OnInit {
             userpassword2: ['', Validators.required],
         })
 
+        // Search opened tabs for the 'new account' type.
         for (let i in this.openedTabs) {
             if (this.openedTabs[i].tabType === UserTabType.NewUser) {
+                // The tab exists, simply activate it.
                 this.switchToTab(i)
                 return
             }
         }
+        // The tab doesn't exist, so open it and activate it.
         this.addUserTab(UserTabType.NewUser, null)
-        this.switchToTab(this.tabs.length - 1)
+        this.userTab.userform = userform
     }
 
-    ngOnInit() {
-        this.tabs = [{ label: 'Users', routerLink: '/users/list' }]
-
-        let defaultTab = new UserTab(UserTabType.List, null)
-        this.openedTabs = []
-        this.openedTabs.push(defaultTab)
-
-        this.users = []
-
-        this.route.paramMap.subscribe((params: ParamMap) => {
-            const userIdStr = params.get('id')
-            if (userIdStr === 'list') {
-                this.switchToTab(0)
-            } else {
-                const userId = userIdStr === 'new' ? 0 : parseInt(userIdStr, 10)
-
-                let found = false
-                for (let i in this.openedTabs) {
-                    let tab = this.openedTabs[i]
-                    if (
-                        (userId > 0 &&
-                            (tab.tabType === UserTabType.User || tab.tabType === UserTabType.EditedUser) &&
-                            tab.user &&
-                            tab.user.id === userId) ||
-                        (userId == 0 && tab.tabType === UserTabType.NewUser)
-                    ) {
-                        this.switchToTab(i)
-                        found = true
-                        break
-                    }
-                }
-
-                if (!found) {
-                    for (const u of this.users) {
-                        if (u.id === userId) {
-                            this.addUserTab(UserTabType.User, u)
-                            this.switchToTab(this.tabs.length - 1)
-                            found = true
-                            break
-                        }
-                    }
-                }
-
-                if (!found) {
-                    this.usersApi.getUser(userId).subscribe(data => {
-                        this.addUserTab(UserTabType.User, data)
-                        this.switchToTab(this.tabs.length - 1)
-                        found = true
-                    })
-                }
-            }
-        })
-    }
-
-    loadUsers(event) {
-        this.usersApi.getUsers(event.first, event.rows, event.filters.text).subscribe(data => {
-            this.users = data.items
-            this.totalUsers = data.total
-        })
-    }
-
-    closeActiveTab() {
+    /**
+     * Closes current tab
+     */
+    private closeActiveTab() {
         this.openedTabs.splice(this.activeTabIdx, 1)
         this.tabs.splice(this.activeTabIdx, 1)
         this.switchToTab(0)
     }
 
+    /**
+     * Closes selected tab
+     */
     closeTab(event, idx) {
         this.openedTabs.splice(idx, 1)
         this.tabs.splice(idx, 1)
@@ -235,7 +271,98 @@ export class UsersPageComponent implements OnInit {
         }
     }
 
-    newUserSave() {
+    /**
+     * Loads system users from the database into the component.
+     *
+     * @param event Event object containing index of the first row, maximum number
+     *              of rows to be returned and the filter text.
+     */
+    loadUsers(event) {
+        this.usersApi.getUsers(event.first, event.rows, event.filters.text).subscribe(data => {
+            this.users = data.items
+            this.totalUsers = data.total
+        })
+    }
+
+    /**
+     * Initializes tabs depending on the active route
+     *
+     * The first/default tab is always opened. It comprises a list of users
+     * which have an account in the system. If the active route specifies
+     * any particular user id, a tab displaying the user information is also
+     * opened.
+     */
+    ngOnInit() {
+        this.users = []
+
+        // Open the default tab
+        this.tabs = [{ label: 'Users', routerLink: '/users/list' }]
+
+        // Store the default tab on the list
+        this.openedTabs = []
+        let defaultTab = new UserTab(UserTabType.List, null)
+        this.openedTabs.push(defaultTab)
+
+        this.route.paramMap.subscribe((params: ParamMap) => {
+            const userIdStr = params.get('id')
+            if (!userIdStr || userIdStr === 'list') {
+                // Open the tab with the list of users.
+                this.switchToTab(0)
+            } else {
+                // Deal with the case when specific user is selected or when the
+                // new user is to be created.
+                const userId = userIdStr === 'new' ? 0 : parseInt(userIdStr, 10)
+
+                // Iterate over opened tabs and check if any of them matches the
+                // given user id or is for new user.
+                for (let i in this.openedTabs) {
+                    let tab = this.openedTabs[i]
+                    if (
+                        (userId > 0 &&
+                            (tab.tabType === UserTabType.User || tab.tabType === UserTabType.EditedUser) &&
+                            tab.user &&
+                            tab.user.id === userId) ||
+                        (userId == 0 && tab.tabType === UserTabType.NewUser)
+                    ) {
+                        this.switchToTab(i)
+                        return
+                    }
+                }
+
+                // If we are creating new user and the tab for the new user does not
+                // exist, let's open the tab and bail.
+                if (userId == 0) {
+                    this.showNewUserTab()
+                    return
+                }
+
+                // If we're interested in a tab for a specific user, let's see if we
+                // already have the user information fetched.
+                for (const u of this.users) {
+                    if (u.id === userId) {
+                        // Found user information, so let's open the tab using this
+                        // information and return.
+                        this.addUserTab(UserTabType.User, u)
+                        return
+                    }
+                }
+
+                // We have no information about the user, so let's try to fetch it
+                // from the server.
+                this.usersApi.getUser(userId).subscribe(data => {
+                    this.addUserTab(UserTabType.User, data)
+                })
+            }
+        })
+    }
+
+    /**
+     * Action invoked when new user form is being saved
+     *
+     * As a result of this action a new user account is attempted to be
+     * created.
+     */
+    private newUserSave() {
         const user = {
             id: 0,
             login: this.userform.controls.userlogin.value,
@@ -268,7 +395,12 @@ export class UsersPageComponent implements OnInit {
         })
     }
 
-    editedUserSave() {
+    /**
+     * Action invoked when the form for editing the user information is saved
+     *
+     * As a result of this action, the user account information will be updated.
+     */
+    private editedUserSave() {
         const user = {
             id: this.userTab.user.id,
             login: this.userform.controls.userlogin.value,
@@ -302,11 +434,26 @@ export class UsersPageComponent implements OnInit {
         })
     }
 
+    /**
+     * Action invoked when a user form is saved
+     *
+     * It covers both the case of creating a new user account and editing
+     * an existing user account.
+     */
     userFormSave() {
         if (this.newUserTab) {
             this.newUserSave()
         } else if (this.editedUserTab) {
             this.editedUserSave()
         }
+    }
+
+    /**
+     * Action invoked when Cancel button is clicked under the form
+     *
+     * It closes current tab with no action.
+     */
+    userFormCancel() {
+        this.closeActiveTab()
     }
 }

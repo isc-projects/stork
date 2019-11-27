@@ -17,20 +17,6 @@
 
 <div *ngIf="activeTabIdx == 0">
     <div style="display: flex; justify-content: space-between; margin: 10px;">
-        <div>
-            <span>
-                <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
-                Filter machines:
-                <input
-                    type="text"
-                    pInputText
-                    [(ngModel)]="filterText"
-                    placeholder="name or any other field"
-                    (keydown)="keyDownFilterText(usersTable, $event)"
-                />
-            </span>
-        </div>
-
         <div style="display: flex;">
             <button
                 type="button"
@@ -283,8 +269,7 @@
                     </div>
 
                     <div class="ui-grid-row">
-                        <div class="ui-grid-col-2"></div>
-                        <div class="ui-grid-col-4">
+                        <div class="ui-grid-col-1">
                             <button
                                 type="submit"
                                 pButton
@@ -295,7 +280,18 @@
                                 (click)="userFormSave()"
                             ></button>
                         </div>
-                        <div class="ui-grid-col-6"></div>
+                        <div class="ui-grid-col-1">
+                            <button
+                                type="submit"
+                                pButton
+                                [disabled]="false"
+                                class="btn btn-basic"
+                                icon="pi pi-times"
+                                label="Cancel"
+                                (click)="userFormCancel()"
+                            ></button>
+                        </div>
+                        <div class="ui-grid-col-10"></div>
                     </div>
                 </p-panel>
             </form>
