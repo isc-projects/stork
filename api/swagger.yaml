@@ -129,6 +129,31 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
+  /users/{id}:
+    get:
+      summary: Get the specific user.
+      description: Returns user by id.
+      operationId: getUser
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: User identifier in the database.
+      responses:
+        200:
+          description: User information returned.
+          schema:
+            $ref: "#/definitions/User"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /version:
     get:
       summary: Get version.

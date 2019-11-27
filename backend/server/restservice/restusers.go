@@ -73,7 +73,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 
 // Get users having an account in the system.
 func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) middleware.Responder {
-	system_users, err := dbmodel.GetUsers(r.PgDB, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderById)
+	systemUsers, err := dbmodel.GetUsers(r.PgDB, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderById)
 	if err != nil {
 		msg := err.Error()
 		rspErr := models.APIError{
@@ -85,7 +85,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 	}
 
 	usersList := []*models.User{}
-	for _, u := range system_users {
+	for _, u := range systemUsers {
 		usersList = append(usersList, NewRestUser(u))
 	}
 
@@ -150,4 +150,22 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	}
 
 	return users.NewUpdateUserOK()
+}
+
+// Returns user information by user ID.
+func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middleware.Responder {
+	id := int(params.ID)
+	su, err := dbmodel.GetUserById(r.PgDB, id)
+	if err != nil {
+		msg := err.Error()
+		rspErr := models.APIError{
+			Code: 500,
+			Message: &msg,
+		}
+		rsp := users.NewGetUserDefault(500).WithPayload(&rspErr)
+		return rsp
+	}
+
+	u := NewRestUser(*su)
+	return users.NewGetUserOK().WithPayload(u)
 }

@@ -109,3 +109,16 @@ func GetUsers(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users
 	return users, err
 }
 
+// Fetches a user with a given id from the database. If the user does not exist
+// the nil value is returned.
+func GetUserById(db *dbops.PgDB, id int) (*SystemUser, error) {
+	user := &SystemUser{Id: id}
+	err := db.Select(user)
+	if err == pg.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "problem with fetching user %v", id)
+	}
+	return user, err
+}
+

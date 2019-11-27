@@ -187,3 +187,24 @@ func TestGetUsersLastPage(t *testing.T) {
 		require.Greater(t, u.Id, prevId); prevId = u.Id
 	}
 }
+
+// Tests that user can be fetched by Id.
+func TestGetUserById(t *testing.T) {
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
+
+	db := pg.Connect(&dbtest.PgConnOptions)
+
+	generateTestUsers(t, db)
+
+	users, err := GetUsers(db, 0, 0, SystemUserOrderById)
+	require.NoError(t, err)
+
+	user, err := GetUserById(db, users[0].Id)
+	require.NoError(t, err)
+	require.NotNil(t, user)
+
+	user, err = GetUserById(db, 1234567)
+	require.NoError(t, err)
+	require.Nil(t, user)
+}

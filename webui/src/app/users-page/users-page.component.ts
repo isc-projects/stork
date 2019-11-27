@@ -187,8 +187,18 @@ export class UsersPageComponent implements OnInit {
                         if (u.id === userId) {
                             this.addUserTab(UserTabType.User, u)
                             this.switchToTab(this.tabs.length - 1)
+                            found = true
+                            break;
                         }
                     }
+                }
+
+                if (!found) {
+                    this.usersApi.getUser(userId).subscribe(data => {
+                        this.addUserTab(UserTabType.User, data)
+                        this.switchToTab(this.tabs.length - 1)
+                        found = true
+                    })
                 }
             }
         })
