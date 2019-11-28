@@ -384,10 +384,9 @@ export class UsersPageComponent implements OnInit {
                 this.closeActiveTab()
             },
             err => {
-                console.info(err)
-                let msg = err.StatusText
-                if (err.error && err.error.detail) {
-                    msg = err.error.detail
+                let msg = err.statusText
+                if (err.error) {
+                    msg = err.error.message
                 }
                 this.msgSrv.add({
                     severity: 'error',
@@ -426,9 +425,9 @@ export class UsersPageComponent implements OnInit {
             },
             err => {
                 console.info(err)
-                let msg = err.StatusText
-                if (err.error && err.error.detail) {
-                    msg = err.error.detail
+                let msg = err.statusText
+                if (err.error) {
+                    msg = err.error.message
                 }
                 this.msgSrv.add({
                     severity: 'error',

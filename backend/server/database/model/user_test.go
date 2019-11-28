@@ -24,7 +24,7 @@ func generateTestUsers(t *testing.T, db *dbops.PgDB) {
 			Name: faker.FirstName(),
 			Password: faker.Word(),
 		}
-		err := user.Persist(db)
+		err, _ := user.Persist(db)
 		require.NoError(t, err, "failed for index %d, login %s", i, user.Login)
 	}
 }
@@ -66,7 +66,8 @@ func TestNewUserAuthenticate(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err := user.Persist(db)
+	err, con := user.Persist(db)
+	require.False(t, con)
 	require.NoError(t, err)
 
 	require.Greater(t, user.Id, 0)
@@ -79,7 +80,8 @@ func TestNewUserAuthenticate(t *testing.T) {
 
 	// Modifying user's password should be possible.
 	user.Password = "new password"
-	err = user.Persist(db)
+	err, con = user.Persist(db)
+	require.False(t, con)
 	require.NoError(t, err)
 
 	// Authentciation using old password should fail.
@@ -96,7 +98,8 @@ func TestNewUserAuthenticate(t *testing.T) {
 
 	// If password is empty, it should remain unmodified in the database.
 	user.Password = ""
-	err = user.Persist(db)
+	err, con = user.Persist(db)
+	require.False(t, con)
 	require.NoError(t, err)
 
 	// Make sure that we can still authenticate (because the password hasn't changed).
@@ -105,6 +108,57 @@ func TestNewUserAuthenticate(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, authOk)
 }
+
+// Tests that it is indicated when the user being udpdated is not found in
+// the database.
+func TestPersistNoUser(t *testing.T) {
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
+
+	db := pg.Connect(&dbtest.PgConnOptions)
+
+	user := &SystemUser{
+		Id: 123456,
+		Email: "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	err, con := user.Persist(db)
+	require.True(t, con)
+	require.Error(t, err)
+}
+
+// Tests that conflict flag is returned when the inserted user is in
+// conflict with existing user.
+func TestPersistConflict(t *testing.T) {
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
+
+	db := pg.Connect(&dbtest.PgConnOptions)
+
+	user := &SystemUser{
+		Login: "jankowal",
+		Email: "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	err, con := user.Persist(db)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	user = &SystemUser{
+		Email: "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	err, con = user.Persist(db)
+	require.True(t, con)
+	require.Error(t, err)
+}
+
 
 // Tests that all system users can be fetched from the database.
 func TestGetUsers(t *testing.T) {

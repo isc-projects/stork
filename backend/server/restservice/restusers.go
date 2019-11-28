@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -75,7 +76,12 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) middleware.Responder {
 	systemUsers, err := dbmodel.GetUsers(r.PgDB, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderById)
 	if err != nil {
-		msg := err.Error()
+		msg := fmt.Sprintf("failed to get users from the database with error: %s", err.Error())
+		log.WithFields(log.Fields{
+			"start": int(*params.Start),
+			"limit": int(*params.Limit),
+		}).Error(msg)
+
 		rspErr := models.APIError{
 			Code: 500,
 			Message: &msg,
@@ -97,6 +103,42 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 	return rsp
 }
 
+// Returns user information by user ID.
+func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middleware.Responder {
+	id := int(params.ID)
+	su, err := dbmodel.GetUserById(r.PgDB, id)
+	if err != nil {
+		msg := fmt.Sprintf("failed to get user with id %v from the database with error: %s", id,
+			err.Error())
+		log.WithFields(log.Fields{
+			"userid": id,
+		}).Error(msg)
+
+		rspErr := models.APIError{
+			Code: 500,
+			Message: &msg,
+		}
+		rsp := users.NewGetUserDefault(500).WithPayload(&rspErr)
+		return rsp
+
+	} else if su == nil {
+		msg := fmt.Sprintf("failed to find user with id %v in the database", id)
+		log.WithFields(log.Fields{
+			"userid": id,
+		}).Error(msg)
+
+		rspErr := models.APIError{
+			Code: 404,
+			Message: &msg,
+		}
+		rsp := users.NewGetUserDefault(404).WithPayload(&rspErr)
+		return rsp
+	}
+
+	u := NewRestUser(*su)
+	return users.NewGetUserOK().WithPayload(u)
+}
+
 // Creates new user account in the database.
 func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams) middleware.Responder {
 	u := params.Account.User
@@ -109,19 +151,34 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 		Name: *u.Name,
 		Password: string(p),
 	}
-	err := su.Persist(r.PgDB)
+	err, con := su.Persist(r.PgDB)
 	if err != nil {
-		msg := err.Error()
-		rspErr := models.APIError{
-			Code: 500,
-			Message: &msg,
+		if con {
+			log.WithFields(log.Fields{
+				"login": *u.Login,
+				"email": *u.Email,
+			}).Infof("failed to create conflicting user account for user %s: %s", su.Identity(), err.Error())
+
+			msg := "user account with provided login/email already exists"
+			rspErr := models.APIError{
+				Code: 409,
+				Message: &msg,
+			}
+			return users.NewCreateUserDefault(409).WithPayload(&rspErr)
+
+		} else {
+			msg := fmt.Sprintf("failed to create new user account for user %s: %s", su.Identity(), err.Error())
+			log.Error(msg)
+
+			rspErr := models.APIError{
+				Code: 500,
+				Message: &msg,
+			}
+			return users.NewCreateUserDefault(500).WithPayload(&rspErr)
 		}
-		rsp := users.NewCreateUserDefault(500).WithPayload(&rspErr)
-		return rsp
 	}
 
 	*u.ID = int64(su.Id)
-
 	return users.NewCreateUserOK().WithPayload(u)
 }
 
@@ -138,34 +195,36 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		Name: *u.Name,
 		Password: string(p),
 	}
-	err := su.Persist(r.PgDB)
-	if err != nil {
-		msg := err.Error()
+	err, con := su.Persist(r.PgDB)
+	if (con) {
+		log.WithFields(log.Fields{
+			"userid": *u.ID,
+		}).Infof("failed to update user account for user %s: %s", su.Identity(), err.Error())
+
+		msg := "user account with provided login/email already exists"
+		rspErr := models.APIError{
+			Code: 409,
+			Message: &msg,
+		}
+		rsp := users.NewUpdateUserDefault(409).WithPayload(&rspErr)
+		return rsp
+
+	} else if err != nil {
+		msg := fmt.Sprintf("failed to update user account in the database with error: %s", err.Error())
+		log.WithFields(log.Fields{
+			"userid": *u.ID,
+			"login": *u.Login,
+			"email": *u.Email,
+		}).Error(msg)
+
 		rspErr := models.APIError{
 			Code: 500,
 			Message: &msg,
 		}
 		rsp := users.NewUpdateUserDefault(500).WithPayload(&rspErr)
 		return rsp
+
 	}
 
 	return users.NewUpdateUserOK()
-}
-
-// Returns user information by user ID.
-func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middleware.Responder {
-	id := int(params.ID)
-	su, err := dbmodel.GetUserById(r.PgDB, id)
-	if err != nil {
-		msg := err.Error()
-		rspErr := models.APIError{
-			Code: 500,
-			Message: &msg,
-		}
-		rsp := users.NewGetUserDefault(500).WithPayload(&rspErr)
-		return rsp
-	}
-
-	u := NewRestUser(*su)
-	return users.NewGetUserOK().WithPayload(u)
 }

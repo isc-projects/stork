@@ -51,19 +51,28 @@ func (u *SystemUser) Identity() string {
 }
 
 // Inserts or updates user information in the database. If user id is set, the user information
-// is updated in the database. Otherwise, the new user will be inserted.
-func (user *SystemUser) Persist(db *pg.DB) (err error) {
+// is updated in the database. Otherwise, the new user will be inserted. The returned
+// conflict value indicates if there was a conflict while inserting/updating the user
+// in the database, i.e. login/email already exists, or the updated user doesn't exist.
+func (user *SystemUser) Persist(db *pg.DB) (err error, conflict bool) {
 	if user.Id == 0 {
 		// Add new user as the id is not set.
 		err = db.Insert(user)
+
 	} else {
 		// Update existing user by primary key.
 		err = db.Update(user)
+		if err == pg.ErrNoRows {
+			conflict = true
+		}
 	}
 	if err != nil {
+		pgErr, ok := err.(pg.Error); if ok {
+			conflict = pgErr.IntegrityViolation()
+		}
 		errors.Wrapf(err, "database operation error while trying to persist user %s", user.Identity())
 	}
-	return err
+	return err, conflict
 }
 
 // Finds the user in the database by login or email and verifies that the provided password
@@ -106,6 +115,10 @@ func GetUsers(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users
 		err = db.Model(&users).OrderExpr("id ASC").Offset(offset).Limit(limit).Select()
 	}
 
+	if err != nil {
+		err = errors.Wrapf(err, "problem with fetching a list of users from the database")
+	}
+
 	return users, err
 }
 
@@ -117,7 +130,7 @@ func GetUserById(db *dbops.PgDB, id int) (*SystemUser, error) {
 	if err == pg.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
-		return nil, errors.Wrapf(err, "problem with fetching user %v", id)
+		return nil, errors.Wrapf(err, "problem with fetching user %v from the database", id)
 	}
 	return user, err
 }
