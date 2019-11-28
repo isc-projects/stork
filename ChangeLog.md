@@ -1,3 +1,8 @@
+* 12 [func] marcin
+
+    Enabled creation and editing of Stork user accounts in the UI.
+    (Gitlab #25)
+
 * 11 [func] marcin
 
     Stork server automatically migrates the database schema to the latest
