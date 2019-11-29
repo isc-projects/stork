@@ -15,7 +15,7 @@ UNAME=`uname -s`
 case UNAME.rstrip
   when "Darwin"
     OS="macos"
-    SWAGGER_BIN="swagger_darwin_amd64"
+    GOSWAGGER_BIN="swagger_darwin_amd64"
     GO_SUFFIX="darwin-amd64"
     PROTOC_ZIP_SUFFIX="osx-x86_64"
     NODE_SUFFIX="darwin-x64"
