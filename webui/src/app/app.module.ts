@@ -42,6 +42,7 @@ import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component'
 import { MachinesPageComponent } from './machines-page/machines-page.component'
 import { LocaltimePipe } from './localtime.pipe'
 import { UsersPageComponent } from './users-page/users-page.component'
+import { ServicesPageComponent } from './services-page/services-page.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -61,6 +62,7 @@ export function cfgFactory() {
         MachinesPageComponent,
         LocaltimePipe,
         UsersPageComponent,
+        ServicesPageComponent,
     ],
     imports: [
         BrowserModule,

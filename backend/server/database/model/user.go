@@ -124,7 +124,7 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) 
 	// first get total count
 	totalInt, err := q.Clone().Count()
 	if err != nil {
-		return nil, total, errors.Wrapf(err, "problem with getting machines total")
+		return nil, total, errors.Wrapf(err, "problem with getting users total")
 	}
 	total = int64(totalInt)
 

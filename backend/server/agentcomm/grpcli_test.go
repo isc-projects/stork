@@ -12,7 +12,7 @@ import (
 
 //go:generate mockgen -package=agentcomm -destination=api_mock.go isc.org/stork/api AgentClient
 
-func TestGetVersion(t *testing.T) {
+func TestGetState(t *testing.T) {
 	settings := AgentsSettings{}
 	agents := NewConnectedAgents(&settings)
 
@@ -27,10 +27,22 @@ func TestGetVersion(t *testing.T) {
 	mockAgentClient := NewMockAgentClient(ctrl)
 	agent.Client = mockAgentClient
 
-	// Call GetVersion
+	// Call GetState
 	expVer := "123"
+	rsp := agentapi.GetStateRsp{
+		AgentVersion: expVer,
+		Services: []*agentapi.Service{
+			{
+				Version: "1.2.3",
+				Service: &agentapi.Service_Kea{
+					Kea: &agentapi.ServiceKea{
+					},
+				},
+			},
+		},
+	}
 	mockAgentClient.EXPECT().GetState(gomock.Any(), gomock.Any()).
-		Return(&agentapi.GetStateRsp{AgentVersion: expVer}, nil)
+		Return(&rsp, nil)
 
 	// Check response
 	ctx := context.Background()

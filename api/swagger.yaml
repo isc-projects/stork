@@ -313,6 +313,59 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
+  /services:
+    get:
+      summary: Get list of services.
+      description: >-
+        It is possible to filter the list of services by several fields. It is also always paged.
+        Default page size is 10.
+        A list of services is returned in items field accompanied by total count
+        which indicates total available number of records for given filtering
+        parameters.
+      operationId: getServices
+      tags:
+        - Services
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/filterTextParam'
+        - name: service
+          in: query
+          description: Limit returned list of services, possible values 'bind' or 'kea'.
+          type: string
+      responses:
+        200:
+          description: List of services
+          schema:
+            $ref: "#/definitions/Services"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /services/{id}:
+    get:
+      summary: Get service by ID.
+      description: Get service by the database specific ID.
+      operationId: getService
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Service ID.
+      responses:
+        200:
+          description: A service
+          schema:
+            $ref: "#/definitions/Service"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
 parameters:
   paginationStartParam:
     name: start
@@ -329,7 +382,9 @@ parameters:
   filterTextParam:
     name: text
     in: query
-    description: Filtering text, e.g. hostname for the machines.
+    description: >-
+      Filtering text, e.g. hostname for the machines
+      or version for the services.
     type: string
 
 definitions:
@@ -460,6 +515,21 @@ definitions:
       error:
         type: string
         readOnly: true
+      services:
+        type: array
+        items:
+          $ref: '#/definitions/MachineService'
+
+  MachineService:
+    type: object
+    properties:
+      id:
+        type: integer
+      type:
+        type: string
+      version:
+        type: string
+
   Machines:
     type: object
     properties:
@@ -467,6 +537,78 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Machine'
+      total:
+        type: integer
+
+  Service:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      type:
+        type: string
+      ctrlPort:
+        type: integer
+      active:
+        type: boolean
+      version:
+        type: string
+      machine:
+        $ref: '#/definitions/ServiceMachine'
+      details:
+        allOf:
+          - $ref: '#/definitions/ServiceKea'
+          - $ref: '#/definitions/ServiceBind'
+
+  KeaDaemon:
+    type: object
+    properties:
+      pid:
+        type: integer
+      name:
+        type: string
+      active:
+        type: boolean
+      version:
+        type: string
+      extendedVersion:
+        type: string
+
+  ServiceKea:
+    type: object
+    properties:
+      extendedVersion:
+        type: string
+      daemons:
+        type: array
+        items:
+          $ref: '#/definitions/KeaDaemon'
+
+  ServiceBind:
+    type: object
+    properties:
+      todo:
+        type: string
+
+  ServiceMachine:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      address:
+        type: string
+      hostname:
+        type: string
+
+  Services:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Service'
       total:
         type: integer
 

@@ -146,15 +146,28 @@
                 </td>
             </tr>
         </ng-template>
+        <!-- TODO: this looks bad, consider better way for presenting total records -->
         <!-- <ng-template pTemplate="paginatorright" let-state> -->
         <!--   Total: {{state.totalRecords}} machines -->
         <!-- </ng-template> -->
     </p-table>
 </div>
 
+<!-- Single machine tab -->
 <div *ngIf="activeTabIdx != 0" class="ui-widget">
-    <div style="display: flex; margin: 10px;">
-        <div style="min-width: 400px;">
+    <div style="margin: 10px;" class="p-grid">
+        <div class="p-col-12">
+            <button
+                type="button"
+                pButton
+                label="Refresh State"
+                icon="pi pi-refresh"
+                (click)="refreshMachineState(machineTab)"
+            ></button>
+        </div>
+
+        <div class="p-col-6">
+            <h3>System Information</h3>
             <table>
                 <tr>
                     <td>Hostame</td>
@@ -203,7 +216,6 @@
                     <td>Agent Version</td>
                     <td>{{ machineTab.machine.agentVersion }}</td>
                 </tr>
-                <!--          <tr><td>Service</td><td>{{machineTab.}}</td></tr>-->
                 <tr>
                     <td>CPUs</td>
                     <td>{{ machineTab.machine.cpus }}</td>
@@ -276,14 +288,15 @@
                 </tr>
             </table>
         </div>
-        <div style="margin-left: 40px;">
-            <button
-                type="button"
-                pButton
-                label="Refresh State"
-                icon="pi pi-refresh"
-                (click)="refreshMachineState(machineTab)"
-            ></button>
+        <div class="p-col-6">
+            <div *ngFor="let srv of machineTab.machine.services">
+                <div *ngIf="srv.type == 'kea'">
+                    <h3>Kea Service</h3>
+                    <a routerLink="/services/{{ srv.type }}/{{ srv.id }}">link to details</a>
+                    <br />
+                    Version: {{ srv.version }}
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -4,7 +4,6 @@ package agentapi;
 
 service Agent {
   rpc getState(GetStateReq) returns (GetStateRsp) {}
-  rpc detectServices(DetectServicesReq) returns (DetectServicesRsp) {}
   rpc restartKea(RestartKeaReq) returns (RestartKeaRsp) {}
 }
 
@@ -33,26 +32,29 @@ message GetStateRsp {
 }
 
 message Service {
-  oneof serviceType {
-    ServiceKea kea = 1;
-    ServiceBind bind = 2;
+  string version = 1;
+  int64 ctrlPort = 2;
+  bool active = 3;
+  oneof service {
+    ServiceKea kea = 4;
+    ServiceBind bind = 5;
   }
 }
 
 message ServiceKea {
-  string version = 1;
+  string extendedVersion = 1;
+  repeated KeaDaemon daemons = 2;
+}
+
+message KeaDaemon {
+  int32 pid = 1;
+  string name = 2;
+  bool active = 3;
+  string version = 4;
+  string extendedVersion = 5;
 }
 
 message ServiceBind {
-  string version = 1;
-}
-
-message DetectServicesReq {
-  string abc = 1;
-}
-
-message DetectServicesRsp {
-  string abc = 1;
 }
 
 message RestartKeaReq {

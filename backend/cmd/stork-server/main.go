@@ -11,7 +11,6 @@ func main() {
 	// Setup logging
 	stork.SetupLogging()
 
-
 	// Initialize global state of Stork Server
 	storkServer, err := server.NewStorkServer()
 	if err != nil {

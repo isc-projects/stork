@@ -2,10 +2,9 @@ import { Component, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
 import { Observable } from 'rxjs'
 
-import { MenubarModule } from 'primeng/menubar'
 import { MenuItem } from 'primeng/api'
 
-import { AuthService, User } from './auth.service'
+import { AuthService } from './auth.service'
 import { LoadingService } from './loading.service'
 
 @Component({
@@ -28,22 +27,33 @@ export class AppComponent implements OnInit {
     ngOnInit() {
         this.menuItems = [
             {
+                label: 'Services',
+                items: [
+                    {
+                        label: 'Kea DHCP',
+                        icon: 'fa fa-server',
+                        routerLink: '/services/kea/all',
+                    },
+                    // TODO: add support for BIND services
+                    // {
+                    //     label: 'BIND DNS',
+                    //     icon: 'fa fa-server',
+                    //     routerLink: '/services/bind/all',
+                    // },
+                    {
+                        label: 'Machines',
+                        icon: 'fa fa-server',
+                        routerLink: '/machines/all',
+                    },
+                ],
+            },
+            {
                 label: 'Configuration',
                 items: [
                     {
                         label: 'Users',
                         icon: 'fa fa-user',
                         routerLink: '/users',
-                    },
-                ],
-            },
-            {
-                label: 'Services',
-                items: [
-                    {
-                        label: 'Machines',
-                        icon: 'fa fa-server',
-                        routerLink: '/machines/all',
                     },
                 ],
             },

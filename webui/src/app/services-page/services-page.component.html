@@ -1,0 +1,195 @@
+<p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
+    <ng-template pTemplate="item" let-item let-i="index">
+        <div style="display: flex; justify-content: space-between;">
+            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em"></div>
+            <div class="ui-menuitem-text">
+                <b>{{ item.label }}</b>
+            </div>
+            <div
+                class="ui-menuitem-icon pi pi-times"
+                style="font-size: 1.3rem"
+                (click)="closeTab($event, i)"
+                *ngIf="i !== 0"
+            ></div>
+        </div>
+    </ng-template>
+</p-tabMenu>
+
+<!-- Services tab -->
+<div *ngIf="activeTabIdx == 0">
+    <div style="display: flex; justify-content: space-between; margin: 10px;">
+        <div>
+            <span>
+                <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
+                Filter services:
+                <input
+                    type="text"
+                    pInputText
+                    [(ngModel)]="filterText"
+                    placeholder="name or any other field"
+                    (keydown)="keyDownFilterText(servicesTable, $event)"
+                />
+            </span>
+            <!-- TODO: this is a starting point for implementin a form for filtering services. -->
+            <!-- <span style="margin-left: 40px;"> -->
+            <!--   Service: -->
+            <!--   <p-dropdown [options]="serviceTypes" [(ngModel)]="selectedServiceType" optionLabel="name" (onChange)="filterByService(servicesTable)"></p-dropdown> -->
+            <!-- </span> -->
+        </div>
+
+        <div style="display: flex;">
+            <button
+                type="button"
+                pButton
+                label="Refresh"
+                icon="pi pi-refresh"
+                (click)="refreshServicesList(servicesTable)"
+            ></button>
+        </div>
+    </div>
+
+    <p-menu #serviceMenu [popup]="true" [model]="serviceMenuItems"></p-menu>
+    <p-table
+        #servicesTable
+        [value]="services"
+        [paginator]="true"
+        paginatorPosition="top"
+        [rows]="10"
+        [lazy]="true"
+        (onLazyLoad)="loadServices($event)"
+        [totalRecords]="totalServices"
+        [rowsPerPageOptions]="[10, 30, 100]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="{currentPage} of {totalPages} pages"
+    >
+        <ng-template pTemplate="header">
+            <tr>
+                <th>Name</th>
+                <th>Version</th>
+                <th>Machine</th>
+                <th>State</th>
+                <th style="width: 4rem;">Action</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-s>
+            <tr>
+                <td>
+                    <a routerLink="/services/{{ serviceType }}/{{ s.id }}"
+                        >Kea with
+                        <span *ngFor="let d of s.details.daemons; let isLast = last"
+                            >{{ d.name }}<span *ngIf="!isLast">, </span>
+                        </span>
+                    </a>
+                </td>
+                <td>{{ s.version }}</td>
+                <td>
+                    <a routerLink="/machines/{{ s.machine.id }}">{{ s.machine.hostname || s.machine.address }}</a>
+                </td>
+                <td>
+                    ctrl-agent:
+                    <svg style="vertical-align: sub;" height="16" width="26">
+                        <ellipse cx="13" cy="8" rx="12" ry="7" [ngStyle]="{ fill: s.active ? '#00df00' : '#f11' }" />
+                    </svg>
+                    <span *ngFor="let d of s.details.daemons">
+                        {{ d.name }}:
+                        <svg style="vertical-align: sub;" height="16" width="26">
+                            <ellipse
+                                cx="13"
+                                cy="8"
+                                rx="12"
+                                ry="7"
+                                [ngStyle]="{ fill: d.active ? '#00df00' : '#f11' }"
+                            />
+                        </svg>
+                    </span>
+                </td>
+                <td>
+                    <button
+                        type="button"
+                        pButton
+                        icon="pi pi-bars"
+                        (click)="showServiceMenu($event, serviceMenu, s)"
+                    ></button>
+                </td>
+            </tr>
+        </ng-template>
+        <!-- TODO: this looks bad, consider better way for presenting total records -->
+        <!-- <ng-template pTemplate="paginatorright" let-state> -->
+        <!--   Total: {{state.totalRecords}} services -->
+        <!-- </ng-template> -->
+    </p-table>
+</div>
+
+<!-- Single service tab -->
+<div *ngIf="activeTabIdx != 0" class="ui-widget">
+    <div style="margin: 10px;" class="p-grid">
+        <div class="p-col-12">
+            <button
+                type="button"
+                pButton
+                label="Refresh Service"
+                icon="pi pi-refresh"
+                (click)="refreshServiceState(serviceTab.service)"
+            ></button>
+        </div>
+
+        <div class="p-col-3">
+            <h3>Kea Service</h3>
+            <table style="width: 100%;">
+                <tr>
+                    <td style="width: 30%;">Active</td>
+                    <td style="width: 70%;">
+                        <svg height="16" width="26">
+                            <ellipse
+                                cx="13"
+                                cy="8"
+                                rx="12"
+                                ry="7"
+                                [ngStyle]="{ fill: serviceTab.service.active ? '#00df00' : '#f11' }"
+                            />
+                        </svg>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Version</td>
+                    <td>{{ serviceTab.service.version }}</td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top;">Version Ext</td>
+                    <td [innerHTML]="serviceTab.service.details.extendedVersion"></td>
+                </tr>
+                <tr>
+                    <td>Control Port</td>
+                    <td>{{ serviceTab.service.ctrlPort }}</td>
+                </tr>
+            </table>
+        </div>
+        <div *ngFor="let d of serviceTab.service.details.daemons" class="p-col-3">
+            <h4>Kea {{ d.name }}</h4>
+            <table style="width: 100%;">
+                <tr>
+                    <td style="width: 25%;">Active</td>
+                    <td style="width: 75%;">
+                        <svg height="16" width="26">
+                            <ellipse
+                                cx="13"
+                                cy="8"
+                                rx="12"
+                                ry="7"
+                                [ngStyle]="{ fill: d.active ? '#00df00' : '#f11' }"
+                            />
+                        </svg>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Version</td>
+                    <td>{{ d.version }}</td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top;">Version Ext</td>
+                    <td [innerHTML]="d.extendedVersion"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>

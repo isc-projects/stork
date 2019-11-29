@@ -3,6 +3,7 @@ WORKDIR /agent
 RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-certificates gnupg apt-transport-https supervisor
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/isc/kea-1-7/cfg/setup/bash.deb.sh' | bash
 RUN apt-get update && apt-get install -y --no-install-recommends  isc-kea-dhcp4-server isc-kea-ctrl-agent && mkdir -p /var/run/kea/
+RUN perl -pi -e 's/8080/8000/g' /etc/kea/kea-ctrl-agent.conf && perl -pi -e 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/kea/kea-ctrl-agent.conf
 COPY backend/cmd/stork-agent/stork-agent /agent/
 COPY docker/supervisor-agent-kea.conf /etc/supervisor.conf
 CMD ["supervisord", "-c", "/etc/supervisor.conf"]

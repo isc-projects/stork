@@ -23,6 +23,7 @@ func SetupLogging() {
 		ForceColors: true,
 		FullTimestamp: true,
 		TimestampFormat: "2006-01-02 15:04:05",
+		// TODO: do more research and enable if it brings value
 		//PadLevelText: true,
 		// FieldMap: log.FieldMap{
 		// 	FieldKeyTime:  "@timestamp",

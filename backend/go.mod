@@ -28,4 +28,5 @@ require (
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc
 	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
 	google.golang.org/grpc v1.24.0
+	gopkg.in/h2non/gock.v1 v1.0.15
 )

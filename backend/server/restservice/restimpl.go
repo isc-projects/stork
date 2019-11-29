@@ -6,6 +6,7 @@ import (
 	"context"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/asaskevich/govalidator"
@@ -37,6 +38,16 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 }
 
 func machineToRestApi(dbMachine dbmodel.Machine) *models.Machine {
+	var services []*models.MachineService
+	for _, srv := range dbMachine.Services {
+		s := models.MachineService{
+			ID: srv.Id,
+			Type: srv.Type,
+			Version: srv.Meta.Version,
+		}
+		services = append(services, &s)
+	}
+
 	m := models.Machine{
 		ID: dbMachine.Id,
 		Address: &dbMachine.Address,
@@ -59,6 +70,7 @@ func machineToRestApi(dbMachine dbmodel.Machine) *models.Machine {
 		HostID: dbMachine.State.HostID,
 		LastVisited: strfmt.DateTime(dbMachine.LastVisited),
 		Error: dbMachine.Error,
+		Services: services,
 	}
 	return &m
 }
@@ -99,6 +111,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 
 	err = updateMachineFields(r.Db, dbMachine, state)
 	if err != nil {
+		log.Error(err)
 		rsp := services.NewGetMachineStateOK().WithPayload(&models.Machine{
 			ID: dbMachine.Id,
 			Error: "cannot update machine in db",
@@ -147,7 +160,7 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 	if err != nil {
 		log.Error(err)
 		msg := "cannot get machines from db"
-		rsp := services.NewCreateMachineDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewGetMachinesDefault(500).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -252,6 +265,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 	err = updateMachineFields(r.Db, dbMachine, state)
 	if err != nil {
+		log.Error(err)
 		rsp := services.NewCreateMachineOK().WithPayload(&models.Machine{
 			ID: dbMachine.Id,
 			Address: &addr,
@@ -334,6 +348,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 }
 
 func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcomm.State) error {
+	// update state fields in machine
 	dbMachine.State.AgentVersion = m.AgentVersion
 	dbMachine.State.Cpus = m.Cpus
 	dbMachine.State.CpusLoad = m.CpusLoad
@@ -352,7 +367,100 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 	dbMachine.State.HostID = m.HostID
 	dbMachine.LastVisited = m.LastVisited
 	dbMachine.Error = m.Error
-	return db.Update(dbMachine)
+	err := db.Update(dbMachine)
+	if err != nil {
+		return errors.Wrapf(err, "problem with updating machine %+v", dbMachine)
+	}
+
+	// update services associated with machine
+
+	// get list of present services in db
+	dbServices, err := dbmodel.GetServicesByMachine(db, dbMachine.Id)
+	if err != nil {
+		return err
+	}
+
+	dbServicesMap := make(map[string]dbmodel.Service)
+	for _, dbSrv := range dbServices {
+		dbServicesMap[dbSrv.Type] = dbSrv
+	}
+
+	var keaSrv *agentcomm.ServiceKea = nil
+	//var bindSrv *agentcomm.ServiceBind
+	for _, srv := range m.Services {
+		switch s := srv.(type) {
+		case *agentcomm.ServiceKea:
+			keaSrv = s
+		// case agentcomm.ServiceBind:
+		// 	bindSrv = &s
+		default:
+			log.Println("NOT IMPLEMENTED")
+		}
+	}
+
+	var keaDaemons []dbmodel.KeaDaemon
+	if keaSrv != nil {
+		for _, d := range keaSrv.Daemons {
+			keaDaemons = append(keaDaemons, dbmodel.KeaDaemon{
+				Pid: d.Pid,
+				Name: d.Name,
+				Active: d.Active,
+				Version: d.Version,
+				ExtendedVersion: d.ExtendedVersion,
+			})
+		}
+	}
+
+	dbKeaSrv, dbOk := dbServicesMap["kea"]
+	if dbOk && keaSrv != nil {
+		// update service in db
+		meta := dbmodel.ServiceMeta{
+			Version: keaSrv.Version,
+		}
+		dbKeaSrv.Deleted = time.Time{}  // undelete if it was deleted
+		dbKeaSrv.CtrlPort = keaSrv.CtrlPort
+		dbKeaSrv.Active = keaSrv.Active
+		dbKeaSrv.Meta = meta
+		dt := dbKeaSrv.Details.(dbmodel.ServiceKea)
+		dt.ExtendedVersion = keaSrv.ExtendedVersion
+		dt.Daemons = keaDaemons
+		err = db.Update(&dbKeaSrv)
+		if err != nil {
+			return errors.Wrapf(err, "problem with updating service %v", dbKeaSrv)
+		}
+	} else if dbOk && keaSrv == nil {
+		// delete service from db
+		err = dbmodel.DeleteService(db, &dbKeaSrv)
+		if err != nil {
+			return err
+		}
+	} else if !dbOk && keaSrv != nil {
+		// add service to db
+		dbKeaSrv = dbmodel.Service{
+			MachineID: dbMachine.Id,
+			Type: "kea",
+			CtrlPort: keaSrv.CtrlPort,
+			Active: keaSrv.Active,
+			Meta: dbmodel.ServiceMeta{
+				Version: keaSrv.Version,
+			},
+			Details: dbmodel.ServiceKea{
+				ExtendedVersion: keaSrv.ExtendedVersion,
+				Daemons: keaDaemons,
+			},
+		}
+		err = dbmodel.AddService(db, &dbKeaSrv)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = dbmodel.RefreshMachineFromDb(db, dbMachine)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Add a machine where Stork Agent is running.
@@ -382,5 +490,117 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 
 	rsp := services.NewDeleteMachineOK()
 
+	return rsp
+}
+
+func serviceToRestApi(dbService dbmodel.Service) *models.Service {
+	var daemons []*models.KeaDaemon
+	for _, d := range dbService.Details.(dbmodel.ServiceKea).Daemons {
+		daemons = append(daemons, &models.KeaDaemon{
+			Pid: int64(d.Pid),
+			Name: d.Name,
+			Active: d.Active,
+			Version: d.Version,
+			ExtendedVersion: d.ExtendedVersion,
+		})
+	}
+	s := models.Service{
+		ID: dbService.Id,
+		Type: dbService.Type,
+		CtrlPort: dbService.CtrlPort,
+		Active: dbService.Active,
+		Version: dbService.Meta.Version,
+		Details: struct {
+			models.ServiceKea
+			models.ServiceBind
+		}{
+			models.ServiceKea{
+				ExtendedVersion: dbService.Details.(dbmodel.ServiceKea).ExtendedVersion,
+				Daemons: daemons,
+			},
+			models.ServiceBind{},
+		},
+		Machine: &models.ServiceMachine{
+			ID: dbService.MachineID,
+			Address: dbService.Machine.Address,
+			Hostname: dbService.Machine.State.Hostname,
+		},
+	}
+	return &s
+}
+
+func (r *RestAPI) GetServices(ctx context.Context, params services.GetServicesParams) middleware.Responder {
+	servicesLst := []*models.Service{}
+
+	var start int64 = 0
+	if params.Start != nil {
+		start = *params.Start
+	}
+
+	var limit int64 = 10
+	if params.Limit != nil {
+		limit = *params.Limit
+	}
+
+	text := ""
+	if params.Text != nil {
+		text = *params.Text
+	}
+
+	service := ""
+	if params.Service != nil {
+		service = *params.Service
+	}
+
+	log.WithFields(log.Fields{
+		"start": start,
+		"limit": limit,
+		"text": text,
+		"service": service,
+	}).Info("query services")
+
+	dbServices, total, err := dbmodel.GetServicesByPage(r.Db, start, limit, text, service)
+	if err != nil {
+		log.Error(err)
+		msg := "cannot get services from db"
+		rsp := services.NewGetServicesDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+
+	for _, dbS := range dbServices {
+		ss := serviceToRestApi(dbS)
+		servicesLst = append(servicesLst, ss)
+	}
+
+	s := models.Services{
+		Items: servicesLst,
+		Total: total,
+	}
+	rsp := services.NewGetServicesOK().WithPayload(&s)
+	return rsp
+}
+
+func (r *RestAPI) GetService(ctx context.Context, params services.GetServiceParams) middleware.Responder {
+	dbService, err := dbmodel.GetServiceById(r.Db, params.ID)
+	if err != nil {
+		msg := fmt.Sprintf("cannot get service with id %d from db", params.ID)
+		log.Error(err)
+		rsp := services.NewGetServiceDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbService == nil {
+		msg := fmt.Sprintf("cannot find service with id %d", params.ID)
+		rsp := services.NewGetServiceDefault(404).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	s := serviceToRestApi(*dbService)
+	rsp := services.NewGetServiceOK().WithPayload(s)
 	return rsp
 }

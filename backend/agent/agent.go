@@ -26,6 +26,7 @@ type AgentSettings struct {
 // Global Stork Agent state
 type StorkAgent struct {
 	Settings AgentSettings
+	ServiceMonitor ServiceMonitor
 }
 
 
@@ -38,9 +39,39 @@ func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*a
 	load, _ := load.Avg()
 	loadStr := fmt.Sprintf("%.2f %.2f %.2f", load.Load1, load.Load5, load.Load15)
 
+	var services []*agentapi.Service
+	for _, srv := range s.ServiceMonitor.GetServices() {
+		switch s := srv.(type) {
+		case ServiceKea:
+			var daemons []*agentapi.KeaDaemon
+			for _, d := range s.Daemons {
+				daemons = append(daemons, &agentapi.KeaDaemon{
+					Pid: d.Pid,
+					Name: d.Name,
+					Active: d.Active,
+					Version: d.Version,
+					ExtendedVersion: d.ExtendedVersion,
+				})
+			}
+			services = append(services, &agentapi.Service{
+				Version: s.Version,
+				CtrlPort: s.CtrlPort,
+				Active: s.Active,
+				Service: &agentapi.Service_Kea{
+					Kea: &agentapi.ServiceKea{
+						ExtendedVersion: s.ExtendedVersion,
+						Daemons: daemons,
+					},
+				},
+			})
+		default:
+			panic(fmt.Sprint("Unknown service type"))
+		}
+	}
+
 	state := agentapi.GetStateRsp{
 		AgentVersion: stork.Version,
-		//Services             []*Service
+		Services: services,
 		Hostname: hostInfo.Hostname,
 		Cpus: int64(runtime.NumCPU()),
 		CpusLoad: loadStr,
@@ -58,13 +89,8 @@ func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*a
 		HostID: hostInfo.HostID,
 		Error: "",
 	}
-	return &state, nil
-}
 
-// Detect services (Kea, Bind).
-func (s *StorkAgent) DetectServices(ctx context.Context, in *agentapi.DetectServicesReq) (*agentapi.DetectServicesRsp, error) {
-	log.Printf("Received: DetectServices %v", in)
-	return &agentapi.DetectServicesRsp{Abc: "321"}, nil
+	return &state, nil
 }
 
 // Restart Kea service.

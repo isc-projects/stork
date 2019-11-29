@@ -396,6 +396,17 @@ task :docker_down do
   sh 'docker-compose down'
 end
 
+desc 'Build container with Stork Agent and Kea'
+task :build_agent_container do
+  sh 'docker build -f docker/docker-agent-kea.txt -t agent-kea .'
+end
+
+desc 'Run container with Stork Agent and Kea and mount current Agent binary'
+task :run_agent_container do
+  # host[8888]->agent[8080],  host[8787]->kea-ca[8000]
+  sh 'docker run --rm -ti -p 8888:8080 -p 8787:8000 -v `pwd`/backend/cmd/stork-agent:/agent agent-kea'
+end
+
 
 # Documentation
 desc 'Builds Stork documentation, using Sphinx'

@@ -7,6 +7,7 @@ import { LoginScreenComponent } from './login-screen/login-screen.component'
 import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component'
 import { MachinesPageComponent } from './machines-page/machines-page.component'
 import { UsersPageComponent } from './users-page/users-page.component'
+import { ServicesPageComponent } from './services-page/services-page.component'
 
 const routes: Routes = [
     {
@@ -31,6 +32,21 @@ const routes: Routes = [
         canActivate: [AuthGuard],
     },
     {
+        path: 'services/:srv',
+        pathMatch: 'full',
+        redirectTo: 'services/:srv/all',
+    },
+    {
+        path: 'services/:srv/:id',
+        component: ServicesPageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'swagger-ui',
+        component: SwaggerUiComponent,
+        canActivate: [AuthGuard],
+    },
+    {
         path: 'users',
         redirectTo: 'users/',
         pathMatch: 'full',
@@ -43,11 +59,6 @@ const routes: Routes = [
     {
         path: 'users/new',
         component: UsersPageComponent,
-        canActivate: [AuthGuard],
-    },
-    {
-        path: 'swagger-ui',
-        component: SwaggerUiComponent,
         canActivate: [AuthGuard],
     },
 

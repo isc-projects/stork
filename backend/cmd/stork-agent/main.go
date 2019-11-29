@@ -11,10 +11,14 @@ import (
 
 
 func main() {
-	storkAgent := agent.StorkAgent{}
-
 	// Setup logging
 	stork.SetupLogging()
+
+	// Start service monitor
+	sm := agent.NewServiceMonitor()
+	storkAgent := agent.StorkAgent{
+		ServiceMonitor: sm,
+	}
 
 	// Prepare parse for command line flags.
 	parser := flags.NewParser(&storkAgent.Settings, flags.Default)

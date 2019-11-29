@@ -13,6 +13,30 @@ import (
 	"isc.org/stork/api"
 )
 
+type KeaDaemon struct {
+	Pid int32
+	Name string
+	Active bool
+	Version string
+	ExtendedVersion string
+}
+
+type ServiceCommon struct {
+	Version string
+	CtrlPort int64
+	Active bool
+}
+
+type ServiceKea struct {
+	ServiceCommon
+	ExtendedVersion string
+	Daemons []KeaDaemon
+}
+
+type ServiceBind struct {
+	ServiceCommon
+}
+
 // State of the machine. It describes multiple properties of the machine like number of CPUs
 // or operating system name and version.
 type State struct {
@@ -35,6 +59,7 @@ type State struct {
 	HostID string
 	LastVisited time.Time
 	Error string
+	Services []interface{}
 }
 
 // Get version from agent.
@@ -49,10 +74,50 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 	// Call agent for version.
 	grpcState, err := agent.Client.GetState(ctx, &agentapi.GetStateReq{})
 	if err != nil {
-		return nil, errors.Wrap(err, "problem with connection to agent")
+		// reconnect and try again
+		err2 := agent.MakeGrpcConnection()
+		if err2 != nil {
+			log.Warn(err)
+			return nil, errors.Wrap(err2, "problem with connection to agent")
+		}
+		grpcState, err = agent.Client.GetState(ctx, &agentapi.GetStateReq{})
+		if err != nil {
+			return nil, errors.Wrap(err, "problem with connection to agent")
+		}
 	}
 
-	log.Printf("state returned is %+v", grpcState)
+
+	var services []interface{}
+	for _, srv := range grpcState.Services {
+
+		switch s := srv.Service.(type) {
+		case *agentapi.Service_Kea:
+			log.Printf("s.Kea.Daemons %+v", s.Kea.Daemons)
+			var daemons []KeaDaemon
+			for _, d := range s.Kea.Daemons {
+				daemons = append(daemons, KeaDaemon{
+					Pid: d.Pid,
+					Name: d.Name,
+					Active: d.Active,
+					Version: d.Version,
+					ExtendedVersion: d.ExtendedVersion,
+				})
+			}
+			services = append(services, &ServiceKea{
+				ServiceCommon: ServiceCommon{
+					Version: srv.Version,
+					CtrlPort: srv.CtrlPort,
+					Active: srv.Active,
+				},
+				ExtendedVersion: s.Kea.ExtendedVersion,
+				Daemons: daemons,
+			})
+		case *agentapi.Service_Bind:
+			log.Println("NOT IMPLEMENTED")
+		default:
+			log.Println("unsupported service type")
+		}
+	}
 
 	state := State{
 		Address: address,
@@ -74,6 +139,7 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 		HostID: grpcState.HostID,
 		LastVisited: stork.UTCNow(),
 		Error: grpcState.Error,
+		Services: services,
 	}
 
 	return &state, nil

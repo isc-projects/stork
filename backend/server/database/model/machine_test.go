@@ -200,3 +200,31 @@ func TestDeleteMachine(t *testing.T) {
 	err = DeleteMachine(db, m2)
 	require.Contains(t, err.Error(), "no rows in result")
 }
+
+func TestRefreshMachineFromDb(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add machine
+	m := &Machine{
+		Address: "localhost",
+		AgentPort: 8080,
+		Error: "some error",
+		State: MachineState{
+			Hostname: "aaaa",
+			Cpus: 4,
+		},
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+
+	m.State.Hostname = "bbbb"
+	m.State.Cpus = 2
+	m.Error = ""
+
+	err = RefreshMachineFromDb(db, m)
+	require.Nil(t, err)
+	require.Equal(t, "aaaa", m.State.Hostname)
+	require.Equal(t, int64(4), m.State.Cpus)
+	require.Equal(t, "some error", m.Error)
+}
