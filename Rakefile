@@ -24,7 +24,7 @@ case UNAME.rstrip
     puts "WARNING: for the developers' convenience only."
   when "Linux"
     OS="linux"
-    SWAGGER_BIN="swagger_linux_amd64"
+    GOSWAGGER_BIN="swagger_linux_amd64"
     GO_SUFFIX="linux-amd64"
     PROTOC_ZIP_SUFFIX="linux-x86_64"
     NODE_SUFFIX="linux-x64"
@@ -32,8 +32,8 @@ case UNAME.rstrip
   when "FreeBSD"
     OS="FreeBSD"
     # TODO: there are no swagger built packages for FreeBSD
-    SWAGGER_BIN=""
-    puts "WARNING: There are no FreeBSD packages for SWAGGER_BIN"
+    GOSWAGGER_BIN=""
+    puts "WARNING: There are no FreeBSD packages for GOSWAGGER_BIN"
     GO_SUFFIX="freebsd-amd64"
     # TODO: there are no protoc built packages for FreeBSD (at least as of 3.10.0)
     PROTOC_ZIP_SUFFIX=""
@@ -46,7 +46,7 @@ case UNAME.rstrip
   end
 
 # Tool URLs
-GOSWAGGER_URL = "https://github.com/go-swagger/go-swagger/releases/download/#{GOSWAGGER_VER}/#{SWAGGER_BIN}"
+GOSWAGGER_URL = "https://github.com/go-swagger/go-swagger/releases/download/#{GOSWAGGER_VER}/#{GOSWAGGER_BIN}"
 GOLANGCILINT_URL = "https://github.com/golangci/golangci-lint/releases/download/v#{GOLANGCILINT_VER}/golangci-lint-#{GOLANGCILINT_VER}-#{GOLANGCILINT_SUFFIX}.tar.gz"
 GO_URL = "https://dl.google.com/go/go#{GO_VER}.#{GO_SUFFIX}.tar.gz"
 PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v#{PROTOC_VER}/protoc-#{PROTOC_VER}-#{PROTOC_ZIP_SUFFIX}.zip"
@@ -61,7 +61,7 @@ RICHGO_URL = 'github.com/kyoh86/richgo'
 TOOLS_DIR = File.expand_path('tools')
 NPX = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin/npx"
 SWAGGER_CODEGEN = "#{TOOLS_DIR}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
-GOSWAGGER = "#{TOOLS_DIR}/#{SWAGGER_BIN}"
+GOSWAGGER = "#{TOOLS_DIR}/#{GOSWAGGER_BIN}"
 NG = File.expand_path('webui/node_modules/.bin/ng')
 GOHOME_DIR = File.expand_path('~/go')
 GOBIN = "#{GOHOME_DIR}/bin"
