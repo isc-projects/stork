@@ -22,5 +22,5 @@
 /.vagrant
 
 # generated documentation
-/docs/singlehtml
-/docs/doctrees
+/doc/singlehtml
+/doc/doctrees

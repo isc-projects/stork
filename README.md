@@ -14,7 +14,7 @@ be published soon, but for the time being you can generate it on your own by
 doing this:
 
 ```consol
-rake docs
+rake doc
 ```
 
 Make sure you have rake and sphinx installed.

@@ -325,8 +325,8 @@ end
 
 # Documentation
 desc 'Builds Stork documentation, using Sphinx'
-task :docs do
-  sh "sphinx-build -M singlehtml docs/ docs/ #{SPHINXOPTS}"
+task :doc do
+  sh "sphinx-build -M singlehtml doc/ doc/ #{SPHINXOPTS}"
 end
 
 
