@@ -103,6 +103,11 @@ func (r *RestAPI) Serve() (err error) {
 		InnerMiddleware: r.GlobalMiddleware,
 		Authorizer: r.Authorizer,
 		AuthToken: func(token string) (interface{}, error) {
+			// In normal circumstances we'd need to return some
+			// user information here, but the authentication is
+			// currently done in the middleware anyway, so we
+			// bypass this whole mechanism anyway. Let's just
+			// return the token.
 			return token, nil
 		},
 
