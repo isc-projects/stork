@@ -278,10 +278,24 @@ export class UsersPageComponent implements OnInit {
      *              of rows to be returned and the filter text.
      */
     loadUsers(event) {
-        this.usersApi.getUsers(event.first, event.rows, event.filters.text).subscribe(data => {
-            this.users = data.items
-            this.totalUsers = data.total
-        })
+        this.usersApi.getUsers(event.first, event.rows, event.filters.text).subscribe(
+            data => {
+                this.users = data.items
+                this.totalUsers = data.total
+            },
+            err => {
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Loading user accounts failed',
+                    detail: 'Loading user accounts from the database failed: ' + msg,
+                    sticky: true,
+                })
+            }
+        )
     }
 
     /**
@@ -385,7 +399,7 @@ export class UsersPageComponent implements OnInit {
             },
             err => {
                 let msg = err.statusText
-                if (err.error) {
+                if (err.error && err.error.message) {
                     msg = err.error.message
                 }
                 this.msgSrv.add({
@@ -426,7 +440,7 @@ export class UsersPageComponent implements OnInit {
             err => {
                 console.info(err)
                 let msg = err.statusText
-                if (err.error) {
+                if (err.error && err.error.message) {
                     msg = err.error.message
                 }
                 this.msgSrv.add({
