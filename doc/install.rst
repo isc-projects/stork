@@ -28,7 +28,9 @@ Installation using Docker
 =========================
 
 The following command will retrieve all required software (go, goswagger, nodejs, Angular
-dependencies, etc.) to local directory. No root password necessary.
+dependencies, etc.) to your local directory. No root password necessary. Note that Docker
+installation is optional. Using docker is the easiest installation method. However, if you prefer to
+install it on your host, see the next section about Native installation.
 
 .. code-block:: console
 
