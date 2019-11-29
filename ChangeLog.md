@@ -15,6 +15,8 @@
     version upon startup.
     (Gitlab #33)
 
+Stork 0.1.0 released on 2019-11-06.
+
 * 10 [doc] marcin
 
     Updated ARM with a description how to sign in to the system using the
