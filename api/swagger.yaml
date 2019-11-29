@@ -69,7 +69,7 @@ paths:
       parameters:
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
-        - $ref: '#/parameters/paginationTextParam'
+        - $ref: '#/parameters/filterTextParam'
       responses:
         200:
           description: List of users returned.
@@ -186,7 +186,7 @@ paths:
       parameters:
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
-        - $ref: '#/parameters/paginationTextParam'
+        - $ref: '#/parameters/filterTextParam'
         - name: service
           in: query
           description: Limit returned list of machines to these which provide given service, possible values 'bind' or 'kea'.
@@ -259,7 +259,7 @@ parameters:
     description: Number of records to retrieve.
     type: integer
 
-  paginationTextParam:
+  filterTextParam:
     name: text
     in: query
     description: Filtering text, e.g. hostname for the machines.

@@ -103,7 +103,7 @@ func (r *RestAPI) Serve() (err error) {
 		InnerMiddleware: r.GlobalMiddleware,
 		Authorizer: r.Authorizer,
 		AuthToken: func(token string) (interface{}, error) {
-			return "xyz", nil
+			return token, nil
 		},
 
 	})

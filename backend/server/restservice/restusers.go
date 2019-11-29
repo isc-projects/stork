@@ -45,7 +45,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 
 	if !ok || err != nil {
 		if err != nil {
-			log.Printf("%+v", err)
+			log.Error(err)
 		}
 		return users.NewCreateSessionBadRequest()
 	}
@@ -66,7 +66,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionParams) middleware.Responder {
 	err := r.SessionManager.LogoutHandler(ctx)
 	if err != nil {
-		log.Printf("%+v", err)
+		log.Error(err)
 		return users.NewDeleteSessionBadRequest()
 	}
 	return users.NewDeleteSessionOK()
@@ -76,12 +76,12 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) middleware.Responder {
 	systemUsers, err := dbmodel.GetUsers(r.PgDB, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderById)
 	if err != nil {
-		msg := fmt.Sprintf("failed to get users from the database with error: %s", err.Error())
 		log.WithFields(log.Fields{
 			"start": int(*params.Start),
 			"limit": int(*params.Limit),
-		}).Error(msg)
+		}).Errorf("failed to get users from the database with error: %s", err.Error())
 
+		msg := "failed to get users from the database"
 		rspErr := models.APIError{
 			Code: 500,
 			Message: &msg,
@@ -108,12 +108,12 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 	id := int(params.ID)
 	su, err := dbmodel.GetUserById(r.PgDB, id)
 	if err != nil {
-		msg := fmt.Sprintf("failed to get user with id %v from the database with error: %s", id,
-			err.Error())
 		log.WithFields(log.Fields{
 			"userid": id,
-		}).Error(msg)
+		}).Errorf("failed to fetch user with id %v from the database with error: %s", id,
+			err.Error())
 
+		msg := "failed to fetch user with id %v from the database"
 		rspErr := models.APIError{
 			Code: 500,
 			Message: &msg,
@@ -167,9 +167,9 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 			return users.NewCreateUserDefault(409).WithPayload(&rspErr)
 
 		} else {
-			msg := fmt.Sprintf("failed to create new user account for user %s: %s", su.Identity(), err.Error())
-			log.Error(msg)
+			log.Errorf("failed to create new user account for user %s: %s", su.Identity(), err.Error())
 
+			msg := fmt.Sprintf("failed to create new user account for user %s", su.Identity())
 			rspErr := models.APIError{
 				Code: 500,
 				Message: &msg,
@@ -210,13 +210,14 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		return rsp
 
 	} else if err != nil {
-		msg := fmt.Sprintf("failed to update user account in the database with error: %s", err.Error())
 		log.WithFields(log.Fields{
 			"userid": *u.ID,
 			"login": *u.Login,
 			"email": *u.Email,
-		}).Error(msg)
+		}).Errorf("failed to update user account for user %s: %s",
+			su.Identity(), err.Error())
 
+		msg := fmt.Sprintf("failed to update user account for user %s", su.Identity())
 		rspErr := models.APIError{
 			Code: 500,
 			Message: &msg,
