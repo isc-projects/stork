@@ -78,7 +78,11 @@ system.
     stork=# create extension pgcrypto;
     CREATE EXTENSION
 
-Now you need to build the migrations and use it to initialize and upgrade the DB to the latest schema:
+Optional step: if you want to initialize the database on your own, you need to build the migrations
+and use it to initialize and upgrade the DB to the latest schema. However, this is completely
+optional as the database migration will be triggered automatically upon the server startup.
+This is only useful if for some reason you want to set up the database, but don't want to run
+the server yet. In most cases this step can be skipped.
 
 .. code-block:: console
 
@@ -92,10 +96,7 @@ done only once and is not needed for future rebuilds. However, it's safe to reru
 
 .. code-block:: console
 
-    $ rake prepare_env
-    $ rake build_agent
     $ rake build_backend
-    $ rake build_server
     $ rake build_ui
 
 The environment should be ready to run! Open 3 consoles, and run the following 3 commands, one in each
@@ -107,4 +108,6 @@ console:
     $ rake serve_ui
     $ rake run_agent
 
-Once all three processes are running, go ahead and connect to http://localhost:4200 with your web browser.
+Once all three processes are running, go ahead and connect to http://localhost:4200 with your web
+browser.  See  :ref:`usage` for initial password information.
+
