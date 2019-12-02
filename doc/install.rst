@@ -12,7 +12,7 @@ There are several dependencies that needs to be installed:
 
  - rake
  - Java Runtime Environment
- - Docker and Docker Compose
+ - Docker and Docker Compose (when installing using Docker)
 
 For details, please see Stork wiki
 https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment .
@@ -20,9 +20,9 @@ Note the Stork project is in very early stages and its building
 instructions change frequently. Please refer to the wiki page in case
 of problems.
 
-For ease of deployment, Stork uses Rake to automate compilation and installation. It currently
-requires Docker, but soon it will be optional. Technically, you can see how all Stork elements are
-built and conduct all of those steps manually (without using docker).
+For ease of deployment, Stork uses Rake to automate compilation and installation.
+It facilitates installation both using Docker and without Docker (see the
+following sections).
 
 Installation using Docker
 =========================
