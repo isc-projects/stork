@@ -45,7 +45,7 @@ export class MachinesPageComponent implements OnInit {
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
         private loadingService: LoadingService
-    ) { }
+    ) {}
 
     switchToTab(index) {
         if (this.activeTabIdx === index) {
@@ -355,7 +355,10 @@ export class MachinesPageComponent implements OnInit {
 
     saveMachine(machineTab) {
         console.info(machineTab)
-        if (machineTab.address === machineTab.machine.address && machineTab.agentPort === machineTab.machine.agentPort) {
+        if (
+            machineTab.address === machineTab.machine.address &&
+            machineTab.agentPort === machineTab.machine.agentPort
+        ) {
             machineTab.activeInplace = false
             return
         }

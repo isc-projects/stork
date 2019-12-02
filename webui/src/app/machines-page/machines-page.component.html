@@ -6,24 +6,24 @@
     <br />
     <br />
     <div>
-    Address:
-    <input
-        type="text"
-        style="width: 100%;"
-        pInputText
-        [(ngModel)]="machineAddress"
-        (keydown)="keyDownNewMachine($event)"
+        Address:
+        <input
+            type="text"
+            style="width: 100%;"
+            pInputText
+            [(ngModel)]="machineAddress"
+            (keydown)="keyDownNewMachine($event)"
         />
     </div>
     <div style="margin-top: 10px;">
-    Port:
-    <input
-        type="text"
-        style="width: 100%;"
-        placeholder="8080"
-        pInputText
-        [(ngModel)]="agentPort"
-        (keydown)="keyDownNewMachine($event)"
+        Port:
+        <input
+            type="text"
+            style="width: 100%;"
+            placeholder="8080"
+            pInputText
+            [(ngModel)]="agentPort"
+            (keydown)="keyDownNewMachine($event)"
         />
     </div>
     <p-footer>
@@ -181,7 +181,7 @@
                                     [(ngModel)]="machineTab.address"
                                     pInputText
                                     (keydown)="machineAddressKeyDown($event, machineTab)"
-                                /><br>
+                                /><br />
                                 <input
                                     type="text"
                                     [(ngModel)]="machineTab.agentPort"
