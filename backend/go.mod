@@ -6,6 +6,7 @@ require (
 	github.com/alexedwards/scs/postgresstore v0.0.0-20191019164820-acb041f89bc3
 	github.com/alexedwards/scs/v2 v2.2.0
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
+	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/go-openapi/errors v0.19.2
 	github.com/go-openapi/loads v0.19.3
 	github.com/go-openapi/runtime v0.19.6

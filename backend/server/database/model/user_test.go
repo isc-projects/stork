@@ -107,10 +107,8 @@ func TestNewUserAuthenticate(t *testing.T) {
 // Tests that it is indicated when the user being udpdated is not found in
 // the database.
 func TestPersistNoUser(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
-
-	db := pg.Connect(&dbtest.PgConnOptions)
+	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	user := &SystemUser{
 		Id: 123456,
@@ -127,10 +125,8 @@ func TestPersistNoUser(t *testing.T) {
 // Tests that conflict flag is returned when the inserted user is in
 // conflict with existing user.
 func TestPersistConflict(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
-
-	db := pg.Connect(&dbtest.PgConnOptions)
+	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	user := &SystemUser{
 		Login: "jankowal",
@@ -157,10 +153,8 @@ func TestPersistConflict(t *testing.T) {
 
 // Tests that all system users can be fetched from the database.
 func TestGetUsers(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
-
-	db := pg.Connect(&dbtest.PgConnOptions)
+	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	generateTestUsers(t, db)
 
@@ -177,10 +171,8 @@ func TestGetUsers(t *testing.T) {
 
 // Tests that users can be fetched and sorted by login or email.
 func TestGetUsersSortByLoginEmail(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
-
-	db := pg.Connect(&dbtest.PgConnOptions)
+	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	generateTestUsers(t, db)
 
@@ -197,10 +189,8 @@ func TestGetUsersSortByLoginEmail(t *testing.T) {
 
 // Tests that a page of users can be fetched.
 func TestGetUsersPage(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
-
-	db := pg.Connect(&dbtest.PgConnOptions)
+	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	generateTestUsers(t, db)
 
@@ -218,10 +208,8 @@ func TestGetUsersPage(t *testing.T) {
 
 // Tests that last page of users can be fetched without issues.
 func TestGetUsersLastPage(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
-
-	db := pg.Connect(&dbtest.PgConnOptions)
+	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	generateTestUsers(t, db)
 
@@ -239,10 +227,8 @@ func TestGetUsersLastPage(t *testing.T) {
 
 // Tests that user can be fetched by Id.
 func TestGetUserById(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
-
-	db := pg.Connect(&dbtest.PgConnOptions)
+	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	generateTestUsers(t, db)
 

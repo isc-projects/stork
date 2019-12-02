@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 	"context"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/go-openapi/strfmt"
@@ -385,4 +384,3 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 
 	return rsp
 }
-

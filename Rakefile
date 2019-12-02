@@ -248,7 +248,8 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
       ignore_list = ['DetectServices', 'RestartKea', 'Serve', 'BeforeQuery', 'AfterQuery',
                      'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
                      'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
-                     'CreateSession', 'DeleteSession', 'Listen', 'Shutdown']
+                     'CreateSession', 'DeleteSession', 'Listen', 'Shutdown', 'NewRestUser',
+                     'GetUsers', 'GetUser', 'CreateUser', 'UpdateUser']
       if cov < 50 and not ignore_list.include? func
         puts "FAIL: %-80s %5s%% < 50%%" % ["#{file} #{func}", "#{cov}"]
         problem = true

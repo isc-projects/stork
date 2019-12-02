@@ -38,7 +38,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 	}
 	user.Password = *params.Userpassword
 
-	ok, err := dbmodel.Authenticate(r.PgDB, user);
+	ok, err := dbmodel.Authenticate(r.Db, user);
 	if ok {
 		err = r.SessionManager.LoginHandler(ctx, user)
 	}
@@ -74,7 +74,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 
 // Get users having an account in the system.
 func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) middleware.Responder {
-	systemUsers, err := dbmodel.GetUsers(r.PgDB, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderById)
+	systemUsers, err := dbmodel.GetUsers(r.Db, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderById)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"start": int(*params.Start),
@@ -83,7 +83,6 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 
 		msg := "failed to get users from the database"
 		rspErr := models.APIError{
-			Code: 500,
 			Message: &msg,
 		}
 		rsp := users.NewGetUsersDefault(500).WithPayload(&rspErr)
@@ -106,7 +105,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 // Returns user information by user ID.
 func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middleware.Responder {
 	id := int(params.ID)
-	su, err := dbmodel.GetUserById(r.PgDB, id)
+	su, err := dbmodel.GetUserById(r.Db, id)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"userid": id,
@@ -115,7 +114,6 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 
 		msg := "failed to fetch user with id %v from the database"
 		rspErr := models.APIError{
-			Code: 500,
 			Message: &msg,
 		}
 		rsp := users.NewGetUserDefault(500).WithPayload(&rspErr)
@@ -128,7 +126,6 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 		}).Error(msg)
 
 		rspErr := models.APIError{
-			Code: 404,
 			Message: &msg,
 		}
 		rsp := users.NewGetUserDefault(404).WithPayload(&rspErr)
@@ -151,7 +148,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 		Name: *u.Name,
 		Password: string(p),
 	}
-	err, con := su.Persist(r.PgDB)
+	err, con := su.Persist(r.Db)
 	if err != nil {
 		if con {
 			log.WithFields(log.Fields{
@@ -161,7 +158,6 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 
 			msg := "user account with provided login/email already exists"
 			rspErr := models.APIError{
-				Code: 409,
 				Message: &msg,
 			}
 			return users.NewCreateUserDefault(409).WithPayload(&rspErr)
@@ -171,7 +167,6 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 
 			msg := fmt.Sprintf("failed to create new user account for user %s", su.Identity())
 			rspErr := models.APIError{
-				Code: 500,
 				Message: &msg,
 			}
 			return users.NewCreateUserDefault(500).WithPayload(&rspErr)
@@ -195,7 +190,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		Name: *u.Name,
 		Password: string(p),
 	}
-	err, con := su.Persist(r.PgDB)
+	err, con := su.Persist(r.Db)
 	if (con) {
 		log.WithFields(log.Fields{
 			"userid": *u.ID,
@@ -203,7 +198,6 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 
 		msg := "user account with provided login/email already exists"
 		rspErr := models.APIError{
-			Code: 409,
 			Message: &msg,
 		}
 		rsp := users.NewUpdateUserDefault(409).WithPayload(&rspErr)
@@ -219,7 +213,6 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 
 		msg := fmt.Sprintf("failed to update user account for user %s", su.Identity())
 		rspErr := models.APIError{
-			Code: 500,
 			Message: &msg,
 		}
 		rsp := users.NewUpdateUserDefault(500).WithPayload(&rspErr)
