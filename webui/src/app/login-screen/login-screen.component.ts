@@ -27,6 +27,10 @@ export class LoginScreenComponent implements OnInit {
     ) {}
 
     ngOnInit() {
+        if (this.router.url === '/logout') {
+            this.signOut()
+        }
+
         this.returnUrl = this.route.snapshot.queryParams.returnUrl || '/'
 
         this.loginForm = this.formBuilder.group({
@@ -47,5 +51,10 @@ export class LoginScreenComponent implements OnInit {
     signIn() {
         this.auth.login(this.f.username.value, this.f.password.value, this.returnUrl)
         this.router.navigate([this.returnUrl])
+    }
+
+    signOut() {
+        this.auth.logout()
+        this.router.navigate(['/login'])
     }
 }
