@@ -141,12 +141,12 @@
                                     Login*:
                                 </div>
                                 <div class="p-col-5">
-                                    <input pInputText type="text" formControlName="userlogin" pattern="[a-zA-Z0-9]*" />
+                                    <input pInputText type="text" formControlName="userlogin" pattern="[a-zA-Z0-9_]*" />
                                 </div>
                                 <div class="p-col-6">
                                     <p-message
                                         severity="error"
-                                        text="Login must only contains latter and digits"
+                                        text="Login must only contain letters, digits or underscore"
                                         *ngIf="
                                             !userform.controls['userlogin'].valid &&
                                             userform.controls['userlogin'].dirty
