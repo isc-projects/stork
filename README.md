@@ -13,7 +13,7 @@ Please see the Installation section in the Stork ARM for details. Stork ARM will
 be published soon, but for the time being you can generate it on your own by
 doing this:
 
-```consol
+```console
 rake doc
 ```
 
