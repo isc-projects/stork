@@ -34,7 +34,7 @@ func TestGetVersion(t *testing.T) {
 
 	// Check response
 	ctx := context.Background()
-	state, err := agents.GetState(ctx, addr)
+	state, err := agents.GetState(ctx, "127.0.0.1", 8080)
 	require.NoError(t, err)
 	require.Equal(t, state.AgentVersion, expVer)
 }

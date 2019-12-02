@@ -23,7 +23,7 @@ func (fa *FakeAgents) Shutdown() {}
 func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error) {
 	return nil, nil
 }
-func (fa *FakeAgents) GetState(ctx context.Context, address string) (*agentcomm.State, error) {
+func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort int64) (*agentcomm.State, error) {
 	state := agentcomm.State{
 		Cpus: 1,
 		Memory: 4,
@@ -77,7 +77,8 @@ func TestGetMachineState(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost:8080",
+		Address: "localhost",
+		AgentPort: 8080,
 	}
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
@@ -89,7 +90,8 @@ func TestGetMachineState(t *testing.T) {
 	rsp = rapi.GetMachineState(ctx, params)
 	require.IsType(t, &services.GetMachineStateOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineStateOK)
-	require.Equal(t, "localhost:8080", *okRsp.Payload.Address)
+	require.Equal(t, "localhost", *okRsp.Payload.Address)
+	require.Equal(t, int64(8080), okRsp.Payload.AgentPort)
 	require.Less(t, int64(0), okRsp.Payload.Memory)
 	require.Less(t, int64(0), okRsp.Payload.Cpus)
 	require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
@@ -110,6 +112,7 @@ func TestCreateMachine(t *testing.T) {
 	params := services.CreateMachineParams{
 		Machine: &models.Machine{
 			Address: &addr,
+			AgentPort: 8080,
 		},
 	}
 	rsp := rapi.CreateMachine(ctx, params)
@@ -119,42 +122,32 @@ func TestCreateMachine(t *testing.T) {
 	require.Equal(t, "cannot parse address", *defaultRsp.Payload.Message)
 
 	// bad port
-	addr = "localhost:121212121212"
+	addr = "1.2.3.4"
 	params = services.CreateMachineParams{
 		Machine: &models.Machine{
 			Address: &addr,
+			AgentPort: 0,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.CreateMachineDefault)
 	require.Equal(t, 400, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot parse address", *defaultRsp.Payload.Message)
-
-	// bad host+port
-	addr = "2001:db8::68]:1212"
-	params = services.CreateMachineParams{
-		Machine: &models.Machine{
-			Address: &addr,
-		},
-	}
-	rsp = rapi.CreateMachine(ctx, params)
-	require.IsType(t, &services.CreateMachineDefault{}, rsp)
-	defaultRsp = rsp.(*services.CreateMachineDefault)
-	require.Equal(t, 400, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot parse address", *defaultRsp.Payload.Message)
+	require.Equal(t, "bad port", *defaultRsp.Payload.Message)
 
 	// all ok
 	addr = "1.2.3.4"
 	params = services.CreateMachineParams{
 		Machine: &models.Machine{
 			Address: &addr,
+			AgentPort: 8080,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
 	require.IsType(t, &services.CreateMachineOK{}, rsp)
 	okRsp := rsp.(*services.CreateMachineOK)
-	require.Equal(t, addr + ":8080", *okRsp.Payload.Address)
+	require.Equal(t, addr, *okRsp.Payload.Address)
+	require.Equal(t, int64(8080), okRsp.Payload.AgentPort)
 	require.Less(t, int64(0), okRsp.Payload.Memory)
 	require.Less(t, int64(0), okRsp.Payload.Cpus)
 	require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
@@ -204,7 +197,8 @@ func TestGetMachine(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost:8080",
+		Address: "localhost",
+		AgentPort: 8080,
 	}
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
@@ -230,11 +224,12 @@ func TestUpdateMachine(t *testing.T) {
 	ctx := context.Background()
 
 	// update non-existing machine
-	addr := "localhost:8080"
+	addr := "localhost"
 	params := services.UpdateMachineParams{
 		ID: 123,
 		Machine: &models.Machine{
 			Address: &addr,
+			AgentPort: 8080,
 		},
 	}
 	rsp := rapi.UpdateMachine(ctx, params)
@@ -245,7 +240,8 @@ func TestUpdateMachine(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost:1010",
+		Address: "localhost",
+		AgentPort: 1010,
 	}
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
@@ -255,6 +251,7 @@ func TestUpdateMachine(t *testing.T) {
 		ID: m.Id,
 		Machine: &models.Machine{
 			Address: &addr,
+			AgentPort: 8080,
 		},
 	}
 	rsp = rapi.UpdateMachine(ctx, params)
@@ -264,7 +261,8 @@ func TestUpdateMachine(t *testing.T) {
 
 	// add another machine
 	m2 := &dbmodel.Machine{
-		Address: "localhost:2020",
+		Address: "localhost",
+		AgentPort: 2020,
 	}
 	err = dbmodel.AddMachine(db, m2)
 	require.NoError(t, err)
@@ -274,6 +272,7 @@ func TestUpdateMachine(t *testing.T) {
 		ID: m2.Id,
 		Machine: &models.Machine{
 			Address: &addr,
+			AgentPort: 8080,
 		},
 	}
 	rsp = rapi.UpdateMachine(ctx, params)
@@ -288,6 +287,7 @@ func TestUpdateMachine(t *testing.T) {
 		ID: m2.Id,
 		Machine: &models.Machine{
 			Address: &addr,
+			AgentPort: 8080,
 		},
 	}
 	rsp = rapi.UpdateMachine(ctx, params)
@@ -317,6 +317,7 @@ func TestDeleteMachine(t *testing.T) {
 	// add machine
 	m := &dbmodel.Machine{
 		Address: "localhost:1010",
+		AgentPort: 1010,
 	}
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)

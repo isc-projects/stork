@@ -1,7 +1,9 @@
 package agentcomm
 
 import (
+	"net"
 	"time"
+	"strconv"
 	"context"
 
 	log "github.com/sirupsen/logrus"
@@ -36,9 +38,10 @@ type State struct {
 }
 
 // Get version from agent.
-func (agents *connectedAgentsData) GetState(ctx context.Context, address string) (*State, error) {
+func (agents *connectedAgentsData) GetState(ctx context.Context, address string, agentPort int64) (*State, error) {
 	// Find agent in map.
-	agent, err := agents.GetConnectedAgent(address)
+	addrPort := net.JoinHostPort(address, strconv.FormatInt(agentPort, 10))
+	agent, err := agents.GetConnectedAgent(addrPort)
 	if err != nil {
 		return nil, err
 	}

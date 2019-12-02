@@ -2,15 +2,13 @@ package restservice
 
 import (
 	"fmt"
-	"net"
 	"time"
 	"context"
-	"regexp"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/pkg/errors"
 	"github.com/asaskevich/govalidator"
 
 	"isc.org/stork"
@@ -43,6 +41,7 @@ func machineToRestApi(dbMachine dbmodel.Machine) *models.Machine {
 	m := models.Machine{
 		ID: dbMachine.Id,
 		Address: &dbMachine.Address,
+		AgentPort: dbMachine.AgentPort,
 		AgentVersion: dbMachine.State.AgentVersion,
 		Cpus: dbMachine.State.Cpus,
 		CpusLoad: dbMachine.State.CpusLoad,
@@ -86,7 +85,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 
 	ctx2, cancel := context.WithTimeout(ctx, 2 * time.Second)
 	defer cancel()
-	state, err := r.Agents.GetState(ctx2, dbMachine.Address)
+	state, err := r.Agents.GetState(ctx2, dbMachine.Address, dbMachine.AgentPort)
 	if err != nil {
 		log.Warn(err)
 		dbMachine.Error = "cannot get state of machine"
@@ -145,8 +144,7 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 		"service": service,
 	}).Info("query machines")
 
-	log.Infof("DB1 %+v", r.Db)
-	dbMachines, total, err := dbmodel.GetMachines(r.Db, start, limit, text)
+	dbMachines, total, err := dbmodel.GetMachinesByPage(r.Db, start, limit, text)
 	if err != nil {
 		log.Error(err)
 		msg := "cannot get machines from db"
@@ -193,55 +191,29 @@ func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachinePara
 	return rsp
 }
 
-func checkMachineAddress(address string) (string, error, string) {
-	// Use net/url to parse the address. Trick: pretend http url address.
-	// This way we can parse any case of address:
-	// - localhost
-	// - localhost:8080
-	// - 127.0.0.1:8080
-	// - [2001:0db8:85a3:0000:0000:8a2e:0370:7334]:8080
-	var host, port string
-
-	m, err := regexp.MatchString(`.*:\d+$`, address)
-	if err != nil {
-		return "", errors.Wrapf(err, "problem with parsing address %s", address), "cannot parse address"
-	}
-	if m {
-		host, port, err = net.SplitHostPort(address)
-		if err != nil {
-			return "", errors.Wrapf(err, "problem with parsing address %s", address), "cannot parse address"
-		}
-	} else {
-		host = address
-		port = stork.DEFAULT_AGENT_PORT
-	}
-
-	if !govalidator.IsHost(host) {
-		return "", errors.Errorf("problem with parsing host part of address %s", host), "cannot parse address"
-	}
-
-	if !govalidator.IsPort(port) {
-		return "", errors.Errorf("problem with parsing port part of address %s", port), "cannot parse address"
-	}
-
-	addr := net.JoinHostPort(host, port)
-	return addr, nil, ""
-}
-
 // Add a machine where Stork Agent is running.
 func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachineParams) middleware.Responder {
-	addr, err, errStr := checkMachineAddress(*params.Machine.Address)
-	if err != nil {
-		log.Warn(err)
+	addr := *params.Machine.Address
+	if !govalidator.IsHost(*params.Machine.Address) {
+		log.Warnf("problem with parsing address %s", addr)
+		msg := "cannot parse address"
 		rsp := services.NewCreateMachineDefault(400).WithPayload(&models.APIError{
-			Message: &errStr,
+			Message: &msg,
+		})
+		return rsp
+	}
+	if params.Machine.AgentPort <= 0 || params.Machine.AgentPort > 65535 {
+		log.Warnf("bad agent port %d", params.Machine.AgentPort)
+		msg := "bad port"
+		rsp := services.NewCreateMachineDefault(400).WithPayload(&models.APIError{
+			Message: &msg,
 		})
 		return rsp
 	}
 
-	dbMachine, err := dbmodel.GetMachineByAddress(r.Db, addr, true)
+	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.Db, addr, params.Machine.AgentPort, true)
 	if err == nil && dbMachine != nil && dbMachine.Deleted.IsZero() {
-		msg := fmt.Sprintf("machine %s already exists", addr)
+		msg := fmt.Sprintf("machine %s:%d already exists", addr, params.Machine.AgentPort)
 		log.Warnf(msg)
 		rsp := services.NewCreateMachineDefault(400).WithPayload(&models.APIError{
 			Message: &msg,
@@ -250,7 +222,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	}
 
 	if dbMachine == nil {
-		dbMachine = &dbmodel.Machine{Address: addr}
+		dbMachine = &dbmodel.Machine{Address: addr, AgentPort: params.Machine.AgentPort}
 		err = dbmodel.AddMachine(r.Db, dbMachine)
 		if err != nil {
 			msg := fmt.Sprintf("cannot store machine %s", addr)
@@ -266,7 +238,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 	ctx2, cancel := context.WithTimeout(ctx, 100 * time.Second)
 	defer cancel()
-	state, err := r.Agents.GetState(ctx2, addr)
+	state, err := r.Agents.GetState(ctx2, addr, params.Machine.AgentPort)
 	if err != nil {
 		log.Warn(err)
 		dbMachine.Error = "cannot get state of machine"
@@ -297,11 +269,20 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 // Get one machine by ID where Stork Agent is running.
 func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachineParams) middleware.Responder {
-	address, err, errStr := checkMachineAddress(*params.Machine.Address)
-	if err != nil {
-		log.Warn(err)
+	addr := *params.Machine.Address
+	if !govalidator.IsHost(*params.Machine.Address) {
+		log.Warnf("problem with parsing address %s", addr)
+		msg := "cannot parse address"
 		rsp := services.NewUpdateMachineDefault(400).WithPayload(&models.APIError{
-			Message: &errStr,
+			Message: &msg,
+		})
+		return rsp
+	}
+	if params.Machine.AgentPort <= 0 || params.Machine.AgentPort > 65535 {
+		log.Warnf("bad agent port %d", params.Machine.AgentPort)
+		msg := "bad port"
+		rsp := services.NewUpdateMachineDefault(400).WithPayload(&models.APIError{
+			Message: &msg,
 		})
 		return rsp
 	}
@@ -324,10 +305,11 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	}
 
 	// check if there is no duplicate
-	if dbMachine.Address != address {
-		dbMachine2, err := dbmodel.GetMachineByAddress(r.Db, address, false)
+	if dbMachine.Address != addr || dbMachine.AgentPort != params.Machine.AgentPort {
+		dbMachine2, err := dbmodel.GetMachineByAddressAndAgentPort(r.Db, addr, params.Machine.AgentPort, false)
 		if err == nil && dbMachine2 != nil && dbMachine2.Id != dbMachine.Id {
-			msg := fmt.Sprintf("machine with address %s already exists", *params.Machine.Address)
+			msg := fmt.Sprintf("machine with address %s:%d already exists",
+				*params.Machine.Address, params.Machine.AgentPort)
 			rsp := services.NewUpdateMachineDefault(400).WithPayload(&models.APIError{
 				Message: &msg,
 			})
@@ -336,7 +318,8 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	}
 
 	// copy fields
-	dbMachine.Address = address
+	dbMachine.Address = addr
+	dbMachine.AgentPort = params.Machine.AgentPort
 	err = r.Db.Update(dbMachine)
 	if err != nil {
 		msg := fmt.Sprintf("cannot update machine with id %d in db", params.ID)

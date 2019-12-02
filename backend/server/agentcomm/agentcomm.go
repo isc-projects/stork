@@ -48,7 +48,7 @@ func (agent *Agent) MakeGrpcConnection() error {
 type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
-	GetState(ctx context.Context, address string) (*State, error)
+	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.
@@ -78,7 +78,7 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	// Look for agent in Agents map and if found then return it
 	agent, ok := agents.AgentsMap[address]
 	if ok {
-		log.Printf("connecting to existing agent from %v", address)
+		log.Printf("connecting to existing agent on %v", address)
 		return agent, nil
 	}
 

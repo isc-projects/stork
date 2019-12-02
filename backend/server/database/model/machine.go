@@ -37,6 +37,7 @@ type Machine struct {
 	Created     time.Time
 	Deleted     time.Time
 	Address     string
+	AgentPort   int64
 	LastVisited time.Time
 	Error       string
 	State       MachineState
@@ -46,14 +47,16 @@ func AddMachine(db *pg.DB, machine *Machine) error {
 	log.Infof("inserting machine %+v", machine)
 	err := db.Insert(machine)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with inserting machine %v", machine.Address)
+		err = errors.Wrapf(err, "problem with inserting machine %+v", machine)
 	}
 	return err
 }
 
-func GetMachineByAddress(db *pg.DB, address string, withDeleted bool) (*Machine, error) {
+func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64, withDeleted bool) (*Machine, error) {
 	machine := Machine{}
-	q := db.Model(&machine).Where("address = ?", address)
+	q := db.Model(&machine)
+	q = q.Where("address = ?", address)
+	q = q.Where("agent_port = ?", agentPort)
 	if !withDeleted {
 		q = q.Where("deleted is NULL")
 	}
@@ -61,7 +64,7 @@ func GetMachineByAddress(db *pg.DB, address string, withDeleted bool) (*Machine,
 	if err == pg.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting machine %v", address)
+		return nil, errors.Wrapf(err, "problem with getting machine %s:%d", address, agentPort)
 	}
 	return &machine, nil
 }
@@ -78,9 +81,9 @@ func GetMachineById(db *pg.DB, id int64) (*Machine, error) {
 	return &machine, nil
 }
 
-func GetMachines(db *pg.DB, offset int64, limit int64, text string) ([]Machine, int64, error) {
+func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Machine, int64, error) {
 	if limit == 0 {
-		limit = 10
+		return nil, 0, errors.New("limit should be greater than 0")
 	}
 	var machines []Machine
 
@@ -90,17 +93,17 @@ func GetMachines(db *pg.DB, offset int64, limit int64, text string) ([]Machine, 
 		text = "%" + text + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
 			qq = qq.WhereOr("address ILIKE ?", text).
-				WhereOr("state->>'agent_version' ILIKE ?", text).
-				WhereOr("state->>'hostname' ILIKE ?", text).
-				WhereOr("state->>'os' ILIKE ?", text).
-				WhereOr("state->>'platform' ILIKE ?", text).
-				WhereOr("state->>'platform_family' ILIKE ?", text).
-				WhereOr("state->>'platform_version' ILIKE ?", text).
-				WhereOr("state->>'kernel_version' ILIKE ?", text).
-				WhereOr("state->>'kernel_arch' ILIKE ?", text).
-				WhereOr("state->>'virtualization_system' ILIKE ?", text).
-				WhereOr("state->>'virtualization_role' ILIKE ?", text).
-				WhereOr("state->>'host_id' ILIKE ?", text)
+				WhereOr("state->>'AgentVersion' ILIKE ?", text).
+				WhereOr("state->>'Hostname' ILIKE ?", text).
+				WhereOr("state->>'Os' ILIKE ?", text).
+				WhereOr("state->>'Platform' ILIKE ?", text).
+				WhereOr("state->>'PlatformFamily' ILIKE ?", text).
+				WhereOr("state->>'PlatformVersion' ILIKE ?", text).
+				WhereOr("state->>'KernelVersion' ILIKE ?", text).
+				WhereOr("state->>'KernelArch' ILIKE ?", text).
+				WhereOr("state->>'VirtualizationSystem' ILIKE ?", text).
+				WhereOr("state->>'VirtualizationRole' ILIKE ?", text).
+				WhereOr("state->>'HostID' ILIKE ?", text)
 			return qq, nil
 		})
 	}

@@ -403,6 +403,8 @@ definitions:
         readOnly: true
       address:
         type: string
+      agentPort:
+        type: integer
       agentVersion:
         type: string
         readOnly: true

@@ -275,6 +275,9 @@ task :show_cov do
   at_exit {
     sh 'rm -f backend/server/agentcomm/api_mock.go'
   }
+  if not File.file?('backend/coverage.out')
+    Rake::Task["unittest_backend_db"].invoke()
+  end
   Dir.chdir('backend') do
     sh "#{GO} generate -v ./..."
     sh "#{GO} tool cover -html=coverage.out"

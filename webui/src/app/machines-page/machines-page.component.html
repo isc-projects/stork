@@ -1,10 +1,11 @@
 <p-dialog header="New Machine" [(visible)]="newMachineDlgVisible">
-    Machine's address should be in form 'address[:port]' <br />
+    Machine is located by address and port <br />
     where 'address' is IP address or FQDN of machine, <br />
-    port is and Stork agent listening port. <br />
+    port is Stork agent listening port. <br />
     Port can be omitted, default value is 8080.
     <br />
     <br />
+    <div>
     Address:
     <input
         type="text"
@@ -12,7 +13,19 @@
         pInputText
         [(ngModel)]="machineAddress"
         (keydown)="keyDownNewMachine($event)"
-    />
+        />
+    </div>
+    <div style="margin-top: 10px;">
+    Port:
+    <input
+        type="text"
+        style="width: 100%;"
+        placeholder="8080"
+        pInputText
+        [(ngModel)]="agentPort"
+        (keydown)="keyDownNewMachine($event)"
+        />
+    </div>
     <p-footer>
         <button type="button" (click)="cancelNewMachine()" pButton icon="pi pi-times" label="Cancel"></button>
         <button type="button" (click)="addNewMachine()" pButton icon="pi pi-check" label="Add"></button>
@@ -111,7 +124,7 @@
                 <td>
                     <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
                 </td>
-                <td>{{ m.address }}</td>
+                <td>{{ m.address }}:{{ m.agentPort }}</td>
                 <td>{{ m.agentVersion }}</td>
                 <td>{{ m.service }}</td>
                 <td>{{ m.cpus }}</td>
@@ -148,7 +161,7 @@
                     <td>{{ machineTab.machine.hostname }}</td>
                 </tr>
                 <tr>
-                    <td>Address</td>
+                    <td style="vertical-align: top;">Address</td>
                     <td>
                         <p-inplace
                             [(active)]="machineTab.activeInplace"
@@ -156,7 +169,7 @@
                             (onActivate)="editAddress(machineTab)"
                         >
                             <span pInplaceDisplay>
-                                {{ machineTab.machine.address }}
+                                {{ machineTab.machine.address }}:{{ machineTab.machine.agentPort }}
                                 <i
                                     class="pi pi-pencil"
                                     style="font-size: 1.5em; vertical-align: middle; margin-left: 5px;"
@@ -166,6 +179,12 @@
                                 <input
                                     type="text"
                                     [(ngModel)]="machineTab.address"
+                                    pInputText
+                                    (keydown)="machineAddressKeyDown($event, machineTab)"
+                                /><br>
+                                <input
+                                    type="text"
+                                    [(ngModel)]="machineTab.agentPort"
                                     pInputText
                                     (keydown)="machineAddressKeyDown($event, machineTab)"
                                 />

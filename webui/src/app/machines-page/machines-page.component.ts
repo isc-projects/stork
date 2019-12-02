@@ -29,7 +29,8 @@ export class MachinesPageComponent implements OnInit {
 
     // new machine
     newMachineDlgVisible = false
-    machineAddress = 'agent-kea:8080'
+    machineAddress = 'localhost'
+    agentPort = ''
 
     // machine tabs
     activeTabIdx = 0
@@ -44,7 +45,7 @@ export class MachinesPageComponent implements OnInit {
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
         private loadingService: LoadingService
-    ) {}
+    ) { }
 
     switchToTab(index) {
         if (this.activeTabIdx === index) {
@@ -61,6 +62,7 @@ export class MachinesPageComponent implements OnInit {
         this.openedMachines.push({
             machine,
             address: machine.address,
+            agentPort: machine.agentPort,
             activeInplace: false,
         })
         this.tabs.push({
@@ -182,7 +184,11 @@ export class MachinesPageComponent implements OnInit {
 
         this.newMachineDlgVisible = false
 
-        const m = { address: this.machineAddress }
+        let agentPort = this.agentPort.trim()
+        if (agentPort === '') {
+            agentPort = '8080'
+        }
+        const m = { address: this.machineAddress, agentPort: parseInt(agentPort, 10) }
 
         this.loadingService.start('adding new machine')
         this.servicesApi.createMachine(m).subscribe(
@@ -349,11 +355,11 @@ export class MachinesPageComponent implements OnInit {
 
     saveMachine(machineTab) {
         console.info(machineTab)
-        if (machineTab.address === machineTab.machine.address) {
+        if (machineTab.address === machineTab.machine.address && machineTab.agentPort === machineTab.machine.agentPort) {
             machineTab.activeInplace = false
             return
         }
-        const m = { address: machineTab.address }
+        const m = { address: machineTab.address, agentPort: parseInt(machineTab.agentPort, 10) }
         this.servicesApi.updateMachine(machineTab.machine.id, m).subscribe(
             data => {
                 console.info('updated', data)

@@ -12,11 +12,12 @@ func init() {
                  id                      SERIAL PRIMARY KEY,
 	         created                 TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
 	         deleted                 TIMESTAMP WITHOUT TIME ZONE,
-                 address                 VARCHAR(255),
-                 state                   JSONB,
+                 address                 VARCHAR(255) NOT NULL,
+                 agent_port              INTEGER NOT NULL,
+                 state                   JSONB NOT NULL,
 	         last_visited            TIMESTAMP WITHOUT TIME ZONE,
 	         error                   VARCHAR(255),
-                 UNIQUE (address)
+                 UNIQUE (address, agent_port)
              );
 
              -- Machine should be deleted after creation.
