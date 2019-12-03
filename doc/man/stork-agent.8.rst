@@ -15,7 +15,7 @@ stork-agent - Stork agent that monitors BIND and Kea services
 Synopsis
 ~~~~~~~~
 
-:program:`stork-agent` 
+:program:`stork-agent` [**--host**] [**--port**]
 
 Description
 ~~~~~~~~~~~
@@ -23,6 +23,22 @@ Description
 The ``stork-agent`` is a small tool that is being run on the systems
 that are running BIND and Kea services. Stork server connects to
 the stork agent and uses it to monitor services remotely.
+
+Arguments
+~~~~~~~~~
+
+The Stork Agent takes the following arguments:
+
+``-h`` or ``--help``
+   Displays list of available parameters.
+
+``--host=hostname``
+   Specifies the IP to listen on. Can be controlled with $STORK_AGENT_ADDRESS environment
+   variable. The default value is ``::``.
+
+``--port=1234``
+   Specifies the TCP port to listen on for connections. The default is 8080. Can be controlled
+   with $STORK_AGENT_PORT environment variable.
 
 
 Configuration
