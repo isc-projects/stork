@@ -10,10 +10,9 @@ It is going to be a spiritual successor of earlier attempts - Kittiwake and Anth
 It is currently in very early stages of planning.
 
 This is the reference guide for Stork version |release|.
-Links to the most up-to-date version of this document (in PDF, HTML,
-and plain text formats), along with other documents for
-Kea, can be found in ISC's `Stork project homepage  <https://gitlab.isc.org/isc-projects/stork>`_.
-
+Links to the most up-to-date version of this document, along with other documents for
+Stork, can be found in ISC's `Stork project homepage  <https://gitlab.isc.org/isc-projects/stork>`_
+or `readthedocs <https://stork.readthedocs.io>`_ .
 
 .. toctree::
    :numbered:
