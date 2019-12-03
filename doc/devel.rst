@@ -58,3 +58,10 @@ can be used:
       "hostID": "c41337a1-0ec3-3896-a954-a1f85e849d53"
     }
 
+Installing git hooks
+====================
+
+There's a simple git hook that inserts the issue number in the commit message automatically. If you
+want to use it, go to ``utils`` directory and run ``git-hooks-install`` script. It will copy the
+necessary file to ``.git/hooks`` directory.
+
