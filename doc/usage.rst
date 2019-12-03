@@ -41,17 +41,17 @@ a variety of way. Here is one of them.
 Assuming you want to monitor services running on machine with IP 192.0.2.1, you can do the following
 on the Stork server command line:
 
-```
-cd <stork-dir>
-scp backend/cmd/stork-agent login@192.0.2.1:/path
-```
+.. code:: console
+
+    cd <stork-dir>
+    scp backend/cmd/stork-agent login@192.0.2.1:/path
 
 On the machine to be monitored, you need to start the agent. In the basic case, you can simply
 run it:
 
-```
-./stork-agent
-```
+.. code:: console
+
+    ./stork-agent
 
 You can optionally pass ``--host=`` or set the ``STORK_AGENT_ADDRESS`` variable to specify which
 address the agent will listen on. You can pass ``--port`` or set the ``STORK_AGENT_PORT``
