@@ -10,12 +10,18 @@ Developer's Guide
    should eventually be separated. However, since these are still very early days of the project,
    this section is kept in the Stork ARM for convenience only.
 
+Generating Documentation
+========================
+
+To generate documentation, simply type ``rake doc``. You need to have Sphinx and rtd-theme installed.
+The documentation will be available in the ``doc/singlehtml`` directory.
+
 Agent API
 =========
 
 The connection between the server and the agents is done using gRPC over http/2. The agent API
 definition is kept in the ``backend/api/agent.proto`` file. For debugging purposes, it is possible
-to connect to the agent using [grpcurl](https://github.com/fullstorydev/grpcurl) tool. For example,
+to connect to the agent using `grpcurl <https://github.com/fullstorydev/grpcurl>`_ tool. For example,
 you can retrieve a list of currently provided gRPC calls by using this command:
 
 .. code:: console
