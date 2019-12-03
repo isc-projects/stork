@@ -1,17 +1,12 @@
 .. _backend-api:
 
-*****************
-Stork Backend API
-*****************
+***********
+Backend API
+***********
 
-URL: (stork-url)/version-get
+Stork agent provides a REST API. The API is generated using [Swagger](https://swagger.io/). The API
+points are currently documented in the ``api/swagger.yaml`` file.
 
-Returns:
+.. note::
 
-.. code-block:: json
-
-    {
-        "version": "1.2.3"
-    }
-
-
+   In the future Stork releases, the API documentation will be generated automatically.
