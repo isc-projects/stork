@@ -1,3 +1,8 @@
+* 15 [doc] tomek
+
+    Users and machines management is now documented in the Stork ARM.
+    (Gitlab #99)
+
 * 14 [doc] sgoldlust
 
     Introduced new Stork logo in the documentation.
