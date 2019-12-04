@@ -97,7 +97,7 @@ export class UsersPageComponent implements OnInit {
     userMenuItems: MenuItem[]
 
     // user tabs
-    activeTabIdx = 0
+    activeTabIdx: number = 0
     tabs: MenuItem[]
     activeItem: MenuItem
     openedTabs: UserTab[]
@@ -147,7 +147,7 @@ export class UsersPageComponent implements OnInit {
      */
     private switchToTab(index) {
         if (this.activeTabIdx !== index) {
-            this.activeTabIdx = index
+            this.activeTabIdx = Number(index)
             if (index > 0) {
                 this.userTab = this.openedTabs[index]
                 this.router.navigate([this.userTab.tabRoute])
@@ -259,11 +259,13 @@ export class UsersPageComponent implements OnInit {
      * Closes selected tab
      */
     closeTab(event, idx) {
-        this.openedTabs.splice(idx, 1)
-        this.tabs.splice(idx, 1)
-        if (this.activeTabIdx === idx) {
-            this.switchToTab(idx - 1)
-        } else if (this.activeTabIdx > idx) {
+        const i = Number(idx)
+
+        this.openedTabs.splice(i, 1)
+        this.tabs.splice(i, 1)
+        if (this.activeTabIdx === i) {
+            this.switchToTab(i - 1)
+        } else if (this.activeTabIdx > i) {
             this.activeTabIdx = this.activeTabIdx - 1
         }
         if (event) {
