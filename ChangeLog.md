@@ -1,3 +1,8 @@
+* 14 [doc] sgoldlust
+
+    Introduced new Stork logo in the documentation.
+    (Gitlab #95)
+
 * 13 [build] tomek
 
     Extended the build system to be able to run on MacOS. Also updated
