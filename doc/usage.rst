@@ -17,7 +17,7 @@ via the web UI. Please use the login ``admin`` and password ``admin`` to sign in
 To manage users, click on the ``Configuration`` menu and choose ``Users``. You will see a list of
 existing users. At the very least, there will be user ``admin``.
 
-To add new user, click ``Create User Account``. A new screen will open that will let you specify the
+To add new user, click ``Create User Account``. A new tab will opened that will let you specify the
 new account parameters. Some fields have specific restrictions. Username can consist of only
 letters, numbers and underscore. E-mail field is optional. However, if specified, it must be a well
 formed e-mail. First and lastname fields are mandatory. Password must only contain letters, digits,
@@ -26,17 +26,17 @@ button will become active and you will be able to add new account.
 
 .. note::
 
-    As of 0.2.0, the role-based access control is not implemented yet. Every user added is
-    considered a super-admin and is able to do everything the interface allows.
+    As of Stork 0.2.0 release, the role-based access control is not implemented yet. Every user
+    is considered a super-admin and has full control over the system.
 
 
 Deploying Stork Agent
 =====================
 
-Stork system uses agents to monitor services. Stork Agent (`STAG` or simply `agent`) is a small
-daemon that is expected to be deployed and run on each machine to be monitored. As of 0.2.0 there
-are no automated deployment routines and STAG has to be copied and run manually. This can be done in
-a variety of way. Here is one of them.
+Stork system uses agents to monitor services. Stork Agent (`STAG` or simply `agent`) is a
+daemon that is expected to be deployed and run on each machine to be monitored. As of Stork 0.2.0
+release there are no automated deployment routines and STAG has to be copied and run manually.
+This can be done in a variety of ways. Here is one of them.
 
 Assuming you want to monitor services running on machine with IP 192.0.2.1, you can do the following
 on the Stork server command line:
@@ -53,9 +53,9 @@ run it:
 
     ./stork-agent
 
-You can optionally pass ``--host=`` or set the ``STORK_AGENT_ADDRESS`` variable to specify which
-address the agent will listen on. You can pass ``--port`` or set the ``STORK_AGENT_PORT``
-variable to specify which TCP port the agent will listen on.
+You can optionally pass ``--host=`` or set the ``STORK_AGENT_ADDRESS`` environment variable to
+specify which address the agent will listen on. You can pass ``--port`` or set the ``STORK_AGENT_PORT``
+environment variable to specify which TCP port the agent will listen on.
 
 .. note::
 
@@ -65,7 +65,7 @@ variable to specify which TCP port the agent will listen on.
 Registering New Machine
 =======================
 
-Once the agent is deployed and running on the machine to be monitored, you should instruct stork
+Once the agent is deployed and running on the machine to be monitored, you should instruct Stork
 server to start monitoring it. You can do so by going to Services menu and choosing Machines.
 You will be presented with a list of currently registered machines.
 
@@ -90,7 +90,7 @@ To monitor registered machines, go to Services menu and click Machines. A list o
 registered machines will be displayed. Pagination mechanism is available to display larger
 number of machines.
 
-There is a filtering mechanism that acts as an omnibox. The string typed is searched for in address,
+There is a filtering mechanism that acts as an omnibox. The string typed is searched for an address,
 agent version, hostname, OS, platform, OS version, kernel version, kernel architecture,
 virtualization system, host-id fields. The filtering happens once you hit ENTER.
 

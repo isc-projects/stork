@@ -13,13 +13,14 @@ Developer's Guide
 Generating Documentation
 ========================
 
-To generate documentation, simply type ``rake doc``. You need to have Sphinx and rtd-theme installed.
-The documentation will be available in the ``doc/singlehtml`` directory.
+To generate documentation, simply type ``rake doc``. You need to have `Sphinx <http://www.sphinx-doc.org>`_
+and `rtd-theme <https://github.com/readthedocs/sphinx_rtd_theme>`_ installed. The generated
+documentation will be available in the ``doc/singlehtml`` directory.
 
 Agent API
 =========
 
-The connection between the server and the agents is done using gRPC over http/2. The agent API
+The connection between the server and the agents is established using gRPC over http/2. The agent API
 definition is kept in the ``backend/api/agent.proto`` file. For debugging purposes, it is possible
 to connect to the agent using `grpcurl <https://github.com/fullstorydev/grpcurl>`_ tool. For example,
 you can retrieve a list of currently provided gRPC calls by using this command:
@@ -34,8 +35,8 @@ you can retrieve a list of currently provided gRPC calls by using this command:
       rpc restartKea ( .agentapi.RestartKeaReq ) returns ( .agentapi.RestartKeaRsp );
     }
 
-You can also call specific gRPC calls. For example, to get the state, the following command can be
-used:
+You can also make specific gRPC calls. For example, to get the machine state, the following command
+can be used:
 
 .. code:: console
 
