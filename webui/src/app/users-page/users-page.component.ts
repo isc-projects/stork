@@ -97,7 +97,7 @@ export class UsersPageComponent implements OnInit {
     userMenuItems: MenuItem[]
 
     // user tabs
-    activeTabIdx: number = 0
+    activeTabIdx = 0
     tabs: MenuItem[]
     activeItem: MenuItem
     openedTabs: UserTab[]
