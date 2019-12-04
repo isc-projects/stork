@@ -1,8 +1,10 @@
+Stork 0.2.0 released on 2019-12-04.
+
 * 16 [bug] marcin
 
     Fixed an issue with closing a tab on the user management page.
     (Gitlab #100)
-    
+
 * 15 [doc] tomek
 
     Users and machines management is now documented in the Stork ARM.
