@@ -154,6 +154,35 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
+  /users/{id}/password:
+    put:
+      summary: Updates user password.
+      description: Updates user password.
+      operationId: updateUserPassword
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: User identifier in the database.
+        - in: body
+          name: passwords
+          description: Old and new password
+          schema:
+            $ref: "#/definitions/PasswordChange"
+
+      responses:
+        200:
+          description: Password updated successfully.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /version:
     get:
       summary: Get version.
@@ -410,6 +439,17 @@ definitions:
 
   Password:
     type: string
+
+  PasswordChange:
+    type: object
+    required:
+      - oldpassword
+      - newpassword
+    properties:
+      oldpassword:
+        $ref: "#/definitions/Password"
+      newpassword:
+        $ref: "#/definitions/Password"
 
   UserAccount:
     type: object

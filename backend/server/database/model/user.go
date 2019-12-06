@@ -54,14 +54,14 @@ func (u *SystemUser) Identity() string {
 // is updated in the database. Otherwise, the new user will be inserted. The returned
 // conflict value indicates if there was a conflict while inserting/updating the user
 // in the database, i.e. login/email already exists, or the updated user doesn't exist.
-func (user *SystemUser) Persist(db *pg.DB) (err error, conflict bool) {
-	if user.Id == 0 {
+func (u *SystemUser) Persist(db *pg.DB) (err error, conflict bool) {
+	if u.Id == 0 {
 		// Add new user as the id is not set.
-		err = db.Insert(user)
+		err = db.Insert(u)
 
 	} else {
 		// Update existing user by primary key.
-		err = db.Update(user)
+		err = db.Update(u)
 		if err == pg.ErrNoRows {
 			conflict = true
 		}
@@ -70,9 +70,51 @@ func (user *SystemUser) Persist(db *pg.DB) (err error, conflict bool) {
 		pgErr, ok := err.(pg.Error); if ok {
 			conflict = pgErr.IntegrityViolation()
 		}
-		err = errors.Wrapf(err, "database operation error while trying to persist user %s", user.Identity())
+		errors.Wrapf(err, "database operation error while trying to persist user %s", u.Identity())
 	}
 	return err, conflict
+}
+
+// Sets new password for the given user id.
+func SetPassword(db *pg.DB, id int, password string) (err error) {
+	user := SystemUser{
+		Id: id,
+		Password: password,
+	}
+
+	result, err := db.Model(&user).Column("password_hash").WherePK().Update()
+	if err != nil {
+		errors.Wrapf(err, "database operation error while trying to set new password for the user id %d",
+			id)
+
+	} else if result.RowsAffected() == 0 {
+		err = errors.Errorf("failed to update password for non existing user with id %d", id)
+	}
+
+	return err
+}
+
+// Checks if the old password matches the one in the database and modifies
+// it to the new password if it does.
+func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, error) {
+	user := SystemUser{
+		Id: id,
+	}
+	ok, err := db.Model(&user).
+		Where("password_hash = crypt(?, password_hash) AND (id = ?)",
+		oldPassword, id).Exists()
+
+	if err != nil {
+		errors.Wrapf(err, "database operation error while trying to change password of user with id %d", id)
+		return false, err
+	}
+
+	if !ok {
+		return false, nil
+	}
+
+	err = SetPassword(db, id, newPassword)
+	return true, err
 }
 
 // Finds the user in the database by login or email and verifies that the provided password

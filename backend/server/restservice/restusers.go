@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/go-openapi/runtime/middleware"
 
@@ -221,4 +222,47 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	}
 
 	return users.NewUpdateUserOK()
+}
+
+// Updates password of the given user in the database.
+func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUserPasswordParams) middleware.Responder {
+	id := int(params.ID)
+	passwords := params.Passwords
+
+	// Try to change the password for the given user id. Including old password
+	// for verification and the new password which will only be set if this
+	// verification is successful.
+	auth, err := dbmodel.ChangePassword(r.PgDB, id, string(passwords.Oldpassword),
+		string(passwords.Newpassword))
+
+	// Error is returned when something went wrong with the database communication
+	// or something similar. The error is not returned when the current password
+	// is not matching.
+	if err != nil {
+		err = errors.Wrapf(err, "failed to update password for user id %d", id)
+		log.Error(err)
+
+		msg := "database error while trying to update user password"
+		rspErr := models.APIError{
+			Code: 500,
+			Message: &msg,
+		}
+		rsp := users.NewUpdateUserPasswordDefault(500).WithPayload(&rspErr)
+		return rsp
+
+	} else if !auth {
+		log.Infof("specified current password is invalid while trying to update existing password for user id %d",
+		id)
+
+		msg := "invalid current password specified"
+		rspErr := models.APIError{
+			Code: 400,
+			Message: &msg,
+		}
+		rsp := users.NewUpdateUserPasswordDefault(400).WithPayload(&rspErr)
+		return rsp
+	}
+
+	// Password successfully changed.
+	return users.NewUpdateUserPasswordOK()
 }

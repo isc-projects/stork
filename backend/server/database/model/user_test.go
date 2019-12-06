@@ -79,7 +79,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
-	// Authentciation using old password should fail.
+	// Authentication using old password should fail.
 	user.Password = "pass"
 	authOk, err = Authenticate(db, user)
 	require.NoError(t, err)
@@ -150,6 +150,88 @@ func TestPersistConflict(t *testing.T) {
 	require.Error(t, err)
 }
 
+// Tests that password can be modified.
+func TestSetPassword(t *testing.T) {
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
+
+	db := pg.Connect(&dbtest.PgConnOptions)
+
+	// Create new user.
+	user := &SystemUser{
+		Email: "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	err, con := user.Persist(db)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	require.Greater(t, user.Id, 0)
+
+	// Set new password for the user.
+	err = SetPassword(db, user.Id, "newpass")
+	require.NoError(t, err)
+
+	// Authenticate with the new password.
+	user.Password = "newpass"
+	authOk, err := Authenticate(db, user)
+	require.NoError(t, err)
+	require.True(t, authOk)
+}
+
+// Tests that password update fails when user does not exist.
+func TestSetPasswordNoUser(t *testing.T) {
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
+
+	db := pg.Connect(&dbtest.PgConnOptions)
+	err := SetPassword(db, 123, "newpass")
+	require.Error(t, err)
+}
+
+// Test that the password is successfully changed if the current password
+// is valid and that the password is not changed if the current password
+// specified is invalid.
+func TestChangePassword(t *testing.T) {
+	teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown(t)
+
+	db := pg.Connect(&dbtest.PgConnOptions)
+
+	// Create new user.
+	user := &SystemUser{
+		Email: "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	err, con := user.Persist(db)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Provide invalid current password. The original password should not change.
+	auth, err := ChangePassword(db, user.Id, "invalid", "newpass")
+	require.False(t, auth)
+	require.NoError(t, err)
+
+	// Still should authenticate with the current password.
+	authOk, err := Authenticate(db, user)
+	require.NoError(t, err)
+	require.True(t, authOk)
+
+	// Provide valid password. The original password should be modified.
+	auth, err = ChangePassword(db, user.Id, "pass", "newpass")
+	require.True(t, auth)
+	require.NoError(t, err)
+
+	// Authenticate with the new password.
+	user.Password = "newpass"
+	authOk, err = Authenticate(db, user)
+	require.NoError(t, err)
+	require.True(t, authOk)
+}
 
 // Tests that all system users can be fetched from the database.
 func TestGetUsersByPage(t *testing.T) {
