@@ -2,12 +2,12 @@
 require 'rake'
 
 # Tool Versions
-NODE_VER = '10.16.3'
-SWAGGER_CODEGEN_VER = '2.4.8'
-GOSWAGGER_VER = 'v0.20.1'
+NODE_VER = '12.13.1'
+SWAGGER_CODEGEN_VER = '2.4.10'
+GOSWAGGER_VER = 'v0.21.0'
 GOLANGCILINT_VER = '1.21.0'
-GO_VER = '1.13.1'
-PROTOC_VER = '3.10.0'
+GO_VER = '1.13.5'
+PROTOC_VER = '3.11.1'
 
 # Check host OS
 UNAME=`uname -s`
