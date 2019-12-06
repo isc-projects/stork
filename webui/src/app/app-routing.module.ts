@@ -8,6 +8,8 @@ import { SwaggerUiComponent } from './swagger-ui/swagger-ui.component'
 import { MachinesPageComponent } from './machines-page/machines-page.component'
 import { UsersPageComponent } from './users-page/users-page.component'
 import { AppsPageComponent } from './apps-page/apps-page.component'
+import { ProfilePageComponent } from './profile-page/profile-page.component'
+import { PasswordChangePageComponent } from './password-change-page/password-change-page.component'
 
 const routes: Routes = [
     {
@@ -48,6 +50,21 @@ const routes: Routes = [
     {
         path: 'swagger-ui',
         component: SwaggerUiComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'settings',
+        component: ProfilePageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'settings/profile',
+        component: ProfilePageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'settings/password',
+        component: PasswordChangePageComponent,
         canActivate: [AuthGuard],
     },
     {

@@ -26,6 +26,8 @@ import { MenuModule } from 'primeng/menu'
 import { InplaceModule } from 'primeng/inplace'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { TooltipModule } from 'primeng/tooltip'
+import { PasswordModule } from 'primeng/password'
+import { CardModule } from 'primeng/card'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -44,6 +46,9 @@ import { LocaltimePipe } from './localtime.pipe'
 import { UsersPageComponent } from './users-page/users-page.component'
 import { AppsPageComponent } from './apps-page/apps-page.component'
 import { KeaAppTabComponent } from './kea-app-tab/kea-app-tab.component'
+import { PasswordChangePageComponent } from './password-change-page/password-change-page.component'
+import { ProfilePageComponent } from './profile-page/profile-page.component'
+import { SettingsMenuComponent } from './settings-menu/settings-menu.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -65,6 +70,9 @@ export function cfgFactory() {
         UsersPageComponent,
         AppsPageComponent,
         KeaAppTabComponent,
+        PasswordChangePageComponent,
+        ProfilePageComponent,
+        SettingsMenuComponent,
     ],
     imports: [
         BrowserModule,
@@ -95,6 +103,8 @@ export function cfgFactory() {
         InplaceModule,
         ProgressSpinnerModule,
         TooltipModule,
+        PasswordModule,
+        CardModule,
     ],
     providers: [
         {
