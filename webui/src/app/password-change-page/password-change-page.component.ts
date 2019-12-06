@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
 import { UrlTree, PRIMARY_OUTLET, Router } from '@angular/router'
 
-import { MenuItem, MessageService } from 'primeng/api'
+import { MessageService } from 'primeng/api'
 import { PasswordModule } from 'primeng/password'
 
 import { UsersService } from '../backend/api/api'
