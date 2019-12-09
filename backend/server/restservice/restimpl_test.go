@@ -3,7 +3,6 @@ package restservice
 import (
 	//"log"
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -48,11 +47,6 @@ func TestGetVersion(t *testing.T) {
 	p := rsp.(*general.GetVersionOK).Payload
 	require.Equal(t, "unstable", *p.Type)
 	require.Regexp(t, `^\d+.\d+.\d+$`, *p.Version)
-}
-
-func getStatusCode(rsp interface{}) int {
-	code := int(reflect.ValueOf(rsp).FieldByName("_statusCode").Int())
-	return code
 }
 
 func TestGetMachineState(t *testing.T) {

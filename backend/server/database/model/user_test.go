@@ -184,7 +184,6 @@ func TestSetPasswordNoUser(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	db := pg.Connect(&dbtest.PgConnOptions)
 	err := SetPassword(db, 123, "newpass")
 	require.Error(t, err)
 }
@@ -195,8 +194,6 @@ func TestSetPasswordNoUser(t *testing.T) {
 func TestChangePassword(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-
-	db := pg.Connect(&dbtest.PgConnOptions)
 
 	// Create new user.
 	user := &SystemUser{
