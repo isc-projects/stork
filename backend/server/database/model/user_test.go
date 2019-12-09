@@ -152,10 +152,8 @@ func TestPersistConflict(t *testing.T) {
 
 // Tests that password can be modified.
 func TestSetPassword(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
-
-	db := pg.Connect(&dbtest.PgConnOptions)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	// Create new user.
 	user := &SystemUser{
@@ -183,8 +181,8 @@ func TestSetPassword(t *testing.T) {
 
 // Tests that password update fails when user does not exist.
 func TestSetPasswordNoUser(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	db := pg.Connect(&dbtest.PgConnOptions)
 	err := SetPassword(db, 123, "newpass")
@@ -195,8 +193,8 @@ func TestSetPasswordNoUser(t *testing.T) {
 // is valid and that the password is not changed if the current password
 // specified is invalid.
 func TestChangePassword(t *testing.T) {
-	teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
 
 	db := pg.Connect(&dbtest.PgConnOptions)
 

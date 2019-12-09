@@ -232,7 +232,7 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 	// Try to change the password for the given user id. Including old password
 	// for verification and the new password which will only be set if this
 	// verification is successful.
-	auth, err := dbmodel.ChangePassword(r.PgDB, id, string(passwords.Oldpassword),
+	auth, err := dbmodel.ChangePassword(r.Db, id, string(passwords.Oldpassword),
 		string(passwords.Newpassword))
 
 	// Error is returned when something went wrong with the database communication
@@ -244,7 +244,6 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 
 		msg := "database error while trying to update user password"
 		rspErr := models.APIError{
-			Code: 500,
 			Message: &msg,
 		}
 		rsp := users.NewUpdateUserPasswordDefault(500).WithPayload(&rspErr)
@@ -256,7 +255,6 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 
 		msg := "invalid current password specified"
 		rspErr := models.APIError{
-			Code: 400,
 			Message: &msg,
 		}
 		rsp := users.NewUpdateUserPasswordDefault(400).WithPayload(&rspErr)
