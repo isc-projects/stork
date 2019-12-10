@@ -2,12 +2,12 @@ package restservice
 
 import (
 	"context"
-	"testing"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/database/model"
 	"isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
+	"testing"
 )
 
 // Tests that user account can be created via REST API.
@@ -19,15 +19,15 @@ func TestCreateUser(t *testing.T) {
 	rapi, _ := NewRestAPI(nil, dbSettings, db, nil)
 
 	su := dbmodel.SystemUser{
-		Email: "jb@example.org",
+		Email:    "jb@example.org",
 		Lastname: "Born",
-		Login: "jb",
-		Name: "John",
+		Login:    "jb",
+		Name:     "John",
 	}
 
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
-			User: NewRestUser(su),
+			User:     NewRestUser(su),
 			Password: models.Password("pass"),
 		},
 	}
@@ -64,7 +64,7 @@ func TestUpdateUser(t *testing.T) {
 
 	// Create new user in the database.
 	su := dbmodel.SystemUser{
-		Email: "jan@example.org",
+		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
 		Password: "pass",
@@ -77,7 +77,7 @@ func TestUpdateUser(t *testing.T) {
 	su.Lastname = "Born"
 	params := users.UpdateUserParams{
 		Account: &models.UserAccount{
-			User: NewRestUser(su),
+			User:     NewRestUser(su),
 			Password: models.Password("pass"),
 		},
 	}
@@ -94,7 +94,7 @@ func TestUpdateUser(t *testing.T) {
 	su.Id = 123
 	params = users.UpdateUserParams{
 		Account: &models.UserAccount{
-			User: NewRestUser(su),
+			User:     NewRestUser(su),
 			Password: models.Password("pass"),
 		},
 	}
@@ -114,7 +114,7 @@ func TestUpdateUserPassword(t *testing.T) {
 
 	// Create new user in the database.
 	user := &dbmodel.SystemUser{
-		Email: "jan@example.org",
+		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
 		Password: "pass",

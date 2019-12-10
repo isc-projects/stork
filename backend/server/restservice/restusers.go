@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/go-openapi/runtime/middleware"
 
 	"isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
@@ -19,11 +19,11 @@ import (
 func NewRestUser(u dbmodel.SystemUser) *models.User {
 	id := int64(u.Id)
 	r := &models.User{
-		Email: &u.Email,
-		Name: &u.Name,
-		ID: &id,
+		Email:    &u.Email,
+		Name:     &u.Name,
+		ID:       &id,
 		Lastname: &u.Lastname,
-		Login: &u.Login,
+		Login:    &u.Login,
 	}
 	return r
 }
@@ -39,7 +39,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 	}
 	user.Password = *params.Userpassword
 
-	ok, err := dbmodel.Authenticate(r.Db, user);
+	ok, err := dbmodel.Authenticate(r.Db, user)
 	if ok {
 		err = r.SessionManager.LoginHandler(ctx, user)
 	}
@@ -53,10 +53,10 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 
 	rspUserId := int64(user.Id)
 	rspUser := models.User{
-		ID: &rspUserId,
-		Login: &user.Login,
-		Email: &user.Email,
-		Name: &user.Name,
+		ID:       &rspUserId,
+		Login:    &user.Login,
+		Email:    &user.Email,
+		Name:     &user.Name,
 		Lastname: &user.Lastname,
 	}
 
@@ -143,10 +143,10 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	p := params.Account.Password
 
 	su := &dbmodel.SystemUser{
-		Login: *u.Login,
-		Email: *u.Email,
+		Login:    *u.Login,
+		Email:    *u.Email,
 		Lastname: *u.Lastname,
-		Name: *u.Name,
+		Name:     *u.Name,
 		Password: string(p),
 	}
 	err, con := su.Persist(r.Db)
@@ -184,15 +184,15 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	p := params.Account.Password
 
 	su := &dbmodel.SystemUser{
-		Id: int(*u.ID),
-		Login: *u.Login,
-		Email: *u.Email,
+		Id:       int(*u.ID),
+		Login:    *u.Login,
+		Email:    *u.Email,
 		Lastname: *u.Lastname,
-		Name: *u.Name,
+		Name:     *u.Name,
 		Password: string(p),
 	}
 	err, con := su.Persist(r.Db)
-	if (con) {
+	if con {
 		log.WithFields(log.Fields{
 			"userid": *u.ID,
 		}).Infof("failed to update user account for user %s: %s", su.Identity(), err.Error())
@@ -207,8 +207,8 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	} else if err != nil {
 		log.WithFields(log.Fields{
 			"userid": *u.ID,
-			"login": *u.Login,
-			"email": *u.Email,
+			"login":  *u.Login,
+			"email":  *u.Email,
 		}).Errorf("failed to update user account for user %s: %s",
 			su.Identity(), err.Error())
 
@@ -251,7 +251,7 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 
 	} else if !auth {
 		log.Infof("specified current password is invalid while trying to update existing password for user id %d",
-		id)
+			id)
 
 		msg := "invalid current password specified"
 		rspErr := models.APIError{

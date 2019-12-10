@@ -2,21 +2,26 @@ package dbmodel
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/go-pg/pg/v9"
+	"github.com/pkg/errors"
 	"isc.org/stork/server/database"
 )
 
 // Represents a user held in system_user table in the database.
 type SystemUser struct {
-	Id           int
-	Login        string
-	Email        string
-	Lastname     string
-	Name         string
-	Password     string `pg:"password_hash"`
+	Id       int
+	Login    string
+	Email    string
+	Lastname string
+	Name     string
+	Password string `pg:"password_hash"`
 
-	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,joinFK:group_id"`
+	Groups SystemGroups `pg:"many2many:system_user_to_group,fk:user_id,joinFK:group_id"`
+}
+
+type SystemUserToGroup struct {
+	UserID  int `pg:",pk,not_null,on_delete:CASCADE"`
+	GroupID int `pg:",pk,not_null,on_delete:CASCADE"`
 }
 
 type SystemUsers []*SystemUser
@@ -69,7 +74,8 @@ func (u *SystemUser) Persist(db *pg.DB) (err error, conflict bool) {
 		}
 	}
 	if err != nil {
-		pgErr, ok := err.(pg.Error); if ok {
+		pgErr, ok := err.(pg.Error)
+		if ok {
 			conflict = pgErr.IntegrityViolation()
 		}
 		errors.Wrapf(err, "database operation error while trying to persist user %s", u.Identity())
@@ -80,7 +86,7 @@ func (u *SystemUser) Persist(db *pg.DB) (err error, conflict bool) {
 // Sets new password for the given user id.
 func SetPassword(db *pg.DB, id int, password string) (err error) {
 	user := SystemUser{
-		Id: id,
+		Id:       id,
 		Password: password,
 	}
 
@@ -104,7 +110,7 @@ func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, e
 	}
 	ok, err := db.Model(&user).
 		Where("password_hash = crypt(?, password_hash) AND (id = ?)",
-		oldPassword, id).Exists()
+			oldPassword, id).Exists()
 
 	if err != nil {
 		errors.Wrapf(err, "database operation error while trying to change password of user with id %d", id)
@@ -123,9 +129,9 @@ func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, e
 // is correct.
 func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 	// Using authentication technique described here: https://www.postgresql.org/docs/8.3/pgcrypto.html
-	err := db.Model(user).
+	err := db.Model(user).Relation("Groups").
 		Where("password_hash = crypt(?, password_hash) AND (login = ? OR email = ?)",
-		user.Password, user.Login, user.Email).Select()
+			user.Password, user.Login, user.Email).First()
 
 	if err != nil {
 		// Failing to find an entry is not really an error. It merely means that the
@@ -184,14 +190,42 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) 
 }
 
 // Fetches a user with a given id from the database. If the user does not exist
-// the nil value is returned.
+// the nil value is returned. The user is returned along with the list of groups
+// it belongs to.
 func GetUserById(db *dbops.PgDB, id int) (*SystemUser, error) {
-	user := &SystemUser{Id: id}
-	err := db.Select(user)
+	user := &SystemUser{}
+	err := db.Model(user).Relation("Groups").Where("id = ?", id).First()
 	if err == pg.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "problem with fetching user %v from the database", id)
 	}
 	return user, err
+}
+
+// Associates a user with a group. Currently only insertion by group id is supported.
+func (u *SystemUser) AddToGroupById(db *dbops.PgDB, group *SystemGroup) (added bool, err error) {
+	if group.Id > 0 {
+		res, err := db.Model(&SystemUserToGroup{
+			UserID:  u.Id,
+			GroupID: group.Id,
+		}).OnConflict("DO NOTHING").Insert()
+
+		return res.RowsAffected() > 0, err
+
+	} else {
+		err = errors.Errorf("unable to add user to the unknown group")
+	}
+	return false, err
+}
+
+// Checks if the user is in the specified group. The group is matched by
+// name and/or by id.
+func (u *SystemUser) InGroup(group *SystemGroup) bool {
+	for _, g := range u.Groups {
+		if (g.Id > 0 && g.Id == group.Id) || (len(g.Name) > 0 && g.Name == group.Name) {
+			return true
+		}
+	}
+	return false
 }

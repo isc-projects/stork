@@ -17,10 +17,10 @@ func generateTestUsers(t *testing.T, db *dbops.PgDB) {
 		login := faker.Word()
 		login = fmt.Sprintf("%s%d", login, i)
 		user := &SystemUser{
-			Login: login,
-			Email: fmt.Sprintf("%s@example.org", login),
+			Login:    login,
+			Email:    fmt.Sprintf("%s@example.org", login),
 			Lastname: faker.LastName(),
-			Name: faker.FirstName(),
+			Name:     faker.FirstName(),
 			Password: faker.Word(),
 		}
 		err, _ := user.Persist(db)
@@ -35,12 +35,16 @@ func TestDefaultUserAuthenticate(t *testing.T) {
 
 	// Use default credentials of the admin user.
 	user := &SystemUser{
-		Login: "admin",
+		Login:    "admin",
 		Password: "admin",
 	}
 	authOk, err := Authenticate(db, user)
 	require.NoError(t, err)
 	require.True(t, authOk)
+
+	// The default user is by default in the super-admin group, which
+	// should be returned.
+	require.True(t, user.InGroup(&SystemGroup{Name: "super-admin"}))
 
 	// Using wrong password should cause the authentication to fail.
 	user.Password = "wrong"
@@ -56,7 +60,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 
 	// Create new user.
 	user := &SystemUser{
-		Email: "jan@example.org",
+		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
 		Password: "pass",
@@ -107,12 +111,12 @@ func TestNewUserAuthenticate(t *testing.T) {
 // Tests that it is indicated when the user being udpdated is not found in
 // the database.
 func TestPersistNoUser(t *testing.T) {
-	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	user := &SystemUser{
-		Id: 123456,
-		Email: "jan@example.org",
+		Id:       123456,
+		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
 		Password: "pass",
@@ -125,12 +129,12 @@ func TestPersistNoUser(t *testing.T) {
 // Tests that conflict flag is returned when the inserted user is in
 // conflict with existing user.
 func TestPersistConflict(t *testing.T) {
-	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	user := &SystemUser{
-		Login: "jankowal",
-		Email: "jan@example.org",
+		Login:    "jankowal",
+		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
 		Password: "pass",
@@ -140,7 +144,7 @@ func TestPersistConflict(t *testing.T) {
 	require.NoError(t, err)
 
 	user = &SystemUser{
-		Email: "jan@example.org",
+		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
 		Password: "pass",
@@ -157,7 +161,7 @@ func TestSetPassword(t *testing.T) {
 
 	// Create new user.
 	user := &SystemUser{
-		Email: "jan@example.org",
+		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
 		Password: "pass",
@@ -197,7 +201,7 @@ func TestChangePassword(t *testing.T) {
 
 	// Create new user.
 	user := &SystemUser{
-		Email: "jan@example.org",
+		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
 		Password: "pass",
@@ -229,8 +233,8 @@ func TestChangePassword(t *testing.T) {
 }
 
 // Tests that all system users can be fetched from the database.
-func TestGetUsersByPage(t *testing.T) {
-	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+func TestGetUsers(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
@@ -243,13 +247,14 @@ func TestGetUsersByPage(t *testing.T) {
 	var prevId int = 0
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
-		require.Greater(t, u.Id, prevId); prevId = u.Id
+		require.Greater(t, u.Id, prevId)
+		prevId = u.Id
 	}
 }
 
 // Tests that users can be fetched and sorted by login or email.
-func TestGetUsersByPageSortByLoginEmail(t *testing.T) {
-	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+func TestGetUsersSortByLoginEmail(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
@@ -262,13 +267,14 @@ func TestGetUsersByPageSortByLoginEmail(t *testing.T) {
 	prevLogin := ""
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
-		require.Greater(t, u.Login, prevLogin); prevLogin = u.Login
+		require.Greater(t, u.Login, prevLogin)
+		prevLogin = u.Login
 	}
 }
 
 // Tests that a page of users can be fetched.
-func TestGetUsersByPagePage(t *testing.T) {
-	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+func TestGetUsersPage(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
@@ -282,13 +288,14 @@ func TestGetUsersByPagePage(t *testing.T) {
 	var prevId int = 0
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
-		require.Greater(t, u.Id, prevId); prevId = u.Id
+		require.Greater(t, u.Id, prevId)
+		prevId = u.Id
 	}
 }
 
 // Tests that last page of users can be fetched without issues.
-func TestGetUsersByPageLastPage(t *testing.T) {
-	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+func TestGetUsersLastPage(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
@@ -302,13 +309,14 @@ func TestGetUsersByPageLastPage(t *testing.T) {
 	var prevId int = 0
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
-		require.Greater(t, u.Id, prevId); prevId = u.Id
+		require.Greater(t, u.Id, prevId)
+		prevId = u.Id
 	}
 }
 
 // Tests that user can be fetched by Id.
 func TestGetUserById(t *testing.T) {
-	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
@@ -324,4 +332,46 @@ func TestGetUserById(t *testing.T) {
 	user, err = GetUserById(db, 1234567)
 	require.NoError(t, err)
 	require.Nil(t, user)
+}
+
+// Test that user can be associated with a group and then the groups
+// are returned along with the user.
+func TestUserWithGroups(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a user account.
+	user := &SystemUser{
+		Login:    "test",
+		Email:    "test@example.org",
+		Lastname: "Smith",
+		Name:     "John",
+		Password: "pass",
+	}
+	err, _ := user.Persist(db)
+	require.NoError(t, err)
+	require.Greater(t, user.Id, 0)
+
+	// Associate the user with two prefefined groups.
+	added, err := user.AddToGroupById(db, &SystemGroup{Id: 1})
+	require.NoError(t, err)
+	require.True(t, added)
+
+	added, err = user.AddToGroupById(db, &SystemGroup{Id: 2})
+	require.NoError(t, err)
+	require.True(t, added)
+
+	// Fetch the user by id. It should also return the groups it belongs to.
+	returned, err := GetUserById(db, user.Id)
+	require.NotNil(t, returned)
+	require.NoError(t, err)
+
+	require.Equal(t, 2, len(returned.Groups))
+	require.True(t, returned.InGroup(&SystemGroup{Name: "super-admin"}))
+	require.True(t, returned.InGroup(&SystemGroup{Name: "admin"}))
+
+	// Another attempt to add the user to the same group should be no-op.
+	added, err = user.AddToGroupById(db, &SystemGroup{Id: 1})
+	require.NoError(t, err)
+	require.False(t, added)
 }

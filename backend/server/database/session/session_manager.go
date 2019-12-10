@@ -3,13 +3,14 @@ package dbsession
 import (
 	"context"
 	"database/sql"
-	"net/http"
-	"github.com/alexedwards/scs/v2"
 	"github.com/alexedwards/scs/postgresstore"
+	"github.com/alexedwards/scs/v2"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	"isc.org/stork/server/database"
 	"isc.org/stork/server/database/model"
+	"net/http"
+	"strings"
 )
 
 // Provides session management mechanisms for Stork. It wraps the scs.SessionManager
@@ -49,6 +50,20 @@ func (s *SessionMgr) LoginHandler(ctx context.Context, user *dbmodel.SystemUser)
 	s.scsSessionMgr.Put(ctx, "userEmail", user.Email)
 	s.scsSessionMgr.Put(ctx, "userLastname", user.Lastname)
 	s.scsSessionMgr.Put(ctx, "userName", user.Name)
+
+	// If any user groups are associated with the user, store them
+	// as a list of comma separated values.
+	if len(user.Groups) > 0 {
+		var groups string
+		for i, g := range user.Groups {
+			if i > 0 {
+				groups += ","
+			}
+			groups += g.Name
+		}
+		s.scsSessionMgr.Put(ctx, "userGroupNames", groups)
+	}
+
 	return nil
 }
 
@@ -92,5 +107,15 @@ func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemU
 	user.Email = s.scsSessionMgr.GetString(ctx, "userEmail")
 	user.Lastname = s.scsSessionMgr.GetString(ctx, "userLastname")
 	user.Name = s.scsSessionMgr.GetString(ctx, "userName")
+
+	// Retrieve comma separated list of groups.
+	userGroups := s.scsSessionMgr.GetString(ctx, "userGroupNames")
+	if len(userGroups) > 0 {
+		groups := strings.Split(userGroups, ",")
+		for _, g := range groups {
+			user.Groups = append(user.Groups, &dbmodel.SystemGroup{Name: g})
+		}
+	}
+
 	return true, user
 }

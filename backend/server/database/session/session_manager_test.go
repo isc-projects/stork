@@ -1,12 +1,12 @@
 package dbsession
 
 import (
-	"net/http"
-	"net/http/httptest"
-	"testing"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/database/model"
 	"isc.org/stork/server/database/test"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 // Attempts to find a cookie in the HTTP response.
@@ -35,11 +35,20 @@ func TestMiddlewareNewSession(t *testing.T) {
 
 	// Create user to be logged to the system.
 	user := &dbmodel.SystemUser{
-		Id: 1,
-		Login: "johnw",
-		Email: "johnw@example.org",
+		Id:       1,
+		Login:    "johnw",
+		Email:    "johnw@example.org",
 		Lastname: "White",
-		Name: "John C",
+		Name:     "John C",
+
+		Groups: dbmodel.SystemGroups{
+			&dbmodel.SystemGroup{
+				Name: "abc",
+			},
+			&dbmodel.SystemGroup{
+				Name: "def",
+			},
+		},
 	}
 
 	// Run the middleware.
@@ -59,6 +68,9 @@ func TestMiddlewareNewSession(t *testing.T) {
 		require.Equal(t, user.Email, userSession.Email)
 		require.Equal(t, user.Lastname, userSession.Lastname)
 		require.Equal(t, user.Name, userSession.Name)
+
+		require.True(t, user.InGroup(&dbmodel.SystemGroup{Name: "abc"}))
+		require.True(t, user.InGroup(&dbmodel.SystemGroup{Name: "def"}))
 	}
 
 	middlewareFunc := mgr.SessionMiddleware(http.HandlerFunc(handler))
