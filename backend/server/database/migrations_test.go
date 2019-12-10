@@ -39,6 +39,7 @@ func setupCreateSchema(t *testing.T) *PgDB {
 	require.NoError(t, err)
 	_, _, err = Migrate(db, "up")
 	require.NoError(t, err)
+
 	return db
 }
 

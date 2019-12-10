@@ -15,9 +15,11 @@ type SystemUser struct {
 	Lastname     string
 	Name         string
 	Password     string `pg:"password_hash"`
+
+	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,joinFK:group_id"`
 }
 
-type SystemUsers []SystemUser
+type SystemUsers []*SystemUser
 
 type SystemUserOrderBy int
 

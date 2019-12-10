@@ -92,7 +92,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 
 	usersList := []*models.User{}
 	for _, u := range systemUsers {
-		usersList = append(usersList, NewRestUser(u))
+		usersList = append(usersList, NewRestUser(*u))
 	}
 
 	u := models.Users{
