@@ -155,14 +155,16 @@ func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 }
 
 // Fetches a collection of users from the database. The offset and limit specify the
-// beginning of the page and the maximum size of the page. Limit has to be greater
+// beginning of the page and the maximum size of the page. If these values are set
+// to 0, all users are returned. Limit has to be greater
 // then 0, otherwise error is returned.
-func GetUsersByPage(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users SystemUsers, total int64, err error) {
+func GetUsers(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users SystemUsers, total int64, err error) {
 	total = int64(0)
 	if limit == 0 {
 		return nil, total, errors.New("limit should be greater than 0")
 	}
-	q := db.Model(&users)
+
+	q := db.Model(&users).Relation("Groups")
 
 	switch order {
 	case SystemUserOrderByLoginEmail:

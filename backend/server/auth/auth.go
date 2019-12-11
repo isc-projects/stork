@@ -12,8 +12,7 @@ func Authorize(user *dbmodel.SystemUser, req *http.Request) (ok bool, err error)
 		return false, nil
 	}
 
-	group := &dbmodel.SystemGroup{Name: "super-admin"}
-	if user.InGroup(group) {
+	if user.InGroup(&dbmodel.SystemGroup{Id: dbmodel.SuperAdminGroupId}) {
 		return true, nil
 	}
 

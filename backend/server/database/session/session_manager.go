@@ -10,6 +10,7 @@ import (
 	"isc.org/stork/server/database"
 	"isc.org/stork/server/database/model"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -59,9 +60,9 @@ func (s *SessionMgr) LoginHandler(ctx context.Context, user *dbmodel.SystemUser)
 			if i > 0 {
 				groups += ","
 			}
-			groups += g.Name
+			groups += strconv.Itoa(g.Id)
 		}
-		s.scsSessionMgr.Put(ctx, "userGroupNames", groups)
+		s.scsSessionMgr.Put(ctx, "userGroupIds", groups)
 	}
 
 	return nil
@@ -109,11 +110,14 @@ func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemU
 	user.Name = s.scsSessionMgr.GetString(ctx, "userName")
 
 	// Retrieve comma separated list of groups.
-	userGroups := s.scsSessionMgr.GetString(ctx, "userGroupNames")
+	userGroups := s.scsSessionMgr.GetString(ctx, "userGroupIds")
+
 	if len(userGroups) > 0 {
 		groups := strings.Split(userGroups, ",")
 		for _, g := range groups {
-			user.Groups = append(user.Groups, &dbmodel.SystemGroup{Name: g})
+			if id, err := strconv.Atoi(g); err == nil {
+				user.Groups = append(user.Groups, &dbmodel.SystemGroup{Id: id})
+			}
 		}
 	}
 

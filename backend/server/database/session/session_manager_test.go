@@ -43,9 +43,11 @@ func TestMiddlewareNewSession(t *testing.T) {
 
 		Groups: dbmodel.SystemGroups{
 			&dbmodel.SystemGroup{
+				Id: 5,
 				Name: "abc",
 			},
 			&dbmodel.SystemGroup{
+				Id: 25,
 				Name: "def",
 			},
 		},
@@ -69,8 +71,9 @@ func TestMiddlewareNewSession(t *testing.T) {
 		require.Equal(t, user.Lastname, userSession.Lastname)
 		require.Equal(t, user.Name, userSession.Name)
 
-		require.True(t, user.InGroup(&dbmodel.SystemGroup{Name: "abc"}))
-		require.True(t, user.InGroup(&dbmodel.SystemGroup{Name: "def"}))
+		require.Equal(t, 2, len(userSession.Groups))
+		require.True(t, userSession.InGroup(&dbmodel.SystemGroup{Id: 5}))
+		require.True(t, userSession.InGroup(&dbmodel.SystemGroup{Id: 25}))
 	}
 
 	middlewareFunc := mgr.SessionMiddleware(http.HandlerFunc(handler))

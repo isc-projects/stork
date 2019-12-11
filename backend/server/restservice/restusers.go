@@ -25,6 +25,14 @@ func NewRestUser(u dbmodel.SystemUser) *models.User {
 		Lastname: &u.Lastname,
 		Login:    &u.Login,
 	}
+
+	// Append an array of groups.
+	for _, g := range u.Groups {
+		if g.Id > 0 {
+			r.Groups = append(r.Groups, int64(g.Id))
+		}
+	}
+
 	return r
 }
 
@@ -51,16 +59,8 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		return users.NewCreateSessionBadRequest()
 	}
 
-	rspUserId := int64(user.Id)
-	rspUser := models.User{
-		ID:       &rspUserId,
-		Login:    &user.Login,
-		Email:    &user.Email,
-		Name:     &user.Name,
-		Lastname: &user.Lastname,
-	}
-
-	return users.NewCreateSessionOK().WithPayload(&rspUser)
+	rspUser := NewRestUser(*user)
+	return users.NewCreateSessionOK().WithPayload(rspUser)
 }
 
 // Attempts to logout a user from the system.

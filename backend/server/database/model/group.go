@@ -1,5 +1,7 @@
 package dbmodel
 
+const SuperAdminGroupId int = 1
+
 // Represents a group of users having some specific permissions.
 type SystemGroup struct {
 	Id          int
