@@ -20,14 +20,18 @@ export class AppComponent implements OnInit {
     menuItems: MenuItem[]
 
     constructor(private router: Router, private auth: AuthService, private loadingService: LoadingService) {
-        this.auth.currentUser.subscribe(x => (this.currentUser = x))
+        this.auth.currentUser.subscribe(x => {
+            this.currentUser = x
+            this.initMenuItems()
+        })
         this.loadingInProgress = this.loadingService.getState()
     }
 
-    ngOnInit() {
-        this.menuItems = [
-            {
-                label: 'Services',
+    initMenuItems() {
+        this.menuItems = []
+        if (this.auth.superAdmin()) {
+            this.menuItems.push({
+                label: 'Configuration',
                 items: [
                     {
                         label: 'Kea DHCP',
@@ -46,7 +50,9 @@ export class AppComponent implements OnInit {
                         routerLink: '/machines/all',
                     },
                 ],
-            },
+            })
+        }
+        this.menuItems = this.menuItems.concat([
             {
                 label: 'Configuration',
                 items: [
@@ -72,7 +78,11 @@ export class AppComponent implements OnInit {
                     },
                 ],
             },
-        ]
+        ])
+    }
+
+    ngOnInit() {
+        this.initMenuItems()
     }
 
     signOut() {

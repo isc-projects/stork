@@ -14,6 +14,7 @@ export class User {
     email: string
     firstName: string
     lastName: string
+    groups: number[]
 }
 
 @Injectable({
@@ -50,6 +51,13 @@ export class AuthService {
                     user.email = data.email
                     user.firstName = data.name
                     user.lastName = data.lastname
+
+                    // Store groups the user belongs to.
+                    user.groups = []
+                    for (const i in data.groups) {
+                        user.groups.push(data.groups[i])
+                    }
+
                     this.currentUserSubject.next(user)
                     localStorage.setItem('currentUser', JSON.stringify(user))
                     this.router.navigate([returnUrl])
@@ -67,5 +75,16 @@ export class AuthService {
             localStorage.removeItem('currentUser')
             this.currentUserSubject.next(null)
         })
+    }
+
+    superAdmin(): bool {
+        if (this.currentUserValue && this.currentUserValue.groups) {
+            for (const i in this.currentUserValue.groups) {
+                if (this.currentUserValue.groups[i] == 1) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 }
