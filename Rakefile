@@ -247,6 +247,13 @@ task :lint_go => [GO, GOLANGCILINT, MOCKERY, MOCKGEN, :gen_agent, :gen_server] d
   end
 end
 
+desc 'Format backend source code'
+task :fmt_go => [GO, :gen_agent, :gen_server] do
+  Dir.chdir('backend') do
+    sh "#{GO} fmt ./..."
+  end
+end
+
 desc 'Run backend unit tests'
 task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_agent] do
   at_exit {
