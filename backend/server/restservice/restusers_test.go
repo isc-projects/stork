@@ -61,6 +61,7 @@ func TestUpdateUser(t *testing.T) {
 
 	ctx := context.Background()
 	rapi, err := NewRestAPI(nil, dbSettings, db, nil)
+	require.NoError(t, err)
 
 	// Create new user in the database.
 	su := dbmodel.SystemUser{
@@ -111,6 +112,7 @@ func TestUpdateUserPassword(t *testing.T) {
 
 	ctx := context.Background()
 	rapi, err := NewRestAPI(nil, dbSettings, db, nil)
+	require.NoError(t, err)
 
 	// Create new user in the database.
 	user := &dbmodel.SystemUser{

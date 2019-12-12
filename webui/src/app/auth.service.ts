@@ -55,7 +55,9 @@ export class AuthService {
                     // Store groups the user belongs to.
                     user.groups = []
                     for (const i in data.groups) {
-                        user.groups.push(data.groups[i])
+                        if (data.groups.hasOwnProperty(i)) {
+                            user.groups.push(data.groups[i])
+                        }
                     }
 
                     this.currentUserSubject.next(user)
@@ -77,10 +79,10 @@ export class AuthService {
         })
     }
 
-    superAdmin(): bool {
+    superAdmin(): boolean {
         if (this.currentUserValue && this.currentUserValue.groups) {
             for (const i in this.currentUserValue.groups) {
-                if (this.currentUserValue.groups[i] == 1) {
+                if (this.currentUserValue.groups[i] === 1) {
                     return true
                 }
             }

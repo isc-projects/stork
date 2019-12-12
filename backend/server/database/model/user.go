@@ -81,10 +81,12 @@ func createUserGroups(db *pg.DB, user *SystemUser) (err error) {
 func CreateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
 	tx, err := db.Begin()
 	if err != nil {
-		errors.Wrapf(err, "unable to begin transaction while trying to create user %s", user.Identity())
+		err = errors.Wrapf(err, "unable to begin transaction while trying to create user %s", user.Identity())
 		return err, false
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	err = db.Insert(user)
 
@@ -99,11 +101,11 @@ func CreateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
 			conflict = pgErr.IntegrityViolation()
 		}
 
-		errors.Wrapf(err, "database operation error while trying to create user %s", user.Identity())
+		err = errors.Wrapf(err, "database operation error while trying to create user %s", user.Identity())
 	}
 
 	if err == nil {
-		tx.Commit()
+		err = tx.Commit()
 	}
 
 	return err, conflict
@@ -115,10 +117,12 @@ func CreateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
 func UpdateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
 	tx, err := db.Begin()
 	if err != nil {
-		errors.Wrapf(err, "unable to begin transaction while trying to update user %s", user.Identity())
+		err = errors.Wrapf(err, "unable to begin transaction while trying to update user %s", user.Identity())
 		return err, false
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	err = db.Update(user)
 
@@ -142,11 +146,11 @@ func UpdateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
 			}
 		}
 
-		errors.Wrapf(err, "database operation error while trying to update user %s", user.Identity())
+		err = errors.Wrapf(err, "database operation error while trying to update user %s", user.Identity())
 	}
 
 	if err == nil {
-		tx.Commit()
+		err = tx.Commit()
 	}
 
 	return err, conflict
@@ -161,7 +165,7 @@ func SetPassword(db *pg.DB, id int, password string) (err error) {
 
 	result, err := db.Model(&user).Column("password_hash").WherePK().Update()
 	if err != nil {
-		errors.Wrapf(err, "database operation error while trying to set new password for the user id %d",
+		err = errors.Wrapf(err, "database operation error while trying to set new password for the user id %d",
 			id)
 
 	} else if result.RowsAffected() == 0 {
@@ -182,7 +186,7 @@ func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, e
 			oldPassword, id).Exists()
 
 	if err != nil {
-		errors.Wrapf(err, "database operation error while trying to change password of user with id %d", id)
+		err = errors.Wrapf(err, "database operation error while trying to change password of user with id %d", id)
 		return false, err
 	}
 

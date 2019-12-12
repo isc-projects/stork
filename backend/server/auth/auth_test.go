@@ -18,12 +18,12 @@ func TestAuthorize(t *testing.T) {
 		},
 	}
 
-	req, err := http.NewRequest("GET", "http://localhost:4200/api/users?start=0&limit=10", nil)
+	req, _ := http.NewRequest("GET", "http://localhost:4200/api/users?start=0&limit=10", nil)
 	ok, err := Authorize(user, req)
 	require.NoError(t, err)
 	require.False(t, ok)
 
-	req, err = http.NewRequest("GET", "http://example.com/users/5/", nil)
+	req, _ = http.NewRequest("GET", "http://example.com/users/5/", nil)
 	ok, err = Authorize(user, req)
 	require.NoError(t, err)
 	require.True(t, ok)
