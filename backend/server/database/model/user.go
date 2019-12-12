@@ -57,6 +57,24 @@ func (u *SystemUser) Identity() string {
 	return s
 }
 
+// Creates associations of the user with its groups.
+func createUserGroups(db *pg.DB, user *SystemUser) (err error) {
+	var assocs []SystemUserToGroup
+
+	if len(user.Groups) > 0 {
+		for _, g := range user.Groups {
+			assocs = append(assocs, SystemUserToGroup{
+				UserID: user.Id,
+				GroupID: g.Id,
+			})
+		}
+
+		_, err = db.Model(&assocs).OnConflict("DO NOTHING").Insert()
+	}
+
+	return err
+}
+
 // Creates new user in the database. The returned conflict value indicates if
 // the created user information is in conflict with some existing user in the
 // database, e.g. duplicated login or email.
@@ -69,6 +87,11 @@ func CreateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
 	defer tx.Rollback()
 
 	err = db.Insert(user)
+
+	// If insert was successful, create associations of the user with groups.
+	if err == nil {
+		err = createUserGroups(db, user)
+	}
 
 	if err != nil {
 		pgErr, ok := err.(pg.Error)
@@ -98,6 +121,17 @@ func UpdateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
 	defer tx.Rollback()
 
 	err = db.Update(user)
+
+	// Delete existing associations of the user with groups.
+	if err == nil {
+		_, err = db.Model(&SystemUserToGroup{}).Where("user_id = ?", user.Id).Delete()
+	}
+
+	// Recreate the groups based on the new groups list.
+	if err == nil {
+		err = createUserGroups(db, user)
+	}
+
 	if err != nil {
 		if err == pg.ErrNoRows {
 			conflict = true

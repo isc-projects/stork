@@ -334,9 +334,76 @@ func TestGetUserById(t *testing.T) {
 	require.Nil(t, user)
 }
 
+// Test that user associations with groups are created when the user
+// is created or updated.
+func TestUserGroups(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a user account.
+	user := &SystemUser{
+		Login:    "test",
+		Email:    "test@example.org",
+		Lastname: "Smith",
+		Name:     "John",
+		Password: "pass",
+		Groups: SystemGroups{
+			&SystemGroup{
+				Id: 1,
+			},
+			&SystemGroup{
+				Id: 2,
+			},
+		},
+	}
+
+	err, _ := CreateUser(db, user)
+	require.NoError(t, err)
+	require.Greater(t, user.Id, 0)
+
+	// Fetch the user by id. It should also return the groups it belongs to.
+	returned, err := GetUserById(db, user.Id)
+	require.NotNil(t, returned)
+	require.NoError(t, err)
+
+	// Fetch the user by id. It should also return the groups it belongs to.
+	returned, err = GetUserById(db, user.Id)
+	require.NotNil(t, returned)
+	require.NoError(t, err)
+
+	require.Equal(t, 2, len(returned.Groups))
+	require.True(t, returned.InGroup(&SystemGroup{Name: "super-admin"}))
+	require.True(t, returned.InGroup(&SystemGroup{Name: "admin"}))
+
+	// Remove the user from one of the groups.
+	user.Groups = SystemGroups{
+		&SystemGroup{
+			Id: 2,
+		},
+	}
+
+	// Updating the user should also cause the groups to be updated.
+	err, _ = UpdateUser(db, user)
+	require.NoError(t, err)
+
+	returned, err = GetUserById(db, user.Id)
+	require.NotNil(t, returned)
+	require.NoError(t, err)
+
+	// Fetch the user by id. It should also return new groups.
+	returned, err = GetUserById(db, user.Id)
+	require.NotNil(t, returned)
+	require.NoError(t, err)
+
+	// The groups should have been updated. One group should now be gone.
+	require.Equal(t, 1, len(returned.Groups))
+	require.False(t, returned.InGroup(&SystemGroup{Name: "super-admin"}))
+	require.True(t, returned.InGroup(&SystemGroup{Name: "admin"}))
+}
+
 // Test that user can be associated with a group and then the groups
 // are returned along with the user.
-func TestUserWithGroups(t *testing.T) {
+func TestAddToGroupById(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
