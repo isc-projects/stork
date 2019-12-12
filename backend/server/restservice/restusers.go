@@ -149,7 +149,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 		Name:     *u.Name,
 		Password: string(p),
 	}
-	err, con := su.Persist(r.Db)
+	err, con := dbmodel.CreateUser(r.Db, su)
 	if err != nil {
 		if con {
 			log.WithFields(log.Fields{
@@ -191,7 +191,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		Name:     *u.Name,
 		Password: string(p),
 	}
-	err, con := su.Persist(r.Db)
+	err, con := dbmodel.UpdateUser(r.Db, su)
 	if con {
 		log.WithFields(log.Fields{
 			"userid": *u.ID,

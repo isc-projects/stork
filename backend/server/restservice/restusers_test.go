@@ -69,7 +69,7 @@ func TestUpdateUser(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := su.Persist(db)
+	err, con := dbmodel.CreateUser(db, &su)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -119,7 +119,7 @@ func TestUpdateUserPassword(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := user.Persist(db)
+	err, con := dbmodel.CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 

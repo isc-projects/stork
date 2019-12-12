@@ -23,7 +23,7 @@ func generateTestUsers(t *testing.T, db *dbops.PgDB) {
 			Name:     faker.FirstName(),
 			Password: faker.Word(),
 		}
-		err, _ := user.Persist(db)
+		err, _ := CreateUser(db, user)
 		require.NoError(t, err, "failed for index %d, login %s", i, user.Login)
 	}
 }
@@ -65,7 +65,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := user.Persist(db)
+	err, con := CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -79,7 +79,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 
 	// Modifying user's password should be possible.
 	user.Password = "new password"
-	err, con = user.Persist(db)
+	err, con = UpdateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -97,7 +97,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 
 	// If password is empty, it should remain unmodified in the database.
 	user.Password = ""
-	err, con = user.Persist(db)
+	err, con = UpdateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -110,7 +110,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 
 // Tests that it is indicated when the user being udpdated is not found in
 // the database.
-func TestPersistNoUser(t *testing.T) {
+func TestUpdateNoUser(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -121,14 +121,14 @@ func TestPersistNoUser(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := user.Persist(db)
+	err, con := UpdateUser(db, user)
 	require.True(t, con)
 	require.Error(t, err)
 }
 
 // Tests that conflict flag is returned when the inserted user is in
 // conflict with existing user.
-func TestPersistConflict(t *testing.T) {
+func TestCreateConflict(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -139,7 +139,7 @@ func TestPersistConflict(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := user.Persist(db)
+	err, con := CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -149,7 +149,7 @@ func TestPersistConflict(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con = user.Persist(db)
+	err, con = CreateUser(db, user)
 	require.True(t, con)
 	require.Error(t, err)
 }
@@ -166,7 +166,7 @@ func TestSetPassword(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := user.Persist(db)
+	err, con := CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -206,7 +206,7 @@ func TestChangePassword(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := user.Persist(db)
+	err, con := CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -348,7 +348,7 @@ func TestUserWithGroups(t *testing.T) {
 		Name:     "John",
 		Password: "pass",
 	}
-	err, _ := user.Persist(db)
+	err, _ := CreateUser(db, user)
 	require.NoError(t, err)
 	require.Greater(t, user.Id, 0)
 

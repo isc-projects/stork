@@ -57,29 +57,64 @@ func (u *SystemUser) Identity() string {
 	return s
 }
 
-// Inserts or updates user information in the database. If user id is set, the user information
-// is updated in the database. Otherwise, the new user will be inserted. The returned
-// conflict value indicates if there was a conflict while inserting/updating the user
-// in the database, i.e. login/email already exists, or the updated user doesn't exist.
-func (u *SystemUser) Persist(db *pg.DB) (err error, conflict bool) {
-	if u.Id == 0 {
-		// Add new user as the id is not set.
-		err = db.Insert(u)
-
-	} else {
-		// Update existing user by primary key.
-		err = db.Update(u)
-		if err == pg.ErrNoRows {
-			conflict = true
-		}
+// Creates new user in the database. The returned conflict value indicates if
+// the created user information is in conflict with some existing user in the
+// database, e.g. duplicated login or email.
+func CreateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
+	tx, err := db.Begin()
+	if err != nil {
+		errors.Wrapf(err, "unable to begin transaction while trying to create user %s", user.Identity())
+		return err, false
 	}
+	defer tx.Rollback()
+
+	err = db.Insert(user)
+
 	if err != nil {
 		pgErr, ok := err.(pg.Error)
 		if ok {
 			conflict = pgErr.IntegrityViolation()
 		}
-		errors.Wrapf(err, "database operation error while trying to persist user %s", u.Identity())
+
+		errors.Wrapf(err, "database operation error while trying to create user %s", user.Identity())
 	}
+
+	if err == nil {
+		tx.Commit()
+	}
+
+	return err, conflict
+}
+
+// Updates user information in the database. The returned conflict value indicates
+// if the updated data is in conflict with some other user information or the
+// updated user doesn't exist.
+func UpdateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
+	tx, err := db.Begin()
+	if err != nil {
+		errors.Wrapf(err, "unable to begin transaction while trying to update user %s", user.Identity())
+		return err, false
+	}
+	defer tx.Rollback()
+
+	err = db.Update(user)
+	if err != nil {
+		if err == pg.ErrNoRows {
+			conflict = true
+		} else {
+			pgErr, ok := err.(pg.Error)
+			if ok {
+				conflict = pgErr.IntegrityViolation()
+			}
+		}
+
+		errors.Wrapf(err, "database operation error while trying to update user %s", user.Identity())
+	}
+
+	if err == nil {
+		tx.Commit()
+	}
+
 	return err, conflict
 }
 
