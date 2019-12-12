@@ -17,6 +17,12 @@ export class User {
     groups: number[]
 }
 
+export class Group {
+    id: number
+    name: string
+    description: string
+}
+
 @Injectable({
     providedIn: 'root',
 })
@@ -24,6 +30,7 @@ export class AuthService {
     private currentUserSubject: BehaviorSubject<User>
     public currentUser: Observable<User>
     public user: User
+    public groups: Group[] = []
 
     constructor(
         private http: HttpClient,
@@ -33,10 +40,32 @@ export class AuthService {
     ) {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')))
         this.currentUser = this.currentUserSubject.asObservable()
+        this.initSystemGroups()
     }
 
     public get currentUserValue(): User {
         return this.currentUserSubject.value
+    }
+
+    initSystemGroups() {
+        this.api.getGroups().subscribe(
+            data => {
+                if (data.items) {
+                    for (const i in data.items) {
+                        if (data.items.hasOwnProperty(i)) {
+                            let group = new Group()
+                            group.id = data.items[i].id
+                            group.name = data.items[i].name
+                            group.description = data.items[i].description
+                            this.groups.push(group)
+                        }
+                    }
+                }
+            },
+            err => {
+                this.msgSrv.add({ severity: 'error', summary: 'Unable to fetch user group definitions' })
+            }
+        )
     }
 
     login(username: string, password: string, returnUrl: string) {
