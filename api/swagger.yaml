@@ -183,6 +183,50 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
+  /users:
+    get:
+      summary: Get the list of users.
+      description: >-
+        Returns all users having an account in the system.
+      operationId: getUsers
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/filterTextParam'
+      responses:
+        200:
+          description: List of users returned.
+          schema:
+            $ref: "#/definitions/Users"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /groups:
+    get:
+      summary: Get the list of groups.
+      description: >-
+        Returns all groups defined for the system.
+      operationId: getGroups
+      security:
+        - Token: []
+      tags:
+        - Users
+      responses:
+        200:
+          description: List of groups returned.
+          schema:
+            $ref: "#/definitions/Groups"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /version:
     get:
       summary: Get version.
@@ -473,6 +517,30 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/User'
+      total:
+        type: integer
+
+  Group:
+    type: object
+    required:
+      - id
+      - name
+      - description
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+
+  Groups:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Group'
       total:
         type: integer
 

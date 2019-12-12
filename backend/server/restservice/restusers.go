@@ -16,7 +16,7 @@ import (
 
 // Creates new instance of the user model used by REST API from the
 // user instance returned from the database.
-func NewRestUser(u dbmodel.SystemUser) *models.User {
+func newRestUser(u dbmodel.SystemUser) *models.User {
 	id := int64(u.Id)
 	r := &models.User{
 		Email:    &u.Email,
@@ -31,6 +31,19 @@ func NewRestUser(u dbmodel.SystemUser) *models.User {
 		if g.Id > 0 {
 			r.Groups = append(r.Groups, int64(g.Id))
 		}
+	}
+
+	return r
+}
+
+// Create new instance of the group model used by REST API from the
+// group instance returned from the database.
+func newRestGroup(g dbmodel.SystemGroup) *models.Group {
+	id := int64(g.Id)
+	r := &models.Group{
+		ID: &id,
+		Name: &g.Name,
+		Description: &g.Description,
 	}
 
 	return r
@@ -59,7 +72,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		return users.NewCreateSessionBadRequest()
 	}
 
-	rspUser := NewRestUser(*user)
+	rspUser := newRestUser(*user)
 	return users.NewCreateSessionOK().WithPayload(rspUser)
 }
 
@@ -92,7 +105,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 
 	usersList := []*models.User{}
 	for _, u := range systemUsers {
-		usersList = append(usersList, NewRestUser(*u))
+		usersList = append(usersList, newRestUser(*u))
 	}
 
 	u := models.Users{
@@ -133,7 +146,7 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 		return rsp
 	}
 
-	u := NewRestUser(*su)
+	u := newRestUser(*su)
 	return users.NewGetUserOK().WithPayload(u)
 }
 
@@ -263,4 +276,31 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 
 	// Password successfully changed.
 	return users.NewUpdateUserPasswordOK()
+}
+
+// Get groups defined in the system.
+func (r *RestAPI) GetGroups(ctx context.Context, params users.GetGroupsParams) middleware.Responder {
+	systemGroups, err := dbmodel.GetGroups(r.Db)
+	if err != nil {
+		log.Errorf("failed to get groups from the database with error: %s", err.Error())
+
+		msg := "failed to get groups from the database"
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewGetGroupsDefault(500).WithPayload(&rspErr)
+		return rsp
+	}
+
+	groupsList := []*models.Group{}
+	for _, g := range systemGroups {
+		groupsList = append(groupsList, newRestGroup(*g))
+	}
+
+	g := models.Groups{
+		Items: groupsList,
+		Total: int64(len(groupsList)),
+	}
+	rsp := users.NewGetGroupsOK().WithPayload(&g)
+	return rsp
 }
