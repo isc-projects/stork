@@ -74,7 +74,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 
 // Get users having an account in the system.
 func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) middleware.Responder {
-	systemUsers, err := dbmodel.GetUsers(r.Db, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderById)
+	systemUsers, total, err := dbmodel.GetUsersByPage(r.Db, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderById)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"start": int(*params.Start),
@@ -96,7 +96,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 
 	u := models.Users{
 		Items: usersList,
-		Total: int64(len(usersList)),
+		Total: total,
 	}
 	rsp := users.NewGetUsersOK().WithPayload(&u)
 	return rsp

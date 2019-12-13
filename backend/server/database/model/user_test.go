@@ -152,15 +152,16 @@ func TestPersistConflict(t *testing.T) {
 
 
 // Tests that all system users can be fetched from the database.
-func TestGetUsers(t *testing.T) {
+func TestGetUsersByPage(t *testing.T) {
 	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
 
-	users, err := GetUsers(db, 0, 0, SystemUserOrderById)
+	users, total, err := GetUsersByPage(db, 0, 1000, SystemUserOrderById)
 	require.NoError(t, err)
 	require.Equal(t, 101, len(users))
+	require.Equal(t, int64(101), total)
 
 	var prevId int = 0
 	for _, u := range users {
@@ -170,15 +171,16 @@ func TestGetUsers(t *testing.T) {
 }
 
 // Tests that users can be fetched and sorted by login or email.
-func TestGetUsersSortByLoginEmail(t *testing.T) {
+func TestGetUsersByPageSortByLoginEmail(t *testing.T) {
 	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
 
-	users, err := GetUsers(db, 0, 0, SystemUserOrderByLoginEmail)
+	users, total, err := GetUsersByPage(db, 0, 1000, SystemUserOrderByLoginEmail)
 	require.NoError(t, err)
 	require.Equal(t, 101, len(users))
+	require.Equal(t, int64(101), total)
 
 	prevLogin := ""
 	for _, u := range users {
@@ -188,16 +190,17 @@ func TestGetUsersSortByLoginEmail(t *testing.T) {
 }
 
 // Tests that a page of users can be fetched.
-func TestGetUsersPage(t *testing.T) {
+func TestGetUsersByPagePage(t *testing.T) {
 	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
 
-	users, err := GetUsers(db, 50, 10, SystemUserOrderById)
+	users, total, err := GetUsersByPage(db, 50, 10, SystemUserOrderById)
 	require.NoError(t, err)
 	require.Equal(t, 10, len(users))
 	require.Equal(t, 51, users[0].Id)
+	require.Equal(t, int64(101), total)
 
 	var prevId int = 0
 	for _, u := range users {
@@ -207,16 +210,17 @@ func TestGetUsersPage(t *testing.T) {
 }
 
 // Tests that last page of users can be fetched without issues.
-func TestGetUsersLastPage(t *testing.T) {
+func TestGetUsersByPageLastPage(t *testing.T) {
 	db, _, teardown  := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
 
-	users, err := GetUsers(db, 90, 20, SystemUserOrderById)
+	users, total, err := GetUsersByPage(db, 90, 20, SystemUserOrderById)
 	require.NoError(t, err)
 	require.Equal(t, 11, len(users))
 	require.Equal(t, 91, users[0].Id)
+	require.Equal(t, int64(101), total)
 
 	var prevId int = 0
 	for _, u := range users {
@@ -232,8 +236,9 @@ func TestGetUserById(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, err := GetUsers(db, 0, 0, SystemUserOrderById)
+	users, total, err := GetUsersByPage(db, 0, 1000, SystemUserOrderById)
 	require.NoError(t, err)
+	require.Equal(t, int64(101), total)
 
 	user, err := GetUserById(db, users[0].Id)
 	require.NoError(t, err)

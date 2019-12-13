@@ -105,9 +105,13 @@ func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 }
 
 // Fetches a collection of users from the database. The offset and limit specify the
-// beginning of the page and the maximum size of the page. If these values are set
-// to 0, all users are returned.
-func GetUsers(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users SystemUsers, err error) {
+// beginning of the page and the maximum size of the page. Limit has to be greater
+// then 0, otherwise error is returned.
+func GetUsersByPage(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users SystemUsers, total int64, err error) {
+	total = int64(0)
+	if limit == 0 {
+		return nil, total, errors.New("limit should be greater than 0")
+	}
 	q := db.Model(&users)
 
 	switch order {
@@ -117,6 +121,14 @@ func GetUsers(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users
 		q = q.OrderExpr("id ASC")
 	}
 
+	// first get total count
+	totalInt, err := q.Clone().Count()
+	if err != nil {
+		return nil, total, errors.Wrapf(err, "problem with getting machines total")
+	}
+	total = int64(totalInt)
+
+	// then do actual query
 	q = q.Offset(offset).Limit(limit)
 	err = q.Select()
 
@@ -124,7 +136,7 @@ func GetUsers(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users
 		err = errors.Wrapf(err, "problem with fetching a list of users from the database")
 	}
 
-	return users, err
+	return users, total, err
 }
 
 // Fetches a user with a given id from the database. If the user does not exist
