@@ -276,8 +276,8 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
                      'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
                      'CreateSession', 'DeleteSession', 'Listen', 'Shutdown', 'NewRestUser',
                      'GetUsers', 'GetUser', 'CreateUser', 'UpdateUser']
-      if cov < 50 and not ignore_list.include? func
-        puts "FAIL: %-80s %5s%% < 50%%" % ["#{file} #{func}", "#{cov}"]
+      if cov < 35 and not ignore_list.include? func
+        puts "FAIL: %-80s %5s%% < 35%%" % ["#{file} #{func}", "#{cov}"]
         problem = true
       end
     end
