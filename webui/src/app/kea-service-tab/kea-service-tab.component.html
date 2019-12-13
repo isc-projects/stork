@@ -1,0 +1,54 @@
+<div style="margin: 10px;" class="p-grid">
+    <div class="p-col-12">
+        <button
+            type="button"
+            pButton
+            label="Refresh Service"
+            icon="pi pi-refresh"
+            (click)="refreshServiceState()"
+            style="float: right;"
+        ></button>
+        <h3>Kea Service {{ serviceTab.service.id }}.</h3>
+        Machine:
+        <a routerLink="/machines/{{ serviceTab.service.machine.id }}">{{ serviceTab.service.machine.address }}</a>
+    </div>
+
+    <div class="p-col-12">
+        <p-tabMenu [model]="tabs" [activeItem]="activeTab">
+            <ng-template pTemplate="item" let-item let-i="index">
+                <div style="display: flex;">
+                    <div class="ui-menuitem-text">
+                        <b>{{ item.label }}</b>
+                    </div>
+                    <div
+                        *ngIf="daemons[i].active"
+                        class="ui-menuitem-icon"
+                        class="pi pi-check"
+                        style="font-size: 1.6em; color: #00df00;"
+                    ></div>
+                    <div
+                        *ngIf="!daemons[i].active"
+                        class="ui-menuitem-icon"
+                        class="pi pi-exclamation-circle"
+                        style="font-size: 1.6em; color: #f33;"
+                    ></div>
+                </div>
+            </ng-template>
+        </p-tabMenu>
+    </div>
+
+    <div class="p-col-12">
+        <div class="p-col-3">
+            <table style="width: 100%;">
+                <tr>
+                    <td>Version</td>
+                    <td>{{ daemon.version }}</td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top;">Version Ext</td>
+                    <td [innerHTML]="daemon.extendedVersion"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>

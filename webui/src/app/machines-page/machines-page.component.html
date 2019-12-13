@@ -108,7 +108,7 @@
                 <th>Hostname</th>
                 <th style="width: 10rem;">Address</th>
                 <th style="width: 7rem;">Agent Version</th>
-                <th style="width: 7rem;">Service</th>
+                <th style="width: 7rem;">Services</th>
                 <th style="width: 4rem;">CPUs</th>
                 <th style="width: 8rem;">CPUs Load</th>
                 <th style="width: 5rem;">Memory</th>
@@ -126,7 +126,22 @@
                 </td>
                 <td>{{ m.address }}:{{ m.agentPort }}</td>
                 <td>{{ m.agentVersion }}</td>
-                <td>{{ m.service }}</td>
+                <td>
+                    <a
+                        *ngFor="let s of m.services"
+                        [ngStyle]="{ color: s.active ? '#00a800' : '#f11' }"
+                        routerLink="/services/{{ s.type }}/{{ s.id }}"
+                    >
+                        <i
+                            class="pi pi-{{ s.active ? 'check' : 'exclamation-circle' }}"
+                            [ngStyle]="{
+                                'font-size': '1.5em',
+                                'vertical-align': s.active ? 'text-bottom' : 'text-top'
+                            }"
+                        ></i
+                        >{{ s.type }}
+                    </a>
+                </td>
                 <td>{{ m.cpus }}</td>
                 <td>{{ m.cpusLoad }}</td>
                 <td>{{ m.memory }}</td>
@@ -292,9 +307,21 @@
             <div *ngFor="let srv of machineTab.machine.services">
                 <div *ngIf="srv.type == 'kea'">
                     <h3>Kea Service</h3>
-                    <a routerLink="/services/{{ srv.type }}/{{ srv.id }}">link to details</a>
+                    Active:
+                    <span [ngStyle]="{ color: srv.active ? '#00a800' : '#f11' }">
+                        <i
+                            class="pi pi-{{ srv.active ? 'check' : 'exclamation-circle' }}"
+                            [ngStyle]="{
+                                'font-size': '1.5em',
+                                'vertical-align': srv.active ? 'text-bottom' : 'text-top'
+                            }"
+                        ></i>
+                        {{ srv.active ? 'yes' : 'no' }}
+                    </span>
                     <br />
                     Version: {{ srv.version }}
+                    <br />
+                    <a routerLink="/services/{{ srv.type }}/{{ srv.id }}">link to details</a>
                 </div>
             </div>
         </div>

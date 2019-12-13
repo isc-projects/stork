@@ -17,6 +17,10 @@ function htmlizeExtVersion(service) {
     }
 }
 
+function capitalize(txt) {
+    return txt.charAt(0).toUpperCase() + txt.slice(1)
+}
+
 @Component({
     selector: 'app-services-page',
     templateUrl: './services-page.component.html',
@@ -62,17 +66,20 @@ export class ServicesPageComponent implements OnInit {
         console.info('addServiceTab', service)
         this.openedServices.push({
             service,
-            aaa: service.id,
+            activeDaemonTabIdx: 0,
         })
+        const capServiceType = capitalize(service.type)
         this.tabs.push({
-            label: service.id,
+            label: `${service.id}. ${capServiceType}@${service.machine.address}`,
             routerLink: '/services/' + this.serviceType + '/' + service.id,
         })
     }
 
     ngOnInit() {
         this.serviceType = this.route.snapshot.params.srv
-        this.tabs = [{ label: 'Services', routerLink: '/services/' + this.serviceType + '/all' }]
+        this.tabs = [
+            { label: capitalize(this.serviceType) + ' Services', routerLink: '/services/' + this.serviceType + '/all' },
+        ]
 
         this.services = []
         this.serviceMenuItems = [
@@ -233,11 +240,27 @@ export class ServicesPageComponent implements OnInit {
         }
     }
 
-    refreshServiceState(machinesTab) {
-        this._refreshServiceState(machinesTab.machine)
+    onRefreshService(event) {
+        this._refreshServiceState(this.serviceTab.service)
     }
 
     refreshServicesList(servicesTable) {
         servicesTable.onLazyLoad.emit(servicesTable.createLazyLoadMetadata())
+    }
+
+    sortKeaDaemonsByImportance(service) {
+        const daemonMap = []
+        for (const d of service.details.daemons) {
+            daemonMap[d.name] = d
+        }
+        const DMAP = [['dhcp4', 'DHCPv4'], ['dhcp6', 'DHCPv6'], ['d2', 'DDNS'], ['ca', 'CA'], ['netconf', 'NETCONF']]
+        const daemons = []
+        for (const dm of DMAP) {
+            if (daemonMap[dm[0]] !== undefined) {
+                daemonMap[dm[0]].niceName = dm[1]
+                daemons.push(daemonMap[dm[0]])
+            }
+        }
+        return daemons
     }
 }

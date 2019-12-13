@@ -43,6 +43,7 @@ import { MachinesPageComponent } from './machines-page/machines-page.component'
 import { LocaltimePipe } from './localtime.pipe'
 import { UsersPageComponent } from './users-page/users-page.component'
 import { ServicesPageComponent } from './services-page/services-page.component'
+import { KeaServiceTabComponent } from './kea-service-tab/kea-service-tab.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -63,6 +64,7 @@ export function cfgFactory() {
         LocaltimePipe,
         UsersPageComponent,
         ServicesPageComponent,
+        KeaServiceTabComponent,
     ],
     imports: [
         BrowserModule,

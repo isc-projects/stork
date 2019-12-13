@@ -64,9 +64,9 @@
     >
         <ng-template pTemplate="header">
             <tr>
-                <th>Name</th>
+                <th>Service Type @ Address</th>
                 <th>Version</th>
-                <th>Machine</th>
+                <th>Machine Hostname</th>
                 <th>State</th>
                 <th style="width: 4rem;">Action</th>
             </tr>
@@ -74,33 +74,25 @@
         <ng-template pTemplate="body" let-s>
             <tr>
                 <td>
-                    <a routerLink="/services/{{ serviceType }}/{{ s.id }}"
-                        >Kea with
-                        <span *ngFor="let d of s.details.daemons; let isLast = last"
-                            >{{ d.name }}<span *ngIf="!isLast">, </span>
-                        </span>
-                    </a>
+                    <a routerLink="/services/{{ serviceType }}/{{ s.id }}"> Kea @ {{ s.machine.address }} </a>
                 </td>
                 <td>{{ s.version }}</td>
                 <td>
                     <a routerLink="/machines/{{ s.machine.id }}">{{ s.machine.hostname || s.machine.address }}</a>
                 </td>
                 <td>
-                    ctrl-agent:
-                    <svg style="vertical-align: sub;" height="16" width="26">
-                        <ellipse cx="13" cy="8" rx="12" ry="7" [ngStyle]="{ fill: s.active ? '#00df00' : '#f11' }" />
-                    </svg>
-                    <span *ngFor="let d of s.details.daemons">
-                        {{ d.name }}:
-                        <svg style="vertical-align: sub;" height="16" width="26">
-                            <ellipse
-                                cx="13"
-                                cy="8"
-                                rx="12"
-                                ry="7"
-                                [ngStyle]="{ fill: d.active ? '#00df00' : '#f11' }"
-                            />
-                        </svg>
+                    <span
+                        *ngFor="let d of sortKeaDaemonsByImportance(s)"
+                        [ngStyle]="{ color: d.active ? '#00a800' : '#f11' }"
+                    >
+                        <i
+                            class="pi pi-{{ d.active ? 'check' : 'times' }}"
+                            [ngStyle]="{
+                                'font-size': '1.5em',
+                                'vertical-align': d.active ? 'text-bottom' : 'text-top'
+                            }"
+                        ></i
+                        >{{ d.niceName }}
                     </span>
                 </td>
                 <td>
@@ -122,74 +114,9 @@
 
 <!-- Single service tab -->
 <div *ngIf="activeTabIdx != 0" class="ui-widget">
-    <div style="margin: 10px;" class="p-grid">
-        <div class="p-col-12">
-            <button
-                type="button"
-                pButton
-                label="Refresh Service"
-                icon="pi pi-refresh"
-                (click)="refreshServiceState(serviceTab.service)"
-            ></button>
-        </div>
-
-        <div class="p-col-3">
-            <h3>Kea Service</h3>
-            <table style="width: 100%;">
-                <tr>
-                    <td style="width: 30%;">Active</td>
-                    <td style="width: 70%;">
-                        <svg height="16" width="26">
-                            <ellipse
-                                cx="13"
-                                cy="8"
-                                rx="12"
-                                ry="7"
-                                [ngStyle]="{ fill: serviceTab.service.active ? '#00df00' : '#f11' }"
-                            />
-                        </svg>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Version</td>
-                    <td>{{ serviceTab.service.version }}</td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top;">Version Ext</td>
-                    <td [innerHTML]="serviceTab.service.details.extendedVersion"></td>
-                </tr>
-                <tr>
-                    <td>Control Port</td>
-                    <td>{{ serviceTab.service.ctrlPort }}</td>
-                </tr>
-            </table>
-        </div>
-        <div *ngFor="let d of serviceTab.service.details.daemons" class="p-col-3">
-            <h4>Kea {{ d.name }}</h4>
-            <table style="width: 100%;">
-                <tr>
-                    <td style="width: 25%;">Active</td>
-                    <td style="width: 75%;">
-                        <svg height="16" width="26">
-                            <ellipse
-                                cx="13"
-                                cy="8"
-                                rx="12"
-                                ry="7"
-                                [ngStyle]="{ fill: d.active ? '#00df00' : '#f11' }"
-                            />
-                        </svg>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Version</td>
-                    <td>{{ d.version }}</td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top;">Version Ext</td>
-                    <td [innerHTML]="d.extendedVersion"></td>
-                </tr>
-            </table>
-        </div>
-    </div>
+    <app-kea-daemons-tabs
+        class="p-col-12"
+        [serviceTab]="serviceTab"
+        (refreshService)="onRefreshService($event)"
+    ></app-kea-daemons-tabs>
 </div>
