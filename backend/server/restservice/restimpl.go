@@ -37,13 +37,31 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 	return general.NewGetVersionOK().WithPayload(&ver)
 }
 
-func machineToRestApi(dbMachine dbmodel.Machine) *models.Machine {
+func machineToRestApi(dbMachine dbmodel.Machine) (*models.Machine, error) {
 	var services []*models.MachineService
 	for _, srv := range dbMachine.Services {
+		active := true
+		if srv.Type == "kea" {
+			if srv.Active {
+				err := dbmodel.ReconvertServiceDetails(&srv)
+				if err != nil {
+					return nil, err
+				}
+				for _, d := range srv.Details.(dbmodel.ServiceKea).Daemons {
+					if !d.Active {
+						active = false
+						break
+					}
+				}
+			} else {
+				active = false
+			}
+		}
 		s := models.MachineService{
 			ID: srv.Id,
 			Type: srv.Type,
 			Version: srv.Meta.Version,
+			Active: active,
 		}
 		services = append(services, &s)
 	}
@@ -72,7 +90,7 @@ func machineToRestApi(dbMachine dbmodel.Machine) *models.Machine {
 		Error: dbMachine.Error,
 		Services: services,
 	}
-	return &m
+	return &m, nil
 }
 
 // Get runtime state of indicated machine.
@@ -103,8 +121,22 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		err = r.Db.Update(dbMachine)
 		if err != nil {
 			log.Error(err)
+			msg := "problem with updating record in database"
+			rsp := services.NewGetMachineStateDefault(500).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
 		}
-		m := machineToRestApi(*dbMachine)
+		m, err := machineToRestApi(*dbMachine)
+		if err != nil {
+			log.Error(err)
+			msg := "problem with serializing data"
+			rsp := services.NewGetMachineStateDefault(500).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+
 		rsp := services.NewGetMachineStateOK().WithPayload(m)
 		return rsp
 	}
@@ -119,7 +151,15 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
-	m := machineToRestApi(*dbMachine)
+	m, err := machineToRestApi(*dbMachine)
+	if err != nil {
+		log.Error(err)
+		msg := "problem with serializing data"
+		rsp := services.NewGetMachineStateDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 	rsp := services.NewGetMachineStateOK().WithPayload(m)
 
 	return rsp
@@ -168,7 +208,15 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 
 
 	for _, dbM := range dbMachines {
-		mm := machineToRestApi(dbM)
+		mm, err := machineToRestApi(dbM)
+		if err != nil {
+			log.Error(err)
+			msg := "problem with serializing data"
+			rsp := services.NewGetMachinesDefault(500).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
 		machines = append(machines, mm)
 	}
 
@@ -198,7 +246,15 @@ func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachinePara
 		})
 		return rsp
 	}
-	m := machineToRestApi(*dbMachine)
+	m, err := machineToRestApi(*dbMachine)
+	if err != nil {
+		log.Error(err)
+		msg := "problem with serializing data"
+		rsp := services.NewGetMachineDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 	rsp := services.NewGetMachineOK().WithPayload(m)
 	return rsp
 }
@@ -257,8 +313,21 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		err = r.Db.Update(dbMachine)
 		if err != nil {
 			log.Error(err)
+			msg := "problem with updating record in database"
+			rsp := services.NewGetMachineStateDefault(500).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
 		}
-		m := machineToRestApi(*dbMachine)
+		m, err := machineToRestApi(*dbMachine)
+		if err != nil {
+			log.Error(err)
+			msg := "problem with serializing data"
+			rsp := services.NewGetMachineDefault(500).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
 		rsp := services.NewCreateMachineOK().WithPayload(m)
 		return rsp
 	}
@@ -274,7 +343,15 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
-	m := machineToRestApi(*dbMachine)
+	m, err := machineToRestApi(*dbMachine)
+	if err != nil {
+		log.Error(err)
+		msg := "problem with serializing data"
+		rsp := services.NewGetMachineDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 	rsp := services.NewCreateMachineOK().WithPayload(m)
 
 	return rsp
@@ -342,7 +419,15 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		})
 		return rsp
 	}
-	m := machineToRestApi(*dbMachine)
+	m, err := machineToRestApi(*dbMachine)
+	if err != nil {
+		log.Error(err)
+		msg := "problem with serializing data"
+		rsp := services.NewUpdateMachineDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 	rsp := services.NewUpdateMachineOK().WithPayload(m)
 	return rsp
 }

@@ -152,7 +152,7 @@ func detectKeaService(match []string) *ServiceKea {
 
 	caUrl := fmt.Sprintf("http://localhost:%d", ctrlPort)
 
-	// retrieve ctrl-agent information
+	// retrieve ctrl-agent information, it is also used as a general service information
 	info, err := keaDaemonVersionGet(caUrl, "")
 	if err == nil {
 		if int(info["result"].(float64)) == 0 {
@@ -166,6 +166,15 @@ func detectKeaService(match []string) *ServiceKea {
 	} else {
 		log.Warnf("cannot get daemon version: %+v", err)
 	}
+
+	// add info about ctrl-agent daemon
+	caDaemon := KeaDaemon{
+		Name: "ca",
+		Active: keaService.Active,
+		Version: keaService.Version,
+		ExtendedVersion: keaService.ExtendedVersion,
+	}
+	keaService.Daemons = append(keaService.Daemons, caDaemon)
 
 	// get list of daemons configured in ctrl-agent
 	var jsonCmd = []byte(`{"command": "config-get"}`)
@@ -200,11 +209,11 @@ func detectKeaService(match []string) *ServiceKea {
 	if !ok {
 		return nil
 	}
-	m5, ok := m4["control-sockets"].(map[string]interface{})
+	daemonsListInCA, ok := m4["control-sockets"].(map[string]interface{})
 	if !ok {
 		return nil
 	}
-	for daemonName := range m5 {
+	for daemonName := range daemonsListInCA {
 		daemon := KeaDaemon{
 			Name: daemonName,
 			Active: false,
@@ -224,6 +233,11 @@ func detectKeaService(match []string) *ServiceKea {
 		} else {
 			log.Warnf("cannot get daemon version: %+v", err)
 		}
+		// if any daemon is inactive, then whole kea service is treated as inactive
+		if !daemon.Active {
+			keaService.Active = false
+		}
+
 		// if any daemon is inactive, then whole kea service is treated as inactive
 		if !daemon.Active {
 			keaService.Active = false

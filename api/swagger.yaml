@@ -529,6 +529,8 @@ definitions:
         type: string
       version:
         type: string
+      active:
+        type: boolean
 
   Machines:
     type: object
