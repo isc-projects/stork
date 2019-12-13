@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	flags "github.com/jessevdk/go-flags"
 
+	"isc.org/stork"
 	"isc.org/stork/agent"
 )
 
@@ -14,10 +14,7 @@ func main() {
 	storkAgent := agent.StorkAgent{}
 
 	// Setup logging
-	log.SetOutput(os.Stdout)
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
+	stork.SetupLogging()
 
 	// Prepare parse for command line flags.
 	parser := flags.NewParser(&storkAgent.Settings, flags.Default)
