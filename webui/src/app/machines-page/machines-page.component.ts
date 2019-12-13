@@ -91,7 +91,6 @@ export class MachinesPageComponent implements OnInit {
 
         this.route.paramMap.subscribe((params: ParamMap) => {
             const machineIdStr = params.get('id')
-            console.info('machineId', machineIdStr)
             if (machineIdStr === 'all') {
                 this.switchToTab(0)
             } else {
@@ -102,7 +101,6 @@ export class MachinesPageComponent implements OnInit {
                 for (let idx = 0; idx < this.openedMachines.length; idx++) {
                     const m = this.openedMachines[idx].machine
                     if (m.id === machineId) {
-                        console.info('found opened machine', idx)
                         this.switchToTab(idx + 1)
                         found = true
                     }
@@ -113,7 +111,6 @@ export class MachinesPageComponent implements OnInit {
                 if (!found) {
                     for (const m of this.machines) {
                         if (m.id === machineId) {
-                            console.info('found machine in the list, opening it')
                             this.addMachineTab(m)
                             this.switchToTab(this.tabs.length - 1)
                             found = true
@@ -124,7 +121,6 @@ export class MachinesPageComponent implements OnInit {
 
                 // if machine is not loaded in list fetch it individually
                 if (!found) {
-                    console.info('fetching machine')
                     this.servicesApi.getMachine(machineId).subscribe(
                         data => {
                             this.addMachineTab(data)

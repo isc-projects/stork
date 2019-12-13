@@ -15,13 +15,13 @@ has_milestone = gitlab.mr_json["milestone"] != nil
 warn("This MR does not refer to an existing milestone", sticky: true) unless has_milestone
 
 # check commits' comments
-commit_lint.check
+commit_lint.check warn: :all
 
 # check gitlab issue in commit message
 git.commits.each do |c|
   m = c.message.match(/^\[\#(\d+)\]\ (.*)/)
   if not m
-    failure "No GitLab issue in commit message: #{c}"
+    warn "No GitLab issue in commit message: #{c}"
     gl_issue_msg = nil
   else
     gl_issue_msg = m.captures[0]
@@ -30,13 +30,13 @@ git.commits.each do |c|
   mr_branch = gitlab.branch_for_head
   m = mr_branch.match(/^(\d+).*/)
   if not m
-    failure "Branch name does not start with GitLab issue: #{mr_branch}"
+    fail "Branch name does not start with GitLab issue: #{mr_branch}"
     gl_issue_br = nil
   else
     gl_issue_br = m.captures[0]
   end
 
   if gl_issue_msg and gl_issue_br and gl_issue_msg != gl_issue_br
-    failure "GitLab issue ##{gl_issue_msg} in msg of commit #{c} and issue ##{gl_issue_br} from branch #{mr_branch} do not match"
+    warn "GitLab issue ##{gl_issue_msg} in msg of commit #{c} and issue ##{gl_issue_br} from branch #{mr_branch} do not match"
   end
 end

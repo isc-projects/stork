@@ -33,8 +33,6 @@ type StorkAgent struct {
 
 // Get state of machine.
 func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*agentapi.GetStateRsp, error) {
-	log.Printf("Received: GetState %v", in)
-
 	vm, _ := mem.VirtualMemory()
 	hostInfo, _ := host.Info()
 	load, _ := load.Avg()

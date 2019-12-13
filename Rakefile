@@ -153,6 +153,17 @@ file AGENT_PB_GO_FILE => [GO, PROTOC, PROTOC_GEN_GO, AGENT_PROTO_FILE] do
   end
 end
 
+# prepare args for dlv debugger
+headless = ''
+if ENV['headless'] == 'true'
+  headless = '--headless -l 0.0.0.0:45678'
+end
+
+desc 'Connect gdlv GUI Go debugger to waiting dlv debugger'
+task :connect_dbg do
+  sh 'gdlv connect 127.0.0.1:45678'
+end
+
 desc 'Generate API sources from agent.proto'
 task :gen_agent => [AGENT_PB_GO_FILE]
 
@@ -163,24 +174,28 @@ end
 
 desc 'Run agent'
 task :run_agent => [:build_agent, GO] do
-  sh "backend/cmd/stork-agent/stork-agent --port 8888"
+  if ENV['debug'] == 'true'
+    sh "cd backend/cmd/stork-agent/ && dlv #{headless} debug"
+  else
+    sh "backend/cmd/stork-agent/stork-agent --port 8888"
+  end
 end
 
-
 desc 'Run server'
-task :run_server, [:dbg] => [:build_server, GO] do |t, args|
-  args.with_defaults(:dbg => false)
-  if args[:dbg]
-    sh "cd backend/cmd/stork-server/ && dlv debug"
+task :run_server => [:build_server, GO] do |t, args|
+  if ENV['debug'] == 'true'
+    sh "cd backend/cmd/stork-server/ && dlv #{headless} debug"
   else
-    # sh "backend/cmd/stork-server/stork-server"
-    sh "backend/cmd/stork-server/stork-server --db-trace-queries"
+    cmd = 'backend/cmd/stork-server/stork-server'
+    if ENV['dbtrace'] == 'true'
+      cmd = "#{cmd} --db-trace-queries"
+    end
+    sh cmd
   end
 end
 
 desc 'Run server with local postgres docker container'
-task :run_server_db, [:dbg] do |t, args|
-  args.with_defaults(:dbg => false)
+task :run_server_db do |t, args|
   ENV['STORK_DATABASE_NAME'] = "storkapp"
   ENV['STORK_DATABASE_USER_NAME'] = "storkapp"
   ENV['STORK_DATABASE_PASSWORD'] = "storkapp"
@@ -190,7 +205,7 @@ task :run_server_db, [:dbg] do |t, args|
     sh "docker rm -f stork-app-pgsql"
   }
   sh 'docker run --name stork-app-pgsql -d -p 5678:5432 -e POSTGRES_DB=storkapp -e POSTGRES_USER=storkapp -e POSTGRES_PASSWORD=storkapp postgres:11 && sleep 5'
-  Rake::Task["run_server"].invoke(args[:dbg])
+  Rake::Task["run_server"].invoke()
 end
 
 
@@ -227,11 +242,22 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     sh 'rm -f backend/server/agentcomm/api_mock.go'
   }
   sh 'rm -f backend/server/agentcomm/api_mock.go'
+  if ENV['scope']
+    scope = ENV['scope']
+  else
+    scope = './...'
+  end
   Dir.chdir('backend') do
     sh "#{GO} generate -v ./..."
-    sh "#{RICHGO} test -race -v -count=1 -p 1 -coverprofile=coverage.out  ./..."  # count=1 disables caching results
-    #sh "#{RICHGO} test -race -v -count=1 -p 1 -coverprofile=coverage.out  ./server/database/session"  # count=1 disables caching results
-    #sh "dlv test  ./server/database"  # count=1 disables caching results
+    if ENV['debug'] == 'true'
+      sh "dlv #{headless} test #{scope}"
+    else
+      gotool = RICHGO
+      if ENV['richgo'] == 'false'
+        gotool = GO
+      end
+      sh "#{gotool} test -race -v -count=1 -p 1 -coverprofile=coverage.out  #{scope}"  # count=1 disables caching results
+    end
 
     # check coverage level
     out = `#{GO} tool cover -func=coverage.out`
@@ -361,13 +387,13 @@ task :docker_up => [:build_backend, :build_ui] do
   at_exit {
     sh "docker-compose down"
   }
-  sh "docker-compose build"
-  sh "docker-compose up"
+  sh 'docker-compose build'
+  sh 'docker-compose up'
 end
 
 desc 'Shut down all containers'
 task :docker_down do
-  sh "docker-compose down"
+  sh 'docker-compose down'
 end
 
 
@@ -405,7 +431,10 @@ task :clean do
 end
 
 desc 'Download all dependencies'
-task :prepare_env => [GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX]
+task :prepare_env => [GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX] do
+  sh "#{GO} get -u github.com/go-delve/delve/cmd/dlv"
+  sh "#{GO} get -u github.com/aarzilli/gdlv"
+end
 
 desc 'Generate ctags for Emacs'
 task :ctags do
