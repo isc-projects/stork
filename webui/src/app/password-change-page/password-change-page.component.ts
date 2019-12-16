@@ -15,7 +15,6 @@ import { AuthService } from '../auth.service'
 })
 export class PasswordChangePageComponent implements OnInit {
     selectedItem: string
-
     passwordChangeForm: FormGroup
 
     constructor(

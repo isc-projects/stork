@@ -12,13 +12,15 @@
                     </p-panel>
                 </div>
                 <div class="p-col-7 p-justify-left p-align-center">
-                    <p-panel header="Marcin Siodelski">
+                    <p-panel header="{{ this.profilePanelHeader }}">
                         <b>ID</b>
-                        <p>125</p>
+                        <p>{{ currentUser.id }}</p>
                         <b>Login</b>
-                        <p>marcin.siodelski</p>
+                        <p>{{ currentUser.username }}</p>
                         <b>Email</b>
-                        <p>marcin.siodelski@example.org</p>
+                        <p>{{ currentUser.email ? currentUser.email : '(not specified)' }}</p>
+                        <b>Group</b>
+                        <p>{{ this.groupName }}</p>
                     </p-panel>
                 </div>
             </div>
