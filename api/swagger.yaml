@@ -189,8 +189,6 @@ paths:
       description: >-
         Returns all groups defined for the system.
       operationId: getGroups
-      security:
-        - Token: []
       tags:
         - Users
       responses:

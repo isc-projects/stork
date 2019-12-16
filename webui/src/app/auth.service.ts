@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators'
 
 import { MessageService } from 'primeng/api'
 
+import { AppInitService } from './app-init.service'
 import { UsersService } from './backend/api/users.service'
 
 export class User {
@@ -17,7 +18,10 @@ export class User {
     groups: number[]
 }
 
-export class Group {
+/**
+ * Represents system group fetched from the database.
+ */
+export class SystemGroup {
     id: number
     name: string
     description: string
@@ -30,44 +34,71 @@ export class AuthService {
     private currentUserSubject: BehaviorSubject<User>
     public currentUser: Observable<User>
     public user: User
-    public groups: Group[] = []
+    public groups: SystemGroup[]
 
     constructor(
         private http: HttpClient,
         private api: UsersService,
         private router: Router,
-        private msgSrv: MessageService
+        private msgSrv: MessageService,
+        private appInit: AppInitService
     ) {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')))
         this.currentUser = this.currentUserSubject.asObservable()
         this.initSystemGroups()
     }
 
+    /**
+     * Returns information about currently logged user.
+     */
     public get currentUserValue(): User {
         return this.currentUserSubject.value
     }
 
-    initSystemGroups() {
-        this.api.getGroups().subscribe(
-            data => {
-                if (data.items) {
-                    for (const i in data.items) {
-                        if (data.items.hasOwnProperty(i)) {
-                            let group = new Group()
-                            group.id = data.items[i].id
-                            group.name = data.items[i].name
-                            group.description = data.items[i].description
-                            this.groups.push(group)
-                        }
-                    }
-                }
-            },
-            err => {
-                this.msgSrv.add({ severity: 'error', summary: 'Unable to fetch user group definitions' })
-            }
-        )
+    /**
+     * Returns name of the system group fetched from the database.
+     *
+     * @param groupId Identifier of the group in the database, counted
+     *                from 1.
+     * @returns Group name or unknown string if the group is not found.
+     */
+    public groupName(groupId): string {
+        const groupIdx = groupId - 1
+        if (this.groups.hasOwnProperty(groupIdx)) {
+            return this.groups[groupIdx].name
+        }
+        return 'unknown'
     }
 
+    /**
+     * Initializes a list of system groups.
+     *
+     * The groups are fetched from the database by the {@link AppInitService}
+     * prior to page load.
+     */
+    initSystemGroups() {
+        this.groups = []
+        const groups = this.appInit.groups
+        if (groups) {
+            for (const i in groups) {
+                if (groups.hasOwnProperty(i)) {
+                    const group = new SystemGroup()
+                    group.id = groups[i].id
+                    group.name = groups[i].name
+                    group.description = groups[i].description
+                    this.groups.push(group)
+                }
+            }
+        }
+    }
+
+    /**
+     * Attempts to create a session for a user.
+     *
+     * @param username Specified user name.
+     * @param password Specified password.
+     * @param returnUrl URL to return to after successful login.
+     */
     login(username: string, password: string, returnUrl: string) {
         let user: User
         this.api.createSession(username, password).subscribe(
@@ -101,6 +132,9 @@ export class AuthService {
         return user
     }
 
+    /**
+     * Destroys user session.
+     */
     logout() {
         this.api.deleteSession('response').subscribe(resp => {
             localStorage.removeItem('currentUser')
@@ -108,6 +142,11 @@ export class AuthService {
         })
     }
 
+    /**
+     * Convenience function checking if the current user has the super admin role.
+     *
+     * @returns true if the user has super-admin group.
+     */
     superAdmin(): boolean {
         if (this.currentUserValue && this.currentUserValue.groups) {
             for (const i in this.currentUserValue.groups) {

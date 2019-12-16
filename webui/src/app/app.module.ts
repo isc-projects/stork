@@ -1,7 +1,7 @@
 // Angular modules
 import { BrowserModule } from '@angular/platform-browser'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { Injector, NgModule } from '@angular/core'
+import { APP_INITIALIZER, Injector, NgModule } from '@angular/core'
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 
@@ -37,6 +37,8 @@ import { environment } from './../environments/environment'
 import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
 import { AuthInterceptor } from './auth-interceptor'
+import { AuthService } from './auth.service'
+import { AppInitService } from './app-init.service'
 import { LoginScreenComponent } from './login-screen/login-screen.component'
 import { DashboardComponent } from './dashboard/dashboard.component'
 import { HostsTableComponent } from './hosts-table/hosts-table.component'
@@ -56,6 +58,16 @@ export function cfgFactory() {
         withCredentials: true,
     }
     return new Configuration(params)
+}
+
+/**
+ * Invokes pre-initialization of the application before the
+ * components are initialized.
+ */
+export function preinitApp(appInitService: AppInitService) {
+    return (): Promise<any> => {
+        return appInitService.Init()
+    }
 }
 
 @NgModule({
@@ -107,6 +119,12 @@ export function cfgFactory() {
         CardModule,
     ],
     providers: [
+        {
+            provide: APP_INITIALIZER,
+            useFactory: preinitApp,
+            deps: [AppInitService],
+            multi: true,
+        },
         {
             provide: HTTP_INTERCEPTORS,
             useClass: AuthInterceptor,

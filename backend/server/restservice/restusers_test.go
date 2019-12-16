@@ -27,7 +27,7 @@ func TestCreateUser(t *testing.T) {
 
 	params := users.CreateUserParams{
 		Account: &models.UserAccount{
-			User:     NewRestUser(su),
+			User:     newRestUser(su),
 			Password: models.Password("pass"),
 		},
 	}
@@ -78,7 +78,7 @@ func TestUpdateUser(t *testing.T) {
 	su.Lastname = "Born"
 	params := users.UpdateUserParams{
 		Account: &models.UserAccount{
-			User:     NewRestUser(su),
+			User:     newRestUser(su),
 			Password: models.Password("pass"),
 		},
 	}
@@ -95,7 +95,7 @@ func TestUpdateUser(t *testing.T) {
 	su.Id = 123
 	params = users.UpdateUserParams{
 		Account: &models.UserAccount{
-			User:     NewRestUser(su),
+			User:     newRestUser(su),
 			Password: models.Password("pass"),
 		},
 	}
@@ -150,4 +150,23 @@ func TestUpdateUserPassword(t *testing.T) {
 	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
 	defaultRsp := rsp.(*users.UpdateUserPasswordDefault)
 	require.Equal(t, 400, getStatusCode(*defaultRsp))
+}
+
+// Tests that multiple groups can be fetched from the database.
+func TestGetGroups(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(nil, dbSettings, db, nil)
+
+	params := users.GetGroupsParams{}
+
+	rsp := rapi.GetGroups(ctx, params)
+	require.IsType(t, &users.GetGroupsOK{}, rsp)
+	rspOK := rsp.(*users.GetGroupsOK)
+
+	groups := rspOK.Payload
+	require.NotNil(t, groups.Items)
+	require.GreaterOrEqual(t, 2, len(groups.Items))
 }

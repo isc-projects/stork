@@ -49,6 +49,7 @@
                 <th>Email</th>
                 <th>Firstname</th>
                 <th>Lastname</th>
+                <th>Group</th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-u>
@@ -61,6 +62,7 @@
                 </td>
                 <td align="center">{{ u.name }}</td>
                 <td align="center">{{ u.lastname }}</td>
+                <td align="center">{{ u.groups.length > 0 ? auth.groupName(u.groups[0]) : 0 }}</td>
             </tr>
         </ng-template>
     </p-table>
@@ -107,6 +109,16 @@
                         </div>
                         <div class="p-col-10">
                             {{ userTab.user.name }}
+                        </div>
+                    </div>
+                </div>
+                <div class="p-col-12">
+                    <div class="p-grid">
+                        <div class="p-col-2">
+                            Group:
+                        </div>
+                        <div class="p-col-10">
+                            {{ userTab.user.groups.length > 0 ? auth.groupName(userTab.user.groups[0]) : 0 }}
                         </div>
                     </div>
                 </div>
@@ -226,6 +238,28 @@
                                             !userform.controls['userlast'].valid &&
                                             userform.controls['userlast'].dirty &&
                                             userform.controls['userlast'].touched
+                                        "
+                                    ></p-message>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-col-12">
+                            <div class="p-grid">
+                                <div class="p-col">
+                                    Group*:
+                                </div>
+                                <div class="p-col-5">
+                                    <p-dropdown [options]="userGroups" formControlName="usergroup"></p-dropdown>
+                                </div>
+                                <div class="p-col-6">
+                                    <p-message
+                                        severity="error"
+                                        text="Please select a group"
+                                        *ngIf="
+                                            !userform.controls['usergroup'].valid &&
+                                            userform.controls['usergroup'].dirty &&
+                                            userform.controls['usergroup'].touched
                                         "
                                     ></p-message>
                                 </div>

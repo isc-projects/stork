@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core'
 import { FormBuilder, FormControl, FormGroup, NgForm, Validators } from '@angular/forms'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
-import { MenuItem, MessageService } from 'primeng/api'
+import { MenuItem, MessageService, SelectItem } from 'primeng/api'
 
+import { AuthService } from '../auth.service'
 import { UsersService } from '../backend/api/api'
 import { UserAccount } from '../backend/model/models'
 
@@ -103,14 +104,23 @@ export class UsersPageComponent implements OnInit {
     openedTabs: UserTab[]
     userTab: UserTab
 
+    // form data
+    userGroups: SelectItem[]
+
     constructor(
         private route: ActivatedRoute,
         private router: Router,
         private formBuilder: FormBuilder,
         private usersApi: UsersService,
-        private msgSrv: MessageService
+        private msgSrv: MessageService,
+        private auth: AuthService
     ) {}
 
+    /**
+     * Returns user form from the current tab.
+     *
+     * @returns instance of the form or null if the curren tab includes no form.
+     */
     get userform(): FormGroup {
         return this.userTab ? this.userTab.userform : null
     }
@@ -196,6 +206,7 @@ export class UsersPageComponent implements OnInit {
                 useremail: ['', Validators.email],
                 userfirst: ['', Validators.required],
                 userlast: ['', Validators.required],
+                usergroup: ['', Validators.required],
                 userpassword: ['', Validators.minLength(8)],
                 userpassword2: ['', Validators.minLength(8)],
             },
@@ -212,6 +223,21 @@ export class UsersPageComponent implements OnInit {
             userfirst: this.userTab.user.name,
             userlast: this.userTab.user.lastname,
         })
+
+        if (
+            this.auth.groups &&
+            this.auth.groups.length > 0 &&
+            this.userTab.user.groups &&
+            this.userTab.user.groups.length > 0
+        ) {
+            userform.patchValue({
+                usergroup: {
+                    id: this.auth.groups[this.userTab.user.groups[0] - 1].id,
+                    name: this.auth.groups[this.userTab.user.groups[0] - 1].name,
+                },
+            })
+        }
+
         this.userTab.userform = userform
     }
 
@@ -229,6 +255,7 @@ export class UsersPageComponent implements OnInit {
             useremail: ['', Validators.email],
             userfirst: ['', Validators.required],
             userlast: ['', Validators.required],
+            usergroup: ['', Validators.required],
             userpassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
             userpassword2: ['', Validators.required],
         })
@@ -310,6 +337,20 @@ export class UsersPageComponent implements OnInit {
      */
     ngOnInit() {
         this.users = []
+        this.userGroups = [
+            {
+                label: 'Select Group',
+                value: null,
+            },
+        ]
+        for (const i in this.auth.groups) {
+            if (this.auth.groups.hasOwnProperty(i)) {
+                this.userGroups.push({
+                    label: this.auth.groups[i].name,
+                    value: { id: this.auth.groups[i].id, name: this.auth.groups[i].name },
+                })
+            }
+        }
 
         // Open the default tab
         this.tabs = [{ label: 'Users', routerLink: '/users/list' }]
@@ -387,6 +428,7 @@ export class UsersPageComponent implements OnInit {
             email: this.userform.controls.useremail.value,
             name: this.userform.controls.userfirst.value,
             lastname: this.userform.controls.userlast.value,
+            groups: [this.userform.controls.usergroup.value.id],
         }
         const password = this.userform.controls.userpassword.value
         const account = { user, password }
@@ -426,6 +468,7 @@ export class UsersPageComponent implements OnInit {
             email: this.userform.controls.useremail.value,
             name: this.userform.controls.userfirst.value,
             lastname: this.userform.controls.userlast.value,
+            groups: [this.userform.controls.usergroup.value.id],
         }
         const password = this.userform.controls.userpassword.value
         const account = { user, password }

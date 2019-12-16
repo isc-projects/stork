@@ -64,7 +64,7 @@ func createUserGroups(db *pg.DB, user *SystemUser) (err error) {
 	if len(user.Groups) > 0 {
 		for _, g := range user.Groups {
 			assocs = append(assocs, SystemUserToGroup{
-				UserID: user.Id,
+				UserID:  user.Id,
 				GroupID: g.Id,
 			})
 		}

@@ -1,9 +1,9 @@
 package dbmodel
 
 import (
-	"testing"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/database/test"
+	"testing"
 )
 
 // Test that all system groups can be fetched from the database.

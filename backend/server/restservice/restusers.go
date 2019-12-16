@@ -41,8 +41,8 @@ func newRestUser(u dbmodel.SystemUser) *models.User {
 func newRestGroup(g dbmodel.SystemGroup) *models.Group {
 	id := int64(g.Id)
 	r := &models.Group{
-		ID: &id,
-		Name: &g.Name,
+		ID:          &id,
+		Name:        &g.Name,
 		Description: &g.Description,
 	}
 
@@ -162,6 +162,11 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 		Name:     *u.Name,
 		Password: string(p),
 	}
+
+	for _, gid := range u.Groups {
+		su.Groups = append(su.Groups, &dbmodel.SystemGroup{Id: int(gid)})
+	}
+
 	err, con := dbmodel.CreateUser(r.Db, su)
 	if err != nil {
 		if con {
@@ -204,6 +209,11 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		Name:     *u.Name,
 		Password: string(p),
 	}
+
+	for _, gid := range u.Groups {
+		su.Groups = append(su.Groups, &dbmodel.SystemGroup{Id: int(gid)})
+	}
+
 	err, con := dbmodel.UpdateUser(r.Db, su)
 	if con {
 		log.WithFields(log.Fields{
