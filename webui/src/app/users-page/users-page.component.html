@@ -47,8 +47,8 @@
             <tr>
                 <th>Login</th>
                 <th>Email</th>
-                <th>Firstname</th>
-                <th>Lastname</th>
+                <th>First name</th>
+                <th>Last name</th>
                 <th>Group</th>
             </tr>
         </ng-template>
@@ -105,7 +105,7 @@
                 <div class="p-col-12">
                     <div class="p-grid">
                         <div class="p-col-2">
-                            Firstname:
+                            First name:
                         </div>
                         <div class="p-col-10">
                             {{ userTab.user.name }}
@@ -143,212 +143,249 @@
 
 <div *ngIf="newUserTab || editedUserTab" class="ui-widget">
     <div style="display: flex; margin: 10px;">
-        <div style="min-width: 1000px;">
-            <form [formGroup]="userform">
-                <p-panel header="User account">
-                    <div class="p-grid p-align-center" style="margin: 10px 0px">
-                        <div class="p-col-12">
-                            <div class="p-grid">
-                                <div class="p-col">
-                                    Login*:
-                                </div>
-                                <div class="p-col-5">
-                                    <input pInputText type="text" formControlName="userlogin" pattern="[a-zA-Z0-9_]*" />
-                                </div>
-                                <div class="p-col-6">
-                                    <p-message
-                                        severity="error"
-                                        text="Login must only contain letters, digits or underscore"
-                                        *ngIf="
-                                            !userform.controls['userlogin'].valid &&
-                                            userform.controls['userlogin'].dirty
-                                        "
-                                    ></p-message>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-col-12">
-                            <div class="p-grid">
-                                <div class="p-col">
-                                    Email:
-                                </div>
-                                <div class="p-col-5">
-                                    <input pInputText type="text" formControlName="useremail" />
-                                </div>
-                                <div class="p-col-6">
-                                    <p-message
-                                        severity="error"
-                                        text="Email is incorrect"
-                                        *ngIf="
-                                            !userform.controls['useremail'].valid &&
-                                            userform.controls['useremail'].dirty &&
-                                            userform.controls['useremail'].touched
-                                        "
-                                    ></p-message>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-col-12">
-                            <div class="p-grid">
-                                <div class="p-col">
-                                    Firstname*:
-                                </div>
-                                <div class="p-col-5">
-                                    <input
-                                        pInputText
-                                        type="text"
-                                        formControlName="userfirst"
-                                        pattern="^[\S][\w|\s]*[\S]$"
-                                    />
-                                </div>
-                                <div class="ui-grid-col-6">
-                                    <p-message
-                                        severity="error"
-                                        text="Firstname is invalid"
-                                        *ngIf="
-                                            !userform.controls['userfirst'].valid &&
-                                            userform.controls['userfirst'].dirty &&
-                                            userform.controls['userfirst'].touched
-                                        "
-                                    ></p-message>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-col-12">
-                            <div class="p-grid">
-                                <div class="p-col">
-                                    Lastname*:
-                                </div>
-                                <div class="p-col-5">
-                                    <input
-                                        pInputText
-                                        type="text"
-                                        formControlName="userlast"
-                                        pattern="^[\S][\w|\s]*[\S]$"
-                                    />
-                                </div>
-                                <div class="p-col-6">
-                                    <p-message
-                                        severity="error"
-                                        text="Lastname is invalid"
-                                        *ngIf="
-                                            !userform.controls['userlast'].valid &&
-                                            userform.controls['userlast'].dirty &&
-                                            userform.controls['userlast'].touched
-                                        "
-                                    ></p-message>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-col-12">
-                            <div class="p-grid">
-                                <div class="p-col">
-                                    Group*:
-                                </div>
-                                <div class="p-col-5">
-                                    <p-dropdown [options]="userGroups" formControlName="usergroup"></p-dropdown>
-                                </div>
-                                <div class="p-col-6">
-                                    <p-message
-                                        severity="error"
-                                        text="Please select a group"
-                                        *ngIf="
-                                            !userform.controls['usergroup'].valid &&
-                                            userform.controls['usergroup'].dirty &&
-                                            userform.controls['usergroup'].touched
-                                        "
-                                    ></p-message>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-col-12">
-                            <div class="p-grid">
-                                <div class="p-col">
-                                    Password*:
-                                </div>
-                                <div class="p-col-5">
-                                    <input
-                                        pInputText
-                                        type="password"
-                                        formControlName="userpassword"
-                                        pattern="[a-zA-Z0-9@.!\+\-]*"
-                                    />
-                                </div>
-                                <div class="p-col-6">
-                                    <p-message
-                                        severity="error"
-                                        text="Password must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long"
-                                        *ngIf="
-                                            !userform.controls['userpassword'].valid &&
-                                            userform.controls['userpassword'].dirty &&
-                                            userform.controls['userpassword'].touched
-                                        "
-                                    ></p-message>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-col-12">
-                            <div class="p-grid">
-                                <div class="p-col">
-                                    Repeat password*:
-                                </div>
-                                <div class="p-col-5">
-                                    <input
-                                        pInputText
-                                        type="password"
-                                        formControlName="userpassword2"
-                                        pattern="{{ userform.controls['userpassword'].value }}"
-                                    />
-                                </div>
-                                <div class="p-col-6">
-                                    <p-message
-                                        severity="error"
-                                        text="Passwords must match"
-                                        *ngIf="
-                                            !userform.controls['userpassword2'].valid &&
-                                            userform.controls['userpassword2'].dirty
-                                        "
-                                    ></p-message>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-col-12">
-                            <div class="p-grid">
-                                <div class="p-col">
-                                    <button
-                                        type="submit"
-                                        pButton
-                                        [disabled]="userform.invalid"
-                                        class="btn btn-success"
-                                        icon="pi pi-pencil"
-                                        label="Save"
-                                        (click)="userFormSave()"
-                                    ></button>
-                                </div>
-                                <div class="p-col">
-                                    <button
-                                        type="submit"
-                                        pButton
-                                        [disabled]="false"
-                                        class="btn btn-basic"
-                                        icon="pi pi-times"
-                                        label="Cancel"
-                                        (click)="userFormCancel()"
-                                    ></button>
-                                </div>
-                                <div class="ui-grid-col-10"></div>
-                            </div>
-                        </div>
-                    </div>
+        <div class="p-grid">
+            <div class="p-col-3">
+                <p-panel header="Creating new account" *ngIf="newUserTab">
+                    <p>
+                        In order to create new user account please specify user login, user's first name and last name.
+                        The email is optional but we strongly recommend that it is specified. If the email is provided
+                        the user can sign in either using the login or the email. The password is mandatory and it is
+                        required that it is at least 8 characters long.
+                    </p>
+                    <br />
+                    <p>
+                        The user must be associated with one of the existing system groups. Currently there are two
+                        groups available: super-admin and admin. The users belonging to the super-admin group have full
+                        control over the system, including creation of the user accounts and modifying those accounts.
+                        The users beloging to the admin group have similar permissions with the exception that they are
+                        not allowed to create and/or modify user accounts. However, they are allowed to update their own
+                        passwords.
+                    </p>
                 </p-panel>
-            </form>
+                <p-panel header="Creating new account" *ngIf="editedUserTab">
+                    <p>
+                        Use this form to modify user account information, add lacking email address or change the group
+                        that the user is associated with.
+                    </p>
+                    <br />
+                    <p>
+                        The user password remains unchanged if it is left blank while saving the form.
+                    </p>
+                </p-panel>
+            </div>
+            <div class="p-col-7">
+                <form [formGroup]="userform">
+                    <p-panel header="User account">
+                        <div class="p-grid">
+                            <div class="p-col-2">
+                                Login*:
+                            </div>
+                            <div class="p-col-7">
+                                <div class="p-grid">
+                                    <div class="p-col-12">
+                                        <input
+                                            pInputText
+                                            type="text"
+                                            formControlName="userlogin"
+                                            style="width:80%"
+                                            pattern="[a-zA-Z0-9_]*"
+                                        />
+                                    </div>
+                                    <div class="p-col-12">
+                                        <p-message
+                                            severity="error"
+                                            text="Login must only contain letters, digits or underscore"
+                                            *ngIf="
+                                                !userform.controls['userlogin'].valid &&
+                                                userform.controls['userlogin'].dirty
+                                            "
+                                        ></p-message>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-col-3"></div>
+                            <div class="p-col-2">
+                                Email:
+                            </div>
+                            <div class="p-col-7">
+                                <div class="p-grid">
+                                    <div class="p-col-12">
+                                        <input pInputText type="text" style="width:80%" formControlName="useremail" />
+                                    </div>
+                                    <div class="p-col-12">
+                                        <p-message
+                                            severity="error"
+                                            text="Email is incorrect"
+                                            *ngIf="
+                                                !userform.controls['useremail'].valid &&
+                                                userform.controls['useremail'].dirty &&
+                                                userform.controls['useremail'].touched
+                                            "
+                                        ></p-message>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-col-3"></div>
+                            <div class="p-col-2">
+                                First name*:
+                            </div>
+                            <div class="p-col-7">
+                                <div class="p-grid">
+                                    <div class="p-col-12">
+                                        <input
+                                            pInputText
+                                            type="text"
+                                            formControlName="userfirst"
+                                            style="width:80%"
+                                            pattern="^[\S][\w|\s]*[\S]$"
+                                        />
+                                    </div>
+                                    <div class="p-col-12">
+                                        <p-message
+                                            severity="error"
+                                            text="Firstname is invalid"
+                                            *ngIf="
+                                                !userform.controls['userfirst'].valid &&
+                                                userform.controls['userfirst'].dirty &&
+                                                userform.controls['userfirst'].touched
+                                            "
+                                        ></p-message>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-col-3"></div>
+                            <div class="p-col-2">
+                                Last name*:
+                            </div>
+                            <div class="p-col-7">
+                                <div class="p-grid">
+                                    <div class="p-col-12">
+                                        <input
+                                            pInputText
+                                            type="text"
+                                            formControlName="userlast"
+                                            style="width:80%"
+                                            pattern="^[\S][\w|\s]*[\S]$"
+                                        />
+                                    </div>
+                                    <div class="p-col-12">
+                                        <p-message
+                                            severity="error"
+                                            text="Lastname is invalid"
+                                            *ngIf="
+                                                !userform.controls['userlast'].valid &&
+                                                userform.controls['userlast'].dirty &&
+                                                userform.controls['userlast'].touched
+                                            "
+                                        ></p-message>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-col-3"></div>
+                            <div class="p-col-2">
+                                Group*:
+                            </div>
+                            <div class="p-col-7">
+                                <div class="p-grid">
+                                    <div class="p-col-12">
+                                        <p-dropdown [options]="userGroups" formControlName="usergroup"></p-dropdown>
+                                    </div>
+                                    <div class="p-col-12">
+                                        <p-message
+                                            severity="error"
+                                            text="Please select a group"
+                                            *ngIf="
+                                                !userform.controls['usergroup'].valid &&
+                                                userform.controls['usergroup'].dirty &&
+                                                userform.controls['usergroup'].touched
+                                            "
+                                        ></p-message>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-col-3"></div>
+                            <div class="p-col-2">
+                                Password*:
+                            </div>
+                            <div class="p-col-7">
+                                <div class="p-grid">
+                                    <div class="p-col-12">
+                                        <input
+                                            pInputText
+                                            type="password"
+                                            formControlName="userpassword"
+                                            style="width:80%"
+                                            pattern="[a-zA-Z0-9@.!\+\-]*"
+                                        />
+                                    </div>
+                                    <div class="p-col-12">
+                                        <p-message
+                                            severity="error"
+                                            text="Password must only contain letters, digits, @, ., !, +, - and must be at least 8 characters long"
+                                            *ngIf="
+                                                !userform.controls['userpassword'].valid &&
+                                                userform.controls['userpassword'].dirty &&
+                                                userform.controls['userpassword'].touched
+                                            "
+                                        ></p-message>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-col-3"></div>
+                            <div class="p-col-2">
+                                Repeat password*:
+                            </div>
+                            <div class="p-col-7">
+                                <div class="p-grid">
+                                    <div class="p-col-12">
+                                        <input
+                                            pInputText
+                                            type="password"
+                                            formControlName="userpassword2"
+                                            style="width:80%"
+                                            pattern="{{ userform.controls['userpassword'].value }}"
+                                        />
+                                    </div>
+                                    <div class="p-col-12">
+                                        <p-message
+                                            severity="error"
+                                            text="Passwords must match"
+                                            *ngIf="
+                                                !userform.controls['userpassword2'].valid &&
+                                                userform.controls['userpassword2'].dirty
+                                            "
+                                        ></p-message>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-col-3"></div>
+                            <div class="p-col">
+                                <button
+                                    type="submit"
+                                    pButton
+                                    [disabled]="userform.invalid"
+                                    class="btn btn-success"
+                                    icon="pi pi-pencil"
+                                    label="Save"
+                                    (click)="userFormSave()"
+                                ></button>
+                            </div>
+                            <div class="p-col p-offset">
+                                <button
+                                    type="submit"
+                                    pButton
+                                    [disabled]="false"
+                                    class="btn btn-basic"
+                                    icon="pi pi-times"
+                                    label="Cancel"
+                                    (click)="userFormCancel()"
+                                ></button>
+                            </div>
+                            <div class="p-col-9"></div>
+                        </div>
+                    </p-panel>
+                </form>
+            </div>
         </div>
     </div>
 </div>
