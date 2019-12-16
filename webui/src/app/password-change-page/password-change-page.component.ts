@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core'
 import { FormBuilder, FormGroup, Validators } from '@angular/forms'
-import { UrlTree, PRIMARY_OUTLET, Router } from '@angular/router'
+import { Router } from '@angular/router'
 
 import { MessageService } from 'primeng/api'
 import { PasswordModule } from 'primeng/password'
@@ -14,7 +14,6 @@ import { AuthService } from '../auth.service'
     styleUrls: ['./password-change-page.component.sass'],
 })
 export class PasswordChangePageComponent implements OnInit {
-    selectedItem: string
     passwordChangeForm: FormGroup
 
     constructor(
@@ -26,24 +25,11 @@ export class PasswordChangePageComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        const urlTree = this.router.parseUrl(this.router.url)
-        const segments = urlTree.root.children[PRIMARY_OUTLET].segments
-        this.selectedItem = 'profile'
-        if (segments.length > 1) {
-            this.selectedItem = segments[1].path
-        }
-
-        switch (this.selectedItem) {
-            case 'password':
-                this.passwordChangeForm = this.formBuilder.group({
-                    oldPassword: ['', Validators.required],
-                    newPassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
-                    confirmPassword: ['', Validators.required],
-                })
-                break
-            default:
-                break
-        }
+        this.passwordChangeForm = this.formBuilder.group({
+            oldPassword: ['', Validators.required],
+            newPassword: ['', Validators.compose([Validators.required, Validators.minLength(8)])],
+            confirmPassword: ['', Validators.required],
+        })
     }
 
     passwordChangeFormSubmit() {
