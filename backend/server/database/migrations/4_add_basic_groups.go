@@ -5,6 +5,9 @@ import (
 	"github.com/go-pg/pg/v9/orm"
 )
 
+// This migration adds system_group table with two default groups: super-admin
+// and admin. The associations between the users and groups are applied using
+// another table, system_user_to_group, in M:M relationship.
 func init() {
 	type systemUser struct {
 		Id int
@@ -25,6 +28,8 @@ func init() {
 	}
 
 	migrations.MustRegisterTx(func(db migrations.DB) error {
+		// Create system_group and system_user_to_group tables. Enable foreign key
+		// constraints and create the tables only if they don't exist.
 		for _, model := range []interface{}{&systemGroup{}, &systemUserToGroup{}} {
 			err := db.Model(model).CreateTable(&orm.CreateTableOptions{
 				FKConstraints: true,
@@ -35,7 +40,8 @@ func init() {
 			}
 		}
 
-		adminGroup := &systemGroup{
+		// Create super-admin group and return the primary key value.
+		superAdminGroup := &systemGroup{
 			Name:        "super-admin",
 			Description: "This group of users can access all system components.",
 		}
@@ -44,6 +50,7 @@ func init() {
 			return err
 		}
 
+		// Create admin group.
 		_, err = db.Model(&systemGroup{
 			Name:        "admin",
 			Description: "This group of users cannot manage user accounts.",
@@ -52,26 +59,31 @@ func init() {
 			return err
 		}
 
-		adminAssoc := systemUserToGroup{
+		// Associate default user (admin) with super-admin group.
+		_, err = db.Model(&systemUserToGroup{
 			UserID:  1,
-			GroupID: adminGroup.Id,
-		}
-		_, err = db.Model(&adminAssoc).Insert()
+			GroupID: superAdminGroup.Id,
+		}).Insert()
 		if err != nil {
 			return err
 		}
 
+		// It is hard (if possible) to do this with pure ORM. This query associates
+		// all existing users except user admin with the group admin.
 		_, err = db.Exec(`WITH non_admin_assoc AS (
                             SELECT id, 2 FROM system_user WHERE id != 1
                           )
                           INSERT INTO system_user_to_group SELECT * FROM non_admin_assoc`)
-
 		if err != nil {
 			return err
 		}
 
+		// All ok.
 		return nil
+
 	}, func(db migrations.DB) error {
+		// Drop the new tables. This also removes all associations between the
+		// users and groups.
 		for _, model := range []interface{}{&systemGroup{}, &systemUserToGroup{}} {
 			err := db.Model(model).DropTable(&orm.DropTableOptions{
 				IfExists: true,
