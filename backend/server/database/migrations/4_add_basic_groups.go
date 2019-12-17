@@ -45,7 +45,7 @@ func init() {
 			Name:        "super-admin",
 			Description: "This group of users can access all system components.",
 		}
-		_, err := db.Model(adminGroup).Returning("id").Insert()
+		_, err := db.Model(superAdminGroup).Returning("id").Insert()
 		if err != nil {
 			return err
 		}
