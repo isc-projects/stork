@@ -113,7 +113,7 @@ export class UsersPageComponent implements OnInit {
         private formBuilder: FormBuilder,
         private usersApi: UsersService,
         private msgSrv: MessageService,
-        private auth: AuthService
+        public auth: AuthService
     ) {}
 
     /**
