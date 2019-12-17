@@ -32,6 +32,13 @@ export class PasswordChangePageComponent implements OnInit {
         })
     }
 
+    /**
+     * Action invoked upon password change submission.
+     *
+     * Sends the old and new password to the server for update. The old
+     * password is used for authorization. If the old and new password
+     * are the same, an error is displayed.
+     */
     passwordChangeFormSubmit() {
         const id = this.auth.currentUserValue.id
         const passwords = {
@@ -39,6 +46,7 @@ export class PasswordChangePageComponent implements OnInit {
             newpassword: this.passwordChangeForm.controls.newPassword.value,
         }
 
+        // Do not contact the server if the new password is the same.
         if (passwords.oldpassword === passwords.newpassword) {
             this.msgSrv.add({
                 severity: 'warn',
@@ -49,6 +57,7 @@ export class PasswordChangePageComponent implements OnInit {
             return
         }
 
+        // Send the old and new password to the server.
         this.usersApi.updateUserPassword(id, passwords).subscribe(
             data => {
                 this.msgSrv.add({

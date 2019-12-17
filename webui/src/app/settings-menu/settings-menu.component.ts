@@ -11,6 +11,9 @@ export class SettingsMenuComponent implements OnInit {
 
     constructor() {}
 
+    /**
+     * Initializes the menu items.
+     */
     ngOnInit() {
         this.items = [
             {
