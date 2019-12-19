@@ -2,6 +2,7 @@ package dbops
 
 import (
 	"context"
+	"time"
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -26,8 +27,15 @@ func NewPgDbConn(pgParams *pg.Options) (*PgDB, error) {
 	db := pg.Connect(pgParams)
 
 	// Test connection to database.
-	var n int
-	_, err := db.QueryOne(pg.Scan(&n), "SELECT 1")
+	var err error
+	for tries := 0; tries < 10; tries++ {
+		var n int
+		_, err = db.QueryOne(pg.Scan(&n), "SELECT 1")
+		if err == nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to connect to the database using provided credentials")
 	}
