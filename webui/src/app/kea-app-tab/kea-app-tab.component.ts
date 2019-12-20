@@ -4,12 +4,12 @@ import { MessageService, MenuItem } from 'primeng/api'
 
 @Component({
     selector: 'app-kea-daemons-tabs',
-    templateUrl: './kea-service-tab.component.html',
-    styleUrls: ['./kea-service-tab.component.sass'],
+    templateUrl: './kea-app-tab.component.html',
+    styleUrls: ['./kea-app-tab.component.sass'],
 })
-export class KeaServiceTabComponent implements OnInit {
-    private _serviceTab: any
-    @Output() refreshService = new EventEmitter<number>()
+export class KeaAppTabComponent implements OnInit {
+    private _appTab: any
+    @Output() refreshApp = new EventEmitter<number>()
 
     tabs: MenuItem[]
     activeTab: MenuItem
@@ -19,15 +19,15 @@ export class KeaServiceTabComponent implements OnInit {
     constructor() {}
 
     ngOnInit() {
-        console.info('this.service', this.serviceTab)
+        console.info('this.app', this.appTab)
     }
 
     @Input()
-    set serviceTab(serviceTab) {
-        this._serviceTab = serviceTab
+    set appTab(appTab) {
+        this._appTab = appTab
 
         const daemonMap = []
-        for (const d of serviceTab.service.details.daemons) {
+        for (const d of appTab.app.details.daemons) {
             daemonMap[d.name] = d
         }
         const DMAP = [['dhcp4', 'DHCPv4'], ['dhcp6', 'DHCPv6'], ['d2', 'DDNS'], ['ca', 'CA'], ['netconf', 'NETCONF']]
@@ -47,13 +47,13 @@ export class KeaServiceTabComponent implements OnInit {
             }
         }
         this.daemons = daemons
-        this.daemon = this.daemons[serviceTab.activeDaemonTabIdx]
+        this.daemon = this.daemons[appTab.activeDaemonTabIdx]
         this.tabs = tabs
-        this.activeTab = this.tabs[serviceTab.activeDaemonTabIdx]
+        this.activeTab = this.tabs[appTab.activeDaemonTabIdx]
     }
 
-    get serviceTab() {
-        return this._serviceTab
+    get appTab() {
+        return this._appTab
     }
 
     daemonTabSwitch(item) {
@@ -65,7 +65,7 @@ export class KeaServiceTabComponent implements OnInit {
         }
     }
 
-    refreshServiceState() {
-        this.refreshService.emit(this._serviceTab.service.id)
+    refreshAppState() {
+        this.refreshApp.emit(this._appTab.app.id)
     }
 }

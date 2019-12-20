@@ -23,36 +23,36 @@ type KeaDaemon struct {
 	ExtendedVersion string
 }
 
-type ServiceCommon struct {
+type AppCommon struct {
 	Version string
 	CtrlPort int64
 	Active bool
 }
 
-type ServiceKea struct {
-	ServiceCommon
+type AppKea struct {
+	AppCommon
 	ExtendedVersion string
 	Daemons []KeaDaemon
 }
 
-type ServiceBind struct {
-	ServiceCommon
+type AppBind struct {
+	AppCommon
 }
 
-type ServiceMonitor interface {
-	GetServices() []interface{}
+type AppMonitor interface {
+	GetApps() []interface{}
 	Shutdown()
 }
 
-type serviceMonitor struct {
-	requests chan chan []interface{}     // input to service monitor, ie. channel for receiving requests
-	quit chan bool       // channel for stopping service monitor
+type appMonitor struct {
+	requests chan chan []interface{}     // input to app monitor, ie. channel for receiving requests
+	quit chan bool       // channel for stopping app monitor
 
-	services []interface{} // list of detected services on the host
+	apps []interface{} // list of detected apps on the host
 }
 
-func NewServiceMonitor() *serviceMonitor {
-	sm := &serviceMonitor{
+func NewAppMonitor() *appMonitor {
+	sm := &appMonitor{
 		requests: make(chan chan []interface{}),
 		quit: make(chan bool),
 	}
@@ -60,18 +60,18 @@ func NewServiceMonitor() *serviceMonitor {
 	return sm
 }
 
-func (sm *serviceMonitor) run() {
+func (sm *appMonitor) run() {
 	const DETECTION_INTERVAL = 10 * time.Second
 
 	for {
 		select {
 		case ret := <- sm.requests:
 			// process user request
-			ret <- sm.services
+			ret <- sm.apps
 
 		case <- time.After(DETECTION_INTERVAL):
 			// periodic detection
-			sm.detectServices()
+			sm.detectApps()
 
 		case <- sm.quit:
 			// exit run
@@ -133,14 +133,14 @@ func keaDaemonVersionGet(caUrl string, daemon string) (map[string]interface{}, e
 	return data2, nil
 }
 
-func detectKeaService(match []string) *ServiceKea {
-	var keaService *ServiceKea
+func detectKeaApp(match []string) *AppKea {
+	var keaApp *AppKea
 
 	keaConfPath := match[1]
 
 	ctrlPort := int64(getCtrlPortFromKeaConfig(keaConfPath))
-	keaService = &ServiceKea{
-		ServiceCommon: ServiceCommon{
+	keaApp = &AppKea{
+		AppCommon: AppCommon{
 			CtrlPort: ctrlPort,
 			Active: false,
 		},
@@ -152,14 +152,14 @@ func detectKeaService(match []string) *ServiceKea {
 
 	caUrl := fmt.Sprintf("http://localhost:%d", ctrlPort)
 
-	// retrieve ctrl-agent information, it is also used as a general service information
+	// retrieve ctrl-agent information, it is also used as a general app information
 	info, err := keaDaemonVersionGet(caUrl, "")
 	if err == nil {
 		if int(info["result"].(float64)) == 0 {
-			keaService.Active = true
-			keaService.Version = info["text"].(string)
+			keaApp.Active = true
+			keaApp.Version = info["text"].(string)
 			info2 := info["arguments"].(map[string]interface{})
-			keaService.ExtendedVersion = info2["extended"].(string)
+			keaApp.ExtendedVersion = info2["extended"].(string)
 		} else {
 			log.Warnf("ctrl-agent returned negative response: %+v", info)
 		}
@@ -170,11 +170,11 @@ func detectKeaService(match []string) *ServiceKea {
 	// add info about ctrl-agent daemon
 	caDaemon := KeaDaemon{
 		Name: "ca",
-		Active: keaService.Active,
-		Version: keaService.Version,
-		ExtendedVersion: keaService.ExtendedVersion,
+		Active: keaApp.Active,
+		Version: keaApp.Version,
+		ExtendedVersion: keaApp.ExtendedVersion,
 	}
-	keaService.Daemons = append(keaService.Daemons, caDaemon)
+	keaApp.Daemons = append(keaApp.Daemons, caDaemon)
 
 	// get list of daemons configured in ctrl-agent
 	var jsonCmd = []byte(`{"command": "config-get"}`)
@@ -233,32 +233,32 @@ func detectKeaService(match []string) *ServiceKea {
 		} else {
 			log.Warnf("cannot get daemon version: %+v", err)
 		}
-		// if any daemon is inactive, then whole kea service is treated as inactive
+		// if any daemon is inactive, then whole kea app is treated as inactive
 		if !daemon.Active {
-			keaService.Active = false
+			keaApp.Active = false
 		}
 
-		// if any daemon is inactive, then whole kea service is treated as inactive
+		// if any daemon is inactive, then whole kea app is treated as inactive
 		if !daemon.Active {
-			keaService.Active = false
+			keaApp.Active = false
 		}
 
-		keaService.Daemons = append(keaService.Daemons, daemon)
+		keaApp.Daemons = append(keaApp.Daemons, daemon)
 	}
 
-	return keaService
+	return keaApp
 }
 
-func (sm *serviceMonitor) detectServices() {
-	// Kea service is being detected by browsing list of processes in the systam
+func (sm *appMonitor) detectApps() {
+	// Kea app is being detected by browsing list of processes in the systam
 	// where cmdline of the process contains given pattern with kea-ctr-agent
 	// substring. Such found processes are being processed further and all other
 	// Kea daemons are discovered and queried for their versions, etc.
 	keaPtrn := regexp.MustCompile(`kea-ctrl-agent.*-c\s+(\S+)`)
 
-	// TODO: BIND service is not yet being detect. It should happen here as well.
+	// TODO: BIND app is not yet being detect. It should happen here as well.
 
-	var services []interface{}
+	var apps []interface{}
 
 	procs, _ := process.Processes()
 	for _, p := range procs {
@@ -270,23 +270,23 @@ func (sm *serviceMonitor) detectServices() {
 		// detect kea
 		m := keaPtrn.FindStringSubmatch(cmdline)
 		if m != nil {
-			keaService := detectKeaService(m)
-			if keaService != nil {
-				services = append(services, *keaService)
+			keaApp := detectKeaApp(m)
+			if keaApp != nil {
+				apps = append(apps, *keaApp)
 			}
 		}
 	}
 
-	sm.services = services
+	sm.apps = apps
 }
 
-func (sm *serviceMonitor) GetServices() []interface{} {
+func (sm *appMonitor) GetApps() []interface{} {
 	ret := make(chan []interface{})
 	sm.requests <- ret
 	srvs := <- ret
 	return srvs
 }
 
-func (sm *serviceMonitor) Shutdown() {
+func (sm *appMonitor) Shutdown() {
 	sm.quit <- true
 }

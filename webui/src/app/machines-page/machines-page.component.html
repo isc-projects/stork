@@ -65,8 +65,8 @@
                 />
             </span>
             <!-- <span style="margin-left: 40px;"> -->
-            <!--   Service: -->
-            <!--   <p-dropdown [options]="serviceTypes" [(ngModel)]="selectedServiceType" optionLabel="name" (onChange)="filterByService(machinesTable)"></p-dropdown> -->
+            <!--   App: -->
+            <!--   <p-dropdown [options]="appTypes" [(ngModel)]="selectedAppType" optionLabel="name" (onChange)="filterByApp(machinesTable)"></p-dropdown> -->
             <!-- </span> -->
         </div>
 
@@ -108,7 +108,7 @@
                 <th>Hostname</th>
                 <th style="width: 10rem;">Address</th>
                 <th style="width: 7rem;">Agent Version</th>
-                <th style="width: 7rem;">Services</th>
+                <th style="width: 7rem;">Apps</th>
                 <th style="width: 4rem;">CPUs</th>
                 <th style="width: 8rem;">CPUs Load</th>
                 <th style="width: 5rem;">Memory</th>
@@ -128,9 +128,9 @@
                 <td>{{ m.agentVersion }}</td>
                 <td>
                     <a
-                        *ngFor="let s of m.services"
+                        *ngFor="let s of m.apps"
                         [ngStyle]="{ color: s.active ? '#00a800' : '#f11' }"
-                        routerLink="/services/{{ s.type }}/{{ s.id }}"
+                        routerLink="/apps/{{ s.type }}/{{ s.id }}"
                     >
                         <i
                             class="pi pi-{{ s.active ? 'check' : 'exclamation-circle' }}"
@@ -304,9 +304,9 @@
             </table>
         </div>
         <div class="p-col-6">
-            <div *ngFor="let srv of machineTab.machine.services">
+            <div *ngFor="let srv of machineTab.machine.apps">
                 <div *ngIf="srv.type == 'kea'">
-                    <h3>Kea Service</h3>
+                    <h3>Kea App</h3>
                     Active:
                     <span [ngStyle]="{ color: srv.active ? '#00a800' : '#f11' }">
                         <i
@@ -321,7 +321,7 @@
                     <br />
                     Version: {{ srv.version }}
                     <br />
-                    <a routerLink="/services/{{ srv.type }}/{{ srv.id }}">link to details</a>
+                    <a routerLink="/apps/{{ srv.type }}/{{ srv.id }}">link to details</a>
                 </div>
             </div>
         </div>

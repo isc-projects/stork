@@ -187,9 +187,9 @@ paths:
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
         - $ref: '#/parameters/filterTextParam'
-        - name: service
+        - name: app
           in: query
-          description: Limit returned list of machines to these which provide given service, possible values 'bind' or 'kea'.
+          description: Limit returned list of machines to these which provide given app, possible values 'bind' or 'kea'.
           type: string
       responses:
         200:
@@ -313,41 +313,41 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
-  /services:
+  /apps:
     get:
-      summary: Get list of services.
+      summary: Get list of apps.
       description: >-
-        It is possible to filter the list of services by several fields. It is also always paged.
+        It is possible to filter the list of apps by several fields. It is also always paged.
         Default page size is 10.
-        A list of services is returned in items field accompanied by total count
+        A list of apps is returned in items field accompanied by total count
         which indicates total available number of records for given filtering
         parameters.
-      operationId: getServices
+      operationId: getApps
       tags:
         - Services
       parameters:
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
         - $ref: '#/parameters/filterTextParam'
-        - name: service
+        - name: app
           in: query
-          description: Limit returned list of services, possible values 'bind' or 'kea'.
+          description: Limit returned list of apps, possible values 'bind' or 'kea'.
           type: string
       responses:
         200:
-          description: List of services
+          description: List of apps
           schema:
-            $ref: "#/definitions/Services"
+            $ref: "#/definitions/Apps"
         default:
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
 
-  /services/{id}:
+  /apps/{id}:
     get:
-      summary: Get service by ID.
-      description: Get service by the database specific ID.
-      operationId: getService
+      summary: Get app by ID.
+      description: Get app by the database specific ID.
+      operationId: getApp
       tags:
         - Services
       parameters:
@@ -355,12 +355,12 @@ paths:
           name: id
           type: integer
           required: true
-          description: Service ID.
+          description: App ID.
       responses:
         200:
-          description: A service
+          description: A app
           schema:
-            $ref: "#/definitions/Service"
+            $ref: "#/definitions/App"
         default:
           description: generic error response
           schema:
@@ -384,7 +384,7 @@ parameters:
     in: query
     description: >-
       Filtering text, e.g. hostname for the machines
-      or version for the services.
+      or version for the apps.
     type: string
 
 definitions:
@@ -515,12 +515,12 @@ definitions:
       error:
         type: string
         readOnly: true
-      services:
+      apps:
         type: array
         items:
-          $ref: '#/definitions/MachineService'
+          $ref: '#/definitions/MachineApp'
 
-  MachineService:
+  MachineApp:
     type: object
     properties:
       id:
@@ -542,7 +542,7 @@ definitions:
       total:
         type: integer
 
-  Service:
+  App:
     type: object
     properties:
       id:
@@ -557,11 +557,11 @@ definitions:
       version:
         type: string
       machine:
-        $ref: '#/definitions/ServiceMachine'
+        $ref: '#/definitions/AppMachine'
       details:
         allOf:
-          - $ref: '#/definitions/ServiceKea'
-          - $ref: '#/definitions/ServiceBind'
+          - $ref: '#/definitions/AppKea'
+          - $ref: '#/definitions/AppBind'
 
   KeaDaemon:
     type: object
@@ -577,7 +577,7 @@ definitions:
       extendedVersion:
         type: string
 
-  ServiceKea:
+  AppKea:
     type: object
     properties:
       extendedVersion:
@@ -587,13 +587,13 @@ definitions:
         items:
           $ref: '#/definitions/KeaDaemon'
 
-  ServiceBind:
+  AppBind:
     type: object
     properties:
       todo:
         type: string
 
-  ServiceMachine:
+  AppMachine:
     type: object
     properties:
       id:
@@ -604,13 +604,13 @@ definitions:
       hostname:
         type: string
 
-  Services:
+  Apps:
     type: object
     properties:
       items:
         type: array
         items:
-          $ref: '#/definitions/Service'
+          $ref: '#/definitions/App'
       total:
         type: integer
 

@@ -3,14 +3,14 @@
         <button
             type="button"
             pButton
-            label="Refresh Service"
+            label="Refresh App"
             icon="pi pi-refresh"
-            (click)="refreshServiceState()"
+            (click)="refreshAppState()"
             style="float: right;"
         ></button>
-        <h3>Kea Service {{ serviceTab.service.id }}.</h3>
+        <h3>Kea App {{ appTab.app.id }}.</h3>
         Machine:
-        <a routerLink="/machines/{{ serviceTab.service.machine.id }}">{{ serviceTab.service.machine.address }}</a>
+        <a routerLink="/machines/{{ appTab.app.machine.id }}">{{ appTab.app.machine.address }}</a>
     </div>
 
     <div class="p-col-12">

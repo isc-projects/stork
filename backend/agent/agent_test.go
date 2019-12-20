@@ -10,39 +10,39 @@ import (
 	"isc.org/stork"
 )
 
-type FakeServiceMonitor struct {
-	Services []interface{}
+type FakeAppMonitor struct {
+	Apps []interface{}
 }
 
-func (fsm *FakeServiceMonitor) GetServices() []interface{} {
+func (fsm *FakeAppMonitor) GetApps() []interface{} {
 	return nil
 }
 
-func (fsm *FakeServiceMonitor) Shutdown() {
+func (fsm *FakeAppMonitor) Shutdown() {
 }
 
 
 func TestGetState(t *testing.T) {
-	fsm := FakeServiceMonitor{}
+	fsm := FakeAppMonitor{}
 	sa := StorkAgent{
-		ServiceMonitor: &fsm,
+		AppMonitor: &fsm,
 	}
 
-	// service monitor is empty, no services should be returned by GetState
+	// app monitor is empty, no apps should be returned by GetState
 	ctx := context.Background()
 	rsp, err := sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	require.Equal(t, rsp.AgentVersion, stork.Version)
 
-	// add some service to service monitor so GetState should return something
-	var services []interface{}
-	services = append(services, ServiceKea{
-		ServiceCommon: ServiceCommon{
+	// add some app to app monitor so GetState should return something
+	var apps []interface{}
+	apps = append(apps, AppKea{
+		AppCommon: AppCommon{
 			Version: "1.2.3",
 			Active: true,
 		},
 	})
-	fsm.Services = services
+	fsm.Apps = apps
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	require.Equal(t, rsp.AgentVersion, stork.Version)

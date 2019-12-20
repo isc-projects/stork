@@ -1,19 +1,19 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
-import { KeaServiceTabComponent } from './kea-service-tab.component'
+import { KeaAppTabComponent } from './kea-app-tab.component'
 
-describe('KeaServiceTabComponent', () => {
-    let component: KeaServiceTabComponent
-    let fixture: ComponentFixture<KeaServiceTabComponent>
+describe('KeaAppTabComponent', () => {
+    let component: KeaAppTabComponent
+    let fixture: ComponentFixture<KeaAppTabComponent>
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            declarations: [KeaServiceTabComponent],
+            declarations: [KeaAppTabComponent],
         }).compileComponents()
     }))
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(KeaServiceTabComponent)
+        fixture = TestBed.createComponent(KeaAppTabComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
     })

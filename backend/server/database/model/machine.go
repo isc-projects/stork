@@ -40,7 +40,7 @@ type Machine struct {
 	LastVisited time.Time
 	Error       string
 	State       MachineState
-	Services    []Service
+	Apps    []App
 }
 
 func AddMachine(db *pg.DB, machine *Machine) error {
@@ -72,7 +72,7 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64,
 func GetMachineById(db *pg.DB, id int64) (*Machine, error) {
 	machine := Machine{}
 	q := db.Model(&machine).Where("machine.id = ?", id)
-	q = q.Relation("Services")
+	q = q.Relation("Apps")
 	err := q.Select()
 	if err == pg.ErrNoRows {
 		return nil, nil
@@ -83,9 +83,9 @@ func GetMachineById(db *pg.DB, id int64) (*Machine, error) {
 }
 
 func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
-	machine.Services = []Service{}
+	machine.Apps = []App{}
 	q := db.Model(machine).Where("id = ?", machine.Id)
-	q = q.Relation("Services")
+	q = q.Relation("Apps")
 	err := q.Select()
 	if err != nil {
 		return errors.Wrapf(err, "problem with getting machine %v", machine.Id)
@@ -93,7 +93,7 @@ func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
 	return nil
 }
 
-// Fetches a collection of services from the database. The offset and limit specify the
+// Fetches a collection of apps from the database. The offset and limit specify the
 // beginning of the page and the maximum size of the page. Limit has to be greater
 // then 0, otherwise error is returned.
 func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Machine, int64, error) {
@@ -104,7 +104,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 
 	// prepare query
 	q := db.Model(&machines).Where("deleted is NULL")
-	q = q.Relation("Services")
+	q = q.Relation("Apps")
 	if text != "" {
 		text = "%" + text + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {

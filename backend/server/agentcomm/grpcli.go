@@ -21,20 +21,20 @@ type KeaDaemon struct {
 	ExtendedVersion string
 }
 
-type ServiceCommon struct {
+type AppCommon struct {
 	Version string
 	CtrlPort int64
 	Active bool
 }
 
-type ServiceKea struct {
-	ServiceCommon
+type AppKea struct {
+	AppCommon
 	ExtendedVersion string
 	Daemons []KeaDaemon
 }
 
-type ServiceBind struct {
-	ServiceCommon
+type AppBind struct {
+	AppCommon
 }
 
 // State of the machine. It describes multiple properties of the machine like number of CPUs
@@ -59,7 +59,7 @@ type State struct {
 	HostID string
 	LastVisited time.Time
 	Error string
-	Services []interface{}
+	Apps []interface{}
 }
 
 // Get version from agent.
@@ -87,11 +87,11 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 	}
 
 
-	var services []interface{}
-	for _, srv := range grpcState.Services {
+	var apps []interface{}
+	for _, srv := range grpcState.Apps {
 
-		switch s := srv.Service.(type) {
-		case *agentapi.Service_Kea:
+		switch s := srv.App.(type) {
+		case *agentapi.App_Kea:
 			log.Printf("s.Kea.Daemons %+v", s.Kea.Daemons)
 			var daemons []KeaDaemon
 			for _, d := range s.Kea.Daemons {
@@ -103,8 +103,8 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 					ExtendedVersion: d.ExtendedVersion,
 				})
 			}
-			services = append(services, &ServiceKea{
-				ServiceCommon: ServiceCommon{
+			apps = append(apps, &AppKea{
+				AppCommon: AppCommon{
 					Version: srv.Version,
 					CtrlPort: srv.CtrlPort,
 					Active: srv.Active,
@@ -112,10 +112,10 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 				ExtendedVersion: s.Kea.ExtendedVersion,
 				Daemons: daemons,
 			})
-		case *agentapi.Service_Bind:
+		case *agentapi.App_Bind:
 			log.Println("NOT IMPLEMENTED")
 		default:
-			log.Println("unsupported service type")
+			log.Println("unsupported app type")
 		}
 	}
 
@@ -139,7 +139,7 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 		HostID: grpcState.HostID,
 		LastVisited: stork.UTCNow(),
 		Error: grpcState.Error,
-		Services: services,
+		Apps: apps,
 	}
 
 	return &state, nil

@@ -6,7 +6,7 @@ import { MessageService, MenuItem } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
 
-interface ServiceType {
+interface AppType {
     name: string
     value: string
 }
@@ -24,8 +24,8 @@ export class MachinesPageComponent implements OnInit {
 
     // action panel
     filterText = ''
-    serviceTypes: ServiceType[]
-    selectedServiceType: ServiceType
+    appTypes: AppType[]
+    selectedAppType: AppType
 
     // new machine
     newMachineDlgVisible = false
@@ -75,7 +75,7 @@ export class MachinesPageComponent implements OnInit {
         this.tabs = [{ label: 'Machines', routerLink: '/machines/all' }]
 
         this.machines = []
-        this.serviceTypes = [{ name: 'any', value: '' }, { name: 'BIND', value: 'bind' }, { name: 'Kea', value: 'kea' }]
+        this.appTypes = [{ name: 'any', value: '' }, { name: 'BIND', value: 'bind' }, { name: 'Kea', value: 'kea' }]
         this.machineMenuItems = [
             {
                 label: 'Refresh',
@@ -152,12 +152,12 @@ export class MachinesPageComponent implements OnInit {
             text = event.filters.text.value
         }
 
-        let service
-        if (event.filters.service) {
-            service = event.filters.service.value
+        let app
+        if (event.filters.app) {
+            app = event.filters.app.value
         }
 
-        this.servicesApi.getMachines(event.first, event.rows, text, service).subscribe(data => {
+        this.servicesApi.getMachines(event.first, event.rows, text, app).subscribe(data => {
             this.machines = data.items
             this.totalMachines = data.total
         })
@@ -237,8 +237,8 @@ export class MachinesPageComponent implements OnInit {
         }
     }
 
-    filterByService(machinesTable) {
-        machinesTable.filter(this.selectedServiceType.value, 'service', 'equals')
+    filterByApp(machinesTable) {
+        machinesTable.filter(this.selectedAppType.value, 'app', 'equals')
     }
 
     closeTab(event, idx) {

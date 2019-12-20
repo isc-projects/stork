@@ -220,19 +220,19 @@ func TestGetMachine(t *testing.T) {
 	err = dbmodel.AddMachine(db, m2)
 	require.NoError(t, err)
 
-	// add service to machine 2
-	s := &dbmodel.Service{
+	// add app to machine 2
+	s := &dbmodel.App{
 		Id: 0,
 		MachineID: m2.Id,
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = dbmodel.AddService(db, s)
+	err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, s.Id)
 
-	// get added machine 2 with kea service
+	// get added machine 2 with kea app
 	params = services.GetMachineParams{
 		ID: m2.Id,
 	}
@@ -240,8 +240,8 @@ func TestGetMachine(t *testing.T) {
 	require.IsType(t, &services.GetMachineOK{}, rsp)
 	okRsp = rsp.(*services.GetMachineOK)
 	require.Equal(t, m2.Id, okRsp.Payload.ID)
-	require.Len(t, okRsp.Payload.Services, 1)
-	require.Equal(t, s.Id, okRsp.Payload.Services[0].ID)
+	require.Len(t, okRsp.Payload.Apps, 1)
+	require.Equal(t, s.Id, okRsp.Payload.Apps[0].ID)
 
 }
 
@@ -380,7 +380,7 @@ func TestDeleteMachine(t *testing.T) {
 	require.Equal(t, m.Id, okRsp.Payload.ID)
 }
 
-func TestGetService(t *testing.T) {
+func TestGetApp(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -390,15 +390,15 @@ func TestGetService(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// get non-existing service
-	params := services.GetServiceParams{
+	// get non-existing app
+	params := services.GetAppParams{
 		ID: 123,
 	}
-	rsp := rapi.GetService(ctx, params)
-	require.IsType(t, &services.GetServiceDefault{}, rsp)
-	defaultRsp := rsp.(*services.GetServiceDefault)
+	rsp := rapi.GetApp(ctx, params)
+	require.IsType(t, &services.GetAppDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetAppDefault)
 	require.Equal(t, 404, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot find service with id 123", *defaultRsp.Payload.Message)
+	require.Equal(t, "cannot find app with id 123", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -408,28 +408,28 @@ func TestGetService(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add service to machine
-	s := &dbmodel.Service{
+	// add app to machine
+	s := &dbmodel.App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = dbmodel.AddService(db, s)
+	err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
 
-	// get added service
-	params = services.GetServiceParams{
+	// get added app
+	params = services.GetAppParams{
 		ID: s.Id,
 	}
-	rsp = rapi.GetService(ctx, params)
-	require.IsType(t, &services.GetServiceOK{}, rsp)
-	okRsp := rsp.(*services.GetServiceOK)
+	rsp = rapi.GetApp(ctx, params)
+	require.IsType(t, &services.GetAppOK{}, rsp)
+	okRsp := rsp.(*services.GetAppOK)
 	require.Equal(t, s.Id, okRsp.Payload.ID)
 }
 
-func TestRestGetService(t *testing.T) {
+func TestRestGetApp(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -439,15 +439,15 @@ func TestRestGetService(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// get non-existing service
-	params := services.GetServiceParams{
+	// get non-existing app
+	params := services.GetAppParams{
 		ID: 123,
 	}
-	rsp := rapi.GetService(ctx, params)
-	require.IsType(t, &services.GetServiceDefault{}, rsp)
-	defaultRsp := rsp.(*services.GetServiceDefault)
+	rsp := rapi.GetApp(ctx, params)
+	require.IsType(t, &services.GetAppDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetAppDefault)
 	require.Equal(t, 404, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot find service with id 123", *defaultRsp.Payload.Message)
+	require.Equal(t, "cannot find app with id 123", *defaultRsp.Payload.Message)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -457,28 +457,28 @@ func TestRestGetService(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add service to machine
-	s := &dbmodel.Service{
+	// add app to machine
+	s := &dbmodel.App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = dbmodel.AddService(db, s)
+	err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
 
-	// get added service
-	params = services.GetServiceParams{
+	// get added app
+	params = services.GetAppParams{
 		ID: s.Id,
 	}
-	rsp = rapi.GetService(ctx, params)
-	require.IsType(t, &services.GetServiceOK{}, rsp)
-	okRsp := rsp.(*services.GetServiceOK)
+	rsp = rapi.GetApp(ctx, params)
+	require.IsType(t, &services.GetAppOK{}, rsp)
+	okRsp := rsp.(*services.GetAppOK)
 	require.Equal(t, s.Id, okRsp.Payload.ID)
 }
 
-func TestRestGetServices(t *testing.T) {
+func TestRestGetApps(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -488,11 +488,11 @@ func TestRestGetServices(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// get empty list of service
-	params := services.GetServicesParams{}
-	rsp := rapi.GetServices(ctx, params)
-	require.IsType(t, &services.GetServicesOK{}, rsp)
-	okRsp := rsp.(*services.GetServicesOK)
+	// get empty list of app
+	params := services.GetAppsParams{}
+	rsp := rapi.GetApps(ctx, params)
+	require.IsType(t, &services.GetAppsOK{}, rsp)
+	okRsp := rsp.(*services.GetAppsOK)
 	require.Equal(t, int64(0), okRsp.Payload.Total)
 
 	// add machine
@@ -503,33 +503,33 @@ func TestRestGetServices(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add service kea to machine
-	s1 := &dbmodel.Service{
+	// add app kea to machine
+	s1 := &dbmodel.App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = dbmodel.AddService(db, s1)
+	err = dbmodel.AddApp(db, s1)
 	require.NoError(t, err)
 
-	// add service bind to machine
-	s2 := &dbmodel.Service{
+	// add app bind to machine
+	s2 := &dbmodel.App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "bind",
 		CtrlPort: 4321,
 		Active: true,
 	}
-	err = dbmodel.AddService(db, s2)
+	err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
 
-	// get added service
-	params = services.GetServicesParams{
+	// get added app
+	params = services.GetAppsParams{
 	}
-	rsp = rapi.GetServices(ctx, params)
-	require.IsType(t, &services.GetServicesOK{}, rsp)
-	okRsp = rsp.(*services.GetServicesOK)
+	rsp = rapi.GetApps(ctx, params)
+	require.IsType(t, &services.GetAppsOK{}, rsp)
+	okRsp = rsp.(*services.GetAppsOK)
 	require.Equal(t, int64(2), okRsp.Payload.Total)
 }

@@ -14,10 +14,10 @@ func main() {
 	// Setup logging
 	stork.SetupLogging()
 
-	// Start service monitor
-	sm := agent.NewServiceMonitor()
+	// Start app monitor
+	sm := agent.NewAppMonitor()
 	storkAgent := agent.StorkAgent{
-		ServiceMonitor: sm,
+		AppMonitor: sm,
 	}
 
 	// Prepare parse for command line flags.

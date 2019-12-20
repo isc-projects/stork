@@ -26,7 +26,7 @@ type AgentSettings struct {
 // Global Stork Agent state
 type StorkAgent struct {
 	Settings AgentSettings
-	ServiceMonitor ServiceMonitor
+	AppMonitor AppMonitor
 }
 
 
@@ -39,10 +39,10 @@ func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*a
 	load, _ := load.Avg()
 	loadStr := fmt.Sprintf("%.2f %.2f %.2f", load.Load1, load.Load5, load.Load15)
 
-	var services []*agentapi.Service
-	for _, srv := range s.ServiceMonitor.GetServices() {
+	var apps []*agentapi.App
+	for _, srv := range s.AppMonitor.GetApps() {
 		switch s := srv.(type) {
-		case ServiceKea:
+		case AppKea:
 			var daemons []*agentapi.KeaDaemon
 			for _, d := range s.Daemons {
 				daemons = append(daemons, &agentapi.KeaDaemon{
@@ -53,25 +53,25 @@ func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*a
 					ExtendedVersion: d.ExtendedVersion,
 				})
 			}
-			services = append(services, &agentapi.Service{
+			apps = append(apps, &agentapi.App{
 				Version: s.Version,
 				CtrlPort: s.CtrlPort,
 				Active: s.Active,
-				Service: &agentapi.Service_Kea{
-					Kea: &agentapi.ServiceKea{
+				App: &agentapi.App_Kea{
+					Kea: &agentapi.AppKea{
 						ExtendedVersion: s.ExtendedVersion,
 						Daemons: daemons,
 					},
 				},
 			})
 		default:
-			panic(fmt.Sprint("Unknown service type"))
+			panic(fmt.Sprint("Unknown app type"))
 		}
 	}
 
 	state := agentapi.GetStateRsp{
 		AgentVersion: stork.Version,
-		Services: services,
+		Apps: apps,
 		Hostname: hostInfo.Hostname,
 		Cpus: int64(runtime.NumCPU()),
 		CpusLoad: loadStr,
@@ -93,7 +93,7 @@ func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*a
 	return &state, nil
 }
 
-// Restart Kea service.
+// Restart Kea app.
 func (s *StorkAgent) RestartKea(ctx context.Context, in *agentapi.RestartKeaReq) (*agentapi.RestartKeaRsp, error) {
 	log.Printf("Received: RestartKea %v", in)
 	return &agentapi.RestartKeaRsp{Xyz: "321"}, nil

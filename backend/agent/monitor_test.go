@@ -10,10 +10,10 @@ import (
 )
 
 
-func TestGetServices(t *testing.T) {
-	sm := NewServiceMonitor()
-	services := sm.GetServices()
-	require.Len(t, services, 0)
+func TestGetApps(t *testing.T) {
+	sm := NewAppMonitor()
+	apps := sm.GetApps()
+	require.Len(t, apps, 0)
 	sm.Shutdown()
 }
 
@@ -86,13 +86,13 @@ func TestGetCtrlPortFromKeaConfigOk(t *testing.T) {
 	require.Equal(t, 1234, port)
 }
 
-func TestDetectServices(t *testing.T) {
-	sm := NewServiceMonitor()
-	sm.detectServices()
+func TestDetectApps(t *testing.T) {
+	sm := NewAppMonitor()
+	sm.detectApps()
 	sm.Shutdown()
 }
 
-func TestDetectKeaService(t *testing.T) {
+func TestDetectKeaApp(t *testing.T) {
 	// prepare kea conf file
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
 	if err != nil {
@@ -127,7 +127,7 @@ func TestDetectKeaService(t *testing.T) {
 			"result": 0, "text": "1.2.3",
 		}})
 
-	// check kea service detection
-	srv := detectKeaService([]string{"", tmpFile.Name()})
+	// check kea app detection
+	srv := detectKeaApp([]string{"", tmpFile.Name()})
 	require.Nil(t, srv)
 }

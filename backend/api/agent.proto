@@ -12,7 +12,7 @@ message GetStateReq {
 
 message GetStateRsp {
   string agentVersion = 1;
-  repeated Service services = 2;
+  repeated App apps = 2;
   string hostname = 3;
   int64 cpus = 4;
   string cpusLoad = 5;
@@ -31,17 +31,17 @@ message GetStateRsp {
   string hostID = 18;
 }
 
-message Service {
+message App {
   string version = 1;
   int64 ctrlPort = 2;
   bool active = 3;
-  oneof service {
-    ServiceKea kea = 4;
-    ServiceBind bind = 5;
+  oneof app {
+    AppKea kea = 4;
+    AppBind bind = 5;
   }
 }
 
-message ServiceKea {
+message AppKea {
   string extendedVersion = 1;
   repeated KeaDaemon daemons = 2;
 }
@@ -54,7 +54,7 @@ message KeaDaemon {
   string extendedVersion = 5;
 }
 
-message ServiceBind {
+message AppBind {
 }
 
 message RestartKeaReq {

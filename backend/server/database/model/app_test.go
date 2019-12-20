@@ -8,7 +8,7 @@ import (
 	"isc.org/stork/server/database/test"
 )
 
-func TestAddService(t *testing.T) {
+func TestAddApp(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -22,55 +22,55 @@ func TestAddService(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.Id)
 
-	// add service but without machine, error should be raised
-	s := &Service{
+	// add app but without machine, error should be raised
+	s := &App{
 		Id: 0,
 		Type: "kea",
 	}
-	err = AddService(db, s)
+	err = AddApp(db, s)
 	require.NotNil(t, err)
 
-	// add service but without type, error should be raised
-	s = &Service{
+	// add app but without type, error should be raised
+	s = &App{
 		Id: 0,
 		MachineID: m.Id,
 	}
-	err = AddService(db, s)
+	err = AddApp(db, s)
 	require.NotNil(t, err)
 
-	// add service, no error expected
-	s = &Service{
+	// add app, no error expected
+	s = &App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = AddService(db, s)
+	err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, s.Id)
 
-	// add service for the same machine and ctrl port - error should be raised
-	s = &Service{
+	// add app for the same machine and ctrl port - error should be raised
+	s = &App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "bind",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = AddService(db, s)
+	err = AddApp(db, s)
 	require.Contains(t, err.Error(), "duplicate")
 }
 
-func TestDeleteService(t *testing.T) {
+func TestDeleteApp(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// delete non-existing service
-	s0 := &Service{
+	// delete non-existing app
+	s0 := &App{
 		Id: 123,
 	}
-	err := DeleteService(db, s0)
+	err := DeleteApp(db, s0)
 	require.Contains(t, err.Error(), "no rows in result")
 
 	// add first machine, should be no error
@@ -83,24 +83,24 @@ func TestDeleteService(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.Id)
 
-	// add service, no error expected
-	s := &Service{
+	// add app, no error expected
+	s := &App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = AddService(db, s)
+	err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, s.Id)
 
-	// delete added service
-	err = DeleteService(db, s)
+	// delete added app
+	err = DeleteApp(db, s)
 	require.NoError(t, err)
 }
 
-func TestGetServicesByMachine(t *testing.T) {
+func TestGetAppsByMachine(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -114,37 +114,37 @@ func TestGetServicesByMachine(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.Id)
 
-	// there should be no services yet
-	services, err := GetServicesByMachine(db, m.Id)
-	require.Len(t, services, 0)
+	// there should be no apps yet
+	apps, err := GetAppsByMachine(db, m.Id)
+	require.Len(t, apps, 0)
 	require.NoError(t, err)
 
-	// add service, no error expected
-	s := &Service{
+	// add app, no error expected
+	s := &App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = AddService(db, s)
+	err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, s.Id)
 
-	// get services of given machine
-	services, err = GetServicesByMachine(db, m.Id)
-	require.Len(t, services, 1)
+	// get apps of given machine
+	apps, err = GetAppsByMachine(db, m.Id)
+	require.Len(t, apps, 1)
 	require.NoError(t, err)
 }
 
-func TestGetServiceById(t *testing.T) {
+func TestGetAppById(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// get non-existing service
-	service, err := GetServiceById(db, 321)
+	// get non-existing app
+	app, err := GetAppById(db, 321)
 	require.NoError(t, err)
-	require.Nil(t, service)
+	require.Nil(t, app)
 
 	// add first machine, should be no error
 	m := &Machine{
@@ -156,27 +156,27 @@ func TestGetServiceById(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.Id)
 
-	// add service, no error expected
-	s := &Service{
+	// add app, no error expected
+	s := &App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = AddService(db, s)
+	err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, s.Id)
 
-	// get service by id
-	service, err = GetServiceById(db, s.Id)
+	// get app by id
+	app, err = GetAppById(db, s.Id)
 	require.NoError(t, err)
-	require.NotNil(t, service)
-	require.Equal(t, s.Id, service.Id)
+	require.NotNil(t, app)
+	require.Equal(t, s.Id, app.Id)
 }
 
 
-func TestGetServicesByPage(t *testing.T) {
+func TestGetAppsByPage(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -190,47 +190,47 @@ func TestGetServicesByPage(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.Id)
 
-	// add kea service, no error expected
-	sKea := &Service{
+	// add kea app, no error expected
+	sKea := &App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = AddService(db, sKea)
+	err = AddApp(db, sKea)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, sKea.Id)
 
-	// add bind service, no error expected
-	sBind := &Service{
+	// add bind app, no error expected
+	sBind := &App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "bind",
 		CtrlPort: 4321,
 		Active: true,
 	}
-	err = AddService(db, sBind)
+	err = AddApp(db, sBind)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, sBind.Id)
 
-	// get all services
-	services, total, err := GetServicesByPage(db, 0, 10, "", "")
+	// get all apps
+	apps, total, err := GetAppsByPage(db, 0, 10, "", "")
 	require.NoError(t, err)
-	require.Len(t, services, 2)
+	require.Len(t, apps, 2)
 	require.Equal(t, int64(2), total)
 
-	// get kea services
-	services, total, err = GetServicesByPage(db, 0, 10, "", "kea")
+	// get kea apps
+	apps, total, err = GetAppsByPage(db, 0, 10, "", "kea")
 	require.NoError(t, err)
-	require.Len(t, services, 1)
+	require.Len(t, apps, 1)
 	require.Equal(t, int64(1), total)
-	require.Equal(t, "kea", services[0].Type)
+	require.Equal(t, "kea", apps[0].Type)
 
-	// get bind services
-	services, total, err = GetServicesByPage(db, 0, 10, "", "bind")
+	// get bind apps
+	apps, total, err = GetAppsByPage(db, 0, 10, "", "bind")
 	require.NoError(t, err)
-	require.Len(t, services, 1)
+	require.Len(t, apps, 1)
 	require.Equal(t, int64(1), total)
-	require.Equal(t, "bind", services[0].Type)
+	require.Equal(t, "bind", apps[0].Type)
 }

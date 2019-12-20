@@ -31,11 +31,11 @@ func TestGetState(t *testing.T) {
 	expVer := "123"
 	rsp := agentapi.GetStateRsp{
 		AgentVersion: expVer,
-		Services: []*agentapi.Service{
+		Apps: []*agentapi.App{
 			{
 				Version: "1.2.3",
-				Service: &agentapi.Service_Kea{
-					Kea: &agentapi.ServiceKea{
+				App: &agentapi.App_Kea{
+					Kea: &agentapi.AppKea{
 					},
 				},
 			},

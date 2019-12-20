@@ -32,13 +32,13 @@ export class AppComponent implements OnInit {
                     {
                         label: 'Kea DHCP',
                         icon: 'fa fa-server',
-                        routerLink: '/services/kea/all',
+                        routerLink: '/apps/kea/all',
                     },
-                    // TODO: add support for BIND services
+                    // TODO: add support for BIND apps
                     // {
                     //     label: 'BIND DNS',
                     //     icon: 'fa fa-server',
-                    //     routerLink: '/services/bind/all',
+                    //     routerLink: '/apps/bind/all',
                     // },
                     {
                         label: 'Machines',

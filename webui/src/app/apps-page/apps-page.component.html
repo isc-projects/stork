@@ -15,25 +15,25 @@
     </ng-template>
 </p-tabMenu>
 
-<!-- Services tab -->
+<!-- Apps tab -->
 <div *ngIf="activeTabIdx == 0">
     <div style="display: flex; justify-content: space-between; margin: 10px;">
         <div>
             <span>
                 <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
-                Filter services:
+                Filter apps:
                 <input
                     type="text"
                     pInputText
                     [(ngModel)]="filterText"
-                    placeholder="name or any other field"
-                    (keydown)="keyDownFilterText(servicesTable, $event)"
+                    placeholder="version or any other field"
+                    (keydown)="keyDownFilterText(appsTable, $event)"
                 />
             </span>
-            <!-- TODO: this is a starting point for implementin a form for filtering services. -->
+            <!-- TODO: this is a starting point for implementin a form for filtering apps. -->
             <!-- <span style="margin-left: 40px;"> -->
-            <!--   Service: -->
-            <!--   <p-dropdown [options]="serviceTypes" [(ngModel)]="selectedServiceType" optionLabel="name" (onChange)="filterByService(servicesTable)"></p-dropdown> -->
+            <!--   App: -->
+            <!--   <p-dropdown [options]="appTypes" [(ngModel)]="selectedAppType" optionLabel="name" (onChange)="filterByApp(appsTable)"></p-dropdown> -->
             <!-- </span> -->
         </div>
 
@@ -43,43 +43,37 @@
                 pButton
                 label="Refresh"
                 icon="pi pi-refresh"
-                (click)="refreshServicesList(servicesTable)"
+                (click)="refreshAppsList(appsTable)"
             ></button>
         </div>
     </div>
 
-    <p-menu #serviceMenu [popup]="true" [model]="serviceMenuItems"></p-menu>
+    <p-menu #appMenu [popup]="true" [model]="appMenuItems"></p-menu>
     <p-table
-        #servicesTable
-        [value]="services"
+        #appsTable
+        [value]="apps"
         [paginator]="true"
         paginatorPosition="top"
         [rows]="10"
         [lazy]="true"
-        (onLazyLoad)="loadServices($event)"
-        [totalRecords]="totalServices"
+        (onLazyLoad)="loadApps($event)"
+        [totalRecords]="totalApps"
         [rowsPerPageOptions]="[10, 30, 100]"
         [showCurrentPageReport]="true"
         currentPageReportTemplate="{currentPage} of {totalPages} pages"
     >
         <ng-template pTemplate="header">
             <tr>
-                <th>Service Type @ Address</th>
                 <th>Version</th>
-                <th>Machine Hostname</th>
                 <th>State</th>
+                <th>Machine Address</th>
+                <th>Machine Hostname</th>
                 <th style="width: 4rem;">Action</th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-s>
             <tr>
-                <td>
-                    <a routerLink="/services/{{ serviceType }}/{{ s.id }}"> Kea @ {{ s.machine.address }} </a>
-                </td>
                 <td>{{ s.version }}</td>
-                <td>
-                    <a routerLink="/machines/{{ s.machine.id }}">{{ s.machine.hostname || s.machine.address }}</a>
-                </td>
                 <td>
                     <span
                         *ngFor="let d of sortKeaDaemonsByImportance(s)"
@@ -96,27 +90,24 @@
                     </span>
                 </td>
                 <td>
-                    <button
-                        type="button"
-                        pButton
-                        icon="pi pi-bars"
-                        (click)="showServiceMenu($event, serviceMenu, s)"
-                    ></button>
+                    <a routerLink="/apps/{{ appType }}/{{ s.id }}">{{ s.machine.address }}</a>
+                </td>
+                <td>
+                    <a routerLink="/machines/{{ s.machine.id }}">{{ s.machine.hostname || s.machine.address }}</a>
+                </td>
+                <td>
+                    <button type="button" pButton icon="pi pi-bars" (click)="showAppMenu($event, appMenu, s)"></button>
                 </td>
             </tr>
         </ng-template>
         <!-- TODO: this looks bad, consider better way for presenting total records -->
         <!-- <ng-template pTemplate="paginatorright" let-state> -->
-        <!--   Total: {{state.totalRecords}} services -->
+        <!--   Total: {{state.totalRecords}} apps -->
         <!-- </ng-template> -->
     </p-table>
 </div>
 
-<!-- Single service tab -->
+<!-- Single app tab -->
 <div *ngIf="activeTabIdx != 0" class="ui-widget">
-    <app-kea-daemons-tabs
-        class="p-col-12"
-        [serviceTab]="serviceTab"
-        (refreshService)="onRefreshService($event)"
-    ></app-kea-daemons-tabs>
+    <app-kea-daemons-tabs class="p-col-12" [appTab]="appTab" (refreshApp)="onRefreshApp($event)"></app-kea-daemons-tabs>
 </div>
