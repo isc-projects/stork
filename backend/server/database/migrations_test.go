@@ -4,13 +4,14 @@ import (
 	"log"
 	"os"
 	"testing"
+
 	"github.com/stretchr/testify/require"
 )
 
 // Expecting storktest database and the storktest user to have full privileges to it.
 var testConnOptions = PgOptions{
 	Database: "storktest",
-	User: "storktest",
+	User:     "storktest",
 	Password: "storktest",
 }
 
@@ -23,8 +24,8 @@ func connDb() *PgDB {
 		testConnOptions.Addr = addr
 	}
 
-	db, err := NewPgDbConn(&testConnOptions);
-	if  db == nil || err != nil {
+	db, err := NewPgDbConn(&testConnOptions)
+	if db == nil || err != nil {
 		log.Fatalf("unable to create database instance %+v", err)
 	}
 	_ = Toss(db)
@@ -107,7 +108,7 @@ func TestInitMigrateToLatest(t *testing.T) {
 	o, n, err := MigrateToLatest(db)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), o)
-	require.GreaterOrEqual(t, int64(4), n)
+	require.GreaterOrEqual(t, int64(5), n)
 }
 
 // Test that available schema version is returned as expected.

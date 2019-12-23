@@ -7,8 +7,8 @@ import (
 	faker "github.com/brianvoe/gofakeit"
 	"github.com/stretchr/testify/require"
 
-	"isc.org/stork/server/database"
-	"isc.org/stork/server/database/test"
+	dbops "isc.org/stork/server/database"
+	dbtest "isc.org/stork/server/database/test"
 )
 
 // Generates a bunch of users and stores them in the database.
@@ -239,7 +239,7 @@ func TestGetUsers(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 0, 1000, SystemUserOrderById)
+	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderById)
 	require.NoError(t, err)
 	require.Equal(t, 101, len(users))
 	require.Equal(t, int64(101), total)
@@ -259,7 +259,7 @@ func TestGetUsersSortByLoginEmail(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 0, 1000, SystemUserOrderByLoginEmail)
+	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByLoginEmail)
 	require.NoError(t, err)
 	require.Equal(t, 101, len(users))
 	require.Equal(t, int64(101), total)
@@ -279,7 +279,7 @@ func TestGetUsersPage(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 50, 10, SystemUserOrderById)
+	users, total, err := GetUsers(db, 50, 10, SystemUserOrderById)
 	require.NoError(t, err)
 	require.Equal(t, 10, len(users))
 	require.Equal(t, 51, users[0].Id)
@@ -300,7 +300,7 @@ func TestGetUsersLastPage(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 90, 20, SystemUserOrderById)
+	users, total, err := GetUsers(db, 90, 20, SystemUserOrderById)
 	require.NoError(t, err)
 	require.Equal(t, 11, len(users))
 	require.Equal(t, 91, users[0].Id)
@@ -321,7 +321,7 @@ func TestGetUserById(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 0, 1000, SystemUserOrderById)
+	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderById)
 	require.NoError(t, err)
 	require.Equal(t, int64(101), total)
 
