@@ -1,10 +1,12 @@
 package agent
 
 import (
+	"bytes"
 	"net"
 	"fmt"
 	"runtime"
 	"context"
+	"net/http"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -12,6 +14,7 @@ import (
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/load"
 
+	"io/ioutil"
 	"isc.org/stork/api"
 	"isc.org/stork"
 )
@@ -97,6 +100,39 @@ func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*a
 func (s *StorkAgent) RestartKea(ctx context.Context, in *agentapi.RestartKeaReq) (*agentapi.RestartKeaRsp, error) {
 	log.Printf("Received: RestartKea %v", in)
 	return &agentapi.RestartKeaRsp{Xyz: "321"}, nil
+}
+
+// Forwards Kea command sent by the Stork server to the appropriate Kea instance over
+// HTTP (via Control Agent).
+func (s *StorkAgent) ForwardToKeaOverHttp(ctx context.Context, in *agentapi.ForwardToKeaOverHttpReq) (*agentapi.ForwardToKeaOverHttpRsp, error) {
+	reqUrl := in.GetUrl()
+	payload := in.GetKeaRequest()
+
+	rsp := &agentapi.ForwardToKeaOverHttpRsp{}
+
+	// Try to forward the command to Kea Control Agent.
+	keaRsp, err := http.Post(reqUrl, "application/json", bytes.NewBuffer([]byte(payload)))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"URL": reqUrl,
+		}).Errorf("Failed to forward command to Kea: %+v", err)
+		return rsp, err
+	}
+	defer keaRsp.Body.Close()
+
+	// Read the response body.
+	body, err := ioutil.ReadAll(keaRsp.Body)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"URL": reqUrl,
+		}).Errorf("Failed to read the body of the Kea response to forwarded command: %+v", err)
+		return rsp, err
+	}
+
+	// Everything looks good, so include the body in the response.
+	rsp.KeaResponse = string(body)
+
+	return rsp, err
 }
 
 func (sa *StorkAgent) Serve() {
