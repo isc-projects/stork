@@ -229,7 +229,8 @@ file GOLANGCILINT => TOOLS_DIR do
   end
 end
 
-desc 'Check backend source code'
+desc 'Check backend source code
+arguments: fix=true - fixes some of the found issues'
 task :lint_go => [GO, GOLANGCILINT, MOCKERY, MOCKGEN, :gen_agent, :gen_server] do
   at_exit {
     sh 'rm -f backend/server/agentcomm/api_mock.go'
@@ -237,7 +238,12 @@ task :lint_go => [GO, GOLANGCILINT, MOCKERY, MOCKGEN, :gen_agent, :gen_server] d
   sh 'rm -f backend/server/agentcomm/api_mock.go'
   Dir.chdir('backend') do
     sh "#{GO} generate -v ./..."
-    sh "#{GOLANGCILINT} run"
+
+    opts = ''
+    if ENV['fix'] == 'true'
+      opts += ' --fix'
+    end
+    sh "#{GOLANGCILINT} run #{opts}"
   end
 end
 
