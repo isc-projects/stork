@@ -251,7 +251,13 @@ export class AppsPageComponent implements OnInit {
         for (const d of app.details.daemons) {
             daemonMap[d.name] = d
         }
-        const DMAP = [['dhcp4', 'DHCPv4'], ['dhcp6', 'DHCPv6'], ['d2', 'DDNS'], ['ca', 'CA'], ['netconf', 'NETCONF']]
+        const DMAP = [
+            ['dhcp4', 'DHCPv4'],
+            ['dhcp6', 'DHCPv6'],
+            ['d2', 'DDNS'],
+            ['ca', 'CA'],
+            ['netconf', 'NETCONF'],
+        ]
         const daemons = []
         for (const dm of DMAP) {
             if (daemonMap[dm[0]] !== undefined) {

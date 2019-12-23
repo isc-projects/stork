@@ -30,7 +30,13 @@ export class KeaAppTabComponent implements OnInit {
         for (const d of appTab.app.details.daemons) {
             daemonMap[d.name] = d
         }
-        const DMAP = [['dhcp4', 'DHCPv4'], ['dhcp6', 'DHCPv6'], ['d2', 'DDNS'], ['ca', 'CA'], ['netconf', 'NETCONF']]
+        const DMAP = [
+            ['dhcp4', 'DHCPv4'],
+            ['dhcp6', 'DHCPv6'],
+            ['d2', 'DDNS'],
+            ['ca', 'CA'],
+            ['netconf', 'NETCONF'],
+        ]
         const daemons = []
         const tabs = []
         for (const dm of DMAP) {

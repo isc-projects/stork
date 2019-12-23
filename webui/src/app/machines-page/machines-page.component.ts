@@ -75,7 +75,11 @@ export class MachinesPageComponent implements OnInit {
         this.tabs = [{ label: 'Machines', routerLink: '/machines/all' }]
 
         this.machines = []
-        this.appTypes = [{ name: 'any', value: '' }, { name: 'BIND', value: 'bind' }, { name: 'Kea', value: 'kea' }]
+        this.appTypes = [
+            { name: 'any', value: '' },
+            { name: 'BIND', value: 'bind' },
+            { name: 'Kea', value: 'kea' },
+        ]
         this.machineMenuItems = [
             {
                 label: 'Refresh',
