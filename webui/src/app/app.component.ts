@@ -52,35 +52,33 @@ export class AppComponent implements OnInit {
         })
         if (this.auth.superAdmin()) {
             this.menuItems = this.menuItems.concat([
-            {
-                label: 'Configuration',
-                items: [
-                    {
-                        label: 'Users',
-                        icon: 'fa fa-user',
-                        routerLink: '/users',
-                    },
-                ],
-            }])
+                {
+                    label: 'Configuration',
+                    items: [
+                        {
+                            label: 'Users',
+                            icon: 'fa fa-user',
+                            routerLink: '/users',
+                        },
+                    ],
+                },
+            ])
         }
-        this.menuItems.push(
-            {
-                label: 'Profile',
-                items: [
-                    {
-                        label: 'Settings',
-                        icon: 'fa fa-cog',
-                        routerLink: '/settings',
-                    },
-                    {
-                        label: 'Logout',
-                        icon: 'pi pi-sign-out',
-                        routerLink: '/logout',
-                    },
-                ],
-            }
-        )
-
+        this.menuItems.push({
+            label: 'Profile',
+            items: [
+                {
+                    label: 'Settings',
+                    icon: 'fa fa-cog',
+                    routerLink: '/settings',
+                },
+                {
+                    label: 'Logout',
+                    icon: 'pi pi-sign-out',
+                    routerLink: '/logout',
+                },
+            ],
+        })
     }
 
     ngOnInit() {
