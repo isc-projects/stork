@@ -1,8 +1,8 @@
 package agentcomm
 
 import (
-	"testing"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 // Test that empty map of services can be created.
@@ -97,7 +97,7 @@ func TestKeaCommandMarshal(t *testing.T) {
                  "value-c": [1,2,3]
              }
          }`,
-    marshaled)
+		marshaled)
 }
 
 // Test that empty service list is generated when service list is empty.
@@ -117,7 +117,7 @@ func TestKeaCommandMarshalEmptyServicesArguments(t *testing.T) {
              "service": [ ],
              "arguments": { }
          }`,
-    marshaled)
+		marshaled)
 }
 
 // Test that it is possible to send a command without arguments and without
@@ -136,5 +136,119 @@ func TestKeaCommandMarshalCommandOnly(t *testing.T) {
 		`{
              "command":"list-commands"
          }`,
-    marshaled)
+		marshaled)
+}
+
+// Test that well formed list of Kea responses can be parsed.
+func TestUnmarshalKeaResponseList(t *testing.T) {
+	services, _ := NewKeaServices("dhcp4", "dhcp6")
+	request, _ := NewKeaCommand("list-commands", services, nil)
+
+	response := `[
+        {
+            "result": 0,
+            "text": "command successful",
+            "arguments": {
+                "subnet-id": 1,
+                "prefix": "192.0.2.0/24"
+            }
+        },
+        {
+            "result": 1,
+            "text": "command unsuccessful"
+        }
+    ]`
+
+	list, err := UnmarshalKeaResponseList(request, response)
+	require.NoError(t, err)
+	require.NotNil(t, list)
+
+	// There should be two responses encapsulated.
+	require.Equal(t, 2, len(*list))
+
+	// The first result value is 0.
+	require.Equal(t, 0, (*list)[0].Result)
+	require.Equal(t, "command successful", (*list)[0].Text)
+
+	// The arguments should be non-nil and contain two parameters.
+	require.NotNil(t, (*list)[0].Arguments)
+	require.Contains(t, *((*list)[0]).Arguments, "subnet-id")
+	require.Contains(t, *((*list)[0]).Arguments, "prefix")
+
+	// The service should be set based on the command instance provided.
+	require.Equal(t, "dhcp4", ((*list)[0]).Service)
+
+	// Validate the arguments.
+	require.EqualValues(t, map[string]interface{}{"subnet-id": float64(1), "prefix": "192.0.2.0/24"},
+		*((*list)[0]).Arguments)
+
+	// The second response should contain different result and text. The
+	// arguments are not present, so should be nil.
+	require.Equal(t, 1, (*list)[1].Result)
+	require.Equal(t, "command unsuccessful", (*list)[1].Text)
+	require.Nil(t, (*list)[1].Arguments)
+	require.Equal(t, "dhcp6", ((*list)[1]).Service)
+}
+
+// Test that the Kea response containing invalid result value is rejected.
+func TestUnmarshalKeaResponseListMalformedResult(t *testing.T) {
+	services, _ := NewKeaServices("dhcp4")
+	request, _ := NewKeaCommand("list-commands", services, nil)
+
+	response := `[
+        {
+            "result": "1"
+        }
+    ]`
+	list, err := UnmarshalKeaResponseList(request, response)
+	require.Error(t, err)
+	require.Nil(t, list)
+}
+
+// Test that the Kea response containing invalid text value is rejected.
+func TestUnmarshalKeaResponseListMalformedText(t *testing.T) {
+	services, _ := NewKeaServices("dhcp4")
+	request, _ := NewKeaCommand("list-commands", services, nil)
+
+	response := `[
+        {
+            "result": 1,
+            "text": 123
+        }
+    ]`
+	list, err := UnmarshalKeaResponseList(request, response)
+	require.Error(t, err)
+	require.Nil(t, list)
+}
+
+// Test that the Kea response containing invalid arguments (being a list
+// rather than a map) is rejected.
+func TestUnmarshalKeaResponseListMalformedArguments(t *testing.T) {
+	services, _ := NewKeaServices("dhcp4")
+	request, _ := NewKeaCommand("list-commands", services, nil)
+
+	response := `[
+        {
+            "result": 0,
+            "arguments": [ 1, 2, 3 ]
+        }
+    ]`
+	list, err := UnmarshalKeaResponseList(request, response)
+	require.Error(t, err)
+	require.Nil(t, list)
+}
+
+// Test that the Kea response not being a list is rejected.
+func TestUnmarshalKeaResponseNotList(t *testing.T) {
+	services, _ := NewKeaServices("dhcp4")
+	request, _ := NewKeaCommand("list-commands", services, nil)
+
+	response := `
+        {
+            "result": 0
+        }
+    `
+	list, err := UnmarshalKeaResponseList(request, response)
+	require.Error(t, err)
+	require.Nil(t, list)
 }
