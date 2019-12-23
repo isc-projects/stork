@@ -1,0 +1,43 @@
+linters:
+  enable-all: true
+  disable:
+    - godox
+    - maligned
+    - lll
+    - funlen
+    - prealloc
+    - wsl       # TODO: reenable later
+    - interfacer  # A tool that suggests interfaces is prone to bad suggestions, so its usefulness in real code is limited.
+
+issues:
+  max-same-issues: 3
+
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - goconst
+
+    - linters:
+        - gosec
+      text: "G107"
+
+    - path: api/gomock
+      linters:
+        - gochecknoglobals
+        - wsl
+        - gofmt
+        - goimports
+
+    - path: server/database/migrations/
+      linters:
+        - gochecknoinits
+        - gochecknoglobals
+
+    - path: server/database/settings.go
+      linters:
+        - gochecknoinits
