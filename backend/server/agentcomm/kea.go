@@ -23,7 +23,7 @@ type KeaCommand struct {
 type KeaResponse struct {
 	Result    int                     `json:"result"`
 	Text      string                  `json:"text"`
-	Service   string                  `json:",ignore"`
+	Service   string                  `json:"-"`
 	Arguments *map[string]interface{} `json:"arguments,omitempty"`
 }
 
