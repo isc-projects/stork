@@ -1,14 +1,14 @@
 package agent
 
 import (
-	"testing"
 	"context"
+	"testing"
 
-	"gopkg.in/h2non/gock.v1"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/h2non/gock.v1"
 
-	"isc.org/stork/api"
 	"isc.org/stork"
+	"isc.org/stork/api"
 )
 
 type FakeAppMonitor struct {
@@ -32,7 +32,6 @@ func (fsm *FakeAppMonitor) GetApps() []interface{} {
 func (fsm *FakeAppMonitor) Shutdown() {
 }
 
-
 func TestGetState(t *testing.T) {
     sa, ctx := setupAgentTest()
 
@@ -46,7 +45,7 @@ func TestGetState(t *testing.T) {
 	apps = append(apps, AppKea{
 		AppCommon: AppCommon{
 			Version: "1.2.3",
-			Active: true,
+			Active:  true,
 		},
 	})
 	fsm, _ := sa.AppMonitor.(*FakeAppMonitor)
@@ -73,7 +72,7 @@ func TestForwardToKeaOverHttpSuccess(t *testing.T) {
 
 	// Forward the request with the expected body.
 	req := &agentapi.ForwardToKeaOverHttpReq{
-		Url: "http://localhost:45634/",
+		Url:        "http://localhost:45634/",
 		KeaRequest: "{ \"command\": \"list-commands\"}",
 	}
 
@@ -99,7 +98,7 @@ func TestForwardToKeaOverHttpBadRequest(t *testing.T) {
 		JSON([]map[string]string{{"HttpCode": "Bad Request"}})
 
 	req := &agentapi.ForwardToKeaOverHttpReq{
-		Url: "http://localhost:45634/",
+		Url:        "http://localhost:45634/",
 		KeaRequest: "{ \"command\": \"list-commands\"}",
 	}
 
@@ -123,7 +122,7 @@ func TestForwardToKeaOverHttpEmptyBody(t *testing.T) {
 		Reply(200)
 
 	req := &agentapi.ForwardToKeaOverHttpReq{
-		Url: "http://localhost:45634/",
+		Url:        "http://localhost:45634/",
 		KeaRequest: "{ \"command\": \"list-commands\"}",
 	}
 
@@ -142,7 +141,7 @@ func TestForwardToKeaOverHttpNoKea(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
 	req := &agentapi.ForwardToKeaOverHttpReq{
-		Url: "http://localhost:45634/",
+		Url:        "http://localhost:45634/",
 		KeaRequest: "{ \"command\": \"list-commands\"}",
 	}
 
