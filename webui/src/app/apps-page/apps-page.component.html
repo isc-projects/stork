@@ -64,8 +64,9 @@
     >
         <ng-template pTemplate="header">
             <tr>
+                <th style="width: 5em;">ID</th>
                 <th>Version</th>
-                <th>State</th>
+                <th>Status</th>
                 <th>Machine Address</th>
                 <th>Machine Hostname</th>
                 <th style="width: 4rem;">Action</th>
@@ -73,7 +74,12 @@
         </ng-template>
         <ng-template pTemplate="body" let-s>
             <tr>
-                <td>{{ s.version }}</td>
+                <td>
+                    <a routerLink="/apps/{{ appType }}/{{ s.id }}">{{ s.id }}</a>
+                </td>
+                <td>
+                    <a routerLink="/apps/{{ appType }}/{{ s.id }}">{{ s.version }}</a>
+                </td>
                 <td>
                     <span
                         *ngFor="let d of sortKeaDaemonsByImportance(s)"
@@ -90,10 +96,10 @@
                     </span>
                 </td>
                 <td>
-                    <a routerLink="/apps/{{ appType }}/{{ s.id }}">{{ s.machine.address }}</a>
+                    <a routerLink="/machines/{{ s.machine.id }}">{{ s.machine.address }}</a>
                 </td>
                 <td>
-                    <a routerLink="/machines/{{ s.machine.id }}">{{ s.machine.hostname || s.machine.address }}</a>
+                    <a routerLink="/machines/{{ s.machine.id }}">{{ s.machine.hostname }}</a>
                 </td>
                 <td>
                     <button type="button" pButton icon="pi pi-bars" (click)="showAppMenu($event, appMenu, s)"></button>
