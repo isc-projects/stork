@@ -29,30 +29,29 @@ export class AppComponent implements OnInit {
 
     initMenuItems() {
         this.menuItems = []
+        this.menuItems.push({
+            label: 'Services',
+            items: [
+                {
+                    label: 'Kea DHCP',
+                    icon: 'fa fa-server',
+                    routerLink: '/apps/kea/all',
+                },
+                // TODO: add support for BIND apps
+                // {
+                //     label: 'BIND DNS',
+                //     icon: 'fa fa-server',
+                //     routerLink: '/apps/bind/all',
+                // },
+                {
+                    label: 'Machines',
+                    icon: 'fa fa-server',
+                    routerLink: '/machines/all',
+                },
+            ],
+        })
         if (this.auth.superAdmin()) {
-            this.menuItems.push({
-                label: 'Configuration',
-                items: [
-                    {
-                        label: 'Kea DHCP',
-                        icon: 'fa fa-server',
-                        routerLink: '/apps/kea/all',
-                    },
-                    // TODO: add support for BIND apps
-                    // {
-                    //     label: 'BIND DNS',
-                    //     icon: 'fa fa-server',
-                    //     routerLink: '/apps/bind/all',
-                    // },
-                    {
-                        label: 'Machines',
-                        icon: 'fa fa-server',
-                        routerLink: '/machines/all',
-                    },
-                ],
-            })
-        }
-        this.menuItems = this.menuItems.concat([
+            this.menuItems = this.menuItems.concat([
             {
                 label: 'Configuration',
                 items: [
@@ -62,7 +61,9 @@ export class AppComponent implements OnInit {
                         routerLink: '/users',
                     },
                 ],
-            },
+            }])
+        }
+        this.menuItems.push(
             {
                 label: 'Profile',
                 items: [
@@ -77,8 +78,9 @@ export class AppComponent implements OnInit {
                         routerLink: '/logout',
                     },
                 ],
-            },
-        ])
+            }
+        )
+
     }
 
     ngOnInit() {
