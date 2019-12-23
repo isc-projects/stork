@@ -61,13 +61,16 @@ RICHGO_URL = 'github.com/kyoh86/richgo'
 TOOLS_DIR = File.expand_path('tools')
 NPX = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin/npx"
 SWAGGER_CODEGEN = "#{TOOLS_DIR}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
-GOSWAGGER = "#{TOOLS_DIR}/#{GOSWAGGER_BIN}"
+GOSWAGGER_DIR = "#{TOOLS_DIR}/#{GOSWAGGER_VER}"
+GOSWAGGER = "#{GOSWAGGER_DIR}/#{GOSWAGGER_BIN}"
 NG = File.expand_path('webui/node_modules/.bin/ng')
 GOHOME_DIR = File.expand_path('~/go')
 GOBIN = "#{GOHOME_DIR}/bin"
-GO = "#{TOOLS_DIR}/go/bin/go"
+GO_DIR = "#{TOOLS_DIR}/#{GO_VER}"
+GO = "#{GO_DIR}/go/bin/go"
 GOLANGCILINT = "#{TOOLS_DIR}/golangci-lint-#{GOLANGCILINT_VER}-#{GOLANGCILINT_SUFFIX}/golangci-lint"
-PROTOC = "#{TOOLS_DIR}/protoc/bin/protoc"
+PROTOC_DIR = "#{TOOLS_DIR}/#{PROTOC_VER}"
+PROTOC = "#{PROTOC_DIR}/bin/protoc"
 PROTOC_GEN_GO = "#{GOBIN}/protoc-gen-go"
 MOCKERY = "#{GOBIN}/mockery"
 MOCKGEN = "#{GOBIN}/mockgen"
@@ -97,8 +100,9 @@ directory TOOLS_DIR
 
 # Server Rules
 file GO => [TOOLS_DIR, GOHOME_DIR] do
-  Dir.chdir(TOOLS_DIR) do
-    sh "wget #{GO_URL} -O go.tar.gz"
+  sh "mkdir -p #{GO_DIR}"
+  sh "wget #{GO_URL} -O #{GO_DIR}/go.tar.gz"
+  Dir.chdir(GO_DIR) do
     sh 'tar -zxf go.tar.gz'
   end
 end
@@ -113,6 +117,7 @@ desc 'Generate server part of REST API using goswagger based on swagger.yml'
 task :gen_server => [GO, GOSWAGGER, SERVER_GEN_FILES]
 
 file GOSWAGGER => TOOLS_DIR do
+  sh "mkdir -p #{GOSWAGGER_DIR}"
   sh "wget #{GOSWAGGER_URL} -O #{GOSWAGGER}"
   sh "chmod a+x #{GOSWAGGER}"
 end
@@ -124,9 +129,9 @@ task :build_server => [GO, :gen_server, :gen_agent] do
 end
 
 file PROTOC do
-  sh "mkdir -p #{TOOLS_DIR}/protoc"
-  Dir.chdir("#{TOOLS_DIR}/protoc") do
-    sh "wget #{PROTOC_URL} -O protoc.zip"
+  sh "mkdir -p #{PROTOC_DIR}"
+  sh "wget #{PROTOC_URL} -O #{PROTOC_DIR}/protoc.zip"
+  Dir.chdir(PROTOC_DIR) do
     sh 'unzip protoc.zip'
   end
 end
