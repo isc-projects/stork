@@ -1,3 +1,10 @@
+* 17 [func] marcin
+
+    Implemented a mechanism by which it is possible to send a command
+    from the Stork server to Kea via Stork Agent and Kea Control
+    Agent.
+    (Gitlab #109)
+
 Stork 0.2.0 released on 2019-12-04.
 
 * 16 [bug] marcin
