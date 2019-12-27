@@ -5,58 +5,58 @@ import (
 	"testing"
 )
 
-// Test that empty map of services can be created.
-func TestNewKeaServicesEmpty(t *testing.T) {
-	services, err := NewKeaServices()
+// Test that empty map of daemons can be created.
+func TestNewKeaDaemonsEmpty(t *testing.T) {
+	daemons, err := NewKeaDaemons()
 	require.NoError(t, err)
-	require.NotNil(t, services)
-	require.Equal(t, 0, len(*services))
+	require.NotNil(t, daemons)
+	require.Equal(t, 0, len(*daemons))
 }
 
-// Test that multiple unique services can be specified.
-func TestNewKeaServicesMultiple(t *testing.T) {
-	services, err := NewKeaServices("dhcp4", "dhcp6", "dhcp-ddns")
+// Test that multiple unique daemons can be specified.
+func TestNewKeaDaemonsMultiple(t *testing.T) {
+	daemons, err := NewKeaDaemons("dhcp4", "dhcp6", "dhcp-ddns")
 	require.NoError(t, err)
-	require.NotNil(t, services)
-	require.Equal(t, 3, len(*services))
-	require.True(t, services.Contains("dhcp4"))
-	require.True(t, services.Contains("dhcp6"))
-	require.True(t, services.Contains("dhcp-ddns"))
-	require.False(t, services.Contains("ctrl-agent"))
+	require.NotNil(t, daemons)
+	require.Equal(t, 3, len(*daemons))
+	require.True(t, daemons.Contains("dhcp4"))
+	require.True(t, daemons.Contains("dhcp6"))
+	require.True(t, daemons.Contains("dhcp-ddns"))
+	require.False(t, daemons.Contains("ctrl-agent"))
 }
 
-// Test that duplicated services are rejected.
-func TestNewKeaServicesDuplicate(t *testing.T) {
-	services, err := NewKeaServices("dhcp4", "dhcp6", "dhcp4")
+// Test that duplicated daemons are rejected.
+func TestNewKeaDaemonsDuplicate(t *testing.T) {
+	daemons, err := NewKeaDaemons("dhcp4", "dhcp6", "dhcp4")
 	require.Error(t, err)
-	require.Nil(t, services)
+	require.Nil(t, daemons)
 }
 
-// Test that service name must be non-empty.
-func TestNewKeaServicesEmptyName(t *testing.T) {
-	services, err := NewKeaServices("dhcp4", "", "dhcp6")
+// Test that daemon name must be non-empty.
+func TestNewKeaDaemonsEmptyName(t *testing.T) {
+	daemons, err := NewKeaDaemons("dhcp4", "", "dhcp6")
 	require.Error(t, err)
-	require.Nil(t, services)
+	require.Nil(t, daemons)
 }
 
-// Test successful creation of the Kea command with services and arguments.
+// Test successful creation of the Kea command with daemons and arguments.
 func TestNewKeaCommand(t *testing.T) {
-	services, err := NewKeaServices("dhcp4", "dhcp6")
-	require.NotNil(t, services)
+	daemons, err := NewKeaDaemons("dhcp4", "dhcp6")
+	require.NotNil(t, daemons)
 	require.NoError(t, err)
 
-	cmd, err := NewKeaCommand("values-set", services,
+	cmd, err := NewKeaCommand("values-set", daemons,
 		&map[string]interface{}{"value-a": 1, "value-b": 2, "value-c": []int{1, 2, 3}})
 
 	require.NoError(t, err)
 	require.NotNil(t, cmd)
-	require.NotNil(t, cmd.Services)
+	require.NotNil(t, cmd.Daemons)
 	require.NotNil(t, cmd.Arguments)
 
 	require.Equal(t, "values-set", cmd.Command)
-	require.Equal(t, 2, len(*cmd.Services))
-	require.True(t, cmd.Services.Contains("dhcp4"))
-	require.True(t, cmd.Services.Contains("dhcp6"))
+	require.Equal(t, 2, len(*cmd.Daemons))
+	require.True(t, cmd.Daemons.Contains("dhcp4"))
+	require.True(t, cmd.Daemons.Contains("dhcp6"))
 	require.Contains(t, *cmd.Arguments, "value-a")
 	require.Contains(t, *cmd.Arguments, "value-b")
 	require.Contains(t, *cmd.Arguments, "value-c")
@@ -65,23 +65,23 @@ func TestNewKeaCommand(t *testing.T) {
 
 // Test that command name must be non-empty.
 func TestNewKeaCommandEmptyName(t *testing.T) {
-	services, err := NewKeaServices("dhcp4")
+	daemons, err := NewKeaDaemons("dhcp4")
 	require.NoError(t, err)
-	require.NotNil(t, services)
+	require.NotNil(t, daemons)
 
-	cmd, err := NewKeaCommand("", services, &map[string]interface{}{"value-a": 1})
+	cmd, err := NewKeaCommand("", daemons, &map[string]interface{}{"value-a": 1})
 	require.Error(t, err)
 	require.Nil(t, cmd)
 }
 
 // Test that JSON representation of the command is created correctly when
-// both service and arguments are present.
+// both daemon name (service in Kea terms) and arguments are present.
 func TestKeaCommandMarshal(t *testing.T) {
-	services, err := NewKeaServices("dhcp4")
-	require.NotNil(t, services)
+	daemons, err := NewKeaDaemons("dhcp4")
+	require.NotNil(t, daemons)
 	require.NoError(t, err)
 
-	cmd, err := NewKeaCommand("values-set", services,
+	cmd, err := NewKeaCommand("values-set", daemons,
 		&map[string]interface{}{"value-a": 1, "value-b": 2, "value-c": []int{1, 2, 3}})
 	require.NoError(t, err)
 	require.NotNil(t, cmd)
@@ -100,13 +100,13 @@ func TestKeaCommandMarshal(t *testing.T) {
 		marshaled)
 }
 
-// Test that empty service list is generated when service list is empty.
-func TestKeaCommandMarshalEmptyServicesArguments(t *testing.T) {
-	services, err := NewKeaServices()
-	require.NotNil(t, services)
+// Test that empty service list is generated when daemons list is empty.
+func TestKeaCommandMarshalEmptyDaemonsArguments(t *testing.T) {
+	daemons, err := NewKeaDaemons()
+	require.NotNil(t, daemons)
 	require.NoError(t, err)
 
-	cmd, err := NewKeaCommand("values-set", services, &map[string]interface{}{})
+	cmd, err := NewKeaCommand("values-set", daemons, &map[string]interface{}{})
 	require.NoError(t, err)
 	require.NotNil(t, cmd)
 
@@ -121,10 +121,10 @@ func TestKeaCommandMarshalEmptyServicesArguments(t *testing.T) {
 }
 
 // Test that it is possible to send a command without arguments and without
-// service list.
+// daemons list.
 func TestKeaCommandMarshalCommandOnly(t *testing.T) {
-	services, err := NewKeaServices()
-	require.NotNil(t, services)
+	daemons, err := NewKeaDaemons()
+	require.NotNil(t, daemons)
 	require.NoError(t, err)
 
 	cmd, err := NewKeaCommand("list-commands", nil, nil)
@@ -141,8 +141,8 @@ func TestKeaCommandMarshalCommandOnly(t *testing.T) {
 
 // Test that well formed list of Kea responses can be parsed.
 func TestUnmarshalKeaResponseList(t *testing.T) {
-	services, _ := NewKeaServices("dhcp4", "dhcp6")
-	request, _ := NewKeaCommand("list-commands", services, nil)
+	daemons, _ := NewKeaDaemons("dhcp4", "dhcp6")
+	request, _ := NewKeaCommand("list-commands", daemons, nil)
 
 	response := `[
         {
@@ -175,8 +175,8 @@ func TestUnmarshalKeaResponseList(t *testing.T) {
 	require.Contains(t, *((*list)[0]).Arguments, "subnet-id")
 	require.Contains(t, *((*list)[0]).Arguments, "prefix")
 
-	// The service should be set based on the command instance provided.
-	require.Equal(t, "dhcp4", ((*list)[0]).Service)
+	// The daemon should be set based on the command instance provided.
+	require.Equal(t, "dhcp4", ((*list)[0]).Daemon)
 
 	// Validate the arguments.
 	require.EqualValues(t, map[string]interface{}{"subnet-id": float64(1), "prefix": "192.0.2.0/24"},
@@ -187,13 +187,13 @@ func TestUnmarshalKeaResponseList(t *testing.T) {
 	require.Equal(t, 1, (*list)[1].Result)
 	require.Equal(t, "command unsuccessful", (*list)[1].Text)
 	require.Nil(t, (*list)[1].Arguments)
-	require.Equal(t, "dhcp6", ((*list)[1]).Service)
+	require.Equal(t, "dhcp6", ((*list)[1]).Daemon)
 }
 
 // Test that the Kea response containing invalid result value is rejected.
 func TestUnmarshalKeaResponseListMalformedResult(t *testing.T) {
-	services, _ := NewKeaServices("dhcp4")
-	request, _ := NewKeaCommand("list-commands", services, nil)
+	daemons, _ := NewKeaDaemons("dhcp4")
+	request, _ := NewKeaCommand("list-commands", daemons, nil)
 
 	response := `[
         {
@@ -207,8 +207,8 @@ func TestUnmarshalKeaResponseListMalformedResult(t *testing.T) {
 
 // Test that the Kea response containing invalid text value is rejected.
 func TestUnmarshalKeaResponseListMalformedText(t *testing.T) {
-	services, _ := NewKeaServices("dhcp4")
-	request, _ := NewKeaCommand("list-commands", services, nil)
+	daemons, _ := NewKeaDaemons("dhcp4")
+	request, _ := NewKeaCommand("list-commands", daemons, nil)
 
 	response := `[
         {
@@ -224,8 +224,8 @@ func TestUnmarshalKeaResponseListMalformedText(t *testing.T) {
 // Test that the Kea response containing invalid arguments (being a list
 // rather than a map) is rejected.
 func TestUnmarshalKeaResponseListMalformedArguments(t *testing.T) {
-	services, _ := NewKeaServices("dhcp4")
-	request, _ := NewKeaCommand("list-commands", services, nil)
+	daemons, _ := NewKeaDaemons("dhcp4")
+	request, _ := NewKeaCommand("list-commands", daemons, nil)
 
 	response := `[
         {
@@ -240,8 +240,8 @@ func TestUnmarshalKeaResponseListMalformedArguments(t *testing.T) {
 
 // Test that the Kea response not being a list is rejected.
 func TestUnmarshalKeaResponseNotList(t *testing.T) {
-	services, _ := NewKeaServices("dhcp4")
-	request, _ := NewKeaCommand("list-commands", services, nil)
+	daemons, _ := NewKeaDaemons("dhcp4")
+	request, _ := NewKeaCommand("list-commands", daemons, nil)
 
 	response := `
         {
