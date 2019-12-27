@@ -2,13 +2,42 @@ package restservice
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/server/database/model"
-	"isc.org/stork/server/database/test"
+	dbmodel "isc.org/stork/server/database/model"
+	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
-	"testing"
 )
+
+// Tests that user account without necessary fields is rejected via REST API.
+func TestCreateUserNegative(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, _ := NewRestAPI(nil, dbSettings, db, nil)
+
+	// Both login and email missing here.
+	su := dbmodel.SystemUser{
+		Lastname: "Doe",
+		Name:     "John",
+	}
+
+	params := users.CreateUserParams{
+		Account: &models.UserAccount{
+			User:     newRestUser(su),
+			Password: models.Password("pass"),
+		},
+	}
+
+	// Attempt to create the user and verify the response is negative.
+	rsp := rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+	defaultRsp := rsp.(*users.CreateUserDefault)
+	require.Equal(t, 409, getStatusCode(*defaultRsp))
+}
 
 // Tests that user account can be created via REST API.
 func TestCreateUser(t *testing.T) {
@@ -169,4 +198,98 @@ func TestGetGroups(t *testing.T) {
 	groups := rspOK.Payload
 	require.NotNil(t, groups.Items)
 	require.GreaterOrEqual(t, 2, len(groups.Items))
+}
+
+// Tests that user information can be retrieved via REST API.
+func TestGetUsers(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, err := NewRestAPI(nil, dbSettings, db, nil)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	user := &dbmodel.SystemUser{
+		Email:    "jd@example.org",
+		Lastname: "Doe",
+		Login:    "johndoe",
+		Name:     "John",
+		Password: "pass",
+	}
+	err, con := dbmodel.CreateUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Retrieve all users using the API
+	var limit int64 = 99999
+	var start int64 = 0
+	var text string = ""
+	params := users.GetUsersParams{
+		Limit: &limit,
+		Start: &start,
+		Text:  &text,
+	}
+
+	rsp := rapi.GetUsers(ctx, params)
+	require.IsType(t, &users.GetUsersOK{}, rsp)
+	okRsp := rsp.(*users.GetUsersOK)
+	require.Equal(t, int64(2), okRsp.Payload.Total) // we expect 2 users (admin and john doe)
+	require.Equal(t, 2, len(okRsp.Payload.Items))   // make sure there's entry with 2 users
+
+	// Check the default user (admin)
+	require.Equal(t, "admin", *okRsp.Payload.Items[0].Login)
+	require.Equal(t, "admin", *okRsp.Payload.Items[0].Name)
+	require.Equal(t, "admin", *okRsp.Payload.Items[0].Lastname)
+	require.Equal(t, "", *okRsp.Payload.Items[0].Email)
+
+	// Check the user we just added
+	require.Equal(t, "johndoe", *okRsp.Payload.Items[1].Login)
+	require.Equal(t, "John", *okRsp.Payload.Items[1].Name)
+	require.Equal(t, "Doe", *okRsp.Payload.Items[1].Lastname)
+	require.Equal(t, "jd@example.org", *okRsp.Payload.Items[1].Email)
+
+	// Make sure the ID of the new user is different.
+	// TODO: implement new test that add 100 users and verifies uniqueness of their IDs
+	require.NotEqual(t, *okRsp.Payload.Items[0].ID, *okRsp.Payload.Items[1].ID)
+}
+
+// Tests that user information can be retrieved via REST API.
+func TestGetUser(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	rapi, err := NewRestAPI(nil, dbSettings, db, nil)
+	require.NoError(t, err)
+
+	// Create new user in the database.
+	user := &dbmodel.SystemUser{
+		Email:    "jd@example.org",
+		Lastname: "Doe",
+		Login:    "johndoe",
+		Name:     "John",
+		Password: "pass",
+	}
+	err, con := dbmodel.CreateUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// Retrieve the user with ID=2 using the API (that's the new user user we just added)
+	var id int64 = 2
+	params := users.GetUserParams{
+		ID: id,
+	}
+
+	rsp := rapi.GetUser(ctx, params)
+	require.IsType(t, &users.GetUserOK{}, rsp)
+	okRsp := rsp.(*users.GetUserOK)
+	require.Equal(t, user.Email, *okRsp.Payload.Email) // we expect 2 users (admin and john doe)
+	require.Equal(t, id, *okRsp.Payload.ID)            // user ID
+	require.Equal(t, user.Login, *okRsp.Payload.Login)
+	require.Equal(t, user.Name, *okRsp.Payload.Name)
+	require.Equal(t, user.Lastname, *okRsp.Payload.Lastname)
+
+	// TODO: check that the new user belongs to a group
+	// require.Equal(t, 1, len(okRsp.Payload.Groups))
 }
