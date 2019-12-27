@@ -181,6 +181,18 @@ func TestSetPassword(t *testing.T) {
 	authOk, err := Authenticate(db, user)
 	require.NoError(t, err)
 	require.True(t, authOk)
+
+	// Also check that authentication with invalid password fails.
+	user.Password = "NewPass"
+	authOk, err = Authenticate(db, user)
+	require.NoError(t, err)
+	require.False(t, authOk)
+
+	// And finally check the original password don't work anymore.
+	user.Password = "pass"
+	authOk, err = Authenticate(db, user)
+	require.NoError(t, err)
+	require.False(t, authOk)
 }
 
 // Tests that password update fails when user does not exist.
