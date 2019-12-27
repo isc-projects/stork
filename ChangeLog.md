@@ -1,9 +1,9 @@
 * 18 [func] marcin
 
-    Logged user can now change his/her password. Also, users can be associated
-    with one of two default permission groups: super-admin and admin. The former
-    can create and modify users' accounts. The latter is not allowed to modify
-    other users' accounts.
+    Logged user can now change his/her password. Also, users can be
+    associated with one of the two default permission groups: super-admin
+    and admin. The former can manage users' accounts. The latter is not
+    allowed to manage other users' accounts.
     (Gitlab #97)
 
 * 17 [func] marcin
