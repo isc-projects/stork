@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 	"bytes"
-	"net/http"
 	"regexp"
 	"strconv"
 	"io/ioutil"
@@ -109,7 +108,7 @@ func keaDaemonVersionGet(caUrl string, daemon string) (map[string]interface{}, e
 		jsonCmd = []byte(`{"command": "version-get", "service": ["` + daemon + `"]}`)
 	}
 
-	resp, err := http.Post(caUrl, "application/json", bytes.NewBuffer(jsonCmd))
+	resp, err := httpClient11.Post(caUrl, "application/json", bytes.NewBuffer(jsonCmd))
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +177,7 @@ func detectKeaApp(match []string) *AppKea {
 
 	// get list of daemons configured in ctrl-agent
 	var jsonCmd = []byte(`{"command": "config-get"}`)
-	resp, err := http.Post(caUrl, "application/json", bytes.NewBuffer(jsonCmd))
+	resp, err := httpClient11.Post(caUrl, "application/json", bytes.NewBuffer(jsonCmd))
 	if err != nil {
 		log.Warnf("problem with request to kea-ctrl-agent: %+v", err)
 		return nil

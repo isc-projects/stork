@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"runtime"
 	"context"
-	"net/http"
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -19,7 +18,6 @@ import (
 	"isc.org/stork"
 )
 
-
 // Stork Agent settings.
 type AgentSettings struct {
 	Host         string        `long:"host" description:"the IP to listen on" env:"STORK_AGENT_ADDRESS"`
@@ -31,7 +29,6 @@ type StorkAgent struct {
 	Settings AgentSettings
 	AppMonitor AppMonitor
 }
-
 
 // API exposed to Stork Server
 
@@ -111,7 +108,7 @@ func (s *StorkAgent) ForwardToKeaOverHttp(ctx context.Context, in *agentapi.Forw
 	rsp := &agentapi.ForwardToKeaOverHttpRsp{}
 
 	// Try to forward the command to Kea Control Agent.
-	keaRsp, err := http.Post(reqUrl, "application/json", bytes.NewBuffer([]byte(payload)))
+	keaRsp, err := httpClient11.Post(reqUrl, "application/json", bytes.NewBuffer([]byte(payload)))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"URL": reqUrl,

@@ -9,6 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Forces gock to intercept the HTTP/1.1 client. Otherwise it would
+// use the HTTP/2.
+func TestMain(m *testing.M) {
+	gock.InterceptClient(httpClient11)
+}
 
 func TestGetApps(t *testing.T) {
 	sm := NewAppMonitor()
