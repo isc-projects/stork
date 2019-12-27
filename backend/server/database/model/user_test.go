@@ -188,7 +188,7 @@ func TestSetPassword(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, authOk)
 
-	// And finally check the original password don't work anymore.
+	// And finally check the original password doesn't work anymore.
 	user.Password = "pass"
 	authOk, err = Authenticate(db, user)
 	require.NoError(t, err)
