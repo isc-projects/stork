@@ -63,6 +63,14 @@ export class AuthService {
      * @returns Group name or unknown string if the group is not found.
      */
     public groupName(groupId): string {
+        // The super-admin group is well known and doesn't require
+        // iterating over the list of groups fetched from the server.
+        // Especially, if the server didn't respond properly for
+        // some reason, we still want to be able to handle the
+        // super-admin group.
+        if (groupId === 1) {
+            return 'super-admin'
+        }
         const groupIdx = groupId - 1
         if (this.groups.hasOwnProperty(groupIdx)) {
             return this.groups[groupIdx].name
@@ -143,18 +151,27 @@ export class AuthService {
     }
 
     /**
-     * Convenience function checking if the current user has the super admin role.
+     * Checks if the current user belongs to the specified group.
      *
-     * @returns true if the user has super-admin group.
+     * @returns true if the user belongs to the group.
      */
-    superAdmin(): boolean {
+    groupMember(groupName: string): boolean {
         if (this.currentUserValue && this.currentUserValue.groups) {
             for (const i in this.currentUserValue.groups) {
-                if (this.currentUserValue.groups[i] === 1) {
+                if (this.groupName(this.currentUserValue.groups[i]) === groupName) {
                     return true
                 }
             }
         }
         return false
+    }
+
+    /**
+     * Convenience function checking if the current user has the super admin role.
+     *
+     * @returns true if the user has super-admin group.
+     */
+    superAdmin(): boolean {
+        return this.groupMember('super-admin')
     }
 }
