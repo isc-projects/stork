@@ -8,6 +8,9 @@ import { PasswordModule } from 'primeng/password'
 import { UsersService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
 
+/**
+ * This component allows the logged user to change the password.
+ */
 @Component({
     selector: 'app-settings-page',
     templateUrl: './password-change-page.component.html',

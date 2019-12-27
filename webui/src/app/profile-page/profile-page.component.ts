@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core'
 import { AuthService } from '../auth.service'
 
+/**
+ * This component is for displaying information about the user's account.
+ */
 @Component({
     selector: 'app-profile-page',
     templateUrl: './profile-page.component.html',

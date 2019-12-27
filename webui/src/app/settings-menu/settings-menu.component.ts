@@ -1,6 +1,12 @@
 import { Component, OnInit } from '@angular/core'
 import { MenuItem } from 'primeng/api'
 
+/**
+ * This component provides a menu for navigating between different
+ * settings of a logged user. Currently supported operations are
+ * to display information about the user and modifying user's
+ * password.
+ */
 @Component({
     selector: 'app-settings-menu',
     templateUrl: './settings-menu.component.html',
