@@ -18,7 +18,7 @@ import (
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
-	"isc.org/stork/server/appkea"
+	"isc.org/stork/server/apps/kea"
 )
 
 
