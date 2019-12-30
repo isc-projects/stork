@@ -92,7 +92,7 @@ func TestForwardToKeaOverHttp(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse)
 
-	responseList := *actualResponse
+	responseList := actualResponse
 	require.Equal(t, 2, len(responseList))
 
 	require.Equal(t, 1, responseList[0].Result)

@@ -105,7 +105,7 @@ func (c *KeaCommand) Marshal() string {
 }
 
 // Parses response received from the Kea Control Agent.
-func UnmarshalKeaResponseList(request *KeaCommand, response string) (*KeaResponseList, error) {
+func UnmarshalKeaResponseList(request *KeaCommand, response string) (KeaResponseList, error) {
 	responses := KeaResponseList{}
 	err := json.Unmarshal([]byte(response), &responses)
 	if err != nil {
@@ -125,5 +125,5 @@ func UnmarshalKeaResponseList(request *KeaCommand, response string) (*KeaRespons
 		}
 	}
 
-	return &responses, err
+	return responses, err
 }

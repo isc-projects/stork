@@ -164,30 +164,30 @@ func TestUnmarshalKeaResponseList(t *testing.T) {
 	require.NotNil(t, list)
 
 	// There should be two responses encapsulated.
-	require.Equal(t, 2, len(*list))
+	require.Equal(t, 2, len(list))
 
 	// The first result value is 0.
-	require.Equal(t, 0, (*list)[0].Result)
-	require.Equal(t, "command successful", (*list)[0].Text)
+	require.Equal(t, 0, list[0].Result)
+	require.Equal(t, "command successful", list[0].Text)
 
 	// The arguments should be non-nil and contain two parameters.
-	require.NotNil(t, (*list)[0].Arguments)
-	require.Contains(t, *((*list)[0]).Arguments, "subnet-id")
-	require.Contains(t, *((*list)[0]).Arguments, "prefix")
+	require.NotNil(t, list[0].Arguments)
+	require.Contains(t, *(list[0]).Arguments, "subnet-id")
+	require.Contains(t, *(list[0]).Arguments, "prefix")
 
 	// The daemon should be set based on the command instance provided.
-	require.Equal(t, "dhcp4", ((*list)[0]).Daemon)
+	require.Equal(t, "dhcp4", (list[0]).Daemon)
 
 	// Validate the arguments.
 	require.EqualValues(t, map[string]interface{}{"subnet-id": float64(1), "prefix": "192.0.2.0/24"},
-		*((*list)[0]).Arguments)
+		*(list[0]).Arguments)
 
 	// The second response should contain different result and text. The
 	// arguments are not present, so should be nil.
-	require.Equal(t, 1, (*list)[1].Result)
-	require.Equal(t, "command unsuccessful", (*list)[1].Text)
-	require.Nil(t, (*list)[1].Arguments)
-	require.Equal(t, "dhcp6", ((*list)[1]).Daemon)
+	require.Equal(t, 1, list[1].Result)
+	require.Equal(t, "command unsuccessful", list[1].Text)
+	require.Nil(t, list[1].Arguments)
+	require.Equal(t, "dhcp6", (list[1]).Daemon)
 }
 
 // Test that the Kea response containing invalid result value is rejected.
