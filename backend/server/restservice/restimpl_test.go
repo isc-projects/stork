@@ -29,7 +29,10 @@ func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort in
 	}
 	return &state, nil
 }
-
+func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, command *agentcomm.KeaCommand,
+	address string, agentPort int64) (agentcomm.KeaResponseList, error) {
+	return nil, nil
+}
 
 func TestGetVersion(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)

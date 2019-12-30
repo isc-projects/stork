@@ -18,6 +18,7 @@ import (
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
+	"isc.org/stork/server/appkea"
 )
 
 
@@ -578,16 +579,24 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 	return rsp
 }
 
-func appToRestApi(dbApp dbmodel.App) *models.App {
+func appToRestApi(dbApp *dbmodel.App, hooks map[string][]string) *models.App {
 	var daemons []*models.KeaDaemon
 	for _, d := range dbApp.Details.(dbmodel.AppKea).Daemons {
-		daemons = append(daemons, &models.KeaDaemon{
+		dmn := &models.KeaDaemon{
 			Pid: int64(d.Pid),
 			Name: d.Name,
 			Active: d.Active,
 			Version: d.Version,
 			ExtendedVersion: d.ExtendedVersion,
-		})
+			Hooks: []string{},
+		}
+		if hooks != nil {
+			hooksList, ok := hooks[d.Name]
+			if ok {
+				dmn.Hooks = hooksList
+			}
+		}
+		daemons = append(daemons, dmn)
 	}
 	s := models.App{
 		ID: dbApp.Id,
@@ -655,16 +664,17 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 	}
 
 
-	for _, dbS := range dbApps {
-		ss := appToRestApi(dbS)
-		appsLst = append(appsLst, ss)
+	for _, dbA := range dbApps {
+		app := dbA
+		a := appToRestApi(&app, nil)
+		appsLst = append(appsLst, a)
 	}
 
-	s := models.Apps{
+	a := models.Apps{
 		Items: appsLst,
 		Total: total,
 	}
-	rsp := services.NewGetAppsOK().WithPayload(&s)
+	rsp := services.NewGetAppsOK().WithPayload(&a)
 	return rsp
 }
 
@@ -685,7 +695,13 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 		})
 		return rsp
 	}
-	s := appToRestApi(*dbApp)
-	rsp := services.NewGetAppOK().WithPayload(s)
+
+	hooksByDaemon, err := kea.GetDaemonHooks(ctx, r.Agents, dbApp)
+	if err != nil {
+		log.Warn(err)
+	}
+
+	a := appToRestApi(dbApp, hooksByDaemon)
+	rsp := services.NewGetAppOK().WithPayload(a)
 	return rsp
 }

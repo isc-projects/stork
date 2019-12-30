@@ -41,7 +41,7 @@ type App struct {
 	CtrlPort     int64
 	Active       bool
 	Meta         AppMeta
-	Details      interface{}
+	Details      interface{}  // here we have either AppKea or AppBind
 }
 
 func AddApp(db *pg.DB, app *App) error {

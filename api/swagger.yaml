@@ -662,6 +662,10 @@ definitions:
         type: string
       extendedVersion:
         type: string
+      hooks:
+        type: array
+        items:
+          type: string
 
   AppKea:
     type: object
