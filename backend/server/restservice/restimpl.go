@@ -40,21 +40,11 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 
 func machineToRestApi(dbMachine dbmodel.Machine) (*models.Machine, error) {
 	var apps []*models.MachineApp
-	for _, srv := range dbMachine.Apps {
+	for _, app := range dbMachine.Apps {
 		active := true
-		if srv.Type == "bind9" {
-			err := dbmodel.ReconvertAppDetails(&srv)
-			if err != nil {
-				return nil, err
-			}
-			active = srv.Details.(dbmodel.AppBind9).Daemon.Active
-		} else if srv.Type == "kea" {
-			if srv.Active {
-				err := dbmodel.ReconvertAppDetails(&srv)
-				if err != nil {
-					return nil, err
-				}
-				for _, d := range srv.Details.(dbmodel.AppKea).Daemons {
+		if app.Type == "kea" {
+			if app.Active {
+				for _, d := range app.Details.(dbmodel.AppKea).Daemons {
 					if !d.Active {
 						active = false
 						break
@@ -65,9 +55,9 @@ func machineToRestApi(dbMachine dbmodel.Machine) (*models.Machine, error) {
 			}
 		}
 		s := models.MachineApp{
-			ID: srv.Id,
-			Type: srv.Type,
-			Version: srv.Meta.Version,
+			ID: app.Id,
+			Type: app.Type,
+			Version: app.Meta.Version,
 			Active: active,
 		}
 		apps = append(apps, &s)
@@ -880,5 +870,42 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 	}
 
 	rsp := services.NewGetAppServicesStatusOK().WithPayload(servicesStatus)
+	return rsp
+}
+
+// Get statistics about applications.
+func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStatsParams) middleware.Responder {
+	dbApps, err := dbmodel.GetAllApps(r.Db)
+	if err != nil {
+		msg := fmt.Sprintf("cannot get all apps from db")
+		log.Error(err)
+		rsp := services.NewGetAppsStatsDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	appsStats := models.AppsStats{
+		KeaAppsTotal: 0,
+		KeaAppsNotOk: 0,
+		Bind9AppsTotal: 0,
+		Bind9AppsNotOk: 0,
+	}
+	for _, dbApp := range dbApps {
+		switch dbApp.Type {
+		case "kea":
+			appsStats.KeaAppsTotal += 1
+			if !dbApp.Active {
+				appsStats.KeaAppsNotOk += 1
+			}
+		case "bind9":
+			appsStats.Bind9AppsTotal += 1
+			if !dbApp.Active {
+				appsStats.Bind9AppsNotOk += 1
+			}
+		}
+	}
+
+	rsp := services.NewGetAppsStatsOK().WithPayload(&appsStats)
 	return rsp
 }

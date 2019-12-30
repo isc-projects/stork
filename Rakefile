@@ -444,7 +444,7 @@ end
 desc 'Run container with Stork Agent and BIND 9 and mount current Agent binary'
 task :run_bind9_container do
   # host[9999]->agent[8080]
-  sh 'docker run --rm -ti -p 9999:8080 -v `pwd`/backend/cmd/stork-agent:/agent agent-bind9'
+  sh 'docker run --rm -ti -p 9999:8080 -h agent-bind9 -v `pwd`/backend/cmd/stork-agent:/agent agent-bind9'
 end
 
 

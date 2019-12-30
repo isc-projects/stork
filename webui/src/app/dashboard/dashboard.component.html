@@ -1,11 +1,21 @@
 <div style="margin: 4px -4px;" class="p-grid p-align-stretch">
-    <p-panel header="Main" class="p-col main-panel">
-        Content
-    </p-panel>
+    <div class="p-col">
+        <!-- TODO: remove comment when functional
+        <p-panel header="Main" class="main-panel">
+            Content
+        </p-panel>
+-->
+    </div>
 
-    <app-hosts-table class="p-col-4"></app-hosts-table>
+    <div class="p-col-4">
+        <!-- TODO: remove comment when functional
+    <app-hosts-table></app-hosts-table>
+-->
+    </div>
 
-    <p-panel header="Alerts" class="p-col-2">
+    <div header="Alerts" class="p-col-2">
+        <!-- TODO: remove comment when functional
+    <p-panel header="Alerts">
         <div style="border: 1px solid #c8c8c8; border-radius: 3px; padding: 6px; margin: 4px 0;">
             Subnet A depleted.
         </div>
@@ -14,4 +24,43 @@
             Subnet B depleted.
         </div>
     </p-panel>
+    -->
+        <p-panel header="Applications">
+            <a routerLink="/apps/kea/all">
+                <!-- kea apps stats -->
+                <div>
+                    <div>{{ appsStats.keaAppsTotal }} Kea {{ appsStats.keaAppsTotal === 1 ? 'app' : 'apps' }}</div>
+                    <div *ngIf="appsStats.keaAppsNotOk > 0" style="color: #f11;">
+                        {{ appsStats.keaAppsNotOk }} {{ appsStats.keaAppsNotOk > 1 ? 'have' : 'has' }} problems
+                        <i class="pi pi-times" style="font-size: 1.5em; vertical-align: text-top;"></i>
+                    </div>
+                    <div
+                        *ngIf="appsStats.keaAppsNotOk === undefined || appsStats.keaAppsNotOk === 0"
+                        style="color: #00a800;"
+                    >
+                        all ok
+                        <i class="pi pi-check" style="font-size: 1.5em; vertical-align: text-top;"></i>
+                    </div>
+                </div>
+
+                <!-- bind9 apps stats -->
+                <div style="margin-top: 8px;">
+                    <div>
+                        {{ appsStats.bind9AppsTotal }} BIND 9 {{ appsStats.bind9AppsTotal === 1 ? 'app' : 'apps' }}
+                    </div>
+                    <div *ngIf="appsStats.bind9AppsNotOk > 0" style="color: #f11;">
+                        {{ appsStats.bind9AppsNotOk }} {{ appsStats.bind9AppsNotOk > 1 ? 'have' : 'has' }} problems
+                        <i class="pi pi-times" style="font-size: 1.5em; vertical-align: text-top;"></i>
+                    </div>
+                    <div
+                        *ngIf="appsStats.bind9AppsNotOk === undefined || appsStats.bind9AppsNotOk === 0"
+                        style="color: #00a800;"
+                    >
+                        all ok
+                        <i class="pi pi-check" style="font-size: 1.5em; vertical-align: text-top;"></i>
+                    </div>
+                </div>
+            </a>
+        </p-panel>
+    </div>
 </div>

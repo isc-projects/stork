@@ -206,6 +206,9 @@ func TestGetMachine(t *testing.T) {
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
+		Details: dbmodel.AppKea{
+			Daemons: []dbmodel.KeaDaemon{},
+		},
 	}
 	err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
@@ -393,6 +396,9 @@ func TestGetApp(t *testing.T) {
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
+		Details: dbmodel.AppKea{
+			Daemons: []dbmodel.KeaDaemon{},
+		},
 	}
 	err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
@@ -442,6 +448,9 @@ func TestRestGetApp(t *testing.T) {
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
+		Details: dbmodel.AppKea{
+			Daemons: []dbmodel.KeaDaemon{},
+		},
 	}
 	err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
@@ -462,6 +471,7 @@ func TestRestGetApp(t *testing.T) {
 		Type: "bind9",
 		CtrlPort: 953,
 		Active: true,
+		Details: dbmodel.AppBind9{},
 	}
 	err = dbmodel.AddApp(db, bind9App)
 	require.NoError(t, err)
@@ -508,6 +518,9 @@ func TestRestGetApps(t *testing.T) {
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
+		Details: dbmodel.AppKea{
+			Daemons: []dbmodel.KeaDaemon{},
+		},
 	}
 	err = dbmodel.AddApp(db, s1)
 	require.NoError(t, err)
@@ -519,13 +532,13 @@ func TestRestGetApps(t *testing.T) {
 		Type: "bind9",
 		CtrlPort: 4321,
 		Active: true,
+		Details: dbmodel.AppBind9{},
 	}
 	err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
 
 	// get added apps
-	params = services.GetAppsParams{
-	}
+	params = services.GetAppsParams{}
 	rsp = rapi.GetApps(ctx, params)
 	require.IsType(t, &services.GetAppsOK{}, rsp)
 	okRsp = rsp.(*services.GetAppsOK)
@@ -685,4 +698,67 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, int64(3), haStatus.RemoteServer.Age)
 	require.True(t, haStatus.RemoteServer.InTouch)
 
+}
+
+func TestRestGetAppsStats(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestApiSettings{}
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// get empty list of app
+	params := services.GetAppsStatsParams{}
+	rsp := rapi.GetAppsStats(ctx, params)
+	require.IsType(t, &services.GetAppsStatsOK{}, rsp)
+	okRsp := rsp.(*services.GetAppsStatsOK)
+	require.Equal(t, int64(0), okRsp.Payload.KeaAppsTotal)
+	require.Equal(t, int64(0), okRsp.Payload.KeaAppsNotOk)
+
+	// add machine
+	m := &dbmodel.Machine{
+		Address: "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add app kea to machine
+	s1 := &dbmodel.App{
+		Id: 0,
+		MachineID: m.Id,
+		Type: "kea",
+		CtrlPort: 1234,
+		Active: true,
+		Details: dbmodel.AppKea{
+			Daemons: []dbmodel.KeaDaemon{},
+		},
+	}
+	err = dbmodel.AddApp(db, s1)
+	require.NoError(t, err)
+
+	// add app bind to machine
+	s2 := &dbmodel.App{
+		Id: 0,
+		MachineID: m.Id,
+		Type: "bind9",
+		CtrlPort: 4321,
+		Active: false,
+		Details: dbmodel.AppBind9{},
+	}
+	err = dbmodel.AddApp(db, s2)
+	require.NoError(t, err)
+
+	// get added app
+	params = services.GetAppsStatsParams{}
+	rsp = rapi.GetAppsStats(ctx, params)
+	require.IsType(t, &services.GetAppsStatsOK{}, rsp)
+	okRsp = rsp.(*services.GetAppsStatsOK)
+	require.Equal(t, int64(1), okRsp.Payload.KeaAppsTotal)
+	require.Equal(t, int64(0), okRsp.Payload.KeaAppsNotOk)
+	require.Equal(t, int64(1), okRsp.Payload.Bind9AppsTotal)
+	require.Equal(t, int64(1), okRsp.Payload.Bind9AppsNotOk)
 }

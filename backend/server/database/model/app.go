@@ -1,10 +1,14 @@
 package dbmodel
 
 import (
+	"context"
 	"encoding/json"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
+	//log "github.com/sirupsen/logrus"
+
 	"isc.org/stork/util"
 	"time"
 )
@@ -53,35 +57,40 @@ type App struct {
 	Details     interface{} // here we have either AppKea or AppBind9
 }
 
-func AddApp(db *pg.DB, app *App) error {
-	err := db.Insert(app)
+func (app *App) AfterScan(ctx context.Context) error {
+	if app.Details == nil {
+		return nil
+	}
+
+	bytes, err := json.Marshal(app.Details)
 	if err != nil {
-		return errors.Wrapf(err, "problem with inserting app %v", app)
+		return errors.Wrapf(err, "problem with marshaling app details: %v ", app.Details)
+	}
+
+	switch app.Type {
+	case "kea":
+		var keaDetails AppKea
+		err = json.Unmarshal(bytes, &keaDetails)
+		if err != nil {
+			return errors.Wrapf(err, "problem with unmarshaling app details")
+		}
+		app.Details = keaDetails
+
+	case "bind9":
+		var bind9Details AppBind9
+		err = json.Unmarshal(bytes, &bind9Details)
+		if err != nil {
+			return errors.Wrapf(err, "problem with unmarshaling app details")
+		}
+		app.Details = bind9Details
 	}
 	return nil
 }
 
-func ReconvertAppDetails(app *App) error {
-	bytes, err := json.Marshal(app.Details)
+func AddApp(db *pg.DB, app *App) error {
+	err := db.Insert(app)
 	if err != nil {
-		return errors.Wrapf(err, "problem with getting app from the database: %v ", app)
-	}
-	if (app.Type == "kea") {
-		var keaDetails AppKea
-		err = json.Unmarshal(bytes, &keaDetails)
-		if err != nil {
-			return errors.Wrapf(err, "problem with getting Kea app from the database: %v ", app)
-		}
-		app.Details = keaDetails
-	} else if (app.Type == "bind9") {
-		var bind9Details AppBind9
-		err = json.Unmarshal(bytes, &bind9Details)
-		if err != nil {
-			return errors.Wrapf(err, "problem with getting BIND 9 app from the database: %v ", app)
-		}
-		app.Details = bind9Details
-	} else {
-		return errors.Wrapf(err, "unknown app type: %v ", app)
+		return errors.Wrapf(err, "problem with inserting app %v", app)
 	}
 	return nil
 }
@@ -96,10 +105,6 @@ func GetAppById(db *pg.DB, id int64) (*App, error) {
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "problem with getting app %v", id)
 	}
-	err = ReconvertAppDetails(&app)
-	if err != nil {
-		return nil, err
-	}
 	return &app, nil
 }
 
@@ -111,13 +116,6 @@ func GetAppsByMachine(db *pg.DB, machineId int64) ([]App, error) {
 	err := q.Select()
 	if err != nil {
 		return nil, errors.Wrapf(err, "problem with getting apps")
-	}
-
-	for idx := range apps {
-		err = ReconvertAppDetails(&apps[idx])
-		if err != nil {
-			return nil, err
-		}
 	}
 	return apps, nil
 }
@@ -158,12 +156,6 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, text string, appType st
 	if err != nil {
 		return nil, 0, errors.Wrapf(err, "problem with getting apps")
 	}
-	for idx := range apps {
-		err = ReconvertAppDetails(&apps[idx])
-		if err != nil {
-			return nil, 0, err
-		}
-	}
 	return apps, int64(total), nil
 }
 
@@ -174,6 +166,21 @@ func DeleteApp(db *pg.DB, app *App) error {
 		return errors.Wrapf(err, "problem with deleting app %v", app.Id)
 	}
 	return nil
+}
+
+func GetAllApps(db *pg.DB) ([]App, error) {
+	var apps []App
+
+	// prepare query
+	q := db.Model(&apps)
+	q = q.Where("app.deleted is NULL")
+
+	// retrieve apps from db
+	err := q.Select()
+	if err != nil {
+		return nil, errors.Wrapf(err, "problem with getting apps")
+	}
+	return apps, nil
 }
 
 // Returns a list of names of active DHCP deamons. This is useful for

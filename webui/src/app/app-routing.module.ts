@@ -14,10 +14,8 @@ import { PasswordChangePageComponent } from './password-change-page/password-cha
 const routes: Routes = [
     {
         path: '',
-        // component: DashboardComponent,
-        pathMatch: 'full',
-        // canActivate: [AuthGuard],
-        redirectTo: 'machines/all',
+        component: DashboardComponent,
+        canActivate: [AuthGuard],
     },
     {
         path: 'login',
@@ -71,6 +69,7 @@ const routes: Routes = [
         path: 'users',
         redirectTo: 'users/',
         pathMatch: 'full',
+        canActivate: [AuthGuard],
     },
     {
         path: 'users/:id',

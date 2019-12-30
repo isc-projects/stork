@@ -16,7 +16,7 @@ require (
 	github.com/go-openapi/validate v0.19.3
 	github.com/go-pg/migrations/v7 v7.1.6
 	github.com/go-pg/pg v8.0.6+incompatible
-	github.com/go-pg/pg/v9 v9.0.0-beta.15
+	github.com/go-pg/pg/v9 v9.1.0
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2
 	github.com/jessevdk/go-flags v1.4.0
@@ -25,8 +25,8 @@ require (
 	github.com/shirou/gopsutil v2.19.9+incompatible
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0
-	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc
-	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
+	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
+	golang.org/x/net v0.0.0-20190923162816-aa69164e4478
 	google.golang.org/grpc v1.24.0
 	gopkg.in/h2non/gock.v1 v1.0.15
 )

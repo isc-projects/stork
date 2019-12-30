@@ -1,9 +1,11 @@
 package dbmodel
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	//log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/database/test"
 )
@@ -308,4 +310,103 @@ func TestGetActiveDHCPAppMismatch(t *testing.T) {
 	}
 	daemons := a.GetActiveDHCPDeamonNames()
 	require.Empty(t, daemons)
+}
+
+
+func TestGetAllApps(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add first machine, should be no error
+	m := &Machine{
+		Id: 0,
+		Address: "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, m.Id)
+
+	// add kea app, no error expected
+	aKea := &App{
+		Id: 0,
+		MachineID: m.Id,
+		Type: "kea",
+		CtrlPort: 1234,
+		Active: true,
+	}
+	err = AddApp(db, aKea)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, aKea.Id)
+
+	// add bind app, no error expected
+	aBind := &App{
+		Id: 0,
+		MachineID: m.Id,
+		Type: "bind",
+		CtrlPort: 4321,
+		Active: true,
+	}
+	err = AddApp(db, aBind)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, aBind.Id)
+
+	// get all apps
+	apps, err := GetAllApps(db)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+}
+
+func TestAfterScanKea(t *testing.T) {
+	ctx := context.Background()
+
+	// for now details are nil
+	aKea := &App{
+		Id: 0,
+		MachineID: 0,
+		Type: "kea",
+		CtrlPort: 1234,
+		Active: true,
+	}
+	err := aKea.AfterScan(ctx)
+	require.Nil(t, err)
+	require.Nil(t, aKea.Details)
+
+	// add some details
+	aKea.Details = map[string]interface{}{
+		"ExtendedVersion": "1.2.3",
+		"Daemons": []map[string]interface{}{
+			{
+				"Pid": 123,
+				"Name": "dhcp4",
+			},
+		},
+	}
+	err = aKea.AfterScan(ctx)
+	require.Nil(t, err)
+	require.NotNil(t, aKea.Details)
+	require.Equal(t, "1.2.3", aKea.Details.(AppKea).ExtendedVersion)
+	require.Equal(t, "dhcp4", aKea.Details.(AppKea).Daemons[0].Name)
+}
+
+func TestAfterScanBind(t *testing.T) {
+	ctx := context.Background()
+
+	// for now details are nil
+	aBind := &App{
+		Id: 0,
+		MachineID: 0,
+		Type: "bind",
+		CtrlPort: 1234,
+		Active: true,
+	}
+	err := aBind.AfterScan(ctx)
+	require.Nil(t, err)
+	require.Nil(t, aBind.Details)
+
+	// add some details
+	aBind.Details = map[string]interface{}{}
+	err = aBind.AfterScan(ctx)
+	require.Nil(t, err)
+	require.NotNil(t, aBind.Details)
 }

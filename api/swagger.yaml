@@ -413,6 +413,23 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
+  /apps-stats:
+    get:
+      summary: Get applications statistics.
+      description: It returns number of apps of given type, number of not fully active apps, etc.
+      operationId: getAppsStats
+      tags:
+        - Services
+      responses:
+        200:
+          description: Application statistics
+          schema:
+            $ref: "#/definitions/AppsStats"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /apps/{id}/services/status:
     get:
       summary: Get services status for a given application.
@@ -742,6 +759,18 @@ definitions:
         items:
           $ref: '#/definitions/App'
       total:
+        type: integer
+
+  AppsStats:
+    type: object
+    properties:
+      keaAppsTotal:
+        type: integer
+      keaAppsNotOk:
+        type: integer
+      bind9AppsTotal:
+        type: integer
+      bind9AppsNotOk:
         type: integer
 
   KeaStatus:
