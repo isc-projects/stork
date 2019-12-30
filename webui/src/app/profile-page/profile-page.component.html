@@ -13,14 +13,32 @@
                 </div>
                 <div class="p-col-7 p-justify-left p-align-center">
                     <p-panel header="{{ this.profilePanelHeader }}">
-                        <b>ID</b>
-                        <p>{{ currentUser.id }}</p>
-                        <b>Login</b>
-                        <p>{{ currentUser.username }}</p>
-                        <b>Email</b>
-                        <p>{{ currentUser.email ? currentUser.email : '(not specified)' }}</p>
-                        <b>Group</b>
-                        <p>{{ this.groupName }}</p>
+                        <div class="p-grid">
+                            <div class="p-col-1">
+                                <b>ID:</b>
+                            </div>
+                            <div class="p-col-11">
+                                {{ currentUser.id }}
+                            </div>
+                            <div class="p-col-1">
+                                <b>Login:</b>
+                            </div>
+                            <div class="p-col-11">
+                                {{ currentUser.username }}
+                            </div>
+                            <div class="p-col-1">
+                                <b>Email:</b>
+                            </div>
+                            <div class="p-col-11">
+                                {{ currentUser.email ? currentUser.email : '(not specified)' }}
+                            </div>
+                            <div class="p-col-1">
+                                <b>Group:</b>
+                            </div>
+                            <div class="p-col-11">
+                                {{ this.groupName }}
+                            </div>
+                        </div>
                     </p-panel>
                 </div>
             </div>
