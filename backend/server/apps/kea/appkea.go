@@ -1,15 +1,15 @@
 package kea
 
 import (
-	"fmt"
-	"time"
-	"strings"
 	"context"
+	"fmt"
+	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
-	"isc.org/stork/server/database/model"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/database/model"
 )
 
 // Retrieve configuration of the selected Kea deamons using the config-get
@@ -22,7 +22,7 @@ func GetConfig(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbm
 	// prepare the command
 	cmd, _ := agentcomm.NewKeaCommand("config-get", daemons, nil)
 
-	ctx2, cancel := context.WithTimeout(ctx, 2 * time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
 	// send the command to daemons through agent and return response list

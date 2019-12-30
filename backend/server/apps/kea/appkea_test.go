@@ -13,7 +13,9 @@ import (
 
 // Helper struct to mock Agents behavior.
 type FakeAgents struct {
-	Daemons int
+	daemons         int
+	recordedURL     string
+	recordedCommand string
 }
 
 func (fa *FakeAgents) Shutdown() {}
@@ -22,13 +24,15 @@ func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error
 }
 func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort int64) (*agentcomm.State, error) {
 	state := agentcomm.State{
-		Cpus: 1,
+		Cpus:   1,
 		Memory: 4,
 	}
 	return &state, nil
 }
 func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, command *agentcomm.KeaCommand,
 	address string, agentPort int64) (agentcomm.KeaResponseList, error) {
+	fa.recordedURL = caURL
+	fa.recordedCommand = command.Command
 	list := agentcomm.KeaResponseList{
 		{
 			Result: 0,
@@ -44,7 +48,7 @@ func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, co
 			},
 		},
 	}
-	if fa.Daemons > 1 {
+	if fa.daemons > 1 {
 		list = append(list, agentcomm.KeaResponse{
 			Result: 0,
 			Daemon: "dhcp6",
@@ -66,15 +70,15 @@ func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, co
 	return list, nil
 }
 
-
-// Check if GetConfig returns anything that make sense.
+// Check if GetConfig returns response to the forwarded command.
 func TestGetConfig(t *testing.T) {
 	ctx := context.Background()
 	fa := FakeAgents{}
 
 	// check getting config of 1 daemon
-	fa.Daemons = 1
+	fa.daemons = 1
 	dbApp := dbmodel.App{
+		CtrlPort: 1234,
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{
 				{
@@ -87,13 +91,16 @@ func TestGetConfig(t *testing.T) {
 	daemons := make(agentcomm.KeaDaemons)
 	daemons["dhcp4"] = true
 
-	list, err := GetConfig(ctx , &fa, &dbApp, &daemons)
+	list, err := GetConfig(ctx, &fa, &dbApp, &daemons)
 	require.NoError(t, err)
 	require.NotNil(t, list)
 	require.Len(t, list, 1)
 
+	require.Equal(t, "http://localhost:1234/", fa.recordedURL)
+	require.Equal(t, "config-get", fa.recordedCommand)
+
 	// check getting configs of 2 daemons
-	fa.Daemons = 2
+	fa.daemons = 2
 	dbApp = dbmodel.App{
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{
@@ -109,12 +116,11 @@ func TestGetConfig(t *testing.T) {
 
 	daemons["dhcp6"] = true
 
-	list, err = GetConfig(ctx , &fa, &dbApp, &daemons)
+	list, err = GetConfig(ctx, &fa, &dbApp, &daemons)
 	require.NoError(t, err)
 	require.NotNil(t, list)
 	require.Len(t, list, 2)
 }
-
 
 // Check if GetDaemonHooks returns hooks for given daemon.
 func TestGetDaemonHooks(t *testing.T) {
@@ -122,7 +128,7 @@ func TestGetDaemonHooks(t *testing.T) {
 	fa := FakeAgents{}
 
 	// check getting config of 1 daemon
-	fa.Daemons = 1
+	fa.daemons = 1
 	dbApp := dbmodel.App{
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{
@@ -133,7 +139,7 @@ func TestGetDaemonHooks(t *testing.T) {
 		},
 	}
 
-	hooksMap, err := GetDaemonHooks(ctx , &fa, &dbApp)
+	hooksMap, err := GetDaemonHooks(ctx, &fa, &dbApp)
 	require.NoError(t, err)
 	require.NotNil(t, hooksMap)
 	hooks, ok := hooksMap["dhcp4"]
@@ -142,7 +148,7 @@ func TestGetDaemonHooks(t *testing.T) {
 	require.Equal(t, "hook_abc.so", hooks[0])
 
 	// check getting configs of 2 daemons
-	fa.Daemons = 2
+	fa.daemons = 2
 	dbApp = dbmodel.App{
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{
@@ -156,7 +162,7 @@ func TestGetDaemonHooks(t *testing.T) {
 		},
 	}
 
-	hooksMap, err = GetDaemonHooks(ctx , &fa, &dbApp)
+	hooksMap, err = GetDaemonHooks(ctx, &fa, &dbApp)
 	require.NoError(t, err)
 	require.NotNil(t, hooksMap)
 	hooks, ok = hooksMap["dhcp4"]
