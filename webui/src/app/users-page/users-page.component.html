@@ -56,6 +56,7 @@
             <tr>
                 <td align="center">
                     <a routerLink="/users/{{ u.id }}">{{ u.login }}</a>
+                    <sup *ngIf="auth.currentUserValue.id === u.id"><span id="youtag">It's you</span></sup>
                 </td>
                 <td align="center">
                     <a routerLink="/users/{{ u.id }}">{{ u.email }}</a>
