@@ -12,10 +12,11 @@ import (
 	"isc.org/stork/server/agentcomm"
 )
 
-
-// Retrieve config using config-get command from all dhcp4 and dhcp6 daemons
-// if they are active.
+// Retrieve configuration of the selected Kea deamons using the config-get
+// command.
 func GetConfig(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemons *agentcomm.KeaDaemons) (agentcomm.KeaResponseList, error) {
+	// We assume that the Kea Control Agent runs on the same machine as
+	// the Stork Agent. Thus, we use localhost to communicate with the CA.
 	caURL := fmt.Sprintf("http://localhost:%d/", dbApp.CtrlPort)
 
 	// prepare the command
@@ -32,7 +33,7 @@ func GetConfig(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbm
 	return responseList, nil
 }
 
-// Get list of hooks for all daemons of given Kea application.
+// Get list of hooks for all DHCP daemons of the given Kea application.
 // It uses GetConfig function.
 func GetDaemonHooks(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) (map[string][]string, error) {
 	hooksByDaemon := make(map[string][]string)
