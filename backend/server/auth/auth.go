@@ -33,5 +33,11 @@ func Authorize(user *dbmodel.SystemUser, req *http.Request) (ok bool, err error)
 	}
 
 	// All other resources can be accessed by the admin user.
-	return true, err
+	if user.InGroup(&dbmodel.SystemGroup{Id: dbmodel.AdminGroupId}) {
+		return true, err
+	}
+
+	// User who doesn't belong to any group is not allowed to access
+	// system resources.
+	return false, nil
 }

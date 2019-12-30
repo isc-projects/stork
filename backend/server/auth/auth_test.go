@@ -10,14 +10,17 @@ import (
 // Helper function checking if the user belonging to the specified group
 // has access to the resource.
 func authorizeAccept(t *testing.T, groupId int, path string) bool {
-	// Create user with ID 5 and specified group id.
+	// Create user with ID 5 and specified group id if the group id is
+	// positive.
 	user := &dbmodel.SystemUser{
 		Id: 5,
-		Groups: dbmodel.SystemGroups{
+	}
+	if groupId > 0 {
+		user.Groups = dbmodel.SystemGroups{
 			&dbmodel.SystemGroup{
 				Id: groupId,
 			},
-		},
+		}
 	}
 
 	// Create request with the specified path and authorize.
@@ -51,4 +54,11 @@ func TestAuthorize(t *testing.T) {
 
 	// admin group have no restriction on machines
 	require.True(t, authorizeAccept(t, 2, "/machines/1/"))
+
+	// but someone who belongs to no groups would not be able
+	// to access machines
+	require.False(t, authorizeAccept(t, 0, "/machines/1/"))
+
+	// the same in case of someone belonging to non existing group
+	require.False(t, authorizeAccept(t, 3, "/machines/1/"))
 }

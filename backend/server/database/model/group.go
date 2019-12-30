@@ -5,7 +5,10 @@ import (
 	"isc.org/stork/server/database"
 )
 
-const SuperAdminGroupId int = 1
+const (
+	SuperAdminGroupId int = 1
+	AdminGroupId int = 2
+)
 
 // Represents a group of users having some specific permissions.
 type SystemGroup struct {
