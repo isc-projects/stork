@@ -1,25 +1,25 @@
 package dbmodel
 
 import (
-	"time"
 	"encoding/json"
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
 	"isc.org/stork"
+	"time"
 )
 
 type KeaDaemon struct {
-	Pid int32
-	Name string
-	Active bool
-	Version string
+	Pid             int32
+	Name            string
+	Active          bool
+	Version         string
 	ExtendedVersion string
 }
 
 type AppKea struct {
-	ExtendedVersion  string
-	Daemons          []KeaDaemon
+	ExtendedVersion string
+	Daemons         []KeaDaemon
 }
 
 type AppBind struct {
@@ -27,21 +27,21 @@ type AppBind struct {
 
 // Part of app table in database that describes metadata of app. In DB it is stored as JSONB.
 type AppMeta struct {
-	Version          string
+	Version string
 }
 
 // Represents a app held in app table in the database.
 type App struct {
-	Id           int64
-	Created      time.Time
-	Deleted      time.Time
-	MachineID    int64
-	Machine      Machine
-	Type         string
-	CtrlPort     int64
-	Active       bool
-	Meta         AppMeta
-	Details      interface{}  // here we have either AppKea or AppBind
+	Id        int64
+	Created   time.Time
+	Deleted   time.Time
+	MachineID int64
+	Machine   Machine
+	Type      string
+	CtrlPort  int64
+	Active    bool
+	Meta      AppMeta
+	Details   interface{} // here we have either AppKea or AppBind
 }
 
 func AddApp(db *pg.DB, app *App) error {
@@ -154,4 +154,17 @@ func DeleteApp(db *pg.DB, app *App) error {
 		return errors.Wrapf(err, "problem with deleting app %v", app.Id)
 	}
 	return nil
+}
+
+// Returns a list of names of active DHCP deamons. This is useful for
+// creating commands to be send to active DHCP servers.
+func (app *App) GetActiveDHCPDeamonNames() (deamons []string) {
+	if kea, ok := app.Details.(AppKea); ok {
+		for _, d := range kea.Daemons {
+			if d.Active && (d.Name == "dhcp4" || d.Name == "dhcp6") {
+				deamons = append(deamons, d.Name)
+			}
+		}
+	}
+	return deamons
 }
