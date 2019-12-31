@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
-	"isc.org/stork/server/database"
-	"os"
+	dbops "isc.org/stork/server/database"
 )
 
 // Structure defining options for all commands except "up".
@@ -18,13 +19,13 @@ type upOpts struct {
 }
 
 // Common application options.
-type Opts struct{
+type Opts struct {
 	dbops.DatabaseSettings
-	Init cmdOpts `command:"init" description:"Create schema versioning table in the database"`
-	Up upOpts `command:"up" description:"Run all available migrations or up to a selected version"`
-	Down cmdOpts `command:"down" description:"Revert last migration"`
-	Reset cmdOpts `command:"reset" description:"Revert all migrations"`
-	Version cmdOpts `command:"version" description:"Print current migration version"`
+	Init       cmdOpts `command:"init" description:"Create schema versioning table in the database"`
+	Up         upOpts  `command:"up" description:"Run all available migrations or up to a selected version"`
+	Down       cmdOpts `command:"down" description:"Revert last migration"`
+	Reset      cmdOpts `command:"reset" description:"Revert all migrations"`
+	Version    cmdOpts `command:"version" description:"Print current migration version"`
 	SetVersion cmdOpts `command:"set_version" description:"Set database version without running migrations"`
 }
 
@@ -76,7 +77,6 @@ func main() {
 
 	if newVersion != oldVersion {
 		log.Infof("Migrated database from version %d to %d\n", oldVersion, newVersion)
-
 	} else {
 		availVersion := dbops.AvailableVersion()
 		if availVersion == oldVersion {

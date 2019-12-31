@@ -1,28 +1,30 @@
 package dbtest
 
-import(
+import (
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
+
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/server/database"
+
+	dbops "isc.org/stork/server/database"
 )
 
 // go-pg specific database connection options.
 // Prepares unit test setup by re-creating the database schema and
 // returns pointer to the teardown function.
-func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, func ()) {
+func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
 	// Common set of database connection options which may be converted to a string
 	// of space separated options used by SQL drivers.
 	genericConnOptions := dbops.DatabaseSettings{
 		BaseDatabaseSettings: dbops.BaseDatabaseSettings{
-			DbName: "storktest",
-			User: "storktest",
+			DbName:   "storktest",
+			User:     "storktest",
 			Password: "storktest",
-			Host: "localhost",
-			Port: 5432,
+			Host:     "localhost",
+			Port:     5432,
 		},
 	}
 
@@ -53,7 +55,7 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 	require.NoError(t, err)
 
 	createSchema(t, db)
-	return db, &genericConnOptions, func () {
+	return db, &genericConnOptions, func() {
 		TossSchema(t, db)
 	}
 }

@@ -3,10 +3,12 @@ package kea
 import (
 	"context"
 	"testing"
+
 	"github.com/stretchr/testify/require"
+
 	"isc.org/stork/server/agentcomm"
-	"isc.org/stork/server/database/model"
-	"isc.org/stork/server/test"
+	dbmodel "isc.org/stork/server/database/model"
+	storktest "isc.org/stork/server/test"
 )
 
 // Generate test response to status-get command including status of the
@@ -17,7 +19,7 @@ func mockGetStatusLoadBalancing(response interface{}) {
 	json := `[
         {
             "result": 0,
-            "text": "Everthing is fine",
+            "text": "Everything is fine",
             "arguments": {
                 "pid": 1234,
                 "uptime": 3024,
@@ -51,7 +53,7 @@ func mockGetStatusNoHA(response interface{}) {
 	json := `[
         {
             "result": 0,
-            "text": "Everthing is fine",
+            "text": "Everything is fine",
             "arguments": {
                 "pid": 1234,
                 "uptime": 3024,
@@ -158,4 +160,3 @@ func TestGetDHCPStatusError(t *testing.T) {
 
 	require.Empty(t, appStatus)
 }
-

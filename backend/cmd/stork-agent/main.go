@@ -6,21 +6,15 @@ import (
 	flags "github.com/jessevdk/go-flags"
 
 	"isc.org/stork/agent"
-	"isc.org/stork/util"
+	storkutil "isc.org/stork/util"
 )
-
 
 func main() {
 	// Setup logging
 	storkutil.SetupLogging()
 
-	agent.SetupHttpClient11()
-
 	// Start app monitor
-	sm := agent.NewAppMonitor()
-	storkAgent := agent.StorkAgent{
-		AppMonitor: sm,
-	}
+	storkAgent := agent.NewStorkAgent()
 
 	// Prepare parse for command line flags.
 	parser := flags.NewParser(&storkAgent.Settings, flags.Default)

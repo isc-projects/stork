@@ -1,32 +1,33 @@
 package agent
 
 import (
-	"time"
 	"bytes"
+	"encoding/json"
+	"io/ioutil"
+	"os/exec"
 	"regexp"
 	"strconv"
-	"io/ioutil"
-	"encoding/json"
-	"os/exec"
+	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/process"
-	"isc.org/stork/util"
+	log "github.com/sirupsen/logrus"
+
+	storkutil "isc.org/stork/util"
 )
 
 type KeaDaemon struct {
-	Pid int32
-	Name string
-	Active bool
-	Version string
+	Pid             int32
+	Name            string
+	Active          bool
+	Version         string
 	ExtendedVersion string
 }
 
 type Bind9Daemon struct {
-	Pid int32
-	Name string
-	Active bool
+	Pid     int32
+	Name    string
+	Active  bool
 	Version string
 }
 
@@ -40,7 +41,7 @@ type AppCommon struct {
 type AppKea struct {
 	AppCommon
 	ExtendedVersion string
-	Daemons []KeaDaemon
+	Daemons         []KeaDaemon
 }
 
 type AppBind9 struct {
@@ -54,35 +55,37 @@ type AppMonitor interface {
 }
 
 type appMonitor struct {
-	requests chan chan []interface{}     // input to app monitor, ie. channel for receiving requests
-	quit chan bool       // channel for stopping app monitor
+	requests chan chan []interface{} // input to app monitor, ie. channel for receiving requests
+	quit     chan bool               // channel for stopping app monitor
 
-	apps []interface{} // list of detected apps on the host
+	apps     []interface{} // list of detected apps on the host
+	CAClient *CAClient
 }
 
-func NewAppMonitor() *appMonitor {
+func NewAppMonitor(caClient *CAClient) AppMonitor {
 	sm := &appMonitor{
 		requests: make(chan chan []interface{}),
-		quit: make(chan bool),
+		quit:     make(chan bool),
+		CAClient: caClient,
 	}
 	go sm.run()
 	return sm
 }
 
 func (sm *appMonitor) run() {
-	const DETECTION_INTERVAL = 10 * time.Second
+	const detectionInterval = 10 * time.Second
 
 	for {
 		select {
-		case ret := <- sm.requests:
+		case ret := <-sm.requests:
 			// process user request
 			ret <- sm.apps
 
-		case <- time.After(DETECTION_INTERVAL):
+		case <-time.After(detectionInterval):
 			// periodic detection
 			sm.detectApps()
 
-		case <- sm.quit:
+		case <-sm.quit:
 			// exit run
 			return
 		}
@@ -114,7 +117,6 @@ func getCtrlAddressFromKeaConfig(path string) (string, int64) {
 	address := "localhost"
 	if len(m) == 0 {
 		log.Warnf("cannot parse http-host: %+v", err)
-
 	} else {
 		address = m[1]
 		if address == "0.0.0.0" {
@@ -125,14 +127,13 @@ func getCtrlAddressFromKeaConfig(path string) (string, int64) {
 	return address, int64(port)
 }
 
-
-func keaDaemonVersionGet(caUrl string, daemon string) (map[string]interface{}, error) {
+func keaDaemonVersionGet(caClient *CAClient, caURL string, daemon string) (map[string]interface{}, error) {
 	var jsonCmd = []byte(`{"command": "version-get"}`)
 	if daemon != "" {
 		jsonCmd = []byte(`{"command": "version-get", "service": ["` + daemon + `"]}`)
 	}
 
-	resp, err := httpClient11.Post(caUrl, "application/json", bytes.NewBuffer(jsonCmd))
+	resp, err := caClient.Call(caURL, bytes.NewBuffer(jsonCmd))
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +171,7 @@ func detectBind9App() (bind9App *AppBind9) {
 		log.Warnf("cannot get BIND 9 status: %+v", err)
 	} else {
 		versionPtrn := regexp.MustCompile(`version:\s(.+)\n`)
-		match := versionPtrn.FindStringSubmatch(string(out[:]))
+		match := versionPtrn.FindStringSubmatch(string(out))
 		if match != nil {
 			bind9App.Version = match[1]
 		} else {
@@ -183,8 +184,8 @@ func detectBind9App() (bind9App *AppBind9) {
 	// TODO: control port, pid
 
 	namedDaemon := Bind9Daemon{
-		Name: "named",
-		Active: bind9App.Active,
+		Name:    "named",
+		Active:  bind9App.Active,
 		Version: bind9App.Version,
 	}
 
@@ -193,7 +194,7 @@ func detectBind9App() (bind9App *AppBind9) {
 	return bind9App
 }
 
-func detectKeaApp(match []string) *AppKea {
+func detectKeaApp(caClient *CAClient, match []string) *AppKea {
 	var keaApp *AppKea
 
 	keaConfPath := match[1]
@@ -201,9 +202,9 @@ func detectKeaApp(match []string) *AppKea {
 	ctrlAddress, ctrlPort := getCtrlAddressFromKeaConfig(keaConfPath)
 	keaApp = &AppKea{
 		AppCommon: AppCommon{
-			Active: false,
+			Active:      false,
 			CtrlAddress: ctrlAddress,
-			CtrlPort: ctrlPort,
+			CtrlPort:    ctrlPort,
 		},
 		Daemons: []KeaDaemon{},
 	}
@@ -211,10 +212,10 @@ func detectKeaApp(match []string) *AppKea {
 		return nil
 	}
 
-	caUrl := storkutil.HostWithPortUrl(ctrlAddress, ctrlPort)
+	caURL := storkutil.HostWithPortURL(ctrlAddress, ctrlPort)
 
 	// retrieve ctrl-agent information, it is also used as a general app information
-	info, err := keaDaemonVersionGet(caUrl, "")
+	info, err := keaDaemonVersionGet(caClient, caURL, "")
 	if err == nil {
 		if int(info["result"].(float64)) == 0 {
 			keaApp.Active = true
@@ -230,16 +231,16 @@ func detectKeaApp(match []string) *AppKea {
 
 	// add info about ctrl-agent daemon
 	caDaemon := KeaDaemon{
-		Name: "ca",
-		Active: keaApp.Active,
-		Version: keaApp.Version,
+		Name:            "ca",
+		Active:          keaApp.Active,
+		Version:         keaApp.Version,
 		ExtendedVersion: keaApp.ExtendedVersion,
 	}
 	keaApp.Daemons = append(keaApp.Daemons, caDaemon)
 
 	// get list of daemons configured in ctrl-agent
 	var jsonCmd = []byte(`{"command": "config-get"}`)
-	resp, err := httpClient11.Post(caUrl, "application/json", bytes.NewBuffer(jsonCmd))
+	resp, err := caClient.Call(caURL, bytes.NewBuffer(jsonCmd))
 	if err != nil {
 		log.Warnf("problem with request to kea-ctrl-agent: %+v", err)
 		return nil
@@ -276,12 +277,12 @@ func detectKeaApp(match []string) *AppKea {
 	}
 	for daemonName := range daemonsListInCA {
 		daemon := KeaDaemon{
-			Name: daemonName,
+			Name:   daemonName,
 			Active: false,
 		}
 
 		// retrieve info about daemon
-		info, err := keaDaemonVersionGet(caUrl, daemonName)
+		info, err := keaDaemonVersionGet(caClient, caURL, daemonName)
 		if err == nil {
 			if int(info["result"].(float64)) == 0 {
 				daemon.Active = true
@@ -334,7 +335,7 @@ func (sm *appMonitor) detectApps() {
 			// detect kea
 			m := keaPtrn.FindStringSubmatch(cmdline)
 			if m != nil {
-				keaApp := detectKeaApp(m)
+				keaApp := detectKeaApp(sm.CAClient, m)
 				if keaApp != nil {
 					apps = append(apps, *keaApp)
 				}
@@ -366,7 +367,7 @@ func (sm *appMonitor) detectApps() {
 func (sm *appMonitor) GetApps() []interface{} {
 	ret := make(chan []interface{})
 	sm.requests <- ret
-	srvs := <- ret
+	srvs := <-ret
 	return srvs
 }
 

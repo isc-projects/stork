@@ -2,13 +2,14 @@ package kea
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
+	"time"
+
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
-	"isc.org/stork/server/database/model"
-	"isc.org/stork/util"
-	"time"
+	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 // Represents the status of the local server (the one that
@@ -22,7 +23,7 @@ type HALocalStatus struct {
 // Represents the status of the remote server.
 type HARemoteStatus struct {
 	Age        int64
-	InTouch    bool     `json:"in-touch"`
+	InTouch    bool `json:"in-touch"`
 	Role       string
 	LastScopes []string `json:"last-scopes"`
 	LastState  string   `json:"last-state"`
@@ -38,11 +39,11 @@ type HAServersStatus struct {
 // command. The HAServers value is nil if it is not present in the
 // response.
 type Status struct {
-	Pid               int64
-	Uptime            int64
-	Reload            int64
-	HAServers         *HAServersStatus `json:"ha-servers"`
-	Daemon            string
+	Pid       int64
+	Uptime    int64
+	Reload    int64
+	HAServers *HAServersStatus `json:"ha-servers"`
+	Daemon    string
 }
 
 type AppStatus []Status
@@ -60,7 +61,7 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	url := storkutil.HostWithPortUrl(dbApp.CtrlAddress, dbApp.CtrlPort)
+	url := storkutil.HostWithPortURL(dbApp.CtrlAddress, dbApp.CtrlPort)
 
 	// The Kea response will be stored in this slice of structures.
 	response := []struct {
@@ -69,7 +70,7 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	}{}
 
 	// Send the command and receive the response.
-	err := agents.ForwardToKeaOverHttp(ctx, url, dbApp.Machine.Address, dbApp.Machine.AgentPort, cmd, &response)
+	err := agents.ForwardToKeaOverHTTP(ctx, url, dbApp.Machine.Address, dbApp.Machine.AgentPort, cmd, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +80,6 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	for _, r := range response {
 		if r.Result != 0 && (len(r.Daemon) > 0) {
 			log.Warn(errors.Errorf("status-get command failed for Kea daemon %s", r.Daemon))
-
 		} else if r.Arguments != nil {
 			appStatus = append(appStatus, *r.Arguments)
 			appStatus[len(appStatus)-1].Daemon = r.Daemon
@@ -88,4 +88,3 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 
 	return appStatus, nil
 }
-

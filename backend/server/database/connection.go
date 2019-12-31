@@ -3,13 +3,13 @@ package dbops
 import (
 	"context"
 	"time"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-type dbLogger struct { }
-
+type dbLogger struct{}
 
 // Hook run before SQL query execution.
 func (d dbLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
@@ -57,7 +57,6 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 	oldVer, newVer, err := MigrateToLatest(db)
 	if err != nil {
 		return nil, err
-
 	} else if oldVer != newVer {
 		log.WithFields(log.Fields{
 			"old-version": oldVer,
@@ -66,7 +65,7 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 	}
 
 	// Add tracing hooks if requested.
-	if (settings.TraceSql) {
+	if settings.TraceSQL {
 		db.AddQueryHook(dbLogger{})
 	}
 

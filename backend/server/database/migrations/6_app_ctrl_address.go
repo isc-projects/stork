@@ -18,7 +18,6 @@ func init() {
                );
            `)
 		return err
-
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
              ALTER TABLE public.app

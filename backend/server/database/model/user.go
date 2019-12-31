@@ -2,14 +2,16 @@ package dbmodel
 
 import (
 	"fmt"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
-	"isc.org/stork/server/database"
+
+	dbops "isc.org/stork/server/database"
 )
 
 // Represents a user held in system_user table in the database.
 type SystemUser struct {
-	Id       int
+	ID       int
 	Login    string
 	Email    string
 	Lastname string
@@ -29,24 +31,24 @@ type SystemUsers []*SystemUser
 type SystemUserOrderBy int
 
 const (
-	SystemUserOrderById SystemUserOrderBy = iota
+	SystemUserOrderByID SystemUserOrderBy = iota
 	SystemUserOrderByLoginEmail
 )
 
 // Returns user's identity for logging purposes. It includes login, email or both.
-func (u *SystemUser) Identity() string {
+func (user *SystemUser) Identity() string {
 	// Include login, if present.
 	var s string
-	if len(u.Login) > 0 {
-		s = fmt.Sprintf("login=%s", u.Login)
+	if len(user.Login) > 0 {
+		s = fmt.Sprintf("login=%s", user.Login)
 	}
 
 	// Include email if present.
-	if len(u.Email) > 0 {
+	if len(user.Email) > 0 {
 		if len(s) > 0 {
 			s += " "
 		}
-		s += fmt.Sprintf("email=%s", u.Email)
+		s += fmt.Sprintf("email=%s", user.Email)
 	}
 
 	// Neither login nor email set.
@@ -64,8 +66,8 @@ func createUserGroups(db *pg.DB, user *SystemUser) (err error) {
 	if len(user.Groups) > 0 {
 		for _, g := range user.Groups {
 			assocs = append(assocs, SystemUserToGroup{
-				UserID:  user.Id,
-				GroupID: g.Id,
+				UserID:  user.ID,
+				GroupID: g.ID,
 			})
 		}
 
@@ -78,11 +80,11 @@ func createUserGroups(db *pg.DB, user *SystemUser) (err error) {
 // Creates new user in the database. The returned conflict value indicates if
 // the created user information is in conflict with some existing user in the
 // database, e.g. duplicated login or email.
-func CreateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
+func CreateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	tx, err := db.Begin()
 	if err != nil {
 		err = errors.Wrapf(err, "unable to begin transaction while trying to create user %s", user.Identity())
-		return err, false
+		return false, err
 	}
 	defer func() {
 		_ = tx.Rollback()
@@ -108,17 +110,17 @@ func CreateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
 		err = tx.Commit()
 	}
 
-	return err, conflict
+	return conflict, err
 }
 
 // Updates user information in the database. The returned conflict value indicates
 // if the updated data is in conflict with some other user information or the
 // updated user doesn't exist.
-func UpdateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
+func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	tx, err := db.Begin()
 	if err != nil {
 		err = errors.Wrapf(err, "unable to begin transaction while trying to update user %s", user.Identity())
-		return err, false
+		return false, err
 	}
 	defer func() {
 		_ = tx.Rollback()
@@ -128,7 +130,7 @@ func UpdateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
 
 	// Delete existing associations of the user with groups.
 	if err == nil {
-		_, err = db.Model(&SystemUserToGroup{}).Where("user_id = ?", user.Id).Delete()
+		_, err = db.Model(&SystemUserToGroup{}).Where("user_id = ?", user.ID).Delete()
 	}
 
 	// Recreate the groups based on the new groups list.
@@ -153,13 +155,13 @@ func UpdateUser(db *pg.DB, user *SystemUser) (err error, conflict bool) {
 		err = tx.Commit()
 	}
 
-	return err, conflict
+	return conflict, err
 }
 
 // Sets new password for the given user id.
 func SetPassword(db *pg.DB, id int, password string) (err error) {
 	user := SystemUser{
-		Id:       id,
+		ID:       id,
 		Password: password,
 	}
 
@@ -167,7 +169,6 @@ func SetPassword(db *pg.DB, id int, password string) (err error) {
 	if err != nil {
 		err = errors.Wrapf(err, "database operation error while trying to set new password for the user id %d",
 			id)
-
 	} else if result.RowsAffected() == 0 {
 		err = errors.Errorf("failed to update password for non existing user with id %d", id)
 	}
@@ -179,7 +180,7 @@ func SetPassword(db *pg.DB, id int, password string) (err error) {
 // it to the new password if it does.
 func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, error) {
 	user := SystemUser{
-		Id: id,
+		ID: id,
 	}
 	ok, err := db.Model(&user).
 		Where("password_hash = crypt(?, password_hash) AND (id = ?)",
@@ -267,7 +268,7 @@ func GetUsers(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users
 // Fetches a user with a given id from the database. If the user does not exist
 // the nil value is returned. The user is returned along with the list of groups
 // it belongs to.
-func GetUserById(db *dbops.PgDB, id int) (*SystemUser, error) {
+func GetUserByID(db *dbops.PgDB, id int) (*SystemUser, error) {
 	user := &SystemUser{}
 	err := db.Model(user).Relation("Groups").Where("id = ?", id).First()
 	if err == pg.ErrNoRows {
@@ -279,26 +280,24 @@ func GetUserById(db *dbops.PgDB, id int) (*SystemUser, error) {
 }
 
 // Associates a user with a group. Currently only insertion by group id is supported.
-func (u *SystemUser) AddToGroupById(db *dbops.PgDB, group *SystemGroup) (added bool, err error) {
-	if group.Id > 0 {
+func (user *SystemUser) AddToGroupByID(db *dbops.PgDB, group *SystemGroup) (added bool, err error) {
+	if group.ID > 0 {
 		res, err := db.Model(&SystemUserToGroup{
-			UserID:  u.Id,
-			GroupID: group.Id,
+			UserID:  user.ID,
+			GroupID: group.ID,
 		}).OnConflict("DO NOTHING").Insert()
 
 		return res.RowsAffected() > 0, err
-
-	} else {
-		err = errors.Errorf("unable to add user to the unknown group")
 	}
+	err = errors.Errorf("unable to add user to the unknown group")
 	return false, err
 }
 
 // Checks if the user is in the specified group. The group is matched by
 // name and/or by id.
-func (u *SystemUser) InGroup(group *SystemGroup) bool {
-	for _, g := range u.Groups {
-		if (g.Id > 0 && g.Id == group.Id) || (len(g.Name) > 0 && g.Name == group.Name) {
+func (user *SystemUser) InGroup(group *SystemGroup) bool {
+	for _, g := range user.Groups {
+		if (g.ID > 0 && g.ID == group.ID) || (len(g.Name) > 0 && g.Name == group.Name) {
 			return true
 		}
 	}

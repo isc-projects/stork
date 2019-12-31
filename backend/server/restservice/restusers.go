@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"isc.org/stork/server/database/model"
+	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
 )
@@ -17,7 +17,7 @@ import (
 // Creates new instance of the user model used by REST API from the
 // user instance returned from the database.
 func newRestUser(u dbmodel.SystemUser) *models.User {
-	id := int64(u.Id)
+	id := int64(u.ID)
 	r := &models.User{
 		Email:    &u.Email,
 		Name:     &u.Name,
@@ -28,8 +28,8 @@ func newRestUser(u dbmodel.SystemUser) *models.User {
 
 	// Append an array of groups.
 	for _, g := range u.Groups {
-		if g.Id > 0 {
-			r.Groups = append(r.Groups, int64(g.Id))
+		if g.ID > 0 {
+			r.Groups = append(r.Groups, int64(g.ID))
 		}
 	}
 
@@ -39,7 +39,7 @@ func newRestUser(u dbmodel.SystemUser) *models.User {
 // Create new instance of the group model used by REST API from the
 // group instance returned from the database.
 func newRestGroup(g dbmodel.SystemGroup) *models.Group {
-	id := int64(g.Id)
+	id := int64(g.ID)
 	r := &models.Group{
 		ID:          &id,
 		Name:        &g.Name,
@@ -88,7 +88,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 
 // Get users having an account in the system.
 func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) middleware.Responder {
-	systemUsers, total, err := dbmodel.GetUsers(r.Db, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderById)
+	systemUsers, total, err := dbmodel.GetUsers(r.Db, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderByID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"start": int(*params.Start),
@@ -119,7 +119,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 // Returns user information by user ID.
 func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middleware.Responder {
 	id := int(params.ID)
-	su, err := dbmodel.GetUserById(r.Db, id)
+	su, err := dbmodel.GetUserByID(r.Db, id)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"userid": id,
@@ -132,7 +132,6 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 		}
 		rsp := users.NewGetUserDefault(500).WithPayload(&rspErr)
 		return rsp
-
 	} else if su == nil {
 		msg := fmt.Sprintf("failed to find user with id %v in the database", id)
 		log.WithFields(log.Fields{
@@ -164,10 +163,10 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	}
 
 	for _, gid := range u.Groups {
-		su.Groups = append(su.Groups, &dbmodel.SystemGroup{Id: int(gid)})
+		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: int(gid)})
 	}
 
-	err, con := dbmodel.CreateUser(r.Db, su)
+	con, err := dbmodel.CreateUser(r.Db, su)
 	if err != nil {
 		if con {
 			log.WithFields(log.Fields{
@@ -180,19 +179,17 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 				Message: &msg,
 			}
 			return users.NewCreateUserDefault(409).WithPayload(&rspErr)
-
-		} else {
-			log.Errorf("failed to create new user account for user %s: %s", su.Identity(), err.Error())
-
-			msg := fmt.Sprintf("failed to create new user account for user %s", su.Identity())
-			rspErr := models.APIError{
-				Message: &msg,
-			}
-			return users.NewCreateUserDefault(500).WithPayload(&rspErr)
 		}
+		log.Errorf("failed to create new user account for user %s: %s", su.Identity(), err.Error())
+
+		msg := fmt.Sprintf("failed to create new user account for user %s", su.Identity())
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		return users.NewCreateUserDefault(500).WithPayload(&rspErr)
 	}
 
-	*u.ID = int64(su.Id)
+	*u.ID = int64(su.ID)
 	return users.NewCreateUserOK().WithPayload(u)
 }
 
@@ -202,7 +199,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	p := params.Account.Password
 
 	su := &dbmodel.SystemUser{
-		Id:       int(*u.ID),
+		ID:       int(*u.ID),
 		Login:    *u.Login,
 		Email:    *u.Email,
 		Lastname: *u.Lastname,
@@ -211,10 +208,10 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	}
 
 	for _, gid := range u.Groups {
-		su.Groups = append(su.Groups, &dbmodel.SystemGroup{Id: int(gid)})
+		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: int(gid)})
 	}
 
-	err, con := dbmodel.UpdateUser(r.Db, su)
+	con, err := dbmodel.UpdateUser(r.Db, su)
 	if con {
 		log.WithFields(log.Fields{
 			"userid": *u.ID,
@@ -226,7 +223,6 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		}
 		rsp := users.NewUpdateUserDefault(409).WithPayload(&rspErr)
 		return rsp
-
 	} else if err != nil {
 		log.WithFields(log.Fields{
 			"userid": *u.ID,
@@ -241,7 +237,6 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		}
 		rsp := users.NewUpdateUserDefault(500).WithPayload(&rspErr)
 		return rsp
-
 	}
 
 	return users.NewUpdateUserOK()
@@ -271,7 +266,6 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 		}
 		rsp := users.NewUpdateUserPasswordDefault(500).WithPayload(&rspErr)
 		return rsp
-
 	} else if !auth {
 		log.Infof("specified current password is invalid while trying to update existing password for user id %d",
 			id)

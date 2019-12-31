@@ -4,7 +4,7 @@ import (
 	"github.com/go-pg/migrations/v7"
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
-	_ "isc.org/stork/server/database/migrations"
+	_ "isc.org/stork/server/database/migrations" // TODO: document why it is blank imported
 )
 
 // Checks if the migrations table exists, i.e. the 'init' command was called.

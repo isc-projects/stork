@@ -2,24 +2,25 @@ package server
 
 import (
 	"os"
-	log "github.com/sirupsen/logrus"
+
 	flags "github.com/jessevdk/go-flags"
+	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
-	"isc.org/stork/server/database"
+	dbops "isc.org/stork/server/database"
 	"isc.org/stork/server/restservice"
 )
 
 // Global Stork Server state
 type StorkServer struct {
-	DbSettings       dbops.DatabaseSettings
-	Db               *dbops.PgDB
+	DbSettings dbops.DatabaseSettings
+	Db         *dbops.PgDB
 
-	AgentsSettings   agentcomm.AgentsSettings
-	Agents           agentcomm.ConnectedAgents
+	AgentsSettings agentcomm.AgentsSettings
+	Agents         agentcomm.ConnectedAgents
 
-	RestApiSettings  restservice.RestApiSettings
-	RestAPI          *restservice.RestAPI
+	RestAPISettings restservice.RestAPISettings
+	RestAPI         *restservice.RestAPI
 }
 
 func (ss *StorkServer) ParseArgs() {
@@ -35,7 +36,7 @@ func (ss *StorkServer) ParseArgs() {
 	}
 
 	// Process ReST API specific args.
-	_, err = parser.AddGroup("ReST Server Flags", "", &ss.RestApiSettings)
+	_, err = parser.AddGroup("ReST Server Flags", "", &ss.RestAPISettings)
 	if err != nil {
 		log.Fatalf("FATAL error: %+v", err)
 	}
@@ -72,7 +73,7 @@ func NewStorkServer() (*StorkServer, error) {
 		return nil, err
 	}
 
-	r, err := restservice.NewRestAPI(&ss.RestApiSettings, &ss.DbSettings, ss.Db, ss.Agents)
+	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DbSettings, ss.Db, ss.Agents)
 	if err != nil {
 		ss.Agents.Shutdown()
 		ss.Db.Close()
@@ -84,7 +85,6 @@ func NewStorkServer() (*StorkServer, error) {
 
 // Run Stork Server
 func (ss *StorkServer) Serve() {
-
 	// Start listening for requests from ReST API.
 	err := ss.RestAPI.Serve()
 	if err != nil {

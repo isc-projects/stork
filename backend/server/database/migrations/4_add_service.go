@@ -6,7 +6,7 @@ import (
 
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
-	     	_, err := db.Exec(`
+		_, err := db.Exec(`
              -- Apps table.
              CREATE TABLE public.app (
                  id                      SERIAL PRIMARY KEY,
@@ -28,7 +28,6 @@ func init() {
              );
            `)
 		return err
-
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
              -- Remove table with apps.

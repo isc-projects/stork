@@ -1,26 +1,25 @@
 package restservice
 
 import (
+	"context"
 	"fmt"
 	"time"
-	"context"
 
-	log "github.com/sirupsen/logrus"
-	"github.com/pkg/errors"
-	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/runtime/middleware"
 	"github.com/asaskevich/govalidator"
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/strfmt"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
-	"isc.org/stork/server/database"
-	"isc.org/stork/server/database/model"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps/kea"
+	dbops "isc.org/stork/server/database"
+	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
-	"isc.org/stork/server/apps/kea"
 )
-
 
 // Get version of Stork server.
 func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParams) middleware.Responder {
@@ -31,18 +30,18 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 	bt := stork.BuildType
 	v := stork.Version
 	ver := models.Version{
-		Date: &d,
-		Type: &bt,
+		Date:    &d,
+		Type:    &bt,
 		Version: &v,
 	}
 	return general.NewGetVersionOK().WithPayload(&ver)
 }
 
-func machineToRestApi(dbMachine dbmodel.Machine) (*models.Machine, error) {
+func machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	var apps []*models.MachineApp
 	for _, app := range dbMachine.Apps {
 		active := true
-		if app.Type == "kea" {
+		if app.Type == dbmodel.KeaAppType {
 			if app.Active {
 				for _, d := range app.Details.(dbmodel.AppKea).Daemons {
 					if !d.Active {
@@ -55,44 +54,44 @@ func machineToRestApi(dbMachine dbmodel.Machine) (*models.Machine, error) {
 			}
 		}
 		s := models.MachineApp{
-			ID: app.Id,
-			Type: app.Type,
+			ID:      app.ID,
+			Type:    app.Type,
 			Version: app.Meta.Version,
-			Active: active,
+			Active:  active,
 		}
 		apps = append(apps, &s)
 	}
 
 	m := models.Machine{
-		ID: dbMachine.Id,
-		Address: &dbMachine.Address,
-		AgentPort: dbMachine.AgentPort,
-		AgentVersion: dbMachine.State.AgentVersion,
-		Cpus: dbMachine.State.Cpus,
-		CpusLoad: dbMachine.State.CpusLoad,
-		Memory: dbMachine.State.Memory,
-		Hostname: dbMachine.State.Hostname,
-		Uptime: dbMachine.State.Uptime,
-		UsedMemory: dbMachine.State.UsedMemory,
-		Os: dbMachine.State.Os,
-		Platform: dbMachine.State.Platform,
-		PlatformFamily: dbMachine.State.PlatformFamily,
-		PlatformVersion: dbMachine.State.PlatformVersion,
-		KernelVersion: dbMachine.State.KernelVersion,
-		KernelArch: dbMachine.State.KernelArch,
+		ID:                   dbMachine.ID,
+		Address:              &dbMachine.Address,
+		AgentPort:            dbMachine.AgentPort,
+		AgentVersion:         dbMachine.State.AgentVersion,
+		Cpus:                 dbMachine.State.Cpus,
+		CpusLoad:             dbMachine.State.CpusLoad,
+		Memory:               dbMachine.State.Memory,
+		Hostname:             dbMachine.State.Hostname,
+		Uptime:               dbMachine.State.Uptime,
+		UsedMemory:           dbMachine.State.UsedMemory,
+		Os:                   dbMachine.State.Os,
+		Platform:             dbMachine.State.Platform,
+		PlatformFamily:       dbMachine.State.PlatformFamily,
+		PlatformVersion:      dbMachine.State.PlatformVersion,
+		KernelVersion:        dbMachine.State.KernelVersion,
+		KernelArch:           dbMachine.State.KernelArch,
 		VirtualizationSystem: dbMachine.State.VirtualizationSystem,
-		VirtualizationRole: dbMachine.State.VirtualizationRole,
-		HostID: dbMachine.State.HostID,
-		LastVisited: strfmt.DateTime(dbMachine.LastVisited),
-		Error: dbMachine.Error,
-		Apps: apps,
+		VirtualizationRole:   dbMachine.State.VirtualizationRole,
+		HostID:               dbMachine.State.HostID,
+		LastVisited:          strfmt.DateTime(dbMachine.LastVisited),
+		Error:                dbMachine.Error,
+		Apps:                 apps,
 	}
-	return &m, nil
+	return &m
 }
 
 // Get runtime state of indicated machine.
 func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachineStateParams) middleware.Responder {
-	dbMachine, err := dbmodel.GetMachineById(r.Db, params.ID)
+	dbMachine, err := dbmodel.GetMachineByID(r.Db, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
@@ -109,7 +108,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
-	ctx2, cancel := context.WithTimeout(ctx, 2 * time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	state, err := r.Agents.GetState(ctx2, dbMachine.Address, dbMachine.AgentPort)
 	if err != nil {
@@ -124,16 +123,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 			})
 			return rsp
 		}
-		m, err := machineToRestApi(*dbMachine)
-		if err != nil {
-			log.Error(err)
-			msg := "problem with serializing data"
-			rsp := services.NewGetMachineStateDefault(500).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
-
+		m := machineToRestAPI(*dbMachine)
 		rsp := services.NewGetMachineStateOK().WithPayload(m)
 		return rsp
 	}
@@ -142,21 +132,13 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 	if err != nil {
 		log.Error(err)
 		rsp := services.NewGetMachineStateOK().WithPayload(&models.Machine{
-			ID: dbMachine.Id,
+			ID:    dbMachine.ID,
 			Error: "cannot update machine in db",
 		})
 		return rsp
 	}
 
-	m, err := machineToRestApi(*dbMachine)
-	if err != nil {
-		log.Error(err)
-		msg := "problem with serializing data"
-		rsp := services.NewGetMachineStateDefault(500).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
+	m := machineToRestAPI(*dbMachine)
 	rsp := services.NewGetMachineStateOK().WithPayload(m)
 
 	return rsp
@@ -189,8 +171,8 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 	log.WithFields(log.Fields{
 		"start": start,
 		"limit": limit,
-		"text": text,
-		"app": app,
+		"text":  text,
+		"app":   app,
 	}).Info("query machines")
 
 	dbMachines, total, err := dbmodel.GetMachinesByPage(r.Db, start, limit, text)
@@ -203,17 +185,8 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 		return rsp
 	}
 
-
 	for _, dbM := range dbMachines {
-		mm, err := machineToRestApi(dbM)
-		if err != nil {
-			log.Error(err)
-			msg := "problem with serializing data"
-			rsp := services.NewGetMachinesDefault(500).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
+		mm := machineToRestAPI(dbM)
 		machines = append(machines, mm)
 	}
 
@@ -227,7 +200,7 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 
 // Get one machine by ID where Stork Agent is running.
 func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachineParams) middleware.Responder {
-	dbMachine, err := dbmodel.GetMachineById(r.Db, params.ID)
+	dbMachine, err := dbmodel.GetMachineByID(r.Db, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
@@ -243,15 +216,7 @@ func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachinePara
 		})
 		return rsp
 	}
-	m, err := machineToRestApi(*dbMachine)
-	if err != nil {
-		log.Error(err)
-		msg := "problem with serializing data"
-		rsp := services.NewGetMachineDefault(500).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
+	m := machineToRestAPI(*dbMachine)
 	rsp := services.NewGetMachineOK().WithPayload(m)
 	return rsp
 }
@@ -301,7 +266,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		dbMachine.Deleted = time.Time{}
 	}
 
-	ctx2, cancel := context.WithTimeout(ctx, 100 * time.Second)
+	ctx2, cancel := context.WithTimeout(ctx, 100*time.Second)
 	defer cancel()
 	state, err := r.Agents.GetState(ctx2, addr, params.Machine.AgentPort)
 	if err != nil {
@@ -316,15 +281,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 			})
 			return rsp
 		}
-		m, err := machineToRestApi(*dbMachine)
-		if err != nil {
-			log.Error(err)
-			msg := "problem with serializing data"
-			rsp := services.NewGetMachineDefault(500).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
+		m := machineToRestAPI(*dbMachine)
 		rsp := services.NewCreateMachineOK().WithPayload(m)
 		return rsp
 	}
@@ -333,22 +290,14 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	if err != nil {
 		log.Error(err)
 		rsp := services.NewCreateMachineOK().WithPayload(&models.Machine{
-			ID: dbMachine.Id,
+			ID:      dbMachine.ID,
 			Address: &addr,
-			Error: "cannot update machine in db",
+			Error:   "cannot update machine in db",
 		})
 		return rsp
 	}
 
-	m, err := machineToRestApi(*dbMachine)
-	if err != nil {
-		log.Error(err)
-		msg := "problem with serializing data"
-		rsp := services.NewGetMachineDefault(500).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
+	m := machineToRestAPI(*dbMachine)
 	rsp := services.NewCreateMachineOK().WithPayload(m)
 
 	return rsp
@@ -374,7 +323,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		return rsp
 	}
 
-	dbMachine, err := dbmodel.GetMachineById(r.Db, params.ID)
+	dbMachine, err := dbmodel.GetMachineByID(r.Db, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
@@ -394,7 +343,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	// check if there is no duplicate
 	if dbMachine.Address != addr || dbMachine.AgentPort != params.Machine.AgentPort {
 		dbMachine2, err := dbmodel.GetMachineByAddressAndAgentPort(r.Db, addr, params.Machine.AgentPort, false)
-		if err == nil && dbMachine2 != nil && dbMachine2.Id != dbMachine.Id {
+		if err == nil && dbMachine2 != nil && dbMachine2.ID != dbMachine.ID {
 			msg := fmt.Sprintf("machine with address %s:%d already exists",
 				*params.Machine.Address, params.Machine.AgentPort)
 			rsp := services.NewUpdateMachineDefault(400).WithPayload(&models.APIError{
@@ -416,15 +365,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		})
 		return rsp
 	}
-	m, err := machineToRestApi(*dbMachine)
-	if err != nil {
-		log.Error(err)
-		msg := "problem with serializing data"
-		rsp := services.NewUpdateMachineDefault(500).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
+	m := machineToRestAPI(*dbMachine)
 	rsp := services.NewUpdateMachineOK().WithPayload(m)
 	return rsp
 }
@@ -443,34 +384,36 @@ func updateMachineFieldsKea(db *dbops.PgDB, dbMachine *dbmodel.Machine, dbAppsMa
 		}
 	}
 
-	dbKeaApp, dbOk := dbAppsMap["kea"]
-	if dbOk && keaApp != nil {
-		// update app in db
-		meta := dbmodel.AppMeta{
-			Version: keaApp.Version,
+	dbKeaApp, dbOk := dbAppsMap[dbmodel.KeaAppType]
+	if dbOk {
+		if keaApp != nil {
+			// update app in db
+			meta := dbmodel.AppMeta{
+				Version: keaApp.Version,
+			}
+			dbKeaApp.Deleted = time.Time{} // undelete if it was deleted
+			dbKeaApp.CtrlPort = keaApp.CtrlPort
+			dbKeaApp.Active = keaApp.Active
+			dbKeaApp.Meta = meta
+			dt := dbKeaApp.Details.(dbmodel.AppKea)
+			dt.ExtendedVersion = keaApp.ExtendedVersion
+			dt.Daemons = keaDaemons
+			err = db.Update(&dbKeaApp)
+			if err != nil {
+				return errors.Wrapf(err, "problem with updating app %v", dbKeaApp)
+			}
+		} else {
+			// delete app from db
+			err = dbmodel.DeleteApp(db, &dbKeaApp)
+			if err != nil {
+				return err
+			}
 		}
-		dbKeaApp.Deleted = time.Time{} // undelete if it was deleted
-		dbKeaApp.CtrlPort = keaApp.CtrlPort
-		dbKeaApp.Active = keaApp.Active
-		dbKeaApp.Meta = meta
-		dt := dbKeaApp.Details.(dbmodel.AppKea)
-		dt.ExtendedVersion = keaApp.ExtendedVersion
-		dt.Daemons = keaDaemons
-		err = db.Update(&dbKeaApp)
-		if err != nil {
-			return errors.Wrapf(err, "problem with updating app %v", dbKeaApp)
-		}
-	} else if dbOk && keaApp == nil {
-		// delete app from db
-		err = dbmodel.DeleteApp(db, &dbKeaApp)
-		if err != nil {
-			return err
-		}
-	} else if !dbOk && keaApp != nil {
+	} else if keaApp != nil {
 		// add app to db
 		dbKeaApp = dbmodel.App{
-			MachineID: dbMachine.Id,
-			Type:      "kea",
+			MachineID: dbMachine.ID,
+			Type:      dbmodel.KeaAppType,
 			CtrlPort:  keaApp.CtrlPort,
 			Active:    keaApp.Active,
 			Meta: dbmodel.AppMeta{
@@ -501,33 +444,35 @@ func updateMachineFieldsBind9(db *dbops.PgDB, dbMachine *dbmodel.Machine, dbApps
 		}
 	}
 
-	dbBind9App, dbOk := dbAppsMap["bind9"]
-	if dbOk && bind9App != nil {
-		// update app in db
-		meta := dbmodel.AppMeta{
-			Version: bind9App.Version,
+	dbBind9App, dbOk := dbAppsMap[dbmodel.Bind9AppType]
+	if dbOk {
+		if bind9App != nil {
+			// update app in db
+			meta := dbmodel.AppMeta{
+				Version: bind9App.Version,
+			}
+			dbBind9App.Deleted = time.Time{} // undelete if it was deleted
+			dbBind9App.CtrlPort = bind9App.CtrlPort
+			dbBind9App.Active = bind9App.Active
+			dbBind9App.Meta = meta
+			dt := dbBind9App.Details.(dbmodel.AppBind9)
+			dt.Daemon = bind9Daemon
+			err = db.Update(&dbBind9App)
+			if err != nil {
+				return errors.Wrapf(err, "problem with updating app %v", dbBind9App)
+			}
+		} else {
+			// delete app from db
+			err = dbmodel.DeleteApp(db, &dbBind9App)
+			if err != nil {
+				return err
+			}
 		}
-		dbBind9App.Deleted = time.Time{} // undelete if it was deleted
-		dbBind9App.CtrlPort = bind9App.CtrlPort
-		dbBind9App.Active = bind9App.Active
-		dbBind9App.Meta = meta
-		dt := dbBind9App.Details.(dbmodel.AppBind9)
-		dt.Daemon = bind9Daemon
-		err = db.Update(&dbBind9App)
-		if err != nil {
-			return errors.Wrapf(err, "problem with updating app %v", dbBind9App)
-		}
-	} else if dbOk && bind9App == nil {
-		// delete app from db
-		err = dbmodel.DeleteApp(db, &dbBind9App)
-		if err != nil {
-			return err
-		}
-	} else if !dbOk && bind9App != nil {
+	} else if bind9App != nil {
 		// add app to db
 		dbBind9App = dbmodel.App{
-			MachineID: dbMachine.Id,
-			Type:      "bind9",
+			MachineID: dbMachine.ID,
+			Type:      dbmodel.Bind9AppType,
 			CtrlPort:  bind9App.CtrlPort,
 			Active:    bind9App.Active,
 			Meta: dbmodel.AppMeta{
@@ -573,7 +518,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 	// update services associated with machine
 
 	// get list of present services in db
-	dbApps, err := dbmodel.GetAppsByMachine(db, dbMachine.Id)
+	dbApps, err := dbmodel.GetAppsByMachine(db, dbMachine.ID)
 	if err != nil {
 		return err
 	}
@@ -590,7 +535,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 		case *agentcomm.AppKea:
 			keaApp = a
 		case *agentcomm.AppBind9:
-		 	bind9App = a
+			bind9App = a
 		default:
 			log.Println("NOT IMPLEMENTED")
 		}
@@ -616,7 +561,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 
 // Add a machine where Stork Agent is running.
 func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachineParams) middleware.Responder {
-	dbMachine, err := dbmodel.GetMachineById(r.Db, params.ID)
+	dbMachine, err := dbmodel.GetMachineByID(r.Db, params.ID)
 	if err == nil && dbMachine == nil {
 		rsp := services.NewDeleteMachineOK()
 		return rsp
@@ -644,34 +589,34 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 	return rsp
 }
 
-func appToRestApi(dbApp *dbmodel.App, hooks map[string][]string) *models.App {
+func appToRestAPI(dbApp *dbmodel.App, hooks map[string][]string) *models.App {
 	app := models.App{
-		ID: dbApp.Id,
-		Type: dbApp.Type,
+		ID:          dbApp.ID,
+		Type:        dbApp.Type,
 		CtrlAddress: dbApp.CtrlAddress,
-		CtrlPort: dbApp.CtrlPort,
-		Active: dbApp.Active,
-		Version: dbApp.Meta.Version,
+		CtrlPort:    dbApp.CtrlPort,
+		Active:      dbApp.Active,
+		Version:     dbApp.Meta.Version,
 		Machine: &models.AppMachine{
-			ID: dbApp.MachineID,
-			Address: dbApp.Machine.Address,
+			ID:       dbApp.MachineID,
+			Address:  dbApp.Machine.Address,
 			Hostname: dbApp.Machine.State.Hostname,
 		},
 	}
 
-	isKeaApp := dbApp.Type == "kea"
-	isBind9App := dbApp.Type == "bind9"
+	isKeaApp := dbApp.Type == dbmodel.KeaAppType
+	isBind9App := dbApp.Type == dbmodel.Bind9AppType
 
 	if isKeaApp {
 		var keaDaemons []*models.KeaDaemon
 		for _, d := range dbApp.Details.(dbmodel.AppKea).Daemons {
 			dmn := &models.KeaDaemon{
-				Pid: int64(d.Pid),
-				Name: d.Name,
-				Active: d.Active,
-				Version: d.Version,
+				Pid:             int64(d.Pid),
+				Name:            d.Name,
+				Active:          d.Active,
+				Version:         d.Version,
 				ExtendedVersion: d.ExtendedVersion,
-				Hooks: []string{},
+				Hooks:           []string{},
 			}
 			if hooks != nil {
 				hooksList, ok := hooks[d.Name]
@@ -682,7 +627,10 @@ func appToRestApi(dbApp *dbmodel.App, hooks map[string][]string) *models.App {
 			keaDaemons = append(keaDaemons, dmn)
 		}
 
-		app.Details = struct { models.AppKea; models.AppBind9 }{
+		app.Details = struct {
+			models.AppKea
+			models.AppBind9
+		}{
 			models.AppKea{
 				ExtendedVersion: dbApp.Details.(dbmodel.AppKea).ExtendedVersion,
 				Daemons:         keaDaemons,
@@ -693,13 +641,16 @@ func appToRestApi(dbApp *dbmodel.App, hooks map[string][]string) *models.App {
 
 	if isBind9App {
 		bind9Daemon := &models.Bind9Daemon{
-			Pid: int64(dbApp.Details.(dbmodel.AppBind9).Daemon.Pid),
-			Name: dbApp.Details.(dbmodel.AppBind9).Daemon.Name,
-			Active: dbApp.Details.(dbmodel.AppBind9).Daemon.Active,
+			Pid:     int64(dbApp.Details.(dbmodel.AppBind9).Daemon.Pid),
+			Name:    dbApp.Details.(dbmodel.AppBind9).Daemon.Name,
+			Active:  dbApp.Details.(dbmodel.AppBind9).Daemon.Active,
 			Version: dbApp.Details.(dbmodel.AppBind9).Daemon.Version,
 		}
 
-		app.Details = struct { models.AppKea; models.AppBind9 }{
+		app.Details = struct {
+			models.AppKea
+			models.AppBind9
+		}{
 			models.AppKea{},
 			models.AppBind9{
 				Daemon: bind9Daemon,
@@ -736,8 +687,8 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 	log.WithFields(log.Fields{
 		"start": start,
 		"limit": limit,
-		"text": text,
-		"app": app,
+		"text":  text,
+		"app":   app,
 	}).Info("query apps")
 
 	dbApps, total, err := dbmodel.GetAppsByPage(r.Db, start, limit, text, app)
@@ -750,10 +701,9 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 		return rsp
 	}
 
-
 	for _, dbA := range dbApps {
 		app := dbA
-		a := appToRestApi(&app, nil)
+		a := appToRestAPI(&app, nil)
 		appsLst = append(appsLst, a)
 	}
 
@@ -766,7 +716,7 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 }
 
 func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) middleware.Responder {
-	dbApp, err := dbmodel.GetAppById(r.Db, params.ID)
+	dbApp, err := dbmodel.GetAppByID(r.Db, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get app with id %d from db", params.ID)
 		log.Error(err)
@@ -784,14 +734,14 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 	}
 
 	var a *models.App
-	if dbApp.Type == "bind9" {
-		a = appToRestApi(dbApp, nil)
-	} else if dbApp.Type == "kea" {
+	if dbApp.Type == dbmodel.Bind9AppType {
+		a = appToRestAPI(dbApp, nil)
+	} else if dbApp.Type == dbmodel.KeaAppType {
 		hooksByDaemon, err := kea.GetDaemonHooks(ctx, r.Agents, dbApp)
 		if err != nil {
 			log.Warn(err)
 		}
-		a = appToRestApi(dbApp, hooksByDaemon)
+		a = appToRestAPI(dbApp, hooksByDaemon)
 	}
 	rsp := services.NewGetAppOK().WithPayload(a)
 	return rsp
@@ -799,7 +749,7 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 
 // Gets current status of services which the given application is associated with.
 func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetAppServicesStatusParams) middleware.Responder {
-	dbApp, err := dbmodel.GetAppById(r.Db, params.ID)
+	dbApp, err := dbmodel.GetAppByID(r.Db, params.ID)
 	if err != nil {
 		log.Error(err)
 		msg := fmt.Sprintf("cannot get app with id %d from the database", params.ID)
@@ -822,7 +772,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 
 	// If this is Kea application, get the Kea DHCP servers status which possibly
 	// includes HA status.
-	if dbApp.Type == "kea" {
+	if dbApp.Type == dbmodel.KeaAppType {
 		status, err := kea.GetDHCPStatus(ctx, r.Agents, dbApp)
 		if err != nil {
 			log.Error(err)
@@ -844,16 +794,16 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 			if s.HAServers != nil {
 				keaStatus.HaServers = &models.KeaStatusHaServers{
 					LocalServer: &models.KeaStatusHaServersLocalServer{
-						Role: s.HAServers.Local.Role,
+						Role:   s.HAServers.Local.Role,
 						Scopes: s.HAServers.Local.Scopes,
-						State: s.HAServers.Local.State,
+						State:  s.HAServers.Local.State,
 					},
 					RemoteServer: &models.KeaStatusHaServersRemoteServer{
-						Age: s.HAServers.Remote.Age,
+						Age:     s.HAServers.Remote.Age,
 						InTouch: s.HAServers.Remote.InTouch,
-						Role: s.HAServers.Remote.Role,
-						Scopes: s.HAServers.Remote.LastScopes,
-						State: s.HAServers.Remote.LastState,
+						Role:    s.HAServers.Remote.Role,
+						Scopes:  s.HAServers.Remote.LastScopes,
+						State:   s.HAServers.Remote.LastState,
 					},
 				}
 			}
@@ -861,7 +811,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 			serviceStatus := &models.ServiceStatus{
 				Status: struct {
 					models.KeaStatus
-				} {
+				}{
 					keaStatus,
 				},
 			}
@@ -886,22 +836,22 @@ func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStats
 	}
 
 	appsStats := models.AppsStats{
-		KeaAppsTotal: 0,
-		KeaAppsNotOk: 0,
+		KeaAppsTotal:   0,
+		KeaAppsNotOk:   0,
 		Bind9AppsTotal: 0,
 		Bind9AppsNotOk: 0,
 	}
 	for _, dbApp := range dbApps {
 		switch dbApp.Type {
-		case "kea":
-			appsStats.KeaAppsTotal += 1
+		case dbmodel.KeaAppType:
+			appsStats.KeaAppsTotal++
 			if !dbApp.Active {
-				appsStats.KeaAppsNotOk += 1
+				appsStats.KeaAppsNotOk++
 			}
-		case "bind9":
-			appsStats.Bind9AppsTotal += 1
+		case dbmodel.Bind9AppType:
+			appsStats.Bind9AppsTotal++
 			if !dbApp.Active {
-				appsStats.Bind9AppsNotOk += 1
+				appsStats.Bind9AppsNotOk++
 			}
 		}
 	}

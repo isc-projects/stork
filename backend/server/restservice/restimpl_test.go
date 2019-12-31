@@ -8,19 +8,19 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"isc.org/stork/server/agentcomm"
-	"isc.org/stork/server/database/test"
+	dbmodel "isc.org/stork/server/database/model"
+	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
-	"isc.org/stork/server/database/model"
-	"isc.org/stork/server/test"
+	storktest "isc.org/stork/server/test"
 )
 
 func TestGetVersion(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -38,7 +38,7 @@ func TestGetMachineState(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -56,7 +56,7 @@ func TestGetMachineState(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -64,7 +64,7 @@ func TestGetMachineState(t *testing.T) {
 
 	// get added machine
 	params = services.GetMachineStateParams{
-		ID: m.Id,
+		ID: m.ID,
 	}
 	rsp = rapi.GetMachineState(ctx, params)
 	require.IsType(t, &services.GetMachineStateOK{}, rsp)
@@ -80,7 +80,7 @@ func TestCreateMachine(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestCreateMachine(t *testing.T) {
 	addr := "//a/"
 	params := services.CreateMachineParams{
 		Machine: &models.Machine{
-			Address: &addr,
+			Address:   &addr,
 			AgentPort: 8080,
 		},
 	}
@@ -104,7 +104,7 @@ func TestCreateMachine(t *testing.T) {
 	addr = "1.2.3.4"
 	params = services.CreateMachineParams{
 		Machine: &models.Machine{
-			Address: &addr,
+			Address:   &addr,
 			AgentPort: 0,
 		},
 	}
@@ -118,7 +118,7 @@ func TestCreateMachine(t *testing.T) {
 	addr = "1.2.3.4"
 	params = services.CreateMachineParams{
 		Machine: &models.Machine{
-			Address: &addr,
+			Address:   &addr,
 			AgentPort: 8080,
 		},
 	}
@@ -136,7 +136,7 @@ func TestGetMachines(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -158,7 +158,7 @@ func TestGetMachine(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -176,7 +176,7 @@ func TestGetMachine(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -184,16 +184,16 @@ func TestGetMachine(t *testing.T) {
 
 	// get added machine
 	params = services.GetMachineParams{
-		ID: m.Id,
+		ID: m.ID,
 	}
 	rsp = rapi.GetMachine(ctx, params)
 	require.IsType(t, &services.GetMachineOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineOK)
-	require.Equal(t, m.Id, okRsp.Payload.ID)
+	require.Equal(t, m.ID, okRsp.Payload.ID)
 
 	// add machine 2
 	m2 := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8082,
 	}
 	err = dbmodel.AddMachine(db, m2)
@@ -201,36 +201,36 @@ func TestGetMachine(t *testing.T) {
 
 	// add app to machine 2
 	s := &dbmodel.App{
-		Id: 0,
-		MachineID: m2.Id,
-		Type: "kea",
-		CtrlPort: 1234,
-		Active: true,
+		ID:        0,
+		MachineID: m2.ID,
+		Type:      dbmodel.KeaAppType,
+		CtrlPort:  1234,
+		Active:    true,
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{},
 		},
 	}
 	err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, s.Id)
+	require.NotEqual(t, 0, s.ID)
 
 	// get added machine 2 with kea app
 	params = services.GetMachineParams{
-		ID: m2.Id,
+		ID: m2.ID,
 	}
 	rsp = rapi.GetMachine(ctx, params)
 	require.IsType(t, &services.GetMachineOK{}, rsp)
 	okRsp = rsp.(*services.GetMachineOK)
-	require.Equal(t, m2.Id, okRsp.Payload.ID)
+	require.Equal(t, m2.ID, okRsp.Payload.ID)
 	require.Len(t, okRsp.Payload.Apps, 1)
-	require.Equal(t, s.Id, okRsp.Payload.Apps[0].ID)
+	require.Equal(t, s.ID, okRsp.Payload.Apps[0].ID)
 }
 
 func TestUpdateMachine(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -241,7 +241,7 @@ func TestUpdateMachine(t *testing.T) {
 	params := services.UpdateMachineParams{
 		ID: 123,
 		Machine: &models.Machine{
-			Address: &addr,
+			Address:   &addr,
 			AgentPort: 8080,
 		},
 	}
@@ -253,7 +253,7 @@ func TestUpdateMachine(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 1010,
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -261,20 +261,20 @@ func TestUpdateMachine(t *testing.T) {
 
 	// update added machine - all ok
 	params = services.UpdateMachineParams{
-		ID: m.Id,
+		ID: m.ID,
 		Machine: &models.Machine{
-			Address: &addr,
+			Address:   &addr,
 			AgentPort: 8080,
 		},
 	}
 	rsp = rapi.UpdateMachine(ctx, params)
 	okRsp := rsp.(*services.UpdateMachineOK)
-	require.Equal(t, m.Id, okRsp.Payload.ID)
+	require.Equal(t, m.ID, okRsp.Payload.ID)
 	require.Equal(t, addr, *okRsp.Payload.Address)
 
 	// add another machine
 	m2 := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 2020,
 	}
 	err = dbmodel.AddMachine(db, m2)
@@ -282,9 +282,9 @@ func TestUpdateMachine(t *testing.T) {
 
 	// update second machine to have the same address - should raise error due to duplicatation
 	params = services.UpdateMachineParams{
-		ID: m2.Id,
+		ID: m2.ID,
 		Machine: &models.Machine{
-			Address: &addr,
+			Address:   &addr,
 			AgentPort: 8080,
 		},
 	}
@@ -297,9 +297,9 @@ func TestUpdateMachine(t *testing.T) {
 	// update second machine with bad address
 	addr = "aaa:"
 	params = services.UpdateMachineParams{
-		ID: m2.Id,
+		ID: m2.ID,
 		Machine: &models.Machine{
-			Address: &addr,
+			Address:   &addr,
 			AgentPort: 8080,
 		},
 	}
@@ -314,7 +314,7 @@ func TestDeleteMachine(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -329,7 +329,7 @@ func TestDeleteMachine(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost:1010",
+		Address:   "localhost:1010",
 		AgentPort: 1010,
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -337,35 +337,35 @@ func TestDeleteMachine(t *testing.T) {
 
 	// get added machine
 	params2 := services.GetMachineParams{
-		ID: m.Id,
+		ID: m.ID,
 	}
 	rsp = rapi.GetMachine(ctx, params2)
 	require.IsType(t, &services.GetMachineOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineOK)
-	require.Equal(t, m.Id, okRsp.Payload.ID)
+	require.Equal(t, m.ID, okRsp.Payload.ID)
 
 	// delete added machine
 	params = services.DeleteMachineParams{
-		ID: m.Id,
+		ID: m.ID,
 	}
 	rsp = rapi.DeleteMachine(ctx, params)
 	require.IsType(t, &services.DeleteMachineOK{}, rsp)
 
 	// get deleted machine - should return not found
 	params2 = services.GetMachineParams{
-		ID: m.Id,
+		ID: m.ID,
 	}
 	rsp = rapi.GetMachine(ctx, params2)
 	require.IsType(t, &services.GetMachineOK{}, rsp)
 	okRsp = rsp.(*services.GetMachineOK)
-	require.Equal(t, m.Id, okRsp.Payload.ID)
+	require.Equal(t, m.ID, okRsp.Payload.ID)
 }
 
 func TestGetApp(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -383,7 +383,7 @@ func TestGetApp(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -391,11 +391,11 @@ func TestGetApp(t *testing.T) {
 
 	// add app to machine
 	s := &dbmodel.App{
-		Id: 0,
-		MachineID: m.Id,
-		Type: "kea",
-		CtrlPort: 1234,
-		Active: true,
+		ID:        0,
+		MachineID: m.ID,
+		Type:      dbmodel.KeaAppType,
+		CtrlPort:  1234,
+		Active:    true,
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{},
 		},
@@ -405,19 +405,19 @@ func TestGetApp(t *testing.T) {
 
 	// get added app
 	params = services.GetAppParams{
-		ID: s.Id,
+		ID: s.ID,
 	}
 	rsp = rapi.GetApp(ctx, params)
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp := rsp.(*services.GetAppOK)
-	require.Equal(t, s.Id, okRsp.Payload.ID)
+	require.Equal(t, s.ID, okRsp.Payload.ID)
 }
 
 func TestRestGetApp(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -435,7 +435,7 @@ func TestRestGetApp(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -443,11 +443,11 @@ func TestRestGetApp(t *testing.T) {
 
 	// add kea app to machine
 	keaApp := &dbmodel.App{
-		Id: 0,
-		MachineID: m.Id,
-		Type: "kea",
-		CtrlPort: 1234,
-		Active: true,
+		ID:        0,
+		MachineID: m.ID,
+		Type:      dbmodel.KeaAppType,
+		CtrlPort:  1234,
+		Active:    true,
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{},
 		},
@@ -457,40 +457,40 @@ func TestRestGetApp(t *testing.T) {
 
 	// get added kea app
 	params = services.GetAppParams{
-		ID: keaApp.Id,
+		ID: keaApp.ID,
 	}
 	rsp = rapi.GetApp(ctx, params)
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp := rsp.(*services.GetAppOK)
-	require.Equal(t, keaApp.Id, okRsp.Payload.ID)
+	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
 
 	// add bind9 app to machine
 	bind9App := &dbmodel.App{
-		Id: 0,
-		MachineID: m.Id,
-		Type: "bind9",
-		CtrlPort: 953,
-		Active: true,
-		Details: dbmodel.AppBind9{},
+		ID:        0,
+		MachineID: m.ID,
+		Type:      dbmodel.Bind9AppType,
+		CtrlPort:  953,
+		Active:    true,
+		Details:   dbmodel.AppBind9{},
 	}
 	err = dbmodel.AddApp(db, bind9App)
 	require.NoError(t, err)
 
 	// get added bind9 app
 	params = services.GetAppParams{
-		ID: bind9App.Id,
+		ID: bind9App.ID,
 	}
 	rsp = rapi.GetApp(ctx, params)
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp = rsp.(*services.GetAppOK)
-	require.Equal(t, bind9App.Id, okRsp.Payload.ID)
+	require.Equal(t, bind9App.ID, okRsp.Payload.ID)
 }
 
 func TestRestGetApps(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -505,7 +505,7 @@ func TestRestGetApps(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -513,11 +513,11 @@ func TestRestGetApps(t *testing.T) {
 
 	// add app kea to machine
 	s1 := &dbmodel.App{
-		Id: 0,
-		MachineID: m.Id,
-		Type: "kea",
-		CtrlPort: 1234,
-		Active: true,
+		ID:        0,
+		MachineID: m.ID,
+		Type:      dbmodel.KeaAppType,
+		CtrlPort:  1234,
+		Active:    true,
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{},
 		},
@@ -527,12 +527,12 @@ func TestRestGetApps(t *testing.T) {
 
 	// add app bind9 to machine
 	s2 := &dbmodel.App{
-		Id: 0,
-		MachineID: m.Id,
-		Type: "bind9",
-		CtrlPort: 4321,
-		Active: true,
-		Details: dbmodel.AppBind9{},
+		ID:        0,
+		MachineID: m.ID,
+		Type:      dbmodel.Bind9AppType,
+		CtrlPort:  4321,
+		Active:    true,
+		Details:   dbmodel.AppBind9{},
 	}
 	err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
@@ -554,7 +554,7 @@ func mockGetStatusWithHA(response interface{}) {
 	json := `[
         {
             "result": 0,
-            "text": "Everthing is fine",
+            "text": "Everything is fine",
             "arguments": {
                 "pid": 1234,
                 "uptime": 3024,
@@ -578,7 +578,7 @@ func mockGetStatusWithHA(response interface{}) {
          },
          {
              "result": 0,
-             "text": "Everthing is fine",
+             "text": "Everything is fine",
              "arguments": {
                  "pid": 2345,
                  "uptime": 3333,
@@ -610,7 +610,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	// Configure the fake control agents to mimic returning a status of
 	// two HA services for Kea.
 	fa := storktest.NewFakeAgents(mockGetStatusWithHA)
@@ -620,7 +620,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 
 	// Add a machine.
 	m := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -628,17 +628,17 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 
 	// Add Kea application to the machine
 	keaApp := &dbmodel.App{
-		Id: 0,
-		MachineID: m.Id,
-		Type: "kea",
-		CtrlPort: 1234,
-		Active: true,
+		ID:        0,
+		MachineID: m.ID,
+		Type:      dbmodel.KeaAppType,
+		CtrlPort:  1234,
+		Active:    true,
 	}
 	err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
 
 	params := services.GetAppServicesStatusParams{
-		ID: keaApp.Id,
+		ID: keaApp.ID,
 	}
 	rsp := rapi.GetAppServicesStatus(ctx, params)
 
@@ -697,14 +697,13 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, "waiting", haStatus.RemoteServer.State)
 	require.Equal(t, int64(3), haStatus.RemoteServer.Age)
 	require.True(t, haStatus.RemoteServer.InTouch)
-
 }
 
 func TestRestGetAppsStats(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestApiSettings{}
+	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
@@ -720,7 +719,7 @@ func TestRestGetAppsStats(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -728,11 +727,11 @@ func TestRestGetAppsStats(t *testing.T) {
 
 	// add app kea to machine
 	s1 := &dbmodel.App{
-		Id: 0,
-		MachineID: m.Id,
-		Type: "kea",
-		CtrlPort: 1234,
-		Active: true,
+		ID:        0,
+		MachineID: m.ID,
+		Type:      dbmodel.KeaAppType,
+		CtrlPort:  1234,
+		Active:    true,
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{},
 		},
@@ -742,12 +741,12 @@ func TestRestGetAppsStats(t *testing.T) {
 
 	// add app bind to machine
 	s2 := &dbmodel.App{
-		Id: 0,
-		MachineID: m.Id,
-		Type: "bind9",
-		CtrlPort: 4321,
-		Active: false,
-		Details: dbmodel.AppBind9{},
+		ID:        0,
+		MachineID: m.ID,
+		Type:      dbmodel.Bind9AppType,
+		CtrlPort:  4321,
+		Active:    false,
+		Details:   dbmodel.AppBind9{},
 	}
 	err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)

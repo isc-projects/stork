@@ -8,7 +8,7 @@ import (
 	"gopkg.in/h2non/gock.v1"
 
 	"isc.org/stork"
-	"isc.org/stork/api"
+	agentapi "isc.org/stork/api"
 )
 
 type FakeAppMonitor struct {
@@ -17,12 +17,13 @@ type FakeAppMonitor struct {
 
 // Initializes StorkAgent instance and context used by the tests.
 func setupAgentTest() (*StorkAgent, context.Context) {
-	SetupHttpClient11()
-	gock.InterceptClient(httpClient11)
+	caClient := NewCAClient()
+	gock.InterceptClient(caClient.client)
 
 	fsm := FakeAppMonitor{}
 	sa := &StorkAgent{
 		AppMonitor: &fsm,
+		CAClient:   caClient,
 	}
 	ctx := context.Background()
 	return sa, ctx
@@ -35,8 +36,14 @@ func (fsm *FakeAppMonitor) GetApps() []interface{} {
 func (fsm *FakeAppMonitor) Shutdown() {
 }
 
+func TestNewStorkAgent(t *testing.T) {
+	sa := NewStorkAgent()
+	require.NotNil(t, sa.AppMonitor)
+	require.NotNil(t, sa.CAClient)
+}
+
 func TestGetState(t *testing.T) {
-    sa, ctx := setupAgentTest()
+	sa, ctx := setupAgentTest()
 
 	// app monitor is empty, no apps should be returned by GetState
 	rsp, err := sa.GetState(ctx, &agentapi.GetStateReq{})
@@ -55,7 +62,7 @@ func TestGetState(t *testing.T) {
 	apps = append(apps, AppBind9{
 		AppCommon: AppCommon{
 			Version: "9.16.0",
-			Active: false,
+			Active:  false,
 		},
 	})
 	fsm, _ := sa.AppMonitor.(*FakeAppMonitor)
@@ -76,7 +83,7 @@ func TestGetState(t *testing.T) {
 
 // Test forwarding command to Kea when HTTP 200 status code
 // is returned.
-func TestForwardToKeaOverHttpSuccess(t *testing.T) {
+func TestForwardToKeaOverHTTPSuccess(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
 	// Expect appropriate content type and the body. If they are not matched
@@ -90,7 +97,7 @@ func TestForwardToKeaOverHttpSuccess(t *testing.T) {
 		JSON([]map[string]int{{"result": 0}})
 
 	// Forward the request with the expected body.
-	req := &agentapi.ForwardToKeaOverHttpReq{
+	req := &agentapi.ForwardToKeaOverHTTPReq{
 		Url:        "http://localhost:45634/",
 		KeaRequest: "{ \"command\": \"list-commands\"}",
 	}
@@ -98,7 +105,7 @@ func TestForwardToKeaOverHttpSuccess(t *testing.T) {
 	// Kea should respond with non-empty body and the status code 200.
 	// This should result in no error and the body should be available
 	// in the response.
-	rsp, err := sa.ForwardToKeaOverHttp(ctx, req)
+	rsp, err := sa.ForwardToKeaOverHTTP(ctx, req)
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.JSONEq(t, "[{\"result\":0}]", rsp.KeaResponse)
@@ -106,7 +113,7 @@ func TestForwardToKeaOverHttpSuccess(t *testing.T) {
 
 // Test forwarding command to Kea when HTTP 400 (Bad Request) status
 // code is returned.
-func TestForwardToKeaOverHttpBadRequest(t *testing.T) {
+func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
 	defer gock.Off()
@@ -116,7 +123,7 @@ func TestForwardToKeaOverHttpBadRequest(t *testing.T) {
 		Reply(400).
 		JSON([]map[string]string{{"HttpCode": "Bad Request"}})
 
-	req := &agentapi.ForwardToKeaOverHttpReq{
+	req := &agentapi.ForwardToKeaOverHTTPReq{
 		Url:        "http://localhost:45634/",
 		KeaRequest: "{ \"command\": \"list-commands\"}",
 	}
@@ -124,14 +131,14 @@ func TestForwardToKeaOverHttpBadRequest(t *testing.T) {
 	// The response to the forwarded command should contain HTTP
 	// status code 400, but that should not raise an error in the
 	// agent.
-	rsp, err := sa.ForwardToKeaOverHttp(ctx, req)
+	rsp, err := sa.ForwardToKeaOverHTTP(ctx, req)
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.JSONEq(t, "[{\"HttpCode\":\"Bad Request\"}]", rsp.KeaResponse)
 }
 
 // Test forwarding command to Kea when no body is returned.
-func TestForwardToKeaOverHttpEmptyBody(t *testing.T) {
+func TestForwardToKeaOverHTTPEmptyBody(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
 	defer gock.Off()
@@ -140,7 +147,7 @@ func TestForwardToKeaOverHttpEmptyBody(t *testing.T) {
 		Post("/").
 		Reply(200)
 
-	req := &agentapi.ForwardToKeaOverHttpReq{
+	req := &agentapi.ForwardToKeaOverHTTPReq{
 		Url:        "http://localhost:45634/",
 		KeaRequest: "{ \"command\": \"list-commands\"}",
 	}
@@ -149,24 +156,24 @@ func TestForwardToKeaOverHttpEmptyBody(t *testing.T) {
 	// this should not result in an error. The command sender should
 	// deal with this as well as with other issues with the response
 	// formatting.
-	rsp, err := sa.ForwardToKeaOverHttp(ctx, req)
+	rsp, err := sa.ForwardToKeaOverHTTP(ctx, req)
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(rsp.KeaResponse))
 }
 
 // Test forwarding command when Kea is unavailable.
-func TestForwardToKeaOverHttpNoKea(t *testing.T) {
+func TestForwardToKeaOverHTTPNoKea(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
-	req := &agentapi.ForwardToKeaOverHttpReq{
+	req := &agentapi.ForwardToKeaOverHTTPReq{
 		Url:        "http://localhost:45634/",
 		KeaRequest: "{ \"command\": \"list-commands\"}",
 	}
 
 	// Kea is unreachable, so we'll have to signal an error to the sender.
 	// The response should be empty.
-	rsp, err := sa.ForwardToKeaOverHttp(ctx, req)
+	rsp, err := sa.ForwardToKeaOverHTTP(ctx, req)
 	require.NotNil(t, rsp)
 	require.Error(t, err)
 	require.Equal(t, 0, len(rsp.KeaResponse))

@@ -16,7 +16,7 @@ func init() {
              ALTER TABLE public.system_user
                ALTER COLUMN email DROP NOT NULL;
 
-             -- Login must be unique accross the database.
+             -- Login must be unique across the database.
              ALTER TABLE public.system_user
                ADD CONSTRAINT system_user_login_unique_idx UNIQUE (login);
 
@@ -56,7 +56,6 @@ func init() {
              INSERT INTO public.system_user (login, password_hash, name, lastname)
                VALUES ('admin', 'admin', 'admin', 'admin');`)
 		return err
-
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(
 			`-- Delete the default user.

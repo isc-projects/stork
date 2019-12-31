@@ -134,7 +134,6 @@ func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(up)
 		return err
-
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(down)
 		return err

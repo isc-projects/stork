@@ -2,11 +2,12 @@ package agentcomm
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
-	"isc.org/stork/api"
+	agentapi "isc.org/stork/api"
 )
 
 // Settings specific to communication with Agents
@@ -49,7 +50,7 @@ type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
 	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
-	ForwardToKeaOverHttp(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *KeaCommand, response interface{}) error
+	ForwardToKeaOverHTTP(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *KeaCommand, response interface{}) error
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.
@@ -59,7 +60,7 @@ type connectedAgentsData struct {
 }
 
 // Create new ConnectedAgents objects.
-func NewConnectedAgents(settings *AgentsSettings) *connectedAgentsData {
+func NewConnectedAgents(settings *AgentsSettings) ConnectedAgents {
 	agents := connectedAgentsData{
 		Settings:  settings,
 		AgentsMap: make(map[string]*Agent),

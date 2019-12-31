@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	//log "github.com/sirupsen/logrus"
 
-	"isc.org/stork/server/database/test"
+	dbtest "isc.org/stork/server/database/test"
 )
 
 func TestAddApp(t *testing.T) {
@@ -16,48 +16,48 @@ func TestAddApp(t *testing.T) {
 
 	// add first machine, should be no error
 	m := &Machine{
-		Id:        0,
+		ID:        0,
 		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err := AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.Id)
+	require.NotEqual(t, 0, m.ID)
 
 	// add app but without machine, error should be raised
 	s := &App{
-		Id:   0,
-		Type: "kea",
+		ID:   0,
+		Type: KeaAppType,
 	}
 	err = AddApp(db, s)
 	require.NotNil(t, err)
 
 	// add app but without type, error should be raised
 	s = &App{
-		Id:        0,
-		MachineID: m.Id,
+		ID:        0,
+		MachineID: m.ID,
 	}
 	err = AddApp(db, s)
 	require.NotNil(t, err)
 
 	// add app, no error expected
 	s = &App{
-		Id:          0,
-		MachineID:   m.Id,
-		Type:        "kea",
+		ID:          0,
+		MachineID:   m.ID,
+		Type:        KeaAppType,
 		CtrlAddress: "cool.example.org",
 		CtrlPort:    1234,
 		Active:      true,
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, s.Id)
+	require.NotEqual(t, 0, s.ID)
 
 	// add app for the same machine and ctrl port - error should be raised
 	s = &App{
-		Id:        0,
-		MachineID: m.Id,
-		Type:      "bind9",
+		ID:        0,
+		MachineID: m.ID,
+		Type:      Bind9AppType,
 		CtrlPort:  1234,
 		Active:    true,
 	}
@@ -66,9 +66,9 @@ func TestAddApp(t *testing.T) {
 
 	// add app with empty control address - error should be raised
 	s = &App{
-		Id:          0,
-		MachineID:   m.Id,
-		Type:        "bind9",
+		ID:          0,
+		MachineID:   m.ID,
+		Type:        Bind9AppType,
 		CtrlAddress: "",
 		CtrlPort:    1234,
 		Active:      true,
@@ -83,32 +83,32 @@ func TestDeleteApp(t *testing.T) {
 
 	// delete non-existing app
 	s0 := &App{
-		Id: 123,
+		ID: 123,
 	}
 	err := DeleteApp(db, s0)
 	require.Contains(t, err.Error(), "no rows in result")
 
 	// add first machine, should be no error
 	m := &Machine{
-		Id:        0,
+		ID:        0,
 		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.Id)
+	require.NotEqual(t, 0, m.ID)
 
 	// add app, no error expected
 	s := &App{
-		Id:        0,
-		MachineID: m.Id,
-		Type:      "kea",
+		ID:        0,
+		MachineID: m.ID,
+		Type:      KeaAppType,
 		CtrlPort:  1234,
 		Active:    true,
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, s.Id)
+	require.NotEqual(t, 0, s.ID)
 
 	// delete added app
 	err = DeleteApp(db, s)
@@ -121,74 +121,74 @@ func TestGetAppsByMachine(t *testing.T) {
 
 	// add first machine, should be no error
 	m := &Machine{
-		Id:        0,
+		ID:        0,
 		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err := AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.Id)
+	require.NotEqual(t, 0, m.ID)
 
 	// there should be no apps yet
-	apps, err := GetAppsByMachine(db, m.Id)
+	apps, err := GetAppsByMachine(db, m.ID)
 	require.Len(t, apps, 0)
 	require.NoError(t, err)
 
 	// add app, no error expected
 	s := &App{
-		Id:        0,
-		MachineID: m.Id,
-		Type:      "kea",
+		ID:        0,
+		MachineID: m.ID,
+		Type:      KeaAppType,
 		CtrlPort:  1234,
 		Active:    true,
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, s.Id)
+	require.NotEqual(t, 0, s.ID)
 
 	// get apps of given machine
-	apps, err = GetAppsByMachine(db, m.Id)
+	apps, err = GetAppsByMachine(db, m.ID)
 	require.Len(t, apps, 1)
 	require.NoError(t, err)
 }
 
-func TestGetAppById(t *testing.T) {
+func TestGetAppByID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// get non-existing app
-	app, err := GetAppById(db, 321)
+	app, err := GetAppByID(db, 321)
 	require.NoError(t, err)
 	require.Nil(t, app)
 
 	// add first machine, should be no error
 	m := &Machine{
-		Id:        0,
+		ID:        0,
 		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.Id)
+	require.NotEqual(t, 0, m.ID)
 
 	// add app, no error expected
 	s := &App{
-		Id:        0,
-		MachineID: m.Id,
-		Type:      "kea",
+		ID:        0,
+		MachineID: m.ID,
+		Type:      KeaAppType,
 		CtrlPort:  1234,
 		Active:    true,
 	}
 
 	err = AddApp(db, s)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, s.Id)
+	require.NotEqual(t, 0, s.ID)
 
 	// get app by id
-	app, err = GetAppById(db, s.Id)
+	app, err = GetAppByID(db, s.ID)
 	require.NoError(t, err)
 	require.NotNil(t, app)
-	require.Equal(t, s.Id, app.Id)
+	require.Equal(t, s.ID, app.ID)
 
 	// The control address is a special case. If it is not specified
 	// it should be localhost.
@@ -201,37 +201,37 @@ func TestGetAppsByPage(t *testing.T) {
 
 	// add first machine, should be no error
 	m := &Machine{
-		Id:        0,
+		ID:        0,
 		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err := AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.Id)
+	require.NotEqual(t, 0, m.ID)
 
 	// add kea app, no error expected
 	sKea := &App{
-		Id:        0,
-		MachineID: m.Id,
-		Type:      "kea",
+		ID:        0,
+		MachineID: m.ID,
+		Type:      KeaAppType,
 		CtrlPort:  1234,
 		Active:    true,
 	}
 	err = AddApp(db, sKea)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, sKea.Id)
+	require.NotEqual(t, 0, sKea.ID)
 
 	// add bind app, no error expected
 	sBind := &App{
-		Id:        0,
-		MachineID: m.Id,
-		Type:      "bind9",
+		ID:        0,
+		MachineID: m.ID,
+		Type:      Bind9AppType,
 		CtrlPort:  4321,
 		Active:    true,
 	}
 	err = AddApp(db, sBind)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, sBind.Id)
+	require.NotEqual(t, 0, sBind.ID)
 
 	// get all apps
 	apps, total, err := GetAppsByPage(db, 0, 10, "", "")
@@ -240,24 +240,24 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Equal(t, int64(2), total)
 
 	// get kea apps
-	apps, total, err = GetAppsByPage(db, 0, 10, "", "kea")
+	apps, total, err = GetAppsByPage(db, 0, 10, "", KeaAppType)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.Equal(t, int64(1), total)
-	require.Equal(t, "kea", apps[0].Type)
+	require.Equal(t, KeaAppType, apps[0].Type)
 
 	// get bind apps
-	apps, total, err = GetAppsByPage(db, 0, 10, "", "bind9")
+	apps, total, err = GetAppsByPage(db, 0, 10, "", Bind9AppType)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.Equal(t, int64(1), total)
-	require.Equal(t, "bind9", apps[0].Type)
+	require.Equal(t, Bind9AppType, apps[0].Type)
 }
 
 // Test that two names of the active DHCP daemons are returned.
 func TestGetActiveDHCPMultiple(t *testing.T) {
 	a := &App{
-		Type: "kea",
+		Type: KeaAppType,
 		Details: AppKea{
 			Daemons: []KeaDaemon{
 				{
@@ -281,7 +281,7 @@ func TestGetActiveDHCPMultiple(t *testing.T) {
 // Test that a single name of the active DHCP deamon is returned.
 func TestGetActiveDHCPSingle(t *testing.T) {
 	a := &App{
-		Type: "kea",
+		Type: KeaAppType,
 		Details: AppKea{
 			Daemons: []KeaDaemon{
 				{
@@ -305,13 +305,12 @@ func TestGetActiveDHCPSingle(t *testing.T) {
 // is not Kea.
 func TestGetActiveDHCPAppMismatch(t *testing.T) {
 	a := &App{
-		Type:    "kea",
+		Type:    KeaAppType,
 		Details: AppBind9{},
 	}
 	daemons := a.GetActiveDHCPDeamonNames()
 	require.Empty(t, daemons)
 }
-
 
 func TestGetAllApps(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -319,44 +318,44 @@ func TestGetAllApps(t *testing.T) {
 
 	// add first machine, should be no error
 	m := &Machine{
-		Id: 0,
-		Address: "localhost",
+		ID:        0,
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err := AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.Id)
+	require.NotEqual(t, 0, m.ID)
 
 	// add kea app, no error expected
 	aKea := &App{
-		Id: 0,
-		MachineID: m.Id,
-		Type: "kea",
-		CtrlPort: 1234,
-		Active: true,
+		ID:        0,
+		MachineID: m.ID,
+		Type:      KeaAppType,
+		CtrlPort:  1234,
+		Active:    true,
 	}
 	err = AddApp(db, aKea)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, aKea.Id)
+	require.NotEqual(t, 0, aKea.ID)
 
 	// add bind app, no error expected
 	aBind := &App{
-		Id: 0,
-		MachineID: m.Id,
-		Type: "bind9",
-		CtrlPort: 4321,
-		Active: true,
+		ID:        0,
+		MachineID: m.ID,
+		Type:      Bind9AppType,
+		CtrlPort:  4321,
+		Active:    true,
 	}
 	err = AddApp(db, aBind)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, aBind.Id)
+	require.NotEqual(t, 0, aBind.ID)
 
 	// get all apps
 	apps, err := GetAllApps(db)
 	require.NoError(t, err)
 	require.Len(t, apps, 2)
-	require.True(t, apps[0].Type == "kea" || apps[1].Type == "kea")
-	require.True(t, apps[0].Type == "bind9" || apps[1].Type == "bind9")
+	require.True(t, apps[0].Type == KeaAppType || apps[1].Type == KeaAppType)
+	require.True(t, apps[0].Type == Bind9AppType || apps[1].Type == Bind9AppType)
 }
 
 func TestAfterScanKea(t *testing.T) {
@@ -364,11 +363,11 @@ func TestAfterScanKea(t *testing.T) {
 
 	// for now details are nil
 	aKea := &App{
-		Id: 0,
+		ID:        0,
 		MachineID: 0,
-		Type: "kea",
-		CtrlPort: 1234,
-		Active: true,
+		Type:      KeaAppType,
+		CtrlPort:  1234,
+		Active:    true,
 	}
 	err := aKea.AfterScan(ctx)
 	require.Nil(t, err)
@@ -379,7 +378,7 @@ func TestAfterScanKea(t *testing.T) {
 		"ExtendedVersion": "1.2.3",
 		"Daemons": []map[string]interface{}{
 			{
-				"Pid": 123,
+				"Pid":  123,
 				"Name": "dhcp4",
 			},
 		},
@@ -396,11 +395,11 @@ func TestAfterScanBind(t *testing.T) {
 
 	// for now details are nil
 	aBind := &App{
-		Id: 0,
+		ID:        0,
 		MachineID: 0,
-		Type: "bind9",
-		CtrlPort: 1234,
-		Active: true,
+		Type:      Bind9AppType,
+		CtrlPort:  1234,
+		Active:    true,
 	}
 	err := aBind.AfterScan(ctx)
 	require.Nil(t, err)
@@ -409,7 +408,7 @@ func TestAfterScanBind(t *testing.T) {
 	// add some details
 	aBind.Details = map[string]interface{}{
 		"Daemon": map[string]interface{}{
-			"Pid": 123,
+			"Pid":  123,
 			"Name": "named",
 		},
 	}

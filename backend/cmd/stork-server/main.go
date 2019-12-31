@@ -4,7 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server"
-	"isc.org/stork/util"
+	storkutil "isc.org/stork/util"
 )
 
 func main() {
@@ -18,5 +18,5 @@ func main() {
 	}
 	defer storkServer.Shutdown()
 
-	storkServer.Serve();
+	storkServer.Serve()
 }

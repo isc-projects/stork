@@ -3,15 +3,17 @@ package dbsession
 import (
 	"context"
 	"database/sql"
-	"github.com/alexedwards/scs/postgresstore"
-	"github.com/alexedwards/scs/v2"
-	_ "github.com/lib/pq"
-	"github.com/pkg/errors"
-	"isc.org/stork/server/database"
-	"isc.org/stork/server/database/model"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/alexedwards/scs/postgresstore"
+	"github.com/alexedwards/scs/v2"
+	_ "github.com/lib/pq" // TODO: document why it is blank imported
+	"github.com/pkg/errors"
+
+	dbops "isc.org/stork/server/database"
+	dbmodel "isc.org/stork/server/database/model"
 )
 
 // Provides session management mechanisms for Stork. It wraps the scs.SessionManager
@@ -46,7 +48,7 @@ func (s *SessionMgr) LoginHandler(ctx context.Context, user *dbmodel.SystemUser)
 		return errors.Wrapf(err, "error while creating new session identifier")
 	}
 
-	s.scsSessionMgr.Put(ctx, "userID", user.Id)
+	s.scsSessionMgr.Put(ctx, "userID", user.ID)
 	s.scsSessionMgr.Put(ctx, "userLogin", user.Login)
 	s.scsSessionMgr.Put(ctx, "userEmail", user.Email)
 	s.scsSessionMgr.Put(ctx, "userLastname", user.Lastname)
@@ -60,7 +62,7 @@ func (s *SessionMgr) LoginHandler(ctx context.Context, user *dbmodel.SystemUser)
 			if i > 0 {
 				groups += ","
 			}
-			groups += strconv.Itoa(g.Id)
+			groups += strconv.Itoa(g.ID)
 		}
 		s.scsSessionMgr.Put(ctx, "userGroupIds", groups)
 	}
@@ -103,7 +105,7 @@ func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemU
 	}
 
 	// User has a session.
-	user = &dbmodel.SystemUser{Id: id}
+	user = &dbmodel.SystemUser{ID: id}
 	user.Login = s.scsSessionMgr.GetString(ctx, "userLogin")
 	user.Email = s.scsSessionMgr.GetString(ctx, "userEmail")
 	user.Lastname = s.scsSessionMgr.GetString(ctx, "userLastname")
@@ -116,7 +118,7 @@ func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemU
 		groups := strings.Split(userGroups, ",")
 		for _, g := range groups {
 			if id, err := strconv.Atoi(g); err == nil {
-				user.Groups = append(user.Groups, &dbmodel.SystemGroup{Id: id})
+				user.Groups = append(user.Groups, &dbmodel.SystemGroup{ID: id})
 			}
 		}
 	}

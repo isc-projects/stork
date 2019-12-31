@@ -2,6 +2,7 @@ package storktest
 
 import (
 	"context"
+
 	"isc.org/stork/server/agentcomm"
 )
 
@@ -40,7 +41,7 @@ func NewFakeAgents(fn func(interface{})) *FakeAgents {
 // function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents.
-func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *agentcomm.KeaCommand, response interface{}) error {
+func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *agentcomm.KeaCommand, response interface{}) error {
 	fa.RecordedURL = caURL
 	fa.RecordedCommand = command.Command
 	// Generate response.
@@ -49,4 +50,3 @@ func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, ag
 	}
 	return nil
 }
-

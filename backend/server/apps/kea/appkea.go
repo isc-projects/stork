@@ -8,15 +8,15 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
-	"isc.org/stork/server/database/model"
-	"isc.org/stork/util"
+	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 // Retrieve configuration of the selected Kea deamons using the config-get
 // command.
 func GetConfig(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemons *agentcomm.KeaDaemons) (agentcomm.KeaResponseList, error) {
 	// Stork Agent will figure out the URL.
-	caURL := storkutil.HostWithPortUrl(dbApp.CtrlAddress, dbApp.CtrlPort)
+	caURL := storkutil.HostWithPortURL(dbApp.CtrlAddress, dbApp.CtrlPort)
 
 	// prepare the command
 	cmd, _ := agentcomm.NewKeaCommand("config-get", daemons, nil)
@@ -26,7 +26,7 @@ func GetConfig(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbm
 
 	// send the command to daemons through agent and return response list
 	responseList := agentcomm.KeaResponseList{}
-	err := agents.ForwardToKeaOverHttp(ctx2, caURL, dbApp.Machine.Address, dbApp.Machine.AgentPort, cmd, &responseList)
+	err := agents.ForwardToKeaOverHTTP(ctx2, caURL, dbApp.Machine.Address, dbApp.Machine.AgentPort, cmd, &responseList)
 	if err != nil {
 		return nil, err
 	}

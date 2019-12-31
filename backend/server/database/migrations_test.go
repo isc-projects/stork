@@ -8,15 +8,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Expecting storktest database and the storktest user to have full privileges to it.
-var testConnOptions = PgOptions{
-	Database: "storktest",
-	User:     "storktest",
-	Password: "storktest",
-}
-
 // Common function which cleans the environment before the tests.
 func connDb() *PgDB {
+	// Expecting storktest database and the storktest user to have full privileges to it.
+	testConnOptions := PgOptions{
+		Database: "storktest",
+		User:     "storktest",
+		Password: "storktest",
+	}
+
 	// Check if we're running tests in Gitlab CI. If so, the host
 	// running the database should be set to "postgres".
 	// See https://docs.gitlab.com/ee/ci/services/postgres.html.
@@ -127,7 +127,7 @@ func TestCurrentVersion(t *testing.T) {
 
 	// Initialize migrations.
 	testMigrateAction(t, db, 0, 0, "init")
-	// Initally, the version should be set to 0.
+	// Initially, the version should be set to 0.
 	testCurrentVersion(t, db, 0)
 	// Go one version up.
 	testMigrateAction(t, db, 0, 1, "up", "1")

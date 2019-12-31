@@ -72,7 +72,7 @@ func TestCreateUser(t *testing.T) {
 	require.Equal(t, *okRsp.Payload.Name, su.Name)
 
 	// Also check that the user is indeed in the database.
-	returned, err := dbmodel.GetUserById(db, int(*okRsp.Payload.ID))
+	returned, err := dbmodel.GetUserByID(db, int(*okRsp.Payload.ID))
 	require.NoError(t, err)
 	require.Equal(t, su.Login, returned.Login)
 
@@ -99,7 +99,7 @@ func TestUpdateUser(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := dbmodel.CreateUser(db, &su)
+	con, err := dbmodel.CreateUser(db, &su)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -115,13 +115,13 @@ func TestUpdateUser(t *testing.T) {
 	require.IsType(t, &users.UpdateUserOK{}, rsp)
 
 	// Also check that the user has been updated in the database.
-	returned, err := dbmodel.GetUserById(db, su.Id)
+	returned, err := dbmodel.GetUserByID(db, su.ID)
 	require.NoError(t, err)
 	require.Equal(t, su.Lastname, returned.Lastname)
 
 	// An attempt to update non-existing user (non macthing ID) should
 	// result in an error 409.
-	su.Id = 123
+	su.ID = 123
 	params = users.UpdateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
@@ -150,13 +150,13 @@ func TestUpdateUserPassword(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := dbmodel.CreateUser(db, user)
+	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
 	// Update user password via the API.
 	params := users.UpdateUserPasswordParams{
-		ID: int64(user.Id),
+		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
 			Newpassword: models.Password("updated"),
 			Oldpassword: models.Password("pass"),
@@ -169,7 +169,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	// HTTP error 400 (Bad Request) because the old password is
 	// not matching anymore.
 	params = users.UpdateUserPasswordParams{
-		ID: int64(user.Id),
+		ID: int64(user.ID),
 		Passwords: &models.PasswordChange{
 			Newpassword: models.Password("updated"),
 			Oldpassword: models.Password("pass"),
@@ -217,7 +217,7 @@ func TestGetUsers(t *testing.T) {
 		Name:     "John",
 		Password: "pass",
 	}
-	err, con := dbmodel.CreateUser(db, user)
+	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -271,7 +271,7 @@ func TestGetUser(t *testing.T) {
 		Name:     "John",
 		Password: "pass",
 	}
-	err, con := dbmodel.CreateUser(db, user)
+	con, err := dbmodel.CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 

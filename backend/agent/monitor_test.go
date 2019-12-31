@@ -1,31 +1,31 @@
 package agent
 
 import (
-	"os"
-	"log"
 	"io/ioutil"
+	"log"
+	"os"
 	"testing"
-	"gopkg.in/h2non/gock.v1"
+
 	"github.com/stretchr/testify/require"
+	"gopkg.in/h2non/gock.v1"
 )
 
-// Forces gock to intercept the HTTP/1.1 client. Otherwise it would
-// use the HTTP/2.
-func TestMain(m *testing.M) {
-	SetupHttpClient11()
-	gock.InterceptClient(httpClient11)
-	os.Exit(m.Run())
-}
-
 func TestGetApps(t *testing.T) {
-	sm := NewAppMonitor()
+	// Forces gock to intercept the HTTP/1.1 client. Otherwise it would
+	// use the HTTP/2.
+	caClient := NewCAClient()
+	gock.InterceptClient(caClient.client)
+	sm := NewAppMonitor(caClient)
+
 	apps := sm.GetApps()
 	require.Len(t, apps, 0)
 	sm.Shutdown()
 }
 
 func TestKeaDaemonVersionGetBadUrl(t *testing.T) {
-	_, err := keaDaemonVersionGet("aaa", "")
+	caClient := NewCAClient()
+	gock.InterceptClient(caClient.client)
+	_, err := keaDaemonVersionGet(caClient, "aaa", "")
 	require.Contains(t, err.Error(), "unsupported protocol ")
 }
 
@@ -37,10 +37,13 @@ func TestKeaDaemonVersionGetDataOk(t *testing.T) {
 		Reply(200).
 		JSON([]map[string]string{{"arguments": "bar"}})
 
-	data, err := keaDaemonVersionGet("http://localhost:45634/", "")
+	caClient := NewCAClient()
+	gock.InterceptClient(caClient.client)
+
+	data, err := keaDaemonVersionGet(caClient, "http://localhost:45634/", "")
 	require.NoError(t, err)
 	require.Equal(t, true, gock.IsDone())
-	require.Equal(t, map[string]interface{}{"arguments":"bar"}, data)
+	require.Equal(t, map[string]interface{}{"arguments": "bar"}, data)
 }
 
 func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
@@ -121,13 +124,14 @@ func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
 }
 
 func TestDetectApps(t *testing.T) {
-	sm := NewAppMonitor()
-	sm.detectApps()
+	caClient := NewCAClient()
+	gock.InterceptClient(caClient.client)
+	sm := NewAppMonitor(caClient)
+	sm.(*appMonitor).detectApps()
 	sm.Shutdown()
 }
 
 func TestDetectBind9App(t *testing.T) {
-
 	// check bind9 app detection
 	srv := detectBind9App()
 	require.NotNil(t, srv)
@@ -162,7 +166,7 @@ func TestDetectKeaApp(t *testing.T) {
 		Reply(200).
 		JSON([]map[string]interface{}{{
 			"arguments": map[string]interface{}{"extended": "bla bla"},
-			"result": 0, "text": "1.2.3",
+			"result":    0, "text": "1.2.3",
 		}})
 	// - second request to kea daemon
 	gock.New("http://localhost:45634").
@@ -170,10 +174,13 @@ func TestDetectKeaApp(t *testing.T) {
 		Reply(200).
 		JSON([]map[string]interface{}{{
 			"arguments": map[string]interface{}{"extended": "bla bla"},
-			"result": 0, "text": "1.2.3",
+			"result":    0, "text": "1.2.3",
 		}})
 
+	caClient := NewCAClient()
+	gock.InterceptClient(caClient.client)
+
 	// check kea app detection
-	srv := detectKeaApp([]string{"", tmpFile.Name()})
+	srv := detectKeaApp(caClient, []string{"", tmpFile.Name()})
 	require.Nil(t, srv)
 }

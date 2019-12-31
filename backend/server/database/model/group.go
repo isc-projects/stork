@@ -2,17 +2,17 @@ package dbmodel
 
 import (
 	"github.com/pkg/errors"
-	"isc.org/stork/server/database"
+	dbops "isc.org/stork/server/database"
 )
 
 const (
-	SuperAdminGroupId int = 1
-	AdminGroupId int = 2
+	SuperAdminGroupID int = 1
+	AdminGroupID      int = 2
 )
 
 // Represents a group of users having some specific permissions.
 type SystemGroup struct {
-	Id          int
+	ID          int
 	Name        string
 	Description string
 

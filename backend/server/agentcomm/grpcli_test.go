@@ -7,13 +7,13 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"isc.org/stork/api"
+	agentapi "isc.org/stork/api"
 )
 
 // Setup function for the unit tests. It creates a fake agent running at
 // 127.0.0.1:8080. The returned function performs a test teardown and
 // should be invoked when the unit test finishes.
-func setupGrpcliTestCase(t *testing.T) (*MockAgentClient, *connectedAgentsData, func()) {
+func setupGrpcliTestCase(t *testing.T) (*MockAgentClient, ConnectedAgents, func()) {
 	settings := AgentsSettings{}
 	agents := NewConnectedAgents(&settings)
 
@@ -46,8 +46,7 @@ func TestGetState(t *testing.T) {
 			{
 				Version: "1.2.3",
 				App: &agentapi.App_Kea{
-					Kea: &agentapi.AppKea{
-					},
+					Kea: &agentapi.AppKea{},
 				},
 			},
 		},
@@ -64,11 +63,11 @@ func TestGetState(t *testing.T) {
 
 // Test that a command can be successfully forwarded to Kea and the response
 // can be parsed.
-func TestForwardToKeaOverHttp(t *testing.T) {
+func TestForwardToKeaOverHTTP(t *testing.T) {
 	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
 	defer teardown()
 
-	rsp := agentapi.ForwardToKeaOverHttpRsp{
+	rsp := agentapi.ForwardToKeaOverHTTPRsp{
 		KeaResponse: `[
             {
                 "result": 1,
@@ -83,13 +82,13 @@ func TestForwardToKeaOverHttp(t *testing.T) {
             }
         ]`,
 	}
-	mockAgentClient.EXPECT().ForwardToKeaOverHttp(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
 	command, _ := NewKeaCommand("test-command", nil, nil)
 	actualResponse := KeaResponseList{}
-	err := agents.ForwardToKeaOverHttp(ctx, "http://localhost:8000/", "127.0.0.1", 8080, command, &actualResponse)
+	err := agents.ForwardToKeaOverHTTP(ctx, "http://localhost:8000/", "127.0.0.1", 8080, command, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse)
 
@@ -109,23 +108,23 @@ func TestForwardToKeaOverHttp(t *testing.T) {
 
 // Test that the error is returned when the response to the forwarded Kea command
 // is malformed.
-func TestForwardToKeaOverHttpInvalidResponse(t *testing.T) {
+func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
 	defer teardown()
 
-	rsp := agentapi.ForwardToKeaOverHttpRsp{
+	rsp := agentapi.ForwardToKeaOverHTTPRsp{
 		KeaResponse: `[
             {
                 "result": "a string"
             }
         ]`,
 	}
-	mockAgentClient.EXPECT().ForwardToKeaOverHttp(gomock.Any(), gomock.Any()).
+	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
 	command, _ := NewKeaCommand("test-command", nil, nil)
 	actualResponse := KeaResponseList{}
-	err := agents.ForwardToKeaOverHttp(ctx, "http://localhost:8080/", "127.0.0.1", 8080, command, &actualResponse)
+	err := agents.ForwardToKeaOverHTTP(ctx, "http://localhost:8080/", "127.0.0.1", 8080, command, &actualResponse)
 	require.Error(t, err)
 }

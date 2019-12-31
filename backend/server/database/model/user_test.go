@@ -23,7 +23,7 @@ func generateTestUsers(t *testing.T, db *dbops.PgDB) {
 			Name:     faker.FirstName(),
 			Password: faker.Word(),
 		}
-		err, _ := CreateUser(db, user)
+		_, err := CreateUser(db, user)
 		require.NoError(t, err, "failed for index %d, login %s", i, user.Login)
 	}
 }
@@ -65,11 +65,11 @@ func TestNewUserAuthenticate(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := CreateUser(db, user)
+	con, err := CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
-	require.Greater(t, user.Id, 0)
+	require.Greater(t, user.ID, 0)
 
 	authOk, err := Authenticate(db, user)
 	require.NoError(t, err)
@@ -79,7 +79,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 
 	// Modifying user's password should be possible.
 	user.Password = "new password"
-	err, con = UpdateUser(db, user)
+	con, err = UpdateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -97,7 +97,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 
 	// If password is empty, it should remain unmodified in the database.
 	user.Password = ""
-	err, con = UpdateUser(db, user)
+	con, err = UpdateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -115,13 +115,13 @@ func TestUpdateNoUser(t *testing.T) {
 	defer teardown()
 
 	user := &SystemUser{
-		Id:       123456,
+		ID:       123456,
 		Email:    "jan@example.org",
 		Lastname: "Kowalski",
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := UpdateUser(db, user)
+	con, err := UpdateUser(db, user)
 	require.True(t, con)
 	require.Error(t, err)
 }
@@ -139,7 +139,7 @@ func TestCreateConflict(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := CreateUser(db, user)
+	con, err := CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
@@ -149,7 +149,7 @@ func TestCreateConflict(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con = CreateUser(db, user)
+	con, err = CreateUser(db, user)
 	require.True(t, con)
 	require.Error(t, err)
 }
@@ -166,14 +166,14 @@ func TestSetPassword(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := CreateUser(db, user)
+	con, err := CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
-	require.Greater(t, user.Id, 0)
+	require.Greater(t, user.ID, 0)
 
 	// Set new password for the user.
-	err = SetPassword(db, user.Id, "newpass")
+	err = SetPassword(db, user.ID, "newpass")
 	require.NoError(t, err)
 
 	// Authenticate with the new password.
@@ -218,12 +218,12 @@ func TestChangePassword(t *testing.T) {
 		Name:     "Jan",
 		Password: "pass",
 	}
-	err, con := CreateUser(db, user)
+	con, err := CreateUser(db, user)
 	require.False(t, con)
 	require.NoError(t, err)
 
 	// Provide invalid current password. The original password should not change.
-	auth, err := ChangePassword(db, user.Id, "invalid", "newpass")
+	auth, err := ChangePassword(db, user.ID, "invalid", "newpass")
 	require.False(t, auth)
 	require.NoError(t, err)
 
@@ -233,7 +233,7 @@ func TestChangePassword(t *testing.T) {
 	require.True(t, authOk)
 
 	// Provide valid password. The original password should be modified.
-	auth, err = ChangePassword(db, user.Id, "pass", "newpass")
+	auth, err = ChangePassword(db, user.ID, "pass", "newpass")
 	require.True(t, auth)
 	require.NoError(t, err)
 
@@ -251,16 +251,16 @@ func TestGetUsers(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderById)
+	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByID)
 	require.NoError(t, err)
 	require.Equal(t, 101, len(users))
 	require.Equal(t, int64(101), total)
 
-	var prevId int = 0
+	var prevID int = 0
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
-		require.Greater(t, u.Id, prevId)
-		prevId = u.Id
+		require.Greater(t, u.ID, prevID)
+		prevID = u.ID
 	}
 }
 
@@ -291,17 +291,17 @@ func TestGetUsersPage(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsers(db, 50, 10, SystemUserOrderById)
+	users, total, err := GetUsers(db, 50, 10, SystemUserOrderByID)
 	require.NoError(t, err)
 	require.Equal(t, 10, len(users))
-	require.Equal(t, 51, users[0].Id)
+	require.Equal(t, 51, users[0].ID)
 	require.Equal(t, int64(101), total)
 
-	var prevId int = 0
+	var prevID int = 0
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
-		require.Greater(t, u.Id, prevId)
-		prevId = u.Id
+		require.Greater(t, u.ID, prevID)
+		prevID = u.ID
 	}
 }
 
@@ -312,36 +312,36 @@ func TestGetUsersLastPage(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsers(db, 90, 20, SystemUserOrderById)
+	users, total, err := GetUsers(db, 90, 20, SystemUserOrderByID)
 	require.NoError(t, err)
 	require.Equal(t, 11, len(users))
-	require.Equal(t, 91, users[0].Id)
+	require.Equal(t, 91, users[0].ID)
 	require.Equal(t, int64(101), total)
 
-	var prevId int = 0
+	var prevID int = 0
 	for _, u := range users {
 		// Make sure that by default the users are ordered by ID.
-		require.Greater(t, u.Id, prevId)
-		prevId = u.Id
+		require.Greater(t, u.ID, prevID)
+		prevID = u.ID
 	}
 }
 
 // Tests that user can be fetched by Id.
-func TestGetUserById(t *testing.T) {
+func TestGetUserByID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderById)
+	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByID)
 	require.NoError(t, err)
 	require.Equal(t, int64(101), total)
 
-	user, err := GetUserById(db, users[0].Id)
+	user, err := GetUserByID(db, users[0].ID)
 	require.NoError(t, err)
 	require.NotNil(t, user)
 
-	user, err = GetUserById(db, 1234567)
+	user, err = GetUserByID(db, 1234567)
 	require.NoError(t, err)
 	require.Nil(t, user)
 }
@@ -361,25 +361,25 @@ func TestUserGroups(t *testing.T) {
 		Password: "pass",
 		Groups: SystemGroups{
 			&SystemGroup{
-				Id: 1,
+				ID: 1,
 			},
 			&SystemGroup{
-				Id: 2,
+				ID: 2,
 			},
 		},
 	}
 
-	err, _ := CreateUser(db, user)
+	_, err := CreateUser(db, user)
 	require.NoError(t, err)
-	require.Greater(t, user.Id, 0)
+	require.Greater(t, user.ID, 0)
 
 	// Fetch the user by id. It should also return the groups it belongs to.
-	returned, err := GetUserById(db, user.Id)
+	returned, err := GetUserByID(db, user.ID)
 	require.NotNil(t, returned)
 	require.NoError(t, err)
 
 	// Fetch the user by id. It should also return the groups it belongs to.
-	returned, err = GetUserById(db, user.Id)
+	returned, err = GetUserByID(db, user.ID)
 	require.NotNil(t, returned)
 	require.NoError(t, err)
 
@@ -390,20 +390,20 @@ func TestUserGroups(t *testing.T) {
 	// Remove the user from one of the groups.
 	user.Groups = SystemGroups{
 		&SystemGroup{
-			Id: 2,
+			ID: 2,
 		},
 	}
 
 	// Updating the user should also cause the groups to be updated.
-	err, _ = UpdateUser(db, user)
+	_, err = UpdateUser(db, user)
 	require.NoError(t, err)
 
-	returned, err = GetUserById(db, user.Id)
+	returned, err = GetUserByID(db, user.ID)
 	require.NotNil(t, returned)
 	require.NoError(t, err)
 
 	// Fetch the user by id. It should also return new groups.
-	returned, err = GetUserById(db, user.Id)
+	returned, err = GetUserByID(db, user.ID)
 	require.NotNil(t, returned)
 	require.NoError(t, err)
 
@@ -415,7 +415,7 @@ func TestUserGroups(t *testing.T) {
 
 // Test that user can be associated with a group and then the groups
 // are returned along with the user.
-func TestAddToGroupById(t *testing.T) {
+func TestAddToGroupByID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -427,21 +427,21 @@ func TestAddToGroupById(t *testing.T) {
 		Name:     "John",
 		Password: "pass",
 	}
-	err, _ := CreateUser(db, user)
+	_, err := CreateUser(db, user)
 	require.NoError(t, err)
-	require.Greater(t, user.Id, 0)
+	require.Greater(t, user.ID, 0)
 
 	// Associate the user with two prefefined groups.
-	added, err := user.AddToGroupById(db, &SystemGroup{Id: 1})
+	added, err := user.AddToGroupByID(db, &SystemGroup{ID: 1})
 	require.NoError(t, err)
 	require.True(t, added)
 
-	added, err = user.AddToGroupById(db, &SystemGroup{Id: 2})
+	added, err = user.AddToGroupByID(db, &SystemGroup{ID: 2})
 	require.NoError(t, err)
 	require.True(t, added)
 
 	// Fetch the user by id. It should also return the groups it belongs to.
-	returned, err := GetUserById(db, user.Id)
+	returned, err := GetUserByID(db, user.ID)
 	require.NotNil(t, returned)
 	require.NoError(t, err)
 
@@ -450,7 +450,7 @@ func TestAddToGroupById(t *testing.T) {
 	require.True(t, returned.InGroup(&SystemGroup{Name: "admin"}))
 
 	// Another attempt to add the user to the same group should be no-op.
-	added, err = user.AddToGroupById(db, &SystemGroup{Id: 1})
+	added, err = user.AddToGroupByID(db, &SystemGroup{ID: 1})
 	require.NoError(t, err)
 	require.False(t, added)
 }

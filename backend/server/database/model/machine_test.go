@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"isc.org/stork/server/database/test"
+	dbtest "isc.org/stork/server/database/test"
 )
 
 func TestAddMachine(t *testing.T) {
@@ -15,17 +15,17 @@ func TestAddMachine(t *testing.T) {
 
 	// add first machine, should be no error
 	m := &Machine{
-		Id: 0,
-		Address: "localhost",
+		ID:        0,
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err := AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.Id)
+	require.NotEqual(t, 0, m.ID)
 
 	// add another one but with the same address - an error should be raised
 	m2 := &Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = AddMachine(db, m2)
@@ -43,7 +43,7 @@ func TestGetMachineByAddress(t *testing.T) {
 
 	// add machine
 	m2 := &Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = AddMachine(db, m2)
@@ -69,25 +69,25 @@ func TestGetMachineByAddress(t *testing.T) {
 	require.Equal(t, m2.Address, m.Address)
 }
 
-func TestGetMachineById(t *testing.T) {
+func TestGetMachineByID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// get non-existing machine
-	m, err := GetMachineById(db, 123)
+	m, err := GetMachineByID(db, 123)
 	require.Nil(t, err)
 	require.Nil(t, m)
 
 	// add machine
 	m2 := &Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err = AddMachine(db, m2)
 	require.NoError(t, err)
 
 	// get added machine
-	m, err = GetMachineById(db, int64(m2.Id))
+	m, err = GetMachineByID(db, m2.ID)
 	require.Nil(t, err)
 	require.Equal(t, m2.Address, m.Address)
 
@@ -96,7 +96,7 @@ func TestGetMachineById(t *testing.T) {
 	require.Nil(t, err)
 
 	// even if machine was delete it should be gettable by id
-	m, err = GetMachineById(db, int64(m2.Id))
+	m, err = GetMachineByID(db, m2.ID)
 	require.Nil(t, err)
 	require.Equal(t, m2.Address, m.Address)
 }
@@ -114,7 +114,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	// add 10 machines
 	for i := 1; i <= 10; i++ {
 		m := &Machine{
-			Address: fmt.Sprintf("host-%d", i),
+			Address:   fmt.Sprintf("host-%d", i),
 			AgentPort: int64(i),
 		}
 		err = AddMachine(db, m)
@@ -152,10 +152,10 @@ func TestGetMachinesByPageWithFiltering(t *testing.T) {
 
 	// add machine
 	m := &Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 		State: MachineState{
-			Hostname: "my-host",
+			Hostname:       "my-host",
 			PlatformFamily: "redhat",
 		},
 	}
@@ -181,7 +181,7 @@ func TestDeleteMachine(t *testing.T) {
 
 	// add machine
 	m := &Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
 	}
 	err := AddMachine(db, m)
@@ -193,8 +193,8 @@ func TestDeleteMachine(t *testing.T) {
 
 	// delete non-existing machine
 	m2 := &Machine{
-		Id: 123,
-		Address: "localhost",
+		ID:        123,
+		Address:   "localhost",
 		AgentPort: 123,
 	}
 	err = DeleteMachine(db, m2)
@@ -207,12 +207,12 @@ func TestRefreshMachineFromDb(t *testing.T) {
 
 	// add machine
 	m := &Machine{
-		Address: "localhost",
+		Address:   "localhost",
 		AgentPort: 8080,
-		Error: "some error",
+		Error:     "some error",
 		State: MachineState{
 			Hostname: "aaaa",
-			Cpus: 4,
+			Cpus:     4,
 		},
 	}
 	err := AddMachine(db, m)

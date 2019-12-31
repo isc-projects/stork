@@ -10,11 +10,11 @@ import (
 // another table, system_user_to_group, in M:M relationship.
 func init() {
 	type systemUser struct {
-		Id int
+		ID int
 	}
 
 	type systemGroup struct {
-		Id          int
+		ID          int
 		Name        string
 		Description string
 	}
@@ -62,7 +62,7 @@ func init() {
 		// Associate default user (admin) with super-admin group.
 		_, err = db.Model(&systemUserToGroup{
 			UserID:  1,
-			GroupID: superAdminGroup.Id,
+			GroupID: superAdminGroup.ID,
 		}).Insert()
 		if err != nil {
 			return err
@@ -80,7 +80,6 @@ func init() {
 
 		// All ok.
 		return nil
-
 	}, func(db migrations.DB) error {
 		// Drop the new tables. This also removes all associations between the
 		// users and groups.

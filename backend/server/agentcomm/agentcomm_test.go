@@ -14,6 +14,6 @@ func TestConnectingToAgent(t *testing.T) {
 	// connect one agent and check if it is in agents map
 	_, err := agents.GetConnectedAgent("127.0.0.1:8080")
 	require.NoError(t, err)
-	_, ok := agents.AgentsMap["127.0.0.1:8080"]
+	_, ok := agents.(*connectedAgentsData).AgentsMap["127.0.0.1:8080"]
 	require.True(t, ok)
 }

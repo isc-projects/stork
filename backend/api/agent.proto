@@ -5,7 +5,7 @@ package agentapi;
 service Agent {
   rpc getState(GetStateReq) returns (GetStateRsp) {}
   rpc restartKea(RestartKeaReq) returns (RestartKeaRsp) {}
-  rpc ForwardToKeaOverHttp(ForwardToKeaOverHttpReq) returns (ForwardToKeaOverHttpRsp) {}
+  rpc ForwardToKeaOverHTTP(ForwardToKeaOverHTTPReq) returns (ForwardToKeaOverHTTPRsp) {}
 }
 
 message GetStateReq {
@@ -75,11 +75,11 @@ message RestartKeaRsp {
   string xyz = 1;
 }
 
-message ForwardToKeaOverHttpReq {
+message ForwardToKeaOverHTTPReq {
   string url = 1;
   string keaRequest = 2;
 }
 
-message ForwardToKeaOverHttpRsp {
+message ForwardToKeaOverHTTPRsp {
   string keaResponse = 1;
 }

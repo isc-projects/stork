@@ -6,8 +6,8 @@ import (
 
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
-	     	_, err := db.Exec(
-	     		`-- Machines table.
+		_, err := db.Exec(
+			`-- Machines table.
              CREATE TABLE public.machine (
                  id                      SERIAL PRIMARY KEY,
 	         created                 TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
@@ -28,7 +28,6 @@ func init() {
 
            `)
 		return err
-
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(
 			`-- Remove table with machines.

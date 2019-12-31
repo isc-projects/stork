@@ -8,8 +8,8 @@ import (
 	//log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
-	"isc.org/stork/server/database/model"
-	"isc.org/stork/server/test"
+	dbmodel "isc.org/stork/server/database/model"
+	storktest "isc.org/stork/server/test"
 )
 
 // Kea servers' response to config-get command. The argument indicates if
@@ -53,7 +53,6 @@ func mockGetConfigResponse(daemons int, response interface{}) {
 				},
 			},
 		})
-
 	}
 }
 
@@ -68,7 +67,7 @@ func TestGetConfig(t *testing.T) {
 
 	dbApp := dbmodel.App{
 		CtrlAddress: "192.0.2.0",
-		CtrlPort: 1234,
+		CtrlPort:    1234,
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{
 				{

@@ -3,20 +3,21 @@ package dbmodel
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
+
 	//log "github.com/sirupsen/logrus"
 
-	"isc.org/stork/util"
-	"time"
+	storkutil "isc.org/stork/util"
 )
 
 type Bind9Daemon struct {
-	Pid int32
-	Name string
-	Active bool
+	Pid     int32
+	Name    string
+	Active  bool
 	Version string
 }
 
@@ -28,10 +29,14 @@ type KeaDaemon struct {
 	ExtendedVersion string
 }
 
+const KeaAppType = "kea"
+
 type AppKea struct {
 	ExtendedVersion string
 	Daemons         []KeaDaemon
 }
+
+const Bind9AppType = "bind9"
 
 type AppBind9 struct {
 	Daemon Bind9Daemon
@@ -44,7 +49,7 @@ type AppMeta struct {
 
 // Represents a app held in app table in the database.
 type App struct {
-	Id          int64
+	ID          int64
 	Created     time.Time
 	Deleted     time.Time
 	MachineID   int64
@@ -70,7 +75,7 @@ func (app *App) AfterScan(ctx context.Context) error {
 	}
 
 	switch app.Type {
-	case "kea":
+	case KeaAppType:
 		var keaDetails AppKea
 		err = json.Unmarshal(bytes, &keaDetails)
 		if err != nil {
@@ -78,7 +83,7 @@ func (app *App) AfterScan(ctx context.Context) error {
 		}
 		app.Details = keaDetails
 
-	case "bind9":
+	case Bind9AppType:
 		var bind9Details AppBind9
 		err = json.Unmarshal(bytes, &bind9Details)
 		if err != nil {
@@ -97,7 +102,7 @@ func AddApp(db *pg.DB, app *App) error {
 	return nil
 }
 
-func GetAppById(db *pg.DB, id int64) (*App, error) {
+func GetAppByID(db *pg.DB, id int64) (*App, error) {
 	app := App{}
 	q := db.Model(&app).Where("app.id = ?", id)
 	q = q.Relation("Machine")
@@ -110,11 +115,11 @@ func GetAppById(db *pg.DB, id int64) (*App, error) {
 	return &app, nil
 }
 
-func GetAppsByMachine(db *pg.DB, machineId int64) ([]App, error) {
+func GetAppsByMachine(db *pg.DB, machineID int64) ([]App, error) {
 	var apps []App
 
 	q := db.Model(&apps)
-	q = q.Where("machine_id = ?", machineId)
+	q = q.Where("machine_id = ?", machineID)
 	err := q.Select()
 	if err != nil {
 		return nil, errors.Wrapf(err, "problem with getting apps")
@@ -152,7 +157,7 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, text string, appType st
 		return nil, 0, errors.Wrapf(err, "problem with getting apps total")
 	}
 
-	// then retrive given page of rows
+	// then retrieve given page of rows
 	q = q.Order("id ASC").Offset(int(offset)).Limit(int(limit))
 	err = q.Select()
 	if err != nil {
@@ -165,7 +170,7 @@ func DeleteApp(db *pg.DB, app *App) error {
 	app.Deleted = storkutil.UTCNow()
 	err := db.Update(app)
 	if err != nil {
-		return errors.Wrapf(err, "problem with deleting app %v", app.Id)
+		return errors.Wrapf(err, "problem with deleting app %v", app.ID)
 	}
 	return nil
 }

@@ -1,44 +1,44 @@
 package agentcomm
 
 import (
-	"net"
-	"time"
-	"strconv"
 	"context"
+	"net"
+	"strconv"
+	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
-	"isc.org/stork/api"
-	"isc.org/stork/util"
+	agentapi "isc.org/stork/api"
+	storkutil "isc.org/stork/util"
 )
 
 type Bind9Daemon struct {
-	Pid int32
-	Name string
-	Active bool
+	Pid     int32
+	Name    string
+	Active  bool
 	Version string
 }
 
 type KeaDaemon struct {
-	Pid int32
-	Name string
-	Active bool
-	Version string
+	Pid             int32
+	Name            string
+	Active          bool
+	Version         string
 	ExtendedVersion string
 }
 
 type AppCommon struct {
-	Version string
+	Version     string
 	CtrlAddress string
-	CtrlPort int64
-	Active bool
+	CtrlPort    int64
+	Active      bool
 }
 
 type AppKea struct {
 	AppCommon
 	ExtendedVersion string
-	Daemons []KeaDaemon
+	Daemons         []KeaDaemon
 }
 
 type AppBind9 struct {
@@ -49,26 +49,26 @@ type AppBind9 struct {
 // State of the machine. It describes multiple properties of the machine like number of CPUs
 // or operating system name and version.
 type State struct {
-	Address string
-	AgentVersion string
-	Cpus int64
-	CpusLoad string
-	Memory int64
-	Hostname string
-	Uptime int64
-	UsedMemory int64
-	Os string
-	Platform string
-	PlatformFamily string
-	PlatformVersion string
-	KernelVersion string
-	KernelArch string
+	Address              string
+	AgentVersion         string
+	Cpus                 int64
+	CpusLoad             string
+	Memory               int64
+	Hostname             string
+	Uptime               int64
+	UsedMemory           int64
+	Os                   string
+	Platform             string
+	PlatformFamily       string
+	PlatformVersion      string
+	KernelVersion        string
+	KernelArch           string
 	VirtualizationSystem string
-	VirtualizationRole string
-	HostID string
-	LastVisited time.Time
-	Error string
-	Apps []interface{}
+	VirtualizationRole   string
+	HostID               string
+	LastVisited          time.Time
+	Error                string
+	Apps                 []interface{}
 }
 
 // Get version from agent.
@@ -95,45 +95,43 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 		}
 	}
 
-
 	var apps []interface{}
 	for _, srv := range grpcState.Apps {
-
 		switch s := srv.App.(type) {
 		case *agentapi.App_Kea:
 			log.Printf("s.Kea.Daemons %+v", s.Kea.Daemons)
 			var daemons []KeaDaemon
 			for _, d := range s.Kea.Daemons {
 				daemons = append(daemons, KeaDaemon{
-					Pid: d.Pid,
-					Name: d.Name,
-					Active: d.Active,
-					Version: d.Version,
+					Pid:             d.Pid,
+					Name:            d.Name,
+					Active:          d.Active,
+					Version:         d.Version,
 					ExtendedVersion: d.ExtendedVersion,
 				})
 			}
 			apps = append(apps, &AppKea{
 				AppCommon: AppCommon{
-					Version: srv.Version,
+					Version:     srv.Version,
 					CtrlAddress: srv.CtrlAddress,
-					CtrlPort: srv.CtrlPort,
-					Active: srv.Active,
+					CtrlPort:    srv.CtrlPort,
+					Active:      srv.Active,
 				},
 				ExtendedVersion: s.Kea.ExtendedVersion,
-				Daemons: daemons,
+				Daemons:         daemons,
 			})
 		case *agentapi.App_Bind9:
 			var daemon = Bind9Daemon{
-				Pid: s.Bind9.Daemon.Pid,
-				Name: s.Bind9.Daemon.Name,
-				Active: s.Bind9.Daemon.Active,
+				Pid:     s.Bind9.Daemon.Pid,
+				Name:    s.Bind9.Daemon.Name,
+				Active:  s.Bind9.Daemon.Active,
 				Version: s.Bind9.Daemon.Version,
 			}
 			apps = append(apps, &AppBind9{
 				AppCommon: AppCommon{
-					Version: srv.Version,
+					Version:  srv.Version,
 					CtrlPort: srv.CtrlPort,
-					Active: srv.Active,
+					Active:   srv.Active,
 				},
 				Daemon: daemon,
 			})
@@ -143,26 +141,26 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 	}
 
 	state := State{
-		Address: address,
-		AgentVersion: grpcState.AgentVersion,
-		Cpus: grpcState.Cpus,
-		CpusLoad: grpcState.CpusLoad,
-		Memory: grpcState.Memory,
-		Hostname: grpcState.Hostname,
-		Uptime: grpcState.Uptime,
-		UsedMemory: grpcState.UsedMemory,
-		Os: grpcState.Os,
-		Platform: grpcState.Platform,
-		PlatformFamily: grpcState.PlatformFamily,
-		PlatformVersion: grpcState.PlatformVersion,
-		KernelVersion: grpcState.KernelVersion,
-		KernelArch: grpcState.KernelArch,
+		Address:              address,
+		AgentVersion:         grpcState.AgentVersion,
+		Cpus:                 grpcState.Cpus,
+		CpusLoad:             grpcState.CpusLoad,
+		Memory:               grpcState.Memory,
+		Hostname:             grpcState.Hostname,
+		Uptime:               grpcState.Uptime,
+		UsedMemory:           grpcState.UsedMemory,
+		Os:                   grpcState.Os,
+		Platform:             grpcState.Platform,
+		PlatformFamily:       grpcState.PlatformFamily,
+		PlatformVersion:      grpcState.PlatformVersion,
+		KernelVersion:        grpcState.KernelVersion,
+		KernelArch:           grpcState.KernelArch,
 		VirtualizationSystem: grpcState.VirtualizationSystem,
-		VirtualizationRole: grpcState.VirtualizationRole,
-		HostID: grpcState.HostID,
-		LastVisited: storkutil.UTCNow(),
-		Error: grpcState.Error,
-		Apps: apps,
+		VirtualizationRole:   grpcState.VirtualizationRole,
+		HostID:               grpcState.HostID,
+		LastVisited:          storkutil.UTCNow(),
+		Error:                grpcState.Error,
+		Apps:                 apps,
 	}
 
 	return &state, nil
@@ -170,7 +168,7 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 
 // Forwards a Kea command via the Stork Agent and Kea Control Agent and then
 // parses the response. caURL is URL to Kea Control Agent.
-func (agents *connectedAgentsData) ForwardToKeaOverHttp(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *KeaCommand, response interface{}) error {
+func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *KeaCommand, response interface{}) error {
 	// Find the agent by address and port.
 	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
 	agent, err := agents.GetConnectedAgent(addrPort)
@@ -182,13 +180,13 @@ func (agents *connectedAgentsData) ForwardToKeaOverHttp(ctx context.Context, caU
 	// Prepare the on-wire representation of the command.
 	c := command.Marshal()
 
-	req := &agentapi.ForwardToKeaOverHttpReq{
+	req := &agentapi.ForwardToKeaOverHTTPReq{
 		Url:        caURL,
 		KeaRequest: c,
 	}
 
 	// Send the command to the Stork agent.
-	rsp, err := agent.Client.ForwardToKeaOverHttp(ctx, req)
+	rsp, err := agent.Client.ForwardToKeaOverHTTP(ctx, req)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to forward Kea command to %s, command was: %s", caURL, c)
 		return err

@@ -1,24 +1,25 @@
 package auth
 
 import (
-	"github.com/stretchr/testify/require"
-	"isc.org/stork/server/database/model"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	dbmodel "isc.org/stork/server/database/model"
 )
 
 // Helper function checking if the user belonging to the specified group
 // has access to the resource.
-func authorizeAccept(t *testing.T, groupId int, path string) bool {
+func authorizeAccept(t *testing.T, groupID int, path string) bool {
 	// Create user with ID 5 and specified group id if the group id is
 	// positive.
 	user := &dbmodel.SystemUser{
-		Id: 5,
+		ID: 5,
 	}
-	if groupId > 0 {
+	if groupID > 0 {
 		user.Groups = dbmodel.SystemGroups{
 			&dbmodel.SystemGroup{
-				Id: groupId,
+				ID: groupID,
 			},
 		}
 	}

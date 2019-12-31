@@ -2,13 +2,14 @@ package dbmodel
 
 import (
 	"time"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"isc.org/stork/util"
-)
 
+	storkutil "isc.org/stork/util"
+)
 
 // Part of machine table in database that describes state of machine. In DB it is stored as JSONB.
 type MachineState struct {
@@ -32,7 +33,7 @@ type MachineState struct {
 
 // Represents a machine held in machine table in the database.
 type Machine struct {
-	Id          int64
+	ID          int64
 	Created     time.Time
 	Deleted     time.Time
 	Address     string
@@ -40,7 +41,7 @@ type Machine struct {
 	LastVisited time.Time
 	Error       string
 	State       MachineState
-	Apps    []App
+	Apps        []App
 }
 
 func AddMachine(db *pg.DB, machine *Machine) error {
@@ -69,7 +70,7 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64,
 	return &machine, nil
 }
 
-func GetMachineById(db *pg.DB, id int64) (*Machine, error) {
+func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	machine := Machine{}
 	q := db.Model(&machine).Where("machine.id = ?", id)
 	q = q.Relation("Apps")
@@ -84,11 +85,11 @@ func GetMachineById(db *pg.DB, id int64) (*Machine, error) {
 
 func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
 	machine.Apps = []App{}
-	q := db.Model(machine).Where("id = ?", machine.Id)
+	q := db.Model(machine).Where("id = ?", machine.ID)
 	q = q.Relation("Apps")
 	err := q.Select()
 	if err != nil {
-		return errors.Wrapf(err, "problem with getting machine %v", machine.Id)
+		return errors.Wrapf(err, "problem with getting machine %v", machine.ID)
 	}
 	return nil
 }
@@ -130,7 +131,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 		return nil, 0, errors.Wrapf(err, "problem with getting machines total")
 	}
 
-	// then retrive given page of rows
+	// then retrieve given page of rows
 	q = q.Order("id ASC").Offset(int(offset)).Limit(int(limit))
 	err = q.Select()
 	if err != nil {
@@ -143,7 +144,7 @@ func DeleteMachine(db *pg.DB, machine *Machine) error {
 	machine.Deleted = storkutil.UTCNow()
 	err := db.Update(machine)
 	if err != nil {
-		return errors.Wrapf(err, "problem with deleting machine %v", machine.Id)
+		return errors.Wrapf(err, "problem with deleting machine %v", machine.ID)
 	}
 	return nil
 }

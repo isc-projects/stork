@@ -1,8 +1,8 @@
 package dbops
 
 import (
-	"os"
 	"net"
+	"os"
 	"strconv"
 	"testing"
 
@@ -24,9 +24,9 @@ func TestNewPgDB(t *testing.T) {
 	settings := DatabaseSettings{
 		BaseDatabaseSettings: BaseDatabaseSettings{
 			DbName: "storktest",
-			User: "storktest",
-			Host: host,
-			Port: portInt,
+			User:   "storktest",
+			Host:   host,
+			Port:   portInt,
 		},
 	}
 	os.Setenv("STORK_DATABASE_PASSWORD", "storktest")

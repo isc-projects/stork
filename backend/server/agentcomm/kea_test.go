@@ -1,8 +1,9 @@
 package agentcomm
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 // Test that empty map of daemons can be created.
@@ -213,7 +214,7 @@ func TestUnmarshalCustomKeaResponse(t *testing.T) {
 		KeaResponseHeader
 		Arguments struct {
 			Subnet struct {
-				SubnetId float64 `json:"subnet-id"`
+				SubnetID float64 `json:"subnet-id"`
 				Prefix   string
 			}
 		}
@@ -227,7 +228,7 @@ func TestUnmarshalCustomKeaResponse(t *testing.T) {
 	require.Equal(t, 1, len(list))
 	require.Equal(t, 0, list[0].Result)
 	require.Equal(t, "command successful", list[0].Text)
-	require.Equal(t, float64(1), list[0].Arguments.Subnet.SubnetId)
+	require.Equal(t, float64(1), list[0].Arguments.Subnet.SubnetID)
 	require.Equal(t, "192.0.2.0/24", list[0].Arguments.Subnet.Prefix)
 }
 

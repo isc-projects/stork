@@ -2,9 +2,10 @@ package agentcomm
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"reflect"
 	"sort"
+
+	"github.com/pkg/errors"
 )
 
 // Map holding names of deamons to which the command is sent. This is
@@ -47,7 +48,6 @@ func NewKeaDaemons(daemonNames ...string) (*KeaDaemons, error) {
 		if len(name) == 0 {
 			// A name must be non-empty.
 			return nil, errors.Errorf("daemon name must not be empty")
-
 		} else if _, exists := keaDaemons[name]; exists {
 			// Duplicates are not allowed.
 			return nil, errors.Errorf("duplicate daemon name %s", name)
