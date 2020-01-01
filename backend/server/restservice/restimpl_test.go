@@ -29,9 +29,8 @@ func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort in
 	}
 	return &state, nil
 }
-func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, command *agentcomm.KeaCommand,
-	address string, agentPort int64) (agentcomm.KeaResponseList, error) {
-	return nil, nil
+func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, address string, agentPort int64, command *agentcomm.KeaCommand, response interface{}) error {
+	return nil
 }
 
 func TestGetVersion(t *testing.T) {

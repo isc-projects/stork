@@ -3,6 +3,7 @@ package agentcomm
 import (
 	"encoding/json"
 	"github.com/pkg/errors"
+	"reflect"
 	"sort"
 )
 
@@ -22,11 +23,16 @@ type KeaCommand struct {
 	Arguments *map[string]interface{} `json:"arguments,omitempty"`
 }
 
+// Common fields in each received Kea response.
+type KeaResponseHeader struct {
+	Result int    `json:"result"`
+	Text   string `json:"text"`
+	Daemon string `json:"-"`
+}
+
 // Represents unmarshaled response from Kea daemon.
 type KeaResponse struct {
-	Result    int                     `json:"result"`
-	Text      string                  `json:"text"`
-	Daemon    string                  `json:"-"`
+	KeaResponseHeader
 	Arguments *map[string]interface{} `json:"arguments,omitempty"`
 }
 
@@ -105,25 +111,30 @@ func (c *KeaCommand) Marshal() string {
 }
 
 // Parses response received from the Kea Control Agent.
-func UnmarshalKeaResponseList(request *KeaCommand, response string) (KeaResponseList, error) {
-	responses := KeaResponseList{}
-	err := json.Unmarshal([]byte(response), &responses)
+func UnmarshalKeaResponseList(request *KeaCommand, response string, parsed interface{}) error {
+	err := json.Unmarshal([]byte(response), parsed)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to parse responses from Kea: %s", response)
-		return nil, err
+		return err
 	}
 
 	// Try to match the responses with the services in the request and tag them with
 	// the service names.
-	if (request.Daemons != nil) && (len(*request.Daemons) > 0) && (len(responses) > 0) {
+	parsedList := reflect.ValueOf(parsed).Elem()
+
+	if (request.Daemons != nil) && (len(*request.Daemons) > 0) && (parsedList.Len() > 0) {
 		daemonNames := request.Daemons.List()
 		for i, daemon := range daemonNames {
-			if i+1 > len(responses) {
+			if i+1 > parsedList.Len() {
 				break
 			}
-			responses[i].Daemon = daemon
+			parsedElem := parsedList.Index(i)
+			field := parsedElem.FieldByName("Daemon")
+			if field.IsValid() {
+				field.SetString(daemon)
+			}
 		}
 	}
 
-	return responses, err
+	return err
 }

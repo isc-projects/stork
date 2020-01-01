@@ -26,7 +26,8 @@ func GetConfig(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbm
 	defer cancel()
 
 	// send the command to daemons through agent and return response list
-	responseList, err := agents.ForwardToKeaOverHttp(ctx2, caURL, cmd, dbApp.Machine.Address, dbApp.Machine.AgentPort)
+	responseList := agentcomm.KeaResponseList{}
+	err := agents.ForwardToKeaOverHttp(ctx2, caURL, dbApp.Machine.Address, dbApp.Machine.AgentPort, cmd, &responseList)
 	if err != nil {
 		return nil, err
 	}

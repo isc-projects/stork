@@ -147,13 +147,13 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 
 // Forwards a Kea command via the Stork Agent and Kea Control Agent and then
 // parses the response. caURL is URL to Kea Control Agent.
-func (agents *connectedAgentsData) ForwardToKeaOverHttp(ctx context.Context, caURL string, command *KeaCommand, address string, agentPort int64) (KeaResponseList, error) {
+func (agents *connectedAgentsData) ForwardToKeaOverHttp(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *KeaCommand, response interface{}) error {
 	// Find the agent by address and port.
-	addrPort := net.JoinHostPort(address, strconv.FormatInt(agentPort, 10))
+	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
 	agent, err := agents.GetConnectedAgent(addrPort)
 	if err != nil {
-		err = errors.Wrapf(err, "there is no agent available at address %s:%d", address, agentPort)
-		return nil, err
+		err = errors.Wrapf(err, "there is no agent available at address %s:%d", agentAddress, agentPort)
+		return err
 	}
 
 	// Prepare the on-wire representation of the command.
@@ -168,16 +168,16 @@ func (agents *connectedAgentsData) ForwardToKeaOverHttp(ctx context.Context, caU
 	rsp, err := agent.Client.ForwardToKeaOverHttp(ctx, req)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to forward Kea command to %s, command was: %s", caURL, c)
-		return nil, err
+		return err
 	}
 
 	// Try to parse the response from the on-wire format.
-	keaResponseList, err := UnmarshalKeaResponseList(command, rsp.GetKeaResponse())
+	err = UnmarshalKeaResponseList(command, rsp.GetKeaResponse(), response)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp.GetKeaResponse())
-		return nil, err
+		return err
 	}
 
-	// Everything was fine, so return the response and no error.
-	return keaResponseList, nil
+	// Everything was fine, so return no error.
+	return nil
 }

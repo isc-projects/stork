@@ -29,14 +29,18 @@ func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort in
 	}
 	return &state, nil
 }
-func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, command *agentcomm.KeaCommand,
-	address string, agentPort int64) (agentcomm.KeaResponseList, error) {
+func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *agentcomm.KeaCommand, response interface{}) error {
 	fa.recordedURL = caURL
 	fa.recordedCommand = command.Command
-	list := agentcomm.KeaResponseList{
+
+	list := response.(*agentcomm.KeaResponseList)
+
+	*list = agentcomm.KeaResponseList{
 		{
-			Result: 0,
-			Daemon: "dhcp4",
+			KeaResponseHeader: agentcomm.KeaResponseHeader{
+				Result: 0,
+				Daemon: "dhcp4",
+			},
 			Arguments: &map[string]interface{}{
 				"Dhcp4": map[string]interface{}{
 					"hooks-libraries": []interface{}{
@@ -49,9 +53,11 @@ func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, co
 		},
 	}
 	if fa.daemons > 1 {
-		list = append(list, agentcomm.KeaResponse{
-			Result: 0,
-			Daemon: "dhcp6",
+		*list = append(*list, agentcomm.KeaResponse{
+			KeaResponseHeader: agentcomm.KeaResponseHeader{
+				Result: 0,
+				Daemon: "dhcp6",
+			},
 			Arguments: &map[string]interface{}{
 				"Dhcp6": map[string]interface{}{
 					"hooks-libraries": []interface{}{
@@ -67,7 +73,7 @@ func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, co
 		})
 
 	}
-	return list, nil
+	return nil
 }
 
 // Check if GetConfig returns response to the forwarded command.

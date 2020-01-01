@@ -142,7 +142,7 @@ func TestKeaCommandMarshalCommandOnly(t *testing.T) {
 // Test that well formed list of Kea responses can be parsed.
 func TestUnmarshalKeaResponseList(t *testing.T) {
 	daemons, _ := NewKeaDaemons("dhcp4", "dhcp6")
-	request, _ := NewKeaCommand("list-commands", daemons, nil)
+	request, _ := NewKeaCommand("list-subnets", daemons, nil)
 
 	response := `[
         {
@@ -159,7 +159,8 @@ func TestUnmarshalKeaResponseList(t *testing.T) {
         }
     ]`
 
-	list, err := UnmarshalKeaResponseList(request, response)
+	list := KeaResponseList{}
+	err := UnmarshalKeaResponseList(request, response, &list)
 	require.NoError(t, err)
 	require.NotNil(t, list)
 
@@ -190,6 +191,75 @@ func TestUnmarshalKeaResponseList(t *testing.T) {
 	require.Equal(t, "dhcp6", (list[1]).Daemon)
 }
 
+// Test that it is possible to parse Kea response to a custom structure.
+func TestUnmarshalCustomKeaResponse(t *testing.T) {
+	daemons, _ := NewKeaDaemons("dhcp4")
+	request, _ := NewKeaCommand("list-subnets", daemons, nil)
+
+	response := `[
+        {
+            "result": 0,
+            "text": "command successful",
+            "arguments": {
+                "subnet": {
+                    "subnet-id": 1,
+                    "prefix": "192.0.2.0/24"
+                }
+            }
+        }
+    ]`
+
+	type CustomResponse struct {
+		KeaResponseHeader
+		Arguments struct {
+			Subnet struct {
+				SubnetId float64 `json:"subnet-id"`
+				Prefix   string
+			}
+		}
+	}
+
+	list := []CustomResponse{}
+	err := UnmarshalKeaResponseList(request, response, &list)
+	require.NoError(t, err)
+	require.NotNil(t, list)
+
+	require.Equal(t, 1, len(list))
+	require.Equal(t, 0, list[0].Result)
+	require.Equal(t, "command successful", list[0].Text)
+	require.Equal(t, float64(1), list[0].Arguments.Subnet.SubnetId)
+	require.Equal(t, "192.0.2.0/24", list[0].Arguments.Subnet.Prefix)
+}
+
+// Test that custom response without arguments is parsed correctly.
+func TestUnmarshalCustomKeaResponseNoArgs(t *testing.T) {
+	daemons, _ := NewKeaDaemons("dhcp4")
+	request, _ := NewKeaCommand("list-subnets", daemons, nil)
+
+	response := `[
+        {
+            "result": 0,
+            "text": "command successful",
+            "arguments": {
+                "param": "value"
+            }
+        }
+    ]`
+
+	type CustomResponse struct {
+		KeaResponseHeader
+	}
+
+	list := []CustomResponse{}
+	err := UnmarshalKeaResponseList(request, response, &list)
+	require.NoError(t, err)
+	require.NotNil(t, list)
+
+	require.Equal(t, 1, len(list))
+	require.Equal(t, 0, list[0].Result)
+	require.Equal(t, "command successful", list[0].Text)
+}
+
 // Test that the Kea response containing invalid result value is rejected.
 func TestUnmarshalKeaResponseListMalformedResult(t *testing.T) {
 	daemons, _ := NewKeaDaemons("dhcp4")
@@ -200,9 +270,9 @@ func TestUnmarshalKeaResponseListMalformedResult(t *testing.T) {
             "result": "1"
         }
     ]`
-	list, err := UnmarshalKeaResponseList(request, response)
+	list := KeaResponseList{}
+	err := UnmarshalKeaResponseList(request, response, &list)
 	require.Error(t, err)
-	require.Nil(t, list)
 }
 
 // Test that the Kea response containing invalid text value is rejected.
@@ -216,9 +286,9 @@ func TestUnmarshalKeaResponseListMalformedText(t *testing.T) {
             "text": 123
         }
     ]`
-	list, err := UnmarshalKeaResponseList(request, response)
+	list := KeaResponseList{}
+	err := UnmarshalKeaResponseList(request, response, &list)
 	require.Error(t, err)
-	require.Nil(t, list)
 }
 
 // Test that the Kea response containing invalid arguments (being a list
@@ -233,9 +303,9 @@ func TestUnmarshalKeaResponseListMalformedArguments(t *testing.T) {
             "arguments": [ 1, 2, 3 ]
         }
     ]`
-	list, err := UnmarshalKeaResponseList(request, response)
+	list := KeaResponseList{}
+	err := UnmarshalKeaResponseList(request, response, &list)
 	require.Error(t, err)
-	require.Nil(t, list)
 }
 
 // Test that the Kea response not being a list is rejected.
@@ -248,7 +318,7 @@ func TestUnmarshalKeaResponseNotList(t *testing.T) {
             "result": 0
         }
     `
-	list, err := UnmarshalKeaResponseList(request, response)
+	list := KeaResponseList{}
+	err := UnmarshalKeaResponseList(request, response, &list)
 	require.Error(t, err)
-	require.Nil(t, list)
 }

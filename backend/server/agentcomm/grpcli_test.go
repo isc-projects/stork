@@ -88,7 +88,8 @@ func TestForwardToKeaOverHttp(t *testing.T) {
 
 	ctx := context.Background()
 	command, _ := NewKeaCommand("test-command", nil, nil)
-	actualResponse, err := agents.ForwardToKeaOverHttp(ctx, "http://localhost:8000/", command, "127.0.0.1", 8080)
+	actualResponse := KeaResponseList{}
+	err := agents.ForwardToKeaOverHttp(ctx, "http://localhost:8000/", "127.0.0.1", 8080, command, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse)
 
@@ -124,7 +125,7 @@ func TestForwardToKeaOverHttpInvalidResponse(t *testing.T) {
 
 	ctx := context.Background()
 	command, _ := NewKeaCommand("test-command", nil, nil)
-	actualResponse, err := agents.ForwardToKeaOverHttp(ctx, "http://localhost:8080/", command, "127.0.0.1", 8080)
+	actualResponse := KeaResponseList{}
+	err := agents.ForwardToKeaOverHttp(ctx, "http://localhost:8080/", "127.0.0.1", 8080, command, &actualResponse)
 	require.Error(t, err)
-	require.Nil(t, actualResponse)
 }

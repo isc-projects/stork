@@ -2,23 +2,23 @@ package agentcomm
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"github.com/pkg/errors"
 
 	"isc.org/stork/api"
 )
 
 // Settings specific to communication with Agents
 type AgentsSettings struct {
-	AgentListenAddress string  `long:"agents-host" description:"the IP to listen on for communication from Stork Agent" default:"" env:"STORK_AGENTS_HOST"`
-	AgentListenPort    int     `long:"agents-port" description:"the port to listen on for communication from Stork Agent" default:"8080" env:"STORK_AGENTS_PORT"`
+	AgentListenAddress string `long:"agents-host" description:"the IP to listen on for communication from Stork Agent" default:"" env:"STORK_AGENTS_HOST"`
+	AgentListenPort    int    `long:"agents-port" description:"the port to listen on for communication from Stork Agent" default:"8080" env:"STORK_AGENTS_PORT"`
 }
 
 // Runtime information about the agent, e.g. connection.
 type Agent struct {
-	Address string
-	Client agentapi.AgentClient
+	Address  string
+	Client   agentapi.AgentClient
 	GrpcConn *grpc.ClientConn
 }
 
@@ -49,19 +49,19 @@ type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
 	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
-	ForwardToKeaOverHttp(ctx context.Context, caURL string, command *KeaCommand, address string, agentPort int64) (KeaResponseList, error)
+	ForwardToKeaOverHttp(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *KeaCommand, response interface{}) error
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.
 type connectedAgentsData struct {
-	Settings *AgentsSettings
+	Settings  *AgentsSettings
 	AgentsMap map[string]*Agent
 }
 
 // Create new ConnectedAgents objects.
 func NewConnectedAgents(settings *AgentsSettings) *connectedAgentsData {
 	agents := connectedAgentsData{
-		Settings: settings,
+		Settings:  settings,
 		AgentsMap: make(map[string]*Agent),
 	}
 	return &agents
