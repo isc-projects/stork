@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: docker/docker-server.txt
+    image: registry.gitlab.isc.org/isc-projects/stork/server:latest
     expose:
       - "8080"
     ports:
@@ -24,7 +25,8 @@ services:
     build:
       context: .
       dockerfile: docker/docker-agent-kea.txt
-    hostname: moneypenny
+    image: registry.gitlab.isc.org/isc-projects/stork/agent-kea:latest
+    hostname: agent-kea
     expose:
       - "8080"
 
@@ -33,7 +35,8 @@ services:
     build:
       context: .
       dockerfile: docker/docker-agent-bind9.txt
-    hostname: jamesbond
+    image: registry.gitlab.isc.org/isc-projects/stork/agent-bind9:latest
+    hostname: agent-bind9
     expose:
       - "8080"
 
@@ -41,6 +44,7 @@ services:
     build:
       context: .
       dockerfile: docker/docker-webui.txt
+    image: registry.gitlab.isc.org/isc-projects/stork/webui:latest
     ports:
       - "8080:80"
     environment:

@@ -6,41 +6,29 @@ variables:
   POSTGRES_USER: storktest
   POSTGRES_PASSWORD: storktest
 
+# this is used to build docker images of stork (using DIND)
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""  # this is workaround for TLS problem https://about.gitlab.com/blog/2019/07/31/docker-in-docker-with-docker-19-dot-03/
+
+# stages order
 stages:
   - build
+  - deploy
 
+# cache
 cache:
   key: one-shared-key
   paths:
   - webui/node_modules/
   - tools/
 
+# common before script
 before_script:
   - apt-get update
   - apt-get install -y wget xz-utils rake openjdk-11-jre-headless gcc g++ chromium-browser unzip
   - rake prepare_env
 
-# race_detector:
-#   stage: test
-#   script:
-#     - make race
-
-# memory_sanitizer:
-#   stage: test
-#   script:
-#     - make msan
-
-# code_coverage:
-#   stage: test
-#   script:
-#     - make coverage
-
-# code_coverage_report:
-#   stage: test
-#   script:
-#     - make coverhtml
-#   only:
-#   - master
+### build jobs ###
 
 lint_go:
   stage: build
@@ -64,6 +52,23 @@ build_webui:
   stage: build
   script:
     - rake build_ui
+  artifacts:
+    name: "webui"
+    expire_in: 1 week
+    paths:
+      - webui/dist/stork/
+
+build_backend:
+  stage: build
+  script:
+    - rake build_backend
+  artifacts:
+    name: "backend"
+    expire_in: 1 week
+    paths:
+      - backend/cmd/stork-agent/stork-agent
+      - backend/cmd/stork-server/stork-server
+      - backend/cmd/stork-db-migrate/stork-db-migrate
 
 danger:
   stage: build
@@ -88,3 +93,35 @@ tarball:
     paths:
       - stork-*.tar.gz
     expire_in: 1 week
+
+
+### deploy jobs ###
+
+deploy_demo:
+  stage: deploy
+  when: manual
+  image: docker:latest
+  tags:
+    - linux
+    - docker
+    - amd64
+  services:
+    - docker:dind
+  dependencies:
+    - build_webui
+    - build_backend
+  before_script:
+    - ip -6 route del default
+    - docker info
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+    - apk update
+    - apk upgrade
+    - apk add docker-compose
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
+  script:
+    - docker-compose build
+    - docker-compose push
+    - scp -o StrictHostKeyChecking=no docker-compose.yaml jenkins@stork.lab.isc.org:~/deploy
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml down
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml up -d --no-build
