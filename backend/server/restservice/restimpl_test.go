@@ -11,35 +11,17 @@ import (
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
-	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/database/model"
+	"isc.org/stork/server/test"
 )
-
-type FakeAgents struct {
-}
-
-func (fa *FakeAgents) Shutdown() {}
-func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error) {
-	return nil, nil
-}
-func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort int64) (*agentcomm.State, error) {
-	state := agentcomm.State{
-		Cpus: 1,
-		Memory: 4,
-	}
-	return &state, nil
-}
-func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, address string, agentPort int64, command *agentcomm.KeaCommand, response interface{}) error {
-	return nil
-}
 
 func TestGetVersion(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	settings := RestApiSettings{}
-	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, &fa)
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -56,8 +38,8 @@ func TestGetMachineState(t *testing.T) {
 	defer teardown()
 
 	settings := RestApiSettings{}
-	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, &fa)
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -98,8 +80,8 @@ func TestCreateMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestApiSettings{}
-	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, &fa)
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -154,8 +136,8 @@ func TestGetMachines(t *testing.T) {
 	defer teardown()
 
 	settings := RestApiSettings{}
-	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, &fa)
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -176,8 +158,8 @@ func TestGetMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestApiSettings{}
-	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, &fa)
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -246,8 +228,8 @@ func TestUpdateMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestApiSettings{}
-	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, &fa)
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -330,8 +312,8 @@ func TestDeleteMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestApiSettings{}
-	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, &fa)
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -381,8 +363,8 @@ func TestGetApp(t *testing.T) {
 	defer teardown()
 
 	settings := RestApiSettings{}
-	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, &fa)
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -430,8 +412,8 @@ func TestRestGetApp(t *testing.T) {
 	defer teardown()
 
 	settings := RestApiSettings{}
-	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, &fa)
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -479,8 +461,8 @@ func TestRestGetApps(t *testing.T) {
 	defer teardown()
 
 	settings := RestApiSettings{}
-	fa := FakeAgents{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, &fa)
+	fa := storktest.NewFakeAgents(nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 

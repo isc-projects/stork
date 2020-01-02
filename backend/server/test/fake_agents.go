@@ -44,7 +44,9 @@ func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, ag
 	fa.RecordedURL = caURL
 	fa.RecordedCommand = command.Command
 	// Generate response.
-	fa.mockFunc(response)
+	if fa.mockFunc != nil {
+		fa.mockFunc(response)
+	}
 	return nil
 }
 
