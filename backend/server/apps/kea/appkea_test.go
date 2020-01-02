@@ -11,28 +11,9 @@ import (
 	"isc.org/stork/server/database/model"
 )
 
-// Helper struct to mock Agents behavior.
-type FakeAgents struct {
-	daemons         int
-	recordedURL     string
-	recordedCommand string
-}
-
-func (fa *FakeAgents) Shutdown() {}
-func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error) {
-	return nil, nil
-}
-func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort int64) (*agentcomm.State, error) {
-	state := agentcomm.State{
-		Cpus:   1,
-		Memory: 4,
-	}
-	return &state, nil
-}
-func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *agentcomm.KeaCommand, response interface{}) error {
-	fa.recordedURL = caURL
-	fa.recordedCommand = command.Command
-
+// Kea servers' response to config-get command. The argument indicates if
+// it is a response from a single server or two servers.
+func mockGetConfigResponse(daemons int, response interface{}) {
 	list := response.(*agentcomm.KeaResponseList)
 
 	*list = agentcomm.KeaResponseList{
@@ -52,7 +33,7 @@ func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, ag
 			},
 		},
 	}
-	if fa.daemons > 1 {
+	if daemons > 1 {
 		*list = append(*list, agentcomm.KeaResponse{
 			KeaResponseHeader: agentcomm.KeaResponseHeader{
 				Result: 0,
@@ -73,16 +54,17 @@ func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, ag
 		})
 
 	}
-	return nil
 }
 
 // Check if GetConfig returns response to the forwarded command.
 func TestGetConfig(t *testing.T) {
 	ctx := context.Background()
-	fa := FakeAgents{}
 
 	// check getting config of 1 daemon
-	fa.daemons = 1
+	fa := NewFakeAgents(func(response interface{}) {
+		mockGetConfigResponse(1, response)
+	})
+
 	dbApp := dbmodel.App{
 		CtrlPort: 1234,
 		Details: dbmodel.AppKea{
@@ -97,7 +79,7 @@ func TestGetConfig(t *testing.T) {
 	daemons := make(agentcomm.KeaDaemons)
 	daemons["dhcp4"] = true
 
-	list, err := GetConfig(ctx, &fa, &dbApp, &daemons)
+	list, err := GetConfig(ctx, fa, &dbApp, &daemons)
 	require.NoError(t, err)
 	require.NotNil(t, list)
 	require.Len(t, list, 1)
@@ -106,7 +88,9 @@ func TestGetConfig(t *testing.T) {
 	require.Equal(t, "config-get", fa.recordedCommand)
 
 	// check getting configs of 2 daemons
-	fa.daemons = 2
+	fa = NewFakeAgents(func(response interface{}) {
+		mockGetConfigResponse(2, response)
+	})
 	dbApp = dbmodel.App{
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{
@@ -122,7 +106,7 @@ func TestGetConfig(t *testing.T) {
 
 	daemons["dhcp6"] = true
 
-	list, err = GetConfig(ctx, &fa, &dbApp, &daemons)
+	list, err = GetConfig(ctx, fa, &dbApp, &daemons)
 	require.NoError(t, err)
 	require.NotNil(t, list)
 	require.Len(t, list, 2)
@@ -131,10 +115,10 @@ func TestGetConfig(t *testing.T) {
 // Check if GetDaemonHooks returns hooks for given daemon.
 func TestGetDaemonHooks(t *testing.T) {
 	ctx := context.Background()
-	fa := FakeAgents{}
-
 	// check getting config of 1 daemon
-	fa.daemons = 1
+	fa := NewFakeAgents(func(response interface{}) {
+		mockGetConfigResponse(1, response)
+	})
 	dbApp := dbmodel.App{
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{
@@ -145,7 +129,7 @@ func TestGetDaemonHooks(t *testing.T) {
 		},
 	}
 
-	hooksMap, err := GetDaemonHooks(ctx, &fa, &dbApp)
+	hooksMap, err := GetDaemonHooks(ctx, fa, &dbApp)
 	require.NoError(t, err)
 	require.NotNil(t, hooksMap)
 	hooks, ok := hooksMap["dhcp4"]
@@ -154,7 +138,9 @@ func TestGetDaemonHooks(t *testing.T) {
 	require.Equal(t, "hook_abc.so", hooks[0])
 
 	// check getting configs of 2 daemons
-	fa.daemons = 2
+	fa = NewFakeAgents(func(response interface{}) {
+		mockGetConfigResponse(2, response)
+	})
 	dbApp = dbmodel.App{
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{
@@ -168,7 +154,7 @@ func TestGetDaemonHooks(t *testing.T) {
 		},
 	}
 
-	hooksMap, err = GetDaemonHooks(ctx, &fa, &dbApp)
+	hooksMap, err = GetDaemonHooks(ctx, fa, &dbApp)
 	require.NoError(t, err)
 	require.NotNil(t, hooksMap)
 	hooks, ok = hooksMap["dhcp4"]
