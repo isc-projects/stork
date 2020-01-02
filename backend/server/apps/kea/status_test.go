@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/database/model"
+	"isc.org/stork/server/test"
 )
 
 // Generate test response to status-get command including status of the
@@ -63,7 +64,7 @@ func mockGetStatusNoHA(response interface{}) {
 
 // Test status-get command when HA status is returned.
 func TestGetDHCPStatus(t *testing.T) {
-	fa := NewFakeAgents(mockGetStatusLoadBalancing)
+	fa := storktest.NewFakeAgents(mockGetStatusLoadBalancing)
 
 	app := dbmodel.App{
 		CtrlPort: 1234,
@@ -104,7 +105,7 @@ func TestGetDHCPStatus(t *testing.T) {
 
 // Test status-get command when HA status is not returned.
 func TestGetDHCPStatusNoHA(t *testing.T) {
-	fa := NewFakeAgents(mockGetStatusNoHA)
+	fa := storktest.NewFakeAgents(mockGetStatusNoHA)
 
 	app := dbmodel.App{
 		CtrlPort: 1234,

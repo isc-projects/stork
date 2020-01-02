@@ -1,4 +1,4 @@
-package kea
+package storktest
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 
 // Helper struct to mock Agents behavior.
 type FakeAgents struct {
-	recordedURL     string
-	recordedCommand string
+	RecordedURL     string
+	RecordedCommand string
 	mockFunc        func(interface{})
 }
 
@@ -41,8 +41,8 @@ func NewFakeAgents(fn func(interface{})) *FakeAgents {
 // response to the command by calling the function specified in the
 // call to NewFakeAgents.
 func (fa *FakeAgents) ForwardToKeaOverHttp(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *agentcomm.KeaCommand, response interface{}) error {
-	fa.recordedURL = caURL
-	fa.recordedCommand = command.Command
+	fa.RecordedURL = caURL
+	fa.RecordedCommand = command.Command
 	// Generate response.
 	fa.mockFunc(response)
 	return nil

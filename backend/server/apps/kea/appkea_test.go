@@ -9,6 +9,7 @@ import (
 
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/database/model"
+	"isc.org/stork/server/test"
 )
 
 // Kea servers' response to config-get command. The argument indicates if
@@ -61,7 +62,7 @@ func TestGetConfig(t *testing.T) {
 	ctx := context.Background()
 
 	// check getting config of 1 daemon
-	fa := NewFakeAgents(func(response interface{}) {
+	fa := storktest.NewFakeAgents(func(response interface{}) {
 		mockGetConfigResponse(1, response)
 	})
 
@@ -84,11 +85,11 @@ func TestGetConfig(t *testing.T) {
 	require.NotNil(t, list)
 	require.Len(t, list, 1)
 
-	require.Equal(t, "http://localhost:1234/", fa.recordedURL)
-	require.Equal(t, "config-get", fa.recordedCommand)
+	require.Equal(t, "http://localhost:1234/", fa.RecordedURL)
+	require.Equal(t, "config-get", fa.RecordedCommand)
 
 	// check getting configs of 2 daemons
-	fa = NewFakeAgents(func(response interface{}) {
+	fa = storktest.NewFakeAgents(func(response interface{}) {
 		mockGetConfigResponse(2, response)
 	})
 	dbApp = dbmodel.App{
@@ -116,7 +117,7 @@ func TestGetConfig(t *testing.T) {
 func TestGetDaemonHooks(t *testing.T) {
 	ctx := context.Background()
 	// check getting config of 1 daemon
-	fa := NewFakeAgents(func(response interface{}) {
+	fa := storktest.NewFakeAgents(func(response interface{}) {
 		mockGetConfigResponse(1, response)
 	})
 	dbApp := dbmodel.App{
@@ -138,7 +139,7 @@ func TestGetDaemonHooks(t *testing.T) {
 	require.Equal(t, "hook_abc.so", hooks[0])
 
 	// check getting configs of 2 daemons
-	fa = NewFakeAgents(func(response interface{}) {
+	fa = storktest.NewFakeAgents(func(response interface{}) {
 		mockGetConfigResponse(2, response)
 	})
 	dbApp = dbmodel.App{
