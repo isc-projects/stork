@@ -1,4 +1,4 @@
-package stork
+package storkutil
 
 import (
 	"os"
@@ -14,6 +14,10 @@ func UTCNow() time.Time {
 	return time.Now().UTC()
 }
 
+// Returns URL of the localhost with port.
+func LocalHostWithPort(port int64) string {
+	return fmt.Sprintf("http://localhost:%d/", port)
+}
 
 func SetupLogging() {
 	log.SetLevel(log.DebugLevel)

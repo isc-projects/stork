@@ -5,14 +5,14 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 
-	"isc.org/stork"
 	"isc.org/stork/agent"
+	"isc.org/stork/util"
 )
 
 
 func main() {
 	// Setup logging
-	stork.SetupLogging()
+	storkutil.SetupLogging()
 
 	// Start app monitor
 	sm := agent.NewAppMonitor()

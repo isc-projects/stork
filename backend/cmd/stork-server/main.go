@@ -3,13 +3,13 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 
-	"isc.org/stork"
 	"isc.org/stork/server"
+	"isc.org/stork/util"
 )
 
 func main() {
 	// Setup logging
-	stork.SetupLogging()
+	storkutil.SetupLogging()
 
 	// Initialize global state of Stork Server
 	storkServer, err := server.NewStorkServer()

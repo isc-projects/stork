@@ -6,7 +6,7 @@ import (
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"isc.org/stork"
+	"isc.org/stork/util"
 )
 
 
@@ -140,7 +140,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 }
 
 func DeleteMachine(db *pg.DB, machine *Machine) error {
-	machine.Deleted = stork.UTCNow()
+	machine.Deleted = storkutil.UTCNow()
 	err := db.Update(machine)
 	if err != nil {
 		return errors.Wrapf(err, "problem with deleting machine %v", machine.Id)

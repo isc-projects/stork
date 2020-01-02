@@ -5,7 +5,7 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
-	"isc.org/stork"
+	"isc.org/stork/util"
 	"time"
 )
 
@@ -148,7 +148,7 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, text string, appType st
 }
 
 func DeleteApp(db *pg.DB, app *App) error {
-	app.Deleted = stork.UTCNow()
+	app.Deleted = storkutil.UTCNow()
 	err := db.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "problem with deleting app %v", app.Id)

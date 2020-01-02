@@ -9,8 +9,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 
-	"isc.org/stork"
 	"isc.org/stork/api"
+	"isc.org/stork/util"
 )
 
 type KeaDaemon struct {
@@ -137,7 +137,7 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 		VirtualizationSystem: grpcState.VirtualizationSystem,
 		VirtualizationRole: grpcState.VirtualizationRole,
 		HostID: grpcState.HostID,
-		LastVisited: stork.UTCNow(),
+		LastVisited: storkutil.UTCNow(),
 		Error: grpcState.Error,
 		Apps: apps,
 	}
