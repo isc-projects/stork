@@ -705,3 +705,79 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 	rsp := services.NewGetAppOK().WithPayload(a)
 	return rsp
 }
+
+// Gets current status of services which the given application is associated with.
+func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetAppServicesStatusParams) middleware.Responder {
+	dbApp, err := dbmodel.GetAppById(r.Db, params.ID)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("cannot get app with id %d from the database", params.ID)
+		rsp := services.NewGetAppServicesStatusDefault(500).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	if dbApp == nil {
+		msg := fmt.Sprintf("cannot find app with id %d", params.ID)
+		log.Warn(errors.New(msg))
+		rsp := services.NewGetAppDefault(404).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	servicesStatus := &models.ServicesStatus{}
+
+	// If this is Kea application, get the Kea DHCP servers status which possibly
+	// includes HA status.
+	if dbApp.Type == "kea" {
+		status, err := kea.GetDHCPStatus(ctx, r.Agents, dbApp)
+		if err != nil {
+			log.Error(err)
+			msg := fmt.Sprintf("cannot get status of the app with id %d", params.ID)
+			rsp := services.NewGetAppServicesStatusDefault(500).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+
+		for _, s := range status {
+			keaStatus := models.KeaStatus{
+				Pid:    s.Pid,
+				Uptime: s.Uptime,
+				Reload: s.Reload,
+				Daemon: s.Daemon,
+			}
+
+			if s.HAServers != nil {
+				keaStatus.HaServers = &models.KeaStatusHaServers{
+					LocalServer: &models.KeaStatusHaServersLocalServer{
+						Role: s.HAServers.Local.Role,
+						Scopes: s.HAServers.Local.Scopes,
+						State: s.HAServers.Local.State,
+					},
+					RemoteServer: &models.KeaStatusHaServersRemoteServer{
+						Age: s.HAServers.Remote.Age,
+						InTouch: s.HAServers.Remote.InTouch,
+						Role: s.HAServers.Remote.Role,
+						Scopes: s.HAServers.Remote.LastScopes,
+						State: s.HAServers.Remote.LastState,
+					},
+				}
+			}
+
+			serviceStatus := &models.ServiceStatus{
+				Status: struct {
+					models.KeaStatus
+				} {
+					keaStatus,
+				},
+			}
+			servicesStatus.Items = append(servicesStatus.Items, serviceStatus)
+		}
+	}
+
+	rsp := services.NewGetAppServicesStatusOK().WithPayload(servicesStatus)
+	return rsp
+}

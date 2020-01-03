@@ -413,6 +413,32 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
+  /apps/{id}/services/status:
+    get:
+      summary: Get services status for a given application.
+      description: >-
+        Services status comprises runtime information about the services.
+        In particular, a Kea application status comprises information about
+        the High Availability service, such as HA state, partner's state etc.
+      operationId: getAppServicesStatus
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: App ID.
+      responses:
+        200:
+          description: Services with their status.
+          schema:
+            $ref: '#/definitions/ServicesStatus'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
 parameters:
   paginationStartParam:
     name: start
@@ -703,6 +729,62 @@ definitions:
           $ref: '#/definitions/App'
       total:
         type: integer
+
+  KeaStatus:
+    type: object
+    properties:
+      pid:
+        type: integer
+      uptime:
+        type: integer
+      reload:
+        type: integer
+      daemon:
+        type: string
+      haServers:
+        type: object
+        properties:
+          localServer:
+            type: object
+            properties:
+              role:
+                type: string
+              scopes:
+                type: array
+                items:
+                  type: string
+              state:
+                type: string
+          remoteServer:
+            type: object
+            properties:
+              age:
+                type: integer
+              inTouch:
+                type: boolean
+              role:
+                type: string
+              scopes:
+                type: array
+                items:
+                  type: string
+              state:
+                type: string
+
+  ServiceStatus:
+    type: object
+    properties:
+      status:
+        allOf:
+          - $ref: '#/definitions/KeaStatus'
+
+  ServicesStatus:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ServiceStatus'
 
   ApiError:
     type: object

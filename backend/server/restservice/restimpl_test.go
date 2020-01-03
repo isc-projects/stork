@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/general"
@@ -510,4 +511,159 @@ func TestRestGetApps(t *testing.T) {
 	require.IsType(t, &services.GetAppsOK{}, rsp)
 	okRsp = rsp.(*services.GetAppsOK)
 	require.Equal(t, int64(2), okRsp.Payload.Total)
+}
+
+// Generates a response to the status-get command including two status
+// structures, one for DHCPv4 and one for DHCPv6. Both contain HA
+// status information.
+func mockGetStatusWithHA(response interface{}) {
+	daemons, _ := agentcomm.NewKeaDaemons("dhcp4", "dhcp6")
+	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	json := `[
+        {
+            "result": 0,
+            "text": "Everthing is fine",
+            "arguments": {
+                "pid": 1234,
+                "uptime": 3024,
+                "reload": 1111,
+                "ha-servers":
+                    {
+                        "local": {
+                            "role": "primary",
+                            "scopes": [ "server1" ],
+                            "state": "load-balancing"
+                        },
+                        "remote": {
+                            "age": 10,
+                            "in-touch": true,
+                            "role": "secondary",
+                            "last-scopes": [ "server2" ],
+                            "last-state": "load-balancing"
+                        }
+                    }
+              }
+         },
+         {
+             "result": 0,
+             "text": "Everthing is fine",
+             "arguments": {
+                 "pid": 2345,
+                 "uptime": 3333,
+                 "reload": 2222,
+                 "ha-servers":
+                     {
+                         "local": {
+                             "role": "primary",
+                             "scopes": [ "server1" ],
+                             "state": "hot-standby"
+                         },
+                         "remote": {
+                             "age": 3,
+                             "in-touch": true,
+                             "role": "standby",
+                             "last-scopes": [ ],
+                             "last-state": "waiting"
+                         }
+                     }
+               }
+          }
+    ]`
+	_ = agentcomm.UnmarshalKeaResponseList(command, json, response)
+}
+
+// Test that status of two HA services for a Kea application is parsed
+// correctly.
+func TestRestGetAppServicesStatus(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestApiSettings{}
+	// Configure the fake control agents to mimic returning a status of
+	// two HA services for Kea.
+	fa := storktest.NewFakeAgents(mockGetStatusWithHA)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add a machine.
+	m := &dbmodel.Machine{
+		Address: "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add Kea application to the machine
+	keaApp := &dbmodel.App{
+		Id: 0,
+		MachineID: m.Id,
+		Type: "kea",
+		CtrlPort: 1234,
+		Active: true,
+	}
+	err = dbmodel.AddApp(db, keaApp)
+	require.NoError(t, err)
+
+	params := services.GetAppServicesStatusParams{
+		ID: keaApp.Id,
+	}
+	rsp := rapi.GetAppServicesStatus(ctx, params)
+
+	// Make sure that the response is ok.
+	require.IsType(t, &services.GetAppServicesStatusOK{}, rsp)
+	okRsp := rsp.(*services.GetAppServicesStatusOK)
+	require.NotNil(t, okRsp.Payload.Items)
+
+	// There should be two structures returned, one with a status of
+	// the DHCPv4 server and one with the status of the DHCPv6 server.
+	require.Equal(t, 2, len(okRsp.Payload.Items))
+
+	statusList := okRsp.Payload.Items
+
+	// Validate the status of the DHCPv4 pair.
+	status := statusList[0].Status.KeaStatus
+	require.Equal(t, int64(1234), status.Pid)
+	require.Equal(t, int64(1111), status.Reload)
+	require.Equal(t, int64(3024), status.Uptime)
+	require.NotNil(t, status.HaServers)
+
+	haStatus := status.HaServers
+	require.NotNil(t, haStatus.LocalServer)
+	require.NotNil(t, haStatus.RemoteServer)
+
+	require.Equal(t, "primary", haStatus.LocalServer.Role)
+	require.Equal(t, 1, len(haStatus.LocalServer.Scopes))
+	require.Contains(t, haStatus.LocalServer.Scopes, "server1")
+	require.Equal(t, "load-balancing", haStatus.LocalServer.State)
+
+	require.Equal(t, "secondary", haStatus.RemoteServer.Role)
+	require.Equal(t, 1, len(haStatus.RemoteServer.Scopes))
+	require.Contains(t, haStatus.RemoteServer.Scopes, "server2")
+	require.Equal(t, "load-balancing", haStatus.RemoteServer.State)
+	require.Equal(t, int64(10), haStatus.RemoteServer.Age)
+	require.True(t, haStatus.RemoteServer.InTouch)
+
+	// Validate the status of the DHCPv6 pair.
+	status = statusList[1].Status.KeaStatus
+	require.Equal(t, int64(2345), status.Pid)
+	require.Equal(t, int64(2222), status.Reload)
+	require.Equal(t, int64(3333), status.Uptime)
+	require.NotNil(t, status.HaServers)
+
+	haStatus = status.HaServers
+	require.NotNil(t, haStatus.LocalServer)
+	require.NotNil(t, haStatus.RemoteServer)
+
+	require.Equal(t, "primary", haStatus.LocalServer.Role)
+	require.Equal(t, 1, len(haStatus.LocalServer.Scopes))
+	require.Contains(t, haStatus.LocalServer.Scopes, "server1")
+	require.Equal(t, "hot-standby", haStatus.LocalServer.State)
+
+	require.Equal(t, "standby", haStatus.RemoteServer.Role)
+	require.Empty(t, haStatus.RemoteServer.Scopes)
+	require.Equal(t, "waiting", haStatus.RemoteServer.State)
+	require.Equal(t, int64(3), haStatus.RemoteServer.Age)
+	require.True(t, haStatus.RemoteServer.InTouch)
+
 }
