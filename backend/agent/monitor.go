@@ -261,17 +261,20 @@ func (sm *appMonitor) detectApps() {
 
 	procs, _ := process.Processes()
 	for _, p := range procs {
-		cmdline, err := p.Cmdline()
-		if err != nil {
-			log.Warnf("cannot get process command line %+v", err)
-		}
+		procName, _ := p.Name()
+		if procName == "kea-ctrl-agent" {
+			cmdline, err := p.Cmdline()
+			if err != nil {
+				log.Warnf("cannot get process command line %+v", err)
+			}
 
-		// detect kea
-		m := keaPtrn.FindStringSubmatch(cmdline)
-		if m != nil {
-			keaApp := detectKeaApp(m)
-			if keaApp != nil {
-				apps = append(apps, *keaApp)
+			// detect kea
+			m := keaPtrn.FindStringSubmatch(cmdline)
+			if m != nil {
+				keaApp := detectKeaApp(m)
+				if keaApp != nil {
+					apps = append(apps, *keaApp)
+				}
 			}
 		}
 	}
