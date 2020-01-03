@@ -2,6 +2,9 @@ package kea
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
+
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/database/model"
 	"isc.org/stork/util"
@@ -75,7 +78,12 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	// Extract the status value.
 	appStatus := AppStatus{}
 	for _, r := range response {
-		appStatus = append(appStatus, *r.Arguments)
+		if r.Result != 0 && (len(r.Daemon) > 0) {
+			log.Warn(errors.Errorf("status-get command failed for Kea daemon %s", r.Daemon))
+
+		} else if r.Arguments != nil {
+			appStatus = append(appStatus, *r.Arguments)
+		}
 	}
 
 	return appStatus, nil

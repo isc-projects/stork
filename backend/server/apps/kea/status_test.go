@@ -62,6 +62,20 @@ func mockGetStatusNoHA(response interface{}) {
 	_ = agentcomm.UnmarshalKeaResponseList(command, json, response)
 }
 
+// Generates test response to status-get command indicating an error and
+// lacking argument.s
+func mockGetStatusError(response interface{}) {
+	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
+	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	json := `[
+        {
+            "result": 1,
+            "text": "unable to communicate with the deamon"
+        }
+    ]`
+	_ = agentcomm.UnmarshalKeaResponseList(command, json, response)
+}
+
 // Test status-get command when HA status is returned.
 func TestGetDHCPStatus(t *testing.T) {
 	fa := storktest.NewFakeAgents(mockGetStatusLoadBalancing)
@@ -126,5 +140,21 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 
 	// This time, HA status should not be present.
 	require.Nil(t, status.HAServers)
+}
+
+// Test the case when the Kea CA is unable to communicate with the
+// Kea deamon.
+func TestGetDHCPStatusError(t *testing.T) {
+	fa := storktest.NewFakeAgents(mockGetStatusError)
+
+	app := dbmodel.App{
+		CtrlPort: 1234,
+	}
+
+	appStatus, err := GetDHCPStatus(context.Background(), fa, &app)
+	require.NoError(t, err)
+	require.NotNil(t, appStatus)
+
+	require.Empty(t, appStatus)
 }
 
