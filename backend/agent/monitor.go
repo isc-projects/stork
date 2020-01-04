@@ -100,14 +100,14 @@ func getCtrlFromKeaConfig(path string) (string, int64) {
 		return "", 0
 	}
 
-	ptrn = regexp.MustCompile(`"http-host"\s*:\s*(\S+)`)
+	ptrn = regexp.MustCompile(`"http-host"\s*:\s*\"(\S+)\"\s*,`)
 	m = ptrn.FindStringSubmatch(string(text))
+	address := "localhost"
 	if len(m) == 0 {
 		log.Warnf("cannot parse http-host: %+v", err)
-	}
-	address := m[1]
-	if len(address) == 0 {
-		address = "localhost"
+
+	} else {
+		address = m[1]
 	}
 
 	return address, int64(port)
