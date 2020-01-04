@@ -42,7 +42,7 @@ type Status struct {
 	Uptime            int64
 	Reload            int64
 	HAServers         *HAServersStatus `json:"ha-servers"`
-	Daemon            string           `json:"-"`
+	Daemon            string
 }
 
 type AppStatus []Status
@@ -83,6 +83,7 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 
 		} else if r.Arguments != nil {
 			appStatus = append(appStatus, *r.Arguments)
+			appStatus[len(appStatus)-1].Daemon = r.Daemon
 		}
 	}
 

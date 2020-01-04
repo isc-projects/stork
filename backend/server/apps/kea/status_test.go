@@ -96,6 +96,7 @@ func TestGetDHCPStatus(t *testing.T) {
 	require.Equal(t, int64(1234), status.Pid)
 	require.Equal(t, int64(3024), status.Uptime)
 	require.Equal(t, int64(1111), status.Reload)
+	require.Equal(t, "dhcp4", status.Daemon)
 
 	// HA status should have been returned.
 	require.NotNil(t, status.HAServers)
