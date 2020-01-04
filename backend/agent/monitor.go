@@ -23,9 +23,10 @@ type KeaDaemon struct {
 }
 
 type AppCommon struct {
-	Version string
-	CtrlPort int64
-	Active bool
+	Version     string
+	CtrlAddress string
+	CtrlPort    int64
+	Active      bool
 }
 
 type AppKea struct {
@@ -79,26 +80,37 @@ func (sm *appMonitor) run() {
 	}
 }
 
-func getCtrlPortFromKeaConfig(path string) int {
+func getCtrlFromKeaConfig(path string) (string, int64) {
 	text, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Warnf("cannot read kea config file: %+v", err)
-		return 0
+		return "", 0
 	}
 
 	ptrn := regexp.MustCompile(`"http-port"\s*:\s*([0-9]+)`)
 	m := ptrn.FindStringSubmatch(string(text))
 	if len(m) == 0 {
-		log.Warnf("cannot parse port: %+v", err)
-		return 0
+		log.Warnf("cannot parse http-port: %+v", err)
+		return "", 0
 	}
 
 	port, err := strconv.Atoi(m[1])
 	if err != nil {
-		log.Warnf("cannot parse port: %+v", err)
-		return 0
+		log.Warnf("cannot parse http-port: %+v", err)
+		return "", 0
 	}
-	return port
+
+	ptrn = regexp.MustCompile(`"http-host"\s*:\s*(\S+)`)
+	m = ptrn.FindStringSubmatch(string(text))
+	if len(m) == 0 {
+		log.Warnf("cannot parse http-host: %+v", err)
+	}
+	address := m[1]
+	if len(address) == 0 {
+		address = "localhost"
+	}
+
+	return address, int64(port)
 }
 
 
@@ -137,19 +149,20 @@ func detectKeaApp(match []string) *AppKea {
 
 	keaConfPath := match[1]
 
-	ctrlPort := int64(getCtrlPortFromKeaConfig(keaConfPath))
+	ctrlAddress, ctrlPort := getCtrlFromKeaConfig(keaConfPath)
 	keaApp = &AppKea{
 		AppCommon: AppCommon{
+			CtrlAddress: ctrlAddress,
 			CtrlPort: ctrlPort,
 			Active: false,
 		},
 		Daemons: []KeaDaemon{},
 	}
-	if ctrlPort == 0 {
+	if ctrlPort == 0 || len(ctrlAddress) == 0 {
 		return nil
 	}
 
-	caUrl := fmt.Sprintf("http://localhost:%d", ctrlPort)
+	caUrl := fmt.Sprintf("http://%s:%d", ctrlAddress, ctrlPort)
 
 	// retrieve ctrl-agent information, it is also used as a general app information
 	info, err := keaDaemonVersionGet(caUrl, "")

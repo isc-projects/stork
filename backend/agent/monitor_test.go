@@ -44,11 +44,12 @@ func TestKeaDaemonVersionGetDataOk(t *testing.T) {
 func TestGetCtrlPortFromKeaConfigNonExisting(t *testing.T) {
 	// check reading from non existing file
 	path := "/tmp/non-exisiting-path"
-	port := getCtrlPortFromKeaConfig(path)
+	address, port := getCtrlFromKeaConfig(path)
 	require.Equal(t, 0, port)
+	require.Empty(t, address)
 }
 
-func TestGetCtrlPortFromKeaConfigBadContent(t *testing.T) {
+func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 	// prepare kea conf file
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
 	if err != nil {
@@ -66,8 +67,9 @@ func TestGetCtrlPortFromKeaConfigBadContent(t *testing.T) {
 
 	// check reading from prepared file with bad content
 	// so 0 should be returned as port
-	port := getCtrlPortFromKeaConfig(tmpFile.Name())
+	address, port := getCtrlFromKeaConfig(tmpFile.Name())
 	require.Equal(t, 0, port)
+	require.Empty(t, address)
 }
 
 func TestGetCtrlPortFromKeaConfigOk(t *testing.T) {
@@ -78,7 +80,7 @@ func TestGetCtrlPortFromKeaConfigOk(t *testing.T) {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	text := []byte("\"http-port\": 1234")
+	text := []byte("\"http-host\": \"host.example.org\", \"http-port\": 1234")
 	if _, err = tmpFile.Write(text); err != nil {
 		log.Fatal("Failed to write to temporary file", err)
 	}
@@ -87,8 +89,9 @@ func TestGetCtrlPortFromKeaConfigOk(t *testing.T) {
 	}
 
 	// check reading from proper file
-	port := getCtrlPortFromKeaConfig(tmpFile.Name())
+	address, port := getCtrlFromKeaConfig(tmpFile.Name())
 	require.Equal(t, 1234, port)
+	require.Equal(t, "host.example.org", address)
 }
 
 func TestDetectApps(t *testing.T) {
@@ -105,7 +108,7 @@ func TestDetectKeaApp(t *testing.T) {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	text := []byte("\"http-port\": 45634")
+	text := []byte("\"http-host\": \"localhost\", \"http-port\": 45634")
 	if _, err = tmpFile.Write(text); err != nil {
 		log.Fatal("Failed to write to temporary file", err)
 	}
