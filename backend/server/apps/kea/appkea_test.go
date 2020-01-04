@@ -85,7 +85,7 @@ func TestGetConfig(t *testing.T) {
 	require.NotNil(t, list)
 	require.Len(t, list, 1)
 
-	require.Equal(t, "http://localhost:1234/", fa.RecordedURL)
+	require.Empty(t, fa.RecordedURL)
 	require.Equal(t, "config-get", fa.RecordedCommand)
 
 	// check getting configs of 2 daemons

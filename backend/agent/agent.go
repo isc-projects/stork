@@ -16,6 +16,7 @@ import (
 	"io/ioutil"
 	"isc.org/stork/api"
 	"isc.org/stork"
+	"isc.org/stork/util"
 )
 
 // Stork Agent settings.
@@ -103,6 +104,19 @@ func (s *StorkAgent) RestartKea(ctx context.Context, in *agentapi.RestartKeaReq)
 // HTTP (via Control Agent).
 func (s *StorkAgent) ForwardToKeaOverHttp(ctx context.Context, in *agentapi.ForwardToKeaOverHttpReq) (*agentapi.ForwardToKeaOverHttpRsp, error) {
 	reqUrl := in.GetUrl()
+
+	// This is a workaround for the case if URL is not provided. Ultimately,
+	// it is the Stork server that is supposed to send an address and port,
+	// but the address it currently not available.
+	if len(reqUrl) == 0 {
+		for _, srv := range s.AppMonitor.GetApps() {
+			s, ok := srv.(AppKea)
+			if ok {
+				reqUrl = storkutil.HostWithPort(s.CtrlAddress, s.CtrlPort)
+			}
+		}
+	}
+
 	payload := in.GetKeaRequest()
 
 	rsp := &agentapi.ForwardToKeaOverHttpRsp{}

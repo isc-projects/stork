@@ -7,7 +7,6 @@ import (
 
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/database/model"
-	"isc.org/stork/util"
 	"time"
 )
 
@@ -60,8 +59,8 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	// The command will be forwarded from the agent to Kea CA on the same host.
-	url := storkutil.LocalHostWithPort(dbApp.CtrlPort)
+	// Stork Agent will figure out the URL.
+	url := ""
 
 	// The Kea response will be stored in this slice of structures.
 	response := []struct {

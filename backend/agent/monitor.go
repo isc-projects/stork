@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"fmt"
 	"time"
 	"bytes"
 	"regexp"
@@ -12,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/process"
+	"isc.org/stork/util"
 )
 
 type KeaDaemon struct {
@@ -162,7 +162,7 @@ func detectKeaApp(match []string) *AppKea {
 		return nil
 	}
 
-	caUrl := fmt.Sprintf("http://%s:%d", ctrlAddress, ctrlPort)
+	caUrl := storkutil.HostWithPort(ctrlAddress, ctrlPort)
 
 	// retrieve ctrl-agent information, it is also used as a general app information
 	info, err := keaDaemonVersionGet(caUrl, "")

@@ -5,8 +5,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test that LocalHostWithPort function generates proper output.
-func TestLocalHostWithPort(t *testing.T) {
-	require.Equal(t, "http://localhost:1000/", LocalHostWithPort(1000))
-	require.Equal(t, "http://localhost:1/", LocalHostWithPort(1))
+// Test that HostWithPort function generates proper output.
+func TestHostWithPort(t *testing.T) {
+	require.Equal(t, "http://localhost:1000/", HostWithPort("localhost", 1000))
+	require.Equal(t, "http://192.0.2.0:1/", HostWithPort("192.0.2.0", 1))
 }

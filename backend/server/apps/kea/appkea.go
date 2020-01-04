@@ -2,7 +2,6 @@ package kea
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -15,9 +14,8 @@ import (
 // Retrieve configuration of the selected Kea deamons using the config-get
 // command.
 func GetConfig(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemons *agentcomm.KeaDaemons) (agentcomm.KeaResponseList, error) {
-	// We assume that the Kea Control Agent runs on the same machine as
-	// the Stork Agent. Thus, we use localhost to communicate with the CA.
-	caURL := fmt.Sprintf("http://localhost:%d/", dbApp.CtrlPort)
+	// Stork Agent will figure out the URL.
+	caURL := ""
 
 	// prepare the command
 	cmd, _ := agentcomm.NewKeaCommand("config-get", daemons, nil)

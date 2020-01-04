@@ -14,9 +14,9 @@ func UTCNow() time.Time {
 	return time.Now().UTC()
 }
 
-// Returns URL of the localhost with port.
-func LocalHostWithPort(port int64) string {
-	return fmt.Sprintf("http://localhost:%d/", port)
+// Returns URL of the host with port.
+func HostWithPort(address string, port int64) string {
+	return fmt.Sprintf("http://%s:%d/", address, port)
 }
 
 func SetupLogging() {
