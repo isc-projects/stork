@@ -13,6 +13,7 @@ import (
 // use the HTTP/2.
 func TestMain(m *testing.M) {
 	gock.InterceptClient(httpClient11)
+	os.Exit(m.Run())
 }
 
 func TestGetApps(t *testing.T) {
@@ -45,7 +46,7 @@ func TestGetCtrlPortFromKeaConfigNonExisting(t *testing.T) {
 	// check reading from non existing file
 	path := "/tmp/non-exisiting-path"
 	address, port := getCtrlFromKeaConfig(path)
-	require.Equal(t, 0, port)
+	require.Equal(t, int64(0), port)
 	require.Empty(t, address)
 }
 
@@ -68,7 +69,7 @@ func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 	// check reading from prepared file with bad content
 	// so 0 should be returned as port
 	address, port := getCtrlFromKeaConfig(tmpFile.Name())
-	require.Equal(t, 0, port)
+	require.Equal(t, int64(0), port)
 	require.Empty(t, address)
 }
 
@@ -80,7 +81,7 @@ func TestGetCtrlPortFromKeaConfigOk(t *testing.T) {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	text := []byte("\"http-host\": \"host.example.org\", \"http-port\": 1234")
+	text := []byte(string("\"http-host\": \"host.example.org\", \"http-port\": 1234"))
 	if _, err = tmpFile.Write(text); err != nil {
 		log.Fatal("Failed to write to temporary file", err)
 	}
@@ -90,7 +91,7 @@ func TestGetCtrlPortFromKeaConfigOk(t *testing.T) {
 
 	// check reading from proper file
 	address, port := getCtrlFromKeaConfig(tmpFile.Name())
-	require.Equal(t, 1234, port)
+	require.Equal(t, int64(1234), port)
 	require.Equal(t, "host.example.org", address)
 }
 
