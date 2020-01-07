@@ -143,7 +143,7 @@ export class HaStatusComponent implements OnInit {
                 }
                 // We were unable to fetch the HA status for this server, thus
                 // we mark it as erred.
-                if (!this._receivedStatus[this._daemonName]) {
+                if (!this._receivedStatus || !this._receivedStatus[this._daemonName]) {
                     this._statusErred[this._daemonName] = true
                 }
             },
