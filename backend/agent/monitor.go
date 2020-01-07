@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"io/ioutil"
 	"encoding/json"
+	"os/exec"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
@@ -22,6 +23,13 @@ type KeaDaemon struct {
 	ExtendedVersion string
 }
 
+type Bind9Daemon struct {
+	Pid int32
+	Name string
+	Active bool
+	Version string
+}
+
 type AppCommon struct {
 	Version     string
 	CtrlAddress string
@@ -35,8 +43,9 @@ type AppKea struct {
 	Daemons []KeaDaemon
 }
 
-type AppBind struct {
+type AppBind9 struct {
 	AppCommon
+	Daemon Bind9Daemon
 }
 
 type AppMonitor interface {
@@ -144,6 +153,43 @@ func keaDaemonVersionGet(caUrl string, daemon string) (map[string]interface{}, e
 	return data2, nil
 }
 
+func detectBind9App() (bind9App *AppBind9) {
+	bind9App = &AppBind9{
+		AppCommon: AppCommon{
+			Active: false,
+		},
+	}
+
+	// version
+	cmd := exec.Command("rndc", "-k", "/etc/bind/rndc.key", "status")
+	out, err := cmd.Output()
+	if err != nil {
+		log.Warnf("cannot get BIND 9 status: %+v", err)
+	} else {
+		versionPtrn := regexp.MustCompile(`version:\s(.+)\n`)
+		match := versionPtrn.FindStringSubmatch(string(out[:]))
+		if match != nil {
+			bind9App.Version = match[1]
+		} else {
+			log.Warnf("cannot get BIND 9 version: unable to find version in rndc output")
+		}
+
+		bind9App.Active = true
+	}
+
+	// TODO: control port, pid
+
+	namedDaemon := Bind9Daemon{
+		Name: "named",
+		Active: bind9App.Active,
+		Version: bind9App.Version,
+	}
+
+	bind9App.Daemon = namedDaemon
+
+	return bind9App
+}
+
 func detectKeaApp(match []string) *AppKea {
 	var keaApp *AppKea
 
@@ -152,9 +198,9 @@ func detectKeaApp(match []string) *AppKea {
 	ctrlAddress, ctrlPort := getCtrlAddressFromKeaConfig(keaConfPath)
 	keaApp = &AppKea{
 		AppCommon: AppCommon{
+			Active: false,
 			CtrlAddress: ctrlAddress,
 			CtrlPort: ctrlPort,
-			Active: false,
 		},
 		Daemons: []KeaDaemon{},
 	}
@@ -263,12 +309,13 @@ func detectKeaApp(match []string) *AppKea {
 
 func (sm *appMonitor) detectApps() {
 	// Kea app is being detected by browsing list of processes in the systam
-	// where cmdline of the process contains given pattern with kea-ctr-agent
+	// where cmdline of the process contains given pattern with kea-ctrl-agent
 	// substring. Such found processes are being processed further and all other
 	// Kea daemons are discovered and queried for their versions, etc.
 	keaPtrn := regexp.MustCompile(`kea-ctrl-agent.*-c\s+(\S+)`)
-
-	// TODO: BIND app is not yet being detect. It should happen here as well.
+	// Bind9 app is being detecting by browsing list of processes in the system
+	// where cmdline of the process contains given pattern with named substring.
+	bind9Ptrn := regexp.MustCompile(`named.*-c\s+(\S+)`)
 
 	var apps []interface{}
 
@@ -289,6 +336,24 @@ func (sm *appMonitor) detectApps() {
 					apps = append(apps, *keaApp)
 				}
 			}
+			continue
+		}
+
+		if procName == "named" {
+			cmdline, err := p.Cmdline()
+			if err != nil {
+				log.Warnf("cannot get process command line %+v", err)
+			}
+
+			// detect bind9
+			m := bind9Ptrn.FindStringSubmatch(cmdline)
+			if m != nil {
+				bind9App := detectBind9App()
+				if bind9App != nil {
+					apps = append(apps, *bind9App)
+				}
+			}
+			continue
 		}
 	}
 

@@ -65,6 +65,23 @@ func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*a
 					},
 				},
 			})
+		case AppBind9:
+			var daemon = &agentapi.Bind9Daemon{
+					Pid: s.Daemon.Pid,
+					Name: s.Daemon.Name,
+					Active: s.Daemon.Active,
+					Version: s.Daemon.Version,
+			}
+			apps = append(apps, &agentapi.App{
+				Version: s.Version,
+				CtrlPort: s.CtrlPort,
+				Active: s.Active,
+				App: &agentapi.App_Bind9{
+					Bind9: &agentapi.AppBind9{
+						Daemon: daemon,
+					},
+				},
+			})
 		default:
 			panic(fmt.Sprint("Unknown app type"))
 		}

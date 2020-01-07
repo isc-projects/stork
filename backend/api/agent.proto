@@ -39,7 +39,7 @@ message App {
   bool active = 4;
   oneof app {
     AppKea kea = 5;
-    AppBind bind = 6;
+    AppBind9 bind9 = 6;
   }
 }
 
@@ -56,7 +56,15 @@ message KeaDaemon {
   string extendedVersion = 5;
 }
 
-message AppBind {
+message Bind9Daemon {
+  int32 pid = 1;
+  string name = 2;
+  bool active = 3;
+  string version = 4;
+}
+
+message AppBind9 {
+  Bind9Daemon daemon = 1;
 }
 
 message RestartKeaReq {

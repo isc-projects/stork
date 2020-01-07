@@ -102,6 +102,18 @@ func TestDetectApps(t *testing.T) {
 	sm.Shutdown()
 }
 
+func TestDetectBind9App(t *testing.T) {
+
+	// check bind9 app detection
+	srv := detectBind9App()
+	require.NotNil(t, srv)
+	require.Empty(t, srv.Version)
+	require.False(t, srv.Active)
+	require.Equal(t, "named", srv.Daemon.Name)
+	require.Empty(t, srv.Daemon.Version)
+	require.False(t, srv.Daemon.Active)
+}
+
 func TestDetectKeaApp(t *testing.T) {
 	// prepare kea conf file
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")

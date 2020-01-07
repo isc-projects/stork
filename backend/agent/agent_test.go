@@ -29,7 +29,7 @@ func setupAgentTest() (*StorkAgent, context.Context) {
 }
 
 func (fsm *FakeAppMonitor) GetApps() []interface{} {
-	return nil
+	return fsm.Apps
 }
 
 func (fsm *FakeAppMonitor) Shutdown() {
@@ -42,8 +42,9 @@ func TestGetState(t *testing.T) {
 	rsp, err := sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	require.Equal(t, rsp.AgentVersion, stork.Version)
+	require.Empty(t, rsp.Apps)
 
-	// add some app to app monitor so GetState should return something
+	// add some apps to app monitor so GetState should return something
 	var apps []interface{}
 	apps = append(apps, AppKea{
 		AppCommon: AppCommon{
@@ -51,11 +52,26 @@ func TestGetState(t *testing.T) {
 			Active:  true,
 		},
 	})
+	apps = append(apps, AppBind9{
+		AppCommon: AppCommon{
+			Version: "9.16.0",
+			Active: false,
+		},
+	})
 	fsm, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fsm.Apps = apps
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	require.Equal(t, rsp.AgentVersion, stork.Version)
+	require.Equal(t, stork.Version, rsp.AgentVersion)
+	require.Equal(t, 2, len(rsp.Apps))
+
+	keaApp := rsp.Apps[0]
+	bind9App := rsp.Apps[1]
+	require.Equal(t, "1.2.3", keaApp.Version)
+	require.Equal(t, true, keaApp.Active)
+	require.Equal(t, "9.16.0", bind9App.Version)
+	require.False(t, bind9App.Active)
 }
 
 // Test forwarding command to Kea when HTTP 200 status code

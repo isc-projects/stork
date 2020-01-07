@@ -13,6 +13,13 @@ import (
 	"isc.org/stork/util"
 )
 
+type Bind9Daemon struct {
+	Pid int32
+	Name string
+	Active bool
+	Version string
+}
+
 type KeaDaemon struct {
 	Pid int32
 	Name string
@@ -34,8 +41,9 @@ type AppKea struct {
 	Daemons []KeaDaemon
 }
 
-type AppBind struct {
+type AppBind9 struct {
 	AppCommon
+	Daemon Bind9Daemon
 }
 
 // State of the machine. It describes multiple properties of the machine like number of CPUs
@@ -114,8 +122,21 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 				ExtendedVersion: s.Kea.ExtendedVersion,
 				Daemons: daemons,
 			})
-		case *agentapi.App_Bind:
-			log.Println("NOT IMPLEMENTED")
+		case *agentapi.App_Bind9:
+			var daemon = Bind9Daemon{
+				Pid: s.Bind9.Daemon.Pid,
+				Name: s.Bind9.Daemon.Name,
+				Active: s.Bind9.Daemon.Active,
+				Version: s.Bind9.Daemon.Version,
+			}
+			apps = append(apps, &AppBind9{
+				AppCommon: AppCommon{
+					Version: srv.Version,
+					CtrlPort: srv.CtrlPort,
+					Active: srv.Active,
+				},
+				Daemon: daemon,
+			})
 		default:
 			log.Println("unsupported app type")
 		}

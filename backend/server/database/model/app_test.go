@@ -55,7 +55,7 @@ func TestAddApp(t *testing.T) {
 	s = &App{
 		Id:        0,
 		MachineID: m.Id,
-		Type:      "bind",
+		Type:      "bind9",
 		CtrlPort:  1234,
 		Active:    true,
 	}
@@ -223,7 +223,7 @@ func TestGetAppsByPage(t *testing.T) {
 	sBind := &App{
 		Id:        0,
 		MachineID: m.Id,
-		Type:      "bind",
+		Type:      "bind9",
 		CtrlPort:  4321,
 		Active:    true,
 	}
@@ -245,11 +245,11 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Equal(t, "kea", apps[0].Type)
 
 	// get bind apps
-	apps, total, err = GetAppsByPage(db, 0, 10, "", "bind")
+	apps, total, err = GetAppsByPage(db, 0, 10, "", "bind9")
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.Equal(t, int64(1), total)
-	require.Equal(t, "bind", apps[0].Type)
+	require.Equal(t, "bind9", apps[0].Type)
 }
 
 // Test that two names of the active DHCP daemons are returned.
@@ -304,7 +304,7 @@ func TestGetActiveDHCPSingle(t *testing.T) {
 func TestGetActiveDHCPAppMismatch(t *testing.T) {
 	a := &App{
 		Type:    "kea",
-		Details: AppBind{},
+		Details: AppBind9{},
 	}
 	daemons := a.GetActiveDHCPDeamonNames()
 	require.Empty(t, daemons)

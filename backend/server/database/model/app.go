@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+type Bind9Daemon struct {
+	Pid int32
+	Name string
+	Active bool
+	Version string
+}
+
 type KeaDaemon struct {
 	Pid             int32
 	Name            string
@@ -22,7 +29,8 @@ type AppKea struct {
 	Daemons         []KeaDaemon
 }
 
-type AppBind struct {
+type AppBind9 struct {
+	Daemon Bind9Daemon
 }
 
 // Part of app table in database that describes metadata of app. In DB it is stored as JSONB.
@@ -42,7 +50,7 @@ type App struct {
 	CtrlPort    int64
 	Active      bool
 	Meta        AppMeta
-	Details     interface{} // here we have either AppKea or AppBind
+	Details     interface{} // here we have either AppKea or AppBind9
 }
 
 func AddApp(db *pg.DB, app *App) error {
@@ -56,14 +64,25 @@ func AddApp(db *pg.DB, app *App) error {
 func ReconvertAppDetails(app *App) error {
 	bytes, err := json.Marshal(app.Details)
 	if err != nil {
-		return errors.Wrapf(err, "problem with getting app from db: %v ", app)
+		return errors.Wrapf(err, "problem with getting app from the database: %v ", app)
 	}
-	var s AppKea
-	err = json.Unmarshal(bytes, &s)
-	if err != nil {
-		return errors.Wrapf(err, "problem with getting app from db: %v ", app)
+	if (app.Type == "kea") {
+		var keaDetails AppKea
+		err = json.Unmarshal(bytes, &keaDetails)
+		if err != nil {
+			return errors.Wrapf(err, "problem with getting Kea app from the database: %v ", app)
+		}
+		app.Details = keaDetails
+	} else if (app.Type == "bind9") {
+		var bind9Details AppBind9
+		err = json.Unmarshal(bytes, &bind9Details)
+		if err != nil {
+			return errors.Wrapf(err, "problem with getting BIND 9 app from the database: %v ", app)
+		}
+		app.Details = bind9Details
+	} else {
+		return errors.Wrapf(err, "unknown app type: %v ", app)
 	}
-	app.Details = s
 	return nil
 }
 

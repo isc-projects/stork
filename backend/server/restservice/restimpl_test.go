@@ -221,7 +221,6 @@ func TestGetMachine(t *testing.T) {
 	require.Equal(t, m2.Id, okRsp.Payload.ID)
 	require.Len(t, okRsp.Payload.Apps, 1)
 	require.Equal(t, s.Id, okRsp.Payload.Apps[0].ID)
-
 }
 
 func TestUpdateMachine(t *testing.T) {
@@ -436,25 +435,45 @@ func TestRestGetApp(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add app to machine
-	s := &dbmodel.App{
+	// add kea app to machine
+	keaApp := &dbmodel.App{
 		Id: 0,
 		MachineID: m.Id,
 		Type: "kea",
 		CtrlPort: 1234,
 		Active: true,
 	}
-	err = dbmodel.AddApp(db, s)
+	err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
 
-	// get added app
+	// get added kea app
 	params = services.GetAppParams{
-		ID: s.Id,
+		ID: keaApp.Id,
 	}
 	rsp = rapi.GetApp(ctx, params)
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp := rsp.(*services.GetAppOK)
-	require.Equal(t, s.Id, okRsp.Payload.ID)
+	require.Equal(t, keaApp.Id, okRsp.Payload.ID)
+
+	// add bind9 app to machine
+	bind9App := &dbmodel.App{
+		Id: 0,
+		MachineID: m.Id,
+		Type: "bind9",
+		CtrlPort: 953,
+		Active: true,
+	}
+	err = dbmodel.AddApp(db, bind9App)
+	require.NoError(t, err)
+
+	// get added bind9 app
+	params = services.GetAppParams{
+		ID: bind9App.Id,
+	}
+	rsp = rapi.GetApp(ctx, params)
+	require.IsType(t, &services.GetAppOK{}, rsp)
+	okRsp = rsp.(*services.GetAppOK)
+	require.Equal(t, bind9App.Id, okRsp.Payload.ID)
 }
 
 func TestRestGetApps(t *testing.T) {
@@ -493,18 +512,18 @@ func TestRestGetApps(t *testing.T) {
 	err = dbmodel.AddApp(db, s1)
 	require.NoError(t, err)
 
-	// add app bind to machine
+	// add app bind9 to machine
 	s2 := &dbmodel.App{
 		Id: 0,
 		MachineID: m.Id,
-		Type: "bind",
+		Type: "bind9",
 		CtrlPort: 4321,
 		Active: true,
 	}
 	err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
 
-	// get added app
+	// get added apps
 	params = services.GetAppsParams{
 	}
 	rsp = rapi.GetApps(ctx, params)

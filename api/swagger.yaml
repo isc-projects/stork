@@ -675,7 +675,7 @@ definitions:
       details:
         allOf:
           - $ref: '#/definitions/AppKea'
-          - $ref: '#/definitions/AppBind'
+          - $ref: '#/definitions/AppBind9'
 
   KeaDaemon:
     type: object
@@ -705,11 +705,23 @@ definitions:
         items:
           $ref: '#/definitions/KeaDaemon'
 
-  AppBind:
+  Bind9Daemon:
     type: object
     properties:
-      todo:
+      pid:
+        type: integer
+      name:
         type: string
+      active:
+        type: boolean
+      version:
+        type: string
+
+  AppBind9:
+    type: object
+    properties:
+      daemon:
+        $ref: '#/definitions/Bind9Daemon'
 
   AppMachine:
     type: object

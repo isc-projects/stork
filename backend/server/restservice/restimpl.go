@@ -42,7 +42,13 @@ func machineToRestApi(dbMachine dbmodel.Machine) (*models.Machine, error) {
 	var apps []*models.MachineApp
 	for _, srv := range dbMachine.Apps {
 		active := true
-		if srv.Type == "kea" {
+		if srv.Type == "bind9" {
+			err := dbmodel.ReconvertAppDetails(&srv)
+			if err != nil {
+				return nil, err
+			}
+			active = srv.Details.(dbmodel.AppBind9).Daemon.Active
+		} else if srv.Type == "kea" {
 			if srv.Active {
 				err := dbmodel.ReconvertAppDetails(&srv)
 				if err != nil {
@@ -493,6 +499,62 @@ func updateMachineFieldsKea(db *dbops.PgDB, dbMachine *dbmodel.Machine, dbAppsMa
 	return nil
 }
 
+func updateMachineFieldsBind9(db *dbops.PgDB, dbMachine *dbmodel.Machine, dbAppsMap map[string]dbmodel.App, bind9App *agentcomm.AppBind9) (err error) {
+	var bind9Daemon dbmodel.Bind9Daemon
+
+	if bind9App != nil {
+		bind9Daemon = dbmodel.Bind9Daemon{
+			Pid:     bind9App.Daemon.Pid,
+			Name:    bind9App.Daemon.Name,
+			Active:  bind9App.Daemon.Active,
+			Version: bind9App.Daemon.Version,
+		}
+	}
+
+	dbBind9App, dbOk := dbAppsMap["bind9"]
+	if dbOk && bind9App != nil {
+		// update app in db
+		meta := dbmodel.AppMeta{
+			Version: bind9App.Version,
+		}
+		dbBind9App.Deleted = time.Time{} // undelete if it was deleted
+		dbBind9App.CtrlPort = bind9App.CtrlPort
+		dbBind9App.Active = bind9App.Active
+		dbBind9App.Meta = meta
+		dt := dbBind9App.Details.(dbmodel.AppBind9)
+		dt.Daemon = bind9Daemon
+		err = db.Update(&dbBind9App)
+		if err != nil {
+			return errors.Wrapf(err, "problem with updating app %v", dbBind9App)
+		}
+	} else if dbOk && bind9App == nil {
+		// delete app from db
+		err = dbmodel.DeleteApp(db, &dbBind9App)
+		if err != nil {
+			return err
+		}
+	} else if !dbOk && bind9App != nil {
+		// add app to db
+		dbBind9App = dbmodel.App{
+			MachineID: dbMachine.Id,
+			Type:      "bind9",
+			CtrlPort:  bind9App.CtrlPort,
+			Active:    bind9App.Active,
+			Meta: dbmodel.AppMeta{
+				Version: bind9App.Version,
+			},
+			Details: dbmodel.AppBind9{
+				Daemon: bind9Daemon,
+			},
+		}
+		err = dbmodel.AddApp(db, &dbBind9App)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcomm.State) error {
 	// update state fields in machine
 	dbMachine.State.AgentVersion = m.AgentVersion
@@ -531,20 +593,25 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 		dbAppsMap[dbSrv.Type] = dbSrv
 	}
 
-	var keaSrv *agentcomm.AppKea = nil
-	//var bindSrv *agentcomm.AppBind
-	for _, srv := range m.Apps {
-		switch s := srv.(type) {
+	var keaApp *agentcomm.AppKea = nil
+	var bind9App *agentcomm.AppBind9 = nil
+	for _, app := range m.Apps {
+		switch a := app.(type) {
 		case *agentcomm.AppKea:
-			keaSrv = s
-		// case agentcomm.AppBind:
-		// 	bindSrv = &s
+			keaApp = a
+		case *agentcomm.AppBind9:
+		 	bind9App = a
 		default:
 			log.Println("NOT IMPLEMENTED")
 		}
 	}
 
-	err = updateMachineFieldsKea(db, dbMachine, dbAppsMap, keaSrv)
+	err = updateMachineFieldsKea(db, dbMachine, dbAppsMap, keaApp)
+	if err != nil {
+		return err
+	}
+
+	err = updateMachineFieldsBind9(db, dbMachine, dbAppsMap, bind9App)
 	if err != nil {
 		return err
 	}
@@ -588,48 +655,69 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 }
 
 func appToRestApi(dbApp *dbmodel.App, hooks map[string][]string) *models.App {
-	var daemons []*models.KeaDaemon
-	for _, d := range dbApp.Details.(dbmodel.AppKea).Daemons {
-		dmn := &models.KeaDaemon{
-			Pid: int64(d.Pid),
-			Name: d.Name,
-			Active: d.Active,
-			Version: d.Version,
-			ExtendedVersion: d.ExtendedVersion,
-			Hooks: []string{},
-		}
-		if hooks != nil {
-			hooksList, ok := hooks[d.Name]
-			if ok {
-				dmn.Hooks = hooksList
-			}
-		}
-		daemons = append(daemons, dmn)
-	}
-	s := models.App{
+	app := models.App{
 		ID: dbApp.Id,
 		Type: dbApp.Type,
 		CtrlAddress: dbApp.CtrlAddress,
 		CtrlPort: dbApp.CtrlPort,
 		Active: dbApp.Active,
 		Version: dbApp.Meta.Version,
-		Details: struct {
-			models.AppKea
-			models.AppBind
-		}{
-			models.AppKea{
-				ExtendedVersion: dbApp.Details.(dbmodel.AppKea).ExtendedVersion,
-				Daemons: daemons,
-			},
-			models.AppBind{},
-		},
 		Machine: &models.AppMachine{
 			ID: dbApp.MachineID,
 			Address: dbApp.Machine.Address,
 			Hostname: dbApp.Machine.State.Hostname,
 		},
 	}
-	return &s
+
+	isKeaApp := dbApp.Type == "kea"
+	isBind9App := dbApp.Type == "bind9"
+
+	if isKeaApp {
+		var keaDaemons []*models.KeaDaemon
+		for _, d := range dbApp.Details.(dbmodel.AppKea).Daemons {
+			dmn := &models.KeaDaemon{
+				Pid: int64(d.Pid),
+				Name: d.Name,
+				Active: d.Active,
+				Version: d.Version,
+				ExtendedVersion: d.ExtendedVersion,
+				Hooks: []string{},
+			}
+			if hooks != nil {
+				hooksList, ok := hooks[d.Name]
+				if ok {
+					dmn.Hooks = hooksList
+				}
+			}
+			keaDaemons = append(keaDaemons, dmn)
+		}
+
+		app.Details = struct { models.AppKea; models.AppBind9 }{
+			models.AppKea{
+				ExtendedVersion: dbApp.Details.(dbmodel.AppKea).ExtendedVersion,
+				Daemons:         keaDaemons,
+			},
+			models.AppBind9{},
+		}
+	}
+
+	if isBind9App {
+		bind9Daemon := &models.Bind9Daemon{
+			Pid: int64(dbApp.Details.(dbmodel.AppBind9).Daemon.Pid),
+			Name: dbApp.Details.(dbmodel.AppBind9).Daemon.Name,
+			Active: dbApp.Details.(dbmodel.AppBind9).Daemon.Active,
+			Version: dbApp.Details.(dbmodel.AppBind9).Daemon.Version,
+		}
+
+		app.Details = struct { models.AppKea; models.AppBind9 }{
+			models.AppKea{},
+			models.AppBind9{
+				Daemon: bind9Daemon,
+			},
+		}
+	}
+
+	return &app
 }
 
 func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) middleware.Responder {
@@ -705,12 +793,16 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 		return rsp
 	}
 
-	hooksByDaemon, err := kea.GetDaemonHooks(ctx, r.Agents, dbApp)
-	if err != nil {
-		log.Warn(err)
+	var a *models.App
+	if dbApp.Type == "bind9" {
+		a = appToRestApi(dbApp, nil)
+	} else if dbApp.Type == "kea" {
+		hooksByDaemon, err := kea.GetDaemonHooks(ctx, r.Agents, dbApp)
+		if err != nil {
+			log.Warn(err)
+		}
+		a = appToRestApi(dbApp, hooksByDaemon)
 	}
-
-	a := appToRestApi(dbApp, hooksByDaemon)
 	rsp := services.NewGetAppOK().WithPayload(a)
 	return rsp
 }
