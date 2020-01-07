@@ -78,7 +78,7 @@ RICHGO = "#{GOBIN}/richgo"
 
 # Patch PATH env
 ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin:#{ENV['PATH']}"
-ENV['PATH'] = "#{TOOLS_DIR}/go/bin:#{ENV['PATH']}"
+ENV['PATH'] = "#{GO_DIR}/go/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
 
 # Documentation
