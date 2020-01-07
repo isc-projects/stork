@@ -82,7 +82,7 @@
                 </td>
                 <td>
                     <span
-                        *ngFor="let d of sortKeaDaemonsByImportance(s)"
+                        *ngFor="let d of sortDaemonsByImportance(s)"
                         [ngStyle]="{ color: d.active ? '#00a800' : '#f11' }"
                     >
                         <i
@@ -115,5 +115,6 @@
 
 <!-- Single app tab -->
 <div *ngIf="activeTabIdx != 0" class="ui-widget">
-    <app-kea-daemons-tabs class="p-col-12" [appTab]="appTab" (refreshApp)="onRefreshApp($event)"></app-kea-daemons-tabs>
+    <app-bind9-app-tab class="p-col-12" *ngIf="appTab.app.type === 'bind9'" [appTab]="appTab" (refreshApp)="onRefreshApp($event)"></app-bind9-app-tab>
+    <app-kea-daemons-tabs class="p-col-12" *ngIf="appTab.app.type === 'kea'" [appTab]="appTab" (refreshApp)="onRefreshApp($event)"></app-kea-daemons-tabs>
 </div>

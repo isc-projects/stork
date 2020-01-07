@@ -3,11 +3,11 @@ import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
 import { MessageService, MenuItem } from 'primeng/api'
 
 @Component({
-    selector: 'app-kea-daemons-tabs',
-    templateUrl: './kea-app-tab.component.html',
-    styleUrls: ['./kea-app-tab.component.sass'],
+    selector: 'app-bind9-app-tab',
+    templateUrl: './bind9-app-tab.component.html',
+    styleUrls: ['./bind9-app-tab.component.sass'],
 })
-export class KeaAppTabComponent implements OnInit {
+export class Bind9AppTabComponent implements OnInit {
     private _appTab: any
     @Output() refreshApp = new EventEmitter<number>()
 
@@ -27,10 +27,8 @@ export class KeaAppTabComponent implements OnInit {
         this._appTab = appTab
 
         const daemonMap = []
-        for (const d of appTab.app.details.daemons) {
-            daemonMap[d.name] = d
-        }
-        const DMAP = [['dhcp4', 'DHCPv4'], ['dhcp6', 'DHCPv6'], ['d2', 'DDNS'], ['ca', 'CA'], ['netconf', 'NETCONF']]
+        daemonMap[appTab.app.details.daemon.name] = appTab.app.details.daemon
+        const DMAP = [['named', 'named']]
         const daemons = []
         const tabs = []
         for (const dm of DMAP) {

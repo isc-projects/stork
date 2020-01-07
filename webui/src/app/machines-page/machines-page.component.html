@@ -139,7 +139,7 @@
                                 'vertical-align': s.active ? 'text-bottom' : 'text-top'
                             }"
                         ></i
-                        >{{ s.type }}
+                        >{{ s.type }}<br />
                     </a>
                 </td>
                 <td>{{ m.cpus }}</td>
@@ -307,6 +307,24 @@
             <div *ngFor="let srv of machineTab.machine.apps">
                 <div *ngIf="srv.type == 'kea'">
                     <h3>Kea App</h3>
+                    Active:
+                    <span [ngStyle]="{ color: srv.active ? '#00a800' : '#f11' }">
+                        <i
+                            class="pi pi-{{ srv.active ? 'check' : 'exclamation-circle' }}"
+                            [ngStyle]="{
+                                'font-size': '1.5em',
+                                'vertical-align': srv.active ? 'text-bottom' : 'text-top'
+                            }"
+                        ></i>
+                        {{ srv.active ? 'yes' : 'no' }}
+                    </span>
+                    <br />
+                    Version: {{ srv.version }}
+                    <br />
+                    <a routerLink="/apps/{{ srv.type }}/{{ srv.id }}">link to details</a>
+                </div>
+                <div *ngIf="srv.type == 'bind9'">
+                    <h3>BIND 9 App</h3>
                     Active:
                     <span [ngStyle]="{ color: srv.active ? '#00a800' : '#f11' }">
                         <i

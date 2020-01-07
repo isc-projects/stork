@@ -47,6 +47,7 @@ import { MachinesPageComponent } from './machines-page/machines-page.component'
 import { LocaltimePipe } from './localtime.pipe'
 import { UsersPageComponent } from './users-page/users-page.component'
 import { AppsPageComponent } from './apps-page/apps-page.component'
+import { Bind9AppTabComponent } from './bind9-app-tab/bind9-app-tab.component'
 import { KeaAppTabComponent } from './kea-app-tab/kea-app-tab.component'
 import { PasswordChangePageComponent } from './password-change-page/password-change-page.component'
 import { ProfilePageComponent } from './profile-page/profile-page.component'
@@ -82,6 +83,7 @@ export function preinitApp(appInitService: AppInitService) {
         LocaltimePipe,
         UsersPageComponent,
         AppsPageComponent,
+        Bind9AppTabComponent,
         KeaAppTabComponent,
         PasswordChangePageComponent,
         ProfilePageComponent,

@@ -10,9 +10,11 @@ function htmlizeExtVersion(app) {
     if (app.details.extendedVersion) {
         app.details.extendedVersion = app.details.extendedVersion.replace(/\n/g, '<br>')
     }
-    for (const d of app.details.daemons) {
-        if (d.extendedVersion) {
-            d.extendedVersion = d.extendedVersion.replace(/\n/g, '<br>')
+    if (app.details.daemons) {
+        for (const d of app.details.daemons) {
+            if (d.extendedVersion) {
+                d.extendedVersion = d.extendedVersion.replace(/\n/g, '<br>')
+            }
         }
     }
 }
@@ -246,25 +248,38 @@ export class AppsPageComponent implements OnInit {
         appsTable.onLazyLoad.emit(appsTable.createLazyLoadMetadata())
     }
 
-    sortKeaDaemonsByImportance(app) {
+    sortDaemonsByImportance(app) {
         const daemonMap = []
-        for (const d of app.details.daemons) {
-            daemonMap[d.name] = d
-        }
-        const DMAP = [
-            ['dhcp4', 'DHCPv4'],
-            ['dhcp6', 'DHCPv6'],
-            ['d2', 'DDNS'],
-            ['ca', 'CA'],
-            ['netconf', 'NETCONF'],
-        ]
         const daemons = []
-        for (const dm of DMAP) {
-            if (daemonMap[dm[0]] !== undefined) {
-                daemonMap[dm[0]].niceName = dm[1]
-                daemons.push(daemonMap[dm[0]])
+
+        if (app.details.daemons) {
+            for (const d of app.details.daemons) {
+                daemonMap[d.name] = d
+            }
+            const DMAP = [
+                ['dhcp4', 'DHCPv4'],
+                ['dhcp6', 'DHCPv6'],
+                ['d2', 'DDNS'],
+                ['ca', 'CA'],
+                ['netconf', 'NETCONF'],
+            ]
+            for (const dm of DMAP) {
+                if (daemonMap[dm[0]] !== undefined) {
+                    daemonMap[dm[0]].niceName = dm[1]
+                    daemons.push(daemonMap[dm[0]])
+                }
+            }
+        } else if (app.details.daemon) {
+            daemonMap[app.details.daemon.name] = app.details.daemon
+            const DMAP = [['named', 'named']]
+            for (const dm of DMAP) {
+                if (daemonMap[dm[0]] !== undefined) {
+                    daemonMap[dm[0]].niceName = dm[1]
+                    daemons.push(daemonMap[dm[0]])
+                }
             }
         }
+
         return daemons
     }
 }
