@@ -119,7 +119,7 @@ export class HaStatusComponent implements OnInit {
     /**
      * Convenience function returning received status for the current daemon.
      */
-    private get ha() {
+    get ha() {
         return this._receivedStatus[this.daemonName]
     }
 
