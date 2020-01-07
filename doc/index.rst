@@ -5,7 +5,7 @@
 Stork Administrator Reference Manual
 ####################################
 
-Stork is a new project proposed by ISC with the aim of delivering BIND and Kea dashboard.
+Stork is a new project proposed by ISC with the aim of delivering BIND 9 and Kea dashboard.
 It is going to be a spiritual successor of earlier attempts - Kittiwake and Antherius.
 It is currently in very early stages of planning.
 

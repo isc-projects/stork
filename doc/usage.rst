@@ -83,6 +83,13 @@ of CPU cores, CPU load, available total memory, current memory utilization, upti
 family, platform name, OS version, kernel, virtualization details (if any), host ID and other
 information will be provided. More information will become available in the future Stork versions.
 
+Detecting Running Applications
+==============================
+
+Once a new Machine has been registered. the Stork agent tries to detect existing running
+Bind9 and Kea applications. If the agent finds them, they will be reported to the Stork server
+and added to the database, so that they become visible in the Stork dashboard.
+
 Monitoring Machines
 ===================
 

@@ -9,7 +9,7 @@
    information regarding copyright ownership.
 
 
-stork-agent - Stork agent that monitors BIND and Kea services
+stork-agent - Stork agent that monitors BIND 9 and Kea services
 -------------------------------------------------------------
 
 Synopsis
@@ -21,7 +21,7 @@ Description
 ~~~~~~~~~~~
 
 The ``stork-agent`` is a small tool that is being run on the systems
-that are running BIND and Kea services. Stork server connects to
+that are running BIND 9 and Kea services. Stork server connects to
 the stork agent and uses it to monitor services remotely.
 
 Arguments
@@ -56,8 +56,8 @@ Mailing List and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There is a public mailing list available for the Stork project. **stork-dev**
-(stork-dev at lists.isc.org) is intended for Kea developers, prospective
-contributors, and other advanced users. The list is available at
+(stork-dev at lists.isc.org) is intended for BIND 9 and Kea developers,
+prospective contributors, and other advanced users. The list is available at
 https://lists.isc.org. The community provides best-effort support
 on both of those lists.
 
