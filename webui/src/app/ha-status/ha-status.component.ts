@@ -85,7 +85,7 @@ export class HaStatusComponent implements OnInit {
      *          below 1 minute and in minutes otherwise.
      */
     get ageCounter(): string {
-        const age = this._ageCounter[this.daemonName]
+        const age = this._ageCounter[this._daemonName]
         if (!age || age === 0) {
             return 'just now'
         }
@@ -101,7 +101,7 @@ export class HaStatusComponent implements OnInit {
      * @returns true if the status has been fetched and is available for display.
      */
     get hasStatus(): boolean {
-        return this._receivedStatus && this._receivedStatus[this.daemonName]
+        return this._receivedStatus && this._receivedStatus[this._daemonName]
     }
 
     /**
@@ -113,14 +113,14 @@ export class HaStatusComponent implements OnInit {
      * @returns true if there was an error while fetching the HA status.
      */
     get hasErredStatus(): boolean {
-        return this._statusErred && this._statusErred[this.daemonName]
+        return this._statusErred && this._statusErred[this._daemonName]
     }
 
     /**
      * Convenience function returning received status for the current daemon.
      */
     get ha() {
-        return this._receivedStatus[this.daemonName]
+        return this._receivedStatus[this._daemonName]
     }
 
     /**
@@ -143,13 +143,13 @@ export class HaStatusComponent implements OnInit {
                 }
                 // We were unable to fetch the HA status for this server, thus
                 // we mark it as erred.
-                if (!this._receivedStatus[this.daemonName]) {
-                    this._statusErred[this.daemonName] = true
+                if (!this._receivedStatus[this._daemonName]) {
+                    this._statusErred[this._daemonName] = true
                 }
             },
             err => {
                 console.warn('failed to fetch the HA status for Kea application id ' + this.appId)
-                this._statusErred[this.daemonName] = true
+                this._statusErred[this._daemonName] = true
                 this._receivedStatus = null
             }
         )
