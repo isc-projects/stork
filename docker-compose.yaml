@@ -19,11 +19,12 @@ services:
     depends_on:
       - postgres
 
-  agent-kea:
+  agent:
     restart: always
     build:
       context: .
-      dockerfile: docker/docker-agent-kea.txt
+      dockerfile: docker/docker-agent-apps.txt
+    hostname: jamesbond
     expose:
       - "8080"
 
