@@ -1,3 +1,8 @@
+* 19 [func] marcin
+
+    Kea High Availability status is presented on the Kea application page.
+    (Gitlab #110)
+
 * 18 [func] marcin
 
     Logged user can now change his/her password. Also, users can be
