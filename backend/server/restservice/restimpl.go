@@ -433,6 +433,66 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	return rsp
 }
 
+func updateMachineFieldsKea(db *dbops.PgDB, dbMachine *dbmodel.Machine, dbAppsMap map[string]dbmodel.App, keaApp *agentcomm.AppKea) (err error) {
+	var keaDaemons []dbmodel.KeaDaemon
+	if keaApp != nil {
+		for _, d := range keaApp.Daemons {
+			keaDaemons = append(keaDaemons, dbmodel.KeaDaemon{
+				Pid:             d.Pid,
+				Name:            d.Name,
+				Active:          d.Active,
+				Version:         d.Version,
+				ExtendedVersion: d.ExtendedVersion,
+			})
+		}
+	}
+
+	dbKeaApp, dbOk := dbAppsMap["kea"]
+	if dbOk && keaApp != nil {
+		// update app in db
+		meta := dbmodel.AppMeta{
+			Version: keaApp.Version,
+		}
+		dbKeaApp.Deleted = time.Time{} // undelete if it was deleted
+		dbKeaApp.CtrlPort = keaApp.CtrlPort
+		dbKeaApp.Active = keaApp.Active
+		dbKeaApp.Meta = meta
+		dt := dbKeaApp.Details.(dbmodel.AppKea)
+		dt.ExtendedVersion = keaApp.ExtendedVersion
+		dt.Daemons = keaDaemons
+		err = db.Update(&dbKeaApp)
+		if err != nil {
+			return errors.Wrapf(err, "problem with updating app %v", dbKeaApp)
+		}
+	} else if dbOk && keaApp == nil {
+		// delete app from db
+		err = dbmodel.DeleteApp(db, &dbKeaApp)
+		if err != nil {
+			return err
+		}
+	} else if !dbOk && keaApp != nil {
+		// add app to db
+		dbKeaApp = dbmodel.App{
+			MachineID: dbMachine.Id,
+			Type:      "kea",
+			CtrlPort:  keaApp.CtrlPort,
+			Active:    keaApp.Active,
+			Meta: dbmodel.AppMeta{
+				Version: keaApp.Version,
+			},
+			Details: dbmodel.AppKea{
+				ExtendedVersion: keaApp.ExtendedVersion,
+				Daemons:         keaDaemons,
+			},
+		}
+		err = dbmodel.AddApp(db, &dbKeaApp)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcomm.State) error {
 	// update state fields in machine
 	dbMachine.State.AgentVersion = m.AgentVersion
@@ -484,63 +544,9 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 		}
 	}
 
-	var keaDaemons []dbmodel.KeaDaemon
-	if keaSrv != nil {
-		for _, d := range keaSrv.Daemons {
-			keaDaemons = append(keaDaemons, dbmodel.KeaDaemon{
-				Pid: d.Pid,
-				Name: d.Name,
-				Active: d.Active,
-				Version: d.Version,
-				ExtendedVersion: d.ExtendedVersion,
-			})
-		}
-	}
-
-	dbKeaSrv, dbOk := dbAppsMap["kea"]
-	if dbOk && keaSrv != nil {
-		// update app in db
-		meta := dbmodel.AppMeta{
-			Version: keaSrv.Version,
-		}
-		dbKeaSrv.Deleted = time.Time{}  // undelete if it was deleted
-		dbKeaSrv.CtrlAddress = keaSrv.CtrlAddress
-		dbKeaSrv.CtrlPort = keaSrv.CtrlPort
-		dbKeaSrv.Active = keaSrv.Active
-		dbKeaSrv.Meta = meta
-		dt := dbKeaSrv.Details.(dbmodel.AppKea)
-		dt.ExtendedVersion = keaSrv.ExtendedVersion
-		dt.Daemons = keaDaemons
-		err = db.Update(&dbKeaSrv)
-		if err != nil {
-			return errors.Wrapf(err, "problem with updating app %v", dbKeaSrv)
-		}
-	} else if dbOk && keaSrv == nil {
-		// delete app from db
-		err = dbmodel.DeleteApp(db, &dbKeaSrv)
-		if err != nil {
-			return err
-		}
-	} else if !dbOk && keaSrv != nil {
-		// add app to db
-		dbKeaSrv = dbmodel.App{
-			MachineID: dbMachine.Id,
-			Type: "kea",
-			CtrlAddress: keaSrv.CtrlAddress,
-			CtrlPort: keaSrv.CtrlPort,
-			Active: keaSrv.Active,
-			Meta: dbmodel.AppMeta{
-				Version: keaSrv.Version,
-			},
-			Details: dbmodel.AppKea{
-				ExtendedVersion: keaSrv.ExtendedVersion,
-				Daemons: keaDaemons,
-			},
-		}
-		err = dbmodel.AddApp(db, &dbKeaSrv)
-		if err != nil {
-			return err
-		}
+	err = updateMachineFieldsKea(db, dbMachine, dbAppsMap, keaSrv)
+	if err != nil {
+		return err
 	}
 
 	err = dbmodel.RefreshMachineFromDb(db, dbMachine)
