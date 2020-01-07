@@ -51,6 +51,7 @@ import { KeaAppTabComponent } from './kea-app-tab/kea-app-tab.component'
 import { PasswordChangePageComponent } from './password-change-page/password-change-page.component'
 import { ProfilePageComponent } from './profile-page/profile-page.component'
 import { SettingsMenuComponent } from './settings-menu/settings-menu.component'
+import { HaStatusComponent } from './ha-status/ha-status.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -85,6 +86,7 @@ export function preinitApp(appInitService: AppInitService) {
         PasswordChangePageComponent,
         ProfilePageComponent,
         SettingsMenuComponent,
+        HaStatusComponent,
     ],
     imports: [
         BrowserModule,

@@ -62,4 +62,8 @@
             </table>
         </div>
     </div>
+
+    <div *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'" class="p-col-12">
+        <app-ha-status [appId]="appTab.app.id" [daemonName]="daemon.name"></app-ha-status>
+    </div>
 </div>

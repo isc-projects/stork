@@ -1,0 +1,80 @@
+<div>
+    <h4>High Availability</h4>
+    <div *ngIf="hasStatus" style="margin: 10px; width:600px" class="p-grid">
+        <div class="p-col-6">
+            <p-panel>
+                <p-header>Local server</p-header>
+                <table>
+                    <tr>
+                        <td>State:</td>
+                        <td>
+                            <i>{{ ha.localServer.state }}</i>
+                            <div
+                                *ngIf="!localStateOk()"
+                                class="ui-menuitem-icon"
+                                class="pi pi-exclamation-circle"
+                                style="font-size: 1.6em; color: #f33;"
+                            ></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Role:</td>
+                        <td>
+                            <i>{{ ha.localServer.role }}</i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Scopes served:</td>
+                        <td>
+                            <i>{{ localScopes() }}</i>
+                        </td>
+                    </tr>
+                </table>
+            </p-panel>
+        </div>
+        <div class="p-col-6">
+            <p-panel>
+                <p-header>{{ 'Remote server (' + this.ageCounter + ')' }}</p-header>
+                <table>
+                    <tr>
+                        <td>State:</td>
+                        <td>
+                            <i>{{ ha.remoteServer.state }}</i>
+                            <div
+                                *ngIf="!remoteStateOk()"
+                                class="ui-menuitem-icon"
+                                class="pi pi-exclamation-circle"
+                                style="font-size: 1.6em; color: #f33;"
+                            ></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Role:</td>
+                        <td>
+                            <i>{{ ha.remoteServer.role }}</i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Scopes served:</td>
+                        <td>
+                            <i>{{ remoteScopes() }}</i>
+                        </td>
+                    </tr>
+                </table>
+            </p-panel>
+        </div>
+        <div class="p-col-12">
+            <p-panel>
+                <p-header>Note</p-header>
+                {{ footerInfo() }}
+            </p-panel>
+        </div>
+    </div>
+
+    <div *ngIf="hasErredStatus">
+        <p-message
+            severity="error"
+            text="Error occurred while trying to fetch High Availability status from the DHCP server."
+        ></p-message>
+    </div>
+</div>
