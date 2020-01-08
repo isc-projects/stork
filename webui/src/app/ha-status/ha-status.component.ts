@@ -119,7 +119,7 @@ export class HaStatusComponent implements OnInit {
     /**
      * Convenience function returning received status for the current daemon.
      */
-    get ha() {
+    haStatus() {
         return this._receivedStatus[this._daemonName]
     }
 
@@ -167,7 +167,7 @@ export class HaStatusComponent implements OnInit {
      */
     localStateOk(): boolean {
         return (
-            this.ha && (this.ha.localServer.state === 'load-balancing' || this.ha.localServer.state === 'hot-standby')
+            this.haStatus() && (this.haStatus().localServer.state === 'load-balancing' || this.haStatus().localServer.state === 'hot-standby')
         )
     }
 
@@ -183,7 +183,7 @@ export class HaStatusComponent implements OnInit {
      */
     remoteStateOk(): boolean {
         return (
-            this.ha && (this.ha.remoteServer.state === 'load-balancing' || this.ha.remoteServer.state === 'hot-standby')
+            this.haStatus() && (this.haStatus().remoteServer.state === 'load-balancing' || this.haStatus().remoteServer.state === 'hot-standby')
         )
     }
 
@@ -197,7 +197,7 @@ export class HaStatusComponent implements OnInit {
     localScopes(): string {
         let scopes: string
         if (this.hasStatus) {
-            scopes = this.ha.localServer.scopes.join(', ')
+            scopes = this.haStatus().localServer.scopes.join(', ')
         }
 
         return scopes || '(none)'
@@ -213,7 +213,7 @@ export class HaStatusComponent implements OnInit {
     remoteScopes(): string {
         let scopes: string
         if (this.hasStatus) {
-            scopes = this.ha.remoteServer.scopes.join(', ')
+            scopes = this.haStatus().remoteServer.scopes.join(', ')
         }
 
         return scopes || '(none)'
@@ -235,25 +235,25 @@ export class HaStatusComponent implements OnInit {
 
         // The local server serves no clients, so the remote serves all of them.
         // It may be a hot-standby case or partner-down case.
-        if (this.ha.localServer.scopes.length === 0 && this.ha.remoteServer.scopes.length > 0) {
+        if (this.haStatus().localServer.scopes.length === 0 && this.haStatus().remoteServer.scopes.length > 0) {
             return 'The remote server responds to the entire DHCP traffic.'
         }
 
         // The remote server serves no cliebts, so the local serves all of them.
         // It may be a hot-standby case or partner-down case.
-        if (this.ha.remoteServer.scopes.length === 0 && this.ha.localServer.scopes.length > 0) {
+        if (this.haStatus().remoteServer.scopes.length === 0 && this.haStatus().localServer.scopes.length > 0) {
             return 'The local server responds to the entire DHCP traffic.'
         }
 
         // This is the load-balancing case when both servers respond to some
         // DHCP traffic.
-        if (this.ha.remoteServer.scopes.length > 0 && this.ha.localServer.scopes.length > 0) {
+        if (this.haStatus().remoteServer.scopes.length > 0 && this.haStatus().localServer.scopes.length > 0) {
             return 'Both servers respond to the DHCP traffic.'
         }
 
         // If the HA service is being started, the servers synchronize their
         // databases and do not respond to any traffic.
-        if (this.ha.remoteServer.scopes.length === 0 && this.ha.localServer.scopes.length === 0) {
+        if (this.haStatus().remoteServer.scopes.length === 0 && this.haStatus().localServer.scopes.length === 0) {
             return 'No servers respond to the DHCP traffic.'
         }
     }

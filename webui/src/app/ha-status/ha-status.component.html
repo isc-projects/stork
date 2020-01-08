@@ -8,7 +8,7 @@
                     <tr>
                         <td>State:</td>
                         <td>
-                            <i>{{ ha.localServer.state }}</i>
+                            <i>{{ haStatus().localServer.state }}</i>
                             <div
                                 *ngIf="!localStateOk()"
                                 class="ui-menuitem-icon pi pi-exclamation-circle"
@@ -19,7 +19,7 @@
                     <tr>
                         <td>Role:</td>
                         <td>
-                            <i>{{ ha.localServer.role }}</i>
+                            <i>{{ haStatus().localServer.role }}</i>
                         </td>
                     </tr>
                     <tr>
@@ -38,7 +38,7 @@
                     <tr>
                         <td>State:</td>
                         <td>
-                            <i>{{ ha.remoteServer.state }}</i>
+                            <i>{{ haStatus().remoteServer.state }}</i>
                             <div
                                 *ngIf="!remoteStateOk()"
                                 class="ui-menuitem-icon pi pi-exclamation-circle"
@@ -49,7 +49,7 @@
                     <tr>
                         <td>Role:</td>
                         <td>
-                            <i>{{ ha.remoteServer.role }}</i>
+                            <i>{{ haStatus().remoteServer.role }}</i>
                         </td>
                     </tr>
                     <tr>
