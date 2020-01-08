@@ -1,4 +1,4 @@
-* 19 [func] marcin
+* 19 [func] marcin
 
     Kea High Availability status is presented on the Kea application page.
     (Gitlab #110)
