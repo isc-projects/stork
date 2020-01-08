@@ -30,6 +30,36 @@ services:
     expose:
       - "8080"
 
+  agent-kea-ha1:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/docker-agent-kea-ha1.txt
+    image: registry.gitlab.isc.org/isc-projects/stork/agent-kea-ha1:latest
+    hostname: agent-kea-ha1
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.101
+    expose:
+      - "8081"
+    ports:
+      - "8881:8080"
+
+  agent-kea-ha2:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/docker-agent-kea-ha2.txt
+    image: registry.gitlab.isc.org/isc-projects/stork/agent-kea-ha2:latest
+    hostname: agent-kea-ha2
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.102
+    expose:
+      - "8082"
+    ports:
+      - "8882:8080"
+
   agent-bind9:
     restart: always
     build:
@@ -63,3 +93,9 @@ services:
 volumes:
   db-data:
   web-data:
+
+networks:
+  storknet:
+    ipam:
+     config:
+       - subnet: 172.20.0.0/24

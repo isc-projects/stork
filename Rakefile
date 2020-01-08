@@ -410,7 +410,20 @@ end
 desc 'Run container with Stork Agent and Kea and mount current Agent binary'
 task :run_kea_container do
   # host[8888]->agent[8080], host[8787]->kea-ca[8000]
-  sh 'docker run --rm -ti -p 8888:8080 -p 8787:8000 -v `pwd`/backend/cmd/stork-agent:/agent agent-kea'
+  sh 'docker run --rm -ti -p 8888:8080 -p 8787:8000 -h agent-kea -v `pwd`/backend/cmd/stork-agent:/agent agent-kea'
+end
+
+desc 'Build container with Stork Agent and Kea HA'
+task :build_agent_kea_ha_container do
+  sh 'docker-compose build agent-kea-ha1 agent-kea-ha2'
+end
+
+desc 'Run 2 containers with Stork Agent and Kea HA pair'
+task :run_agent_kea_ha_container do
+  at_exit {
+    sh "docker-compose down"
+  }
+  sh 'docker-compose up agent-kea-ha1 agent-kea-ha2'
 end
 
 desc 'Build container with Stork Agent and BIND 9'
