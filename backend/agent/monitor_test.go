@@ -42,10 +42,10 @@ func TestKeaDaemonVersionGetDataOk(t *testing.T) {
 	require.Equal(t, map[string]interface{}{"arguments":"bar"}, data)
 }
 
-func TestGetCtrlPortFromKeaConfigNonExisting(t *testing.T) {
+func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
 	// check reading from non existing file
 	path := "/tmp/non-exisiting-path"
-	address, port := getCtrlFromKeaConfig(path)
+	address, port := getCtrlAddressFromKeaConfig(path)
 	require.Equal(t, int64(0), port)
 	require.Empty(t, address)
 }
@@ -68,12 +68,12 @@ func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 
 	// check reading from prepared file with bad content
 	// so 0 should be returned as port
-	address, port := getCtrlFromKeaConfig(tmpFile.Name())
+	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
 	require.Equal(t, int64(0), port)
 	require.Empty(t, address)
 }
 
-func TestGetCtrlPortFromKeaConfigOk(t *testing.T) {
+func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
 	// prepare kea conf file
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
 	if err != nil {
@@ -90,7 +90,7 @@ func TestGetCtrlPortFromKeaConfigOk(t *testing.T) {
 	}
 
 	// check reading from proper file
-	address, port := getCtrlFromKeaConfig(tmpFile.Name())
+	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
 	require.Equal(t, int64(1234), port)
 	require.Equal(t, "host.example.org", address)
 }

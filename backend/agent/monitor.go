@@ -80,7 +80,7 @@ func (sm *appMonitor) run() {
 	}
 }
 
-func getCtrlFromKeaConfig(path string) (string, int64) {
+func getCtrlAddressFromKeaConfig(path string) (string, int64) {
 	text, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Warnf("cannot read kea config file: %+v", err)
@@ -149,7 +149,7 @@ func detectKeaApp(match []string) *AppKea {
 
 	keaConfPath := match[1]
 
-	ctrlAddress, ctrlPort := getCtrlFromKeaConfig(keaConfPath)
+	ctrlAddress, ctrlPort := getCtrlAddressFromKeaConfig(keaConfPath)
 	keaApp = &AppKea{
 		AppCommon: AppCommon{
 			CtrlAddress: ctrlAddress,
