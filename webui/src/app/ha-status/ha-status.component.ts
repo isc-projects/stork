@@ -167,7 +167,9 @@ export class HaStatusComponent implements OnInit {
      */
     localStateOk(): boolean {
         return (
-            this.haStatus() && (this.haStatus().localServer.state === 'load-balancing' || this.haStatus().localServer.state === 'hot-standby')
+            this.haStatus() &&
+            (this.haStatus().localServer.state === 'load-balancing' ||
+                this.haStatus().localServer.state === 'hot-standby')
         )
     }
 
@@ -183,7 +185,9 @@ export class HaStatusComponent implements OnInit {
      */
     remoteStateOk(): boolean {
         return (
-            this.haStatus() && (this.haStatus().remoteServer.state === 'load-balancing' || this.haStatus().remoteServer.state === 'hot-standby')
+            this.haStatus() &&
+            (this.haStatus().remoteServer.state === 'load-balancing' ||
+                this.haStatus().remoteServer.state === 'hot-standby')
         )
     }
 
