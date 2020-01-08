@@ -40,11 +40,12 @@ func TestAddApp(t *testing.T) {
 
 	// add app, no error expected
 	s = &App{
-		Id:        0,
-		MachineID: m.Id,
-		Type:      "kea",
-		CtrlPort:  1234,
-		Active:    true,
+		Id:          0,
+		MachineID:   m.Id,
+		Type:        "kea",
+		CtrlAddress: "cool.example.org",
+		CtrlPort:    1234,
+		Active:      true,
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
@@ -60,6 +61,18 @@ func TestAddApp(t *testing.T) {
 	}
 	err = AddApp(db, s)
 	require.Contains(t, err.Error(), "duplicate")
+
+	// add app with empty control address - error should be raised
+	s = &App{
+		Id:          0,
+		MachineID:   m.Id,
+		Type:        "bind",
+		CtrlAddress: "",
+		CtrlPort:    1234,
+		Active:      true,
+	}
+	err = AddApp(db, s)
+	require.NotNil(t, err)
 }
 
 func TestDeleteApp(t *testing.T) {
@@ -164,6 +177,7 @@ func TestGetAppById(t *testing.T) {
 		CtrlPort:  1234,
 		Active:    true,
 	}
+
 	err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, s.Id)
@@ -173,6 +187,10 @@ func TestGetAppById(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, app)
 	require.Equal(t, s.Id, app.Id)
+
+	// The control address is a special case. If it is not specified
+	// it should be localhost.
+	require.Equal(t, "localhost", app.CtrlAddress)
 }
 
 func TestGetAppsByPage(t *testing.T) {

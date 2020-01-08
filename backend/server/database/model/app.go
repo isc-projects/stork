@@ -32,16 +32,17 @@ type AppMeta struct {
 
 // Represents a app held in app table in the database.
 type App struct {
-	Id        int64
-	Created   time.Time
-	Deleted   time.Time
-	MachineID int64
-	Machine   Machine
-	Type      string
-	CtrlPort  int64
-	Active    bool
-	Meta      AppMeta
-	Details   interface{} // here we have either AppKea or AppBind
+	Id          int64
+	Created     time.Time
+	Deleted     time.Time
+	MachineID   int64
+	Machine     Machine
+	Type        string
+	CtrlAddress string
+	CtrlPort    int64
+	Active      bool
+	Meta        AppMeta
+	Details     interface{} // here we have either AppKea or AppBind
 }
 
 func AddApp(db *pg.DB, app *App) error {
