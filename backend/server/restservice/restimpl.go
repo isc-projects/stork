@@ -504,6 +504,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 			Version: keaSrv.Version,
 		}
 		dbKeaSrv.Deleted = time.Time{}  // undelete if it was deleted
+		dbKeaSrv.CtrlAddress = keaSrv.CtrlAddress
 		dbKeaSrv.CtrlPort = keaSrv.CtrlPort
 		dbKeaSrv.Active = keaSrv.Active
 		dbKeaSrv.Meta = meta
@@ -525,6 +526,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 		dbKeaSrv = dbmodel.App{
 			MachineID: dbMachine.Id,
 			Type: "kea",
+			CtrlAddress: keaSrv.CtrlAddress,
 			CtrlPort: keaSrv.CtrlPort,
 			Active: keaSrv.Active,
 			Meta: dbmodel.AppMeta{

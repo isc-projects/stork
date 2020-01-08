@@ -56,6 +56,7 @@ func (s *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*a
 			}
 			apps = append(apps, &agentapi.App{
 				Version: s.Version,
+				CtrlAddress: s.CtrlAddress,
 				CtrlPort: s.CtrlPort,
 				Active: s.Active,
 				App: &agentapi.App_Kea{

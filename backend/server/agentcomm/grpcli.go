@@ -23,6 +23,7 @@ type KeaDaemon struct {
 
 type AppCommon struct {
 	Version string
+	CtrlAddress string
 	CtrlPort int64
 	Active bool
 }
@@ -106,6 +107,7 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 			apps = append(apps, &AppKea{
 				AppCommon: AppCommon{
 					Version: srv.Version,
+					CtrlAddress: srv.CtrlAddress,
 					CtrlPort: srv.CtrlPort,
 					Active: srv.Active,
 				},

@@ -34,11 +34,12 @@ message GetStateRsp {
 
 message App {
   string version = 1;
-  int64 ctrlPort = 2;
-  bool active = 3;
+  string ctrlAddress = 2;
+  int64 ctrlPort = 3;
+  bool active = 4;
   oneof app {
-    AppKea kea = 4;
-    AppBind bind = 5;
+    AppKea kea = 5;
+    AppBind bind = 6;
   }
 }
 
