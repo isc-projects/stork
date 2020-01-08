@@ -17,6 +17,7 @@ type FakeAppMonitor struct {
 
 // Initializes StorkAgent instance and context used by the tests.
 func setupAgentTest() (*StorkAgent, context.Context) {
+	SetupHttpClient11()
 	gock.InterceptClient(httpClient11)
 
 	fsm := FakeAppMonitor{}

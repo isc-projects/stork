@@ -14,6 +14,8 @@ func main() {
 	// Setup logging
 	storkutil.SetupLogging()
 
+	agent.SetupHttpClient11()
+
 	// Start app monitor
 	sm := agent.NewAppMonitor()
 	storkAgent := agent.StorkAgent{

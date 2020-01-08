@@ -12,6 +12,7 @@ import (
 // Forces gock to intercept the HTTP/1.1 client. Otherwise it would
 // use the HTTP/2.
 func TestMain(m *testing.M) {
+	SetupHttpClient11()
 	gock.InterceptClient(httpClient11)
 	os.Exit(m.Run())
 }
