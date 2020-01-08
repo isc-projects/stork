@@ -19,11 +19,20 @@ services:
     depends_on:
       - postgres
 
-  agent:
+  agent-kea:
     restart: always
     build:
       context: .
-      dockerfile: docker/docker-agent-apps.txt
+      dockerfile: docker/docker-agent-kea.txt
+    hostname: moneypenny
+    expose:
+      - "8080"
+
+  agent-bind9:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/docker-agent-bind9.txt
     hostname: jamesbond
     expose:
       - "8080"

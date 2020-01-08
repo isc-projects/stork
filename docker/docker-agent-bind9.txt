@@ -1,0 +1,13 @@
+FROM ubuntu:18.04
+WORKDIR /agent
+# Install essentials and Bind9.
+RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-certificates gnupg apt-transport-https supervisor bind9
+# Install Stork agent.
+COPY backend/cmd/stork-agent/stork-agent /agent/
+# Copy configuration files.
+COPY docker/supervisor-agent-bind9.conf /etc/supervisor.conf
+COPY docker/named.conf /etc/bind/
+RUN chown root:bind /etc/bind/rndc.key
+RUN chmod 640 /etc/bind/rndc.key
+# Start supervisor.
+CMD ["supervisord", "-c", "/etc/supervisor.conf"]

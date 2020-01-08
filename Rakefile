@@ -402,15 +402,26 @@ task :docker_down do
   sh 'docker-compose down'
 end
 
-desc 'Build container with Stork Agent, BIND 9 and Kea'
-task :build_agent_container do
-  sh 'docker build -f docker/docker-agent-apps.txt -t agent .'
+desc 'Build container with Stork Agent and Kea'
+task :build_kea_container do
+  sh 'docker build -f docker/docker-agent-kea.txt -t agent-kea .'
 end
 
-desc 'Run container with Stork Agent, BIND 9 and Kea and mount current Agent binary'
-task :run_agent_container do
+desc 'Run container with Stork Agent and Kea and mount current Agent binary'
+task :run_kea_container do
   # host[8888]->agent[8080], host[8787]->kea-ca[8000]
   sh 'docker run --rm -ti -p 8888:8080 -p 8787:8000 -v `pwd`/backend/cmd/stork-agent:/agent agent-kea'
+end
+
+desc 'Build container with Stork Agent and BIND 9'
+task :build_bind9_container do
+  sh 'docker build -f docker/docker-agent-bind9.txt -t agent-bind9 .'
+end
+
+desc 'Run container with Stork Agent and BIND 9 and mount current Agent binary'
+task :run_bind9_container do
+  # host[9999]->agent[8080]
+  sh 'docker run --rm -ti -p 9999:8080 -v `pwd`/backend/cmd/stork-agent:/agent agent-bind9'
 end
 
 
