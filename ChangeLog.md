@@ -1,3 +1,10 @@
+* 20 [func] matthijs
+
+    Add BIND 9 application to Stork.  Detects running BIND 9
+    application by looking for named process.  Uses rndc to retrieve
+    version information.
+    (Gitlab #106)
+
 * 19 [func] marcin
 
     Kea High Availability status is presented on the Kea application page.
