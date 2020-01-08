@@ -112,7 +112,7 @@ func (s *StorkAgent) ForwardToKeaOverHttp(ctx context.Context, in *agentapi.Forw
 		for _, srv := range s.AppMonitor.GetApps() {
 			s, ok := srv.(AppKea)
 			if ok {
-				reqUrl = storkutil.HostWithPort(s.CtrlAddress, s.CtrlPort)
+				reqUrl = storkutil.HostWithPortUrl(s.CtrlAddress, s.CtrlPort)
 			}
 		}
 	}

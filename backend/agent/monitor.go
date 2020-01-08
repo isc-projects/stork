@@ -162,7 +162,7 @@ func detectKeaApp(match []string) *AppKea {
 		return nil
 	}
 
-	caUrl := storkutil.HostWithPort(ctrlAddress, ctrlPort)
+	caUrl := storkutil.HostWithPortUrl(ctrlAddress, ctrlPort)
 
 	// retrieve ctrl-agent information, it is also used as a general app information
 	info, err := keaDaemonVersionGet(caUrl, "")

@@ -15,7 +15,7 @@ func UTCNow() time.Time {
 }
 
 // Returns URL of the host with port.
-func HostWithPort(address string, port int64) string {
+func HostWithPortUrl(address string, port int64) string {
 	return fmt.Sprintf("http://%s:%d/", address, port)
 }
 
