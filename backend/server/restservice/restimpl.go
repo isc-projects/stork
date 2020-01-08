@@ -603,6 +603,7 @@ func appToRestApi(dbApp *dbmodel.App, hooks map[string][]string) *models.App {
 	s := models.App{
 		ID: dbApp.Id,
 		Type: dbApp.Type,
+		CtrlAddress: dbApp.CtrlAddress,
 		CtrlPort: dbApp.CtrlPort,
 		Active: dbApp.Active,
 		Version: dbApp.Meta.Version,

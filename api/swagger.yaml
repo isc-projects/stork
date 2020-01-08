@@ -662,6 +662,8 @@ definitions:
         readOnly: true
       type:
         type: string
+      ctrlAddress:
+        type: string
       ctrlPort:
         type: integer
       active:
