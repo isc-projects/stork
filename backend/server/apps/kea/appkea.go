@@ -9,13 +9,14 @@ import (
 
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/database/model"
+	"isc.org/stork/util"
 )
 
 // Retrieve configuration of the selected Kea deamons using the config-get
 // command.
 func GetConfig(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemons *agentcomm.KeaDaemons) (agentcomm.KeaResponseList, error) {
 	// Stork Agent will figure out the URL.
-	caURL := ""
+	caURL := storkutil.HostWithPortUrl(dbApp.CtrlAddress, dbApp.CtrlPort)
 
 	// prepare the command
 	cmd, _ := agentcomm.NewKeaCommand("config-get", daemons, nil)

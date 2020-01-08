@@ -67,6 +67,7 @@ func TestGetConfig(t *testing.T) {
 	})
 
 	dbApp := dbmodel.App{
+		CtrlAddress: "192.0.2.0",
 		CtrlPort: 1234,
 		Details: dbmodel.AppKea{
 			Daemons: []dbmodel.KeaDaemon{
@@ -85,7 +86,7 @@ func TestGetConfig(t *testing.T) {
 	require.NotNil(t, list)
 	require.Len(t, list, 1)
 
-	require.Empty(t, fa.RecordedURL)
+	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
 	require.Equal(t, "config-get", fa.RecordedCommand)
 
 	// check getting configs of 2 daemons
