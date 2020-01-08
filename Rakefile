@@ -393,7 +393,11 @@ task :docker_up => [:build_backend, :build_ui] do
   at_exit {
     sh "docker-compose down"
   }
-  sh 'docker-compose build'
+  cache_opt = ''
+  if ENV['cache'] == 'false'
+    cache_opt = '--no-cache'
+  end
+  sh "docker-compose build #{cache_opt}"
   sh 'docker-compose up'
 end
 
@@ -413,12 +417,16 @@ task :run_kea_container do
   sh 'docker run --rm -ti -p 8888:8080 -p 8787:8000 -h agent-kea -v `pwd`/backend/cmd/stork-agent:/agent agent-kea'
 end
 
-desc 'Build container with Stork Agent and Kea HA'
-task :build_agent_kea_ha_container do
-  sh 'docker-compose build agent-kea-ha1 agent-kea-ha2'
+desc 'Build two container with Stork Agent and Kea HA pair'
+task :build_agent_kea_ha_container => :build_agent do
+  cache_opt = ''
+  if ENV['cache'] == 'false'
+    cache_opt = '--no-cache'
+  end
+  sh "docker-compose build #{cache_opt} agent-kea-ha1 agent-kea-ha2"
 end
 
-desc 'Run 2 containers with Stork Agent and Kea HA pair'
+desc 'Run two containers with Stork Agent and Kea HA pair'
 task :run_agent_kea_ha_container do
   at_exit {
     sh "docker-compose down"

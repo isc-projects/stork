@@ -117,6 +117,9 @@ func getCtrlAddressFromKeaConfig(path string) (string, int64) {
 
 	} else {
 		address = m[1]
+		if address == "0.0.0.0" {
+			address = "127.0.0.1"
+		}
 	}
 
 	return address, int64(port)

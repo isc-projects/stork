@@ -1,3 +1,9 @@
+* 21 [func] godfryd
+
+    Added new Rake tasks to build and start two containers
+    with Kea instances running as High Availability partners.
+    (Gitlab #126)
+
 * 20 [func] matthijs
 
     Add BIND 9 application to Stork.  Detects running BIND 9
