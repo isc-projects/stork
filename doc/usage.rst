@@ -31,7 +31,20 @@ creation and management of users' accounts. The ``admin`` group has similar priv
 the users belonging to this group are not allowed to manage other users' accounts.
 
 Once the new user account information has been specified and all requirements are met, the
-``Save``button will become active and you will be able to add new account.
+``Save`` button will become active and you will be able to add new account.
+
+Changing User Password
+======================
+
+Initial password is assigned by the administrator when the user account is created.
+Each user should change the password when he or she first logs in to the system.
+Click on the ``Profile`` menu and choose ``Settings``. The user profile information
+is displayed. Click on ``Change password`` in the menu bar on the left. In the first
+input box the current password must be specified. The new password must be specified
+in the second input box and this password must meet the normal requirements for the
+password as mentioned in the previous sections. Finally, the password must be confirmed
+in the third input box. When all entered data is valid the ``Save`` button will be
+activated. Clicking this button will attempt to change the password.
 
 
 Deploying Stork Agent
