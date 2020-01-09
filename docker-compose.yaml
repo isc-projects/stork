@@ -7,6 +7,8 @@ services:
       context: .
       dockerfile: docker/docker-server.txt
     image: registry.gitlab.isc.org/isc-projects/stork/server:latest
+    networks:
+      - storknet
     expose:
       - "8080"
     ports:
@@ -27,6 +29,8 @@ services:
       dockerfile: docker/docker-agent-kea.txt
     image: registry.gitlab.isc.org/isc-projects/stork/agent-kea:latest
     hostname: agent-kea
+    networks:
+      - storknet
     expose:
       - "8080"
 
@@ -67,6 +71,8 @@ services:
       dockerfile: docker/docker-agent-bind9.txt
     image: registry.gitlab.isc.org/isc-projects/stork/agent-bind9:latest
     hostname: agent-bind9
+    networks:
+      - storknet
     expose:
       - "8080"
 
@@ -75,6 +81,8 @@ services:
       context: .
       dockerfile: docker/docker-webui.txt
     image: registry.gitlab.isc.org/isc-projects/stork/webui:latest
+    networks:
+      - storknet
     ports:
       - "8080:80"
     environment:
@@ -85,6 +93,8 @@ services:
 
   postgres:
     image: postgres:11
+    networks:
+      - storknet
     environment:
       POSTGRES_USER: stork
       POSTGRES_PASSWORD: stork123
