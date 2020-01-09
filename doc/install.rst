@@ -40,15 +40,27 @@ install it on your host, see the next section about Native installation.
 Once the build process finishes, Stork UI will be available at http://localhost:8080/. Use
 any browser to connect.
 
+The installation procedure will create several Docker images:
+
+- `stork_webui`: exposing web UI interface,
+- `stork_server`: running a server backend,
+- `postgres`: running a PostgreSQL database used by the server,
+- `stork_agent-bind9`: running an demo instance of BIND9,
+- `stork_agent-kea`: running a demo instance of Kea DHCPv4 server,
+- `stork_agent-kea-ha1`: running the primary Kea DHCPv4 server in High Availability mode,
+- `stork_agent-kea-ha2`: running the secondary Kea DHCPv4 server in High Availability mode
+
 .. note::
 
-   The installation procedure will create 3 Docker images: `stork_webui`, `stork_server` and `postgres`.
-   The PostgreSQL database schema will be automatically migrated to the latest version required
-   by the Stork server process.
+   The containers running Kea and BIND9 applications are for demo purposes only. They
+   allow the users to quickly start playing with Stork without having to manually
+   deploy Kea and/or BIND9 instances.
 
-   If you run unit-tests, also `stork-ui-pgsql` image will be created. The installation
-   procedure assumes those images are fully under Stork control. If there are existing images,
-   they will be overwritten.
+The PostgreSQL database schema will be automatically migrated to the latest version required
+by the Stork server process.
+
+The installation procedure assumes those images are fully under Stork control. If there are
+existing images, they will be overwritten.
 
 There are several other rake targets. For a complete list of available tasks, use `rake -T`.
 Also see `wiki <https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment#building-testing-and-running-stork>`_
