@@ -417,7 +417,7 @@ task :run_kea_container do
   sh 'docker run --rm -ti -p 8888:8080 -p 8787:8000 -h agent-kea -v `pwd`/backend/cmd/stork-agent:/agent agent-kea'
 end
 
-desc 'Build two container with Stork Agent and Kea HA pair'
+desc 'Build two containers with Stork Agent and Kea HA pair'
 task :build_kea_ha_containers => :build_agent do
   cache_opt = ''
   if ENV['cache'] == 'false'
