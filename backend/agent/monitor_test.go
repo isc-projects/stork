@@ -96,6 +96,30 @@ func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
 	require.Equal(t, "host.example.org", address)
 }
 
+func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
+	// prepare kea conf file
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
+	if err != nil {
+		log.Fatal("Cannot create temporary file", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	text := []byte(string("\"http-host\": \"0.0.0.0\", \"http-port\": 1234"))
+	if _, err = tmpFile.Write(text); err != nil {
+		log.Fatal("Failed to write to temporary file", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	// check reading from proper file;
+	// if CA is listening on 0.0.0.0 then 127.0.0.1 should be returned
+	// as it is not possible to connect to 0.0.0.0
+	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
+	require.Equal(t, int64(1234), port)
+	require.Equal(t, "127.0.0.1", address)
+}
+
 func TestDetectApps(t *testing.T) {
 	sm := NewAppMonitor()
 	sm.detectApps()
