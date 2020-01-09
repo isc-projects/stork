@@ -79,26 +79,37 @@ environment variable to specify which TCP port the agent will listen on.
    Unless explicitly specified, the agent will listen on all addresses on port 8080. There are no
    authentication mechanisms implemented in the agent yet. Use with care!
 
+Connecting and Monitoring Machines
+==================================
+
 Registering New Machine
-=======================
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Once the agent is deployed and running on the machine to be monitored, you should instruct Stork
 server to start monitoring it. You can do so by going to Services menu and choosing Machines.
 You will be presented with a list of currently registered machines.
 
 To add a new machine, click ``Add New Machine``. You need to specify the machine address or hostname
-and a port. If Stork agent is running in a container, you may specify the container name. This is
-particularly useful, if you built stork using ``rake docker_up`` command and the agent is running in
-a container. In such case, you can use kea-agent as your hostname. If you run agent by using ``rake
-run_agent``, the agent will listen on port 8888.
+and a port. If Stork agent is running in a container, you should specify the container name as
+a machine hostname. If you launched Stork using ``rake docker_up`` command you may specify one of
+the demo container names, e.g. agent-kea, agent-bind9 etc. The demo agents are running on
+port 8080. If the agent you're connecting to was launched using ``rake run_agent`` it will
+listen on port 8888.
 
 Once you click Add, the server will attempt to establish gRPC over http/2 connection to the agent.
 Make sure that any firewalls in between will allow incoming connections to the TCP port specified.
 
-Once a machine is added, number of parameters, such as hostname, address, agent version, number
+Once a machine is added, a number of parameters, such as hostname, address, agent version, number
 of CPU cores, CPU load, available total memory, current memory utilization, uptime, OS, platform
 family, platform name, OS version, kernel, virtualization details (if any), host ID and other
-information will be provided. More information will become available in the future Stork versions.
+information will be displayed.
+
+If any applications, i.e. Kea or/and BIND9 are detected on this machine, the status of those
+applications will be displayed and the link will allow for navigating to the applications'
+details.
+
+Navigating to the discovered applications is also possible through the ``Services`` menu.
+
 
 Detecting Running Applications
 ==============================
@@ -108,7 +119,7 @@ Bind9 and Kea applications. If the agent finds them, they will be reported to th
 and added to the database, so that they become visible in the Stork dashboard.
 
 Monitoring Machines
-===================
+~~~~~~~~~~~~~~~~~~~
 
 To monitor registered machines, go to Services menu and click Machines. A list of currently
 registered machines will be displayed. Pagination mechanism is available to display larger
@@ -126,7 +137,7 @@ The machine state can also be refreshed using Action menu. On the machines list,
 its own menu. Click on the triple lines button at the right side and choose the Refresh option.
 
 Deleting Machines
-=================
+~~~~~~~~~~~~~~~~~
 
 To stop monitoring a machine, you can go to the Machines list, find the machine you want to stop
 monitoring, click on the triple lines button at the right side and choose Delete. Note this will
@@ -134,3 +145,31 @@ terminate the connection between Stork server and the agent running on the machi
 will no longer monitor it. However, the Stork agent process will continue running. If you want to
 completely shut it down, you need to do so manually, e.g. by connecting to the machine using ssh and
 stopping the agent there. One way to achieve that is to issue ``killall stork-agent`` command.
+
+
+Monitoring Applications
+=======================
+
+Application Status
+~~~~~~~~~~~~~~~~~~
+
+Kea and BIND9 applications discovered on the connected machines can be listed via the top level
+menu bar, under ``Services``. You can select between Kea and BIND9 applications. The list
+of applications of the given type comprises the application version, application status and some
+machine details. The ``Action`` button is also available which allows for refreshing the
+information about the application.
+
+The application status comprises a list of daemons belonging to the application. For BIND9 it
+is always only one daemon, ``named``. In case of Kea, several daemons can be presented in the
+application status column, typically: DHCPv4, DHCPv6, DDNS and CA (Kea Control Agent). The
+listed daemons are those that Stork found in the CA configuration file. The warning sign
+will be displayed for those daemons from the CA configuration file that are not running.
+In cases when the Kea installation is simply using the default CA configuration file,
+which includes configuration of daemons that are never intended to be launched, it is
+recommended to remove (or comment out) those configurations to eliminate unwanted
+warnings from Stork about inactive daemons.
+
+Kea High Availability Status
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+tbd
