@@ -124,4 +124,5 @@ deploy_demo:
     - docker-compose push
     - scp -o StrictHostKeyChecking=no docker-compose.yaml jenkins@stork.lab.isc.org:~/deploy
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml down
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml pull
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml up -d --no-build
