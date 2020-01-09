@@ -11,8 +11,9 @@ to http://localhost:4200.
 Managing users
 ==============
 
-Currently, the default administrator's account is created and can be used to sign in to the system
-via the web UI. Please use the login ``admin`` and password ``admin`` to sign in to the system.
+Upon the initial installation the default administrator's account is created and can be used to
+sign in to the system via the web UI. Please use the login ``admin`` and password ``admin`` to
+sign in to the system.
 
 To manage users, click on the ``Configuration`` menu and choose ``Users``. You will see a list of
 existing users. At the very least, there will be user ``admin``.
@@ -21,20 +22,23 @@ To add new user, click ``Create User Account``. A new tab will opened that will 
 new account parameters. Some fields have specific restrictions. Username can consist of only
 letters, numbers and underscore. E-mail field is optional. However, if specified, it must be a well
 formed e-mail. First and lastname fields are mandatory. Password must only contain letters, digits,
-@, ., !, +, - and must be at least 8 characters long. Once all requirements are met, the ``Save``
-button will become active and you will be able to add new account.
+@, ., !, +, - and must be at least 8 characters long.
 
-.. note::
+As of Stork 0.3 release, the users are be associated with one of the two predefined groups (roles),
+i.e. ``super-admin`` or ``admin``, which must be selected when the user account is created. The
+users belonging to the ``super-admin`` group are granted full privileges in the system, including
+creation and management of users' accounts. The ``admin`` group has similar privileges, except that
+the users belonging to this group are not allowed to manage other users' accounts.
 
-    As of Stork 0.2.0 release, the role-based access control is not implemented yet. Every user
-    is considered a super-admin and has full control over the system.
+Once the new user account information has been specified and all requirements are met, the
+``Save``button will become active and you will be able to add new account.
 
 
 Deploying Stork Agent
 =====================
 
 Stork system uses agents to monitor services. Stork Agent (`STAG` or simply `agent`) is a
-daemon that is expected to be deployed and run on each machine to be monitored. As of Stork 0.2.0
+daemon that is expected to be deployed and run on each machine to be monitored. As of Stork 0.3.0
 release there are no automated deployment routines and STAG has to be copied and run manually.
 This can be done in a variety of ways. Here is one of them.
 
