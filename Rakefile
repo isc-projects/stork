@@ -388,7 +388,8 @@ end
 
 
 # Docker Rules
-desc 'Build containers with everything and statup all services using docker-compose'
+desc 'Build containers with everything and statup all services using docker-compose
+arguments: cache=false - forces rebuilding whole container'
 task :docker_up => [:build_backend, :build_ui] do
   at_exit {
     sh "docker-compose down"
@@ -417,7 +418,8 @@ task :run_kea_container do
   sh 'docker run --rm -ti -p 8888:8080 -p 8787:8000 -h agent-kea -v `pwd`/backend/cmd/stork-agent:/agent agent-kea'
 end
 
-desc 'Build two containers with Stork Agent and Kea HA pair'
+desc 'Build two containers with Stork Agent and Kea HA pair
+arguments: cache=false - forces rebuilding whole container'
 task :build_kea_ha_containers => :build_agent do
   cache_opt = ''
   if ENV['cache'] == 'false'
