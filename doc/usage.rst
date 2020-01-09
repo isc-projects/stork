@@ -172,4 +172,37 @@ warnings from Stork about inactive daemons.
 Kea High Availability Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-tbd
+When viewing the details of the Kea application for which High Availability is enabled
+(via libdhcp_ha.so hooks library), the High Availability live status is presented
+and periodically refreshed for the DHCPv4 and/or DHCPv6 deamon configured as primary
+or secondary/standby server. The status is not displayed for the server configured
+as a HA backup. See the `High Availability section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/hooks.html#ha-high-availability>`_ for the details about various roles of the servers
+within the HA setup.
+
+The following picture shows a typical High Availability status view displayed in
+Stork UI.
+
+.. figure:: static/kea-ha-status.png
+   :alt: High Availability status example
+
+
+The local server is the DHCP server (daemon) belonging to the application for which
+the status is displayed. The remote server is its active HA partner. The remote
+server server belongs to a different apploication running on a different machine
+and this machine may or may not be monitored by Stork. The status of both the
+local and the remote server is fetched by sending the
+`status-get <https://kea.readthedocs.io/en/latest/arm/hooks.html#the-status-get-command>`_
+command to the Kea server which details are displayed (local server). The local
+server periodically checks the status of its partner by sending the
+``ha-heartbeat`` command to it. Therefore this information is not always up to
+date and its age depends on the heartbeat command interval (typically 10s). The
+status of the remote server includes the age of the data displayed.
+
+The status information contains the role, state and the scopes served by each
+HA partner. In our case, both servers are in load-balancing state which
+means that both are serving the DHCP clients and there is no failure. If the
+remote server crashes, the local server should transition to the partner-down
+state which will be reflected in this view. If the local server crashes, this
+will manifest itself as a communication problem between Stork and the
+server.
+
