@@ -41,7 +41,7 @@ services:
       storknet:
         ipv4_address: 172.20.0.101
     expose:
-      - "8081"
+      - "8001"
     ports:
       - "8881:8080"
 
@@ -56,7 +56,7 @@ services:
       storknet:
         ipv4_address: 172.20.0.102
     expose:
-      - "8082"
+      - "8002"
     ports:
       - "8882:8080"
 
