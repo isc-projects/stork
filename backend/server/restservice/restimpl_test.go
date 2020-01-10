@@ -30,8 +30,8 @@ func TestGetVersion(t *testing.T) {
 
 	rsp := rapi.GetVersion(ctx, params)
 	p := rsp.(*general.GetVersionOK).Payload
-	require.Equal(t, "unstable", *p.Type)
 	require.Regexp(t, `^\d+.\d+.\d+$`, *p.Version)
+	require.Equal(t, "unset", *p.Date)
 }
 
 func TestGetMachineState(t *testing.T) {

@@ -81,6 +81,11 @@ ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GO_DIR}/go/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
 
+# build date
+build_date = Time.now.strftime("%Y-%m-%d %H:%M")
+puts "Stork build date: #{build_date}"
+go_build_date_opt = "-ldflags=\"-X 'isc.org/stork.BuildDate=#{build_date}'\""
+
 # Documentation
 SPHINXOPTS = "-v -E -a -W -j 2"
 
@@ -125,7 +130,7 @@ end
 desc 'Compile server part'
 task :build_server => [GO, :gen_server, :gen_agent] do
   sh 'rm -f backend/server/agentcomm/api_mock.go'
-  sh "cd backend/cmd/stork-server/ && #{GO} build"
+  sh "cd backend/cmd/stork-server/ && #{GO} build #{go_build_date_opt}"
 end
 
 file PROTOC do
@@ -174,7 +179,7 @@ task :gen_agent => [AGENT_PB_GO_FILE]
 
 desc 'Compile agent part'
 file :build_agent => [GO, AGENT_PB_GO_FILE] do
-  sh "cd backend/cmd/stork-agent/ && #{GO} build"
+  sh "cd backend/cmd/stork-agent/ && #{GO} build #{go_build_date_opt}"
 end
 
 desc 'Run agent'
@@ -216,7 +221,7 @@ end
 
 desc 'Compile database migrations tool'
 task :build_migrations =>  [GO] do
-  sh "cd backend/cmd/stork-db-migrate/ && #{GO} build"
+  sh "cd backend/cmd/stork-db-migrate/ && #{GO} build #{go_build_date_opt}"
 end
 
 desc 'Compile whole backend: server, migrations and agent'

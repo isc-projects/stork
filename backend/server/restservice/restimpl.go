@@ -23,15 +23,10 @@ import (
 
 // Get version of Stork server.
 func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParams) middleware.Responder {
-	d, err := strfmt.ParseDateTime("0001-01-01T00:00:00.000Z")
-	if err != nil {
-		fmt.Printf("problem\n")
-	}
-	bt := stork.BuildType
+	bd := stork.BuildDate
 	v := stork.Version
 	ver := models.Version{
-		Date:    &d,
-		Type:    &bt,
+		Date:    &bd,
 		Version: &v,
 	}
 	return general.NewGetVersionOK().WithPayload(&ver)

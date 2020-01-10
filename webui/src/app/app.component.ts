@@ -4,6 +4,7 @@ import { Observable } from 'rxjs'
 
 import { MenuItem } from 'primeng/api'
 
+import { GeneralService } from './backend/api/api'
 import { AuthService } from './auth.service'
 import { LoadingService } from './loading.service'
 
@@ -14,12 +15,19 @@ import { LoadingService } from './loading.service'
 })
 export class AppComponent implements OnInit {
     title = 'Stork'
+    storkVersion = 'unknown'
+    storkBuildDate = 'unknown'
     currentUser = null
     loadingInProgress = new Observable()
 
     menuItems: MenuItem[]
 
-    constructor(private router: Router, private auth: AuthService, private loadingService: LoadingService) {
+    constructor(
+        private router: Router,
+        protected generalApi: GeneralService,
+        private auth: AuthService,
+        private loadingService: LoadingService
+    ) {
         this.auth.currentUser.subscribe(x => {
             this.currentUser = x
             this.initMenuItems()
@@ -82,6 +90,11 @@ export class AppComponent implements OnInit {
 
     ngOnInit() {
         this.initMenuItems()
+
+        this.generalApi.getVersion().subscribe(data => {
+            this.storkVersion = data.version
+            this.storkBuildDate = data.date
+        })
     }
 
     signOut() {

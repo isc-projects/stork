@@ -7,6 +7,8 @@ import (
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 	dbops "isc.org/stork/server/database"
+	"isc.org/stork"
+	"isc.org/stork/server/database"
 )
 
 // Structure defining options for all commands except "up".
@@ -30,6 +32,8 @@ type Opts struct {
 }
 
 func main() {
+	log.Printf("Starting Stork Database Migration Tool, version %s, build date %s", stork.Version, stork.BuildDate)
+
 	// Parse command line options and commands.
 	opts := Opts{}
 	parser := flags.NewParser(&opts, flags.Default)

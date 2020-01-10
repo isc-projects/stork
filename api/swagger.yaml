@@ -566,16 +566,11 @@ definitions:
     required:
       - version
       - date
-      - type
     properties:
       version:
         type: string
       date:
         type: string
-        format: date-time
-      type:
-        type: string
-        enum: [stable, release-candidate, development]
 
   Machine:
     type: object

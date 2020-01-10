@@ -4,7 +4,9 @@ import (
 	"os"
 
 	flags "github.com/jessevdk/go-flags"
+	log "github.com/sirupsen/logrus"
 
+	"isc.org/stork"
 	"isc.org/stork/agent"
 	storkutil "isc.org/stork/util"
 )
@@ -12,6 +14,7 @@ import (
 func main() {
 	// Setup logging
 	storkutil.SetupLogging()
+	log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
 
 	// Start app monitor
 	storkAgent := agent.NewStorkAgent()
