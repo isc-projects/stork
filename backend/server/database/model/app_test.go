@@ -68,7 +68,7 @@ func TestAddApp(t *testing.T) {
 	s = &App{
 		Id:          0,
 		MachineID:   m.Id,
-		Type:        "bind",
+		Type:        "bind9",
 		CtrlAddress: "",
 		CtrlPort:    1234,
 		Active:      true,
@@ -343,7 +343,7 @@ func TestGetAllApps(t *testing.T) {
 	aBind := &App{
 		Id: 0,
 		MachineID: m.Id,
-		Type: "bind",
+		Type: "bind9",
 		CtrlPort: 4321,
 		Active: true,
 	}
@@ -355,6 +355,8 @@ func TestGetAllApps(t *testing.T) {
 	apps, err := GetAllApps(db)
 	require.NoError(t, err)
 	require.Len(t, apps, 2)
+	require.True(t, apps[0].Type == "kea" || apps[1].Type == "kea")
+	require.True(t, apps[0].Type == "bind9" || apps[1].Type == "bind9")
 }
 
 func TestAfterScanKea(t *testing.T) {
@@ -396,7 +398,7 @@ func TestAfterScanBind(t *testing.T) {
 	aBind := &App{
 		Id: 0,
 		MachineID: 0,
-		Type: "bind",
+		Type: "bind9",
 		CtrlPort: 1234,
 		Active: true,
 	}
@@ -405,8 +407,15 @@ func TestAfterScanBind(t *testing.T) {
 	require.Nil(t, aBind.Details)
 
 	// add some details
-	aBind.Details = map[string]interface{}{}
+	aBind.Details = map[string]interface{}{
+		"Daemon": map[string]interface{}{
+			"Pid": 123,
+			"Name": "named",
+		},
+	}
 	err = aBind.AfterScan(ctx)
 	require.Nil(t, err)
 	require.NotNil(t, aBind.Details)
+	require.Equal(t, "named", aBind.Details.(AppBind9).Daemon.Name)
+	require.Equal(t, int32(123), aBind.Details.(AppBind9).Daemon.Pid)
 }

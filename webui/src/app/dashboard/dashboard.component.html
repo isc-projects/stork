@@ -1,18 +1,4 @@
 <div style="margin: 4px -4px;" class="p-grid p-align-stretch">
-    <div class="p-col">
-        <!-- TODO: remove comment when functional
-        <p-panel header="Main" class="main-panel">
-            Content
-        </p-panel>
--->
-    </div>
-
-    <div class="p-col-4">
-        <!-- TODO: remove comment when functional
-    <app-hosts-table></app-hosts-table>
--->
-    </div>
-
     <div header="Alerts" class="p-col-2">
         <!-- TODO: remove comment when functional
     <p-panel header="Alerts">
@@ -26,39 +12,39 @@
     </p-panel>
     -->
         <p-panel header="Applications">
-            <a routerLink="/apps/kea/all">
-                <!-- kea apps stats -->
-                <div>
-                    <div>{{ appsStats.keaAppsTotal }} Kea {{ appsStats.keaAppsTotal === 1 ? 'app' : 'apps' }}</div>
-                    <div *ngIf="appsStats.keaAppsNotOk > 0" style="color: #f11;">
-                        {{ appsStats.keaAppsNotOk }} {{ appsStats.keaAppsNotOk > 1 ? 'have' : 'has' }} problems
-                        <i class="pi pi-times" style="font-size: 1.5em; vertical-align: text-top;"></i>
-                    </div>
-                    <div
-                        *ngIf="appsStats.keaAppsNotOk === undefined || appsStats.keaAppsNotOk === 0"
-                        style="color: #00a800;"
-                    >
-                        all ok
-                        <i class="pi pi-check" style="font-size: 1.5em; vertical-align: text-top;"></i>
-                    </div>
+            <!-- kea apps stats -->
+            <a routerLink="/apps/kea/all" *ngIf="appsStats.keaAppsTotal > 0" style="display: block;">
+                <div>{{ appsStats.keaAppsTotal }} Kea {{ appsStats.keaAppsTotal === 1 ? 'app' : 'apps' }}</div>
+                <div *ngIf="appsStats.keaAppsNotOk > 0" style="color: #f11;">
+                    {{ appsStats.keaAppsNotOk }} {{ appsStats.keaAppsNotOk > 1 ? 'have' : 'has' }} problems
+                    <i class="pi pi-times" style="font-size: 1.5em; vertical-align: text-top;"></i>
                 </div>
+                <div
+                    *ngIf="appsStats.keaAppsNotOk === undefined || appsStats.keaAppsNotOk === 0"
+                    style="color: #00a800;"
+                >
+                    all ok
+                    <i class="pi pi-check" style="font-size: 1.5em; vertical-align: text-top;"></i>
+                </div>
+            </a>
 
-                <!-- bind9 apps stats -->
-                <div style="margin-top: 8px;">
-                    <div>
-                        {{ appsStats.bind9AppsTotal }} BIND 9 {{ appsStats.bind9AppsTotal === 1 ? 'app' : 'apps' }}
-                    </div>
-                    <div *ngIf="appsStats.bind9AppsNotOk > 0" style="color: #f11;">
-                        {{ appsStats.bind9AppsNotOk }} {{ appsStats.bind9AppsNotOk > 1 ? 'have' : 'has' }} problems
-                        <i class="pi pi-times" style="font-size: 1.5em; vertical-align: text-top;"></i>
-                    </div>
-                    <div
-                        *ngIf="appsStats.bind9AppsNotOk === undefined || appsStats.bind9AppsNotOk === 0"
-                        style="color: #00a800;"
-                    >
-                        all ok
-                        <i class="pi pi-check" style="font-size: 1.5em; vertical-align: text-top;"></i>
-                    </div>
+            <!-- bind9 apps stats -->
+            <a
+                routerLink="/apps/bind9/all"
+                style="display: block; margin-top: 8px;"
+                *ngIf="appsStats.bind9AppsTotal > 0"
+            >
+                <div>{{ appsStats.bind9AppsTotal }} BIND 9 {{ appsStats.bind9AppsTotal === 1 ? 'app' : 'apps' }}</div>
+                <div *ngIf="appsStats.bind9AppsNotOk > 0" style="color: #f11;">
+                    {{ appsStats.bind9AppsNotOk }} {{ appsStats.bind9AppsNotOk > 1 ? 'have' : 'has' }} problems
+                    <i class="pi pi-times" style="font-size: 1.5em; vertical-align: text-top;"></i>
+                </div>
+                <div
+                    *ngIf="appsStats.bind9AppsNotOk === undefined || appsStats.bind9AppsNotOk === 0"
+                    style="color: #00a800;"
+                >
+                    all ok
+                    <i class="pi pi-check" style="font-size: 1.5em; vertical-align: text-top;"></i>
                 </div>
             </a>
         </p-panel>

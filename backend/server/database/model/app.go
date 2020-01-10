@@ -57,6 +57,8 @@ type App struct {
 	Details     interface{} // here we have either AppKea or AppBind9
 }
 
+// This is a hook to go-pg that is called just after reading rows from database.
+// It reconverts app details from json string maps to particular Go structure.
 func (app *App) AfterScan(ctx context.Context) error {
 	if app.Details == nil {
 		return nil
@@ -64,7 +66,7 @@ func (app *App) AfterScan(ctx context.Context) error {
 
 	bytes, err := json.Marshal(app.Details)
 	if err != nil {
-		return errors.Wrapf(err, "problem with marshaling app details: %v ", app.Details)
+		return errors.Wrapf(err, "problem with marshaling %s app details: %v ", app.Type, app.Details)
 	}
 
 	switch app.Type {
@@ -72,7 +74,7 @@ func (app *App) AfterScan(ctx context.Context) error {
 		var keaDetails AppKea
 		err = json.Unmarshal(bytes, &keaDetails)
 		if err != nil {
-			return errors.Wrapf(err, "problem with unmarshaling app details")
+			return errors.Wrapf(err, "problem with unmarshaling kea app details")
 		}
 		app.Details = keaDetails
 
@@ -80,7 +82,7 @@ func (app *App) AfterScan(ctx context.Context) error {
 		var bind9Details AppBind9
 		err = json.Unmarshal(bytes, &bind9Details)
 		if err != nil {
-			return errors.Wrapf(err, "problem with unmarshaling app details")
+			return errors.Wrapf(err, "problem with unmarshaling bind9 app details")
 		}
 		app.Details = bind9Details
 	}

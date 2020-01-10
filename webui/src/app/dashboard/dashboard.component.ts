@@ -25,7 +25,7 @@ export class DashboardComponent implements OnInit {
         this.servicesApi.getAppsStats().subscribe(
             data => {
                 this.appsStats = { ...this.appsStats, ...data }
-                if (this.appsStats.keaAppsTotal === 0) {
+                if (this.appsStats.keaAppsTotal === 0 && this.appsStats.bind9AppsTotal === 0) {
                     // redirect to machines page so user can add some machine
                     this.router.navigate(['/machines/all'])
                 }

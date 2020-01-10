@@ -199,3 +199,9 @@ state which will be reflected in this view. If the local server crashes, this
 will manifest itself as a communication problem between Stork and the
 server.
 
+
+Dashboard
+=========
+
+Main web page of Stork presents a dashboard. It presents statistics about applications.
+They include total number of Kea and BIND 9 apps and a number of misbehaving apps.

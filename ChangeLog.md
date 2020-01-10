@@ -1,8 +1,8 @@
 * 23 [func] godfryd
 
-    Added presenting number of all and misbehaving application
-    on dashboard page. If there is no apps yet then dashboard
-    redirects to machines page.
+    Added presenting number of all and misbehaving applications
+    on the dashboard page. If there are no applications added yet,
+    the dashboard redirects to the list of connected machines.
     (Gitlab #120)
 
 * 22 [doc] marcin
