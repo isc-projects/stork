@@ -1,3 +1,5 @@
+Stork 0.3.0 released on 2020-01-10.
+
 * 23 [func] godfryd
 
     Added presenting number of all and misbehaving applications
