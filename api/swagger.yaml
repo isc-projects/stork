@@ -416,7 +416,7 @@ paths:
   /apps-stats:
     get:
       summary: Get applications statistics.
-      description: It returns number of apps of given type, number of not fully active apps, etc.
+      description: It returns a number of apps of a given type, a number of apps with some inactive daemons, etc.
       operationId: getAppsStats
       tags:
         - Services
