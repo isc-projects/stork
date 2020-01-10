@@ -45,16 +45,16 @@ The installation procedure will create several Docker images:
 - `stork_webui`: exposing web UI interface,
 - `stork_server`: running a server backend,
 - `postgres`: running a PostgreSQL database used by the server,
-- `stork_agent-bind9`: running an demo instance of BIND9,
+- `stork_agent-bind9`: running an demo instance of BIND 9,
 - `stork_agent-kea`: running a demo instance of Kea DHCPv4 server,
 - `stork_agent-kea-ha1`: running the primary Kea DHCPv4 server in High Availability mode,
 - `stork_agent-kea-ha2`: running the secondary Kea DHCPv4 server in High Availability mode
 
 .. note::
 
-   The containers running Kea and BIND9 applications are for demo purposes only. They
+   The containers running Kea and BIND 9 applications are for demo purposes only. They
    allow the users to quickly start playing with Stork without having to manually
-   deploy Kea and/or BIND9 instances.
+   deploy Kea and/or BIND 9 instances.
 
 The PostgreSQL database schema will be automatically migrated to the latest version required
 by the Stork server process.
