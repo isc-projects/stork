@@ -1,3 +1,10 @@
+* 22 [doc] marcin
+
+    Updated Stork ARM. Added documentation of the High Availability
+    status monitoring with Kea. Added new sections describing applications
+    management.
+    (Gitlab #122)
+
 * 21 [func] godfryd
 
     Added new Rake tasks to build and start two containers
