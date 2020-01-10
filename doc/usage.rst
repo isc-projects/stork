@@ -104,19 +104,12 @@ of CPU cores, CPU load, available total memory, current memory utilization, upti
 family, platform name, OS version, kernel, virtualization details (if any), host ID and other
 information will be displayed.
 
-If any applications, i.e. Kea or/and BIND9 are detected on this machine, the status of those
+If any applications, i.e. Kea or/and Bind9 are detected on this machine, the status of those
 applications will be displayed and the link will allow for navigating to the applications'
 details.
 
 Navigating to the discovered applications is also possible through the ``Services`` menu.
 
-
-Detecting Running Applications
-==============================
-
-Once a new Machine has been registered. the Stork agent tries to detect existing running
-Bind9 and Kea applications. If the agent finds them, they will be reported to the Stork server
-and added to the database, so that they become visible in the Stork dashboard.
 
 Monitoring Machines
 ~~~~~~~~~~~~~~~~~~~
@@ -150,16 +143,21 @@ stopping the agent there. One way to achieve that is to issue ``killall stork-ag
 Monitoring Applications
 =======================
 
+Once a new Machine has been registered, the Stork agent tries to detect existing running
+Bind9 and Kea applications. If the agent finds them, they will be reported to the Stork server
+and added to the database, so that they become visible in the Stork dashboard.
+
+
 Application Status
 ~~~~~~~~~~~~~~~~~~
 
-Kea and BIND9 applications discovered on the connected machines can be listed via the top level
-menu bar, under ``Services``. You can select between Kea and BIND9 applications. The list
+Kea and Bind9 applications discovered on the connected machines can be listed via the top level
+menu bar, under ``Services``. You can select between Kea and Bind9 applications. The list
 of applications of the given type comprises the application version, application status and some
 machine details. The ``Action`` button is also available which allows for refreshing the
 information about the application.
 
-The application status comprises a list of daemons belonging to the application. For BIND9 it
+The application status comprises a list of daemons belonging to the application. For Bind9 it
 is always only one daemon, ``named``. In case of Kea, several daemons can be presented in the
 application status column, typically: DHCPv4, DHCPv6, DDNS and CA (Kea Control Agent). The
 listed daemons are those that Stork found in the CA configuration file. The warning sign
