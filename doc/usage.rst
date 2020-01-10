@@ -203,5 +203,6 @@ server.
 Dashboard
 =========
 
-Main web page of Stork presents a dashboard. It presents statistics about applications.
-They include total number of Kea and BIND 9 apps and a number of misbehaving apps.
+The Main Stork page presents a simple dashboard. It includes some statistics about the monitored
+applications such as: a total number of Kea and BIND 9 applications and a number of misbehaving
+applications.
