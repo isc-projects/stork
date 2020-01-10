@@ -24,10 +24,10 @@ letters, numbers and underscore. E-mail field is optional. However, if specified
 formed e-mail. First and lastname fields are mandatory. Password must only contain letters, digits,
 @, ., !, +, - and must be at least 8 characters long.
 
-As of Stork 0.3 release, the users are be associated with one of the two predefined groups (roles),
+Currently, the users are be associated with one of the two predefined groups (roles),
 i.e. ``super-admin`` or ``admin``, which must be selected when the user account is created. The
 users belonging to the ``super-admin`` group are granted full privileges in the system, including
-creation and management of users' accounts. The ``admin`` group has similar privileges, except that
+creation and management of user accounts. The ``admin`` group has similar privileges, except that
 the users belonging to this group are not allowed to manage other users' accounts.
 
 Once the new user account information has been specified and all requirements are met, the
@@ -51,8 +51,8 @@ Deploying Stork Agent
 =====================
 
 Stork system uses agents to monitor services. Stork Agent (`STAG` or simply `agent`) is a
-daemon that is expected to be deployed and run on each machine to be monitored. As of Stork 0.3.0
-release there are no automated deployment routines and STAG has to be copied and run manually.
+daemon that is expected to be deployed and run on each machine to be monitored. Currently,
+there are no automated deployment routines and STAG has to be copied and run manually.
 This can be done in a variety of ways. Here is one of them.
 
 Assuming you want to monitor services running on machine with IP 192.0.2.1, you can do the following
@@ -94,7 +94,7 @@ and a port. If Stork agent is running in a container, you should specify the con
 a machine hostname. If you launched Stork using ``rake docker_up`` command you may specify one of
 the demo container names, e.g. agent-kea, agent-bind9 etc. The demo agents are running on
 port 8080. If the agent you're connecting to was launched using ``rake run_agent`` it will
-listen on port 8888.
+listen on localhost port 8888.
 
 Once you click Add, the server will attempt to establish gRPC over http/2 connection to the agent.
 Make sure that any firewalls in between will allow incoming connections to the TCP port specified.
@@ -104,8 +104,8 @@ of CPU cores, CPU load, available total memory, current memory utilization, upti
 family, platform name, OS version, kernel, virtualization details (if any), host ID and other
 information will be displayed.
 
-If any applications, i.e. Kea or/and Bind9 are detected on this machine, the status of those
-applications will be displayed and the link will allow for navigating to the applications'
+If any applications, i.e. Kea or/and BIND 9 are detected on this machine, the status of those
+applications will be displayed and the link will allow for navigating to the application
 details.
 
 Navigating to the discovered applications is also possible through the ``Services`` menu.
@@ -143,21 +143,16 @@ stopping the agent there. One way to achieve that is to issue ``killall stork-ag
 Monitoring Applications
 =======================
 
-Once a new Machine has been registered, the Stork agent tries to detect existing running
-Bind9 and Kea applications. If the agent finds them, they will be reported to the Stork server
-and added to the database, so that they become visible in the Stork dashboard.
-
-
 Application Status
 ~~~~~~~~~~~~~~~~~~
 
-Kea and Bind9 applications discovered on the connected machines can be listed via the top level
-menu bar, under ``Services``. You can select between Kea and Bind9 applications. The list
+Kea and BIND 9 applications discovered on the connected machines can be listed via the top level
+menu bar, under ``Services``. You can select between Kea and BIND 9 applications. The list
 of applications of the given type comprises the application version, application status and some
 machine details. The ``Action`` button is also available which allows for refreshing the
 information about the application.
 
-The application status comprises a list of daemons belonging to the application. For Bind9 it
+The application status comprises a list of daemons belonging to the application. For BIND 9 it
 is always only one daemon, ``named``. In case of Kea, several daemons can be presented in the
 application status column, typically: DHCPv4, DHCPv6, DDNS and CA (Kea Control Agent). The
 listed daemons are those that Stork found in the CA configuration file. The warning sign
@@ -186,7 +181,7 @@ Stork UI.
 
 The local server is the DHCP server (daemon) belonging to the application for which
 the status is displayed. The remote server is its active HA partner. The remote
-server server belongs to a different apploication running on a different machine
+server server belongs to a different application running on a different machine
 and this machine may or may not be monitored by Stork. The status of both the
 local and the remote server is fetched by sending the
 `status-get <https://kea.readthedocs.io/en/latest/arm/hooks.html#the-status-get-command>`_
