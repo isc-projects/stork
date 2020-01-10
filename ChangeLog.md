@@ -1,3 +1,10 @@
+* 23 [func] godfryd
+
+    Added presenting number of all and misbehaving application
+    on dashboard page. If there is no apps yet then dashboard
+    redirects to machines page.
+    (Gitlab #120)
+
 * 22 [doc] marcin
 
     Updated Stork ARM. Added documentation of the High Availability
