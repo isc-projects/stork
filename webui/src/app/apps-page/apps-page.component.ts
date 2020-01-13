@@ -135,6 +135,17 @@ export class AppsPageComponent implements OnInit {
                     console.info('fetching app')
                     this.servicesApi.getApp(appId).subscribe(
                         data => {
+                            if (data.type !== this.appType) {
+                                this.msgSrv.add({
+                                    severity: 'error',
+                                    summary: 'Cannot find app',
+                                    detail: 'Cannot find app with ID ' + appId,
+                                    life: 10000,
+                                })
+                                this.router.navigate(['/apps/' + this.appType + '/all'])
+                                return
+                            }
+
                             htmlizeExtVersion(data)
                             this.addAppTab(data)
                             this.switchToTab(this.tabs.length - 1)
