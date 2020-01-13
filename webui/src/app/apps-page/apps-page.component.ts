@@ -29,7 +29,7 @@ function capitalize(txt) {
     styleUrls: ['./apps-page.component.sass'],
 })
 export class AppsPageComponent implements OnInit {
-    appType: string
+    appType = ''
     // apps table
     apps: any[]
     totalApps: number
@@ -65,7 +65,6 @@ export class AppsPageComponent implements OnInit {
     }
 
     addAppTab(app) {
-        console.info('addAppTab', app)
         this.openedApps.push({
             app,
             activeDaemonTabIdx: 0,
@@ -78,20 +77,28 @@ export class AppsPageComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.appType = this.route.snapshot.params.srv
-        this.tabs = [{ label: capitalize(this.appType) + ' Apps', routerLink: '/apps/' + this.appType + '/all' }]
+        this.route.paramMap.subscribe(params => {
+            const newAppType = params.get('appType')
+            if (newAppType !== this.appType) {
+                this.appType = newAppType
 
-        this.apps = []
-        this.appMenuItems = [
-            {
-                label: 'Refresh',
-                icon: 'pi pi-refresh',
-            },
-        ]
+                this.tabs = [
+                    { label: capitalize(this.appType) + ' Apps', routerLink: '/apps/' + this.appType + '/all' },
+                ]
 
-        this.openedApps = []
+                this.apps = []
+                this.appMenuItems = [
+                    {
+                        label: 'Refresh',
+                        icon: 'pi pi-refresh',
+                    },
+                ]
 
-        this.route.paramMap.subscribe((params: ParamMap) => {
+                this.openedApps = []
+
+                this.loadApps({ first: 0, rows: 10 })
+            }
+
             const appIdStr = params.get('id')
             if (appIdStr === 'all') {
                 this.switchToTab(0)
@@ -152,8 +159,12 @@ export class AppsPageComponent implements OnInit {
     }
 
     loadApps(event) {
+        if (this.appType === '') {
+            // appType has not been set yet so do not load anything
+            return
+        }
         let text
-        if (event.filters.text) {
+        if (event.filters && event.filters.text) {
             text = event.filters.text.value
         }
 

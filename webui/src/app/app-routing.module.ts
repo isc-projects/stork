@@ -36,12 +36,12 @@ const routes: Routes = [
         canActivate: [AuthGuard],
     },
     {
-        path: 'apps/:srv',
+        path: 'apps/:appType',
         pathMatch: 'full',
-        redirectTo: 'apps/:srv/all',
+        redirectTo: 'apps/:appType/all',
     },
     {
-        path: 'apps/:srv/:id',
+        path: 'apps/:appType/:id',
         component: AppsPageComponent,
         canActivate: [AuthGuard],
     },
