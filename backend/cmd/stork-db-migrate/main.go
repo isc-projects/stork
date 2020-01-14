@@ -8,7 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	dbops "isc.org/stork/server/database"
 	"isc.org/stork"
-	"isc.org/stork/server/database"
 )
 
 // Structure defining options for all commands except "up".
