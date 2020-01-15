@@ -6,8 +6,8 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
-	dbops "isc.org/stork/server/database"
 	"isc.org/stork"
+	dbops "isc.org/stork/server/database"
 )
 
 // Structure defining options for all commands except "up".

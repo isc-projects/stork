@@ -38,6 +38,10 @@ issues:
         - gochecknoinits
         - gochecknoglobals
 
+    - path: version.go
+      linters:
+        - gochecknoglobals
+
     - path: server/database/settings.go
       linters:
         - gochecknoinits
