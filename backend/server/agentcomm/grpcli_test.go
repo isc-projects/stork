@@ -44,10 +44,9 @@ func TestGetState(t *testing.T) {
 		AgentVersion: expVer,
 		Apps: []*agentapi.App{
 			{
-				Version: "1.2.3",
-				App: &agentapi.App_Kea{
-					Kea: &agentapi.AppKea{},
-				},
+				Type:        "kea",
+				CtrlAddress: "1.2.3.4",
+				CtrlPort:    1234,
 			},
 		},
 	}
@@ -58,7 +57,8 @@ func TestGetState(t *testing.T) {
 	ctx := context.Background()
 	state, err := agents.GetState(ctx, "127.0.0.1", 8080)
 	require.NoError(t, err)
-	require.Equal(t, state.AgentVersion, expVer)
+	require.Equal(t, expVer, state.AgentVersion)
+	require.Equal(t, "kea", state.Apps[0].Type)
 }
 
 // Test that a command can be successfully forwarded to Kea and the response
@@ -68,7 +68,14 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 	defer teardown()
 
 	rsp := agentapi.ForwardToKeaOverHTTPRsp{
-		KeaResponse: `[
+		Status: &agentapi.Status{
+			Code: 0,
+		},
+		KeaResponses: []*agentapi.KeaResponse{{
+			Status: &agentapi.Status{
+				Code: 0,
+			},
+			Response: `[
             {
                 "result": 1,
                 "text": "operation failed"
@@ -80,17 +87,21 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
                     "success": true
                 }
             }
-        ]`,
+        ]`}},
 	}
+
 	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
 	command, _ := NewKeaCommand("test-command", nil, nil)
 	actualResponse := KeaResponseList{}
-	err := agents.ForwardToKeaOverHTTP(ctx, "http://localhost:8000/", "127.0.0.1", 8080, command, &actualResponse)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "http://localhost:8000/", []*KeaCommand{command}, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse)
+	require.NoError(t, cmdsResult.Error)
+	require.Len(t, cmdsResult.CmdsErrors, 1)
+	require.NoError(t, cmdsResult.CmdsErrors[0])
 
 	responseList := actualResponse
 	require.Equal(t, 2, len(responseList))
@@ -106,6 +117,82 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 	require.Contains(t, *responseList[1].Arguments, "success")
 }
 
+// Test that two commands can be successfully forwarded to Kea and the response
+// can be parsed.
+func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
+	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
+	defer teardown()
+
+	rsp := agentapi.ForwardToKeaOverHTTPRsp{
+		Status: &agentapi.Status{
+			Code: 0,
+		},
+		KeaResponses: []*agentapi.KeaResponse{{
+			Status: &agentapi.Status{
+				Code: 0,
+			},
+			Response: `[
+            {
+                "result": 1,
+                "text": "operation failed"
+            },
+            {
+                "result": 0,
+                "text": "operation succeeded",
+                "arguments": {
+                    "success": true
+                }
+            }
+        ]`}, {
+			Status: &agentapi.Status{
+				Code: 0,
+			},
+			Response: `[
+            {
+                "result": 1,
+                "text": "operation failed"
+            }
+        ]`}},
+	}
+
+	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
+		Return(&rsp, nil)
+
+	ctx := context.Background()
+	command1, _ := NewKeaCommand("test-command", nil, nil)
+	command2, _ := NewKeaCommand("test-command", nil, nil)
+	actualResponse1 := KeaResponseList{}
+	actualResponse2 := KeaResponseList{}
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "http://localhost:8000/", []*KeaCommand{command1, command2}, &actualResponse1, &actualResponse2)
+	require.NoError(t, err)
+	require.NotNil(t, actualResponse1)
+	require.NotNil(t, actualResponse2)
+	require.NoError(t, cmdsResult.Error)
+	require.Len(t, cmdsResult.CmdsErrors, 2)
+	require.NoError(t, cmdsResult.CmdsErrors[0])
+	require.NoError(t, cmdsResult.CmdsErrors[1])
+
+	responseList := actualResponse1
+	require.Equal(t, 2, len(responseList))
+
+	require.Equal(t, 1, responseList[0].Result)
+	require.Equal(t, "operation failed", responseList[0].Text)
+	require.Nil(t, responseList[0].Arguments)
+
+	require.Equal(t, 0, responseList[1].Result)
+	require.Equal(t, "operation succeeded", responseList[1].Text)
+	require.NotNil(t, responseList[1].Arguments)
+	require.Equal(t, 1, len(*responseList[1].Arguments))
+	require.Contains(t, *responseList[1].Arguments, "success")
+
+	responseList = actualResponse2
+	require.Equal(t, 1, len(responseList))
+
+	require.Equal(t, 1, responseList[0].Result)
+	require.Equal(t, "operation failed", responseList[0].Text)
+	require.Nil(t, responseList[0].Arguments)
+}
+
 // Test that the error is returned when the response to the forwarded Kea command
 // is malformed.
 func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
@@ -113,11 +200,18 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	defer teardown()
 
 	rsp := agentapi.ForwardToKeaOverHTTPRsp{
-		KeaResponse: `[
+		Status: &agentapi.Status{
+			Code: 0,
+		},
+		KeaResponses: []*agentapi.KeaResponse{{
+			Status: &agentapi.Status{
+				Code: 0,
+			},
+			Response: `[
             {
                 "result": "a string"
             }
-        ]`,
+        ]`}},
 	}
 	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
@@ -125,6 +219,56 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	ctx := context.Background()
 	command, _ := NewKeaCommand("test-command", nil, nil)
 	actualResponse := KeaResponseList{}
-	err := agents.ForwardToKeaOverHTTP(ctx, "http://localhost:8080/", "127.0.0.1", 8080, command, &actualResponse)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "http://localhost:8080/", []*KeaCommand{command}, &actualResponse)
+	require.NoError(t, err)
+	require.NotNil(t, cmdsResult)
+	require.NoError(t, cmdsResult.Error)
+	require.Len(t, cmdsResult.CmdsErrors, 1)
+	// and now for our command we get an error
+	require.Error(t, cmdsResult.CmdsErrors[0])
+}
+
+func TestGetBind9StateAllOk(t *testing.T) {
+	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
+	defer teardown()
+
+	rsp := agentapi.GetBind9StateRsp{
+		Status: &agentapi.Status{
+			Code: 0, // all ok
+		},
+		Version: "1.2.3",
+		Daemon: &agentapi.Bind9Daemon{
+			Name: "named",
+		},
+	}
+	mockAgentClient.EXPECT().GetBind9State(gomock.Any(), gomock.Any()).
+		Return(&rsp, nil)
+
+	ctx := context.Background()
+
+	state, err := agents.GetBind9State(ctx, "127.0.0.1", 8080)
+	require.NoError(t, err)
+	require.NotNil(t, state)
+	require.Equal(t, "1.2.3", state.Version)
+	require.Equal(t, "named", state.Daemon.Name)
+}
+
+func TestGetBind9StateError(t *testing.T) {
+	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
+	defer teardown()
+
+	rsp := agentapi.GetBind9StateRsp{
+		Status: &agentapi.Status{
+			Code:    1, // all ok
+			Message: "some problems",
+		},
+	}
+	mockAgentClient.EXPECT().GetBind9State(gomock.Any(), gomock.Any()).
+		Return(&rsp, nil)
+
+	ctx := context.Background()
+
+	state, err := agents.GetBind9State(ctx, "127.0.0.1", 8080)
 	require.Error(t, err)
+	require.Nil(t, state)
 }

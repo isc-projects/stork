@@ -259,7 +259,7 @@ func TestGetActiveDHCPMultiple(t *testing.T) {
 	a := &App{
 		Type: KeaAppType,
 		Details: AppKea{
-			Daemons: []KeaDaemon{
+			Daemons: []*KeaDaemon{
 				{
 					Active: true,
 					Name:   "dhcp4",
@@ -283,7 +283,7 @@ func TestGetActiveDHCPSingle(t *testing.T) {
 	a := &App{
 		Type: KeaAppType,
 		Details: AppKea{
-			Daemons: []KeaDaemon{
+			Daemons: []*KeaDaemon{
 				{
 					Active: false,
 					Name:   "dhcp4",

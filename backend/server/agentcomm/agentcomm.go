@@ -50,7 +50,8 @@ type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
 	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
-	ForwardToKeaOverHTTP(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *KeaCommand, response interface{}) error
+	GetBind9State(ctx context.Context, agentAddress string, agentPort int64) (*Bind9State, error)
+	ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caURL string, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.

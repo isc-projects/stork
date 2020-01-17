@@ -12,29 +12,6 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Represents the status of the local server (the one that
-// responded to the command).
-type HALocalStatus struct {
-	Role   string
-	Scopes []string
-	State  string
-}
-
-// Represents the status of the remote server.
-type HARemoteStatus struct {
-	Age        int64
-	InTouch    bool `json:"in-touch"`
-	Role       string
-	LastScopes []string `json:"last-scopes"`
-	LastState  string   `json:"last-state"`
-}
-
-// Represents the status of the HA enabled Kea servers.
-type HAServersStatus struct {
-	Local  HALocalStatus
-	Remote HARemoteStatus
-}
-
 // Represents a response from the single Kea server to the status-get
 // command. The HAServers value is nil if it is not present in the
 // response.
@@ -61,7 +38,7 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	url := storkutil.HostWithPortURL(dbApp.CtrlAddress, dbApp.CtrlPort)
+	caURL := storkutil.HostWithPortURL(dbApp.CtrlAddress, dbApp.CtrlPort)
 
 	// The Kea response will be stored in this slice of structures.
 	response := []struct {
@@ -70,9 +47,15 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	}{}
 
 	// Send the command and receive the response.
-	err := agents.ForwardToKeaOverHTTP(ctx, url, dbApp.Machine.Address, dbApp.Machine.AgentPort, cmd, &response)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caURL, []*agentcomm.KeaCommand{cmd}, &response)
 	if err != nil {
 		return nil, err
+	}
+	if cmdsResult.Error != nil && len(cmdsResult.CmdsErrors) == 0 {
+		return nil, cmdsResult.Error
+	}
+	if cmdsResult.CmdsErrors[0] != nil {
+		return nil, cmdsResult.CmdsErrors[0]
 	}
 
 	// Extract the status value.

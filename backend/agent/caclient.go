@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/tls"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 type CAClient struct {
@@ -32,5 +34,5 @@ func NewCAClient() *CAClient {
 
 func (c *CAClient) Call(caURL string, payload *bytes.Buffer) (*http.Response, error) {
 	caRsp, err := c.client.Post(caURL, "application/json", payload)
-	return caRsp, err
+	return caRsp, errors.Wrapf(err, "problem with sending POST to Kea Control Agent %s", caURL)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
@@ -34,7 +35,7 @@ func TestGetVersion(t *testing.T) {
 	require.Equal(t, "unset", *p.Date)
 }
 
-func TestGetMachineState(t *testing.T) {
+func TestGetMachineStateOnly(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -74,6 +75,164 @@ func TestGetMachineState(t *testing.T) {
 	require.Less(t, int64(0), okRsp.Payload.Memory)
 	require.Less(t, int64(0), okRsp.Payload.Cpus)
 	require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
+}
+
+func mockGetAppsState(callNo int, cmdResponses []interface{}) {
+	switch callNo {
+	case 0:
+		list1 := cmdResponses[0].(*[]kea.VersionGetResponse)
+		*list1 = []kea.VersionGetResponse{
+			{
+				KeaResponseHeader: agentcomm.KeaResponseHeader{
+					Result: 0,
+					Daemon: "ca",
+				},
+				Arguments: &kea.VersionGetRespArgs{
+					Extended: "Extended version",
+				},
+			},
+		}
+		list2 := cmdResponses[1].(*[]kea.CAConfigGetResponse)
+		*list2 = []kea.CAConfigGetResponse{
+			{
+				KeaResponseHeader: agentcomm.KeaResponseHeader{
+					Result: 0,
+					Daemon: "ca",
+				},
+				Arguments: &kea.CAConfigGetRespArgs{
+					ControlAgent: &kea.ControlAgentData{
+						ControlSockets: &kea.ControlSocketsData{
+							Dhcp4: &kea.SocketData{
+								SocketName: "aaaa",
+								SocketType: "unix",
+							},
+						},
+					},
+				},
+			},
+		}
+	case 1:
+		// version-get response
+		list1 := cmdResponses[0].(*[]kea.VersionGetResponse)
+		*list1 = []kea.VersionGetResponse{
+			{
+				KeaResponseHeader: agentcomm.KeaResponseHeader{
+					Result: 0,
+					Daemon: "dhcp4",
+				},
+				Arguments: &kea.VersionGetRespArgs{
+					Extended: "Extended version",
+				},
+			},
+		}
+		// status-get response
+		list2 := cmdResponses[1].(*[]kea.StatusGetResponse)
+		*list2 = []kea.StatusGetResponse{
+			{
+				KeaResponseHeader: agentcomm.KeaResponseHeader{
+					Result: 0,
+					Daemon: "dhcp4",
+				},
+				Arguments: &kea.StatusGetRespArgs{
+					Pid: 123,
+				},
+			},
+		}
+		// config-get response
+		list3 := cmdResponses[2].(*[]agentcomm.KeaResponse)
+		*list3 = []agentcomm.KeaResponse{
+			{
+				KeaResponseHeader: agentcomm.KeaResponseHeader{
+					Result: 0,
+					Daemon: "dhcp4",
+				},
+				Arguments: &map[string]interface{}{
+					"Dhcp4": map[string]interface{}{
+						"hooks-libraries": []interface{}{
+							map[string]interface{}{
+								"library": "hook_abc.so",
+							},
+							map[string]interface{}{
+								"library": "hook_def.so",
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+}
+
+func TestGetMachineAndAppsState(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := storktest.NewFakeAgents(mockGetAppsState)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// add machine
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add kea app
+	keaApp := &dbmodel.App{
+		MachineID:   m.ID,
+		Machine:     m,
+		Type:        "kea",
+		CtrlAddress: "1.2.3.4",
+		CtrlPort:    123,
+	}
+	err = dbmodel.AddApp(db, keaApp)
+	require.NoError(t, err)
+	m.Apps = append(m.Apps, keaApp)
+
+	// add BIND 9 app
+	bind9App := &dbmodel.App{
+		MachineID:   m.ID,
+		Machine:     m,
+		Type:        "bind9",
+		CtrlAddress: "1.2.3.4",
+		CtrlPort:    124,
+	}
+	err = dbmodel.AddApp(db, bind9App)
+	require.NoError(t, err)
+	m.Apps = append(m.Apps, bind9App)
+
+	fa.MachineState = &agentcomm.State{
+		Apps: []*agentcomm.App{
+			{
+				Type:        "kea",
+				CtrlAddress: "1.2.3.4",
+				CtrlPort:    123,
+			},
+			{
+				Type:        "bind9",
+				CtrlAddress: "1.2.3.4",
+				CtrlPort:    124,
+			},
+		},
+	}
+
+	fa.Bind9State = &agentcomm.Bind9State{
+		Version: "1.2.3",
+	}
+
+	// get added machine
+	params := services.GetMachineStateParams{
+		ID: m.ID,
+	}
+	rsp := rapi.GetMachineState(ctx, params)
+	require.IsType(t, &services.GetMachineStateOK{}, rsp)
+	okRsp := rsp.(*services.GetMachineStateOK)
+	require.Len(t, okRsp.Payload.Apps, 2)
+	require.Equal(t, "kea", okRsp.Payload.Apps[0].Type)
 }
 
 func TestCreateMachine(t *testing.T) {
@@ -207,7 +366,7 @@ func TestGetMachine(t *testing.T) {
 		CtrlPort:  1234,
 		Active:    true,
 		Details: dbmodel.AppKea{
-			Daemons: []dbmodel.KeaDaemon{},
+			Daemons: []*dbmodel.KeaDaemon{},
 		},
 	}
 	err = dbmodel.AddApp(db, s)
@@ -397,7 +556,7 @@ func TestGetApp(t *testing.T) {
 		CtrlPort:  1234,
 		Active:    true,
 		Details: dbmodel.AppKea{
-			Daemons: []dbmodel.KeaDaemon{},
+			Daemons: []*dbmodel.KeaDaemon{},
 		},
 	}
 	err = dbmodel.AddApp(db, s)
@@ -449,7 +608,7 @@ func TestRestGetApp(t *testing.T) {
 		CtrlPort:  1234,
 		Active:    true,
 		Details: dbmodel.AppKea{
-			Daemons: []dbmodel.KeaDaemon{},
+			Daemons: []*dbmodel.KeaDaemon{},
 		},
 	}
 	err = dbmodel.AddApp(db, keaApp)
@@ -464,7 +623,7 @@ func TestRestGetApp(t *testing.T) {
 	okRsp := rsp.(*services.GetAppOK)
 	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
 
-	// add bind9 app to machine
+	// add BIND 9 app to machine
 	bind9App := &dbmodel.App{
 		ID:        0,
 		MachineID: m.ID,
@@ -476,7 +635,7 @@ func TestRestGetApp(t *testing.T) {
 	err = dbmodel.AddApp(db, bind9App)
 	require.NoError(t, err)
 
-	// get added bind9 app
+	// get added BIND 9 app
 	params = services.GetAppParams{
 		ID: bind9App.ID,
 	}
@@ -519,13 +678,13 @@ func TestRestGetApps(t *testing.T) {
 		CtrlPort:  1234,
 		Active:    true,
 		Details: dbmodel.AppKea{
-			Daemons: []dbmodel.KeaDaemon{},
+			Daemons: []*dbmodel.KeaDaemon{},
 		},
 	}
 	err = dbmodel.AddApp(db, s1)
 	require.NoError(t, err)
 
-	// add app bind9 to machine
+	// add app BIND 9 to machine
 	s2 := &dbmodel.App{
 		ID:        0,
 		MachineID: m.ID,
@@ -548,7 +707,7 @@ func TestRestGetApps(t *testing.T) {
 // Generates a response to the status-get command including two status
 // structures, one for DHCPv4 and one for DHCPv6. Both contain HA
 // status information.
-func mockGetStatusWithHA(response interface{}) {
+func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
 	daemons, _ := agentcomm.NewKeaDaemons("dhcp4", "dhcp6")
 	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
 	json := `[
@@ -601,7 +760,7 @@ func mockGetStatusWithHA(response interface{}) {
                }
           }
     ]`
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, response)
+	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
 }
 
 // Test that status of two HA services for a Kea application is parsed
@@ -733,7 +892,7 @@ func TestRestGetAppsStats(t *testing.T) {
 		CtrlPort:  1234,
 		Active:    true,
 		Details: dbmodel.AppKea{
-			Daemons: []dbmodel.KeaDaemon{},
+			Daemons: []*dbmodel.KeaDaemon{},
 		},
 	}
 	err = dbmodel.AddApp(db, s1)

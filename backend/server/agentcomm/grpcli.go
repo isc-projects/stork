@@ -13,37 +13,10 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-type Bind9Daemon struct {
-	Pid     int32
-	Name    string
-	Active  bool
-	Version string
-}
-
-type KeaDaemon struct {
-	Pid             int32
-	Name            string
-	Active          bool
-	Version         string
-	ExtendedVersion string
-}
-
-type AppCommon struct {
-	Version     string
+type App struct {
+	Type        string // currently supported types are: "kea" and "bind9"
 	CtrlAddress string
 	CtrlPort    int64
-	Active      bool
-}
-
-type AppKea struct {
-	AppCommon
-	ExtendedVersion string
-	Daemons         []KeaDaemon
-}
-
-type AppBind9 struct {
-	AppCommon
-	Daemon Bind9Daemon
 }
 
 // State of the machine. It describes multiple properties of the machine like number of CPUs
@@ -68,7 +41,7 @@ type State struct {
 	HostID               string
 	LastVisited          time.Time
 	Error                string
-	Apps                 []interface{}
+	Apps                 []*App
 }
 
 // Get version from agent.
@@ -95,49 +68,13 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 		}
 	}
 
-	var apps []interface{}
-	for _, srv := range grpcState.Apps {
-		switch s := srv.App.(type) {
-		case *agentapi.App_Kea:
-			log.Printf("s.Kea.Daemons %+v", s.Kea.Daemons)
-			var daemons []KeaDaemon
-			for _, d := range s.Kea.Daemons {
-				daemons = append(daemons, KeaDaemon{
-					Pid:             d.Pid,
-					Name:            d.Name,
-					Active:          d.Active,
-					Version:         d.Version,
-					ExtendedVersion: d.ExtendedVersion,
-				})
-			}
-			apps = append(apps, &AppKea{
-				AppCommon: AppCommon{
-					Version:     srv.Version,
-					CtrlAddress: srv.CtrlAddress,
-					CtrlPort:    srv.CtrlPort,
-					Active:      srv.Active,
-				},
-				ExtendedVersion: s.Kea.ExtendedVersion,
-				Daemons:         daemons,
-			})
-		case *agentapi.App_Bind9:
-			var daemon = Bind9Daemon{
-				Pid:     s.Bind9.Daemon.Pid,
-				Name:    s.Bind9.Daemon.Name,
-				Active:  s.Bind9.Daemon.Active,
-				Version: s.Bind9.Daemon.Version,
-			}
-			apps = append(apps, &AppBind9{
-				AppCommon: AppCommon{
-					Version:  srv.Version,
-					CtrlPort: srv.CtrlPort,
-					Active:   srv.Active,
-				},
-				Daemon: daemon,
-			})
-		default:
-			log.Println("unsupported app type")
-		}
+	var apps []*App
+	for _, app := range grpcState.Apps {
+		apps = append(apps, &App{
+			Type:        app.Type,
+			CtrlAddress: app.CtrlAddress,
+			CtrlPort:    app.CtrlPort,
+		})
 	}
 
 	state := State{
@@ -166,39 +103,115 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 	return &state, nil
 }
 
-// Forwards a Kea command via the Stork Agent and Kea Control Agent and then
-// parses the response. caURL is URL to Kea Control Agent.
-func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, caURL string, agentAddress string, agentPort int64, command *KeaCommand, response interface{}) error {
+type Bind9Daemon struct {
+	Pid     int32
+	Name    string
+	Active  bool
+	Version string
+}
+
+type Bind9State struct {
+	Version string
+	Active  bool
+	Daemon  Bind9Daemon
+}
+
+func (agents *connectedAgentsData) GetBind9State(ctx context.Context, agentAddress string, agentPort int64) (*Bind9State, error) {
 	// Find the agent by address and port.
 	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
 	agent, err := agents.GetConnectedAgent(addrPort)
 	if err != nil {
 		err = errors.Wrapf(err, "there is no agent available at address %s:%d", agentAddress, agentPort)
-		return err
+		return nil, err
 	}
 
-	// Prepare the on-wire representation of the command.
-	c := command.Marshal()
-
-	req := &agentapi.ForwardToKeaOverHTTPReq{
-		Url:        caURL,
-		KeaRequest: c,
+	req := &agentapi.GetBind9StateReq{
+		CtrlAddress: agentAddress,
+		CtrlPort:    agentPort,
 	}
 
-	// Send the command to the Stork agent.
-	rsp, err := agent.Client.ForwardToKeaOverHTTP(ctx, req)
+	// call agent to get BIND 9 state
+	rsp, err := agent.Client.GetBind9State(ctx, req)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to forward Kea command to %s, command was: %s", caURL, c)
-		return err
+		err = errors.Wrapf(err, "failed to get BIND 9 state: %+v", req)
+		return nil, err
+	}
+	if rsp.Status.Code != agentapi.Status_OK {
+		err = errors.New(rsp.Status.Message)
+		return nil, err
 	}
 
-	// Try to parse the response from the on-wire format.
-	err = UnmarshalKeaResponseList(command, rsp.GetKeaResponse(), response)
+	state := &Bind9State{
+		Version: rsp.Version,
+		Active:  rsp.Active,
+		Daemon: Bind9Daemon{
+			Pid:     rsp.Daemon.Pid,
+			Name:    rsp.Daemon.Name,
+			Active:  rsp.Daemon.Active,
+			Version: rsp.Daemon.Version,
+		},
+	}
+
+	return state, nil
+}
+
+type KeaCmdsResult struct {
+	Error      error
+	CmdsErrors []error
+}
+
+// Forwards a Kea command via the Stork Agent and Kea Control Agent and then
+// parses the response. caURL is URL to Kea Control Agent.
+func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caURL string, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error) {
+	// Find the agent by address and port.
+	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
+	agent, err := agents.GetConnectedAgent(addrPort)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp.GetKeaResponse())
-		return err
+		err = errors.Wrapf(err, "there is no agent available at address %s:%d", agentAddress, agentPort)
+		return nil, err
+	}
+
+	// Prepare the on-wire representation of the commands.
+	fdReq := &agentapi.ForwardToKeaOverHTTPReq{
+		Url: caURL,
+	}
+	for _, cmd := range commands {
+		fdReq.KeaRequests = append(fdReq.KeaRequests, &agentapi.KeaRequest{
+			Request: cmd.Marshal(),
+		})
+	}
+
+	// Send the commands to the Stork agent.
+	fdRsp, err := agent.Client.ForwardToKeaOverHTTP(ctx, fdReq)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to forward Kea commands to %s, commands were: %+v", caURL, fdReq.KeaRequests)
+		return nil, err
+	}
+
+	result := &KeaCmdsResult{}
+	result.Error = nil
+	if fdRsp.Status.Code != agentapi.Status_OK {
+		result.Error = errors.New(fdRsp.Status.Message)
+	}
+
+	for idx, rsp := range fdRsp.GetKeaResponses() {
+		cmdResp := cmdResponses[idx]
+		if rsp.Status.Code != agentapi.Status_OK {
+			result.CmdsErrors = append(result.CmdsErrors, errors.New(rsp.Status.Message))
+			continue
+		}
+
+		// Try to parse the response from the on-wire format.
+		err = UnmarshalKeaResponseList(commands[idx], rsp.Response, cmdResp)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
+			result.CmdsErrors = append(result.CmdsErrors, err)
+			continue
+		}
+
+		result.CmdsErrors = append(result.CmdsErrors, nil)
 	}
 
 	// Everything was fine, so return no error.
-	return nil
+	return result, nil
 }

@@ -128,6 +128,11 @@
         type: string
       extendedVersion:
         type: string
+      uptime:
+        type: integer
+      reloadedAt:
+        type: string
+        format: date-time
       hooks:
         type: array
         items:

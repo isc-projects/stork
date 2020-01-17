@@ -225,7 +225,7 @@ task :run_server_db do |t, args|
   ENV['STORK_DATABASE_HOST'] = "localhost"
   ENV['STORK_DATABASE_PORT'] = "5678"
   at_exit {
-    sh "docker rm -f stork-app-pgsql"
+    sh "docker rm -f -v stork-app-pgsql"
   }
   sh 'docker run --name stork-app-pgsql -d -p 5678:5432 -e POSTGRES_DB=storkapp -e POSTGRES_USER=storkapp -e POSTGRES_PASSWORD=storkapp postgres:11 && sleep 5'
   Rake::Task["run_server"].invoke()
@@ -312,7 +312,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
                      'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
                      'CreateSession', 'DeleteSession', 'Listen', 'Shutdown', 'NewRestUser',
                      'CreateUser', 'UpdateUser', 'SetupLogging', 'UTCNow', 'detectApps',
-                     'updateMachineFieldsKea', 'updateMachineFieldsBind9', 'prepareTLS']
+                     'prepareTLS']
       if cov < 35 and not ignore_list.include? func
         puts "FAIL: %-80s %5s%% < 35%%" % ["#{file} #{func}", "#{cov}"]
         problem = true
@@ -327,7 +327,7 @@ end
 desc 'Run backend unit tests with local postgres docker container'
 task :unittest_backend_db do
   at_exit {
-    sh "docker rm -f stork-ut-pgsql"
+    sh "docker rm -f -v stork-ut-pgsql"
   }
   sh "docker run --name stork-ut-pgsql -d -p 5678:5432 -e POSTGRES_DB=storktest -e POSTGRES_USER=storktest -e POSTGRES_PASSWORD=storktest postgres:11"
   ENV['POSTGRES_ADDR'] = "localhost:5678"

@@ -1,5 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
 
+import moment from 'moment-timezone'
+
 import { MessageService, MenuItem } from 'primeng/api'
 
 @Component({
@@ -73,5 +75,27 @@ export class KeaAppTabComponent implements OnInit {
 
     refreshAppState() {
         this.refreshApp.emit(this._appTab.app.id)
+    }
+
+    showDuration(duration) {
+        if (duration > 0) {
+            const d = moment.duration(duration, 'seconds')
+            let txt = ''
+            if (d.days() > 0) {
+                txt += ' ' + d.days() + ' days'
+            }
+            if (d.hours() > 0) {
+                txt += ' ' + d.hours() + ' hours'
+            }
+            if (d.minutes() > 0) {
+                txt += ' ' + d.minutes() + ' minutes'
+            }
+            if (d.seconds() > 0) {
+                txt += ' ' + d.seconds() + ' seconds'
+            }
+
+            return txt.trim()
+        }
+        return ''
     }
 }

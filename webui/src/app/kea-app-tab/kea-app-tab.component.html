@@ -1,4 +1,4 @@
-<div style="margin: 10px;" class="p-grid">
+<div style="margin: 0;" class="p-grid">
     <div class="p-col-12">
         <button
             type="button"
@@ -57,6 +57,14 @@
                             no hooks
                         </div>
                     </td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top;">Uptime</td>
+                    <td>{{ showDuration(daemon.uptime) }}</td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top;">Last Reloaded At</td>
+                    <td>{{ daemon.reloadedAt | localtime }}</td>
                 </tr>
             </table>
         </div>

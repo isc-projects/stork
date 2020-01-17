@@ -41,7 +41,7 @@ type Machine struct {
 	LastVisited time.Time
 	Error       string
 	State       MachineState
-	Apps        []App
+	Apps        []*App
 }
 
 func AddMachine(db *pg.DB, machine *Machine) error {
@@ -84,7 +84,7 @@ func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 }
 
 func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
-	machine.Apps = []App{}
+	machine.Apps = []*App{}
 	q := db.Model(machine).Where("id = ?", machine.ID)
 	q = q.Relation("Apps")
 	err := q.Select()
@@ -144,7 +144,7 @@ func DeleteMachine(db *pg.DB, machine *Machine) error {
 	// first mark as deleted all apps of the machine
 	for _, app := range machine.Apps {
 		dbApp := app
-		err := DeleteApp(db, &dbApp)
+		err := DeleteApp(db, dbApp)
 		if err != nil {
 			log.Warnf("problem with deleting app %d: %s", app.ID, err)
 		}

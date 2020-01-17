@@ -27,13 +27,16 @@ type KeaDaemon struct {
 	Active          bool
 	Version         string
 	ExtendedVersion string
+	Config          *map[string]interface{}
+	Uptime          int64
+	ReloadedAt      time.Time
 }
 
 const KeaAppType = "kea"
 
 type AppKea struct {
 	ExtendedVersion string
-	Daemons         []KeaDaemon
+	Daemons         []*KeaDaemon
 }
 
 const Bind9AppType = "bind9"
@@ -53,8 +56,8 @@ type App struct {
 	Created     time.Time
 	Deleted     time.Time
 	MachineID   int64
-	Machine     Machine
-	Type        string
+	Machine     *Machine
+	Type        string // currently supported types are: "kea" and "bind9"
 	CtrlAddress string
 	CtrlPort    int64
 	Active      bool
@@ -87,7 +90,7 @@ func (app *App) AfterScan(ctx context.Context) error {
 		var bind9Details AppBind9
 		err = json.Unmarshal(bytes, &bind9Details)
 		if err != nil {
-			return errors.Wrapf(err, "problem with unmarshaling bind9 app details")
+			return errors.Wrapf(err, "problem with unmarshaling BIND 9 app details")
 		}
 		app.Details = bind9Details
 	}

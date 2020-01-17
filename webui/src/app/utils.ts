@@ -14,6 +14,11 @@ export function datetimeToLocal(d) {
             tz = ' UTC'
         }
 
+        // If year is < 2 it means that the date is not set.
+        // In Go if date is zeroed then it is 0001.01.01.
+        if (d.year() < 2) {
+            return ''
+        }
         return d.format('YYYY-MM-DD hh:mm:ss') + tz
     } catch (e) {
         return d

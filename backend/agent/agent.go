@@ -37,7 +37,7 @@ type StorkAgent struct {
 func NewStorkAgent() *StorkAgent {
 	caClient := NewCAClient()
 	sa := &StorkAgent{
-		AppMonitor: NewAppMonitor(caClient),
+		AppMonitor: NewAppMonitor(),
 		CAClient:   caClient,
 	}
 	return sa
@@ -51,51 +51,12 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 	loadStr := fmt.Sprintf("%.2f %.2f %.2f", load.Load1, load.Load5, load.Load15)
 
 	var apps []*agentapi.App
-	for _, srv := range sa.AppMonitor.GetApps() {
-		switch s := srv.(type) {
-		case AppKea:
-			var daemons []*agentapi.KeaDaemon
-			for _, d := range s.Daemons {
-				daemons = append(daemons, &agentapi.KeaDaemon{
-					Pid:             d.Pid,
-					Name:            d.Name,
-					Active:          d.Active,
-					Version:         d.Version,
-					ExtendedVersion: d.ExtendedVersion,
-				})
-			}
-			apps = append(apps, &agentapi.App{
-				Version:     s.Version,
-				CtrlAddress: s.CtrlAddress,
-				CtrlPort:    s.CtrlPort,
-				Active:      s.Active,
-				App: &agentapi.App_Kea{
-					Kea: &agentapi.AppKea{
-						ExtendedVersion: s.ExtendedVersion,
-						Daemons:         daemons,
-					},
-				},
-			})
-		case AppBind9:
-			var daemon = &agentapi.Bind9Daemon{
-				Pid:     s.Daemon.Pid,
-				Name:    s.Daemon.Name,
-				Active:  s.Daemon.Active,
-				Version: s.Daemon.Version,
-			}
-			apps = append(apps, &agentapi.App{
-				Version:  s.Version,
-				CtrlPort: s.CtrlPort,
-				Active:   s.Active,
-				App: &agentapi.App_Bind9{
-					Bind9: &agentapi.AppBind9{
-						Daemon: daemon,
-					},
-				},
-			})
-		default:
-			panic(fmt.Sprint("Unknown app type"))
-		}
+	for _, app := range sa.AppMonitor.GetApps() {
+		apps = append(apps, &agentapi.App{
+			Type:        app.Type,
+			CtrlAddress: app.CtrlAddress,
+			CtrlPort:    app.CtrlPort,
+		})
 	}
 
 	state := agentapi.GetStateRsp{
@@ -122,44 +83,85 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 	return &state, nil
 }
 
-// Restart Kea app.
-func (sa *StorkAgent) RestartKea(ctx context.Context, in *agentapi.RestartKeaReq) (*agentapi.RestartKeaRsp, error) {
-	log.Printf("Received: RestartKea %v", in)
-	return &agentapi.RestartKeaRsp{Xyz: "321"}, nil
+func (sa *StorkAgent) GetBind9State(ctx context.Context, in *agentapi.GetBind9StateReq) (*agentapi.GetBind9StateRsp, error) {
+	app := &App{
+		CtrlAddress: in.CtrlAddress,
+		CtrlPort:    in.CtrlPort,
+	}
+	state, err := getBind9State(app)
+
+	status := &agentapi.Status{
+		Code: agentapi.Status_OK, // all ok
+	}
+	if err != nil {
+		status.Code = agentapi.Status_ERROR
+		status.Message = err.Error()
+	}
+
+	rsp := &agentapi.GetBind9StateRsp{
+		Status:  status,
+		Version: state.Version,
+		Active:  state.Active,
+		Daemon: &agentapi.Bind9Daemon{
+			Pid:     state.Daemon.Pid,
+			Name:    state.Daemon.Name,
+			Active:  state.Daemon.Active,
+			Version: state.Daemon.Version,
+		},
+	}
+	return rsp, nil
 }
 
-// Forwards Kea command sent by the Stork server to the appropriate Kea instance over
+// Forwards one or more Kea commands sent by the Stork server to the appropriate Kea instance over
 // HTTP (via Control Agent).
 func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) (*agentapi.ForwardToKeaOverHTTPRsp, error) {
 	reqURL := in.GetUrl()
 
-	payload := in.GetKeaRequest()
+	requests := in.GetKeaRequests()
 
-	rsp := &agentapi.ForwardToKeaOverHTTPRsp{}
-
-	// Try to forward the command to Kea Control Agent.
-	keaRsp, err := sa.CAClient.Call(reqURL, bytes.NewBuffer([]byte(payload)))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"URL": reqURL,
-		}).Errorf("Failed to forward command to Kea: %+v", err)
-		return rsp, err
-	}
-	defer keaRsp.Body.Close()
-
-	// Read the response body.
-	body, err := ioutil.ReadAll(keaRsp.Body)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"URL": reqURL,
-		}).Errorf("Failed to read the body of the Kea response to forwarded command: %+v", err)
-		return rsp, err
+	response := &agentapi.ForwardToKeaOverHTTPRsp{
+		Status: &agentapi.Status{
+			Code: agentapi.Status_OK, // all ok
+		},
 	}
 
-	// Everything looks good, so include the body in the response.
-	rsp.KeaResponse = string(body)
+	// forward requests to kea one by one
+	for _, req := range requests {
+		rsp := &agentapi.KeaResponse{
+			Status: &agentapi.Status{},
+		}
+		// Try to forward the command to Kea Control Agent.
+		keaRsp, err := sa.CAClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
+		if err != nil {
+			log.WithFields(log.Fields{
+				"URL": reqURL,
+			}).Errorf("Failed to forward commands to Kea: %+v", err)
+			rsp.Status.Code = agentapi.Status_ERROR
+			rsp.Status.Message = "Failed to forward commands to Kea"
+			response.KeaResponses = append(response.KeaResponses, rsp)
+			continue
+		}
 
-	return rsp, err
+		// Read the response body.
+		body, err := ioutil.ReadAll(keaRsp.Body)
+		keaRsp.Body.Close()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"URL": reqURL,
+			}).Errorf("Failed to read the body of the Kea response to forwarded commands: %+v", err)
+			rsp.Status.Code = agentapi.Status_ERROR
+			rsp.Status.Message = "Failed to read the body of the Kea response"
+			response.KeaResponses = append(response.KeaResponses, rsp)
+			continue
+		}
+
+		// Everything looks good, so include the body in the response.
+		rsp.Response = string(body)
+		rsp.Status.Code = agentapi.Status_OK
+		response.KeaResponses = append(response.KeaResponses, rsp)
+	}
+
+	return response, nil
 }
 
 func (sa *StorkAgent) Serve() {

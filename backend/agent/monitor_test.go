@@ -7,43 +7,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gopkg.in/h2non/gock.v1"
 )
 
 func TestGetApps(t *testing.T) {
-	// Forces gock to intercept the HTTP/1.1 client. Otherwise it would
-	// use the HTTP/2.
-	caClient := NewCAClient()
-	gock.InterceptClient(caClient.client)
-	sm := NewAppMonitor(caClient)
-
-	apps := sm.GetApps()
+	am := NewAppMonitor()
+	apps := am.GetApps()
 	require.Len(t, apps, 0)
-	sm.Shutdown()
-}
-
-func TestKeaDaemonVersionGetBadUrl(t *testing.T) {
-	caClient := NewCAClient()
-	gock.InterceptClient(caClient.client)
-	_, err := keaDaemonVersionGet(caClient, "aaa", "")
-	require.Contains(t, err.Error(), "unsupported protocol ")
-}
-
-func TestKeaDaemonVersionGetDataOk(t *testing.T) {
-	defer gock.Off()
-
-	gock.New("http://localhost:45634").
-		Post("/").
-		Reply(200).
-		JSON([]map[string]string{{"arguments": "bar"}})
-
-	caClient := NewCAClient()
-	gock.InterceptClient(caClient.client)
-
-	data, err := keaDaemonVersionGet(caClient, "http://localhost:45634/", "")
-	require.NoError(t, err)
-	require.Equal(t, true, gock.IsDone())
-	require.Equal(t, map[string]interface{}{"arguments": "bar"}, data)
+	am.Shutdown()
 }
 
 func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
@@ -123,23 +93,43 @@ func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
 	require.Equal(t, "127.0.0.1", address)
 }
 
+func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
+	// prepare kea conf file
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
+	if err != nil {
+		log.Fatal("Cannot create temporary file", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	text := []byte(string("\"http-host\": \"::\", \"http-port\": 1234"))
+	if _, err = tmpFile.Write(text); err != nil {
+		log.Fatal("Failed to write to temporary file", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	// check reading from proper file;
+	// if CA is listening on :: then ::1 should be returned
+	// as it is not possible to connect to ::
+	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
+	require.Equal(t, int64(1234), port)
+	require.Equal(t, "::1", address)
+}
+
 func TestDetectApps(t *testing.T) {
-	caClient := NewCAClient()
-	gock.InterceptClient(caClient.client)
-	sm := NewAppMonitor(caClient)
-	sm.(*appMonitor).detectApps()
-	sm.Shutdown()
+	am := NewAppMonitor()
+	am.(*appMonitor).detectApps()
+	am.Shutdown()
 }
 
 func TestDetectBind9App(t *testing.T) {
-	// check bind9 app detection
-	srv := detectBind9App()
-	require.NotNil(t, srv)
-	require.Empty(t, srv.Version)
-	require.False(t, srv.Active)
-	require.Equal(t, "named", srv.Daemon.Name)
-	require.Empty(t, srv.Daemon.Version)
-	require.False(t, srv.Daemon.Active)
+	// check BIND 9 app detection
+	app := detectBind9App()
+	require.NotNil(t, app)
+	require.Equal(t, "bind9", app.Type)
+	require.Equal(t, "", app.CtrlAddress)
+	require.Equal(t, int64(0), app.CtrlPort)
 }
 
 func TestDetectKeaApp(t *testing.T) {
@@ -158,29 +148,10 @@ func TestDetectKeaApp(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	// prepare response for ctrl-agent
-	defer gock.Off()
-	// first request to the kea ctrl-agent
-	gock.New("http://localhost:45634").
-		Post("/").
-		Reply(200).
-		JSON([]map[string]interface{}{{
-			"arguments": map[string]interface{}{"extended": "bla bla"},
-			"result":    0, "text": "1.2.3",
-		}})
-	// - second request to kea daemon
-	gock.New("http://localhost:45634").
-		Post("/").
-		Reply(200).
-		JSON([]map[string]interface{}{{
-			"arguments": map[string]interface{}{"extended": "bla bla"},
-			"result":    0, "text": "1.2.3",
-		}})
-
-	caClient := NewCAClient()
-	gock.InterceptClient(caClient.client)
-
 	// check kea app detection
-	srv := detectKeaApp(caClient, []string{"", tmpFile.Name()})
-	require.Nil(t, srv)
+	app := detectKeaApp([]string{"", tmpFile.Name()})
+	require.NotNil(t, app)
+	require.Equal(t, "kea", app.Type)
+	require.Equal(t, "localhost", app.CtrlAddress)
+	require.Equal(t, int64(45634), app.CtrlPort)
 }

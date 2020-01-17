@@ -13,7 +13,7 @@ import (
 
 // Generate test response to status-get command including status of the
 // HA pair doing load balancing.
-func mockGetStatusLoadBalancing(response interface{}) {
+func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
 	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
 	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
 	json := `[
@@ -42,12 +42,12 @@ func mockGetStatusLoadBalancing(response interface{}) {
                 }
             }
     ]`
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, response)
+	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
 }
 
 // Generates test response to status-get command lacking a status of the
 // HA pair.
-func mockGetStatusNoHA(response interface{}) {
+func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
 	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
 	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
 	json := `[
@@ -61,12 +61,12 @@ func mockGetStatusNoHA(response interface{}) {
             }
         }
     ]`
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, response)
+	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
 }
 
 // Generates test response to status-get command indicating an error and
 // lacking argument.s
-func mockGetStatusError(response interface{}) {
+func mockGetStatusError(callNo int, cmdResponses []interface{}) {
 	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
 	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
 	json := `[
@@ -75,7 +75,7 @@ func mockGetStatusError(response interface{}) {
             "text": "unable to communicate with the deamon"
         }
     ]`
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, response)
+	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
 }
 
 // Test status-get command when HA status is returned.
@@ -84,6 +84,10 @@ func TestGetDHCPStatus(t *testing.T) {
 
 	app := dbmodel.App{
 		CtrlPort: 1234,
+		Machine: &dbmodel.Machine{
+			Address:   "192.0.2.0",
+			AgentPort: 1111,
+		},
 	}
 
 	appStatus, err := GetDHCPStatus(context.Background(), fa, &app)
@@ -126,6 +130,10 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 
 	app := dbmodel.App{
 		CtrlPort: 1234,
+		Machine: &dbmodel.Machine{
+			Address:   "192.0.2.0",
+			AgentPort: 1111,
+		},
 	}
 
 	appStatus, err := GetDHCPStatus(context.Background(), fa, &app)
@@ -152,6 +160,10 @@ func TestGetDHCPStatusError(t *testing.T) {
 
 	app := dbmodel.App{
 		CtrlPort: 1234,
+		Machine: &dbmodel.Machine{
+			Address:   "192.0.2.0",
+			AgentPort: 1111,
+		},
 	}
 
 	appStatus, err := GetDHCPStatus(context.Background(), fa, &app)

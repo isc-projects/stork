@@ -136,5 +136,5 @@ func UnmarshalKeaResponseList(request *KeaCommand, response string, parsed inter
 		}
 	}
 
-	return err
+	return nil
 }
