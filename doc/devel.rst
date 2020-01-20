@@ -65,3 +65,22 @@ There's a simple git hook that inserts the issue number in the commit message au
 want to use it, go to ``utils`` directory and run ``git-hooks-install`` script. It will copy the
 necessary file to ``.git/hooks`` directory.
 
+
+ReST API
+========
+
+The primary user of ReST API is Stork UI in web browser. The definition of ReST API is located
+in api folder and is described in Swagger 2.0 format.
+
+The description in Swagger is split into multiple files. 2 files comprise a tag group:
+
+* \*-paths.yaml - defines URLs
+* \*-defs.yaml - contains entity definitions
+
+All these files are combined by ``yamlinc`` tool into signle swagger file ``swagger.yaml``.
+Then from ``swagger.yaml`` there are generated code for:
+
+* UI fronted by swagger-codegen
+* backend in Go lang by go-swagger
+
+All these steps are realized in Rakefile.
