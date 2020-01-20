@@ -3,7 +3,7 @@ require 'rake'
 
 # Tool Versions
 NODE_VER = '12.13.1'
-SWAGGER_CODEGEN_VER = '2.4.10'
+SWAGGER_CODEGEN_VER = '2.4.12'
 GOSWAGGER_VER = 'v0.21.0'
 GOLANGCILINT_VER = '1.21.0'
 GO_VER = '1.13.5'
@@ -51,7 +51,7 @@ GOLANGCILINT_URL = "https://github.com/golangci/golangci-lint/releases/download/
 GO_URL = "https://dl.google.com/go/go#{GO_VER}.#{GO_SUFFIX}.tar.gz"
 PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v#{PROTOC_VER}/protoc-#{PROTOC_VER}-#{PROTOC_ZIP_SUFFIX}.zip"
 PROTOC_GEN_GO_URL = 'github.com/golang/protobuf/protoc-gen-go'
-SWAGGER_CODEGEN_URL = "http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/#{SWAGGER_CODEGEN_VER}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
+SWAGGER_CODEGEN_URL = "https://oss.sonatype.org/content/repositories/releases/io/swagger/swagger-codegen-cli/#{SWAGGER_CODEGEN_VER}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
 NODE_URL = "https://nodejs.org/dist/v#{NODE_VER}/node-v#{NODE_VER}-#{NODE_SUFFIX}.tar.xz"
 MOCKERY_URL = 'github.com/vektra/mockery/.../'
 MOCKGEN_URL = 'github.com/golang/mock/mockgen'
