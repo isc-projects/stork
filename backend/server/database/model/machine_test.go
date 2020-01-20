@@ -175,7 +175,7 @@ func TestGetMachinesByPageWithFiltering(t *testing.T) {
 	require.Len(t, ms, 1)
 }
 
-func TestDeleteMachine(t *testing.T) {
+func TestDeleteMachineOnly(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -199,6 +199,43 @@ func TestDeleteMachine(t *testing.T) {
 	}
 	err = DeleteMachine(db, m2)
 	require.Contains(t, err.Error(), "no rows in result")
+}
+
+func TestDeleteMachineWithApps(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add machine
+	m := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add app
+	a := &App{
+		ID:        0,
+		MachineID: m.ID,
+		Type:      "kea",
+	}
+	err = AddApp(db, a)
+	require.NoError(t, err)
+	appID := a.ID
+	require.NotEqual(t, 0, appID)
+
+	// reload machine from db to get apps relation loaded
+	err = RefreshMachineFromDb(db, m)
+	require.Nil(t, err)
+
+	// delete machine
+	err = DeleteMachine(db, m)
+	require.NoError(t, err)
+
+	// check if app is also deleted
+	a, err = GetAppByID(db, appID)
+	require.NoError(t, err)
+	require.NotZero(t, a.Deleted)
 }
 
 func TestRefreshMachineFromDb(t *testing.T) {

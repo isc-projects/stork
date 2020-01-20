@@ -86,7 +86,7 @@ export class MachinesPageComponent implements OnInit {
                 icon: 'pi pi-refresh',
             },
             {
-                label: 'Delete',
+                label: 'Remove',
                 icon: 'pi pi-times',
             },
         ]

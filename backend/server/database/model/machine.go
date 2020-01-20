@@ -141,6 +141,16 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 }
 
 func DeleteMachine(db *pg.DB, machine *Machine) error {
+	// first mark as deleted all apps of the machine
+	for _, app := range machine.Apps {
+		dbApp := app
+		err := DeleteApp(db, &dbApp)
+		if err != nil {
+			log.Warnf("problem with deleting app %d: %s", app.ID, err)
+		}
+	}
+
+	// and now mark machine as deleted
 	machine.Deleted = storkutil.UTCNow()
 	err := db.Update(machine)
 	if err != nil {
