@@ -1,0 +1,181 @@
+  /sessions:
+    post:
+      summary: Logs in a user to the system
+      operationId: createSession
+      tags:
+        - Users
+      parameters:
+        - in: query
+          name: useremail
+          type: string
+          description: E-mail of the user logging to the system
+        - in: query
+          name: userpassword
+          type: string
+          description: User password to log in to the system
+      responses:
+        200:
+          description: Login successful
+          schema:
+            $ref: "#/definitions/User"
+        400:
+          description: Invalid user email or password supplied
+          schema:
+            $ref: "#/definitions/ApiError"
+    delete:
+      summary: Logs out a user from the system
+      operationId: deleteSession
+      tags:
+        - Users
+      responses:
+        200:
+          description: Logout successful
+        400:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /users:
+    get:
+      summary: Get the list of users.
+      description: >-
+        Returns all users having an account in the system.
+      operationId: getUsers
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/filterTextParam'
+      responses:
+        200:
+          description: List of users returned.
+          schema:
+            $ref: "#/definitions/Users"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+    post:
+      summary: Creates new user account.
+      description: >-
+        Creates new user account in the system.
+      operationId: createUser
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - name: account
+          in: body
+          description: New user account including user information and password
+          schema:
+            $ref: "#/definitions/UserAccount"
+
+      responses:
+        200:
+          description: User account successfully created.
+          schema:
+            $ref: "#/definitions/User"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+    put:
+      summary: Updates existing user account.
+      description: >-
+        Updates exsiting user account in the system.
+      operationId: updateUser
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - name: account
+          in: body
+          description: Updated user account information and password
+          schema:
+            $ref: "#/definitions/UserAccount"
+
+      responses:
+        200:
+          description: User account successfully updated.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /users/{id}:
+    get:
+      summary: Get the specific user.
+      description: Returns user by id.
+      operationId: getUser
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: User identifier in the database.
+      responses:
+        200:
+          description: User information returned.
+          schema:
+            $ref: "#/definitions/User"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /users/{id}/password:
+    put:
+      summary: Updates user password.
+      description: Updates user password.
+      operationId: updateUserPassword
+      security:
+        - Token: []
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: User identifier in the database.
+        - in: body
+          name: passwords
+          description: Old and new password
+          schema:
+            $ref: "#/definitions/PasswordChange"
+
+      responses:
+        200:
+          description: Password updated successfully.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /groups:
+    get:
+      summary: Get the list of groups.
+      description: >-
+        Returns all groups defined for the system.
+      operationId: getGroups
+      tags:
+        - Users
+      responses:
+        200:
+          description: List of groups returned.
+          schema:
+            $ref: "#/definitions/Groups"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

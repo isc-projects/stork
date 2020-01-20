@@ -58,6 +58,7 @@
         "tslint-angular": "^3.0.2",
         "tslint-config-prettier": "^1.18.0",
         "tslint-plugin-prettier": "^2.0.1",
-        "typescript": "~3.5.3"
+        "typescript": "~3.5.3",
+        "yamlinc": "^0.1.10"
     }
 }

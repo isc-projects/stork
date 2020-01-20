@@ -1,0 +1,251 @@
+  Machine:
+    type: object
+    required:
+      - address
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      address:
+        type: string
+      agentPort:
+        type: integer
+      agentVersion:
+        type: string
+        readOnly: true
+      hostname:
+        type: string
+        readOnly: true
+      cpus:
+        type: integer
+        readOnly: true
+      cpusLoad:
+        type: string
+        readOnly: true
+      memory:
+        type: integer
+        readOnly: true
+      usedMemory:
+        type: integer
+        readOnly: true
+      uptime:
+        type: integer
+        readOnly: true
+      os:
+        type: string
+        readOnly: true
+      platform:
+        type: string
+        readOnly: true
+      platformFamily:
+        type: string
+        readOnly: true
+      platformVersion:
+        type: string
+        readOnly: true
+      kernelVersion:
+        type: string
+        readOnly: true
+      kernelArch:
+        type: string
+        readOnly: true
+      virtualizationSystem:
+        type: string
+        readOnly: true
+      virtualizationRole:
+        type: string
+        readOnly: true
+      hostID:
+        type: string
+        readOnly: true
+      lastVisited:
+        type: string
+        format: date-time
+        readOnly: true
+      error:
+        type: string
+        readOnly: true
+      apps:
+        type: array
+        items:
+          $ref: '#/definitions/MachineApp'
+
+  MachineApp:
+    type: object
+    properties:
+      id:
+        type: integer
+      type:
+        type: string
+      version:
+        type: string
+      active:
+        type: boolean
+
+  Machines:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Machine'
+      total:
+        type: integer
+
+  App:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      type:
+        type: string
+      ctrlAddress:
+        type: string
+      ctrlPort:
+        type: integer
+      active:
+        type: boolean
+      version:
+        type: string
+      machine:
+        $ref: '#/definitions/AppMachine'
+      details:
+        allOf:
+          - $ref: '#/definitions/AppKea'
+          - $ref: '#/definitions/AppBind9'
+
+  KeaDaemon:
+    type: object
+    properties:
+      pid:
+        type: integer
+      name:
+        type: string
+      active:
+        type: boolean
+      version:
+        type: string
+      extendedVersion:
+        type: string
+      hooks:
+        type: array
+        items:
+          type: string
+
+  AppKea:
+    type: object
+    properties:
+      extendedVersion:
+        type: string
+      daemons:
+        type: array
+        items:
+          $ref: '#/definitions/KeaDaemon'
+
+  Bind9Daemon:
+    type: object
+    properties:
+      pid:
+        type: integer
+      name:
+        type: string
+      active:
+        type: boolean
+      version:
+        type: string
+
+  AppBind9:
+    type: object
+    properties:
+      daemon:
+        $ref: '#/definitions/Bind9Daemon'
+
+  AppMachine:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      address:
+        type: string
+      hostname:
+        type: string
+
+  Apps:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/App'
+      total:
+        type: integer
+
+  AppsStats:
+    type: object
+    properties:
+      keaAppsTotal:
+        type: integer
+      keaAppsNotOk:
+        type: integer
+      bind9AppsTotal:
+        type: integer
+      bind9AppsNotOk:
+        type: integer
+
+  KeaStatus:
+    type: object
+    properties:
+      pid:
+        type: integer
+      uptime:
+        type: integer
+      reload:
+        type: integer
+      daemon:
+        type: string
+      haServers:
+        type: object
+        properties:
+          localServer:
+            type: object
+            properties:
+              role:
+                type: string
+              scopes:
+                type: array
+                items:
+                  type: string
+              state:
+                type: string
+          remoteServer:
+            type: object
+            properties:
+              age:
+                type: integer
+              inTouch:
+                type: boolean
+              role:
+                type: string
+              scopes:
+                type: array
+                items:
+                  type: string
+              state:
+                type: string
+
+  ServiceStatus:
+    type: object
+    properties:
+      status:
+        allOf:
+          - $ref: '#/definitions/KeaStatus'
+
+  ServicesStatus:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ServiceStatus'

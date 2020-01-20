@@ -91,6 +91,7 @@ SPHINXOPTS = "-v -E -a -W -j 2"
 
 # Files
 SWAGGER_FILE = File.expand_path('api/swagger.yaml')
+SWAGGER_API_FILES = 'api/swagger.in.yaml', 'api/services-defs.yaml', 'api/services-paths.yaml', 'api/users-defs.yaml', 'api/users-paths.yaml'
 AGENT_PROTO_FILE = File.expand_path('backend/api/agent.proto')
 AGENT_PB_GO_FILE = File.expand_path('backend/api/agent.pb.go')
 
@@ -109,6 +110,18 @@ file GO => [TOOLS_DIR, GOHOME_DIR] do
   sh "wget #{GO_URL} -O #{GO_DIR}/go.tar.gz"
   Dir.chdir(GO_DIR) do
     sh 'tar -zxf go.tar.gz'
+  end
+end
+
+YAMLINC = File.expand_path('webui/node_modules/.bin/yamlinc')
+
+file YAMLINC do
+  Rake::Task[NG].invoke()
+end
+
+file SWAGGER_FILE => [YAMLINC, *SWAGGER_API_FILES] do
+  Dir.chdir('api') do
+    sh "#{YAMLINC} -o swagger.yaml swagger.in.yaml"
   end
 end
 

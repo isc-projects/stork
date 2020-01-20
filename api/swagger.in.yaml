@@ -1,0 +1,89 @@
+---
+swagger: "2.0"
+info:
+  description: An API for Stork
+  title: Stork API
+  version: 0.1.0
+consumes:
+  - application/json
+produces:
+  - application/json
+schemes:
+- http
+basePath: /api
+
+securityDefinitions:
+  Token:
+    type: apiKey
+    in: header
+    name: Cookie
+
+paths:
+  /version:
+    get:
+      summary: Get version.
+      operationId: getVersion
+      security: []
+      tags:
+        - General
+      responses:
+        200:
+          description: Version of Stork
+          schema:
+            $ref: "#/definitions/Version"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  $include: ./users-paths.yaml
+  $include: ./services-paths.yaml
+
+
+parameters:
+  paginationStartParam:
+    name: start
+    in: query
+    description: First record to retrieve.
+    type: integer
+
+  paginationLimitParam:
+    name: limit
+    in: query
+    description: Number of records to retrieve.
+    type: integer
+
+  filterTextParam:
+    name: text
+    in: query
+    description: >-
+      Filtering text, e.g. hostname for the machines
+      or version for the apps.
+    type: string
+
+
+definitions:
+  Version:
+    type: object
+    required:
+      - version
+      - date
+    properties:
+      version:
+        type: string
+      date:
+        type: string
+
+  ApiError:
+    type: object
+    required:
+      - message
+    properties:
+      message:
+        type: string
+
+  principal:
+    type: string
+
+  $include: users-defs.yaml
+  $include: services-defs.yaml

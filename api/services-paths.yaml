@@ -1,0 +1,237 @@
+  /machines:
+    get:
+      summary: Get list of machines.
+      description: >-
+        It is possible to filter list of machines by several fields. It is also always paged.
+        Default page size is 10.
+        A list of machines is returned in items field accompanied by total count
+        which indicates total available number of records for given filtering
+        parameters.
+      operationId: getMachines
+      tags:
+        - Services
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/filterTextParam'
+        - name: app
+          in: query
+          description: Limit returned list of machines to these which provide given app, possible values 'bind' or 'kea'.
+          type: string
+      responses:
+        200:
+          description: List of machines
+          schema:
+            $ref: "#/definitions/Machines"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+    post:
+      summary: Add new machine.
+      description: >-
+        To create new machine at least one parameter is needed: address.
+        There are optional parameters as well.
+      operationId: createMachine
+      tags:
+        - Services
+      parameters:
+        - name: machine
+          in: body
+          description: Machine
+          schema:
+            $ref: '#/definitions/Machine'
+      responses:
+        200:
+          description: Machine information
+          schema:
+            $ref: "#/definitions/Machine"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /machines/{id}:
+    get:
+      summary: Get machine by ID.
+      description: Get machine by the database specific ID.
+      operationId: getMachine
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Machine ID.
+      responses:
+        200:
+          description: A machine
+          schema:
+            $ref: "#/definitions/Machine"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+    put:
+      summary: Update machine information.
+      description: Update machine information, e.g. IP address.
+      operationId: updateMachine
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Machine ID.
+        - name: machine
+          in: body
+          description: Machine details
+          schema:
+            $ref: '#/definitions/Machine'
+      responses:
+        200:
+          description: Machine information.
+          schema:
+            $ref: "#/definitions/Machine"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+    delete:
+      summary: Delete machine by Id
+      operationId: deleteMachine
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Machine ID.
+      responses:
+        200:
+          description: Delete successful
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /machines/{id}/state:
+    get:
+      summary: Get machine's runtime state.
+      operationId: getMachineState
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Machine ID.
+      responses:
+        200:
+          description: Machine
+          schema:
+            $ref: "#/definitions/Machine"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /apps:
+    get:
+      summary: Get list of apps.
+      description: >-
+        It is possible to filter the list of apps by several fields. It is also always paged.
+        Default page size is 10.
+        A list of apps is returned in items field accompanied by total count
+        which indicates total available number of records for given filtering
+        parameters.
+      operationId: getApps
+      tags:
+        - Services
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/filterTextParam'
+        - name: app
+          in: query
+          description: Limit returned list of apps, possible values 'bind' or 'kea'.
+          type: string
+      responses:
+        200:
+          description: List of apps
+          schema:
+            $ref: "#/definitions/Apps"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /apps/{id}:
+    get:
+      summary: Get app by ID.
+      description: Get app by the database specific ID.
+      operationId: getApp
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: App ID.
+      responses:
+        200:
+          description: A app
+          schema:
+            $ref: "#/definitions/App"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /apps-stats:
+    get:
+      summary: Get applications statistics.
+      description: It returns a number of apps of a given type, a number of apps with some inactive daemons, etc.
+      operationId: getAppsStats
+      tags:
+        - Services
+      responses:
+        200:
+          description: Application statistics
+          schema:
+            $ref: "#/definitions/AppsStats"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /apps/{id}/services/status:
+    get:
+      summary: Get services status for a given application.
+      description: >-
+        Services status comprises runtime information about the services.
+        In particular, a Kea application status comprises information about
+        the High Availability service, such as HA state, partner's state etc.
+      operationId: getAppServicesStatus
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: App ID.
+      responses:
+        200:
+          description: Services with their status.
+          schema:
+            $ref: '#/definitions/ServicesStatus'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'

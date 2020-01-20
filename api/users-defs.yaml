@@ -1,0 +1,82 @@
+  User:
+    type: object
+    required:
+      - id
+      - login
+      - email
+      - name
+      - lastname
+    properties:
+      id:
+        type: integer
+      login:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      lastname:
+        type: string
+      groups:
+        type: array
+        items:
+          type: integer
+
+  Password:
+    type: string
+
+  PasswordChange:
+    type: object
+    required:
+      - oldpassword
+      - newpassword
+    properties:
+      oldpassword:
+        $ref: "#/definitions/Password"
+      newpassword:
+        $ref: "#/definitions/Password"
+
+  UserAccount:
+    type: object
+    required:
+      - user
+      - password
+    properties:
+      user:
+        $ref: "#/definitions/User"
+      password:
+        $ref: "#/definitions/Password"
+
+  Users:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/User'
+      total:
+        type: integer
+
+  Group:
+    type: object
+    required:
+      - id
+      - name
+      - description
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+
+  Groups:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Group'
+      total:
+        type: integer
