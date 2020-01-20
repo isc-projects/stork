@@ -1,3 +1,8 @@
+* 24 [func] godfryd
+
+    Added deleting apps while machine is being deleted.
+    (Gitlab #123)
+
 Stork 0.3.0 released on 2020-01-10.
 
 * 23 [func] godfryd
