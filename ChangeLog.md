@@ -1,6 +1,6 @@
-* 24 [func] godfryd
+* 24 [bug] godfryd
 
-    Added deleting apps while machine is being deleted.
+    Apps are now deleted while the machine is being deleted.
     (Gitlab #123)
 
 Stork 0.3.0 released on 2020-01-10.
