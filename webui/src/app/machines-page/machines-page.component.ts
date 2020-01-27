@@ -88,6 +88,7 @@ export class MachinesPageComponent implements OnInit {
             {
                 label: 'Remove',
                 icon: 'pi pi-times',
+                title: 'Remove machine from Stork Server',
             },
         ]
 
