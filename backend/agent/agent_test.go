@@ -62,6 +62,7 @@ func TestGetState(t *testing.T) {
 		Type:        "bind9",
 		CtrlAddress: "2.3.4.4",
 		CtrlPort:    2345,
+		CtrlKey:     "abcd",
 	})
 	fsm, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fsm.Apps = apps
@@ -75,8 +76,10 @@ func TestGetState(t *testing.T) {
 	bind9App := rsp.Apps[1]
 	require.Equal(t, "1.2.3.1", keaApp.CtrlAddress)
 	require.Equal(t, int64(1234), keaApp.CtrlPort)
+	require.Empty(t, keaApp.CtrlKey)
 	require.Equal(t, "2.3.4.4", bind9App.CtrlAddress)
 	require.Equal(t, int64(2345), bind9App.CtrlPort)
+	require.Equal(t, "abcd", bind9App.CtrlKey)
 }
 
 // Test forwarding command to Kea when HTTP 200 status code
@@ -188,6 +191,7 @@ func TestGetBind9StateError(t *testing.T) {
 	req := &agentapi.GetBind9StateReq{
 		CtrlAddress: "127.0.0.1",
 		CtrlPort:    1234,
+		CtrlKey:     "hmac-md5:abcd",
 	}
 
 	rsp, err := sa.GetBind9State(ctx, req)

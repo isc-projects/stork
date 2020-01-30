@@ -12,6 +12,7 @@ type App struct {
 	Type        string // currently supported types are: "kea" and "bind9"
 	CtrlAddress string
 	CtrlPort    int64
+	CtrlKey     string
 }
 
 type AppMonitor interface {

@@ -47,6 +47,7 @@ func TestAddApp(t *testing.T) {
 		Type:        KeaAppType,
 		CtrlAddress: "cool.example.org",
 		CtrlPort:    1234,
+		CtrlKey:     "",
 		Active:      true,
 	}
 	err = AddApp(db, s)
@@ -59,6 +60,7 @@ func TestAddApp(t *testing.T) {
 		MachineID: m.ID,
 		Type:      Bind9AppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 	}
 	err = AddApp(db, s)
@@ -71,6 +73,7 @@ func TestAddApp(t *testing.T) {
 		Type:        Bind9AppType,
 		CtrlAddress: "",
 		CtrlPort:    1234,
+		CtrlKey:     "abcd",
 		Active:      true,
 	}
 	err = AddApp(db, s)
@@ -104,6 +107,7 @@ func TestDeleteApp(t *testing.T) {
 		MachineID: m.ID,
 		Type:      KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 	}
 	err = AddApp(db, s)
@@ -140,6 +144,7 @@ func TestGetAppsByMachine(t *testing.T) {
 		MachineID: m.ID,
 		Type:      KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 	}
 	err = AddApp(db, s)
@@ -177,6 +182,7 @@ func TestGetAppByID(t *testing.T) {
 		MachineID: m.ID,
 		Type:      KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 	}
 
@@ -215,6 +221,7 @@ func TestGetAppsByPage(t *testing.T) {
 		MachineID: m.ID,
 		Type:      KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 	}
 	err = AddApp(db, sKea)
@@ -227,6 +234,7 @@ func TestGetAppsByPage(t *testing.T) {
 		MachineID: m.ID,
 		Type:      Bind9AppType,
 		CtrlPort:  4321,
+		CtrlKey:   "abcd",
 		Active:    true,
 	}
 	err = AddApp(db, sBind)
@@ -332,6 +340,7 @@ func TestGetAllApps(t *testing.T) {
 		MachineID: m.ID,
 		Type:      KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 	}
 	err = AddApp(db, aKea)
@@ -344,6 +353,7 @@ func TestGetAllApps(t *testing.T) {
 		MachineID: m.ID,
 		Type:      Bind9AppType,
 		CtrlPort:  4321,
+		CtrlKey:   "abcd",
 		Active:    true,
 	}
 	err = AddApp(db, aBind)
@@ -367,6 +377,7 @@ func TestAfterScanKea(t *testing.T) {
 		MachineID: 0,
 		Type:      KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 	}
 	err := aKea.AfterScan(ctx)
@@ -399,6 +410,7 @@ func TestAfterScanBind(t *testing.T) {
 		MachineID: 0,
 		Type:      Bind9AppType,
 		CtrlPort:  1234,
+		CtrlKey:   "abcd",
 		Active:    true,
 	}
 	err := aBind.AfterScan(ctx)

@@ -17,6 +17,7 @@ type App struct {
 	Type        string // currently supported types are: "kea" and "bind9"
 	CtrlAddress string
 	CtrlPort    int64
+	CtrlKey     string
 }
 
 // State of the machine. It describes multiple properties of the machine like number of CPUs
@@ -74,6 +75,7 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 			Type:        app.Type,
 			CtrlAddress: app.CtrlAddress,
 			CtrlPort:    app.CtrlPort,
+			CtrlKey:     app.CtrlKey,
 		})
 	}
 

@@ -50,7 +50,7 @@ type AppMeta struct {
 	Version string
 }
 
-// Represents a app held in app table in the database.
+// Represents an app held in app table in the database.
 type App struct {
 	ID          int64
 	Created     time.Time
@@ -60,6 +60,7 @@ type App struct {
 	Type        string // currently supported types are: "kea" and "bind9"
 	CtrlAddress string
 	CtrlPort    int64
+	CtrlKey     string
 	Active      bool
 	Meta        AppMeta
 	Details     interface{} // here we have either AppKea or AppBind9

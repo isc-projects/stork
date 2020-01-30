@@ -56,6 +56,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 			Type:        app.Type,
 			CtrlAddress: app.CtrlAddress,
 			CtrlPort:    app.CtrlPort,
+			CtrlKey:     app.CtrlKey,
 		})
 	}
 
@@ -87,6 +88,7 @@ func (sa *StorkAgent) GetBind9State(ctx context.Context, in *agentapi.GetBind9St
 	app := &App{
 		CtrlAddress: in.CtrlAddress,
 		CtrlPort:    in.CtrlPort,
+		CtrlKey:     in.CtrlKey,
 	}
 	state, err := getBind9State(app)
 

@@ -61,11 +61,13 @@ message App {
   string type = 1;  // currently supported types are: "kea" and "bind9"
   string ctrlAddress = 2;
   int64 ctrlPort = 3;
+  string ctrlKey = 4;
 }
 
 message GetBind9StateReq {
   string ctrlAddress = 1;
   int64 ctrlPort = 2;
+  string ctrlKey = 3;
 }
 
 // Detailed description of BIND 9 daemon.

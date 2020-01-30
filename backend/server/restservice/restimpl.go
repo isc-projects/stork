@@ -131,6 +131,7 @@ func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 				Type:        app.Type,
 				CtrlAddress: app.CtrlAddress,
 				CtrlPort:    app.CtrlPort,
+				CtrlKey:     app.CtrlKey,
 			}
 		} else {
 			dbApp.Machine = dbMachine
@@ -485,6 +486,7 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 		Type:        dbApp.Type,
 		CtrlAddress: dbApp.CtrlAddress,
 		CtrlPort:    dbApp.CtrlPort,
+		CtrlKey:     dbApp.CtrlKey,
 		Active:      dbApp.Active,
 		Version:     dbApp.Meta.Version,
 		Machine: &models.AppMachine{

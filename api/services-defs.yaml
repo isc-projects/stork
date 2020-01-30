@@ -104,6 +104,8 @@
         type: string
       ctrlPort:
         type: integer
+      ctrlKey:
+        type: string
       active:
         type: boolean
       version:

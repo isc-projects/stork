@@ -188,6 +188,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 		Type:        "kea",
 		CtrlAddress: "1.2.3.4",
 		CtrlPort:    123,
+		CtrlKey:     "",
 	}
 	err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
@@ -200,6 +201,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 		Type:        "bind9",
 		CtrlAddress: "1.2.3.4",
 		CtrlPort:    124,
+		CtrlKey:     "abcd",
 	}
 	err = dbmodel.AddApp(db, bind9App)
 	require.NoError(t, err)
@@ -211,11 +213,13 @@ func TestGetMachineAndAppsState(t *testing.T) {
 				Type:        "kea",
 				CtrlAddress: "1.2.3.4",
 				CtrlPort:    123,
+				CtrlKey:     "",
 			},
 			{
 				Type:        "bind9",
 				CtrlAddress: "1.2.3.4",
 				CtrlPort:    124,
+				CtrlKey:     "abcd",
 			},
 		},
 	}
@@ -364,6 +368,7 @@ func TestGetMachine(t *testing.T) {
 		MachineID: m2.ID,
 		Type:      dbmodel.KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 		Details: dbmodel.AppKea{
 			Daemons: []*dbmodel.KeaDaemon{},
@@ -554,6 +559,7 @@ func TestGetApp(t *testing.T) {
 		MachineID: m.ID,
 		Type:      dbmodel.KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 		Details: dbmodel.AppKea{
 			Daemons: []*dbmodel.KeaDaemon{},
@@ -606,6 +612,7 @@ func TestRestGetApp(t *testing.T) {
 		MachineID: m.ID,
 		Type:      dbmodel.KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 		Details: dbmodel.AppKea{
 			Daemons: []*dbmodel.KeaDaemon{},
@@ -629,6 +636,7 @@ func TestRestGetApp(t *testing.T) {
 		MachineID: m.ID,
 		Type:      dbmodel.Bind9AppType,
 		CtrlPort:  953,
+		CtrlKey:   "abcd",
 		Active:    true,
 		Details:   dbmodel.AppBind9{},
 	}
@@ -676,6 +684,7 @@ func TestRestGetApps(t *testing.T) {
 		MachineID: m.ID,
 		Type:      dbmodel.KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 		Details: dbmodel.AppKea{
 			Daemons: []*dbmodel.KeaDaemon{},
@@ -690,6 +699,7 @@ func TestRestGetApps(t *testing.T) {
 		MachineID: m.ID,
 		Type:      dbmodel.Bind9AppType,
 		CtrlPort:  4321,
+		CtrlKey:   "abcd",
 		Active:    true,
 		Details:   dbmodel.AppBind9{},
 	}
@@ -791,6 +801,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 		MachineID: m.ID,
 		Type:      dbmodel.KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 	}
 	err = dbmodel.AddApp(db, keaApp)
@@ -890,6 +901,7 @@ func TestRestGetAppsStats(t *testing.T) {
 		MachineID: m.ID,
 		Type:      dbmodel.KeaAppType,
 		CtrlPort:  1234,
+		CtrlKey:   "",
 		Active:    true,
 		Details: dbmodel.AppKea{
 			Daemons: []*dbmodel.KeaDaemon{},
@@ -898,12 +910,13 @@ func TestRestGetAppsStats(t *testing.T) {
 	err = dbmodel.AddApp(db, s1)
 	require.NoError(t, err)
 
-	// add app bind to machine
+	// add app bind9 to machine
 	s2 := &dbmodel.App{
 		ID:        0,
 		MachineID: m.ID,
 		Type:      dbmodel.Bind9AppType,
 		CtrlPort:  4321,
+		CtrlKey:   "abcd",
 		Active:    false,
 		Details:   dbmodel.AppBind9{},
 	}
