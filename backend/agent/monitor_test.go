@@ -124,12 +124,32 @@ func TestDetectApps(t *testing.T) {
 }
 
 func TestDetectBind9App(t *testing.T) {
+	// prepare named.conf file
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
+	if err != nil {
+		log.Fatal("Cannot create temporary file", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	text := []byte(string("keys \"foo\" {\n   algorithm \"hmac-md5\";\n   secret \"abcd\"; \n};\n"))
+	if _, err = tmpFile.Write(text); err != nil {
+		log.Fatal("Failed to write to temporary file", err)
+	}
+	text = []byte(string("controls {\n   inet 127.0.0.53 port 5353 allow { localhost; } keys { \"foo\";};\n};"))
+	if _, err = tmpFile.Write(text); err != nil {
+		log.Fatal("Failed to write to temporary file", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		log.Fatal(err)
+	}
+
 	// check BIND 9 app detection
-	app := detectBind9App()
+	app := detectBind9App([]string{"", tmpFile.Name()})
 	require.NotNil(t, app)
-	require.Equal(t, "bind9", app.Type)
-	require.Equal(t, "", app.CtrlAddress)
-	require.Equal(t, int64(0), app.CtrlPort)
+	require.Equal(t, app.Type, "bind9")
+	require.Equal(t, app.CtrlAddress, "127.0.0.53")
+	require.Equal(t, app.CtrlPort, int64(5353))
+	require.Equal(t, app.CtrlKey, "hmac-md5:abcd")
 }
 
 func TestDetectKeaApp(t *testing.T) {
@@ -154,4 +174,5 @@ func TestDetectKeaApp(t *testing.T) {
 	require.Equal(t, "kea", app.Type)
 	require.Equal(t, "localhost", app.CtrlAddress)
 	require.Equal(t, int64(45634), app.CtrlPort)
+	require.Empty(t, "", app.CtrlKey)
 }

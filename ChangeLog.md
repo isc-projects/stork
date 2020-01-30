@@ -1,3 +1,11 @@
+* 25 [func] matthijs
+
+    Improve getting configuration of the BIND 9 application.
+    Stork now retrieves the control address and port from
+    named.conf, as well as the rndc key, and uses this to interact
+    with the named daemon.
+    (Gitlab #130)
+
 * 24 [bug] godfryd
 
     Apps are now deleted while the machine is being deleted.

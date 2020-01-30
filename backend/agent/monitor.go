@@ -97,7 +97,7 @@ func (sm *appMonitor) detectApps() {
 			// detect bind9
 			m := bind9Ptrn.FindStringSubmatch(cmdline)
 			if m != nil {
-				bind9App := detectBind9App()
+				bind9App := detectBind9App(m)
 				if bind9App != nil {
 					apps = append(apps, bind9App)
 				}
