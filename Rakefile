@@ -7,7 +7,8 @@ SWAGGER_CODEGEN_VER = '2.4.12'
 GOSWAGGER_VER = 'v0.21.0'
 GOLANGCILINT_VER = '1.21.0'
 GO_VER = '1.13.5'
-PROTOC_VER = '3.11.1'
+PROTOC_VER = '3.11.2'
+PROTOC_GEN_GO_VER = 'v1.3.3'
 
 # Check host OS
 UNAME=`uname -s`
@@ -71,7 +72,7 @@ GO = "#{GO_DIR}/go/bin/go"
 GOLANGCILINT = "#{TOOLS_DIR}/golangci-lint-#{GOLANGCILINT_VER}-#{GOLANGCILINT_SUFFIX}/golangci-lint"
 PROTOC_DIR = "#{TOOLS_DIR}/#{PROTOC_VER}"
 PROTOC = "#{PROTOC_DIR}/bin/protoc"
-PROTOC_GEN_GO = "#{GOBIN}/protoc-gen-go"
+PROTOC_GEN_GO = "#{GOBIN}/protoc-gen-go-#{PROTOC_GEN_GO_VER}"
 MOCKERY = "#{GOBIN}/mockery"
 MOCKGEN = "#{GOBIN}/mockgen"
 RICHGO = "#{GOBIN}/richgo"
@@ -155,7 +156,10 @@ file PROTOC do
 end
 
 file PROTOC_GEN_GO do
-  sh "#{GO} get -u #{PROTOC_GEN_GO_URL}"
+  sh "#{GO} get -d -u #{PROTOC_GEN_GO_URL}"
+  sh "git -C \"$(#{GO} env GOPATH)\"/src/github.com/golang/protobuf checkout #{PROTOC_GEN_GO_VER}"
+  sh "#{GO} install github.com/golang/protobuf/protoc-gen-go"
+  sh "cp #{GOBIN}/protoc-gen-go #{PROTOC_GEN_GO}"
 end
 
 file MOCKERY do
