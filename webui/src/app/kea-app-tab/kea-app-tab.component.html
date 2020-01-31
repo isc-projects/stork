@@ -97,10 +97,10 @@
                                 <ng-template pTemplate="body" let-sn>
                                     <tr>
                                         <td>
-                                            <a routerLink="/subnets/{{ sn.id }}">{{ sn.id }}</a>
+                                            {{ sn.id }}
                                         </td>
                                         <td>
-                                            <a routerLink="/subnets/{{ sn.id }}">{{ sn.subnet }}</a>
+                                            {{ sn.subnet }}
                                         </td>
                                         <td>
                                             {{ sn.pools.join(', ') }}
