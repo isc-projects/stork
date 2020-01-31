@@ -11,5 +11,6 @@ COPY backend/cmd/stork-agent/stork-agent /agent/
 # Copy configuration files.
 COPY docker/supervisor-agent-kea6.conf /etc/supervisor.conf
 COPY docker/kea-dhcp6.conf /etc/kea/
+COPY docker/agent-kea6-kea-ctrl-agent.conf /etc/kea/kea-ctrl-agent.conf
 # Start supervisor.
 CMD ["supervisord", "-c", "/etc/supervisor.conf"]
