@@ -1,0 +1,23 @@
+  Subnet:
+    type: object
+    properties:
+      id:
+        type: integer
+      appId:
+        type: integer
+      subnet:
+        type: string
+      pools:
+        type: array
+        items:
+          type: string
+
+  Subnets:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Subnet'
+      total:
+        type: integer

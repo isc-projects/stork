@@ -38,6 +38,7 @@ paths:
 
   $include: ./users-paths.yaml
   $include: ./services-paths.yaml
+  $include: ./dhcp-paths.yaml
 
 
 parameters:
@@ -87,3 +88,4 @@ definitions:
 
   $include: users-defs.yaml
   $include: services-defs.yaml
+  $include: dhcp-defs.yaml

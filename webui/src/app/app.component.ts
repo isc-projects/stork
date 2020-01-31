@@ -38,6 +38,16 @@ export class AppComponent implements OnInit {
     initMenuItems() {
         this.menuItems = []
         this.menuItems.push({
+            label: 'DHCP',
+            items: [
+                {
+                    label: 'Subnets',
+                    icon: 'fa fa-project-diagram',
+                    routerLink: '/dhcp/subnets',
+                },
+            ],
+        })
+        this.menuItems.push({
             label: 'Services',
             items: [
                 {

@@ -53,6 +53,7 @@ import { PasswordChangePageComponent } from './password-change-page/password-cha
 import { ProfilePageComponent } from './profile-page/profile-page.component'
 import { SettingsMenuComponent } from './settings-menu/settings-menu.component'
 import { HaStatusComponent } from './ha-status/ha-status.component'
+import { SubnetsPageComponent } from './subnets-page/subnets-page.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -89,6 +90,7 @@ export function preinitApp(appInitService: AppInitService) {
         ProfilePageComponent,
         SettingsMenuComponent,
         HaStatusComponent,
+        SubnetsPageComponent,
     ],
     imports: [
         BrowserModule,

@@ -10,6 +10,7 @@ import { UsersPageComponent } from './users-page/users-page.component'
 import { AppsPageComponent } from './apps-page/apps-page.component'
 import { ProfilePageComponent } from './profile-page/profile-page.component'
 import { PasswordChangePageComponent } from './password-change-page/password-change-page.component'
+import { SubnetsPageComponent } from './subnets-page/subnets-page.component'
 
 const routes: Routes = [
     {
@@ -43,6 +44,11 @@ const routes: Routes = [
     {
         path: 'apps/:appType/:id',
         component: AppsPageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'dhcp/subnets',
+        component: SubnetsPageComponent,
         canActivate: [AuthGuard],
     },
     {

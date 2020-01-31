@@ -1,0 +1,65 @@
+<div>
+    <h2>DHCP Subnets</h2>
+    <div style="margin: 0 0 10px 5px;">
+        <span>
+            <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
+            Filter subnets:
+            <input
+                type="text"
+                pInputText
+                [(ngModel)]="filterText"
+                placeholder="subnet or any other field"
+                (keydown)="keyDownFilterText(subnetsTable, $event)"
+            />
+        </span>
+        <span style="margin-left: 40px;">
+            Protocol:
+            <p-dropdown
+                [options]="dhcpVersions"
+                [(ngModel)]="selectedDhcpVersion"
+                optionLabel="name"
+                (onChange)="filterByDhcpVersion(subnetsTable)"
+            ></p-dropdown>
+        </span>
+    </div>
+
+    <div>
+        <p-table
+            #subnetsTable
+            [value]="subnets"
+            [paginator]="true"
+            [rows]="10"
+            [lazy]="true"
+            (onLazyLoad)="loadSubnets($event)"
+            [totalRecords]="totalSubnets"
+            [rowsPerPageOptions]="[10, 30, 100]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="{currentPage} of {totalPages} pages"
+        >
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="width: 5rem;">Subnet ID</th>
+                    <th style="width: 11rem;">Subnet</th>
+                    <th>Pools</th>
+                    <th style="width: 4rem;">App ID</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-sn>
+                <tr>
+                    <td>
+                        <a routerLink="/subnets/{{ sn.id }}">{{ sn.id }}</a>
+                    </td>
+                    <td>
+                        <a routerLink="/subnets/{{ sn.id }}">{{ sn.subnet }}</a>
+                    </td>
+                    <td>
+                        {{ sn.pools }}
+                    </td>
+                    <td>
+                        <a routerLink="/apps/kea/{{ sn.appId }}">{{ sn.appId }}</a>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</div>

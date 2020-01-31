@@ -92,7 +92,12 @@ SPHINXOPTS = "-v -E -a -W -j 2"
 
 # Files
 SWAGGER_FILE = File.expand_path('api/swagger.yaml')
-SWAGGER_API_FILES = 'api/swagger.in.yaml', 'api/services-defs.yaml', 'api/services-paths.yaml', 'api/users-defs.yaml', 'api/users-paths.yaml'
+SWAGGER_API_FILES = [
+  'api/swagger.in.yaml',
+  'api/services-defs.yaml', 'api/services-paths.yaml',
+  'api/users-defs.yaml', 'api/users-paths.yaml',
+  'api/dhcp-defs.yaml', 'api/dhcp-paths.yaml'
+]
 AGENT_PROTO_FILE = File.expand_path('backend/api/agent.proto')
 AGENT_PB_GO_FILE = File.expand_path('backend/api/agent.pb.go')
 

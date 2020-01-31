@@ -67,7 +67,6 @@ export class AppsPageComponent implements OnInit {
     addAppTab(app) {
         this.openedApps.push({
             app,
-            activeDaemonTabIdx: 0,
         })
         const capAppType = capitalize(app.type)
         this.tabs.push({

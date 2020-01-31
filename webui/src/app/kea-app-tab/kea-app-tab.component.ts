@@ -4,8 +4,10 @@ import moment from 'moment-timezone'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
+import { DHCPService } from '../backend/api/api'
+
 @Component({
-    selector: 'app-kea-daemons-tabs',
+    selector: 'app-kea-app-tab',
     templateUrl: './kea-app-tab.component.html',
     styleUrls: ['./kea-app-tab.component.sass'],
 })
@@ -13,16 +15,11 @@ export class KeaAppTabComponent implements OnInit {
     private _appTab: any
     @Output() refreshApp = new EventEmitter<number>()
 
-    tabs: MenuItem[]
-    activeTab: MenuItem
     daemons: any[] = []
-    daemon: any
 
-    constructor() {}
+    constructor(private dhcpApi: DHCPService) {}
 
-    ngOnInit() {
-        console.info('this.app', this.appTab)
-    }
+    ngOnInit() {}
 
     @Input()
     set appTab(appTab) {
@@ -40,37 +37,19 @@ export class KeaAppTabComponent implements OnInit {
             ['netconf', 'NETCONF'],
         ]
         const daemons = []
-        const tabs = []
         for (const dm of DMAP) {
             if (daemonMap[dm[0]] !== undefined) {
                 daemonMap[dm[0]].niceName = dm[1]
+                daemonMap[dm[0]].subnets = []
+                daemonMap[dm[0]].totalSubnets = 0
                 daemons.push(daemonMap[dm[0]])
-
-                tabs.push({
-                    label: dm[1],
-                    command: event => {
-                        this.daemonTabSwitch(event.item)
-                    },
-                })
             }
         }
         this.daemons = daemons
-        this.daemon = this.daemons[appTab.activeDaemonTabIdx]
-        this.tabs = tabs
-        this.activeTab = this.tabs[appTab.activeDaemonTabIdx]
     }
 
     get appTab() {
         return this._appTab
-    }
-
-    daemonTabSwitch(item) {
-        for (const d of this.daemons) {
-            if (d.niceName === item.label) {
-                this.daemon = d
-                break
-            }
-        }
     }
 
     refreshAppState() {
@@ -97,5 +76,16 @@ export class KeaAppTabComponent implements OnInit {
             return txt.trim()
         }
         return ''
+    }
+
+    loadSubnets(daemon, event) {
+        let dhcpVer = 4
+        if (daemon.name === 'dhcp6') {
+            dhcpVer = 6
+        }
+        this.dhcpApi.getSubnets(event.first, event.rows, this._appTab.app.id, dhcpVer).subscribe(data => {
+            daemon.subnets = data.items
+            daemon.totalSubnets = data.total
+        })
     }
 }
