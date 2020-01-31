@@ -30,3 +30,6 @@
 
 # ctags
 TAGS
+
+# generated while combining whole swagger API
+/api/swagger.yaml
