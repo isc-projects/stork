@@ -1,3 +1,9 @@
+* 26 [func] godfryd
+
+    Added initial support for DHCP subnets. There are presented
+    on dedicated page and on apps' pages.
+    (Gitlab #47)
+
 * 25 [func] matthijs
 
     Improve getting configuration of the BIND 9 application.
