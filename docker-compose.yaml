@@ -34,6 +34,18 @@ services:
     expose:
       - "8080"
 
+  agent-kea6:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/docker-agent-kea6.txt
+    image: registry.gitlab.isc.org/isc-projects/stork/agent-kea6:latest
+    hostname: agent-kea6
+    networks:
+      - storknet
+    expose:
+      - "8080"
+
   agent-kea-ha1:
     restart: always
     build:
