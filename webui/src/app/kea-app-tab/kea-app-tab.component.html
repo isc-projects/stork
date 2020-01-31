@@ -103,7 +103,7 @@
                                             <a routerLink="/subnets/{{ sn.id }}">{{ sn.subnet }}</a>
                                         </td>
                                         <td>
-                                            {{ sn.pools }}
+                                            {{ sn.pools.join(', ') }}
                                         </td>
                                     </tr>
                                 </ng-template>

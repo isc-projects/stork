@@ -53,7 +53,12 @@
                         <a routerLink="/subnets/{{ sn.id }}">{{ sn.subnet }}</a>
                     </td>
                     <td>
-                        {{ sn.pools }}
+                        <span
+                            *ngFor="let p of sn.pools"
+                            style="border-radius: 4px; background-color: #ddd; padding: 0 4px; margin-right: 5px;"
+                        >
+                            {{ p }}
+                        </span>
                     </td>
                     <td>
                         <a routerLink="/apps/kea/{{ sn.appId }}">{{ sn.appId }}</a>
