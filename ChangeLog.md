@@ -1,7 +1,8 @@
 * 26 [func] godfryd
 
     Added initial support for DHCP subnets. There are presented
-    on dedicated page and on apps' pages.
+    on dedicated page and on apps' pages. For now only these subnets
+    are listed which do not belong to shared networks.
     (Gitlab #47)
 
 * 25 [func] matthijs
