@@ -226,5 +226,4 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	subnets, err := GetSubnetsByPage(db, 0, 10, 0, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, subnets, 0)
-
 }

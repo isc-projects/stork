@@ -20,7 +20,7 @@ export class SubnetsPageComponent implements OnInit {
     dhcpVersions: any[]
     selectedDhcpVersion: any
 
-    constructor(private dhcpApi: DHCPService) { }
+    constructor(private dhcpApi: DHCPService) {}
 
     ngOnInit() {
         // prepare list of DHCP versions, this is used in subnets filtering
