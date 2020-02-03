@@ -3,7 +3,6 @@ package restservice
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/go-openapi/runtime/middleware"
 	log "github.com/sirupsen/logrus"
@@ -49,7 +48,6 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 	// prepare response
 	subnets := models.Subnets{}
 	for _, sn := range dbSubnets {
-		snID, _ := strconv.ParseInt(sn.ID, 10, 64)
 		pools := []string{}
 		for _, poolDetails := range sn.Pools {
 			pool, ok := poolDetails["pool"].(string)
@@ -59,7 +57,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 		}
 		subnet := &models.Subnet{
 			AppID:  int64(sn.AppID),
-			ID:     snID,
+			ID:     int64(sn.ID),
 			Pools:  pools,
 			Subnet: sn.Subnet,
 		}

@@ -7,7 +7,7 @@ import (
 )
 
 type Subnet struct {
-	ID     string
+	ID     int
 	AppID  int
 	Subnet string
 	Pools  []map[string]interface{}
