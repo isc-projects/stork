@@ -2,6 +2,7 @@ package agentcomm
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -228,47 +229,59 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	require.Error(t, cmdsResult.CmdsErrors[0])
 }
 
-func TestGetBind9StateAllOk(t *testing.T) {
+// Test that a command can be successfully forwarded to rndc and the response
+// can be parsed.
+func TestForwardRndcCommand(t *testing.T) {
 	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
 	defer teardown()
 
-	rsp := agentapi.GetBind9StateRsp{
+	rndcSettings := Bind9Control{
+		CtrlAddress: "127.0.0.1",
+		CtrlPort:    953,
+		CtrlKey:     "",
+	}
+
+	rsp := agentapi.ForwardToBind9UsingRndcRsp{
 		Status: &agentapi.Status{
-			Code: 0, // all ok
+			Code: 0,
 		},
-		Version: "1.2.3",
-		Daemon: &agentapi.Bind9Daemon{
-			Name: "named",
+		RndcResponse: &agentapi.RndcResponse{
+			Status: &agentapi.Status{
+				Code: 0,
+			},
+			Response: "all good",
 		},
 	}
-	mockAgentClient.EXPECT().GetBind9State(gomock.Any(), gomock.Any()).
+
+	mockAgentClient.EXPECT().ForwardRndcCommand(gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
 	ctx := context.Background()
-
-	state, err := agents.GetBind9State(ctx, "127.0.0.1", 8080)
+	out, err := agents.ForwardRndcCommand(ctx, "127.0.0.1", 8080, rndcSettings, "test")
 	require.NoError(t, err)
-	require.NotNil(t, state)
-	require.Equal(t, "1.2.3", state.Version)
-	require.Equal(t, "named", state.Daemon.Name)
+	require.Equal(t, out.Output, "all good")
+	require.NoError(t, out.Error)
 }
 
-func TestGetBind9StateError(t *testing.T) {
+// Test an error case for forwarding rndc command.
+func TestForwardRndcCommandError(t *testing.T) {
 	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
 	defer teardown()
 
-	rsp := agentapi.GetBind9StateRsp{
-		Status: &agentapi.Status{
-			Code:    1, // all ok
-			Message: "some problems",
-		},
+	rndcSettings := Bind9Control{
+		CtrlAddress: "127.0.0.1",
+		CtrlPort:    953,
+		CtrlKey:     "",
 	}
-	mockAgentClient.EXPECT().GetBind9State(gomock.Any(), gomock.Any()).
-		Return(&rsp, nil)
+
+	err := errors.New("failed to forward")
+
+	mockAgentClient.EXPECT().ForwardRndcCommand(gomock.Any(), gomock.Any()).
+		Return(nil, err)
 
 	ctx := context.Background()
-
-	state, err := agents.GetBind9State(ctx, "127.0.0.1", 8080)
-	require.Error(t, err)
-	require.Nil(t, state)
+	out, err2 := agents.ForwardRndcCommand(ctx, "127.0.0.1", 8080, rndcSettings, "test")
+	expectedErr := "failed to forward rndc command test: failed to forward"
+	require.Nil(t, out)
+	require.Equal(t, expectedErr, err2.Error())
 }

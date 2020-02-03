@@ -9,8 +9,8 @@ service Agent {
   // its version, CPU and available memory and runtime information like memory usage.
   rpc GetState(GetStateReq) returns (GetStateRsp) {}
 
-  // Get state of BIND 9 application. It returns information about named version.
-  rpc GetBind9State(GetBind9StateReq) returns (GetBind9StateRsp) {}
+  // Forward rndc command and return results.
+  rpc ForwardRndcCommand(ForwardToBind9UsingRndcReq) returns (ForwardToBind9UsingRndcRsp) {}
 
   // Forward commands (one or more) to Kea Control Agent and return results.
   rpc ForwardToKeaOverHTTP(ForwardToKeaOverHTTPReq) returns (ForwardToKeaOverHTTPRsp) {}
@@ -64,29 +64,6 @@ message App {
   string ctrlKey = 4;
 }
 
-message GetBind9StateReq {
-  string ctrlAddress = 1;
-  int64 ctrlPort = 2;
-  string ctrlKey = 3;
-}
-
-// Detailed description of BIND 9 daemon.
-message Bind9Daemon {
-  int32 pid = 1;
-  string name = 2;
-  bool active = 3;
-  string version = 4;
-}
-
-// Detailed description of BIND 9 application.
-message GetBind9StateRsp {
-  // Status of call execution.
-  Status status = 1;
-  string version = 2;
-  bool active = 3;
-  Bind9Daemon daemon = 4;
-}
-
 // Request to Kea CA.
 message KeaRequest {
   // Request to Kea CA, JSON encoded as string.
@@ -116,4 +93,35 @@ message ForwardToKeaOverHTTPRsp {
 
   // List of responses from CA.
   repeated KeaResponse keaResponses = 2;
+}
+
+// Request to rndc.
+message RndcRequest {
+  // Request to rndc
+  string request = 1;
+}
+
+message ForwardToBind9UsingRndcReq {
+  // Daemon access control
+  string ctrlAddress = 1;
+  int64 ctrlPort = 2;
+  string ctrlKey = 3;
+
+  RndcRequest rndcRequest = 4;
+}
+
+// Response from Rndc.
+message RndcResponse {
+  // Response from rndc.
+  string response = 1;
+
+  // Status of request execution.
+  Status status = 2;
+}
+
+message ForwardToBind9UsingRndcRsp {
+  // Status of call execution.
+  Status status = 1;
+
+  RndcResponse rndcResponse = 2;
 }

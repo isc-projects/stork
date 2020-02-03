@@ -2,8 +2,10 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 
@@ -15,15 +17,45 @@ type FakeAppMonitor struct {
 	Apps []*App
 }
 
+// mockRndc mocks successful rndc output.
+func mockRndc(command []string) ([]byte, error) {
+	var output string
+
+	if command[len(command)-1] == "status" {
+		output = "server is up and running"
+		return []byte(output), nil
+	}
+
+	// unknown command.
+	output = fmt.Sprintf("unknown command")
+	return []byte(output), nil
+}
+
+// mockRndcError mocks an error.
+func mockRndcError(command []string) ([]byte, error) {
+	log.Debugf("mock rndc: error")
+
+	return []byte(""), fmt.Errorf("mocking an error")
+}
+
+// mockRndcEmpty mocks empty output.
+func mockRndcEmpty(command []string) ([]byte, error) {
+	log.Debugf("mock rndc: empty")
+
+	return []byte(""), nil
+}
+
 // Initializes StorkAgent instance and context used by the tests.
-func setupAgentTest() (*StorkAgent, context.Context) {
+func setupAgentTest(rndc CommandExecutor) (*StorkAgent, context.Context) {
 	caClient := NewCAClient()
+	rndcClient := NewRndcClient(rndc)
 	gock.InterceptClient(caClient.client)
 
 	fsm := FakeAppMonitor{}
 	sa := &StorkAgent{
 		AppMonitor: &fsm,
 		CAClient:   caClient,
+		RndcClient: rndcClient,
 	}
 	ctx := context.Background()
 	return sa, ctx
@@ -40,10 +72,11 @@ func TestNewStorkAgent(t *testing.T) {
 	sa := NewStorkAgent()
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.CAClient)
+	require.NotNil(t, sa.RndcClient)
 }
 
 func TestGetState(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx := setupAgentTest(mockRndc)
 
 	// app monitor is empty, no apps should be returned by GetState
 	rsp, err := sa.GetState(ctx, &agentapi.GetStateReq{})
@@ -85,7 +118,7 @@ func TestGetState(t *testing.T) {
 // Test forwarding command to Kea when HTTP 200 status code
 // is returned.
 func TestForwardToKeaOverHTTPSuccess(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx := setupAgentTest(mockRndc)
 
 	// Expect appropriate content type and the body. If they are not matched
 	// an error will be raised.
@@ -116,7 +149,7 @@ func TestForwardToKeaOverHTTPSuccess(t *testing.T) {
 // Test forwarding command to Kea when HTTP 400 (Bad Request) status
 // code is returned.
 func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx := setupAgentTest(mockRndc)
 
 	defer gock.Off()
 	gock.New("http://localhost:45634").
@@ -142,7 +175,7 @@ func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
 
 // Test forwarding command to Kea when no body is returned.
 func TestForwardToKeaOverHTTPEmptyBody(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx := setupAgentTest(mockRndc)
 
 	defer gock.Off()
 	gock.New("http://localhost:45634").
@@ -168,7 +201,7 @@ func TestForwardToKeaOverHTTPEmptyBody(t *testing.T) {
 
 // Test forwarding command when Kea is unavailable.
 func TestForwardToKeaOverHTTPNoKea(t *testing.T) {
-	sa, ctx := setupAgentTest()
+	sa, ctx := setupAgentTest(mockRndc)
 
 	req := &agentapi.ForwardToKeaOverHTTPReq{
 		Url:         "http://localhost:45634/",
@@ -185,18 +218,82 @@ func TestForwardToKeaOverHTTPNoKea(t *testing.T) {
 	require.Equal(t, 0, len(rsp.KeaResponses[0].Response))
 }
 
-func TestGetBind9StateError(t *testing.T) {
-	sa, ctx := setupAgentTest()
+func TestForwardRndcCommandSuccess(t *testing.T) {
+	sa, ctx := setupAgentTest(mockRndc)
+	cmd := &agentapi.RndcRequest{Request: "status"}
 
-	req := &agentapi.GetBind9StateReq{
+	req := &agentapi.ForwardToBind9UsingRndcReq{
 		CtrlAddress: "127.0.0.1",
 		CtrlPort:    1234,
 		CtrlKey:     "hmac-md5:abcd",
+		RndcRequest: cmd,
 	}
 
-	rsp, err := sa.GetBind9State(ctx, req)
+	// Expect no error, an OK status code, and an empty status message.
+	rsp, err := sa.ForwardRndcCommand(ctx, req)
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
-	require.NotEqual(t, int32(0), rsp.Status.Code)
+	require.Equal(t, agentapi.Status_OK, rsp.Status.Code)
+	require.Empty(t, rsp.Status.Message)
+	// Check expected output.
+	require.Equal(t, rsp.RndcResponse.Response, "server is up and running")
+
+	// Empty request.
+	cmd = &agentapi.RndcRequest{Request: ""}
+	req.RndcRequest = cmd
+	rsp, err = sa.ForwardRndcCommand(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.Equal(t, agentapi.Status_OK, rsp.Status.Code)
+	require.Empty(t, rsp.Status.Message)
+	require.Equal(t, rsp.RndcResponse.Response, "unknown command")
+
+	// Unknown request.
+	cmd = &agentapi.RndcRequest{Request: "foobar"}
+	req.RndcRequest = cmd
+	rsp, err = sa.ForwardRndcCommand(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.Equal(t, agentapi.Status_OK, rsp.Status.Code)
+	require.Empty(t, rsp.Status.Message)
+	require.Equal(t, rsp.RndcResponse.Response, "unknown command")
+}
+
+func TestForwardRndcCommandError(t *testing.T) {
+	sa, ctx := setupAgentTest(mockRndcError)
+	cmd := &agentapi.RndcRequest{Request: "status"}
+
+	req := &agentapi.ForwardToBind9UsingRndcReq{
+		CtrlAddress: "127.0.0.1",
+		CtrlPort:    1234,
+		CtrlKey:     "hmac-md5:abcd",
+		RndcRequest: cmd,
+	}
+
+	// Expect an error status code and some message.
+	rsp, err := sa.ForwardRndcCommand(ctx, req)
+	require.NotNil(t, rsp)
+	require.Error(t, err)
+	require.Equal(t, agentapi.Status_ERROR, rsp.Status.Code)
 	require.NotEmpty(t, rsp.Status.Message)
+}
+
+func TestForwardRndcCommandEmpty(t *testing.T) {
+	sa, ctx := setupAgentTest(mockRndcEmpty)
+	cmd := &agentapi.RndcRequest{Request: "status"}
+
+	req := &agentapi.ForwardToBind9UsingRndcReq{
+		CtrlAddress: "127.0.0.1",
+		CtrlPort:    1234,
+		CtrlKey:     "hmac-md5:abcd",
+		RndcRequest: cmd,
+	}
+
+	// Empty output is not normal, but we are just forwarding, so expect
+	// no error, an OK status code, and an empty status message.
+	rsp, err := sa.ForwardRndcCommand(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.Equal(t, agentapi.Status_OK, rsp.Status.Code)
+	require.Empty(t, rsp.Status.Message)
 }

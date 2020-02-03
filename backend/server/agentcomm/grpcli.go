@@ -105,20 +105,12 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 	return &state, nil
 }
 
-type Bind9Daemon struct {
-	Pid     int32
-	Name    string
-	Active  bool
-	Version string
+type RndcOutput struct {
+	Output string
+	Error  error
 }
 
-type Bind9State struct {
-	Version string
-	Active  bool
-	Daemon  Bind9Daemon
-}
-
-func (agents *connectedAgentsData) GetBind9State(ctx context.Context, agentAddress string, agentPort int64) (*Bind9State, error) {
+func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, agentAddress string, agentPort int64, rndcSettings Bind9Control, command string) (*RndcOutput, error) {
 	// Find the agent by address and port.
 	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
 	agent, err := agents.GetConnectedAgent(addrPort)
@@ -127,34 +119,40 @@ func (agents *connectedAgentsData) GetBind9State(ctx context.Context, agentAddre
 		return nil, err
 	}
 
-	req := &agentapi.GetBind9StateReq{
-		CtrlAddress: agentAddress,
-		CtrlPort:    agentPort,
-	}
-
-	// call agent to get BIND 9 state
-	rsp, err := agent.Client.GetBind9State(ctx, req)
-	if err != nil {
-		err = errors.Wrapf(err, "failed to get BIND 9 state: %+v", req)
-		return nil, err
-	}
-	if rsp.Status.Code != agentapi.Status_OK {
-		err = errors.New(rsp.Status.Message)
-		return nil, err
-	}
-
-	state := &Bind9State{
-		Version: rsp.Version,
-		Active:  rsp.Active,
-		Daemon: Bind9Daemon{
-			Pid:     rsp.Daemon.Pid,
-			Name:    rsp.Daemon.Name,
-			Active:  rsp.Daemon.Active,
-			Version: rsp.Daemon.Version,
+	// Prepare the on-wire representation of the commands.
+	req := &agentapi.ForwardToBind9UsingRndcReq{
+		CtrlAddress: rndcSettings.CtrlAddress,
+		CtrlPort:    rndcSettings.CtrlPort,
+		CtrlKey:     rndcSettings.CtrlKey,
+		RndcRequest: &agentapi.RndcRequest{
+			Request: command,
 		},
 	}
 
-	return state, nil
+	// Send the command to the Stork agent.
+	response, err := agent.Client.ForwardRndcCommand(ctx, req)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to forward rndc command %s", command)
+		return nil, err
+	}
+
+	if response.Status.Code != agentapi.Status_OK {
+		err = errors.New(response.Status.Message)
+		return nil, err
+	}
+
+	result := &RndcOutput{
+		Output: "",
+		Error:  nil,
+	}
+
+	rndcResponse := response.GetRndcResponse()
+	if rndcResponse.Status.Code != agentapi.Status_OK {
+		result.Error = errors.New(response.Status.Message)
+	} else {
+		result.Output = rndcResponse.Response
+	}
+	return result, nil
 }
 
 type KeaCmdsResult struct {

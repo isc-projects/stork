@@ -224,10 +224,6 @@ func TestGetMachineAndAppsState(t *testing.T) {
 		},
 	}
 
-	fa.Bind9State = &agentcomm.Bind9State{
-		Version: "1.2.3",
-	}
-
 	// get added machine
 	params := services.GetMachineStateParams{
 		ID: m.ID,
@@ -237,6 +233,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	okRsp := rsp.(*services.GetMachineStateOK)
 	require.Len(t, okRsp.Payload.Apps, 2)
 	require.Equal(t, "kea", okRsp.Payload.Apps[0].Type)
+	require.Equal(t, "bind9", okRsp.Payload.Apps[1].Type)
 }
 
 func TestCreateMachine(t *testing.T) {

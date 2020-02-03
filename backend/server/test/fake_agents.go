@@ -2,6 +2,7 @@ package storktest
 
 import (
 	"context"
+	"fmt"
 
 	"isc.org/stork/server/agentcomm"
 )
@@ -13,15 +14,29 @@ type FakeAgents struct {
 	mockFunc         func(int, []interface{})
 	callNo           int
 
+	RecordedCtrlAddress string
+	RecordedCtrlPort    int64
+	RecordedCtrlKey     string
+	RecordedCommand     string
+	mockRndcOutput      string
+
 	MachineState *agentcomm.State
-	Bind9State   *agentcomm.Bind9State
+}
+
+// mockRndcOutput returns some mocked named response.
+func mockRndcOutput() string {
+	version := "9.9.9"
+	bootTime := "Tue, 21 Jan 2020 08:25:43 GMT"
+	lastConfigured := "Tue, 21 Jan 2020 17:04:40 GMT"
+	return fmt.Sprintf("version: %s\nboot time: %s\nlast configured: %s\nserver is up and running", version, bootTime, lastConfigured)
 }
 
 // Creates new instance of the FakeAgents structure with the function returning
 // a custom response set.
 func NewFakeAgents(fn func(int, []interface{})) *FakeAgents {
 	fa := &FakeAgents{
-		mockFunc: fn,
+		mockFunc:       fn,
+		mockRndcOutput: mockRndcOutput(),
 	}
 	return fa
 }
@@ -44,7 +59,7 @@ func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort in
 	return &state, nil
 }
 
-// FakeAgents specific Implementation of the function to forward a command
+// FakeAgents specific implementation of the function to forward a command
 // to the Kea servers. It records some arguments used in the call to this
 // function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
@@ -64,9 +79,24 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, agentAddress str
 	return result, nil
 }
 
-func (fa *FakeAgents) GetBind9State(ctx context.Context, agentAddress string, agentPort int64) (*agentcomm.Bind9State, error) {
-	if fa.Bind9State != nil {
-		return fa.Bind9State, nil
+// FakeAgents specific implementation of the function to forward a command
+// to rndc. It records some arguments used in the call to this function
+// so as they can be later validated. It also returns a custom response
+// to the command by calling the function specified in the call to
+// NewFakeAgents.
+func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, agentAddress string, agentPort int64, rndcSettings agentcomm.Bind9Control, command string) (*agentcomm.RndcOutput, error) {
+	fa.RecordedCtrlAddress = rndcSettings.CtrlAddress
+	fa.RecordedCtrlPort = rndcSettings.CtrlPort
+	fa.RecordedCtrlKey = rndcSettings.CtrlKey
+	fa.RecordedCommand = command
+
+	if fa.mockRndcOutput != "" {
+		output := &agentcomm.RndcOutput{
+			Output: fa.mockRndcOutput,
+			Error:  nil,
+		}
+		return output, nil
 	}
+
 	return nil, nil
 }

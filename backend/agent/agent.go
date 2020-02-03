@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/load"
@@ -29,16 +31,26 @@ type StorkAgent struct {
 	Settings   Settings
 	AppMonitor AppMonitor
 
-	CAClient *CAClient
+	CAClient   *CAClient   // to communicate with Kea
+	RndcClient *RndcClient // to communicate with BIND 9
 }
 
 // API exposed to Stork Server
 
 func NewStorkAgent() *StorkAgent {
+	// rndc is the command to interface with BIND 9.
+	rndc := func(command []string) ([]byte, error) {
+		cmd := exec.Command(command[0], command[1:]...) //nolint:gosec
+		return cmd.Output()
+	}
+	rndcClient := NewRndcClient(rndc)
+
 	caClient := NewCAClient()
+
 	sa := &StorkAgent{
 		AppMonitor: NewAppMonitor(),
 		CAClient:   caClient,
+		RndcClient: rndcClient,
 	}
 	return sa
 }
@@ -84,34 +96,44 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 	return &state, nil
 }
 
-func (sa *StorkAgent) GetBind9State(ctx context.Context, in *agentapi.GetBind9StateReq) (*agentapi.GetBind9StateRsp, error) {
+// ForwardRndcCommand forwards one rndc command sent by the Stork server to
+// the named daemon.
+func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.ForwardToBind9UsingRndcReq) (*agentapi.ForwardToBind9UsingRndcRsp, error) {
 	app := &App{
 		CtrlAddress: in.CtrlAddress,
 		CtrlPort:    in.CtrlPort,
 		CtrlKey:     in.CtrlKey,
 	}
-	state, err := getBind9State(app)
 
-	status := &agentapi.Status{
-		Code: agentapi.Status_OK, // all ok
-	}
-	if err != nil {
-		status.Code = agentapi.Status_ERROR
-		status.Message = err.Error()
-	}
-
-	rsp := &agentapi.GetBind9StateRsp{
-		Status:  status,
-		Version: state.Version,
-		Active:  state.Active,
-		Daemon: &agentapi.Bind9Daemon{
-			Pid:     state.Daemon.Pid,
-			Name:    state.Daemon.Name,
-			Active:  state.Daemon.Active,
-			Version: state.Daemon.Version,
+	request := in.GetRndcRequest()
+	response := &agentapi.ForwardToBind9UsingRndcRsp{
+		Status: &agentapi.Status{
+			Code: agentapi.Status_OK, // all ok
 		},
 	}
-	return rsp, nil
+
+	rndcRsp := &agentapi.RndcResponse{
+		Status: &agentapi.Status{},
+	}
+
+	// Try to forward the command to rndc.
+	output, err := sa.RndcClient.Call(app, strings.Fields(request.Request))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"CtrlAddress": app.CtrlAddress,
+			"CtrlPort":    app.CtrlPort,
+			"CtrlKey":     app.CtrlKey,
+		}).Errorf("Failed to forward commands to rndc: %+v", err)
+		rndcRsp.Status.Code = agentapi.Status_ERROR
+		rndcRsp.Status.Message = "Failed to forward commands to rndc"
+	} else {
+		rndcRsp.Status.Code = agentapi.Status_OK
+		rndcRsp.Response = string(output)
+	}
+
+	response.Status = rndcRsp.Status
+	response.RndcResponse = rndcRsp
+	return response, err
 }
 
 // Forwards one or more Kea commands sent by the Stork server to the appropriate Kea instance over

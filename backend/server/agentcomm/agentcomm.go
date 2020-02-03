@@ -50,7 +50,7 @@ type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
 	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
-	GetBind9State(ctx context.Context, agentAddress string, agentPort int64) (*Bind9State, error)
+	ForwardRndcCommand(ctx context.Context, agentAddress string, agentPort int64, rndcSettings Bind9Control, command string) (*RndcOutput, error)
 	ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caURL string, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
 }
 

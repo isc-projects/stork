@@ -3,8 +3,6 @@ package agent
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
-	"os/exec"
 	"regexp"
 	"strconv"
 
@@ -14,8 +12,8 @@ import (
 type Bind9Daemon struct {
 	Pid     int32
 	Name    string
-	Active  bool
 	Version string
+	Active  bool
 }
 
 type Bind9State struct {
@@ -24,9 +22,7 @@ type Bind9State struct {
 	Daemon  Bind9Daemon
 }
 
-// Helpful constants for rndc (the remote control command for the named daemon).
 const RndcDefaultPort = 953
-const RndcKeyFile = "/etc/bind/rndc.key"
 
 // getRndcKey looks for the key with a given `name` in `contents`.
 //
@@ -186,64 +182,4 @@ func detectBind9App(match []string) (bind9App *App) {
 		CtrlKey:     ctrlKey,
 	}
 	return bind9App
-}
-
-// rndc is an utility function to send a command to the named daemon.
-func (app *App) rndc(command []string) ([]byte, error) {
-	if app.CtrlPort == 0 {
-		return nil, fmt.Errorf("rndc requires control port")
-	}
-	if len(app.CtrlAddress) == 0 {
-		return nil, fmt.Errorf("rndc requires control address")
-	}
-
-	rndcCommand := []string{"rndc", "-s", app.CtrlAddress, "-p", fmt.Sprintf("%d", app.CtrlPort)}
-	if len(app.CtrlKey) > 0 {
-		rndcCommand = append(rndcCommand, "-y")
-		rndcCommand = append(rndcCommand, app.CtrlKey)
-	} else if _, err := os.Stat(RndcKeyFile); err == nil {
-		rndcCommand = append(rndcCommand, "-k")
-		rndcCommand = append(rndcCommand, RndcKeyFile)
-	}
-	rndcCommand = append(rndcCommand, command...)
-	log.Warnf("rndc: %+v", rndcCommand)
-
-	cmd := exec.Command(rndcCommand[0], rndcCommand[1:]...) //nolint:gosec
-	return cmd.Output()
-}
-
-func getBind9State(app *App) (*Bind9State, error) { //nolint:unparam
-	state := &Bind9State{
-		Active: false,
-	}
-
-	// version
-	out, err := app.rndc([]string{"status"})
-	if err != nil {
-		log.Warnf("cannot get BIND 9 status: %+v", err)
-	} else {
-		versionPtrn := regexp.MustCompile(`version:\s(.+)\n`)
-		match := versionPtrn.FindStringSubmatch(string(out))
-		if match != nil {
-			state.Version = match[1]
-		} else {
-			log.Warnf("cannot get BIND 9 version: unable to find version in rndc output")
-		}
-
-		upPtrn := regexp.MustCompile(`server is up and running`)
-		up := upPtrn.FindString(string(out))
-		if up != "" {
-			state.Active = true
-		}
-	}
-
-	namedDaemon := Bind9Daemon{
-		Name:    "named",
-		Active:  state.Active,
-		Version: state.Version,
-	}
-
-	state.Daemon = namedDaemon
-
-	return state, err
 }
