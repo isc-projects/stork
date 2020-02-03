@@ -447,7 +447,7 @@ task :docker_down do
   sh 'docker-compose down'
 end
 
-desc 'Build container with Stork Agent and Kea DHCPv4'
+desc 'Build container with Stork Agent and Kea DHCPv4 server'
 task :build_kea_container do
   sh 'docker build -f docker/docker-agent-kea.txt -t agent-kea .'
 end
