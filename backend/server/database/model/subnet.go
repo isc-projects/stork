@@ -35,6 +35,17 @@ func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer
 	params.Offset = offset
 	params.Limit = limit
 
+	// Build a query do goes through apps and their configs and retrieves list of subnets
+	// for both DHCPv4 and v6.
+	// Example of such query:
+	//
+	// SELECT app_id, sn->>'id' as id, sn->>'subnet' as subnet, sn->'pools' as pools
+	//   FROM ( SELECT id AS app_id, jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp4'->'subnet4') AS sn FROM app
+	//          UNION
+	//          SELECT id AS app_id, jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp6'->'subnet6') AS sn FROM app) sq
+	//   WHERE sn->>'subnet' like '%192%' OR sn->>'pools' like '%192%' ORDER BY subnet, id, app_id OFFSET NULL LIMIT 10;
+	//
+	// It looks for v4 and v6 subnets with `192` in subnet or pools text.
 	query := `SELECT app_id, sn->>'id' as id, sn->>'subnet' as subnet, sn->'pools' as pools FROM (`
 	whereAppID := ` WHERE id = ?appid`
 
