@@ -46,7 +46,7 @@ func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer
 	//   WHERE sn->>'subnet' like '%192%' OR sn->>'pools' like '%192%' ORDER BY subnet, id, app_id OFFSET NULL LIMIT 10;
 	//
 	// It looks for v4 and v6 subnets with `192` in subnet or pools text.
-	query := `SELECT app_id, sn->>'id' as id, sn->>'subnet' as subnet, sn->'pools' as pools FROM (`
+	query := `SELECT app_id, sn->'id' as id, sn->>'subnet' as subnet, sn->'pools' as pools FROM (`
 	whereAppID := ` WHERE id = ?appid`
 
 	sq := ` SELECT id AS app_id, jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp%d'->'subnet%d') AS sn FROM app`

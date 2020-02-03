@@ -32,7 +32,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 				Config: &map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
-							"id":     "1",
+							"id":     1,
 							"subnet": "192.168.0.0/24",
 							"pools": []map[string]interface{}{{
 								"pool": "192.168.0.1-192.168.0.100",
@@ -60,7 +60,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 				Config: &map[string]interface{}{
 					"Dhcp6": &map[string]interface{}{
 						"subnet6": []map[string]interface{}{{
-							"id":     "2",
+							"id":     2,
 							"subnet": "2001:db8:1::/64",
 							"pools":  []map[string]interface{}{},
 						}},
@@ -84,7 +84,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 				Config: &map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
-							"id":     "3",
+							"id":     3,
 							"subnet": "192.118.0.0/24",
 							"pools": []map[string]interface{}{{
 								"pool": "192.118.0.1-192.118.0.200",
@@ -96,7 +96,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 				Config: &map[string]interface{}{
 					"Dhcp6": &map[string]interface{}{
 						"subnet6": []map[string]interface{}{{
-							"id":     "4",
+							"id":     4,
 							"subnet": "3001:db8:1::/64",
 							"pools": []map[string]interface{}{{
 								"pool": "3001:db8:1::/80",
