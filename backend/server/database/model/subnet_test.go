@@ -8,7 +8,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
-func TestGetSubnetsByPage(t *testing.T) {
+func TestGetSubnetsByPageBasic(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -190,4 +190,41 @@ func TestGetSubnetsByPage(t *testing.T) {
 	require.Len(t, subnets, 1)
 	require.Equal(t, int(a46.ID), subnets[0].AppID)
 	require.Equal(t, "3", subnets[0].ID)
+}
+
+func TestGetSubnetsByPageNoSubnets(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add machine
+	m := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add app kea with dhcp4 to machine but with no subnets configured
+	a4 := &App{
+		ID:        0,
+		MachineID: m.ID,
+		Type:      KeaAppType,
+		CtrlPort:  1114,
+		Active:    true,
+		Details: AppKea{
+			Daemons: []*KeaDaemon{{
+				Config: &map[string]interface{}{
+					"Dhcp4": &map[string]interface{}{},
+				},
+			}},
+		},
+	}
+	err = AddApp(db, a4)
+	require.NoError(t, err)
+
+	// get all subnets -> empty list should be retruned
+	subnets, err := GetSubnetsByPage(db, 0, 10, 0, 0, nil)
+	require.NoError(t, err)
+	require.Len(t, subnets, 0)
+
 }
