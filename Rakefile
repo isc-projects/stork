@@ -458,7 +458,7 @@ task :run_kea_container do
   sh 'docker run --rm -ti -p 8888:8080 -p 8787:8000 -h agent-kea -v `pwd`/backend/cmd/stork-agent:/agent agent-kea'
 end
 
-desc 'Build container with Stork Agent and Kea DHCPv6'
+desc 'Build container with Stork Agent and Kea DHCPv6 server'
 task :build_kea6_container do
   sh 'docker build -f docker/docker-agent-kea6.txt -t agent-kea6 .'
 end
