@@ -90,6 +90,50 @@ func TestGetServiceById(t *testing.T) {
 	require.Equal(t, "dhcp4", service.HAService.HAType)
 }
 
+// Test getting services for an app.
+func TestGetServicesByAppID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	services := addTestServices(t, db)
+	require.GreaterOrEqual(t, len(services), 2)
+
+	// Get a service instance to which the forth application of the service1 belongs.
+	appServices, err := GetServicesByAppID(db, services[0].Apps[3].ID)
+	require.NoError(t, err)
+	require.Len(t, appServices, 1)
+
+	// Validate that the service returned is the service1.
+	service := appServices[0]
+	require.Len(t, service.Apps, 5)
+	require.Equal(t, services[0].Label, service.Label)
+	require.ElementsMatch(t, service.Apps, services[0].Apps)
+
+	// Repeat the same test for the fifth application belonging to the service2.
+	appServices, err = GetServicesByAppID(db, services[1].Apps[4].ID)
+	require.NoError(t, err)
+	require.Len(t, appServices, 1)
+
+	// Validate that the returned service is the service2.
+	service = appServices[0]
+	require.Len(t, service.Apps, 5)
+	require.Equal(t, services[1].Label, service.Label)
+	require.ElementsMatch(t, service.Apps, services[1].Apps)
+
+	// Finally, make one of the application shared between two services.
+	err = AddAppToService(db, services[0].ID, services[1].Apps[0])
+	require.NoError(t, err)
+
+	// When querying the services for this app, both service1 and 2 should
+	// be returned.
+	appServices, err = GetServicesByAppID(db, services[1].Apps[0].ID)
+	require.NoError(t, err)
+	require.Len(t, appServices, 2)
+
+	require.Equal(t, services[0].Label, appServices[0].Label)
+	require.Equal(t, services[1].Label, appServices[1].Label)
+}
+
 // Test getting all services.
 func TestGetAllServices(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -101,7 +145,7 @@ func TestGetAllServices(t *testing.T) {
 	// There should be two services returned.
 	allServices, err := GetAllServices(db)
 	require.NoError(t, err)
-	require.Len(t, services, 2)
+	require.Len(t, allServices, 2)
 
 	// Services are sorted by ascending ID, so the first returned
 	// service should be the one inserted.

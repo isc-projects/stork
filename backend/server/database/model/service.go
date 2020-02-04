@@ -206,6 +206,25 @@ func GetService(db *dbops.PgDB, serviceID int64) (*Service, error) {
 	return service, err
 }
 
+// Fetches all services to which the given app belongs.
+func GetServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) {
+	var services []Service
+
+	err := db.Model(&services).
+		Join("INNER JOIN app_to_service AS atos ON atos.service_id = service.id").
+		Relation("HAService").
+		Relation("Apps").
+		Where("atos.app_id = ?", appID).
+		OrderExpr("service.id ASC").
+		Select()
+
+	if err != nil && err != pg.ErrNoRows {
+		err = errors.Wrapf(err, "problem with getting services for app id %d", appID)
+		return services, err
+	}
+	return services, nil
+}
+
 // Fetches all services from the database.
 func GetAllServices(db *dbops.PgDB) ([]Service, error) {
 	var services []Service
