@@ -14,49 +14,54 @@
     </div>
 
     <div class="p-col-12">
-        <p-tabMenu [model]="tabs" [activeItem]="activeTab">
-            <ng-template pTemplate="item" let-item let-i="index">
-                <div style="display: flex;">
-                    <div class="ui-menuitem-text">
-                        <b>{{ item.label }}</b>
+        <p-tabView>
+            <p-tabPanel *ngFor="let daemon of daemons">
+                <ng-template pTemplate="header">
+                    <div>
+                        <span style="margin-right: 0.5em; font-weight: bold;">
+                            {{ daemon.niceName }}
+                        </span>
+                        <span
+                            *ngIf="daemon.active"
+                            class="pi pi-check"
+                            style="font-size: 1.6em; vertical-align: bottom; color: #00df00;"
+                        ></span>
+                        <span
+                            *ngIf="!daemon.active"
+                            class="pi pi-exclamation-circle"
+                            style="font-size: 1.6em; vertical-align: bottom; color: #f33;"
+                        ></span>
                     </div>
-                    <div
-                        *ngIf="daemon.active"
-                        class="ui-menuitem-icon"
-                        class="pi pi-check"
-                        style="font-size: 1.6em; color: #00df00;"
-                    ></div>
-                    <div
-                        *ngIf="!daemon.active"
-                        class="ui-menuitem-icon"
-                        class="pi pi-exclamation-circle"
-                        style="font-size: 1.6em; color: #f33;"
-                    ></div>
-                </div>
-            </ng-template>
-        </p-tabMenu>
-    </div>
+                </ng-template>
 
-    <div class="p-col-12">
-        <div class="p-col-4">
-            <table style="width: 100%;">
-                <tr>
-                    <td>Version</td>
-                    <td>{{ daemon.version }}</td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top;">Uptime</td>
-                    <td>{{ showDuration(daemon.uptime) }}</td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top;">Last Reloaded At</td>
-                    <td>{{ daemon.reloadedAt | localtime }}</td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top;">Number of zones</td>
-                    <td>{{ daemon.zoneCount }}</td>
-                </tr>
-            </table>
-        </div>
+                <ng-template pTemplate="content">
+                    <div class="p-grid" style="padding: 0;">
+                        <div class="p-col-6">
+                            <div class="p-col-12">
+                                <h4>Overview</h4>
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td>Version</td>
+                                        <td>{{ daemon.version }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="vertical-align: top;">Uptime</td>
+                                        <td>{{ showDuration(daemon.uptime) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="vertical-align: top;">Last Reloaded At</td>
+                                        <td>{{ daemon.reloadedAt | localtime }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="vertical-align: top;">Number of Zones</td>
+                                        <td>{{ daemon.zoneCount }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </ng-template>
+            </p-tabPanel>
+        </p-tabView>
     </div>
 </div>

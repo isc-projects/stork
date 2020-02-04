@@ -13,16 +13,11 @@ export class Bind9AppTabComponent implements OnInit {
     private _appTab: any
     @Output() refreshApp = new EventEmitter<number>()
 
-    tabs: MenuItem[]
-    activeTab: MenuItem
     daemons: any[] = []
-    daemon: any
 
     constructor() {}
 
-    ngOnInit() {
-        console.info('this.app', this.appTab)
-    }
+    ngOnInit() {}
 
     @Input()
     set appTab(appTab) {
@@ -32,37 +27,17 @@ export class Bind9AppTabComponent implements OnInit {
         daemonMap[appTab.app.details.daemon.name] = appTab.app.details.daemon
         const DMAP = [['named', 'named']]
         const daemons = []
-        const tabs = []
         for (const dm of DMAP) {
             if (daemonMap[dm[0]] !== undefined) {
                 daemonMap[dm[0]].niceName = dm[1]
                 daemons.push(daemonMap[dm[0]])
-
-                tabs.push({
-                    label: dm[1],
-                    command: event => {
-                        this.daemonTabSwitch(event.item)
-                    },
-                })
             }
         }
         this.daemons = daemons
-        this.daemon = this.daemons[appTab.activeDaemonTabIdx]
-        this.tabs = tabs
-        this.activeTab = this.tabs[appTab.activeDaemonTabIdx]
     }
 
     get appTab() {
         return this._appTab
-    }
-
-    daemonTabSwitch(item) {
-        for (const d of this.daemons) {
-            if (d.niceName === item.label) {
-                this.daemon = d
-                break
-            }
-        }
     }
 
     refreshAppState() {
