@@ -9,16 +9,18 @@ import (
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
 
-	//log "github.com/sirupsen/logrus"
-
 	storkutil "isc.org/stork/util"
 )
 
 type Bind9Daemon struct {
-	Pid     int32
-	Name    string
-	Active  bool
-	Version string
+	Pid                int32
+	Name               string
+	Version            string
+	Active             bool
+	Uptime             int64
+	ReloadedAt         time.Time
+	ZoneCount          int64
+	AutomaticZoneCount int64
 }
 
 type KeaDaemon struct {

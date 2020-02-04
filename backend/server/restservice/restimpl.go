@@ -536,10 +536,14 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 
 	if isBind9App {
 		bind9Daemon := &models.Bind9Daemon{
-			Pid:     int64(dbApp.Details.(dbmodel.AppBind9).Daemon.Pid),
-			Name:    dbApp.Details.(dbmodel.AppBind9).Daemon.Name,
-			Active:  dbApp.Details.(dbmodel.AppBind9).Daemon.Active,
-			Version: dbApp.Details.(dbmodel.AppBind9).Daemon.Version,
+			Pid:           int64(dbApp.Details.(dbmodel.AppBind9).Daemon.Pid),
+			Name:          dbApp.Details.(dbmodel.AppBind9).Daemon.Name,
+			Active:        dbApp.Details.(dbmodel.AppBind9).Daemon.Active,
+			Version:       dbApp.Details.(dbmodel.AppBind9).Daemon.Version,
+			Uptime:        dbApp.Details.(dbmodel.AppBind9).Daemon.Uptime,
+			ReloadedAt:    strfmt.DateTime(dbApp.Details.(dbmodel.AppBind9).Daemon.ReloadedAt),
+			ZoneCount:     dbApp.Details.(dbmodel.AppBind9).Daemon.ZoneCount,
+			AutoZoneCount: dbApp.Details.(dbmodel.AppBind9).Daemon.AutomaticZoneCount,
 		}
 
 		app.Details = struct {

@@ -3,6 +3,7 @@ package bind9
 import (
 	"context"
 	"regexp"
+	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -10,6 +11,9 @@ import (
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 )
+
+// Provide example date format how named returns dates.
+const namedLongDateFormat = "Mon, 02 Jan 2006 15:04:05 MST"
 
 func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) {
 	// Get rndc control settings
@@ -30,12 +34,13 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	}
 
 	bind9Daemon := dbmodel.Bind9Daemon{
+		Pid:  0,
 		Name: "named",
 	}
 
-	// get version
-	versionPtrn := regexp.MustCompile(`version:\s(.+)\n`)
-	match := versionPtrn.FindStringSubmatch(out.Output)
+	// Get version
+	pattern := regexp.MustCompile(`version:\s+(.+)\n`)
+	match := pattern.FindStringSubmatch(out.Output)
 	if match != nil {
 		bind9Daemon.Version = match[1]
 	} else {
@@ -44,12 +49,59 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 
 	// Is the named daemon running?
 	bind9Daemon.Active = false
-	upPtrn := regexp.MustCompile(`server is up and running`)
-	up := upPtrn.FindString(out.Output)
+	pattern = regexp.MustCompile(`server is up and running`)
+	up := pattern.FindString(out.Output)
 	if up != "" {
 		bind9Daemon.Active = true
 	}
 
+	// Up time
+	pattern = regexp.MustCompile(`boot time:\s+(.+)`)
+	match = pattern.FindStringSubmatch(out.Output)
+	if match != nil {
+		bootTime, err := time.Parse(namedLongDateFormat, match[1])
+		if err != nil {
+			log.Warnf("cannot get BIND 9 up time: %s", err.Error())
+		}
+		now := time.Now()
+		elapsed := now.Sub(bootTime)
+		bind9Daemon.Uptime = int64(elapsed.Seconds())
+	} else {
+		log.Warnf("cannot get BIND 9 up time: unable to find boot time in output")
+	}
+
+	// Reloaded at
+	pattern = regexp.MustCompile(`last configured:\s+(.+)`)
+	match = pattern.FindStringSubmatch(out.Output)
+	if match != nil {
+		reloadTime, err := time.Parse(namedLongDateFormat, match[1])
+		if err != nil {
+			log.Warnf("cannot get BIND 9 reload time: %s", err.Error())
+		}
+		bind9Daemon.ReloadedAt = reloadTime
+	} else {
+		log.Warnf("cannot get BIND 9 reload time: unable to find last configured in output")
+	}
+
+	// Number of zones
+	pattern = regexp.MustCompile(`number of zones:\s+(\d+)\s+\((\d+) automatic\)`)
+	match = pattern.FindStringSubmatch(out.Output)
+	if match != nil {
+		count, err := strconv.Atoi(match[1])
+		if err != nil {
+			log.Warnf("cannot get BIND 9 number of zones: %s", err.Error())
+		}
+		autoCount, err := strconv.Atoi(match[2])
+		if err != nil {
+			log.Warnf("cannot get BIND 9 number of automatic zones: %s", err.Error())
+		}
+		bind9Daemon.ZoneCount = int64(count - autoCount)
+		bind9Daemon.AutomaticZoneCount = int64(autoCount)
+	} else {
+		log.Warnf("cannot get BIND 9 number of zones: unable to find number of zones in output")
+	}
+
+	// Save status
 	dbApp.Active = bind9Daemon.Active
 	dbApp.Meta.Version = bind9Daemon.Version
 	dbApp.Details = dbmodel.AppBind9{

@@ -3,6 +3,7 @@ package bind9
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -39,6 +40,10 @@ func TestGetAppState(t *testing.T) {
 
 	daemon := dbApp.Details.(dbmodel.AppBind9).Daemon
 	require.True(t, daemon.Active)
-	require.Equal(t, daemon.Version, "9.9.9")
 	require.Equal(t, daemon.Name, "named")
+	require.Equal(t, daemon.Version, "9.9.9")
+	reloadedAt, _ := time.Parse(namedLongDateFormat, "Mon, 03 Feb 2020 14:39:36 GMT")
+	require.Equal(t, daemon.ReloadedAt, reloadedAt)
+	require.Equal(t, daemon.ZoneCount, int64(5))
+	require.Equal(t, daemon.AutomaticZoneCount, int64(96))
 }

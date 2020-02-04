@@ -1,3 +1,9 @@
+* 27 [func] matthijs
+
+    Show more status information for named: up time, last reloaded,
+    number of zones.
+    (Gitlab #140)
+
 * 26 [func] godfryd
 
     Added initial support for DHCP subnets. There are presented

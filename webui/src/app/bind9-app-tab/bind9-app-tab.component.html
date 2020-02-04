@@ -1,4 +1,4 @@
-<div style="margin: 10px;" class="p-grid">
+<div style="margin: 0;" class="p-grid">
     <div class="p-col-12">
         <button
             type="button"
@@ -43,6 +43,18 @@
                 <tr>
                     <td>Version</td>
                     <td>{{ daemon.version }}</td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top;">Uptime</td>
+                    <td>{{ showDuration(daemon.uptime) }}</td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top;">Last Reloaded At</td>
+                    <td>{{ daemon.reloadedAt | localtime }}</td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top;">Number of zones</td>
+                    <td>{{ daemon.zoneCount }}</td>
                 </tr>
             </table>
         </div>
