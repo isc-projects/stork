@@ -67,12 +67,34 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 	return services
 }
 
+// Test that the base service can be updated.
+func TestUpdateBaseService(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	services := addTestServices(t, db)
+	require.GreaterOrEqual(t, len(services), 2)
+
+	// Modify one of the services.
+	service := services[0]
+	service.Label = "funny name"
+	err := UpdateBaseService(db, &service.BaseService)
+	require.NoError(t, err)
+
+	// Check that the new label is returned.
+	returned, err := GetService(db, service.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.Equal(t, service.Label, returned.Label)
+}
+
 // Test getting the service by id.
 func TestGetServiceById(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	services := addTestServices(t, db)
+	require.GreaterOrEqual(t, len(services), 2)
 
 	// Get the first service. It should lack HA specific info.
 	service, err := GetService(db, services[0].ID)

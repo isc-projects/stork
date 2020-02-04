@@ -187,6 +187,16 @@ func AddService(db *dbops.PgDB, service *Service) error {
 	return err
 }
 
+// Updates basic information about the service. It only affects the contents of the
+// service table in the database.
+func UpdateBaseService(db *dbops.PgDB, service *BaseService) error {
+	err := db.Update(service)
+	if err != nil {
+		err = errors.Wrapf(err, "problem with updating a service with id %d", service.ID)
+	}
+	return err
+}
+
 // Fetches a service from the database for a given service id.
 func GetService(db *dbops.PgDB, serviceID int64) (*Service, error) {
 	service := &Service{}
