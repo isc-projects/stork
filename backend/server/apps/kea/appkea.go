@@ -290,7 +290,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 				continue
 			}
 
-			dmn.Config = cRsp.Arguments
+			dmn.Config = dbmodel.NewKeaConfig(cRsp.Arguments)
 		}
 	}
 

@@ -29,7 +29,7 @@ type KeaDaemon struct {
 	Active          bool
 	Version         string
 	ExtendedVersion string
-	Config          *map[string]interface{}
+	Config          *KeaConfig
 	Uptime          int64
 	ReloadedAt      time.Time
 }

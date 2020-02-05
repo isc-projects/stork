@@ -30,7 +30,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Active:    true,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
-				Config: &map[string]interface{}{
+				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
 							"id":     1,
@@ -65,7 +65,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 							}},
 						}},
 					},
-				},
+				}),
 			}},
 		},
 	}
@@ -81,7 +81,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Active:    true,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
-				Config: &map[string]interface{}{
+				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp6": &map[string]interface{}{
 						"subnet6": []map[string]interface{}{{
 							"id":     2,
@@ -97,7 +97,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 							}},
 						}},
 					},
-				},
+				}),
 			}},
 		},
 	}
@@ -113,7 +113,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Active:    true,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
-				Config: &map[string]interface{}{
+				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
 							"id":     3,
@@ -123,9 +123,9 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 							}},
 						}},
 					},
-				},
+				}),
 			}, {
-				Config: &map[string]interface{}{
+				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp6": &map[string]interface{}{
 						"subnet6": []map[string]interface{}{{
 							"id":     4,
@@ -135,7 +135,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 							}},
 						}},
 					},
-				},
+				}),
 			}},
 		},
 	}
@@ -262,9 +262,9 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 		Active:    true,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
-				Config: &map[string]interface{}{
+				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{},
-				},
+				}),
 			}},
 		},
 	}
@@ -300,7 +300,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 		Active:    true,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
-				Config: &map[string]interface{}{
+				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
 							"id":     1,
@@ -324,7 +324,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 							}},
 						}},
 					},
-				},
+				}),
 			}},
 		},
 	}
@@ -340,7 +340,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 		Active:    true,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
-				Config: &map[string]interface{}{
+				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp6": &map[string]interface{}{
 						"subnet6": []map[string]interface{}{{
 							"id":     2,
@@ -358,7 +358,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 							}},
 						}},
 					},
-				},
+				}),
 			}},
 		},
 	}

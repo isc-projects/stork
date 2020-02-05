@@ -213,7 +213,7 @@ func TestGetDaemonHooksFrom1Daemon(t *testing.T) {
 			Daemons: []*dbmodel.KeaDaemon{
 				{
 					Name: "dhcp4",
-					Config: &map[string]interface{}{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 						"Dhcp4": map[string]interface{}{
 							"hooks-libraries": []interface{}{
 								map[string]interface{}{
@@ -221,7 +221,7 @@ func TestGetDaemonHooksFrom1Daemon(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 			},
 		},
@@ -242,7 +242,7 @@ func TestGetDaemonHooksFrom2Daemons(t *testing.T) {
 			Daemons: []*dbmodel.KeaDaemon{
 				{
 					Name: "dhcp6",
-					Config: &map[string]interface{}{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 						"Dhcp6": map[string]interface{}{
 							"hooks-libraries": []interface{}{
 								map[string]interface{}{
@@ -253,11 +253,11 @@ func TestGetDaemonHooksFrom2Daemons(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				{
 					Name: "dhcp4",
-					Config: &map[string]interface{}{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 						"Dhcp4": map[string]interface{}{
 							"hooks-libraries": []interface{}{
 								map[string]interface{}{
@@ -265,7 +265,7 @@ func TestGetDaemonHooksFrom2Daemons(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 			},
 		},
