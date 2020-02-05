@@ -235,6 +235,34 @@ func GetServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) {
 	return services, nil
 }
 
+// Fetches all services which include applications that operate on the specified
+// control address and port. This is useful for detecting that an application,
+// perhaps the one that is being now added, belongs to the existing service.
+// In particular, the Kea application which belongs to the HA setup includes
+// the URLs of the partners. These URLs can be used to associate the applications
+// with the services.
+func GetServicesByAppCtrlAddressPort(db *dbops.PgDB, ctrlAddress string, ctrlPort int64) ([]Service, error) {
+	var services []Service
+
+	err := db.Model(&services).
+		DistinctOn("service.id").
+		Join("INNER JOIN app_to_service AS atos ON atos.service_id = service.id").
+		Join("INNER JOIN app AS a ON a.id = atos.app_id").
+		Relation("HAService").
+		Relation("Apps").
+		Where("a.ctrl_address = ?", ctrlAddress).
+		Where("a.ctrl_port = ?", ctrlPort).
+		OrderExpr("service.id ASC").
+		Select()
+
+	if err != nil && err != pg.ErrNoRows {
+		err = errors.Wrapf(err, "problem with getting services for control address: %s and port: %d",
+			ctrlAddress, ctrlPort)
+		return services, err
+	}
+	return services, nil
+}
+
 // Fetches all services from the database.
 func GetAllServices(db *dbops.PgDB) ([]Service, error) {
 	var services []Service

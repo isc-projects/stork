@@ -36,7 +36,7 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 			MachineID:   m.ID,
 			Type:        KeaAppType,
 			CtrlAddress: "cool.example.org",
-			CtrlPort:    1234,
+			CtrlPort:    int64(1234 + i),
 			Active:      true,
 		}
 		err = AddApp(db, a)
@@ -154,6 +154,40 @@ func TestGetServicesByAppID(t *testing.T) {
 
 	require.Equal(t, services[0].Label, appServices[0].Label)
 	require.Equal(t, services[1].Label, appServices[1].Label)
+}
+
+// Test getting the services including applications which operate on a
+// given control address and port.
+func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	services := addTestServices(t, db)
+	require.GreaterOrEqual(t, len(services), 2)
+
+	// Get a service instance to which the forth application of the service1 belongs.
+	appServices, err := GetServicesByAppCtrlAddressPort(db, services[0].Apps[3].CtrlAddress,
+		services[0].Apps[3].CtrlPort)
+	require.NoError(t, err)
+	require.Len(t, appServices, 1)
+
+	// Make sure that the first service was returned.
+	service := appServices[0]
+	require.Len(t, service.Apps, 5)
+	require.Equal(t, services[0].Label, service.Label)
+	require.ElementsMatch(t, service.Apps, services[0].Apps)
+
+	// Repeat the same test for the application belonging to the second service.
+	appServices, err = GetServicesByAppCtrlAddressPort(db, services[1].Apps[3].CtrlAddress,
+		services[1].Apps[3].CtrlPort)
+	require.NoError(t, err)
+	require.Len(t, appServices, 1)
+
+	// Make sure that the second service was returned.
+	service = appServices[0]
+	require.Len(t, service.Apps, 5)
+	require.Equal(t, services[1].Label, service.Label)
+	require.ElementsMatch(t, service.Apps, services[1].Apps)
 }
 
 // Test getting all services.

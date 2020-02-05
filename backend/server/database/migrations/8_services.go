@@ -108,6 +108,9 @@ func init() {
                       ON UPDATE NO ACTION
                       ON DELETE CASCADE
                );
+
+               -- Create index for searching apps using control address and port.
+               CREATE INDEX app_ctrl_address_port_idx ON app (ctrl_address, ctrl_port);
            `)
 		return err
 	}, func(db migrations.DB) error {
