@@ -168,8 +168,8 @@ IPv4 and IPv6 Subnets per Kea Application
 One of the primary configuration aspects of any network is how the IP addressing is laid out.  This
 is represented in Kea with IPv4 and IPv6 subnets. Each subnet represents addresses being used on a
 physical link. Typically, certain parts of each subnet ("pools") are delegated to the DHCP server to
-manage. Stork is able to display this information. You can inspect subnets and pools within in two
-ways. First, you can inspect specific application. This will give you an overview of what kind of
+manage. Stork is able to display this information. One of the ways to inspect the subnets and pools
+within is by looking at the Kea applications. This will give you an overview of what kind of
 configuration this specific Kea application is serving. A list of configured subnets on that
 specific Kea application will be displayed. The following picture shows a simple view of the Kea
 DHCPv6 server running with a single subnet with three pools configured in it.
@@ -197,6 +197,11 @@ show only the first (192.0.2.0/24) subnet by searching for *0.2* string. You can
 specific pools. For example, you can easily filter the subnet with specific pool if you search for
 part of the pool ranges, e.g. *3.200*.
 
+.. note::
+
+   As of 0.4.0, Stork does not support shared networks yet. Also, if there are two or more servers
+   handling the same subnet (e.g. a HA pair), the same subnet will be listed multiple times. Both of
+   these limitations will be addressed in the future releases.
 
 Kea High Availability Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
