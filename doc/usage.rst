@@ -194,7 +194,7 @@ only or both. There is also omnisearch box available. You can type a string you 
 for. Note that for strings of 4 characters and more, the filtering takes place automatically. For
 shorter strings, you need to also hit Enter. For example, in the above situation you can choose to
 show only the first (192.0.2.0/24) subnet by searching for *0.2* string. You can also search for
-specific pools. For example you can easily filter the subnet with specific pool if you search for
+specific pools. For example, you can easily filter the subnet with specific pool if you search for
 part of the pool ranges, e.g. *3.200*.
 
 
