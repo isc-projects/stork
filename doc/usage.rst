@@ -162,6 +162,42 @@ which includes configuration of daemons that are never intended to be launched, 
 recommended to remove (or comment out) those configurations to eliminate unwanted
 warnings from Stork about inactive daemons.
 
+IPv4 and IPv6 Subnets per Kea Application
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+One of the primary configuration aspects of any network is how the IP addressing is laid out.  This
+is represented in Kea with IPv4 and IPv6 subnets. Each subnet represents addresses being used on a
+physical link. Typically, certain parts of each subnet ("pools") are delegated to the DHCP server to
+manage. Stork is able to display this information. You can inspect subnets and pools within in two
+ways. First, you can inspect specific application. This will give you an overview of what kind of
+configuration this specific Kea application is serving. A list of configured subnets on that
+specific Kea application will be displayed. The following picture shows a simple view of the Kea
+DHCPv6 server running with a single subnet with three pools configured in it.
+
+.. figure:: static/kea-subnets6.png
+   :alt: View of Subnets assigned to a single Kea application
+
+IPv4 and IPv6 Subnets in the whole Network
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is convenient to see the complete overview of all subnets configured in the network being
+monitored by Stork. To view all subnets, click on DHCP menu and choose Subnets. Note that you should
+have at least one machine added with Kea application running on it. The view shows all IPv4 and IPv6
+subnets with the address pools and the links to applications that are providing them. An example
+view of all subnets in the network is presented in figure below.
+
+.. figure:: static/kea-subnets-list.png
+   :alt: List of all subnets in the network
+
+There are filtering capabilities available. You can choose whether you want to see IPv4 only, IPv6
+only or both. There is also omnisearch box available. You can type a string you are looking
+for. Note that for strings of 4 characters and more, the filtering takes place automatically. For
+shorter strings, you need to also hit Enter. For example, in the above situation you can choose to
+show only the first (192.0.2.0/24) subnet by searching for *0.2* string. You can also search for
+specific pools. For example you can easily filter the subnet with specific pool if you search for
+part of the pool ranges, e.g. *3.200*.
+
+
 Kea High Availability Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -177,7 +213,6 @@ Stork UI.
 
 .. figure:: static/kea-ha-status.png
    :alt: High Availability status example
-
 
 The local server is the DHCP server (daemon) belonging to the application for which
 the status is displayed. The remote server is its active HA partner. The remote
