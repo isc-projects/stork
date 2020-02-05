@@ -1,5 +1,10 @@
 Stork 0.4.0 released on 2020-02-05.
 
+* 28 [doc] tomek
+
+    Subnets inspection is now documented.
+    (Gitlab #149)
+
 * 27 [func] matthijs
 
     Show more status information for named: up time, last reloaded,
