@@ -1,3 +1,10 @@
+* 29 [func] godfryd
+
+    Added initial support for DHCP shared networks. They are presented
+    on dedicated page. Subnets page now is also presenting subnets
+    that belong to shared networks.
+    (Gitlab #151)
+
 Stork 0.4.0 released on 2020-02-05.
 
 * 28 [doc] tomek
@@ -13,7 +20,7 @@ Stork 0.4.0 released on 2020-02-05.
 
 * 26 [func] godfryd
 
-    Added initial support for DHCP subnets. There are presented
+    Added initial support for DHCP subnets. They are presented
     on dedicated page and on apps' pages. For now only these subnets
     are listed which do not belong to shared networks.
     (Gitlab #47)
