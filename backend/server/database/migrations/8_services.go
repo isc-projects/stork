@@ -66,17 +66,32 @@ func init() {
              -- service. This table is in 1:1 relationship with the service table.
              -- A new entry should be created in this table of the ha_type in the
              -- service table is set to ha_dhcp.
-             CREATE TABLE IF NOT EXISTS ha_service (
-                 id BIGSERIAL NOT NULL,
-                 service_id bigint NOT NULL,
-                 ha_type hadhcptype NOT NULL,
-                 CONSTRAINT ha_service_pkey PRIMARY KEY (id),
-                 CONSTRAINT ha_service_id_unique UNIQUE (service_id),
-                 CONSTRAINT ha_service_service_id FOREIGN KEY (service_id)
-                    REFERENCES service (id) MATCH SIMPLE
-                    ON UPDATE CASCADE
-                    ON DELETE CASCADE
-              );
+              CREATE TABLE IF NOT EXISTS ha_service (
+                  id BIGSERIAL NOT NULL,
+                  service_id BIGINT NOT NULL,
+                  ha_type HADHCPTYPE NOT NULL,
+                  ha_mode TEXT,
+                  primary_id BIGINT,
+                  secondary_id BIGINT,
+                  primary_status_time TIME WITHOUT TIME ZONE,
+                  secondary_status_time TIME WITHOUT TIME ZONE,
+                  primary_last_state TEXT,
+                  secondary_last_state TEXT,
+                  backup_id BIGINT[],
+                  CONSTRAINT ha_service_pkey PRIMARY KEY (id),
+                  CONSTRAINT ha_service_id_unique UNIQUE (service_id),
+                  CONSTRAINT ha_service_primary_id FOREIGN KEY (primary_id)
+                      REFERENCES app (id) MATCH SIMPLE
+                      ON UPDATE NO ACTION
+                      ON DELETE NO ACTION,
+                  CONSTRAINT ha_service_secondary_id FOREIGN KEY (secondary_id)
+                      REFERENCES app (id) MATCH SIMPLE
+                      ON UPDATE NO ACTION
+                      ON DELETE NO ACTION,
+                  CONSTRAINT ha_service_service_id FOREIGN KEY (service_id)
+                      REFERENCES service (id) MATCH SIMPLE
+                      ON UPDATE CASCADE
+                      ON DELETE CASCADE);
 
               -- Automatically set service_type to ha_dhcp if inserting the
               -- new entry or updating existing entry in the ha_service.
