@@ -1,15 +1,15 @@
 <div>
-    <h2>DHCP Subnets</h2>
+    <h2>DHCP Shared Networks</h2>
     <div style="margin: 0 0 10px 5px;">
         <span>
             <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
-            Filter subnets:
+            Filter networks:
             <input
                 type="text"
                 pInputText
                 [(ngModel)]="filterText"
-                placeholder="subnet or any other field"
-                (keydown)="keyDownFilterText(subnetsTable, $event)"
+                placeholder="network or any other field"
+                (keydown)="keyDownFilterText(networksTable, $event)"
             />
         </span>
         <span style="margin-left: 40px;">
@@ -18,54 +18,46 @@
                 [options]="dhcpVersions"
                 [(ngModel)]="selectedDhcpVersion"
                 optionLabel="name"
-                (onChange)="filterByDhcpVersion(subnetsTable)"
+                (onChange)="filterByDhcpVersion(networksTable)"
             ></p-dropdown>
         </span>
     </div>
 
     <div>
         <p-table
-            #subnetsTable
-            [value]="subnets"
+            #networksTable
+            [value]="networks"
             [paginator]="true"
             [rows]="10"
             [lazy]="true"
-            (onLazyLoad)="loadSubnets($event)"
-            [totalRecords]="totalSubnets"
+            (onLazyLoad)="loadNetworks($event)"
+            [totalRecords]="totalNetworks"
             [rowsPerPageOptions]="[10, 30, 100]"
             [showCurrentPageReport]="true"
             currentPageReportTemplate="{currentPage} of {totalPages} pages"
         >
             <ng-template pTemplate="header">
                 <tr>
-                    <th style="width: 5rem;">Subnet ID</th>
-                    <th style="width: 11rem;">Subnet</th>
-                    <th>Pools</th>
-                    <th style="width: 6rem;">Shared Network</th>
+                    <th style="width: 7rem;">Name</th>
+                    <th>Subnets</th>
                     <th style="width: 4rem;">App ID</th>
                 </tr>
             </ng-template>
-            <ng-template pTemplate="body" let-sn>
+            <ng-template pTemplate="body" let-net>
                 <tr>
                     <td>
-                        {{ sn.id }}
-                    </td>
-                    <td>
-                        {{ sn.subnet }}
+                        {{ net.name }}
                     </td>
                     <td>
                         <span
-                            *ngFor="let p of sn.pools"
+                            *ngFor="let sn of net.subnets"
                             style="border-radius: 4px; background-color: #ddd; padding: 0 4px; margin-right: 5px;"
                         >
-                            {{ p }}
+                            {{ sn }}
                         </span>
                     </td>
                     <td>
-                        {{ sn.sharedNetwork }}
-                    </td>
-                    <td>
-                        <a routerLink="/apps/kea/{{ sn.appId }}">{{ sn.appId }}</a>
+                        <a routerLink="/apps/kea/{{ net.appId }}">{{ net.appId }}</a>
                     </td>
                 </tr>
             </ng-template>

@@ -11,6 +11,7 @@ import { AppsPageComponent } from './apps-page/apps-page.component'
 import { ProfilePageComponent } from './profile-page/profile-page.component'
 import { PasswordChangePageComponent } from './password-change-page/password-change-page.component'
 import { SubnetsPageComponent } from './subnets-page/subnets-page.component'
+import { SharedNetworksPageComponent } from './shared-networks-page/shared-networks-page.component'
 
 const routes: Routes = [
     {
@@ -49,6 +50,11 @@ const routes: Routes = [
     {
         path: 'dhcp/subnets',
         component: SubnetsPageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'dhcp/shared-networks',
+        component: SharedNetworksPageComponent,
         canActivate: [AuthGuard],
     },
     {

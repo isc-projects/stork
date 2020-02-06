@@ -1,3 +1,5 @@
+# Subnet
+
   Subnet:
     type: object
     properties:
@@ -11,6 +13,8 @@
         type: array
         items:
           type: string
+      sharedNetwork:
+        type: string
 
   Subnets:
     type: object
@@ -19,5 +23,30 @@
         type: array
         items:
           $ref: '#/definitions/Subnet'
+      total:
+        type: integer
+
+
+# Shared Network
+
+  SharedNetwork:
+    type: object
+    properties:
+      name:
+        type: string
+      appId:
+        type: integer
+      subnets:
+        type: array
+        items:
+          type: string
+
+  SharedNetworks:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/SharedNetwork'
       total:
         type: integer

@@ -32,3 +32,38 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /shared-networks:
+    get:
+      summary: Get list of DHCP shared networks.
+      description: >-
+        A list of shared networks is returned in items field accompanied by total count
+        which indicates total available number of records for given filtering
+        parameters.
+      operationId: getSharedNetworks
+      tags:
+        - DHCP
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - name: appId
+          in: query
+          description: Limit returned list of subnets to these which are served by given app ID.
+          type: integer
+        - name: dhcpVersion
+          in: query
+          description: Limit returned list of subnets to either DHCPv4 (4) or DHCPv6 (6).
+          type: integer
+        - name: text
+          in: query
+          description: Limit returned list of subnets to the ones containing indicated text.
+          type: string
+      responses:
+        200:
+          description: List of shared networks
+          schema:
+            $ref: "#/definitions/SharedNetworks"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

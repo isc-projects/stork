@@ -45,6 +45,11 @@ export class AppComponent implements OnInit {
                     icon: 'fa fa-project-diagram',
                     routerLink: '/dhcp/subnets',
                 },
+                {
+                    label: 'Shared Networks',
+                    icon: 'fa fa-network-wired',
+                    routerLink: '/dhcp/shared-networks',
+                },
             ],
         })
         this.menuItems.push({
