@@ -2,7 +2,6 @@ package kea
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -21,26 +20,11 @@ func GetDaemonHooks(dbApp *dbmodel.App) map[string][]string {
 		if dmn.Config == nil {
 			continue
 		}
-		rootNodeName := strings.Title(dmn.Name)
-		dhcpNode, ok := (*dmn.Config)[rootNodeName].(map[string]interface{})
-		if !ok {
-			log.Warnf("missing root node %s", rootNodeName)
-			continue
-		}
-		hookNodes, ok := dhcpNode["hooks-libraries"].([]interface{})
-		if !ok {
-			continue
-		}
+
+		libraries := dmn.Config.GetHooksLibraries()
 		hooks := []string{}
-		for _, hookNode := range hookNodes {
-			hookNode2, ok := hookNode.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			library, ok := hookNode2["library"].(string)
-			if ok {
-				hooks = append(hooks, library)
-			}
+		for _, library := range libraries {
+			hooks = append(hooks, library.Library)
 		}
 		hooksByDaemon[dmn.Name] = hooks
 	}
