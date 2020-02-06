@@ -26,6 +26,10 @@ issues:
         - gosec
       text: "G107"
 
+    - linters:
+        - gosec
+      text: "G202"
+
     - path: api/gomock
       linters:
         - gochecknoglobals
