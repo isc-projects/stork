@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
@@ -57,7 +58,14 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 
 	// Service 2 holds HA specific information.
 	service2.HAService = &BaseHAService{
-		HAType: "dhcp4",
+		HAType:              "dhcp4",
+		PrimaryID:           service2.Apps[0].ID,
+		SecondaryID:         service2.Apps[1].ID,
+		BackupID:            []int64{service2.Apps[2].ID, service2.Apps[3].ID},
+		PrimaryStatusTime:   time.Now().UTC(),
+		SecondaryStatusTime: time.Now().UTC(),
+		PrimaryLastState:    "load-balancing",
+		SecondaryLastState:  "syncing",
 	}
 	err = AddService(db, service2)
 	require.NoError(t, err)
@@ -110,6 +118,15 @@ func TestGetServiceById(t *testing.T) {
 	require.Len(t, service.Apps, 5)
 	require.NotNil(t, service.HAService)
 	require.Equal(t, "dhcp4", service.HAService.HAType)
+	require.Equal(t, service.Apps[0].ID, service.HAService.PrimaryID)
+	require.Equal(t, service.Apps[1].ID, service.HAService.SecondaryID)
+	require.Len(t, service.HAService.BackupID, 2)
+	require.Contains(t, service.HAService.BackupID, service.Apps[2].ID)
+	require.Contains(t, service.HAService.BackupID, service.Apps[3].ID)
+	require.False(t, service.HAService.PrimaryStatusTime.IsZero())
+	require.False(t, service.HAService.SecondaryStatusTime.IsZero())
+	require.Equal(t, "load-balancing", service.HAService.PrimaryLastState)
+	require.Equal(t, "syncing", service.HAService.SecondaryLastState)
 }
 
 // Test getting services for an app.

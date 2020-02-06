@@ -34,10 +34,18 @@ type AppToService struct {
 // High Availability specific information. It is embedded in the
 // Service structure.
 type BaseHAService struct {
-	tableName struct{} `pg:"ha_service"` //nolint:unused,structcheck
-	ID        int64
-	ServiceID int64
-	HAType    string
+	tableName           struct{} `pg:"ha_service"` //nolint:unused,structcheck
+	ID                  int64
+	ServiceID           int64
+	HAType              string
+	HAMode              string
+	PrimaryID           int64
+	SecondaryID         int64
+	BackupID            []int64 `pg:",array"`
+	PrimaryStatusTime   time.Time
+	SecondaryStatusTime time.Time
+	PrimaryLastState    string
+	SecondaryLastState  string
 }
 
 // A structure reflecting all SQL tables holding information about the
