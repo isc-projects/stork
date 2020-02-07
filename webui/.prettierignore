@@ -9,4 +9,5 @@ nginx.conf
 .gitkeep
 src/app/backend/*
 *.ico
+*.png
 dist
