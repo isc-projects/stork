@@ -40,7 +40,7 @@
                 <tr>
                     <th style="width: 7rem;">Name</th>
                     <th>Subnets</th>
-                    <th style="width: 4rem;">App ID</th>
+                    <th style="width: 10rem;">AppID @ Machine</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-net>
@@ -57,7 +57,7 @@
                         </span>
                     </td>
                     <td>
-                        <a routerLink="/apps/kea/{{ net.appId }}">{{ net.appId }}</a>
+                        <a routerLink="/apps/kea/{{ net.appId }}">{{ net.appId }} @ {{ net.machineAddress }}</a>
                     </td>
                 </tr>
             </ng-template>

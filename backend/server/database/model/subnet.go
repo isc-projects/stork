@@ -5,21 +5,25 @@ import (
 
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
-	//log "github.com/sirupsen/logrus"
+	// log "github.com/sirupsen/logrus"
 )
 
 type Subnet struct {
-	ID            int
-	AppID         int
-	Subnet        string
-	Pools         []map[string]interface{}
-	SharedNetwork string
+	ID             int
+	AppID          int
+	Subnet         string
+	Pools          []map[string]interface{}
+	SharedNetwork  string
+	MachineAddress string
+	AgentPort      int64
 }
 
 type SharedNetwork struct {
-	Name    string
-	AppID   int
-	Subnets []map[string]interface{}
+	Name           string
+	AppID          int
+	Subnets        []map[string]interface{}
+	MachineAddress string
+	AgentPort      int64
 }
 
 // Fetches a collection of subnets from the database. The offset and limit specify the
@@ -64,8 +68,10 @@ func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer
 	query := ``
 	whereAppID := ` WHERE id = ?appid`
 
-	sqSubnets := ` SELECT id AS app_id, jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp%d'->'subnet%d') AS sn, '' as shared_network FROM app`
-	sqNetworkSubnets := ` SELECT id AS app_id,`
+	sqSubnets := ` SELECT id AS app_id, machine_id, `
+	sqSubnets += ` jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp%d'->'subnet%d') AS sn, '' as shared_network`
+	sqSubnets += ` FROM app`
+	sqNetworkSubnets := ` SELECT id AS app_id, machine_id,`
 	sqNetworkSubnets += ` jsonb_array_elements(jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp%d'->'shared-networks')->'subnet%d') AS sn,`
 	sqNetworkSubnets += ` jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp%d'->'shared-networks')->>'name' AS shared_network`
 	sqNetworkSubnets += ` FROM app`
@@ -103,15 +109,16 @@ func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer
 
 	query += `) sq`
 
+	whereClause := ` `
 	if text != nil {
 		params.Text = "%" + *text + "%"
-		query += ` WHERE sn->>'subnet' like ?text`
-		query += ` OR sn->>'pools' like ?text`
-		query += ` OR shared_network like ?text`
+		whereClause = ` WHERE sn->>'subnet' like ?text`
+		whereClause += ` OR sn->>'pools' like ?text`
+		whereClause += ` OR shared_network like ?text`
 	}
 
 	// and then, first get total count
-	queryTotal := `SELECT count(*) FROM (` + query + `;`
+	queryTotal := `SELECT count(*) FROM (` + query + whereClause + `;`
 	var total int64
 	_, err = db.QueryOne(pg.Scan(&total), queryTotal, params)
 	if err != nil {
@@ -119,11 +126,14 @@ func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer
 	}
 
 	// then retrieve given page of rows
-	query = `SELECT app_id, sn->'id' as id, sn->>'subnet' as subnet, sn->'pools' as pools, shared_network FROM (` + query
-	query += ` ORDER BY subnet, id, app_id`
-	query += ` OFFSET ?offset LIMIT ?limit;`
+	query2 := `SELECT app_id, sn->'id' as id, sn->>'subnet' as subnet, sn->'pools' as pools, shared_network,`
+	query2 += `      machine.address as machine_address, machine.agent_port as agent_port FROM (` + query
+	query2 += ` JOIN machine ON machine_id  = machine.id `
+	query2 += whereClause
+	query2 += ` ORDER BY subnet, id, app_id`
+	query2 += ` OFFSET ?offset LIMIT ?limit;`
 
-	_, err = db.Query(&subnets, query, params)
+	_, err = db.Query(&subnets, query2, params)
 
 	if err != nil {
 		return []Subnet{}, 0, errors.Wrapf(err, "problem with getting subnets from db")
@@ -160,12 +170,12 @@ func GetSharedNetworksByPage(db *pg.DB, offset int64, limit int64, appID int64, 
 	//
 	// SELECT app_id, name, subnets
 	//    FROM (
-	//       SELECT id as app_id,
+	//       SELECT id as app_id, machine_id,
 	//              jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp4'->'shared-networks')->>'name' AS name,
 	//              jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp4'->'shared-networks')->'subnet4' AS subnets
 	//          FROM app
 	//       UNION
-	//       SELECT id as app_id,
+	//       SELECT id as app_id, machine_id,
 	//              jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp6'->'shared-networks')->>'name' AS name,
 	//              jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp6'->'shared-networks')->'subnet6' AS subnets
 	//          FROM app
@@ -180,7 +190,7 @@ func GetSharedNetworksByPage(db *pg.DB, offset int64, limit int64, appID int64, 
 	query := ``
 	whereAppID := ` WHERE id = ?appid`
 
-	sq := ` SELECT id as app_id,`
+	sq := ` SELECT id as app_id, machine_id,`
 	sq += `        jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp%d'->'shared-networks')->>'name' AS name,`
 	sq += `        jsonb_array_elements(jsonb_array_elements(details->'Daemons')->'Config'->'Dhcp%d'->'shared-networks')->'subnet%d' AS subnets`
 	sq += `        FROM app`
@@ -201,14 +211,15 @@ func GetSharedNetworksByPage(db *pg.DB, offset int64, limit int64, appID int64, 
 
 	query += `) sq`
 
+	whereClause := ` `
 	if text != nil {
 		params.Text = "%" + *text + "%"
-		query += ` WHERE name like ?text`
-		query += ` OR subnets::text like ?text`
+		whereClause = ` WHERE name like ?text`
+		whereClause += ` OR subnets::text like ?text`
 	}
 
 	// and then, first get total count
-	queryTotal := `SELECT count(*) FROM (` + query + `;`
+	queryTotal := `SELECT count(*) FROM (` + query + whereClause + `;`
 	var total int64
 	_, err = db.QueryOne(pg.Scan(&total), queryTotal, params)
 	if err != nil {
@@ -216,11 +227,14 @@ func GetSharedNetworksByPage(db *pg.DB, offset int64, limit int64, appID int64, 
 	}
 
 	// then retrieve given page of rows
-	query = `SELECT app_id, name, subnets FROM (` + query
-	query += ` ORDER BY name, app_id`
-	query += ` OFFSET ?offset LIMIT ?limit;`
+	query2 := `SELECT app_id, name, subnets, machine.address as machine_address, machine.agent_port as agent_port FROM (` + query
+	query2 += ` JOIN machine ON machine_id  = machine.id `
+	query2 += whereClause
+	query2 += ` ORDER BY name, app_id`
+	query2 += ` OFFSET ?offset LIMIT ?limit;`
 
-	_, err = db.Query(&sharedNetworks, query, params)
+	_, err = db.Query(&sharedNetworks, query2, params)
+
 
 	if err != nil {
 		return []SharedNetwork{}, 0, errors.Wrapf(err, "problem with getting shared networks from db")

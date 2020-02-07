@@ -37,7 +37,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 	// get subnets from db
 	dbSubnets, total, err := dbmodel.GetSubnetsByPage(r.Db, start, limit, appID, dhcpVer, params.Text)
 	if err != nil {
-		msg := fmt.Sprintf("cannot get subnets from db")
+		msg := "cannot get subnets from db"
 		log.Error(err)
 		rsp := dhcp.NewGetSubnetsDefault(500).WithPayload(&models.APIError{
 			Message: &msg,
@@ -58,11 +58,12 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 			}
 		}
 		subnet := &models.Subnet{
-			AppID:         int64(sn.AppID),
-			ID:            int64(sn.ID),
-			Pools:         pools,
-			Subnet:        sn.Subnet,
-			SharedNetwork: sn.SharedNetwork,
+			AppID:          int64(sn.AppID),
+			ID:             int64(sn.ID),
+			Pools:          pools,
+			Subnet:         sn.Subnet,
+			SharedNetwork:  sn.SharedNetwork,
+			MachineAddress: fmt.Sprintf("%s:%d", sn.MachineAddress, sn.AgentPort),
 		}
 		subnets.Items = append(subnets.Items, subnet)
 	}
@@ -117,9 +118,10 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 			}
 		}
 		sharedNetwork := &models.SharedNetwork{
-			Name:    net.Name,
-			AppID:   int64(net.AppID),
-			Subnets: subnets,
+			Name:           net.Name,
+			AppID:          int64(net.AppID),
+			Subnets:        subnets,
+			MachineAddress: fmt.Sprintf("%s:%d", net.MachineAddress, net.AgentPort),
 		}
 		sharedNetworks.Items = append(sharedNetworks.Items, sharedNetwork)
 	}
