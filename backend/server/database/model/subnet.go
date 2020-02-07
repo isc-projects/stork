@@ -107,6 +107,7 @@ func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer
 		params.Text = "%" + *text + "%"
 		query += ` WHERE sn->>'subnet' like ?text`
 		query += ` OR sn->>'pools' like ?text`
+		query += ` OR shared_network like ?text`
 	}
 
 	// and then, first get total count
