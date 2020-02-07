@@ -235,7 +235,6 @@ func GetSharedNetworksByPage(db *pg.DB, offset int64, limit int64, appID int64, 
 
 	_, err = db.Query(&sharedNetworks, query2, params)
 
-
 	if err != nil {
 		return []SharedNetwork{}, 0, errors.Wrapf(err, "problem with getting shared networks from db")
 	}
