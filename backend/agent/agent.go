@@ -98,7 +98,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 
 // ForwardRndcCommand forwards one rndc command sent by the Stork server to
 // the named daemon.
-func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.ForwardToBind9UsingRndcReq) (*agentapi.ForwardToBind9UsingRndcRsp, error) {
+func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.ForwardRndcCommandReq) (*agentapi.ForwardRndcCommandRsp, error) {
 	app := &App{
 		CtrlAddress: in.CtrlAddress,
 		CtrlPort:    in.CtrlPort,
@@ -106,7 +106,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	}
 
 	request := in.GetRndcRequest()
-	response := &agentapi.ForwardToBind9UsingRndcRsp{
+	response := &agentapi.ForwardRndcCommandRsp{
 		Status: &agentapi.Status{
 			Code: agentapi.Status_OK, // all ok
 		},

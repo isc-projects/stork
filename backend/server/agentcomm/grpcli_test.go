@@ -241,7 +241,7 @@ func TestForwardRndcCommand(t *testing.T) {
 		CtrlKey:     "",
 	}
 
-	rsp := agentapi.ForwardToBind9UsingRndcRsp{
+	rsp := agentapi.ForwardRndcCommandRsp{
 		Status: &agentapi.Status{
 			Code: 0,
 		},

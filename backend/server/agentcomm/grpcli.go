@@ -120,7 +120,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, agent
 	}
 
 	// Prepare the on-wire representation of the commands.
-	req := &agentapi.ForwardToBind9UsingRndcReq{
+	req := &agentapi.ForwardRndcCommandReq{
 		CtrlAddress: rndcSettings.CtrlAddress,
 		CtrlPort:    rndcSettings.CtrlPort,
 		CtrlKey:     rndcSettings.CtrlKey,

@@ -10,7 +10,7 @@ service Agent {
   rpc GetState(GetStateReq) returns (GetStateRsp) {}
 
   // Forward rndc command and return results.
-  rpc ForwardRndcCommand(ForwardToBind9UsingRndcReq) returns (ForwardToBind9UsingRndcRsp) {}
+  rpc ForwardRndcCommand(ForwardRndcCommandReq) returns (ForwardRndcCommandRsp) {}
 
   // Forward commands (one or more) to Kea Control Agent and return results.
   rpc ForwardToKeaOverHTTP(ForwardToKeaOverHTTPReq) returns (ForwardToKeaOverHTTPRsp) {}
@@ -101,7 +101,7 @@ message RndcRequest {
   string request = 1;
 }
 
-message ForwardToBind9UsingRndcReq {
+message ForwardRndcCommandReq {
   // Daemon access control
   string ctrlAddress = 1;
   int64 ctrlPort = 2;
@@ -119,7 +119,7 @@ message RndcResponse {
   Status status = 2;
 }
 
-message ForwardToBind9UsingRndcRsp {
+message ForwardRndcCommandRsp {
   // Status of call execution.
   Status status = 1;
 

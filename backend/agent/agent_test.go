@@ -222,7 +222,7 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndc)
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
-	req := &agentapi.ForwardToBind9UsingRndcReq{
+	req := &agentapi.ForwardRndcCommandReq{
 		CtrlAddress: "127.0.0.1",
 		CtrlPort:    1234,
 		CtrlKey:     "hmac-md5:abcd",
@@ -263,7 +263,7 @@ func TestForwardRndcCommandError(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndcError)
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
-	req := &agentapi.ForwardToBind9UsingRndcReq{
+	req := &agentapi.ForwardRndcCommandReq{
 		CtrlAddress: "127.0.0.1",
 		CtrlPort:    1234,
 		CtrlKey:     "hmac-md5:abcd",
@@ -282,7 +282,7 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndcEmpty)
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
-	req := &agentapi.ForwardToBind9UsingRndcReq{
+	req := &agentapi.ForwardRndcCommandReq{
 		CtrlAddress: "127.0.0.1",
 		CtrlPort:    1234,
 		CtrlKey:     "hmac-md5:abcd",
