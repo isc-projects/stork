@@ -273,3 +273,44 @@ func TestGetHAHooksLibraryEmptyHooks(t *testing.T) {
 	require.Empty(t, path)
 	require.Empty(t, params.ThisServerName)
 }
+
+// Checks if the HA peer structure validation works as expected.
+func TestPeerParametersSet(t *testing.T) {
+	p := Peer{}
+	require.False(t, p.IsSet())
+
+	name := "server1"
+	p.Name = &name
+	require.False(t, p.IsSet())
+
+	url := "http://example.org/"
+	p.URL = &url
+	require.False(t, p.IsSet())
+
+	role := "primary"
+	p.Role = &role
+	require.True(t, p.IsSet())
+
+	autoFailover := true
+	p.AutoFailover = &autoFailover
+	require.True(t, p.IsSet())
+}
+
+// Checks if the HA configuration validation works as expected.
+func TestHAConfigParametersSet(t *testing.T) {
+	cfg := KeaConfigHA{}
+
+	require.False(t, cfg.IsSet())
+
+	thisServerName := "server1"
+	cfg.ThisServerName = &thisServerName
+	require.False(t, cfg.IsSet())
+
+	haMode := "load-balancing"
+	cfg.Mode = &haMode
+	require.True(t, cfg.IsSet())
+
+	p := Peer{}
+	cfg.Peers = append(cfg.Peers, p)
+	require.False(t, cfg.IsSet())
+}

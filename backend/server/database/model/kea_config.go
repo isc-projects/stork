@@ -140,3 +140,22 @@ func (c *KeaConfig) GetHAHooksLibrary() (path string, params KeaConfigHA, ok boo
 
 	return path, params, ok
 }
+
+// Checks if the mandatory peer parameters are set. It doesn't check if the
+// values are correct.
+func (p Peer) IsSet() bool {
+	return p.Name != nil && p.URL != nil && p.Role != nil
+}
+
+// Checks if the mandatory Kea HA configuration parameters are set. It doesn't
+// check parameters consistency, though.
+func (c KeaConfigHA) IsSet() bool {
+	// Check if peers are valid.
+	for _, p := range c.Peers {
+		if !p.IsSet() {
+			return false
+		}
+	}
+	// Check other required parameters.
+	return c.ThisServerName != nil && c.Mode != nil
+}
