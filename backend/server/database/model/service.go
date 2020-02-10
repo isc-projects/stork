@@ -205,6 +205,17 @@ func UpdateBaseService(db *dbops.PgDB, service *BaseService) error {
 	return err
 }
 
+// Updates HA specific information for a service. It only affects the contents of
+// the ha_service table.
+func UpdateBaseHAService(db *dbops.PgDB, service *BaseHAService) error {
+	err := db.Update(service)
+	if err != nil {
+		err = errors.Wrapf(err, "problem with updating the HA configuration for service with id %d",
+			service.ServiceID)
+	}
+	return err
+}
+
 // Fetches a service from the database for a given service id.
 func GetService(db *dbops.PgDB, serviceID int64) (*Service, error) {
 	service := &Service{}
@@ -301,4 +312,10 @@ func DeleteService(db *dbops.PgDB, serviceID int64) error {
 		err = errors.Wrapf(err, "problem with deleting the service having id %d", serviceID)
 	}
 	return err
+}
+
+// Checks if the service is new, i.e. hasn't yet been inserted into
+// the database.
+func (s Service) IsNew() bool {
+	return s.ID == 0
 }

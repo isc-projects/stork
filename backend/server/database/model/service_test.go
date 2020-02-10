@@ -96,6 +96,28 @@ func TestUpdateBaseService(t *testing.T) {
 	require.Equal(t, service.Label, returned.Label)
 }
 
+// Test that HA specific information can be updated for a service.
+func TestUpdateBaseHAService(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	services := addTestServices(t, db)
+	require.GreaterOrEqual(t, len(services), 2)
+
+	// Modify HA information.
+	service := services[1].HAService
+	service.SecondaryLastState = "load-balancing"
+	err := UpdateBaseHAService(db, service)
+	require.NoError(t, err)
+
+	// Check that the updated information is returned.
+	returned, err := GetService(db, service.ServiceID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.NotNil(t, returned.HAService)
+	require.Equal(t, service.SecondaryLastState, returned.HAService.SecondaryLastState)
+}
+
 // Test getting the service by id.
 func TestGetServiceById(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -297,4 +319,16 @@ func TestDeleteAppFromService(t *testing.T) {
 	service, err := GetService(db, 1)
 	require.NoError(t, err)
 	require.Len(t, service.Apps, 4)
+}
+
+// Test the convenience function checking if the service is new,
+// i.e. hasn't yet been inserted into a database.
+func TestIsServiceNew(t *testing.T) {
+	// Create blank service lacking db ID. It should be considered new.
+	s := Service{}
+	require.True(t, s.IsNew())
+
+	// Set ID and expect that the service is no longer new.
+	s.ID = 100
+	require.False(t, s.IsNew())
 }
