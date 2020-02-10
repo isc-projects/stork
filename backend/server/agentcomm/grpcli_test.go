@@ -2,7 +2,6 @@ package agentcomm
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -261,27 +260,4 @@ func TestForwardRndcCommand(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, out.Output, "all good")
 	require.NoError(t, out.Error)
-}
-
-// Test an error case for forwarding rndc command.
-func TestForwardRndcCommandError(t *testing.T) {
-	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
-	defer teardown()
-
-	rndcSettings := Bind9Control{
-		CtrlAddress: "127.0.0.1",
-		CtrlPort:    953,
-		CtrlKey:     "",
-	}
-
-	err := errors.New("failed to forward")
-
-	mockAgentClient.EXPECT().ForwardRndcCommand(gomock.Any(), gomock.Any()).
-		Return(nil, err)
-
-	ctx := context.Background()
-	out, err2 := agents.ForwardRndcCommand(ctx, "127.0.0.1", 8080, rndcSettings, "test")
-	expectedErr := "failed to forward rndc command test: failed to forward"
-	require.Nil(t, out)
-	require.Equal(t, expectedErr, err2.Error())
 }

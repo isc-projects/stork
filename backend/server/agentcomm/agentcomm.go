@@ -56,16 +56,21 @@ type ConnectedAgents interface {
 
 // Agents management map. It tracks Agents currently connected to the Server.
 type connectedAgentsData struct {
-	Settings  *AgentsSettings
-	AgentsMap map[string]*Agent
+	Settings     *AgentsSettings
+	AgentsMap    map[string]*Agent
+	CommLoopReqs chan *commLoopReq
 }
 
 // Create new ConnectedAgents objects.
 func NewConnectedAgents(settings *AgentsSettings) ConnectedAgents {
 	agents := connectedAgentsData{
-		Settings:  settings,
-		AgentsMap: make(map[string]*Agent),
+		Settings:     settings,
+		AgentsMap:    make(map[string]*Agent),
+		CommLoopReqs: make(chan *commLoopReq),
 	}
+
+	go agents.communicationLoop()
+
 	return &agents
 }
 
@@ -74,6 +79,8 @@ func (agents *connectedAgentsData) Shutdown() {
 	for _, agent := range agents.AgentsMap {
 		agent.GrpcConn.Close()
 	}
+
+	close(agents.CommLoopReqs)
 }
 
 // Get Agent object by its address.
@@ -90,7 +97,7 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	agent.Address = address
 	err := agent.MakeGrpcConnection()
 	if err != nil {
-		log.Warn(err)
+		return nil, err
 	}
 
 	// Store it in Agents map

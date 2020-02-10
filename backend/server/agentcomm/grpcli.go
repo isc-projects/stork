@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 
 	agentapi "isc.org/stork/api"
 	storkutil "isc.org/stork/util"
@@ -47,27 +46,14 @@ type State struct {
 
 // Get version from agent.
 func (agents *connectedAgentsData) GetState(ctx context.Context, address string, agentPort int64) (*State, error) {
-	// Find agent in map.
 	addrPort := net.JoinHostPort(address, strconv.FormatInt(agentPort, 10))
-	agent, err := agents.GetConnectedAgent(addrPort)
-	if err != nil {
-		return nil, err
-	}
 
 	// Call agent for version.
-	grpcState, err := agent.Client.GetState(ctx, &agentapi.GetStateReq{})
+	resp, err := agents.sendAndRecvViaQueue(addrPort, &agentapi.GetStateReq{})
 	if err != nil {
-		// reconnect and try again
-		err2 := agent.MakeGrpcConnection()
-		if err2 != nil {
-			log.Warn(err)
-			return nil, errors.Wrap(err2, "problem with connection to agent")
-		}
-		grpcState, err = agent.Client.GetState(ctx, &agentapi.GetStateReq{})
-		if err != nil {
-			return nil, errors.Wrap(err, "problem with connection to agent")
-		}
+		return nil, errors.Wrap(err, "problem with connection to agent")
 	}
+	grpcState := resp.(*agentapi.GetStateRsp)
 
 	var apps []*App
 	for _, app := range grpcState.Apps {
@@ -111,13 +97,7 @@ type RndcOutput struct {
 }
 
 func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, agentAddress string, agentPort int64, rndcSettings Bind9Control, command string) (*RndcOutput, error) {
-	// Find the agent by address and port.
 	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
-	agent, err := agents.GetConnectedAgent(addrPort)
-	if err != nil {
-		err = errors.Wrapf(err, "there is no agent available at address %s:%d", agentAddress, agentPort)
-		return nil, err
-	}
 
 	// Prepare the on-wire representation of the commands.
 	req := &agentapi.ForwardRndcCommandReq{
@@ -130,11 +110,12 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, agent
 	}
 
 	// Send the command to the Stork agent.
-	response, err := agent.Client.ForwardRndcCommand(ctx, req)
+	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to forward rndc command %s", command)
 		return nil, err
 	}
+	response := resp.(*agentapi.ForwardRndcCommandRsp)
 
 	if response.Status.Code != agentapi.Status_OK {
 		err = errors.New(response.Status.Message)
@@ -163,13 +144,7 @@ type KeaCmdsResult struct {
 // Forwards a Kea command via the Stork Agent and Kea Control Agent and then
 // parses the response. caURL is URL to Kea Control Agent.
 func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caURL string, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error) {
-	// Find the agent by address and port.
 	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
-	agent, err := agents.GetConnectedAgent(addrPort)
-	if err != nil {
-		err = errors.Wrapf(err, "there is no agent available at address %s:%d", agentAddress, agentPort)
-		return nil, err
-	}
 
 	// Prepare the on-wire representation of the commands.
 	fdReq := &agentapi.ForwardToKeaOverHTTPReq{
@@ -182,11 +157,12 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, age
 	}
 
 	// Send the commands to the Stork agent.
-	fdRsp, err := agent.Client.ForwardToKeaOverHTTP(ctx, fdReq)
+	resp, err := agents.sendAndRecvViaQueue(addrPort, fdReq)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to forward Kea commands to %s, commands were: %+v", caURL, fdReq.KeaRequests)
 		return nil, err
 	}
+	fdRsp := resp.(*agentapi.ForwardToKeaOverHTTPRsp)
 
 	result := &KeaCmdsResult{}
 	result.Error = nil
