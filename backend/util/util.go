@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"regexp"
 	"runtime"
+	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -17,6 +19,29 @@ func UTCNow() time.Time {
 // Returns URL of the host with port.
 func HostWithPortURL(address string, port int64) string {
 	return fmt.Sprintf("http://%s:%d/", address, port)
+}
+
+// Parses URL into host and port.
+func ParseURL(url string) (host string, port int64) {
+	ptrn := regexp.MustCompile(`https{0,1}:\/\/\[{1}(\S+)\]{1}(:([0-9]+)){0,1}`)
+	m := ptrn.FindStringSubmatch(url)
+
+	if len(m) == 0 {
+		ptrn := regexp.MustCompile(`https{0,1}:\/\/([^\s\:\/]+)(:([0-9]+)){0,1}`)
+		m = ptrn.FindStringSubmatch(url)
+	}
+
+	if len(m) > 1 {
+		host = m[1]
+	}
+
+	if len(m) > 3 {
+		p, err := strconv.Atoi(m[3])
+		if err == nil {
+			port = int64(p)
+		}
+	}
+	return host, port
 }
 
 func SetupLogging() {
