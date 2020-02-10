@@ -106,10 +106,10 @@
                 </td>
             </tr>
         </ng-template>
-        <!-- TODO: this looks bad in UI, consider better way for presenting total records in UI -->
-        <!-- <ng-template pTemplate="paginatorright" let-state> -->
-        <!--   Total: {{state.totalRecords}} apps -->
-        <!-- </ng-template> -->
+        <ng-template pTemplate="paginatorright" let-state>
+            Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
+            {{ state.totalRecords === 1 ? 'app' : 'apps' }}
+        </ng-template>
     </p-table>
 </div>
 
