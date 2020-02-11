@@ -23,7 +23,7 @@ func (agents *connectedAgentsData) communicationLoop() {
 			}
 			agents.handleRequest(req)
 		case <-time.After(10 * time.Second):
-			//log.Printf("timeout 10s")
+			// To be implemented: gathering stats periodically
 		}
 	}
 }
@@ -80,7 +80,9 @@ func (agents *connectedAgentsData) handleRequest(req *commLoopReq) {
 	response, err := doCall(ctx, agent, req.ReqData)
 
 	if err != nil {
-		// reconnect and try again
+		// GetConnectedAgent remembers the grpc connection so it might
+		// return an already existing connection.  This connection may
+		// be broken so we should retry at least once.
 		err2 := agent.MakeGrpcConnection()
 		if err2 != nil {
 			log.Warn(err)
