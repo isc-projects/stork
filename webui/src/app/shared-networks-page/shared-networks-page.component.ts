@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core'
 
 import { DHCPService } from '../backend/api/api'
 
+/**
+ * Component for presenting shared networks in a table.
+ */
 @Component({
     selector: 'app-shared-networks-page',
     templateUrl: './shared-networks-page.component.html',
