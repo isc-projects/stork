@@ -91,9 +91,10 @@ func (agents *connectedAgentsData) handleRequest(req *commLoopReq) {
 		}
 
 		// do call once again
-		response, err = doCall(ctx, agent, req.ReqData)
-		if err != nil {
-			req.RespChan <- &channelResp{Response: nil, Err: errors.Wrap(err, "problem with connection to agent")}
+		response, err2 = doCall(ctx, agent, req.ReqData)
+		if err2 != nil {
+			log.Warn(err)
+			req.RespChan <- &channelResp{Response: nil, Err: errors.Wrap(err2, "problem with connection to agent")}
 			return
 		}
 	}
