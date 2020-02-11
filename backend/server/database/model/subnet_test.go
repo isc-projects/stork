@@ -8,6 +8,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
+// Check that basic functionality of subnets works, returns proper data and can be filtered.
 func TestGetSubnetsByPageBasic(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -239,6 +240,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.Equal(t, 3, subnets[0].ID)
 }
 
+// Check if getting subnets works when there is no subnets in config of kea app.
 func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -276,6 +278,7 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	require.Len(t, subnets, 0)
 }
 
+// Check that basic functionality of shared newtorks works, returns proper data and can be filtered.
 func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
