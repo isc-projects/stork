@@ -51,7 +51,7 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 	// Call agent for version.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, &agentapi.GetStateReq{})
 	if err != nil {
-		return nil, errors.Wrap(err, "problem with connection to agent")
+		return nil, errors.Wrapf(err, "failed to get state from agent %s", addrPort)
 	}
 	grpcState := resp.(*agentapi.GetStateRsp)
 
@@ -112,7 +112,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, agent
 	// Send the command to the Stork agent.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to forward rndc command %s", command)
+		err = errors.Wrapf(err, "failed to forward rndc command %s to agent %s", command, addrPort)
 		return nil, err
 	}
 	response := resp.(*agentapi.ForwardRndcCommandRsp)
@@ -159,7 +159,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, age
 	// Send the commands to the Stork agent.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, fdReq)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to forward Kea commands to %s, commands were: %+v", caURL, fdReq.KeaRequests)
+		err = errors.Wrapf(err, "failed to forward Kea commands to agent %s, to %s, commands were: %+v", addrPort, caURL, fdReq.KeaRequests)
 		return nil, err
 	}
 	fdRsp := resp.(*agentapi.ForwardToKeaOverHTTPRsp)
