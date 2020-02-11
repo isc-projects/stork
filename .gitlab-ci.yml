@@ -32,11 +32,17 @@ before_script:
 
 lint_go:
   stage: build
+  tags:
+    - linux
+    - amd64
   script:
     - rake lint_go
 
 unittest_backend:
   stage: build
+  tags:
+    - linux
+    - amd64
   services:
     - name: registry.gitlab.isc.org/isc-projects/stork/ci-postgres:11
       alias: postgres
@@ -45,11 +51,17 @@ unittest_backend:
 
 ci_ui:
   stage: build
+  tags:
+    - linux
+    - amd64
   script:
     - rake ci_ui
 
 build_webui:
   stage: build
+  tags:
+    - linux
+    - amd64
   script:
     - rake build_ui
   artifacts:
@@ -60,6 +72,9 @@ build_webui:
 
 build_backend:
   stage: build
+  tags:
+    - linux
+    - amd64
   script:
     - rake build_backend
   artifacts:
@@ -72,6 +87,9 @@ build_backend:
 
 danger:
   stage: build
+  tags:
+    - linux
+    - amd64
   image: registry.gitlab.isc.org/isc-projects/stork/ci-danger
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
@@ -87,6 +105,9 @@ danger:
 
 tarball:
   stage: build
+  tags:
+    - linux
+    - amd64
   script:
     - rake tarball
   artifacts:
