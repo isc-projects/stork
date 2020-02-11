@@ -3,6 +3,7 @@ package restservice
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/asaskevich/govalidator"
@@ -192,14 +193,14 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
-		rsp := services.NewGetMachineStateDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewGetMachineStateDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 	if dbMachine == nil {
 		msg := fmt.Sprintf("cannot find machine with id %d", params.ID)
-		rsp := services.NewGetMachineStateDefault(404).WithPayload(&models.APIError{
+		rsp := services.NewGetMachineStateDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -207,7 +208,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 
 	errStr := getMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents)
 	if errStr != "" {
-		rsp := services.NewGetMachineStateDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewGetMachineStateDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
 		})
 		return rsp
@@ -254,7 +255,7 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 	if err != nil {
 		log.Error(err)
 		msg := "cannot get machines from db"
-		rsp := services.NewGetMachinesDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewGetMachinesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -279,14 +280,14 @@ func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachinePara
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
-		rsp := services.NewGetMachineDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewGetMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 	if dbMachine == nil {
 		msg := fmt.Sprintf("cannot find machine with id %d", params.ID)
-		rsp := services.NewGetMachineDefault(404).WithPayload(&models.APIError{
+		rsp := services.NewGetMachineDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -302,7 +303,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	if !govalidator.IsHost(*params.Machine.Address) {
 		log.Warnf("problem with parsing address %s", addr)
 		msg := "cannot parse address"
-		rsp := services.NewCreateMachineDefault(400).WithPayload(&models.APIError{
+		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -310,7 +311,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	if params.Machine.AgentPort <= 0 || params.Machine.AgentPort > 65535 {
 		log.Warnf("bad agent port %d", params.Machine.AgentPort)
 		msg := "bad port"
-		rsp := services.NewCreateMachineDefault(400).WithPayload(&models.APIError{
+		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -320,7 +321,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	if err == nil && dbMachine != nil && dbMachine.Deleted.IsZero() {
 		msg := fmt.Sprintf("machine %s:%d already exists", addr, params.Machine.AgentPort)
 		log.Warnf(msg)
-		rsp := services.NewCreateMachineDefault(400).WithPayload(&models.APIError{
+		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -332,7 +333,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		if err != nil {
 			msg := fmt.Sprintf("cannot store machine %s", addr)
 			log.Error(err)
-			rsp := services.NewCreateMachineDefault(500).WithPayload(&models.APIError{
+			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
@@ -343,7 +344,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 	errStr := getMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents)
 	if errStr != "" {
-		rsp := services.NewCreateMachineDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
 		})
 		return rsp
@@ -362,7 +363,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	if !govalidator.IsHost(*params.Machine.Address) {
 		log.Warnf("problem with parsing address %s", addr)
 		msg := "cannot parse address"
-		rsp := services.NewUpdateMachineDefault(400).WithPayload(&models.APIError{
+		rsp := services.NewUpdateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -370,7 +371,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	if params.Machine.AgentPort <= 0 || params.Machine.AgentPort > 65535 {
 		log.Warnf("bad agent port %d", params.Machine.AgentPort)
 		msg := "bad port"
-		rsp := services.NewUpdateMachineDefault(400).WithPayload(&models.APIError{
+		rsp := services.NewUpdateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -380,14 +381,14 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
-		rsp := services.NewUpdateMachineDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewUpdateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 	if dbMachine == nil {
 		msg := fmt.Sprintf("cannot find machine with id %d", params.ID)
-		rsp := services.NewUpdateMachineDefault(404).WithPayload(&models.APIError{
+		rsp := services.NewUpdateMachineDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -399,7 +400,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		if err == nil && dbMachine2 != nil && dbMachine2.ID != dbMachine.ID {
 			msg := fmt.Sprintf("machine with address %s:%d already exists",
 				*params.Machine.Address, params.Machine.AgentPort)
-			rsp := services.NewUpdateMachineDefault(400).WithPayload(&models.APIError{
+			rsp := services.NewUpdateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
@@ -413,7 +414,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	if err != nil {
 		msg := fmt.Sprintf("cannot update machine with id %d in db", params.ID)
 		log.Error(err)
-		rsp := services.NewUpdateMachineDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewUpdateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -459,7 +460,7 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 	} else if err != nil {
 		msg := fmt.Sprintf("cannot delete machine %d", params.ID)
 		log.Error(err)
-		rsp := services.NewDeleteMachineDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewDeleteMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -469,7 +470,7 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 	if err != nil {
 		msg := fmt.Sprintf("cannot delete machine %d", params.ID)
 		log.Error(err)
-		rsp := services.NewDeleteMachineDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewDeleteMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -594,7 +595,7 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 	if err != nil {
 		log.Error(err)
 		msg := "cannot get apps from db"
-		rsp := services.NewGetAppsDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewGetAppsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -619,14 +620,14 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 	if err != nil {
 		msg := fmt.Sprintf("cannot get app with id %d from db", params.ID)
 		log.Error(err)
-		rsp := services.NewGetAppDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewGetAppDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 	if dbApp == nil {
 		msg := fmt.Sprintf("cannot find app with id %d", params.ID)
-		rsp := services.NewGetAppDefault(404).WithPayload(&models.APIError{
+		rsp := services.NewGetAppDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -648,7 +649,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 	if err != nil {
 		log.Error(err)
 		msg := fmt.Sprintf("cannot get app with id %d from the database", params.ID)
-		rsp := services.NewGetAppServicesStatusDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewGetAppServicesStatusDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -657,7 +658,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 	if dbApp == nil {
 		msg := fmt.Sprintf("cannot find app with id %d", params.ID)
 		log.Warn(errors.New(msg))
-		rsp := services.NewGetAppDefault(404).WithPayload(&models.APIError{
+		rsp := services.NewGetAppDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -672,7 +673,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 		if err != nil {
 			log.Error(err)
 			msg := fmt.Sprintf("cannot get status of the app with id %d", params.ID)
-			rsp := services.NewGetAppServicesStatusDefault(500).WithPayload(&models.APIError{
+			rsp := services.NewGetAppServicesStatusDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
@@ -724,7 +725,7 @@ func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStats
 	if err != nil {
 		msg := fmt.Sprintf("cannot get all apps from db")
 		log.Error(err)
-		rsp := services.NewGetAppsStatsDefault(500).WithPayload(&models.APIError{
+		rsp := services.NewGetAppsStatsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp

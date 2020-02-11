@@ -3,6 +3,7 @@ package restservice
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
 	log "github.com/sirupsen/logrus"
@@ -39,7 +40,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 	if err != nil {
 		msg := "cannot get subnets from db"
 		log.Error(err)
-		rsp := dhcp.NewGetSubnetsDefault(500).WithPayload(&models.APIError{
+		rsp := dhcp.NewGetSubnetsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -99,7 +100,7 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 	if err != nil {
 		msg := fmt.Sprintf("cannot get shared network from db")
 		log.Error(err)
-		rsp := dhcp.NewGetSharedNetworksDefault(500).WithPayload(&models.APIError{
+		rsp := dhcp.NewGetSharedNetworksDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp

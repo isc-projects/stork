@@ -3,6 +3,7 @@ package restservice
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -99,7 +100,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		rsp := users.NewGetUsersDefault(500).WithPayload(&rspErr)
+		rsp := users.NewGetUsersDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
 	}
 
@@ -130,7 +131,7 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		rsp := users.NewGetUserDefault(500).WithPayload(&rspErr)
+		rsp := users.NewGetUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
 	} else if su == nil {
 		msg := fmt.Sprintf("failed to find user with id %v in the database", id)
@@ -141,7 +142,7 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		rsp := users.NewGetUserDefault(404).WithPayload(&rspErr)
+		rsp := users.NewGetUserDefault(http.StatusNotFound).WithPayload(&rspErr)
 		return rsp
 	}
 
@@ -186,7 +187,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		return users.NewCreateUserDefault(500).WithPayload(&rspErr)
+		return users.NewCreateUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 	}
 
 	*u.ID = int64(su.ID)
@@ -235,7 +236,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		rsp := users.NewUpdateUserDefault(500).WithPayload(&rspErr)
+		rsp := users.NewUpdateUserDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
 	}
 
@@ -264,7 +265,7 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		rsp := users.NewUpdateUserPasswordDefault(500).WithPayload(&rspErr)
+		rsp := users.NewUpdateUserPasswordDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
 	} else if !auth {
 		log.Infof("specified current password is invalid while trying to update existing password for user id %d",
@@ -274,7 +275,7 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		rsp := users.NewUpdateUserPasswordDefault(400).WithPayload(&rspErr)
+		rsp := users.NewUpdateUserPasswordDefault(http.StatusBadRequest).WithPayload(&rspErr)
 		return rsp
 	}
 
@@ -292,7 +293,7 @@ func (r *RestAPI) GetGroups(ctx context.Context, params users.GetGroupsParams) m
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		rsp := users.NewGetGroupsDefault(500).WithPayload(&rspErr)
+		rsp := users.NewGetGroupsDefault(http.StatusInternalServerError).WithPayload(&rspErr)
 		return rsp
 	}
 

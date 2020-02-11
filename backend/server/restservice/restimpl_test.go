@@ -3,6 +3,7 @@ package restservice
 import (
 	//"log"
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -52,7 +53,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 	rsp := rapi.GetMachineState(ctx, params)
 	require.IsType(t, &services.GetMachineStateDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetMachineStateDefault)
-	require.Equal(t, 404, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 	require.Equal(t, "cannot find machine with id 123", *defaultRsp.Payload.Message)
 
 	// add machine
@@ -257,7 +258,7 @@ func TestCreateMachine(t *testing.T) {
 	rsp := rapi.CreateMachine(ctx, params)
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp := rsp.(*services.CreateMachineDefault)
-	require.Equal(t, 400, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "cannot parse address", *defaultRsp.Payload.Message)
 
 	// bad port
@@ -271,7 +272,7 @@ func TestCreateMachine(t *testing.T) {
 	rsp = rapi.CreateMachine(ctx, params)
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.CreateMachineDefault)
-	require.Equal(t, 400, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "bad port", *defaultRsp.Payload.Message)
 
 	// all ok
@@ -331,7 +332,7 @@ func TestGetMachine(t *testing.T) {
 	rsp := rapi.GetMachine(ctx, params)
 	require.IsType(t, &services.GetMachineDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetMachineDefault)
-	require.Equal(t, 404, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 	require.Equal(t, "cannot find machine with id 123", *defaultRsp.Payload.Message)
 
 	// add machine
@@ -409,7 +410,7 @@ func TestUpdateMachine(t *testing.T) {
 	rsp := rapi.UpdateMachine(ctx, params)
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
 	defaultRsp := rsp.(*services.UpdateMachineDefault)
-	require.Equal(t, 404, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 	require.Equal(t, "cannot find machine with id 123", *defaultRsp.Payload.Message)
 
 	// add machine
@@ -452,7 +453,7 @@ func TestUpdateMachine(t *testing.T) {
 	rsp = rapi.UpdateMachine(ctx, params)
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.UpdateMachineDefault)
-	require.Equal(t, 400, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "machine with address localhost:8080 already exists", *defaultRsp.Payload.Message)
 
 	// update second machine with bad address
@@ -467,7 +468,7 @@ func TestUpdateMachine(t *testing.T) {
 	rsp = rapi.UpdateMachine(ctx, params)
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.UpdateMachineDefault)
-	require.Equal(t, 400, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "cannot parse address", *defaultRsp.Payload.Message)
 }
 
@@ -539,7 +540,7 @@ func TestGetApp(t *testing.T) {
 	rsp := rapi.GetApp(ctx, params)
 	require.IsType(t, &services.GetAppDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetAppDefault)
-	require.Equal(t, 404, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 	require.Equal(t, "cannot find app with id 123", *defaultRsp.Payload.Message)
 
 	// add machine
@@ -592,7 +593,7 @@ func TestRestGetApp(t *testing.T) {
 	rsp := rapi.GetApp(ctx, params)
 	require.IsType(t, &services.GetAppDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetAppDefault)
-	require.Equal(t, 404, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 	require.Equal(t, "cannot find app with id 123", *defaultRsp.Payload.Message)
 
 	// add machine

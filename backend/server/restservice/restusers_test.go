@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -178,7 +179,7 @@ func TestUpdateUserPassword(t *testing.T) {
 	rsp = rapi.UpdateUserPassword(ctx, params)
 	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
 	defaultRsp := rsp.(*users.UpdateUserPasswordDefault)
-	require.Equal(t, 400, getStatusCode(*defaultRsp))
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 }
 
 // Tests that multiple groups can be fetched from the database.
