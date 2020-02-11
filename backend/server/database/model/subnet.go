@@ -7,6 +7,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Represents a subnet retrieved from database from app table,
+// form config json field.
 type Subnet struct {
 	ID             int
 	AppID          int
@@ -17,6 +19,8 @@ type Subnet struct {
 	AgentPort      int64
 }
 
+// Represents a shared network retrieved from database from app table,
+// form config json field.
 type SharedNetwork struct {
 	Name           string
 	AppID          int
@@ -47,7 +51,7 @@ func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer
 	params.Offset = offset
 	params.Limit = limit
 
-	// Build a query do goes through apps and their configs and retrieves list of subnets
+	// Build a query that goes through apps and their configs and retrieves list of subnets
 	// for both DHCPv4 and v6.
 	// Example of such query:
 	//
@@ -106,7 +110,7 @@ func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer
 		}
 	}
 
-	query += `) sq`
+	query += `) sq` // this 'sq' is a subquery name
 
 	whereClause := ` `
 	if text != nil {
@@ -163,7 +167,7 @@ func GetSharedNetworksByPage(db *pg.DB, offset int64, limit int64, appID int64, 
 	params.Offset = offset
 	params.Limit = limit
 
-	// Build a query do goes through apps and their configs and retrieves list of shared networks with their subnets
+	// Build a query that goes through apps and their configs and retrieves list of shared networks with their subnets
 	// for both DHCPv4 and v6.
 	// Example of such query:
 	//
@@ -208,7 +212,7 @@ func GetSharedNetworksByPage(db *pg.DB, offset int64, limit int64, appID int64, 
 		}
 	}
 
-	query += `) sq`
+	query += `) sq` // this 'sq' is a subquery name
 
 	whereClause := ` `
 	if text != nil {
