@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
-	// log "github.com/sirupsen/logrus"
 )
 
 type Subnet struct {
