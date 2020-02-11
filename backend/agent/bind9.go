@@ -66,6 +66,63 @@ func getRndcKey(contents, name string) (controlKey string) {
 	return controlKey
 }
 
+// parseInetSpec parses an inet statement from a named configuration excerpt.
+// The inet statement is defined by inet_spec:
+//
+//    inet_spec = ( ip_addr | * ) [ port ip_port ]
+//                allow { address_match_list }
+//                keys { key_list };
+//
+// This function returns the ip_addr, port and the first key that is
+// referenced in the key_list.  If instead of an ip_addr, the asterisk (*) is
+// specified, this function will return 'localhost' as an address.
+func parseInetSpec(config, excerpt string) (address string, port int64, key string) {
+	ptrn := regexp.MustCompile(`(?s)inet\s+(\S+\s*\S*\s*\d*)\s+allow\s*\{\s*\S+\s*;\s*\}(.*);`)
+	match := ptrn.FindStringSubmatch(excerpt)
+	if len(match) == 0 {
+		log.Warnf("cannot parse BIND 9 inet configuration: no match (%+v)", config)
+		return "", 0, ""
+	}
+
+	inetSpec := regexp.MustCompile(`\s+`).Split(match[1], 3)
+	switch len(inetSpec) {
+	case 1:
+		address = inetSpec[0]
+	case 3:
+		address = inetSpec[0]
+		if inetSpec[1] != "port" {
+			log.Warnf("cannot parse BIND 9 control port: bad port statement (%+v)", inetSpec)
+			return "", 0, ""
+		}
+
+		iPort, err := strconv.Atoi(inetSpec[2])
+		if err != nil {
+			log.Warnf("cannot parse BIND 9 control port: %+v (%+v)", inetSpec, err)
+			return "", 0, ""
+		}
+		port = int64(iPort)
+	case 2:
+	default:
+		log.Warnf("cannot parse BIND 9 inet_spec configuration: no match (%+v)", inetSpec)
+		return "", 0, ""
+	}
+
+	if len(match) == 3 {
+		// Find a key clause
+		ptrn = regexp.MustCompile(`(?s)keys\s*\{\s*\"(\S+)\"\s*;\s*\}\s*`)
+		keyName := ptrn.FindStringSubmatch(match[2])
+		if len(keyName) > 1 {
+			key = getRndcKey(config, keyName[1])
+		}
+	}
+
+	if address == "*" {
+		address = "localhost"
+	}
+
+	return address, port, key
+}
+
 // getCtrlAddressFromBind9Config retrieves the rndc control access address,
 // port, and secret key (if configured) from the configuration `path`.
 //
@@ -113,57 +170,13 @@ func getCtrlAddressFromBind9Config(path string) (controlAddress string, controlP
 
 	// We only pick the first match, but the controls clause
 	// can list multiple control access points.
-	// inet_spec = ( ip_addr | * ) [ port ip_port ]
-	//             allow { address_match_list }
-	//             keys { key_list };
-	ptrn = regexp.MustCompile(`(?s)inet\s+(\S+\s*\S*\s*\d*)\s+allow\s*\{\s*\S+\s*;\s*\}(.*);`)
-	match := ptrn.FindStringSubmatch(controls[1])
-	if len(match) == 0 {
-		log.Warnf("cannot parse BIND 9 inet configuration: %+v, %+v", controls[1], err)
-		return "", 0, ""
-	}
-
-	inetSpec := regexp.MustCompile(`\s+`).Split(match[1], 3)
-	port := RndcDefaultPort
-	var address string
-	switch len(inetSpec) {
-	case 1:
-		address = inetSpec[0]
-	case 3:
-		address = inetSpec[0]
-		if inetSpec[1] != "port" {
-			log.Warnf("cannot parse BIND 9 control port: %+v, %+v", inetSpec, err)
-			return "", 0, ""
-		}
-
-		var err error
-		port, err = strconv.Atoi(inetSpec[2])
-		if err != nil {
-			log.Warnf("cannot parse BIND 9 control port: %+v, %+v", inetSpec, err)
-			return "", 0, ""
-		}
-	case 2:
-	default:
-		log.Warnf("cannot parse BIND 9 inet_spec configuration: %+v, %+v", inetSpec, err)
-		return "", 0, ""
-	}
-
-	if len(match) == 3 {
-		// Find a key clause
-		ptrn = regexp.MustCompile(`(?s)keys\s*\{\s*\"(\S+)\"\s*;\s*\}\s*`)
-		keyName := ptrn.FindStringSubmatch(match[2])
-		if len(keyName) > 1 {
-			controlKey = getRndcKey(string(text), keyName[1])
+	controlAddress, controlPort, controlKey = parseInetSpec(string(text), controls[1])
+	if controlAddress != "" {
+		// If no port was provided, use the default rndc port.
+		if controlPort == 0 {
+			controlPort = RndcDefaultPort
 		}
 	}
-
-	if address == "*" {
-		controlAddress = "localhost"
-	} else {
-		controlAddress = address
-	}
-	controlPort = int64(port)
-
 	return controlAddress, controlPort, controlKey
 }
 
