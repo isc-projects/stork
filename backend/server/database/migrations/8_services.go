@@ -22,20 +22,20 @@ func init() {
              CREATE TYPE HADHCPTYPE AS ENUM
                  ('dhcp4', 'dhcp6');
 
-             -- Trigger function generating a default label for a new service.
-             -- The label is only generated if the label specified by the
+             -- Trigger function generating a default name for a new service.
+             -- The name is only generated if the name specified by the
              -- user is blank.
-             CREATE OR REPLACE FUNCTION service_label_gen()
+             CREATE OR REPLACE FUNCTION service_name_gen()
                  RETURNS trigger
                  LANGUAGE 'plpgsql'
                  AS $function$
              BEGIN
                  -- Remove all of the whitespaces.
-                 IF NEW.label IS NOT NULL THEN
-	                 NEW.label = TRIM(NEW.label);
+                 IF NEW.name IS NOT NULL THEN
+	                 NEW.name = TRIM(NEW.name);
                  END IF;
-                 IF NEW.label IS NULL OR NEW.label = '' THEN
-                   NEW.label := 'service-' || to_char(NEW.id, 'FM0000000000');
+                 IF NEW.name IS NULL OR NEW.name = '' THEN
+                   NEW.name := 'service-' || to_char(NEW.id, 'FM0000000000');
                  END IF;
                  RETURN NEW;
              END;
@@ -49,18 +49,18 @@ func init() {
              -- this relationship.
              CREATE TABLE IF NOT EXISTS service (
                  id BIGSERIAL NOT NULL,
-                 label TEXT COLLATE pg_catalog."default",
+                 name TEXT COLLATE pg_catalog."default",
                  created TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
                  service_type SERVICETYPE,
                  CONSTRAINT service_pkey PRIMARY KEY (id),
-                 CONSTRAINT service_label_unique_idx UNIQUE (label),
-                 CONSTRAINT service_label_not_blank CHECK (label IS NOT NULL AND btrim(label) <> ''::text)
+                 CONSTRAINT service_name_unique_idx UNIQUE (name),
+                 CONSTRAINT service_name_not_blank CHECK (name IS NOT NULL AND btrim(name) <> ''::text)
              );
 
-             -- Generate a label for an inserted service if it is blank.
+             -- Generate a name for an inserted service if it is blank.
              CREATE TRIGGER service_before_insert
                  BEFORE INSERT OR UPDATE ON service
-                    FOR EACH ROW EXECUTE PROCEDURE service_label_gen();
+                    FOR EACH ROW EXECUTE PROCEDURE service_name_gen();
 
              -- This table includes a details about the DHCP High Availability
              -- service. This table is in 1:1 relationship with the service table.
@@ -134,7 +134,7 @@ func init() {
                DROP TABLE IF EXISTS ha_service;
                DROP TRIGGER IF EXISTS service_before_insert ON service;
                DROP TABLE IF EXISTS service;
-               DROP FUNCTION IF EXISTS service_label_gen;
+               DROP FUNCTION IF EXISTS service_name_gen;
                DROP TYPE servicetype;
                DROP TYPE hadhcptype;
            `)

@@ -13,12 +13,12 @@ import (
 func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 	service1 := &Service{
 		BaseService: BaseService{
-			Label: "service1",
+			Name: "service1",
 		},
 	}
 	service2 := &Service{
 		BaseService: BaseService{
-			Label: "service2",
+			Name: "service2",
 		},
 	}
 
@@ -85,15 +85,15 @@ func TestUpdateBaseService(t *testing.T) {
 
 	// Modify one of the services.
 	service := services[0]
-	service.Label = "funny name"
+	service.Name = "funny name"
 	err := UpdateBaseService(db, &service.BaseService)
 	require.NoError(t, err)
 
-	// Check that the new label is returned.
+	// Check that the new name is returned.
 	returned, err := GetService(db, service.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
-	require.Equal(t, service.Label, returned.Label)
+	require.Equal(t, service.Name, returned.Name)
 }
 
 // Test that HA specific information can be updated for a service.
@@ -167,7 +167,7 @@ func TestGetServicesByAppID(t *testing.T) {
 	// Validate that the service returned is the service1.
 	service := appServices[0]
 	require.Len(t, service.Apps, 5)
-	require.Equal(t, services[0].Label, service.Label)
+	require.Equal(t, services[0].Name, service.Name)
 	require.ElementsMatch(t, service.Apps, services[0].Apps)
 
 	// Repeat the same test for the fifth application belonging to the service2.
@@ -178,7 +178,7 @@ func TestGetServicesByAppID(t *testing.T) {
 	// Validate that the returned service is the service2.
 	service = appServices[0]
 	require.Len(t, service.Apps, 5)
-	require.Equal(t, services[1].Label, service.Label)
+	require.Equal(t, services[1].Name, service.Name)
 	require.ElementsMatch(t, service.Apps, services[1].Apps)
 
 	// Finally, make one of the application shared between two services.
@@ -191,8 +191,8 @@ func TestGetServicesByAppID(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, appServices, 2)
 
-	require.Equal(t, services[0].Label, appServices[0].Label)
-	require.Equal(t, services[1].Label, appServices[1].Label)
+	require.Equal(t, services[0].Name, appServices[0].Name)
+	require.Equal(t, services[1].Name, appServices[1].Name)
 }
 
 // Test getting the services including applications which operate on a
@@ -213,7 +213,7 @@ func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
 	// Make sure that the first service was returned.
 	service := appServices[0]
 	require.Len(t, service.Apps, 5)
-	require.Equal(t, services[0].Label, service.Label)
+	require.Equal(t, services[0].Name, service.Name)
 	require.ElementsMatch(t, service.Apps, services[0].Apps)
 
 	// Repeat the same test for the application belonging to the second service.
@@ -225,7 +225,7 @@ func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
 	// Make sure that the second service was returned.
 	service = appServices[0]
 	require.Len(t, service.Apps, 5)
-	require.Equal(t, services[1].Label, service.Label)
+	require.Equal(t, services[1].Name, service.Name)
 	require.ElementsMatch(t, service.Apps, services[1].Apps)
 }
 

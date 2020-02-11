@@ -10,12 +10,12 @@ import (
 )
 
 // A structure reflecting service SQL table. This table holds
-// generic information about the service such as ID, service label
+// generic information about the service such as ID, service name
 // and service type.
 type BaseService struct {
 	tableName   struct{} `pg:"service"` //nolint:unused,structcheck
 	ID          int64
-	Label       string
+	Name        string
 	ServiceType string
 	Created     time.Time
 
