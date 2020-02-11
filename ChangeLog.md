@@ -1,3 +1,11 @@
+* 30 [func] marcin
+
+    Created data model for services and implemented a mechanism to
+    to automatically associate a new Kea application with a High
+    Availability service when the application is configured to use
+    High Availability. This mechanism is not yet used in the UI.
+    (Gitlab #137)
+
 * 29 [func] godfryd
 
     Added initial support for DHCP shared networks. They are presented
