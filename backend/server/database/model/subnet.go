@@ -20,7 +20,7 @@ type Subnet struct {
 }
 
 // Represents a shared network retrieved from database from app table,
-// form config json field.
+// from config json field.
 type SharedNetwork struct {
 	Name           string
 	AppID          int
