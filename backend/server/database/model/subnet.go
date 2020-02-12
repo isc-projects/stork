@@ -9,7 +9,7 @@ import (
 
 // Represents a subnet retrieved from database from app table,
 // form config json field.
-type Subnet struct {
+type KeaSubnet struct {
 	ID             int
 	AppID          int
 	Subnet         string
@@ -33,12 +33,12 @@ type SharedNetwork struct {
 // beginning of the page and the maximum size of the page. Limit has to be greater
 // then 0, otherwise error is returned. Result can be filtered by appID (if it is different than 0)
 // or by DHCP version: 4 or 6 (0 means no filtering).
-func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer int64, text *string) ([]Subnet, int64, error) {
-	var subnets []Subnet
+func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer int64, text *string) ([]KeaSubnet, int64, error) {
+	var subnets []KeaSubnet
 	var err error
 
 	if dhcpVer != 0 && dhcpVer != 4 && dhcpVer != 6 {
-		return []Subnet{}, 0, fmt.Errorf("wrong DHCP version: %d", dhcpVer)
+		return []KeaSubnet{}, 0, fmt.Errorf("wrong DHCP version: %d", dhcpVer)
 	}
 
 	params := &struct {
@@ -139,7 +139,7 @@ func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer
 	_, err = db.Query(&subnets, query2, params)
 
 	if err != nil {
-		return []Subnet{}, 0, errors.Wrapf(err, "problem with getting subnets from db")
+		return []KeaSubnet{}, 0, errors.Wrapf(err, "problem with getting subnets from db")
 	}
 
 	return subnets, total, nil
