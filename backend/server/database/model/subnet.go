@@ -21,7 +21,7 @@ type KeaSubnet struct {
 
 // Represents a shared network retrieved from database from app table,
 // from config json field.
-type SharedNetwork struct {
+type KeaSharedNetwork struct {
 	Name           string
 	AppID          int
 	Subnets        []map[string]interface{}
@@ -149,12 +149,12 @@ func GetSubnetsByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer
 // beginning of the page and the maximum size of the page. Limit has to be greater
 // then 0, otherwise error is returned. Result can be filtered by appID (if it is different than 0)
 // or by DHCP version: 4 or 6 (0 means no filtering).
-func GetSharedNetworksByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer int64, text *string) ([]SharedNetwork, int64, error) {
-	var sharedNetworks []SharedNetwork
+func GetSharedNetworksByPage(db *pg.DB, offset int64, limit int64, appID int64, dhcpVer int64, text *string) ([]KeaSharedNetwork, int64, error) {
+	var sharedNetworks []KeaSharedNetwork
 	var err error
 
 	if dhcpVer != 0 && dhcpVer != 4 && dhcpVer != 6 {
-		return []SharedNetwork{}, 0, fmt.Errorf("wrong DHCP version: %d", dhcpVer)
+		return []KeaSharedNetwork{}, 0, fmt.Errorf("wrong DHCP version: %d", dhcpVer)
 	}
 
 	params := &struct {
@@ -239,7 +239,7 @@ func GetSharedNetworksByPage(db *pg.DB, offset int64, limit int64, appID int64, 
 	_, err = db.Query(&sharedNetworks, query2, params)
 
 	if err != nil {
-		return []SharedNetwork{}, 0, errors.Wrapf(err, "problem with getting shared networks from db")
+		return []KeaSharedNetwork{}, 0, errors.Wrapf(err, "problem with getting shared networks from db")
 	}
 
 	return sharedNetworks, total, nil
