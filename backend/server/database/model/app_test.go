@@ -157,6 +157,63 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Check getting apps by type only.
+func TestGetAppsByType(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add a machine
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, m.ID)
+
+	// add kea app
+	aKea := &App{
+		ID:        0,
+		MachineID: m.ID,
+		Type:      KeaAppType,
+		CtrlPort:  1234,
+		CtrlKey:   "",
+		Active:    true,
+	}
+	err = AddApp(db, aKea)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, aKea.ID)
+
+	// add bind9 app
+	aBind9 := &App{
+		ID:        0,
+		MachineID: m.ID,
+		Type:      Bind9AppType,
+		CtrlPort:  2234,
+		CtrlKey:   "",
+		Active:    true,
+	}
+	err = AddApp(db, aBind9)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, aBind9.ID)
+
+	// check getting kea apps
+	apps, err := GetAppsByType(db, KeaAppType)
+	require.NoError(t, err)
+	require.Len(t, apps, 1)
+	require.Equal(t, aKea.ID, apps[0].ID)
+	require.NotNil(t, apps[0].Machine)
+
+	// check getting bind9 apps
+	apps, err = GetAppsByType(db, Bind9AppType)
+	require.NoError(t, err)
+	require.Len(t, apps, 1)
+	require.Equal(t, aBind9.ID, apps[0].ID)
+	require.NotNil(t, apps[0].Machine)
+}
+
+// Check getting app by its ID.
 func TestGetAppByID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

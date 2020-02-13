@@ -1,6 +1,10 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
@@ -18,7 +22,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("unexpected error: %+v", err)
 	}
-	defer storkServer.Shutdown()
+
+	// Setup graceful shutdown on Ctrl-C
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGINT)
+	go func() {
+		<-c
+		log.Println("Received Ctrl-C signal")
+		storkServer.Shutdown()
+		os.Exit(1)
+	}()
 
 	storkServer.Serve()
+	storkServer.Shutdown()
 }

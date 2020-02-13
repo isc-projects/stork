@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps/kea"
 	dbops "isc.org/stork/server/database"
 	"isc.org/stork/server/restservice"
 )
@@ -21,6 +22,8 @@ type StorkServer struct {
 
 	RestAPISettings restservice.RestAPISettings
 	RestAPI         *restservice.RestAPI
+
+	StatsPuller *kea.StatsPuller
 }
 
 func (ss *StorkServer) ParseArgs() {
@@ -64,8 +67,10 @@ func NewStorkServer() (*StorkServer, error) {
 	ss := StorkServer{}
 	ss.ParseArgs()
 
+	// setup connected agents
 	ss.Agents = agentcomm.NewConnectedAgents(&ss.AgentsSettings)
 
+	// setup database connection
 	var err error
 	ss.Db, err = dbops.NewPgDB(&ss.DbSettings)
 	if err != nil {
@@ -73,10 +78,15 @@ func NewStorkServer() (*StorkServer, error) {
 		return nil, err
 	}
 
+	// setup kea stats puller
+	ss.StatsPuller = kea.NewStatsPuller(ss.Db, ss.Agents)
+
+	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DbSettings, ss.Db, ss.Agents)
 	if err != nil {
-		ss.Agents.Shutdown()
+		ss.StatsPuller.Shutdown()
 		ss.Db.Close()
+		ss.Agents.Shutdown()
 		return nil, err
 	}
 	ss.RestAPI = r
@@ -94,7 +104,10 @@ func (ss *StorkServer) Serve() {
 
 // Shutdown for Stork Server state
 func (ss *StorkServer) Shutdown() {
+	log.Println("Shutting down Stork Server")
 	ss.RestAPI.Shutdown()
+	ss.StatsPuller.Shutdown()
 	ss.Db.Close()
 	ss.Agents.Shutdown()
+	log.Println("Stork Server shut down")
 }

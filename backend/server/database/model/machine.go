@@ -94,7 +94,7 @@ func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
 	return nil
 }
 
-// Fetches a collection of apps from the database. The offset and limit specify the
+// Fetches a collection of machines from the database. The offset and limit specify the
 // beginning of the page and the maximum size of the page. Limit has to be greater
 // then 0, otherwise error is returned.
 func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Machine, int64, error) {

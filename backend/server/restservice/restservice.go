@@ -1,6 +1,7 @@
 package restservice
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
@@ -51,6 +52,7 @@ type RestAPI struct {
 	Agents agentcomm.ConnectedAgents
 
 	TLS          bool
+	HTTPServer   *http.Server
 	srvListener  net.Listener
 	api          *operations.StorkAPI
 	handler      http.Handler
@@ -191,6 +193,7 @@ func (r *RestAPI) Serve() (err error) {
 	s := r.Settings
 
 	httpServer := new(http.Server)
+	r.HTTPServer = httpServer
 	httpServer.MaxHeaderBytes = int(s.MaxHeaderSize)
 	httpServer.ReadTimeout = s.ReadTimeout
 	httpServer.WriteTimeout = s.WriteTimeout
@@ -282,5 +285,15 @@ func (r *RestAPI) Listen() error {
 }
 
 func (r *RestAPI) Shutdown() {
-	// TODO
+	log.Printf("Stopping ReST API Service")
+	if r.HTTPServer != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		r.HTTPServer.SetKeepAlivesEnabled(false)
+		if err := r.HTTPServer.Shutdown(ctx); err != nil {
+			log.Printf("Could not gracefully shutdown the server: %v\n", err)
+		}
+	}
+	log.Printf("Stopped ReST API Service")
 }

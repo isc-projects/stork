@@ -2,7 +2,6 @@ package agentcomm
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -15,15 +14,17 @@ import (
 // via channels what guarantees that requests are forwarded to agents one
 // by one.
 func (agents *connectedAgentsData) communicationLoop() {
+	defer agents.Wg.Done()
 	for {
 		select {
-		case req, ok := <-agents.CommLoopReqs:
-			if !ok {
-				return
+		// wait for requests from parties that want to talk to agents
+		case req := <-agents.CommLoopReqs:
+			if req != nil {
+				agents.handleRequest(req)
 			}
-			agents.handleRequest(req)
-		case <-time.After(10 * time.Second):
-			// To be implemented: gathering stats periodically
+		// wait for done signal from shutdown function
+		case <-agents.DoneCommLoop:
+			return
 		}
 	}
 }

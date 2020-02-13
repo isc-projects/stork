@@ -133,6 +133,20 @@ func GetAppsByMachine(db *pg.DB, machineID int64) ([]App, error) {
 	return apps, nil
 }
 
+// Fetches all app by type from the database.
+func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
+	var apps []App
+
+	q := db.Model(&apps)
+	q = q.Where("type = ?", appType)
+	q = q.Relation("Machine")
+	err := q.Select()
+	if err != nil {
+		return nil, errors.Wrapf(err, "problem with getting apps")
+	}
+	return apps, nil
+}
+
 // Fetches a collection of apps from the database. The offset and limit specify the
 // beginning of the page and the maximum size of the page. Limit has to be greater
 // then 0, otherwise error is returned.

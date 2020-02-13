@@ -2,6 +2,7 @@ package agentcomm
 
 import (
 	"context"
+	"sync"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -59,6 +60,8 @@ type connectedAgentsData struct {
 	Settings     *AgentsSettings
 	AgentsMap    map[string]*Agent
 	CommLoopReqs chan *commLoopReq
+	DoneCommLoop chan bool
+	Wg           *sync.WaitGroup
 }
 
 // Create new ConnectedAgents objects.
@@ -67,8 +70,11 @@ func NewConnectedAgents(settings *AgentsSettings) ConnectedAgents {
 		Settings:     settings,
 		AgentsMap:    make(map[string]*Agent),
 		CommLoopReqs: make(chan *commLoopReq),
+		DoneCommLoop: make(chan bool),
+		Wg:           &sync.WaitGroup{},
 	}
 
+	agents.Wg.Add(1)
 	go agents.communicationLoop()
 
 	return &agents
@@ -76,11 +82,15 @@ func NewConnectedAgents(settings *AgentsSettings) ConnectedAgents {
 
 // Shutdown agents in agents map.
 func (agents *connectedAgentsData) Shutdown() {
+	log.Printf("Stopping Agents Comm")
 	for _, agent := range agents.AgentsMap {
 		agent.GrpcConn.Close()
 	}
 
 	close(agents.CommLoopReqs)
+	agents.DoneCommLoop <- true
+	agents.Wg.Wait()
+	log.Printf("Stopped Agents Comm")
 }
 
 // Get Agent object by its address.
