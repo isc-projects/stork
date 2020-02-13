@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Reflects IPv4 or IPv6 address pool.
 type AddressPool struct {
 	ID         int64
 	Created    time.Time
@@ -16,6 +17,7 @@ type AddressPool struct {
 	Subnet     *Subnet
 }
 
+// Reflects IPv6 address pool.
 type PrefixPool struct {
 	ID           int64
 	Created      time.Time
@@ -25,6 +27,7 @@ type PrefixPool struct {
 	Subnet       *Subnet
 }
 
+// Adds address pool to the database.
 func AddAddressPool(db *dbops.PgDB, pool *AddressPool) error {
 	if pool.SubnetID == 0 && pool.Subnet == nil {
 		err := errors.Errorf("subnet must be specified while adding new pool %s-%s into the database",
@@ -46,6 +49,7 @@ func AddAddressPool(db *dbops.PgDB, pool *AddressPool) error {
 	return err
 }
 
+// Adds prefix pool to the database.
 func AddPrefixPool(db *dbops.PgDB, pool *PrefixPool) error {
 	if pool.Subnet.ID == 0 && pool.Subnet == nil {
 		err := errors.Errorf("subnet must be specified while adding new prefix pool %s into the database",
@@ -67,6 +71,7 @@ func AddPrefixPool(db *dbops.PgDB, pool *PrefixPool) error {
 	return err
 }
 
+// Deletes IPv4 or IPv6 address pool from the database.
 func DeleteAddressPool(db *dbops.PgDB, poolID int64) error {
 	pool := &AddressPool{
 		ID: poolID,
@@ -78,6 +83,7 @@ func DeleteAddressPool(db *dbops.PgDB, poolID int64) error {
 	return err
 }
 
+// Deletes IPv6 address pool from the database.
 func DeletePrefixPool(db *dbops.PgDB, poolID int64) error {
 	pool := &PrefixPool{
 		ID: poolID,
