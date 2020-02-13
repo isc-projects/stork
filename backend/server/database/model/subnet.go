@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// Reflects IPv4 or IPv6 subnet from the database.
 type Subnet struct {
 	ID      int64
 	Created time.Time
@@ -20,11 +21,16 @@ type Subnet struct {
 	PrefixPools  []PrefixPool
 }
 
+// Add address and prefix pools from the subnet instance into the database.
+// The subnet is expected to exist in the database.
 func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 	if len(subnet.AddressPools) == 0 && len(subnet.PrefixPools) == 0 {
 		return nil
 	}
 
+	// This function is meant to be used both within a transaction and to
+	// create its own transaction. Depending on the object type, we either
+	// use the existing transaction or start the new one.
 	var tx *pg.Tx
 	db, ok := dbIface.(*pg.DB)
 	if ok {
@@ -44,15 +50,27 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 		}
 	}
 
+	// Add address pools first.
 	for _, p := range subnet.AddressPools {
 		pool := p
 		pool.SubnetID = subnet.ID
 		_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
+		if err != nil {
+			err = errors.Wrapf(err, "problem with adding an address pool %s-%s for subnet with id %d",
+				pool.LowerBound, pool.UpperBound, subnet.ID)
+			return err
+		}
 	}
+	// Add prefix pools. This should be empty for IPv4 case.
 	for _, p := range subnet.PrefixPools {
 		pool := p
 		pool.SubnetID = subnet.ID
 		_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
+		if err != nil {
+			err = errors.Wrapf(err, "problem with adding a prefix pool %s for subnet with id %d",
+				pool.Prefix, subnet.ID)
+			return err
+		}
 	}
 
 	if db != nil {
@@ -65,13 +83,16 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 	return err
 }
 
+// Adds a new subnet and its pools to the database within a transaction.
 func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) error {
+	// Add the subnet first.
 	_, err := tx.Model(subnet).Insert()
 	if err != nil {
 		err = errors.Wrapf(err, "problem with adding new subnet with prefix %s", subnet.Prefix)
 		return err
 	}
 
+	// Add the pools.
 	err = addSubnetPools(tx, subnet)
 	if err != nil {
 		return err
@@ -79,6 +100,9 @@ func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) error {
 	return err
 }
 
+// Creates new transaction and adds the subnet along with its pools into the
+// database. If it has any associations with the shared network, those
+// associations are also made in the database.
 func AddSubnet(db *pg.DB, subnet *Subnet) error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -103,6 +127,7 @@ func AddSubnet(db *pg.DB, subnet *Subnet) error {
 	return err
 }
 
+// Fetches the subnet and its pools by id from the database.
 func GetSubnet(db *pg.DB, subnetID int64) (*Subnet, error) {
 	subnet := &Subnet{}
 	err := db.Model(subnet).
@@ -126,6 +151,7 @@ func GetSubnet(db *pg.DB, subnetID int64) (*Subnet, error) {
 	return subnet, err
 }
 
+// Fetches the subnet by prefix from the database.
 func GetSubnetByPrefix(db *pg.DB, prefix string) (*Subnet, error) {
 	subnet := &Subnet{}
 	err := db.Model(subnet).
