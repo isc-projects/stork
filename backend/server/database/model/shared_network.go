@@ -85,8 +85,14 @@ func GetSharedNetwork(db *dbops.PgDB, networkID int64) (*SharedNetwork, error) {
 	return network, err
 }
 
+// Fetches a shared network with the subnets it contains.
 func GetSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) (network *SharedNetwork, err error) {
 	subnets := []Subnet{}
+
+	// The query we're building makes a select against subnets rather than shared networks
+	// because it is super complicated (if possible) to use ORM to make a "cascade" query
+	// to fetch 3 levels of information shared networks->subnets->pools. If you query for
+	// subnets you can easily join both shared networks and pools.
 	err = db.Model(&subnets).
 		Relation("SharedNetwork", func(q *orm.Query) (*orm.Query, error) {
 			return q.Where("shared_network.id = ?", networkID).
@@ -100,13 +106,19 @@ func GetSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) (network *Shar
 		}).
 		Select()
 
+	// If there was nothing returned, it doesn't mean that there is no shared network.
+	// It merely means there are no subnets belonging to it (which is rare).
+	// If that's the case, simply get the shared network.
 	if err == pg.ErrNoRows {
 		network, err = GetSharedNetwork(db, networkID)
 	} else {
+		// Subnets with the shared network have been returned. Let's create the
+		// shared network instance and attach the returned subnets to it. Take
+		// the subnet instance from the first subnet we found. We could take
+		// it from any subnet actually.
 		network = subnets[0].SharedNetwork
 		network.Subnets = subnets
 	}
-
 	if err != nil {
 		err = errors.Wrapf(err, "problem with getting a shared network with id %d and its subnets", networkID)
 		return nil, err
@@ -126,6 +138,7 @@ func DeleteSharedNetwork(db *dbops.PgDB, networkID int64) error {
 	return err
 }
 
+// Deletes a shared network and along with its subnets.
 func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -137,6 +150,7 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 		_ = tx.Rollback()
 	}()
 
+	// Delete all subnets blonging to the shared network.
 	subnets := []Subnet{}
 	_, err = db.Model(&subnets).
 		Where("subnet.shared_network_id = ?", networkID).
@@ -146,6 +160,8 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 		return err
 	}
 
+	// If everything went fine, delete the shared network. Note that shared network
+	// does not trigger cascaded deletion of the subnets.
 	network := &SharedNetwork{
 		ID: networkID,
 	}
