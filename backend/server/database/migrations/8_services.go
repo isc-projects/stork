@@ -61,9 +61,13 @@ func init() {
              );
 
              -- Generate a name for an inserted service if it is blank.
-             CREATE TRIGGER service_before_insert
-                 BEFORE INSERT OR UPDATE ON service
-                    FOR EACH ROW EXECUTE PROCEDURE service_name_gen();
+             DO $$ BEGIN
+                 CREATE TRIGGER service_before_insert
+                     BEFORE INSERT OR UPDATE ON service
+                         FOR EACH ROW EXECUTE PROCEDURE service_name_gen();
+             EXCEPTION
+                 WHEN duplicate_object THEN null;
+             END $$;
 
              -- This table includes a details about the DHCP High Availability
              -- service. This table is in 1:1 relationship with the service table.
@@ -108,9 +112,13 @@ func init() {
               END;
               $function$;
 
-             CREATE TRIGGER ha_service_before_insert_update
-                 BEFORE INSERT OR UPDATE ON ha_service
-                    FOR EACH ROW EXECUTE PROCEDURE ha_service_type_set();
+             DO $$ BEGIN
+                 CREATE TRIGGER ha_service_before_insert_update
+                     BEFORE INSERT OR UPDATE ON ha_service
+                         FOR EACH ROW EXECUTE PROCEDURE ha_service_type_set();
+             EXCEPTION
+                 WHEN duplicate_object THEN null;
+             END $$;
 
               -- Provides M:M relationship between app and service tables.
               CREATE TABLE IF NOT EXISTS app_to_service (
