@@ -240,7 +240,7 @@ func TestGetHAHooksLibrary(t *testing.T) {
 		}
 	}
 
-	// There should be two distinct peers found.
+	// There should be three distinct peers found.
 	require.Len(t, peersFound, 3)
 }
 
