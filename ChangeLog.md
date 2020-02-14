@@ -3,7 +3,9 @@
     Created data model for services and implemented a mechanism to
     to automatically associate a new Kea application with a High
     Availability service when the application is configured to use
-    High Availability. This mechanism is not yet used in the UI.
+    High Availability. This mechanism is not yet used by the server
+    when the Kea application is added via the UI. The usage of
+    this mechanism will be added in the future tickets.
     (Gitlab #137)
 
 * 29 [func] godfryd
