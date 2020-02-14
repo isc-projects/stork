@@ -19,8 +19,11 @@ func init() {
              -- This enum is used in the ha_service table to indicate if
              -- the given service is the DHCPv4 or DHCPv6 High Availability
              -- service.
-             CREATE TYPE HADHCPTYPE AS ENUM
-                 ('dhcp4', 'dhcp6');
+             DO $$ BEGIN
+                 CREATE TYPE HADHCPTYPE AS ENUM ('dhcp4', 'dhcp6');
+             EXCEPTION
+                 WHEN duplicate_object THEN null;
+             END $$;
 
              -- Trigger function generating a default name for a new service.
              -- The name is only generated if the name specified by the
