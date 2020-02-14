@@ -90,7 +90,7 @@ func TestUpdateBaseService(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the new name is returned.
-	returned, err := GetService(db, service.ID)
+	returned, err := GetDetailedService(db, service.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.Equal(t, service.Name, returned.Name)
@@ -111,7 +111,7 @@ func TestUpdateBaseHAService(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the updated information is returned.
-	returned, err := GetService(db, service.ServiceID)
+	returned, err := GetDetailedService(db, service.ServiceID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.NotNil(t, returned.HAService)
@@ -127,14 +127,14 @@ func TestGetServiceById(t *testing.T) {
 	require.GreaterOrEqual(t, len(services), 2)
 
 	// Get the first service. It should lack HA specific info.
-	service, err := GetService(db, services[0].ID)
+	service, err := GetDetailedService(db, services[0].ID)
 	require.NoError(t, err)
 	require.NotNil(t, service)
 	require.Len(t, service.Apps, 5)
 	require.Nil(t, service.HAService)
 
 	// Get the second service. It should include HA specific info.
-	service, err = GetService(db, services[1].ID)
+	service, err = GetDetailedService(db, services[1].ID)
 	require.NoError(t, err)
 	require.NotNil(t, service)
 	require.Len(t, service.Apps, 5)
@@ -160,7 +160,7 @@ func TestGetServicesByAppID(t *testing.T) {
 	require.GreaterOrEqual(t, len(services), 2)
 
 	// Get a service instance to which the forth application of the service1 belongs.
-	appServices, err := GetServicesByAppID(db, services[0].Apps[3].ID)
+	appServices, err := GetDetailedServicesByAppID(db, services[0].Apps[3].ID)
 	require.NoError(t, err)
 	require.Len(t, appServices, 1)
 
@@ -171,7 +171,7 @@ func TestGetServicesByAppID(t *testing.T) {
 	require.ElementsMatch(t, service.Apps, services[0].Apps)
 
 	// Repeat the same test for the fifth application belonging to the service2.
-	appServices, err = GetServicesByAppID(db, services[1].Apps[4].ID)
+	appServices, err = GetDetailedServicesByAppID(db, services[1].Apps[4].ID)
 	require.NoError(t, err)
 	require.Len(t, appServices, 1)
 
@@ -187,7 +187,7 @@ func TestGetServicesByAppID(t *testing.T) {
 
 	// When querying the services for this app, both service1 and 2 should
 	// be returned.
-	appServices, err = GetServicesByAppID(db, services[1].Apps[0].ID)
+	appServices, err = GetDetailedServicesByAppID(db, services[1].Apps[0].ID)
 	require.NoError(t, err)
 	require.Len(t, appServices, 2)
 
@@ -205,7 +205,7 @@ func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
 	require.GreaterOrEqual(t, len(services), 2)
 
 	// Get a service instance to which the forth application of the service1 belongs.
-	appServices, err := GetServicesByAppCtrlAddressPort(db, services[0].Apps[3].CtrlAddress,
+	appServices, err := GetDetailedServicesByAppCtrlAddressPort(db, services[0].Apps[3].CtrlAddress,
 		services[0].Apps[3].CtrlPort)
 	require.NoError(t, err)
 	require.Len(t, appServices, 1)
@@ -217,7 +217,7 @@ func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
 	require.ElementsMatch(t, service.Apps, services[0].Apps)
 
 	// Repeat the same test for the application belonging to the second service.
-	appServices, err = GetServicesByAppCtrlAddressPort(db, services[1].Apps[3].CtrlAddress,
+	appServices, err = GetDetailedServicesByAppCtrlAddressPort(db, services[1].Apps[3].CtrlAddress,
 		services[1].Apps[3].CtrlPort)
 	require.NoError(t, err)
 	require.Len(t, appServices, 1)
@@ -238,7 +238,7 @@ func TestGetAllServices(t *testing.T) {
 	require.GreaterOrEqual(t, len(services), 2)
 
 	// There should be two services returned.
-	allServices, err := GetAllServices(db)
+	allServices, err := GetDetailedAllServices(db)
 	require.NoError(t, err)
 	require.Len(t, allServices, 2)
 
@@ -272,7 +272,7 @@ func TestDeleteService(t *testing.T) {
 	require.NoError(t, err)
 
 	// Try to get this service and make sure it is gone.
-	service, err := GetService(db, services[1].ID)
+	service, err := GetDetailedService(db, services[1].ID)
 	require.NoError(t, err)
 	require.Nil(t, service)
 
@@ -297,7 +297,7 @@ func TestAddAppToService(t *testing.T) {
 	require.NoError(t, err)
 
 	// That service should not include 6 apps.
-	service, err := GetService(db, services[0].ID)
+	service, err := GetDetailedService(db, services[0].ID)
 	require.NoError(t, err)
 	require.Len(t, service.Apps, 6)
 }
@@ -316,7 +316,7 @@ func TestDeleteAppFromService(t *testing.T) {
 	require.True(t, ok)
 
 	// The service should now include 4 apps.
-	service, err := GetService(db, 1)
+	service, err := GetDetailedService(db, 1)
 	require.NoError(t, err)
 	require.Len(t, service.Apps, 4)
 }

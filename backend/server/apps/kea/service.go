@@ -170,7 +170,7 @@ func DetectHAServices(db *dbops.PgDB, dbApp *dbmodel.App) (services []dbmodel.Se
 			index = -1
 			for _, p := range params.Peers {
 				host, port := storkutil.ParseURL(*p.URL)
-				dbServices, _ = dbmodel.GetServicesByAppCtrlAddressPort(db, host, port)
+				dbServices, _ = dbmodel.GetDetailedServicesByAppCtrlAddressPort(db, host, port)
 				index = -1
 				for i, service := range dbServices {
 					s := service

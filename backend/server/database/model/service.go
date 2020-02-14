@@ -217,7 +217,7 @@ func UpdateBaseHAService(db *dbops.PgDB, service *BaseHAService) error {
 }
 
 // Fetches a service from the database for a given service id.
-func GetService(db *dbops.PgDB, serviceID int64) (*Service, error) {
+func GetDetailedService(db *dbops.PgDB, serviceID int64) (*Service, error) {
 	service := &Service{}
 	err := db.Model(service).
 		Relation("HAService").
@@ -236,7 +236,7 @@ func GetService(db *dbops.PgDB, serviceID int64) (*Service, error) {
 }
 
 // Fetches all services to which the given app belongs.
-func GetServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) {
+func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) {
 	var services []Service
 
 	err := db.Model(&services).
@@ -260,7 +260,7 @@ func GetServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) {
 // In particular, the Kea application which belongs to the HA setup includes
 // the URLs of the partners. These URLs can be used to associate the applications
 // with the services.
-func GetServicesByAppCtrlAddressPort(db *dbops.PgDB, ctrlAddress string, ctrlPort int64) ([]Service, error) {
+func GetDetailedServicesByAppCtrlAddressPort(db *dbops.PgDB, ctrlAddress string, ctrlPort int64) ([]Service, error) {
 	var services []Service
 
 	err := db.Model(&services).
@@ -283,7 +283,7 @@ func GetServicesByAppCtrlAddressPort(db *dbops.PgDB, ctrlAddress string, ctrlPor
 }
 
 // Fetches all services from the database.
-func GetAllServices(db *dbops.PgDB) ([]Service, error) {
+func GetDetailedAllServices(db *dbops.PgDB) ([]Service, error) {
 	var services []Service
 
 	err := db.Model(&services).
