@@ -363,3 +363,37 @@ func TestDetectHAServices(t *testing.T) {
 
 	require.Len(t, services[0].Apps, 3)
 }
+
+// Test that an app doesn't belong to a blank service , i.e. a
+// service that comprises no apps.
+func TestAppBelongsToHAServiceBlankService(t *testing.T) {
+	// Create blank service.
+	service := &dbmodel.Service{
+		BaseService: dbmodel.BaseService{
+			ServiceType: "ha_dhcp",
+		},
+		HAService: &dbmodel.BaseHAService{
+			HAType: "dhcp4",
+		},
+	}
+	// Create an app.
+	app := &dbmodel.App{
+		Type:        dbmodel.KeaAppType,
+		CtrlAddress: "192.0.2.66",
+		CtrlPort:    8000,
+		Details: dbmodel.AppKea{
+			Daemons: []*dbmodel.KeaDaemon{
+				{
+					Name: "dhcp4",
+					Config: getTestConfig("Dhcp4", "server2", "load-balancing",
+						"server1", "server2", "server4"),
+				},
+			},
+		},
+	}
+
+	// The app doesn't belong to the service because the service includes
+	// no meaningful information to make such determination. In that case
+	// it is up to the administrator to explicitly add the app to the service.
+	require.False(t, appBelongsToHAService(app, service))
+}

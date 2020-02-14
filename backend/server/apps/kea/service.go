@@ -13,9 +13,9 @@ import (
 // the peers' configurations the server names, URLs and roles must
 // match.
 func appBelongsToHAService(app *dbmodel.App, service *dbmodel.Service) bool {
-	// If the service or app is nil, or if the app is not Kea then the app
+	// If the service or app is nil, service is blank or if the app is not Kea then the app
 	// surely doesn't belong to the service.
-	if service.HAService == nil || app == nil || app.Type != "kea" {
+	if service.HAService == nil || len(service.Apps) == 0 || app == nil || app.Type != "kea" {
 		return false
 	}
 
@@ -30,7 +30,7 @@ func appBelongsToHAService(app *dbmodel.App, service *dbmodel.Service) bool {
 
 	var index int = -1
 	for i, d := range appKea.Daemons {
-		if (d.Name == "dhcp4" || d.Name == "dhcp6") && (d.Name == service.HAService.HAType) {
+		if d.Name == service.HAService.HAType {
 			index = i
 		}
 	}
@@ -174,7 +174,9 @@ func DetectHAServices(db *dbops.PgDB, dbApp *dbmodel.App) (services []dbmodel.Se
 				index = -1
 				for i, service := range dbServices {
 					s := service
-					if service.HAService.HAType == d.Name && appBelongsToHAService(dbApp, &s) {
+					if (service.HAService != nil) &&
+						(service.HAService.HAType == d.Name) &&
+						appBelongsToHAService(dbApp, &s) {
 						index = i
 						break
 					}
