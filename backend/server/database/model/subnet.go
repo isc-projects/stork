@@ -3,10 +3,22 @@ package dbmodel
 import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
-	"github.com/pkg/errors"
+	errors "github.com/pkg/errors"
 
 	"time"
 )
+
+// This structure reflects an app which is associated with a subnet in M:N
+// relationship. Such association is made via the app_to_subnet table which,
+// besides the primary key, includes the optional local subnet id value.
+// This struct embeds the app and glues it with the local subnet id. The
+// value of the local subnet id is copied via App_LocalSubnetID field of the
+// AppToSubnet structure.
+type SubnetAttachedApp struct {
+	tableName struct{} `pg:"app"` //nolint:unused,structcheck
+	App
+	LocalSubnetID int64 `pg:"-"`
+}
 
 // Reflects IPv4 or IPv6 subnet from the database.
 type Subnet struct {
@@ -19,6 +31,28 @@ type Subnet struct {
 
 	AddressPools []AddressPool
 	PrefixPools  []PrefixPool
+
+	Apps []*SubnetAttachedApp `pg:"many2many:app_to_subnet,fk:subnet_id,joinFK:app_id"`
+}
+
+// A structure reflecting an app_to_subnet SQL table which associates
+// applications with subnets in many to many relationship. It also
+// provides additional association of the global subnet id (from the
+// database) and optional application specific subnet id (local one).
+// The Kea specific subnet id is an example of the local subnet id.
+// The local subnet id is non-unique, because different app instances
+// may use the same id, even for different subnets. In fact, the same
+// app may use the same local subnet ID twice, once for DHCPv4 and
+// second time for DHCPv6.
+// Note that App_LocalSubnetID is used in queries to copy the value of
+// the local subnet id to the SubnetAttachedApp structure. The
+// LocalSubnetID is used in statements inserting the data to the
+// app_to_subnet table.
+type AppToSubnet struct {
+	AppID             int64 `pg:",pk"`
+	SubnetID          int64 `pg:",pk"`
+	App_LocalSubnetID int64 //nolint:golint,stylecheck
+	LocalSubnetID     int64
 }
 
 // Add address and prefix pools from the subnet instance into the database.
@@ -138,6 +172,7 @@ func GetSubnet(db *pg.DB, subnetID int64) (*Subnet, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
+		Relation("Apps").
 		Where("subnet.id = ?", subnetID).
 		Select()
 
@@ -162,6 +197,7 @@ func GetSubnetByPrefix(db *pg.DB, prefix string) (*Subnet, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
+		Relation("Apps").
 		Where("subnet.prefix = ?", prefix).
 		Select()
 
@@ -173,4 +209,52 @@ func GetSubnetByPrefix(db *pg.DB, prefix string) (*Subnet, error) {
 		return nil, err
 	}
 	return subnet, err
+}
+
+// Associates an application with the subnet having a specified ID and prefix.
+func AddAppToSubnet(db *pg.DB, subnet *Subnet, app *App) error {
+	localSubnetID := int64(0)
+	// If the prefix is available we should try to match the subnet prefix
+	// with the app's configuration and retrieve the local subnet id from
+	// there.
+	if len(subnet.Prefix) > 0 {
+		localSubnetID = app.GetLocalSubnetID(subnet.Prefix)
+	}
+	assoc := AppToSubnet{
+		AppID:         app.ID,
+		SubnetID:      subnet.ID,
+		LocalSubnetID: localSubnetID,
+	}
+	// Try to insert. If such association already exists we could maybe do
+	// nothing, but we do update instead to force setting the new value
+	// of the local_subnet_id if it has changed.
+	_, err := db.Model(&assoc).
+		Column("app_id").
+		Column("subnet_id").
+		Column("local_subnet_id").
+		OnConflict("(app_id, subnet_id) DO UPDATE").
+		Set("local_subnet_id = EXCLUDED.local_subnet_id").
+		Insert()
+	if err != nil {
+		err = errors.Wrapf(err, "problem with associating the app with id %d with the subnet with id %d",
+			app.ID, subnet.ID)
+	}
+	return err
+}
+
+// Dissociates an application from the subnet having a specified id.
+// The first returned value indicates if any row was removed from the
+// app_to_service table.
+func DeleteAppFromSubnet(db *pg.DB, subnetID int64, appID int64) (bool, error) {
+	assoc := &AppToSubnet{
+		AppID:    appID,
+		SubnetID: subnetID,
+	}
+	rows, err := db.Model(assoc).WherePK().Delete()
+	if err != nil && err != pg.ErrNoRows {
+		err = errors.Wrapf(err, "problem with deleting an app with id %d from the subnet with %d",
+			appID, subnetID)
+		return false, err
+	}
+	return rows.RowsAffected() > 0, nil
 }
