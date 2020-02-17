@@ -222,3 +222,17 @@ func (app *App) GetActiveDHCPDeamonNames() (deamons []string) {
 	}
 	return deamons
 }
+
+// Returns local subnet ID for a given subnet prefix. It iterates over the
+// daemons' configurations and searches for a subnet with matching prefix.
+// If the match isn't found, the value of 0 is returned.
+func (app *App) GetLocalSubnetID(prefix string) int64 {
+	if kea, ok := app.Details.(AppKea); ok {
+		for _, d := range kea.Daemons {
+			if d.Config != nil {
+				return d.Config.GetLocalSubnetID(prefix)
+			}
+		}
+	}
+	return 0
+}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	require "github.com/stretchr/testify/require"
 	//log "github.com/sirupsen/logrus"
 
 	dbtest "isc.org/stork/server/database/test"
@@ -486,4 +486,46 @@ func TestAfterScanBind(t *testing.T) {
 	require.NotNil(t, aBind.Details)
 	require.Equal(t, "named", aBind.Details.(AppBind9).Daemon.Name)
 	require.Equal(t, int32(123), aBind.Details.(AppBind9).Daemon.Pid)
+}
+
+// Test that local subnet id of the Kea subnet can be extracted.
+func TestGetLocalSubnetID(t *testing.T) {
+	ctx := context.Background()
+
+	aKea := &App{
+		ID:        0,
+		MachineID: 0,
+		Type:      KeaAppType,
+		CtrlPort:  1234,
+		CtrlKey:   "",
+		Active:    true,
+	}
+
+	// Add a DHCPv4 daemon with a simple configuration comprising a single subnet.
+	aKea.Details = map[string]interface{}{
+		"Daemons": []map[string]interface{}{
+			{
+				"Name": "dhcp4",
+				"Config": &map[string]interface{}{
+					"Dhcp4": map[string]interface{}{
+						"subnet4": []map[string]interface{}{
+							{
+								"id":     1,
+								"subnet": "192.0.2.0/24",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := aKea.AfterScan(ctx)
+	require.Nil(t, err)
+	require.NotNil(t, aKea.Details)
+
+	// Try to find a non-existing subnet.
+	require.Zero(t, aKea.GetLocalSubnetID("192.0.3.0/24"))
+	// Next, try to find the existing subnet.
+	require.EqualValues(t, 1, aKea.GetLocalSubnetID("192.0.2.0/24"))
 }

@@ -1,11 +1,13 @@
 package dbmodel
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
+	"net"
 	"strings"
 )
 
@@ -139,6 +141,85 @@ func (c *KeaConfig) GetHAHooksLibrary() (path string, params KeaConfigHA, ok boo
 	}
 
 	return path, params, ok
+}
+
+// Scans subnets within the Kea configuration and returns the ID of the subnet having
+// the specified prefix.
+func (c *KeaConfig) GetLocalSubnetID(prefix string) int64 {
+	_, globalNetwork, err := net.ParseCIDR(prefix)
+	if err != nil || globalNetwork == nil {
+		return 0
+	}
+
+	// Depending on the DHCP server type, we need to use different name of the list
+	// holding the subnets.
+	rootName, ok := c.GetRootName()
+	if !ok {
+		return 0
+	}
+	var subnetParamName string
+	switch rootName {
+	case "Dhcp4":
+		subnetParamName = "subnet4"
+	case "Dhcp6":
+		subnetParamName = "subnet6"
+	default:
+		// If this is neither the DHCPv4 nor DHCPv6 server, there is nothing to do.
+		return 0
+	}
+
+	// Matcher function will try to match the prefix of each found subnet with the
+	// prefix given as function argument.
+	matcher := func(subnet interface{}) int64 {
+		var parsedSubnet struct {
+			ID     int64
+			Subnet string
+		}
+		// Get the subnet's ID and prefix.
+		_ = mapstructure.Decode(subnet, &parsedSubnet)
+
+		// Parse the prefix into a common form that can be used for comparison.
+		_, localNetwork, err := net.ParseCIDR(parsedSubnet.Subnet)
+		if err != nil {
+			return 0
+		}
+		// Compare the prefix of the subnet we have found and the specified prefix.
+		if (localNetwork != nil) && net.IP.Equal(globalNetwork.IP, localNetwork.IP) &&
+			bytes.Equal(globalNetwork.Mask, localNetwork.Mask) {
+			return parsedSubnet.ID
+		}
+		// No match.
+		return 0
+	}
+
+	// First, let's iterate over the subnets which are not associated with any
+	// shared network.
+	if subnetList, ok := c.GetTopLevelList(subnetParamName); ok {
+		for _, s := range subnetList {
+			id := matcher(s)
+			if id > 0 {
+				return id
+			}
+		}
+	}
+
+	// No match. Let's get the subnets belonging to the shared networks.
+	if networkList, ok := c.GetTopLevelList("shared-networks"); ok {
+		for _, n := range networkList {
+			if network, ok := n.(map[string]interface{}); ok {
+				if subnetList, ok := network[subnetParamName].([]interface{}); ok {
+					for _, s := range subnetList {
+						id := matcher(s)
+						if id > 0 {
+							return id
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return 0
 }
 
 // Checks if the mandatory peer parameters are set. It doesn't check if the
