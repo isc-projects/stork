@@ -71,7 +71,7 @@ func init() {
 
              -- This table includes a details about the DHCP High Availability
              -- service. This table is in 1:1 relationship with the service table.
-             -- A new entry should be created in this table of the type in the
+             -- A new entry should be created in this table if the type in the
              -- service table is set to ha_dhcp.
               CREATE TABLE IF NOT EXISTS ha_service (
                   id BIGSERIAL NOT NULL,
