@@ -187,9 +187,9 @@ func GetSubnet(db *pg.DB, subnetID int64) (*Subnet, error) {
 }
 
 // Fetches the subnet by prefix from the database.
-func GetSubnetByPrefix(db *pg.DB, prefix string) (*Subnet, error) {
-	subnet := &Subnet{}
-	err := db.Model(subnet).
+func GetSubnetsByPrefix(db *pg.DB, prefix string) ([]Subnet, error) {
+	subnets := []Subnet{}
+	err := db.Model(&subnets).
 		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
@@ -205,10 +205,10 @@ func GetSubnetByPrefix(db *pg.DB, prefix string) (*Subnet, error) {
 		if err == pg.ErrNoRows {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting a subnet with prefix %s", prefix)
+		err = errors.Wrapf(err, "problem with getting subnets with prefix %s", prefix)
 		return nil, err
 	}
-	return subnet, err
+	return subnets, err
 }
 
 // Associates an application with the subnet having a specified ID and prefix.

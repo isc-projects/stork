@@ -154,9 +154,10 @@ func TestDeleteSharedNetwork(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, returned)
 
-	returnedSubnet, err := GetSubnetByPrefix(db, "192.0.2.0/24")
+	returnedSubnets, err := GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
-	require.NotNil(t, returnedSubnet)
+	require.NotEmpty(t, returnedSubnets)
+	returnedSubnet := returnedSubnets[0]
 	require.Equal(t, "192.0.2.0/24", returnedSubnet.Prefix)
 	require.Nil(t, returnedSubnet.SharedNetwork)
 	require.Zero(t, returnedSubnet.SharedNetworkID)
@@ -186,7 +187,7 @@ func TestDeleteSharedNetworkWithSubnets(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, returned)
 
-	returnedSubnet, err := GetSubnetByPrefix(db, "192.0.2.0/24")
+	returnedSubnets, err := GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
-	require.Nil(t, returnedSubnet)
+	require.Empty(t, returnedSubnets)
 }

@@ -28,9 +28,10 @@ func TestAddDeleteAddressPool(t *testing.T) {
 	err = AddAddressPool(db, &pool)
 	require.NoError(t, err)
 
-	returnedSubnet, err := GetSubnetByPrefix(db, "192.0.2.0/24")
+	returnedSubnets, err := GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
-	require.NotNil(t, returnedSubnet)
+	require.NotEmpty(t, returnedSubnets)
+	returnedSubnet := returnedSubnets[0]
 	require.Len(t, returnedSubnet.AddressPools, 1)
 	require.NotZero(t, returnedSubnet.AddressPools[0].ID)
 	require.NotZero(t, returnedSubnet.AddressPools[0].Created)
@@ -39,9 +40,10 @@ func TestAddDeleteAddressPool(t *testing.T) {
 
 	err = DeleteAddressPool(db, pool.ID)
 	require.NoError(t, err)
-	returnedSubnet, err = GetSubnetByPrefix(db, "192.0.2.0/24")
+	returnedSubnets, err = GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
-	require.NotNil(t, returnedSubnet)
+	require.NotEmpty(t, returnedSubnets)
+	returnedSubnet = returnedSubnets[0]
 	require.Empty(t, returnedSubnet.AddressPools)
 }
 
@@ -66,9 +68,10 @@ func TestAddDeletePrefixPool(t *testing.T) {
 	err = AddPrefixPool(db, &pool)
 	require.NoError(t, err)
 
-	returnedSubnet, err := GetSubnetByPrefix(db, "2001:db8:1::/64")
+	returnedSubnets, err := GetSubnetsByPrefix(db, "2001:db8:1::/64")
 	require.NoError(t, err)
-	require.NotNil(t, returnedSubnet)
+	require.NotEmpty(t, returnedSubnets)
+	returnedSubnet := returnedSubnets[0]
 	require.Len(t, returnedSubnet.PrefixPools, 1)
 	require.NotZero(t, returnedSubnet.PrefixPools[0].ID)
 	require.NotZero(t, returnedSubnet.PrefixPools[0].Created)
@@ -77,8 +80,9 @@ func TestAddDeletePrefixPool(t *testing.T) {
 
 	err = DeletePrefixPool(db, pool.ID)
 	require.NoError(t, err)
-	returnedSubnet, err = GetSubnetByPrefix(db, "2001:db8:1::/64")
+	returnedSubnets, err = GetSubnetsByPrefix(db, "2001:db8:1::/64")
 	require.NoError(t, err)
-	require.NotNil(t, returnedSubnet)
+	require.NotEmpty(t, returnedSubnets)
+	returnedSubnet = returnedSubnets[0]
 	require.Empty(t, returnedSubnet.PrefixPools)
 }
