@@ -153,6 +153,57 @@ func TestAddSubnetWithPrefixPools(t *testing.T) {
 	}
 }
 
+// Test that all subnets, all IPv4 subnets or all IPv6 subnets can be fetched.
+func TestGetAllSubnets(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add two IPv4 and two IPv6 subnets.
+	subnets := []Subnet{
+		{
+			Prefix: "192.0.2.0/24",
+		},
+		{
+			Prefix: "2001:db8:1::/64",
+		},
+		{
+			Prefix: "192.0.3.0/24",
+		},
+		{
+			Prefix: "2001:db8:2::/64",
+		},
+	}
+	for _, s := range subnets {
+		subnet := s
+		err := AddSubnet(db, &subnet)
+		require.NoError(t, err)
+	}
+
+	// Get all subnets regardless of the family.
+	returnedSubnets, err := GetAllSubnets(db, 0)
+	require.NoError(t, err)
+	require.Len(t, returnedSubnets, 4)
+
+	// They should be ordered the same as they were inserted.
+	for i, s := range returnedSubnets {
+		require.Equal(t, subnets[i].Prefix, s.Prefix)
+	}
+
+	// Get IPv4 subnets only. The order is preserved.
+	returnedSubnets, err = GetAllSubnets(db, 4)
+	require.NoError(t, err)
+	require.Len(t, returnedSubnets, 2)
+	require.Equal(t, subnets[0].Prefix, returnedSubnets[0].Prefix)
+	require.Equal(t, subnets[2].Prefix, returnedSubnets[1].Prefix)
+
+	// Get IPv6 subnets only. The order is preserved.
+	returnedSubnets, err = GetAllSubnets(db, 6)
+	require.NoError(t, err)
+	require.Len(t, returnedSubnets, 2)
+	require.Equal(t, subnets[1].Prefix, returnedSubnets[0].Prefix)
+	require.Equal(t, subnets[3].Prefix, returnedSubnets[1].Prefix)
+}
+
 // Test that the inserted subnet can be associated with a shared network.
 func TestAddSubnetWithExistingSharedNetwork(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -215,6 +266,12 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.Len(t, returnedSubnet.Apps, 1)
 	// Local subnet ID should have been copied from the app_to_subnet table.
 	require.EqualValues(t, 123, returnedSubnet.Apps[0].LocalSubnetID)
+
+	// Also make sure that the app can be retrieved using the GetApp function.
+	returnedApp := returnedSubnet.GetApp(apps[0].ID)
+	require.NotNil(t, returnedApp)
+	returnedApp = returnedSubnet.GetApp(apps[1].ID)
+	require.Nil(t, returnedApp)
 
 	// Add another app to the same subnet.
 	err = AddAppToSubnet(db, subnet, apps[1])

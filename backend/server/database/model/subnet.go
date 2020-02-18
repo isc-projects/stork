@@ -1,9 +1,9 @@
 package dbmodel
 
 import (
-	"github.com/mitchellh/mapstructure"
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
+	mapstructure "github.com/mitchellh/mapstructure"
 	errors "github.com/pkg/errors"
 
 	"time"
@@ -61,7 +61,7 @@ func NewSubnet(rawSubnet *map[string]interface{}) *Subnet {
 	var parsedSubnet KeaConfigSubnet
 	_ = mapstructure.Decode(rawSubnet, &parsedSubnet)
 	newSubnet := &Subnet{
-		Prefix: parsedSubnet.Subnet
+		Prefix: parsedSubnet.Subnet,
 	}
 	return newSubnet
 }
@@ -222,6 +222,38 @@ func GetSubnetsByPrefix(db *pg.DB, prefix string) ([]Subnet, error) {
 	return subnets, err
 }
 
+// Fetches all subnets belonging to a given family. If the family is set to 0
+// it fetches both IPv4 and IPv6 subnet.
+func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
+	subnets := []Subnet{}
+	q := db.Model(&subnets).
+		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("address_pool.id ASC"), nil
+		}).
+		Relation("PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("prefix_pool.id ASC"), nil
+		}).
+		Relation("SharedNetwork").
+		Relation("Apps").
+		OrderExpr("id ASC")
+
+	// Let's be liberal and allow other values than 0 too. The only special
+	// ones are 4 and 6.
+	if family == 4 || family == 6 {
+		q = q.Where("family(subnet.prefix) = ?", family)
+	}
+	err := q.Select()
+
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		err = errors.Wrapf(err, "problem with getting all subnets for family %d", family)
+		return nil, err
+	}
+	return subnets, err
+}
+
 // Associates an application with the subnet having a specified ID and prefix.
 func AddAppToSubnet(db *pg.DB, subnet *Subnet, app *App) error {
 	localSubnetID := int64(0)
@@ -268,4 +300,15 @@ func DeleteAppFromSubnet(db *pg.DB, subnetID int64, appID int64) (bool, error) {
 		return false, err
 	}
 	return rows.RowsAffected() > 0, nil
+}
+
+// Finds and returns an app associated with a subnet having the specified id.
+func (s *Subnet) GetApp(appID int64) *SubnetAttachedApp {
+	for _, a := range s.Apps {
+		app := a
+		if a.ID == appID {
+			return app
+		}
+	}
+	return nil
 }
