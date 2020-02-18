@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"github.com/mitchellh/mapstructure"
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	errors "github.com/pkg/errors"
@@ -53,6 +54,16 @@ type AppToSubnet struct {
 	SubnetID          int64 `pg:",pk"`
 	App_LocalSubnetID int64 //nolint:golint,stylecheck
 	LocalSubnetID     int64
+}
+
+// Creates new subnet instance from the pointer to the map of interfaces.
+func NewSubnet(rawSubnet *map[string]interface{}) *Subnet {
+	var parsedSubnet KeaConfigSubnet
+	_ = mapstructure.Decode(rawSubnet, &parsedSubnet)
+	newSubnet := &Subnet{
+		Prefix: parsedSubnet.Subnet
+	}
+	return newSubnet
 }
 
 // Add address and prefix pools from the subnet instance into the database.

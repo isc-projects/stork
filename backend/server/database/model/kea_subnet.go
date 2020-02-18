@@ -7,6 +7,23 @@ import (
 	"github.com/pkg/errors"
 )
 
+type KeaConfigPool struct {
+	Pool string
+}
+
+type KeaConfigPdPool struct {
+	Prefix       string
+	PrefixLen    int
+	DelegatedLen int
+}
+
+type KeaConfigSubnet struct {
+	ID      int64
+	Subnet  string
+	Pools   []KeaConfigPool
+	PdPools []KeaConfigPdPool
+}
+
 // Represents a subnet retrieved from database from app table,
 // form config json field.
 type KeaSubnet struct {
