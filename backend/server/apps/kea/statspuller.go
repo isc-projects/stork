@@ -21,6 +21,8 @@ type StatsPuller struct {
 	Wg     *sync.WaitGroup
 }
 
+// Create a StatsPuller object. Beneath it spawns a goroutine that pulls stats
+// periodically from Kea apps (that are stored in database).
 func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) *StatsPuller {
 	log.Printf("Starting Stats Puller")
 	statsPuller := &StatsPuller{
@@ -31,6 +33,8 @@ func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) *StatsPuller {
 		Wg:     &sync.WaitGroup{},
 	}
 
+	// start puller loop as goroutine and increment WaitGroup (which is used later
+	// for stopping this goroutine)
 	statsPuller.Wg.Add(1)
 	go statsPuller.pullerLoop()
 
@@ -38,21 +42,24 @@ func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) *StatsPuller {
 	return statsPuller
 }
 
+// Shutdown StatsPuller. It stops goroutine that pulls stats.
 func (statsPuller *StatsPuller) Shutdown() {
-	log.Printf("Stopping Stats Puller")
+	log.Printf("Stopping Kea Stats Puller")
 	statsPuller.Ticker.Stop()
 	statsPuller.Done <- true
 	statsPuller.Wg.Wait()
-	log.Printf("Stopped Stats Puller")
+	log.Printf("Stopped Kea Stats Puller")
 }
 
+// A loop that pulls stats from all Kea apps. It pulls periodicaly by indicated time
+// in configuration.
 func (statsPuller *StatsPuller) pullerLoop() {
 	defer statsPuller.Wg.Done()
 	for {
 		select {
 		// every N seconds do lease stats gathering from all kea apps and their active daemons
 		case <-statsPuller.Ticker.C:
-			_, err := statsPuller.gatherLeaseStats()
+			_, err := statsPuller.pullLeaseStats()
 			if err != nil {
 				log.Errorf("some errors were encountered while gathering lease stats from Kea apps: %+v", err)
 			}
@@ -63,7 +70,9 @@ func (statsPuller *StatsPuller) pullerLoop() {
 	}
 }
 
-func (statsPuller *StatsPuller) gatherLeaseStats() (int, error) {
+// Pull stats from all Kea apps from database. It returns number of successfuly pulled apps
+// and last encountered error.
+func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
 	// get list of all kea apps from database
 	dbApps, err := dbmodel.GetAppsByType(statsPuller.Db, dbmodel.KeaAppType)
 	if err != nil {
@@ -86,24 +95,20 @@ func (statsPuller *StatsPuller) gatherLeaseStats() (int, error) {
 	return appsOkCnt, lastErr
 }
 
+// Part of response for stat-lease4-get and stat-lease6-get commands.
 type ResultSetInStatLeaseGet struct {
 	Columns []string
 	Rows    [][]int
 }
 
+// Part of response for stat-lease4-get and stat-lease6-get commands.
 type StatLeaseGetArgs struct {
 	ResultSet ResultSetInStatLeaseGet `json:"result-set"`
 	Timestamp string
 }
 
-// Represents unmarshaled response from Kea daemon to stat-lease4-get.
-type StatLease4GetResponse struct {
-	agentcomm.KeaResponseHeader
-	Arguments *StatLeaseGetArgs `json:"arguments,omitempty"`
-}
-
-// Represents unmarshaled response from Kea daemon to stat-lease6-get.
-type StatLease6GetResponse struct {
+// Represents unmarshaled response from Kea daemon to stat-lease4-get and stat-lease6-get commands.
+type StatLeaseGetResponse struct {
 	agentcomm.KeaResponseHeader
 	Arguments *StatLeaseGetArgs `json:"arguments,omitempty"`
 }
@@ -143,8 +148,8 @@ func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 	}
 
 	// forward commands to kea
-	stats4Resp := []StatLease4GetResponse{}
-	stats6Resp := []StatLease6GetResponse{}
+	stats4Resp := []StatLeaseGetResponse{}
+	stats6Resp := []StatLeaseGetResponse{}
 	ctx := context.Background()
 	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caURL, cmds, &stats4Resp, &stats6Resp)
 	if err != nil {

@@ -110,7 +110,6 @@ func TestStatsPullerGatherStats(t *testing.T) {
 	sp := NewStatsPuller(db, fa)
 
 	// invoke gathering stats
-	log.Println("run gatherLeaseStats")
 	appsOkCnt, err := sp.gatherLeaseStats()
 	require.NoError(t, err)
 	require.Equal(t, 1, appsOkCnt)
