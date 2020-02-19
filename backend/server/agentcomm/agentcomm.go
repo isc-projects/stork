@@ -82,7 +82,7 @@ func NewConnectedAgents(settings *AgentsSettings) ConnectedAgents {
 
 // Shutdown agents in agents map.
 func (agents *connectedAgentsData) Shutdown() {
-	log.Printf("Stopping Agents Comm")
+	log.Printf("Stopping communication with agents")
 	for _, agent := range agents.AgentsMap {
 		agent.GrpcConn.Close()
 	}
