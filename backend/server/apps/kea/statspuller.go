@@ -54,7 +54,7 @@ func (statsPuller *StatsPuller) pullerLoop() {
 		case <-statsPuller.Ticker.C:
 			_, err := statsPuller.gatherLeaseStats()
 			if err != nil {
-				log.Errorf("some errors were encountered while gathering lease stats from kea apps: %+v", err)
+				log.Errorf("some errors were encountered while gathering lease stats from Kea apps: %+v", err)
 			}
 		// wait for done signal from shutdown function
 		case <-statsPuller.Done:
