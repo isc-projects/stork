@@ -90,7 +90,7 @@ func (agents *connectedAgentsData) Shutdown() {
 	close(agents.CommLoopReqs)
 	agents.DoneCommLoop <- true
 	agents.Wg.Wait()
-	log.Printf("Stopped Agents Comm")
+	log.Printf("Stopped communication with agents")
 }
 
 // Get Agent object by its address.
