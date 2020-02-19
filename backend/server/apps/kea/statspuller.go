@@ -52,7 +52,7 @@ func (statsPuller *StatsPuller) Shutdown() {
 	log.Printf("Stopped Kea Stats Puller")
 }
 
-// A loop that pulls stats from all Kea apps. It pulls periodicaly by indicated time
+// A loop that pulls stats from all Kea apps. It pulls periodically by indicated time
 // in configuration.
 func (statsPuller *StatsPuller) pullerLoop() {
 	defer statsPuller.Wg.Done()
@@ -71,7 +71,7 @@ func (statsPuller *StatsPuller) pullerLoop() {
 	}
 }
 
-// Pull stats from all Kea apps from database. It returns number of successfuly pulled apps
+// Pull stats from all Kea apps from database. It returns number of successfully pulled apps
 // and last encountered error.
 func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
 	// get list of all kea apps from database
