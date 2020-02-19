@@ -135,7 +135,7 @@ func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 			Daemons: &dhcpDaemons,
 		})
 	}
-	if dhcpDaemons["dhcp4"] {
+	if dhcpDaemons["dhcp6"] {
 		cmds = append(cmds, &agentcomm.KeaCommand{
 			Command: "stat-lease6-get",
 			Daemons: &dhcpDaemons,
