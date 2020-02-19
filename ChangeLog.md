@@ -1,3 +1,8 @@
+* 31 [func] godfryd
+
+    Added querying lease stats from Kea apps peridically. No UI yet.
+    (Gitlab #166)
+
 * 30 [func] marcin
 
     Created data model for services and implemented a mechanism to
