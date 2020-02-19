@@ -23,12 +23,13 @@ type StatsPuller struct {
 
 // Create a StatsPuller object. Beneath it spawns a goroutine that pulls stats
 // periodically from Kea apps (that are stored in database).
+// pullingInterval argument is expressed in seconds.
 func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) *StatsPuller {
 	log.Printf("Starting Stats Puller")
 	statsPuller := &StatsPuller{
 		Db:     db,
 		Agents: agents,
-		Ticker: time.NewTicker(1 * time.Second), // TODO: change it to 10 minutes
+		Ticker: time.NewTicker(10 * time.Minute), // TODO: change it to a setting in db
 		Done:   make(chan bool),
 		Wg:     &sync.WaitGroup{},
 	}
