@@ -30,7 +30,7 @@ func main() {
 		<-c
 		log.Println("Received Ctrl-C signal")
 		storkServer.Shutdown()
-		os.Exit(1)
+		os.Exit(130)
 	}()
 
 	storkServer.Serve()
