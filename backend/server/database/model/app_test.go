@@ -22,7 +22,7 @@ func TestAddApp(t *testing.T) {
 	}
 	err := AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.ID)
+	require.NotZero(t, m.ID)
 
 	// add app but without machine, error should be raised
 	s := &App{
@@ -52,7 +52,7 @@ func TestAddApp(t *testing.T) {
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, s.ID)
+	require.NotZero(t, s.ID)
 
 	// add app for the same machine and ctrl port - error should be raised
 	s = &App{
@@ -99,7 +99,7 @@ func TestDeleteApp(t *testing.T) {
 	}
 	err = AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.ID)
+	require.NotZero(t, m.ID)
 
 	// add app, no error expected
 	s := &App{
@@ -112,7 +112,7 @@ func TestDeleteApp(t *testing.T) {
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, s.ID)
+	require.NotZero(t, s.ID)
 
 	// delete added app
 	err = DeleteApp(db, s)
@@ -131,7 +131,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	}
 	err := AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.ID)
+	require.NotZero(t, m.ID)
 
 	// there should be no apps yet
 	apps, err := GetAppsByMachine(db, m.ID)
@@ -149,7 +149,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, s.ID)
+	require.NotZero(t, s.ID)
 
 	// get apps of given machine
 	apps, err = GetAppsByMachine(db, m.ID)
@@ -170,7 +170,7 @@ func TestGetAppsByType(t *testing.T) {
 	}
 	err := AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.ID)
+	require.NotZero(t, m.ID)
 
 	// add kea app
 	aKea := &App{
@@ -183,7 +183,7 @@ func TestGetAppsByType(t *testing.T) {
 	}
 	err = AddApp(db, aKea)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, aKea.ID)
+	require.NotZero(t, aKea.ID)
 
 	// add bind9 app
 	aBind9 := &App{
@@ -196,7 +196,7 @@ func TestGetAppsByType(t *testing.T) {
 	}
 	err = AddApp(db, aBind9)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, aBind9.ID)
+	require.NotZero(t, aBind9.ID)
 
 	// check getting kea apps
 	apps, err := GetAppsByType(db, KeaAppType)
@@ -231,7 +231,7 @@ func TestGetAppByID(t *testing.T) {
 	}
 	err = AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.ID)
+	require.NotZero(t, m.ID)
 
 	// add app, no error expected
 	s := &App{
@@ -245,7 +245,7 @@ func TestGetAppByID(t *testing.T) {
 
 	err = AddApp(db, s)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, s.ID)
+	require.NotZero(t, s.ID)
 
 	// get app by id
 	app, err = GetAppByID(db, s.ID)
@@ -270,7 +270,7 @@ func TestGetAppsByPage(t *testing.T) {
 	}
 	err := AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.ID)
+	require.NotZero(t, m.ID)
 
 	// add kea app, no error expected
 	sKea := &App{
@@ -283,7 +283,7 @@ func TestGetAppsByPage(t *testing.T) {
 	}
 	err = AddApp(db, sKea)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, sKea.ID)
+	require.NotZero(t, sKea.ID)
 
 	// add bind app, no error expected
 	sBind := &App{
@@ -296,7 +296,7 @@ func TestGetAppsByPage(t *testing.T) {
 	}
 	err = AddApp(db, sBind)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, sBind.ID)
+	require.NotZero(t, sBind.ID)
 
 	// get all apps
 	apps, total, err := GetAppsByPage(db, 0, 10, "", "")
@@ -389,7 +389,7 @@ func TestGetAllApps(t *testing.T) {
 	}
 	err := AddMachine(db, m)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.ID)
+	require.NotZero(t, m.ID)
 
 	// add kea app, no error expected
 	aKea := &App{
@@ -402,7 +402,7 @@ func TestGetAllApps(t *testing.T) {
 	}
 	err = AddApp(db, aKea)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, aKea.ID)
+	require.NotZero(t, aKea.ID)
 
 	// add bind app, no error expected
 	aBind := &App{
@@ -415,7 +415,7 @@ func TestGetAllApps(t *testing.T) {
 	}
 	err = AddApp(db, aBind)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, aBind.ID)
+	require.NotZero(t, aBind.ID)
 
 	// get all apps
 	apps, err := GetAllApps(db)

@@ -142,7 +142,7 @@ func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 	q = q.Relation("Machine")
 	err := q.Select()
 	if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting apps")
+		return nil, errors.Wrapf(err, "problem with getting %s apps", appType)
 	}
 	return apps, nil
 }
