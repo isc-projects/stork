@@ -108,7 +108,7 @@ func TestInitMigrateToLatest(t *testing.T) {
 	o, n, err := MigrateToLatest(db)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), o)
-	require.GreaterOrEqual(t, n, int64(13))
+	require.GreaterOrEqual(t, n, int64(14))
 }
 
 // Test that available schema version is returned as expected.
