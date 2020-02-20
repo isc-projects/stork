@@ -56,12 +56,18 @@ message GetStateRsp {
   string hostID = 18;
 }
 
+// Application access point
+message AccessPoint {
+  string type = 1;  // currently supported types are: "control" and "statistics"
+  string address = 2;
+  int64 port = 3;
+  string key = 4;
+}
+
 // Basic information about application.
 message App {
   string type = 1;  // currently supported types are: "kea" and "bind9"
-  string ctrlAddress = 2;
-  int64 ctrlPort = 3;
-  string ctrlKey = 4;
+  repeated AccessPoint accessPoints = 2;
 }
 
 // Request to Kea CA.
@@ -103,9 +109,9 @@ message RndcRequest {
 
 message ForwardRndcCommandReq {
   // Daemon access control
-  string ctrlAddress = 1;
-  int64 ctrlPort = 2;
-  string ctrlKey = 3;
+  string Address = 1;
+  int64 Port = 2;
+  string Key = 3;
 
   RndcRequest rndcRequest = 4;
 }
