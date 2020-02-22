@@ -2,8 +2,8 @@ FROM ubuntu:18.04
 WORKDIR /agent
 # Install essentials.
 RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-certificates gnupg apt-transport-https supervisor
+# Install Kea.
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/isc/kea-1-7/cfg/setup/bash.deb.sh' | bash
-# Install kea.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         isc-kea-dhcp4-server=1.7.4-isc0012520200128102739 \
         isc-kea-ctrl-agent=1.7.4-isc0012520200128102739 \
