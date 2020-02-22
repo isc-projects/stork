@@ -34,5 +34,8 @@ func NewCAClient() *CAClient {
 
 func (c *CAClient) Call(caURL string, payload *bytes.Buffer) (*http.Response, error) {
 	caRsp, err := c.client.Post(caURL, "application/json", payload)
-	return caRsp, errors.Wrapf(err, "problem with sending POST to Kea Control Agent %s", caURL)
+	if err != nil {
+		err = errors.Wrapf(err, "problem with sending POST to Kea Control Agent %s", caURL)
+	}
+	return caRsp, err
 }

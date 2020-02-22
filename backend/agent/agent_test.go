@@ -51,9 +51,9 @@ func setupAgentTest(rndc CommandExecutor) (*StorkAgent, context.Context) {
 	rndcClient := NewRndcClient(rndc)
 	gock.InterceptClient(caClient.client)
 
-	fsm := FakeAppMonitor{}
+	fam := FakeAppMonitor{}
 	sa := &StorkAgent{
-		AppMonitor: &fsm,
+		AppMonitor: &fam,
 		CAClient:   caClient,
 		RndcClient: rndcClient,
 	}
@@ -61,15 +61,16 @@ func setupAgentTest(rndc CommandExecutor) (*StorkAgent, context.Context) {
 	return sa, ctx
 }
 
-func (fsm *FakeAppMonitor) GetApps() []*App {
-	return fsm.Apps
+func (fam *FakeAppMonitor) GetApps() []*App {
+	return fam.Apps
 }
 
-func (fsm *FakeAppMonitor) Shutdown() {
+func (fam *FakeAppMonitor) Shutdown() {
 }
 
 func TestNewStorkAgent(t *testing.T) {
-	sa := NewStorkAgent()
+	fam := &FakeAppMonitor{}
+	sa := NewStorkAgent(fam)
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.CAClient)
 	require.NotNil(t, sa.RndcClient)
@@ -97,8 +98,8 @@ func TestGetState(t *testing.T) {
 		CtrlPort:    2345,
 		CtrlKey:     "abcd",
 	})
-	fsm, _ := sa.AppMonitor.(*FakeAppMonitor)
-	fsm.Apps = apps
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	require.Equal(t, rsp.AgentVersion, stork.Version)

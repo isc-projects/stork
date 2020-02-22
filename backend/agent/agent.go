@@ -37,7 +37,7 @@ type StorkAgent struct {
 
 // API exposed to Stork Server
 
-func NewStorkAgent() *StorkAgent {
+func NewStorkAgent(appMonitor AppMonitor) *StorkAgent {
 	// rndc is the command to interface with BIND 9.
 	rndc := func(command []string) ([]byte, error) {
 		cmd := exec.Command(command[0], command[1:]...) //nolint:gosec
@@ -48,7 +48,7 @@ func NewStorkAgent() *StorkAgent {
 	caClient := NewCAClient()
 
 	sa := &StorkAgent{
-		AppMonitor: NewAppMonitor(),
+		AppMonitor: appMonitor,
 		CAClient:   caClient,
 		RndcClient: rndcClient,
 	}

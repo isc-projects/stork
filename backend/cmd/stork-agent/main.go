@@ -17,12 +17,23 @@ func main() {
 	log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
 
 	// Start app monitor
-	storkAgent := agent.NewStorkAgent()
+	appMonitor := agent.NewAppMonitor()
+
+	// Prepare agent gRPC handler
+	storkAgent := agent.NewStorkAgent(appMonitor)
+
+	// Prepare
+	promKeaExporter := agent.NewPromKeaExporter(appMonitor)
 
 	// Prepare parse for command line flags.
 	parser := flags.NewParser(&storkAgent.Settings, flags.Default)
 	parser.ShortDescription = "Stork Agent"
 	parser.LongDescription = "Stork Agent"
+
+	_, err := parser.AddGroup("Prometheus Kea Exporter flags", "", &promKeaExporter.Settings)
+	if err != nil {
+		log.Fatalf("FATAL error: %+v", err)
+	}
 
 	if _, err := parser.Parse(); err != nil {
 		code := 1
@@ -33,6 +44,9 @@ func main() {
 		}
 		os.Exit(code)
 	}
+
+	promKeaExporter.Start()
+	defer promKeaExporter.Shutdown()
 
 	storkAgent.Serve()
 }

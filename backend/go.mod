@@ -24,6 +24,7 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.8.1
+	github.com/prometheus/client_golang v1.4.1
 	github.com/shirou/gopsutil v2.19.9+incompatible
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0
