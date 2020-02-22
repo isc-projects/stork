@@ -448,25 +448,23 @@ task :docker_down do
 end
 
 desc 'Build container with Stork Agent and Kea DHCPv4 server'
-task :build_kea_container do
-  sh 'docker build -f docker/docker-agent-kea.txt -t agent-kea .'
+task :build_kea_container => :build_agent do
+  sh 'docker-compose build agent-kea'
 end
 
 desc 'Run container with Stork Agent and Kea and mount current Agent binary'
 task :run_kea_container do
-  # host[8888]->agent[8080],  host[8787]->kea-ca[8000]
-  sh 'docker run --rm -ti -p 8888:8080 -p 8787:8000 -h agent-kea -v `pwd`/backend/cmd/stork-agent:/agent agent-kea'
+  sh 'docker-compose up agent-kea'
 end
 
 desc 'Build container with Stork Agent and Kea DHCPv6 server'
-task :build_kea6_container do
-  sh 'docker build -f docker/docker-agent-kea6.txt -t agent-kea6 .'
+task :build_kea6_container => :build_agent do
+  sh 'docker-compose build agent-kea6'
 end
 
 desc 'Run container with Stork Agent and Kea DHCPv6 server and mount current Agent binary'
 task :run_kea6_container do
-  # host[8888]->agent[8080]
-  sh 'docker run --rm -ti -p 8886:8080 -h agent-kea6 -v `pwd`/backend/cmd/stork-agent:/agent agent-kea6'
+  sh 'docker-compose up agent-kea6'
 end
 
 desc 'Build two containers with Stork Agent and Kea HA pair
@@ -495,7 +493,7 @@ end
 desc 'Run container with Stork Agent and BIND 9 and mount current Agent binary'
 task :run_bind9_container do
   # host[9999]->agent[8080]
-  sh 'docker run --rm -ti -p 9999:8080 -h agent-bind9 -v `pwd`/backend/cmd/stork-agent:/agent agent-bind9'
+  sh 'docker run --rm -ti -p 9999:8080 --name agent-bind9 -h agent-bind9 -v `pwd`/backend/cmd/stork-agent:/agent agent-bind9'
 end
 
 

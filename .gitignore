@@ -33,3 +33,10 @@ TAGS
 
 # generated while combining whole swagger API
 /api/swagger.yaml
+
+# venv for dhcp traffic simulator
+/sim/venv
+/sim/__pycache__/
+
+# containers output
+/backend/cmd/stork-agent/supervisord.log

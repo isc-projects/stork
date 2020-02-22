@@ -17,6 +17,8 @@
         type: string
       machineAddress:
         type: string
+      clientClass:
+        type: string
 
   Subnets:
     type: object

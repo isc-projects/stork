@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stork DHCP Traffic Simulator</title>
+  <script src="https://unpkg.com/vue"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+    <h1>Stork DHCP Traffic Simulator</h1>
+    <div id="app">
+
+        <el-table :data="subnets">
+            <el-table-column label="Subnet" min-width="10em">
+                <template slot-scope="scope">
+                    {{ scope.row.subnet }}
+                </template>
+            </el-table-column>
+            <el-table-column label="Rate" min-width="12em">
+                <template slot-scope="scope">
+                    <el-input-number v-model="scope.row.rate"></el-input-number>
+                </template>
+            </el-table-column>
+            <el-table-column label="Clients" min-width="12em">
+                <template slot-scope="scope">
+                    <el-input-number v-model="scope.row.clients" :step="20"></el-input-number>
+                </template>
+            </el-table-column>
+            <el-table-column label="Action" min-width="8em">
+                <template slot-scope="scope">
+                    <el-button type="success" v-if="scope.row.state == 'stop'" v-on:click="updateSubnet(scope.$index, 'start')">Start</el-button>
+                    <el-button type="danger" v-if="scope.row.state == 'start'" v-on:click="updateSubnet(scope.$index, 'stop')">Stop</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </div>
+
+    <script>
+        var subnets = []
+        var app = new Vue({
+            el: '#app',
+            data: {
+                subnets: subnets,
+                count: 0
+            },
+            created: function () {
+                axios.get('/subnets').then(function (response) {
+                    this.subnets.push(...response.data.items)
+                })
+            },
+            methods: {
+                updateSubnet: function (idx, state) {
+                    var sn = this.subnets[idx]
+                    var data = {state: state,
+                                rate: sn.rate,
+                                clients: sn.clients}
+                    axios.put('/subnets/' + idx, data).then(function (response) {
+                        this.subnets.length = 0;
+                        this.subnets.push(...response.data.items);
+                    })
+                }
+            }
+        })
+
+    </script>
+</body>
+</html>

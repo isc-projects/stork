@@ -30,7 +30,7 @@ func (ss *StorkServer) ParseArgs() {
 	// Process command line flags.
 	parser := flags.NewParser(nil, flags.Default) // TODO: change nil to some main group of server settings
 	parser.ShortDescription = "Stork Server"
-	parser.LongDescription = "Stork Server is a Kea and BIND Dashboard"
+	parser.LongDescription = "Stork Server is a Kea and BIND 9 Dashboard"
 
 	// Process Database specific args.
 	_, err := parser.AddGroup("Database ConnectionFlags", "", &ss.DbSettings)

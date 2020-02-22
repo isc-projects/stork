@@ -24,6 +24,7 @@ type LocalSubnet struct {
 	SubnetID      int64 `pg:",pk"`
 	App           *App
 	LocalSubnetID int64
+	ClientClass    string
 }
 
 // Reflects IPv4 or IPv6 subnet from the database.

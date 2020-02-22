@@ -30,9 +30,20 @@ services:
     image: registry.gitlab.isc.org/isc-projects/stork/agent-kea:latest
     hostname: agent-kea
     networks:
-      - storknet
+      storknet:
+        ipv4_address: 172.20.0.100
+      subnet-00:
+        ipv4_address: 172.100.0.100
+      subnet-01:
+        ipv4_address: 172.101.0.100
+      subnet-02:
+        ipv4_address: 172.102.0.100
     expose:
-      - "8080"
+      - "8080"  # stork server to agent
+      - "9100"  # node_exporter for prometheus
+      - "9547"  # kea_exporter for prometheus
+    ports:
+      - "8888:8080"  # publish ports for development purposes
 
   agent-kea6:
     restart: always
@@ -44,7 +55,10 @@ services:
     networks:
       - storknet
     expose:
-      - "8080"
+      - "8080"  # stork server to agent
+      - "9547"  # kea_exporter for prometheus
+    ports:
+      - "8886:8080"  # publish ports for development purposes
 
   agent-kea-ha1:
     restart: always
@@ -58,8 +72,9 @@ services:
         ipv4_address: 172.20.0.101
     expose:
       - "8001"
+      - "9547"  # kea_exporter for prometheus
     ports:
-      - "8881:8080"
+      - "8881:8080"  # publish ports for development purposes
 
   agent-kea-ha2:
     restart: always
@@ -73,8 +88,9 @@ services:
         ipv4_address: 172.20.0.102
     expose:
       - "8002"
+      - "9547"  # kea_exporter for prometheus
     ports:
-      - "8882:8080"
+      - "8882:8080"  # publish ports for development purposes
 
   agent-bind9:
     restart: always
@@ -87,6 +103,8 @@ services:
       - storknet
     expose:
       - "8080"
+      - "9100"  # node_exporter for prometheus
+      - "9119"  # bind_exporter for prometheus
 
   webui:
     build:
@@ -132,6 +150,25 @@ services:
        - ./docker/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
        - ./docker/grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
        - ./grafana/kea-dhcp4.json:/var/lib/grafana/dashboards/kea-dhcp4.json
+
+  traffic-dhcp:
+    build:
+      context: .
+      dockerfile: docker/docker-traffic-dhcp.txt
+    image: registry.gitlab.isc.org/isc-projects/stork/dhcp-traffic:latest
+    hostname: traffic-dhcp
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.200
+      subnet-00:
+        ipv4_address: 172.100.0.200
+      subnet-01:
+        ipv4_address: 172.101.0.200
+      subnet-02:
+        ipv4_address: 172.102.0.200
+    ports:
+      - "5000:5000"
+
 volumes:
   db-data:
   web-data:
@@ -141,3 +178,23 @@ networks:
     ipam:
      config:
        - subnet: 172.20.0.0/24
+  subnet-00:
+    ipam:
+     config:
+       - subnet: 172.100.0.0/24
+  subnet-01:
+    ipam:
+     config:
+       - subnet: 172.101.0.0/24
+  subnet-02:
+    ipam:
+     config:
+       - subnet: 172.102.0.0/24
+  subnet-03:
+    ipam:
+     config:
+       - subnet: 172.103.0.0/24
+  subnet-04:
+    ipam:
+     config:
+       - subnet: 172.104.0.0/24
