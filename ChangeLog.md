@@ -1,6 +1,7 @@
 * 31 [func] godfryd
 
-    Added querying lease stats from Kea apps peridically. No UI yet.
+    Added querying lease stats from Kea apps periodically.
+    Stats are not yet presented in the UI.
     (Gitlab #166)
 
 * 30 [func] marcin

@@ -21,11 +21,10 @@ type StatsPuller struct {
 	Wg     *sync.WaitGroup
 }
 
-// Create a StatsPuller object. Beneath it spawns a goroutine that pulls stats
-// periodically from Kea apps (that are stored in database).
-// pullingInterval argument is expressed in seconds.
+// Create a StatsPuller object that in background pulls Kea stats about leases.
+// Beneath it spawns a goroutine that pulls stats periodically from Kea apps (that are stored in database).
 func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) *StatsPuller {
-	log.Printf("Starting Stats Puller")
+	log.Printf("Starting Kea Stats Puller")
 	statsPuller := &StatsPuller{
 		Db:     db,
 		Agents: agents,
@@ -39,7 +38,7 @@ func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) *StatsPuller {
 	statsPuller.Wg.Add(1)
 	go statsPuller.pullerLoop()
 
-	log.Printf("Started Stats Puller")
+	log.Printf("Started Kea Stats Puller")
 	return statsPuller
 }
 
@@ -52,8 +51,7 @@ func (statsPuller *StatsPuller) Shutdown() {
 	log.Printf("Stopped Kea Stats Puller")
 }
 
-// A loop that pulls stats from all Kea apps. It pulls periodically by indicated time
-// in configuration.
+// A loop that pulls stats from all Kea apps. It pulls stats periodically with the configured interval.
 func (statsPuller *StatsPuller) pullerLoop() {
 	defer statsPuller.Wg.Done()
 	for {
@@ -71,8 +69,8 @@ func (statsPuller *StatsPuller) pullerLoop() {
 	}
 }
 
-// Pull stats from all Kea apps from database. It returns number of successfully pulled apps
-// and last encountered error.
+// Pull stats periodically for all Kea apps which Stork is monitoring. The function returns a number
+// of apps for which the stats were successfully pulled and last encountered error.
 func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
 	// get list of all kea apps from database
 	dbApps, err := dbmodel.GetAppsByType(statsPuller.Db, dbmodel.KeaAppType)

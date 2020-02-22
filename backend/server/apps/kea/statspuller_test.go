@@ -108,6 +108,8 @@ func TestStatsPullerPullStats(t *testing.T) {
 
 	// prepare stats puller
 	sp := NewStatsPuller(db, fa)
+	// shutdown stats puller at the end
+	defer sp.Shutdown()
 
 	// invoke pulling stats
 	appsOkCnt, err := sp.pullLeaseStats()
@@ -115,12 +117,9 @@ func TestStatsPullerPullStats(t *testing.T) {
 	require.Equal(t, 1, appsOkCnt)
 
 	// TODO: check collected stats
-
-	// shutdown stats puller
-	sp.Shutdown()
 }
 
-// Check if empty stats response is handled correctly.
+// Check if empty stats response is handled correctly and when stat plugin is not loaded in Kea.
 func TestStatsPullerEmptyResponse(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -130,6 +129,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 		// DHCPv4
 		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
 		command, _ := agentcomm.NewKeaCommand("stat-lease4-get", daemons, nil)
+		// simulate empty response
 		json := `[{
                             "result": 0,
                             "text": "Everything is fine",
@@ -140,6 +140,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 		// DHCPv6
 		daemons, _ = agentcomm.NewKeaDaemons("dhcp6")
 		command, _ = agentcomm.NewKeaCommand("stat-lease6-get", daemons, nil)
+		// simulate not loaded stat plugin in kea
 		json = `[{
                            "result": 2,
                            "text": "'stat-lease6-get' command not supported."
@@ -183,6 +184,8 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 
 	// prepare stats puller
 	sp := NewStatsPuller(db, fa)
+	// shutdown stats puller at the end
+	defer sp.Shutdown()
 
 	// invoke pulling stats
 	appsOkCnt, err := sp.pullLeaseStats()
@@ -190,7 +193,4 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	require.Equal(t, 1, appsOkCnt)
 
 	// TODO: check collected stats
-
-	// shutdown stats puller
-	sp.Shutdown()
 }
