@@ -65,6 +65,8 @@ type App struct {
 	Active      bool
 	Meta        AppMeta
 	Details     interface{} // here we have either AppKea or AppBind9
+
+	AccessPoints []*AccessPoint
 }
 
 // This is a hook to go-pg that is called just after reading rows from database.
@@ -99,6 +101,28 @@ func (app *App) AfterScan(ctx context.Context) error {
 	return nil
 }
 
+// addAppAccessPoints inserts the associated application access points into
+// the database.
+func addAppAccessPoints(tx *pg.Tx, app *App) (err error) {
+	if len(app.AccessPoints) == 0 {
+		return nil
+	}
+
+	// If there are any access points to be inserted with the app,
+	// iterate over them and insert into the access_points table.
+	for _, point := range app.AccessPoints {
+		point.AppID = app.ID
+		point.MachineID = app.MachineID
+
+		_, err := tx.Model(point).OnConflict("DO NOTHING").Insert()
+		if err != nil {
+			err = errors.Wrapf(err, "problem with adding new access point: %v", point)
+			return err
+		}
+	}
+	return nil
+}
+
 // Adds application into the database. The dbIface object may either be a pg.DB
 // object or pg.Tx. In the latter case this function uses existing transaction
 // to add an app.
@@ -115,6 +139,13 @@ func AddApp(dbIface interface{}, app *App) error {
 	err = tx.Insert(app)
 	if err != nil {
 		return errors.Wrapf(err, "problem with inserting app %v", app)
+	}
+
+	// Add access points.
+	err = addAppAccessPoints(tx, app)
+	if err != nil {
+		err = errors.Wrapf(err, "problem with adding access points to app: %+v", app)
+		return err
 	}
 
 	// Commit the changes if necessary.
@@ -148,8 +179,10 @@ func UpdateApp(dbIface interface{}, app *App) error {
 
 func GetAppByID(db *pg.DB, id int64) (*App, error) {
 	app := App{}
-	q := db.Model(&app).Where("app.id = ?", id)
+	q := db.Model(&app)
 	q = q.Relation("Machine")
+	q = q.Relation("AccessPoints")
+	q = q.Where("app.id = ?", id)
 	err := q.Select()
 	if err == pg.ErrNoRows {
 		return nil, nil
@@ -163,6 +196,7 @@ func GetAppsByMachine(db *pg.DB, machineID int64) ([]App, error) {
 	var apps []App
 
 	q := db.Model(&apps)
+	q = q.Relation("AccessPoints")
 	q = q.Where("machine_id = ?", machineID)
 	err := q.Select()
 	if err != nil {
@@ -196,6 +230,7 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, text string, appType st
 
 	// prepare query
 	q := db.Model(&apps)
+	q = q.Relation("AccessPoints")
 	q = q.Relation("Machine")
 	if appType != "" {
 		q = q.Where("type = ?", appType)
@@ -236,6 +271,7 @@ func GetAllApps(db *pg.DB) ([]App, error) {
 
 	// prepare query
 	q := db.Model(&apps)
+	q = q.Relation("AccessPoints")
 
 	// retrieve apps from db
 	err := q.Select()

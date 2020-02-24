@@ -78,6 +78,53 @@ func TestAddApp(t *testing.T) {
 	}
 	err = AddApp(db, s)
 	require.NotNil(t, err)
+
+	// add app with explicit access point, bad type - error should be raised.
+	var accessPoints []*AccessPoint
+	accessPoints = append(accessPoints, &AccessPoint{
+		Type:    "foobar",
+		Address: "10.0.0.1",
+		Port:    4321,
+		Key:     "",
+	})
+
+	s = &App{
+		ID:          0,
+		MachineID:   m.ID,
+		Type:        Bind9AppType,
+		CtrlAddress: "dns1.example.org",
+		CtrlPort:    4321,
+		CtrlKey:     "",
+		Active:      true,
+
+		AccessPoints: accessPoints,
+	}
+	err = AddApp(db, s)
+	require.NotNil(t, err)
+
+	// add app with explicit good access point, no error expected.
+	var accessPoints2 []*AccessPoint
+	accessPoints2 = append(accessPoints2, &AccessPoint{
+		Type:    "control",
+		Address: "10.0.0.1",
+		Port:    4321,
+		Key:     "",
+	})
+
+	s = &App{
+		ID:          0,
+		MachineID:   m.ID,
+		Type:        Bind9AppType,
+		CtrlAddress: "dns1.example.org",
+		CtrlPort:    4321,
+		CtrlKey:     "",
+		Active:      true,
+
+		AccessPoints: accessPoints2,
+	}
+	err = AddApp(db, s)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, s.ID)
 }
 
 // Test that the app can be updated in the database.
@@ -138,6 +185,14 @@ func TestDeleteApp(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// add app, no error expected
+	var accessPoints []*AccessPoint
+	accessPoints = append(accessPoints, &AccessPoint{
+		Type:    "control",
+		Address: "10.0.0.1",
+		Port:    4321,
+		Key:     "",
+	})
+
 	s := &App{
 		ID:        0,
 		MachineID: m.ID,
@@ -145,6 +200,8 @@ func TestDeleteApp(t *testing.T) {
 		CtrlPort:  1234,
 		CtrlKey:   "",
 		Active:    true,
+
+		AccessPoints: accessPoints,
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
@@ -175,6 +232,14 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.NoError(t, err)
 
 	// add app, no error expected
+	var accessPoints []*AccessPoint
+	accessPoints = append(accessPoints, &AccessPoint{
+		Type:    "control",
+		Address: "10.0.0.1",
+		Port:    4321,
+		Key:     "",
+	})
+
 	s := &App{
 		ID:        0,
 		MachineID: m.ID,
@@ -182,6 +247,8 @@ func TestGetAppsByMachine(t *testing.T) {
 		CtrlPort:  1234,
 		CtrlKey:   "",
 		Active:    true,
+
+		AccessPoints: accessPoints,
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
@@ -191,6 +258,11 @@ func TestGetAppsByMachine(t *testing.T) {
 	apps, err = GetAppsByMachine(db, m.ID)
 	require.Len(t, apps, 1)
 	require.NoError(t, err)
+	app := apps[0]
+	require.Equal(t, m.ID, app.MachineID)
+	require.Equal(t, KeaAppType, app.Type)
+	require.Equal(t, int64(1234), app.CtrlPort)
+	require.Equal(t, 1, len(app.AccessPoints))
 }
 
 // Check getting apps by type only.
@@ -270,28 +342,63 @@ func TestGetAppByID(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// add app, no error expected
+	var accessPoints []*AccessPoint
+	accessPoints = append(accessPoints, &AccessPoint{
+		Type:    "control",
+		Address: "10.0.0.1",
+		Port:    4444,
+		Key:     "",
+	})
+	accessPoints = append(accessPoints, &AccessPoint{
+		Type:    "statistics",
+		Address: "10.0.0.2",
+		Port:    5555,
+		Key:     "abcd",
+	})
+
 	s := &App{
 		ID:        0,
 		MachineID: m.ID,
-		Type:      KeaAppType,
+		Type:      Bind9AppType,
 		CtrlPort:  1234,
-		CtrlKey:   "",
+		CtrlKey:   "abcd",
 		Active:    true,
+
+		AccessPoints: accessPoints,
 	}
 
 	err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotZero(t, s.ID)
 
-	// get app by id
+	// Get app by ID.
 	app, err = GetAppByID(db, s.ID)
 	require.NoError(t, err)
 	require.NotNil(t, app)
 	require.Equal(t, s.ID, app.ID)
-
-	// The control address is a special case. If it is not specified
-	// it should be localhost.
+	// The control address is a special case.
+	// If it is not specified it should be localhost.
 	require.Equal(t, "localhost", app.CtrlAddress)
+	require.Equal(t, int64(1234), app.CtrlPort)
+	require.Equal(t, "abcd", app.CtrlKey)
+	// Machine is set.
+	require.Equal(t, m.ID, app.Machine.ID)
+	require.Equal(t, "localhost", app.Machine.Address)
+	require.Equal(t, int64(8080), app.Machine.AgentPort)
+	// Check access points.
+	require.Equal(t, 2, len(app.AccessPoints))
+
+	pt := app.AccessPoints[0]
+	require.Equal(t, "control", pt.Type)
+	require.Equal(t, "10.0.0.1", pt.Address)
+	require.Equal(t, int64(4444), pt.Port)
+	require.Empty(t, pt.Key)
+
+	pt = app.AccessPoints[1]
+	require.Equal(t, "statistics", pt.Type)
+	require.Equal(t, "10.0.0.2", pt.Address)
+	require.Equal(t, int64(5555), pt.Port)
+	require.Equal(t, "abcd", pt.Key)
 }
 
 func TestGetAppsByPage(t *testing.T) {
@@ -309,6 +416,13 @@ func TestGetAppsByPage(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// add kea app, no error expected
+	var keaPoints []*AccessPoint
+	keaPoints = append(keaPoints, &AccessPoint{
+		Type: "control",
+		Port: 1234,
+		Key:  "",
+	})
+
 	sKea := &App{
 		ID:        0,
 		MachineID: m.ID,
@@ -316,12 +430,21 @@ func TestGetAppsByPage(t *testing.T) {
 		CtrlPort:  1234,
 		CtrlKey:   "",
 		Active:    true,
+
+		AccessPoints: keaPoints,
 	}
 	err = AddApp(db, sKea)
 	require.NoError(t, err)
 	require.NotZero(t, sKea.ID)
 
 	// add bind app, no error expected
+	var bind9Points []*AccessPoint
+	bind9Points = append(bind9Points, &AccessPoint{
+		Type: "control",
+		Port: 4321,
+		Key:  "abcd",
+	})
+
 	sBind := &App{
 		ID:        0,
 		MachineID: m.ID,
@@ -329,6 +452,8 @@ func TestGetAppsByPage(t *testing.T) {
 		CtrlPort:  4321,
 		CtrlKey:   "abcd",
 		Active:    true,
+
+		AccessPoints: bind9Points,
 	}
 	err = AddApp(db, sBind)
 	require.NoError(t, err)
@@ -346,6 +471,12 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Len(t, apps, 1)
 	require.Equal(t, int64(1), total)
 	require.Equal(t, KeaAppType, apps[0].Type)
+	require.Equal(t, 1, len(apps[0].AccessPoints))
+	pt := apps[0].AccessPoints[0]
+	require.Equal(t, "control", pt.Type)
+	require.Equal(t, "localhost", pt.Address)
+	require.Equal(t, int64(1234), pt.Port)
+	require.Empty(t, pt.Key)
 
 	// get bind apps
 	apps, total, err = GetAppsByPage(db, 0, 10, "", Bind9AppType)
@@ -353,6 +484,12 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Len(t, apps, 1)
 	require.Equal(t, int64(1), total)
 	require.Equal(t, Bind9AppType, apps[0].Type)
+	require.Equal(t, 1, len(apps[0].AccessPoints))
+	pt = apps[0].AccessPoints[0]
+	require.Equal(t, "control", pt.Type)
+	require.Equal(t, "localhost", pt.Address)
+	require.Equal(t, int64(4321), pt.Port)
+	require.Equal(t, "abcd", pt.Key)
 }
 
 // Test that two names of the active DHCP daemons are returned.
