@@ -39,7 +39,7 @@ func AddSharedNetwork(db *dbops.PgDB, network *SharedNetwork) error {
 		return err
 	}
 
-	for _, s := range network.Subnets {
+	for i, s := range network.Subnets {
 		subnet := s
 		subnet.SharedNetworkID = network.ID
 
@@ -47,6 +47,7 @@ func AddSharedNetwork(db *dbops.PgDB, network *SharedNetwork) error {
 		if err != nil {
 			return err
 		}
+		network.Subnets[i] = subnet
 	}
 
 	err = tx.Commit()
@@ -121,6 +122,7 @@ func GetSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) (network *Shar
 		Relation("PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.OrderExpr("prefix_pool.id ASC"), nil
 		}).
+		Relation("Apps").
 		Select()
 
 	// If there was nothing returned, it doesn't mean that there is no shared network.

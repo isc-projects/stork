@@ -85,7 +85,7 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 	}
 
 	// Add address pools first.
-	for _, p := range subnet.AddressPools {
+	for i, p := range subnet.AddressPools {
 		pool := p
 		pool.SubnetID = subnet.ID
 		_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
@@ -94,9 +94,10 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 				pool.LowerBound, pool.UpperBound, subnet.ID)
 			return err
 		}
+		subnet.AddressPools[i] = pool
 	}
 	// Add prefix pools. This should be empty for IPv4 case.
-	for _, p := range subnet.PrefixPools {
+	for i, p := range subnet.PrefixPools {
 		pool := p
 		pool.SubnetID = subnet.ID
 		_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
@@ -105,6 +106,7 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 				pool.Prefix, subnet.ID)
 			return err
 		}
+		subnet.PrefixPools[i] = pool
 	}
 
 	if db != nil {
