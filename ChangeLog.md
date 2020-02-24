@@ -1,3 +1,11 @@
+* 32 [func] marcin
+
+    Created data model for shared networks, subnets and pools and
+    implemented mechanism to match configurations of Kea apps with
+    these structures in the database. This mechanism is not yet used
+    by the server when adding new apps via the UI.
+    (Gitlab #165)
+
 * 31 [func] godfryd
 
     Added querying lease stats from Kea apps periodically.
