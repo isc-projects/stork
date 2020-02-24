@@ -119,7 +119,8 @@ func TestStatsPullerPullStats(t *testing.T) {
 	// TODO: check collected stats
 }
 
-// Check if empty stats response is handled correctly and when stat plugin is not loaded in Kea.
+// Check if Kea response to stat-leaseX-get command is handled correctly when it is
+// empty or when stats hooks library is not loaded.
 func TestStatsPullerEmptyResponse(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
