@@ -11,6 +11,12 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+const (
+	dhcp4 = "dhcp4"
+	dhcp6 = "dhcp6"
+	d2    = "d2"
+)
+
 // Get list of hooks for all DHCP daemons of the given Kea application.
 func GetDaemonHooks(dbApp *dbmodel.App) map[string][]string {
 	hooksByDaemon := make(map[string][]string)
@@ -165,15 +171,15 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caURL
 	dhcpDaemons := make(agentcomm.KeaDaemons)
 	if caConfigGetResp[0].Arguments.ControlAgent.ControlSockets != nil {
 		if caConfigGetResp[0].Arguments.ControlAgent.ControlSockets.Dhcp4 != nil {
-			allDaemons["dhcp4"] = true
-			dhcpDaemons["dhcp4"] = true
+			allDaemons[dhcp4] = true
+			dhcpDaemons[dhcp4] = true
 		}
 		if caConfigGetResp[0].Arguments.ControlAgent.ControlSockets.Dhcp6 != nil {
-			allDaemons["dhcp6"] = true
-			dhcpDaemons["dhcp6"] = true
+			allDaemons[dhcp6] = true
+			dhcpDaemons[dhcp6] = true
 		}
 		if caConfigGetResp[0].Arguments.ControlAgent.ControlSockets.D2 != nil {
-			allDaemons["d2"] = true
+			allDaemons[d2] = true
 		}
 	}
 

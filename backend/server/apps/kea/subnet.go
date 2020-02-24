@@ -152,9 +152,9 @@ func DetectNetworks(db *dbops.PgDB, app *dbmodel.App) (networks []dbmodel.Shared
 
 		var family int
 		switch d.Name {
-		case "dhcp4":
+		case dhcp4:
 			family = 4
-		case "dhcp6":
+		case dhcp6:
 			family = 6
 		default:
 			continue

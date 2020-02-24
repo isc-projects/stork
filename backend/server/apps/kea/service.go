@@ -134,7 +134,7 @@ func DetectHAServices(db *dbops.PgDB, dbApp *dbmodel.App) (services []dbmodel.Se
 	// match their configuration against the services.
 	for _, d := range appKea.Daemons {
 		// We only detct HA services for DHCP daemons. Other daemons do not support it.
-		if d.Config == nil || (d.Name != "dhcp4" && d.Name != "dhcp6") {
+		if d.Config == nil || (d.Name != dhcp4 && d.Name != dhcp6) {
 			continue
 		}
 
