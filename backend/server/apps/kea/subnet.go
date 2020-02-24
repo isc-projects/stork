@@ -11,6 +11,10 @@ import (
 // database and returned to the caller.
 func sharedNetworkExists(db *dbops.PgDB, network *dbmodel.SharedNetwork, existingNetworks []dbmodel.SharedNetwork) (*dbmodel.SharedNetwork, error) {
 	for _, existing := range existingNetworks {
+		// todo: this is logic should be extended to perform some more sophisticated
+		// matching of a shared network with existing shared networks. For now,
+		// we only match by the shared network name and we do not resolve any
+		// conflicts. This should change soon.
 		if existing.Name == network.Name {
 			// Get the subnets included in this shared network.
 			dbNetwork, err := dbmodel.GetSharedNetworkWithSubnets(db, existing.ID)
@@ -27,6 +31,10 @@ func sharedNetworkExists(db *dbops.PgDB, network *dbmodel.SharedNetwork, existin
 // of existing subnets. If the subnet matches one of them the index of the
 // subnet is returned to the caller.
 func subnetExists(subnet *dbmodel.Subnet, existingSubnets []dbmodel.Subnet) (bool, int) {
+	// todo: this logic should be extended to perform some more sophisticated
+	// matching of the subnet with existing subnets. For now, we only match by
+	// the subnet prefix and we do not resolve any conflicts. This should
+	// change soon.
 	for i, existing := range existingSubnets {
 		if existing.Prefix == subnet.Prefix {
 			return true, i
