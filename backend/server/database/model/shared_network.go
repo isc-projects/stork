@@ -68,6 +68,23 @@ func UpdateSharedNetwork(db *dbops.PgDB, network *SharedNetwork) error {
 	return err
 }
 
+// Fetches all shared networks without subnets.
+func GetAllSharedNetworks(db *dbops.PgDB) ([]SharedNetwork, error) {
+	networks := []SharedNetwork{}
+	err := db.Model(&networks).
+		OrderExpr("id ASC").
+		Select()
+
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return []SharedNetwork{}, nil
+		}
+		err = errors.Wrapf(err, "problem with getting all shared networks")
+		return nil, err
+	}
+	return networks, err
+}
+
 // Fetches the information about the selected shared network.
 func GetSharedNetwork(db *dbops.PgDB, networkID int64) (*SharedNetwork, error) {
 	network := &SharedNetwork{}

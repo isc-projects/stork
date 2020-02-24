@@ -105,6 +105,11 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 			require.Equal(t, returnedNetwork.Subnets[i].PrefixPools[j].Prefix, p.Prefix)
 		}
 	}
+
+	baseNetworks, err := GetAllSharedNetworks(db)
+	require.NoError(t, err)
+	require.Len(t, baseNetworks, 1)
+	require.Empty(t, baseNetworks[0].Subnets)
 }
 
 // Tests that the shared network information can be updated.
