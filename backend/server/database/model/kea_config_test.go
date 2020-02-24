@@ -426,3 +426,65 @@ func TestHAConfigParametersSet(t *testing.T) {
 	cfg.Peers = append(cfg.Peers, p)
 	require.False(t, cfg.IsSet())
 }
+
+// Verifies that the shared network instance can be created by parsing
+// Kea configuration.
+func TestNewSharedNetworkFromKea(t *testing.T) {
+	rawNetwork := map[string]interface{}{
+		"name": "foo",
+		"subnet4": []map[string]interface{}{
+			{
+				"id":     1,
+				"subnet": "192.0.2.0/24",
+			},
+		},
+		"subnet6": []map[string]interface{}{
+			{
+				"id":     2,
+				"subnet": "2001:db8:1::/64",
+			},
+		},
+	}
+
+	parsedNetwork := NewSharedNetworkFromKea(&rawNetwork)
+	require.NotNil(t, parsedNetwork)
+	require.Equal(t, "foo", parsedNetwork.Name)
+	require.Len(t, parsedNetwork.Subnets, 2)
+
+	require.EqualValues(t, 1, parsedNetwork.Subnets[0].ID)
+	require.Equal(t, "192.0.2.0/24", parsedNetwork.Subnets[0].Prefix)
+	require.EqualValues(t, 2, parsedNetwork.Subnets[1].ID)
+	require.Equal(t, "2001:db8:1::/64", parsedNetwork.Subnets[1].Prefix)
+}
+
+// Verifies that the subnet instance can be created by parsing Kea
+// configuration.
+func TestNewSubnetFromKea(t *testing.T) {
+	rawSubnet := map[string]interface{}{
+		"id":     1,
+		"subnet": "2001:db8:1::/64",
+		"pools": []interface{}{
+			map[string]interface{}{
+				"pool": "2001:db8:1:1::/120",
+			},
+		},
+		"pd-pools": []interface{}{
+			map[string]interface{}{
+				"prefix":        "2001:db8:1:1::/96",
+				"delegated-len": 120,
+			},
+		},
+	}
+
+	parsedSubnet := NewSubnetFromKea(&rawSubnet)
+	require.NotNil(t, parsedSubnet)
+	require.EqualValues(t, 1, parsedSubnet.ID)
+	require.Equal(t, "2001:db8:1::/64", parsedSubnet.Prefix)
+	require.Len(t, parsedSubnet.AddressPools, 1)
+	require.Equal(t, "2001:db8:1:1::", parsedSubnet.AddressPools[0].LowerBound)
+	require.Equal(t, "2001:db8:1:1::ff", parsedSubnet.AddressPools[0].UpperBound)
+
+	require.Len(t, parsedSubnet.PrefixPools, 1)
+	require.Equal(t, "2001:db8:1:1::/96", parsedSubnet.PrefixPools[0].Prefix)
+	require.EqualValues(t, 120, parsedSubnet.PrefixPools[0].DelegatedLen)
+}

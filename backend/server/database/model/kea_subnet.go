@@ -15,8 +15,7 @@ type KeaConfigPool struct {
 // Represents prefix delegation pool structure within Kea configuration.
 type KeaConfigPdPool struct {
 	Prefix       string
-	PrefixLen    int
-	DelegatedLen int
+	DelegatedLen int `mapstructure:"delegated-len"`
 }
 
 // Represents a subnet with pools within Kea configuration.
@@ -24,7 +23,7 @@ type KeaConfigSubnet struct {
 	ID      int64
 	Subnet  string
 	Pools   []KeaConfigPool
-	PdPools []KeaConfigPdPool
+	PdPools []KeaConfigPdPool `mapstructure:"pd-pools"`
 }
 
 // Represents a shared network with subnets within Kea configuration.
