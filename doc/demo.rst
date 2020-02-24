@@ -61,6 +61,12 @@ by the Stork server process.
 The installation procedure assumes those images are fully under Stork control. If there are
 existing images, they will be overwritten.
 
+Requirements
+------------
+
+Requirements are the same as for Stork development. For details, please see Stork wiki
+https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment .
+
 Initialization
 --------------
 
