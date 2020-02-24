@@ -7,21 +7,31 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Represents address pool structure within Kea configuration.
 type KeaConfigPool struct {
 	Pool string
 }
 
+// Represents prefix delegation pool structure within Kea configuration.
 type KeaConfigPdPool struct {
 	Prefix       string
 	PrefixLen    int
 	DelegatedLen int
 }
 
+// Represents a subnet with pools within Kea configuration.
 type KeaConfigSubnet struct {
 	ID      int64
 	Subnet  string
 	Pools   []KeaConfigPool
 	PdPools []KeaConfigPdPool
+}
+
+// Represents a shared network with subnets within Kea configuration.
+type KeaConfigSharedNetwork struct {
+	Name    string
+	Subnet4 []KeaConfigSubnet
+	Subnet6 []KeaConfigSubnet
 }
 
 // Represents a subnet retrieved from database from app table,
