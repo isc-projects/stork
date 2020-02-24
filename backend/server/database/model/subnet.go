@@ -188,6 +188,39 @@ func GetSubnet(db *pg.DB, subnetID int64) (*Subnet, error) {
 	return subnet, err
 }
 
+// Fetches the subnet and its pools by local subnet ID and application ID.
+// Applications may use their own numbering scheme for subnets. Therefore,
+// the local subnet ID must be accompanied by the app ID.
+// If the family is set to 0 it fetches both IPv4 and IPv6 subnets.
+// Use 4 o 6 to fetch IPv4 or IPv6 specific subnet.
+func GetSubnetsByLocalID(db *pg.DB, localSubnetID int64, appID int64, family int) ([]Subnet, error) {
+	subnets := []Subnet{}
+	q := db.Model(&subnets).
+		Join("INNER JOIN app_to_subnet AS atos ON atos.local_subnet_id = ? AND atos.app_id = ?", localSubnetID, appID).
+		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("address_pool.id ASC"), nil
+		}).
+		Relation("PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("prefix_pool.id ASC"), nil
+		}).
+		Relation("SharedNetwork").
+		Relation("Apps")
+
+	// Optionally filter by IPv4 or IPv6 subnets.
+	if family == 4 || family == 6 {
+		q = q.Where("family(subnet.prefix) = ?", family)
+	}
+	err := q.Select()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		err = errors.Wrapf(err, "problem with getting subnets by local subnet id %d and app id %d", localSubnetID, appID)
+		return nil, err
+	}
+	return subnets, err
+}
+
 // Fetches the subnet by prefix from the database.
 func GetSubnetsByPrefix(db *pg.DB, prefix string) ([]Subnet, error) {
 	subnets := []Subnet{}

@@ -297,3 +297,52 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.NotNil(t, returnedSubnet)
 	require.Len(t, returnedSubnet.Apps, 1)
 }
+
+// Test that the subnet can be fetched by local ID and app ID.
+func TestGetSubnetByLocalID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add apps to the database. They must exist to make any association between
+	// then and the subnet.
+	apps := addTestSubnetApps(t, db)
+	require.Len(t, apps, 2)
+
+	subnet := &Subnet{
+		Prefix: "192.0.2.0/24",
+	}
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// Add association of the app to the subnet.
+	err = AddAppToSubnet(db, subnet, apps[0])
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// The subnet should be returned for local subnet ID of 123 and for
+	// the app we have added.
+	returnedSubnets, err := GetSubnetsByLocalID(db, 123, apps[0].ID, 0)
+	require.NoError(t, err)
+	require.Len(t, returnedSubnets, 1)
+
+	// It should be also returned among IPv4 subnets.
+	returnedSubnets, err = GetSubnetsByLocalID(db, 123, apps[0].ID, 4)
+	require.NoError(t, err)
+	require.Len(t, returnedSubnets, 1)
+
+	// If the local subnet ID is not matching no subnet should be returned.
+	returnedSubnets, err = GetSubnetsByLocalID(db, 234, apps[0].ID, 0)
+	require.NoError(t, err)
+	require.Empty(t, returnedSubnets)
+
+	// If the app id is not matching the subnet should not be returned.
+	returnedSubnets, err = GetSubnetsByLocalID(db, 123, apps[0].ID+1, 0)
+	require.NoError(t, err)
+	require.Empty(t, returnedSubnets)
+
+	// The IPv6 subnet does not exist.
+	returnedSubnets, err = GetSubnetsByLocalID(db, 123, apps[0].ID, 6)
+	require.NoError(t, err)
+	require.Empty(t, returnedSubnets)
+}
