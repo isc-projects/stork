@@ -24,50 +24,8 @@ For ease of deployment, Stork uses Rake to automate compilation and installation
 It facilitates installation both using Docker and without Docker (see the
 following sections).
 
-Installation using Docker
-=========================
-
-The following command will retrieve all required software (go, goswagger, nodejs, Angular
-dependencies, etc.) to your local directory. No root password necessary. Note that Docker
-installation is optional. Using docker is the easiest installation method. However, if you prefer to
-install it on your host, see the next section about Native installation.
-
-.. code-block:: console
-
-    # Prepare docker images and start them up
-    rake docker_up
-
-Once the build process finishes, Stork UI will be available at http://localhost:8080/. Use
-any browser to connect.
-
-The installation procedure will create several Docker images:
-
-- `stork_webui`: exposing web UI interface,
-- `stork_server`: running a server backend,
-- `postgres`: running a PostgreSQL database used by the server,
-- `stork_agent-bind9`: running an demo instance of BIND 9,
-- `stork_agent-kea`: running a demo instance of Kea DHCPv4 server,
-- `stork_agent-kea-ha1`: running the primary Kea DHCPv4 server in High Availability mode,
-- `stork_agent-kea-ha2`: running the secondary Kea DHCPv4 server in High Availability mode
-
-.. note::
-
-   The containers running Kea and BIND 9 applications are for demo purposes only. They
-   allow the users to quickly start playing with Stork without having to manually
-   deploy Kea and/or BIND 9 instances.
-
-The PostgreSQL database schema will be automatically migrated to the latest version required
-by the Stork server process.
-
-The installation procedure assumes those images are fully under Stork control. If there are
-existing images, they will be overwritten.
-
-There are several other rake targets. For a complete list of available tasks, use `rake -T`.
-Also see `wiki <https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment#building-testing-and-running-stork>`_
-for detailed build instructions.
-
-Native Installation
-===================
+Installation Steps
+==================
 
 The following steps will install Stork and its dependencies natively, i.e. on the host machine
 rather than using Docker images.
@@ -124,4 +82,3 @@ console:
 
 Once all three processes are running, go ahead and connect to http://localhost:4200 with your web
 browser.  See  :ref:`usage` for initial password information.
-

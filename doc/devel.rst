@@ -10,6 +10,17 @@ Developer's Guide
    should eventually be separated. However, since these are still very early days of the project,
    this section is kept in the Stork ARM for convenience only.
 
+Rakefile
+========
+
+Rakefile is a script for performing many development tasks like building source code, running linters,
+running unit tests, running Stork services directly or in Docker containers.
+
+There are several other rake targets. For a complete list of available tasks, use `rake -T`.
+Also see `wiki <https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment#building-testing-and-running-stork>`_
+for detailed instructions.
+
+
 Generating Documentation
 ========================
 
@@ -83,4 +94,36 @@ Then from ``swagger.yaml`` there are generated code for:
 * UI fronted by swagger-codegen
 * backend in Go lang by go-swagger
 
-All these steps are realized in Rakefile.
+All these steps are realized by Rakefile.
+
+Docker Containers
+=================
+
+To ease testing, there are several docker containers available. Not all of them are necessary.
+
+* ``server`` - This container is essential. It runs the Stork server, which interacts with all the
+  agents, the database and exposes API. Without it, Stork will not be able to function.
+* ``postgres`` - This container is essential. It runs the PostgreSQL database that is used by the
+  Stork server. Without it, Stork server will will only able to produce error messages about
+  unavailable database.
+* ``webui`` - This container is essential in most circumstances. It provides the front web
+  interface. You could possibly not run it, if you are developing your own Stork API client.
+
+There are also several containers provided that are used to samples. Those will not be needed in a
+production network, however they're very useful to demonstrate existing Stork capabilities. They
+simulate certain services that Stork is able to handle:
+
+* ``agent-bind9`` - This container runs BIND 9 server. If you run it, you can add it as a machine
+  and Stork will begin monitoring its BIND 9 service.
+
+* ``agent-kea`` - This container runs Kea DHCPv4 server. If you run it, you can add it as a machine
+  and Stork will begin monitoring its BIND 9 service.
+
+* ``agent-kea-ha1`` and ``agent-kea-ha2`` - Those two containers should in general be run
+  together. They have each a Kea DHCPv4 server instance configured in a HA pair. If you run both of
+  them and register them as machines in Stork, you will be able to observe certain HA mechanisms,
+  such as one taking over the traffic if the partner becomes unavailable.
+
+* ``traffic-dhcp`` - This container is optional. If stated, it will start transmitting DHCP packets
+  towards agent-kea. It may be useful to observe non-zero statistics coming from Kea. If you're
+  running Stork in docker, you can coveniently control that using ``rake start_traffic_dhcp`` and
