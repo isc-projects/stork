@@ -9,6 +9,7 @@ import (
 
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
+	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
 )
 
@@ -282,4 +283,40 @@ func TestGetDaemonHooksFrom2Daemons(t *testing.T) {
 	require.Len(t, hooks, 2)
 	require.Contains(t, hooks, "hook_abc.so")
 	require.Contains(t, hooks, "hook_def.so")
+}
+
+// Tests that Kea can be added and then updated in the database.
+func TestCommitAppIntoDB(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+	require.NotZero(t, machine.ID)
+
+	app := &dbmodel.App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      dbmodel.KeaAppType,
+		CtrlPort:  1234,
+		CtrlKey:   "",
+		Active:    true,
+	}
+
+	err = CommitAppIntoDB(db, app)
+	require.NoError(t, err)
+
+	app.CtrlPort = 2345
+	err = CommitAppIntoDB(db, app)
+	require.NoError(t, err)
+
+	returned, err := dbmodel.GetAppByID(db, app.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.EqualValues(t, 2345, returned.CtrlPort)
 }

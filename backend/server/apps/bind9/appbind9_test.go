@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	dbmodel "isc.org/stork/server/database/model"
+	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
 )
 
@@ -46,4 +47,40 @@ func TestGetAppState(t *testing.T) {
 	require.Equal(t, daemon.ReloadedAt, reloadedAt)
 	require.Equal(t, daemon.ZoneCount, int64(5))
 	require.Equal(t, daemon.AutomaticZoneCount, int64(96))
+}
+
+// Tests that BIND 9 can be added and then updated in the database.
+func TestCommitAppIntoDB(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+	require.NotZero(t, machine.ID)
+
+	app := &dbmodel.App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      dbmodel.Bind9AppType,
+		CtrlPort:  1234,
+		CtrlKey:   "",
+		Active:    true,
+	}
+
+	err = CommitAppIntoDB(db, app)
+	require.NoError(t, err)
+
+	app.CtrlPort = 2345
+	err = CommitAppIntoDB(db, app)
+	require.NoError(t, err)
+
+	returned, err := dbmodel.GetAppByID(db, app.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.EqualValues(t, 2345, returned.CtrlPort)
 }

@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
@@ -107,4 +108,16 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	dbApp.Details = dbmodel.AppBind9{
 		Daemon: bind9Daemon,
 	}
+}
+
+// Inserts or updates information about BIND 9 app in the database.
+func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App) (err error) {
+	if app.ID == 0 {
+		err = dbmodel.AddApp(db, app)
+	} else {
+		err = dbmodel.UpdateApp(db, app)
+	}
+	// todo: perform any additional actions required after storing the
+	// app in the db.
+	return err
 }

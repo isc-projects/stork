@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -321,4 +322,14 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 		keaApp.Daemons = append(keaApp.Daemons, dmn)
 	}
 	dbApp.Details = keaApp
+}
+
+// Inserts or updates information about Kea app in the database.
+func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App) (err error) {
+	if app.ID == 0 {
+		err = dbmodel.AddApp(db, app)
+	} else {
+		err = dbmodel.UpdateApp(db, app)
+	}
+	return err
 }

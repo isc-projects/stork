@@ -141,26 +141,21 @@ func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 		switch app.Type {
 		case dbmodel.KeaAppType:
 			kea.GetAppState(ctx2, agents, dbApp)
+			err = kea.CommitAppIntoDB(db, dbApp)
 		case dbmodel.Bind9AppType:
 			bind9.GetAppState(ctx2, agents, dbApp)
+			err = bind9.CommitAppIntoDB(db, dbApp)
+		default:
+			err = nil
 		}
 
-		// either add new app record to db or update old one
-		if dbApp.ID == 0 {
-			err = dbmodel.AddApp(db, dbApp)
-			if err != nil {
-				log.Error(err)
-				return "problem with storing application state in database"
-			}
-			log.Printf("added %s app on %s", dbApp.Type, dbMachine.Address)
-		} else {
-			err = db.Update(dbApp)
-			if err != nil {
-				log.Error(err)
-				return "problem with storing application state in database"
-			}
-			log.Printf("updated %s app on %s", dbApp.Type, dbMachine.Address)
+		if err != nil {
+			log.Error(err)
+			return "problem with storing application state in the database"
 		}
+
+		log.Printf("committed information about %s app running on %s to database",
+			dbApp.Type, dbMachine.Address)
 
 		// add app to machine's apps list
 		dbMachine.Apps = append(dbMachine.Apps, dbApp)
