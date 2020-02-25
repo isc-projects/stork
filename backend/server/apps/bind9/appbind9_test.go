@@ -20,10 +20,10 @@ func TestGetAppState(t *testing.T) {
 
 	fa := storktest.NewFakeAgents(dummyFn)
 
+	var accessPoints []dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "127.0.0.1", "abcd", 953)
 	dbApp := dbmodel.App{
-		CtrlAddress: "127.0.0.1",
-		CtrlPort:    953,
-		CtrlKey:     "abcd",
+		AccessPoints: accessPoints,
 		Machine: &dbmodel.Machine{
 			Address:   "192.0.2.0",
 			AgentPort: 1111,

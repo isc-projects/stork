@@ -163,9 +163,11 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 		}
 	})
 
+	var accessPoints []dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "192.0.2.0", "", 1234)
+
 	dbApp := dbmodel.App{
-		CtrlAddress: "192.0.2.0",
-		CtrlPort:    1234,
+		AccessPoints: accessPoints,
 		Machine: &dbmodel.Machine{
 			Address:   "192.0.2.0",
 			AgentPort: 1111,
@@ -191,9 +193,11 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 		}
 	})
 
+	var accessPoints []dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "192.0.2.0", "", 1234)
+
 	dbApp := dbmodel.App{
-		CtrlAddress: "192.0.2.0",
-		CtrlPort:    1234,
+		AccessPoints: accessPoints,
 		Machine: &dbmodel.Machine{
 			Address:   "192.0.2.0",
 			AgentPort: 1111,

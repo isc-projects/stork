@@ -187,14 +187,15 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	err := dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.ID)
+
+	var accessPoints []dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "cool.example.org", "", 1234)
 	a := &dbmodel.App{
-		ID:          0,
-		MachineID:   m.ID,
-		Type:        dbmodel.KeaAppType,
-		CtrlAddress: "cool.example.org",
-		CtrlPort:    1234,
-		CtrlKey:     "",
-		Active:      true,
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.KeaAppType,
+		Active:       true,
+		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
 			Daemons: []*dbmodel.KeaDaemon{
 				{

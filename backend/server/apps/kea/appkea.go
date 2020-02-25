@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -293,7 +294,12 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 // The state, that is stored into dbApp, includes: version, config and runtime state of indicated Kea daemons.
 func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) {
 	// prepare URL to CA
-	caURL := storkutil.HostWithPortURL(dbApp.CtrlAddress, dbApp.CtrlPort)
+	ctrlPoint, err := apps.GetAccessPoint(dbApp, "control")
+	if err != nil {
+		log.Warnf("problem with getting kea access control point: %s", err)
+		return
+	}
+	caURL := storkutil.HostWithPortURL(ctrlPoint.Address, ctrlPoint.Port)
 
 	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()

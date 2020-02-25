@@ -22,12 +22,14 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add Kea app with DHCPv4 subnets in two shared networks.
+	var accessPoints []AccessPoint
+	accessPoints = AppendAccessPoint(accessPoints, "control", "", "", 1114)
 	a4 := &App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      KeaAppType,
-		CtrlPort:  1114,
-		Active:    true,
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         KeaAppType,
+		Active:       true,
+		AccessPoints: accessPoints,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
 				Config: NewKeaConfig(&map[string]interface{}{
@@ -135,12 +137,14 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add Kea app with DHCPv6 subnets, one global and one within a shared network.
+	accessPoints = []AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, "control", "", "", 1116)
 	a6 := &App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      KeaAppType,
-		CtrlPort:  1116,
-		Active:    true,
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         KeaAppType,
+		Active:       true,
+		AccessPoints: accessPoints,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
 				Config: NewKeaConfig(&map[string]interface{}{
@@ -185,12 +189,14 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// Kea app with DHCPv4 and DHCPv6 subnets.
+	accessPoints = []AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, "control", "", "", 1146)
 	a46 := &App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      KeaAppType,
-		CtrlPort:  1146,
-		Active:    true,
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         KeaAppType,
+		Active:       true,
+		AccessPoints: accessPoints,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
 				Config: NewKeaConfig(&map[string]interface{}{
@@ -392,12 +398,14 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add Kea DHCPv4 without subnets
+	var accessPoints []AccessPoint
+	accessPoints = AppendAccessPoint(accessPoints, "control", "", "", 1114)
 	a4 := &App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      KeaAppType,
-		CtrlPort:  1114,
-		Active:    true,
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         KeaAppType,
+		Active:       true,
+		AccessPoints: accessPoints,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
 				Config: NewKeaConfig(&map[string]interface{}{
@@ -430,12 +438,14 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// add app kea with dhcp4 to machine
+	var accessPoints []AccessPoint
+	accessPoints = AppendAccessPoint(accessPoints, "control", "", "", 1114)
 	a4 := &App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      KeaAppType,
-		CtrlPort:  1114,
-		Active:    true,
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         KeaAppType,
+		Active:       true,
+		AccessPoints: accessPoints,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
 				Config: NewKeaConfig(&map[string]interface{}{
@@ -502,12 +512,14 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// add app kea with dhcp6 to machine
+	var accessPoints []AccessPoint
+	accessPoints = AppendAccessPoint(accessPoints, "control", "", "", 1116)
 	a6 := &App{
-		ID:        0,
-		MachineID: m.ID,
-		Type:      KeaAppType,
-		CtrlPort:  1116,
-		Active:    true,
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         KeaAppType,
+		Active:       true,
+		AccessPoints: accessPoints,
 		Details: AppKea{
 			Daemons: []*KeaDaemon{{
 				Config: NewKeaConfig(&map[string]interface{}{

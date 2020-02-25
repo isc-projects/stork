@@ -14,6 +14,7 @@ import (
 
 	"isc.org/stork"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps"
 	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"
 	dbops "isc.org/stork/server/database"
@@ -86,6 +87,27 @@ func machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	return &m
 }
 
+// appCompare compares two apps on equality.  Two apps are considered equal if
+// their type matches and if they have the same control port.  Return true if
+// equal, false otherwise.
+func appCompare(dbApp *dbmodel.App, app *agentcomm.App) bool {
+	if dbApp.Type != app.Type {
+		return false
+	}
+
+	var controlPortEqual bool
+	for _, pt := range dbApp.AccessPoints {
+		if pt.Type != "control" {
+			continue
+		}
+		if pt.Port == app.CtrlPort {
+			controlPortEqual = true
+			break
+		}
+	}
+	return controlPortEqual
+}
+
 func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents) string {
 	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -118,21 +140,27 @@ func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 		// look for old app
 		var dbApp *dbmodel.App = nil
 		for _, dbApp2 := range oldAppsList {
-			if dbApp2.Type == app.Type && dbApp2.CtrlPort == app.CtrlPort {
+			if appCompare(dbApp2, app) {
 				dbApp = dbApp2
 				break
 			}
 		}
 		// if no old app in db then prepare new record
 		if dbApp == nil {
+			var accessPoints []dbmodel.AccessPoint
+			accessPoints = append(accessPoints, dbmodel.AccessPoint{
+				Type:    "control",
+				Address: app.CtrlAddress,
+				Port:    app.CtrlPort,
+				Key:     app.CtrlKey,
+			})
+
 			dbApp = &dbmodel.App{
-				ID:          0,
-				MachineID:   dbMachine.ID,
-				Machine:     dbMachine,
-				Type:        app.Type,
-				CtrlAddress: app.CtrlAddress,
-				CtrlPort:    app.CtrlPort,
-				CtrlKey:     app.CtrlKey,
+				ID:           0,
+				MachineID:    dbMachine.ID,
+				Machine:      dbMachine,
+				Type:         app.Type,
+				AccessPoints: accessPoints,
 			}
 		} else {
 			dbApp.Machine = dbMachine
@@ -165,7 +193,7 @@ func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 	for _, dbApp := range oldAppsList {
 		found := false
 		for _, app := range state.Apps {
-			if dbApp.Type == app.Type && dbApp.CtrlPort == app.CtrlPort {
+			if appCompare(dbApp, app) {
 				found = true
 				break
 			}
@@ -475,12 +503,14 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 }
 
 func appToRestAPI(dbApp *dbmodel.App) *models.App {
+	ctrlPoint, _ := apps.GetAccessPoint(dbApp, "control")
+
 	app := models.App{
 		ID:          dbApp.ID,
 		Type:        dbApp.Type,
-		CtrlAddress: dbApp.CtrlAddress,
-		CtrlPort:    dbApp.CtrlPort,
-		CtrlKey:     dbApp.CtrlKey,
+		CtrlAddress: ctrlPoint.Address,
+		CtrlPort:    ctrlPoint.Port,
+		CtrlKey:     ctrlPoint.Key,
 		Active:      dbApp.Active,
 		Version:     dbApp.Meta.Version,
 		Machine: &models.AppMachine{

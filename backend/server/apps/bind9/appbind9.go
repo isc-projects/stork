@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 )
@@ -18,10 +19,16 @@ const namedLongDateFormat = "Mon, 02 Jan 2006 15:04:05 MST"
 
 func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) {
 	// Get rndc control settings
+	ctrlPoint, err := apps.GetAccessPoint(dbApp, "control")
+	if err != nil {
+		log.Warnf("problem with getting BIND 9 control point: %s", err)
+		return
+	}
+
 	rndcSettings := agentcomm.Bind9Control{
-		CtrlAddress: dbApp.CtrlAddress,
-		CtrlPort:    dbApp.CtrlPort,
-		CtrlKey:     dbApp.CtrlKey,
+		CtrlAddress: ctrlPoint.Address,
+		CtrlPort:    ctrlPoint.Port,
+		CtrlKey:     ctrlPoint.Key,
 	}
 
 	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)

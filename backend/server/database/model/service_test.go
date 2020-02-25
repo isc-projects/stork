@@ -9,6 +9,112 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
+// accessPointsMatch compares two access points and returns true if they
+// match, false otherwise.
+func accessPointsMatch(pt1, pt2 AccessPoint) bool {
+	if pt1.Type != pt2.Type {
+		return false
+	}
+	if pt1.Address != pt2.Address {
+		return false
+	}
+	if pt1.Port != pt2.Port {
+		return false
+	}
+	if pt1.Key != pt2.Key {
+		return false
+	}
+	return true
+}
+
+// accessPointArraysMatch compares two access point arrays and returns true
+// if they match, false otherwise.
+func accessPointArraysMatch(pts1, pts2 []AccessPoint) bool {
+	if len(pts1) != len(pts2) {
+		return false
+	}
+
+	if len(pts1) == 0 {
+		return true
+	}
+
+	var found = make([]bool, len(pts1))
+
+	for i := 0; i < len(pts1); i++ {
+		for j := 0; j < len(pts2); j++ {
+			if accessPointsMatch(pts1[i], pts2[j]) {
+				found[i] = true
+				break
+			}
+		}
+	}
+
+	for i := 0; i < len(pts1); i++ {
+		if !found[i] {
+			return false
+		}
+	}
+
+	return true
+
+}
+
+// appsMatch compares two application and returns true if they match,
+// false otherwise.
+func appsMatch(app1, app2 *App) bool {
+	if app1.ID != app2.ID {
+		return false
+	}
+	if app1.Created != app2.Created {
+		return false
+	}
+	if app1.Deleted != app2.Deleted {
+		return false
+	}
+	if app1.MachineID != app2.MachineID {
+		return false
+	}
+	if app1.Type != app2.Type {
+		return false
+	}
+	if app1.Active != app2.Active {
+		return false
+	}
+	return accessPointArraysMatch(app1.AccessPoints, app2.AccessPoints)
+}
+
+// appArraysMatch compares two application arrays.  The two arrays may be
+// ordered differently, as long as the elements in the array are identical,
+// the two arrays are considered to match.  If so, this function returns
+// true, false otherwise.
+func appArraysMatch(appArray1, appArray2 []*App) bool {
+	if len(appArray1) != len(appArray2) {
+		return false
+	}
+
+	if len(appArray1) == 0 {
+		return true
+	}
+
+	var found = make([]bool, len(appArray1))
+
+	for i := 0; i < len(appArray1); i++ {
+		for j := 0; j < len(appArray2); j++ {
+			if appsMatch(appArray1[i], appArray2[j]) {
+				found[i] = true
+				break
+			}
+		}
+	}
+
+	for i := 0; i < len(appArray1); i++ {
+		if !found[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // This function adds two services, each including 5 Kea applications.
 func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 	service1 := &Service{
@@ -32,14 +138,16 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 		err := AddMachine(db, m)
 		require.NoError(t, err)
 
+		var accessPoints []AccessPoint
+		accessPoints = AppendAccessPoint(accessPoints, "control", "cool.example.org", "", int64(1234+i))
 		a := &App{
-			ID:          0,
-			MachineID:   m.ID,
-			Type:        KeaAppType,
-			CtrlAddress: "cool.example.org",
-			CtrlPort:    int64(1234 + i),
-			Active:      true,
+			ID:           0,
+			MachineID:    m.ID,
+			Type:         KeaAppType,
+			Active:       true,
+			AccessPoints: accessPoints,
 		}
+
 		err = AddApp(db, a)
 		require.NoError(t, err)
 
@@ -168,7 +276,7 @@ func TestGetServicesByAppID(t *testing.T) {
 	service := appServices[0]
 	require.Len(t, service.Apps, 5)
 	require.Equal(t, services[0].Name, service.Name)
-	require.ElementsMatch(t, service.Apps, services[0].Apps)
+	require.True(t, appArraysMatch(service.Apps, services[0].Apps))
 
 	// Repeat the same test for the fifth application belonging to the service2.
 	appServices, err = GetDetailedServicesByAppID(db, services[1].Apps[4].ID)
@@ -179,7 +287,7 @@ func TestGetServicesByAppID(t *testing.T) {
 	service = appServices[0]
 	require.Len(t, service.Apps, 5)
 	require.Equal(t, services[1].Name, service.Name)
-	require.ElementsMatch(t, service.Apps, services[1].Apps)
+	require.True(t, appArraysMatch(service.Apps, services[1].Apps))
 
 	// Finally, make one of the application shared between two services.
 	err = AddAppToService(db, services[0].ID, services[1].Apps[0])
@@ -205,8 +313,9 @@ func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
 	require.GreaterOrEqual(t, len(services), 2)
 
 	// Get a service instance to which the forth application of the service1 belongs.
-	appServices, err := GetDetailedServicesByAppCtrlAddressPort(db, services[0].Apps[3].CtrlAddress,
-		services[0].Apps[3].CtrlPort)
+	accessPoint, err := GetAccessPointByAppID(db, services[0].Apps[3].ID, "control")
+	require.NoError(t, err)
+	appServices, err := GetDetailedServicesByAppCtrlAddressPort(db, accessPoint.Address, accessPoint.Port)
 	require.NoError(t, err)
 	require.Len(t, appServices, 1)
 
@@ -214,11 +323,12 @@ func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
 	service := appServices[0]
 	require.Len(t, service.Apps, 5)
 	require.Equal(t, services[0].Name, service.Name)
-	require.ElementsMatch(t, service.Apps, services[0].Apps)
+	require.True(t, appArraysMatch(service.Apps, services[0].Apps))
 
 	// Repeat the same test for the application belonging to the second service.
-	appServices, err = GetDetailedServicesByAppCtrlAddressPort(db, services[1].Apps[3].CtrlAddress,
-		services[1].Apps[3].CtrlPort)
+	accessPoint, err = GetAccessPointByAppID(db, services[1].Apps[3].ID, "control")
+	require.NoError(t, err)
+	appServices, err = GetDetailedServicesByAppCtrlAddressPort(db, accessPoint.Address, accessPoint.Port)
 	require.NoError(t, err)
 	require.Len(t, appServices, 1)
 
@@ -226,7 +336,7 @@ func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
 	service = appServices[0]
 	require.Len(t, service.Apps, 5)
 	require.Equal(t, services[1].Name, service.Name)
-	require.ElementsMatch(t, service.Apps, services[1].Apps)
+	require.True(t, appArraysMatch(service.Apps, services[1].Apps))
 }
 
 // Test getting all services.

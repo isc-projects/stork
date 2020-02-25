@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -154,7 +155,11 @@ func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLease
 // Get lease stats from given kea app.
 func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 	// prepare URL to CA
-	caURL := storkutil.HostWithPortURL(dbApp.CtrlAddress, dbApp.CtrlPort)
+	ctrlPoint, err := apps.GetAccessPoint(dbApp, "control")
+	if err != nil {
+		return err
+	}
+	caURL := storkutil.HostWithPortURL(ctrlPoint.Address, ctrlPoint.Port)
 
 	// get active dhcp daemons
 	dhcpDaemons := make(agentcomm.KeaDaemons)

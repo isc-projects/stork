@@ -75,6 +75,13 @@ func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "problem with getting machine %v", id)
 	}
+
+	// Retrieve the access points. This should be incorporated in the
+	// above query, ideally.
+	for _, app := range machine.Apps {
+		app.AccessPoints, _ = GetAllAccessPointsByAppID(db, app.ID)
+	}
+
 	return &machine, nil
 }
 
@@ -86,6 +93,13 @@ func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
 	if err != nil {
 		return errors.Wrapf(err, "problem with getting machine %v", machine.ID)
 	}
+
+	// Retrieve the access points. This should be incorporated in the
+	// above query, ideally.
+	for _, app := range machine.Apps {
+		app.AccessPoints, _ = GetAllAccessPointsByAppID(db, app.ID)
+	}
+
 	return nil
 }
 
@@ -132,6 +146,15 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 	if err != nil {
 		return nil, 0, errors.Wrapf(err, "problem with getting machines")
 	}
+
+	// Retrieve the access points. This should be incorporated in the
+	// above query, ideally.
+	for _, machine := range machines {
+		for _, app := range machine.Apps {
+			app.AccessPoints, _ = GetAllAccessPointsByAppID(db, app.ID)
+		}
+	}
+
 	return machines, int64(total), nil
 }
 

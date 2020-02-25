@@ -447,11 +447,12 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Creates new app. Its configuration doesn't matter in this test.
+	var accessPoints []AccessPoint
+	accessPoints = AppendAccessPoint(accessPoints, "control", "localhost", "", 8000)
 	app := App{
-		MachineID:   m.ID,
-		Type:        KeaAppType,
-		CtrlAddress: "localhost",
-		CtrlPort:    8000,
+		MachineID:    m.ID,
+		Type:         KeaAppType,
+		AccessPoints: accessPoints,
 	}
 	// Add the app to the database.
 	err = AddApp(db, &app)

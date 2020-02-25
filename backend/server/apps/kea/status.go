@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -38,7 +39,11 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	caURL := storkutil.HostWithPortURL(dbApp.CtrlAddress, dbApp.CtrlPort)
+	ctrlPoint, err := apps.GetAccessPoint(dbApp, "control")
+	if err != nil {
+		return nil, err
+	}
+	caURL := storkutil.HostWithPortURL(ctrlPoint.Address, ctrlPoint.Port)
 
 	// The Kea response will be stored in this slice of structures.
 	response := []struct {

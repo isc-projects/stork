@@ -221,6 +221,7 @@ func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) 
 
 	err := db.Model(&services).
 		Join("INNER JOIN app_to_service AS atos ON atos.service_id = service.id").
+		Join("INNER JOIN app AS a ON a.id = atos.app_id").
 		Relation("HAService").
 		Relation("Apps").
 		Where("atos.app_id = ?", appID).
@@ -231,6 +232,15 @@ func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) 
 		err = errors.Wrapf(err, "problem with getting services for app id %d", appID)
 		return services, err
 	}
+
+	// Retrieve the access points. This should be incorporated in the
+	// above query, ideally.
+	for _, service := range services {
+		for _, app := range service.Apps {
+			app.AccessPoints, _ = GetAllAccessPointsByAppID(db, app.ID)
+		}
+	}
+
 	return services, nil
 }
 
@@ -247,10 +257,12 @@ func GetDetailedServicesByAppCtrlAddressPort(db *dbops.PgDB, ctrlAddress string,
 		DistinctOn("service.id").
 		Join("INNER JOIN app_to_service AS atos ON atos.service_id = service.id").
 		Join("INNER JOIN app AS a ON a.id = atos.app_id").
+		Join("INNER JOIN access_point AS ap ON ap.app_id = atos.app_id").
 		Relation("HAService").
 		Relation("Apps").
-		Where("a.ctrl_address = ?", ctrlAddress).
-		Where("a.ctrl_port = ?", ctrlPort).
+		Where("ap.address = ?", ctrlAddress).
+		Where("ap.port = ?", ctrlPort).
+		Where("ap.type = 'control'").
 		OrderExpr("service.id ASC").
 		Select()
 
@@ -259,6 +271,15 @@ func GetDetailedServicesByAppCtrlAddressPort(db *dbops.PgDB, ctrlAddress string,
 			ctrlAddress, ctrlPort)
 		return services, err
 	}
+
+	// Retrieve the access points. This should be incorporated in the
+	// above query, ideally.
+	for _, service := range services {
+		for _, app := range service.Apps {
+			app.AccessPoints, _ = GetAllAccessPointsByAppID(db, app.ID)
+		}
+	}
+
 	return services, nil
 }
 

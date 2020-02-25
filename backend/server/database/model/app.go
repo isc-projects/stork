@@ -54,19 +54,16 @@ type AppMeta struct {
 
 // Represents an app held in app table in the database.
 type App struct {
-	ID          int64
-	Created     time.Time
-	MachineID   int64
-	Machine     *Machine
-	Type        string // currently supported types are: "kea" and "bind9"
-	CtrlAddress string
-	CtrlPort    int64
-	CtrlKey     string
-	Active      bool
-	Meta        AppMeta
-	Details     interface{} // here we have either AppKea or AppBind9
+	ID        int64
+	Created   time.Time
+	MachineID int64
+	Machine   *Machine
+	Type      string // currently supported types are: "kea" and "bind9"
+	Active    bool
+	Meta      AppMeta
+	Details   interface{} // here we have either AppKea or AppBind9
 
-	AccessPoints []*AccessPoint
+	AccessPoints []AccessPoint
 }
 
 // This is a hook to go-pg that is called just after reading rows from database.
@@ -114,7 +111,7 @@ func addAppAccessPoints(tx *pg.Tx, app *App) (err error) {
 		point.AppID = app.ID
 		point.MachineID = app.MachineID
 
-		_, err := tx.Model(point).OnConflict("DO NOTHING").Insert()
+		_, err := tx.Model(&point).OnConflict("DO NOTHING").Insert()
 		if err != nil {
 			err = errors.Wrapf(err, "problem with adding new access point: %v", point)
 			return err
@@ -212,6 +209,7 @@ func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 	q := db.Model(&apps)
 	q = q.Where("type = ?", appType)
 	q = q.Relation("Machine")
+	q = q.Relation("AccessPoints")
 	err := q.Select()
 	if err != nil {
 		return nil, errors.Wrapf(err, "problem with getting %s apps", appType)
