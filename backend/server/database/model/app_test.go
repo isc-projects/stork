@@ -80,6 +80,42 @@ func TestAddApp(t *testing.T) {
 	require.NotNil(t, err)
 }
 
+// Test that the app can be updated in the database.
+func TestUpdateApp(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotZero(t, m.ID)
+
+	a := &App{
+		ID:          0,
+		MachineID:   m.ID,
+		Type:        KeaAppType,
+		CtrlAddress: "cool.example.org",
+		CtrlPort:    1234,
+		CtrlKey:     "",
+		Active:      true,
+	}
+
+	err = UpdateApp(db, a)
+	require.Error(t, err)
+
+	err = AddApp(db, a)
+	require.NoError(t, err)
+	require.NotZero(t, a.ID)
+
+	a.CtrlPort = 2345
+	err = UpdateApp(db, a)
+	require.NoError(t, err)
+}
+
 func TestDeleteApp(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

@@ -105,6 +105,16 @@ func AddApp(db *pg.DB, app *App) error {
 	return nil
 }
 
+// Updates application in the database. An error is returned if the app
+// does not exist.
+func UpdateApp(db *pg.DB, app *App) error {
+	err := db.Update(app)
+	if err != nil {
+		return errors.Wrapf(err, "problem with updating app %v", app)
+	}
+	return nil
+}
+
 func GetAppByID(db *pg.DB, id int64) (*App, error) {
 	app := App{}
 	q := db.Model(&app).Where("app.id = ?", id)
