@@ -113,8 +113,7 @@ func GetSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) (network *Shar
 	// subnets you can easily join both shared networks and pools.
 	err = db.Model(&subnets).
 		Relation("SharedNetwork", func(q *orm.Query) (*orm.Query, error) {
-			return q.Where("shared_network.id = ?", networkID).
-				OrderExpr("shared_network.id ASC"), nil
+			return q.Where("shared_network.id = ?", networkID), nil
 		}).
 		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.OrderExpr("address_pool.id ASC"), nil
