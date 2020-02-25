@@ -61,7 +61,12 @@ type AppToSubnet struct {
 }
 
 // Add address and prefix pools from the subnet instance into the database.
-// The subnet is expected to exist in the database.
+// The subnet is expected to exist in the database. The dbIface argument
+// is either a pointer to pg.DB if the new transaction should be started
+// by this function or it is a pointer to pg.Tx which represents an
+// existing transaction. That way this function can be called to add
+// pools within a separate transaction or as part of an existing
+// transaction.
 func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 	if len(subnet.AddressPools) == 0 && len(subnet.PrefixPools) == 0 {
 		return nil
