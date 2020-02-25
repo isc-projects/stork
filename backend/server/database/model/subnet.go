@@ -13,7 +13,12 @@ import (
 // besides the primary key, includes the optional local subnet id value.
 // This struct embeds the app and glues it with the local subnet id. The
 // value of the local subnet id is copied via App_LocalSubnetID field of the
-// AppToSubnet structure.
+// AppToSubnet structure. Without this structure, the value of the local
+// subnet id would not be available within the Subnet structure after
+// querying for a subnet with associated apps. The LocalSubnetID value
+// is copied to this structure thanks to using App_LocalSubnetID in the
+// AppToSubnet structure which, when present, signals to go-pg to capture
+// this value.
 type SubnetAttachedApp struct {
 	tableName struct{} `pg:"app"` //nolint:unused,structcheck
 	App
