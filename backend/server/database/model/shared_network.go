@@ -22,16 +22,14 @@ type SharedNetwork struct {
 }
 
 // Adds new shared network to the database.
-func AddSharedNetwork(db *dbops.PgDB, network *SharedNetwork) error {
-	tx, err := db.Begin()
+func AddSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with starting transaction for adding new shared network with name %s",
+		err = errors.WithMessagef(err, "problem with starting transaction for adding new shared network with name %s",
 			network.Name)
 		return err
 	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	defer rollback()
 
 	err = tx.Insert(network)
 	if err != nil {
@@ -50,9 +48,9 @@ func AddSharedNetwork(db *dbops.PgDB, network *SharedNetwork) error {
 		network.Subnets[i] = subnet
 	}
 
-	err = tx.Commit()
+	err = commit()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with coommitting new shared network with name %s into the database",
+		err = errors.WithMessagef(err, "problem with committing new shared network with name %s into the database",
 			network.Name)
 	}
 
@@ -61,10 +59,25 @@ func AddSharedNetwork(db *dbops.PgDB, network *SharedNetwork) error {
 
 // Updates shared network in the database. It neither adds nor modifies associations
 // with the subnets it contains.
-func UpdateSharedNetwork(db *dbops.PgDB, network *SharedNetwork) error {
-	err := db.Update(network)
+func UpdateSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with starting transaction for updating shared network with name %s",
+			network.Name)
+		return err
+	}
+	defer rollback()
+
+	err = tx.Update(network)
 	if err != nil {
 		err = errors.Wrapf(err, "problem with updating the shared network with id %d", network.ID)
+		return err
+	}
+
+	err = commit()
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with committing updates to shared network with name %s into the database",
+			network.Name)
 	}
 	return err
 }

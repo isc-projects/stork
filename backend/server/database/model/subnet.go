@@ -5,6 +5,8 @@ import (
 	"github.com/go-pg/pg/v9/orm"
 	errors "github.com/pkg/errors"
 
+	dbops "isc.org/stork/server/database"
+
 	"time"
 )
 
@@ -128,24 +130,22 @@ func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) error {
 // Creates new transaction and adds the subnet along with its pools into the
 // database. If it has any associations with the shared network, those
 // associations are also made in the database.
-func AddSubnet(db *pg.DB, subnet *Subnet) error {
-	tx, err := db.Begin()
+func AddSubnet(dbIface interface{}, subnet *Subnet) error {
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with starting transaction for adding new subnet with prefix %s",
+		err = errors.WithMessagef(err, "problem with starting transaction for adding new subnet with prefix %s",
 			subnet.Prefix)
 		return err
 	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	defer rollback()
 
 	err = addSubnetWithPools(tx, subnet)
 	if err != nil {
 		return err
 	}
-	err = tx.Commit()
+	err = commit()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with committing new subnet with prefix %s into the database",
+		err = errors.WithMessagef(err, "problem with committing new subnet with prefix %s into the database",
 			subnet.Prefix)
 	}
 
@@ -271,7 +271,15 @@ func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
 // Internally, the association is made via the local_subnet table which holds
 // information about the subnet from the given app perspective, local subnet
 // id, statistics etc.
-func AddAppToSubnet(db *pg.DB, subnet *Subnet, app *App) error {
+func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App) error {
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with starting transaction for associating an app with id %d with the subnet %s",
+			app.ID, subnet.Prefix)
+		return err
+	}
+	defer rollback()
+
 	localSubnetID := int64(0)
 	// If the prefix is available we should try to match the subnet prefix
 	// with the app's configuration and retrieve the local subnet id from
@@ -287,7 +295,7 @@ func AddAppToSubnet(db *pg.DB, subnet *Subnet, app *App) error {
 	// Try to insert. If such association already exists we could maybe do
 	// nothing, but we do update instead to force setting the new value
 	// of the local_subnet_id if it has changed.
-	_, err := db.Model(&localSubnet).
+	_, err = tx.Model(&localSubnet).
 		Column("app_id").
 		Column("subnet_id").
 		Column("local_subnet_id").
@@ -295,8 +303,15 @@ func AddAppToSubnet(db *pg.DB, subnet *Subnet, app *App) error {
 		Set("local_subnet_id = EXCLUDED.local_subnet_id").
 		Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with associating the app with id %d with the subnet with id %d",
-			app.ID, subnet.ID)
+		err = errors.Wrapf(err, "problem with associating the app with id %d with the subnet %s",
+			app.ID, subnet.Prefix)
+		return err
+	}
+
+	err = commit()
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with committing transaction associating the app with id %d with the subnet %s",
+			app.ID, subnet.Prefix)
 	}
 	return err
 }
