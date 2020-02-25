@@ -1,6 +1,7 @@
 package kea
 
 import (
+	log "github.com/sirupsen/logrus"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 )
@@ -67,8 +68,9 @@ func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig) (networks [
 		for _, n := range networkList {
 			if networkMap, ok := n.(map[string]interface{}); ok {
 				// Parse the configured network.
-				network := dbmodel.NewSharedNetworkFromKea(&networkMap)
-				if network == nil {
+				network, err := dbmodel.NewSharedNetworkFromKea(&networkMap)
+				if err != nil {
+					log.Warnf("skipping invalid shared network: %v", err)
 					continue
 				}
 				dbNetwork, err := sharedNetworkExists(db, network, dbNetworks)
@@ -124,7 +126,11 @@ func detectSubnets(db *dbops.PgDB, config *dbmodel.KeaConfig, family int) (subne
 		for _, s := range subnetList {
 			if subnetMap, ok := s.(map[string]interface{}); ok {
 				// Parse the configured subnet.
-				subnet := dbmodel.NewSubnetFromKea(&subnetMap)
+				subnet, err := dbmodel.NewSubnetFromKea(&subnetMap)
+				if err != nil {
+					log.Warnf("skipping invalid subnet: %v", err)
+					continue
+				}
 				exists, index := subnetExists(subnet, dbSubnets)
 				if exists {
 					subnets = append(subnets, dbSubnets[index])

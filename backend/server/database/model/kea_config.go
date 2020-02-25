@@ -58,7 +58,7 @@ func NewKeaConfigFromJSON(rawCfg string) (*KeaConfig, error) {
 
 // Converts a structure holding subnet in Kea format to Stork representation
 // of the subnet.
-func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) *Subnet {
+func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) (*Subnet, error) {
 	convertedSubnet := &Subnet{
 		ID:     keaSubnet.ID,
 		Prefix: keaSubnet.Subnet,
@@ -66,7 +66,7 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) *Subnet {
 	for _, p := range keaSubnet.Pools {
 		addressPool, err := NewAddressPoolFromRange(p.Pool)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		addressPool.SubnetID = keaSubnet.ID
 		convertedSubnet.AddressPools = append(convertedSubnet.AddressPools, *addressPool)
@@ -74,16 +74,16 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) *Subnet {
 	for _, p := range keaSubnet.PdPools {
 		prefixPool, err := NewPrefixPool(p.Prefix, p.DelegatedLen)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		prefixPool.SubnetID = keaSubnet.ID
 		convertedSubnet.PrefixPools = append(convertedSubnet.PrefixPools, *prefixPool)
 	}
-	return convertedSubnet
+	return convertedSubnet, nil
 }
 
 // Creates new shared network instance from the pointer to the map of interfaces.
-func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}) *SharedNetwork {
+func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}) (*SharedNetwork, error) {
 	var parsedSharedNetwork KeaConfigSharedNetwork
 	_ = mapstructure.Decode(rawNetwork, &parsedSharedNetwork)
 	newSharedNetwork := &SharedNetwork{
@@ -93,18 +93,20 @@ func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}) *SharedNetwork 
 	for _, subnetList := range [][]KeaConfigSubnet{parsedSharedNetwork.Subnet4, parsedSharedNetwork.Subnet6} {
 		for _, s := range subnetList {
 			keaSubnet := s
-			subnet := convertSubnetFromKea(&keaSubnet)
-			if subnet != nil {
+			subnet, err := convertSubnetFromKea(&keaSubnet)
+			if err == nil {
 				newSharedNetwork.Subnets = append(newSharedNetwork.Subnets, *subnet)
+			} else {
+				return nil, err
 			}
 		}
 	}
 
-	return newSharedNetwork
+	return newSharedNetwork, nil
 }
 
 // Creates new subnet instance from the pointer to the map of interfaces.
-func NewSubnetFromKea(rawSubnet *map[string]interface{}) *Subnet {
+func NewSubnetFromKea(rawSubnet *map[string]interface{}) (*Subnet, error) {
 	var parsedSubnet KeaConfigSubnet
 	_ = mapstructure.Decode(rawSubnet, &parsedSubnet)
 	return convertSubnetFromKea(&parsedSubnet)
