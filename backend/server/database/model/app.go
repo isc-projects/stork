@@ -8,6 +8,8 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
+
+	dbops "isc.org/stork/server/database"
 )
 
 type Bind9Daemon struct {
@@ -97,22 +99,51 @@ func (app *App) AfterScan(ctx context.Context) error {
 	return nil
 }
 
-func AddApp(db *pg.DB, app *App) error {
-	err := db.Insert(app)
+// Adds application into the database. The dbIface object may either be a pg.DB
+// object or pg.Tx. In the latter case this function uses existing transaction
+// to add an app.
+func AddApp(dbIface interface{}, app *App) error {
+	// Start transaction if it hasn't been started yet.
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		return err
+	}
+	// Always rollback when this function ends. If the changes get committed
+	// first this is no-op.
+	defer rollback()
+
+	err = tx.Insert(app)
 	if err != nil {
 		return errors.Wrapf(err, "problem with inserting app %v", app)
 	}
-	return nil
+
+	// Commit the changes if necessary.
+	err = commit()
+	return err
 }
 
 // Updates application in the database. An error is returned if the app
-// does not exist.
-func UpdateApp(db *pg.DB, app *App) error {
-	err := db.Update(app)
+// does not exist. The dbIface object may either be a pg.DB object or
+// pg.Tx. In the latter case this function uses existing transaction
+// to add an app.
+func UpdateApp(dbIface interface{}, app *App) error {
+	// Start transaction if it hasn't been started yet.
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		return err
+	}
+	// Always rollback when this function ends. If the changes get committed
+	// first this is no-op.
+	defer rollback()
+
+	err = tx.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "problem with updating app %v", app)
 	}
-	return nil
+
+	// Commit the changes if necessary.
+	err = commit()
+	return err
 }
 
 func GetAppByID(db *pg.DB, id int64) (*App, error) {

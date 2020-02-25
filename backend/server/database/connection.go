@@ -72,3 +72,41 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 	log.Infof("connected to database %s:%d, schema version: %d", settings.Host, settings.Port, newVer)
 	return db, nil
 }
+
+// Creates new transaction or returns existing transaction along with
+// the appropriate rollback and commit functions. If the dbIface is
+// a pointer to pg.DB object, this object is used to create new
+// transaction. The rollback and commit functions contain appropriate
+// rollback and commit implementations. If the dbIface points to an
+// pg.Tx it means that we're in the middle of an existing transaction.
+// In that case this object is returned to the caller and the rollback
+// and commit functions are no-op.
+func Transaction(dbIface interface{}) (tx *pg.Tx, rollback func(), commit func() error, err error) {
+	db, ok := dbIface.(*pg.DB)
+	if ok {
+		tx, err = db.Begin()
+		if err != nil {
+			err = errors.Wrapf(err, "problem with starting database transaction")
+		}
+		rollback = func() {
+			_ = tx.Rollback()
+		}
+		commit = func() (err error) {
+			err = tx.Commit()
+			if err != nil {
+				err = errors.Wrapf(err, "problem with committing the transaction")
+			}
+			return err
+		}
+	} else {
+		tx, ok = dbIface.(*pg.Tx)
+		if !ok {
+			err = errors.New("unsupported type of the database transaction object provided")
+		}
+		rollback = func() {}
+		commit = func() (err error) {
+			return nil
+		}
+	}
+	return tx, rollback, commit, err
+}
