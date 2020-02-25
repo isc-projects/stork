@@ -52,38 +52,41 @@ func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig) (networks [
 	// application configuration.
 	if networkList, ok := config.GetTopLevelList("shared-networks"); ok {
 		// If there are no shared networks there is nothing to do.
-		if len(networkList) > 0 {
-			// We have to match the configured shared networks with the ones we
-			// already have in the database.
-			dbNetworks, err := dbmodel.GetAllSharedNetworks(db)
-			if err != nil {
-				return []dbmodel.SharedNetwork{}, err
-			}
+		if len(networkList) == 0 {
+			return networks, nil
+		}
 
-			// For each network in the app's configuration we will do such matching.
-			for _, n := range networkList {
-				if networkMap, ok := n.(map[string]interface{}); ok {
-					// Parse the configured network.
-					network := dbmodel.NewSharedNetworkFromKea(&networkMap)
-					if network != nil {
-						dbNetwork, err := sharedNetworkExists(db, network, dbNetworks)
-						if err != nil {
-							return []dbmodel.SharedNetwork{}, err
-						}
-						if dbNetwork != nil {
-							// Go over the configured subnets and see if they belong to that
-							// shared network already.
-							for _, s := range network.Subnets {
-								subnet := s
-								if ok, _ := subnetExists(&subnet, dbNetwork.Subnets); !ok {
-									dbNetwork.Subnets = append(dbNetwork.Subnets, subnet)
-								}
-							}
-							networks = append(networks, *dbNetwork)
-						} else {
-							networks = append(networks, *network)
+		// We have to match the configured shared networks with the ones we
+		// already have in the database.
+		dbNetworks, err := dbmodel.GetAllSharedNetworks(db)
+		if err != nil {
+			return []dbmodel.SharedNetwork{}, err
+		}
+
+		// For each network in the app's configuration we will do such matching.
+		for _, n := range networkList {
+			if networkMap, ok := n.(map[string]interface{}); ok {
+				// Parse the configured network.
+				network := dbmodel.NewSharedNetworkFromKea(&networkMap)
+				if network == nil {
+					continue
+				}
+				dbNetwork, err := sharedNetworkExists(db, network, dbNetworks)
+				if err != nil {
+					return []dbmodel.SharedNetwork{}, err
+				}
+				if dbNetwork != nil {
+					// Go over the configured subnets and see if they belong to that
+					// shared network already.
+					for _, s := range network.Subnets {
+						subnet := s
+						if ok, _ := subnetExists(&subnet, dbNetwork.Subnets); !ok {
+							dbNetwork.Subnets = append(dbNetwork.Subnets, subnet)
 						}
 					}
+					networks = append(networks, *dbNetwork)
+				} else {
+					networks = append(networks, *network)
 				}
 			}
 		}
