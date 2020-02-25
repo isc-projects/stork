@@ -317,8 +317,8 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
-	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.Db, addr, params.Machine.AgentPort, true)
-	if err == nil && dbMachine != nil && dbMachine.Deleted.IsZero() {
+	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.Db, addr, params.Machine.AgentPort)
+	if err == nil && dbMachine != nil {
 		msg := fmt.Sprintf("machine %s:%d already exists", addr, params.Machine.AgentPort)
 		log.Warnf(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
@@ -338,8 +338,6 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 			})
 			return rsp
 		}
-	} else {
-		dbMachine.Deleted = time.Time{}
 	}
 
 	errStr := getMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents)
@@ -396,7 +394,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 
 	// check if there is no duplicate
 	if dbMachine.Address != addr || dbMachine.AgentPort != params.Machine.AgentPort {
-		dbMachine2, err := dbmodel.GetMachineByAddressAndAgentPort(r.Db, addr, params.Machine.AgentPort, false)
+		dbMachine2, err := dbmodel.GetMachineByAddressAndAgentPort(r.Db, addr, params.Machine.AgentPort)
 		if err == nil && dbMachine2 != nil && dbMachine2.ID != dbMachine.ID {
 			msg := fmt.Sprintf("machine with address %s:%d already exists",
 				*params.Machine.Address, params.Machine.AgentPort)

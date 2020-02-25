@@ -7,8 +7,6 @@ import (
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
-	storkutil "isc.org/stork/util"
 )
 
 // Part of machine table in database that describes state of machine. In DB it is stored as JSONB.
@@ -35,7 +33,6 @@ type MachineState struct {
 type Machine struct {
 	ID          int64
 	Created     time.Time
-	Deleted     time.Time
 	Address     string
 	AgentPort   int64
 	LastVisited time.Time
@@ -53,14 +50,12 @@ func AddMachine(db *pg.DB, machine *Machine) error {
 	return err
 }
 
-func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64, withDeleted bool) (*Machine, error) {
+func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64) (*Machine, error) {
 	machine := Machine{}
 	q := db.Model(&machine)
 	q = q.Where("address = ?", address)
 	q = q.Where("agent_port = ?", agentPort)
-	if !withDeleted {
-		q = q.Where("deleted is NULL")
-	}
+
 	err := q.Select()
 	if err == pg.ErrNoRows {
 		return nil, nil
@@ -104,7 +99,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 	var machines []Machine
 
 	// prepare query
-	q := db.Model(&machines).Where("deleted is NULL")
+	q := db.Model(&machines)
 	q = q.Relation("Apps")
 	if text != "" {
 		text = "%" + text + "%"
@@ -141,18 +136,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 }
 
 func DeleteMachine(db *pg.DB, machine *Machine) error {
-	// first mark as deleted all apps of the machine
-	for _, app := range machine.Apps {
-		dbApp := app
-		err := DeleteApp(db, dbApp)
-		if err != nil {
-			log.Warnf("problem with deleting app %d: %s", app.ID, err)
-		}
-	}
-
-	// and now mark machine as deleted
-	machine.Deleted = storkutil.UTCNow()
-	err := db.Update(machine)
+	err := db.Delete(machine)
 	if err != nil {
 		return errors.Wrapf(err, "problem with deleting machine %v", machine.ID)
 	}

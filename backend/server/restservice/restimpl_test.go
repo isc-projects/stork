@@ -518,9 +518,9 @@ func TestDeleteMachine(t *testing.T) {
 		ID: m.ID,
 	}
 	rsp = rapi.GetMachine(ctx, params2)
-	require.IsType(t, &services.GetMachineOK{}, rsp)
-	okRsp = rsp.(*services.GetMachineOK)
-	require.Equal(t, m.ID, okRsp.Payload.ID)
+	require.IsType(t, &services.GetMachineDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetMachineDefault)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 }
 
 func TestGetApp(t *testing.T) {

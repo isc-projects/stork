@@ -8,8 +8,6 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
-
-	storkutil "isc.org/stork/util"
 )
 
 type Bind9Daemon struct {
@@ -56,7 +54,6 @@ type AppMeta struct {
 type App struct {
 	ID          int64
 	Created     time.Time
-	Deleted     time.Time
 	MachineID   int64
 	Machine     *Machine
 	Type        string // currently supported types are: "kea" and "bind9"
@@ -158,7 +155,6 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, text string, appType st
 
 	// prepare query
 	q := db.Model(&apps)
-	q = q.Where("app.deleted is NULL")
 	q = q.Relation("Machine")
 	if appType != "" {
 		q = q.Where("type = ?", appType)
@@ -187,8 +183,7 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, text string, appType st
 }
 
 func DeleteApp(db *pg.DB, app *App) error {
-	app.Deleted = storkutil.UTCNow()
-	err := db.Update(app)
+	err := db.Delete(app)
 	if err != nil {
 		return errors.Wrapf(err, "problem with deleting app %v", app.ID)
 	}
@@ -200,7 +195,6 @@ func GetAllApps(db *pg.DB) ([]App, error) {
 
 	// prepare query
 	q := db.Model(&apps)
-	q = q.Where("app.deleted is NULL")
 
 	// retrieve apps from db
 	err := q.Select()

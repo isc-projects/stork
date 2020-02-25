@@ -37,7 +37,7 @@ func TestGetMachineByAddress(t *testing.T) {
 	defer teardown()
 
 	// get non-existing machine
-	m, err := GetMachineByAddressAndAgentPort(db, "localhost", 8080, false)
+	m, err := GetMachineByAddressAndAgentPort(db, "localhost", 8080)
 	require.Nil(t, err)
 	require.Nil(t, m)
 
@@ -50,7 +50,7 @@ func TestGetMachineByAddress(t *testing.T) {
 	require.NoError(t, err)
 
 	// get added machine
-	m, err = GetMachineByAddressAndAgentPort(db, "localhost", 8080, false)
+	m, err = GetMachineByAddressAndAgentPort(db, "localhost", 8080)
 	require.Nil(t, err)
 	require.Equal(t, m2.Address, m.Address)
 
@@ -59,14 +59,9 @@ func TestGetMachineByAddress(t *testing.T) {
 	require.Nil(t, err)
 
 	// get deleted machine while do not include deleted machines
-	m, err = GetMachineByAddressAndAgentPort(db, "localhost", 8080, false)
+	m, err = GetMachineByAddressAndAgentPort(db, "localhost", 8080)
 	require.Nil(t, err)
 	require.Nil(t, m)
-
-	// get deleted machine but this time include deleted machines
-	m, err = GetMachineByAddressAndAgentPort(db, "localhost", 8080, true)
-	require.Nil(t, err)
-	require.Equal(t, m2.Address, m.Address)
 }
 
 func TestGetMachineByID(t *testing.T) {
@@ -95,10 +90,9 @@ func TestGetMachineByID(t *testing.T) {
 	err = DeleteMachine(db, m)
 	require.Nil(t, err)
 
-	// even if machine was delete it should be gettable by id
 	m, err = GetMachineByID(db, m2.ID)
-	require.Nil(t, err)
-	require.Equal(t, m2.Address, m.Address)
+	require.NoError(t, err)
+	require.Nil(t, m)
 }
 
 func TestGetMachinesByPageBasic(t *testing.T) {
@@ -235,7 +229,7 @@ func TestDeleteMachineWithApps(t *testing.T) {
 	// check if app is also deleted
 	a, err = GetAppByID(db, appID)
 	require.NoError(t, err)
-	require.NotZero(t, a.Deleted)
+	require.Nil(t, a)
 }
 
 func TestRefreshMachineFromDb(t *testing.T) {
