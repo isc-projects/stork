@@ -86,7 +86,7 @@ func Transaction(dbIface interface{}) (tx *pg.Tx, rollback func(), commit func()
 	if ok {
 		tx, err = db.Begin()
 		if err != nil {
-			err = errors.Wrapf(err, "problem with starting database transaction")
+			err = errors.WithMessage(err, "problem with starting database transaction")
 		}
 		rollback = func() {
 			_ = tx.Rollback()
@@ -94,7 +94,7 @@ func Transaction(dbIface interface{}) (tx *pg.Tx, rollback func(), commit func()
 		commit = func() (err error) {
 			err = tx.Commit()
 			if err != nil {
-				err = errors.Wrapf(err, "problem with committing the transaction")
+				err = errors.WithMessage(err, "problem with committing the transaction")
 			}
 			return err
 		}
