@@ -3,12 +3,11 @@ package dbmodel
 import (
 	"bytes"
 	"encoding/json"
+	"net"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-
-	"net"
-	"strings"
 )
 
 // Kea daemon configuration map. It comprises a set of functions
