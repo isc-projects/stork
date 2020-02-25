@@ -80,7 +80,7 @@ func TestDetectNetworks(t *testing.T) {
                         "subnet": "192.0.3.0/24"
                     }
                 ]
-            }   
+            }
         }`
 
 	v6Config := `
@@ -94,7 +94,7 @@ func TestDetectNetworks(t *testing.T) {
                         "subnet": "2001:db8:2::/64"
                     }
                 ]
-            }   
+            }
         }`
 	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
 
@@ -225,7 +225,7 @@ func TestDetectNetworks(t *testing.T) {
                         ]
                     }
                 ]
-            }   
+            }
         }`
 	app = createAppWithSubnets(t, db, 2, v4Config, "")
 
@@ -265,4 +265,157 @@ func TestDetectNetworks(t *testing.T) {
 	require.Zero(t, networks[1].Subnets[1].ID)
 	require.Equal(t, "192.0.4.0/24", networks[1].Subnets[1].Prefix)
 	require.Empty(t, networks[1].Subnets[1].LocalSubnets)
+}
+
+// Multi step test which verifies that the subnets and shared networks can be
+// updated in the database for each newly added or updated app.
+func TestDetectNetworksWhenAppCommitted(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create the Kea app supporting DHCPv4 and DHCPv6.
+	v4Config := `
+        {
+            "Dhcp4": {
+                "subnet4": [
+                    {
+                        "subnet": "192.0.2.0/24"
+                    },
+                    {
+                        "subnet": "192.0.3.0/24"
+                    }
+                ]
+            }
+        }`
+
+	v6Config := `
+        {
+            "Dhcp6": {
+                "subnet6": [
+                    {
+                        "subnet": "2001:db8:1::/64"
+                    },
+                    {
+                        "subnet": "2001:db8:2::/64"
+                    }
+                ]
+            }
+        }`
+	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
+	err := CommitAppIntoDB(db, app)
+	require.NoError(t, err)
+
+	// The configuration didn't include any shared network, so it should
+	// be empty initially.
+	networks, err := dbmodel.GetAllSharedNetworks(db)
+	require.NoError(t, err)
+	require.Empty(t, networks)
+
+	// There should be 2 IPv4 subnets created.
+	subnets, err := dbmodel.GetAllSubnets(db, 4)
+	require.NoError(t, err)
+	require.Len(t, subnets, 2)
+
+	// There should be 2 IPv6 subnets created.
+	subnets, err = dbmodel.GetAllSubnets(db, 6)
+	require.NoError(t, err)
+	require.Len(t, subnets, 2)
+
+	// Create another Kea app which introduces a shared network and for
+	// which the subnets partially overlaps.
+	v4Config = `
+        {
+            "Dhcp4": {
+                "shared-networks": [
+                    {
+                        "name": "foo",
+                        "subnet4": [
+                            {
+                                "subnet": "10.0.0.0/8"
+                            },
+                            {
+                                "subnet": "10.1.0.0/16"
+                            }
+                        ]
+                    }
+                ],
+                "subnet4": [
+                    {
+                        "subnet": "192.0.2.0/24"
+                    },
+                    {
+                        "subnet": "192.0.4.0/24"
+                    }
+                ]
+            }
+        }`
+	app = createAppWithSubnets(t, db, 1, v4Config, "")
+	err = CommitAppIntoDB(db, app)
+	require.NoError(t, err)
+
+	// There should be one shared network in the database.
+	networks, err = dbmodel.GetAllSharedNetworks(db)
+	require.NoError(t, err)
+	require.Len(t, networks, 1)
+
+	// Make sure that the number of subnets stored for the shared network is 2.
+	network, err := dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	require.NoError(t, err)
+	require.Len(t, network.Subnets, 2)
+
+	// The total number of subnets should be 7.
+	subnets, err = dbmodel.GetAllSubnets(db, 0)
+	require.NoError(t, err)
+	require.Len(t, subnets, 7)
+
+	// Let's add another app with the same shared network and new subnet in it.
+	v4Config = `
+        {
+            "Dhcp4": {
+                "shared-networks": [
+                    {
+                        "name": "foo",
+                        "subnet4": [
+                            {
+                                "subnet": "10.2.0.0/16"
+                            }
+                        ]
+                    }
+                ],
+                "subnet4": [
+                    {
+                        "subnet": "192.0.2.0/24"
+                    },
+                    {
+                        "subnet": "192.0.5.0/24"
+                    }
+                ]
+            }
+        }`
+	app = createAppWithSubnets(t, db, 2, v4Config, "")
+	err = CommitAppIntoDB(db, app)
+	require.NoError(t, err)
+
+	// There should still be just one shared network.
+	networks, err = dbmodel.GetAllSharedNetworks(db)
+	require.NoError(t, err)
+	require.Len(t, networks, 1)
+
+	// It should now contain 3 subnets.
+	network, err = dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	require.NoError(t, err)
+	require.Len(t, network.Subnets, 3)
+
+	// Adding the same subnet again should be fine and should not result in
+	// any conflicts.
+	err = CommitAppIntoDB(db, app)
+	require.NoError(t, err)
+
+	networks, err = dbmodel.GetAllSharedNetworks(db)
+	require.NoError(t, err)
+	require.Len(t, networks, 1)
+
+	network, err = dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	require.NoError(t, err)
+	require.Len(t, network.Subnets, 3)
 }
