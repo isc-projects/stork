@@ -198,6 +198,31 @@ func (c *KeaConfig) GetHAHooksLibrary() (path string, params KeaConfigHA, ok boo
 	return path, params, ok
 }
 
+// Matches the prefix of a subnet with the given IP network. If the match is
+// found the local subnet id of that subnet is returned. Otherwise, the value
+// of 0 is returned.
+func getMatchingSubnetLocalID(subnet interface{}, ipNet *net.IPNet) int64 {
+	var parsedSubnet struct {
+		ID     int64
+		Subnet string
+	}
+	// Get the subnet's ID and prefix.
+	_ = mapstructure.Decode(subnet, &parsedSubnet)
+
+	// Parse the prefix into a common form that can be used for comparison.
+	_, localNetwork, err := net.ParseCIDR(parsedSubnet.Subnet)
+	if err != nil {
+		return 0
+	}
+	// Compare the prefix of the subnet we have found and the specified prefix.
+	if (localNetwork != nil) && net.IP.Equal(ipNet.IP, localNetwork.IP) &&
+		bytes.Equal(ipNet.Mask, localNetwork.Mask) {
+		return parsedSubnet.ID
+	}
+	// No match.
+	return 0
+}
+
 // Scans subnets within the Kea configuration and returns the ID of the subnet having
 // the specified prefix.
 func (c *KeaConfig) GetLocalSubnetID(prefix string) int64 {
@@ -223,35 +248,11 @@ func (c *KeaConfig) GetLocalSubnetID(prefix string) int64 {
 		return 0
 	}
 
-	// Matcher function will try to match the prefix of each found subnet with the
-	// prefix given as function argument.
-	matcher := func(subnet interface{}) int64 {
-		var parsedSubnet struct {
-			ID     int64
-			Subnet string
-		}
-		// Get the subnet's ID and prefix.
-		_ = mapstructure.Decode(subnet, &parsedSubnet)
-
-		// Parse the prefix into a common form that can be used for comparison.
-		_, localNetwork, err := net.ParseCIDR(parsedSubnet.Subnet)
-		if err != nil {
-			return 0
-		}
-		// Compare the prefix of the subnet we have found and the specified prefix.
-		if (localNetwork != nil) && net.IP.Equal(globalNetwork.IP, localNetwork.IP) &&
-			bytes.Equal(globalNetwork.Mask, localNetwork.Mask) {
-			return parsedSubnet.ID
-		}
-		// No match.
-		return 0
-	}
-
 	// First, let's iterate over the subnets which are not associated with any
 	// shared network.
 	if subnetList, ok := c.GetTopLevelList(subnetParamName); ok {
 		for _, s := range subnetList {
-			id := matcher(s)
+			id := getMatchingSubnetLocalID(s, globalNetwork)
 			if id > 0 {
 				return id
 			}
@@ -264,7 +265,7 @@ func (c *KeaConfig) GetLocalSubnetID(prefix string) int64 {
 			if network, ok := n.(map[string]interface{}); ok {
 				if subnetList, ok := network[subnetParamName].([]interface{}); ok {
 					for _, s := range subnetList {
-						id := matcher(s)
+						id := getMatchingSubnetLocalID(s, globalNetwork)
 						if id > 0 {
 							return id
 						}
