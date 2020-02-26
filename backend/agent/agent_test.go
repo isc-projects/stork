@@ -101,9 +101,18 @@ func TestGetState(t *testing.T) {
 		Type:         "kea",
 		AccessPoints: makeAccessPoint("control", "1.2.3.1", "", 1234),
 	})
+
+	accessPoints := makeAccessPoint("control", "2.3.4.4", "abcd", 2345)
+	accessPoints = append(accessPoints, AccessPoint{
+		Type:    "statistics",
+		Address: "2.3.4.5",
+		Port:    2346,
+		Key:     "",
+	})
+
 	apps = append(apps, &App{
 		Type:         "bind9",
-		AccessPoints: makeAccessPoint("control", "2.3.4.4", "abcd", 2345),
+		AccessPoints: accessPoints,
 	})
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
@@ -115,19 +124,25 @@ func TestGetState(t *testing.T) {
 
 	keaApp := rsp.Apps[0]
 	require.Equal(t, 1, len(keaApp.AccessPoints))
-	ctrlPoint := keaApp.AccessPoints[0]
-	require.Equal(t, "control", ctrlPoint.Type)
-	require.Equal(t, "1.2.3.1", ctrlPoint.Address)
-	require.Equal(t, int64(1234), ctrlPoint.Port)
-	require.Empty(t, ctrlPoint.Key)
+	point := keaApp.AccessPoints[0]
+	require.Equal(t, "control", point.Type)
+	require.Equal(t, "1.2.3.1", point.Address)
+	require.Equal(t, int64(1234), point.Port)
+	require.Empty(t, point.Key)
 
 	bind9App := rsp.Apps[1]
-	require.Equal(t, 1, len(bind9App.AccessPoints))
-	ctrlPoint = bind9App.AccessPoints[0]
-	require.Equal(t, "control", ctrlPoint.Type)
-	require.Equal(t, "2.3.4.4", ctrlPoint.Address)
-	require.Equal(t, int64(2345), ctrlPoint.Port)
-	require.Equal(t, "abcd", ctrlPoint.Key)
+	require.Equal(t, 2, len(bind9App.AccessPoints))
+	// sorted by port
+	point = bind9App.AccessPoints[0]
+	require.Equal(t, "control", point.Type)
+	require.Equal(t, "2.3.4.4", point.Address)
+	require.Equal(t, int64(2345), point.Port)
+	require.Equal(t, "abcd", point.Key)
+	point = bind9App.AccessPoints[1]
+	require.Equal(t, "statistics", point.Type)
+	require.Equal(t, "2.3.4.5", point.Address)
+	require.Equal(t, int64(2346), point.Port)
+	require.Empty(t, point.Key)
 }
 
 // Test forwarding command to Kea when HTTP 200 status code

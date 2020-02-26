@@ -135,7 +135,11 @@ func TestDetectBind9App(t *testing.T) {
 	if _, err = tmpFile.Write(text); err != nil {
 		log.Fatal("Failed to write to temporary file", err)
 	}
-	text = []byte(string("controls {\n   inet 127.0.0.53 port 5353 allow { localhost; } keys { \"foo\";};\n};"))
+	text = []byte(string("controls {\n   inet 127.0.0.53 port 5353 allow { localhost; } keys { \"foo\";};\n};\n"))
+	if _, err = tmpFile.Write(text); err != nil {
+		log.Fatal("Failed to write to temporary file", err)
+	}
+	text = []byte(string("statistics-channels {\n   inet 127.0.0.80 port 80 allow { localhost; };\n};\n"))
 	if _, err = tmpFile.Write(text); err != nil {
 		log.Fatal("Failed to write to temporary file", err)
 	}
@@ -147,12 +151,17 @@ func TestDetectBind9App(t *testing.T) {
 	app := detectBind9App([]string{"", tmpFile.Name()})
 	require.NotNil(t, app)
 	require.Equal(t, app.Type, "bind9")
-	require.Equal(t, 1, len(app.AccessPoints))
-	ctrlPoint := app.AccessPoints[0]
-	require.Equal(t, "control", ctrlPoint.Type)
-	require.Equal(t, "127.0.0.53", ctrlPoint.Address)
-	require.Equal(t, int64(5353), ctrlPoint.Port)
-	require.Equal(t, "hmac-md5:abcd", ctrlPoint.Key)
+	require.Equal(t, 2, len(app.AccessPoints))
+	point := app.AccessPoints[0]
+	require.Equal(t, "control", point.Type)
+	require.Equal(t, "127.0.0.53", point.Address)
+	require.Equal(t, int64(5353), point.Port)
+	require.Equal(t, "hmac-md5:abcd", point.Key)
+	point = app.AccessPoints[1]
+	require.Equal(t, "statistics", point.Type)
+	require.Equal(t, "127.0.0.80", point.Address)
+	require.Equal(t, int64(80), point.Port)
+	require.Empty(t, point.Key)
 }
 
 func TestDetectKeaApp(t *testing.T) {

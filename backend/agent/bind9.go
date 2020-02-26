@@ -23,6 +23,7 @@ type Bind9State struct {
 }
 
 const RndcDefaultPort = 953
+const StatsChannelDefaultPort = 80
 
 // getRndcKey looks for the key with a given `name` in `contents`.
 //
@@ -175,21 +176,82 @@ func getCtrlAddressFromBind9Config(path string) (controlAddress string, controlP
 	return controlAddress, controlPort, controlKey
 }
 
-func detectBind9App(match []string) (bind9App *App) {
-	var accessPoints []AccessPoint
+// getStatisticsChannelFromBind9Config retrieves the statistics channel access
+// address, port, and secret key (if configured) from the configuration `path`.
+//
+// The statistics-channels clause can also be in an include file, but
+// currently this function is not following include paths.
+//
+// Multiple statistics-channels clauses may be configured but currently this
+// function only matches the first one.  Multiple access points may be listed
+// inside a single controls clause, but this function currently only matches
+// the first in the list.  A statistics-channels clause may look like this:
+//
+//    statistics-channels {
+//        inet 10.1.10.10 port 8080 allow { 192.168.2.10; 10.1.10.2; };
+//        inet 127.0.0.1  port 8080 allow { "stats-clients" };
+//    };
+//
+// In this example, "stats-clients" refers to an acl clause.
+//
+// Finding the key is done by looking if the control access point has a
+// keys parameter and if so, it looks in `path` for a key clause with the
+// same name.
+func getStatisticsChannelFromBind9Config(path string) (statsAddress string, statsPort int64, statsKey string) {
+	text, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Warnf("cannot read BIND 9 config file (%s): %+v", path, err)
+		return "", 0, ""
+	}
 
+	// Match the following clause:
+	//     statistics-channels {
+	//         inet inet_spec [inet_spec] ;
+	//     };
+	ptrn := regexp.MustCompile(`(?s)statistics-channels\s*\{\s*(.*)\s*\}\s*;`)
+	channels := ptrn.FindStringSubmatch(string(text))
+	if len(channels) == 0 {
+		log.Warnf("cannot parse BIND 9 statistics-channels clause: %+v, %+v", string(text), err)
+		return "", 0, ""
+	}
+
+	// We only pick the first match, but the statistics-channels clause
+	// can list multiple control access points.
+	statsAddress, statsPort, statsKey = parseInetSpec(string(text), channels[1])
+	if statsAddress != "" {
+		// If no port was provided, use the default statschannel port.
+		if statsPort == 0 {
+			statsPort = StatsChannelDefaultPort
+		}
+	}
+	return statsAddress, statsPort, statsKey
+}
+
+func detectBind9App(match []string) (bind9App *App) {
 	bind9ConfPath := match[1]
 
 	address, port, key := getCtrlAddressFromBind9Config(bind9ConfPath)
 	if port == 0 || len(address) == 0 {
 		return nil
 	}
-	accessPoints = append(accessPoints, AccessPoint{
-		Type:    "control",
-		Address: address,
-		Port:    port,
-		Key:     key,
-	})
+	accessPoints := []AccessPoint{
+		{
+			Type:    "control",
+			Address: address,
+			Port:    port,
+			Key:     key,
+		},
+	}
+
+	address, port, key = getStatisticsChannelFromBind9Config(bind9ConfPath)
+	if port > 0 && len(address) != 0 {
+		accessPoints = append(accessPoints, AccessPoint{
+			Type:    "statistics",
+			Address: address,
+			Port:    port,
+			Key:     key,
+		})
+	}
 
 	return &App{
 		Type:         "bind9",
