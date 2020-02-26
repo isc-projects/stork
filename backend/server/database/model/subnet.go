@@ -43,7 +43,7 @@ type Subnet struct {
 // A structure reflecting an app_to_subnet SQL table which associates
 // applications with subnets in many to many relationship. It also
 // provides additional association of the global subnet id (from the
-// database) and optional application specific subnet id (local one).
+// database) and optional subnet id local to the application.
 // The Kea specific subnet id is an example of the local subnet id.
 // The local subnet id is non-unique, because different app instances
 // may use the same id, even for different subnets. In fact, the same
