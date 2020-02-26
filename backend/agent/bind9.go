@@ -144,12 +144,7 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 //
 // Finding the key is done by looking if the control access point has a
 // keys parameter and if so, it looks in `path` for a key clause with the
-// same name.  A key clause may look like this:
-//
-//    key "rndc-remote" {
-//        algorithm hmac-md5;
-//        secret "OmItW1lOyLVUEuvv+Fme+Q==";
-//    };
+// same name.
 func getCtrlAddressFromBind9Config(path string) (controlAddress string, controlPort int64, controlKey string) {
 	text, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -181,18 +176,23 @@ func getCtrlAddressFromBind9Config(path string) (controlAddress string, controlP
 }
 
 func detectBind9App(match []string) (bind9App *App) {
+	var accessPoints []AccessPoint
+
 	bind9ConfPath := match[1]
 
-	ctrlAddress, ctrlPort, ctrlKey := getCtrlAddressFromBind9Config(bind9ConfPath)
-	if ctrlPort == 0 || len(ctrlAddress) == 0 {
+	address, port, key := getCtrlAddressFromBind9Config(bind9ConfPath)
+	if port == 0 || len(address) == 0 {
 		return nil
 	}
+	accessPoints = append(accessPoints, AccessPoint{
+		Type:    "control",
+		Address: address,
+		Port:    port,
+		Key:     key,
+	})
 
-	bind9App = &App{
-		Type:        "bind9",
-		CtrlAddress: ctrlAddress,
-		CtrlPort:    ctrlPort,
-		CtrlKey:     ctrlKey,
+	return &App{
+		Type:         "bind9",
+		AccessPoints: accessPoints,
 	}
-	return bind9App
 }

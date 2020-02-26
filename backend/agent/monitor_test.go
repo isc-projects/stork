@@ -147,9 +147,12 @@ func TestDetectBind9App(t *testing.T) {
 	app := detectBind9App([]string{"", tmpFile.Name()})
 	require.NotNil(t, app)
 	require.Equal(t, app.Type, "bind9")
-	require.Equal(t, app.CtrlAddress, "127.0.0.53")
-	require.Equal(t, app.CtrlPort, int64(5353))
-	require.Equal(t, app.CtrlKey, "hmac-md5:abcd")
+	require.Equal(t, 1, len(app.AccessPoints))
+	ctrlPoint := app.AccessPoints[0]
+	require.Equal(t, "control", ctrlPoint.Type)
+	require.Equal(t, "127.0.0.53", ctrlPoint.Address)
+	require.Equal(t, int64(5353), ctrlPoint.Port)
+	require.Equal(t, "hmac-md5:abcd", ctrlPoint.Key)
 }
 
 func TestDetectKeaApp(t *testing.T) {
@@ -172,7 +175,10 @@ func TestDetectKeaApp(t *testing.T) {
 	app := detectKeaApp([]string{"", tmpFile.Name()})
 	require.NotNil(t, app)
 	require.Equal(t, "kea", app.Type)
-	require.Equal(t, "localhost", app.CtrlAddress)
-	require.Equal(t, int64(45634), app.CtrlPort)
-	require.Empty(t, "", app.CtrlKey)
+	require.Equal(t, 1, len(app.AccessPoints))
+	ctrlPoint := app.AccessPoints[0]
+	require.Equal(t, "control", ctrlPoint.Type)
+	require.Equal(t, "localhost", ctrlPoint.Address)
+	require.Equal(t, int64(45634), ctrlPoint.Port)
+	require.Empty(t, ctrlPoint.Key)
 }

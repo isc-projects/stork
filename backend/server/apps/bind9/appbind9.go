@@ -26,9 +26,9 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	}
 
 	rndcSettings := agentcomm.Bind9Control{
-		CtrlAddress: ctrlPoint.Address,
-		CtrlPort:    ctrlPoint.Port,
-		CtrlKey:     ctrlPoint.Key,
+		Address: ctrlPoint.Address,
+		Port:    ctrlPoint.Port,
+		Key:     ctrlPoint.Key,
 	}
 
 	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)

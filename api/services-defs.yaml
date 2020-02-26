@@ -92,6 +92,18 @@
       total:
         type: integer
 
+  AppAccessPoint:
+     type: object
+     properties:
+       type:
+         type: string
+       address:
+         type: string
+       port:
+         type: integer
+       key:
+         type: string
+
   App:
     type: object
     properties:
@@ -100,12 +112,10 @@
         readOnly: true
       type:
         type: string
-      ctrlAddress:
-        type: string
-      ctrlPort:
-        type: integer
-      ctrlKey:
-        type: string
+      accessPoints:
+        type: array
+        items:
+          $ref: '#/definitions/AppAccessPoint'
       active:
         type: boolean
       version:

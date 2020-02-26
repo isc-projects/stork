@@ -14,7 +14,6 @@ import (
 
 	"isc.org/stork"
 	"isc.org/stork/server/agentcomm"
-	"isc.org/stork/server/apps"
 	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"
 	dbops "isc.org/stork/server/database"
@@ -96,15 +95,27 @@ func appCompare(dbApp *dbmodel.App, app *agentcomm.App) bool {
 	}
 
 	var controlPortEqual bool
-	for _, pt := range dbApp.AccessPoints {
-		if pt.Type != "control" {
+	for _, pt1 := range dbApp.AccessPoints {
+		if pt1.Type != "control" {
 			continue
 		}
-		if pt.Port == app.CtrlPort {
-			controlPortEqual = true
+		for _, pt2 := range app.AccessPoints {
+			if pt2.Type != "control" {
+				continue
+			}
+
+			if pt1.Port == pt2.Port {
+				controlPortEqual = true
+				break
+			}
+		}
+
+		// If a match is found, we can break.
+		if controlPortEqual {
 			break
 		}
 	}
+
 	return controlPortEqual
 }
 
@@ -148,12 +159,15 @@ func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 		// if no old app in db then prepare new record
 		if dbApp == nil {
 			var accessPoints []dbmodel.AccessPoint
-			accessPoints = append(accessPoints, dbmodel.AccessPoint{
-				Type:    "control",
-				Address: app.CtrlAddress,
-				Port:    app.CtrlPort,
-				Key:     app.CtrlKey,
-			})
+
+			for _, point := range app.AccessPoints {
+				accessPoints = append(accessPoints, dbmodel.AccessPoint{
+					Type:    point.Type,
+					Address: point.Address,
+					Port:    point.Port,
+					Key:     point.Key,
+				})
+			}
 
 			dbApp = &dbmodel.App{
 				ID:           0,
@@ -503,22 +517,28 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 }
 
 func appToRestAPI(dbApp *dbmodel.App) *models.App {
-	ctrlPoint, _ := apps.GetAccessPoint(dbApp, "control")
-
 	app := models.App{
-		ID:          dbApp.ID,
-		Type:        dbApp.Type,
-		CtrlAddress: ctrlPoint.Address,
-		CtrlPort:    ctrlPoint.Port,
-		CtrlKey:     ctrlPoint.Key,
-		Active:      dbApp.Active,
-		Version:     dbApp.Meta.Version,
+		ID:      dbApp.ID,
+		Type:    dbApp.Type,
+		Active:  dbApp.Active,
+		Version: dbApp.Meta.Version,
 		Machine: &models.AppMachine{
 			ID:       dbApp.MachineID,
 			Address:  dbApp.Machine.Address,
 			Hostname: dbApp.Machine.State.Hostname,
 		},
 	}
+
+	var accessPoints []*models.AppAccessPoint
+	for _, point := range dbApp.AccessPoints {
+		accessPoints = append(accessPoints, &models.AppAccessPoint{
+			Type:    point.Type,
+			Address: point.Address,
+			Port:    point.Port,
+			Key:     point.Key,
+		})
+	}
+	app.AccessPoints = accessPoints
 
 	isKeaApp := dbApp.Type == dbmodel.KeaAppType
 	isBind9App := dbApp.Type == dbmodel.Bind9AppType

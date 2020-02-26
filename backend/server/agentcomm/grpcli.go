@@ -12,11 +12,16 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+type AccessPoint struct {
+	Type    string // currently supported types are "control" and "statistics"
+	Address string
+	Port    int64
+	Key     string
+}
+
 type App struct {
-	Type        string // currently supported types are: "kea" and "bind9"
-	CtrlAddress string
-	CtrlPort    int64
-	CtrlKey     string
+	Type         string // currently supported types are: "kea" and "bind9"
+	AccessPoints []AccessPoint
 }
 
 // State of the machine. It describes multiple properties of the machine like number of CPUs
@@ -57,11 +62,20 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 
 	var apps []*App
 	for _, app := range grpcState.Apps {
+		var accessPoints []AccessPoint
+
+		for _, point := range app.AccessPoints {
+			accessPoints = append(accessPoints, AccessPoint{
+				Type:    point.Type,
+				Address: point.Address,
+				Port:    point.Port,
+				Key:     point.Key,
+			})
+		}
+
 		apps = append(apps, &App{
-			Type:        app.Type,
-			CtrlAddress: app.CtrlAddress,
-			CtrlPort:    app.CtrlPort,
-			CtrlKey:     app.CtrlKey,
+			Type:         app.Type,
+			AccessPoints: accessPoints,
 		})
 	}
 
@@ -101,9 +115,9 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, agent
 
 	// Prepare the on-wire representation of the commands.
 	req := &agentapi.ForwardRndcCommandReq{
-		CtrlAddress: rndcSettings.CtrlAddress,
-		CtrlPort:    rndcSettings.CtrlPort,
-		CtrlKey:     rndcSettings.CtrlKey,
+		Address: rndcSettings.Address,
+		Port:    rndcSettings.Port,
+		Key:     rndcSettings.Key,
 		RndcRequest: &agentapi.RndcRequest{
 			Request: command,
 		},

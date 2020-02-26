@@ -68,6 +68,16 @@ func (fam *FakeAppMonitor) GetApps() []*App {
 func (fam *FakeAppMonitor) Shutdown() {
 }
 
+// makeAccessPoint is an utility to make single element app access point slice.
+func makeAccessPoint(tp, address, key string, port int64) (ap []AccessPoint) {
+	return append(ap, AccessPoint{
+		Type:    tp,
+		Address: address,
+		Port:    port,
+		Key:     key,
+	})
+}
+
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	sa := NewStorkAgent(fam)
@@ -88,15 +98,12 @@ func TestGetState(t *testing.T) {
 	// add some apps to app monitor so GetState should return something
 	var apps []*App
 	apps = append(apps, &App{
-		Type:        "kea",
-		CtrlAddress: "1.2.3.1",
-		CtrlPort:    1234,
+		Type:         "kea",
+		AccessPoints: makeAccessPoint("control", "1.2.3.1", "", 1234),
 	})
 	apps = append(apps, &App{
-		Type:        "bind9",
-		CtrlAddress: "2.3.4.4",
-		CtrlPort:    2345,
-		CtrlKey:     "abcd",
+		Type:         "bind9",
+		AccessPoints: makeAccessPoint("control", "2.3.4.4", "abcd", 2345),
 	})
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
@@ -107,13 +114,20 @@ func TestGetState(t *testing.T) {
 	require.Equal(t, 2, len(rsp.Apps))
 
 	keaApp := rsp.Apps[0]
+	require.Equal(t, 1, len(keaApp.AccessPoints))
+	ctrlPoint := keaApp.AccessPoints[0]
+	require.Equal(t, "control", ctrlPoint.Type)
+	require.Equal(t, "1.2.3.1", ctrlPoint.Address)
+	require.Equal(t, int64(1234), ctrlPoint.Port)
+	require.Empty(t, ctrlPoint.Key)
+
 	bind9App := rsp.Apps[1]
-	require.Equal(t, "1.2.3.1", keaApp.CtrlAddress)
-	require.Equal(t, int64(1234), keaApp.CtrlPort)
-	require.Empty(t, keaApp.CtrlKey)
-	require.Equal(t, "2.3.4.4", bind9App.CtrlAddress)
-	require.Equal(t, int64(2345), bind9App.CtrlPort)
-	require.Equal(t, "abcd", bind9App.CtrlKey)
+	require.Equal(t, 1, len(bind9App.AccessPoints))
+	ctrlPoint = bind9App.AccessPoints[0]
+	require.Equal(t, "control", ctrlPoint.Type)
+	require.Equal(t, "2.3.4.4", ctrlPoint.Address)
+	require.Equal(t, int64(2345), ctrlPoint.Port)
+	require.Equal(t, "abcd", ctrlPoint.Key)
 }
 
 // Test forwarding command to Kea when HTTP 200 status code
@@ -224,9 +238,9 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
-		CtrlAddress: "127.0.0.1",
-		CtrlPort:    1234,
-		CtrlKey:     "hmac-md5:abcd",
+		Address:     "127.0.0.1",
+		Port:        1234,
+		Key:         "hmac-md5:abcd",
 		RndcRequest: cmd,
 	}
 
@@ -265,9 +279,9 @@ func TestForwardRndcCommandError(t *testing.T) {
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
-		CtrlAddress: "127.0.0.1",
-		CtrlPort:    1234,
-		CtrlKey:     "hmac-md5:abcd",
+		Address:     "127.0.0.1",
+		Port:        1234,
+		Key:         "hmac-md5:abcd",
 		RndcRequest: cmd,
 	}
 
@@ -284,9 +298,9 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
-		CtrlAddress: "127.0.0.1",
-		CtrlPort:    1234,
-		CtrlKey:     "hmac-md5:abcd",
+		Address:     "127.0.0.1",
+		Port:        1234,
+		Key:         "hmac-md5:abcd",
 		RndcRequest: cmd,
 	}
 

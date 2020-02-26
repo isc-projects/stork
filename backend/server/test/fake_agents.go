@@ -13,11 +13,11 @@ type FakeAgents struct {
 	mockFunc         func(int, []interface{})
 	callNo           int
 
-	RecordedCtrlAddress string
-	RecordedCtrlPort    int64
-	RecordedCtrlKey     string
-	RecordedCommand     string
-	mockRndcOutput      string
+	RecordedAddress string
+	RecordedPort    int64
+	RecordedKey     string
+	RecordedCommand string
+	mockRndcOutput  string
 
 	MachineState *agentcomm.State
 }
@@ -97,9 +97,9 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, agentAddress str
 // to the command by calling the function specified in the call to
 // NewFakeAgents.
 func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, agentAddress string, agentPort int64, rndcSettings agentcomm.Bind9Control, command string) (*agentcomm.RndcOutput, error) {
-	fa.RecordedCtrlAddress = rndcSettings.CtrlAddress
-	fa.RecordedCtrlPort = rndcSettings.CtrlPort
-	fa.RecordedCtrlKey = rndcSettings.CtrlKey
+	fa.RecordedAddress = rndcSettings.Address
+	fa.RecordedPort = rndcSettings.Port
+	fa.RecordedKey = rndcSettings.Key
 	fa.RecordedCommand = command
 
 	if fa.mockRndcOutput != "" {

@@ -48,15 +48,20 @@ func getCtrlAddressFromKeaConfig(path string) (string, int64) {
 func detectKeaApp(match []string) *App {
 	keaConfPath := match[1]
 
-	ctrlAddress, ctrlPort := getCtrlAddressFromKeaConfig(keaConfPath)
-	if ctrlPort == 0 || len(ctrlAddress) == 0 {
+	address, port := getCtrlAddressFromKeaConfig(keaConfPath)
+	if port == 0 || len(address) == 0 {
 		return nil
 	}
-
+	accessPoints := []AccessPoint{
+		{
+			Type:    "control",
+			Address: address,
+			Port:    port,
+		},
+	}
 	keaApp := &App{
-		Type:        "kea",
-		CtrlAddress: ctrlAddress,
-		CtrlPort:    ctrlPort,
+		Type:         "kea",
+		AccessPoints: accessPoints,
 	}
 
 	return keaApp

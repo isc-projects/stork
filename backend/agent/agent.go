@@ -64,11 +64,19 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 
 	var apps []*agentapi.App
 	for _, app := range sa.AppMonitor.GetApps() {
+		var accessPoints []*agentapi.AccessPoint
+		for _, point := range app.AccessPoints {
+			accessPoints = append(accessPoints, &agentapi.AccessPoint{
+				Type:    point.Type,
+				Address: point.Address,
+				Port:    point.Port,
+				Key:     point.Key,
+			})
+		}
+
 		apps = append(apps, &agentapi.App{
-			Type:        app.Type,
-			CtrlAddress: app.CtrlAddress,
-			CtrlPort:    app.CtrlPort,
-			CtrlKey:     app.CtrlKey,
+			Type:         app.Type,
+			AccessPoints: accessPoints,
 		})
 	}
 
@@ -99,10 +107,18 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 // ForwardRndcCommand forwards one rndc command sent by the Stork server to
 // the named daemon.
 func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.ForwardRndcCommandReq) (*agentapi.ForwardRndcCommandRsp, error) {
+	accessPoints := []AccessPoint{
+		{
+			Type:    "control",
+			Address: in.Address,
+			Port:    in.Port,
+			Key:     in.Key,
+		},
+	}
+
 	app := &App{
-		CtrlAddress: in.CtrlAddress,
-		CtrlPort:    in.CtrlPort,
-		CtrlKey:     in.CtrlKey,
+		Type:         "bind9",
+		AccessPoints: accessPoints,
 	}
 
 	request := in.GetRndcRequest()
@@ -120,9 +136,9 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	output, err := sa.RndcClient.Call(app, strings.Fields(request.Request))
 	if err != nil {
 		log.WithFields(log.Fields{
-			"CtrlAddress": app.CtrlAddress,
-			"CtrlPort":    app.CtrlPort,
-			"CtrlKey":     app.CtrlKey,
+			"Address": accessPoints[0].Address,
+			"Port":    accessPoints[0].Port,
+			"Key":     accessPoints[0].Key,
 		}).Errorf("Failed to forward commands to rndc: %+v", err)
 		rndcRsp.Status.Code = agentapi.Status_ERROR
 		rndcRsp.Status.Message = "Failed to forward commands to rndc"

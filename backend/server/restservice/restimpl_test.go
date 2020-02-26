@@ -18,6 +18,16 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
+// makeAccessPoint is an utility to make an array of one access point.
+func makeAccessPoint(tp, address, key string, port int64) (ap []agentcomm.AccessPoint) {
+	return append(ap, agentcomm.AccessPoint{
+		Type:    tp,
+		Address: address,
+		Port:    port,
+		Key:     key,
+	})
+}
+
 func TestGetVersion(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -211,16 +221,12 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	fa.MachineState = &agentcomm.State{
 		Apps: []*agentcomm.App{
 			{
-				Type:        "kea",
-				CtrlAddress: "1.2.3.4",
-				CtrlPort:    123,
-				CtrlKey:     "",
+				Type:         "kea",
+				AccessPoints: makeAccessPoint("control", "1.2.3.4", "", 123),
 			},
 			{
-				Type:        "bind9",
-				CtrlAddress: "1.2.3.4",
-				CtrlPort:    124,
-				CtrlKey:     "abcd",
+				Type:         "bind9",
+				AccessPoints: makeAccessPoint("control", "1.2.3.4", "abcd", 124),
 			},
 		},
 	}

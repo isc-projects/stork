@@ -32,9 +32,9 @@ func TestGetAppState(t *testing.T) {
 
 	GetAppState(ctx, fa, &dbApp)
 
-	require.Equal(t, "127.0.0.1", fa.RecordedCtrlAddress)
-	require.Equal(t, int64(953), fa.RecordedCtrlPort)
-	require.Equal(t, "abcd", fa.RecordedCtrlKey)
+	require.Equal(t, "127.0.0.1", fa.RecordedAddress)
+	require.Equal(t, int64(953), fa.RecordedPort)
+	require.Equal(t, "abcd", fa.RecordedKey)
 
 	require.True(t, dbApp.Active)
 	require.Equal(t, dbApp.Meta.Version, "9.9.9")

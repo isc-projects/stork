@@ -8,11 +8,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type AccessPoint struct {
+	Type    string // currently supported types are: "control" and "statistics"
+	Address string
+	Port    int64
+	Key     string
+}
+
 type App struct {
-	Type        string // currently supported types are: "kea" and "bind9"
-	CtrlAddress string
-	CtrlPort    int64
-	CtrlKey     string
+	Type         string // currently supported types are: "kea" and "bind9"
+	AccessPoints []AccessPoint
 }
 
 type AppMonitor interface {

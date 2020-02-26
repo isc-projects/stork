@@ -10,6 +10,16 @@ import (
 	agentapi "isc.org/stork/api"
 )
 
+// makeAccessPoint is an utility to make single element app access point slice.
+func makeAccessPoint(tp, address, key string, port int64) (ap []*agentapi.AccessPoint) {
+	return append(ap, &agentapi.AccessPoint{
+		Type:    tp,
+		Address: address,
+		Port:    port,
+		Key:     key,
+	})
+}
+
 // Setup function for the unit tests. It creates a fake agent running at
 // 127.0.0.1:8080. The returned function performs a test teardown and
 // should be invoked when the unit test finishes.
@@ -44,9 +54,8 @@ func TestGetState(t *testing.T) {
 		AgentVersion: expVer,
 		Apps: []*agentapi.App{
 			{
-				Type:        "kea",
-				CtrlAddress: "1.2.3.4",
-				CtrlPort:    1234,
+				Type:         "kea",
+				AccessPoints: makeAccessPoint("control", "1.2.3.4", "", 1234),
 			},
 		},
 	}
@@ -235,9 +244,9 @@ func TestForwardRndcCommand(t *testing.T) {
 	defer teardown()
 
 	rndcSettings := Bind9Control{
-		CtrlAddress: "127.0.0.1",
-		CtrlPort:    953,
-		CtrlKey:     "",
+		Address: "127.0.0.1",
+		Port:    953,
+		Key:     "",
 	}
 
 	rsp := agentapi.ForwardRndcCommandRsp{

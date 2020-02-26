@@ -27,18 +27,38 @@ func NewRndcClient(ce CommandExecutor) *RndcClient {
 	return rndcClient
 }
 
-func (c *RndcClient) Call(app *App, command []string) ([]byte, error) {
-	if app.CtrlPort == 0 {
-		return nil, fmt.Errorf("rndc requires control port")
-	}
-	if len(app.CtrlAddress) == 0 {
-		return nil, fmt.Errorf("rndc requires control address")
+func (c *RndcClient) Call(app *App, command []string) (output []byte, err error) {
+	var ctrl AccessPoint
+
+	for _, point := range app.AccessPoints {
+		if point.Type != "control" {
+			continue
+		}
+
+		if point.Port == 0 {
+			err = fmt.Errorf("rndc requires control port")
+		} else if len(point.Address) == 0 {
+			err = fmt.Errorf("rndc requires control address")
+		} else {
+			err = nil
+		}
+
+		if err != nil {
+			continue
+		}
+		// found a good access point
+		ctrl = point
+		break
 	}
 
-	rndcCommand := []string{"rndc", "-s", app.CtrlAddress, "-p", fmt.Sprintf("%d", app.CtrlPort)}
-	if len(app.CtrlKey) > 0 {
+	if err != nil {
+		return nil, err
+	}
+
+	rndcCommand := []string{"rndc", "-s", ctrl.Address, "-p", fmt.Sprintf("%d", ctrl.Port)}
+	if len(ctrl.Key) > 0 {
 		rndcCommand = append(rndcCommand, "-y")
-		rndcCommand = append(rndcCommand, app.CtrlKey)
+		rndcCommand = append(rndcCommand, ctrl.Key)
 	} else if _, err := os.Stat(RndcKeyFile); err == nil {
 		rndcCommand = append(rndcCommand, "-k")
 		rndcCommand = append(rndcCommand, RndcKeyFile)
