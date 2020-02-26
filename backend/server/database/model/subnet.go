@@ -19,7 +19,7 @@ import (
 // is copied to this structure thanks to using App_LocalSubnetID in the
 // AppToSubnet structure which, when present, signals to go-pg to capture
 // this value.
-type SubnetAttachedApp struct {
+type AppWithSubnet struct {
 	tableName struct{} `pg:"app"` //nolint:unused,structcheck
 	App
 	LocalSubnetID int64 `pg:"-"`
@@ -37,7 +37,7 @@ type Subnet struct {
 	AddressPools []AddressPool
 	PrefixPools  []PrefixPool
 
-	Apps []*SubnetAttachedApp `pg:"many2many:app_to_subnet,fk:subnet_id,joinFK:app_id"`
+	Apps []*AppWithSubnet `pg:"many2many:app_to_subnet,fk:subnet_id,joinFK:app_id"`
 }
 
 // A structure reflecting an app_to_subnet SQL table which associates
@@ -50,7 +50,7 @@ type Subnet struct {
 // app may use the same local subnet ID twice, once for DHCPv4 and
 // second time for DHCPv6.
 // Note that App_LocalSubnetID is used in queries to copy the value of
-// the local subnet id to the SubnetAttachedApp structure. The
+// the local subnet id to the AppWithSubnet structure. The
 // LocalSubnetID is used in statements inserting the data to the
 // app_to_subnet table.
 type AppToSubnet struct {
@@ -337,7 +337,7 @@ func DeleteAppFromSubnet(db *pg.DB, subnetID int64, appID int64) (bool, error) {
 }
 
 // Finds and returns an app associated with a subnet having the specified id.
-func (s *Subnet) GetApp(appID int64) *SubnetAttachedApp {
+func (s *Subnet) GetApp(appID int64) *AppWithSubnet {
 	for _, a := range s.Apps {
 		app := a
 		if a.ID == appID {
