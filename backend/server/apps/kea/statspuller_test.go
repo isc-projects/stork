@@ -188,7 +188,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.ID)
 
-	var accessPoints []dbmodel.AccessPoint
+	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "cool.example.org", "", 1234)
 	a := &dbmodel.App{
 		ID:           0,

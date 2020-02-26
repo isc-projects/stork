@@ -8,7 +8,7 @@ import (
 
 // GetAccessPoint returns the access point of the given app and given access
 // point type.
-func GetAccessPoint(app *dbmodel.App, accessType string) (ap dbmodel.AccessPoint, err error) {
+func GetAccessPoint(app *dbmodel.App, accessType string) (ap *dbmodel.AccessPoint, err error) {
 	for _, point := range app.AccessPoints {
 		if point.Type == accessType {
 			return point, nil

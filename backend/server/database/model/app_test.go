@@ -41,7 +41,7 @@ func TestAddApp(t *testing.T) {
 	require.NotNil(t, err)
 
 	// add app, no error expected
-	var accessPoints []AccessPoint
+	var accessPoints []*AccessPoint
 	accessPoints = AppendAccessPoint(accessPoints, "control", "cool.example.org", "", 1234)
 
 	s = &App{
@@ -56,7 +56,7 @@ func TestAddApp(t *testing.T) {
 	require.NotZero(t, s.ID)
 
 	// add app for the same machine and ctrl port - error should be raised
-	accessPoints = []AccessPoint{}
+	accessPoints = []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, "control", "", "", 1234)
 	s = &App{
 		ID:           0,
@@ -70,7 +70,7 @@ func TestAddApp(t *testing.T) {
 	require.Contains(t, err.Error(), "duplicate")
 
 	// add app with empty control address, no error expected.
-	accessPoints = []AccessPoint{}
+	accessPoints = []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, "control", "", "abcd", 4321)
 	s = &App{
 		ID:           0,
@@ -83,7 +83,7 @@ func TestAddApp(t *testing.T) {
 	require.Nil(t, err)
 
 	// add app with two control points - error should be raised.
-	accessPoints = []AccessPoint{}
+	accessPoints = []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, "control", "dns1.example.org", "", 5555)
 	accessPoints = AppendAccessPoint(accessPoints, "control", "dns2.example.org", "", 5656)
 	s = &App{
@@ -98,7 +98,7 @@ func TestAddApp(t *testing.T) {
 	require.Contains(t, err.Error(), "duplicate")
 
 	// add app with explicit access point, bad type - error should be raised.
-	accessPoints = []AccessPoint{}
+	accessPoints = []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, "foobar", "dns1.example.org", "", 6666)
 	s = &App{
 		ID:           0,
@@ -169,7 +169,7 @@ func TestDeleteApp(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// add app, no error expected
-	var accessPoints []AccessPoint
+	var accessPoints []*AccessPoint
 	accessPoints = AppendAccessPoint(accessPoints, "control", "10.0.0.1", "", 4321)
 
 	s := &App{
@@ -208,7 +208,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.NoError(t, err)
 
 	// add app, no error expected
-	var accessPoints []AccessPoint
+	var accessPoints []*AccessPoint
 	accessPoints = AppendAccessPoint(accessPoints, "control", "", "", 1234)
 
 	s := &App{
@@ -254,7 +254,7 @@ func TestGetAppsByType(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// add kea app
-	var keaPoints []AccessPoint
+	var keaPoints []*AccessPoint
 	keaPoints = AppendAccessPoint(keaPoints, "control", "", "", 1234)
 	aKea := &App{
 		ID:           0,
@@ -268,7 +268,7 @@ func TestGetAppsByType(t *testing.T) {
 	require.NotZero(t, aKea.ID)
 
 	// add bind9 app
-	var bind9Points []AccessPoint
+	var bind9Points []*AccessPoint
 	bind9Points = AppendAccessPoint(bind9Points, "control", "", "", 2234)
 	aBind9 := &App{
 		ID:           0,
@@ -317,7 +317,7 @@ func TestGetAppByID(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// add app, no error expected
-	var accessPoints []AccessPoint
+	var accessPoints []*AccessPoint
 	accessPoints = AppendAccessPoint(accessPoints, "control", "", "", 4444)
 	accessPoints = AppendAccessPoint(accessPoints, "statistics", "10.0.0.2", "abcd", 5555)
 
@@ -375,7 +375,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// add kea app, no error expected
-	var keaPoints []AccessPoint
+	var keaPoints []*AccessPoint
 	keaPoints = AppendAccessPoint(keaPoints, "control", "", "", 1234)
 
 	sKea := &App{
@@ -390,7 +390,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.NotZero(t, sKea.ID)
 
 	// add bind app, no error expected
-	var bind9Points []AccessPoint
+	var bind9Points []*AccessPoint
 	bind9Points = AppendAccessPoint(bind9Points, "control", "", "abcd", 4321)
 
 	sBind := &App{
@@ -510,7 +510,7 @@ func TestGetAllApps(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// add kea app, no error expected
-	var keaPoints []AccessPoint
+	var keaPoints []*AccessPoint
 	keaPoints = AppendAccessPoint(keaPoints, "control", "", "", 1234)
 
 	aKea := &App{
@@ -525,7 +525,7 @@ func TestGetAllApps(t *testing.T) {
 	require.NotZero(t, aKea.ID)
 
 	// add bind app, no error expected
-	var bind9Points []AccessPoint
+	var bind9Points []*AccessPoint
 	bind9Points = AppendAccessPoint(bind9Points, "control", "", "abcd", 4321)
 
 	aBind := &App{
@@ -551,7 +551,7 @@ func TestAfterScanKea(t *testing.T) {
 	ctx := context.Background()
 
 	// for now details are nil
-	var accessPoints []AccessPoint
+	var accessPoints []*AccessPoint
 	accessPoints = AppendAccessPoint(accessPoints, "control", "", "", 1234)
 
 	aKea := &App{
@@ -586,7 +586,7 @@ func TestAfterScanBind(t *testing.T) {
 	ctx := context.Background()
 
 	// for now details are nil
-	var accessPoints []AccessPoint
+	var accessPoints []*AccessPoint
 	accessPoints = AppendAccessPoint(accessPoints, "control", "", "abcd", 4321)
 
 	aBind := &App{

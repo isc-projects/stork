@@ -37,15 +37,12 @@ func (c *RndcClient) Call(app *App, command []string) (output []byte, err error)
 
 		if point.Port == 0 {
 			err = fmt.Errorf("rndc requires control port")
+			break
 		} else if len(point.Address) == 0 {
 			err = fmt.Errorf("rndc requires control address")
-		} else {
-			err = nil
+			break
 		}
 
-		if err != nil {
-			continue
-		}
 		// found a good access point
 		ctrl = point
 		break

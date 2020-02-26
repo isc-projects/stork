@@ -11,7 +11,7 @@ import (
 
 // accessPointsMatch compares two access points and returns true if they
 // match, false otherwise.
-func accessPointsMatch(pt1, pt2 AccessPoint) bool {
+func accessPointsMatch(pt1, pt2 *AccessPoint) bool {
 	if pt1.Type != pt2.Type {
 		return false
 	}
@@ -29,7 +29,7 @@ func accessPointsMatch(pt1, pt2 AccessPoint) bool {
 
 // accessPointArraysMatch compares two access point arrays and returns true
 // if they match, false otherwise.
-func accessPointArraysMatch(pts1, pts2 []AccessPoint) bool {
+func accessPointArraysMatch(pts1, pts2 []*AccessPoint) bool {
 	if len(pts1) != len(pts2) {
 		return false
 	}
@@ -56,7 +56,6 @@ func accessPointArraysMatch(pts1, pts2 []AccessPoint) bool {
 	}
 
 	return true
-
 }
 
 // appsMatch compares two application and returns true if they match,
@@ -138,7 +137,7 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 		err := AddMachine(db, m)
 		require.NoError(t, err)
 
-		var accessPoints []AccessPoint
+		var accessPoints []*AccessPoint
 		accessPoints = AppendAccessPoint(accessPoints, "control", "cool.example.org", "", int64(1234+i))
 		a := &App{
 			ID:           0,

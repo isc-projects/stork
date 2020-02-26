@@ -158,10 +158,10 @@ func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 		}
 		// if no old app in db then prepare new record
 		if dbApp == nil {
-			var accessPoints []dbmodel.AccessPoint
+			var accessPoints []*dbmodel.AccessPoint
 
 			for _, point := range app.AccessPoints {
-				accessPoints = append(accessPoints, dbmodel.AccessPoint{
+				accessPoints = append(accessPoints, &dbmodel.AccessPoint{
 					Type:    point.Type,
 					Address: point.Address,
 					Port:    point.Port,

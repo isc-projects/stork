@@ -163,7 +163,7 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 		}
 	})
 
-	var accessPoints []dbmodel.AccessPoint
+	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "192.0.2.0", "", 1234)
 
 	dbApp := dbmodel.App{
@@ -193,7 +193,7 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 		}
 	})
 
-	var accessPoints []dbmodel.AccessPoint
+	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "192.0.2.0", "", 1234)
 
 	dbApp := dbmodel.App{

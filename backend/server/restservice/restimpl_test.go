@@ -193,7 +193,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	require.NoError(t, err)
 
 	// add kea app
-	var keaPoints []dbmodel.AccessPoint
+	var keaPoints []*dbmodel.AccessPoint
 	keaPoints = dbmodel.AppendAccessPoint(keaPoints, "control", "1.2.3.4", "", 123)
 	keaApp := &dbmodel.App{
 		MachineID:    m.ID,
@@ -206,7 +206,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	m.Apps = append(m.Apps, keaApp)
 
 	// add BIND 9 app
-	var bind9Points []dbmodel.AccessPoint
+	var bind9Points []*dbmodel.AccessPoint
 	bind9Points = dbmodel.AppendAccessPoint(bind9Points, "control", "1.2.3.4", "abcd", 124)
 	bind9App := &dbmodel.App{
 		MachineID:    m.ID,
@@ -367,7 +367,7 @@ func TestGetMachine(t *testing.T) {
 	require.NoError(t, err)
 
 	// add app to machine 2
-	var accessPoints []dbmodel.AccessPoint
+	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "", "", 1234)
 	s := &dbmodel.App{
 		ID:           0,
@@ -559,7 +559,7 @@ func TestGetApp(t *testing.T) {
 	require.NoError(t, err)
 
 	// add app to machine
-	var accessPoints []dbmodel.AccessPoint
+	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "", "", 1234)
 	s := &dbmodel.App{
 		ID:           0,
@@ -613,7 +613,7 @@ func TestRestGetApp(t *testing.T) {
 	require.NoError(t, err)
 
 	// add kea app to machine
-	var keaPoints []dbmodel.AccessPoint
+	var keaPoints []*dbmodel.AccessPoint
 	keaPoints = dbmodel.AppendAccessPoint(keaPoints, "control", "", "", 1234)
 	keaApp := &dbmodel.App{
 		ID:           0,
@@ -638,7 +638,7 @@ func TestRestGetApp(t *testing.T) {
 	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
 
 	// add BIND 9 app to machine
-	var bind9Points []dbmodel.AccessPoint
+	var bind9Points []*dbmodel.AccessPoint
 	bind9Points = dbmodel.AppendAccessPoint(bind9Points, "control", "", "abcd", 953)
 	bind9App := &dbmodel.App{
 		ID:           0,
@@ -687,7 +687,7 @@ func TestRestGetApps(t *testing.T) {
 	require.NoError(t, err)
 
 	// add app kea to machine
-	var keaPoints []dbmodel.AccessPoint
+	var keaPoints []*dbmodel.AccessPoint
 	keaPoints = dbmodel.AppendAccessPoint(keaPoints, "control", "", "", 1234)
 	s1 := &dbmodel.App{
 		ID:           0,
@@ -703,7 +703,7 @@ func TestRestGetApps(t *testing.T) {
 	require.NoError(t, err)
 
 	// add app BIND 9 to machine
-	var bind9Points []dbmodel.AccessPoint
+	var bind9Points []*dbmodel.AccessPoint
 	bind9Points = dbmodel.AppendAccessPoint(bind9Points, "control", "", "abcd", 4321)
 	s2 := &dbmodel.App{
 		ID:           0,
@@ -806,7 +806,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add Kea application to the machine
-	var keaPoints []dbmodel.AccessPoint
+	var keaPoints []*dbmodel.AccessPoint
 	keaPoints = dbmodel.AppendAccessPoint(keaPoints, "control", "", "", 1234)
 	keaApp := &dbmodel.App{
 		ID:           0,
@@ -907,7 +907,7 @@ func TestRestGetAppsStats(t *testing.T) {
 	require.NoError(t, err)
 
 	// add app kea to machine
-	var keaPoints []dbmodel.AccessPoint
+	var keaPoints []*dbmodel.AccessPoint
 	keaPoints = dbmodel.AppendAccessPoint(keaPoints, "control", "", "", 1234)
 	s1 := &dbmodel.App{
 		ID:           0,
@@ -923,7 +923,7 @@ func TestRestGetAppsStats(t *testing.T) {
 	require.NoError(t, err)
 
 	// add app bind9 to machine
-	var bind9Points []dbmodel.AccessPoint
+	var bind9Points []*dbmodel.AccessPoint
 	bind9Points = dbmodel.AppendAccessPoint(bind9Points, "control", "", "abcd", 4321)
 	s2 := &dbmodel.App{
 		ID:           0,

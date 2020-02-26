@@ -20,7 +20,7 @@ func TestGetAppState(t *testing.T) {
 
 	fa := storktest.NewFakeAgents(dummyFn)
 
-	var accessPoints []dbmodel.AccessPoint
+	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "127.0.0.1", "abcd", 953)
 	dbApp := dbmodel.App{
 		AccessPoints: accessPoints,

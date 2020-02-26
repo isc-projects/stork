@@ -18,8 +18,8 @@ type AccessPoint struct {
 }
 
 // GetAllAccessPointsByAppID returns all access points for an app with given ID.
-func GetAllAccessPointsByAppID(db *dbops.PgDB, appID int64) ([]AccessPoint, error) {
-	var accessPoints []AccessPoint
+func GetAllAccessPointsByAppID(db *dbops.PgDB, appID int64) ([]*AccessPoint, error) {
+	var accessPoints []*AccessPoint
 
 	err := db.Model(&accessPoints).
 		Where("app_id = ?", appID).
@@ -54,8 +54,8 @@ func GetAccessPointByAppID(db *dbops.PgDB, appID int64, pointType string) (*Acce
 
 // AppendAccessPoint is an utility function that appends an access point to a
 // list.
-func AppendAccessPoint(list []AccessPoint, tp, address, key string, port int64) []AccessPoint {
-	list = append(list, AccessPoint{
+func AppendAccessPoint(list []*AccessPoint, tp, address, key string, port int64) []*AccessPoint {
+	list = append(list, &AccessPoint{
 		Type:    tp,
 		Address: address,
 		Port:    port,

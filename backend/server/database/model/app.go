@@ -63,7 +63,7 @@ type App struct {
 	Meta      AppMeta
 	Details   interface{} // here we have either AppKea or AppBind9
 
-	AccessPoints []AccessPoint
+	AccessPoints []*AccessPoint
 }
 
 // This is a hook to go-pg that is called just after reading rows from database.
