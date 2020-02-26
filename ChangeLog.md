@@ -1,3 +1,10 @@
+* 39 [func] matthijs
+
+    Update the data model such that applications can have multiple
+    access points.  Parse named.conf to detect both "control"
+    and "statistics" access point.
+    (Gitlab #170)
+
 Stork 0.5.0 released on 2020-03-06.
 
 * 38 [doc] tomek
