@@ -86,15 +86,20 @@ func Transaction(dbIface interface{}) (tx *pg.Tx, rollback func(), commit func()
 	if ok {
 		tx, err = db.Begin()
 		if err != nil {
-			err = errors.WithMessage(err, "problem with starting database transaction")
+			err = errors.Wrapf(err, "problem with starting database transaction")
 		}
 		rollback = func() {
+			// We neither capture nor log any error here because it would
+			// flood us with warnings indicating that rollback was called
+			// on already committed changes. Our usage pattern is to
+			// always call rollback upon exiting the function. It most
+			// often occurs after commit.
 			_ = tx.Rollback()
 		}
 		commit = func() (err error) {
 			err = tx.Commit()
 			if err != nil {
-				err = errors.WithMessage(err, "problem with committing the transaction")
+				err = errors.Wrapf(err, "problem with committing the transaction")
 			}
 			return err
 		}
