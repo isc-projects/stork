@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-pg/pg/v9"
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -326,30 +325,6 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	dbApp.Details = keaApp
 }
 
-// Iterates over the provided slice of subnets and stores them in the database
-// if they are not there yet. In addition, it associates the subnets with the
-// specified Kea application.
-func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []dbmodel.Subnet, app *dbmodel.App) (err error) {
-	for _, s := range subnets {
-		subnet := s
-		if subnet.ID == 0 {
-			subnet.SharedNetworkID = networkID
-			err = dbmodel.AddSubnet(tx, &subnet)
-			if err != nil {
-				err = errors.WithMessagef(err, "unable to add detected subnet %s to the database",
-					subnet.Prefix)
-				return err
-			}
-		}
-		err = dbmodel.AddAppToSubnet(tx, &subnet, app)
-		if err != nil {
-			err = errors.WithMessagef(err, "unable to associate detected subnet %s with Kea app having id %d", subnet.Prefix, app.ID)
-			return err
-		}
-	}
-	return nil
-}
-
 // Inserts or updates information about Kea app in the database. Next, it extracts
 // Kea's configurations and uses to either update or create new shared networks,
 // subnets and pools. Finally, the relations between the subnets and the Kea app
@@ -384,30 +359,9 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App) error {
 		return err
 	}
 
-	// Go over the networks that the Kea app belongs to.
-	for _, n := range networks {
-		network := n
-		if n.ID == 0 {
-			// This is new shared network. Add it to the database.
-			err = dbmodel.AddSharedNetwork(tx, &network)
-			if err != nil {
-				err = errors.WithMessagef(err, "unable to add detected shared network %s to the database",
-					network.Name)
-				return err
-			}
-		} else {
-			// This is an existing shared network. Go over its subnets and add them
-			// to the database if they are not there yet.
-			err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	// Finally, add top level subnets to the database and associate them with
-	// the Kea app.
-	err = commitSubnetsIntoDB(tx, 0, subnets, app)
+	// For the given app, iterate over the networks and subnets and update their
+	// global instances accordingly in the database.
+	err = dbmodel.CommitNetworksIntoDB(tx, networks, subnets, app)
 	if err != nil {
 		return err
 	}

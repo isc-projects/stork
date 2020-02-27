@@ -348,3 +348,56 @@ func TestGetSubnetByLocalID(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, returnedSubnets)
 }
+
+// Test that global shared networks and subnet instances are committed
+// to the database and associated with the given app. This test is very
+// simple. More exhaustive tests are implemented in backend/apps.
+func TestCommitNetworksIntoDB(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add the machine.
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Creates new app. Its configuration doesn't matter in this test.
+	app := App{
+		MachineID:   m.ID,
+		Type:        KeaAppType,
+		CtrlAddress: "localhost",
+		CtrlPort:    8000,
+	}
+	// Add the app to the database.
+	err = AddApp(db, &app)
+	require.NoError(t, err)
+
+	// Create a shared network and subnet.
+	networks := []SharedNetwork{
+		{
+			Name: "foo",
+			Subnets: []Subnet{
+				{
+					Prefix: "192.0.2.0/24",
+				},
+			},
+		},
+	}
+	subnets := []Subnet{
+		{
+			Prefix: "192.0.2.0/24",
+		},
+	}
+	// Attempt to create the global shared network and subnet.
+	err = CommitNetworksIntoDB(db, networks, subnets, &app)
+	require.NoError(t, err)
+
+	// There should be two subnets in the database now.
+	returnedSubnets, err := GetAllSubnets(db, 0)
+	require.NoError(t, err)
+	require.Len(t, returnedSubnets, 2)
+}

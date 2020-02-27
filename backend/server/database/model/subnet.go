@@ -329,3 +329,70 @@ func (s *Subnet) GetApp(appID int64) *App {
 	}
 	return nil
 }
+
+// Iterates over the provided slice of subnets and stores them in the database
+// if they are not there yet. In addition, it associates the subnets with the
+// specified Kea application.
+func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App) (err error) {
+	for _, s := range subnets {
+		subnet := s
+		if subnet.ID == 0 {
+			subnet.SharedNetworkID = networkID
+			err = AddSubnet(tx, &subnet)
+			if err != nil {
+				err = errors.WithMessagef(err, "unable to add detected subnet %s to the database",
+					subnet.Prefix)
+				return err
+			}
+		}
+		err = AddAppToSubnet(tx, &subnet, app)
+		if err != nil {
+			err = errors.WithMessagef(err, "unable to associate detected subnet %s with Kea app having id %d", subnet.Prefix, app.ID)
+			return err
+		}
+	}
+	return nil
+}
+
+// Iterates over the shared networks and subnets and commits them to the database.
+// In addition it associates them with the specified app.
+func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets []Subnet, app *App) error {
+	// Begin transaction.
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		return err
+	}
+	defer rollback()
+
+	// Go over the networks that the Kea app belongs to.
+	for _, n := range networks {
+		network := n
+		if n.ID == 0 {
+			// This is new shared network. Add it to the database.
+			err = AddSharedNetwork(tx, &network)
+			if err != nil {
+				err = errors.WithMessagef(err, "unable to add detected shared network %s to the database",
+					network.Name)
+				return err
+			}
+		} else {
+			// This is an existing shared network. Go over its subnets and add them
+			// to the database if they are not there yet.
+			err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// Finally, add top level subnets to the database and associate them with
+	// the Kea app.
+	err = commitSubnetsIntoDB(tx, 0, subnets, app)
+	if err != nil {
+		return err
+	}
+
+	// Commit the changes if everything went fine.
+	err = commit()
+	return err
+}
