@@ -2,10 +2,12 @@ package kea
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-pg/pg/v9"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
@@ -28,7 +30,7 @@ func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) *StatsPuller {
 	statsPuller := &StatsPuller{
 		Db:     db,
 		Agents: agents,
-		Ticker: time.NewTicker(10 * time.Minute), // TODO: change it to a setting in db
+		Ticker: time.NewTicker(1 * time.Minute), // TODO: change it to a setting in db
 		Done:   make(chan bool),
 		Wg:     &sync.WaitGroup{},
 	}
@@ -91,6 +93,7 @@ func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
 			appsOkCnt++
 		}
 	}
+	log.Printf("completed pulling lease stats from Kea apps: %d/%d succeeded", appsOkCnt, len(dbApps))
 	return appsOkCnt, lastErr
 }
 
@@ -110,6 +113,43 @@ type StatLeaseGetArgs struct {
 type StatLeaseGetResponse struct {
 	agentcomm.KeaResponseHeader
 	Arguments *StatLeaseGetArgs `json:"arguments,omitempty"`
+}
+
+// A key that is used in map that is mapping from (local subnet id, inet family) to LocalSubnet struct.
+type LocalSubnetKey struct {
+	LocalSubnetID int64
+	Family        int
+}
+
+// Take a stats set from dhcp4 or dhcp6 daemon and store them in LocalSubnet in database.
+func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLeaseGet, subnetsMap map[LocalSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+	var lastErr error
+
+	for _, row := range resultSet.Rows {
+		stats := make(map[string]interface{})
+		var sn *dbmodel.LocalSubnet
+		var lsnID int64
+		for colIdx, val := range row {
+			name := resultSet.Columns[colIdx]
+			if name == "subnet-id" {
+				lsnID = int64(val)
+				sn = subnetsMap[LocalSubnetKey{lsnID, family}]
+			} else {
+				stats[name] = val
+			}
+		}
+		if sn == nil {
+			lastErr = errors.Errorf("cannot find LocalSubnet for app:%d, local subnet id: %d, family: %d", dbApp.ID, lsnID, family)
+			log.Error(lastErr.Error())
+			continue
+		}
+		err := sn.UpdateStats(statsPuller.Db, stats)
+		if err != nil {
+			log.Errorf("problem with updating local subnet %d, app:%d, stats: %s", sn.LocalSubnetID, dbApp.ID, err.Error())
+			lastErr = err
+		}
+	}
+	return lastErr
 }
 
 // Get lease stats from given kea app.
@@ -158,32 +198,40 @@ func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 		return cmdsResult.Error
 	}
 
-	// process response from kea daemons
-	log.Printf("App %+v", dbApp)
-	log.Printf("stats4Resp %+v", stats4Resp)
-	for _, s4r := range stats4Resp {
-		if s4r.Arguments == nil {
-			continue
-		}
-		for idx, row := range s4r.Arguments.ResultSet.Rows {
-			log.Printf("Row: %d", idx)
-			for colIdx, col := range row {
-				log.Printf("  %s: %d", s4r.Arguments.ResultSet.Columns[colIdx], col)
-			}
-		}
+	// get app's local subnets
+	subnets, err := dbmodel.GetAppLocalSubnets(statsPuller.Db, dbApp.ID)
+	if err != nil {
+		return err
 	}
-	log.Printf("stats6Resp %+v", stats6Resp)
-	for _, s6r := range stats6Resp {
-		if s6r.Arguments == nil {
-			continue
+
+	// prepare a map that will speed up looking for LocalSubnet
+	// based on local subnet id and inet family
+	subnetsMap := make(map[LocalSubnetKey]*dbmodel.LocalSubnet)
+	for _, sn := range subnets {
+		family := 4
+		if strings.Contains(sn.Subnet.Prefix, ":") {
+			family = 6
 		}
-		for idx, row := range s6r.Arguments.ResultSet.Rows {
-			log.Printf("Row: %d", idx)
-			for colIdx, col := range row {
-				log.Printf("  %s: %d", s6r.Arguments.ResultSet.Columns[colIdx], col)
+		subnetsMap[LocalSubnetKey{sn.LocalSubnetID, family}] = sn
+	}
+
+	// process response from kea daemons
+	var lastErr error
+	for idx, srs := range [][]StatLeaseGetResponse{stats4Resp, stats6Resp} {
+		family := 4
+		if idx == 1 {
+			family = 6
+		}
+		for _, sr := range srs {
+			if sr.Arguments == nil {
+				continue
+			}
+			err = statsPuller.storeDaemonStats(&sr.Arguments.ResultSet, subnetsMap, dbApp, family)
+			if err != nil {
+				lastErr = err
 			}
 		}
 	}
 
-	return nil
+	return lastErr
 }

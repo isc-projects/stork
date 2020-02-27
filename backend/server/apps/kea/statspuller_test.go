@@ -3,7 +3,6 @@ package kea
 import (
 	"testing"
 
-	//log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"isc.org/stork/server/agentcomm"
@@ -61,9 +60,9 @@ func TestStatsPullerPullStats(t *testing.T) {
                                "result-set": {
                                    "columns": [ "subnet-id", "total-nas", "assigned-nas", "declined-nas", "total-pds", "assigned-pds" ],
                                    "rows": [
-                                       [ 10, 4096, 2400, 3, 0, 0],
-                                       [ 20, 0, 0, 0, 1048, 233 ],
-                                       [ 30, 256, 60, 0, 1048, 15 ]
+                                       [ 30, 4096, 2400, 3, 0, 0],
+                                       [ 40, 0, 0, 0, 1048, 233 ],
+                                       [ 50, 256, 60, 0, 1048, 15 ]
                                    ],
                                    "timestamp": "2018-05-04 15:03:37.000000"
                                }
@@ -72,39 +71,27 @@ func TestStatsPullerPullStats(t *testing.T) {
 		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[1])
 	})
 
-	// add one machine with one kea app
-	m := &dbmodel.Machine{
-		ID:        0,
-		Address:   "localhost",
-		AgentPort: 8080,
-	}
-	err := dbmodel.AddMachine(db, m)
+	// prepare apps with subnets and local subnets
+	v4Config := `
+        {
+            "Dhcp4": {
+                "subnet4": [{"id": 10, "subnet": "192.0.2.0/24"},
+                            {"id": 20, "subnet": "192.0.3.0/24"}]
+            }
+        }`
+	v6Config := `
+        {
+            "Dhcp6": {
+                "subnet6": [{"id": 30, "subnet": "2001:db8:1::/64"},
+                            {"id": 40, "subnet": "2001:db8:2::/64"},
+                            {"id": 50, "subnet": "2001:db8:3::/64"}]
+            }
+        }`
+	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
+	nets, snets, err := DetectNetworks(db, app)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, m.ID)
-	a := &dbmodel.App{
-		ID:          0,
-		MachineID:   m.ID,
-		Type:        dbmodel.KeaAppType,
-		CtrlAddress: "cool.example.org",
-		CtrlPort:    1234,
-		CtrlKey:     "",
-		Active:      true,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
-				{
-					Active: true,
-					Name:   "dhcp4",
-				},
-				{
-					Active: true,
-					Name:   "dhcp6",
-				},
-			},
-		},
-	}
-	err = dbmodel.AddApp(db, a)
+	err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app)
 	require.NoError(t, err)
-	require.NotEqual(t, 0, a.ID)
 
 	// prepare stats puller
 	sp := NewStatsPuller(db, fa)
@@ -116,7 +103,49 @@ func TestStatsPullerPullStats(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, appsOkCnt)
 
-	// TODO: check collected stats
+	// check collected stats
+	subnets := []*dbmodel.LocalSubnet{}
+	q := db.Model(&subnets)
+	q = q.Column("local_subnet_id", "stats", "stats_collected_at")
+	q = q.Where("local_subnet.app_id = ?", app.ID)
+	err = q.Select()
+	require.NoError(t, err)
+	snCnt := 0
+	for _, sn := range subnets {
+		switch sn.LocalSubnetID {
+		case 10:
+			require.Equal(t, 111.0, sn.Stats["assigned-addresses"])
+			require.Equal(t, 0.0, sn.Stats["declined-addresses"])
+			require.Equal(t, 256.0, sn.Stats["total-addresses"])
+			snCnt++
+		case 20:
+			require.Equal(t, 2034.0, sn.Stats["assigned-addresses"])
+			require.Equal(t, 4.0, sn.Stats["declined-addresses"])
+			require.Equal(t, 4098.0, sn.Stats["total-addresses"])
+			snCnt++
+		case 30:
+			require.Equal(t, 2400.0, sn.Stats["assigned-nas"])
+			require.Equal(t, 0.0, sn.Stats["assigned-pds"])
+			require.Equal(t, 3.0, sn.Stats["declined-nas"])
+			require.Equal(t, 0.0, sn.Stats["total-pds"])
+			snCnt++
+		case 40:
+			require.Equal(t, 0.0, sn.Stats["assigned-nas"])
+			require.Equal(t, 233.0, sn.Stats["assigned-pds"])
+			require.Equal(t, 0.0, sn.Stats["declined-nas"])
+			require.Equal(t, 0.0, sn.Stats["total-nas"])
+			require.Equal(t, 1048.0, sn.Stats["total-pds"])
+			snCnt++
+		case 50:
+			require.Equal(t, 60.0, sn.Stats["assigned-nas"])
+			require.Equal(t, 15.0, sn.Stats["assigned-pds"])
+			require.Equal(t, 0.0, sn.Stats["declined-nas"])
+			require.Equal(t, 256.0, sn.Stats["total-nas"])
+			require.Equal(t, 1048.0, sn.Stats["total-pds"])
+			snCnt++
+		}
+	}
+	require.Equal(t, 5, snCnt)
 }
 
 // Check if Kea response to stat-leaseX-get command is handled correctly when it is
@@ -192,6 +221,4 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	appsOkCnt, err := sp.pullLeaseStats()
 	require.NoError(t, err)
 	require.Equal(t, 1, appsOkCnt)
-
-	// TODO: check collected stats
 }

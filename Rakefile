@@ -292,6 +292,10 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
   else
     scope = './...'
   end
+
+  if ENV['dbtrace'] == 'true'
+    ENV['STORK_DATABASE_TRACE'] = 'true'
+  end
   Dir.chdir('backend') do
     sh "#{GO} generate -v ./..."
     if ENV['debug'] == 'true'

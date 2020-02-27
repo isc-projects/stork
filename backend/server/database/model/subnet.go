@@ -1,13 +1,15 @@
 package dbmodel
 
 import (
+	"time"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	errors "github.com/pkg/errors"
 
 	dbops "isc.org/stork/server/database"
 
-	"time"
+	storkutil "isc.org/stork/util"
 )
 
 // This structure holds subnet information retrieved from an app. Multiple
@@ -23,7 +25,11 @@ type LocalSubnet struct {
 	AppID         int64 `pg:",pk"`
 	SubnetID      int64 `pg:",pk"`
 	App           *App
+	Subnet        *Subnet
 	LocalSubnetID int64
+
+	Stats            map[string]interface{}
+	StatsCollectedAt time.Time
 }
 
 // Reflects IPv4 or IPv6 subnet from the database.
@@ -465,5 +471,35 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 
 	// Commit the changes if everything went fine.
 	err = commit()
+	return err
+}
+
+// Fetch all local subnets for indicated app.
+func GetAppLocalSubnets(db *pg.DB, appID int64) ([]*LocalSubnet, error) {
+	subnets := []*LocalSubnet{}
+	q := db.Model(&subnets)
+	q = q.Column("app_id", "subnet_id", "local_subnet_id")
+	q = q.Relation("Subnet")
+	q = q.Where("local_subnet.app_id = ?", appID)
+
+	err := q.Select()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		err = errors.Wrapf(err, "problem with getting all subnets for app %d", appID)
+		return nil, err
+	}
+	return subnets, nil
+}
+
+// Update stats pulled for given local subnet.
+func (lsn *LocalSubnet) UpdateStats(db *pg.DB, stats map[string]interface{}) error {
+	lsn.Stats = stats
+	lsn.StatsCollectedAt = storkutil.UTCNow()
+	q := db.Model(lsn)
+	q = q.Column("stats", "stats_collected_at")
+	q = q.WherePK()
+	_, err := q.Update()
 	return err
 }

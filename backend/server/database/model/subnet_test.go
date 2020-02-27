@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )
@@ -347,6 +348,85 @@ func TestGetSubnetByLocalID(t *testing.T) {
 	returnedSubnets, err = GetSubnetsByLocalID(db, 123, apps[0].ID, 6)
 	require.NoError(t, err)
 	require.Empty(t, returnedSubnets)
+}
+
+// Test that the subnet can be fetched by local ID and app ID.
+func TestGetAppLocalSubnets(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// prepare apps
+	apps := addTestSubnetApps(t, db)
+	require.Len(t, apps, 2)
+
+	// prepare a subnet
+	subnet := &Subnet{
+		Prefix: "192.0.2.0/24",
+	}
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// add association of the app to the subnet - this will create LocalSubnet
+	err = AddAppToSubnet(db, subnet, apps[0])
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// check fetching LocalSubnets for given app
+	subnets, err := GetAppLocalSubnets(db, apps[0].ID)
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+	require.Equal(t, int64(123), subnets[0].LocalSubnetID)
+	require.NotNil(t, subnets[0].Subnet)
+	require.Equal(t, subnet.ID, subnets[0].Subnet.ID)
+}
+
+// Check updating stats in LocalSubnet.
+func TestUpdateStats(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// prepare apps
+	apps := addTestSubnetApps(t, db)
+	require.Len(t, apps, 2)
+
+	// prepare a subnet
+	subnet := &Subnet{
+		Prefix: "192.0.2.0/24",
+	}
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// add association of the app to the subnet - this will create LocalSubnet
+	err = AddAppToSubnet(db, subnet, apps[0])
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// check fetching LocalSubnets for given app
+	subnets, err := GetAppLocalSubnets(db, apps[0].ID)
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	// check updating stats
+	lsn := subnets[0]
+	lsn.AppID = apps[0].ID
+	lsn.SubnetID = subnet.ID
+	stats := make(map[string]interface{})
+	stats["hakuna-matata"] = 123
+	err = lsn.UpdateStats(db, stats)
+	require.NoError(t, err)
+
+	// check stored stats
+	lsns := []*LocalSubnet{}
+	err = db.Model(&lsns).Select()
+	require.NoError(t, err)
+	require.Len(t, lsns, 1)
+	lsn = lsns[0]
+	require.NotZero(t, lsn.StatsCollectedAt)
+	require.NotEmpty(t, lsn.Stats)
+	require.Contains(t, lsn.Stats, "hakuna-matata")
+	require.Equal(t, float64(123), lsn.Stats["hakuna-matata"])
 }
 
 // Test that global shared networks and subnet instances are committed

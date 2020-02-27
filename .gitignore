@@ -38,5 +38,6 @@ TAGS
 /tests/sim/venv
 /tests/sim/__pycache__/
 
-# containers output
+# files created by running docker containers
 /backend/cmd/stork-agent/supervisord.log
+/backend/cmd/stork-agent/supervisord.pid

@@ -9,16 +9,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type dbLogger struct{}
+type DbLogger struct{}
 
 // Hook run before SQL query execution.
-func (d dbLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
+func (d DbLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
 	log.Println(q.FormattedQuery())
 	return c, nil
 }
 
 // Hook run after SQL query execution.
-func (d dbLogger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
+func (d DbLogger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
 	return nil
 }
 
@@ -66,7 +66,7 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 
 	// Add tracing hooks if requested.
 	if settings.TraceSQL {
-		db.AddQueryHook(dbLogger{})
+		db.AddQueryHook(DbLogger{})
 	}
 
 	log.Infof("connected to database %s:%d, schema version: %d", settings.Host, settings.Port, newVer)
