@@ -114,7 +114,7 @@ func GetSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) (network *Shar
 		Relation("Subnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("Subnets.Apps").
+		Relation("Subnets.LocalSubnets.App").
 		Select()
 
 	if err != nil {

@@ -263,9 +263,9 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	returnedSubnet, err := GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet)
-	require.Len(t, returnedSubnet.Apps, 1)
-	// Local subnet ID should have been copied from the app_to_subnet table.
-	require.EqualValues(t, 123, returnedSubnet.Apps[0].LocalSubnetID)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
+	require.EqualValues(t, 123, returnedSubnet.LocalSubnets[0].LocalSubnetID)
+	require.NotNil(t, returnedSubnet.LocalSubnets[0].App)
 
 	// Also make sure that the app can be retrieved using the GetApp function.
 	returnedApp := returnedSubnet.GetApp(apps[0].ID)
@@ -282,12 +282,14 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	returnedSubnet, err = GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet)
-	require.Len(t, returnedSubnet.Apps, 2)
-	require.EqualValues(t, 123, returnedSubnet.Apps[0].LocalSubnetID)
-	require.EqualValues(t, 123, returnedSubnet.Apps[1].LocalSubnetID)
+	require.Len(t, returnedSubnet.LocalSubnets, 2)
+	require.EqualValues(t, 123, returnedSubnet.LocalSubnets[0].LocalSubnetID)
+	require.NotNil(t, returnedSubnet.LocalSubnets[0].App)
+	require.EqualValues(t, 123, returnedSubnet.LocalSubnets[1].LocalSubnetID)
+	require.NotNil(t, returnedSubnet.LocalSubnets[1].App)
 
 	// Remove the association of the first app with the subnet.
-	ok, err := DeleteAppFromSubnet(db, subnet.ID, returnedSubnet.Apps[0].ID)
+	ok, err := DeleteAppFromSubnet(db, subnet.ID, returnedSubnet.LocalSubnets[0].App.ID)
 	require.NoError(t, err)
 	require.True(t, ok)
 
@@ -295,7 +297,7 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	returnedSubnet, err = GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet)
-	require.Len(t, returnedSubnet.Apps, 1)
+	require.Len(t, returnedSubnet.LocalSubnets, 1)
 }
 
 // Test that the subnet can be fetched by local ID and app ID.

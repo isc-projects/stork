@@ -73,26 +73,29 @@ func init() {
                  CONSTRAINT prefix_pool_ipv6_only_check CHECK (family(prefix::inet) = 6)
              );
 
-             -- Provides M:M relationship between app and subnet tables.
-             CREATE TABLE IF NOT EXISTS app_to_subnet (
+             -- Create table which holds information about the subnet local to one of the
+             -- applications serving this subnet. Currently this local information is
+             -- merely a local subnet id used by this application. In the future it will
+             -- also include statistics for the subnet returned by this app.
+             CREATE TABLE IF NOT EXISTS local_subnet (
                  app_id bigint NOT NULL,
                  subnet_id bigint NOT NULL,
                  local_subnet_id bigint,
-                 CONSTRAINT app_to_subnet_pkey PRIMARY KEY (app_id, subnet_id),
-                 CONSTRAINT app_to_subnet_app_id FOREIGN KEY (app_id)
+                 CONSTRAINT local_subnet_pkey PRIMARY KEY (app_id, subnet_id),
+                 CONSTRAINT local_subnet_app_id FOREIGN KEY (app_id)
                      REFERENCES app (id) MATCH SIMPLE
-                     ON UPDATE NO ACTION
+                     ON UPDATE CASCADE
                      ON DELETE CASCADE,
-                 CONSTRAINT app_to_subnet_subnet_id FOREIGN KEY (subnet_id)
+                 CONSTRAINT local_subnet_subnet_id FOREIGN KEY (subnet_id)
                      REFERENCES subnet (id) MATCH SIMPLE
-                     ON UPDATE NO ACTION
+                     ON UPDATE CASCADE
                      ON DELETE CASCADE
              );
         `)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
-             DROP TABLE IF EXISTS app_to_subnet;
+             DROP TABLE IF EXISTS local_subnet;
              DROP TABLE IF EXISTS prefix_pool;
              DROP TABLE IF EXISTS address_pool;
              DROP TABLE IF EXISTS subnet;

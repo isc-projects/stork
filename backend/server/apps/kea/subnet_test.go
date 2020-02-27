@@ -113,7 +113,7 @@ func TestDetectNetworks(t *testing.T) {
 		// The app is not associated automatically with the subnets. This is
 		// to indicate that the subnet is not associated with the app until
 		// explicitly requested.
-		require.Empty(t, s.Apps)
+		require.Empty(t, s.LocalSubnets)
 		// The subnets haven't been added to the database yet. Their IDs should
 		// be 0. That also allows to determine that this is a new subnet.
 		require.Zero(t, s.ID)
@@ -168,7 +168,7 @@ func TestDetectNetworks(t *testing.T) {
 	require.Equal(t, "10.0.0.0/8", newNetwork.Subnets[0].Prefix)
 	// The subnet is not associated with any apps until such association
 	// is explicitly made.
-	require.Empty(t, newNetwork.Subnets[0].Apps)
+	require.Empty(t, newNetwork.Subnets[0].LocalSubnets)
 
 	// Add the shared network and the subnet it contains to the database.
 	err = dbmodel.AddSharedNetwork(db, &newNetwork)
@@ -191,7 +191,7 @@ func TestDetectNetworks(t *testing.T) {
 	require.NotZero(t, newSubnet.ID)
 	require.Equal(t, "192.0.2.0/24", newSubnet.Prefix)
 	// Also this subnet should be already associated with the previous app.
-	require.Len(t, newSubnet.Apps, 1)
+	require.Len(t, newSubnet.LocalSubnets, 1)
 
 	// Add association of our new app with that subnet.
 	err = dbmodel.AddAppToSubnet(db, &newSubnet, app)
@@ -247,13 +247,13 @@ func TestDetectNetworks(t *testing.T) {
 	require.NotZero(t, networks[0].Subnets[0].ID)
 	require.Equal(t, "10.0.0.0/8", networks[0].Subnets[0].Prefix)
 	// Also, this subnet already had an association with one of the apps.
-	require.Len(t, networks[0].Subnets[0].Apps, 1)
+	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
 
 	// The second subnet is new and therefore has id of 0.
 	require.Zero(t, networks[0].Subnets[1].ID)
 	require.Equal(t, "10.1.0.0/16", networks[0].Subnets[1].Prefix)
 	// Also, it is not associated with any apps yet.
-	require.Empty(t, networks[0].Subnets[1].Apps)
+	require.Empty(t, networks[0].Subnets[1].LocalSubnets)
 
 	// The second shared network is brand new. The subnets in it are
 	// also brand new.
@@ -261,8 +261,8 @@ func TestDetectNetworks(t *testing.T) {
 	require.Len(t, networks[1].Subnets, 2)
 	require.Zero(t, networks[1].Subnets[0].ID)
 	require.Equal(t, "192.0.3.0/24", networks[1].Subnets[0].Prefix)
-	require.Empty(t, networks[1].Subnets[0].Apps)
+	require.Empty(t, networks[1].Subnets[0].LocalSubnets)
 	require.Zero(t, networks[1].Subnets[1].ID)
 	require.Equal(t, "192.0.4.0/24", networks[1].Subnets[1].Prefix)
-	require.Empty(t, networks[1].Subnets[1].Apps)
+	require.Empty(t, networks[1].Subnets[1].LocalSubnets)
 }
