@@ -71,27 +71,11 @@ func addServiceApps(dbIface interface{}, service *BaseService) (err error) {
 
 	var assocs []AppToService
 
-	var tx *pg.Tx
-	db, ok := dbIface.(*pg.DB)
-	if ok {
-		// Database object provided rather than the transaction. Let's
-		// create new transaction.
-		tx, err = db.Begin()
-		if err != nil {
-			err = errors.Wrapf(err, "problem with starting transaction for adding apps to a service")
-		}
-		defer func() {
-			_ = tx.Rollback()
-		}()
-	} else {
-		// Transaction has been started by the caller, so let's just
-		// use it.
-		tx, ok = dbIface.(*pg.Tx)
-		if !ok {
-			err = errors.New("unsupported type of the database transaction object provided")
-			return err
-		}
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		err = errors.WithMessage(err, "problem with starting transaction for adding apps to a service")
 	}
+	defer rollback()
 
 	// If there are any apps to be associated with the service, let's iterate over them
 	// and insert into the app_to_service table.
@@ -106,11 +90,9 @@ func addServiceApps(dbIface interface{}, service *BaseService) (err error) {
 
 	// If we have started the transaction in this function we also have to commit the
 	// changes.
-	if db != nil {
-		err = tx.Commit()
-		if err != nil {
-			err = errors.Wrapf(err, "problem with committing associations of application with the service")
-		}
+	err = commit()
+	if err != nil {
+		err = errors.WithMessage(err, "problem with committing associations of application with the service")
 	}
 
 	return err
@@ -152,14 +134,12 @@ func DeleteAppFromService(db *pg.DB, serviceID, appID int64) (bool, error) {
 // This operation is performed in a transaction. There are several SQL tables
 // involved in this operation: service, app_to_service and optionally ha_service.
 func AddService(db *dbops.PgDB, service *Service) error {
-	tx, err := db.Begin()
+	tx, rollback, commit, err := dbops.Transaction(db)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with starting transaction for adding new service")
+		err = errors.WithMessagef(err, "problem with starting transaction for adding new service")
 		return err
 	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	defer rollback()
 
 	// Insert generic information into the service table.
 	_, err = tx.Model(service).Insert()
@@ -187,9 +167,9 @@ func AddService(db *dbops.PgDB, service *Service) error {
 	}
 
 	// All ok, let's commit the changes.
-	err = tx.Commit()
+	err = commit()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with committing new service into the database")
+		err = errors.WithMessage(err, "problem with committing new service into the database")
 	}
 
 	return err

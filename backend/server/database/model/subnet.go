@@ -56,24 +56,12 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 	// This function is meant to be used both within a transaction and to
 	// create its own transaction. Depending on the object type, we either
 	// use the existing transaction or start the new one.
-	var tx *pg.Tx
-	db, ok := dbIface.(*pg.DB)
-	if ok {
-		tx, err = db.Begin()
-		if err != nil {
-			err = errors.Wrapf(err, "problem with starting transaction for adding pools to subnet with id %d",
-				subnet.ID)
-		}
-		defer func() {
-			_ = tx.Rollback()
-		}()
-	} else {
-		tx, ok = dbIface.(*pg.Tx)
-		if !ok {
-			err = errors.New("unsupported type of the database transaction object provided")
-			return err
-		}
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with starting transaction for adding pools to subnet with id %d",
+			subnet.ID)
 	}
+	defer rollback()
 
 	// Add address pools first.
 	for i, p := range subnet.AddressPools {
@@ -100,11 +88,9 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 		subnet.PrefixPools[i] = pool
 	}
 
-	if db != nil {
-		err = tx.Commit()
-		if err != nil {
-			err = errors.Wrapf(err, "problem with committing pools into a subnet with id %d", subnet.ID)
-		}
+	err = commit()
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with committing pools into a subnet with id %d", subnet.ID)
 	}
 
 	return err
