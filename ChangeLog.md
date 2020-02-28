@@ -1,3 +1,11 @@
+* 33 [func] marcin
+
+    New data model is now used by the server to hold the information
+    about the subnets and shared networks. There is no visible change
+    to the UI yet. This change mostly affects how the data is stored
+    in the database.
+    (Gitlab #172)
+
 * 32 [func] marcin
 
     Created data model for shared networks, subnets and pools and
