@@ -265,7 +265,9 @@ func (app *App) GetLocalSubnetID(prefix string) int64 {
 	if kea, ok := app.Details.(AppKea); ok {
 		for _, d := range kea.Daemons {
 			if d.Config != nil {
-				return d.Config.GetLocalSubnetID(prefix)
+				if id := d.Config.GetLocalSubnetID(prefix); id > 0 {
+					return id
+				}
 			}
 		}
 	}

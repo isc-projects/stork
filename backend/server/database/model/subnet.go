@@ -253,6 +253,78 @@ func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
 	return subnets, err
 }
 
+// Fetches a collection of subnets from the database. The offset and limit
+// specify the beginning of the page and the maximum size of the page. The appID
+// is used to filter subnets to those handled by the given application.
+// The family is used to filter by IPv4 (if 4) or IPv6 (if 6). For all other values
+// of the family parameter both IPv4 and IPv6 subnets are returned. The filterText
+// can be used to match the subnet prefix or pool ranges. The nil value disables
+// such filtering. This function returns a collection of subnets, the total number
+// of subnets and error.
+func GetSubnetsByPage2(db *pg.DB, offset, limit, appID, family int64, filterText *string) ([]Subnet, int64, error) {
+	subnets := []Subnet{}
+	q := db.Model(&subnets).DistinctOn("subnet.id")
+
+	// When filtering by appID we also need the local_subnet table as it holds the
+	// application identifier.
+	if appID != 0 {
+		q = q.Join("INNER JOIN local_subnet AS ls ON subnet.id = ls.subnet_id")
+	}
+	// Pools are also required when trying to filter by text.
+	if filterText != nil {
+		q = q.Join("LEFT JOIN address_pool AS ap ON subnet.id = ap.subnet_id")
+	}
+	// Include pools, shared network the subnets belong to, local subnet info
+	// and the associated apps in the results.
+	q = q.Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
+		return q.Order("address_pool.id ASC"), nil
+	}).
+		Relation("PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("prefix_pool.id ASC"), nil
+		}).
+		Relation("SharedNetwork").
+		Relation("LocalSubnets").
+		Relation("LocalSubnets.App")
+
+	// Let's be liberal and allow other values than 0 too. The only special
+	// ones are 4 and 6.
+	if family == 4 || family == 6 {
+		q = q.Where("family(subnet.prefix) = ?", family)
+	}
+
+	// Filter by appID.
+	if appID != 0 {
+		q = q.Where("ls.app_id = ?", appID)
+	}
+
+	// Quick filtering by subnet prefix, pool ranges or shared network name.
+	if filterText != nil {
+		// The combination of the concat and host functions reconstruct the textual
+		// version of the pool range as specified in Kea, e.g. 192.0.2.10-192.0.2.20.
+		// This allows for quick filtering by strings like: 2.10-192.0.
+		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
+			q = q.WhereOr("text(subnet.prefix) LIKE ?", "%"+*filterText+"%").
+				WhereOr("concat(host(ap.lower_bound), '-', host(ap.upper_bound)) LIKE ?", "%"+*filterText+"%").
+				WhereOr("shared_network.name LIKE ?", "%"+*filterText+"%")
+			return q, nil
+		})
+	}
+
+	q = q.OrderExpr("subnet.id ASC").
+		Offset(int(offset)).
+		Limit(int(limit))
+
+	// This returns the limited results plus the total number of records.
+	total, err := q.SelectAndCount()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, 0, nil
+		}
+		err = errors.Wrapf(err, "problem with getting subnets by page")
+	}
+	return subnets, int64(total), err
+}
+
 // Associates an application with the subnet having a specified ID and prefix.
 // Internally, the association is made via the local_subnet table which holds
 // information about the subnet from the given app perspective, local subnet
@@ -375,13 +447,11 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 					network.Name)
 				return err
 			}
-		} else {
-			// This is an existing shared network. Go over its subnets and add them
-			// to the database if they are not there yet.
-			err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app)
-			if err != nil {
-				return err
-			}
+		}
+		// Associate subnets with the app.
+		err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app)
+		if err != nil {
+			return err
 		}
 	}
 

@@ -21,7 +21,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	err := AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add app kea with dhcp4 to machine
+	// Add Kea app with DHCPv4 subnets in two shared networks.
 	a4 := &App{
 		ID:        0,
 		MachineID: m.ID,
@@ -69,10 +69,70 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			}},
 		},
 	}
+
 	err = AddApp(db, a4)
 	require.NoError(t, err)
+	// Specify the shared networks to be committed as global shared networks
+	// and associated with this app.
+	appNetworks := []SharedNetwork{
+		{
+			Name: "frog",
+			Subnets: []Subnet{
+				{
+					Prefix: "192.1.0.0/24",
+					AddressPools: []AddressPool{
+						{
+							LowerBound: "192.1.0.1",
+							UpperBound: "192.1.0.100",
+						},
+						{
+							LowerBound: "192.1.0.150",
+							UpperBound: "192.1.0.200",
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "mouse",
+			Subnets: []Subnet{
+				{
+					Prefix: "192.2.0.0/24",
+					AddressPools: []AddressPool{
+						{
+							LowerBound: "192.2.0.1",
+							UpperBound: "192.2.0.100",
+						},
+						{
+							LowerBound: "192.2.0.150",
+							UpperBound: "192.2.0.200",
+						},
+					},
+				},
+			},
+		},
+	}
 
-	// add app kea with dhcp6 to machine
+	appSubnets := []Subnet{
+		{
+			Prefix: "192.168.0.0/24",
+			AddressPools: []AddressPool{
+				{
+					LowerBound: "192.168.0.1",
+					UpperBound: "192.168.0.100",
+				},
+				{
+					LowerBound: "192.168.0.150",
+					UpperBound: "192.168.0.200",
+				},
+			},
+		},
+	}
+
+	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4)
+	require.NoError(t, err)
+
+	// Add Kea app with DHCPv6 subnets, one global and one within a shared network.
 	a6 := &App{
 		ID:        0,
 		MachineID: m.ID,
@@ -86,14 +146,12 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 						"subnet6": []map[string]interface{}{{
 							"id":     2,
 							"subnet": "2001:db8:1::/64",
-							"pools":  []map[string]interface{}{},
 						}},
 						"shared-networks": []map[string]interface{}{{
 							"name": "fox",
 							"subnet6": []map[string]interface{}{{
 								"id":     21,
 								"subnet": "5001:db8:1::/64",
-								"pools":  []map[string]interface{}{},
 							}},
 						}},
 					},
@@ -104,7 +162,26 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	err = AddApp(db, a6)
 	require.NoError(t, err)
 
-	// add app kea with dhcp4 and dhcp6 to machine
+	appNetworks = []SharedNetwork{
+		{
+			Name: "fox",
+			Subnets: []Subnet{
+				{
+					Prefix: "5001:db8:1::/64",
+				},
+			},
+		},
+	}
+
+	appSubnets = []Subnet{
+		{
+			Prefix: "2001:db8:1::/64",
+		},
+	}
+	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6)
+	require.NoError(t, err)
+
+	// Kea app with DHCPv4 and DHCPv6 subnets.
 	a46 := &App{
 		ID:        0,
 		MachineID: m.ID,
@@ -142,102 +219,160 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	err = AddApp(db, a46)
 	require.NoError(t, err)
 
-	// get all subnets
-	subnets, total, err := GetSubnetsByPage(db, 0, 10, 0, 0, nil)
+	appSubnets = []Subnet{
+		{
+			Prefix: "192.118.0.0/24",
+			AddressPools: []AddressPool{
+				{
+					LowerBound: "192.168.0.1",
+					UpperBound: "192.168.0.200",
+				},
+			},
+		},
+		{
+			Prefix: "3001:db8:1::/64",
+			AddressPools: []AddressPool{
+				{
+					LowerBound: "3001:db8:1::",
+					UpperBound: "3001:db8:1:0:ffff::ffff",
+				},
+			},
+		},
+	}
+	err = CommitNetworksIntoDB(db, []SharedNetwork{}, appSubnets, a46)
+	require.NoError(t, err)
+
+	// Get all subnets.
+	subnets, total, err := GetSubnetsByPage2(db, 0, 10, 0, 0, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(7), total)
 	require.Len(t, subnets, 7)
+
+	localSubnetIDs := []int64{}
 	for _, sn := range subnets {
-		switch sn.ID {
+		require.Len(t, sn.LocalSubnets, 1)
+		localSubnetIDs = append(localSubnetIDs, sn.LocalSubnets[0].LocalSubnetID)
+		switch sn.LocalSubnets[0].LocalSubnetID {
 		case 1:
-			require.Len(t, sn.Pools, 2)
+			require.Len(t, sn.AddressPools, 2)
 		case 2:
-			require.Len(t, sn.Pools, 0)
+			require.Len(t, sn.AddressPools, 0)
 		case 11:
-			require.Len(t, sn.Pools, 2)
+			require.Len(t, sn.AddressPools, 2)
 		case 12:
-			require.Len(t, sn.Pools, 2)
+			require.Len(t, sn.AddressPools, 2)
 		case 21:
-			require.Len(t, sn.Pools, 0)
+			require.Len(t, sn.AddressPools, 0)
 		default:
-			require.Len(t, sn.Pools, 1)
+			require.Len(t, sn.AddressPools, 1)
 		}
 	}
+	// Make sure that all subnets have local subnet ids set.
+	require.ElementsMatch(t, localSubnetIDs, []int64{1, 2, 3, 4, 11, 12, 21})
 
-	// get subnets from app a4
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, a4.ID, 0, nil)
+	// Get subnets from app a4
+	subnets, total, err = GetSubnetsByPage2(db, 0, 10, a4.ID, 0, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(3), total)
 	require.Len(t, subnets, 3)
-	require.Equal(t, int(a4.ID), subnets[0].AppID)
-	require.Equal(t, int(a4.ID), subnets[1].AppID)
-	require.Equal(t, int(a4.ID), subnets[2].AppID)
-	require.ElementsMatch(t, []int{1, 11, 12}, []int{subnets[0].ID, subnets[1].ID, subnets[2].ID})
+	for _, s := range subnets {
+		require.Len(t, s.LocalSubnets, 1)
+	}
+	// Subnets should be associated with appropriate apps.
+	require.EqualValues(t, a4.ID, subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, a4.ID, subnets[1].LocalSubnets[0].AppID)
+	require.EqualValues(t, a4.ID, subnets[2].LocalSubnets[0].AppID)
+	// And local subnet ids should be set.
+	for _, s := range subnets {
+		require.Contains(t, []int64{1, 11, 12}, s.LocalSubnets[0].LocalSubnetID)
+	}
 
-	// get subnets from app a46
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 0, nil)
+	// Get subnets from app a46.
+	subnets, total, err = GetSubnetsByPage2(db, 0, 10, a46.ID, 0, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(2), total)
 	require.Len(t, subnets, 2)
-	require.True(t, (subnets[0].ID == 3 && subnets[1].ID == 4) ||
-		(subnets[0].ID == 4 && subnets[1].ID == 3))
+	for _, s := range subnets {
+		require.Len(t, s.LocalSubnets, 1)
+	}
+	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
+	require.EqualValues(t, 4, subnets[1].LocalSubnets[0].LocalSubnetID)
 
-	// get v4 subnets
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 4, nil)
+	// Get IPv4 subnets
+	subnets, total, err = GetSubnetsByPage2(db, 0, 10, 0, 4, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(4), total)
 	require.Len(t, subnets, 4)
-	require.ElementsMatch(t, []int{1, 3, 11, 12}, []int{subnets[0].ID, subnets[1].ID, subnets[2].ID, subnets[3].ID})
+	for _, s := range subnets {
+		require.Len(t, s.LocalSubnets, 1)
+	}
+	for _, s := range subnets {
+		require.Contains(t, []int64{1, 3, 11, 12}, s.LocalSubnets[0].LocalSubnetID)
+	}
 
-	// get v6 subnets
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 6, nil)
+	// Get IPv4 subnets
+	subnets, total, err = GetSubnetsByPage2(db, 0, 10, 0, 6, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(3), total)
 	require.Len(t, subnets, 3)
-	require.ElementsMatch(t, []int{2, 4, 21}, []int{subnets[0].ID, subnets[1].ID, subnets[2].ID})
+	for _, s := range subnets {
+		require.Len(t, s.LocalSubnets, 1)
+	}
+	for _, s := range subnets {
+		require.Contains(t, []int64{2, 4, 21}, s.LocalSubnets[0].LocalSubnetID)
+	}
 
-	// get v4 subnets and app a4
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, a4.ID, 4, nil)
+	// Get IPv4 subnets for app a4
+	subnets, total, err = GetSubnetsByPage2(db, 0, 10, a4.ID, 4, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(3), total)
 	require.Len(t, subnets, 3)
-	require.ElementsMatch(t, []int{1, 11, 12}, []int{subnets[0].ID, subnets[1].ID, subnets[2].ID})
+	for _, s := range subnets {
+		require.Len(t, s.LocalSubnets, 1)
+	}
+	for _, s := range subnets {
+		require.Contains(t, []int64{1, 11, 12}, s.LocalSubnets[0].LocalSubnetID)
+	}
 
-	// get subnets by text '118.0.0/2'
+	// Get subnets by text '118.0.0/2'
 	text := "118.0.0/2"
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, &text)
+	subnets, total, err = GetSubnetsByPage2(db, 0, 10, 0, 0, &text)
 	require.NoError(t, err)
-	require.Equal(t, int64(1), total)
+	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
-	require.Equal(t, int(a46.ID), subnets[0].AppID)
-	require.Equal(t, 3, subnets[0].ID)
+	require.Len(t, subnets[0].LocalSubnets, 1)
+	require.EqualValues(t, a46.ID, subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get subnets by text '0.150-192.168'
 	text = "0.150-192.168"
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, &text)
+	subnets, total, err = GetSubnetsByPage2(db, 0, 10, 0, 0, &text)
 	require.NoError(t, err)
-	require.Equal(t, int64(1), total)
+	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
-	require.Equal(t, int(a4.ID), subnets[0].AppID)
-	require.Equal(t, 1, subnets[0].ID)
+	require.Len(t, subnets[0].LocalSubnets, 1)
+	require.EqualValues(t, a4.ID, subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, 1, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get subnets by text '200' and app a46
 	text = "200"
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 0, &text)
+	subnets, total, err = GetSubnetsByPage2(db, 0, 10, a46.ID, 0, &text)
 	require.NoError(t, err)
-	require.Equal(t, int64(1), total)
+	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
-	require.Equal(t, int(a46.ID), subnets[0].AppID)
-	require.Equal(t, 3, subnets[0].ID)
+	require.Len(t, subnets[0].LocalSubnets, 1)
+	require.EqualValues(t, a46.ID, subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get v4 subnets by text '200' and app a46
 	text = "200"
-	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 4, &text)
+	subnets, total, err = GetSubnetsByPage2(db, 0, 10, a46.ID, 4, &text)
 	require.NoError(t, err)
 	require.Equal(t, int64(1), total)
 	require.Len(t, subnets, 1)
-	require.Equal(t, int(a46.ID), subnets[0].AppID)
-	require.Equal(t, 3, subnets[0].ID)
+	require.Len(t, subnets[0].LocalSubnets, 1)
+	require.EqualValues(t, a46.ID, subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 }
 
 // Check if getting subnets works when there is no subnets in config of kea app.
@@ -253,7 +388,7 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	err := AddMachine(db, m)
 	require.NoError(t, err)
 
-	// add app kea with dhcp4 to machine but with no subnets configured
+	// Add Kea DHCPv4 without subnets
 	a4 := &App{
 		ID:        0,
 		MachineID: m.ID,
@@ -271,10 +406,10 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	err = AddApp(db, a4)
 	require.NoError(t, err)
 
-	// get all subnets -> empty list should be retruned
-	subnets, total, err := GetSubnetsByPage(db, 0, 10, 0, 0, nil)
+	// Get all subnets -> empty list should be retruned
+	subnets, total, err := GetSubnetsByPage2(db, 0, 10, 0, 0, nil)
 	require.NoError(t, err)
-	require.Equal(t, int64(0), total)
+	require.Zero(t, total)
 	require.Len(t, subnets, 0)
 }
 
@@ -331,6 +466,36 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	err = AddApp(db, a4)
 	require.NoError(t, err)
 
+	appNetworks := []SharedNetwork{
+		{
+			Name: "frog",
+			Subnets: []Subnet{
+				{
+					Prefix: "192.1.0.0/24",
+				},
+			},
+		},
+		{
+			Name: "mouse",
+			Subnets: []Subnet{
+				{
+					Prefix: "192.2.0.0/24",
+				},
+				{
+					Prefix: "192.3.0.0/24",
+				},
+			},
+		},
+	}
+
+	appSubnets := []Subnet{
+		{
+			Prefix: "192.168.0.0/24",
+		},
+	}
+	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4)
+	require.NoError(t, err)
+
 	// add app kea with dhcp6 to machine
 	a6 := &App{
 		ID:        0,
@@ -365,11 +530,34 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	err = AddApp(db, a6)
 	require.NoError(t, err)
 
-	// get all shared networks
-	networks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil)
+	appNetworks = []SharedNetwork{
+		{
+			Name: "fox",
+			Subnets: []Subnet{
+				{
+					Prefix: "5001:db8:1::/64",
+				},
+				{
+					Prefix: "6001:db8:1::/64",
+				},
+			},
+		},
+	}
+
+	appSubnets = []Subnet{
+		{
+			Prefix: "2001:db8:1::/64",
+		},
+	}
+	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6)
 	require.NoError(t, err)
-	require.Equal(t, int64(3), total)
+
+	// Get all shared networks.
+	networks, total, err := GetSharedNetworksByPage2(db, 0, 10, 0, 0, nil)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
 	require.Len(t, networks, 3)
+
 	for _, net := range networks {
 		require.Contains(t, []string{"frog", "mouse", "fox"}, net.Name)
 		switch net.Name {
@@ -382,29 +570,45 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 		}
 	}
 
-	// get shared networks from app a4
-	networks, total, err = GetSharedNetworksByPage(db, 0, 10, a4.ID, 0, nil)
+	// Get shared networks for Kea app a4.
+	networks, total, err = GetSharedNetworksByPage2(db, 0, 10, a4.ID, 0, nil)
 	require.NoError(t, err)
-	require.Equal(t, int64(2), total)
+	require.EqualValues(t, 2, total)
 	require.Len(t, networks, 2)
-	require.Equal(t, int(a4.ID), networks[0].AppID)
-	require.Equal(t, int(a4.ID), networks[1].AppID)
+
+	require.Len(t, networks[0].Subnets, 1)
+	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
+	require.EqualValues(t, a4.ID, networks[0].Subnets[0].LocalSubnets[0].AppID)
+
+	require.Len(t, networks[1].Subnets, 2)
+	require.Len(t, networks[1].Subnets[0].LocalSubnets, 1)
+	require.EqualValues(t, a4.ID, networks[1].Subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, a4.ID, networks[1].Subnets[1].LocalSubnets[0].AppID)
+
 	require.ElementsMatch(t, []string{"frog", "mouse"}, []string{networks[0].Name, networks[1].Name})
 
-	// get DHCPv6 networks
-	networks, total, err = GetSharedNetworksByPage(db, 0, 10, 0, 6, nil)
+	// Get shared networks for Kea app a6.
+	networks, total, err = GetSharedNetworksByPage2(db, 0, 10, 0, 6, nil)
 	require.NoError(t, err)
-	require.Equal(t, int64(1), total)
+	require.EqualValues(t, 1, total)
 	require.Len(t, networks, 1)
-	require.Equal(t, int(a6.ID), networks[0].AppID)
+	require.Len(t, networks[0].Subnets, 2)
+	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
+	require.Len(t, networks[0].Subnets[1].LocalSubnets, 1)
+	require.EqualValues(t, a6.ID, networks[0].Subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, a6.ID, networks[0].Subnets[1].LocalSubnets[0].AppID)
 	require.Equal(t, "fox", networks[0].Name)
 
-	// get networks by text "mous"
+	// Get networks by text "mous".
 	text := "mous"
-	networks, total, err = GetSharedNetworksByPage(db, 0, 10, 0, 0, &text)
+	networks, total, err = GetSharedNetworksByPage2(db, 0, 10, 0, 0, &text)
 	require.NoError(t, err)
-	require.Equal(t, int64(1), total)
+	require.EqualValues(t, 1, total)
 	require.Len(t, networks, 1)
-	require.Equal(t, int(a4.ID), networks[0].AppID)
+	require.Len(t, networks[0].Subnets, 2)
+	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
+	require.Len(t, networks[0].Subnets[1].LocalSubnets, 1)
+	require.EqualValues(t, a4.ID, networks[0].Subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, a4.ID, networks[0].Subnets[1].LocalSubnets[0].AppID)
 	require.Equal(t, "mouse", networks[0].Name)
 }

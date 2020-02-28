@@ -1,13 +1,13 @@
 package dbmodel
 
 import (
+	"time"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	errors "github.com/pkg/errors"
 
 	dbops "isc.org/stork/server/database"
-
-	"time"
 )
 
 // A structure reflecting shared_network SQL table. This table holds
@@ -191,4 +191,68 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 			networkID)
 	}
 	return err
+}
+
+// Fetches a collection of shared networks from the database. The offset and limit
+// specify the beginning of the page and the maximum size of the page. The appID
+// is used to filter shared networks to those handled by the given application.
+// The family is used to filter by IPv4 (if 4) or IPv6 (if 6). For all other values
+// of the family parameter both IPv4 and IPv6 shared networks are returned. The
+// filterText can be used to match the shared network name or subnet prefix. The
+// nil value disables such filtering. This function returns a collection of
+// shared networks, the total number of shared networks and error.
+func GetSharedNetworksByPage2(db *pg.DB, offset, limit, appID, family int64, filterText *string) ([]SharedNetwork, int64, error) {
+	networks := []SharedNetwork{}
+	q := db.Model(&networks).DistinctOn("shared_network.id")
+
+	// If any of the filtering parameters are specified we need to explicitly join
+	// the subnets table so as we can access its columns in the Where clause.
+	if appID != 0 || family != 0 || filterText != nil {
+		q = q.Join("INNER JOIN subnet AS s ON shared_network.id = s.shared_network_id")
+	}
+	// When filtering by appID we also need the local_subnet table as it holds the
+	// application identifier.
+	if appID != 0 {
+		q = q.Join("INNER JOIN local_subnet AS ls ON s.id = ls.subnet_id")
+	}
+	// Include address pools, prefix pools and the local subnet info in the results.
+	q = q.Relation("Subnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
+		return q.Order("address_pool.id ASC"), nil
+	}).
+		Relation("Subnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("prefix_pool.id ASC"), nil
+		}).
+		Relation("Subnets.LocalSubnets.App")
+
+	// Let's be liberal and allow other values than 0 too. The only special
+	// ones are 4 and 6.
+	if family == 4 || family == 6 {
+		q = q.Where("family(s.prefix) = ?", family)
+	}
+
+	// Filter by appID.
+	if appID != 0 {
+		q = q.Where("ls.app_id = ?", appID)
+	}
+
+	// Quick filtering by shared network name or subnet prefix.
+	if filterText != nil {
+		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
+			q = q.WhereOr("TEXT(s.prefix) LIKE ?", "%"+*filterText+"%").
+				WhereOr("shared_network.name LIKE ?", "%"+*filterText+"%")
+			return q, nil
+		})
+	}
+
+	q = q.OrderExpr("shared_network.id ASC")
+
+	// This returns the limited results plus the total number of records.
+	total, err := q.SelectAndCount()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, 0, nil
+		}
+		err = errors.Wrapf(err, "problem with getting shared networks by page")
+	}
+	return networks, int64(total), err
 }
