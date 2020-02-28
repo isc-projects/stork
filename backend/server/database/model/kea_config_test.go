@@ -452,9 +452,9 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 	require.Equal(t, "foo", parsedNetwork.Name)
 	require.Len(t, parsedNetwork.Subnets, 2)
 
-	require.EqualValues(t, 1, parsedNetwork.Subnets[0].ID)
+	require.Zero(t, parsedNetwork.Subnets[0].ID)
 	require.Equal(t, "192.0.2.0/24", parsedNetwork.Subnets[0].Prefix)
-	require.EqualValues(t, 2, parsedNetwork.Subnets[1].ID)
+	require.Zero(t, parsedNetwork.Subnets[1].ID)
 	require.Equal(t, "2001:db8:1::/64", parsedNetwork.Subnets[1].Prefix)
 }
 
@@ -480,7 +480,7 @@ func TestNewSubnetFromKea(t *testing.T) {
 	parsedSubnet, err := NewSubnetFromKea(&rawSubnet)
 	require.NoError(t, err)
 	require.NotNil(t, parsedSubnet)
-	require.EqualValues(t, 1, parsedSubnet.ID)
+	require.Zero(t, parsedSubnet.ID)
 	require.Equal(t, "2001:db8:1::/64", parsedSubnet.Prefix)
 	require.Len(t, parsedSubnet.AddressPools, 1)
 	require.Equal(t, "2001:db8:1:1::", parsedSubnet.AddressPools[0].LowerBound)
