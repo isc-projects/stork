@@ -36,7 +36,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 	}
 
 	// get subnets from db
-	dbSubnets, total, err := dbmodel.GetSubnetsByPage(r.Db, start, limit, appID, dhcpVer, params.Text)
+	dbSubnets, total, err := dbmodel.GetSubnetsByPage2(r.Db, start, limit, appID, dhcpVer, params.Text)
 	if err != nil {
 		msg := "cannot get subnets from db"
 		log.Error(err)
@@ -50,23 +50,34 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 	subnets := models.Subnets{
 		Total: total,
 	}
+
+	// todo: This logic has to change. According to the new data model, there is
+	// a single instance of a subnet and multiple apps attached to it. The way
+	// we do it currently is to iterate over the local subnets (and apps)
+	// associated with the global subnet and return them individually. Changing
+	// the current logic requires reworking the UI.
 	for _, sn := range dbSubnets {
 		pools := []string{}
-		for _, poolDetails := range sn.Pools {
-			pool, ok := poolDetails["pool"].(string)
-			if ok {
-				pools = append(pools, pool)
+		for _, poolDetails := range sn.AddressPools {
+			pool := poolDetails.LowerBound + "-" + poolDetails.UpperBound
+			pools = append(pools, pool)
+		}
+		var sharedNetworkName string
+		if sn.SharedNetwork != nil {
+			sharedNetworkName = sn.SharedNetwork.Name
+		}
+
+		for _, ls := range sn.LocalSubnets {
+			subnet := &models.Subnet{
+				AppID:          ls.App.ID,
+				ID:             ls.LocalSubnetID,
+				Pools:          pools,
+				Subnet:         sn.Prefix,
+				SharedNetwork:  sharedNetworkName,
+				MachineAddress: fmt.Sprintf("%s:%d", ls.App.CtrlAddress, ls.App.CtrlPort),
 			}
+			subnets.Items = append(subnets.Items, subnet)
 		}
-		subnet := &models.Subnet{
-			AppID:          int64(sn.AppID),
-			ID:             int64(sn.ID),
-			Pools:          pools,
-			Subnet:         sn.Subnet,
-			SharedNetwork:  sn.SharedNetwork,
-			MachineAddress: fmt.Sprintf("%s:%d", sn.MachineAddress, sn.AgentPort),
-		}
-		subnets.Items = append(subnets.Items, subnet)
 	}
 
 	rsp := dhcp.NewGetSubnetsOK().WithPayload(&subnets)
@@ -96,7 +107,7 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 	}
 
 	// get shared networks from db
-	dbSharedNetworks, total, err := dbmodel.GetSharedNetworksByPage(r.Db, start, limit, appID, dhcpVer, params.Text)
+	dbSharedNetworks, total, err := dbmodel.GetSharedNetworksByPage2(r.Db, start, limit, appID, dhcpVer, params.Text)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get shared network from db")
 		log.Error(err)
@@ -110,19 +121,32 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 	sharedNetworks := models.SharedNetworks{
 		Total: total,
 	}
+
+	// todo: This logic has to change. According to the new data model, there is
+	// a single instance of a shared network and multiple apps attached to it.
+	// Currently we mostly assume that each shared network is served by individual
+	// server and we map the app id to the shared network. This will be reworked
+	// but changes to the UI are required.
 	for _, net := range dbSharedNetworks {
-		subnets := []string{}
-		for _, snDetails := range net.Subnets {
-			subnet, ok := snDetails["subnet"].(string)
-			if ok {
-				subnets = append(subnets, subnet)
-			}
+		if len(net.Subnets) == 0 || len(net.Subnets[0].LocalSubnets) == 0 {
+			continue
 		}
+		subnets := []string{}
+		// Exclude the subnets that are not attached to any app. This shouldn't
+		// be the case but let's be safe.
+		for _, subnet := range net.Subnets {
+			if len(subnet.LocalSubnets) == 0 {
+				continue
+			}
+			subnets = append(subnets, subnet.Prefix)
+		}
+		// Create shared network and use the app id of the first subnet found.
 		sharedNetwork := &models.SharedNetwork{
-			Name:           net.Name,
-			AppID:          int64(net.AppID),
-			Subnets:        subnets,
-			MachineAddress: fmt.Sprintf("%s:%d", net.MachineAddress, net.AgentPort),
+			Name:    net.Name,
+			AppID:   net.Subnets[0].LocalSubnets[0].AppID,
+			Subnets: subnets,
+			MachineAddress: fmt.Sprintf("%s:%d", net.Subnets[0].LocalSubnets[0].App.CtrlAddress,
+				net.Subnets[0].LocalSubnets[0].App.CtrlPort),
 		}
 		sharedNetworks.Items = append(sharedNetworks.Items, sharedNetwork)
 	}

@@ -67,6 +67,25 @@ func TestGetSubnets(t *testing.T) {
 	err = dbmodel.AddApp(db, a4)
 	require.NoError(t, err)
 
+	appSubnets := []dbmodel.Subnet{
+		{
+			Prefix: "192.168.0.0/24",
+			AddressPools: []dbmodel.AddressPool{
+				{
+					LowerBound: "192.168.0.1",
+					UpperBound: "192.168.0.100",
+				},
+				{
+					LowerBound: "192.168.0.150",
+					UpperBound: "192.168.0.200",
+				},
+			},
+		},
+	}
+
+	err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a4)
+	require.NoError(t, err)
+
 	// add app kea with dhcp6 to machine
 	a6 := &dbmodel.App{
 		ID:        0,
@@ -89,6 +108,14 @@ func TestGetSubnets(t *testing.T) {
 		},
 	}
 	err = dbmodel.AddApp(db, a6)
+	require.NoError(t, err)
+
+	appSubnets = []dbmodel.Subnet{
+		{
+			Prefix: "2001:db8:1::/64",
+		},
+	}
+	err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a6)
 	require.NoError(t, err)
 
 	// add app kea with dhcp4 and dhcp6 to machine
@@ -134,6 +161,40 @@ func TestGetSubnets(t *testing.T) {
 		},
 	}
 	err = dbmodel.AddApp(db, a46)
+	require.NoError(t, err)
+
+	appNetworks := []dbmodel.SharedNetwork{
+		{
+			Name: "fox",
+			Subnets: []dbmodel.Subnet{
+				{
+					Prefix: "5001:db8:1::/64",
+				},
+			},
+		},
+	}
+
+	appSubnets = []dbmodel.Subnet{
+		{
+			Prefix: "192.118.0.0/24",
+			AddressPools: []dbmodel.AddressPool{
+				{
+					LowerBound: "192.118.0.1",
+					UpperBound: "192.118.0.200",
+				},
+			},
+		},
+		{
+			Prefix: "3001:db8:1::/64",
+			AddressPools: []dbmodel.AddressPool{
+				{
+					LowerBound: "3001:db8:1::",
+					UpperBound: "3001:db8:1:0:ffff::ffff",
+				},
+			},
+		},
+	}
+	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, appSubnets, a46)
 	require.NoError(t, err)
 
 	// get all subnets
@@ -298,6 +359,31 @@ func TestGetSharedNetworks(t *testing.T) {
 	err = dbmodel.AddApp(db, a4)
 	require.NoError(t, err)
 
+	appNetworks := []dbmodel.SharedNetwork{
+		{
+			Name: "frog",
+			Subnets: []dbmodel.Subnet{
+				{
+					Prefix: "192.1.0.0/24",
+				},
+			},
+		},
+		{
+			Name: "mouse",
+			Subnets: []dbmodel.Subnet{
+				{
+					Prefix: "192.2.0.0/24",
+				},
+				{
+					Prefix: "192.3.0.0/24",
+				},
+			},
+		},
+	}
+
+	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, []dbmodel.Subnet{}, a4)
+	require.NoError(t, err)
+
 	// add app kea with dhcp6 to machine
 	a6 := &dbmodel.App{
 		ID:        0,
@@ -325,6 +411,22 @@ func TestGetSharedNetworks(t *testing.T) {
 		},
 	}
 	err = dbmodel.AddApp(db, a6)
+	require.NoError(t, err)
+
+	appNetworks = []dbmodel.SharedNetwork{
+		{
+			Name: "fox",
+			Subnets: []dbmodel.Subnet{
+				{
+					Prefix: "5001:db8:1::/64",
+				},
+				{
+					Prefix: "6001:db8:1::/64",
+				},
+			},
+		},
+	}
+	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, []dbmodel.Subnet{}, a6)
 	require.NoError(t, err)
 
 	// get all shared networks
