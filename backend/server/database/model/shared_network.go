@@ -201,7 +201,7 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 // filterText can be used to match the shared network name or subnet prefix. The
 // nil value disables such filtering. This function returns a collection of
 // shared networks, the total number of shared networks and error.
-func GetSharedNetworksByPage2(db *pg.DB, offset, limit, appID, family int64, filterText *string) ([]SharedNetwork, int64, error) {
+func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filterText *string) ([]SharedNetwork, int64, error) {
 	networks := []SharedNetwork{}
 	q := db.Model(&networks).DistinctOn("shared_network.id")
 

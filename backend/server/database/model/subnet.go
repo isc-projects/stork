@@ -261,7 +261,7 @@ func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
 // can be used to match the subnet prefix or pool ranges. The nil value disables
 // such filtering. This function returns a collection of subnets, the total number
 // of subnets and error.
-func GetSubnetsByPage2(db *pg.DB, offset, limit, appID, family int64, filterText *string) ([]Subnet, int64, error) {
+func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText *string) ([]Subnet, int64, error) {
 	subnets := []Subnet{}
 	q := db.Model(&subnets).DistinctOn("subnet.id")
 

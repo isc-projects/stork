@@ -243,7 +243,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get all subnets.
-	subnets, total, err := GetSubnetsByPage2(db, 0, 10, 0, 0, nil)
+	subnets, total, err := GetSubnetsByPage(db, 0, 10, 0, 0, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(7), total)
 	require.Len(t, subnets, 7)
@@ -271,7 +271,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.ElementsMatch(t, localSubnetIDs, []int64{1, 2, 3, 4, 11, 12, 21})
 
 	// Get subnets from app a4
-	subnets, total, err = GetSubnetsByPage2(db, 0, 10, a4.ID, 0, nil)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, a4.ID, 0, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(3), total)
 	require.Len(t, subnets, 3)
@@ -288,7 +288,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	}
 
 	// Get subnets from app a46.
-	subnets, total, err = GetSubnetsByPage2(db, 0, 10, a46.ID, 0, nil)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 0, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(2), total)
 	require.Len(t, subnets, 2)
@@ -299,7 +299,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 4, subnets[1].LocalSubnets[0].LocalSubnetID)
 
 	// Get IPv4 subnets
-	subnets, total, err = GetSubnetsByPage2(db, 0, 10, 0, 4, nil)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 4, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(4), total)
 	require.Len(t, subnets, 4)
@@ -311,7 +311,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	}
 
 	// Get IPv4 subnets
-	subnets, total, err = GetSubnetsByPage2(db, 0, 10, 0, 6, nil)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 6, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(3), total)
 	require.Len(t, subnets, 3)
@@ -323,7 +323,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	}
 
 	// Get IPv4 subnets for app a4
-	subnets, total, err = GetSubnetsByPage2(db, 0, 10, a4.ID, 4, nil)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, a4.ID, 4, nil)
 	require.NoError(t, err)
 	require.Equal(t, int64(3), total)
 	require.Len(t, subnets, 3)
@@ -336,7 +336,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 
 	// Get subnets by text '118.0.0/2'
 	text := "118.0.0/2"
-	subnets, total, err = GetSubnetsByPage2(db, 0, 10, 0, 0, &text)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, &text)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
@@ -346,7 +346,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 
 	// get subnets by text '0.150-192.168'
 	text = "0.150-192.168"
-	subnets, total, err = GetSubnetsByPage2(db, 0, 10, 0, 0, &text)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, &text)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
@@ -356,7 +356,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 
 	// get subnets by text '200' and app a46
 	text = "200"
-	subnets, total, err = GetSubnetsByPage2(db, 0, 10, a46.ID, 0, &text)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 0, &text)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
@@ -366,7 +366,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 
 	// get v4 subnets by text '200' and app a46
 	text = "200"
-	subnets, total, err = GetSubnetsByPage2(db, 0, 10, a46.ID, 4, &text)
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 4, &text)
 	require.NoError(t, err)
 	require.Equal(t, int64(1), total)
 	require.Len(t, subnets, 1)
@@ -407,7 +407,7 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get all subnets -> empty list should be retruned
-	subnets, total, err := GetSubnetsByPage2(db, 0, 10, 0, 0, nil)
+	subnets, total, err := GetSubnetsByPage(db, 0, 10, 0, 0, nil)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Len(t, subnets, 0)
@@ -553,7 +553,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get all shared networks.
-	networks, total, err := GetSharedNetworksByPage2(db, 0, 10, 0, 0, nil)
+	networks, total, err := GetSharedNetworksByPage(db, 0, 10, 0, 0, nil)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, total)
 	require.Len(t, networks, 3)
@@ -571,7 +571,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	}
 
 	// Get shared networks for Kea app a4.
-	networks, total, err = GetSharedNetworksByPage2(db, 0, 10, a4.ID, 0, nil)
+	networks, total, err = GetSharedNetworksByPage(db, 0, 10, a4.ID, 0, nil)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, networks, 2)
@@ -588,7 +588,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	require.ElementsMatch(t, []string{"frog", "mouse"}, []string{networks[0].Name, networks[1].Name})
 
 	// Get shared networks for Kea app a6.
-	networks, total, err = GetSharedNetworksByPage2(db, 0, 10, 0, 6, nil)
+	networks, total, err = GetSharedNetworksByPage(db, 0, 10, 0, 6, nil)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, networks, 1)
@@ -601,7 +601,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 
 	// Get networks by text "mous".
 	text := "mous"
-	networks, total, err = GetSharedNetworksByPage2(db, 0, 10, 0, 0, &text)
+	networks, total, err = GetSharedNetworksByPage(db, 0, 10, 0, 0, &text)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, networks, 1)

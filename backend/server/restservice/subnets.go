@@ -36,7 +36,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 	}
 
 	// get subnets from db
-	dbSubnets, total, err := dbmodel.GetSubnetsByPage2(r.Db, start, limit, appID, dhcpVer, params.Text)
+	dbSubnets, total, err := dbmodel.GetSubnetsByPage(r.Db, start, limit, appID, dhcpVer, params.Text)
 	if err != nil {
 		msg := "cannot get subnets from db"
 		log.Error(err)
@@ -107,7 +107,7 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 	}
 
 	// get shared networks from db
-	dbSharedNetworks, total, err := dbmodel.GetSharedNetworksByPage2(r.Db, start, limit, appID, dhcpVer, params.Text)
+	dbSharedNetworks, total, err := dbmodel.GetSharedNetworksByPage(r.Db, start, limit, appID, dhcpVer, params.Text)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get shared network from db")
 		log.Error(err)
