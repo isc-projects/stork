@@ -19,10 +19,10 @@ or `readthedocs <https://stork.readthedocs.io>`_ .
    :maxdepth: 5
 
    install
-   demo
    usage
    backend-api
    devel
+   demo
 
 
 .. toctree::
