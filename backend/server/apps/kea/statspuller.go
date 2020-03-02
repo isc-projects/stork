@@ -116,13 +116,13 @@ type StatLeaseGetResponse struct {
 }
 
 // A key that is used in map that is mapping from (local subnet id, inet family) to LocalSubnet struct.
-type LocalSubnetKey struct {
+type localSubnetKey struct {
 	LocalSubnetID int64
 	Family        int
 }
 
 // Take a stats set from dhcp4 or dhcp6 daemon and store them in LocalSubnet in database.
-func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLeaseGet, subnetsMap map[LocalSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLeaseGet, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	var lastErr error
 
 	for _, row := range resultSet.Rows {
@@ -133,7 +133,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLease
 			name := resultSet.Columns[colIdx]
 			if name == "subnet-id" {
 				lsnID = int64(val)
-				sn = subnetsMap[LocalSubnetKey{lsnID, family}]
+				sn = subnetsMap[localSubnetKey{lsnID, family}]
 			} else {
 				stats[name] = val
 			}
@@ -206,13 +206,13 @@ func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 
 	// prepare a map that will speed up looking for LocalSubnet
 	// based on local subnet id and inet family
-	subnetsMap := make(map[LocalSubnetKey]*dbmodel.LocalSubnet)
+	subnetsMap := make(map[localSubnetKey]*dbmodel.LocalSubnet)
 	for _, sn := range subnets {
 		family := 4
 		if strings.Contains(sn.Subnet.Prefix, ":") {
 			family = 6
 		}
-		subnetsMap[LocalSubnetKey{sn.LocalSubnetID, family}] = sn
+		subnetsMap[localSubnetKey{sn.LocalSubnetID, family}] = sn
 	}
 
 	// process response from kea daemons
