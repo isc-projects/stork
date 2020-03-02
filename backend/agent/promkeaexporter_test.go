@@ -42,6 +42,7 @@ func TestNewPromKeaExporterBasic(t *testing.T) {
 	require.Len(t, pke.Adr6StatsMap, 7)
 }
 
+// Check starting PromKeaExporter and collecting stats.
 func TestPromKeaExporterStart(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://0.1.2.3:1234/").
