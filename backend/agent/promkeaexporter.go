@@ -450,8 +450,6 @@ func (pke *PromKeaExporter) collectStats() error {
 					continue
 				}
 
-				// log.Printf("%s: %v", statName, statValue)
-
 				// store stat value in proper prometheus object
 				if strings.HasPrefix(statName, "pkt") {
 					// if this is pkt stat
