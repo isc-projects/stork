@@ -75,6 +75,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 				Subnet:         sn.Prefix,
 				SharedNetwork:  sharedNetworkName,
 				MachineAddress: fmt.Sprintf("%s:%d", ls.App.CtrlAddress, ls.App.CtrlPort),
+				ClientClass:    sn.ClientClass,
 			}
 			subnets.Items = append(subnets.Items, subnet)
 		}

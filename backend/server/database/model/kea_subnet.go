@@ -15,6 +15,7 @@ type KeaConfigPdPool struct {
 type KeaConfigSubnet struct {
 	ID      int64
 	Subnet  string
+	ClientClass    string `mapstructure:"client-class"`
 	Pools   []KeaConfigPool
 	PdPools []KeaConfigPdPool `mapstructure:"pd-pools"`
 }
