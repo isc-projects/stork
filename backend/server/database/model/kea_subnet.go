@@ -13,11 +13,11 @@ type KeaConfigPdPool struct {
 
 // Represents a subnet with pools within Kea configuration.
 type KeaConfigSubnet struct {
-	ID      int64
-	Subnet  string
-	ClientClass    string `mapstructure:"client-class"`
-	Pools   []KeaConfigPool
-	PdPools []KeaConfigPdPool `mapstructure:"pd-pools"`
+	ID          int64
+	Subnet      string
+	ClientClass string `mapstructure:"client-class"`
+	Pools       []KeaConfigPool
+	PdPools     []KeaConfigPdPool `mapstructure:"pd-pools"`
 }
 
 // Represents a shared network with subnets within Kea configuration.

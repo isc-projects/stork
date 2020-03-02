@@ -60,7 +60,7 @@ func NewKeaConfigFromJSON(rawCfg string) (*KeaConfig, error) {
 // of the subnet.
 func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) (*Subnet, error) {
 	convertedSubnet := &Subnet{
-		Prefix: keaSubnet.Subnet,
+		Prefix:      keaSubnet.Subnet,
 		ClientClass: keaSubnet.ClientClass,
 	}
 	for _, p := range keaSubnet.Pools {
