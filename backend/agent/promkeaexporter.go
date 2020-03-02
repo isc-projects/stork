@@ -375,19 +375,25 @@ func (pke *PromKeaExporter) collectStats() error {
 		}
 		rspList, ok := rspsIfc.([]interface{})
 		if !ok {
+			log.Errorf("problem with casting rspsIfc: %+v", rspsIfc)
 			continue
 		}
+
+		// go though list of responses from daemons (it can none or more of dhcp4/dhcp6)
 		for daemonIdx, rspIfc := range rspList {
 			rsp, ok := rspIfc.(map[string]interface{})
 			if !ok {
+				log.Errorf("problem with casting rspIfc: %+v", rspIfc)
 				continue
 			}
 			resultIfc, ok := rsp["result"]
 			if !ok {
+				log.Errorf("no 'result' in response: %+v", rsp)
 				continue
 			}
 			result, ok := resultIfc.(float64)
 			if !ok {
+				log.Errorf("problem with casting resultIfc: %+v", resultIfc)
 				continue
 			}
 			if result != 0 {
@@ -404,10 +410,12 @@ func (pke *PromKeaExporter) collectStats() error {
 			}
 			argsIfc, ok := rsp["arguments"]
 			if !ok {
+				log.Errorf("no 'arguments' in response: %+v", rsp)
 				continue
 			}
 			args := argsIfc.(map[string]interface{})
 			if !ok {
+				log.Errorf("problem with casting argsIfc: %+v", argsIfc)
 				continue
 			}
 
@@ -420,20 +428,25 @@ func (pke *PromKeaExporter) collectStats() error {
 				// get stat value from nested lists (eg. [[val, timestamp]])
 				statValueList1, ok := statValueList1Ifc.([]interface{})
 				if !ok {
+					log.Errorf("problem with casting statValueList1Ifc: %+v", statValueList1Ifc)
 					continue
 				}
 				if len(statValueList1) == 0 {
+					log.Errorf("empty list of stat values")
 					continue
 				}
 				statValueList2, ok := statValueList1[0].([]interface{})
 				if !ok {
+					log.Errorf("problem with casting statValueList1[0]: %+v", statValueList1[0])
 					continue
 				}
 				if len(statValueList2) == 0 {
+					log.Errorf("empty list of stat values")
 					continue
 				}
 				statValue, ok := statValueList2[0].(float64)
 				if !ok {
+					log.Errorf("problem with casting statValueList2[0]: %+v", statValueList2[0])
 					continue
 				}
 
