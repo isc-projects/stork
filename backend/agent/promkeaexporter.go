@@ -379,7 +379,7 @@ func (pke *PromKeaExporter) collectStats() error {
 			continue
 		}
 
-		// go though list of responses from daemons (it can none or more of dhcp4/dhcp6)
+		// go though list of responses from daemons (it can have none or some responses from dhcp4/dhcp6)
 		for daemonIdx, rspIfc := range rspList {
 			rsp, ok := rspIfc.(map[string]interface{})
 			if !ok {
