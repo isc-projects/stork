@@ -496,7 +496,7 @@ func GetAppLocalSubnets(db *pg.DB, appID int64) ([]*LocalSubnet, error) {
 		if err == pg.ErrNoRows {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting all subnets for app %d", appID)
+		err = errors.Wrapf(err, "problem with getting all local subnets for app %d", appID)
 		return nil, err
 	}
 	return subnets, nil
