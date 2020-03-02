@@ -2,7 +2,6 @@ package kea
 
 import (
 	"context"
-	"strings"
 	"sync"
 	"time"
 
@@ -208,10 +207,7 @@ func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 	// based on local subnet id and inet family
 	subnetsMap := make(map[localSubnetKey]*dbmodel.LocalSubnet)
 	for _, sn := range subnets {
-		family := 4
-		if strings.Contains(sn.Subnet.Prefix, ":") {
-			family = 6
-		}
+		family := sn.Subnet.GetFamily()
 		subnetsMap[localSubnetKey{sn.LocalSubnetID, family}] = sn
 	}
 

@@ -481,3 +481,14 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, returnedSubnets, 2)
 }
+
+// Check if getting subnet family works.
+func TestGetSubnetFamily(t *testing.T) {
+	// create v4 subnet and check its family
+	s4 := &Subnet{Prefix: "192.168.0.0/24"}
+	require.EqualValues(t, 4, s4.GetFamily())
+
+	// create v6 subnet and check its family
+	s6 := &Subnet{Prefix: "2001:db8:1::0/24"}
+	require.EqualValues(t, 6, s6.GetFamily())
+}

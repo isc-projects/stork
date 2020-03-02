@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -46,6 +47,14 @@ type Subnet struct {
 	PrefixPools  []PrefixPool
 
 	LocalSubnets []*LocalSubnet
+}
+
+func (sn *Subnet) GetFamily() int {
+	family := 4
+	if strings.Contains(sn.Prefix, ":") {
+		family = 6
+	}
+	return family
 }
 
 // Add address and prefix pools from the subnet instance into the database.
