@@ -35,8 +35,8 @@ TAGS
 /api/swagger.yaml
 
 # venv for dhcp traffic simulator
-/sim/venv
-/sim/__pycache__/
+/tests/sim/venv
+/tests/sim/__pycache__/
 
 # containers output
 /backend/cmd/stork-agent/supervisord.log
