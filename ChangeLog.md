@@ -1,3 +1,19 @@
+* 34 [func] godfryd
+
+    Added support for Prometheus & Grafana in the demo installation.
+    Added preconfigured Prometheus & Grafana containers to docker-compose.
+    Added Kea and BIND 9 Prometheus exporters.
+
+    Implementated Kea exporter in Go and embedded it in Stork Agent.
+    It is based on kea_exporter in python:
+    https://github.com/mweinelt/kea-exporter
+
+    Implemented DHCP simulator as web app for the demo installation.
+    Beneath it starts perfdhcp for selected subnet with indicated
+    parameters.
+
+    (Gitlab #167)
+
 * 33 [func] marcin
 
     New data model is now used by the server to hold the information
