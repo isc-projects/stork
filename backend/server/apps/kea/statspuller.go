@@ -145,7 +145,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLease
 		}
 		err := sn.UpdateStats(statsPuller.Db, stats)
 		if err != nil {
-			log.Errorf("problem with updating local subnet %d, app:%d, stats: %s", sn.LocalSubnetID, dbApp.ID, err.Error())
+			log.Errorf("problem with updating Kea stats for local subnet id %d, app id %d: %s", sn.LocalSubnetID, dbApp.ID, err.Error())
 			lastErr = err
 		}
 	}
