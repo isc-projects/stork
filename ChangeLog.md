@@ -9,7 +9,7 @@
     https://github.com/mweinelt/kea-exporter
 
     Implemented DHCP simulator as web app for the demo installation.
-    Beneath it starts perfdhcp for selected subnet with indicated
+    Internally it starts perfdhcp for selected subnet with indicated
     parameters.
 
     (Gitlab #167)
