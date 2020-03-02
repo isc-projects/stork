@@ -49,9 +49,9 @@ type Subnet struct {
 	LocalSubnets []*LocalSubnet
 }
 
-func (sn *Subnet) GetFamily() int {
+func (s *Subnet) GetFamily() int {
 	family := 4
-	if strings.Contains(sn.Prefix, ":") {
+	if strings.Contains(s.Prefix, ":") {
 		family = 6
 	}
 	return family
