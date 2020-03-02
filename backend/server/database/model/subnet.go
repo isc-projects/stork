@@ -510,5 +510,9 @@ func (lsn *LocalSubnet) UpdateStats(db *pg.DB, stats map[string]interface{}) err
 	q = q.Column("stats", "stats_collected_at")
 	q = q.WherePK()
 	_, err := q.Update()
+	if err != nil {
+		err = errors.Wrapf(err, "problem with updating stats in local subnet: [app:%d, subnet:%d local subnet: %d]",
+			lsn.AppID, lsn.SubnetID, lsn.LocalSubnetID)
+	}
 	return err
 }
