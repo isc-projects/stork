@@ -880,7 +880,12 @@
   "refresh": "5s",
   "schemaVersion": 21,
   "style": "dark",
-  "tags": [],
+  "tags": [
+    "kea",
+    "stork",
+    "dhcp4",
+    "prometheus"
+  ],
   "templating": {
     "list": [
       {
