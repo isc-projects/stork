@@ -127,3 +127,9 @@ simulate certain services that Stork is able to handle:
 * ``traffic-dhcp`` - This container is optional. If stated, it will start transmitting DHCP packets
   towards agent-kea. It may be useful to observe non-zero statistics coming from Kea. If you're
   running Stork in docker, you can coveniently control that using ``rake start_traffic_dhcp`` and
+
+* ``prometheus`` - This is a container with Prometheus for monitoring applications.
+  It is preconfigured to monitor Kea and BIND 9 containers.
+
+* ``grafana`` - This is a container with Grafana - a dashboard for Prometheus. It is preconfigured
+  to pull data from Prometheus container and show Stork dashboards.
