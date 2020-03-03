@@ -49,6 +49,7 @@ type Subnet struct {
 	LocalSubnets []*LocalSubnet
 }
 
+// Return family of the subnet.
 func (s *Subnet) GetFamily() int {
 	family := 4
 	if strings.Contains(s.Prefix, ":") {
@@ -487,6 +488,7 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 func GetAppLocalSubnets(db *pg.DB, appID int64) ([]*LocalSubnet, error) {
 	subnets := []*LocalSubnet{}
 	q := db.Model(&subnets)
+	// only selected columns are returned while stats columns are skipped for performance reasons (they are pretty big json fields)
 	q = q.Column("app_id", "subnet_id", "local_subnet_id")
 	q = q.Relation("Subnet")
 	q = q.Where("local_subnet.app_id = ?", appID)
