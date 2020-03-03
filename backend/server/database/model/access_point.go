@@ -26,7 +26,7 @@ func GetAllAccessPointsByAppID(db *dbops.PgDB, appID int64) ([]*AccessPoint, err
 
 	err := db.Model(&accessPoints).
 		Where("app_id = ?", appID).
-		OrderExpr("access_point.port ASC").
+		OrderExpr("access_point.type ASC").
 		Select()
 
 	if err != nil && err != pg.ErrNoRows {
