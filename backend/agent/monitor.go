@@ -8,6 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// An access point for an application to retrieve information such
+// as status or metrics.
 type AccessPoint struct {
 	Type    string
 	Address string

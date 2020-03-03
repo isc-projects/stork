@@ -12,6 +12,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// An access point for an application to retrieve information such
+// as status or metrics.
 type AccessPoint struct {
 	Type    string
 	Address string
