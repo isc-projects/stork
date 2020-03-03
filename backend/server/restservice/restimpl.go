@@ -38,7 +38,7 @@ func machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	var apps []*models.MachineApp
 	for _, app := range dbMachine.Apps {
 		active := true
-		if app.Type == dbmodel.KeaAppType {
+		if app.Type == dbmodel.AppTypeKea {
 			if app.Active {
 				for _, d := range app.Details.(dbmodel.AppKea).Daemons {
 					if !d.Active {
@@ -96,11 +96,11 @@ func appCompare(dbApp *dbmodel.App, app *agentcomm.App) bool {
 
 	var controlPortEqual bool
 	for _, pt1 := range dbApp.AccessPoints {
-		if pt1.Type != "control" {
+		if pt1.Type != dbmodel.AccessPointControl {
 			continue
 		}
 		for _, pt2 := range app.AccessPoints {
-			if pt2.Type != "control" {
+			if pt2.Type != dbmodel.AccessPointControl {
 				continue
 			}
 
@@ -181,10 +181,10 @@ func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 		}
 
 		switch app.Type {
-		case dbmodel.KeaAppType:
+		case dbmodel.AppTypeKea:
 			kea.GetAppState(ctx2, agents, dbApp)
 			err = kea.CommitAppIntoDB(db, dbApp)
-		case dbmodel.Bind9AppType:
+		case dbmodel.AppTypeBind9:
 			bind9.GetAppState(ctx2, agents, dbApp)
 			err = bind9.CommitAppIntoDB(db, dbApp)
 		default:
@@ -540,8 +540,8 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 	}
 	app.AccessPoints = accessPoints
 
-	isKeaApp := dbApp.Type == dbmodel.KeaAppType
-	isBind9App := dbApp.Type == dbmodel.Bind9AppType
+	isKeaApp := dbApp.Type == dbmodel.AppTypeKea
+	isBind9App := dbApp.Type == dbmodel.AppTypeBind9
 
 	if isKeaApp {
 		var keaDaemons []*models.KeaDaemon
@@ -677,9 +677,9 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 	}
 
 	var a *models.App
-	if dbApp.Type == dbmodel.Bind9AppType {
+	if dbApp.Type == dbmodel.AppTypeBind9 {
 		a = appToRestAPI(dbApp)
-	} else if dbApp.Type == dbmodel.KeaAppType {
+	} else if dbApp.Type == dbmodel.AppTypeKea {
 		a = appToRestAPI(dbApp)
 	}
 	rsp := services.NewGetAppOK().WithPayload(a)
@@ -711,7 +711,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 
 	// If this is Kea application, get the Kea DHCP servers status which possibly
 	// includes HA status.
-	if dbApp.Type == dbmodel.KeaAppType {
+	if dbApp.Type == dbmodel.AppTypeKea {
 		status, err := kea.GetDHCPStatus(ctx, r.Agents, dbApp)
 		if err != nil {
 			log.Error(err)
@@ -782,12 +782,12 @@ func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStats
 	}
 	for _, dbApp := range dbApps {
 		switch dbApp.Type {
-		case dbmodel.KeaAppType:
+		case dbmodel.AppTypeKea:
 			appsStats.KeaAppsTotal++
 			if !dbApp.Active {
 				appsStats.KeaAppsNotOk++
 			}
-		case dbmodel.Bind9AppType:
+		case dbmodel.AppTypeBind9:
 			appsStats.Bind9AppsTotal++
 			if !dbApp.Active {
 				appsStats.Bind9AppsNotOk++

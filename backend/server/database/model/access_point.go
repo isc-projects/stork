@@ -17,6 +17,9 @@ type AccessPoint struct {
 	Key       string
 }
 
+const AccessPointControl = "control"
+const AccessPointStatistics = "statistics"
+
 // GetAllAccessPointsByAppID returns all access points for an app with given ID.
 func GetAllAccessPointsByAppID(db *dbops.PgDB, appID int64) ([]*AccessPoint, error) {
 	var accessPoints []*AccessPoint

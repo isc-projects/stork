@@ -83,7 +83,7 @@ func TestGetDHCPStatus(t *testing.T) {
 	fa := storktest.NewFakeAgents(mockGetStatusLoadBalancing)
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
 
 	app := dbmodel.App{
 		AccessPoints: accessPoints,
@@ -132,7 +132,7 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 	fa := storktest.NewFakeAgents(mockGetStatusNoHA)
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
 
 	app := dbmodel.App{
 		AccessPoints: accessPoints,
@@ -165,7 +165,7 @@ func TestGetDHCPStatusError(t *testing.T) {
 	fa := storktest.NewFakeAgents(mockGetStatusError)
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
 
 	app := dbmodel.App{
 		AccessPoints: accessPoints,

@@ -41,12 +41,12 @@ func TestGetSubnets(t *testing.T) {
 
 	// add app kea with dhcp4 to machine
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "", "", 1114)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1114)
 
 	a4 := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
-		Type:         dbmodel.KeaAppType,
+		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
@@ -91,12 +91,12 @@ func TestGetSubnets(t *testing.T) {
 
 	// add app kea with dhcp6 to machine
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "", "", 1116)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1116)
 
 	a6 := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
-		Type:         dbmodel.KeaAppType,
+		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
@@ -126,12 +126,12 @@ func TestGetSubnets(t *testing.T) {
 
 	// add app kea with dhcp4 and dhcp6 to machine
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "", "", 1146)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1146)
 
 	a46 := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
-		Type:         dbmodel.KeaAppType,
+		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
@@ -336,12 +336,12 @@ func TestGetSharedNetworks(t *testing.T) {
 
 	// add app kea with dhcp4 to machine
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "", "", 1114)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1114)
 
 	a4 := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
-		Type:         dbmodel.KeaAppType,
+		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
@@ -401,12 +401,12 @@ func TestGetSharedNetworks(t *testing.T) {
 
 	// add app kea with dhcp6 to machine
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "", "", 1116)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1116)
 
 	a6 := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
-		Type:         dbmodel.KeaAppType,
+		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{

@@ -39,7 +39,7 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	ctrlPoint, err := apps.GetAccessPoint(dbApp, "control")
+	ctrlPoint, err := apps.GetAccessPoint(dbApp, dbmodel.AccessPointControl)
 	if err != nil {
 		return nil, err
 	}

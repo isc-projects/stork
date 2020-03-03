@@ -236,7 +236,7 @@ func detectBind9App(match []string) (bind9App *App) {
 	}
 	accessPoints := []AccessPoint{
 		{
-			Type:    "control",
+			Type:    AccessPointControl,
 			Address: address,
 			Port:    port,
 			Key:     key,
@@ -246,7 +246,7 @@ func detectBind9App(match []string) (bind9App *App) {
 	address, port, key = getStatisticsChannelFromBind9Config(bind9ConfPath)
 	if port > 0 && len(address) != 0 {
 		accessPoints = append(accessPoints, AccessPoint{
-			Type:    "statistics",
+			Type:    AccessPointStatistics,
 			Address: address,
 			Port:    port,
 			Key:     key,
@@ -254,7 +254,7 @@ func detectBind9App(match []string) (bind9App *App) {
 	}
 
 	return &App{
-		Type:         "bind9",
+		Type:         AppTypeBind9,
 		AccessPoints: accessPoints,
 	}
 }

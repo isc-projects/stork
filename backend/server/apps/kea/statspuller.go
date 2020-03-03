@@ -75,7 +75,7 @@ func (statsPuller *StatsPuller) pullerLoop() {
 // of apps for which the stats were successfully pulled and last encountered error.
 func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
 	// get list of all kea apps from database
-	dbApps, err := dbmodel.GetAppsByType(statsPuller.Db, dbmodel.KeaAppType)
+	dbApps, err := dbmodel.GetAppsByType(statsPuller.Db, dbmodel.AppTypeKea)
 	if err != nil {
 		return 0, err
 	}
@@ -155,7 +155,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLease
 // Get lease stats from given kea app.
 func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 	// prepare URL to CA
-	ctrlPoint, err := apps.GetAccessPoint(dbApp, "control")
+	ctrlPoint, err := apps.GetAccessPoint(dbApp, dbmodel.AccessPointControl)
 	if err != nil {
 		return err
 	}

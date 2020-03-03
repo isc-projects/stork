@@ -211,7 +211,7 @@ func TestDeleteMachineWithApps(t *testing.T) {
 	a := &App{
 		ID:        0,
 		MachineID: m.ID,
-		Type:      "kea",
+		Type:      AppTypeKea,
 	}
 	err = AddApp(db, a)
 	require.NoError(t, err)

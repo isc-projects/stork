@@ -15,7 +15,7 @@ import (
 func appBelongsToHAService(app *dbmodel.App, service *dbmodel.Service) bool {
 	// If the service or app is nil, service is blank or if the app is not Kea then the app
 	// surely doesn't belong to the service.
-	if service.HAService == nil || len(service.Apps) == 0 || app == nil || app.Type != "kea" {
+	if service.HAService == nil || len(service.Apps) == 0 || app == nil || app.Type != dbmodel.AppTypeKea {
 		return false
 	}
 

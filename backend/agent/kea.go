@@ -54,13 +54,13 @@ func detectKeaApp(match []string) *App {
 	}
 	accessPoints := []AccessPoint{
 		{
-			Type:    "control",
+			Type:    AccessPointControl,
 			Address: address,
 			Port:    port,
 		},
 	}
 	keaApp := &App{
-		Type:         "kea",
+		Type:         AppTypeKea,
 		AccessPoints: accessPoints,
 	}
 

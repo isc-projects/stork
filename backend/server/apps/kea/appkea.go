@@ -294,7 +294,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 // The state, that is stored into dbApp, includes: version, config and runtime state of indicated Kea daemons.
 func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) {
 	// prepare URL to CA
-	ctrlPoint, err := apps.GetAccessPoint(dbApp, "control")
+	ctrlPoint, err := apps.GetAccessPoint(dbApp, dbmodel.AccessPointControl)
 	if err != nil {
 		log.Warnf("problem with getting kea access control point: %s", err)
 		return

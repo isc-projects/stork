@@ -41,7 +41,7 @@ func createAppWithSubnets(t *testing.T, db *dbops.PgDB, index int64, v4Config, v
 	// Creates new app with provided configurations.
 	app := dbmodel.App{
 		MachineID:   m.ID,
-		Type:        dbmodel.KeaAppType,
+		Type:        dbmodel.AppTypeKea,
 		CtrlAddress: "localhost",
 		CtrlPort:    8000,
 		Details: dbmodel.AppKea{

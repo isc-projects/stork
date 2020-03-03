@@ -150,15 +150,15 @@ func TestDetectBind9App(t *testing.T) {
 	// check BIND 9 app detection
 	app := detectBind9App([]string{"", tmpFile.Name()})
 	require.NotNil(t, app)
-	require.Equal(t, app.Type, "bind9")
+	require.Equal(t, app.Type, AppTypeBind9)
 	require.Equal(t, 2, len(app.AccessPoints))
 	point := app.AccessPoints[0]
-	require.Equal(t, "control", point.Type)
+	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
 	require.Equal(t, int64(5353), point.Port)
 	require.Equal(t, "hmac-md5:abcd", point.Key)
 	point = app.AccessPoints[1]
-	require.Equal(t, "statistics", point.Type)
+	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "127.0.0.80", point.Address)
 	require.Equal(t, int64(80), point.Port)
 	require.Empty(t, point.Key)
@@ -183,10 +183,10 @@ func TestDetectKeaApp(t *testing.T) {
 	// check kea app detection
 	app := detectKeaApp([]string{"", tmpFile.Name()})
 	require.NotNil(t, app)
-	require.Equal(t, "kea", app.Type)
+	require.Equal(t, AppTypeKea, app.Type)
 	require.Equal(t, 1, len(app.AccessPoints))
 	ctrlPoint := app.AccessPoints[0]
-	require.Equal(t, "control", ctrlPoint.Type)
+	require.Equal(t, AccessPointControl, ctrlPoint.Type)
 	require.Equal(t, "localhost", ctrlPoint.Address)
 	require.Equal(t, int64(45634), ctrlPoint.Port)
 	require.Empty(t, ctrlPoint.Key)

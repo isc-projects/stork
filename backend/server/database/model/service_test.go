@@ -138,11 +138,11 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 		require.NoError(t, err)
 
 		var accessPoints []*AccessPoint
-		accessPoints = AppendAccessPoint(accessPoints, "control", "cool.example.org", "", int64(1234+i))
+		accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", int64(1234+i))
 		a := &App{
 			ID:           0,
 			MachineID:    m.ID,
-			Type:         KeaAppType,
+			Type:         AppTypeKea,
 			Active:       true,
 			AccessPoints: accessPoints,
 		}
@@ -312,7 +312,7 @@ func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
 	require.GreaterOrEqual(t, len(services), 2)
 
 	// Get a service instance to which the forth application of the service1 belongs.
-	accessPoint, err := GetAccessPointByAppID(db, services[0].Apps[3].ID, "control")
+	accessPoint, err := GetAccessPointByAppID(db, services[0].Apps[3].ID, AccessPointControl)
 	require.NoError(t, err)
 	appServices, err := GetDetailedServicesByAppCtrlAddressPort(db, accessPoint.Address, accessPoint.Port)
 	require.NoError(t, err)
@@ -325,7 +325,7 @@ func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
 	require.True(t, appArraysMatch(service.Apps, services[0].Apps))
 
 	// Repeat the same test for the application belonging to the second service.
-	accessPoint, err = GetAccessPointByAppID(db, services[1].Apps[3].ID, "control")
+	accessPoint, err = GetAccessPointByAppID(db, services[1].Apps[3].ID, AccessPointControl)
 	require.NoError(t, err)
 	appServices, err = GetDetailedServicesByAppCtrlAddressPort(db, accessPoint.Address, accessPoint.Port)
 	require.NoError(t, err)

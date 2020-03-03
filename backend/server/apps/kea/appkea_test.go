@@ -164,7 +164,7 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 	})
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "192.0.2.0", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234)
 
 	dbApp := dbmodel.App{
 		AccessPoints: accessPoints,
@@ -194,7 +194,7 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 	})
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, "control", "192.0.2.0", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234)
 
 	dbApp := dbmodel.App{
 		AccessPoints: accessPoints,
@@ -306,7 +306,7 @@ func TestCommitAppIntoDB(t *testing.T) {
 	app := &dbmodel.App{
 		ID:        0,
 		MachineID: machine.ID,
-		Type:      dbmodel.KeaAppType,
+		Type:      dbmodel.AppTypeKea,
 		CtrlPort:  1234,
 		CtrlKey:   "",
 		Active:    true,

@@ -54,8 +54,8 @@ func TestGetState(t *testing.T) {
 		AgentVersion: expVer,
 		Apps: []*agentapi.App{
 			{
-				Type:         "kea",
-				AccessPoints: makeAccessPoint("control", "1.2.3.4", "", 1234),
+				Type:         AppTypeKea,
+				AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.4", "", 1234),
 			},
 		},
 	}
@@ -67,7 +67,7 @@ func TestGetState(t *testing.T) {
 	state, err := agents.GetState(ctx, "127.0.0.1", 8080)
 	require.NoError(t, err)
 	require.Equal(t, expVer, state.AgentVersion)
-	require.Equal(t, "kea", state.Apps[0].Type)
+	require.Equal(t, AppTypeKea, state.Apps[0].Type)
 }
 
 // Test that a command can be successfully forwarded to Kea and the response

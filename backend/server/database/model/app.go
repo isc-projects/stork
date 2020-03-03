@@ -34,14 +34,14 @@ type KeaDaemon struct {
 	ReloadedAt      time.Time
 }
 
-const KeaAppType = "kea"
+const AppTypeKea = "kea"
 
 type AppKea struct {
 	ExtendedVersion string
 	Daemons         []*KeaDaemon
 }
 
-const Bind9AppType = "bind9"
+const AppTypeBind9 = "bind9"
 
 type AppBind9 struct {
 	Daemon Bind9Daemon
@@ -79,7 +79,7 @@ func (app *App) AfterScan(ctx context.Context) error {
 	}
 
 	switch app.Type {
-	case KeaAppType:
+	case AppTypeKea:
 		var keaDetails AppKea
 		err = json.Unmarshal(bytes, &keaDetails)
 		if err != nil {
@@ -87,7 +87,7 @@ func (app *App) AfterScan(ctx context.Context) error {
 		}
 		app.Details = keaDetails
 
-	case Bind9AppType:
+	case AppTypeBind9:
 		var bind9Details AppBind9
 		err = json.Unmarshal(bytes, &bind9Details)
 		if err != nil {

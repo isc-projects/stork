@@ -9,16 +9,24 @@ import (
 )
 
 type AccessPoint struct {
-	Type    string // currently supported types are: "control" and "statistics"
+	Type    string
 	Address string
 	Port    int64
 	Key     string
 }
 
+// Currently supported types are: "control" and "statistics"
+const AccessPointControl = "control"
+const AccessPointStatistics = "statistics"
+
 type App struct {
-	Type         string // currently supported types are: "kea" and "bind9"
+	Type         string
 	AccessPoints []AccessPoint
 }
+
+// Currently supported types are: "kea" and "bind9"
+const AppTypeKea = "kea"
+const AppTypeBind9 = "bind9"
 
 type AppMonitor interface {
 	GetApps() []*App

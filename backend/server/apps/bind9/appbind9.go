@@ -19,7 +19,7 @@ const namedLongDateFormat = "Mon, 02 Jan 2006 15:04:05 MST"
 
 func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) {
 	// Get rndc control settings
-	ctrlPoint, err := apps.GetAccessPoint(dbApp, "control")
+	ctrlPoint, err := apps.GetAccessPoint(dbApp, dbmodel.AccessPointControl)
 	if err != nil {
 		log.Warnf("problem with getting BIND 9 control point: %s", err)
 		return

@@ -31,7 +31,7 @@ func (c *RndcClient) Call(app *App, command []string) (output []byte, err error)
 	var ctrl AccessPoint
 
 	for _, point := range app.AccessPoints {
-		if point.Type != "control" {
+		if point.Type != AccessPointControl {
 			continue
 		}
 

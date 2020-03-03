@@ -109,7 +109,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.ForwardRndcCommandReq) (*agentapi.ForwardRndcCommandRsp, error) {
 	accessPoints := []AccessPoint{
 		{
-			Type:    "control",
+			Type:    AccessPointControl,
 			Address: in.Address,
 			Port:    in.Port,
 			Key:     in.Key,
@@ -117,7 +117,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	}
 
 	app := &App{
-		Type:         "bind9",
+		Type:         AppTypeBind9,
 		AccessPoints: accessPoints,
 	}
 

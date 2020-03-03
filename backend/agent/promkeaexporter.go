@@ -71,13 +71,13 @@ func NewPromKeaExporter(appMonitor AppMonitor) *PromKeaExporter {
 
 	// packets dhcp4
 	packets4SentTotal := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp4",
 		Name:      "packets_sent_total",
 		Help:      "Packets sent",
 	}, []string{"operation"})
 	packets4ReceivedTotal := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp4",
 		Name:      "packets_received_total",
 		Help:      "Packets received",
@@ -85,25 +85,25 @@ func NewPromKeaExporter(appMonitor AppMonitor) *PromKeaExporter {
 
 	// packets dhcp6
 	packets6SentTotal := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "packets_sent_total",
 		Help:      "Packets sent",
 	}, []string{"operation"})
 	packets6ReceivedTotal := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "packets_received_total",
 		Help:      "Packets received",
 	}, []string{"operation"})
 	packets4o6SentTotal := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "packets_sent_dhcp4_total",
 		Help:      "DHCPv4-over-DHCPv6 Packets received",
 	}, []string{"operation"})
 	packets4o6ReceivedTotal := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "packets_received_dhcp4_total",
 		Help:      "DHCPv4-over-DHCPv6 Packets received",
@@ -155,31 +155,31 @@ func NewPromKeaExporter(appMonitor AppMonitor) *PromKeaExporter {
 	// addresses dhcp4
 	adr4StatsMap := make(map[string]*prometheus.GaugeVec)
 	adr4StatsMap["assigned-addresses"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp4",
 		Name:      "addresses_assigned_total",
 		Help:      "Assigned addresses",
 	}, []string{"subnet"})
 	adr4StatsMap["declined-addresses"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp4",
 		Name:      "addresses_declined_total",
 		Help:      "Declined counts",
 	}, []string{"subnet"})
 	adr4StatsMap["reclaimed-declined-addresses"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp4",
 		Name:      "addresses_declined_reclaimed_total",
 		Help:      "Declined addresses that were reclaimed",
 	}, []string{"subnet"})
 	adr4StatsMap["reclaimed-leases"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp4",
 		Name:      "addresses_reclaimed_total",
 		Help:      "Expired addresses that were reclaimed",
 	}, []string{"subnet"})
 	adr4StatsMap["total-addresses"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp4",
 		Name:      "addresses_total",
 		Help:      "Size of subnet address pool",
@@ -188,43 +188,43 @@ func NewPromKeaExporter(appMonitor AppMonitor) *PromKeaExporter {
 	// addresses dhcp6
 	adr6StatsMap := make(map[string]*prometheus.GaugeVec)
 	adr6StatsMap["total-nas"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "na_total",
 		Help:      "'Size of non-temporary address pool",
 	}, []string{"subnet"})
 	adr6StatsMap["assigned-nas"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "na_assigned_total",
 		Help:      "Assigned non-temporary addresses (IA_NA)",
 	}, []string{"subnet"})
 	adr6StatsMap["total-pds"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "pd_total",
 		Help:      "Size of prefix delegation pool",
 	}, []string{"subnet"})
 	adr6StatsMap["assigned-pds"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "pd_assigned_total",
 		Help:      "Assigned prefix delegations (IA_PD)",
 	}, []string{"subnet"})
 	adr6StatsMap["reclaimed-leases"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "addresses_reclaimed_total",
 		Help:      "Expired addresses that were reclaimed",
 	}, []string{"subnet"})
 	adr6StatsMap["declined-addresses"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "addresses_declined_total",
 		Help:      "Declined counts",
 	}, []string{"subnet"})
 	adr6StatsMap["reclaimed-declined-addresses"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kea",
+		Namespace: AppTypeKea,
 		Subsystem: "dhcp6",
 		Name:      "addresses_declined_reclaimed_total",
 		Help:      "Declined addresses that were reclaimed",
@@ -343,7 +343,7 @@ func (pke *PromKeaExporter) collectStats() error {
 	apps := pke.AppMonitor.GetApps()
 	for _, app := range apps {
 		// ignore non-kea apps
-		if app.Type != "kea" {
+		if app.Type != AppTypeKea {
 			continue
 		}
 		log.Printf("APP %+v", app)

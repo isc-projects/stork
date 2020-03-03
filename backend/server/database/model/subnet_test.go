@@ -24,7 +24,7 @@ func addTestSubnetApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 		a := &App{
 			ID:          0,
 			MachineID:   m.ID,
-			Type:        KeaAppType,
+			Type:        AppTypeKea,
 			CtrlAddress: "cool.example.org",
 			CtrlPort:    int64(1234 + i),
 			Active:      true,
@@ -448,10 +448,10 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 
 	// Creates new app. Its configuration doesn't matter in this test.
 	var accessPoints []AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, "control", "localhost", "", 8000)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "localhost", "", 8000)
 	app := App{
 		MachineID:    m.ID,
-		Type:         KeaAppType,
+		Type:         AppTypeKea,
 		AccessPoints: accessPoints,
 	}
 	// Add the app to the database.
