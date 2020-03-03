@@ -8,6 +8,7 @@ type KeaConfigPool struct {
 // Represents prefix delegation pool structure within Kea configuration.
 type KeaConfigPdPool struct {
 	Prefix       string
+	PrefixLen    int `mapstructure:"prefix-len"`
 	DelegatedLen int `mapstructure:"delegated-len"`
 }
 

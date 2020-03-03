@@ -471,7 +471,8 @@ func TestNewSubnetFromKea(t *testing.T) {
 		},
 		"pd-pools": []interface{}{
 			map[string]interface{}{
-				"prefix":        "2001:db8:1:1::/96",
+				"prefix":        "2001:db8:1:1::",
+				"prefix-len":    96,
 				"delegated-len": 120,
 			},
 		},

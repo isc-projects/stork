@@ -3,6 +3,7 @@ package dbmodel
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net"
 	"strings"
 
@@ -72,7 +73,7 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) (*Subnet, error) {
 		convertedSubnet.AddressPools = append(convertedSubnet.AddressPools, *addressPool)
 	}
 	for _, p := range keaSubnet.PdPools {
-		prefixPool, err := NewPrefixPool(p.Prefix, p.DelegatedLen)
+		prefixPool, err := NewPrefixPool(fmt.Sprintf("%s/%d", p.Prefix, p.PrefixLen), p.DelegatedLen)
 		if err != nil {
 			return nil, err
 		}
