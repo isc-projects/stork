@@ -201,7 +201,7 @@ func GetDetailedService(db *dbops.PgDB, serviceID int64) (*Service, error) {
 	service := &Service{}
 	err := db.Model(service).
 		Relation("HAService").
-		Relation("Apps").
+		Relation("Apps.AccessPoints").
 		Where("service.id = ?", serviceID).
 		Select()
 
@@ -223,7 +223,7 @@ func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) 
 		Join("INNER JOIN app_to_service AS atos ON atos.service_id = service.id").
 		Join("INNER JOIN app AS a ON a.id = atos.app_id").
 		Relation("HAService").
-		Relation("Apps").
+		Relation("Apps.AccessPoints").
 		Where("atos.app_id = ?", appID).
 		OrderExpr("service.id ASC").
 		Select()
@@ -259,7 +259,7 @@ func GetDetailedServicesByAppCtrlAddressPort(db *dbops.PgDB, ctrlAddress string,
 		Join("INNER JOIN app AS a ON a.id = atos.app_id").
 		Join("INNER JOIN access_point AS ap ON ap.app_id = atos.app_id").
 		Relation("HAService").
-		Relation("Apps").
+		Relation("Apps.AccessPoints").
 		Where("ap.address = ?", ctrlAddress).
 		Where("ap.port = ?", ctrlPort).
 		Where("ap.type = 'control'").
@@ -272,14 +272,6 @@ func GetDetailedServicesByAppCtrlAddressPort(db *dbops.PgDB, ctrlAddress string,
 		return services, err
 	}
 
-	// Retrieve the access points. This should be incorporated in the
-	// above query, ideally.
-	for _, service := range services {
-		for _, app := range service.Apps {
-			app.AccessPoints, _ = GetAllAccessPointsByAppID(db, app.ID)
-		}
-	}
-
 	return services, nil
 }
 
@@ -289,7 +281,7 @@ func GetDetailedAllServices(db *dbops.PgDB) ([]Service, error) {
 
 	err := db.Model(&services).
 		Relation("HAService").
-		Relation("Apps").
+		Relation("Apps.AccessPoints").
 		OrderExpr("id ASC").
 		Select()
 

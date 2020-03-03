@@ -55,7 +55,7 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64)
 	q := db.Model(&machine)
 	q = q.Where("address = ?", address)
 	q = q.Where("agent_port = ?", agentPort)
-
+	q = q.Relation("Apps.AccessPoints")
 	err := q.Select()
 	if err == pg.ErrNoRows {
 		return nil, nil
@@ -68,18 +68,12 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64)
 func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	machine := Machine{}
 	q := db.Model(&machine).Where("machine.id = ?", id)
-	q = q.Relation("Apps")
+	q = q.Relation("Apps.AccessPoints")
 	err := q.Select()
 	if err == pg.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, errors.Wrapf(err, "problem with getting machine %v", id)
-	}
-
-	// Retrieve the access points. This should be incorporated in the
-	// above query, ideally.
-	for _, app := range machine.Apps {
-		app.AccessPoints, _ = GetAllAccessPointsByAppID(db, app.ID)
 	}
 
 	return &machine, nil
@@ -88,16 +82,10 @@ func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
 	machine.Apps = []*App{}
 	q := db.Model(machine).Where("id = ?", machine.ID)
-	q = q.Relation("Apps")
+	q = q.Relation("Apps.AccessPoints")
 	err := q.Select()
 	if err != nil {
 		return errors.Wrapf(err, "problem with getting machine %v", machine.ID)
-	}
-
-	// Retrieve the access points. This should be incorporated in the
-	// above query, ideally.
-	for _, app := range machine.Apps {
-		app.AccessPoints, _ = GetAllAccessPointsByAppID(db, app.ID)
 	}
 
 	return nil
@@ -114,7 +102,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 
 	// prepare query
 	q := db.Model(&machines)
-	q = q.Relation("Apps")
+	q = q.Relation("Apps.AccessPoints")
 	if text != "" {
 		text = "%" + text + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
@@ -145,14 +133,6 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 	err = q.Select()
 	if err != nil {
 		return nil, 0, errors.Wrapf(err, "problem with getting machines")
-	}
-
-	// Retrieve the access points. This should be incorporated in the
-	// above query, ideally.
-	for _, machine := range machines {
-		for _, app := range machine.Apps {
-			app.AccessPoints, _ = GetAllAccessPointsByAppID(db, app.ID)
-		}
 	}
 
 	return machines, int64(total), nil

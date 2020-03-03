@@ -49,10 +49,34 @@ func TestGetMachineByAddress(t *testing.T) {
 	err = AddMachine(db, m2)
 	require.NoError(t, err)
 
+	// add app
+	a := &App{
+		ID:        0,
+		MachineID: m2.ID,
+		Type:      "kea",
+		AccessPoints: []*AccessPoint{
+			{
+				MachineID: m2.ID,
+				Type:      "control",
+				Address:   "localhost",
+				Port:      1234,
+				Key:       "",
+			},
+		},
+	}
+	err = AddApp(db, a)
+	require.NoError(t, err)
+
 	// get added machine
 	m, err = GetMachineByAddressAndAgentPort(db, "localhost", 8080)
 	require.Nil(t, err)
 	require.Equal(t, m2.Address, m.Address)
+	require.Len(t, m.Apps, 1)
+	require.Len(t, m.Apps[0].AccessPoints, 1)
+	require.Equal(t, "control", m.Apps[0].AccessPoints[0].Type)
+	require.Equal(t, "localhost", m.Apps[0].AccessPoints[0].Address)
+	require.EqualValues(t, 1234, m.Apps[0].AccessPoints[0].Port)
+	require.Empty(t, m.Apps[0].AccessPoints[0].Key)
 
 	// delete machine
 	err = DeleteMachine(db, m)
@@ -81,10 +105,34 @@ func TestGetMachineByID(t *testing.T) {
 	err = AddMachine(db, m2)
 	require.NoError(t, err)
 
+	// add app
+	a := &App{
+		ID:        0,
+		MachineID: m2.ID,
+		Type:      "bind9",
+		AccessPoints: []*AccessPoint{
+			{
+				MachineID: m2.ID,
+				Type:      "control",
+				Address:   "dns.example.",
+				Port:      953,
+				Key:       "abcd",
+			},
+		},
+	}
+	err = AddApp(db, a)
+	require.NoError(t, err)
+
 	// get added machine
 	m, err = GetMachineByID(db, m2.ID)
 	require.Nil(t, err)
 	require.Equal(t, m2.Address, m.Address)
+	require.Len(t, m.Apps, 1)
+	require.Len(t, m.Apps[0].AccessPoints, 1)
+	require.Equal(t, "control", m.Apps[0].AccessPoints[0].Type)
+	require.Equal(t, "dns.example.", m.Apps[0].AccessPoints[0].Address)
+	require.EqualValues(t, 953, m.Apps[0].AccessPoints[0].Port)
+	require.Equal(t, "abcd", m.Apps[0].AccessPoints[0].Key)
 
 	// delete machine
 	err = DeleteMachine(db, m)
@@ -113,6 +161,24 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 		}
 		err = AddMachine(db, m)
 		require.NoError(t, err)
+
+		// add app
+		a := &App{
+			ID:        0,
+			MachineID: m.ID,
+			Type:      "bind9",
+			AccessPoints: []*AccessPoint{
+				{
+					MachineID: m.ID,
+					Type:      "control",
+					Address:   "localhost",
+					Port:      int64(8000 + i),
+					Key:       "",
+				},
+			},
+		}
+		err = AddApp(db, a)
+		require.NoError(t, err)
 	}
 
 	// get 10 machines from 0
@@ -138,6 +204,21 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, int64(2), total)
 	require.Len(t, ms, 2)
+
+	// check machine details
+	require.Len(t, ms[0].Apps, 1)
+	require.Len(t, ms[0].Apps[0].AccessPoints, 1)
+	require.Equal(t, "control", ms[0].Apps[0].AccessPoints[0].Type)
+	require.Equal(t, "localhost", ms[0].Apps[0].AccessPoints[0].Address)
+	require.EqualValues(t, 8001, ms[0].Apps[0].AccessPoints[0].Port)
+	require.Empty(t, ms[0].Apps[0].AccessPoints[0].Key)
+
+	require.Len(t, ms[1].Apps, 1)
+	require.Len(t, ms[1].Apps[0].AccessPoints, 1)
+	require.Equal(t, "control", ms[1].Apps[0].AccessPoints[0].Type)
+	require.Equal(t, "localhost", ms[1].Apps[0].AccessPoints[0].Address)
+	require.EqualValues(t, 8010, ms[1].Apps[0].AccessPoints[0].Port)
+	require.Empty(t, ms[1].Apps[0].AccessPoints[0].Key)
 }
 
 func TestGetMachinesByPageWithFiltering(t *testing.T) {
