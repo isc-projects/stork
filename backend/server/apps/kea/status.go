@@ -8,7 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
-	"isc.org/stork/server/apps"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -39,7 +38,7 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	ctrlPoint, err := apps.GetAccessPoint(dbApp, dbmodel.AccessPointControl)
+	ctrlPoint, err := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
 	if err != nil {
 		return nil, err
 	}

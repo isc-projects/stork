@@ -307,3 +307,14 @@ func (app *App) GetLocalSubnetID(prefix string) int64 {
 	}
 	return 0
 }
+
+// GetAccessPoint returns the access point of the given app and given access
+// point type.
+func (app *App) GetAccessPoint(accessPointType string) (ap *AccessPoint, err error) {
+	for _, point := range app.AccessPoints {
+		if point.Type == accessPointType {
+			return point, nil
+		}
+	}
+	return nil, errors.Errorf("no access point of type %s found for app id %d", accessPointType, app.ID)
+}

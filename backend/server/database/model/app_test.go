@@ -236,6 +236,19 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.Equal(t, "localhost", pt.Address)
 	require.Equal(t, int64(1234), pt.Port)
 	require.Empty(t, pt.Key)
+
+	// test GetAccessPoint
+	pt, err = app.GetAccessPoint(AccessPointControl)
+	require.NotNil(t, pt)
+	require.NoError(t, err)
+	require.Equal(t, AccessPointControl, pt.Type)
+	require.Equal(t, "localhost", pt.Address)
+	require.Equal(t, int64(1234), pt.Port)
+	require.Empty(t, pt.Key)
+	// bad access point type
+	pt, err = app.GetAccessPoint("foobar")
+	require.Nil(t, pt)
+	require.Error(t, err)
 }
 
 // Check getting apps by type only.
@@ -354,6 +367,23 @@ func TestGetAppByID(t *testing.T) {
 	require.Empty(t, pt.Key)
 
 	pt = app.AccessPoints[1]
+	require.Equal(t, AccessPointStatistics, pt.Type)
+	require.Equal(t, "10.0.0.2", pt.Address)
+	require.Equal(t, int64(5555), pt.Port)
+	require.Equal(t, "abcd", pt.Key)
+
+	// test GetAccessPoint
+	pt, err = app.GetAccessPoint(AccessPointControl)
+	require.NotNil(t, pt)
+	require.NoError(t, err)
+	require.Equal(t, AccessPointControl, pt.Type)
+	require.Equal(t, "localhost", pt.Address)
+	require.Equal(t, int64(4444), pt.Port)
+	require.Empty(t, pt.Key)
+
+	pt, err = app.GetAccessPoint(AccessPointStatistics)
+	require.NotNil(t, pt)
+	require.NoError(t, err)
 	require.Equal(t, AccessPointStatistics, pt.Type)
 	require.Equal(t, "10.0.0.2", pt.Address)
 	require.Equal(t, int64(5555), pt.Port)

@@ -10,7 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
-	"isc.org/stork/server/apps"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -155,7 +154,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLease
 // Get lease stats from given kea app.
 func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 	// prepare URL to CA
-	ctrlPoint, err := apps.GetAccessPoint(dbApp, dbmodel.AccessPointControl)
+	ctrlPoint, err := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
 	if err != nil {
 		return err
 	}
