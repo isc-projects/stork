@@ -55,6 +55,7 @@ import { SettingsMenuComponent } from './settings-menu/settings-menu.component'
 import { HaStatusComponent } from './ha-status/ha-status.component'
 import { SubnetsPageComponent } from './subnets-page/subnets-page.component'
 import { SharedNetworksPageComponent } from './shared-networks-page/shared-networks-page.component'
+import { SubnetBarComponent } from './subnet-bar/subnet-bar.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -93,6 +94,7 @@ export function preinitApp(appInitService: AppInitService) {
         HaStatusComponent,
         SubnetsPageComponent,
         SharedNetworksPageComponent,
+        SubnetBarComponent,
     ],
     imports: [
         BrowserModule,

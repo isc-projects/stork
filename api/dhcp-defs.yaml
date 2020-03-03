@@ -19,6 +19,11 @@
         type: string
       clientClass:
         type: string
+      stats:
+        type: object
+      statsCollectedAt:
+        type: string
+        format: date-time
 
   Subnets:
     type: object
@@ -43,7 +48,7 @@
       subnets:
         type: array
         items:
-          type: string
+          $ref: '#/definitions/Subnet'
       machineAddress:
         type: string
 

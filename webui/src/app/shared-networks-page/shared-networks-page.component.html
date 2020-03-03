@@ -49,12 +49,7 @@
                         {{ net.name }}
                     </td>
                     <td>
-                        <span
-                            *ngFor="let sn of net.subnets"
-                            style="border-radius: 4px; background-color: #ddd; padding: 0 4px; margin-right: 5px;"
-                        >
-                            {{ sn }}
-                        </span>
+                        <app-subnet-bar *ngFor="let sn of net.subnets" [subnet]="sn"></app-subnet-bar>
                     </td>
                     <td>
                         <a routerLink="/apps/kea/{{ net.appId }}">{{ net.appId }} @ {{ net.machineAddress }}</a>

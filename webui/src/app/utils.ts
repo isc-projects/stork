@@ -46,3 +46,19 @@ export function durationToString(duration) {
     }
     return ''
 }
+
+/**
+ * Get subnet utilization in % based on stats.
+ */
+export function getSubnetUtilization(subnet) {
+    if (!subnet.stats) {
+        return 0
+    }
+    if (subnet.subnet.includes('.')) {
+        // DHCPv4 stats
+        return (100 * subnet.stats['assigned-addreses']) / subnet.stats['total-addreses']
+    } else {
+        // DHCPv6 stats
+        return (100 * subnet.stats['assigned-nas']) / subnet.stats['total-nas']
+    }
+}

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 
 import { DHCPService } from '../backend/api/api'
+import { getSubnetUtilization } from '../utils'
 
 /**
  * Component for presenting shared networks in a table.

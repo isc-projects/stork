@@ -138,7 +138,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLease
 			}
 		}
 		if sn == nil {
-			lastErr = errors.Errorf("cannot find LocalSubnet for app:%d, local subnet id: %d, family: %d", dbApp.ID, lsnID, family)
+			lastErr = errors.Errorf("cannot find LocalSubnet for app: %d, local subnet id: %d, family: %d", dbApp.ID, lsnID, family)
 			log.Error(lastErr.Error())
 			continue
 		}
@@ -186,15 +186,27 @@ func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 	}
 
 	// forward commands to kea
-	stats4Resp := []StatLeaseGetResponse{}
-	stats6Resp := []StatLeaseGetResponse{}
+	statsResp1 := []StatLeaseGetResponse{}
+	statsResp2 := []StatLeaseGetResponse{}
 	ctx := context.Background()
-	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caURL, cmds, &stats4Resp, &stats6Resp)
+	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caURL, cmds, &statsResp1, &statsResp2)
 	if err != nil {
 		return err
 	}
 	if cmdsResult.Error != nil {
 		return cmdsResult.Error
+	}
+
+	// assign responses to v4 and v6 depending on active daemons
+	var stats4Resp []StatLeaseGetResponse
+	var stats6Resp []StatLeaseGetResponse
+	if dhcpDaemons["dhcp4"] {
+		stats4Resp = statsResp1
+		if dhcpDaemons["dhcp6"] {
+			stats6Resp = statsResp2
+		}
+	} else if dhcpDaemons["dhcp6"] {
+		stats6Resp = statsResp1
 	}
 
 	// get app's local subnets

@@ -6,12 +6,38 @@ import (
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/strfmt"
 	log "github.com/sirupsen/logrus"
 
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 )
+
+func subnetToRestAPI(lsn *dbmodel.LocalSubnet) *models.Subnet {
+	pools := []string{}
+	for _, poolDetails := range lsn.Subnet.AddressPools {
+		pool := poolDetails.LowerBound + "-" + poolDetails.UpperBound
+		pools = append(pools, pool)
+	}
+	var sharedNetworkName string
+	if lsn.Subnet.SharedNetwork != nil {
+		sharedNetworkName = lsn.Subnet.SharedNetwork.Name
+	}
+
+	subnet := &models.Subnet{
+		AppID:            lsn.App.ID,
+		ID:               lsn.LocalSubnetID,
+		Pools:            pools,
+		Subnet:           lsn.Subnet.Prefix,
+		SharedNetwork:    sharedNetworkName,
+		MachineAddress:   fmt.Sprintf("%s:%d", lsn.App.CtrlAddress, lsn.App.CtrlPort),
+		ClientClass:      lsn.Subnet.ClientClass,
+		Stats:            lsn.Stats,
+		StatsCollectedAt: strfmt.DateTime(lsn.StatsCollectedAt),
+	}
+	return subnet
+}
 
 // Get list of DHCP subnets. The list can be filtered by app ID, DHCP version and text.
 func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) middleware.Responder {
@@ -56,27 +82,11 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 	// we do it currently is to iterate over the local subnets (and apps)
 	// associated with the global subnet and return them individually. Changing
 	// the current logic requires reworking the UI.
-	for _, sn := range dbSubnets {
-		pools := []string{}
-		for _, poolDetails := range sn.AddressPools {
-			pool := poolDetails.LowerBound + "-" + poolDetails.UpperBound
-			pools = append(pools, pool)
-		}
-		var sharedNetworkName string
-		if sn.SharedNetwork != nil {
-			sharedNetworkName = sn.SharedNetwork.Name
-		}
-
-		for _, ls := range sn.LocalSubnets {
-			subnet := &models.Subnet{
-				AppID:          ls.App.ID,
-				ID:             ls.LocalSubnetID,
-				Pools:          pools,
-				Subnet:         sn.Prefix,
-				SharedNetwork:  sharedNetworkName,
-				MachineAddress: fmt.Sprintf("%s:%d", ls.App.CtrlAddress, ls.App.CtrlPort),
-				ClientClass:    sn.ClientClass,
-			}
+	for _, snTmp := range dbSubnets {
+		sn := snTmp
+		for _, lsn := range sn.LocalSubnets {
+			lsn.Subnet = &sn
+			subnet := subnetToRestAPI(lsn)
 			subnets.Items = append(subnets.Items, subnet)
 		}
 	}
@@ -132,14 +142,19 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 		if len(net.Subnets) == 0 || len(net.Subnets[0].LocalSubnets) == 0 {
 			continue
 		}
-		subnets := []string{}
+		subnets := []*models.Subnet{}
 		// Exclude the subnets that are not attached to any app. This shouldn't
 		// be the case but let's be safe.
-		for _, subnet := range net.Subnets {
-			if len(subnet.LocalSubnets) == 0 {
+		for _, snTmp := range net.Subnets {
+			sn := snTmp
+			if len(sn.LocalSubnets) == 0 {
 				continue
 			}
-			subnets = append(subnets, subnet.Prefix)
+			for _, lsn := range sn.LocalSubnets {
+				lsn.Subnet = &sn
+				subnet := subnetToRestAPI(lsn)
+				subnets = append(subnets, subnet)
+			}
 		}
 		// Create shared network and use the app id of the first subnet found.
 		sharedNetwork := &models.SharedNetwork{

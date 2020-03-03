@@ -1,3 +1,11 @@
+* 36 [func] godfryd
+
+    Added presenting subnet utilization and subnet stats
+    (like assigned-addresses) on subnet and shared-network pages in UI.
+    Stats are fetched from Kea apps periodically. On UI they have to
+    be refreshed manually.
+    (Gitlab #178)
+
 * 35 [func] marcin
 
     Corrected a bug in the Stork server which caused failures when

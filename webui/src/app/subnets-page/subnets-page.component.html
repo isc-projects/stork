@@ -38,11 +38,17 @@
         >
             <ng-template pTemplate="header">
                 <tr>
-                    <th style="width: 5rem;">Subnet ID</th>
-                    <th style="width: 11rem;">Subnet</th>
-                    <th>Pools</th>
-                    <th style="width: 6rem;">Shared Network</th>
-                    <th style="width: 14rem;">AppID @ Machine</th>
+                    <th rowspan="2" style="width: 5rem;">Subnet ID</th>
+                    <th rowspan="2" style="width: 11rem;">Subnet</th>
+                    <th colspan="3" style="width: 15rem;">Addresses</th>
+                    <th rowspan="2">Pools</th>
+                    <th rowspan="2" style="width: 6rem;">Shared Network</th>
+                    <th rowspan="2" style="width: 14rem;">AppID @ Machine</th>
+                </tr>
+                <tr>
+                    <th style="width: 5rem;">Total</th>
+                    <th style="width: 5rem;">Assigned</th>
+                    <th style="width: 5rem;">Used %</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-sn>
@@ -51,15 +57,38 @@
                         {{ sn.id }}
                     </td>
                     <td>
-                        {{ sn.subnet }}
+                        <app-subnet-bar [subnet]="sn"></app-subnet-bar>
                     </td>
                     <td>
-                        <span
+                        <span pTooltip="{{ getTotalAddresses(sn).toLocaleString('en-US') }}">{{
+                            humanCount(getTotalAddresses(sn))
+                        }}</span>
+                    </td>
+                    <td>
+                        <span pTooltip="{{ getAssignedAddresses(sn).toLocaleString('en-US') }}">{{
+                            humanCount(getAssignedAddresses(sn))
+                        }}</span>
+                    </td>
+                    <td>
+                        {{ sn.stats ? getSubnetUtilization(sn) + '%' : '?' }}
+                        <i
+                            *ngIf="getSubnetUtilization(sn) > 80 && getSubnetUtilization(sn) <= 90"
+                            class="pi pi-exclamation-triangle"
+                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange;"
+                        ></i>
+                        <i
+                            *ngIf="getSubnetUtilization(sn) > 90"
+                            class="pi pi-exclamation-circle"
+                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: red;"
+                        ></i>
+                    </td>
+                    <td>
+                        <div
                             *ngFor="let p of sn.pools"
-                            style="border-radius: 4px; background-color: #ddd; padding: 0 4px; margin-right: 5px;"
+                            style="display: inline-block; border-radius: 4px; background-color: #ddd; padding: 0 4px; margin: 0 4px 2px 0;"
                         >
                             {{ p }}
-                        </span>
+                        </div>
                     </td>
                     <td>
                         {{ sn.sharedNetwork }}
