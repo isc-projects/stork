@@ -51,18 +51,20 @@ export function durationToString(duration) {
  * Get subnet utilization in % based on stats.
  */
 export function getSubnetUtilization(subnet) {
+    let utilization = 0.0
     if (!subnet.stats) {
-        return 0
+        return utilization
     }
     if (subnet.subnet.includes('.')) {
         // DHCPv4 stats
-        return (100 * subnet.stats['assigned-addreses']) / subnet.stats['total-addreses']
+        utilization = (100 * subnet.stats['assigned-addreses']) / subnet.stats['total-addreses']
     } else {
         // DHCPv6 stats
         let total = subnet.stats['total-nas']
         if (total === -1) {
             total = Number.MAX_SAFE_INTEGER
         }
-        return (100 * subnet.stats['assigned-nas']) / total
+        utilization = (100 * subnet.stats['assigned-nas']) / total
     }
+    return utilization.toFixed(0)
 }
