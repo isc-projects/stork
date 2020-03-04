@@ -67,12 +67,46 @@ func init() {
                   AND    access_point.port = app.ctrl_port
               );
 
+              -- Drop deprecated constraints and columns.
               ALTER TABLE app
                   DROP CONSTRAINT app_machine_id_ctrl_port_key;
+
+              ALTER TABLE app
+                  DROP COLUMN ctrl_address;
+
+              ALTER TABLE app
+                  DROP COLUMN ctrl_port;
+
+              ALTER TABLE app
+                  DROP COLUMN ctrl_key;
+
            `)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
+
+               -- Restore columns.
+               ALTER TABLE app
+                   ADD COLUMN ctrl_address TEXT DEFAULT 'localhost';
+
+               ALTER TABLE app
+                   ADD COLUMN ctrl_port INTEGER DEFAULT 0;
+
+               ALTER TABLE app
+                   ADD COLUMN ctrl_key TEXT DEFAULT '';
+
+               -- Restore data.
+               UPDATE app SET (ctrl_address, ctrl_port, ctrl_key) =
+                   (SELECT address, port, key
+                    FROM   access_point
+                    WHERE  access_point.app_id = app.id
+                    AND    access_point.type = 'control');
+
+               -- Restore CONSTRAINT app_machine_id_ctrl_port_key.
+               ALTER TABLE app
+                   ADD CONSTRAINT app_machine_id_ctrl_port_key UNIQUE (machine_id, ctrl_port);
+
+               -- Drop created tables and types.
                DROP TABLE IF EXISTS access_point;
                DROP TYPE IF EXISTS ACCESSPOINTTYPE;
            `)
