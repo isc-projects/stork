@@ -44,7 +44,11 @@ export class SubnetBarComponent {
                 // DHCPv6 stats
                 // NAs
                 if (stats['total-nas'] !== undefined) {
-                    lines.push('Total NAs: ' + this._subnet.stats['total-nas'].toLocaleString('en-US'))
+                    let total = this._subnet.stats['total-nas']
+                    if (total === -1) {
+                        total = Number.MAX_SAFE_INTEGER
+                    }
+                    lines.push('Total NAs: ' + total.toLocaleString('en-US'))
                 }
                 if (stats['assigned-nas'] !== undefined) {
                     lines.push('Assigned NAs: ' + this._subnet.stats['assigned-nas'].toLocaleString('en-US'))
@@ -54,7 +58,11 @@ export class SubnetBarComponent {
                 }
                 // PDs
                 if (stats['total-pds'] !== undefined) {
-                    lines.push('Total PDs: ' + this._subnet.stats['total-pds'].toLocaleString('en-US'))
+                    let total = this._subnet.stats['total-pds']
+                    if (total === -1) {
+                        total = Number.MAX_SAFE_INTEGER
+                    }
+                    lines.push('Total PDs: ' + total.toLocaleString('en-US'))
                 }
                 if (stats['assigned-pds'] !== undefined) {
                     lines.push('Assigned PDs: ' + this._subnet.stats['assigned-pds'].toLocaleString('en-US'))

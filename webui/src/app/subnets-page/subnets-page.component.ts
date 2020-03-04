@@ -95,7 +95,11 @@ export class SubnetsPageComponent implements OnInit {
                 return subnet.stats['total-addreses']
             } else {
                 // DHCPv6 stats
-                return subnet.stats['total-nas']
+                let total = subnet.stats['total-nas']
+                if (total === -1) {
+                    total = Number.MAX_SAFE_INTEGER
+                }
+                return total
             }
         } else {
             return '?'

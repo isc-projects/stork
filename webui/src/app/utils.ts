@@ -59,6 +59,10 @@ export function getSubnetUtilization(subnet) {
         return (100 * subnet.stats['assigned-addreses']) / subnet.stats['total-addreses']
     } else {
         // DHCPv6 stats
-        return (100 * subnet.stats['assigned-nas']) / subnet.stats['total-nas']
+        let total = subnet.stats['total-nas']
+        if (total === -1) {
+            total = Number.MAX_SAFE_INTEGER
+        }
+        return (100 * subnet.stats['assigned-nas']) / total
     }
 }
