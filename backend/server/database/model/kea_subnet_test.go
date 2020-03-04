@@ -254,7 +254,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	// Get all subnets.
 	subnets, total, err := GetSubnetsByPage(db, 0, 10, 0, 0, nil)
 	require.NoError(t, err)
-	require.Equal(t, int64(7), total)
+	require.EqualValues(t, 7, total)
 	require.Len(t, subnets, 7)
 
 	localSubnetIDs := []int64{}
@@ -282,7 +282,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	// Get subnets from app a4
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, a4.ID, 0, nil)
 	require.NoError(t, err)
-	require.Equal(t, int64(3), total)
+	require.EqualValues(t, 3, total)
 	require.Len(t, subnets, 3)
 	for _, s := range subnets {
 		require.Len(t, s.LocalSubnets, 1)
@@ -299,7 +299,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	// Get subnets from app a46.
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 0, nil)
 	require.NoError(t, err)
-	require.Equal(t, int64(2), total)
+	require.EqualValues(t, 2, total)
 	require.Len(t, subnets, 2)
 	for _, s := range subnets {
 		require.Len(t, s.LocalSubnets, 1)
@@ -310,7 +310,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	// Get IPv4 subnets
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 4, nil)
 	require.NoError(t, err)
-	require.Equal(t, int64(4), total)
+	require.EqualValues(t, 4, total)
 	require.Len(t, subnets, 4)
 	for _, s := range subnets {
 		require.Len(t, s.LocalSubnets, 1)
@@ -322,7 +322,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	// Get IPv4 subnets
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 6, nil)
 	require.NoError(t, err)
-	require.Equal(t, int64(3), total)
+	require.EqualValues(t, 3, total)
 	require.Len(t, subnets, 3)
 	for _, s := range subnets {
 		require.Len(t, s.LocalSubnets, 1)
@@ -334,7 +334,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	// Get IPv4 subnets for app a4
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, a4.ID, 4, nil)
 	require.NoError(t, err)
-	require.Equal(t, int64(3), total)
+	require.EqualValues(t, 3, total)
 	require.Len(t, subnets, 3)
 	for _, s := range subnets {
 		require.Len(t, s.LocalSubnets, 1)
@@ -377,7 +377,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	text = "200"
 	subnets, total, err = GetSubnetsByPage(db, 0, 10, a46.ID, 4, &text)
 	require.NoError(t, err)
-	require.Equal(t, int64(1), total)
+	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
 	require.Len(t, subnets[0].LocalSubnets, 1)
 	require.EqualValues(t, a46.ID, subnets[0].LocalSubnets[0].AppID)

@@ -378,7 +378,7 @@ func TestGetAppLocalSubnets(t *testing.T) {
 	subnets, err := GetAppLocalSubnets(db, apps[0].ID)
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
-	require.Equal(t, int64(123), subnets[0].LocalSubnetID)
+	require.EqualValues(t, 123, subnets[0].LocalSubnetID)
 	require.NotNil(t, subnets[0].Subnet)
 	require.Equal(t, subnet.ID, subnets[0].Subnet.ID)
 }
@@ -428,7 +428,7 @@ func TestUpdateStats(t *testing.T) {
 	require.NotZero(t, lsn.StatsCollectedAt)
 	require.NotEmpty(t, lsn.Stats)
 	require.Contains(t, lsn.Stats, "hakuna-matata")
-	require.Equal(t, float64(123), lsn.Stats["hakuna-matata"])
+	require.EqualValues(t, 123, lsn.Stats["hakuna-matata"])
 }
 
 // Test that global shared networks and subnet instances are committed

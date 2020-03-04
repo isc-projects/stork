@@ -318,7 +318,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	pt := app.AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "localhost", pt.Address)
-	require.Equal(t, int64(1234), pt.Port)
+	require.EqualValues(t, 1234, pt.Port)
 	require.Empty(t, pt.Key)
 
 	// test GetAccessPoint
@@ -327,7 +327,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "localhost", pt.Address)
-	require.Equal(t, int64(1234), pt.Port)
+	require.EqualValues(t, 1234, pt.Port)
 	require.Empty(t, pt.Key)
 	// bad access point type
 	pt, err = app.GetAccessPoint("foobar")
@@ -438,7 +438,7 @@ func TestGetAppByID(t *testing.T) {
 	// Machine is set.
 	require.Equal(t, m.ID, app.Machine.ID)
 	require.Equal(t, "localhost", app.Machine.Address)
-	require.Equal(t, int64(8080), app.Machine.AgentPort)
+	require.EqualValues(t, 8080, app.Machine.AgentPort)
 	// Check access points.
 	require.Equal(t, 2, len(app.AccessPoints))
 
@@ -447,13 +447,13 @@ func TestGetAppByID(t *testing.T) {
 	// The control address is a special case.
 	// If it is not specified it should be localhost.
 	require.Equal(t, "localhost", pt.Address)
-	require.Equal(t, int64(4444), pt.Port)
+	require.EqualValues(t, 4444, pt.Port)
 	require.Empty(t, pt.Key)
 
 	pt = app.AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, pt.Type)
 	require.Equal(t, "10.0.0.2", pt.Address)
-	require.Equal(t, int64(5555), pt.Port)
+	require.EqualValues(t, 5555, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
 
 	// test GetAccessPoint
@@ -462,7 +462,7 @@ func TestGetAppByID(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "localhost", pt.Address)
-	require.Equal(t, int64(4444), pt.Port)
+	require.EqualValues(t, 4444, pt.Port)
 	require.Empty(t, pt.Key)
 
 	pt, err = app.GetAccessPoint(AccessPointStatistics)
@@ -470,7 +470,7 @@ func TestGetAppByID(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, AccessPointStatistics, pt.Type)
 	require.Equal(t, "10.0.0.2", pt.Address)
-	require.Equal(t, int64(5555), pt.Port)
+	require.EqualValues(t, 5555, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
 }
 
@@ -522,32 +522,32 @@ func TestGetAppsByPage(t *testing.T) {
 	apps, total, err := GetAppsByPage(db, 0, 10, "", "")
 	require.NoError(t, err)
 	require.Len(t, apps, 2)
-	require.Equal(t, int64(2), total)
+	require.EqualValues(t, 2, total)
 
 	// get kea apps
 	apps, total, err = GetAppsByPage(db, 0, 10, "", AppTypeKea)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
-	require.Equal(t, int64(1), total)
+	require.EqualValues(t, 1, total)
 	require.Equal(t, AppTypeKea, apps[0].Type)
 	require.Equal(t, 1, len(apps[0].AccessPoints))
 	pt := apps[0].AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "localhost", pt.Address)
-	require.Equal(t, int64(1234), pt.Port)
+	require.EqualValues(t, 1234, pt.Port)
 	require.Empty(t, pt.Key)
 
 	// get bind apps
 	apps, total, err = GetAppsByPage(db, 0, 10, "", AppTypeBind9)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
-	require.Equal(t, int64(1), total)
+	require.EqualValues(t, 1, total)
 	require.Equal(t, AppTypeBind9, apps[0].Type)
 	require.Equal(t, 1, len(apps[0].AccessPoints))
 	pt = apps[0].AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "localhost", pt.Address)
-	require.Equal(t, int64(4321), pt.Port)
+	require.EqualValues(t, 4321, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
 }
 
@@ -725,7 +725,7 @@ func TestAfterScanBind(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, aBind.Details)
 	require.Equal(t, "named", aBind.Details.(AppBind9).Daemon.Name)
-	require.Equal(t, int32(123), aBind.Details.(AppBind9).Daemon.Pid)
+	require.EqualValues(t, 123, aBind.Details.(AppBind9).Daemon.Pid)
 }
 
 // Test that local subnet id of the Kea subnet can be extracted.

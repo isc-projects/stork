@@ -16,11 +16,11 @@ func TestHostWithPortURL(t *testing.T) {
 func TestParseURL(t *testing.T) {
 	host, port := ParseURL("https://xyz:8080/")
 	require.Equal(t, "xyz", host)
-	require.Equal(t, int64(8080), port)
+	require.EqualValues(t, 8080, port)
 
 	host, port = ParseURL("https://[2001:db8:1::]:8080")
 	require.Equal(t, "2001:db8:1::", host)
-	require.Equal(t, int64(8080), port)
+	require.EqualValues(t, 8080, port)
 
 	host, port = ParseURL("http://host.example.org/")
 	require.Equal(t, "host.example.org", host)

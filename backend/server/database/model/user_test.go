@@ -253,8 +253,8 @@ func TestGetUsers(t *testing.T) {
 
 	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByID)
 	require.NoError(t, err)
-	require.Equal(t, 101, len(users))
-	require.Equal(t, int64(101), total)
+	require.EqualValues(t, 101, len(users))
+	require.EqualValues(t, 101, total)
 
 	var prevID int = 0
 	for _, u := range users {
@@ -273,8 +273,8 @@ func TestGetUsersSortByLoginEmail(t *testing.T) {
 
 	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByLoginEmail)
 	require.NoError(t, err)
-	require.Equal(t, 101, len(users))
-	require.Equal(t, int64(101), total)
+	require.EqualValues(t, 101, len(users))
+	require.EqualValues(t, 101, total)
 
 	prevLogin := ""
 	for _, u := range users {
@@ -293,9 +293,9 @@ func TestGetUsersPage(t *testing.T) {
 
 	users, total, err := GetUsers(db, 50, 10, SystemUserOrderByID)
 	require.NoError(t, err)
-	require.Equal(t, 10, len(users))
-	require.Equal(t, 51, users[0].ID)
-	require.Equal(t, int64(101), total)
+	require.EqualValues(t, 10, len(users))
+	require.EqualValues(t, 51, users[0].ID)
+	require.EqualValues(t, 101, total)
 
 	var prevID int = 0
 	for _, u := range users {
@@ -314,9 +314,9 @@ func TestGetUsersLastPage(t *testing.T) {
 
 	users, total, err := GetUsers(db, 90, 20, SystemUserOrderByID)
 	require.NoError(t, err)
-	require.Equal(t, 11, len(users))
-	require.Equal(t, 91, users[0].ID)
-	require.Equal(t, int64(101), total)
+	require.EqualValues(t, 11, len(users))
+	require.EqualValues(t, 91, users[0].ID)
+	require.EqualValues(t, 101, total)
 
 	var prevID int = 0
 	for _, u := range users {
@@ -335,7 +335,7 @@ func TestGetUserByID(t *testing.T) {
 
 	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByID)
 	require.NoError(t, err)
-	require.Equal(t, int64(101), total)
+	require.EqualValues(t, 101, total)
 
 	user, err := GetUserByID(db, users[0].ID)
 	require.NoError(t, err)

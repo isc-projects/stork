@@ -127,7 +127,7 @@ func TestGetState(t *testing.T) {
 	point := keaApp.AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "1.2.3.1", point.Address)
-	require.Equal(t, int64(1234), point.Port)
+	require.EqualValues(t, 1234, point.Port)
 	require.Empty(t, point.Key)
 
 	bind9App := rsp.Apps[1]
@@ -136,12 +136,12 @@ func TestGetState(t *testing.T) {
 	point = bind9App.AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "2.3.4.4", point.Address)
-	require.Equal(t, int64(2345), point.Port)
+	require.EqualValues(t, 2345, point.Port)
 	require.Equal(t, "abcd", point.Key)
 	point = bind9App.AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "2.3.4.5", point.Address)
-	require.Equal(t, int64(2346), point.Port)
+	require.EqualValues(t, 2346, point.Port)
 	require.Empty(t, point.Key)
 }
 

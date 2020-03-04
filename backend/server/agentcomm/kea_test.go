@@ -228,7 +228,7 @@ func TestUnmarshalCustomKeaResponse(t *testing.T) {
 	require.Equal(t, 1, len(list))
 	require.Equal(t, 0, list[0].Result)
 	require.Equal(t, "command successful", list[0].Text)
-	require.Equal(t, float64(1), list[0].Arguments.Subnet.SubnetID)
+	require.EqualValues(t, 1, list[0].Arguments.Subnet.SubnetID)
 	require.Equal(t, "192.0.2.0/24", list[0].Arguments.Subnet.Prefix)
 }
 

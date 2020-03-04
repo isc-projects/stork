@@ -29,7 +29,7 @@ func TestGetSubnets(t *testing.T) {
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
 	okRsp := rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 0)
-	require.Equal(t, int64(0), okRsp.Payload.Total)
+	require.EqualValues(t, 0, okRsp.Payload.Total)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -213,7 +213,7 @@ func TestGetSubnets(t *testing.T) {
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 5)
-	require.Equal(t, int64(5), okRsp.Payload.Total)
+	require.EqualValues(t, 5, okRsp.Payload.Total)
 	for _, sn := range okRsp.Payload.Items {
 		switch sn.ID {
 		case 1:
@@ -235,9 +235,9 @@ func TestGetSubnets(t *testing.T) {
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 1)
-	require.Equal(t, int64(1), okRsp.Payload.Total)
+	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[0].AppID)
-	require.Equal(t, int64(1), okRsp.Payload.Items[0].ID)
+	require.EqualValues(t, 1, okRsp.Payload.Items[0].ID)
 
 	// get subnets from app a46
 	params = dhcp.GetSubnetsParams{
@@ -247,7 +247,7 @@ func TestGetSubnets(t *testing.T) {
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 3)
-	require.Equal(t, int64(3), okRsp.Payload.Total)
+	require.EqualValues(t, 3, okRsp.Payload.Total)
 	// checking if returned subnet-ids have expected values
 	require.ElementsMatch(t, []int64{3, 4, 21}, []int64{okRsp.Payload.Items[0].ID, okRsp.Payload.Items[1].ID, okRsp.Payload.Items[2].ID})
 
@@ -260,7 +260,7 @@ func TestGetSubnets(t *testing.T) {
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 2)
-	require.Equal(t, int64(2), okRsp.Payload.Total)
+	require.EqualValues(t, 2, okRsp.Payload.Total)
 	// checking if returned subnet-ids have expected values
 	require.True(t, (okRsp.Payload.Items[0].ID == 1 && okRsp.Payload.Items[1].ID == 3) ||
 		(okRsp.Payload.Items[0].ID == 3 && okRsp.Payload.Items[1].ID == 1))
@@ -274,7 +274,7 @@ func TestGetSubnets(t *testing.T) {
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 3)
-	require.Equal(t, int64(3), okRsp.Payload.Total)
+	require.EqualValues(t, 3, okRsp.Payload.Total)
 	// checking if returned subnet-ids have expected values
 	require.ElementsMatch(t, []int64{2, 4, 21}, []int64{okRsp.Payload.Items[0].ID, okRsp.Payload.Items[1].ID, okRsp.Payload.Items[2].ID})
 
@@ -287,10 +287,10 @@ func TestGetSubnets(t *testing.T) {
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 1)
-	require.Equal(t, int64(1), okRsp.Payload.Total)
+	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Equal(t, a46.ID, okRsp.Payload.Items[0].AppID)
 	// checking if returned subnet-ids have expected values
-	require.Equal(t, int64(3), okRsp.Payload.Items[0].ID)
+	require.EqualValues(t, 3, okRsp.Payload.Items[0].ID)
 
 	// get subnets by text '0.150-192.168'
 	text = "0.150-192.168"
@@ -301,10 +301,10 @@ func TestGetSubnets(t *testing.T) {
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 1)
-	require.Equal(t, int64(1), okRsp.Payload.Total)
+	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[0].AppID)
 	// checking if returned subnet-ids have expected values
-	require.Equal(t, int64(1), okRsp.Payload.Items[0].ID)
+	require.EqualValues(t, 1, okRsp.Payload.Items[0].ID)
 }
 
 // Check getting shared networks via rest api functions.
@@ -324,7 +324,7 @@ func TestGetSharedNetworks(t *testing.T) {
 	require.IsType(t, &dhcp.GetSharedNetworksOK{}, rsp)
 	okRsp := rsp.(*dhcp.GetSharedNetworksOK)
 	require.Len(t, okRsp.Payload.Items, 0)
-	require.Equal(t, int64(0), okRsp.Payload.Total)
+	require.EqualValues(t, 0, okRsp.Payload.Total)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -454,7 +454,7 @@ func TestGetSharedNetworks(t *testing.T) {
 	require.IsType(t, &dhcp.GetSharedNetworksOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSharedNetworksOK)
 	require.Len(t, okRsp.Payload.Items, 3)
-	require.Equal(t, int64(3), okRsp.Payload.Total)
+	require.EqualValues(t, 3, okRsp.Payload.Total)
 	for _, net := range okRsp.Payload.Items {
 		require.Contains(t, []string{"frog", "mouse", "fox"}, net.Name)
 		switch net.Name {
@@ -475,7 +475,7 @@ func TestGetSharedNetworks(t *testing.T) {
 	require.IsType(t, &dhcp.GetSharedNetworksOK{}, rsp)
 	okRsp = rsp.(*dhcp.GetSharedNetworksOK)
 	require.Len(t, okRsp.Payload.Items, 2)
-	require.Equal(t, int64(2), okRsp.Payload.Total)
+	require.EqualValues(t, 2, okRsp.Payload.Total)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[0].AppID)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[1].AppID)
 	require.ElementsMatch(t, []string{"mouse", "frog"}, []string{okRsp.Payload.Items[0].Name, okRsp.Payload.Items[1].Name})

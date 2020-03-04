@@ -235,8 +235,8 @@ func TestGetUsers(t *testing.T) {
 	rsp := rapi.GetUsers(ctx, params)
 	require.IsType(t, &users.GetUsersOK{}, rsp)
 	okRsp := rsp.(*users.GetUsersOK)
-	require.Equal(t, int64(2), okRsp.Payload.Total) // we expect 2 users (admin and john doe)
-	require.Equal(t, 2, len(okRsp.Payload.Items))   // make sure there's entry with 2 users
+	require.EqualValues(t, 2, okRsp.Payload.Total) // we expect 2 users (admin and john doe)
+	require.Equal(t, 2, len(okRsp.Payload.Items))  // make sure there's entry with 2 users
 
 	// Check the default user (admin)
 	require.Equal(t, "admin", *okRsp.Payload.Items[0].Login)

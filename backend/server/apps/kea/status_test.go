@@ -102,9 +102,9 @@ func TestGetDHCPStatus(t *testing.T) {
 	status := appStatus[0]
 
 	// Common fields must be always present.
-	require.Equal(t, int64(1234), status.Pid)
-	require.Equal(t, int64(3024), status.Uptime)
-	require.Equal(t, int64(1111), status.Reload)
+	require.EqualValues(t, 1234, status.Pid)
+	require.EqualValues(t, 3024, status.Uptime)
+	require.EqualValues(t, 1111, status.Reload)
 	require.Equal(t, "dhcp4", status.Daemon)
 
 	// HA status should have been returned.
@@ -123,7 +123,7 @@ func TestGetDHCPStatus(t *testing.T) {
 	require.Equal(t, 1, len(remote.LastScopes))
 	require.Contains(t, remote.LastScopes, "server2")
 	require.Equal(t, "load-balancing", remote.LastState)
-	require.Equal(t, int64(10), remote.Age)
+	require.EqualValues(t, 10, remote.Age)
 	require.True(t, remote.InTouch)
 }
 
@@ -151,9 +151,9 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 	status := appStatus[0]
 
 	// Common fields must be always present.
-	require.Equal(t, int64(1234), status.Pid)
-	require.Equal(t, int64(3024), status.Uptime)
-	require.Equal(t, int64(1111), status.Reload)
+	require.EqualValues(t, 1234, status.Pid)
+	require.EqualValues(t, 3024, status.Uptime)
+	require.EqualValues(t, 1111, status.Reload)
 
 	// This time, HA status should not be present.
 	require.Nil(t, status.HAServers)

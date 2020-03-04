@@ -150,7 +150,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	// no machines yet but try to get some
 	ms, total, err := GetMachinesByPage(db, 0, 10, "")
 	require.Nil(t, err)
-	require.Equal(t, int64(0), total)
+	require.EqualValues(t, 0, total)
 	require.Len(t, ms, 0)
 
 	// add 10 machines
@@ -184,25 +184,25 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	// get 10 machines from 0
 	ms, total, err = GetMachinesByPage(db, 0, 10, "")
 	require.Nil(t, err)
-	require.Equal(t, int64(10), total)
+	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 10)
 
 	// get 2 machines out of 10, from 0
 	ms, total, err = GetMachinesByPage(db, 0, 2, "")
 	require.Nil(t, err)
-	require.Equal(t, int64(10), total)
+	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 2)
 
 	// get 3 machines out of 10, from 2
 	ms, total, err = GetMachinesByPage(db, 2, 3, "")
 	require.Nil(t, err)
-	require.Equal(t, int64(10), total)
+	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 3)
 
 	// get 10 machines out of 10, from 0, but with '1' in contents; should return 2: 1 and 10
 	ms, total, err = GetMachinesByPage(db, 0, 10, "1")
 	require.Nil(t, err)
-	require.Equal(t, int64(2), total)
+	require.EqualValues(t, 2, total)
 	require.Len(t, ms, 2)
 
 	// check machine details
@@ -240,13 +240,13 @@ func TestGetMachinesByPageWithFiltering(t *testing.T) {
 	// filter machines by json fields: redhat
 	ms, total, err := GetMachinesByPage(db, 0, 10, "redhat")
 	require.Nil(t, err)
-	require.Equal(t, int64(1), total)
+	require.EqualValues(t, 1, total)
 	require.Len(t, ms, 1)
 
 	// filter machines by json fields: my
 	ms, total, err = GetMachinesByPage(db, 0, 10, "my")
 	require.Nil(t, err)
-	require.Equal(t, int64(1), total)
+	require.EqualValues(t, 1, total)
 	require.Len(t, ms, 1)
 }
 
@@ -337,6 +337,6 @@ func TestRefreshMachineFromDb(t *testing.T) {
 	err = RefreshMachineFromDb(db, m)
 	require.Nil(t, err)
 	require.Equal(t, "aaaa", m.State.Hostname)
-	require.Equal(t, int64(4), m.State.Cpus)
+	require.EqualValues(t, 4, m.State.Cpus)
 	require.Equal(t, "some error", m.Error)
 }

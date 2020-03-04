@@ -82,7 +82,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 	require.IsType(t, &services.GetMachineStateOK{}, rsp)
 	okRsp := rsp.(*services.GetMachineStateOK)
 	require.Equal(t, "localhost", *okRsp.Payload.Address)
-	require.Equal(t, int64(8080), okRsp.Payload.AgentPort)
+	require.EqualValues(t, 8080, okRsp.Payload.AgentPort)
 	require.Less(t, int64(0), okRsp.Payload.Memory)
 	require.Less(t, int64(0), okRsp.Payload.Cpus)
 	require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
@@ -293,7 +293,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineOK{}, rsp)
 	okRsp := rsp.(*services.CreateMachineOK)
 	require.Equal(t, addr, *okRsp.Payload.Address)
-	require.Equal(t, int64(8080), okRsp.Payload.AgentPort)
+	require.EqualValues(t, 8080, okRsp.Payload.AgentPort)
 	require.Less(t, int64(0), okRsp.Payload.Memory)
 	require.Less(t, int64(0), okRsp.Payload.Cpus)
 	require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
@@ -317,7 +317,7 @@ func TestGetMachines(t *testing.T) {
 
 	rsp := rapi.GetMachines(ctx, params)
 	ms := rsp.(*services.GetMachinesOK).Payload
-	require.Equal(t, ms.Total, int64(0))
+	require.EqualValues(t, ms.Total, 0)
 	//require.Greater(t, ms.Items, )
 }
 
@@ -676,7 +676,7 @@ func TestRestGetApps(t *testing.T) {
 	rsp := rapi.GetApps(ctx, params)
 	require.IsType(t, &services.GetAppsOK{}, rsp)
 	okRsp := rsp.(*services.GetAppsOK)
-	require.Equal(t, int64(0), okRsp.Payload.Total)
+	require.EqualValues(t, 0, okRsp.Payload.Total)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -721,7 +721,7 @@ func TestRestGetApps(t *testing.T) {
 	rsp = rapi.GetApps(ctx, params)
 	require.IsType(t, &services.GetAppsOK{}, rsp)
 	okRsp = rsp.(*services.GetAppsOK)
-	require.Equal(t, int64(2), okRsp.Payload.Total)
+	require.EqualValues(t, 2, okRsp.Payload.Total)
 }
 
 // Generates a response to the status-get command including two status
@@ -836,9 +836,9 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 
 	// Validate the status of the DHCPv4 pair.
 	status := statusList[0].Status.KeaStatus
-	require.Equal(t, int64(1234), status.Pid)
-	require.Equal(t, int64(1111), status.Reload)
-	require.Equal(t, int64(3024), status.Uptime)
+	require.EqualValues(t, 1234, status.Pid)
+	require.EqualValues(t, 1111, status.Reload)
+	require.EqualValues(t, 3024, status.Uptime)
 	require.NotNil(t, status.HaServers)
 
 	haStatus := status.HaServers
@@ -854,14 +854,14 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, 1, len(haStatus.RemoteServer.Scopes))
 	require.Contains(t, haStatus.RemoteServer.Scopes, "server2")
 	require.Equal(t, "load-balancing", haStatus.RemoteServer.State)
-	require.Equal(t, int64(10), haStatus.RemoteServer.Age)
+	require.EqualValues(t, 10, haStatus.RemoteServer.Age)
 	require.True(t, haStatus.RemoteServer.InTouch)
 
 	// Validate the status of the DHCPv6 pair.
 	status = statusList[1].Status.KeaStatus
-	require.Equal(t, int64(2345), status.Pid)
-	require.Equal(t, int64(2222), status.Reload)
-	require.Equal(t, int64(3333), status.Uptime)
+	require.EqualValues(t, 2345, status.Pid)
+	require.EqualValues(t, 2222, status.Reload)
+	require.EqualValues(t, 3333, status.Uptime)
 	require.NotNil(t, status.HaServers)
 
 	haStatus = status.HaServers
@@ -876,7 +876,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, "standby", haStatus.RemoteServer.Role)
 	require.Empty(t, haStatus.RemoteServer.Scopes)
 	require.Equal(t, "waiting", haStatus.RemoteServer.State)
-	require.Equal(t, int64(3), haStatus.RemoteServer.Age)
+	require.EqualValues(t, 3, haStatus.RemoteServer.Age)
 	require.True(t, haStatus.RemoteServer.InTouch)
 }
 
@@ -895,8 +895,8 @@ func TestRestGetAppsStats(t *testing.T) {
 	rsp := rapi.GetAppsStats(ctx, params)
 	require.IsType(t, &services.GetAppsStatsOK{}, rsp)
 	okRsp := rsp.(*services.GetAppsStatsOK)
-	require.Equal(t, int64(0), okRsp.Payload.KeaAppsTotal)
-	require.Equal(t, int64(0), okRsp.Payload.KeaAppsNotOk)
+	require.EqualValues(t, 0, okRsp.Payload.KeaAppsTotal)
+	require.EqualValues(t, 0, okRsp.Payload.KeaAppsNotOk)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -941,8 +941,8 @@ func TestRestGetAppsStats(t *testing.T) {
 	rsp = rapi.GetAppsStats(ctx, params)
 	require.IsType(t, &services.GetAppsStatsOK{}, rsp)
 	okRsp = rsp.(*services.GetAppsStatsOK)
-	require.Equal(t, int64(1), okRsp.Payload.KeaAppsTotal)
-	require.Equal(t, int64(0), okRsp.Payload.KeaAppsNotOk)
-	require.Equal(t, int64(1), okRsp.Payload.Bind9AppsTotal)
-	require.Equal(t, int64(1), okRsp.Payload.Bind9AppsNotOk)
+	require.EqualValues(t, 1, okRsp.Payload.KeaAppsTotal)
+	require.EqualValues(t, 0, okRsp.Payload.KeaAppsNotOk)
+	require.EqualValues(t, 1, okRsp.Payload.Bind9AppsTotal)
+	require.EqualValues(t, 1, okRsp.Payload.Bind9AppsNotOk)
 }

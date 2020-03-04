@@ -20,7 +20,7 @@ func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
 	// check reading from non existing file
 	path := "/tmp/non-exisiting-path"
 	address, port := getCtrlAddressFromKeaConfig(path)
-	require.Equal(t, int64(0), port)
+	require.EqualValues(t, 0, port)
 	require.Empty(t, address)
 }
 
@@ -43,7 +43,7 @@ func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 	// check reading from prepared file with bad content
 	// so 0 should be returned as port
 	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
-	require.Equal(t, int64(0), port)
+	require.EqualValues(t, 0, port)
 	require.Empty(t, address)
 }
 
@@ -65,7 +65,7 @@ func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
 
 	// check reading from proper file
 	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
-	require.Equal(t, int64(1234), port)
+	require.EqualValues(t, 1234, port)
 	require.Equal(t, "host.example.org", address)
 }
 
@@ -89,7 +89,7 @@ func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
 	// if CA is listening on 0.0.0.0 then 127.0.0.1 should be returned
 	// as it is not possible to connect to 0.0.0.0
 	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
-	require.Equal(t, int64(1234), port)
+	require.EqualValues(t, 1234, port)
 	require.Equal(t, "127.0.0.1", address)
 }
 
@@ -113,7 +113,7 @@ func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
 	// if CA is listening on :: then ::1 should be returned
 	// as it is not possible to connect to ::
 	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
-	require.Equal(t, int64(1234), port)
+	require.EqualValues(t, 1234, port)
 	require.Equal(t, "::1", address)
 }
 
@@ -161,12 +161,12 @@ func TestDetectBind9App(t *testing.T) {
 	point := app.AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
-	require.Equal(t, int64(5353), point.Port)
+	require.EqualValues(t, 5353, point.Port)
 	require.Equal(t, "hmac-md5:abcd", point.Key)
 	point = app.AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "127.0.0.80", point.Address)
-	require.Equal(t, int64(80), point.Port)
+	require.EqualValues(t, 80, point.Port)
 	require.Empty(t, point.Key)
 }
 
@@ -201,7 +201,7 @@ func TestDetectKeaApp(t *testing.T) {
 	ctrlPoint := app.AccessPoints[0]
 	require.Equal(t, AccessPointControl, ctrlPoint.Type)
 	require.Equal(t, "localhost", ctrlPoint.Address)
-	require.Equal(t, int64(45634), ctrlPoint.Port)
+	require.EqualValues(t, 45634, ctrlPoint.Port)
 	require.Empty(t, ctrlPoint.Key)
 }
 
@@ -227,7 +227,7 @@ func TestGetAccessPoint(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
-	require.Equal(t, int64(5353), point.Port)
+	require.EqualValues(t, 5353, point.Port)
 	require.Equal(t, "hmac-md5:abcd", point.Key)
 
 	point, err = getAccessPoint(bind9App, AccessPointStatistics)
@@ -235,7 +235,7 @@ func TestGetAccessPoint(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "127.0.0.80", point.Address)
-	require.Equal(t, int64(80), point.Port)
+	require.EqualValues(t, 80, point.Port)
 	require.Empty(t, point.Key)
 
 	// test get kea access points
@@ -244,7 +244,7 @@ func TestGetAccessPoint(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "localhost", point.Address)
-	require.Equal(t, int64(45634), point.Port)
+	require.EqualValues(t, 45634, point.Port)
 	require.Empty(t, point.Key)
 
 	point, err = getAccessPoint(keaApp, AccessPointStatistics)

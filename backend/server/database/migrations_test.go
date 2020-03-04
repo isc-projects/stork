@@ -107,7 +107,7 @@ func TestInitMigrateToLatest(t *testing.T) {
 
 	o, n, err := MigrateToLatest(db)
 	require.NoError(t, err)
-	require.Equal(t, int64(0), o)
+	require.EqualValues(t, 0, o)
 	require.GreaterOrEqual(t, n, int64(14))
 }
 
