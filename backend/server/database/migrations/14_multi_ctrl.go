@@ -8,8 +8,12 @@ func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
              -- Access point type.
-             CREATE TYPE ACCESSPOINTTYPE AS ENUM
-                 ('control', 'statistics');
+             DO $$ BEGIN
+                 CREATE TYPE ACCESSPOINTTYPE AS ENUM
+                     ('control', 'statistics');
+             EXCEPTION
+                 WHEN duplicate_object THEN null;
+             END $$;
 
              -- This table holds application's access points.
              CREATE TABLE IF NOT EXISTS access_point (
@@ -31,7 +35,28 @@ func init() {
                      ON DELETE CASCADE
               );
 
-              -- Migrate the data.
+              -- Trigger function inserting control access point every time an
+              -- app created.
+              CREATE OR REPLACE FUNCTION update_machine_id()
+                  RETURNS trigger
+                  LANGUAGE 'plpgsql'
+                  AS $function$
+              BEGIN
+                  UPDATE app SET machine_id = NEW.machine_id WHERE id = NEW.app_id;
+                  RETURN NEW;
+              END;
+              $function$;
+
+              -- Trigger to insert control access point when an app is created.
+              DO $$ BEGIN
+                  CREATE TRIGGER trigger_update_machine_id
+                      BEFORE INSERT OR UPDATE ON access_point
+                          FOR EACH ROW EXECUTE PROCEDURE update_machine_id();
+              EXCEPTION
+                  WHEN duplicate_object THEN null;
+              END $$;
+
+              -- Migrate existing data.
               INSERT INTO access_point (app_id, machine_id, type, address, port, key)
               SELECT      id, machine_id, 'control', ctrl_address, ctrl_port, ctrl_key
               FROM        app
