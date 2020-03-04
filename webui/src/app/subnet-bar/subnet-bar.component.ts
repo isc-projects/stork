@@ -25,9 +25,9 @@ export class SubnetBarComponent {
         }
 
         if (util > 90) {
-            style['background-color'] = '#faa'
+            style['background-color'] = '#faa' // red-ish
         } else if (util > 80) {
-            style['background-color'] = '#ffcf76'
+            style['background-color'] = '#ffcf76' // orange-ish
         }
 
         this.style = style
