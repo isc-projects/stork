@@ -129,6 +129,8 @@ services:
       POSTGRES_USER: stork
       POSTGRES_PASSWORD: stork123
       POSTGRES_DB: stork
+    ports:
+      - "5678:5432"
 
   prometheus:
     image: prom/prometheus:v2.16.0
