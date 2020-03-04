@@ -57,8 +57,6 @@ func (sm *appMonitor) run() {
 
 		case <-time.After(detectionInterval):
 			// periodic detection
-			t1 := time.Now()
-			elapsed := t1.Sub(t0)
 			sm.detectApps()
 
 			// restore sleep time to initial one
