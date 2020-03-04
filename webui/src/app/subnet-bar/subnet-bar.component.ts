@@ -2,6 +2,10 @@ import { Component, Input } from '@angular/core'
 
 import { getSubnetUtilization, datetimeToLocal } from '../utils'
 
+/**
+ * Component that presents subnet as a bar with a sub-bar that shows utilizations in %.
+ * It also shows details in a tooltip.
+ */
 @Component({
     selector: 'app-subnet-bar',
     templateUrl: './subnet-bar.component.html',
