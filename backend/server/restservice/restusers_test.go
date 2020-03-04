@@ -236,7 +236,7 @@ func TestGetUsers(t *testing.T) {
 	require.IsType(t, &users.GetUsersOK{}, rsp)
 	okRsp := rsp.(*users.GetUsersOK)
 	require.EqualValues(t, 2, okRsp.Payload.Total) // we expect 2 users (admin and john doe)
-	require.Equal(t, 2, len(okRsp.Payload.Items))  // make sure there's entry with 2 users
+	require.Len(t, okRsp.Payload.Items, 2)         // make sure there's entry with 2 users
 
 	// Check the default user (admin)
 	require.Equal(t, "admin", *okRsp.Payload.Items[0].Login)
@@ -292,5 +292,5 @@ func TestGetUser(t *testing.T) {
 	require.Equal(t, user.Lastname, *okRsp.Payload.Lastname)
 
 	// TODO: check that the new user belongs to a group
-	// require.Equal(t, 1, len(okRsp.Payload.Groups))
+	// require.Len(t, okRsp.Payload.Groups, 1)
 }

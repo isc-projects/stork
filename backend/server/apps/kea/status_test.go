@@ -97,7 +97,7 @@ func TestGetDHCPStatus(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, appStatus)
 
-	require.Equal(t, 1, len(appStatus))
+	require.Len(t, appStatus, 1)
 
 	status := appStatus[0]
 
@@ -113,14 +113,14 @@ func TestGetDHCPStatus(t *testing.T) {
 	// Test HA status of the server receiving the command.
 	local := status.HAServers.Local
 	require.Equal(t, "primary", local.Role)
-	require.Equal(t, 1, len(local.Scopes))
+	require.Len(t, local.Scopes, 1)
 	require.Contains(t, local.Scopes, "server1")
 	require.Equal(t, "load-balancing", local.State)
 
 	// Test HA status of the partner.
 	remote := status.HAServers.Remote
 	require.Equal(t, "secondary", remote.Role)
-	require.Equal(t, 1, len(remote.LastScopes))
+	require.Len(t, remote.LastScopes, 1)
 	require.Contains(t, remote.LastScopes, "server2")
 	require.Equal(t, "load-balancing", remote.LastState)
 	require.EqualValues(t, 10, remote.Age)
@@ -146,7 +146,7 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, appStatus)
 
-	require.Equal(t, 1, len(appStatus))
+	require.Len(t, appStatus, 1)
 
 	status := appStatus[0]
 

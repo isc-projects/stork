@@ -120,10 +120,10 @@ func TestGetState(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, rsp.AgentVersion, stork.Version)
 	require.Equal(t, stork.Version, rsp.AgentVersion)
-	require.Equal(t, 2, len(rsp.Apps))
+	require.Len(t, rsp.Apps, 2)
 
 	keaApp := rsp.Apps[0]
-	require.Equal(t, 1, len(keaApp.AccessPoints))
+	require.Len(t, keaApp.AccessPoints, 1)
 	point := keaApp.AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "1.2.3.1", point.Address)
@@ -131,7 +131,7 @@ func TestGetState(t *testing.T) {
 	require.Empty(t, point.Key)
 
 	bind9App := rsp.Apps[1]
-	require.Equal(t, 2, len(bind9App.AccessPoints))
+	require.Len(t, bind9App.AccessPoints, 2)
 	// sorted by port
 	point = bind9App.AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
@@ -226,7 +226,7 @@ func TestForwardToKeaOverHTTPEmptyBody(t *testing.T) {
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.Len(t, rsp.KeaResponses, 1)
-	require.Equal(t, 0, len(rsp.KeaResponses[0].Response))
+	require.Len(t, rsp.KeaResponses[0].Response, 0)
 }
 
 // Test forwarding command when Kea is unavailable.
@@ -245,7 +245,7 @@ func TestForwardToKeaOverHTTPNoKea(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, rsp.KeaResponses, 1)
 	require.NotEqual(t, 0, rsp.KeaResponses[0].Status.Code)
-	require.Equal(t, 0, len(rsp.KeaResponses[0].Response))
+	require.Len(t, rsp.KeaResponses[0].Response, 0)
 }
 
 func TestForwardRndcCommandSuccess(t *testing.T) {

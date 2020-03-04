@@ -15,7 +15,7 @@ func TestGetGroups(t *testing.T) {
 	groups, err := GetGroups(db)
 	require.NoError(t, err)
 	// There are two predefined groups.
-	require.Equal(t, 2, len(groups))
+	require.Len(t, groups, 2)
 
 	// Groups are supposed to be ordered by id.
 	require.Equal(t, 1, groups[0].ID)

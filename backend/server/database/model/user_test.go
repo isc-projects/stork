@@ -253,7 +253,7 @@ func TestGetUsers(t *testing.T) {
 
 	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByID)
 	require.NoError(t, err)
-	require.EqualValues(t, 101, len(users))
+	require.Len(t, users, 101)
 	require.EqualValues(t, 101, total)
 
 	var prevID int = 0
@@ -273,7 +273,7 @@ func TestGetUsersSortByLoginEmail(t *testing.T) {
 
 	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByLoginEmail)
 	require.NoError(t, err)
-	require.EqualValues(t, 101, len(users))
+	require.Len(t, users, 101)
 	require.EqualValues(t, 101, total)
 
 	prevLogin := ""
@@ -293,7 +293,7 @@ func TestGetUsersPage(t *testing.T) {
 
 	users, total, err := GetUsers(db, 50, 10, SystemUserOrderByID)
 	require.NoError(t, err)
-	require.EqualValues(t, 10, len(users))
+	require.Len(t, users, 10)
 	require.EqualValues(t, 51, users[0].ID)
 	require.EqualValues(t, 101, total)
 
@@ -314,7 +314,7 @@ func TestGetUsersLastPage(t *testing.T) {
 
 	users, total, err := GetUsers(db, 90, 20, SystemUserOrderByID)
 	require.NoError(t, err)
-	require.EqualValues(t, 11, len(users))
+	require.Len(t, users, 11)
 	require.EqualValues(t, 91, users[0].ID)
 	require.EqualValues(t, 101, total)
 
@@ -383,7 +383,7 @@ func TestUserGroups(t *testing.T) {
 	require.NotNil(t, returned)
 	require.NoError(t, err)
 
-	require.Equal(t, 2, len(returned.Groups))
+	require.Len(t, returned.Groups, 2)
 	require.True(t, returned.InGroup(&SystemGroup{Name: "super-admin"}))
 	require.True(t, returned.InGroup(&SystemGroup{Name: "admin"}))
 
@@ -408,7 +408,7 @@ func TestUserGroups(t *testing.T) {
 	require.NoError(t, err)
 
 	// The groups should have been updated. One group should now be gone.
-	require.Equal(t, 1, len(returned.Groups))
+	require.Len(t, returned.Groups, 1)
 	require.False(t, returned.InGroup(&SystemGroup{Name: "super-admin"}))
 	require.True(t, returned.InGroup(&SystemGroup{Name: "admin"}))
 }
@@ -445,7 +445,7 @@ func TestAddToGroupByID(t *testing.T) {
 	require.NotNil(t, returned)
 	require.NoError(t, err)
 
-	require.Equal(t, 2, len(returned.Groups))
+	require.Len(t, returned.Groups, 2)
 	require.True(t, returned.InGroup(&SystemGroup{Name: "super-admin"}))
 	require.True(t, returned.InGroup(&SystemGroup{Name: "admin"}))
 

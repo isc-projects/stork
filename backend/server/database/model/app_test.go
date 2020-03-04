@@ -314,7 +314,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.Equal(t, m.ID, app.MachineID)
 	require.Equal(t, AppTypeKea, app.Type)
 	// check access point
-	require.Equal(t, 1, len(app.AccessPoints))
+	require.Len(t, app.AccessPoints, 1)
 	pt := app.AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "localhost", pt.Address)
@@ -440,7 +440,7 @@ func TestGetAppByID(t *testing.T) {
 	require.Equal(t, "localhost", app.Machine.Address)
 	require.EqualValues(t, 8080, app.Machine.AgentPort)
 	// Check access points.
-	require.Equal(t, 2, len(app.AccessPoints))
+	require.Len(t, app.AccessPoints, 2)
 
 	pt := app.AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
@@ -530,7 +530,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
 	require.Equal(t, AppTypeKea, apps[0].Type)
-	require.Equal(t, 1, len(apps[0].AccessPoints))
+	require.Len(t, apps[0].AccessPoints, 1)
 	pt := apps[0].AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "localhost", pt.Address)
@@ -543,7 +543,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
 	require.Equal(t, AppTypeBind9, apps[0].Type)
-	require.Equal(t, 1, len(apps[0].AccessPoints))
+	require.Len(t, apps[0].AccessPoints, 1)
 	pt = apps[0].AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "localhost", pt.Address)
@@ -570,7 +570,7 @@ func TestGetActiveDHCPMultiple(t *testing.T) {
 	}
 
 	daemons := a.GetActiveDHCPDeamonNames()
-	require.Equal(t, 2, len(daemons))
+	require.Len(t, daemons, 2)
 	require.Contains(t, daemons, "dhcp4")
 	require.Contains(t, daemons, "dhcp6")
 }
@@ -593,7 +593,7 @@ func TestGetActiveDHCPSingle(t *testing.T) {
 		},
 	}
 	daemons := a.GetActiveDHCPDeamonNames()
-	require.Equal(t, 1, len(daemons))
+	require.Len(t, daemons, 1)
 	require.NotContains(t, daemons, "dhcp4")
 	require.Contains(t, daemons, "dhcp6")
 }

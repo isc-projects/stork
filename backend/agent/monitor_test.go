@@ -157,7 +157,7 @@ func TestDetectBind9App(t *testing.T) {
 	app := detectBind9App([]string{"", tmpFile.Name()})
 	require.NotNil(t, app)
 	require.Equal(t, app.Type, AppTypeBind9)
-	require.Equal(t, 2, len(app.AccessPoints))
+	require.Len(t, app.AccessPoints, 2)
 	point := app.AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
@@ -197,7 +197,7 @@ func TestDetectKeaApp(t *testing.T) {
 	app := detectKeaApp([]string{"", tmpFile.Name()})
 	require.NotNil(t, app)
 	require.Equal(t, AppTypeKea, app.Type)
-	require.Equal(t, 1, len(app.AccessPoints))
+	require.Len(t, app.AccessPoints, 1)
 	ctrlPoint := app.AccessPoints[0]
 	require.Equal(t, AccessPointControl, ctrlPoint.Type)
 	require.Equal(t, "localhost", ctrlPoint.Address)

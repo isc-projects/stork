@@ -11,7 +11,7 @@ func TestNewKeaDaemonsEmpty(t *testing.T) {
 	daemons, err := NewKeaDaemons()
 	require.NoError(t, err)
 	require.NotNil(t, daemons)
-	require.Equal(t, 0, len(*daemons))
+	require.Len(t, *daemons, 0)
 }
 
 // Test that multiple unique daemons can be specified.
@@ -19,7 +19,7 @@ func TestNewKeaDaemonsMultiple(t *testing.T) {
 	daemons, err := NewKeaDaemons("dhcp4", "dhcp6", "dhcp-ddns")
 	require.NoError(t, err)
 	require.NotNil(t, daemons)
-	require.Equal(t, 3, len(*daemons))
+	require.Len(t, *daemons, 3)
 	require.True(t, daemons.Contains("dhcp4"))
 	require.True(t, daemons.Contains("dhcp6"))
 	require.True(t, daemons.Contains("dhcp-ddns"))
@@ -55,7 +55,7 @@ func TestNewKeaCommand(t *testing.T) {
 	require.NotNil(t, cmd.Arguments)
 
 	require.Equal(t, "values-set", cmd.Command)
-	require.Equal(t, 2, len(*cmd.Daemons))
+	require.Len(t, *cmd.Daemons, 2)
 	require.True(t, cmd.Daemons.Contains("dhcp4"))
 	require.True(t, cmd.Daemons.Contains("dhcp6"))
 	require.Contains(t, *cmd.Arguments, "value-a")
@@ -166,7 +166,7 @@ func TestUnmarshalKeaResponseList(t *testing.T) {
 	require.NotNil(t, list)
 
 	// There should be two responses encapsulated.
-	require.Equal(t, 2, len(list))
+	require.Len(t, list, 2)
 
 	// The first result value is 0.
 	require.Equal(t, 0, list[0].Result)
@@ -225,7 +225,7 @@ func TestUnmarshalCustomKeaResponse(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, list)
 
-	require.Equal(t, 1, len(list))
+	require.Len(t, list, 1)
 	require.Equal(t, 0, list[0].Result)
 	require.Equal(t, "command successful", list[0].Text)
 	require.EqualValues(t, 1, list[0].Arguments.Subnet.SubnetID)
@@ -256,7 +256,7 @@ func TestUnmarshalCustomKeaResponseNoArgs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, list)
 
-	require.Equal(t, 1, len(list))
+	require.Len(t, list, 1)
 	require.Equal(t, 0, list[0].Result)
 	require.Equal(t, "command successful", list[0].Text)
 }

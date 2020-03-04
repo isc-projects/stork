@@ -73,7 +73,7 @@ func TestMiddlewareNewSession(t *testing.T) {
 		require.Equal(t, user.Lastname, userSession.Lastname)
 		require.Equal(t, user.Name, userSession.Name)
 
-		require.Equal(t, 2, len(userSession.Groups))
+		require.Len(t, userSession.Groups, 2)
 		require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 5}))
 		require.True(t, userSession.InGroup(&dbmodel.SystemGroup{ID: 25}))
 	}

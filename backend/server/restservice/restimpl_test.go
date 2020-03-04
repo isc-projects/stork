@@ -830,7 +830,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 
 	// There should be two structures returned, one with a status of
 	// the DHCPv4 server and one with the status of the DHCPv6 server.
-	require.Equal(t, 2, len(okRsp.Payload.Items))
+	require.Len(t, okRsp.Payload.Items, 2)
 
 	statusList := okRsp.Payload.Items
 
@@ -846,12 +846,12 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.NotNil(t, haStatus.RemoteServer)
 
 	require.Equal(t, "primary", haStatus.LocalServer.Role)
-	require.Equal(t, 1, len(haStatus.LocalServer.Scopes))
+	require.Len(t, haStatus.LocalServer.Scopes, 1)
 	require.Contains(t, haStatus.LocalServer.Scopes, "server1")
 	require.Equal(t, "load-balancing", haStatus.LocalServer.State)
 
 	require.Equal(t, "secondary", haStatus.RemoteServer.Role)
-	require.Equal(t, 1, len(haStatus.RemoteServer.Scopes))
+	require.Len(t, haStatus.RemoteServer.Scopes, 1)
 	require.Contains(t, haStatus.RemoteServer.Scopes, "server2")
 	require.Equal(t, "load-balancing", haStatus.RemoteServer.State)
 	require.EqualValues(t, 10, haStatus.RemoteServer.Age)
@@ -869,7 +869,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.NotNil(t, haStatus.RemoteServer)
 
 	require.Equal(t, "primary", haStatus.LocalServer.Role)
-	require.Equal(t, 1, len(haStatus.LocalServer.Scopes))
+	require.Len(t, haStatus.LocalServer.Scopes, 1)
 	require.Contains(t, haStatus.LocalServer.Scopes, "server1")
 	require.Equal(t, "hot-standby", haStatus.LocalServer.State)
 
