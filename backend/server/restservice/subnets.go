@@ -14,7 +14,7 @@ import (
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 )
 
-func subnetToRestAPI(lsn *dbmodel.LocalSubnet) *models.Subnet {
+func localSubnetToRestAPI(lsn *dbmodel.LocalSubnet) *models.Subnet {
 	pools := []string{}
 	for _, poolDetails := range lsn.Subnet.AddressPools {
 		pool := poolDetails.LowerBound + "-" + poolDetails.UpperBound
@@ -86,7 +86,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 		sn := snTmp
 		for _, lsn := range sn.LocalSubnets {
 			lsn.Subnet = &sn
-			subnet := subnetToRestAPI(lsn)
+			subnet := localSubnetToRestAPI(lsn)
 			subnets.Items = append(subnets.Items, subnet)
 		}
 	}
@@ -152,7 +152,7 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 			}
 			for _, lsn := range sn.LocalSubnets {
 				lsn.Subnet = &sn
-				subnet := subnetToRestAPI(lsn)
+				subnet := localSubnetToRestAPI(lsn)
 				subnets = append(subnets, subnet)
 			}
 		}
