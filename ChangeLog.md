@@ -1,3 +1,11 @@
+* 35 [func] marcin
+
+    Corrected a bug in the Stork server which caused failures when
+    parsing prefix delegation pools from the Kea configurations.
+    The Server subsequently refused to monitor the Kea apps including
+    prefix delegation pools.
+    (Gitlab #179)
+
 * 34 [func] godfryd
 
     Added support for Prometheus & Grafana in the demo installation.
