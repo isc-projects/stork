@@ -76,6 +76,9 @@ export class SubnetsPageComponent implements OnInit {
     }
 
     humanCount(count) {
+        if (isNaN(count)) {
+            return count
+        }
         if (Math.abs(count) < 1000000) {
             return count.toLocaleString('en-US')
         }
@@ -86,6 +89,13 @@ export class SubnetsPageComponent implements OnInit {
             ++u
         } while (Math.abs(count) >= 1000 && u < units.length - 1)
         return count.toFixed(1) + ' ' + units[u]
+    }
+
+    tooltipCount(count) {
+        if (count === '?') {
+            return 'not data collected yet'
+        }
+        return count.toLocaleString('en-US')
     }
 
     getTotalAddresses(subnet) {
