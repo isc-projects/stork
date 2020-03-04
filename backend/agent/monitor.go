@@ -37,20 +37,36 @@ func NewAppMonitor() AppMonitor {
 }
 
 func (sm *appMonitor) run() {
-	const detectionInterval = 10 * time.Second
+	log.Printf("Started app monitor")
+	const initialDetectionInterval = 10 * time.Second
+	detectionInterval := initialDetectionInterval
 
 	for {
+		t0 := time.Now()
 		select {
 		case ret := <-sm.requests:
 			// process user request
 			ret <- sm.apps
 
+			// If sleeping in time.After below has been interrupted by user request served here,
+			// then reduce next sleep time by the amout of time that we already slept for.
+			detectionInterval = detectionInterval - time.Now().Sub(t0)
+			if detectionInterval < 0 {
+				detectionInterval = 0
+			}
+
 		case <-time.After(detectionInterval):
 			// periodic detection
+			t1 := time.Now()
+			elapsed := t1.Sub(t0)
 			sm.detectApps()
+
+			// restore sleep time to initial one
+			detectionInterval = initialDetectionInterval
 
 		case <-sm.quit:
 			// exit run
+			log.Printf("Stopped app monitor")
 			return
 		}
 	}
