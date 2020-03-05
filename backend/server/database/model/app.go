@@ -111,7 +111,7 @@ func addAppAccessPoints(tx *pg.Tx, app *App) (err error) {
 		point.AppID = app.ID
 		point.MachineID = app.MachineID
 
-		_, err := tx.Model(&point).OnConflict("DO NOTHING").Insert()
+		_, err := tx.Model(point).Insert()
 		if err != nil {
 			err = errors.Wrapf(err, "problem with adding new access point: %v", point)
 			return err
