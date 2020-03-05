@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core'
 
 import { DHCPService } from '../backend/api/api'
-import { getSubnetUtilization } from '../utils'
+import { humanCount } from '../utils'
+import { getTotalAddresses, getAssignedAddresses } from '../subnets'
 
 /**
  * Component for presenting shared networks in a table.
@@ -69,5 +70,44 @@ export class SharedNetworksPageComponent implements OnInit {
         if (this.filterText.length >= 3 || event.key === 'Enter') {
             networksTable.filter(this.filterText, 'text', 'equals')
         }
+    }
+
+    getTotalAddresses(network) {
+        let total = 0
+        for (const sn of network.subnets) {
+            if (sn.stats) {
+                total += getTotalAddresses(sn)
+            }
+        }
+        return total
+    }
+
+    getAssignedAddresses(network) {
+        let total = 0
+        for (const sn of network.subnets) {
+            if (sn.stats) {
+                total += getAssignedAddresses(sn)
+            }
+        }
+        return total
+    }
+
+    getNetworkUtilization(network) {
+        const utilization = (100 * this.getAssignedAddresses(network)) / this.getTotalAddresses(network)
+        return Math.floor(utilization)
+    }
+
+    tooltipCount(count) {
+        return count.toLocaleString('en-US')
+    }
+
+    humanCount(count) {
+        if (isNaN(count)) {
+            return count
+        }
+        if (Math.abs(count) < 1000000) {
+            return count.toLocaleString('en-US')
+        }
+        return humanCount(count)
     }
 }

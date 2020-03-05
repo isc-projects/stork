@@ -10,10 +10,11 @@
 * 36 [func] godfryd
 
     Added presenting IP addresses utilization within subnets and
-    subnet statistics, e.g. a number of assigned addresses, in the UI.
-    Statistics are fetched from the monitored Kea apps periodically and
-    can be manually refreshed in the UI.
-    (Gitlab #178)
+    subnet statistics, e.g. a number of assigned addresses, in the UI
+    (subnets and shared networks pages). Statistics are fetched
+    from the monitored Kea apps periodically and can be manually
+    refreshed in the UI.
+    (Gitlab #178, #185)
 
 * 35 [func] marcin
 

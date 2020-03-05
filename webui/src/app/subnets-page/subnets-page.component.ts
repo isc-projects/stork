@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core'
 
 import { DHCPService } from '../backend/api/api'
-import { getSubnetUtilization } from '../utils'
+import { humanCount } from '../utils'
+import { getSubnetUtilization, getTotalAddresses, getAssignedAddresses } from '../subnets'
 
 /**
  * Component for presenting DHCP subnets.
@@ -82,13 +83,7 @@ export class SubnetsPageComponent implements OnInit {
         if (Math.abs(count) < 1000000) {
             return count.toLocaleString('en-US')
         }
-        const units = ['k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
-        let u = -1
-        do {
-            count /= 1000
-            ++u
-        } while (Math.abs(count) >= 1000 && u < units.length - 1)
-        return count.toFixed(1) + ' ' + units[u]
+        return humanCount(count)
     }
 
     tooltipCount(count) {
@@ -100,17 +95,7 @@ export class SubnetsPageComponent implements OnInit {
 
     getTotalAddresses(subnet) {
         if (subnet.stats) {
-            if (subnet.subnet.includes('.')) {
-                // DHCPv4 stats
-                return subnet.stats['total-addreses']
-            } else {
-                // DHCPv6 stats
-                let total = subnet.stats['total-nas']
-                if (total === -1) {
-                    total = Number.MAX_SAFE_INTEGER
-                }
-                return total
-            }
+            return getTotalAddresses(subnet)
         } else {
             return '?'
         }
@@ -118,13 +103,7 @@ export class SubnetsPageComponent implements OnInit {
 
     getAssignedAddresses(subnet) {
         if (subnet.stats) {
-            if (subnet.subnet.includes('.')) {
-                // DHCPv4 stats
-                return subnet.stats['assigned-addreses']
-            } else {
-                // DHCPv6 stats
-                return subnet.stats['assigned-nas']
-            }
+            return getAssignedAddresses(subnet)
         } else {
             return '?'
         }

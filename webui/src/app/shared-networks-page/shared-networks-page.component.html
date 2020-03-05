@@ -38,15 +38,44 @@
         >
             <ng-template pTemplate="header">
                 <tr>
-                    <th style="width: 7rem;">Name</th>
-                    <th>Subnets</th>
-                    <th style="width: 14rem;">AppID @ Machine</th>
+                    <th rowspan="2" style="width: 7rem;">Name</th>
+                    <th colspan="3" style="width: 16rem;">Addresses</th>
+                    <th rowspan="2">Subnets</th>
+                    <th rowspan="2" style="width: 14rem;">AppID @ Machine</th>
+                </tr>
+                <tr>
+                    <th>Total</th>
+                    <th>Assigned</th>
+                    <th>Used %</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-net>
                 <tr>
                     <td>
                         {{ net.name }}
+                    </td>
+                    <td>
+                        <span pTooltip="{{ tooltipCount(getTotalAddresses(net)) }}">{{
+                            humanCount(getTotalAddresses(net))
+                        }}</span>
+                    </td>
+                    <td>
+                        <span pTooltip="{{ tooltipCount(getAssignedAddresses(net)) }}">{{
+                            humanCount(getAssignedAddresses(net))
+                        }}</span>
+                    </td>
+                    <td>
+                        {{ getNetworkUtilization(net) }} %
+                        <i
+                            *ngIf="getNetworkUtilization(net) > 80 && getNetworkUtilization(net) <= 90"
+                            class="pi pi-exclamation-triangle"
+                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange;"
+                        ></i>
+                        <i
+                            *ngIf="getNetworkUtilization(net) > 90"
+                            class="pi pi-exclamation-circle"
+                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: red;"
+                        ></i>
                     </td>
                     <td>
                         <app-subnet-bar *ngFor="let sn of net.subnets" [subnet]="sn"></app-subnet-bar>

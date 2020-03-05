@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core'
 
-import { getSubnetUtilization, datetimeToLocal } from '../utils'
+import { datetimeToLocal } from '../utils'
+import { getSubnetUtilization } from '../subnets'
 
 /**
  * Component that presents subnet as a bar with a sub-bar that shows utilizations in %.

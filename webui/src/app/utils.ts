@@ -48,23 +48,14 @@ export function durationToString(duration) {
 }
 
 /**
- * Get subnet utilization in % based on stats.
+ * Present count in human reabable way ie. big numbers get unit, e.g. 102 M instead of 102342543.
  */
-export function getSubnetUtilization(subnet) {
-    let utilization = 0.0
-    if (!subnet.stats) {
-        return utilization
-    }
-    if (subnet.subnet.includes('.')) {
-        // DHCPv4 stats
-        utilization = (100 * subnet.stats['assigned-addreses']) / subnet.stats['total-addreses']
-    } else {
-        // DHCPv6 stats
-        let total = subnet.stats['total-nas']
-        if (total === -1) {
-            total = Number.MAX_SAFE_INTEGER
-        }
-        utilization = (100 * subnet.stats['assigned-nas']) / total
-    }
-    return utilization.toFixed(0)
+export function humanCount(count) {
+    const units = ['k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
+    let u = -1
+    do {
+        count /= 1000
+        ++u
+    } while (Math.abs(count) >= 1000 && u < units.length - 1)
+    return count.toFixed(1) + ' ' + units[u]
 }
