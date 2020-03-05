@@ -191,7 +191,6 @@ func TestGetSharedNetworksByFamily(t *testing.T) {
 	require.Equal(t, "snake", returned[1].Name)
 }
 
-
 // Tests that the shared network information can be updated.
 func TestUpdateSharedNetwork(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
