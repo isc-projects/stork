@@ -68,7 +68,7 @@ func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int)
 		for _, n := range networkList {
 			if networkMap, ok := n.(map[string]interface{}); ok {
 				// Parse the configured network.
-				network, err := dbmodel.NewSharedNetworkFromKea(&networkMap)
+				network, err := dbmodel.NewSharedNetworkFromKea(&networkMap, family)
 				if err != nil {
 					log.Warnf("skipping invalid shared network: %v", err)
 					continue

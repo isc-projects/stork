@@ -432,13 +432,11 @@ func TestHAConfigParametersSet(t *testing.T) {
 func TestNewSharedNetworkFromKea(t *testing.T) {
 	rawNetwork := map[string]interface{}{
 		"name": "foo",
-		"subnet4": []map[string]interface{}{
+		"subnet6": []map[string]interface{}{
 			{
 				"id":     1,
 				"subnet": "2001:db8:2::/64",
 			},
-		},
-		"subnet6": []map[string]interface{}{
 			{
 				"id":     2,
 				"subnet": "2001:db8:1::/64",
@@ -446,7 +444,7 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 		},
 	}
 
-	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork)
+	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 6)
 	require.NoError(t, err)
 	require.NotNil(t, parsedNetwork)
 	require.Equal(t, "foo", parsedNetwork.Name)
@@ -457,6 +455,30 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 	require.Equal(t, "2001:db8:2::/64", parsedNetwork.Subnets[0].Prefix)
 	require.Zero(t, parsedNetwork.Subnets[1].ID)
 	require.Equal(t, "2001:db8:1::/64", parsedNetwork.Subnets[1].Prefix)
+}
+
+// Test that subnets within a shared network are verified to catch
+// those which family is not matching with the shared network family.
+func TestNewSharedNetworkFromKeaFamilyClash(t *testing.T) {
+	rawNetwork := map[string]interface{}{
+		"name": "foo",
+		"subnet4": []map[string]interface{}{
+			{
+				"id":     1,
+				"subnet": "192.0.2.0/24",
+			},
+		},
+		"subnet6": []map[string]interface{}{
+			{
+				"id":     2,
+				"subnet": "2001:db8:1::/64",
+			},
+		},
+	}
+
+	parsedNetwork, err := NewSharedNetworkFromKea(&rawNetwork, 4)
+	require.Error(t, err)
+	require.Nil(t, parsedNetwork)
 }
 
 // Verifies that the subnet instance can be created by parsing Kea

@@ -84,12 +84,14 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) (*Subnet, error) {
 }
 
 // Creates new shared network instance from the pointer to the map of interfaces.
-func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}) (*SharedNetwork, error) {
+// The family designates if the shared network contains IPv4 (if 4) or IPv6 (if 6)
+// subnets. If any of the subnets doesn't match this value, an error is returned.
+func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}, family int) (*SharedNetwork, error) {
 	var parsedSharedNetwork KeaConfigSharedNetwork
 	_ = mapstructure.Decode(rawNetwork, &parsedSharedNetwork)
 	newSharedNetwork := &SharedNetwork{
 		Name:   parsedSharedNetwork.Name,
-		Family: 4,
+		Family: family,
 	}
 
 	for _, subnetList := range [][]KeaConfigSubnet{parsedSharedNetwork.Subnet4, parsedSharedNetwork.Subnet6} {
@@ -97,6 +99,10 @@ func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}) (*SharedNetwork
 			keaSubnet := s
 			subnet, err := convertSubnetFromKea(&keaSubnet)
 			if err == nil {
+				if subnet.GetFamily() != family {
+					return nil, errors.Errorf("non matching family of the subnet %s with the shared network %s",
+						subnet.Prefix, newSharedNetwork.Name)
+				}
 				newSharedNetwork.Subnets = append(newSharedNetwork.Subnets, *subnet)
 			} else {
 				return nil, err
