@@ -165,7 +165,8 @@ func TestGetSubnets(t *testing.T) {
 
 	appNetworks := []dbmodel.SharedNetwork{
 		{
-			Name: "fox",
+			Name:   "fox",
+			Family: 6,
 			Subnets: []dbmodel.Subnet{
 				{
 					Prefix: "5001:db8:1::/64",
@@ -361,7 +362,8 @@ func TestGetSharedNetworks(t *testing.T) {
 
 	appNetworks := []dbmodel.SharedNetwork{
 		{
-			Name: "frog",
+			Name:   "frog",
+			Family: 4,
 			Subnets: []dbmodel.Subnet{
 				{
 					Prefix: "192.1.0.0/24",
@@ -369,7 +371,8 @@ func TestGetSharedNetworks(t *testing.T) {
 			},
 		},
 		{
-			Name: "mouse",
+			Name:   "mouse",
+			Family: 4,
 			Subnets: []dbmodel.Subnet{
 				{
 					Prefix: "192.2.0.0/24",
@@ -415,7 +418,8 @@ func TestGetSharedNetworks(t *testing.T) {
 
 	appNetworks = []dbmodel.SharedNetwork{
 		{
-			Name: "fox",
+			Name:   "fox",
+			Family: 6,
 			Subnets: []dbmodel.Subnet{
 				{
 					Prefix: "5001:db8:1::/64",

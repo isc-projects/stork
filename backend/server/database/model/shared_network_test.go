@@ -13,7 +13,8 @@ func TestAddSharedNetwork(t *testing.T) {
 	defer teardown()
 
 	network := SharedNetwork{
-		Name: "funny name",
+		Name:   "funny name",
+		Family: 6,
 	}
 	err := AddSharedNetwork(db, &network)
 	require.NoError(t, err)
@@ -31,7 +32,8 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	defer teardown()
 
 	network := &SharedNetwork{
-		Name: "funny name",
+		Name:   "funny name",
+		Family: 6,
 		Subnets: []Subnet{
 			{
 				Prefix: "2001:db8:1::/64",
@@ -112,13 +114,36 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 	require.Empty(t, baseNetworks[0].Subnets)
 }
 
+// Test that family of the subnets being added within the shared network
+// must match the shared network family.
+func TestAddSharedNetworkSubnetsFamilyClash(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	network := &SharedNetwork{
+		Name:   "funny name",
+		Family: 6,
+		Subnets: []Subnet{
+			{
+				Prefix: "2001:db8:1::/64",
+			},
+			{
+				Prefix: "192.0.2.0/24",
+			},
+		},
+	}
+	err := AddSharedNetwork(db, network)
+	require.Error(t, err)
+}
+
 // Tests that the shared network information can be updated.
 func TestUpdateSharedNetwork(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	network := SharedNetwork{
-		Name: "funny name",
+		Name:   "funny name",
+		Family: 4,
 	}
 	err := AddSharedNetwork(db, &network)
 	require.NoError(t, err)
@@ -140,7 +165,8 @@ func TestDeleteSharedNetwork(t *testing.T) {
 	defer teardown()
 
 	network := SharedNetwork{
-		Name: "funny name",
+		Name:   "funny name",
+		Family: 4,
 		Subnets: []Subnet{
 			{
 				Prefix: "192.0.2.0/24",
@@ -173,7 +199,8 @@ func TestDeleteSharedNetworkWithSubnets(t *testing.T) {
 	defer teardown()
 
 	network := SharedNetwork{
-		Name: "funny name",
+		Name:   "funny name",
+		Family: 4,
 		Subnets: []Subnet{
 			{
 				Prefix: "192.0.2.0/24",

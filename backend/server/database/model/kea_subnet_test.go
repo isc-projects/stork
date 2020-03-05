@@ -76,7 +76,8 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	// and associated with this app.
 	appNetworks := []SharedNetwork{
 		{
-			Name: "frog",
+			Name:   "frog",
+			Family: 4,
 			Subnets: []Subnet{
 				{
 					Prefix: "192.1.0.0/24",
@@ -94,7 +95,8 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			},
 		},
 		{
-			Name: "mouse",
+			Name:   "mouse",
+			Family: 4,
 			Subnets: []Subnet{
 				{
 					Prefix: "192.2.0.0/24",
@@ -164,7 +166,8 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 
 	appNetworks = []SharedNetwork{
 		{
-			Name: "fox",
+			Name:   "fox",
+			Family: 6,
 			Subnets: []Subnet{
 				{
 					Prefix: "5001:db8:1::/64",
@@ -468,7 +471,8 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 
 	appNetworks := []SharedNetwork{
 		{
-			Name: "frog",
+			Name:   "frog",
+			Family: 4,
 			Subnets: []Subnet{
 				{
 					Prefix: "192.1.0.0/24",
@@ -476,7 +480,8 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			},
 		},
 		{
-			Name: "mouse",
+			Name:   "mouse",
+			Family: 4,
 			Subnets: []Subnet{
 				{
 					Prefix: "192.2.0.0/24",
@@ -532,7 +537,8 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 
 	appNetworks = []SharedNetwork{
 		{
-			Name: "fox",
+			Name:   "fox",
+			Family: 6,
 			Subnets: []Subnet{
 				{
 					Prefix: "5001:db8:1::/64",

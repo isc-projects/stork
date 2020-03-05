@@ -435,7 +435,7 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 		"subnet4": []map[string]interface{}{
 			{
 				"id":     1,
-				"subnet": "192.0.2.0/24",
+				"subnet": "2001:db8:2::/64",
 			},
 		},
 		"subnet6": []map[string]interface{}{
@@ -450,10 +450,11 @@ func TestNewSharedNetworkFromKea(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, parsedNetwork)
 	require.Equal(t, "foo", parsedNetwork.Name)
+	require.EqualValues(t, 6, parsedNetwork.Family)
 	require.Len(t, parsedNetwork.Subnets, 2)
 
 	require.Zero(t, parsedNetwork.Subnets[0].ID)
-	require.Equal(t, "192.0.2.0/24", parsedNetwork.Subnets[0].Prefix)
+	require.Equal(t, "2001:db8:2::/64", parsedNetwork.Subnets[0].Prefix)
 	require.Zero(t, parsedNetwork.Subnets[1].ID)
 	require.Equal(t, "2001:db8:1::/64", parsedNetwork.Subnets[1].Prefix)
 }

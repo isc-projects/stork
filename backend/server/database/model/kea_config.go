@@ -88,7 +88,8 @@ func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}) (*SharedNetwork
 	var parsedSharedNetwork KeaConfigSharedNetwork
 	_ = mapstructure.Decode(rawNetwork, &parsedSharedNetwork)
 	newSharedNetwork := &SharedNetwork{
-		Name: parsedSharedNetwork.Name,
+		Name:   parsedSharedNetwork.Name,
+		Family: 4,
 	}
 
 	for _, subnetList := range [][]KeaConfigSubnet{parsedSharedNetwork.Subnet4, parsedSharedNetwork.Subnet6} {
@@ -101,6 +102,11 @@ func NewSharedNetworkFromKea(rawNetwork *map[string]interface{}) (*SharedNetwork
 				return nil, err
 			}
 		}
+	}
+
+	// Update shared network family based on the subnets family.
+	if len(newSharedNetwork.Subnets) > 0 {
+		newSharedNetwork.Family = newSharedNetwork.Subnets[0].GetFamily()
 	}
 
 	return newSharedNetwork, nil

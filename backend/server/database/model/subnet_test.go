@@ -212,7 +212,8 @@ func TestAddSubnetWithExistingSharedNetwork(t *testing.T) {
 
 	// First, add the shared network.
 	sharedNetwork := &SharedNetwork{
-		Name: "test",
+		Name:   "test",
+		Family: 6,
 	}
 	err := AddSharedNetwork(db, sharedNetwork)
 	require.NoError(t, err)
@@ -459,7 +460,8 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	// Create a shared network and subnet.
 	networks := []SharedNetwork{
 		{
-			Name: "foo",
+			Name:   "foo",
+			Family: 4,
 			Subnets: []Subnet{
 				{
 					Prefix: "192.0.2.0/24",

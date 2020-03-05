@@ -17,6 +17,7 @@ type SharedNetwork struct {
 	ID      int64
 	Created time.Time
 	Name    string
+	Family  int `pg:"inet_family"`
 
 	Subnets []Subnet
 }
