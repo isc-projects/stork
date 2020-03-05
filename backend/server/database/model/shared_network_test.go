@@ -108,7 +108,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 		}
 	}
 
-	baseNetworks, err := GetAllSharedNetworks(db)
+	baseNetworks, err := GetAllSharedNetworks(db, 0)
 	require.NoError(t, err)
 	require.Len(t, baseNetworks, 1)
 	require.Empty(t, baseNetworks[0].Subnets)
@@ -135,6 +135,62 @@ func TestAddSharedNetworkSubnetsFamilyClash(t *testing.T) {
 	err := AddSharedNetwork(db, network)
 	require.Error(t, err)
 }
+
+// Tests that shared networks can be fetched by family.
+func TestGetSharedNetworksByFamily(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	networks := []SharedNetwork{
+		{
+			Name:   "fox",
+			Family: 6,
+		},
+		{
+			Name:   "frog",
+			Family: 4,
+		},
+		{
+			Name:   "fox",
+			Family: 4,
+		},
+		{
+			Name:   "snake",
+			Family: 6,
+		},
+	}
+	// Add two IPv4 and two IPv6 shared networks.
+	for _, n := range networks {
+		network := n
+		err := AddSharedNetwork(db, &network)
+		require.NoError(t, err)
+		require.NotZero(t, network.ID)
+	}
+
+	// Get all shared networks without specifying family.
+	returned, err := GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Len(t, returned, 4)
+	require.Equal(t, "fox", returned[0].Name)
+	require.Equal(t, "frog", returned[1].Name)
+	require.Equal(t, "fox", returned[2].Name)
+	require.Equal(t, "snake", returned[3].Name)
+
+	// Get only IPv4 networks.
+	returned, err = GetAllSharedNetworks(db, 4)
+	require.NoError(t, err)
+	require.Len(t, returned, 2)
+	require.Equal(t, "frog", returned[0].Name)
+	require.Equal(t, "fox", returned[1].Name)
+
+	// Get only IPv6 networks.
+	returned, err = GetAllSharedNetworks(db, 6)
+	require.NoError(t, err)
+	require.Len(t, returned, 2)
+	require.Equal(t, "fox", returned[0].Name)
+	require.Equal(t, "snake", returned[1].Name)
+}
+
 
 // Tests that the shared network information can be updated.
 func TestUpdateSharedNetwork(t *testing.T) {

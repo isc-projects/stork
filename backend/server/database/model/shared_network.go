@@ -83,12 +83,19 @@ func UpdateSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 	return err
 }
 
-// Fetches all shared networks without subnets.
-func GetAllSharedNetworks(db *dbops.PgDB) ([]SharedNetwork, error) {
+// Fetches all shared networks without subnets. The family argument specifies
+// whether only IPv4 shared networks should be fetched (if 4), only IPv6 shared
+// networks should be fetched (if 6) or both otherwise.
+func GetAllSharedNetworks(db *dbops.PgDB, family int) ([]SharedNetwork, error) {
 	networks := []SharedNetwork{}
-	err := db.Model(&networks).
-		OrderExpr("id ASC").
-		Select()
+	q := db.Model(&networks)
+
+	if family == 4 || family == 6 {
+		q = q.Where("inet_family = ?", family)
+	}
+	q = q.OrderExpr("id ASC")
+
+	err := q.Select()
 
 	if err != nil {
 		if err == pg.ErrNoRows {
