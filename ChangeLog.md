@@ -1,3 +1,12 @@
+* 37 [bug] marcin
+
+    Improved shared network detection mechanism to take into account
+    the family of the subnets belonging to the shared network. This
+    prevents the issue whereby two IPv4 and IPv6 subnets belonging
+    to separate shared networks having the same name would be shown
+    as belonging to the same shared network in the UI.
+    (Gitlab #180)
+
 * 36 [func] godfryd
 
     Added presenting IP addresses utilization within subnets and
