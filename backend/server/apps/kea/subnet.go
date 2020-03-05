@@ -48,7 +48,7 @@ func subnetExists(subnet *dbmodel.Subnet, existingSubnets []dbmodel.Subnet) (boo
 // configuration. All existing shared network matching the given configuration
 // are returned as they are. If there is no match a new shared network instance
 // is returned.
-func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig) (networks []dbmodel.SharedNetwork, err error) {
+func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int) (networks []dbmodel.SharedNetwork, err error) {
 	// Get all shared networks and the subnets within those networks from the
 	// application configuration.
 	if networkList, ok := config.GetTopLevelList("shared-networks"); ok {
@@ -59,7 +59,7 @@ func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig) (networks [
 
 		// We have to match the configured shared networks with the ones we
 		// already have in the database.
-		dbNetworks, err := dbmodel.GetAllSharedNetworks(db)
+		dbNetworks, err := dbmodel.GetAllSharedNetworks(db, family)
 		if err != nil {
 			return []dbmodel.SharedNetwork{}, err
 		}
@@ -170,7 +170,7 @@ func DetectNetworks(db *dbops.PgDB, app *dbmodel.App) (networks []dbmodel.Shared
 		}
 
 		// Detect shared networks and the subnets.
-		detectedNetworks, err := detectSharedNetworks(db, d.Config)
+		detectedNetworks, err := detectSharedNetworks(db, d.Config, family)
 		if err != nil {
 			return networks, subnets, err
 		}

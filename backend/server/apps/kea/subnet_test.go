@@ -227,11 +227,29 @@ func TestDetectNetworks(t *testing.T) {
                 ]
             }
         }`
-	app = createAppWithSubnets(t, db, 2, v4Config, "")
+
+	// Add IPv6 configuration with a shared network having the same name
+	// as the IPv4 shared network.
+	v6Config = `
+        {
+            "Dhcp6": {
+                "shared-networks": [
+                    {
+                        "name": "foo",
+                        "subnet6": [
+                            {
+                                "subnet": "3000:1::/32"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }`
+	app = createAppWithSubnets(t, db, 2, v4Config, v6Config)
 
 	networks, subnets, err = DetectNetworks(db, app)
 	require.NoError(t, err)
-	require.Len(t, networks, 2)
+	require.Len(t, networks, 3)
 	// This time there should be no top level subnets.
 	require.Empty(t, subnets)
 
@@ -265,6 +283,15 @@ func TestDetectNetworks(t *testing.T) {
 	require.Zero(t, networks[1].Subnets[1].ID)
 	require.Equal(t, "192.0.4.0/24", networks[1].Subnets[1].Prefix)
 	require.Empty(t, networks[1].Subnets[1].LocalSubnets)
+
+	// The third shared network has the same name as the first one,
+	// but it should be separate from the first one because it
+	// contains IPv6 subnet.
+	require.Equal(t, "foo", networks[2].Name)
+	require.Zero(t, networks[2].ID)
+	require.Len(t, networks[2].Subnets, 1)
+	require.Zero(t, networks[2].Subnets[0].ID)
+	require.Equal(t, "3000:1::/32", networks[2].Subnets[0].Prefix)
 }
 
 // Multi step test which verifies that the subnets and shared networks can be
@@ -307,7 +334,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 
 	// The configuration didn't include any shared network, so it should
 	// be empty initially.
-	networks, err := dbmodel.GetAllSharedNetworks(db)
+	networks, err := dbmodel.GetAllSharedNetworks(db, 0)
 	require.NoError(t, err)
 	require.Empty(t, networks)
 
@@ -354,7 +381,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	require.NoError(t, err)
 
 	// There should be one shared network in the database.
-	networks, err = dbmodel.GetAllSharedNetworks(db)
+	networks, err = dbmodel.GetAllSharedNetworks(db, 4)
 	require.NoError(t, err)
 	require.Len(t, networks, 1)
 
@@ -397,7 +424,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	require.NoError(t, err)
 
 	// There should still be just one shared network.
-	networks, err = dbmodel.GetAllSharedNetworks(db)
+	networks, err = dbmodel.GetAllSharedNetworks(db, 4)
 	require.NoError(t, err)
 	require.Len(t, networks, 1)
 
@@ -411,7 +438,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	err = CommitAppIntoDB(db, app)
 	require.NoError(t, err)
 
-	networks, err = dbmodel.GetAllSharedNetworks(db)
+	networks, err = dbmodel.GetAllSharedNetworks(db, 4)
 	require.NoError(t, err)
 	require.Len(t, networks, 1)
 
