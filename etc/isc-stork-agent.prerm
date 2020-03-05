@@ -1,0 +1,4 @@
+#!/bin/sh
+
+systemctl disable isc-stork-agent
+systemctl stop isc-stork-agent

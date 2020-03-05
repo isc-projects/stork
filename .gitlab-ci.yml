@@ -22,27 +22,26 @@ cache:
   - webui/node_modules/
   - tools/
 
-# common before script
-before_script:
-  - apt-get update
-  - DEBIAN_FRONTEND=noninteractive apt-get install -y wget xz-utils rake openjdk-11-jre-headless gcc g++ chromium-browser unzip python3-sphinx python3-sphinx-rtd-theme
-  - rake prepare_env
-
 ### build jobs ###
 
-lint_go:
+# common parts used in build jobs
+.base_build:
   stage: build
   tags:
     - linux
     - amd64
+  before_script:
+    - apt-get update
+    - apt-get install -y wget xz-utils rake openjdk-11-jre-headless gcc g++ chromium-browser unzip python3-sphinx python3-sphinx-rtd-theme
+    - rake prepare_env
+
+lint_go:
+  extends: .base_build
   script:
     - rake lint_go
 
 unittest_backend:
-  stage: build
-  tags:
-    - linux
-    - amd64
+  extends: .base_build
   services:
     - name: registry.gitlab.isc.org/isc-projects/stork/ci-postgres:11
       alias: postgres
@@ -50,18 +49,12 @@ unittest_backend:
     - rake unittest_backend
 
 ci_ui:
-  stage: build
-  tags:
-    - linux
-    - amd64
+  extends: .base_build
   script:
     - rake ci_ui
 
 build_webui:
-  stage: build
-  tags:
-    - linux
-    - amd64
+  extends: .base_build
   script:
     - rake build_ui
   artifacts:
@@ -71,10 +64,7 @@ build_webui:
       - webui/dist/stork/
 
 build_backend:
-  stage: build
-  tags:
-    - linux
-    - amd64
+  extends: .base_build
   script:
     - rake build_backend
   artifacts:
@@ -102,7 +92,6 @@ danger:
     - gem install danger-commit_lint
     - danger --fail-on-errors=true --new-comment
 
-
 tarball:
   stage: build
   tags:
@@ -116,7 +105,36 @@ tarball:
     expire_in: 1 week
 
 
-### deploy jobs ###
+### build rpm & deb packages ###
+
+debs:
+  stage: build
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-ubuntu-18-04:latest
+  tags:
+    - linux
+    - amd64
+  script:
+    - rake deb_agent deb_server
+  artifacts:
+    paths:
+      - isc-stork-*deb
+    expire_in: 1 week
+
+rpms:
+  stage: build
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest
+  tags:
+    - linux
+    - amd64
+  script:
+    - rake rpm_agent rpm_server
+  artifacts:
+    paths:
+      - isc-stork-*rpm
+    expire_in: 1 week
+
+
+### demo deploy jobs ###
 
 deploy_demo:
   stage: deploy

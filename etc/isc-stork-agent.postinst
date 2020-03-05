@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+if [ -e /etc/redhat-release ]; then
+    useradd --system --home-dir /var/lib/ stork
+else
+    addgroup --system stork >/dev/null
+    adduser --quiet --system --home /var/lib/ --ingroup stork \
+            --shell /bin/false --no-create-home --disabled-password --disabled-login \
+            --gecos "Stork Agent User" stork >/dev/null
+fi

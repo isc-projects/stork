@@ -1,0 +1,9 @@
+FROM ubuntu:18.04
+
+WORKDIR /repo
+RUN \
+        apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ruby ruby-dev rubygems build-essential \
+        git wget unzip openjdk-11-jre-headless python3-sphinx python3-sphinx-rtd-theme && \
+        rm -rf /var/lib/apt/lists/* && \
+        gem install --no-document --no-ri --no-rdoc fpm

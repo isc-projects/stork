@@ -1,0 +1,4 @@
+#!/bin/sh
+
+systemctl disable isc-stork-server
+systemctl stop isc-stork-server

@@ -1,0 +1,16 @@
+[Unit]
+Description=ISC Stork Agent
+Documentation=man:stork-agent(8)
+Wants=network-online.target
+After=network-online.target
+After=time-sync.target
+
+[Service]
+User=stork
+ConfigurationDirectory=stork
+ExecStart=/usr/bin/stork-agent
+ExecReload=/bin/kill -HUP $MAINPID
+EnvironmentFile=/etc/stork/agent.env
+
+[Install]
+WantedBy=multi-user.target

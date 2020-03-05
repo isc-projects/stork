@@ -83,8 +83,14 @@ ENV['PATH'] = "#{GO_DIR}/go/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
 
 # build date
-build_date = Time.now.strftime("%Y-%m-%d %H:%M")
-puts "Stork build date: #{build_date}"
+now = Time.now
+build_date = now.strftime("%Y-%m-%d %H:%M")
+if ENV['STORK_BUILD_TIMESTAMP']
+  TIMESTAMP = ENV['STORK_BUILD_TIMESTAMP']
+else
+  TIMESTAMP = now.strftime("%y%m%d%H%M%S")
+end
+puts "Stork build date: #{build_date} (timestamp: #{TIMESTAMP})"
 go_build_date_opt = "-ldflags=\"-X 'isc.org/stork.BuildDate=#{build_date}'\""
 
 # Documentation
@@ -105,12 +111,44 @@ SERVER_GEN_FILES = Rake::FileList[
   File.expand_path('backend/server/gen/restapi/configure_stork.go'),
 ]
 
+# locations for installing files
+if ENV['DESTDIR']
+  DESTDIR=ENV['DESTDIR']
+else
+  DESTDIR=File.join(File.dirname(__FILE__), 'root')
+end
+BIN_DIR=File.join(DESTDIR, 'usr/bin')
+UNIT_DIR=File.join(DESTDIR, 'lib/systemd/system')
+ETC_DIR=File.join(DESTDIR, 'etc/stork')
+WWW_DIR=File.join(DESTDIR, 'usr/share/stork/www')
+EXAMPLES_DIR=File.join(DESTDIR, 'usr/share/stork/examples')
+MAN_DIR=File.join(DESTDIR, 'usr/share/man/man8')
+
 # Directories
 directory GOHOME_DIR
 directory TOOLS_DIR
+directory DESTDIR
+directory BIN_DIR
+directory UNIT_DIR
+directory ETC_DIR
+directory WWW_DIR
+directory EXAMPLES_DIR
+directory MAN_DIR
+
+# establish Stork version
+STORK_VERSION = '0.0.0'
+version_file = 'backend/version.go'
+text = File.open(version_file).read
+text.each_line do |line|
+  if line.start_with? 'const Version'
+    parts = line.split('"')
+    STORK_VERSION = parts[1]
+  end
+end
 
 
-# Server Rules
+### Backend Tasks #########################
+
 file GO => [TOOLS_DIR, GOHOME_DIR] do
   sh "mkdir -p #{GO_DIR}"
   sh "wget #{GO_URL} -O #{GO_DIR}/go.tar.gz"
@@ -362,7 +400,8 @@ task :show_cov do
 end
 
 
-# Web UI Rules
+### Web UI Tasks #########################
+
 desc 'Generate client part of REST API using swagger_codegen based on swagger.yml'
 task :gen_client => [SWAGGER_CODEGEN, SWAGGER_FILE] do
   Dir.chdir('webui') do
@@ -383,7 +422,7 @@ end
 
 file NG => NPX do
   Dir.chdir('webui') do
-    sh 'npm install'
+    sh 'NG_CLI_ANALYTICS=false npm install'
   end
 end
 
@@ -431,7 +470,8 @@ task :ci_ui => [:gen_client] do
 end
 
 
-# Docker Rules
+### Docker Tasks #########################
+
 desc 'Build containers with everything and statup all services using docker-compose
 arguments: cache=false - forces rebuilding whole container'
 task :docker_up => [:build_backend, :build_ui] do
@@ -501,31 +541,118 @@ task :run_bind9_container do
 end
 
 
-# Documentation
+### Documentation Tasks #########################
+
 desc 'Builds Stork documentation, using Sphinx'
 task :doc do
   sh "sphinx-build -M singlehtml doc/ doc/_build #{SPHINXOPTS}"
   sh 'mkdir -p webui/src/assets/arm'
   sh 'cp -a doc/_build/singlehtml/* webui/src/assets/arm'
+  sh "sphinx-build -M man doc/ doc/ #{SPHINXOPTS}"
 end
 
 
-# Release Rules
+### Release Tasks #########################
+
+desc 'Prepare release tarball with Stork sources'
 task :tarball do
-  version = 'unknown'
-  version_file = 'backend/version.go'
-  text = File.open(version_file).read
-  text.each_line do |line|
-    if line.start_with? 'const Version'
-      parts = line.split('"')
-      version = parts[1]
-    end
-  end
-  sh "git archive --prefix=stork-#{version}/ -o stork-#{version}.tar.gz HEAD"
+  sh "git archive --prefix=stork-#{STORK_VERSION}/ -o stork-#{STORK_VERSION}.tar.gz HEAD"
 end
 
+desc 'Build debs in Docker. It is used for developer purposes.'
+task :build_debs_in_docker do
+  sh "docker run -v $PWD:/repo --rm -ti registry.gitlab.isc.org/isc-projects/stork/pkgs-ubuntu-18-04:latest rake build_fresh STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+end
 
-# Other Rules
+desc 'Build RPMs in Docker. It is used for developer purposes.'
+task :build_rpms_in_docker do
+  sh "docker run -v $PWD:/repo --rm -ti registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest rake build_fresh STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+end
+
+# Internal task that copies sources and builds packages on a side. It is used by build_debs_in_docker and build_rpms_in_docker.
+task :build_fresh do
+  sh 'rm -rf /build && mkdir /build'
+  sh 'git archive -o /stork.tar.gz HEAD'
+  sh 'tar -C /build -zxvf /stork.tar.gz'
+  if File.exist?('/etc/redhat-release')
+    pkg_type = 'rpm'
+  else
+    pkg_type = 'deb'
+  end
+  sh "cd /build && rm -rf /build/root && rake #{pkg_type}_agent STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+  sh "cd /build && rm -rf /build/root && rake #{pkg_type}_server STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+  sh 'mv /build/isc-stork* /repo'
+end
+
+desc 'Build all. It builds backend and UI.'
+task :build_all => [:build_backend, :build_ui] do
+  sh 'echo DONE'
+end
+
+desc 'Install agent files to DESTDIR. It depends on building tasks.'
+task :install_agent => [:build_agent, :doc, BIN_DIR, UNIT_DIR, ETC_DIR, MAN_DIR] do
+  sh "cp -a backend/cmd/stork-agent/stork-agent #{BIN_DIR}"
+  sh "cp -a etc/isc-stork-agent.service #{UNIT_DIR}"
+  sh "cp -a etc/agent.env #{ETC_DIR}"
+  sh "cp -a doc/man/stork-agent.8 #{MAN_DIR}"
+end
+
+desc 'Install server files to DESTDIR. It depends on building tasks.'
+task :install_server => [:build_server, :build_migrations, :build_ui, :doc, BIN_DIR, UNIT_DIR, ETC_DIR, WWW_DIR, EXAMPLES_DIR, MAN_DIR] do
+  sh "cp -a backend/cmd/stork-server/stork-server #{BIN_DIR}"
+  sh "cp -a backend/cmd/stork-db-migrate/stork-db-migrate #{BIN_DIR}"
+  sh "cp -a etc/isc-stork-server.service #{UNIT_DIR}"
+  sh "cp -a etc/server.env #{ETC_DIR}"
+  sh "cp -a etc/nginx-stork.conf #{EXAMPLES_DIR}"
+  sh "cp -a webui/dist/stork/* #{WWW_DIR}"
+  sh "cp -a doc/man/stork-server.8 #{MAN_DIR}"
+end
+
+# invoke fpm for building RPM or deb package
+def fpm(pkg, fpm_target)
+  cmd = "fpm -n isc-stork-#{pkg}"
+  cmd += " -v #{STORK_VERSION}.#{TIMESTAMP}"
+  cmd += " --license 'MPL 2.0'"
+  cmd += " --vendor 'Internet Systems Consortium, Inc.'"
+  cmd += " --url 'https://gitlab.isc.org/isc-projects/stork/'"
+  cmd += " --description 'ISC Stork #{pkg.capitalize()}'"
+  cmd += " --after-install etc/isc-stork-agent.postinst"
+  cmd += " --before-remove etc/isc-stork-#{pkg}.prerm"
+  cmd += " --after-remove etc/isc-stork-agent.postrm"
+  cmd += " -s dir"
+  cmd += " -t #{fpm_target}"
+  cmd += " -C #{DESTDIR} ."
+  sh cmd
+end
+
+desc 'Build deb package with Stork agent. It depends on building and installing tasks.'
+task :deb_agent => :install_agent do
+  fpm('agent', 'deb')
+end
+
+desc 'Build RPM package with Stork agent. It depends on building and installing tasks.'
+task :rpm_agent => :install_agent do
+  fpm('agent', 'rpm')
+end
+
+desc 'Build deb package with Stork server. It depends on building and installing tasks.'
+task :deb_server => :install_server do
+  fpm('server', 'deb')
+end
+
+desc 'Build RPM package with Stork server. It depends on building and installing tasks.'
+task :rpm_server => :install_server do
+  fpm('server', 'rpm')
+end
+
+desc 'Prepare containers with FPM and other dependencies that are used for building RPM and deb packages'
+task :build_fpm_containers do
+  sh 'docker build -f docker/pkgs/ubuntu-18-04.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-ubuntu-18-04:latest docker/pkgs/'
+  sh 'docker build -f docker/pkgs/centos-8.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest docker/pkgs/'
+end
+
+### Other Tasks #########################
+
 desc 'Remove tools and other build or generated files'
 task :clean do
   sh "rm -rf #{AGENT_PB_GO_FILE}"

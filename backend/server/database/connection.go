@@ -26,6 +26,7 @@ func (d DbLogger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
 func NewPgDbConn(pgParams *pg.Options) (*PgDB, error) {
 	db := pg.Connect(pgParams)
 
+	log.Printf("checking connection to database")
 	// Test connection to database.
 	var err error
 	for tries := 0; tries < 10; tries++ {

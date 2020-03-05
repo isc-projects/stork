@@ -42,6 +42,8 @@ TAGS
 /backend/cmd/stork-agent/supervisord.log
 /backend/cmd/stork-agent/supervisord.pid
 
-# doc related
+# generated docs
+/doc/man/stork-agent.8
+/doc/man/stork-server.8
 /doc/_build/
 /webui/src/assets/arm/

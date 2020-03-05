@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -e /etc/redhat-release ]; then
+    userdel stork >/dev/null || /bin/true
+else
+    deluser --system stork >/dev/null || /bin/true
+    delgroup --system stork >/dev/null || /bin/true
+fi
