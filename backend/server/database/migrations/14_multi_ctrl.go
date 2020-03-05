@@ -106,6 +106,10 @@ func init() {
                ALTER TABLE app
                    ADD CONSTRAINT app_machine_id_ctrl_port_key UNIQUE (machine_id, ctrl_port);
 
+               -- Drop function and trigger.
+               DROP TRIGGER IF EXISTS trigger_update_machine_id ON access_point;
+               DROP FUNCTION IF EXISTS update_machine_id;
+
                -- Drop created tables and types.
                DROP TABLE IF EXISTS access_point;
                DROP TYPE IF EXISTS ACCESSPOINTTYPE;
