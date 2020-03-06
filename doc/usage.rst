@@ -212,7 +212,7 @@ IPv4 and IPv6 Networks
 Kea has a concept of shared networks (or networks), which is essentially a stack of subnets
 deployed on the same physical link. This feature is very popular among users. Stork is now able
 to retrieve this information and aggregate it across all configured Kea servers. The Shared Networks
-view allows inspection of networks and the subnets that belong in them. Pool utilization is
+view allows for inspection of networks and the subnets that belong in them. Pool utilization is
 shown for each subnet.
 
 
