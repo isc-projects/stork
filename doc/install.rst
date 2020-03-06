@@ -12,13 +12,18 @@ There are several dependencies that needs to be installed:
 
  - rake
  - Java Runtime Environment
- - Docker and Docker Compose (when installing using Docker)
+ - Docker and Docker Compose (if installing using Docker)
 
 For details, please see Stork wiki
 https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment .
 Note the Stork project is in very early stages and its building
 instructions change frequently. Please refer to the wiki page in case
 of problems.
+
+Note Java is currently a build-time dependency, because one of the tools used to generate API
+bindings, goswagger, is written in Java. However, Java is not needed to run Stork. In the future
+Stork versions, this dependency will be and optional dependency only necessary for developers who
+want to implement new or change existing API interfaces.
 
 For ease of deployment, Stork uses Rake to automate compilation and installation.
 It facilitates installation both using Docker and without Docker (see the

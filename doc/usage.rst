@@ -197,11 +197,24 @@ show only the first (192.0.2.0/24) subnet by searching for *0.2* string. You can
 specific pools. For example, you can easily filter the subnet with specific pool if you search for
 part of the pool ranges, e.g. *3.200*.
 
+Stork is now able to display pool utilization for each subnet. Absolute number of addresses
+allocated and percentage usage are shown. There are two thresholds: 80% (warning, the pool
+utilization bar becomes orange) and 90% (critical, the pool utulization bar becomes red).
+
 .. note::
 
-   As of 0.4.0, Stork does not support shared networks yet. Also, if there are two or more servers
-   handling the same subnet (e.g. a HA pair), the same subnet will be listed multiple times. Both of
-   these limitations will be addressed in the future releases.
+   As of 0.5.0, if there are two or more servers handling the same subnet (e.g. a HA pair), the same
+   subnet will be listed multiple times. This limitation will be addressed in the future releases.
+
+IPv4 and IPv6 Networks
+~~~~~~~~~~~~~~~~~~~~~~
+
+Kea has a concept of shared networks (or networks), which is essentially a stack of subnets
+deployed on the same physical link. This feature is very popular among users. Stork is now able
+to retrieve this information and aggregate it across all configured Kea servers. The Shared Networks
+view allows inspection of networks and the subnets that belong in them. Pool utilization is
+shown for each subnet.
+
 
 Kea High Availability Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
