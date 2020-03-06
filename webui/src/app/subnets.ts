@@ -1,3 +1,8 @@
+/**
+ * Get total number of addresses in a subnet.
+ * It is taken from DHCPv4 or DHCPv6 stats respectively.
+ * In DHCPv6 if total is -1 in stats then max safe int is returned.
+ */
 export function getTotalAddresses(subnet) {
     if (subnet.subnet.includes('.')) {
         // DHCPv4 stats
@@ -12,6 +17,10 @@ export function getTotalAddresses(subnet) {
     }
 }
 
+/**
+ * Get assigned number of addresses in a subnet.
+ * It is taken from DHCPv4 or DHCPv6 stats respectively.
+ */
 export function getAssignedAddresses(subnet) {
     if (subnet.subnet.includes('.')) {
         // DHCPv4 stats
@@ -23,7 +32,7 @@ export function getAssignedAddresses(subnet) {
 }
 
 /**
- * Get subnet utilization in % based on stats.
+ * Get subnet utilization based on stats. A percentage is returned as floored int.
  */
 export function getSubnetUtilization(subnet) {
     let utilization = 0.0

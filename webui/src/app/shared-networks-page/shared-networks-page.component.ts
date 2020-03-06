@@ -72,6 +72,9 @@ export class SharedNetworksPageComponent implements OnInit {
         }
     }
 
+    /**
+     * Get total of addresses in the network by summing up all subnets.
+     */
     getTotalAddresses(network) {
         let total = 0
         for (const sn of network.subnets) {
@@ -82,6 +85,9 @@ export class SharedNetworksPageComponent implements OnInit {
         return total
     }
 
+    /**
+     * Get assigned of addresses in the network by summing up all subnets.
+     */
     getAssignedAddresses(network) {
         let total = 0
         for (const sn of network.subnets) {
@@ -92,15 +98,24 @@ export class SharedNetworksPageComponent implements OnInit {
         return total
     }
 
+    /**
+     * Get network addresses utilization (assigned / total) by summing up all subnets.
+     */
     getNetworkUtilization(network) {
         const utilization = (100 * this.getAssignedAddresses(network)) / this.getTotalAddresses(network)
         return Math.floor(utilization)
     }
 
+    /**
+     * Prepare count for presenting in tooltip by adding ',' separator to big numbers, eg. 1,243,342.
+     */
     tooltipCount(count) {
         return count.toLocaleString('en-US')
     }
 
+    /**
+     * Prepare count for presenting in a column that it is easy to grasp by humans.
+     */
     humanCount(count) {
         if (isNaN(count)) {
             return count

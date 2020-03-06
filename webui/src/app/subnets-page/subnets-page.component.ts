@@ -72,10 +72,16 @@ export class SubnetsPageComponent implements OnInit {
         }
     }
 
+    /**
+     * Get subnet addresses utilization.
+     */
     getSubnetUtilization(subnet) {
         return getSubnetUtilization(subnet)
     }
 
+    /**
+     * Prepare count for presenting in a column that it is easy to grasp by humans.
+     */
     humanCount(count) {
         if (isNaN(count)) {
             return count
@@ -86,6 +92,9 @@ export class SubnetsPageComponent implements OnInit {
         return humanCount(count)
     }
 
+    /**
+     * Prepare count for presenting in tooltip by adding ',' separator to big numbers, eg. 1,243,342.
+     */
     tooltipCount(count) {
         if (count === '?') {
             return 'not data collected yet'
@@ -93,6 +102,9 @@ export class SubnetsPageComponent implements OnInit {
         return count.toLocaleString('en-US')
     }
 
+    /**
+     * Get total number of addresses in a subnet.
+     */
     getTotalAddresses(subnet) {
         if (subnet.stats) {
             return getTotalAddresses(subnet)
@@ -101,6 +113,9 @@ export class SubnetsPageComponent implements OnInit {
         }
     }
 
+    /**
+     * Get assigned number of addresses in a subnet.
+     */
     getAssignedAddresses(subnet) {
         if (subnet.stats) {
             return getAssignedAddresses(subnet)
