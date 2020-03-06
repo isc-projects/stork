@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -320,6 +321,100 @@ func (pke *PromKeaExporter) statsCollectorLoop() {
 	}
 }
 
+// setDaemonStats stores the stat values from a daemon in the proper prometheus object.
+func (pke *PromKeaExporter) setDaemonStats(daemonIdx int, rspIfc interface{}, ignoredStats map[string]bool) error {
+	rsp, ok := rspIfc.(map[string]interface{})
+	if !ok {
+		return errors.Errorf("problem with casting rspIfc: %+v", rspIfc)
+	}
+
+	resultIfc, ok := rsp["result"]
+	if !ok {
+		return errors.Errorf("no 'result' in response: %+v", rsp)
+	}
+
+	result, ok := resultIfc.(float64)
+	if !ok {
+		return errors.Errorf("problem with casting resultIfc: %+v", resultIfc)
+	}
+	if result != 0 {
+		textIfc, ok := rsp["text"]
+		if ok {
+			text, ok := textIfc.(string)
+			if ok && (!strings.Contains(text, "server is likely to be offline") || !strings.Contains(text, "forwarding socket is not configured for the server type")) {
+				return errors.Errorf("response result from Kea != 0: %d, text: %s", int(result), text)
+			}
+		}
+		return errors.Errorf("response result from Kea != 0: %d", int(result))
+	}
+
+	argsIfc, ok := rsp["arguments"]
+	if !ok {
+		return errors.Errorf("no 'arguments' in response: %+v", rsp)
+	}
+
+	args := argsIfc.(map[string]interface{})
+	if !ok {
+		return errors.Errorf("problem with casting argsIfc: %+v", argsIfc)
+	}
+
+	for statName, statValueList1Ifc := range args {
+		// skip ignored stats
+		if ignoredStats[statName] {
+			continue
+		}
+
+		// get stat value from nested lists (eg. [[val, timestamp]])
+		statValueList1, ok := statValueList1Ifc.([]interface{})
+		if !ok {
+			log.Errorf("problem with casting statValueList1Ifc: %+v", statValueList1Ifc)
+			continue
+		}
+		if len(statValueList1) == 0 {
+			log.Errorf("empty list of stat values")
+			continue
+		}
+		statValueList2, ok := statValueList1[0].([]interface{})
+		if !ok {
+			log.Errorf("problem with casting statValueList1[0]: %+v", statValueList1[0])
+			continue
+		}
+		if len(statValueList2) == 0 {
+			log.Errorf("empty list of stat values")
+			continue
+		}
+		statValue, ok := statValueList2[0].(float64)
+		if !ok {
+			log.Errorf("problem with casting statValueList2[0]: %+v", statValueList2[0])
+			continue
+		}
+
+		// store stat value in proper prometheus object
+		if strings.HasPrefix(statName, "pkt") {
+			// if this is pkt stat
+			statDescr := pke.PktStatsMap[statName]
+			statDescr.Stat.With(prometheus.Labels{"operation": statDescr.Operation}).Set(statValue)
+		} else if strings.HasPrefix(statName, "subnet[") {
+			// if this is address per subnet stat
+			re := regexp.MustCompile(`subnet\[(\d+)\]\.(.+)`)
+			matches := re.FindStringSubmatch(statName)
+			subnetID := matches[1]
+			name := matches[2]
+
+			var stat *prometheus.GaugeVec
+			// daemon 0 is dhcp4, 1 is dhcp6
+			if daemonIdx == 0 {
+				stat = pke.Adr4StatsMap[name]
+			} else {
+				stat = pke.Adr6StatsMap[name]
+			}
+			stat.With(prometheus.Labels{"subnet": subnetID}).Set(statValue)
+		}
+	}
+
+	return nil
+}
+
 // Collect stats from all Kea apps.
 func (pke *PromKeaExporter) collectStats() error {
 	var lastErr error
@@ -381,102 +476,16 @@ func (pke *PromKeaExporter) collectStats() error {
 		}
 		rspList, ok := rspsIfc.([]interface{})
 		if !ok {
-			log.Errorf("problem with casting rspsIfc: %+v", rspsIfc)
+			lastErr = errors.Errorf("problem with casting rspsIfc: %+v", rspsIfc)
+			log.Errorf("%+v", lastErr)
 			continue
 		}
 
 		// go though list of responses from daemons (it can have none or some responses from dhcp4/dhcp6)
 		for daemonIdx, rspIfc := range rspList {
-			rsp, ok := rspIfc.(map[string]interface{})
-			if !ok {
-				log.Errorf("problem with casting rspIfc: %+v", rspIfc)
-				continue
-			}
-			resultIfc, ok := rsp["result"]
-			if !ok {
-				log.Errorf("no 'result' in response: %+v", rsp)
-				continue
-			}
-			result, ok := resultIfc.(float64)
-			if !ok {
-				log.Errorf("problem with casting resultIfc: %+v", resultIfc)
-				continue
-			}
-			if result != 0 {
-				textIfc, ok := rsp["text"]
-				if ok {
-					text, ok := textIfc.(string)
-					if ok && (!strings.Contains(text, "server is likely to be offline") || !strings.Contains(text, "forwarding socket is not configured for the server type")) {
-						log.Errorf("response result from Kea != 0: %d, text: %s", int(result), text)
-					}
-				} else {
-					log.Errorf("response result from Kea != 0: %d", int(result))
-				}
-				continue
-			}
-			argsIfc, ok := rsp["arguments"]
-			if !ok {
-				log.Errorf("no 'arguments' in response: %+v", rsp)
-				continue
-			}
-			args := argsIfc.(map[string]interface{})
-			if !ok {
-				log.Errorf("problem with casting argsIfc: %+v", argsIfc)
-				continue
-			}
-
-			for statName, statValueList1Ifc := range args {
-				// skip ignored stats
-				if ignoredStats[statName] {
-					continue
-				}
-
-				// get stat value from nested lists (eg. [[val, timestamp]])
-				statValueList1, ok := statValueList1Ifc.([]interface{})
-				if !ok {
-					log.Errorf("problem with casting statValueList1Ifc: %+v", statValueList1Ifc)
-					continue
-				}
-				if len(statValueList1) == 0 {
-					log.Errorf("empty list of stat values")
-					continue
-				}
-				statValueList2, ok := statValueList1[0].([]interface{})
-				if !ok {
-					log.Errorf("problem with casting statValueList1[0]: %+v", statValueList1[0])
-					continue
-				}
-				if len(statValueList2) == 0 {
-					log.Errorf("empty list of stat values")
-					continue
-				}
-				statValue, ok := statValueList2[0].(float64)
-				if !ok {
-					log.Errorf("problem with casting statValueList2[0]: %+v", statValueList2[0])
-					continue
-				}
-
-				// store stat value in proper prometheus object
-				if strings.HasPrefix(statName, "pkt") {
-					// if this is pkt stat
-					statDescr := pke.PktStatsMap[statName]
-					statDescr.Stat.With(prometheus.Labels{"operation": statDescr.Operation}).Set(statValue)
-				} else if strings.HasPrefix(statName, "subnet[") {
-					// if this is address per subnet stat
-					re := regexp.MustCompile(`subnet\[(\d+)\]\.(.+)`)
-					matches := re.FindStringSubmatch(statName)
-					subnetID := matches[1]
-					name := matches[2]
-
-					var stat *prometheus.GaugeVec
-					// daemon 0 is dhcp4, 1 is dhcp6
-					if daemonIdx == 0 {
-						stat = pke.Adr4StatsMap[name]
-					} else {
-						stat = pke.Adr6StatsMap[name]
-					}
-					stat.With(prometheus.Labels{"subnet": subnetID}).Set(statValue)
-				}
+			err = pke.setDaemonStats(daemonIdx, rspIfc, ignoredStats)
+			if err != nil {
+				log.Errorf("cannot get stat from daemon: %+v", err)
 			}
 		}
 	}
