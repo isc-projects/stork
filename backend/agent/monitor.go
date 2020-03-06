@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/process"
 	log "github.com/sirupsen/logrus"
 )
@@ -137,4 +138,24 @@ func (sm *appMonitor) GetApps() []*App {
 
 func (sm *appMonitor) Shutdown() {
 	sm.quit <- true
+}
+
+// GetAccessPoint retrieves the requested type of access point from the app.
+func GetAccessPoint(app *App, accessType string) (*AccessPoint, error) {
+	for _, point := range app.AccessPoints {
+		if point.Type != accessType {
+			continue
+		}
+
+		if point.Port == 0 {
+			return nil, errors.Errorf("%s access point does not have port number", accessType)
+		} else if len(point.Address) == 0 {
+			return nil, errors.Errorf("%s access point does not have address", accessType)
+		}
+
+		// found a good access point
+		return &point, nil
+	}
+
+	return nil, errors.Errorf("%s access point not found", accessType)
 }

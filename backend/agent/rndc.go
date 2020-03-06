@@ -28,26 +28,7 @@ func NewRndcClient(ce CommandExecutor) *RndcClient {
 }
 
 func (c *RndcClient) Call(app *App, command []string) (output []byte, err error) {
-	var ctrl AccessPoint
-
-	for _, point := range app.AccessPoints {
-		if point.Type != AccessPointControl {
-			continue
-		}
-
-		if point.Port == 0 {
-			err = fmt.Errorf("rndc requires control port")
-			break
-		} else if len(point.Address) == 0 {
-			err = fmt.Errorf("rndc requires control address")
-			break
-		}
-
-		// found a good access point
-		ctrl = point
-		break
-	}
-
+	ctrl, err := GetAccessPoint(app, AccessPointControl)
 	if err != nil {
 		return nil, err
 	}

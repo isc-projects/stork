@@ -19,9 +19,8 @@ type PromFakeAppMonitor struct {
 func (fam *PromFakeAppMonitor) GetApps() []*App {
 	log.Println("GetApps")
 	return []*App{{
-		Type:        AppTypeKea,
-		CtrlAddress: "0.1.2.3",
-		CtrlPort:    1234,
+		Type:         AppTypeKea,
+		AccessPoints: makeAccessPoint("control", "0.1.2.3", "", 1234),
 	}}
 }
 
