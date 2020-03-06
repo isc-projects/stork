@@ -1,3 +1,5 @@
+Stork 0.5.0 released on 2020-03-06.
+
 * 37 [bug] marcin
 
     Improved shared network detection mechanism to take into account
