@@ -28,7 +28,7 @@ copyright = '2020, Internet Systems Consortium'
 author = 'Internet Systems Consortium'
 
 # get current stork version
-release = '0.4.0-git'
+release = '0.5.0-git'
 
 version_file = '../backend/version.go'
 release = 'UNRELEASED'
