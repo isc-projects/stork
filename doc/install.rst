@@ -22,7 +22,7 @@ of problems.
 
 Note Java is currently a build-time dependency, because one of the tools used to generate API
 bindings, goswagger, is written in Java. However, Java is not needed to run Stork. In the future
-Stork versions, this dependency will be and optional dependency only necessary for developers who
+Stork versions, this dependency will be optional,  only necessary for developers who
 want to implement new or change existing API interfaces.
 
 For ease of deployment, Stork uses Rake to automate compilation and installation.
