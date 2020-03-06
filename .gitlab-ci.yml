@@ -144,6 +144,11 @@ deploy_demo:
     - docker-compose build
     - docker-compose push
     - scp -o StrictHostKeyChecking=no docker-compose.yaml jenkins@stork.lab.isc.org:~/deploy
+    - scp -o StrictHostKeyChecking=no docker/prometheus.yml jenkins@stork.lab.isc.org:~/deploy/docker/prometheus.yml
+    - scp -o StrictHostKeyChecking=no grafana/kea-dhcp4.json jenkins@stork.lab.isc.org:~/deploy/grafana/kea-dhcp4.json
+    - scp -o StrictHostKeyChecking=no docker/grafana/dashboards.yaml jenkins@stork.lab.isc.org:~/deploy/docker/grafana/dashboards.yaml
+    - scp -o StrictHostKeyChecking=no docker/grafana/datasource.yaml jenkins@stork.lab.isc.org:~/deploy/docker/grafana/datasource.yaml
+    - scp -o StrictHostKeyChecking=no docker/grafana/grafana.ini jenkins@stork.lab.isc.org:~/deploy/docker/grafana/grafana.ini
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml down
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml pull
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml up -d --no-build
