@@ -67,9 +67,6 @@ func appsMatch(app1, app2 *App) bool {
 	if app1.Created != app2.Created {
 		return false
 	}
-	if app1.Deleted != app2.Deleted {
-		return false
-	}
 	if app1.MachineID != app2.MachineID {
 		return false
 	}

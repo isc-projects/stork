@@ -135,7 +135,7 @@ func GetSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) (network *Shar
 		Relation("Subnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("Subnets.LocalSubnets.App").
+		Relation("Subnets.LocalSubnets.App.AccessPoints").
 		Where("shared_network.id = ?", networkID).
 		Select()
 
@@ -231,7 +231,7 @@ func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filt
 		Relation("Subnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("Subnets.LocalSubnets.App")
+		Relation("Subnets.LocalSubnets.App.AccessPoints")
 
 	// Let's be liberal and allow other values than 0 too. The only special
 	// ones are 4 and 6.

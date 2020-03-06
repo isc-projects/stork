@@ -166,7 +166,7 @@ func GetSubnet(db *pg.DB, subnetID int64) (*Subnet, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets.App").
+		Relation("LocalSubnets.App.AccessPoints").
 		Where("subnet.id = ?", subnetID).
 		Select()
 
@@ -196,7 +196,7 @@ func GetSubnetsByLocalID(db *pg.DB, localSubnetID int64, appID int64, family int
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets.App")
+		Relation("LocalSubnets.App.AccessPoints")
 
 	// Optionally filter by IPv4 or IPv6 subnets.
 	if family == 4 || family == 6 {
@@ -224,7 +224,7 @@ func GetSubnetsByPrefix(db *pg.DB, prefix string) ([]Subnet, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets.App").
+		Relation("LocalSubnets.App.AccessPoints").
 		Where("subnet.prefix = ?", prefix).
 		Select()
 
@@ -250,7 +250,7 @@ func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets.App").
+		Relation("LocalSubnets.App.AccessPoints").
 		OrderExpr("id ASC")
 
 	// Let's be liberal and allow other values than 0 too. The only special
@@ -300,8 +300,7 @@ func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText 
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets").
-		Relation("LocalSubnets.App")
+		Relation("LocalSubnets.App.AccessPoints")
 
 	// Let's be liberal and allow other values than 0 too. The only special
 	// ones are 4 and 6.

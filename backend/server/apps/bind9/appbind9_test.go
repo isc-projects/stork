@@ -63,24 +63,27 @@ func TestCommitAppIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, machine.ID)
 
+	var accessPoints []*dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
 	app := &dbmodel.App{
-		ID:        0,
-		MachineID: machine.ID,
-		Type:      dbmodel.AppTypeBind9,
-		CtrlPort:  1234,
-		CtrlKey:   "",
-		Active:    true,
+		ID:           0,
+		MachineID:    machine.ID,
+		Type:         dbmodel.AppTypeBind9,
+		Active:       true,
+		AccessPoints: accessPoints,
 	}
-
 	err = CommitAppIntoDB(db, app)
 	require.NoError(t, err)
 
-	app.CtrlPort = 2345
+	accessPoints = []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 2345)
+	app.AccessPoints = accessPoints
 	err = CommitAppIntoDB(db, app)
 	require.NoError(t, err)
 
 	returned, err := dbmodel.GetAppByID(db, app.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
-	require.EqualValues(t, 2345, returned.CtrlPort)
+	require.Len(t, returned.AccessPoints, 1)
+	require.EqualValues(t, 2345, returned.AccessPoints[0].Port)
 }

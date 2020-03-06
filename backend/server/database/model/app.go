@@ -98,23 +98,26 @@ func (app *App) AfterScan(ctx context.Context) error {
 	return nil
 }
 
-// addAppAccessPoints inserts the associated application access points into
-// the database.
-func addAppAccessPoints(tx *pg.Tx, app *App) (err error) {
+// walkAppAccessPoints inserts or updates the associated application access
+// points into the database.
+func walkAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
 	if len(app.AccessPoints) == 0 {
 		return nil
 	}
 
-	// If there are any access points to be inserted with the app,
-	// iterate over them and insert into the access_points table.
+	// If there are any access points associated with the app,
+	// iterate over them and insert/update into the access_points table.
 	for _, point := range app.AccessPoints {
 		point.AppID = app.ID
 		point.MachineID = app.MachineID
 
-		_, err := tx.Model(point).Insert()
+		if update {
+			_, err = tx.Model(point).WherePK().Update()
+		} else {
+			_, err = tx.Model(point).Insert()
+		}
 		if err != nil {
-			err = errors.Wrapf(err, "problem with adding new access point: %v", point)
-			return err
+			return errors.Wrapf(err, "problem with adding access point: %v", point)
 		}
 	}
 	return nil
@@ -139,10 +142,9 @@ func AddApp(dbIface interface{}, app *App) error {
 	}
 
 	// Add access points.
-	err = addAppAccessPoints(tx, app)
+	err = walkAppAccessPoints(tx, app, false)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with adding access points to app: %+v", app)
-		return err
+		return errors.Wrapf(err, "problem with adding access points to app: %+v", app)
 	}
 
 	// Commit the changes if necessary.
@@ -167,6 +169,12 @@ func UpdateApp(dbIface interface{}, app *App) error {
 	err = tx.Update(app)
 	if err != nil {
 		return errors.Wrapf(err, "problem with updating app %v", app)
+	}
+
+	// Update access points.
+	err = walkAppAccessPoints(tx, app, true)
+	if err != nil {
+		return errors.Wrapf(err, "problem with updating access points to app: %+v", app)
 	}
 
 	// Commit the changes if necessary.

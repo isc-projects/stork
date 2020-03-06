@@ -21,13 +21,14 @@ func addTestSubnetApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 		err := AddMachine(db, m)
 		require.NoError(t, err)
 
+		accessPoints := []*AccessPoint{}
+		accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", int64(1234+i))
 		a := &App{
-			ID:          0,
-			MachineID:   m.ID,
-			Type:        AppTypeKea,
-			CtrlAddress: "cool.example.org",
-			CtrlPort:    int64(1234 + i),
-			Active:      true,
+			ID:           0,
+			MachineID:    m.ID,
+			Type:         AppTypeKea,
+			Active:       true,
+			AccessPoints: accessPoints,
 			Details: AppKea{
 				Daemons: []*KeaDaemon{
 					{
@@ -447,7 +448,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Creates new app. Its configuration doesn't matter in this test.
-	var accessPoints []AccessPoint
+	var accessPoints []*AccessPoint
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "localhost", "", 8000)
 	app := App{
 		MachineID:    m.ID,

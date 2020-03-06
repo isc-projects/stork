@@ -25,13 +25,17 @@ func localSubnetToRestAPI(lsn *dbmodel.LocalSubnet) *models.Subnet {
 		sharedNetworkName = lsn.Subnet.SharedNetwork.Name
 	}
 
+	ctrl, err := lsn.App.GetAccessPoint(dbmodel.AccessPointControl)
+	if err != nil {
+		return nil
+	}
 	subnet := &models.Subnet{
 		AppID:            lsn.App.ID,
 		ID:               lsn.LocalSubnetID,
 		Pools:            pools,
 		Subnet:           lsn.Subnet.Prefix,
 		SharedNetwork:    sharedNetworkName,
-		MachineAddress:   fmt.Sprintf("%s:%d", lsn.App.CtrlAddress, lsn.App.CtrlPort),
+		MachineAddress:   fmt.Sprintf("%s:%d", ctrl.Address, ctrl.Port),
 		ClientClass:      lsn.Subnet.ClientClass,
 		Stats:            lsn.Stats,
 		StatsCollectedAt: strfmt.DateTime(lsn.StatsCollectedAt),
@@ -157,12 +161,15 @@ func (r *RestAPI) GetSharedNetworks(ctx context.Context, params dhcp.GetSharedNe
 			}
 		}
 		// Create shared network and use the app id of the first subnet found.
+		ctrl, err := net.Subnets[0].LocalSubnets[0].App.GetAccessPoint(dbmodel.AccessPointControl)
+		if err != nil {
+			continue
+		}
 		sharedNetwork := &models.SharedNetwork{
-			Name:    net.Name,
-			AppID:   net.Subnets[0].LocalSubnets[0].AppID,
-			Subnets: subnets,
-			MachineAddress: fmt.Sprintf("%s:%d", net.Subnets[0].LocalSubnets[0].App.CtrlAddress,
-				net.Subnets[0].LocalSubnets[0].App.CtrlPort),
+			Name:           net.Name,
+			AppID:          net.Subnets[0].LocalSubnets[0].AppID,
+			Subnets:        subnets,
+			MachineAddress: fmt.Sprintf("%s:%d", ctrl.Address, ctrl.Port),
 		}
 		sharedNetworks.Items = append(sharedNetworks.Items, sharedNetwork)
 	}

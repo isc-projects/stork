@@ -125,14 +125,14 @@ func TestUpdateApp(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, m.ID)
 
+	accessPoints := []*AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234)
 	a := &App{
-		ID:          0,
-		MachineID:   m.ID,
-		Type:        AppTypeKea,
-		CtrlAddress: "cool.example.org",
-		CtrlPort:    1234,
-		CtrlKey:     "",
-		Active:      true,
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         AppTypeKea,
+		Active:       true,
+		AccessPoints: accessPoints,
 	}
 
 	err = UpdateApp(db, a)
@@ -142,7 +142,9 @@ func TestUpdateApp(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, a.ID)
 
-	a.CtrlPort = 2345
+	accessPoints = []*AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 2345)
+	a.AccessPoints = accessPoints
 	err = UpdateApp(db, a)
 	require.NoError(t, err)
 }
@@ -648,13 +650,14 @@ func TestAfterScanBind(t *testing.T) {
 func TestGetLocalSubnetID(t *testing.T) {
 	ctx := context.Background()
 
+	accessPoints := []*AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234)
 	aKea := &App{
-		ID:        0,
-		MachineID: 0,
-		Type:      AppTypeKea,
-		CtrlPort:  1234,
-		CtrlKey:   "",
-		Active:    true,
+		ID:           0,
+		MachineID:    0,
+		Type:         AppTypeKea,
+		Active:       true,
+		AccessPoints: accessPoints,
 	}
 
 	// Add a DHCPv4 daemon with a simple configuration comprising a single subnet.
