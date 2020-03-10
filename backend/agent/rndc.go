@@ -28,7 +28,7 @@ func NewRndcClient(ce CommandExecutor) *RndcClient {
 }
 
 func (c *RndcClient) Call(app *App, command []string) (output []byte, err error) {
-	ctrl, err := GetAccessPoint(app, AccessPointControl)
+	ctrl, err := getAccessPoint(app, AccessPointControl)
 	if err != nil {
 		return nil, err
 	}

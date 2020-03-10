@@ -123,29 +123,35 @@ func TestDetectApps(t *testing.T) {
 	am.Shutdown()
 }
 
-func TestDetectBind9App(t *testing.T) {
+func makeNamedConfFile() (file *os.File, removeFunc func(string) error) {
 	// prepare named.conf file
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
+	file, err := ioutil.TempFile(os.TempDir(), "prefix-")
 	if err != nil {
 		log.Fatal("Cannot create temporary file", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	removeFunc = os.Remove
 
 	text := []byte(string("keys \"foo\" {\n   algorithm \"hmac-md5\";\n   secret \"abcd\"; \n};\n"))
-	if _, err = tmpFile.Write(text); err != nil {
+	if _, err = file.Write(text); err != nil {
 		log.Fatal("Failed to write to temporary file", err)
 	}
 	text = []byte(string("controls {\n   inet 127.0.0.53 port 5353 allow { localhost; } keys { \"foo\";};\n};\n"))
-	if _, err = tmpFile.Write(text); err != nil {
+	if _, err = file.Write(text); err != nil {
 		log.Fatal("Failed to write to temporary file", err)
 	}
 	text = []byte(string("statistics-channels {\n   inet 127.0.0.80 port 80 allow { localhost; };\n};\n"))
-	if _, err = tmpFile.Write(text); err != nil {
+	if _, err = file.Write(text); err != nil {
 		log.Fatal("Failed to write to temporary file", err)
 	}
-	if err := tmpFile.Close(); err != nil {
+	if err := file.Close(); err != nil {
 		log.Fatal(err)
 	}
+	return file, removeFunc
+}
+
+func TestDetectBind9App(t *testing.T) {
+	tmpFile, remove := makeNamedConfFile()
+	defer remove(tmpFile.Name())
 
 	// check BIND 9 app detection
 	app := detectBind9App([]string{"", tmpFile.Name()})
@@ -164,21 +170,28 @@ func TestDetectBind9App(t *testing.T) {
 	require.Empty(t, point.Key)
 }
 
-func TestDetectKeaApp(t *testing.T) {
+func makeKeaConfFile() (file *os.File, removeFunc func(string) error) {
 	// prepare kea conf file
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
+	file, err := ioutil.TempFile(os.TempDir(), "prefix-")
 	if err != nil {
 		log.Fatal("Cannot create temporary file", err)
 	}
-	defer os.Remove(tmpFile.Name())
+	removeFunc = os.Remove
 
 	text := []byte("\"http-host\": \"localhost\", \"http-port\": 45634")
-	if _, err = tmpFile.Write(text); err != nil {
+	if _, err = file.Write(text); err != nil {
 		log.Fatal("Failed to write to temporary file", err)
 	}
-	if err := tmpFile.Close(); err != nil {
+	if err := file.Close(); err != nil {
 		log.Fatal(err)
 	}
+
+	return file, removeFunc
+}
+
+func TestDetectKeaApp(t *testing.T) {
+	tmpFile, remove := makeKeaConfFile()
+	defer remove(tmpFile.Name())
 
 	// check kea app detection
 	app := detectKeaApp([]string{"", tmpFile.Name()})
@@ -190,4 +203,51 @@ func TestDetectKeaApp(t *testing.T) {
 	require.Equal(t, "localhost", ctrlPoint.Address)
 	require.Equal(t, int64(45634), ctrlPoint.Port)
 	require.Empty(t, ctrlPoint.Key)
+}
+
+func TestGetAccessPoint(t *testing.T) {
+	namedFile, removeNamedFile := makeNamedConfFile()
+	defer removeNamedFile(namedFile.Name())
+
+	keaFile, removeKeaFile := makeKeaConfFile()
+	defer removeKeaFile(keaFile.Name())
+
+	// detect apps
+	bind9App := detectBind9App([]string{"", namedFile.Name()})
+	require.NotNil(t, bind9App)
+	require.Equal(t, bind9App.Type, AppTypeBind9)
+
+	keaApp := detectKeaApp([]string{"", keaFile.Name()})
+	require.NotNil(t, keaApp)
+	require.Equal(t, AppTypeKea, keaApp.Type)
+
+	// test get bind 9 access points
+	point, err := getAccessPoint(bind9App, AccessPointControl)
+	require.NotNil(t, point)
+	require.NoError(t, err)
+	require.Equal(t, AccessPointControl, point.Type)
+	require.Equal(t, "127.0.0.53", point.Address)
+	require.Equal(t, int64(5353), point.Port)
+	require.Equal(t, "hmac-md5:abcd", point.Key)
+
+	point, err = getAccessPoint(bind9App, AccessPointStatistics)
+	require.NotNil(t, point)
+	require.NoError(t, err)
+	require.Equal(t, AccessPointStatistics, point.Type)
+	require.Equal(t, "127.0.0.80", point.Address)
+	require.Equal(t, int64(80), point.Port)
+	require.Empty(t, point.Key)
+
+	// test get kea access points
+	point, err = getAccessPoint(keaApp, AccessPointControl)
+	require.NotNil(t, point)
+	require.NoError(t, err)
+	require.Equal(t, AccessPointControl, point.Type)
+	require.Equal(t, "localhost", point.Address)
+	require.Equal(t, int64(45634), point.Port)
+	require.Empty(t, point.Key)
+
+	point, err = getAccessPoint(keaApp, AccessPointStatistics)
+	require.Error(t, err)
+	require.Nil(t, point)
 }

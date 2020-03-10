@@ -140,8 +140,8 @@ func (sm *appMonitor) Shutdown() {
 	sm.quit <- true
 }
 
-// GetAccessPoint retrieves the requested type of access point from the app.
-func GetAccessPoint(app *App, accessType string) (*AccessPoint, error) {
+// getAccessPoint retrieves the requested type of access point from the app.
+func getAccessPoint(app *App, accessType string) (*AccessPoint, error) {
 	for _, point := range app.AccessPoints {
 		if point.Type != accessType {
 			continue

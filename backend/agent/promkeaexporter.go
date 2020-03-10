@@ -444,10 +444,10 @@ func (pke *PromKeaExporter) collectStats() error {
 		log.Printf("APP %+v", app)
 
 		// get stats from kea
-		ctrl, err := GetAccessPoint(app, AccessPointControl)
+		ctrl, err := getAccessPoint(app, AccessPointControl)
 		if err != nil {
 			lastErr = err
-			log.Errorf("problem with getting stats from kea: %+v", err)
+			log.Errorf("problem with getting stats from kea, bad Kea access control point: %+v", err)
 			continue
 		}
 		caURL := storkutil.HostWithPortURL(ctrl.Address, ctrl.Port)
