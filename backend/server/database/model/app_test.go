@@ -134,19 +134,101 @@ func TestUpdateApp(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-
-	err = UpdateApp(db, a)
-	require.Error(t, err)
-
 	err = AddApp(db, a)
 	require.NoError(t, err)
 	require.NotZero(t, a.ID)
 
+	// change active
+	a.Active = false
+	err = UpdateApp(db, a)
+	require.NoError(t, err)
+	require.False(t, a.Active)
+
+	returned, err := GetAppByID(db, a.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.EqualValues(t, a.ID, returned.ID)
+	require.False(t, returned.Active)
+
+	// change access point
 	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 2345)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "warm.example.org", "abcd", 2345)
 	a.AccessPoints = accessPoints
 	err = UpdateApp(db, a)
 	require.NoError(t, err)
+	require.Len(t, a.AccessPoints, 1)
+	pt := a.AccessPoints[0]
+	require.Equal(t, AccessPointControl, pt.Type)
+	require.Equal(t, "warm.example.org", pt.Address)
+	require.EqualValues(t, 2345, pt.Port)
+	require.Equal(t, "abcd", pt.Key)
+
+	returned, err = GetAppByID(db, a.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.EqualValues(t, a.ID, returned.ID)
+	require.Len(t, returned.AccessPoints, 1)
+	pt = returned.AccessPoints[0]
+	require.Equal(t, AccessPointControl, pt.Type)
+	require.Equal(t, "warm.example.org", pt.Address)
+	require.EqualValues(t, 2345, pt.Port)
+	require.Equal(t, "abcd", pt.Key)
+
+	// add access point
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointStatistics, "cold.example.org", "", 1234)
+	a.AccessPoints = accessPoints
+	err = UpdateApp(db, a)
+	require.NoError(t, err)
+	require.Len(t, a.AccessPoints, 2)
+	pt = a.AccessPoints[0]
+	require.Equal(t, AccessPointControl, pt.Type)
+	require.Equal(t, "warm.example.org", pt.Address)
+	require.EqualValues(t, 2345, pt.Port)
+	require.Equal(t, "abcd", pt.Key)
+	pt = a.AccessPoints[1]
+	require.Equal(t, AccessPointStatistics, pt.Type)
+	require.Equal(t, "cold.example.org", pt.Address)
+	require.EqualValues(t, 1234, pt.Port)
+	require.Empty(t, pt.Key)
+
+	returned, err = GetAppByID(db, a.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.EqualValues(t, a.ID, returned.ID)
+	require.Len(t, returned.AccessPoints, 2)
+	pt = returned.AccessPoints[0]
+	require.Equal(t, AccessPointControl, pt.Type)
+	require.Equal(t, "warm.example.org", pt.Address)
+	require.EqualValues(t, 2345, pt.Port)
+	require.Equal(t, "abcd", pt.Key)
+	pt = returned.AccessPoints[1]
+	require.Equal(t, AccessPointStatistics, pt.Type)
+	require.Equal(t, "cold.example.org", pt.Address)
+	require.EqualValues(t, 1234, pt.Port)
+	require.Empty(t, pt.Key)
+
+	// delete access point
+	accessPoints = accessPoints[0:1]
+	a.AccessPoints = accessPoints
+	err = UpdateApp(db, a)
+	require.NoError(t, err)
+	require.Len(t, a.AccessPoints, 1)
+	pt = a.AccessPoints[0]
+	require.Equal(t, AccessPointControl, pt.Type)
+	require.Equal(t, "warm.example.org", pt.Address)
+	require.EqualValues(t, 2345, pt.Port)
+	require.Equal(t, "abcd", pt.Key)
+
+	returned, err = GetAppByID(db, a.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.EqualValues(t, a.ID, returned.ID)
+	require.Len(t, returned.AccessPoints, 1)
+	pt = returned.AccessPoints[0]
+	require.Equal(t, AccessPointControl, pt.Type)
+	require.Equal(t, "warm.example.org", pt.Address)
+	require.EqualValues(t, 2345, pt.Port)
+	require.Equal(t, "abcd", pt.Key)
 }
 
 func TestDeleteApp(t *testing.T) {

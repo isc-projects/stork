@@ -98,11 +98,22 @@ func (app *App) AfterScan(ctx context.Context) error {
 	return nil
 }
 
-// walkAppAccessPoints inserts or updates the associated application access
-// points into the database.
-func walkAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
-	if len(app.AccessPoints) == 0 {
-		return nil
+// updateAppAccessPoints updates the associated application access points into
+// the database.
+func updateAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
+	if update {
+		// First delete any access points previously associated with the app.
+		types := []string{}
+		for _, point := range app.AccessPoints {
+			types = append(types, point.Type)
+		}
+		q := tx.Model((*AccessPoint)(nil))
+		q = q.Where("app_id = ?", app.ID)
+		q = q.Where("type NOT IN (?)", pg.In(types))
+		_, err = q.Delete()
+		if err != nil {
+			return errors.Wrapf(err, "problem with removing access points from app %d", app.ID)
+		}
 	}
 
 	// If there are any access points associated with the app,
@@ -110,14 +121,13 @@ func walkAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
 	for _, point := range app.AccessPoints {
 		point.AppID = app.ID
 		point.MachineID = app.MachineID
-
 		if update {
-			_, err = tx.Model(point).WherePK().Update()
+			_, err = tx.Model(point).OnConflict("(app_id, type) DO UPDATE").Insert()
 		} else {
 			_, err = tx.Model(point).Insert()
 		}
 		if err != nil {
-			return errors.Wrapf(err, "problem with adding access point: %v", point)
+			return errors.Wrapf(err, "problem with adding access point to app %d: %v", app.ID, point)
 		}
 	}
 	return nil
@@ -142,7 +152,7 @@ func AddApp(dbIface interface{}, app *App) error {
 	}
 
 	// Add access points.
-	err = walkAppAccessPoints(tx, app, false)
+	err = updateAppAccessPoints(tx, app, false)
 	if err != nil {
 		return errors.Wrapf(err, "problem with adding access points to app: %+v", app)
 	}
@@ -172,7 +182,7 @@ func UpdateApp(dbIface interface{}, app *App) error {
 	}
 
 	// Update access points.
-	err = walkAppAccessPoints(tx, app, true)
+	err = updateAppAccessPoints(tx, app, true)
 	if err != nil {
 		return errors.Wrapf(err, "problem with updating access points to app: %+v", app)
 	}
