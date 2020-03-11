@@ -41,3 +41,7 @@ TAGS
 # files created by running docker containers
 /backend/cmd/stork-agent/supervisord.log
 /backend/cmd/stork-agent/supervisord.pid
+
+# doc related
+/doc/_build/
+/webui/src/assets/arm/

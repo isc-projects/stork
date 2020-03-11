@@ -101,6 +101,28 @@ export class AppComponent implements OnInit {
                 },
             ],
         })
+        this.menuItems.push({
+            label: 'Help',
+            items: [
+                {
+                    label: 'Manual',
+                    icon: 'fa fa-book',
+                    url: '/assets/arm/index.html',
+                    target: 'blank',
+                },
+                {
+                    label: 'API Docs (SwaggerUI)',
+                    icon: 'fa fa-code',
+                    routerLink: '/swagger-ui',
+                },
+                {
+                    label: 'API Docs (Redoc)',
+                    icon: 'fa fa-code',
+                    url: '/api/docs',
+                    target: 'blank',
+                },
+            ],
+        })
     }
 
     ngOnInit() {

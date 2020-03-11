@@ -25,7 +25,7 @@ cache:
 # common before script
 before_script:
   - apt-get update
-  - apt-get install -y wget xz-utils rake openjdk-11-jre-headless gcc g++ chromium-browser unzip
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y wget xz-utils rake openjdk-11-jre-headless gcc g++ chromium-browser unzip python3-sphinx python3-sphinx-rtd-theme
   - rake prepare_env
 
 ### build jobs ###

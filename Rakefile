@@ -388,14 +388,14 @@ file NG => NPX do
 end
 
 desc 'Build angular application'
-task :build_ui => [NG, :gen_client] do
+task :build_ui => [NG, :gen_client, :doc] do
   Dir.chdir('webui') do
     sh 'npx ng build --prod'
   end
 end
 
 desc 'Serve angular app'
-task :serve_ui => [NG, :gen_client] do
+task :serve_ui => [NG, :gen_client, :doc] do
   Dir.chdir('webui') do
     sh 'npx ng serve --disable-host-check --proxy-config proxy.conf.json'
   end
@@ -504,7 +504,9 @@ end
 # Documentation
 desc 'Builds Stork documentation, using Sphinx'
 task :doc do
-  sh "sphinx-build -M singlehtml doc/ doc/ #{SPHINXOPTS}"
+  sh "sphinx-build -M singlehtml doc/ doc/_build #{SPHINXOPTS}"
+  sh 'mkdir -p webui/src/assets/arm'
+  sh 'cp -a doc/_build/singlehtml/* webui/src/assets/arm'
 end
 
 
