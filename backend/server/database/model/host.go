@@ -254,6 +254,52 @@ func GetAllHosts(db *pg.DB, family int) ([]Host, error) {
 	return hosts, err
 }
 
+// Fetches a collection of hosts from the database. The offset and limit
+// specify the beginning of the page and the maximum size of the page. The
+// optional subnetID is used to fetch hosts belonging to the particular
+// IPv4 or IPv6 subnet. If this value is set to nil all subnets are returned.
+// The value of 0 indicates that only global hosts are to be returned.
+func GetHostsByPage(db *pg.DB, offset, limit int64, subnetID *int64, filterText *string) ([]Host, int64, error) {
+	hosts := []Host{}
+	q := db.Model(&hosts).DistinctOn("host.id")
+
+	if subnetID != nil {
+		if *subnetID == 0 {
+			// Get global hosts, i.e. the ones for which subnet ids are not
+			// specified.
+			q = q.Where("subnet_id IS NULL")
+		} else {
+			// Get hosts for matching subnet id.
+			q = q.Where("subnet_id = ?", *subnetID)
+		}
+	}
+
+	if filterText != nil && len(*filterText) > 0 {
+		q = q.Join("INNER JOIN ip_reservation AS r ON r.host_id = host.id")
+		q = q.Where("text(r.address) LIKE ?", "%"+*filterText+"%")
+	}
+
+	q = q.
+		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("host_identifier.id ASC"), nil
+		}).
+		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("ip_reservation.id ASC"), nil
+		}).
+		OrderExpr("host.id ASC").
+		Offset(int(offset)).
+		Limit(int(limit))
+
+	total, err := q.SelectAndCount()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, 0, nil
+		}
+		err = errors.Wrapf(err, "problem with getting hosts by page")
+	}
+	return hosts, int64(total), err
+}
+
 // Delete host, host identifiers and reservations by id.
 func DeleteHost(db *pg.DB, hostID int64) error {
 	host := &Host{

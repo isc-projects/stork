@@ -3,10 +3,113 @@ package dbmodel
 import (
 	"testing"
 
+	"github.com/go-pg/pg/v9"
 	"github.com/stretchr/testify/require"
 
 	dbtest "isc.org/stork/server/database/test"
 )
+
+// This function creates multiple hosts used in tests which fetch and
+// filter hosts.
+func addHostsForFilteringTest(t *testing.T, db *pg.DB) []Host {
+	subnets := []Subnet{
+		{
+			ID:     1,
+			Prefix: "192.0.2.0/24",
+		},
+		{
+			ID:     2,
+			Prefix: "2001:db8:1::/64",
+		},
+	}
+	for i, s := range subnets {
+		subnet := s
+		err := AddSubnet(db, &subnet)
+		require.NoError(t, err)
+		require.NotZero(t, subnet.ID)
+		subnets[i] = subnet
+	}
+
+	hosts := []Host{
+		{
+			SubnetID: 1,
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{1, 2, 3, 4, 5, 6},
+				},
+				{
+					Type:  "circuit-id",
+					Value: []byte{1, 2, 3, 4},
+				},
+			},
+			IPReservations: []IPReservation{
+				{
+					Address: "192.0.2.4/32",
+				},
+				{
+					Address: "192.0.2.5/32",
+				},
+			},
+		},
+		{
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{2, 3, 4, 5, 6, 7},
+				},
+				{
+					Type:  "circuit-id",
+					Value: []byte{2, 3, 4, 5},
+				},
+			},
+			IPReservations: []IPReservation{
+				{
+					Address: "192.0.2.6/32",
+				},
+				{
+					Address: "192.0.2.7/32",
+				},
+			},
+		},
+		{
+			SubnetID: 2,
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{1, 2, 3, 4, 5, 6},
+				},
+			},
+			IPReservations: []IPReservation{
+				{
+					Address: "2001:db8:1::1/128",
+				},
+			},
+		},
+		{
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "duid",
+					Value: []byte{1, 2, 3, 4},
+				},
+			},
+			IPReservations: []IPReservation{
+				{
+					Address: "2001:db8:1::2/128",
+				},
+			},
+		},
+	}
+
+	for i, h := range hosts {
+		host := h
+		err := AddHost(db, &host)
+		require.NoError(t, err)
+		require.NotZero(t, host.ID)
+		hosts[i] = host
+	}
+	return hosts
+}
 
 // This test verifies that the new host along with identifiers and reservations
 // can be added to the database.
@@ -188,81 +291,7 @@ func TestGetAllHosts(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts := []Host{
-		{
-			HostIdentifiers: []HostIdentifier{
-				{
-					Type:  "hw-address",
-					Value: []byte{1, 2, 3, 4, 5, 6},
-				},
-				{
-					Type:  "circuit-id",
-					Value: []byte{1, 2, 3, 4},
-				},
-			},
-			IPReservations: []IPReservation{
-				{
-					Address: "192.0.2.4/32",
-				},
-				{
-					Address: "192.0.2.5/32",
-				},
-			},
-		},
-		{
-			HostIdentifiers: []HostIdentifier{
-				{
-					Type:  "hw-address",
-					Value: []byte{2, 3, 4, 5, 6, 7},
-				},
-				{
-					Type:  "circuit-id",
-					Value: []byte{2, 3, 4, 5},
-				},
-			},
-			IPReservations: []IPReservation{
-				{
-					Address: "192.0.2.6/32",
-				},
-				{
-					Address: "192.0.2.7/32",
-				},
-			},
-		},
-		{
-			HostIdentifiers: []HostIdentifier{
-				{
-					Type:  "hw-address",
-					Value: []byte{1, 2, 3, 4, 5, 6},
-				},
-			},
-			IPReservations: []IPReservation{
-				{
-					Address: "2001:db8:1::1/128",
-				},
-			},
-		},
-		{
-			HostIdentifiers: []HostIdentifier{
-				{
-					Type:  "duid",
-					Value: []byte{1, 2, 3, 4},
-				},
-			},
-			IPReservations: []IPReservation{
-				{
-					Address: "2001:db8:1::2/128",
-				},
-			},
-		},
-	}
-	for i, h := range hosts {
-		host := h
-		err := AddHost(db, &host)
-		require.NoError(t, err)
-		require.NotZero(t, host.ID)
-		hosts[i] = host
-	}
+	hosts := addHostsForFilteringTest(t, db)
 
 	// Fetch all hosts having IPv4 reservations.
 	returned, err := GetAllHosts(db, 4)
@@ -288,6 +317,79 @@ func TestGetAllHosts(t *testing.T) {
 	for _, host := range hosts {
 		require.Contains(t, returned, host)
 	}
+}
+
+// Test that page of the hosts can be fetched without filtering.
+func TestGetHostsByPageNoFiltering(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
+	_ = addHostsForFilteringTest(t, db)
+
+	returned, _, err := GetHostsByPage(db, 0, 10, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, returned, 4)
+}
+
+// Test that page of the hosts can be fetched with filtering by subnet id.
+func TestGetHostsByPageSubnet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
+	hosts := addHostsForFilteringTest(t, db)
+
+	// Get global hosts only.
+	subnetID := int64(0)
+	returned, _, err := GetHostsByPage(db, 0, 10, &subnetID, nil)
+	require.NoError(t, err)
+	require.Len(t, returned, 2)
+	require.Contains(t, returned, hosts[1])
+	require.Contains(t, returned, hosts[3])
+
+	// Get hosts associated with subnet id 1.
+	subnetID = int64(1)
+	returned, _, err = GetHostsByPage(db, 0, 10, &subnetID, nil)
+	require.NoError(t, err)
+	require.Len(t, returned, 1)
+	require.Contains(t, returned, hosts[0])
+
+	// Get hosts associated with subnet id 2.
+	subnetID = int64(2)
+	returned, _, err = GetHostsByPage(db, 0, 10, &subnetID, nil)
+	require.NoError(t, err)
+	require.Len(t, returned, 1)
+	require.Contains(t, returned, hosts[2])
+}
+
+// Test that page of the hosts can be filtered by IP reservations.
+func TestGetHostsByPageFilteringText(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
+	hosts := addHostsForFilteringTest(t, db)
+
+	filterText := "0.2.4"
+	returned, _, err := GetHostsByPage(db, 0, 10, nil, &filterText)
+	require.NoError(t, err)
+	require.Len(t, returned, 1)
+	require.Contains(t, returned, hosts[0])
+
+	filterText = "192.0.2"
+	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	require.NoError(t, err)
+	require.Len(t, returned, 2)
+	require.Contains(t, returned, hosts[0])
+	require.Contains(t, returned, hosts[1])
+
+	filterText = "0"
+	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	require.NoError(t, err)
+	require.Len(t, returned, 4)
+
+	require.ElementsMatch(t, returned, hosts)
 }
 
 // Test that the host and its identifiers and reservations can be
