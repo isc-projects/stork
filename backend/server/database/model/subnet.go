@@ -47,6 +47,8 @@ type Subnet struct {
 	PrefixPools  []PrefixPool
 
 	LocalSubnets []*LocalSubnet
+
+	Hosts []Host
 }
 
 // Return family of the subnet.

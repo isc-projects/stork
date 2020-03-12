@@ -2,9 +2,11 @@ package dbmodel
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
+	"reflect"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -80,6 +82,13 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) (*Subnet, error) {
 		prefixPool.SubnetID = keaSubnet.ID
 		convertedSubnet.PrefixPools = append(convertedSubnet.PrefixPools, *prefixPool)
 	}
+	for _, r := range keaSubnet.Reservations {
+		host, err := NewHostFromKeaConfigReservation(r)
+		if err != nil {
+			return nil, err
+		}
+		convertedSubnet.Hosts = append(convertedSubnet.Hosts, *host)
+	}
 	return convertedSubnet, nil
 }
 
@@ -123,6 +132,61 @@ func NewSubnetFromKea(rawSubnet *map[string]interface{}) (*Subnet, error) {
 	var parsedSubnet KeaConfigSubnet
 	_ = mapstructure.Decode(rawSubnet, &parsedSubnet)
 	return convertSubnetFromKea(&parsedSubnet)
+}
+
+// Creates new host instance from the host reservation extracted from the
+// Kea configuration.
+func NewHostFromKeaConfigReservation(reservation KeaConfigReservation) (*Host, error) {
+	var host Host
+	structType := reflect.TypeOf(reservation)
+	value := reflect.ValueOf(reservation)
+
+	// Iterate over the struct fields which may hold host identifiers.
+	for _, name := range []string{"HWAddress", "DUID", "CircuitID", "ClientID", "FlexID"} {
+		fieldValue := strings.TrimSpace(value.FieldByName(name).String())
+		if len(fieldValue) > 0 {
+			// Struct field type is required to map the struct field to
+			// an identifier name.
+			fieldType, ok := structType.FieldByName(name)
+			if !ok {
+				continue
+			}
+			// The mapstructure tag contains the identifier name.
+			tag, ok := fieldType.Tag.Lookup("mapstructure")
+			if !ok {
+				continue
+			}
+			// Remove colons from the string of hexadecimal values.
+			hexv := strings.ReplaceAll(fieldValue, ":", "")
+			// Convert the identifier to binary.
+			bytev, err := hex.DecodeString(hexv)
+			if err != nil {
+				return nil, err
+			}
+			identifier := HostIdentifier{
+				Type:  tag,
+				Value: bytev,
+			}
+			// Append the identifier.
+			host.HostIdentifiers = append(host.HostIdentifiers, identifier)
+		}
+	}
+	// Iterate over the IPv6 addresses and prefixes and create IP reservations
+	// from them
+	for _, addrs := range [][]string{reservation.IPAddresses, reservation.Prefixes} {
+		for _, addr := range addrs {
+			host.IPReservations = append(host.IPReservations, IPReservation{
+				Address: strings.TrimSpace(addr),
+			})
+		}
+	}
+	// Finally, take the IPv4 reservation.
+	if len(reservation.IPAddress) > 0 {
+		host.IPReservations = append(host.IPReservations, IPReservation{
+			Address: strings.TrimSpace(reservation.IPAddress),
+		})
+	}
+	return &host, nil
 }
 
 // Returns name of the root configuration node, e.g. Dhcp4.

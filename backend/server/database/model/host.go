@@ -34,7 +34,7 @@ type IPReservation struct {
 // one or more identifiers which are used for matching DHCP clients with the
 // host.
 type Host struct {
-	ID           int64 `pg:",pk"`
+	ID        int64 `pg:",pk"`
 	CreatedAt time.Time
 	SubnetID  int64
 

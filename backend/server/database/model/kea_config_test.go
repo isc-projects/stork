@@ -413,6 +413,19 @@ func TestNewSubnetFromKea(t *testing.T) {
 				"delegated-len": 120,
 			},
 		},
+		"reservations": []interface{}{
+			map[string]interface{}{
+				"duid": "01:02:03:04:05:06",
+				"ip-addresses": []interface{}{
+					"2001:db8:1::1",
+					"2001:db8:1::2",
+				},
+				"prefixes": []interface{}{
+					"3000:1::/64",
+					"3000:2::/64",
+				},
+			},
+		},
 	}
 
 	parsedSubnet, err := NewSubnetFromKea(&rawSubnet)
@@ -427,4 +440,15 @@ func TestNewSubnetFromKea(t *testing.T) {
 	require.Len(t, parsedSubnet.PrefixPools, 1)
 	require.Equal(t, "2001:db8:1:1::/96", parsedSubnet.PrefixPools[0].Prefix)
 	require.EqualValues(t, 120, parsedSubnet.PrefixPools[0].DelegatedLen)
+
+	require.Len(t, parsedSubnet.Hosts, 1)
+	require.Len(t, parsedSubnet.Hosts[0].HostIdentifiers, 1)
+	require.Equal(t, "duid", parsedSubnet.Hosts[0].HostIdentifiers[0].Type)
+	require.Equal(t, []byte{1, 2, 3, 4, 5, 6}, parsedSubnet.Hosts[0].HostIdentifiers[0].Value)
+
+	require.Len(t, parsedSubnet.Hosts[0].IPReservations, 4)
+	require.Equal(t, "2001:db8:1::1", parsedSubnet.Hosts[0].IPReservations[0].Address)
+	require.Equal(t, "2001:db8:1::2", parsedSubnet.Hosts[0].IPReservations[1].Address)
+	require.Equal(t, "3000:1::/64", parsedSubnet.Hosts[0].IPReservations[2].Address)
+	require.Equal(t, "3000:2::/64", parsedSubnet.Hosts[0].IPReservations[3].Address)
 }
