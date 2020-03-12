@@ -40,6 +40,8 @@ type Host struct {
 
 	HostIdentifiers []HostIdentifier
 	IPReservations  []IPReservation
+
+	LocalHosts []LocalHost
 }
 
 // This structure links a host entry stored in the database with an app from
@@ -206,6 +208,7 @@ func GetHost(db *pg.DB, hostID int64) (*Host, error) {
 		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
+		Relation("LocalHosts.App").
 		Where("host.id = ?", hostID).
 		Select()
 
@@ -240,6 +243,7 @@ func GetAllHosts(db *pg.DB, family int) ([]Host, error) {
 		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
+		Relation("LocalHosts").
 		OrderExpr("id ASC")
 
 	err := q.Select()
@@ -286,6 +290,7 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, subnetID *int64, filterText 
 		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
+		Relation("LocalHosts").
 		OrderExpr("host.id ASC").
 		Offset(int(offset)).
 		Limit(int(limit))
@@ -308,6 +313,41 @@ func DeleteHost(db *pg.DB, hostID int64) error {
 	_, err := db.Model(host).WherePK().Delete()
 	if err != nil {
 		err = errors.Wrapf(err, "problem with deleting a host with id %d", hostID)
+	}
+	return err
+}
+
+// Associates an applicatiopn with the host having a specified ID. Internally,
+// the association is made via the local_host table which holds information
+// about the host from the given app perspective. The source argument
+// indicates whether the host information was fetched from the app's configuration
+// or via the command.
+func AddAppToHost(dbIface interface{}, host *Host, app *App, source string) error {
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with starting transaction for associating an app %d with the host %d",
+			app.ID, host.ID)
+		return err
+	}
+	defer rollback()
+
+	localHost := LocalHost{
+		AppID:      app.ID,
+		HostID:     host.ID,
+		DataSource: source,
+	}
+
+	_, err = tx.Model(&localHost).Insert()
+	if err != nil {
+		err = errors.Wrapf(err, "problem with associating the app %d with the host %d",
+			app.ID, host.ID)
+		return err
+	}
+
+	err = commit()
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with committing transaction associating the app %d with the host %d",
+			app.ID, host.ID)
 	}
 	return err
 }

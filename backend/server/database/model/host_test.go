@@ -11,7 +11,7 @@ import (
 
 // This function creates multiple hosts used in tests which fetch and
 // filter hosts.
-func addHostsForFilteringTest(t *testing.T, db *pg.DB) []Host {
+func addTestHosts(t *testing.T, db *pg.DB) []Host {
 	subnets := []Subnet{
 		{
 			ID:     1,
@@ -291,7 +291,7 @@ func TestGetAllHosts(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts := addHostsForFilteringTest(t, db)
+	hosts := addTestHosts(t, db)
 
 	// Fetch all hosts having IPv4 reservations.
 	returned, err := GetAllHosts(db, 4)
@@ -325,7 +325,7 @@ func TestGetHostsByPageNoFiltering(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	_ = addHostsForFilteringTest(t, db)
+	_ = addTestHosts(t, db)
 
 	returned, _, err := GetHostsByPage(db, 0, 10, nil, nil)
 	require.NoError(t, err)
@@ -338,7 +338,7 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts := addHostsForFilteringTest(t, db)
+	hosts := addTestHosts(t, db)
 
 	// Get global hosts only.
 	subnetID := int64(0)
@@ -369,7 +369,7 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	defer teardown()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts := addHostsForFilteringTest(t, db)
+	hosts := addTestHosts(t, db)
 
 	filterText := "0.2.4"
 	returned, _, err := GetHostsByPage(db, 0, 10, nil, &filterText)
@@ -421,4 +421,55 @@ func TestDeleteHost(t *testing.T) {
 	returned, err := GetHost(db, host.ID)
 	require.NoError(t, err)
 	require.Nil(t, returned)
+}
+
+// Test that an app can be associated with a host.
+func TestAddAppToHost(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps and hosts into the database.
+	apps := addTestSubnetApps(t, db)
+	hosts := addTestHosts(t, db)
+
+	// Associate the first host with the first app.
+	host := hosts[0]
+	err := AddAppToHost(db, &host, apps[0], "api")
+	require.NoError(t, err)
+
+	// Fetch the host from the database.
+	returned, err := GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+
+	// Make sure that the host includes the local host information which
+	// associates the app with the host.
+	require.Len(t, returned.LocalHosts, 1)
+	require.Equal(t, "api", returned.LocalHosts[0].DataSource)
+	require.EqualValues(t, apps[0].ID, returned.LocalHosts[0].AppID)
+	// When fetching one selected host the app information should be also
+	// returned.
+	require.NotNil(t, returned.LocalHosts[0].App)
+
+	// Get all hosts.
+	returnedList, err := GetAllHosts(db, 0)
+	require.NoError(t, err)
+	require.Len(t, returnedList, 4)
+	require.Len(t, returnedList[0].LocalHosts, 1)
+	require.Equal(t, "api", returnedList[0].LocalHosts[0].DataSource)
+	require.EqualValues(t, apps[0].ID, returnedList[0].LocalHosts[0].AppID)
+	// When fetching all hosts, the detailed app information should not be
+	// returned.
+	require.Nil(t, returnedList[0].LocalHosts[0].App)
+
+	// Get the first host by reserved IP address.
+	filterText := "192.0.2.4"
+	returnedList, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	require.NoError(t, err)
+	require.Len(t, returnedList, 1)
+	require.Len(t, returnedList[0].LocalHosts, 1)
+	require.Equal(t, "api", returnedList[0].LocalHosts[0].DataSource)
+	require.EqualValues(t, apps[0].ID, returnedList[0].LocalHosts[0].AppID)
+	// This time the detailed app information should not be included.
+	require.Nil(t, returnedList[0].LocalHosts[0].App)
 }
