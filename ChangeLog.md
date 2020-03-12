@@ -1,3 +1,9 @@
+* 41 [func] godfryd
+
+    Added settings in Stork. They are stored in database, in setting
+    table. No UI for settings yet.
+    (Gitlab #169)
+
 * 40 [func] godfryd
 
     Exposed access to API docs and ARM docs in new Help menu.

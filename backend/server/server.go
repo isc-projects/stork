@@ -9,6 +9,7 @@ import (
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps/kea"
 	dbops "isc.org/stork/server/database"
+	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/restservice"
 )
 
@@ -78,8 +79,19 @@ func NewStorkServer() (*StorkServer, error) {
 		return nil, err
 	}
 
+	// initialize stork settings
+	err = dbmodel.InitializeSettings(ss.Db)
+	if err != nil {
+		ss.Agents.Shutdown()
+		return nil, err
+	}
+
 	// setup kea stats puller
-	ss.StatsPuller = kea.NewStatsPuller(ss.Db, ss.Agents)
+	ss.StatsPuller, err = kea.NewStatsPuller(ss.Db, ss.Agents)
+	if err != nil {
+		ss.Agents.Shutdown()
+		return nil, err
+	}
 
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DbSettings, ss.Db, ss.Agents)

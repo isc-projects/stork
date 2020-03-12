@@ -24,12 +24,18 @@ type StatsPuller struct {
 
 // Create a StatsPuller object that in background pulls Kea stats about leases.
 // Beneath it spawns a goroutine that pulls stats periodically from Kea apps (that are stored in database).
-func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) *StatsPuller {
+func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*StatsPuller, error) {
 	log.Printf("Starting Kea Stats Puller")
+
+	interval, err := dbmodel.GetSettingInt(db, "kea_stats_puller_interval")
+	if err != nil {
+		return nil, err
+	}
+
 	statsPuller := &StatsPuller{
 		Db:     db,
 		Agents: agents,
-		Ticker: time.NewTicker(1 * time.Minute), // TODO: change it to a setting in db
+		Ticker: time.NewTicker(time.Duration(interval) * time.Second),
 		Done:   make(chan bool),
 		Wg:     &sync.WaitGroup{},
 	}
@@ -40,7 +46,7 @@ func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) *StatsPuller {
 	go statsPuller.pullerLoop()
 
 	log.Printf("Started Kea Stats Puller")
-	return statsPuller
+	return statsPuller, nil
 }
 
 // Shutdown StatsPuller. It stops goroutine that pulls stats.
@@ -66,6 +72,15 @@ func (statsPuller *StatsPuller) pullerLoop() {
 		// wait for done signal from shutdown function
 		case <-statsPuller.Done:
 			return
+		}
+
+		// check if interval has change in settings, if so recreate ticker
+		interval, err := dbmodel.GetSettingInt(statsPuller.Db, "kea_stats_puller_interval")
+		if err != nil {
+			log.Errorf("problem with getting interval setting from db: %+v", err)
+		} else {
+			statsPuller.Ticker.Stop()
+			statsPuller.Ticker = time.NewTicker(time.Duration(interval) * time.Second)
 		}
 	}
 }

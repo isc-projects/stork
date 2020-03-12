@@ -17,10 +17,19 @@ func TestStatsPullerBasic(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	// set one setting that is needed by puller
+	setting := dbmodel.Setting{
+		Name:    "kea_stats_puller_interval",
+		ValType: dbmodel.SettingValTypeInt,
+		Value:   "60",
+	}
+	err := db.Insert(&setting)
+	require.NoError(t, err)
+
 	// prepare fake agents
 	fa := storktest.NewFakeAgents(nil)
 
-	sp := NewStatsPuller(db, fa)
+	sp, _ := NewStatsPuller(db, fa)
 	sp.Shutdown()
 }
 
@@ -93,8 +102,18 @@ func TestStatsPullerPullStats(t *testing.T) {
 	err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app)
 	require.NoError(t, err)
 
+	// set one setting that is needed by puller
+	setting := dbmodel.Setting{
+		Name:    "kea_stats_puller_interval",
+		ValType: dbmodel.SettingValTypeInt,
+		Value:   "60",
+	}
+	err = db.Insert(&setting)
+	require.NoError(t, err)
+
 	// prepare stats puller
-	sp := NewStatsPuller(db, fa)
+	sp, err := NewStatsPuller(db, fa)
+	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
 
@@ -213,8 +232,18 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, a.ID)
 
+	// set one setting that is needed by puller
+	setting := dbmodel.Setting{
+		Name:    "kea_stats_puller_interval",
+		ValType: dbmodel.SettingValTypeInt,
+		Value:   "60",
+	}
+	err = db.Insert(&setting)
+	require.NoError(t, err)
+
 	// prepare stats puller
-	sp := NewStatsPuller(db, fa)
+	sp, err := NewStatsPuller(db, fa)
+	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
 
