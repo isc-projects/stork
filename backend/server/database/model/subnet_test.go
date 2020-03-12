@@ -5,50 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )
-
-// Adds apps to be used with subnet tests.
-func addTestSubnetApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
-	// Add two apps.
-	for i := 0; i < 2; i++ {
-		m := &Machine{
-			ID:        0,
-			Address:   "localhost",
-			AgentPort: int64(8080 + i),
-		}
-		err := AddMachine(db, m)
-		require.NoError(t, err)
-
-		accessPoints := []*AccessPoint{}
-		accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", int64(1234+i))
-		a := &App{
-			ID:           0,
-			MachineID:    m.ID,
-			Type:         AppTypeKea,
-			Active:       true,
-			AccessPoints: accessPoints,
-			Details: AppKea{
-				Daemons: []*KeaDaemon{
-					{
-						Name:   "dhcp4",
-						Config: getTestConfigWithIPv4Subnets(t),
-					},
-				},
-			},
-		}
-
-		apps = append(apps, a)
-	}
-
-	// Add the apps to be database.
-	for _, app := range apps {
-		err := AddApp(db, app)
-		require.NoError(t, err)
-	}
-	return apps
-}
 
 // Test that subnet with address pools is inserted into the database.
 func TestAddSubnetWithAddressPools(t *testing.T) {
