@@ -24,7 +24,7 @@ func TestAddSharedNetwork(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.Equal(t, network.Name, returned.Name)
-	require.NotZero(t, returned.Created)
+	require.NotZero(t, returned.CreatedAt)
 }
 
 func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
@@ -87,7 +87,7 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 
 	for i, s := range returnedNetwork.Subnets {
 		require.NotZero(t, s.ID)
-		require.NotZero(t, s.Created)
+		require.NotZero(t, s.CreatedAt)
 		require.Equal(t, network.Subnets[i].Prefix, s.Prefix)
 		require.Equal(t, returnedNetwork.ID, s.SharedNetworkID)
 
@@ -96,14 +96,14 @@ func TestAddSharedNetworkWithSubnetsPools(t *testing.T) {
 
 		for j, p := range s.AddressPools {
 			require.NotZero(t, p.ID)
-			require.NotZero(t, p.Created)
+			require.NotZero(t, p.CreatedAt)
 			require.Equal(t, returnedNetwork.Subnets[i].AddressPools[j].LowerBound, p.LowerBound)
 			require.Equal(t, returnedNetwork.Subnets[i].AddressPools[j].UpperBound, p.UpperBound)
 		}
 
 		for j, p := range s.PrefixPools {
 			require.NotZero(t, p.ID)
-			require.NotZero(t, p.Created)
+			require.NotZero(t, p.CreatedAt)
 			require.Equal(t, returnedNetwork.Subnets[i].PrefixPools[j].Prefix, p.Prefix)
 		}
 	}

@@ -83,7 +83,7 @@ func TestAddDeleteAddressPool(t *testing.T) {
 	returnedSubnet := returnedSubnets[0]
 	require.Len(t, returnedSubnet.AddressPools, 1)
 	require.NotZero(t, returnedSubnet.AddressPools[0].ID)
-	require.NotZero(t, returnedSubnet.AddressPools[0].Created)
+	require.NotZero(t, returnedSubnet.AddressPools[0].CreatedAt)
 	require.Equal(t, "192.0.2.10", returnedSubnet.AddressPools[0].LowerBound)
 	require.Equal(t, "192.0.2.20", returnedSubnet.AddressPools[0].UpperBound)
 
@@ -123,7 +123,7 @@ func TestAddDeletePrefixPool(t *testing.T) {
 	returnedSubnet := returnedSubnets[0]
 	require.Len(t, returnedSubnet.PrefixPools, 1)
 	require.NotZero(t, returnedSubnet.PrefixPools[0].ID)
-	require.NotZero(t, returnedSubnet.PrefixPools[0].Created)
+	require.NotZero(t, returnedSubnet.PrefixPools[0].CreatedAt)
 	require.Equal(t, "2001:db8:1:1::/80", returnedSubnet.PrefixPools[0].Prefix)
 	require.Equal(t, 96, returnedSubnet.PrefixPools[0].DelegatedLen)
 

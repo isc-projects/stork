@@ -14,10 +14,10 @@ import (
 // information about DHCP shared networks. A shared netwok groups
 // multiple subnets together.
 type SharedNetwork struct {
-	ID      int64
-	Created time.Time
-	Name    string
-	Family  int `pg:"inet_family"`
+	ID        int64
+	CreatedAt time.Time
+	Name      string
+	Family    int `pg:"inet_family"`
 
 	Subnets []Subnet
 }

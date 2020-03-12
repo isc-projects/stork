@@ -147,8 +147,8 @@ func TestDetectHAServices(t *testing.T) {
 	require.Zero(t, services[0].HAService.PrimaryID)
 	require.Equal(t, app.ID, services[0].HAService.SecondaryID)
 	require.Empty(t, services[0].HAService.BackupID)
-	require.True(t, services[0].HAService.PrimaryStatusTime.IsZero())
-	require.True(t, services[0].HAService.SecondaryStatusTime.IsZero())
+	require.True(t, services[0].HAService.PrimaryStatusCollectedAt.IsZero())
+	require.True(t, services[0].HAService.SecondaryStatusCollectedAt.IsZero())
 	require.Empty(t, services[0].HAService.PrimaryLastState)
 	require.Empty(t, services[0].HAService.SecondaryLastState)
 
@@ -160,8 +160,8 @@ func TestDetectHAServices(t *testing.T) {
 	require.Zero(t, services[1].HAService.PrimaryID)
 	require.Equal(t, app.ID, services[1].HAService.SecondaryID)
 	require.Empty(t, services[1].HAService.BackupID)
-	require.True(t, services[1].HAService.PrimaryStatusTime.IsZero())
-	require.True(t, services[1].HAService.SecondaryStatusTime.IsZero())
+	require.True(t, services[1].HAService.PrimaryStatusCollectedAt.IsZero())
+	require.True(t, services[1].HAService.SecondaryStatusCollectedAt.IsZero())
 	require.Empty(t, services[1].HAService.PrimaryLastState)
 	require.Empty(t, services[1].HAService.SecondaryLastState)
 

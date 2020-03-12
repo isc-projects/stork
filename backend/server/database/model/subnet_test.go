@@ -131,7 +131,7 @@ func TestAddSubnetWithPrefixPools(t *testing.T) {
 	returned, err := GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
-	require.NotZero(t, returned.Created)
+	require.NotZero(t, returned.CreatedAt)
 	require.Equal(t, subnet.Prefix, returned.Prefix)
 	require.Zero(t, returned.SharedNetworkID)
 	require.Nil(t, returned.SharedNetwork)
@@ -142,14 +142,14 @@ func TestAddSubnetWithPrefixPools(t *testing.T) {
 
 	// Validate returned address pools.
 	for i, p := range returned.AddressPools {
-		require.NotZero(t, p.Created)
+		require.NotZero(t, p.CreatedAt)
 		require.Equal(t, subnet.AddressPools[i].LowerBound, p.LowerBound)
 		require.Equal(t, subnet.AddressPools[i].UpperBound, p.UpperBound)
 	}
 
 	// Validate returned prefix pools.
 	for i, p := range returned.PrefixPools {
-		require.NotZero(t, p.Created)
+		require.NotZero(t, p.CreatedAt)
 		require.Equal(t, subnet.PrefixPools[i].Prefix, p.Prefix)
 		require.Equal(t, subnet.PrefixPools[i].DelegatedLen, p.DelegatedLen)
 	}

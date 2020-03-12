@@ -64,7 +64,7 @@ func appsMatch(app1, app2 *App) bool {
 	if app1.ID != app2.ID {
 		return false
 	}
-	if app1.Created != app2.Created {
+	if app1.CreatedAt != app2.CreatedAt {
 		return false
 	}
 	if app1.MachineID != app2.MachineID {
@@ -162,14 +162,14 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 
 	// Service 2 holds HA specific information.
 	service2.HAService = &BaseHAService{
-		HAType:              "dhcp4",
-		PrimaryID:           service2.Apps[0].ID,
-		SecondaryID:         service2.Apps[1].ID,
-		BackupID:            []int64{service2.Apps[2].ID, service2.Apps[3].ID},
-		PrimaryStatusTime:   time.Now().UTC(),
-		SecondaryStatusTime: time.Now().UTC(),
-		PrimaryLastState:    "load-balancing",
-		SecondaryLastState:  "syncing",
+		HAType:                     "dhcp4",
+		PrimaryID:                  service2.Apps[0].ID,
+		SecondaryID:                service2.Apps[1].ID,
+		BackupID:                   []int64{service2.Apps[2].ID, service2.Apps[3].ID},
+		PrimaryStatusCollectedAt:   time.Now().UTC(),
+		SecondaryStatusCollectedAt: time.Now().UTC(),
+		PrimaryLastState:           "load-balancing",
+		SecondaryLastState:         "syncing",
 	}
 	err = AddService(db, service2)
 	require.NoError(t, err)
@@ -249,8 +249,8 @@ func TestGetServiceById(t *testing.T) {
 	require.Len(t, service.HAService.BackupID, 2)
 	require.Contains(t, service.HAService.BackupID, service.Apps[2].ID)
 	require.Contains(t, service.HAService.BackupID, service.Apps[3].ID)
-	require.False(t, service.HAService.PrimaryStatusTime.IsZero())
-	require.False(t, service.HAService.SecondaryStatusTime.IsZero())
+	require.False(t, service.HAService.PrimaryStatusCollectedAt.IsZero())
+	require.False(t, service.HAService.SecondaryStatusCollectedAt.IsZero())
 	require.Equal(t, "load-balancing", service.HAService.PrimaryLastState)
 	require.Equal(t, "syncing", service.HAService.SecondaryLastState)
 }

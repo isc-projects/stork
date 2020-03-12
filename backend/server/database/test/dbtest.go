@@ -54,12 +54,12 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 	}
 	require.NoError(t, err)
 
-	createSchema(t, db)
-
 	// enable tracing sql queries if requested
 	if _, ok := os.LookupEnv("STORK_DATABASE_TRACE"); ok {
 		db.AddQueryHook(dbops.DbLogger{})
 	}
+
+	createSchema(t, db)
 
 	return db, &genericConnOptions, func() {
 		TossSchema(t, db)

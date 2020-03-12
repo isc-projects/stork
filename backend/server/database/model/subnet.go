@@ -36,7 +36,7 @@ type LocalSubnet struct {
 // Reflects IPv4 or IPv6 subnet from the database.
 type Subnet struct {
 	ID          int64
-	Created     time.Time
+	CreatedAt   time.Time
 	Prefix      string
 	ClientClass string
 

@@ -31,14 +31,14 @@ type MachineState struct {
 
 // Represents a machine held in machine table in the database.
 type Machine struct {
-	ID          int64
-	Created     time.Time
-	Address     string
-	AgentPort   int64
-	LastVisited time.Time
-	Error       string
-	State       MachineState
-	Apps        []*App
+	ID            int64
+	CreatedAt     time.Time
+	Address       string
+	AgentPort     int64
+	LastVisitedAt time.Time
+	Error         string
+	State         MachineState
+	Apps          []*App
 }
 
 func AddMachine(db *pg.DB, machine *Machine) error {

@@ -13,7 +13,7 @@ import (
 // Reflects IPv4 or IPv6 address pool.
 type AddressPool struct {
 	ID         int64
-	Created    time.Time
+	CreatedAt  time.Time
 	LowerBound string
 	UpperBound string
 	SubnetID   int64
@@ -23,7 +23,7 @@ type AddressPool struct {
 // Reflects IPv6 address pool.
 type PrefixPool struct {
 	ID           int64
-	Created      time.Time
+	CreatedAt    time.Time
 	Prefix       string
 	DelegatedLen int
 	SubnetID     int64

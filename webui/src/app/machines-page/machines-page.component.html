@@ -147,7 +147,7 @@
                 <td>{{ m.memory }}</td>
                 <td><p-progressBar [value]="m.usedMemory"></p-progressBar></td>
                 <td>{{ m.uptime || '?' }} days</td>
-                <td>{{ m.lastVisited | localtime }}</td>
+                <td>{{ m.lastVisitedAt | localtime }}</td>
                 <td>
                     <p-message *ngIf="m.error" severity="error" text="{{ m.error }}"></p-message>
                 </td>
@@ -289,7 +289,7 @@
                 </tr>
                 <tr>
                     <td>Last Visited</td>
-                    <td>{{ machineTab.machine.lastVisited | localtime }}</td>
+                    <td>{{ machineTab.machine.lastVisitedAt | localtime }}</td>
                 </tr>
                 <tr>
                     <td>Error</td>

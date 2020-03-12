@@ -55,7 +55,7 @@ type AppMeta struct {
 // Represents an app held in app table in the database.
 type App struct {
 	ID        int64
-	Created   time.Time
+	CreatedAt time.Time
 	MachineID int64
 	Machine   *Machine
 	Type      string // currently supported types are: "kea" and "bind9"

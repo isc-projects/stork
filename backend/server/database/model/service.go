@@ -17,7 +17,7 @@ type BaseService struct {
 	ID          int64
 	Name        string
 	ServiceType string
-	Created     time.Time
+	CreatedAt   time.Time
 
 	Apps []*App `pg:"many2many:app_to_service,fk:service_id,joinFK:app_id"`
 }
@@ -34,18 +34,18 @@ type AppToService struct {
 // High Availability specific information. It is embedded in the
 // Service structure.
 type BaseHAService struct {
-	tableName           struct{} `pg:"ha_service"` //nolint:unused,structcheck
-	ID                  int64
-	ServiceID           int64
-	HAType              string
-	HAMode              string
-	PrimaryID           int64
-	SecondaryID         int64
-	BackupID            []int64 `pg:",array"`
-	PrimaryStatusTime   time.Time
-	SecondaryStatusTime time.Time
-	PrimaryLastState    string
-	SecondaryLastState  string
+	tableName                  struct{} `pg:"ha_service"` //nolint:unused,structcheck
+	ID                         int64
+	ServiceID                  int64
+	HAType                     string
+	HAMode                     string
+	PrimaryID                  int64
+	SecondaryID                int64
+	BackupID                   []int64 `pg:",array"`
+	PrimaryStatusCollectedAt   time.Time
+	SecondaryStatusCollectedAt time.Time
+	PrimaryLastState           string
+	SecondaryLastState         string
 }
 
 // A structure reflecting all SQL tables holding information about the

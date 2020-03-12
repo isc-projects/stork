@@ -79,7 +79,7 @@ func machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 		VirtualizationSystem: dbMachine.State.VirtualizationSystem,
 		VirtualizationRole:   dbMachine.State.VirtualizationRole,
 		HostID:               dbMachine.State.HostID,
-		LastVisited:          strfmt.DateTime(dbMachine.LastVisited),
+		LastVisitedAt:        strfmt.DateTime(dbMachine.LastVisitedAt),
 		Error:                dbMachine.Error,
 		Apps:                 apps,
 	}
@@ -477,7 +477,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 	dbMachine.State.VirtualizationSystem = m.VirtualizationSystem
 	dbMachine.State.VirtualizationRole = m.VirtualizationRole
 	dbMachine.State.HostID = m.HostID
-	dbMachine.LastVisited = m.LastVisited
+	dbMachine.LastVisitedAt = m.LastVisitedAt
 	dbMachine.Error = m.Error
 	err := db.Update(dbMachine)
 	if err != nil {

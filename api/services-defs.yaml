@@ -58,7 +58,7 @@
       hostID:
         type: string
         readOnly: true
-      lastVisited:
+      lastVisitedAt:
         type: string
         format: date-time
         readOnly: true

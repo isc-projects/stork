@@ -54,7 +54,7 @@ type State struct {
 	VirtualizationSystem string
 	VirtualizationRole   string
 	HostID               string
-	LastVisited          time.Time
+	LastVisitedAt        time.Time
 	Error                string
 	Apps                 []*App
 }
@@ -107,7 +107,7 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 		VirtualizationSystem: grpcState.VirtualizationSystem,
 		VirtualizationRole:   grpcState.VirtualizationRole,
 		HostID:               grpcState.HostID,
-		LastVisited:          storkutil.UTCNow(),
+		LastVisitedAt:        storkutil.UTCNow(),
 		Error:                grpcState.Error,
 		Apps:                 apps,
 	}
