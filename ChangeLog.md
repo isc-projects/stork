@@ -1,3 +1,8 @@
+* 40 [func] godfryd
+
+    Exposed access to API docs and ARM docs in new Help menu.
+    (Gitlab #199)
+
 * 39 [func] matthijs
 
     Update the data model such that applications can have multiple
