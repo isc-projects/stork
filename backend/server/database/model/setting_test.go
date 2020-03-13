@@ -13,21 +13,45 @@ func TestInitializeSettings(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	var settings []Setting
+
+	// check if settings are empy
+	q := db.Model(&settings)
+	err := q.Select()
+	require.NoError(t, err)
+	require.Empty(t, settings)
+
 	// initialize settings
-	err := InitializeSettings(db)
+	err = InitializeSettings(db)
 	require.NoError(t, err)
 
 	// check if any settings were added to db
-	var settings []Setting
-	q := db.Model(&settings)
+	settings = nil
+	q = db.Model(&settings)
 	err = q.Select()
 	require.NoError(t, err)
 	require.NotEmpty(t, settings)
+	count := len(settings)
 
 	// check if given setting exists in db and has some default value
 	val, err := GetSettingInt(db, "kea_stats_puller_interval")
 	require.NoError(t, err)
 	require.EqualValues(t, 60, val)
+
+	// change the setting
+	err = SetSettingInt(db, "kea_stats_puller_interval", 123)
+	require.NoError(t, err)
+	require.EqualValues(t, 60, val)
+
+	// reinitialize settings, nothing should change
+	err = InitializeSettings(db)
+	require.NoError(t, err)
+	require.Len(t, settings, count)
+
+	// this changed setting should not be reset
+	val, err = GetSettingInt(db, "kea_stats_puller_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 123, val)
 }
 
 // Check getting and setting settings.
