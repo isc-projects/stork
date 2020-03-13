@@ -1,8 +1,8 @@
 * 42 [func] godfryd
 
-    Prepared scripts for building RPMs and debs packages with Stork server
-    and Stork agent (total 4 packages). They are prepared for Ubuntu 18.04
-    and CentOS 8.
+    Prepared scripts for building native RPMs and debs packages
+    with Stork server and Stork agent (total 4 packages).
+    They are prepared for Ubuntu 18.04 and CentOS 8.
     (Gitlab #187)
 
 * 41 [func] godfryd
