@@ -7,6 +7,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+// This module provides global settings that can be used anywhere in the code.
+// All settings with their defaul values are defined in defaultSettings table,
+// in InitializeSettings function. There is a few functions for getting and
+// setting these settings. Generally setters are used in API function
+// so users can set these settings. Getters are used around the code
+// where given setting is needed.
+
+// TODO: add caching to avoid trips to database; candidate caching libs:
+// https://allegro.tech/2016/03/writing-fast-cache-service-in-go.html
+
 const SettingValTypeInt = 1
 const SettingValTypeBool = 2
 const SettingValTypeStr = 3
