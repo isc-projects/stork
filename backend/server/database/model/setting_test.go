@@ -41,7 +41,6 @@ func TestInitializeSettings(t *testing.T) {
 	// change the setting
 	err = SetSettingInt(db, "kea_stats_puller_interval", 123)
 	require.NoError(t, err)
-	require.EqualValues(t, 60, val)
 
 	// reinitialize settings, nothing should change
 	err = InitializeSettings(db)
