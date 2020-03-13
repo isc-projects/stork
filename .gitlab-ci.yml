@@ -32,7 +32,7 @@ cache:
     - amd64
   before_script:
     - apt-get update
-    - apt-get install -y wget xz-utils rake openjdk-11-jre-headless gcc g++ chromium-browser unzip python3-sphinx python3-sphinx-rtd-theme
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y wget xz-utils rake openjdk-11-jre-headless gcc g++ chromium-browser unzip python3-sphinx python3-sphinx-rtd-theme
     - rake prepare_env
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
