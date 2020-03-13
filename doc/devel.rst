@@ -133,3 +133,25 @@ simulate certain services that Stork is able to handle:
 
 * ``grafana`` - This is a container with Grafana - a dashboard for Prometheus. It is preconfigured
   to pull data from Prometheus container and show Stork dashboards.
+
+Packaging
+=========
+
+There are scripts for packaging binary form of Stork. There are supported two formats:
+
+- RPM
+- deb
+
+RPM package is being built on latest CentOS. deb package is being built on latest Ubuntu LTS.
+
+There are built 2 packages for each system: a server and an agent.
+
+There are Rake tasks that perform whole build procedure in a docker containers:
+`build_rpms_in_docker` and `build_debs_in_docker`. It is also possible to build packages directly
+in current operating system - this is provided by `deb_agent`, `rpm_agent`, `deb_server`, `rpm_server`
+Rake tasks.
+
+Internally these packages are being built by FPM (https://fpm.readthedocs.io/). The containers
+that are being used to built packages are prebuilt with all dependencies required.
+This is accomplished by `build_fpm_containers` Rake tasks. The definitions of these containers
+are placed in `docker/pkgs/centos-8.txt` and `docker/pkgs/ubuntu-18-04.txt`.
