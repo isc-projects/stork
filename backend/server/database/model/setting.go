@@ -39,12 +39,12 @@ func InitializeSettings(db *pg.DB) error {
 		Value:   "60",
 	}}
 
-        // Check if there are new settings vs existing ones. Add new ones to DB.
-        _, err := db.Model(&defaultSettings).OnConflict("DO NOTHING").Insert()
-        if err != nil {
-                err = errors.Wrapf(err, "problem with inserting default settings")
-        }
-        return err
+	// Check if there are new settings vs existing ones. Add new ones to DB.
+	_, err := db.Model(&defaultSettings).OnConflict("DO NOTHING").Insert()
+	if err != nil {
+		err = errors.Wrapf(err, "problem with inserting default settings")
+	}
+	return err
 }
 
 // Get setting record from db based on its name.
