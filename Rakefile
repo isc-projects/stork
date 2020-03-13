@@ -136,16 +136,16 @@ directory EXAMPLES_DIR
 directory MAN_DIR
 
 # establish Stork version
-STORK_VERSION = '0.0.0'
+stork_version = '0.0.0'
 version_file = 'backend/version.go'
 text = File.open(version_file).read
 text.each_line do |line|
   if line.start_with? 'const Version'
     parts = line.split('"')
-    STORK_VERSION = parts[1]
+    stork_version = parts[1]
   end
 end
-
+STORK_VERSION = stork_version
 
 ### Backend Tasks #########################
 
