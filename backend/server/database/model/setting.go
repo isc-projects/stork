@@ -29,38 +29,12 @@ func InitializeSettings(db *pg.DB) error {
 		Value:   "60",
 	}}
 
-	// get present settings from db
-	var settings []Setting
-	q := db.Model(&settings)
-	err := q.Select()
-	if err != nil {
-		err = errors.Wrapf(err, "problem with getting settings from db")
-		return err
-	}
-
 	// Check if there are new settings vs existing ones. Add new ones to DB.
-	for _, sDef := range defaultSettings {
-		// check if setting already exist, if so then skip it
-		found := false
-		for _, s := range settings {
-			if sDef.Name == s.Name {
-				found = true
-				break
-			}
-		}
-		if found {
-			continue
-		}
-
-		// if setting is not yet in db, then add it with default value
-		sDefTmp := sDef
-		err := db.Insert(&sDefTmp)
-		if err != nil {
-			err = errors.Wrapf(err, "problem with inserting setting %s", sDef.Name)
-			return err
-		}
+	_, err := db.Model(&defaultSettings).OnConflict("DO NOTHING").Insert()
+	if err != nil {
+		err = errors.Wrapf(err, "problem with inserting default settings")
 	}
-	return nil
+	return err
 }
 
 // Get setting record from db based on its name.
