@@ -29,12 +29,12 @@ func InitializeSettings(db *pg.DB) error {
 		Value:   "60",
 	}}
 
-	// Check if there are new settings vs existing ones. Add new ones to DB.
-	_, err := db.Model(&defaultSettings).OnConflict("DO NOTHING").Insert()
-	if err != nil {
-		err = errors.Wrapf(err, "problem with inserting default settings")
-	}
-	return err
+        // Check if there are new settings vs existing ones. Add new ones to DB.
+        _, err := db.Model(&defaultSettings).OnConflict("DO NOTHING").Insert()
+        if err != nil {
+                err = errors.Wrapf(err, "problem with inserting default settings")
+        }
+        return err
 }
 
 // Get setting record from db based on its name.
@@ -50,14 +50,23 @@ func GetSetting(db *pg.DB, name string) (*Setting, error) {
 	return &setting, nil
 }
 
-// Get int value of given setting by name.
-func GetSettingInt(db *pg.DB, name string) (int64, error) {
+// Get setting by name and check if its type matches to expected one.
+func getAndCheckSetting(db *pg.DB, name string, expValType int64) (*Setting, error) {
 	s, err := GetSetting(db, name)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	if s.ValType != SettingValTypeInt {
-		return 0, errors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, SettingValTypeInt)
+	if s.ValType != expValType {
+		return nil, errors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, expValType)
+	}
+	return s, nil
+}
+
+// Get int value of given setting by name.
+func GetSettingInt(db *pg.DB, name string) (int64, error) {
+	s, err := getAndCheckSetting(db, name, SettingValTypeInt)
+	if err != nil {
+		return 0, err
 	}
 	val, err := strconv.ParseInt(s.Value, 10, 64)
 	if err != nil {
@@ -68,12 +77,9 @@ func GetSettingInt(db *pg.DB, name string) (int64, error) {
 
 // Get bool value of given setting by name.
 func GetSettingBool(db *pg.DB, name string) (bool, error) {
-	s, err := GetSetting(db, name)
+	s, err := getAndCheckSetting(db, name, SettingValTypeBool)
 	if err != nil {
 		return false, err
-	}
-	if s.ValType != SettingValTypeBool {
-		return false, errors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, SettingValTypeBool)
 	}
 	val, err := strconv.ParseBool(s.Value)
 	if err != nil {
@@ -84,36 +90,27 @@ func GetSettingBool(db *pg.DB, name string) (bool, error) {
 
 // Get string value of given setting by name.
 func GetSettingStr(db *pg.DB, name string) (string, error) {
-	s, err := GetSetting(db, name)
+	s, err := getAndCheckSetting(db, name, SettingValTypeStr)
 	if err != nil {
 		return "", err
-	}
-	if s.ValType != SettingValTypeStr {
-		return "", errors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, SettingValTypeStr)
 	}
 	return s.Value, nil
 }
 
 // Get password value of given setting by name.
 func GetSettingPasswd(db *pg.DB, name string) (string, error) {
-	s, err := GetSetting(db, name)
+	s, err := getAndCheckSetting(db, name, SettingValTypePasswd)
 	if err != nil {
 		return "", err
-	}
-	if s.ValType != SettingValTypePasswd {
-		return "", errors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, SettingValTypePasswd)
 	}
 	return s.Value, nil
 }
 
 // Set int value of given setting by name.
 func SetSettingInt(db *pg.DB, name string, value int64) error {
-	s, err := GetSetting(db, name)
+	s, err := getAndCheckSetting(db, name, SettingValTypeInt)
 	if err != nil {
 		return err
-	}
-	if s.ValType != SettingValTypeInt {
-		return errors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, SettingValTypeInt)
 	}
 	s.Value = strconv.FormatInt(value, 10)
 	err = db.Update(s)
@@ -125,12 +122,9 @@ func SetSettingInt(db *pg.DB, name string, value int64) error {
 
 // Set bool value of given setting by name.
 func SetSettingBool(db *pg.DB, name string, value bool) error {
-	s, err := GetSetting(db, name)
+	s, err := getAndCheckSetting(db, name, SettingValTypeBool)
 	if err != nil {
 		return err
-	}
-	if s.ValType != SettingValTypeBool {
-		return errors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, SettingValTypeBool)
 	}
 	s.Value = strconv.FormatBool(value)
 	err = db.Update(s)
@@ -142,12 +136,9 @@ func SetSettingBool(db *pg.DB, name string, value bool) error {
 
 // Set string value of given setting by name.
 func SetSettingStr(db *pg.DB, name string, value string) error {
-	s, err := GetSetting(db, name)
+	s, err := getAndCheckSetting(db, name, SettingValTypeStr)
 	if err != nil {
 		return err
-	}
-	if s.ValType != SettingValTypeStr {
-		return errors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, SettingValTypeStr)
 	}
 	s.Value = value
 	err = db.Update(s)
@@ -159,12 +150,9 @@ func SetSettingStr(db *pg.DB, name string, value string) error {
 
 // Set password value of given setting by name.
 func SetSettingPasswd(db *pg.DB, name string, value string) error {
-	s, err := GetSetting(db, name)
+	s, err := getAndCheckSetting(db, name, SettingValTypePasswd)
 	if err != nil {
 		return err
-	}
-	if s.ValType != SettingValTypePasswd {
-		return errors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, SettingValTypePasswd)
 	}
 	s.Value = value
 	err = db.Update(s)
