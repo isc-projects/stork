@@ -524,3 +524,31 @@ func TestHasIPAddress(t *testing.T) {
 	require.True(t, host.HasIPAddress("192.0.2.5"))
 	require.False(t, host.HasIPAddress("192.0.2.7/32"))
 }
+
+// Tests the function checking if the host includes a given identifier.
+func TestHasIdentifier(t *testing.T) {
+	host := Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+			{
+				Type:  "circuit-id",
+				Value: []byte{1, 2, 3, 4},
+			},
+		},
+		IPReservations: []IPReservation{
+			{
+				Address: "192.0.2.4/32",
+			},
+			{
+				Address: "192.0.2.5/32",
+			},
+		},
+	}
+
+	require.True(t, host.HasIdentifier("hw-address", []byte{1, 2, 3, 4, 5, 6}))
+	require.True(t, host.HasIdentifier("circuit-id", []byte{1, 2, 3, 4}))
+	require.False(t, host.HasIdentifier("hw-address", []byte{1, 2, 3, 4}))
+}

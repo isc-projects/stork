@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"bytes"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -392,6 +393,18 @@ func (host Host) HasIPAddress(ipAddress string) bool {
 		}
 		if hostCidr == argCidr {
 			return true
+		}
+	}
+	return false
+}
+
+// This function checks if the given host has specified identifier.
+func (host Host) HasIdentifier(idType string, identifier []byte) bool {
+	for _, i := range host.HostIdentifiers {
+		if idType == i.Type {
+			if bytes.Compare(i.Value, identifier) == 0 {
+				return true
+			}
 		}
 	}
 	return false
