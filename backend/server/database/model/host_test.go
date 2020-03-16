@@ -552,3 +552,67 @@ func TestHasIdentifier(t *testing.T) {
 	require.True(t, host.HasIdentifier("circuit-id", []byte{1, 2, 3, 4}))
 	require.False(t, host.HasIdentifier("hw-address", []byte{1, 2, 3, 4}))
 }
+
+// Test the functions which compares two hosts for equality and which
+// compare IP reservations for equality.
+func TestHostsEqual(t *testing.T) {
+	host1 := Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+			{
+				Type:  "circuit-id",
+				Value: []byte{1, 2, 3, 4},
+			},
+		},
+		IPReservations: []IPReservation{
+			{
+				Address: "192.0.2.4/32",
+			},
+			{
+				Address: "192.0.2.5/32",
+			},
+		},
+	}
+
+	host2 := Host{
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "circuit-id",
+				Value: []byte{1, 2, 3, 4},
+			},
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		IPReservations: []IPReservation{
+			{
+				Address: "192.0.2.5/32",
+			},
+			{
+				Address: "192.0.2.4/32",
+			},
+		},
+	}
+
+	require.True(t, host1.Equal(&host2))
+	require.True(t, host2.Equal(&host1))
+	require.True(t, host1.HasEqualIPReservations(&host2))
+	require.True(t, host2.HasEqualIPReservations(&host1))
+
+	host1.HostIdentifiers = append(host1.HostIdentifiers, HostIdentifier{
+		Type:  "client-id",
+		Value: []byte{1, 1, 1, 1},
+	})
+	host1.IPReservations = append(host1.IPReservations, IPReservation{
+		Address: "192.0.2.6",
+	})
+
+	require.False(t, host1.Equal(&host2))
+	require.False(t, host2.Equal(&host1))
+	require.False(t, host1.HasEqualIPReservations(&host2))
+	require.False(t, host2.HasEqualIPReservations(&host1))
+}

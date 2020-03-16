@@ -409,3 +409,32 @@ func (host Host) HasIdentifier(idType string, identifier []byte) bool {
 	}
 	return false
 }
+
+// Checks if two hosts have the same IP reservations.
+func (host Host) HasEqualIPReservations(other *Host) bool {
+	if len(host.IPReservations) != len(other.IPReservations) {
+		return false
+	}
+
+	for _, o := range other.IPReservations {
+		if !host.HasIPAddress(o.Address) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Checks if two hosts are equal.
+func (host Host) Equal(other *Host) bool {
+	if len(host.HostIdentifiers) != len(other.HostIdentifiers) {
+		return false
+	}
+
+	for _, o := range other.HostIdentifiers {
+		if !host.HasIdentifier(o.Type, o.Value) {
+			return false
+		}
+	}
+	return host.HasEqualIPReservations(other)
+}
