@@ -8,6 +8,7 @@ import (
 	errors "github.com/pkg/errors"
 
 	dbops "isc.org/stork/server/database"
+	"isc.org/stork/util"
 )
 
 // This structure reflects a row in the host_identifier table. It includes
@@ -375,4 +376,23 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string) erro
 			app.ID, host.ID)
 	}
 	return err
+}
+
+// This function checks if the given host includes a reservation for the
+// given address.
+func (host Host) HasIPAddress(ipAddress string) bool {
+	for _, r := range host.IPReservations {
+		hostCidr, err := storkutil.MakeCIDR(r.Address)
+		if err != nil {
+			continue
+		}
+		argCidr, err := storkutil.MakeCIDR(ipAddress)
+		if err != nil {
+			return false
+		}
+		if hostCidr == argCidr {
+			return true
+		}
+	}
+	return false
 }
