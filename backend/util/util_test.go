@@ -26,3 +26,22 @@ func TestParseURL(t *testing.T) {
 	require.Equal(t, "host.example.org", host)
 	require.Zero(t, port)
 }
+
+// Tests function converting an address to CIDR.
+func TestMakeCIDR(t *testing.T) {
+	cidr, err := MakeCIDR("192.0.2.123")
+	require.NoError(t, err)
+	require.Equal(t, "192.0.2.123/32", cidr)
+
+	cidr, err = MakeCIDR("192.0.2.0/24")
+	require.NoError(t, err)
+	require.Equal(t, "192.0.2.0/24", cidr)
+
+	cidr, err = MakeCIDR("2001:db8:1::1")
+	require.NoError(t, err)
+	require.Equal(t, "2001:db8:1::1/128", cidr)
+
+	cidr, err = MakeCIDR("2001:db8:1::/64")
+	require.NoError(t, err)
+	require.Equal(t, "2001:db8:1::/64", cidr)
+}

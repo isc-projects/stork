@@ -1,12 +1,15 @@
 package storkutil
 
 import (
+	"errors"
 	"fmt"
+	"net"
 	"os"
 	"path"
 	"regexp"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -42,6 +45,24 @@ func ParseURL(url string) (host string, port int64) {
 		}
 	}
 	return host, port
+}
+
+// Turns IP address into CIDR. If the IP address already seems to be using
+// CIDR notation, it is returned.
+func MakeCIDR(address string) (string, error) {
+	if !strings.Contains(address, "/") {
+		ip := net.ParseIP(address)
+		if ip == nil {
+			return address, errors.New("provided string %s is not a valid IP address")
+		}
+		ip4 := ip.To4()
+		if ip4 != nil {
+			address += "/32"
+		} else {
+			address += "/128"
+		}
+	}
+	return address, nil
 }
 
 func SetupLogging() {
