@@ -1,8 +1,7 @@
 #!/bin/sh
 
 if [ -e /etc/redhat-release ]; then
-    userdel stork >/dev/null || /bin/true
+    userdel stork-agent >/dev/null || /bin/true
 else
-    deluser --system stork >/dev/null || /bin/true
-    delgroup --system stork >/dev/null || /bin/true
+    deluser --system stork-agent >/dev/null || /bin/true
 fi

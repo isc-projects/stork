@@ -3,9 +3,9 @@
 set -e
 
 if [ -e /etc/redhat-release ]; then
-    useradd --system --home-dir /var/lib/ stork-agent
+    useradd --system --home-dir /var/lib/ stork-server
 else
     adduser --quiet --system --group --home /var/lib/ \
             --no-create-home --disabled-password --disabled-login \
-            --gecos "Stork Agent User" stork-agent >/dev/null
+            --gecos "Stork Agent User" stork-server >/dev/null
 fi

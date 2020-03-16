@@ -6,7 +6,7 @@ After=network-online.target
 After=time-sync.target
 
 [Service]
-User=stork
+User=stork-server
 ConfigurationDirectory=stork
 ExecStart=/usr/bin/stork-server
 ExecReload=/bin/kill -HUP $MAINPID
