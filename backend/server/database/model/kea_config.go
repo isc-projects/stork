@@ -87,7 +87,30 @@ func convertSubnetFromKea(keaSubnet *KeaConfigSubnet) (*Subnet, error) {
 		if err != nil {
 			return nil, err
 		}
-		convertedSubnet.Hosts = append(convertedSubnet.Hosts, *host)
+
+		// We need to check if the host with the same set of reservations already
+		// exists. If so, then we may need to merge the new host with it.
+		found := false
+		for i, c := range convertedSubnet.Hosts {
+			if c.HasEqualIPReservations(host) {
+				// Go over the identifiers of the new host and for each that doesn't
+				// exist, create it in the existing host.
+				for j, id := range host.HostIdentifiers {
+					if exists, _ := c.HasIdentifier(id.Type, id.Value); !exists {
+						convertedSubnet.Hosts[i].HostIdentifiers = append(convertedSubnet.Hosts[i].HostIdentifiers, host.HostIdentifiers[j])
+					}
+					// We just take the first identifier, because Kea host reservation
+					// never has more than one.
+					break
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			// Existing reservation not found, add the whole host.
+			convertedSubnet.Hosts = append(convertedSubnet.Hosts, *host)
+		}
 	}
 	return convertedSubnet, nil
 }

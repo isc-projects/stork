@@ -398,16 +398,19 @@ func (host Host) HasIPAddress(ipAddress string) bool {
 	return false
 }
 
-// This function checks if the given host has specified identifier.
-func (host Host) HasIdentifier(idType string, identifier []byte) bool {
+// This function checks if the given host has specified identifier and if
+// the identifier value matches. The first returned value indicates if the
+// identifiers exists. The second one indicates if the value matches.
+func (host Host) HasIdentifier(idType string, identifier []byte) (bool, bool) {
 	for _, i := range host.HostIdentifiers {
 		if idType == i.Type {
 			if bytes.Compare(i.Value, identifier) == 0 {
-				return true
+				return true, true
 			}
+			return true, false
 		}
 	}
-	return false
+	return false, false
 }
 
 // Checks if two hosts have the same IP reservations.
@@ -432,7 +435,7 @@ func (host Host) Equal(other *Host) bool {
 	}
 
 	for _, o := range other.HostIdentifiers {
-		if !host.HasIdentifier(o.Type, o.Value) {
+		if _, ok := host.HasIdentifier(o.Type, o.Value); !ok {
 			return false
 		}
 	}
