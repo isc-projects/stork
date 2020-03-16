@@ -258,6 +258,31 @@ func GetAllHosts(db *pg.DB, family int) ([]Host, error) {
 	return hosts, err
 }
 
+// Fetches a collection of hosts by subnet ID.
+func GetHostsBySubnetID(db *pg.DB, subnetID int64) ([]Host, error) {
+	hosts := []Host{}
+	err := db.Model(&hosts).
+		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("host_identifier.id ASC"), nil
+		}).
+		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("ip_reservation.id ASC"), nil
+		}).
+		Relation("LocalHosts").
+		Where("host.subnet_id = ?", subnetID).
+		OrderExpr("id ASC").
+		Select()
+
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		err = errors.Wrapf(err, "problem with getting hosts by subnet ID %d", subnetID)
+		return nil, err
+	}
+	return hosts, err
+}
+
 // Fetches a collection of hosts from the database. The offset and limit
 // specify the beginning of the page and the maximum size of the page. The
 // optional subnetID is used to fetch hosts belonging to the particular

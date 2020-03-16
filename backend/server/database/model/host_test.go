@@ -319,6 +319,27 @@ func TestGetAllHosts(t *testing.T) {
 	}
 }
 
+// Test that hosts can be fetched by subnet ID.
+func TestGetHostsBySubnetID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
+	hosts := addTestHosts(t, db)
+
+	// Fetch host having IPv4 reservations.
+	returned, err := GetHostsBySubnetID(db, 1)
+	require.NoError(t, err)
+	require.Len(t, returned, 1)
+	require.Contains(t, returned, hosts[0])
+
+	// Fetch host having IPv6 reservations.
+	returned, err = GetHostsBySubnetID(db, 2)
+	require.NoError(t, err)
+	require.Len(t, returned, 1)
+	require.Contains(t, returned, hosts[2])
+}
+
 // Test that page of the hosts can be fetched without filtering.
 func TestGetHostsByPageNoFiltering(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
