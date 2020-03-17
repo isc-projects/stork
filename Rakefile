@@ -325,16 +325,21 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     sh 'rm -f backend/server/agentcomm/api_mock.go'
   }
   sh 'rm -f backend/server/agentcomm/api_mock.go'
+
+  cov_params = '-coverprofile=coverage.out'
+
   if ENV['scope']
     scope = ENV['scope']
+    cov_params = ''
   else
     scope = './...'
   end
 
   if ENV['test']
-    testRegex = "-run #{ENV['test']}"
+    test_regex = "-run #{ENV['test']}"
+    cov_params = ''
   else
-    testRegex = ''
+    test_regex = ''
   end
 
   if ENV['dbtrace'] == 'true'
@@ -349,34 +354,36 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
       if ENV['richgo'] == 'false'
         gotool = GO
       end
-      sh "#{gotool} test -race -v -count=1 -p 1 -coverprofile=coverage.out #{testRegex} #{scope}"  # count=1 disables caching results
+      sh "#{gotool} test -race -v -count=1 -p 1 #{cov_params} #{test_regex} #{scope}"  # count=1 disables caching results
     end
 
-    # check coverage level
-    out = `#{GO} tool cover -func=coverage.out`
-    puts out, ''
-    problem = false
-    out.each_line do |line|
-      if line.start_with? 'total:' or line.include? 'api_mock.go'
-        next
+    # check coverage level (run it only for full tests scope)
+    if not ENV['scope'] and not ENV['test']
+      out = `#{GO} tool cover -func=coverage.out`
+      puts out, ''
+      problem = false
+      out.each_line do |line|
+        if line.start_with? 'total:' or line.include? 'api_mock.go'
+          next
+        end
+        items = line.gsub(/\s+/m, ' ').strip.split(" ")
+        file = items[0]
+        func = items[1]
+        cov = items[2].strip()[0..-2].to_f
+        ignore_list = ['DetectServices', 'RestartKea', 'Serve', 'BeforeQuery', 'AfterQuery',
+                       'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
+                       'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
+                       'CreateSession', 'DeleteSession', 'Listen', 'Shutdown', 'NewRestUser',
+                       'CreateUser', 'UpdateUser', 'SetupLogging', 'UTCNow', 'detectApps',
+                       'prepareTLS', 'handleRequest', 'pullerLoop']
+        if cov < 35 and not ignore_list.include? func
+          puts "FAIL: %-80s %5s%% < 35%%" % ["#{file} #{func}", "#{cov}"]
+          problem = true
+        end
       end
-      items = line.gsub(/\s+/m, ' ').strip.split(" ")
-      file = items[0]
-      func = items[1]
-      cov = items[2].strip()[0..-2].to_f
-      ignore_list = ['DetectServices', 'RestartKea', 'Serve', 'BeforeQuery', 'AfterQuery',
-                     'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
-                     'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
-                     'CreateSession', 'DeleteSession', 'Listen', 'Shutdown', 'NewRestUser',
-                     'CreateUser', 'UpdateUser', 'SetupLogging', 'UTCNow', 'detectApps',
-                     'prepareTLS', 'handleRequest', 'pullerLoop']
-      if cov < 35 and not ignore_list.include? func
-        puts "FAIL: %-80s %5s%% < 35%%" % ["#{file} #{func}", "#{cov}"]
-        problem = true
+      if problem
+        fail("\nFAIL: Tests coverage is too low, add some tests\n\n")
       end
-    end
-    if problem
-      fail("\nFAIL: Tests coverage is too low, add some tests\n\n")
     end
   end
 end
