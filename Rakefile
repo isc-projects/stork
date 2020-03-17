@@ -331,6 +331,12 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     scope = './...'
   end
 
+  if ENV['test']
+    testRegex = "-run #{ENV['test']}"
+  else
+    testRegex = ''
+  end
+
   if ENV['dbtrace'] == 'true'
     ENV['STORK_DATABASE_TRACE'] = 'true'
   end
@@ -343,7 +349,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
       if ENV['richgo'] == 'false'
         gotool = GO
       end
-      sh "#{gotool} test -race -v -count=1 -p 1 -coverprofile=coverage.out  #{scope}"  # count=1 disables caching results
+      sh "#{gotool} test -race -v -count=1 -p 1 -coverprofile=coverage.out #{testRegex} #{scope}"  # count=1 disables caching results
     end
 
     # check coverage level
