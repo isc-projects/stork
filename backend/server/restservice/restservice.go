@@ -40,6 +40,8 @@ type RestAPISettings struct {
 	TLSCertificate    flags.Filename `long:"rest-tls-certificate" description:"the certificate to use for secure connections" env:"STORK_REST_TLS_CERTIFICATE"`
 	TLSCertificateKey flags.Filename `long:"rest-tls-key" description:"the private key to use for secure connections" env:"STORK_REST_TLS_PRIVATE_KEY"`
 	TLSCACertificate  flags.Filename `long:"rest-tls-ca" description:"the certificate authority file to be used with mutual tls auth" env:"STORK_REST_TLS_CA_CERTIFICATE"`
+
+	StaticFilesDir string `long:"rest-static-files-dir" description:"Directory with static files for UI" default:"" env:"STORK_REST_STATIC_FILES_DIR"`
 }
 
 // Runtime information and settings for ReST API service.
@@ -159,7 +161,7 @@ func (r *RestAPI) Serve() (err error) {
 		UsersAPI:        r,
 		DhcpAPI:         r,
 		Logger:          log.Infof,
-		InnerMiddleware: r.GlobalMiddleware,
+		InnerMiddleware: r.InnerMiddleware,
 		Authorizer:      r.Authorizer,
 		AuthToken: func(token string) (interface{}, error) {
 			// In normal circumstances we'd need to return some
@@ -205,7 +207,10 @@ func (r *RestAPI) Serve() (err error) {
 		httpServer.IdleTimeout = s.CleanupTimeout
 	}
 
-	httpServer.Handler = r.handler
+	if s.StaticFilesDir == "" {
+		s.StaticFilesDir = "./webui/dist/stork/"
+	}
+	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir)
 
 	if r.TLS {
 		err = prepareTLS(httpServer, s)
