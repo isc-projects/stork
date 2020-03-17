@@ -1,3 +1,10 @@
+* 43 [func] marcin
+
+    Implemented data model for IP reservations and detection of IP
+    reservations specified within a Kea configuration file. This
+    mechanism is not yet used for monitored apps.
+    (Gitlab #188)
+
 * 42 [func] godfryd
 
     Prepared scripts for building native RPM and deb packages
