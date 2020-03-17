@@ -52,11 +52,11 @@ func init() {
              CREATE TABLE IF NOT EXISTS host_identifier (
                  id bigserial NOT NULL,
                  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
-                 id_type hostidtype NOT NULL,
-                 id_value bytea NOT NULL,
+                 type hostidtype NOT NULL,
+                 value bytea NOT NULL,
                  host_id bigint NOT NULL,
                  CONSTRAINT host_identifier_pkey PRIMARY KEY (id),
-                 CONSTRAINT host_identifier_host_id_type_unique_idx UNIQUE (host_id, id_type),
+                 CONSTRAINT host_identifier_host_type_unique_idx UNIQUE (host_id, type),
                  CONSTRAINT host_identifier_host_fkey FOREIGN KEY (host_id)
                      REFERENCES host (id) MATCH SIMPLE
                          ON UPDATE CASCADE

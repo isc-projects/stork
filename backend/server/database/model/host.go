@@ -18,8 +18,8 @@ import (
 // and flex-id (same as those available in Kea).
 type HostIdentifier struct {
 	ID     int64
-	Type   string `pg:"id_type"`
-	Value  []byte `pg:"id_value"`
+	Type   string
+	Value  []byte
 	HostID int64
 }
 
@@ -63,8 +63,8 @@ func addHostIdentifiers(tx *pg.Tx, host *Host) error {
 		identifier := id
 		identifier.HostID = host.ID
 		_, err := tx.Model(&identifier).
-			OnConflict("(id_type, host_id) DO UPDATE").
-			Set("id_value = EXCLUDED.id_value").
+			OnConflict("(type, host_id) DO UPDATE").
+			Set("value = EXCLUDED.value").
 			Insert()
 		if err != nil {
 			err = errors.Wrapf(err, "problem with adding host identifier with type %s for host with id %d",
@@ -150,7 +150,7 @@ func UpdateHost(dbIface interface{}, host *Host) error {
 	// the new set of identifiers.
 	_, err = tx.Model((*HostIdentifier)(nil)).
 		Where("host_identifier.host_id = ?", host.ID).
-		Where("host_identifier.id_type NOT IN (?)", pg.In(hostIDTypes)).
+		Where("host_identifier.type NOT IN (?)", pg.In(hostIDTypes)).
 		Delete()
 	if err != nil {
 		err = errors.Wrapf(err, "problem with deleting host identifiers for host %d", host.ID)
