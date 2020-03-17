@@ -425,13 +425,43 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 			Subnets: []Subnet{
 				{
 					Prefix: "192.0.2.0/24",
+					Hosts: []Host{
+						{
+							HostIdentifiers: []HostIdentifier{
+								{
+									Type:  "hw-address",
+									Value: []byte{1, 2, 3, 4, 5, 6},
+								},
+							},
+							IPReservations: []IPReservation{
+								{
+									Address: "192.0.2.123/32",
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 	}
 	subnets := []Subnet{
 		{
-			Prefix: "192.0.2.0/24",
+			Prefix: "192.0.3.0/24",
+			Hosts: []Host{
+				{
+					HostIdentifiers: []HostIdentifier{
+						{
+							Type:  "hw-address",
+							Value: []byte{1, 2, 3, 4, 5, 6},
+						},
+					},
+					IPReservations: []IPReservation{
+						{
+							Address: "192.0.3.123/32",
+						},
+					},
+				},
+			},
 		},
 	}
 	// Attempt to create the global shared network and subnet.
@@ -442,6 +472,18 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	returnedSubnets, err := GetAllSubnets(db, 0)
 	require.NoError(t, err)
 	require.Len(t, returnedSubnets, 2)
+
+	returnedHosts, err := GetHostsBySubnetID(db, returnedSubnets[0].ID)
+	require.NoError(t, err)
+	require.Len(t, returnedHosts, 1)
+	require.Len(t, returnedHosts[0].LocalHosts, 1)
+	require.EqualValues(t, app.ID, returnedHosts[0].LocalHosts[0].AppID)
+
+	returnedHosts, err = GetHostsBySubnetID(db, returnedSubnets[1].ID)
+	require.NoError(t, err)
+	require.Len(t, returnedHosts, 1)
+	require.Len(t, returnedHosts[0].LocalHosts, 1)
+	require.EqualValues(t, app.ID, returnedHosts[0].LocalHosts[0].AppID)
 }
 
 // Check if getting subnet family works.

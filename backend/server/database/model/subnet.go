@@ -451,11 +451,34 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App)
 			err = errors.WithMessagef(err, "unable to associate detected subnet %s with Kea app having id %d", subnet.Prefix, app.ID)
 			return err
 		}
+
+		for _, h := range subnet.Hosts {
+			host := h
+			if host.ID == 0 {
+				err = AddHost(tx, &host)
+				if err != nil {
+					err = errors.WithMessagef(err, "unable to add detected host to the database")
+					return err
+				}
+			} else {
+				err = UpdateHost(tx, &host)
+				if err != nil {
+					err = errors.WithMessagef(err, "unable to update detected host in the database")
+					return err
+				}
+			}
+			err = AddAppToHost(tx, &host, app, "config")
+			if err != nil {
+				err = errors.WithMessagef(err, "unable to associated detected host with Kea app having id %d",
+					app.ID)
+				return err
+			}
+		}
 	}
 	return nil
 }
 
-// Iterates over the shared networks and subnets and commits them to the database.
+// Iterates over the shared networks, subnets and hosts and commits them to the database.
 // In addition it associates them with the specified app.
 func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets []Subnet, app *App) error {
 	// Begin transaction.
