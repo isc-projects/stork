@@ -9,6 +9,12 @@ import (
 )
 
 // Merges hosts belonging to the new subnet into the hosts within existing subnet.
+// A host from the new subnet is added to the slice of returned hosts if such
+// host doesn't exist. If the host with exactly the same set of of identifiers
+// and IP reservation exists, it is not added to the slice of returned hosts to
+// avoid duplication. As a result, the returned slice of hosts is a collection of
+// existing hosts plus the hosts from the new subnet which do not exist in the
+// database.
 func mergeHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet) (hosts []dbmodel.Host, err error) {
 	if len(newSubnet.Hosts) == 0 {
 		return hosts, err
