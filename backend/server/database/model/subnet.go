@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 	errors "github.com/pkg/errors"
 
 	dbops "isc.org/stork/server/database"
-
 	storkutil "isc.org/stork/util"
 )
 
@@ -49,6 +49,17 @@ type Subnet struct {
 	LocalSubnets []*LocalSubnet
 
 	Hosts []Host
+}
+
+// Hook executed after inserting a subnet to the database. It updates subnet
+// id on the hosts belonging to this subnet.
+func (s *Subnet) AfterInsert(ctx context.Context) error {
+	if s != nil && s.ID != 0 {
+		for i := range s.Hosts {
+			s.Hosts[i].SubnetID = s.ID
+		}
+	}
+	return nil
 }
 
 // Return family of the subnet.

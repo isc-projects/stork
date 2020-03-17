@@ -75,7 +75,17 @@ func TestDetectNetworks(t *testing.T) {
             "Dhcp4": {
                 "subnet4": [
                     {
-                        "subnet": "192.0.2.0/24"
+                        "subnet": "192.0.2.0/24",
+                        "reservations": [
+                            {
+                                "hw-address": "01:02:03:04:05:06",
+                                "ip-address": "192.0.2.55"
+                            },
+                            {
+                                "duid": "0A:0A:0A:0A:0A:0A",
+                                "ip-address": "192.0.2.55"
+                            }
+                        ]
                     },
                     {
                         "subnet": "192.0.3.0/24"
@@ -89,7 +99,13 @@ func TestDetectNetworks(t *testing.T) {
             "Dhcp6": {
                 "subnet6": [
                     {
-                        "subnet": "2001:db8:1::/64"
+                        "subnet": "2001:db8:1::/64",
+                        "reservations": [
+                            {
+                                "duid": "01:02:03:04",
+                                "ip-addresses": [ "2001:db8:1::55" ]
+                            }
+                        ]
                     },
                     {
                         "subnet": "2001:db8:2::/64"
@@ -110,7 +126,7 @@ func TestDetectNetworks(t *testing.T) {
 	require.Len(t, subnets, 4)
 
 	// Verify that the subnets are correct.
-	for _, s := range subnets {
+	for i, s := range subnets {
 		// The app is not associated automatically with the subnets. This is
 		// to indicate that the subnet is not associated with the app until
 		// explicitly requested.
@@ -119,6 +135,14 @@ func TestDetectNetworks(t *testing.T) {
 		// be 0. That also allows to determine that this is a new subnet.
 		require.Zero(t, s.ID)
 
+		// Even subnets should include reservations and odd subnets should not.
+		if i%2 == 0 {
+			require.Len(t, subnets[i].Hosts, 1)
+			require.Empty(t, subnets[i].Hosts[0].LocalHosts)
+		} else {
+			require.Empty(t, subnets[i].Hosts)
+		}
+
 		// Ok let's add the subnet to the db and associate this subnet with
 		// our app.
 		subnet := s
@@ -126,6 +150,16 @@ func TestDetectNetworks(t *testing.T) {
 		require.NoError(t, err)
 		err = dbmodel.AddAppToSubnet(db, &subnet, app)
 		require.NoError(t, err)
+
+		// Add the host to the database
+		for _, h := range subnets[i].Hosts {
+			host := h
+			err = dbmodel.AddHost(db, &host)
+			require.NoError(t, err)
+			require.NotZero(t, host.ID)
+			err = dbmodel.AddAppToHost(db, &host, app, "config")
+			require.NoError(t, err)
+		}
 	}
 
 	// Second case: introducing a shared network. Note that the top level subnet
@@ -138,14 +172,34 @@ func TestDetectNetworks(t *testing.T) {
                         "name": "foo",
                         "subnet4": [
                             {
-                                "subnet": "10.0.0.0/8"
+                                "subnet": "10.0.0.0/8",
+                                "reservations": [
+                                    {
+                                        "hw-address": "02:02:02:02:02:02",
+                                        "ip-address": "10.1.1.1"
+                                    }
+                                ]
                             }
                         ]
                     }
                 ],
                 "subnet4": [
                     {
-                        "subnet": "192.0.2.0/24"
+                        "subnet": "192.0.2.0/24",
+                        "reservations": [
+                            {
+                                "hw-address": "01:02:03:04:05:06",
+                                "ip-address": "192.0.2.55"
+                            },
+                            {
+                                "duid": "0A:0A:0A:0A:0A:0A",
+                                "ip-address": "192.0.2.55"
+                            },
+                            {
+                                "hw-address": "09:09:09:09:09:09",
+                                "ip-address": "192.0.2.66"
+                            }
+                        ]
                     }
                 ]
             }
@@ -167,6 +221,9 @@ func TestDetectNetworks(t *testing.T) {
 	// This is new subnet so the ID should be unset.
 	require.Zero(t, newNetwork.Subnets[0].ID)
 	require.Equal(t, "10.0.0.0/8", newNetwork.Subnets[0].Prefix)
+	// The reservation should exist for this subnet.
+	require.Len(t, newNetwork.Subnets[0].Hosts, 1)
+	require.Empty(t, newNetwork.Subnets[0].Hosts[0].LocalHosts)
 	// The subnet is not associated with any apps until such association
 	// is explicitly made.
 	require.Empty(t, newNetwork.Subnets[0].LocalSubnets)
@@ -183,6 +240,13 @@ func TestDetectNetworks(t *testing.T) {
 	err = dbmodel.AddAppToSubnet(db, &newSubnet, app)
 	require.NoError(t, err)
 
+	newHost := newSubnet.Hosts[0]
+	err = dbmodel.AddHost(db, &newHost)
+	require.NoError(t, err)
+	require.NotZero(t, newHost.ID)
+	err = dbmodel.AddAppToHost(db, &newHost, app, "config")
+	require.NoError(t, err)
+
 	// Verify that we have one top level subnet.
 	require.Len(t, subnets, 1)
 	newSubnet = subnets[0]
@@ -193,6 +257,13 @@ func TestDetectNetworks(t *testing.T) {
 	require.Equal(t, "192.0.2.0/24", newSubnet.Prefix)
 	// Also this subnet should be already associated with the previous app.
 	require.Len(t, newSubnet.LocalSubnets, 1)
+
+	// This subnet should now have two reservations.
+	require.Len(t, newSubnet.Hosts, 2)
+	require.NotZero(t, newSubnet.Hosts[0].ID)
+	require.Len(t, newSubnet.Hosts[0].LocalHosts, 1)
+	require.Zero(t, newSubnet.Hosts[1].ID)
+	require.Empty(t, newSubnet.Hosts[1].LocalHosts)
 
 	// Add association of our new app with that subnet.
 	err = dbmodel.AddAppToSubnet(db, &newSubnet, app)
@@ -207,7 +278,17 @@ func TestDetectNetworks(t *testing.T) {
                         "name": "foo",
                         "subnet4": [
                             {
-                                "subnet": "10.0.0.0/8"
+                                "subnet": "10.0.0.0/8",
+                                "reservations": [
+                                    {
+                                        "hw-address": "02:02:02:02:02:02",
+                                        "ip-address": "10.1.1.1"
+                                    },
+                                    {
+                                        "hw-address": "03:03:03:03:03:03",
+                                        "ip-address": "10.2.2.2"
+                                    }
+                                ]
                             },
                             {
                                 "subnet": "10.1.0.0/16"
@@ -267,6 +348,10 @@ func TestDetectNetworks(t *testing.T) {
 	require.Equal(t, "10.0.0.0/8", networks[0].Subnets[0].Prefix)
 	// Also, this subnet already had an association with one of the apps.
 	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
+
+	// There should now be two hosts for this subnet. One already existed
+	// and the other one is new.
+	require.Len(t, networks[0].Subnets[0].Hosts, 2)
 
 	// The second subnet is new and therefore has id of 0.
 	require.Zero(t, networks[0].Subnets[1].ID)

@@ -9,7 +9,7 @@ import (
 	errors "github.com/pkg/errors"
 
 	dbops "isc.org/stork/server/database"
-	"isc.org/stork/util"
+	storkutil "isc.org/stork/util"
 )
 
 // This structure reflects a row in the host_identifier table. It includes
@@ -404,7 +404,7 @@ func (host Host) HasIPAddress(ipAddress string) bool {
 func (host Host) HasIdentifier(idType string, identifier []byte) (bool, bool) {
 	for _, i := range host.HostIdentifiers {
 		if idType == i.Type {
-			if bytes.Compare(i.Value, identifier) == 0 {
+			if bytes.Equal(i.Value, identifier) {
 				return true, true
 			}
 			return true, false

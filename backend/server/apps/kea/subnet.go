@@ -1,10 +1,48 @@
 package kea
 
 import (
+	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 )
+
+// Merges hosts belonging to the new subnet into the hosts within existing subnet.
+func mergeHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet) (hosts []dbmodel.Host, err error) {
+	if len(newSubnet.Hosts) == 0 {
+		return hosts, err
+	}
+
+	// Get the existing hosts from the db.
+	existingHosts, err := dbmodel.GetHostsBySubnetID(db, existingSubnet.ID)
+	if err != nil {
+		return hosts, errors.WithMessagef(err, "problem with merging hosts for subnet %s", existingSubnet.Prefix)
+	}
+	hosts = append(hosts, existingHosts...)
+
+	// Merge each host from the new subnet.
+	for _, n := range newSubnet.Hosts {
+		newHost := n
+		found := false
+		// Iterate over the existing hosts to check if the host from the new
+		// subnet is there already.
+		for _, h := range existingHosts {
+			host := h
+			if n.Equal(&host) {
+				// Host found and matches the new host so nothing to do.
+				found = true
+				break
+			}
+		}
+		if !found {
+			// Host doesn't exist yet, so let's add it.
+			hosts = append(hosts, newHost)
+		}
+	}
+
+	return hosts, err
+}
 
 // Checks whether the given shared network exists already. It iterates over the
 // slice of existing networks. If the network seems to be matching one of them,
@@ -82,8 +120,19 @@ func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int)
 					// shared network already.
 					for _, s := range network.Subnets {
 						subnet := s
-						if ok, _ := subnetExists(&subnet, dbNetwork.Subnets); !ok {
+						ok, idx := subnetExists(&subnet, dbNetwork.Subnets)
+						if !ok {
 							dbNetwork.Subnets = append(dbNetwork.Subnets, subnet)
+						} else {
+							// Subnet already exists and may contain some hosts. Let's
+							// merge the hosts from the new subnet into the existing subnet.
+							hosts, err := mergeHosts(db, &dbNetwork.Subnets[idx], &subnet)
+							if err != nil {
+								log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
+									subnet.Prefix, err)
+								continue
+							}
+							dbNetwork.Subnets[idx].Hosts = hosts
 						}
 					}
 					networks = append(networks, *dbNetwork)
@@ -134,6 +183,16 @@ func detectSubnets(db *dbops.PgDB, config *dbmodel.KeaConfig, family int) (subne
 				exists, index := subnetExists(subnet, dbSubnets)
 				if exists {
 					subnets = append(subnets, dbSubnets[index])
+					// Subnet already exists and may contain some hosts. Let's
+					// merge the hosts from the new subnet into the existing subnet.
+					hosts, err := mergeHosts(db, &dbSubnets[index], subnet)
+					if err != nil {
+						log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
+							subnet.Prefix, err)
+						continue
+					}
+					// Assign merged hosts to the subnet.
+					subnets[len(subnets)-1].Hosts = hosts
 				} else {
 					subnets = append(subnets, *subnet)
 				}
