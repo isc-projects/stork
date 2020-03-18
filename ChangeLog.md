@@ -9,9 +9,9 @@
 * 43 [func] marcin
 
     Implemented data model for IP reservations and detection of IP
-    reservations specified within a Kea configuration file. This
-    mechanism is not yet used for monitored apps.
-    (Gitlab #188)
+    reservations specified within a Kea configuration file. Detected
+    reservations are not yet used in the UI.
+    (Gitlab #188, #206)
 
 * 42 [func] godfryd
 
