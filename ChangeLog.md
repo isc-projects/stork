@@ -1,3 +1,11 @@
+* 44 [func] godfryd
+
+    Added possibility to run Stork server without Nginx or Apache,
+    ie. static files can be served by Stork server. Still it is
+    possible to run Stork server behind Nginx or Apache which
+    will do reverse proxy or serve static files.
+    (Gitlab #200)
+
 * 43 [func] marcin
 
     Implemented data model for IP reservations and detection of IP
