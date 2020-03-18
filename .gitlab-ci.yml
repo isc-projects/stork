@@ -22,6 +22,7 @@ cache:
   - webui/node_modules/
   - tools/
 
+
 ### build jobs ###
 
 # common parts used in build jobs
@@ -172,3 +173,31 @@ deploy_demo:
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml down
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml pull
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml up -d --no-build
+
+
+### deploy pkgs to cloudsmith.io ###
+
+deploy_pkgs:
+  stage: deploy
+  when: manual
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:latest
+  tags:
+    - linux
+    - docker
+    - amd64
+  dependencies:
+    - rpms
+    - debs
+  before_script:
+    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+  script:
+    - ls -al
+    - export LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
+    - cloudsmith check service
+    - cloudsmith whoami -k $CLOUDSMITH_API_KEY
+    - if [ -z "$REPO" ]; then export REPO="stork-testing"; fi
+    - cloudsmith upload deb -k $CLOUDSMITH_API_KEY -W --republish isc/$REPO/any-distro/any-version isc-stork-agent*deb
+    - cloudsmith upload deb -k $CLOUDSMITH_API_KEY -W --republish isc/$REPO/any-distro/any-version isc-stork-server*deb
+    - cloudsmith upload rpm -k $CLOUDSMITH_API_KEY -W --republish isc/$REPO/any-distro/any-version isc-stork-agent*rpm
+    - cloudsmith upload rpm -k $CLOUDSMITH_API_KEY -W --republish isc/$REPO/any-distro/any-version isc-stork-server*rpm

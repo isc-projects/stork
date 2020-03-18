@@ -660,8 +660,9 @@ end
 
 desc 'Prepare containers with FPM and other dependencies that are used for building RPM and deb packages'
 task :build_fpm_containers do
-  sh 'docker build -f docker/pkgs/ubuntu-18-04.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-ubuntu-18-04:latest docker/pkgs/'
-  sh 'docker build -f docker/pkgs/centos-8.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest docker/pkgs/'
+#  sh 'docker build -f docker/pkgs/ubuntu-18-04.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-ubuntu-18-04:latest docker/pkgs/'
+#  sh 'docker build -f docker/pkgs/centos-8.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest docker/pkgs/'
+  sh 'docker build -f docker/pkgs/cloudsmith.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:latest docker/pkgs/'
 end
 
 ### Other Tasks #########################
