@@ -248,6 +248,109 @@ func TestForwardToKeaOverHTTPNoKea(t *testing.T) {
 	require.Len(t, rsp.KeaResponses[0].Response, 0)
 }
 
+// Test successful forwarding stats request to named.
+func TestForwardToNamedStatsSuccess(t *testing.T) {
+	sa, ctx := setupAgentTest(mockRndc)
+
+	// Expect appropriate content type and the body. If they are not matched
+	// an error will be raised.
+	defer gock.Off()
+	gock.New("http://localhost:45634/").
+		MatchHeader("Content-Type", "application/json").
+		Post("/").
+		Reply(200).
+		JSON([]map[string]int{{"result": 0}})
+
+	// Forward the request with the expected body.
+	req := &agentapi.ForwardToNamedStatsReq{
+		Url:               "http://localhost:45634/json/v1/server",
+		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
+	}
+
+	// Named should respond with non-empty body and the status code 200.
+	// This should result in no error and the body should be available
+	// in the response.
+	rsp, err := sa.ForwardToNamedStats(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.NotNil(t, rsp.NamedStatsResponse)
+	require.JSONEq(t, "[{\"result\":0}]", rsp.NamedStatsResponse.Response)
+}
+
+// Test forwarding command to named when HTTP 400 (Bad Request) status
+// code is returned.
+func TestForwardToNamedStatsBadRequest(t *testing.T) {
+	sa, ctx := setupAgentTest(mockRndc)
+
+	defer gock.Off()
+	gock.New("http://localhost:45634/json/v1/server").
+		MatchHeader("Content-Type", "application/json").
+		Post("/").
+		Reply(400).
+		JSON([]map[string]string{{"HttpCode": "Bad Request"}})
+
+	req := &agentapi.ForwardToNamedStatsReq{
+		Url:               "http://localhost:45634/json/v1/server",
+		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
+	}
+
+	// The response to the forwarded command should contain HTTP
+	// status code 400, but that should not raise an error in the
+	// agent.
+	rsp, err := sa.ForwardToNamedStats(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.NotNil(t, rsp.NamedStatsResponse)
+	require.JSONEq(t, "[{\"HttpCode\":\"Bad Request\"}]", rsp.NamedStatsResponse.Response)
+	require.NotEqual(t, 0, rsp.NamedStatsResponse.Status.Code)
+}
+
+// Test forwarding command to named statistics-cahnnel when no body is returned.
+func TestForwardToNamedStatsHTTPEmptyBody(t *testing.T) {
+	sa, ctx := setupAgentTest(mockRndc)
+
+	defer gock.Off()
+	gock.New("http://localhost:45634/json/v1/server").
+		MatchHeader("Content-Type", "application/json").
+		Post("/").
+		Reply(200)
+
+	req := &agentapi.ForwardToNamedStatsReq{
+		Url:               "http://localhost:45634/json/v1/server",
+		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
+	}
+
+	// Forward the command to named statistics-channel.
+	// The response contains no body, but this should not result in an
+	// error. The command sender should deal with this as well as with
+	// other issues with the response formatting.
+	rsp, err := sa.ForwardToNamedStats(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.NotNil(t, rsp.NamedStatsResponse)
+	require.Len(t, rsp.NamedStatsResponse.Response, 0)
+}
+
+// Test forwarding statistics request when named is unavailable.
+func TestForwardToNamedStatsNoNamed(t *testing.T) {
+	sa, ctx := setupAgentTest(mockRndc)
+
+	req := &agentapi.ForwardToNamedStatsReq{
+		Url:               "http://localhost:45634/json/v1/server",
+		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
+	}
+
+	// Named is unreachable, so we'll have to signal an error to the sender.
+	// The response should be empty.
+	rsp, err := sa.ForwardToNamedStats(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.NotNil(t, rsp.NamedStatsResponse)
+	require.NotEqual(t, 0, rsp.NamedStatsResponse.Status.Code)
+	require.Len(t, rsp.NamedStatsResponse.Response, 0)
+}
+
+// Test a successful rndc command.
 func TestForwardRndcCommandSuccess(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndc)
 	cmd := &agentapi.RndcRequest{Request: "status"}
@@ -289,6 +392,7 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 	require.Equal(t, rsp.RndcResponse.Response, "unknown command")
 }
 
+// Test rndc command failed to forward.
 func TestForwardRndcCommandError(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndcError)
 	cmd := &agentapi.RndcRequest{Request: "status"}
@@ -308,6 +412,7 @@ func TestForwardRndcCommandError(t *testing.T) {
 	require.NotEmpty(t, rsp.Status.Message)
 }
 
+// Test rndc command successfully forwarded, but bad response.
 func TestForwardRndcCommandEmpty(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndcEmpty)
 	cmd := &agentapi.RndcRequest{Request: "status"}

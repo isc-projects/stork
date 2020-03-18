@@ -152,6 +152,52 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	return response, err
 }
 
+// ForwardToNamedStats forwards a statistics request to the named daemon.
+func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.ForwardToNamedStatsReq) (*agentapi.ForwardToNamedStatsRsp, error) {
+	reqURL := in.GetUrl()
+	req := in.GetNamedStatsRequest()
+
+	response := &agentapi.ForwardToNamedStatsRsp{
+		Status: &agentapi.Status{
+			Code: agentapi.Status_OK, // all ok
+		},
+	}
+
+	rsp := &agentapi.NamedStatsResponse{
+		Status: &agentapi.Status{},
+	}
+	// Try to forward the command to named daemon.
+	namedRsp, err := sa.CAClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"URL": reqURL,
+		}).Errorf("Failed to forward commands to named: %+v", err)
+		rsp.Status.Code = agentapi.Status_ERROR
+		rsp.Status.Message = "Failed to forward commands to named"
+		response.NamedStatsResponse = rsp
+		return response, nil
+	}
+
+	// Read the response body.
+	body, err := ioutil.ReadAll(namedRsp.Body)
+	namedRsp.Body.Close()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"URL": reqURL,
+		}).Errorf("Failed to read the body of the named response: %+v", err)
+		rsp.Status.Code = agentapi.Status_ERROR
+		rsp.Status.Message = "Failed to read the body of the named response"
+		response.NamedStatsResponse = rsp
+		return response, nil
+	}
+
+	// Everything looks good, so include the body in the response.
+	rsp.Response = string(body)
+	rsp.Status.Code = agentapi.Status_OK
+	response.NamedStatsResponse = rsp
+	return response, nil
+}
+
 // Forwards one or more Kea commands sent by the Stork server to the appropriate Kea instance over
 // HTTP (via Control Agent).
 func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) (*agentapi.ForwardToKeaOverHTTPRsp, error) {

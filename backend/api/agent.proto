@@ -131,3 +131,30 @@ message ForwardRndcCommandRsp {
 
   RndcResponse rndcResponse = 2;
 }
+
+// Request to named statistics-channel.
+message NamedStatsRequest {
+  string request = 1;
+}
+
+message ForwardToNamedStatsReq {
+  // URL to named statistics-channel
+  string url = 1;
+
+  NamedStatsRequest namedStatsRequest = 2;
+}
+
+// Response from named statistics-channel
+message NamedStatsResponse {
+  string response = 1;
+
+  // Status of request execution.
+  Status status = 2;
+}
+
+message ForwardToNamedStatsRsp {
+  // Status of call execution.
+  Status status = 1;
+
+  NamedStatsResponse namedStatsResponse = 2;
+}
