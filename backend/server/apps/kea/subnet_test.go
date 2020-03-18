@@ -392,7 +392,13 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
             "Dhcp4": {
                 "subnet4": [
                     {
-                        "subnet": "192.0.2.0/24"
+                        "subnet": "192.0.2.0/24",
+                        "reservations": [
+                            {
+                                "hw-address": "01:02:03:04:05:06",
+                                "ip-address": "192.0.2.100"
+                            }
+                        ]
                     },
                     {
                         "subnet": "192.0.3.0/24"
@@ -409,7 +415,18 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
                         "subnet": "2001:db8:1::/64"
                     },
                     {
-                        "subnet": "2001:db8:2::/64"
+                        "subnet": "2001:db8:2::/64",
+                        "reservations": [
+                            {
+                                "duid": "01:02:03:04",
+                                "ip-addresses": [
+                                    "2001:db8:2::100", "2001:db8:2::101"
+                                ],
+                                "prefixes": [
+                                    "3000:1::/96", "3000:2::/96"
+                                ]
+                            }
+                        ]
                     }
                 ]
             }
@@ -429,10 +446,34 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, subnets, 2)
 
+	// The first subnet should have one reservation.
+	reservations, err := dbmodel.GetHostsBySubnetID(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.Len(t, reservations, 1)
+	require.EqualValues(t, subnets[0].ID, reservations[0].SubnetID)
+	require.Len(t, reservations[0].LocalHosts, 1)
+	require.EqualValues(t, app.ID, reservations[0].LocalHosts[0].AppID)
+	// The second subnet should have no reservations.
+	reservations, err = dbmodel.GetHostsBySubnetID(db, subnets[1].ID)
+	require.NoError(t, err)
+	require.Empty(t, reservations)
+
 	// There should be 2 IPv6 subnets created.
 	subnets, err = dbmodel.GetAllSubnets(db, 6)
 	require.NoError(t, err)
 	require.Len(t, subnets, 2)
+
+	// The first subnet should have no reservations.
+	reservations, err = dbmodel.GetHostsBySubnetID(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.Empty(t, reservations)
+	// The second subnet should have one reservation.
+	reservations, err = dbmodel.GetHostsBySubnetID(db, subnets[1].ID)
+	require.NoError(t, err)
+	require.Len(t, reservations, 1)
+	require.EqualValues(t, subnets[1].ID, reservations[0].SubnetID)
+	require.Len(t, reservations[0].LocalHosts, 1)
+	require.EqualValues(t, app.ID, reservations[0].LocalHosts[0].AppID)
 
 	// Create another Kea app which introduces a shared network and for
 	// which the subnets partially overlaps.
@@ -454,7 +495,17 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
                 ],
                 "subnet4": [
                     {
-                        "subnet": "192.0.2.0/24"
+                        "subnet": "192.0.2.0/24",
+                        "reservations": [
+                            {
+                                "hw-address": "01:02:03:04:05:06",
+                                "ip-address": "192.0.2.100"
+                            },
+                            {
+                                "hw-address": "02:02:02:02:02:02",
+                                "ip-address": "192.0.2.111"
+                            }
+                        ]
                     },
                     {
                         "subnet": "192.0.4.0/24"
@@ -480,6 +531,28 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	subnets, err = dbmodel.GetAllSubnets(db, 0)
 	require.NoError(t, err)
 	require.Len(t, subnets, 7)
+
+	subnets, err = dbmodel.GetSubnetsByPrefix(db, "192.0.2.0/24")
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	// Verify that the hosts within the 192.0.2.0/24 subnet have
+	// been updated.
+	hosts, err := dbmodel.GetHostsBySubnetID(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.Len(t, hosts, 2)
+	// Both hosts should have non zero ID and should belong to the same subnet.
+	for _, h := range hosts {
+		require.NotZero(t, h.ID)
+		require.EqualValues(t, subnets[0].ID, h.SubnetID)
+	}
+	// The first host belongs to two apps.
+	require.Len(t, hosts[0].LocalHosts, 2)
+	require.NotEqual(t, hosts[0].LocalHosts[0].AppID, app.ID)
+	require.Equal(t, app.ID, hosts[0].LocalHosts[1].AppID)
+	// The second host belongs to one app.
+	require.Len(t, hosts[1].LocalHosts, 1)
+	require.Equal(t, app.ID, hosts[1].LocalHosts[0].AppID)
 
 	// Let's add another app with the same shared network and new subnet in it.
 	v4Config = `

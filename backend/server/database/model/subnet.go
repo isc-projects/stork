@@ -454,6 +454,8 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App)
 
 		for _, h := range subnet.Hosts {
 			host := h
+			// Make sure the host associated with the current subnet.
+			host.SubnetID = subnet.ID
 			if host.ID == 0 {
 				err = AddHost(tx, &host)
 				if err != nil {
