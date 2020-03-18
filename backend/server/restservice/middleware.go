@@ -47,7 +47,7 @@ func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler
 	log.Info("installed file server middleware")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api") || r.URL.Path == "/swagger.json" {
-			// server API request
+			// serve API request
 			next.ServeHTTP(w, r)
 		} else {
 			pth := path.Join(staticFilesDir, r.URL.Path)
