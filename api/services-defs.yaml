@@ -180,6 +180,8 @@
         type: integer
       autoZoneCount:
         type: integer
+      cacheHitRatio:
+        type: number
 
   AppBind9:
     type: object
