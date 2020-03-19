@@ -2,6 +2,7 @@ package bind9
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strconv"
 	"time"
@@ -11,11 +12,85 @@ import (
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 // Provide example date format how named returns dates.
 const namedLongDateFormat = "Mon, 02 Jan 2006 15:04:05 MST"
 
+type CacheStatsData struct {
+	CacheHits   int64 `json:"CacheHits"`
+	CacheMisses int64 `json:"CacheMisses"`
+}
+
+type ResolverData struct {
+	CacheStats CacheStatsData `json:"cachestats"`
+}
+
+type ViewStatsData struct {
+	Resolver ResolverData `json:"resolver"`
+}
+
+type NamedStatsGetResponse struct {
+	Views map[string]*ViewStatsData `json:"views,omitempty"`
+}
+
+// Get statistics from named daemon using ForwardToNamedStats function.
+func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) {
+	// prepare URL to named
+	statsChannel, err := dbApp.GetAccessPoint(dbmodel.AccessPointStatistics)
+	if err != nil {
+		log.Warnf("problem with getting named statistics-channel access point: %s", err)
+		return
+	}
+	statsAddress := storkutil.HostWithPortURL(statsChannel.Address, statsChannel.Port)
+	statsRequest := "json/v1/server"
+	statsURL := fmt.Sprintf("%s%s", statsAddress, statsRequest)
+
+	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	// store all collected details in app db record
+	statsOutput := NamedStatsGetResponse{}
+	err = agents.ForwardToNamedStats(ctx2, dbApp.Machine.Address, dbApp.Machine.AgentPort, statsURL, &statsOutput)
+	if err != nil {
+		log.Warnf("problem with retrieving stats from named: %s", err)
+	}
+
+	bind9App := dbApp.Details.(dbmodel.AppBind9)
+	bind9Daemon := bind9App.Daemon
+
+	if statsOutput.Views != nil {
+		for name, view := range statsOutput.Views {
+			// Only deal with the default view for now.
+			if name != "_default" {
+				continue
+			}
+			// Calculate the cache hit ratio: the number of
+			// responses that were retrieved from cache divided
+			// by the number of all responses.
+			hits := view.Resolver.CacheStats.CacheHits
+			misses := view.Resolver.CacheStats.CacheMisses
+			ratio := float64(0)
+			total := float64(hits) + float64(misses)
+			if total != 0 {
+				ratio = float64(hits) / total
+			}
+			bind9Daemon.CacheHitRatio = ratio
+			bind9Daemon.CacheHits = hits
+			bind9Daemon.CacheMisses = misses
+			break
+		}
+	}
+
+	dbApp.Details = dbmodel.AppBind9{
+		Daemon: bind9Daemon,
+	}
+}
+
+// Get state of named daemon using ForwardRndcCommand function.
+// The state that is stored into dbApp includes: version, number of zones, and
+// some runtime state.
 func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) {
 	// Get rndc control settings
 	ctrlPoint, err := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
@@ -114,6 +189,9 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	dbApp.Details = dbmodel.AppBind9{
 		Daemon: bind9Daemon,
 	}
+
+	// Get statistics
+	GetAppStatistics(ctx, agents, dbApp)
 }
 
 // Inserts or updates information about BIND 9 app in the database.

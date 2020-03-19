@@ -12,16 +12,40 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
+// Named statistics-channel response.
+func mockNamed(callNo int, response interface{}) {
+	statsOutput := response.(*NamedStatsGetResponse)
+	*statsOutput = NamedStatsGetResponse{
+		Views: map[string]*ViewStatsData{
+			"_default": {
+				Resolver: ResolverData{
+					CacheStats: CacheStatsData{
+						CacheHits:   40,
+						CacheMisses: 10,
+					},
+				},
+			},
+			"_bind": {
+				Resolver: ResolverData{
+					CacheStats: CacheStatsData{
+						CacheHits:   1,
+						CacheMisses: 5,
+					},
+				},
+			},
+		},
+	}
+}
+
+// Test retrieving state of BIND 9 app.
 func TestGetAppState(t *testing.T) {
 	ctx := context.Background()
 
-	dummyFn := func(c int, r []interface{}) {
-	}
-
-	fa := storktest.NewFakeAgents(dummyFn, nil)
+	fa := storktest.NewFakeAgents(nil, mockNamed)
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointStatistics, "127.0.0.1", "abcd", 8000)
 	dbApp := dbmodel.App{
 		AccessPoints: accessPoints,
 		Machine: &dbmodel.Machine{
@@ -47,6 +71,11 @@ func TestGetAppState(t *testing.T) {
 	require.Equal(t, reloadedAt, daemon.ReloadedAt)
 	require.EqualValues(t, 5, daemon.ZoneCount)
 	require.EqualValues(t, 96, daemon.AutomaticZoneCount)
+
+	// Test statistics.
+	require.EqualValues(t, 40, daemon.CacheHits)
+	require.EqualValues(t, 10, daemon.CacheMisses)
+	require.EqualValues(t, 0.8, daemon.CacheHitRatio)
 }
 
 // Tests that BIND 9 can be added and then updated in the database.

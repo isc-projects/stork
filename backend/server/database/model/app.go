@@ -21,6 +21,9 @@ type Bind9Daemon struct {
 	ReloadedAt         time.Time
 	ZoneCount          int64
 	AutomaticZoneCount int64
+	CacheHits          int64
+	CacheMisses        int64
+	CacheHitRatio      float64
 }
 
 type KeaDaemon struct {
