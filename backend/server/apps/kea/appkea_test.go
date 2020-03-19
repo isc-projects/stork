@@ -155,13 +155,14 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 	ctx := context.Background()
 
 	// check getting config of 1 daemon
-	fa := storktest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	keaMock := func(callNo int, cmdResponses []interface{}) {
 		if callNo == 0 {
 			mockGetConfigFromCAResponse(1, cmdResponses)
 		} else if callNo == 1 {
 			mockGetConfigFromOtherDaemonsResponse(1, cmdResponses)
 		}
-	})
+	}
+	fa := storktest.NewFakeAgents(keaMock, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234)
@@ -185,13 +186,14 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 	ctx := context.Background()
 
 	// check getting configs of 2 daemons
-	fa := storktest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	keaMock := func(callNo int, cmdResponses []interface{}) {
 		if callNo == 0 {
 			mockGetConfigFromCAResponse(2, cmdResponses)
 		} else if callNo == 1 {
 			mockGetConfigFromOtherDaemonsResponse(2, cmdResponses)
 		}
-	})
+	}
+	fa := storktest.NewFakeAgents(keaMock, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234)

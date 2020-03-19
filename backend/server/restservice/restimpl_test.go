@@ -33,7 +33,7 @@ func TestGetVersion(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -51,7 +51,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -179,7 +179,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(mockGetAppsState)
+	fa := storktest.NewFakeAgents(mockGetAppsState, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -248,7 +248,7 @@ func TestCreateMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -304,7 +304,7 @@ func TestGetMachines(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -326,7 +326,7 @@ func TestGetMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -400,7 +400,7 @@ func TestUpdateMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -484,7 +484,7 @@ func TestDeleteMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -535,7 +535,7 @@ func TestGetApp(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -589,7 +589,7 @@ func TestRestGetApp(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -666,7 +666,7 @@ func TestRestGetApps(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -792,7 +792,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	settings := RestAPISettings{}
 	// Configure the fake control agents to mimic returning a status of
 	// two HA services for Kea.
-	fa := storktest.NewFakeAgents(mockGetStatusWithHA)
+	fa := storktest.NewFakeAgents(mockGetStatusWithHA, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -885,7 +885,7 @@ func TestRestGetAppsStats(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()

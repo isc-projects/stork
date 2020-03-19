@@ -18,7 +18,7 @@ func TestGetSubnets(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -313,7 +313,7 @@ func TestGetSharedNetworks(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()

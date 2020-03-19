@@ -49,7 +49,7 @@ func TestInnerMiddleware(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	sm, err := dbsession.NewSessionMgr(&rapi.DbSettings.BaseDatabaseSettings)

@@ -27,7 +27,7 @@ func TestStatsPullerBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare fake agents
-	fa := storktest.NewFakeAgents(nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 
 	sp, _ := NewStatsPuller(db, fa)
 	sp.Shutdown()
@@ -39,7 +39,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 	defer teardown()
 
 	// prepare fake agents
-	fa := storktest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	keaMock := func(callNo int, cmdResponses []interface{}) {
 		// DHCPv4
 		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
 		command, _ := agentcomm.NewKeaCommand("stat-lease4-get", daemons, nil)
@@ -78,7 +78,8 @@ func TestStatsPullerPullStats(t *testing.T) {
                            }
                         }]`
 		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[1])
-	})
+	}
+	fa := storktest.NewFakeAgents(keaMock, nil)
 
 	// prepare apps with subnets and local subnets
 	v4Config := `
@@ -174,7 +175,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	defer teardown()
 
 	// prepare fake agents
-	fa := storktest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+	keaMock := func(callNo int, cmdResponses []interface{}) {
 		// DHCPv4
 		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
 		command, _ := agentcomm.NewKeaCommand("stat-lease4-get", daemons, nil)
@@ -195,7 +196,8 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
                            "text": "'stat-lease6-get' command not supported."
                         }]`
 		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[1])
-	})
+	}
+	fa := storktest.NewFakeAgents(keaMock, nil)
 
 	// add one machine with one kea app
 	m := &dbmodel.Machine{

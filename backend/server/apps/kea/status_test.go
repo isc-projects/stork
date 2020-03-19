@@ -80,7 +80,7 @@ func mockGetStatusError(callNo int, cmdResponses []interface{}) {
 
 // Test status-get command when HA status is returned.
 func TestGetDHCPStatus(t *testing.T) {
-	fa := storktest.NewFakeAgents(mockGetStatusLoadBalancing)
+	fa := storktest.NewFakeAgents(mockGetStatusLoadBalancing, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
@@ -129,7 +129,7 @@ func TestGetDHCPStatus(t *testing.T) {
 
 // Test status-get command when HA status is not returned.
 func TestGetDHCPStatusNoHA(t *testing.T) {
-	fa := storktest.NewFakeAgents(mockGetStatusNoHA)
+	fa := storktest.NewFakeAgents(mockGetStatusNoHA, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
@@ -162,7 +162,7 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 // Test the case when the Kea CA is unable to communicate with the
 // Kea deamon.
 func TestGetDHCPStatusError(t *testing.T) {
-	fa := storktest.NewFakeAgents(mockGetStatusError)
+	fa := storktest.NewFakeAgents(mockGetStatusError, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)

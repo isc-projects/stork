@@ -290,7 +290,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 }
 
 // Get state of Kea application daemons using ForwardToKeaOverHTTP function.
-// The state, that is stored into dbApp, includes: version, config and runtime state of indicated Kea daemons.
+// The state that is stored into dbApp includes: version, config and runtime state of indicated Kea daemons.
 func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) {
 	// prepare URL to CA
 	ctrlPoint, err := dbApp.GetAccessPoint(dbmodel.AccessPointControl)

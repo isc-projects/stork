@@ -10,7 +10,7 @@ import (
 type FakeAgents struct {
 	RecordedURL      string
 	RecordedCommands []string
-	mockFunc         func(int, []interface{})
+	mockKeaFunc      func(int, []interface{})
 	callNo           int
 
 	RecordedAddress string
@@ -18,6 +18,9 @@ type FakeAgents struct {
 	RecordedKey     string
 	RecordedCommand string
 	mockRndcOutput  string
+
+	RecordedStatsURL string
+	mockNamedFunc    func(int, interface{})
 
 	MachineState *agentcomm.State
 }
@@ -45,9 +48,10 @@ server is up and running`
 
 // Creates new instance of the FakeAgents structure with the function returning
 // a custom response set.
-func NewFakeAgents(fn func(int, []interface{})) *FakeAgents {
+func NewFakeAgents(fnKea func(int, []interface{}), fnNamed func(int, interface{})) *FakeAgents {
 	fa := &FakeAgents{
-		mockFunc:       fn,
+		mockKeaFunc:    fnKea,
+		mockNamedFunc:  fnNamed,
 		mockRndcOutput: mockRndcOutput(),
 	}
 	return fa
@@ -84,11 +88,27 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, agentAddress str
 		result.CmdsErrors = append(result.CmdsErrors, nil)
 	}
 	// Generate response.
-	if fa.mockFunc != nil {
-		fa.mockFunc(fa.callNo, cmdResponses)
+	if fa.mockKeaFunc != nil {
+		fa.mockKeaFunc(fa.callNo, cmdResponses)
 	}
 	fa.callNo++
 	return result, nil
+}
+
+// FakeAgents specific implementation of the function to forward a command
+// to the named statistics-channel. It records some arguments used in the call
+// to this function so as they can be later validated. It also returns a custom
+// response to the command by calling the function specified in the
+// call to NewFakeAgents.
+func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsURL string, statsOutput interface{}) error {
+	fa.RecordedStatsURL = statsURL
+
+	// Generate response.
+	if fa.mockNamedFunc != nil {
+		fa.mockNamedFunc(fa.callNo, statsOutput)
+	}
+	fa.callNo++
+	return nil
 }
 
 // FakeAgents specific implementation of the function to forward a command
