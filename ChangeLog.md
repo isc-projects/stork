@@ -1,3 +1,9 @@
+* 45 [func] matthijs
+
+    Retrieve some cache statistics from named and show Cache Hit
+    Ratio on the dashboard.
+    (Gitlab #64)
+
 * 44 [func] godfryd
 
     Added possibility to run Stork server without Nginx or Apache,
