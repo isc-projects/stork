@@ -206,20 +206,35 @@ func TestDetectKeaApp(t *testing.T) {
 }
 
 func TestGetAccessPoint(t *testing.T) {
-	namedFile, removeNamedFile := makeNamedConfFile()
-	defer removeNamedFile(namedFile.Name())
+	bind9App := &App{
+		Type: AppTypeBind9,
+		AccessPoints: []AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "127.0.0.53",
+				Port:    int64(5353),
+				Key:     "hmac-md5:abcd",
+			},
+			{
+				Type:    AccessPointStatistics,
+				Address: "127.0.0.80",
+				Port:    int64(80),
+				Key:     "",
+			},
+		},
+	}
 
-	keaFile, removeKeaFile := makeKeaConfFile()
-	defer removeKeaFile(keaFile.Name())
-
-	// detect apps
-	bind9App := detectBind9App([]string{"", namedFile.Name()})
-	require.NotNil(t, bind9App)
-	require.Equal(t, bind9App.Type, AppTypeBind9)
-
-	keaApp := detectKeaApp([]string{"", keaFile.Name()})
-	require.NotNil(t, keaApp)
-	require.Equal(t, AppTypeKea, keaApp.Type)
+	keaApp := &App{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    int64(45634),
+				Key:     "",
+			},
+		},
+	}
 
 	// test get bind 9 access points
 	point, err := getAccessPoint(bind9App, AccessPointControl)
