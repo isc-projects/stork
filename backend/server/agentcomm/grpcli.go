@@ -160,6 +160,43 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, agent
 	return result, nil
 }
 
+// Forwards a statistics request via the Stork Agent to the named daemon and
+// then parses the response. statsURL is URL to the statistics-channel of the
+// named daemon.
+func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsURL string, statsOutput interface{}) error {
+	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
+
+	// Prepare the on-wire representation of the commands.
+	storkReq := &agentapi.ForwardToNamedStatsReq{
+		Url: statsURL,
+	}
+	storkReq.NamedStatsRequest = &agentapi.NamedStatsRequest{
+		Request: "",
+	}
+
+	// Send the commands to the Stork agent.
+	storkRsp, err := agents.sendAndRecvViaQueue(addrPort, storkReq)
+	if err != nil {
+		return errors.Wrapf(err, "failed to forward named statistics commands to agent %s, to %s, commands were: %+v", addrPort, statsURL, storkReq.NamedStatsRequest)
+	}
+	fdRsp := storkRsp.(*agentapi.ForwardToNamedStatsRsp)
+	if fdRsp.Status.Code != agentapi.Status_OK {
+		return errors.New(fdRsp.Status.Message)
+	}
+
+	statsRsp := fdRsp.NamedStatsResponse
+	if statsRsp.Status.Code != agentapi.Status_OK {
+		return errors.New(statsRsp.Status.Message)
+	}
+
+	// Try to parse the response from the on-wire format.
+	err = UnmarshalNamedStatsResponse(statsRsp.Response, statsOutput)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to parse named statistics response from %s, response was: %s", statsURL, statsRsp)
+	}
+	return err
+}
+
 type KeaCmdsResult struct {
 	Error      error
 	CmdsErrors []error

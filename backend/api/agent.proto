@@ -12,6 +12,9 @@ service Agent {
   // Forward rndc command and return results.
   rpc ForwardRndcCommand(ForwardRndcCommandReq) returns (ForwardRndcCommandRsp) {}
 
+  // Forward statistics request to named daemon and return respones.
+  rpc ForwardToNamedStats(ForwardToNamedStatsReq) returns (ForwardToNamedStatsRsp) {}
+
   // Forward commands (one or more) to Kea Control Agent and return results.
   rpc ForwardToKeaOverHTTP(ForwardToKeaOverHTTPReq) returns (ForwardToKeaOverHTTPRsp) {}
 }

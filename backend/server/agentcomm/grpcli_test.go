@@ -237,6 +237,75 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	require.Error(t, cmdsResult.CmdsErrors[0])
 }
 
+// Test that a statistics request can be successfully forwarded to named
+// statistics-channel and the output can be parsed.
+func TestForwardToNamedStats(t *testing.T) {
+	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
+	defer teardown()
+
+	rsp := agentapi.ForwardToNamedStatsRsp{
+		Status: &agentapi.Status{
+			Code: 0,
+		},
+		NamedStatsResponse: &agentapi.NamedStatsResponse{
+			Status: &agentapi.Status{
+				Code: 0,
+			},
+			Response: `{
+                             "json-stats-version": "1.2.",
+                             "views": {
+                                 "_default": {
+                                     "resolver": {
+                                         "cachestats": {
+                                             "CacheHits": 11,
+                                             "CacheMisses": 12
+                                         }
+                                     }
+                                 }
+                             }
+                        }`,
+		},
+	}
+
+	mockAgentClient.EXPECT().ForwardToNamedStats(gomock.Any(), gomock.Any()).
+		Return(&rsp, nil)
+
+	ctx := context.Background()
+	actualResponse := NamedStatsGetResponse{}
+	err := agents.ForwardToNamedStats(ctx, "127.0.0.1", 8080, "http://localhost:8000/", &actualResponse)
+	require.NoError(t, err)
+	require.NotNil(t, actualResponse)
+	require.Len(t, *actualResponse.Views, 1)
+	require.Contains(t, *actualResponse.Views, "_default")
+}
+
+// Test that the error is returned when the response to the forwarded
+// named statistics request is malformed.
+func TestForwardToNamedStatsInvalidResponse(t *testing.T) {
+	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
+	defer teardown()
+
+	rsp := agentapi.ForwardToNamedStatsRsp{
+		Status: &agentapi.Status{
+			Code: 0,
+		},
+		NamedStatsResponse: &agentapi.NamedStatsResponse{
+			Status: &agentapi.Status{
+				Code: 0,
+			},
+			Response: `{
+                          "views": "not the views you are looking for",
+            }`},
+	}
+	mockAgentClient.EXPECT().ForwardToNamedStats(gomock.Any(), gomock.Any()).
+		Return(&rsp, nil)
+
+	ctx := context.Background()
+	actualResponse := NamedStatsGetResponse{}
+	err := agents.ForwardToNamedStats(ctx, "127.0.0.1", 8080, "http://localhost:8000/", &actualResponse)
+	require.Error(t, err)
+}
+
 // Test that a command can be successfully forwarded to rndc and the response
 // can be parsed.
 func TestForwardRndcCommand(t *testing.T) {

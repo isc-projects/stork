@@ -58,6 +58,8 @@ func doCall(ctx context.Context, agent *Agent, in interface{}) (interface{}, err
 		response, err = agent.Client.GetState(ctx, inData)
 	case *agentapi.ForwardRndcCommandReq:
 		response, err = agent.Client.ForwardRndcCommand(ctx, inData)
+	case *agentapi.ForwardToNamedStatsReq:
+		response, err = agent.Client.ForwardToNamedStats(ctx, inData)
 	case *agentapi.ForwardToKeaOverHTTPReq:
 		response, err = agent.Client.ForwardToKeaOverHTTP(ctx, inData)
 	default:
