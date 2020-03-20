@@ -33,7 +33,7 @@ func TestNewPromKeaExporterBasic(t *testing.T) {
 	pke := NewPromKeaExporter(fam)
 	defer pke.Shutdown()
 
-	require.NotNil(t, pke.CAClient)
+	require.NotNil(t, pke.HTTPClient)
 	require.NotNil(t, pke.HTTPServer)
 
 	require.Len(t, pke.PktStatsMap, 31)
@@ -57,7 +57,7 @@ func TestPromKeaExporterStart(t *testing.T) {
 	pke := NewPromKeaExporter(fam)
 	defer pke.Shutdown()
 
-	gock.InterceptClient(pke.CAClient.client)
+	gock.InterceptClient(pke.HTTPClient.client)
 
 	// prepare sane settings
 	pke.Settings.Port = 1234

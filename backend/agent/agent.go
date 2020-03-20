@@ -31,8 +31,8 @@ type StorkAgent struct {
 	Settings   Settings
 	AppMonitor AppMonitor
 
-	CAClient   *CAClient   // to communicate with Kea
-	RndcClient *RndcClient // to communicate with BIND 9
+	HTTPClient *HTTPClient // to communicate with Kea Control Agent and named statistics-channel
+	RndcClient *RndcClient // to communicate with BIND 9 via rndc
 }
 
 // API exposed to Stork Server
@@ -45,11 +45,11 @@ func NewStorkAgent(appMonitor AppMonitor) *StorkAgent {
 	}
 	rndcClient := NewRndcClient(rndc)
 
-	caClient := NewCAClient()
+	httpClient := NewHTTPClient()
 
 	sa := &StorkAgent{
 		AppMonitor: appMonitor,
-		CAClient:   caClient,
+		HTTPClient: httpClient,
 		RndcClient: rndcClient,
 	}
 	return sa
@@ -167,7 +167,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 		Status: &agentapi.Status{},
 	}
 	// Try to forward the command to named daemon.
-	namedRsp, err := sa.CAClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
+	namedRsp, err := sa.HTTPClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"URL": reqURL,
@@ -217,7 +217,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			Status: &agentapi.Status{},
 		}
 		// Try to forward the command to Kea Control Agent.
-		keaRsp, err := sa.CAClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
+		keaRsp, err := sa.HTTPClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
 		if err != nil {
 			log.WithFields(log.Fields{
 				"URL": reqURL,

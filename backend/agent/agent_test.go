@@ -47,14 +47,14 @@ func mockRndcEmpty(command []string) ([]byte, error) {
 
 // Initializes StorkAgent instance and context used by the tests.
 func setupAgentTest(rndc CommandExecutor) (*StorkAgent, context.Context) {
-	caClient := NewCAClient()
+	httpClient := NewHTTPClient()
 	rndcClient := NewRndcClient(rndc)
-	gock.InterceptClient(caClient.client)
+	gock.InterceptClient(httpClient.client)
 
 	fam := FakeAppMonitor{}
 	sa := &StorkAgent{
 		AppMonitor: &fam,
-		CAClient:   caClient,
+		HTTPClient: httpClient,
 		RndcClient: rndcClient,
 	}
 	ctx := context.Background()
@@ -82,7 +82,7 @@ func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
 	sa := NewStorkAgent(fam)
 	require.NotNil(t, sa.AppMonitor)
-	require.NotNil(t, sa.CAClient)
+	require.NotNil(t, sa.HTTPClient)
 	require.NotNil(t, sa.RndcClient)
 }
 

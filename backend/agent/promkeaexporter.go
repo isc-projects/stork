@@ -43,7 +43,7 @@ type PromKeaExporter struct {
 	Settings PromKeaExporterSettings
 
 	AppMonitor AppMonitor
-	CAClient   *CAClient
+	HTTPClient *HTTPClient
 	HTTPServer *http.Server
 
 	Ticker        *time.Ticker
@@ -64,7 +64,7 @@ func NewPromKeaExporter(appMonitor AppMonitor) *PromKeaExporter {
 	}
 	pke := &PromKeaExporter{
 		AppMonitor:    appMonitor,
-		CAClient:      NewCAClient(),
+		HTTPClient:    NewHTTPClient(),
 		HTTPServer:    srv,
 		DoneCollector: make(chan bool),
 		Wg:            &sync.WaitGroup{},
@@ -451,7 +451,7 @@ func (pke *PromKeaExporter) collectStats() error {
 			continue
 		}
 		caURL := storkutil.HostWithPortURL(ctrl.Address, ctrl.Port)
-		httpRsp, err := pke.CAClient.Call(caURL, bytes.NewBuffer([]byte(request)))
+		httpRsp, err := pke.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
 		if err != nil {
 			lastErr = err
 			log.Errorf("problem with getting stats from kea: %+v", err)
