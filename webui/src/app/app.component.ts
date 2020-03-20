@@ -41,6 +41,11 @@ export class AppComponent implements OnInit {
             label: 'DHCP',
             items: [
                 {
+                    label: 'Hosts',
+                    icon: 'fa fa-project-diagram',
+                    routerLink: '/dhcp/hosts',
+                },
+                {
                     label: 'Subnets',
                     icon: 'fa fa-project-diagram',
                     routerLink: '/dhcp/subnets',
