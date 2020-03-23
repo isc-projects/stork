@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"bytes"
+	"encoding/hex"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -449,4 +450,24 @@ func (host Host) Equal(other *Host) bool {
 		}
 	}
 	return host.HasEqualIPReservations(other)
+}
+
+// Converts host identifier value to a string of hexadecimal digits.
+func (id HostIdentifier) ToHex(separator string) string {
+	// Convert binary value to hexadecimal value.
+	encoded := hex.EncodeToString(id.Value)
+	// If no separator specified, return what we have.
+	if len(separator) == 0 {
+		return encoded
+	}
+	var separated string
+	// Iterate over pairs of hexadecimal digits and insert separator
+	// between them.
+	for i := 0; i < len(encoded); i += 2 {
+		if len(separated) > 0 {
+			separated += separator
+		}
+		separated += encoded[i : i+2]
+	}
+	return separated
 }

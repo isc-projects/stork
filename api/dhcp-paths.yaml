@@ -1,3 +1,34 @@
+  /hosts:
+    get:
+      summary: Get list of hosts and DHCP reservations.
+      description: >-
+        A list of hosts is returned in items field accompanied by total count
+        which indicates total available number of records for given filtering
+        parameters.
+      operationId: getHosts
+      tags:
+        - DHCP
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - name: subnetId
+          in: query
+          description: Limit returned list of hosts to these which belong to a given subnet.
+          type: integer
+        - name: text
+          in: query
+          description: Limit returned list of hosts to the ones containing the given text.
+          type: string
+      responses:
+        200:
+          description: List of hosts
+          schema:
+            $ref: "#/definitions/Hosts"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /subnets:
     get:
       summary: Get list of DHCP subnets.

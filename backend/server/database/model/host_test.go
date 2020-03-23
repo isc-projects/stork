@@ -653,3 +653,11 @@ func TestHostsEqual(t *testing.T) {
 	require.False(t, host1.HasEqualIPReservations(&host2))
 	require.False(t, host2.HasEqualIPReservations(&host1))
 }
+
+func TestHostIdentifierToHex(t *testing.T) {
+	id := HostIdentifier{
+		Value: []byte{1, 2, 3, 4, 5, 0xa, 0xb},
+	}
+	require.Equal(t, "01:02:03:04:05:0a:0b", id.ToHex(":"))
+	require.Equal(t, "01020304050a0b", id.ToHex(""))
+}

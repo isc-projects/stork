@@ -1,3 +1,51 @@
+# Host
+
+  HostIdentifier:
+    type: object
+    properties:
+      idType:
+        type: string
+      idHexValue:
+        type: string
+
+  IPReservation:
+    type: object
+    properties:
+      address:
+        type: string
+
+  Host:
+    type: object
+    properties:
+      id:
+        type: integer
+      subnetID:
+        type: integer
+      subnetPrefix:
+        type: string
+      hostIdentifiers:
+        type: array
+        items:
+          $ref: '#/definitions/HostIdentifier'
+      addressReservations:
+        type: array
+        items:
+          $ref: '#/definitions/IPReservation'
+      prefixReservations:
+        type: array
+        items:
+          $ref: '#/definitions/IPReservation'
+
+  Hosts:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Host'
+      total:
+        type: integer
+
 # Subnet
 
   Subnet:
