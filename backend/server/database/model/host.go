@@ -3,6 +3,7 @@ package dbmodel
 import (
 	"bytes"
 	"encoding/hex"
+	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -292,6 +293,9 @@ func GetHostsBySubnetID(db *pg.DB, subnetID int64) ([]Host, error) {
 // optional subnetID is used to fetch hosts belonging to the particular
 // IPv4 or IPv6 subnet. If this value is set to nil all subnets are returned.
 // The value of 0 indicates that only global hosts are to be returned.
+// Filtering text allows for searching hosts by reserved IP addresses
+// and/or host identifiers specified using hexadecimal digits. It is
+// allowed to specify colons while searching by hosts by host identifiers.
 func GetHostsByPage(db *pg.DB, offset, limit int64, subnetID *int64, filterText *string) ([]Host, int64, error) {
 	hosts := []Host{}
 	q := db.Model(&hosts).DistinctOn("host.id")
@@ -308,8 +312,17 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, subnetID *int64, filterText 
 	}
 
 	if filterText != nil && len(*filterText) > 0 {
+		// It is possible that the user is typing a search text with colons
+		// for host identifiers. We need to remove them because they are
+		// not present in the database.
+		colonlessFilterText := strings.ReplaceAll(*filterText, ":", "")
 		q = q.Join("INNER JOIN ip_reservation AS r ON r.host_id = host.id")
-		q = q.Where("text(r.address) LIKE ?", "%"+*filterText+"%")
+		q = q.Join("INNER JOIN host_identifier AS i ON i.host_id = host.id")
+		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
+			q = q.WhereOr("text(r.address) LIKE ?", "%"+*filterText+"%").
+				WhereOr("encode(i.value, 'hex') LIKE ?", "%"+colonlessFilterText+"%")
+			return q, nil
+		})
 	}
 
 	q = q.

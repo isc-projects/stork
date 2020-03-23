@@ -436,6 +436,12 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	}
 
 	require.ElementsMatch(t, returned, hosts)
+
+	// Filter by identifier value.
+	filterText = "01:02:03"
+	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	require.NoError(t, err)
+	require.Len(t, returned, 3)
 }
 
 // Test that the host and its identifiers and reservations can be
