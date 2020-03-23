@@ -16,7 +16,32 @@ import (
 
 // This function creates multiple hosts used in tests which fetch and
 // filter hosts.
-func addTestHosts(t *testing.T, db *pg.DB) []dbmodel.Host {
+func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel.App) {
+	// Add two apps.
+	for i := 0; i < 2; i++ {
+		m := &dbmodel.Machine{
+			ID:        0,
+			Address:   "localhost",
+			AgentPort: int64(8080 + i),
+		}
+		err := dbmodel.AddMachine(db, m)
+		require.NoError(t, err)
+
+		accessPoints := []*dbmodel.AccessPoint{}
+		accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "cool.example.org", "", int64(1234+i))
+
+		a := dbmodel.App{
+			ID:           0,
+			MachineID:    m.ID,
+			Type:         dbmodel.AppTypeKea,
+			Active:       true,
+			AccessPoints: accessPoints,
+			Details:      dbmodel.AppKea{},
+		}
+
+		apps = append(apps, a)
+	}
+
 	subnets := []dbmodel.Subnet{
 		{
 			ID:     1,
@@ -35,7 +60,7 @@ func addTestHosts(t *testing.T, db *pg.DB) []dbmodel.Host {
 		subnets[i] = subnet
 	}
 
-	hosts := []dbmodel.Host{
+	hosts = []dbmodel.Host{
 		{
 			SubnetID: 1,
 			HostIdentifiers: []dbmodel.HostIdentifier{
@@ -119,6 +144,16 @@ func addTestHosts(t *testing.T, db *pg.DB) []dbmodel.Host {
 		},
 	}
 
+	// Add apps to the database.
+	for i, a := range apps {
+		app := a
+		err := dbmodel.AddApp(db, &app)
+		require.NoError(t, err)
+		require.NotZero(t, app.ID)
+		apps[i] = app
+	}
+
+	// Add hosts to the database.
 	for i, h := range hosts {
 		host := h
 		err := dbmodel.AddHost(db, &host)
@@ -126,7 +161,7 @@ func addTestHosts(t *testing.T, db *pg.DB) []dbmodel.Host {
 		require.NotZero(t, host.ID)
 		hosts[i] = host
 	}
-	return hosts
+	return hosts, apps
 }
 
 // Test that all hosts can be fetched without filtering.
@@ -141,7 +176,12 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	hosts := addTestHosts(t, db)
+	hosts, apps := addTestHosts(t, db)
+
+	err = dbmodel.AddAppToHost(db, &hosts[0], &apps[0], "config")
+	require.NoError(t, err)
+	err = dbmodel.AddAppToHost(db, &hosts[0], &apps[1], "config")
+	require.NoError(t, err)
 
 	params := dhcp.GetHostsParams{}
 	rsp := rapi.GetHosts(ctx, params)
@@ -197,6 +237,15 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	require.NotNil(t, "2001:db8:1::/64", items[2].SubnetPrefix)
 	require.Empty(t, items[3].SubnetPrefix)
 	require.Empty(t, items[4].SubnetPrefix)
+
+	// The first host should be associated with two apps.
+	require.Len(t, items[0].LocalHosts, 2)
+	require.NotNil(t, items[0].LocalHosts[0])
+	require.EqualValues(t, apps[0].ID, items[0].LocalHosts[0].AppID)
+	require.Equal(t, "config", items[0].LocalHosts[0].DataSource)
+	require.NotNil(t, items[0].LocalHosts[1])
+	require.EqualValues(t, apps[1].ID, items[0].LocalHosts[1].AppID)
+	require.Equal(t, "config", items[0].LocalHosts[1].DataSource)
 }
 
 // Test that hosts can be filtered by subnet ID.
@@ -211,7 +260,7 @@ func TestGetHostsBySubnetID(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	_ = addTestHosts(t, db)
+	_, _ = addTestHosts(t, db)
 
 	subnetID := int64(2)
 	params := dhcp.GetHostsParams{
@@ -236,7 +285,7 @@ func TestGetHostsWithFiltering(t *testing.T) {
 	ctx := context.Background()
 
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
-	_ = addTestHosts(t, db)
+	_, _ = addTestHosts(t, db)
 
 	filteringText := "2001:db"
 	params := dhcp.GetHostsParams{

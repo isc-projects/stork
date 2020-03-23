@@ -74,6 +74,15 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 				host.AddressReservations = append(host.AddressReservations, &hostIP)
 			}
 		}
+		// Append local hosts containing associations of the host with
+		// apps.
+		for _, dbLocalHost := range dbHost.LocalHosts {
+			localHost := models.LocalHost{
+				AppID:      dbLocalHost.AppID,
+				DataSource: dbLocalHost.DataSource,
+			}
+			host.LocalHosts = append(host.LocalHosts, &localHost)
+		}
 		hosts.Items = append(hosts.Items, &host)
 	}
 
