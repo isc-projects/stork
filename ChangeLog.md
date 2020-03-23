@@ -1,3 +1,9 @@
+* 46 [func] marcin
+
+    Host reservations are listed and the UI. It is possible to filter
+    reservations by reserved IP address or host identifier value.
+    (Gitlab #210)
+
 * 45 [func] matthijs
 
     Retrieve some cache statistics from named and show Cache Hit
