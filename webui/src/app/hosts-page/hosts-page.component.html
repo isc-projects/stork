@@ -31,6 +31,7 @@
                     <th rowspan="2" colspan="4">DHCP Identifiers</th>
                     <th colspan="6">IP Reservations</th>
                     <th rowspan="2" style="width: 14rem;">Subnet</th>
+                    <th rowspan="2">Servers #</th>
                 </tr>
                 <tr>
                     <th colspan="3">IP Addresses</th>
@@ -63,8 +64,11 @@
                             {{ r.address }}
                         </div>
                     </td>
-                    <td>
+                    <td align="center">
                         {{ h.subnetPrefix }}
+                    </td>
+                    <td align="center">
+                        {{ h.localHosts.length }}
                     </td>
                 </tr>
             </ng-template>
