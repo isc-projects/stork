@@ -45,3 +45,26 @@ func TestMakeCIDR(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "2001:db8:1::/64", cidr)
 }
+
+// Test that IP address or prefix can be parsed.
+func TestParseIP(t *testing.T) {
+	parsed, prefix, ok := ParseIP("192.0.2.0/24")
+	require.Equal(t, "192.0.2.0/24", parsed)
+	require.True(t, prefix)
+	require.True(t, ok)
+
+	parsed, prefix, ok = ParseIP("192.0.2.1/32")
+	require.Equal(t, "192.0.2.1", parsed)
+	require.False(t, prefix)
+	require.True(t, ok)
+
+	parsed, prefix, ok = ParseIP("2001:db8:1::/48")
+	require.Equal(t, "2001:db8:1::/48", parsed)
+	require.True(t, prefix)
+	require.True(t, ok)
+
+	parsed, prefix, ok = ParseIP("2001:db8:1::/128")
+	require.Equal(t, "2001:db8:1::", parsed)
+	require.False(t, prefix)
+	require.True(t, ok)
+}
