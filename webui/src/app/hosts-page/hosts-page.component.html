@@ -1,1 +1,73 @@
-<p>hosts-page works!</p>
+<div>
+    <h2>DHCP Hosts and Reservations</h2>
+    <div style="margin: 0 0 10px 5px;">
+        <span>
+            <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
+            Filter hosts:
+            <input
+                type="text"
+                pInputText
+                [(ngModel)]="filterText"
+                placeholder="IP reservation"
+                (keydown)="keyDownFilterText(hostsTable, $event)"
+            />
+        </span>
+    </div>
+    <div style="margin: 0 0 10px, 5x;">
+        <p-table
+            #hostsTable
+            [value]="hosts"
+            [paginator]="true"
+            [rows]="10"
+            [lazy]="true"
+            (onLazyLoad)="loadHosts($event)"
+            [totalRecords]="totalHosts"
+            [rowsPerPageOptions]="[10, 30, 100]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="{currentPage} of {totalPages} pages"
+        >
+            <ng-template pTemplate="header">
+                <tr>
+                    <th rowspan="2" colspan="4">DHCP Identifiers</th>
+                    <th colspan="6">IP Reservations</th>
+                    <th rowspan="2" style="width: 14rem;">Subnet</th>
+                </tr>
+                <tr>
+                    <th colspan="3">IP Addresses</th>
+                    <th colspan="3">IPv6 Prefixes</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-h>
+                <tr>
+                    <td colspan="4">
+                        <div
+                            *ngFor="let i of h.hostIdentifiers"
+                            style="display: inline-block; border-radius: 4px; background-color: #ddd; padding: 0 4px; margin: 0 4px 2px 0;"
+                        >
+                            {{ i.idType + '=' + i.idHexValue }}
+                        </div>
+                    </td>
+                    <td colspan="3">
+                        <div
+                            *ngFor="let r of h.addressReservations"
+                            style="display: inline-block; border-radius: 4px; background-color: #ddd; padding: 0 4px; margin: 0 4px 2px 0;"
+                        >
+                            {{ r.address }}
+                        </div>
+                    </td>
+                    <td colspan="3">
+                        <div
+                            *ngFor="let r of h.prefixReservations"
+                            style="display: inline-block; border-radius: 4px; background-color: #ddd; padding: 0 4px; margin: 0 4px 2px 0;"
+                        >
+                            {{ r.address }}
+                        </div>
+                    </td>
+                    <td>
+                        {{ h.subnetPrefix }}
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</div>
