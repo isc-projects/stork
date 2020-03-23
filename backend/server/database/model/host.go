@@ -39,6 +39,7 @@ type Host struct {
 	ID        int64 `pg:",pk"`
 	CreatedAt time.Time
 	SubnetID  int64
+	Subnet    *Subnet
 
 	HostIdentifiers []HostIdentifier
 	IPReservations  []IPReservation
@@ -317,7 +318,15 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, subnetID *int64, filterText 
 		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
-		Relation("LocalHosts").
+		Relation("LocalHosts")
+
+	// Only join the subnet if querying all hosts or hosts belonging to a
+	// given subnet.
+	if subnetID == nil || *subnetID > 0 {
+		q = q.Relation("Subnet")
+	}
+
+	q = q.
 		OrderExpr("host.id ASC").
 		Offset(int(offset)).
 		Limit(int(limit))

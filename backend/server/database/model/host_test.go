@@ -374,14 +374,24 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 	returned, _, err = GetHostsByPage(db, 0, 10, &subnetID, nil)
 	require.NoError(t, err)
 	require.Len(t, returned, 1)
-	require.Contains(t, returned, hosts[0])
+	require.EqualValues(t, hosts[0].ID, returned[0].ID)
+	require.EqualValues(t, 1, returned[0].SubnetID)
+	require.NotNil(t, returned[0].Subnet)
+	require.Equal(t, "192.0.2.0/24", returned[0].Subnet.Prefix)
+	require.ElementsMatch(t, returned[0].HostIdentifiers, hosts[0].HostIdentifiers)
+	require.ElementsMatch(t, returned[0].IPReservations, hosts[0].IPReservations)
 
 	// Get hosts associated with subnet id 2.
 	subnetID = int64(2)
 	returned, _, err = GetHostsByPage(db, 0, 10, &subnetID, nil)
 	require.NoError(t, err)
 	require.Len(t, returned, 1)
-	require.Contains(t, returned, hosts[2])
+	require.EqualValues(t, hosts[2].ID, returned[0].ID)
+	require.EqualValues(t, 2, returned[0].SubnetID)
+	require.NotNil(t, returned[0].Subnet)
+	require.Equal(t, "2001:db8:1::/64", returned[0].Subnet.Prefix)
+	require.ElementsMatch(t, returned[0].HostIdentifiers, hosts[2].HostIdentifiers)
+	require.ElementsMatch(t, returned[0].IPReservations, hosts[2].IPReservations)
 }
 
 // Test that page of the hosts can be filtered by IP reservations.
@@ -396,12 +406,23 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	returned, _, err := GetHostsByPage(db, 0, 10, nil, &filterText)
 	require.NoError(t, err)
 	require.Len(t, returned, 1)
+	require.NotNil(t, returned[0].Subnet)
+	require.Equal(t, "192.0.2.0/24", returned[0].Subnet.Prefix)
+	// Reset subnet, so as we can use Contain function to compare the rest of the
+	// host information.
+	returned[0].Subnet = nil
 	require.Contains(t, returned, hosts[0])
 
 	filterText = "192.0.2"
 	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
 	require.NoError(t, err)
 	require.Len(t, returned, 2)
+	require.NotNil(t, returned[0].Subnet)
+	require.Equal(t, "192.0.2.0/24", returned[0].Subnet.Prefix)
+	require.Nil(t, returned[1].Subnet)
+	// Reset subnet, so as we can use Contain function to compare the rest of the
+	// host information.
+	returned[0].Subnet = nil
 	require.Contains(t, returned, hosts[0])
 	require.Contains(t, returned, hosts[1])
 
@@ -409,6 +430,10 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
 	require.NoError(t, err)
 	require.Len(t, returned, 4)
+
+	for i := range returned {
+		returned[i].Subnet = nil
+	}
 
 	require.ElementsMatch(t, returned, hosts)
 }
