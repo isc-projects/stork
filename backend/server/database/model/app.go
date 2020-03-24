@@ -302,7 +302,7 @@ func GetAllApps(db *pg.DB) ([]App, error) {
 
 // Returns a list of names of active DHCP deamons. This is useful for
 // creating commands to be send to active DHCP servers.
-func (app *App) GetActiveDHCPDeamonNames() (deamons []string) {
+func (app *App) GetActiveDHCPDaemonNames() (deamons []string) {
 	if kea, ok := app.Details.(AppKea); ok {
 		for _, d := range kea.Daemons {
 			if d.Active && (d.Name == "dhcp4" || d.Name == "dhcp6") {

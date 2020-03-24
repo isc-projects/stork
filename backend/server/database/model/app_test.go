@@ -569,7 +569,7 @@ func TestGetActiveDHCPMultiple(t *testing.T) {
 		},
 	}
 
-	daemons := a.GetActiveDHCPDeamonNames()
+	daemons := a.GetActiveDHCPDaemonNames()
 	require.Len(t, daemons, 2)
 	require.Contains(t, daemons, "dhcp4")
 	require.Contains(t, daemons, "dhcp6")
@@ -592,7 +592,7 @@ func TestGetActiveDHCPSingle(t *testing.T) {
 			},
 		},
 	}
-	daemons := a.GetActiveDHCPDeamonNames()
+	daemons := a.GetActiveDHCPDaemonNames()
 	require.Len(t, daemons, 1)
 	require.NotContains(t, daemons, "dhcp4")
 	require.Contains(t, daemons, "dhcp6")
@@ -605,7 +605,7 @@ func TestGetActiveDHCPAppMismatch(t *testing.T) {
 		Type:    AppTypeKea,
 		Details: AppBind9{},
 	}
-	daemons := a.GetActiveDHCPDeamonNames()
+	daemons := a.GetActiveDHCPDaemonNames()
 	require.Empty(t, daemons)
 }
 

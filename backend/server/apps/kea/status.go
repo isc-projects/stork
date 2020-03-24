@@ -28,7 +28,7 @@ type AppStatus []Status
 // Sends the status-get command to Kea DHCP servers and returns this status to the caller.
 func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) (AppStatus, error) {
 	// This command is only sent to the DHCP deamons.
-	daemons, _ := agentcomm.NewKeaDaemons(dbApp.GetActiveDHCPDeamonNames()...)
+	daemons, _ := agentcomm.NewKeaDaemons(dbApp.GetActiveDHCPDaemonNames()...)
 
 	// It takes no arguments, thus the last parameter is nil.
 	cmd, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
