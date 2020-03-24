@@ -20,7 +20,7 @@ func (fam *PromFakeAppMonitor) GetApps() []*App {
 	log.Println("GetApps")
 	return []*App{{
 		Type:         AppTypeKea,
-		AccessPoints: makeAccessPoint("control", "0.1.2.3", "", 1234),
+		AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234),
 	}}
 }
 
@@ -72,7 +72,6 @@ func TestPromKeaExporterStart(t *testing.T) {
 
 	// check if assigned-addresses is 13
 	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(prometheus.Labels{"subnet": "7"})
-	//log.Printf("assigned-addresses %+v", metric)
 	require.Equal(t, 13.0, testutil.ToFloat64(metric))
 
 	// check if pkt4-nak-received is 19

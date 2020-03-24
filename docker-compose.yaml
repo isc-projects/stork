@@ -106,6 +106,7 @@ services:
       - "8080"
       - "9100"  # node_exporter for prometheus
       - "9119"  # bind_exporter for prometheus
+      - "9548"  # bind9_exporter for prometheus
 
   webui:
     build:
