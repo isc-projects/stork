@@ -310,6 +310,78 @@ func TestGetSubnetByLocalID(t *testing.T) {
 	require.Empty(t, returnedSubnets)
 }
 
+// Test that subnets can be fetched by app ID.
+func TestGetSubnetsByAppID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add apps to the database. They must exist to make any association between
+	// then and the subnet.
+	apps := addTestSubnetApps(t, db)
+	require.Len(t, apps, 2)
+
+	// Add several subnets matching configuration of the apps we have added.
+	subnets := []Subnet{
+		{
+			Prefix: "192.0.2.0/24",
+		},
+		{
+			Prefix: "192.0.3.0/24",
+		},
+		{
+			Prefix: "10.0.0.0/8",
+		},
+	}
+	for i := range subnets {
+		err := AddSubnet(db, &subnets[i])
+		require.NoError(t, err)
+		require.NotZero(t, subnets[i].ID)
+
+		// Add association of the apps to the subnet.
+		if i < 2 {
+			// First two subnets associated with the first app.
+			err = AddAppToSubnet(db, &subnets[i], apps[0])
+		} else {
+			// Last subnet is only associated with the second app.
+			err = AddAppToSubnet(db, &subnets[i], apps[1])
+		}
+		require.NoError(t, err)
+		require.NotZero(t, subnets[i].ID)
+	}
+
+	// Get all IPv4 subnets for this app.
+	returnedSubnets, err := GetSubnetsByAppID(db, apps[0].ID, 4)
+	require.NoError(t, err)
+	require.Len(t, returnedSubnets, 2)
+
+	require.Len(t, returnedSubnets[0].LocalSubnets, 1)
+	require.EqualValues(t, 123, returnedSubnets[0].LocalSubnets[0].LocalSubnetID)
+	require.EqualValues(t, apps[0].ID, returnedSubnets[0].LocalSubnets[0].AppID)
+
+	require.Len(t, returnedSubnets[1].LocalSubnets, 1)
+	require.EqualValues(t, 234, returnedSubnets[1].LocalSubnets[0].LocalSubnetID)
+	require.EqualValues(t, apps[0].ID, returnedSubnets[1].LocalSubnets[0].AppID)
+
+	// Get all IPv4 subnets for the second app.
+	returnedSubnets, err = GetSubnetsByAppID(db, apps[1].ID, 4)
+	require.NoError(t, err)
+	require.Len(t, returnedSubnets, 1)
+
+	require.Len(t, returnedSubnets[0].LocalSubnets, 1)
+	require.EqualValues(t, 345, returnedSubnets[0].LocalSubnets[0].LocalSubnetID)
+	require.EqualValues(t, apps[1].ID, returnedSubnets[0].LocalSubnets[0].AppID)
+
+	// Get all subnets for the first app.
+	returnedSubnets, err = GetSubnetsByAppID(db, apps[0].ID, 0)
+	require.NoError(t, err)
+	require.Len(t, returnedSubnets, 2)
+
+	// Get IPv6 subnets. They should not exist.
+	returnedSubnets, err = GetSubnetsByAppID(db, apps[0].ID, 6)
+	require.NoError(t, err)
+	require.Empty(t, returnedSubnets)
+}
+
 // Test that the subnet can be fetched by local ID and app ID.
 func TestGetAppLocalSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

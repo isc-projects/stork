@@ -226,6 +226,40 @@ func GetSubnetsByLocalID(db *pg.DB, localSubnetID int64, appID int64, family int
 	return subnets, err
 }
 
+// Fetches all subnets associated with the given application by ID.
+// If the family is set to 0 it fetches both IPv4 and IPv6 subnets.
+// Use 4 o 6 to fetch IPv4 or IPv6 specific subnet.
+func GetSubnetsByAppID(db *pg.DB, appID int64, family int) ([]Subnet, error) {
+	subnets := []Subnet{}
+
+	q := db.Model(&subnets).
+		DistinctOn("subnet.id").
+		Join("INNER JOIN local_subnet AS ls ON ls.subnet_id = subnet.id").
+		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("address_pool.id ASC"), nil
+		}).
+		Relation("PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("prefix_pool.id ASC"), nil
+		}).
+		Relation("SharedNetwork").
+		Relation("LocalSubnets.App.AccessPoints").
+		Where("ls.app_id = ?", appID)
+
+	// Optionally filter by IPv4 or IPv6 subnets.
+	if family == 4 || family == 6 {
+		q = q.Where("family(subnet.prefix) = ?", family)
+	}
+	err := q.Select()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		err = errors.Wrapf(err, "problem with getting subnets by app id %d", appID)
+		return nil, err
+	}
+	return subnets, err
+}
+
 // Fetches the subnet by prefix from the database.
 func GetSubnetsByPrefix(db *pg.DB, prefix string) ([]Subnet, error) {
 	subnets := []Subnet{}
