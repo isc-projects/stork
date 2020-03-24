@@ -100,7 +100,8 @@ services:
     image: registry.gitlab.isc.org/isc-projects/stork/agent-bind9:latest
     hostname: agent-bind9
     networks:
-      - storknet
+      storknet:
+        ipv4_address: 172.20.0.53
     expose:
       - "8080"
       - "9100"  # node_exporter for prometheus
@@ -170,6 +171,18 @@ services:
         ipv4_address: 172.102.0.200
     ports:
       - "5000:5000"
+
+  traffic-dns:
+    build:
+      context: .
+      dockerfile: docker/docker-traffic-dns.txt
+    image: registry.gitlab.isc.org/isc-projects/stork/dns-traffic:latest
+    hostname: traffic-dns
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.201
+    ports:
+      - "5001:5000"
 
 volumes:
   db-data:

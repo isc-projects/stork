@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stork DNS Traffic Simulator</title>
+  <script src="https://unpkg.com/vue"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+    <h1>Stork DNS Traffic Simulator</h1>
+    <div id="app">
+
+        <el-table :data="servers">
+            <el-table-column label="DNS server" min-width="4em">
+                <template slot-scope="scope">
+                    {{ scope.row.address }}
+                </template>
+            </el-table-column>
+            <el-table-column label="Query Name" min-width="10em">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.qname"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column label="Clients" min-width="8em">
+                <template slot-scope="scope">
+                    <el-input-number v-model="scope.row.clients" :max="50"></el-input-number>
+                </template>
+            </el-table-column>
+            <el-table-column label="Rate" min-width="8em">
+                <template slot-scope="scope">
+                    <el-input-number v-model="scope.row.rate"></el-input-number>
+                </template>
+            </el-table-column>
+            <el-table-column label="Query" min-width="4em">
+                <template slot-scope="scope">
+                    <el-button type="success" v-on:click="queryServer(scope.$index)">Dig</el-button>
+                </template>
+            </el-table-column>
+            <el-table-column label="Stream" min-width="4em">
+                <template slot-scope="scope">
+                    <el-button type="success" v-if="scope.row.state == 'stop'" v-on:click="perfServer(scope.$index, 'start')">Start</el-button>
+                    <el-button type="danger" v-if="scope.row.state == 'start'" v-on:click="perfServer(scope.$index, 'stop')">Stop</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </div>
+
+    <script>
+        var servers = []
+        var app = new Vue({
+            el: '#app',
+            data: {
+                servers: servers,
+                count: 0
+            },
+            created: function () {
+                axios.get('/servers').then(function (response) {
+                    this.servers.push(...response.data.items)
+                })
+            },
+            methods: {
+                queryServer: function (idx) {
+                    var srv = this.servers[idx]
+                    var data = {attempts: srv.attempts,
+                                qname: srv.qname}
+                    axios.put('/query/' + idx, data).then(function (response) {
+                        this.servers.length = 0;
+                        this.servers.push(...response.data.items);
+                    })
+                },
+                perfServer: function (idx, state) {
+                    var srv = this.servers[idx]
+                    var data = {state: state,
+                                attempts: srv.attempts,
+                                qname: srv.qname}
+                    axios.put('/perf/' + idx, data).then(function (response) {
+                        this.servers.length = 0;
+                        this.servers.push(...response.data.items);
+                    })
+                }
+            }
+        })
+
+    </script>
+</body>
+</html>
