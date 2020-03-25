@@ -180,8 +180,7 @@ All these steps are accomplished by Rakefile.
 Docker Containers
 =================
 
-To ease testing, there are several Docker containers available,
-although not all of them are necessary.
+To ease testing, there are several Docker containers available.
 
 * ``server`` - This container is essential. It runs the Stork server,
   which interacts with all the agents and the database and exposes the
@@ -193,10 +192,11 @@ although not all of them are necessary.
   provides the front-end web interface. It is potentially unnecessary with
   the custom development of a Stork API client.
 
-There are also several containers provided that are used as
-samples. They are not needed in a production network; however, they
-are very useful to demonstrate existing Stork capabilities. They
-simulate certain services that Stork is able to handle, including:
+There are also several containers provided that are used to samples and
+they are not strictly necessary. The following containers will not be needed
+in a production network, however they're very useful to demonstrate
+existing Stork capabilities. They simulate certain services that Stork is able
+to handle:
 
 * ``agent-bind9`` - This container runs a BIND 9 server. With this
   container, the agent can be added as a machine and Stork will begin
@@ -213,11 +213,16 @@ simulate certain services that Stork is able to handle, including:
   mechanisms, such as one taking over the traffic if the partner
   becomes unavailable.
 
-* ``traffic-dhcp`` - This container is optional. If started, it will
-  transmit DHCP packets to ``agent-kea``. It may be useful to observe
+* ``traffic-dhcp`` - This container is optional. If started, it can be used
+  to transmit DHCP packets to ``agent-kea``. It may be useful to observe
   non-zero statistics coming from Kea. When running Stork in Docker,
   ``rake start_traffic_dhcp`` can be used to conveniently control
   traffic.
+
+* ``traffic-dns`` - This container is optional. If stated, it can be used to
+  transmit DNS packets towards agent-bind9. It may be useful to observe
+  non-zero statistics coming from BIND 9. If you're running Stork in docker,
+  you can conveniently control that using ``rake start_traffic_dns``.
 
 * ``prometheus`` - This is a container with Prometheus for monitoring
   applications.  It is preconfigured to monitor Kea and BIND 9

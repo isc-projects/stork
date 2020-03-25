@@ -1,3 +1,17 @@
+* 49 [func] matthijs
+
+    Updated Prometheus & Grafana in the demo installation with BIND 9.
+
+    Implementated BIND 9 exporter in Go and embedded it in Stork
+    Agent for showing Cache Hit Ratio.
+
+    Implemented DNS traffic simulator as web app for the demo
+    installation. Internally it runs a single query with dig, or
+    starts flamethrower (a DNS performance tool) for selected server
+    with indicated parameters.
+
+    (Gitlab #10)
+
 * 48 [doc] marcin, sgoldlust
 
     Documented the use of Host Reservations in Stork ARM.

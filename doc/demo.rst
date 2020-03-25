@@ -16,6 +16,7 @@ The demo installation uses `Docker` and `Docker Compose` to set up all
 - Stork Agent with Kea HA-2 (high availability server 2)
 - Stork Agent with BIND 9
 - Stork DHCP Traffic Simulator
+- Stork DNS Traffic Simulator
 - PostgreSQL database
 - Prometheus & Grafana
 
@@ -61,6 +62,7 @@ The installation procedure creates several Docker images:
 - `stork_agent-kea-ha1`: the primary Kea DHCPv4 server in High Availability mode,
 - `stork_agent-kea-ha2`: the secondary Kea DHCPv4 server in High Availability mode,
 - `traffic-dhcp`: a web application that can run DHCP traffic using perfdhcp,
+- `traffic-dns`: a web application that can run DNS traffic using dig and flamethrower,
 - `prometheus`: Prometheus, a monitoring solution (https://prometheus.io/),
 - `grafana`: Grafana, a dashboard for Prometheus (https://grafana.com/)
 
@@ -117,6 +119,12 @@ network.
 
 The traffic simulator can be found at: http://localhost:5000/
 
+DNS Traffic Simulator
+----------------------
+Traffic simulator allows sending DNS traffic to selected DNS servers.
+
+Traffic simulator can be found at: http://localhost:5001/
+
 Prometheus
 ----------
 
@@ -125,7 +133,7 @@ The Prometheus instance is preconfigured and pulls statistics from:
 - node exporters: agent-kea:9100, agent-bind9:9100
 - kea exporters embedded in stork-agent: agent-kea:9547,
   agent-kea6:9547, agent-kea-ha1:9547, agent-kea-ha2:9547
-- bind9 exporter: agent-bind9:9119
+- bind9 exporter: agent-bind9:9119, agent-bind9:9548
 
 The Prometheus web page can be found at: http://localhost:9090/
 
