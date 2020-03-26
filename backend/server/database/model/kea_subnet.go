@@ -2,14 +2,14 @@ package dbmodel
 
 // Represents host reservation within Kea configuration.
 type KeaConfigReservation struct {
-	HWAddress   string   `mapstructure:"hw-address"`
-	DUID        string   `mapstructure:"duid"`
-	CircuitID   string   `mapstructure:"circuit-id"`
-	ClientID    string   `mapstructure:"client-id"`
-	FlexID      string   `mapstructure:"flex-id"`
-	IPAddress   string   `mapstructure:"ip-address"`
-	IPAddresses []string `mapstructure:"ip-addresses"`
-	Prefixes    []string `mapstructure:"prefixes"`
+	HWAddress   string   `mapstructure:"hw-address" json:"hw-address,omitempty"`
+	DUID        string   `mapstructure:"duid" json:"duid,omitempty"`
+	CircuitID   string   `mapstructure:"circuit-id" json:"circuit-id,omitempty"`
+	ClientID    string   `mapstructure:"client-id" json:"client-id,omitempty"`
+	FlexID      string   `mapstructure:"flex-id" json:"flex-id,omitempty"`
+	IPAddress   string   `mapstructure:"ip-address" json:"ip-address,omitempty"`
+	IPAddresses []string `mapstructure:"ip-addresses" json:"ip-addresses,omitempty"`
+	Prefixes    []string `mapstructure:"prefixes" json:"prefixes,omitempty"`
 }
 
 // Represents address pool structure within Kea configuration.

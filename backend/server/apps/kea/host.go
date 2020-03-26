@@ -1,0 +1,293 @@
+package kea
+
+import (
+	"context"
+
+	errors "github.com/pkg/errors"
+
+	"isc.org/stork/server/agentcomm"
+	dbops "isc.org/stork/server/database"
+	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
+)
+
+// Structure reflecting "next" map of the Kea response to the
+// reservation-get-page command.
+type ReservationGetPageNext struct {
+	From        int64
+	SourceIndex int64 `json:"source-index"`
+}
+
+// Structure reflecting arguments of the Kea response to the
+// reservation-get-page command.
+type ReservationGetPageArgs struct {
+	Count int64
+	Hosts []dbmodel.KeaConfigReservation
+	Next  ReservationGetPageNext
+}
+
+// Structure reflecting a Kea response to the reservation-get-page
+// command.
+type ReservationGetPageResponse struct {
+	agentcomm.KeaResponseHeader
+	Arguments *ReservationGetPageArgs `json:"arguments,omitempty"`
+}
+
+// Structure reflecting a state of fetching host reservations from Kea
+// via the reservation-get-page command. This allows for fetching hosts
+// in chunks to avoid large bulk of data to be generated on the Kea side
+// and transmitted over the network to Stork. The paging mechanism allows
+// for controlling how many hosts are returned in a single transaction.
+// The client side (Stork in this case) has to has to remember two values
+// returned in the last response to the command, i.e. "from" and
+// "source-index". These values mark the last retrieved host and should
+// be specified in subsequent commands to inform the Kea server where
+// the next page of data starts. These two values along with a bulk of
+// other values constitute a state of hosts fetching. A collection of
+// these values are maintained by the "iterator".
+// The current limitation of the Kea server is that the reservation-get-page
+// command is required to contain subnet-id parameter. In other words,
+// this command allows only for fetching the reservations for the given
+// subnet in the given transaction. That's why the iterator also maintains
+// the current subnet for which the hosts are being fetched. It also
+// holds the family (DHCPv4 or DHCPv6) to indicate from which Kea
+// daemons the reservations are currently fetched. It is not easy to fetch
+// from both servers at the same time, because they contain different
+// subnets, different number of reservations. That's why the iterator
+// fetches hosts from these two servers sequentially, i.e. gets all
+// hosts from one server and then gets all hosts from the other.
+type HostDetectionIterator struct {
+	db          *dbops.PgDB
+	app         *dbmodel.App
+	agents      agentcomm.ConnectedAgents
+	serverIndex int
+	from        int64
+	sourceIndex int64
+	url         string
+	subnets     []dbmodel.Subnet
+	subnetIndex int
+}
+
+// Creates new iterator instance.
+func NewHostDetectionIterator(db *dbops.PgDB, app *dbmodel.App, agents agentcomm.ConnectedAgents) *HostDetectionIterator {
+	it := &HostDetectionIterator{
+		db:          db,
+		app:         app,
+		agents:      agents,
+		serverIndex: 0,
+		from:        0,
+		sourceIndex: 0,
+		url:         "",
+		subnets:     []dbmodel.Subnet{},
+		subnetIndex: 0,
+	}
+	return it
+}
+
+// Resets iterator's state to make it possible to start over fetching the
+// hosts if necessary.
+func (iterator *HostDetectionIterator) reset() {
+	iterator.serverIndex = 0
+	iterator.from = 0
+	iterator.sourceIndex = 0
+	iterator.subnets = make([]dbmodel.Subnet, 0)
+	iterator.subnetIndex = 0
+}
+
+// Iterates over the hosts fetched from the Kea server and converts them to
+// the Stork's format for hosts. It also associates the hosts with their
+// subnet using the data stored as iterator's state.
+func (iterator *HostDetectionIterator) convertAndAssignHosts(fetchedHosts []dbmodel.KeaConfigReservation) (hosts []dbmodel.Host) {
+	for _, fetchedHost := range fetchedHosts {
+		host, err := dbmodel.NewHostFromKeaConfigReservation(fetchedHost)
+		if err != nil {
+			continue
+		}
+		host.SubnetID = iterator.subnets[iterator.subnetIndex].ID
+		hosts = append(hosts, *host)
+	}
+	return hosts
+}
+
+// Sends the reservation-get-page command to Kea. If there is an error it is
+// returned. Otherwise, the "from" and "source-index" are updated in the
+// iterator's state. Finally the list of hosts is retrieved and returned.
+func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel.KeaConfigReservation, canRetry bool, err error) {
+	commands := []*agentcomm.KeaCommand{
+		{
+			Command: "reservation-get-page",
+		},
+	}
+	response := []ReservationGetPageResponse{}
+	ctx := context.Background()
+	result, err := iterator.agents.ForwardToKeaOverHTTP(ctx, iterator.app.Machine.Address, iterator.app.Machine.AgentPort,
+		iterator.url, commands, &response)
+	if err != nil {
+		// Can retry because the error may go away upon the next attempt.
+		return hosts, true, err
+	}
+
+	if result.Error != nil {
+		// Can retry beause the erroor may go away.
+		return hosts, true, result.Error
+	}
+
+	// The following two would rather be fatal errors and retrying wouldn't help.
+	if len(response) == 0 {
+		return hosts, false, errors.Errorf("invalid response to reservation-get-page command received")
+	}
+
+	if response[0].Arguments == nil {
+		return hosts, false, errors.Errorf("response to reservation-get-page command lacks arguments")
+	}
+
+	// Response received, update the iterator's state.
+	iterator.from = response[0].Arguments.Next.From
+	iterator.sourceIndex = response[0].Arguments.Next.SourceIndex
+
+	// Return hosts to the caller.
+	hosts = response[0].Arguments.Hosts
+	return hosts, false, nil
+}
+
+// Returns a pointer to the subnet for which the last chunk of hosts have been
+// returned by the DetectHostsFromHostCmds function. This allows for correlating
+// the returned hosts with the subnet.
+func (iterator *HostDetectionIterator) GetCurrentSubnet() *dbmodel.Subnet {
+	if iterator.subnetIndex >= len(iterator.subnets) {
+		return nil
+	}
+	return &iterator.subnets[iterator.subnetIndex]
+}
+
+// Returns the next chunk of host reservations. The first returned value is a slice
+// containing the next chunk of hosts. The second value, done, indicates if the
+// returned chunk of hosts was the last available one for the given app. If this
+// value is equal to false the caller should continue calling this function to
+// fetch subsequent hosts. If this value is set to true the caller should stop
+// calling this function. Further calling this function would return the first
+// chunk of hosts again.
+func (iterator *HostDetectionIterator) DetectHostsFromHostCmds() (hosts []dbmodel.Host, done bool, err error) {
+	retry := false
+
+	// The default behavior is that an error terminates hosts fetching from
+	// the particular app. It is possible to override this in some cases
+	// by setting the retry value.
+	defer func() {
+		if done || (!retry && err != nil) {
+			iterator.reset()
+			done = true
+		}
+	}()
+
+	// If this is not Kea application there is nothing to do.
+	appKea, ok := iterator.app.Details.(dbmodel.AppKea)
+	if !ok {
+		err = errors.Errorf("attempted to fetch host reservations for non Kea app")
+		return hosts, done, err
+	}
+
+	// During the first call to this function we have to initialize the URL of
+	// the Kea app we wicll be communicating with. We don't repeat this operation
+	// for subequent calls.
+	if len(iterator.url) == 0 {
+		ctrlPoint, err := iterator.app.GetAccessPoint(dbmodel.AccessPointControl)
+		if err != nil {
+			return hosts, done, errors.WithMessagef(err, "problem with getting Kea access points upon an attempt to detect host reservations over the host_cmds hooks library")
+		}
+		iterator.url = storkutil.HostWithPortURL(ctrlPoint.Address, ctrlPoint.Port)
+	}
+
+	// Count the servers we have iterated over to make sure we use the one we used
+	// previously.
+	serverIndex := 0
+	for _, d := range appKea.Daemons {
+		if d.Config == nil {
+			continue
+		}
+
+		var family int
+		switch d.Name {
+		case dhcp4:
+			family = 4
+		case dhcp6:
+			family = 6
+		default:
+			continue
+		}
+
+		// We have been already getting hosts from this daemon, so let's get to
+		// the next one.
+		if serverIndex < iterator.serverIndex {
+			serverIndex++
+			continue
+		}
+
+		// If this is the first time we're getting hosts for this server we should
+		// first get all corresponding subnets.
+		if len(iterator.subnets) == 0 {
+			iterator.subnets, err = dbmodel.GetSubnetsByAppID(iterator.db, iterator.app.ID, family)
+			if err != nil {
+				return hosts, done, errors.WithMessagef(err, "problem with getting Kea subnets upon an attempt to detect host reservations over the host_cmds hooks library")
+			}
+			// Start from the first subnet.
+			iterator.subnetIndex = 0
+			// If this server has no subnets and we're still at the first server, let's
+			// try the next one if exists.
+			if len(iterator.subnets) == 0 {
+				serverIndex++
+				iterator.serverIndex = serverIndex
+				continue
+			}
+		}
+
+		// Iterate over the subnets and for each subnet fetch the hosts.
+		for i := iterator.subnetIndex; i < len(iterator.subnets); i++ {
+			// Send reservation-get-page command to fetch the next chunk of host
+			// reservations from Kea.
+			var returnedHosts []dbmodel.KeaConfigReservation
+			returnedHosts, retry, err = iterator.sendReservationGetPage()
+			if err != nil {
+				return hosts, done, err
+			}
+
+			// If the number of hosts returned is 0, it means that we have hit the
+			// end of the hosts list for this subnet. Let's move to the next one.
+			if len(returnedHosts) == 0 {
+				iterator.from = 0
+				iterator.sourceIndex = 0
+				iterator.subnetIndex++
+				continue
+			}
+
+			// There are some hosts for this subnet so let's convert them from
+			// Kea to Stork format.
+			hosts = iterator.convertAndAssignHosts(returnedHosts)
+
+			// We return one chunk of hosts for one subnet. So let's get out
+			// of this loop.
+			break
+		}
+
+		// If there are some hosts fetched, let's return them.
+		if len(hosts) > 0 {
+			break
+		}
+
+		if len(iterator.subnets) <= iterator.subnetIndex {
+			// If we went over all hosts in all subnets but there is potentially
+			// one more server available, let's try this server.
+			iterator.reset()
+			serverIndex++
+			iterator.serverIndex = serverIndex
+			continue
+		}
+	}
+
+	// If we got here and there are no hosts it means that we have reached the
+	// end of all hosts lists for all servers and all subnets.
+	if len(hosts) == 0 {
+		done = true
+	}
+	return hosts, done, err
+}
