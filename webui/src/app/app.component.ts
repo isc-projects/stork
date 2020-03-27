@@ -42,7 +42,7 @@ export class AppComponent implements OnInit {
             items: [
                 {
                     label: 'Hosts',
-                    icon: 'fa fa-project-diagram',
+                    icon: 'fa fa-laptop',
                     routerLink: '/dhcp/hosts',
                 },
                 {
