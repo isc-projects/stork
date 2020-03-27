@@ -7,26 +7,18 @@ Installation
 Stork can be installed from pre-built packages or from sources. The following sections describe
 both methods.
 
-
 Prerequisites
 =============
 
-``Stork Server`` and ``Stork Agent`` have been tested thoroughly on Ubuntu 18.04 system.
-They are also being tested and run on Fedora 31 system occasionally.
+The ``Stork Agent`` does not require any specific dependencies to run. It can be run immediately after installation.
 
-``Stork Agent`` does not require anything specific to run it. It can be installed and immediatelly
-can be run.
+For the ``Stork Server``, a PostgreSQL database (https://www.postgresql.org/) using at least version 11 of PostgreSQL is required.
+(The installation procedure for PostgreSQL is OS-specific and is not included here.)
 
-In case of ``Stork Server`` it is required to set up a PostgreSQL database (https://www.postgresql.org/).
-It is required to use at least 11 version of PostgreSQL.
+These instructions prepare a database for use with the ``Stork Server``, with the `stork` database user and `stork` password. 
+Next, a database called `stork` is created and the `pgcrypto` extension is enabled in the database.
 
-Installation procedure for PostgreSQL  is OS specific and is skipped here. The following instruction
-prepares database for working with ``Stork Server``.
-
-Here `stork` database user with `stork` password is created. Next, database called `stork` is created
-and `pgcrypto` extension is enabled in this database.
-
-At first connect to PostgreSQL using `psql` and `postgres` administration user:
+First, connect to PostgreSQL using `psql` and the `postgres` administration user:
 
 .. code-block:: console
 
@@ -35,7 +27,7 @@ At first connect to PostgreSQL using `psql` and `postgres` administration user:
     Type "help" for help.
     postgres=#
 
-and then prepare the database:
+Then, prepare the database:
 
 .. code-block:: psql
 
@@ -54,30 +46,32 @@ and then prepare the database:
 Installing from Packages
 ========================
 
-Stork packages are stored in repositories located in Cloudsmith service:
-https://cloudsmith.io/~isc/repos/stork/packages/. There are stored both Debian/Ubuntu packages
-and RPM packages.
+Stork packages are stored in repositories located on the Cloudsmith service:
+https://cloudsmith.io/~isc/repos/stork/packages/. Both Debian/Ubuntu 
+and RPM packages may be found there.
 
-Detailed instruction for setting up operating system to use this repository is available under
-`Set Me Up` button on this web page.
+Detailed instructions for setting up the operating system to use this repository are available under
+the `Set Me Up` button on the Cloudsmith repository page.
 
 
 Installing on Debian/Ubuntu
 ---------------------------
 
-The basic steps for Debian and Ubuntu look as follows:
+``Stork Server`` and ``Stork Agent`` have been tested thoroughly on the Ubuntu 18.04 system.
+
+The basic steps for Debian and Ubuntu are:
 
 .. code-block:: console
 
    $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh' | sudo bash
 
-The next step is installing package with Stork Server:
+The next step is to install the package with ``Stork Server``:
 
 .. code-block:: console
 
    $ sudo apt install isc-stork-server
 
-and installing Stork Agent:
+Then, install ``Stork Agent``:
 
 .. code-block:: console
 
@@ -89,19 +83,21 @@ It is possible to install both agent and server on the same machine.
 Installing on CentOS/RHEL/Fedora
 --------------------------------
 
-The basic steps for RPM based distributions look as follows:
+``Stork Server`` and ``Stork Agent`` have been tested and run on the Fedora 31 system.
+
+The basic steps for RPM-based distributions are:
 
 .. code-block:: console
 
    $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.rpm.sh' | sudo bash
 
-The next step is installing package with Stork Server:
+The next step is to install the package with ``Stork Server``:
 
 .. code-block:: console
 
    $ sudo dnf install isc-stork-server
 
-and installing Stork Agent:
+Then, install ``Stork Agent``:
 
 .. code-block:: console
 
@@ -113,75 +109,74 @@ It is possible to install both agent and server on the same machine.
 Initial Setup of Server
 -----------------------
 
-These steps are the same for Debian-based and RPM-based distributions that use `SystemD`.
+These steps are the same for both Debian-based and RPM-based distributions that use `SystemD`.
 
-After installing ``Stork Server`` from the package it is required to configure
-basic settings. They are stored in ``/etc/stork/server.env``.
+After installing ``Stork Server`` from the package, configuration of the
+basic settings is required. They are stored in ``/etc/stork/server.env``.
 
-The required settings are for connecting with database:
+These are the required settings to connect with the database:
 
-* STORK_DATABASE_HOST - an address of PostgreSQL database, default is `localhost`
-* STORK_DATABASE_PORT - a port of PostgreSQL database, default is `5432`
-* STORK_DATABASE_NAME - a name of database, default is `stork`
-* STORK_DATABASE_USER_NAME - a username for connecting to the database, default is `stork`
-* STORK_DATABASE_PASSWORD - a password for username for connecting to the database
+* STORK_DATABASE_HOST - the address of a PostgreSQL database; default is `localhost`
+* STORK_DATABASE_PORT - the port of a PostgreSQL database; default is `5432`
+* STORK_DATABASE_NAME - the name of a database; default is `stork`
+* STORK_DATABASE_USER_NAME - the username for connecting to the database; default is `stork`
+* STORK_DATABASE_PASSWORD - the password for the username connecting to the database
 
-Now it is possible to enable and start ``Stork Server`` service:
+With those settings in place, the ``Stork Server`` service can be enabled and started:
 
 .. code-block:: console
 
    $ sudo systemctl enable isc-stork-server
    $ sudo systemctl start isc-stork-server
 
-and then check the status:
+To check the status:
 
 .. code-block:: console
 
    $ sudo systemctl status isc-stork-server
 
-By default ``Stork Server`` web service is exposed on 8080 port,
+By default, the ``Stork Server`` web service is exposed on port 8080,
 so now it can be visited in a web browser here: http://localhost:8080.
 
-It is possible to put ``Stork Server`` behind HTTP reverse proxy. For that purpose
-`Nginx` or `Apache` can be used. In ``Stork Server`` package there is provided
-an exemplary configuration file for `Nginx` which is located
+It is possible to put ``Stork Server`` behind an HTTP reverse proxy using
+`Nginx` or `Apache`. In the ``Stork Server`` package an example configuration file is provided
+for `Nginx`,
 in `/usr/share/stork/examples/nginx-stork.conf`.
 
 
-Initial Setup of Agent
------------------------
+Initial Setup of Stork Agent
+----------------------------
 
-These steps are the same for Debian-based and RPM-based distributions that use `SystemD`.
+These steps are the same for both Debian-based and RPM-based distributions that use `SystemD`.
 
-After installing ``Stork Agent`` from the package it is required to configure
-basic settings. They are stored in ``/etc/stork/agent.env``.
+After installing ``Stork Agent`` from the package, configuration of the
+basic settings is required. They are stored in ``/etc/stork/agent.env``.
 
-The required settings are for connecting with database:
+These are the required settings to connect with the database:
 
-* STORK_AGENT_ADDRESS - an IP address of network interface which ``Stork Agent``
-  should use for listening for ``Stork Server`` incoming connections,
-  default is `0.0.0.0` ie. listen on all interfaces
-* STORK_AGENT_PORT - a port that should be used for listening, default is `8080`
+* STORK_AGENT_ADDRESS - the IP address of the network interface which ``Stork Agent``
+  should use for listening for ``Stork Server`` incoming connections;
+  default is `0.0.0.0` (ie. listen on all interfaces)
+* STORK_AGENT_PORT - the port that should be used for listening; default is `8080`
 
-Now it is possible to enable and start ``Stork Agent`` service:
+With those settings in place, the ``Stork Agent`` service can be enabled and started:
 
 .. code-block:: console
 
    $ sudo systemctl enable isc-stork-server
    $ sudo systemctl start isc-stork-server
 
-and then check the status:
+To check the status:
 
 .. code-block:: console
 
    $ sudo systemctl status isc-stork-server
 
-After starting the agent it periodically tries to detect installed services on the system.
-It looks for Kea or BIND 9 services. When it finds any of them then they will be reported
-to ``Stork Server`` when it connects to this agent.
+After starting the agent, it periodically tries to detect installed Kea DHCP or BIND 9 services on the system.
+If it finds them, they are reported to the ``Stork Server`` when it connects to the agent.
 
-Further configuration and usage of ``Stork Server`` and ``Stork Agent`` are described
-in :ref:`usage` chapter.
+Further configuration and usage of the ``Stork Server`` and the ``Stork Agent`` are described
+in the :ref:`usage` chapter.
 
 
 .. _installation_sources:
@@ -194,20 +189,20 @@ Prerequisites
 
 ``Stork`` sources can be built on Ubuntu 18.04 and Fedora 31.
 
-There are several dependencies that needs to be installed to build ``Stork`` sources :
+There are several dependencies that need to be installed to build ``Stork`` sources:
 
  - Rake
  - Java Runtime Environment
 
-Other dependencies are installed locally, automatically by Rake tasks.
+Other dependencies are installed locally and automatically by Rake tasks.
 
-For details about environment, please see Stork wiki
-https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment .
+For details about the environment, please see the Stork wiki
+https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment.
 
 Download Sources
 ----------------
 
-Sources of Stork are available on ISC GitLab: https://gitlab.isc.org/isc-projects/stork.
+Sources of Stork are available on the ISC GitLab: https://gitlab.isc.org/isc-projects/stork.
 
 To get the latest sources invoke:
 .. code-block:: console
@@ -217,33 +212,33 @@ To get the latest sources invoke:
 Building
 --------
 
-There are several parts of ``Stork``:
+There are several components of ``Stork``:
 
-- ``Stork Agent`` - this is only one binary `stork-agent` which is written in Go language
-- ``Stork Server`` - it compraises of two parts:
-  - `backend service` - written in Go language
+- ``Stork Agent`` - this is the binary `stork-agent`, written in Go
+- ``Stork Server`` - this is comprised of two parts:
+  - `backend service` - written in Go
   - `frontend` - an `Angular` application written in Typescript
 
-All parts can be build using the following command:
+All components can be built using the following command:
 
 .. code-block:: console
 
    $ rake build_all
 
-Then it is possible to install agent part using this command:
+The agent component is installed using this command:
 
 .. code-block:: console
 
    $ rake install_agent
 
-and server part with this command:
+and the server component with this command:
 
 .. code-block:: console
 
    $ rake install_server
 
-By default all parts are installed to `root` folder in current directory. This is not useful
-for production installation. It can be customized by ``DESTDIR`` variable, e.g.:
+By default, all components are installed to the `root` folder in the current directory; however, this is not useful
+for installation in a production environment. It can be customized via the ``DESTDIR`` variable, e.g.:
 
 .. code-block:: console
 
