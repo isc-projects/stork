@@ -12,6 +12,10 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+const (
+	defaultHostCmdsPageLimit int64 = 1000
+)
+
 // Structure reflecting "next" map of the Kea response to the
 // reservation-get-page command.
 type ReservationGetPageNext struct {
@@ -354,4 +358,71 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 		done = true
 	}
 	return hosts, done, err
+}
+
+// Fetches all host reservations stored in the hosts backend for the particular
+// Kea app. The app must have the host_cmds hooks library loaded. The function
+// uses HostDetectionIterator mechanism to fetch the hosts, which will in
+// most cases result in multiple reservation-get-page commands sent to Kea
+// instance.
+func DetectAndCommitHostsIntoDB(db *dbops.PgDB, agents agentcomm.ConnectedAgents, app *dbmodel.App) error {
+	tx, rollback, commit, err := dbops.Transaction(db)
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with starting transaction for committing new hosts from host_cmds hooks library for app id %d", app.ID)
+		return err
+	}
+	defer rollback()
+	it := NewHostDetectionIterator(db, app, agents, defaultHostCmdsPageLimit)
+	var (
+		hosts []dbmodel.Host
+		done  bool
+	)
+	// Fetch the hosts as long as they are returned by Kea.
+	for !done {
+		hosts, done, err = it.DetectHostsPageFromHostCmds()
+		if err != nil {
+			break
+		}
+		// This condition is rather impossible but let's make sure.
+		if len(hosts) == 0 {
+			continue
+		}
+		// Same here. It is rather impossible but let's proceed until
+		// the iterator says we're done or there is an error.
+		subnet := it.GetCurrentSubnet()
+		if subnet == nil {
+			continue
+		}
+		// The returned hosts belong to the subnet, but the subnet instance
+		// doesn't contain them yet (they are new hosts), so let's assign
+		// them explicitly to the current subnet.
+		subnet.Hosts = hosts
+		// Now, there is a tricky part. The second part argument is the
+		// existing subnet. It is merely used to extract the ID of the
+		// given subnet and then fetch this subnet along with all the
+		// hosts it has in the database. The second parameter specifies
+		// the subnet with the new hosts (fetched via the Kea API). These
+		// hosts are merged into the existing hosts for this subnet and
+		// returned as mergedHosts.
+		mergedHosts, err := mergeHosts(db, subnet, subnet)
+		if err != nil {
+			break
+		}
+		// Now we have to assign the combined set of existing hosts and
+		// new hosts into the subnet instance and commit everything to the
+		// database.
+		subnet.Hosts = mergedHosts
+		err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, app, "api")
+		if err != nil {
+			break
+		}
+	}
+
+	if err == nil {
+		err = commit()
+		if err != nil {
+			err = errors.WithMessagef(err, "problem with committing transaction adding new hosts from host_cmds hooks library for app id %d", app.ID)
+		}
+	}
+	return err
 }

@@ -11,7 +11,7 @@ type FakeAgents struct {
 	RecordedURL      string
 	RecordedCommands []agentcomm.KeaCommand
 	mockKeaFunc      func(int, []interface{})
-	callNo           int
+	CallNo           int
 
 	RecordedAddress string
 	RecordedPort    int64
@@ -98,9 +98,9 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, agentAddress str
 	}
 	// Generate response.
 	if fa.mockKeaFunc != nil {
-		fa.mockKeaFunc(fa.callNo, cmdResponses)
+		fa.mockKeaFunc(fa.CallNo, cmdResponses)
 	}
-	fa.callNo++
+	fa.CallNo++
 	return result, nil
 }
 
@@ -114,9 +114,9 @@ func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, agentAddress stri
 
 	// Generate response.
 	if fa.mockNamedFunc != nil {
-		fa.mockNamedFunc(fa.callNo, statsOutput)
+		fa.mockNamedFunc(fa.CallNo, statsOutput)
 	}
-	fa.callNo++
+	fa.CallNo++
 	return nil
 }
 

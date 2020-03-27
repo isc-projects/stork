@@ -707,3 +707,67 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	testReservationGetPageReceived(t, it)
 	require.EqualValues(t, 678, (*fa.GetLastCommand().Arguments)["subnet-id"])
 }
+
+// Test function which fetches host reservations from the Kea server over
+// the control channel and stores them in the database.
+func TestDetectAndCommitHostsIntoDB(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Creates new app with provided configurations.
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	app := dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Details: dbmodel.AppKea{
+			Daemons: []*dbmodel.KeaDaemon{
+				{
+					Name:   "dhcp4",
+					Config: getTestConfigWithIPv4Subnets(t),
+				},
+				{
+					Name:   "dhcp6",
+					Config: getTestConfigWithIPv6Subnets(t),
+				},
+			},
+		},
+	}
+	// Add the app to the database.
+	err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+	app.Machine = m
+
+	err = CommitAppIntoDB(db, &app)
+	require.NoError(t, err)
+
+	fa := storktest.NewFakeAgents(mockReservationGetPage, nil)
+
+	// Detect hosts to times in the row. This simulates periodic
+	// pull of the hosts for the given app.
+	for i := 0; i < 2; i++ {
+		err = DetectAndCommitHostsIntoDB(db, fa, &app)
+		require.NoError(t, err)
+
+		hosts, err := dbmodel.GetAllHosts(db, 4)
+		require.NoError(t, err)
+		require.Len(t, hosts, 50)
+
+		hosts, err = dbmodel.GetAllHosts(db, 6)
+		require.NoError(t, err)
+		require.Len(t, hosts, 50)
+
+		// Reset server state so it should send the same set of responses
+		// the second time.
+		fa.CallNo = 0
+	}
+}

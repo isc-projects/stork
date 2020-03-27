@@ -486,28 +486,9 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App)
 			return err
 		}
 
-		for i := range subnet.Hosts {
-			// Make sure the host associated with the current subnet.
-			subnet.Hosts[i].SubnetID = subnet.ID
-			if subnet.Hosts[i].ID == 0 {
-				err = AddHost(tx, &subnet.Hosts[i])
-				if err != nil {
-					err = errors.WithMessagef(err, "unable to add detected host to the database")
-					return err
-				}
-			} else {
-				err = UpdateHost(tx, &subnet.Hosts[i])
-				if err != nil {
-					err = errors.WithMessagef(err, "unable to update detected host in the database")
-					return err
-				}
-			}
-			err = AddAppToHost(tx, &subnet.Hosts[i], app, "config")
-			if err != nil {
-				err = errors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
-					app.ID)
-				return err
-			}
+		err = CommitSubnetHostsIntoDB(tx, subnet, app, "config")
+		if err != nil {
+			return err
 		}
 	}
 	return nil

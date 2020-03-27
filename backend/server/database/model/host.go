@@ -263,10 +263,20 @@ func GetAllHosts(db *pg.DB, family int) ([]Host, error) {
 	return hosts, err
 }
 
-// Fetches a collection of hosts by subnet ID.
-func GetHostsBySubnetID(db *pg.DB, subnetID int64) ([]Host, error) {
+// Fetches a collection of hosts by subnet ID. This function may be sometimes
+// used within a transaction. In particular, when we're synchronizing hosts
+// fetched from the Kea hosts backend in multiple chunks.`
+func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 	hosts := []Host{}
-	err := db.Model(&hosts).
+
+	tx, rollback, _, err := dbops.Transaction(dbIface)
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with starting transaction for getting hosts for subnet with id %d", subnetID)
+		return hosts, err
+	}
+	defer rollback()
+
+	err = tx.Model(&hosts).
 		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("host_identifier.id ASC"), nil
 		}).
@@ -404,6 +414,35 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string) erro
 			app.ID, host.ID)
 	}
 	return err
+}
+
+// Iterates over the hosts belonging to the given subnet and stores them
+// or updates in the database.
+func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string) (err error) {
+	for i := range subnet.Hosts {
+		// Make sure the host associated with the current subnet.
+		subnet.Hosts[i].SubnetID = subnet.ID
+		if subnet.Hosts[i].ID == 0 {
+			err = AddHost(tx, &subnet.Hosts[i])
+			if err != nil {
+				err = errors.WithMessagef(err, "unable to add detected host to the database")
+				return err
+			}
+		} else {
+			err = UpdateHost(tx, &subnet.Hosts[i])
+			if err != nil {
+				err = errors.WithMessagef(err, "unable to update detected host in the database")
+				return err
+			}
+		}
+		err = AddAppToHost(tx, &subnet.Hosts[i], app, source)
+		if err != nil {
+			err = errors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
+				app.ID)
+			return err
+		}
+	}
+	return nil
 }
 
 // This function checks if the given host includes a reservation for the
