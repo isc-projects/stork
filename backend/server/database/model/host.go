@@ -388,7 +388,10 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string) erro
 		DataSource: source,
 	}
 
-	_, err = tx.Model(&localHost).Insert()
+	_, err = tx.Model(&localHost).
+		OnConflict("(app_id, host_id) DO UPDATE").
+		Set("data_source = EXCLUDED.data_source").
+		Insert()
 	if err != nil {
 		err = errors.Wrapf(err, "problem with associating the app %d with the host %d",
 			app.ID, host.ID)

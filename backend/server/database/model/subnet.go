@@ -435,43 +435,42 @@ func (s *Subnet) GetApp(appID int64) *App {
 // if they are not there yet. In addition, it associates the subnets with the
 // specified Kea application.
 func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App) (err error) {
-	for _, s := range subnets {
-		subnet := s
+	for i := range subnets {
+		subnet := &subnets[i]
 		if subnet.ID == 0 {
 			subnet.SharedNetworkID = networkID
-			err = AddSubnet(tx, &subnet)
+			err = AddSubnet(tx, subnet)
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to add detected subnet %s to the database",
 					subnet.Prefix)
 				return err
 			}
 		}
-		err = AddAppToSubnet(tx, &subnet, app)
+		err = AddAppToSubnet(tx, subnet, app)
 		if err != nil {
 			err = errors.WithMessagef(err, "unable to associate detected subnet %s with Kea app having id %d", subnet.Prefix, app.ID)
 			return err
 		}
 
-		for _, h := range subnet.Hosts {
-			host := h
+		for i := range subnet.Hosts {
 			// Make sure the host associated with the current subnet.
-			host.SubnetID = subnet.ID
-			if host.ID == 0 {
-				err = AddHost(tx, &host)
+			subnet.Hosts[i].SubnetID = subnet.ID
+			if subnet.Hosts[i].ID == 0 {
+				err = AddHost(tx, &subnet.Hosts[i])
 				if err != nil {
 					err = errors.WithMessagef(err, "unable to add detected host to the database")
 					return err
 				}
 			} else {
-				err = UpdateHost(tx, &host)
+				err = UpdateHost(tx, &subnet.Hosts[i])
 				if err != nil {
 					err = errors.WithMessagef(err, "unable to update detected host in the database")
 					return err
 				}
 			}
-			err = AddAppToHost(tx, &host, app, "config")
+			err = AddAppToHost(tx, &subnet.Hosts[i], app, "config")
 			if err != nil {
-				err = errors.WithMessagef(err, "unable to associated detected host with Kea app having id %d",
+				err = errors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
 					app.ID)
 				return err
 			}
@@ -491,11 +490,11 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 	defer rollback()
 
 	// Go over the networks that the Kea app belongs to.
-	for _, n := range networks {
-		network := n
-		if n.ID == 0 {
+	for i := range networks {
+		network := &networks[i]
+		if network.ID == 0 {
 			// This is new shared network. Add it to the database.
-			err = AddSharedNetwork(tx, &network)
+			err = AddSharedNetwork(tx, network)
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to add detected shared network %s to the database",
 					network.Name)

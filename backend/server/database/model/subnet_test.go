@@ -484,6 +484,10 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.Len(t, returnedHosts, 1)
 	require.Len(t, returnedHosts[0].LocalHosts, 1)
 	require.EqualValues(t, app.ID, returnedHosts[0].LocalHosts[0].AppID)
+
+	// Make sure we can commit the networks again without an error.
+	err = CommitNetworksIntoDB(db, networks, subnets, &app)
+	require.NoError(t, err)
 }
 
 // Check if getting subnet family works.
