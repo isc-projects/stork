@@ -320,6 +320,7 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, subnetID *int64, filterText 
 		q = q.Join("INNER JOIN host_identifier AS i ON i.host_id = host.id")
 		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
 			q = q.WhereOr("text(r.address) LIKE ?", "%"+*filterText+"%").
+				WhereOr("i.type::text LIKE ?", "%"+*filterText+"%").
 				WhereOr("encode(i.value, 'hex') LIKE ?", "%"+colonlessFilterText+"%")
 			return q, nil
 		})

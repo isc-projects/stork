@@ -442,6 +442,13 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
 	require.NoError(t, err)
 	require.Len(t, returned, 3)
+
+	// Filter by identifier type.
+	filterText = "dui"
+	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	require.NoError(t, err)
+	require.Len(t, returned, 1)
+	require.Contains(t, returned, hosts[3])
 }
 
 // Test that the host and its identifiers and reservations can be
