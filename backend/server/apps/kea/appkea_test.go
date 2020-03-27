@@ -178,8 +178,8 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 	GetAppState(ctx, fa, &dbApp)
 
 	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
-	require.Equal(t, "version-get", fa.RecordedCommands[0])
-	require.Equal(t, "config-get", fa.RecordedCommands[1])
+	require.Equal(t, "version-get", fa.RecordedCommands[0].Command)
+	require.Equal(t, "config-get", fa.RecordedCommands[1].Command)
 }
 
 func TestGetAppStateWith2Daemons(t *testing.T) {
@@ -209,8 +209,8 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 	GetAppState(ctx, fa, &dbApp)
 
 	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
-	require.Equal(t, "version-get", fa.RecordedCommands[0])
-	require.Equal(t, "config-get", fa.RecordedCommands[1])
+	require.Equal(t, "version-get", fa.RecordedCommands[0].Command)
+	require.Equal(t, "config-get", fa.RecordedCommands[1].Command)
 }
 
 // Check if GetDaemonHooks returns hooks for given daemon.

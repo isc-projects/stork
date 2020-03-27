@@ -2,6 +2,7 @@ package kea
 
 import (
 	"context"
+	"fmt"
 
 	errors "github.com/pkg/errors"
 
@@ -60,7 +61,9 @@ type HostDetectionIterator struct {
 	db          *dbops.PgDB
 	app         *dbmodel.App
 	agents      agentcomm.ConnectedAgents
+	limit       int64
 	serverIndex int
+	family      int
 	from        int64
 	sourceIndex int64
 	url         string
@@ -69,12 +72,14 @@ type HostDetectionIterator struct {
 }
 
 // Creates new iterator instance.
-func NewHostDetectionIterator(db *dbops.PgDB, app *dbmodel.App, agents agentcomm.ConnectedAgents) *HostDetectionIterator {
+func NewHostDetectionIterator(db *dbops.PgDB, app *dbmodel.App, agents agentcomm.ConnectedAgents, limit int64) *HostDetectionIterator {
 	it := &HostDetectionIterator{
 		db:          db,
 		app:         app,
 		agents:      agents,
+		limit:       limit,
 		serverIndex: 0,
+		family:      0,
 		from:        0,
 		sourceIndex: 0,
 		url:         "",
@@ -88,6 +93,7 @@ func NewHostDetectionIterator(db *dbops.PgDB, app *dbmodel.App, agents agentcomm
 // hosts if necessary.
 func (iterator *HostDetectionIterator) reset() {
 	iterator.serverIndex = 0
+	iterator.family = 0
 	iterator.from = 0
 	iterator.sourceIndex = 0
 	iterator.subnets = make([]dbmodel.Subnet, 0)
@@ -112,33 +118,80 @@ func (iterator *HostDetectionIterator) convertAndAssignHosts(fetchedHosts []dbmo
 // Sends the reservation-get-page command to Kea. If there is an error it is
 // returned. Otherwise, the "from" and "source-index" are updated in the
 // iterator's state. Finally the list of hosts is retrieved and returned.
-func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel.KeaConfigReservation, canRetry bool, err error) {
-	commands := []*agentcomm.KeaCommand{
-		{
-			Command: "reservation-get-page",
-		},
+func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel.KeaConfigReservation, result int, canRetry bool, err error) {
+	// Depending on the family we should set the service parameter to
+	// dhcp4 or dhcp6.
+	daemons, err := agentcomm.NewKeaDaemons(fmt.Sprintf("dhcp%d", iterator.family))
+	if err != nil {
+		return hosts, agentcomm.KeaResponseError, false, err
 	}
+	// We need to set subnet-id. This required extracting the local subnet-id
+	// for the given app.
+	subnet := iterator.GetCurrentSubnet()
+	subnetID := int64(0)
+	for _, ls := range subnet.LocalSubnets {
+		if ls.AppID == iterator.app.ID {
+			subnetID = ls.LocalSubnetID
+			break
+		}
+	}
+	if subnetID == 0 {
+		// This is not possible if we have fetched subnets for the given app
+		// but let's be safe.
+		return hosts, agentcomm.KeaResponseError, false, errors.Errorf("specified subnet does not belong to the app with ID %d",
+			iterator.app.ID)
+	}
+	// The subnet-id and limit are mandatory.
+	arguments := map[string]interface{}{
+		"subnet-id": subnetID,
+		"limit":     iterator.limit,
+	}
+	// The from and source-index values are not present in a first call to
+	// fetch the hosts for a given subnet.
+	if iterator.from > 0 {
+		arguments["from"] = iterator.from
+	}
+	if iterator.sourceIndex > 0 {
+		arguments["source-index"] = iterator.sourceIndex
+	}
+	// Prepare the command.
+	command, err := agentcomm.NewKeaCommand("reservation-get-page", daemons, &arguments)
+	if err != nil {
+		return hosts, agentcomm.KeaResponseError, false, err
+	}
+	commands := []*agentcomm.KeaCommand{command}
 	response := []ReservationGetPageResponse{}
 	ctx := context.Background()
-	result, err := iterator.agents.ForwardToKeaOverHTTP(ctx, iterator.app.Machine.Address, iterator.app.Machine.AgentPort,
+	respResult, err := iterator.agents.ForwardToKeaOverHTTP(ctx, iterator.app.Machine.Address, iterator.app.Machine.AgentPort,
 		iterator.url, commands, &response)
 	if err != nil {
 		// Can retry because the error may go away upon the next attempt.
-		return hosts, true, err
+		return hosts, agentcomm.KeaResponseError, true, err
 	}
 
-	if result.Error != nil {
+	if respResult.Error != nil {
 		// Can retry beause the erroor may go away.
-		return hosts, true, result.Error
+		return hosts, agentcomm.KeaResponseError, true, respResult.Error
 	}
 
 	// The following two would rather be fatal errors and retrying wouldn't help.
 	if len(response) == 0 {
-		return hosts, false, errors.Errorf("invalid response to reservation-get-page command received")
+		return hosts, agentcomm.KeaResponseError, false, errors.Errorf("invalid response to reservation-get-page command received")
+	}
+
+	// An error is likely to be a communication problem between Kea Control
+	// Agent and some other daemon.
+	if response[0].Result == agentcomm.KeaResponseError {
+		return hosts, response[0].Result, false, errors.Errorf("error returned by Kea in response to reservation-get-page command")
+	}
+
+	// If the command is not supported by this Kea server, simply stop.
+	if response[0].Result == agentcomm.KeaResponseCommandUnsupported {
+		return hosts, response[0].Result, false, nil
 	}
 
 	if response[0].Arguments == nil {
-		return hosts, false, errors.Errorf("response to reservation-get-page command lacks arguments")
+		return hosts, response[0].Result, false, errors.Errorf("response to reservation-get-page command lacks arguments")
 	}
 
 	// Response received, update the iterator's state.
@@ -147,7 +200,7 @@ func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel
 
 	// Return hosts to the caller.
 	hosts = response[0].Arguments.Hosts
-	return hosts, false, nil
+	return hosts, response[0].Result, false, nil
 }
 
 // Returns a pointer to the subnet for which the last chunk of hosts have been
@@ -223,6 +276,10 @@ func (iterator *HostDetectionIterator) DetectHostsFromHostCmds() (hosts []dbmode
 			continue
 		}
 
+		// Remember the current server's family because it will be required to
+		// set a service value for the commnd being sent.
+		iterator.family = family
+
 		// If this is the first time we're getting hosts for this server we should
 		// first get all corresponding subnets.
 		if len(iterator.subnets) == 0 {
@@ -246,9 +303,16 @@ func (iterator *HostDetectionIterator) DetectHostsFromHostCmds() (hosts []dbmode
 			// Send reservation-get-page command to fetch the next chunk of host
 			// reservations from Kea.
 			var returnedHosts []dbmodel.KeaConfigReservation
-			returnedHosts, retry, err = iterator.sendReservationGetPage()
+			var result int
+			returnedHosts, result, retry, err = iterator.sendReservationGetPage()
 			if err != nil {
+				err = errors.WithMessagef(err, "problem with sending reservation-get-page command upon attempt to detect host reservations over the host_cmds hooks library")
 				return hosts, done, err
+			}
+
+			// If the command is not supported for this app there is nothing more to do.
+			if result == agentcomm.KeaResponseCommandUnsupported {
+				return hosts, true, nil
 			}
 
 			// If the number of hosts returned is 0, it means that we have hit the

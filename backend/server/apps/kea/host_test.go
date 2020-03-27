@@ -190,6 +190,40 @@ func testHost(t *testing.T, host dbmodel.Host, identifier string, address string
 	require.Equal(t, identifierBytes, host.HostIdentifiers[0].Value)
 }
 
+// Tests that valid reservation-get-page received command was received by
+// the fake agents.
+func testReservationGetPageReceived(t *testing.T, iterator *HostDetectionIterator) {
+	agents, ok := iterator.agents.(*storktest.FakeAgents)
+	require.True(t, ok)
+	// This function is not called before first command is sent.
+	require.GreaterOrEqual(t, len(agents.RecordedCommands), 1)
+	recordedCommand := *agents.GetLastCommand()
+	// Check that the correct command name was sent.
+	require.Equal(t, "reservation-get-page", recordedCommand.Command)
+	// This command must always include some arguments.
+	require.NotNil(t, recordedCommand.Arguments)
+	recordedArguments := *recordedCommand.Arguments
+	// The subnet-id is always required.
+	require.Contains(t, recordedArguments, "subnet-id")
+	// The limit is also always required.
+	require.Contains(t, recordedArguments, "limit")
+	// The limit is configurable and the limit value sent should be the one
+	// that has been configured.
+	require.EqualValues(t, iterator.limit, recordedArguments["limit"])
+	// Check that the service name is correct.
+	require.NotNil(t, recordedCommand.Daemons)
+	recordedDaemons := *recordedCommand.Daemons
+	require.Len(t, recordedDaemons, 1)
+	// Family may be set to 0 if we have ended iterating over hosts.
+	if iterator.family != 0 {
+		// The family may only be 4 or 6.
+		require.Contains(t, []int{4, 6}, iterator.family)
+		// Depending on family we expect the service value to be set
+		// either to dhcp4 or dhcp6.
+		require.Contains(t, recordedDaemons, fmt.Sprintf("dhcp%d", iterator.family))
+	}
+}
+
 // Tests that host reservations can be retrieved in chunks from the Kea
 // DHCPv4 and DHCPv6 servers.
 func TestDetectHostsFromHostCmds(t *testing.T) {
@@ -234,7 +268,7 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 
 	fa := storktest.NewFakeAgents(mockReservationGetPage, nil)
 
-	it := NewHostDetectionIterator(db, &app, fa)
+	it := NewHostDetectionIterator(db, &app, fa, 5)
 	require.NotNil(t, it)
 
 	// Should get addresses 192.0.2.10 thru 192.0.2.14
@@ -253,6 +287,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:02", "192.0.2.12")
 	testHost(t, hosts[3], "01:02:03:04:05:03", "192.0.2.13")
 	testHost(t, hosts[4], "01:02:03:04:05:04", "192.0.2.14")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 123, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.2.15 thru 192.0.2.19
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -270,6 +308,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:07", "192.0.2.17")
 	testHost(t, hosts[3], "01:02:03:04:05:08", "192.0.2.18")
 	testHost(t, hosts[4], "01:02:03:04:05:09", "192.0.2.19")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 123, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
+	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.3.10 thru 192.0.3.14
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -287,6 +329,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:17", "192.0.3.12")
 	testHost(t, hosts[3], "01:02:03:04:05:18", "192.0.3.13")
 	testHost(t, hosts[4], "01:02:03:04:05:19", "192.0.3.14")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 234, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.3.15 thru 192.0.3.19
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -304,6 +350,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:22", "192.0.3.17")
 	testHost(t, hosts[3], "01:02:03:04:05:23", "192.0.3.18")
 	testHost(t, hosts[4], "01:02:03:04:05:24", "192.0.3.19")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 234, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
+	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.4.10 thru 192.0.4.14
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -321,6 +371,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:32", "192.0.4.12")
 	testHost(t, hosts[3], "01:02:03:04:05:33", "192.0.4.13")
 	testHost(t, hosts[4], "01:02:03:04:05:34", "192.0.4.14")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 345, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.4.15 thru 192.0.4.19
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -338,6 +392,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:37", "192.0.4.17")
 	testHost(t, hosts[3], "01:02:03:04:05:38", "192.0.4.18")
 	testHost(t, hosts[4], "01:02:03:04:05:39", "192.0.4.19")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 345, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
+	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.5.10 thru 192.0.5.14
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -355,6 +413,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:47", "192.0.5.12")
 	testHost(t, hosts[3], "01:02:03:04:05:48", "192.0.5.13")
 	testHost(t, hosts[4], "01:02:03:04:05:49", "192.0.5.14")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 567, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.5.15 thru 192.0.5.19
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -372,6 +434,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:52", "192.0.5.17")
 	testHost(t, hosts[3], "01:02:03:04:05:53", "192.0.5.18")
 	testHost(t, hosts[4], "01:02:03:04:05:54", "192.0.5.19")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 567, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
+	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.6.10 thru 192.0.6.14
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -389,6 +455,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:62", "192.0.6.12")
 	testHost(t, hosts[3], "01:02:03:04:05:63", "192.0.6.13")
 	testHost(t, hosts[4], "01:02:03:04:05:64", "192.0.6.14")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 678, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.6.15 thru 192.0.6.19
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -406,6 +476,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:67", "192.0.6.17")
 	testHost(t, hosts[3], "01:02:03:04:05:68", "192.0.6.18")
 	testHost(t, hosts[4], "01:02:03:04:05:69", "192.0.6.19")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 678, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
+	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:2::10 thru 2001:db8:2::14
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -423,6 +497,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:02", "2001:db8:2::12")
 	testHost(t, hosts[3], "01:02:03:04:05:03", "2001:db8:2::13")
 	testHost(t, hosts[4], "01:02:03:04:05:04", "2001:db8:2::14")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 123, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:2::15 thru 2001:db8:2::19
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -440,6 +518,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:07", "2001:db8:2::17")
 	testHost(t, hosts[3], "01:02:03:04:05:08", "2001:db8:2::18")
 	testHost(t, hosts[4], "01:02:03:04:05:09", "2001:db8:2::19")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 123, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
+	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:3::10 thru 2001:db8:3::14
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -457,6 +539,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:17", "2001:db8:3::12")
 	testHost(t, hosts[3], "01:02:03:04:05:18", "2001:db8:3::13")
 	testHost(t, hosts[4], "01:02:03:04:05:19", "2001:db8:3::14")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 234, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:3::15 thru 2001:db8:3::19
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -474,6 +560,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:22", "2001:db8:3::17")
 	testHost(t, hosts[3], "01:02:03:04:05:23", "2001:db8:3::18")
 	testHost(t, hosts[4], "01:02:03:04:05:24", "2001:db8:3::19")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 234, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
+	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:4::10 thru 2001:db8:4::14
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -491,6 +581,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:32", "2001:db8:4::12")
 	testHost(t, hosts[3], "01:02:03:04:05:33", "2001:db8:4::13")
 	testHost(t, hosts[4], "01:02:03:04:05:34", "2001:db8:4::14")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 345, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:4::15 thru 2001:db8:4::19
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -508,6 +602,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:37", "2001:db8:4::17")
 	testHost(t, hosts[3], "01:02:03:04:05:38", "2001:db8:4::18")
 	testHost(t, hosts[4], "01:02:03:04:05:39", "2001:db8:4::19")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 345, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
+	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:5::10 thru 2001:db8:5::14
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -525,6 +623,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:47", "2001:db8:5::12")
 	testHost(t, hosts[3], "01:02:03:04:05:48", "2001:db8:5::13")
 	testHost(t, hosts[4], "01:02:03:04:05:49", "2001:db8:5::14")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 567, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:5::15 thru 2001:db8:5::19
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -542,6 +644,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:52", "2001:db8:5::17")
 	testHost(t, hosts[3], "01:02:03:04:05:53", "2001:db8:5::18")
 	testHost(t, hosts[4], "01:02:03:04:05:54", "2001:db8:5::19")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 567, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
+	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:6::10 thru 2001:db8:6::14
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -559,6 +665,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:62", "2001:db8:6::12")
 	testHost(t, hosts[3], "01:02:03:04:05:63", "2001:db8:6::13")
 	testHost(t, hosts[4], "01:02:03:04:05:64", "2001:db8:6::14")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 678, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
+	require.NotContains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:6::15 thru 2001:db8:6::19
 	hosts, done, err = it.DetectHostsFromHostCmds()
@@ -576,6 +686,10 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	testHost(t, hosts[2], "01:02:03:04:05:67", "2001:db8:6::17")
 	testHost(t, hosts[3], "01:02:03:04:05:68", "2001:db8:6::18")
 	testHost(t, hosts[4], "01:02:03:04:05:69", "2001:db8:6::19")
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 678, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
+	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// We have iterated over all subnets already and fetched all
 	// reservations. No hosts should be returned, the done flag
@@ -590,4 +704,6 @@ func TestDetectHostsFromHostCmds(t *testing.T) {
 	require.Empty(t, it.subnets)
 	require.EqualValues(t, 0, it.subnetIndex)
 	require.Nil(t, it.GetCurrentSubnet())
+	testReservationGetPageReceived(t, it)
+	require.EqualValues(t, 678, (*fa.GetLastCommand().Arguments)["subnet-id"])
 }

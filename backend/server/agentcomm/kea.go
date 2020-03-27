@@ -8,6 +8,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	KeaResponseSuccess            = 0
+	KeaResponseError              = 1
+	KeaResponseCommandUnsupported = 2
+	KeaResponseEmpty              = 3
+)
+
 // Map holding names of deamons to which the command is sent. This is
 // stored in the map rather than a list to guarantee uniqueness of the
 // deamons' names. Not that deamons are called services in the Kea terms,

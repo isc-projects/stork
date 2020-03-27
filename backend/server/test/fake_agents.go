@@ -9,7 +9,7 @@ import (
 // Helper struct to mock Agents behavior.
 type FakeAgents struct {
 	RecordedURL      string
-	RecordedCommands []string
+	RecordedCommands []agentcomm.KeaCommand
 	mockKeaFunc      func(int, []interface{})
 	callNo           int
 
@@ -75,6 +75,15 @@ func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort in
 	return &state, nil
 }
 
+// Returns last received command by FakeAgents or nil if no command
+// has been received yet.
+func (fa *FakeAgents) GetLastCommand() *agentcomm.KeaCommand {
+	if len(fa.RecordedCommands) == 0 {
+		return nil
+	}
+	return &fa.RecordedCommands[len(fa.RecordedCommands)-1]
+}
+
 // FakeAgents specific implementation of the function to forward a command
 // to the Kea servers. It records some arguments used in the call to this
 // function so as they can be later validated. It also returns a custom
@@ -84,7 +93,7 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, agentAddress str
 	fa.RecordedURL = caURL
 	result := &agentcomm.KeaCmdsResult{}
 	for _, cmd := range commands {
-		fa.RecordedCommands = append(fa.RecordedCommands, cmd.Command)
+		fa.RecordedCommands = append(fa.RecordedCommands, *cmd)
 		result.CmdsErrors = append(result.CmdsErrors, nil)
 	}
 	// Generate response.
