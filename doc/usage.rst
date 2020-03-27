@@ -4,11 +4,11 @@
 Using Stork
 ***********
 
-This section describes how to use features available in stork. To connect to Stork, use your
-web browser and connect to port 4200. If Stork is running on your localhost, you can navigate
-to http://localhost:4200.
+This section describes how to use features available in ``Stork``. To connect to ``Stork``, use your
+web browser and connect to port 8080. If Stork is running on your localhost, you can navigate
+to http://localhost:8080.
 
-Managing users
+Managing Users
 ==============
 
 Upon the initial installation the default administrator's account is created and can be used to
@@ -50,10 +50,12 @@ activated. Clicking this button will attempt to change the password.
 Deploying Stork Agent
 =====================
 
-Stork system uses agents to monitor services. Stork Agent (`STAG` or simply `agent`) is a
-daemon that is expected to be deployed and run on each machine to be monitored. Currently,
-there are no automated deployment routines and STAG has to be copied and run manually.
-This can be done in a variety of ways. Here is one of them.
+Stork system uses agents to monitor services. ``Stork Agent`` is a daemon that is expected
+to be deployed and run on each machine to be monitored. Currently, there are no automated
+deployment routines and ``Stork Agent`` has to be installed manually.
+This can be done in a variety of ways. It can be installed from RPM or deb packages
+(what is described in :ref:`installation` chapter). Here is presented very simple method: copying
+``Stork Agent`` binary to destination machine manually.
 
 Assuming you want to monitor services running on machine with IP 192.0.2.1, you can do the following
 on the Stork server command line:
@@ -85,18 +87,14 @@ Connecting and Monitoring Machines
 Registering New Machine
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Once the agent is deployed and running on the machine to be monitored, you should instruct Stork
-server to start monitoring it. You can do so by going to Services menu and choosing Machines.
-You will be presented with a list of currently registered machines.
+Once the agent is deployed and running on the machine to be monitored, you should instruct
+``Stork Server`` to start monitoring it. You can do so by going to ``Services`` menu
+and choosing ``Machines``. You will be presented with a list of currently registered machines.
 
-To add a new machine, click ``Add New Machine``. You need to specify the machine address or hostname
-and a port. If Stork agent is running in a container, you should specify the container name as
-a machine hostname. If you launched Stork using ``rake docker_up`` command you may specify one of
-the demo container names, e.g. agent-kea, agent-bind9 etc. The demo agents are running on
-port 8080. If the agent you're connecting to was launched using ``rake run_agent`` it will
-listen on localhost port 8888.
+To add a new machine, click ``Add New Machine``. You need to specify the machine address (IP address,
+hostname or FQDN) and a port.
 
-Once you click Add, the server will attempt to establish gRPC over http/2 connection to the agent.
+Once you click ``Add`` button, the server will attempt to establish a connection to the agent.
 Make sure that any firewalls in between will allow incoming connections to the TCP port specified.
 
 Once a machine is added, a number of parameters, such as hostname, address, agent version, number
@@ -104,7 +102,7 @@ of CPU cores, CPU load, available total memory, current memory utilization, upti
 family, platform name, OS version, kernel, virtualization details (if any), host ID and other
 information will be displayed.
 
-If any applications, i.e. Kea or/and BIND 9 are detected on this machine, the status of those
+If any applications, i.e. `Kea` or/and `BIND 9` are detected on this machine, the status of those
 applications will be displayed and the link will allow for navigating to the application
 details.
 
@@ -120,7 +118,7 @@ number of machines.
 
 There is a filtering mechanism that acts as an omnibox. The string typed is searched for an address,
 agent version, hostname, OS, platform, OS version, kernel version, kernel architecture,
-virtualization system, host-id fields. The filtering happens once you hit ENTER.
+virtualization system, host-id fields. The filtering happens once you hit `Enter`.
 
 You can inspect the state of a machine by clicking its hostname. A new tab will open with machine
 details. Multiple tabs can be open at the same time. You can click Refresh state to get updated
@@ -211,9 +209,9 @@ IPv4 and IPv6 Networks
 
 Kea has a concept of shared networks (or networks), which is essentially a stack of subnets
 deployed on the same physical link. This feature is very popular among users. Stork is now able
-to retrieve information about the shared networks and aggregate it across all configured Kea servers. The Shared Networks
-view allows for inspection of networks and the subnets that belong in them. Pool utilization is
-shown for each subnet.
+to retrieve information about the shared networks and aggregate it across all configured Kea servers.
+The Shared Networks view allows for inspection of networks and the subnets that belong in them.
+Pool utilization is shown for each subnet.
 
 
 Kea High Availability Status
@@ -223,8 +221,8 @@ When viewing the details of the Kea application for which High Availability is e
 (via libdhcp_ha.so hooks library), the High Availability live status is presented
 and periodically refreshed for the DHCPv4 and/or DHCPv6 deamon configured as primary
 or secondary/standby server. The status is not displayed for the server configured
-as a HA backup. See the `High Availability section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/hooks.html#ha-high-availability>`_ for the details about various roles of the servers
-within the HA setup.
+as a HA backup. See the `High Availability section in the Kea ARM <https://kea.readthedocs.io/en/latest/arm/hooks.html#ha-high-availability>`_
+for the details about various roles of the servers within the HA setup.
 
 The following picture shows a typical High Availability status view displayed in
 Stork UI.

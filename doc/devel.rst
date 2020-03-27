@@ -28,6 +28,64 @@ To generate documentation, simply type ``rake doc``. You need to have `Sphinx <h
 and `rtd-theme <https://github.com/readthedocs/sphinx_rtd_theme>`_ installed. The generated
 documentation will be available in the ``doc/singlehtml`` directory.
 
+
+Setting up Development Environment
+==================================
+
+The following steps will install Stork and its dependencies natively, i.e. on the host machine
+rather than using Docker images.
+
+First, you need to install PostgreSQL. This is OS specific. Please follow the instructions
+from :ref:`installation` chapter.
+
+Optional step: if you want to initialize the database on your own, you need to build the migrations
+tool and use it to initialize and upgrade the DB to the latest schema. However, this is completely
+optional as the database migration will be triggered automatically upon the server startup.
+This is only useful if for some reason you want to set up the database, but don't want to run
+the server yet. In most cases this step can be skipped.
+
+.. code-block:: console
+
+    $ rake build_migrations
+    $ backend/cmd/stork-db-migrate/stork-db-migrate init
+    $ backend/cmd/stork-db-migrate/stork-db-migrate up
+
+Now that you have the database environment set up, the next step is to build all the tools. Note the first
+command will download some missing dependencies needed and will install it in a local directory. This is
+done only once and is not needed for future rebuilds. However, it's safe to rerun the command.
+
+.. code-block:: console
+
+    $ rake build_backend
+    $ rake build_ui
+
+The environment should be ready to run! Open 3 consoles, and run the following 3 commands, one in each
+console:
+
+.. code-block:: console
+
+    $ rake run_server
+    $ rake serve_ui
+    $ rake run_agent
+
+Once all three processes are running, go ahead and connect to http://localhost:4200 with your web
+browser.  See  :ref:`usage` for initial password information or for adding new machines to the server.
+
+The `run_agent` runs the agent directly on current operating system, natively,
+and exposed port of the agent is 8888.
+
+There are other Rake tasks for running preconfigured agents in Docker containers.
+They are exposed to the host on specific ports.
+
+So when they are added as machines in ``Stork Server`` UI a localhost as addresss should be specified and
+port specific to given container has to be specified. This is a list of ports for particular Rake tasks
+and containers:
+
+- `rake run_kea_container`: Kea with DHCPv4, port 8888
+- `rake run_kea6_container`: Kea with DHCPv6, port 8886
+- `rake run_kea_ha_containers`: 2 containers: Kea 1 and 2 with preconfigured HA, ports:  8881 and 8882
+- `rake run_bind9_container`: port 9999
+
 Agent API
 =========
 
@@ -69,7 +127,7 @@ can be used:
       "hostID": "c41337a1-0ec3-3896-a954-a1f85e849d53"
     }
 
-Installing git hooks
+Installing Git Hooks
 ====================
 
 There's a simple git hook that inserts the issue number in the commit message automatically. If you

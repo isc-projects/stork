@@ -5,9 +5,8 @@
 Stork Administrator Reference Manual
 ####################################
 
-Stork is a new project proposed by ISC with the aim of delivering BIND 9 and Kea dashboard.
-It is going to be a spiritual successor of earlier attempts - Kittiwake and Antherius.
-It is currently in very early stages of planning.
+``Stork`` is a new project led by ISC with the aim of delivering `ISC BIND 9` and `ISC Kea` dashboard.
+It is going to be a spiritual successor of earlier attempts - `Kittiwake` and `Antherius`.
 
 This is the reference guide for Stork version |release|.
 Links to the most up-to-date version of this document, along with other documents for
@@ -18,6 +17,7 @@ or `readthedocs <https://stork.readthedocs.io>`_ .
    :numbered:
    :maxdepth: 5
 
+   overview
    install
    usage
    backend-api

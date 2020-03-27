@@ -3,10 +3,10 @@
 Demo
 ====
 
-Demo installation of Stork can be used to demonstrate Stork capabilities but can be used
+Demo installation of ``Stork`` can be used to demonstrate ``Stork`` capabilities but can be used
 for its development as well.
 
-Demo installation is using Docker Compose for setting up all Stork services.
+Demo installation is using `Docker` and `Docker Compose` for setting up all `Stork` services.
 It contains:
 
 - Stork Server
@@ -21,7 +21,21 @@ It contains:
 
 Running all these services allows presenting many features of Stork.
 
-Installation steps
+Requirements
+------------
+
+Running ``Stork Demo`` requires the same dependencies as building ``Stork``
+what is described in :ref:`installation_sources` chapter.
+
+Beside that there are required:
+
+- Docker
+- Docker Compose
+
+For details, please see Stork wiki
+https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment .
+
+Installation Steps
 ------------------
 
 The following command will retrieve all required software (go, goswagger, nodejs, Angular
@@ -76,12 +90,6 @@ This web page and the token is available only to ISC employees and ISC customers
 
    $ rake docker_up cs_repo_access_token=<access token>
 
-
-Requirements
-------------
-
-Requirements are the same as for Stork development. For details, please see Stork wiki
-https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment .
 
 Initialization
 --------------

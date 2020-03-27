@@ -13,8 +13,6 @@ import (
 
 // Settings specific to communication with Agents
 type AgentsSettings struct {
-	AgentListenAddress string `long:"agents-host" description:"the IP to listen on for communication from Stork Agent" default:"" env:"STORK_AGENTS_HOST"`
-	AgentListenPort    int    `long:"agents-port" description:"the port to listen on for communication from Stork Agent" default:"8080" env:"STORK_AGENTS_PORT"`
 }
 
 // Runtime information about the agent, e.g. connection.
