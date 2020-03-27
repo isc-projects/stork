@@ -156,7 +156,7 @@ These are the required settings to connect with the database:
 
 * STORK_AGENT_ADDRESS - the IP address of the network interface which ``Stork Agent``
   should use for listening for ``Stork Server`` incoming connections;
-  default is `0.0.0.0` (ie. listen on all interfaces)
+  default is `0.0.0.0` (i.e. listen on all interfaces)
 * STORK_AGENT_PORT - the port that should be used for listening; default is `8080`
 
 With those settings in place, the ``Stork Agent`` service can be enabled and started:
@@ -205,6 +205,7 @@ Download Sources
 Sources of Stork are available on the ISC GitLab: https://gitlab.isc.org/isc-projects/stork.
 
 To get the latest sources invoke:
+
 .. code-block:: console
 
    $ git clone https://gitlab.isc.org/isc-projects/stork

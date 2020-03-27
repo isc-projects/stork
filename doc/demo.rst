@@ -3,10 +3,10 @@
 Demo
 ====
 
-Demo installation of ``Stork`` can be used to demonstrate ``Stork`` capabilities but can be used
+A demo installation of ``Stork`` can be used to demonstrate ``Stork`` capabilities but can be used
 for its development as well.
 
-Demo installation is using `Docker` and `Docker Compose` for setting up all `Stork` services.
+The demo installation uses `Docker` and `Docker Compose` to set up all `Stork` services.
 It contains:
 
 - Stork Server
@@ -19,57 +19,57 @@ It contains:
 - PostgreSQL database
 - Prometheus & Grafana
 
-Running all these services allows presenting many features of Stork.
+These services allow observation of many Stork features.
 
 Requirements
 ------------
 
-Running ``Stork Demo`` requires the same dependencies as building ``Stork``
-what is described in :ref:`installation_sources` chapter.
+Running the ``Stork Demo`` requires the same dependencies as building Stork,
+which is described in the :ref:`installation_sources` chapter.
 
-Beside that there are required:
+Besides the standard dependencies, the ``Stork Demo`` requires:
 
 - Docker
 - Docker Compose
 
-For details, please see Stork wiki
-https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment .
+For details, please see the Stork wiki
+https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment.
 
 Installation Steps
 ------------------
 
-The following command will retrieve all required software (go, goswagger, nodejs, Angular
-dependencies, etc.) to your local directory. No root password necessary.
+The following command retrieves all required software (go, goswagger, nodejs, Angular
+dependencies, etc.) to the local directory. No root password is necessary.
 
 .. code-block:: console
 
     # Prepare docker images and start them up
     rake docker_up
 
-Once the build process finishes, Stork UI will be available at http://localhost:8080/. Use
+Once the build process finishes, the Stork UI is available at http://localhost:8080/. Use
 any browser to connect.
 
-The installation procedure will create several Docker images:
+The installation procedure creates several Docker images:
 
-- `stork_webui`: exposing web UI interface,
+- `stork_webui`: a web UI interface,
 - `stork_server`: a server backend,
 - `postgres`: a PostgreSQL database used by the server,
-- `stork_agent-bind9`: agent with BIND 9,
-- `stork_agent-kea`: agent with Kea DHCPv4 server,
-- `stork_agent-kea6`: agent with Kea DHCPv6 server,
+- `stork_agent-bind9`: an agent with BIND 9,
+- `stork_agent-kea`: an agent with a Kea DHCPv4 server,
+- `stork_agent-kea6`: an agent with a Kea DHCPv6 server,
 - `stork_agent-kea-ha1`: the primary Kea DHCPv4 server in High Availability mode,
-- `stork_agent-kea-ha2`: the secondary Kea DHCPv4 server in High Availability mode
-- `traffic-dhcp`: a web application that can run DHCP traffic using perfdhcp
-- `prometheus`: Prometheus, a monitoring solution (https://prometheus.io/)
+- `stork_agent-kea-ha2`: the secondary Kea DHCPv4 server in High Availability mode,
+- `traffic-dhcp`: a web application that can run DHCP traffic using perfdhcp,
+- `prometheus`: Prometheus, a monitoring solution (https://prometheus.io/),
 - `grafana`: Grafana, a dashboard for Prometheus (https://grafana.com/)
 
 .. note::
 
-   The containers running Kea and BIND 9 applications are for demo purposes only. They
-   allow the users to quickly start playing with Stork without having to manually
+   The containers running the Kea and BIND 9 applications are for demo purposes only. They
+   allow users to quickly start experimenting with Stork without having to manually
    deploy Kea and/or BIND 9 instances.
 
-The PostgreSQL database schema will be automatically migrated to the latest version required
+The PostgreSQL database schema is automatically migrated to the latest version required
 by the Stork server process.
 
 The installation procedure assumes those images are fully under Stork control. If there are
@@ -94,10 +94,10 @@ This web page and the token is available only to ISC employees and ISC customers
 Initialization
 --------------
 
-At the beginning some initial information needs to be added in Stork Server:
+At the beginning some initial information needs to be added in the ``Stork Server``:
 
 #. Go to http://localhost:8080/machines/all
-#. Add new machines (leave default port):
+#. Add new machines (leave the default port):
 
    #. agent-kea
    #. agent-kea6
@@ -107,27 +107,27 @@ At the beginning some initial information needs to be added in Stork Server:
 
 DHCP Traffic Simulator
 ----------------------
-Traffic simulator allows sending DHCP traffic to selected subnets pre-configured
-in Kea instances. There is a limitation, it is possible to send traffic to one subnet
-from given shared network.
+The traffic simulator allows DHCP traffic to be sent to selected subnets pre-configured
+in Kea instances. There is a limitation: it is possible to send traffic to only one subnet
+from a given shared network.
 
-Traffic simulator can be found at: http://localhost:5000/
+The traffic simulator can be found at: http://localhost:5000/
 
 Prometheus
 ----------
 
-Prometheus instance is preconfigured and pulls stats from:
+The Prometheus instance is preconfigured and pulls statistics from:
 
 - node exporters: agent-kea:9100, agent-bind9:9100
-- kea exporters embedded in stork agent: agent-kea:9547, agent-kea6:9547, agent-kea-ha1:9547, agent-kea-ha2:9547
+- kea exporters embedded in stork-agent: agent-kea:9547, agent-kea6:9547, agent-kea-ha1:9547, agent-kea-ha2:9547
 - bind9 exporter: agent-bind9:9119
 
-Prometheus web page can be found at: http://localhost:9090/
+The Prometheus web page can be found at: http://localhost:9090/
 
 Grafana
 -------
 
-Grafana instance is preconfigured as well. It pulls data from Prometheus and loads dashboards from stork repository,
-from grafana folder.
+The Grafana instance is preconfigured as well. It pulls data from Prometheus and loads dashboards from the Stork repository,
+in the Grafana folder.
 
-Grafana web page can be found at: http://localhost:3000/
+The Grafana web page can be found at: http://localhost:3000/

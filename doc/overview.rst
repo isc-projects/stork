@@ -7,24 +7,24 @@ Overview
 Goals
 =====
 
-The goals of Stork project are as follows:
+The goals of the Stork project are as follows:
 
-- make easier to observe what is happening to `ISC Kea` and `ISC BIND 9` services
-- provide alerting mechanisms that quicky indicate failures in `ISC Kea` and `ISC BIND 9` services
-- make easier troubleshooting of these services
+- to make it easier for administrators to observe the operation of `ISC Kea DHCP` and `ISC BIND 9` services
+- to provide alerting mechanisms that quickly indicate failures in `ISC Kea DHCP` and `ISC BIND 9` services
+- to permit easier troubleshooting of these services
 
 
 Architecture
 ============
 
-Stork comprises of two components: ``Stork Server`` and ``Stork Agent``.
+Stork is comprised of two components: ``Stork Server`` and ``Stork Agent``.
 
-``Stork Agent`` is installed along `Kea` or `BIND 9`. This way the agent is able
-to interact directly with `Kea` and `BIND 9` services.
+``Stork Agent`` is installed along with `Kea DHCP` or `BIND 9` and is able
+to interact directly with those services.
 
-``Stork Server`` is installed on stand alone machine. It connects to indicated agents
-and indirectly (via agents) interacts with `Kea` and `BIND 9` services. This way it provides
-integrated, centralized place for interacting with these services.
+``Stork Server`` is installed on a stand-alone machine. It connects to any indicated agents
+and indirectly (via those agents) interacts with the `Kea DHCP` and `BIND 9` services. It provides
+an integrated, centralized front end for interacting with these services.
 
 Architecture diagram::
 
@@ -41,7 +41,7 @@ Architecture diagram::
    |                  |          |              \            --\  |                  |
    |   Stork Agent    |          /               \              --|   Stork Agent    |
    |                  |         |                 -\              |                  |
-   |    Kea DHCP      |         /                   \             |    BIND9 DNS     |
+   |    Kea DHCP      |         /                   \             |    BIND 9 DNS    |
    |                  |        |                     \            |                  |
    +------------------+        /                      -\          +------------------+
                               |                         \
@@ -49,7 +49,7 @@ Architecture diagram::
                +------------------+             |                  |
                |                  |             |   Stork Agent    |
                |   Stork Agent    |             |                  |
-               |                  |             |    BIND9 DNS     |
+               |                  |             |    BIND 9 DNS    |
                |    Kea DHCP      |             |                  |
                |                  |             +------------------+
                +------------------+
