@@ -220,7 +220,7 @@ func (iterator *HostDetectionIterator) GetCurrentSubnet() *dbmodel.Subnet {
 // fetch subsequent hosts. If this value is set to true the caller should stop
 // calling this function. Further calling this function would return the first
 // chunk of hosts again.
-func (iterator *HostDetectionIterator) DetectHostsFromHostCmds() (hosts []dbmodel.Host, done bool, err error) {
+func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []dbmodel.Host, done bool, err error) {
 	retry := false
 
 	// The default behavior is that an error terminates hosts fetching from
