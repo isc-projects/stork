@@ -31,3 +31,6 @@ any indicated agents and indirectly (via those agents) interacts with
 the `Kea DHCP` and `BIND 9` services. It provides an integrated,
 centralized front end for interacting with these services. There is
 only one ``Stork Server`` deployed in a network.
+
+.. figure:: static/arch.png
+   :align: center
