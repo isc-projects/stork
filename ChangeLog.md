@@ -1,3 +1,9 @@
+* 47 [func] marcin
+
+    Stork server periodically fetches host reservations from the Kea
+    instances having host_cmds hooks library loaded.
+    (Gitlab #214)
+
 * 46 [func] marcin
 
     Host reservations are listed and the UI. It is possible to filter
