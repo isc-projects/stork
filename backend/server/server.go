@@ -25,6 +25,7 @@ type StorkServer struct {
 	RestAPI         *restservice.RestAPI
 
 	StatsPuller *kea.StatsPuller
+	HostsPuller *kea.HostsPuller
 }
 
 func (ss *StorkServer) ParseArgs() {
@@ -64,32 +65,39 @@ func (ss *StorkServer) ParseArgs() {
 }
 
 // Init for Stork Server state
-func NewStorkServer() (*StorkServer, error) {
-	ss := StorkServer{}
+func NewStorkServer() (ss *StorkServer, err error) {
+	ss = &StorkServer{}
 	ss.ParseArgs()
 
 	// setup connected agents
 	ss.Agents = agentcomm.NewConnectedAgents(&ss.AgentsSettings)
+	defer func() {
+		if err != nil {
+			ss.Agents.Shutdown()
+		}
+	}()
 
 	// setup database connection
-	var err error
 	ss.Db, err = dbops.NewPgDB(&ss.DbSettings)
 	if err != nil {
-		ss.Agents.Shutdown()
 		return nil, err
 	}
 
 	// initialize stork settings
 	err = dbmodel.InitializeSettings(ss.Db)
 	if err != nil {
-		ss.Agents.Shutdown()
 		return nil, err
 	}
 
 	// setup kea stats puller
 	ss.StatsPuller, err = kea.NewStatsPuller(ss.Db, ss.Agents)
 	if err != nil {
-		ss.Agents.Shutdown()
+		return nil, err
+	}
+
+	// Setup Kea hosts puller.
+	ss.HostsPuller, err = kea.NewHostsPuller(ss.Db, ss.Agents)
+	if err != nil {
 		return nil, err
 	}
 
@@ -98,11 +106,10 @@ func NewStorkServer() (*StorkServer, error) {
 	if err != nil {
 		ss.StatsPuller.Shutdown()
 		ss.Db.Close()
-		ss.Agents.Shutdown()
 		return nil, err
 	}
 	ss.RestAPI = r
-	return &ss, nil
+	return ss, nil
 }
 
 // Run Stork Server
