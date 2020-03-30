@@ -33,11 +33,18 @@ type Setting struct {
 // and it will be automatically added to db here in this function.
 func InitializeSettings(db *pg.DB) error {
 	// list of all stork settings with default values
-	defaultSettings := []Setting{{
-		Name:    "kea_stats_puller_interval", // in seconds
-		ValType: SettingValTypeInt,
-		Value:   "60",
-	}}
+	defaultSettings := []Setting{
+		{
+			Name:    "kea_stats_puller_interval", // in seconds
+			ValType: SettingValTypeInt,
+			Value:   "60",
+		},
+		{
+			Name:    "kea_hosts_puller_interval", // in seconds
+			ValType: SettingValTypeInt,
+			Value:   "60",
+		},
+	}
 
 	// Check if there are new settings vs existing ones. Add new ones to DB.
 	_, err := db.Model(&defaultSettings).OnConflict("DO NOTHING").Insert()

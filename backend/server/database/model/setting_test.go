@@ -38,6 +38,10 @@ func TestInitializeSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 60, val)
 
+	val, err = GetSettingInt(db, "kea_hosts_puller_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 60, val)
+
 	// change the setting
 	err = SetSettingInt(db, "kea_stats_puller_interval", 123)
 	require.NoError(t, err)
