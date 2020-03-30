@@ -108,7 +108,7 @@ func TestInitMigrateToLatest(t *testing.T) {
 	o, n, err := MigrateToLatest(db)
 	require.NoError(t, err)
 	require.EqualValues(t, 0, o)
-	require.GreaterOrEqual(t, n, int64(14))
+	require.GreaterOrEqual(t, n, int64(18))
 }
 
 // Test that available schema version is returned as expected.
@@ -117,7 +117,7 @@ func TestAvailableVersion(t *testing.T) {
 	defer cleanupDb(t, db)
 
 	avail := AvailableVersion()
-	require.GreaterOrEqual(t, avail, int64(2))
+	require.GreaterOrEqual(t, avail, int64(18))
 }
 
 // Test that current version is returned from the database.

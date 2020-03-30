@@ -533,6 +533,45 @@ func TestAddAppToHost(t *testing.T) {
 	require.Nil(t, returnedList[0].LocalHosts[0].App)
 }
 
+// Tests that a host which is no longer associated with any app is deleted
+// from the database.
+func TestDeleteDanglingHosts(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps and hosts into the database.
+	apps := addTestSubnetApps(t, db)
+	hosts := addTestHosts(t, db)
+
+	// Associate two apps with a host.
+	host := hosts[0]
+	err := AddAppToHost(db, &host, apps[0], "api")
+	require.NoError(t, err)
+	err = AddAppToHost(db, &host, apps[1], "api")
+	require.NoError(t, err)
+
+	// Delete the first app. The host is still associated with the second
+	// app so it should still exist.
+	err = DeleteApp(db, apps[0])
+	require.NoError(t, err)
+
+	// Make sure it is returned.
+	filterText := "192.0.2.4"
+	returnedList, _, err := GetHostsByPage(db, 0, 10, nil, &filterText)
+	require.NoError(t, err)
+	require.Len(t, returnedList, 1)
+
+	// Delete the second app. The host is no longer associated with any
+	// app and should get deleted automatically.
+	err = DeleteApp(db, apps[1])
+	require.NoError(t, err)
+
+	// Make sure the host is no longer returned.
+	returnedList, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	require.NoError(t, err)
+	require.Empty(t, returnedList)
+}
+
 // Tests the function checking if the host includes a reservation for the
 // given IP address.
 func TestHasIPAddress(t *testing.T) {

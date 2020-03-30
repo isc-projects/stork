@@ -261,6 +261,52 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.Len(t, returnedSubnet.LocalSubnets, 1)
 }
 
+// Tests that a subnet which is no longer associated with any app is deleted
+// from the database.
+func TestDeleteDanglingSubnets(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add apps to the database. They must exist to make any association between
+	// them and the subnet.
+	apps := addTestSubnetApps(t, db)
+	require.Len(t, apps, 2)
+
+	// Same story for subnet. It must exist.
+	subnet := &Subnet{
+		Prefix: "192.0.2.0/24",
+	}
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// Add association of the two apps with a subnet.
+	err = AddAppToSubnet(db, subnet, apps[0])
+	require.NoError(t, err)
+	err = AddAppToSubnet(db, subnet, apps[1])
+	require.NoError(t, err)
+
+	// Delete one of the apps. The second app should still be associated with
+	// the subnet and therefore the subnet should exist.
+	err = DeleteApp(db, apps[0])
+	require.NoError(t, err)
+
+	// Make sure the subnet exists.
+	returnedSubnet, err := GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedSubnet)
+
+	// Delete the second app which should remove the remaining association
+	// between apps and subnets.
+	err = DeleteApp(db, apps[1])
+	require.NoError(t, err)
+
+	// The subnet should now be gone.
+	returnedSubnet, err = GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	require.Nil(t, returnedSubnet)
+}
+
 // Test that the subnet can be fetched by local ID and app ID.
 func TestGetSubnetByLocalID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
