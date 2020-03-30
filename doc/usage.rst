@@ -252,7 +252,7 @@ Kea uses the concept of a shared network, which is essentially a stack
 of subnets deployed on the same physical link. Stork is able to
 retrieve information about shared networks and aggregate it across all
 configured Kea servers.  The Shared Networks view allows for the
-inspection of networks and the subnets that belong in them.  Pool
+inspection of networks and the subnets that belong in them. Pool
 utilization is shown for each subnet.
 
 
