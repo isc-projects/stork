@@ -2,8 +2,6 @@ package kea
 
 import (
 	"context"
-	"sync"
-	"time"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
@@ -15,74 +13,25 @@ import (
 )
 
 type StatsPuller struct {
-	Db     *pg.DB
-	Agents agentcomm.ConnectedAgents
-	Ticker *time.Ticker
-	Done   chan bool
-	Wg     *sync.WaitGroup
+	*agentcomm.PeriodicPuller
 }
 
 // Create a StatsPuller object that in background pulls Kea stats about leases.
 // Beneath it spawns a goroutine that pulls stats periodically from Kea apps (that are stored in database).
 func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*StatsPuller, error) {
-	log.Printf("Starting Kea Stats Puller")
-
-	interval, err := dbmodel.GetSettingInt(db, "kea_stats_puller_interval")
+	statsPuller := &StatsPuller{}
+	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Stats", "kea_stats_puller_interval",
+		statsPuller.pullLeaseStats)
 	if err != nil {
 		return nil, err
 	}
-
-	statsPuller := &StatsPuller{
-		Db:     db,
-		Agents: agents,
-		Ticker: time.NewTicker(time.Duration(interval) * time.Second),
-		Done:   make(chan bool),
-		Wg:     &sync.WaitGroup{},
-	}
-
-	// start puller loop as goroutine and increment WaitGroup (which is used later
-	// for stopping this goroutine)
-	statsPuller.Wg.Add(1)
-	go statsPuller.pullerLoop()
-
-	log.Printf("Started Kea Stats Puller")
+	statsPuller.PeriodicPuller = periodicPuller
 	return statsPuller, nil
 }
 
 // Shutdown StatsPuller. It stops goroutine that pulls stats.
 func (statsPuller *StatsPuller) Shutdown() {
-	log.Printf("Stopping Kea Stats Puller")
-	statsPuller.Ticker.Stop()
-	statsPuller.Done <- true
-	statsPuller.Wg.Wait()
-	log.Printf("Stopped Kea Stats Puller")
-}
-
-// A loop that pulls stats from all Kea apps. It pulls stats periodically with the configured interval.
-func (statsPuller *StatsPuller) pullerLoop() {
-	defer statsPuller.Wg.Done()
-	for {
-		select {
-		// every N seconds do lease stats gathering from all kea apps and their active daemons
-		case <-statsPuller.Ticker.C:
-			_, err := statsPuller.pullLeaseStats()
-			if err != nil {
-				log.Errorf("some errors were encountered while gathering lease stats from Kea apps: %+v", err)
-			}
-		// wait for done signal from shutdown function
-		case <-statsPuller.Done:
-			return
-		}
-
-		// check if interval has change in settings, if so recreate ticker
-		interval, err := dbmodel.GetSettingInt(statsPuller.Db, "kea_stats_puller_interval")
-		if err != nil {
-			log.Errorf("problem with getting interval setting from db: %+v", err)
-		} else {
-			statsPuller.Ticker.Stop()
-			statsPuller.Ticker = time.NewTicker(time.Duration(interval) * time.Second)
-		}
-	}
+	statsPuller.PeriodicPuller.Shutdown()
 }
 
 // Pull stats periodically for all Kea apps which Stork is monitoring. The function returns a number
