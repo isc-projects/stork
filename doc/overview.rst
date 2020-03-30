@@ -29,32 +29,5 @@ agents deployed in a network, one per each machine.
 ``Stork Server`` is installed on a stand-alone machine. It connects to
 any indicated agents and indirectly (via those agents) interacts with
 the `Kea DHCP` and `BIND 9` services. It provides an integrated,
-centralized front end for interacting with these services.
-
-Architecture diagram::
-
-                                +----------------+
-                                |                |
-                                |  Stork Server  |
-                                |                |
-                                +----------------+
-                               ---/ /    \     \
-                           ---/    |      -\    --\
-                      ----/        /        \      --\
-                     /            |          \        ---\
-   +------------------+           /           -\          --\     +------------------+
-   |                  |          |              \            --\  |                  |
-   |   Stork Agent    |          /               \              --|   Stork Agent    |
-   |                  |         |                 -\              |                  |
-   |    Kea DHCP      |         /                   \             |    BIND 9 DNS    |
-   |                  |        |                     \            |                  |
-   +------------------+        /                      -\          +------------------+
-                              |                         \
-                              /                 +------------------+
-               +------------------+             |                  |
-               |                  |             |   Stork Agent    |
-               |   Stork Agent    |             |                  |
-               |                  |             |    BIND 9 DNS    |
-               |    Kea DHCP      |             |                  |
-               |                  |             +------------------+
-               +------------------+
+centralized front end for interacting with these services. There is
+only one ``Stork Server`` deployed in a network.
