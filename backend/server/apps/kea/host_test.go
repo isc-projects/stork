@@ -771,3 +771,94 @@ func TestDetectAndCommitHostsIntoDB(t *testing.T) {
 		fa.CallNo = 0
 	}
 }
+
+// Test that new instance of the puller for fetching host reservations can be
+// created and shut down.
+func TestNewHostsPuller(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// The puller requires fetch interval to be present in the database.
+	err := dbmodel.InitializeSettings(db)
+	require.NoError(t, err)
+
+	puller, err := NewHostsPuller(db, nil)
+	require.NoError(t, err)
+	require.NotNil(t, puller)
+	puller.Shutdown()
+}
+
+// This test verifies that host reservations can be fetched via the hosts
+// puller mechanism.
+func TestPullHostsIntoDB(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Creates new app with provided configurations.
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	app := dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Details: dbmodel.AppKea{
+			Daemons: []*dbmodel.KeaDaemon{
+				{
+					Name:   "dhcp4",
+					Config: getTestConfigWithIPv4Subnets(t),
+				},
+				{
+					Name:   "dhcp6",
+					Config: getTestConfigWithIPv6Subnets(t),
+				},
+			},
+		},
+	}
+	// Add the app to the database.
+	err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+	app.Machine = m
+
+	err = CommitAppIntoDB(db, &app)
+	require.NoError(t, err)
+
+	fa := storktest.NewFakeAgents(mockReservationGetPage, nil)
+
+	// The puller requires fetch interval to be present in the database.
+	err = dbmodel.InitializeSettings(db)
+	require.NoError(t, err)
+
+	// Create the puller. It is configured to fetch the data every 60 seconds
+	// so we'd rather call it periodically.
+	puller, err := NewHostsPuller(db, fa)
+	require.NoError(t, err)
+	require.NotNil(t, puller)
+
+	// Detect hosts to times in the row. This simulates periodic
+	// pull of the hosts for the given app.
+	for i := 0; i < 2; i++ {
+		count, err := puller.pullData()
+		require.NoError(t, err)
+		require.Equal(t, 1, count)
+
+		hosts, err := dbmodel.GetAllHosts(db, 4)
+		require.NoError(t, err)
+		require.Len(t, hosts, 50)
+
+		hosts, err = dbmodel.GetAllHosts(db, 6)
+		require.NoError(t, err)
+		require.Len(t, hosts, 50)
+
+		// Reset server state so it should send the same set of responses
+		// the second time.
+		fa.CallNo = 0
+	}
+}

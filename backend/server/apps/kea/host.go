@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	errors "github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
@@ -36,6 +37,54 @@ type ReservationGetPageArgs struct {
 type ReservationGetPageResponse struct {
 	agentcomm.KeaResponseHeader
 	Arguments *ReservationGetPageArgs `json:"arguments,omitempty"`
+}
+
+// Instance of the puller which periodically fetches host reservations from
+// the Kea apps.
+type HostsPuller struct {
+	*agentcomm.PeriodicPuller
+}
+
+// Create an instance of the puller which periodically fetches host reservations
+// from monitored Kea apps via control channel.
+func NewHostsPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (*HostsPuller, error) {
+	hostsPuller := &HostsPuller{}
+	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Hosts", "kea_hosts_puller_interval",
+		hostsPuller.pullData)
+	if err != nil {
+		return nil, err
+	}
+	hostsPuller.PeriodicPuller = periodicPuller
+	return hostsPuller, nil
+}
+
+// Stops the timer triggering hosts fetching from apps.
+func (puller *HostsPuller) Shutdown() {
+	puller.PeriodicPuller.Shutdown()
+}
+
+// Triggers fetch of the host reservations from the monitored Kea apps.
+func (puller *HostsPuller) pullData() (int, error) {
+	// Get the list of all Kea apps from the database.
+	apps, err := dbmodel.GetAppsByType(puller.Db, dbmodel.AppTypeKea)
+	if err != nil {
+		return 0, err
+	}
+
+	// Synchronize hosts from all Kea apps.
+	var lastErr error
+	appsOkCnt := 0
+	for i := range apps {
+		err := DetectAndCommitHostsIntoDB(puller.Db, puller.Agents, &apps[i])
+		if err != nil {
+			lastErr = err
+			log.Errorf("error occurred while getting stats from app %+v: %+v", apps[i], err)
+		} else {
+			appsOkCnt++
+		}
+	}
+	log.Printf("completed pulling hosts from Kea apps: %d/%d succeeded", appsOkCnt, len(apps))
+	return appsOkCnt, lastErr
 }
 
 // Structure reflecting a state of fetching host reservations from Kea
