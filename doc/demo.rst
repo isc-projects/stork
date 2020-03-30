@@ -40,12 +40,12 @@ Installation Steps
 
 The following command retrieves all required software (go, goswagger,
 nodejs, Angular dependencies, etc.) to the local directory. No root
-password is necessary.
+password is necessary. Then it prepares docker images and starts them
+up.
 
 .. code-block:: console
 
-    # Prepare docker images and start them up
-    rake docker_up
+    $ rake docker_up
 
 Once the build process finishes, the Stork UI is available at
 http://localhost:8080/. Use any browser to connect.

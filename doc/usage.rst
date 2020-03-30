@@ -76,14 +76,14 @@ Assuming services will be monitored on a machine with the IP
 
 .. code:: console
 
-    cd <stork-dir>
-    scp backend/cmd/stork-agent login@192.0.2.1:/path
+    $ cd <stork-dir>
+    $ scp backend/cmd/stork-agent login@192.0.2.1:/path
 
 On the machine to be monitored, the agent must be started by running:
 
 .. code:: console
 
-    ./stork-agent
+    $ ./stork-agent
 
 It is possible to set the ``--host=`` or ``STORK_AGENT_ADDRESS``
 environment variables to specify which address the agent listens
