@@ -3,11 +3,11 @@
 Demo
 ====
 
-A demo installation of ``Stork`` can be used to demonstrate ``Stork`` capabilities but can be used
-for its development as well.
+A demo installation of ``Stork`` can be used to demonstrate ``Stork``
+capabilities but can be used for its development as well.
 
-The demo installation uses `Docker` and `Docker Compose` to set up all `Stork` services.
-It contains:
+The demo installation uses `Docker` and `Docker Compose` to set up all
+`Stork` services. It contains:
 
 - Stork Server
 - Stork Agent with Kea DHCPv4
@@ -24,8 +24,8 @@ These services allow observation of many Stork features.
 Requirements
 ------------
 
-Running the ``Stork Demo`` requires the same dependencies as building Stork,
-which is described in the :ref:`installation_sources` chapter.
+Running the ``Stork Demo`` requires the same dependencies as building
+Stork, which is described in the :ref:`installation_sources` chapter.
 
 Besides the standard dependencies, the ``Stork Demo`` requires:
 
@@ -38,16 +38,17 @@ https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment.
 Installation Steps
 ------------------
 
-The following command retrieves all required software (go, goswagger, nodejs, Angular
-dependencies, etc.) to the local directory. No root password is necessary.
+The following command retrieves all required software (go, goswagger,
+nodejs, Angular dependencies, etc.) to the local directory. No root
+password is necessary.
 
 .. code-block:: console
 
     # Prepare docker images and start them up
     rake docker_up
 
-Once the build process finishes, the Stork UI is available at http://localhost:8080/. Use
-any browser to connect.
+Once the build process finishes, the Stork UI is available at
+http://localhost:8080/. Use any browser to connect.
 
 The installation procedure creates several Docker images:
 
@@ -65,15 +66,16 @@ The installation procedure creates several Docker images:
 
 .. note::
 
-   The containers running the Kea and BIND 9 applications are for demo purposes only. They
-   allow users to quickly start experimenting with Stork without having to manually
-   deploy Kea and/or BIND 9 instances.
+   The containers running the Kea and BIND 9 applications are for demo
+   purposes only. They allow users to quickly start experimenting with
+   Stork without having to manually deploy Kea and/or BIND 9
+   instances.
 
-The PostgreSQL database schema is automatically migrated to the latest version required
-by the Stork server process.
+The PostgreSQL database schema is automatically migrated to the latest
+version required by the Stork server process.
 
-The installation procedure assumes those images are fully under Stork control. If there are
-existing images, they will be overwritten.
+The installation procedure assumes those images are fully under Stork
+control. If there are existing images, they will be overwritten.
 
 Premium Features
 ~~~~~~~~~~~~~~~~
@@ -107,9 +109,11 @@ At the beginning some initial information needs to be added in the ``Stork Serve
 
 DHCP Traffic Simulator
 ----------------------
-The traffic simulator allows DHCP traffic to be sent to selected subnets pre-configured
-in Kea instances. There is a limitation: it is possible to send traffic to only one subnet
-from a given shared network.
+
+The traffic simulator allows DHCP traffic to be sent to selected
+subnets pre-configured in Kea instances. There is a limitation: it is
+possible to send traffic to only one subnet from a given shared
+network.
 
 The traffic simulator can be found at: http://localhost:5000/
 
@@ -119,7 +123,8 @@ Prometheus
 The Prometheus instance is preconfigured and pulls statistics from:
 
 - node exporters: agent-kea:9100, agent-bind9:9100
-- kea exporters embedded in stork-agent: agent-kea:9547, agent-kea6:9547, agent-kea-ha1:9547, agent-kea-ha2:9547
+- kea exporters embedded in stork-agent: agent-kea:9547,
+  agent-kea6:9547, agent-kea-ha1:9547, agent-kea-ha2:9547
 - bind9 exporter: agent-bind9:9119
 
 The Prometheus web page can be found at: http://localhost:9090/
@@ -127,7 +132,8 @@ The Prometheus web page can be found at: http://localhost:9090/
 Grafana
 -------
 
-The Grafana instance is preconfigured as well. It pulls data from Prometheus and loads dashboards from the Stork repository,
-in the Grafana folder.
+The Grafana instance is preconfigured as well. It pulls data from
+Prometheus and loads dashboards from the Stork repository, in the
+Grafana folder.
 
 The Grafana web page can be found at: http://localhost:3000/
