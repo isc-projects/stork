@@ -82,6 +82,16 @@ ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GO_DIR}/go/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
 
+# premium support
+if ENV['cs_repo_access_token']
+  ENV['premium'] = 'true'
+end
+if ENV['premium'] == 'true'
+  DOCKER_COMPOSE_FILES='-f docker-compose.yaml -f docker-compose-premium.yaml'
+else
+  DOCKER_COMPOSE_FILES='-f docker-compose.yaml'
+end
+
 # build date
 now = Time.now
 build_date = now.strftime("%Y-%m-%d %H:%M")
@@ -489,19 +499,19 @@ desc 'Build containers with everything and statup all services using docker-comp
 arguments: cache=false - forces rebuilding whole container'
 task :docker_up => [:build_backend, :build_ui] do
   at_exit {
-    sh "docker-compose down"
+    sh "docker-compose #{DOCKER_COMPOSE_FILES} down"
   }
   cache_opt = ''
   if ENV['cache'] == 'false'
     cache_opt = '--no-cache'
   end
-  sh "docker-compose build #{cache_opt}"
-  sh 'docker-compose up'
+  sh "docker-compose #{DOCKER_COMPOSE_FILES} build #{cache_opt}"
+  sh "docker-compose #{DOCKER_COMPOSE_FILES} up"
 end
 
 desc 'Shut down all containers'
 task :docker_down do
-  sh 'docker-compose down'
+  sh "docker-compose #{DOCKER_COMPOSE_FILES} down"
 end
 
 desc 'Build container with Stork Agent and Kea DHCPv4 server'
@@ -511,6 +521,9 @@ end
 
 desc 'Run container with Stork Agent and Kea and mount current Agent binary'
 task :run_kea_container do
+  at_exit {
+    sh 'docker-compose down'
+  }
   sh 'docker-compose up agent-kea'
 end
 
@@ -521,6 +534,9 @@ end
 
 desc 'Run container with Stork Agent and Kea DHCPv6 server and mount current Agent binary'
 task :run_kea6_container do
+  at_exit {
+    sh 'docker-compose down'
+  }
   sh 'docker-compose up agent-kea6'
 end
 
@@ -540,6 +556,19 @@ task :run_kea_ha_containers do
     sh "docker-compose down"
   }
   sh 'docker-compose up agent-kea-ha1 agent-kea-ha2'
+end
+
+desc 'Build container with Stork Agent and Kea with host reseverations in db'
+task :build_kea_hosts_container => :build_agent do
+  sh "docker-compose #{DOCKER_COMPOSE_FILES} build --build-arg CS_REPO_ACCESS_TOKEN=#{ENV['cs_repo_access_token']} agent-kea-hosts"
+end
+
+desc 'Run container with Stork Agent and Kea with host reseverations in db'
+task :run_kea_hosts_container do
+  at_exit {
+    sh "docker-compose #{DOCKER_COMPOSE_FILES} down"
+  }
+  sh "docker-compose #{DOCKER_COMPOSE_FILES} up agent-kea-hosts hosts-db"
 end
 
 desc 'Build container with Stork Agent and BIND 9'
@@ -562,6 +591,11 @@ task :doc do
   sh 'mkdir -p webui/src/assets/arm'
   sh 'cp -a doc/_build/singlehtml/* webui/src/assets/arm'
   sh "sphinx-build -M man doc/ doc/ #{SPHINXOPTS}"
+end
+
+desc 'Builds Stork documentation continuously whenever source files change'
+task :doc_live do
+  sh 'find doc -name "*.rst" | entr rake doc'
 end
 
 

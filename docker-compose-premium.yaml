@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  agent-kea-hosts:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/docker-agent-kea-hosts.txt
+    image: registry.gitlab.isc.org/isc-private/stork/agent-kea-hosts:latest
+    hostname: agent-kea-hosts
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.103
+    expose:
+      - "8080"  # stork server to agent
+    ports:
+      - "8838:8080"  # publish ports for development purposes
+
+  hosts-db:
+    image: mysql:5.7
+    restart: always
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.104
+    environment:
+      MYSQL_ROOT_PASSWORD: kea
+      MYSQL_DATABASE: kea
+      MYSQL_USER: kea
+      MYSQL_PASSWORD: kea
