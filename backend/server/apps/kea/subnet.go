@@ -15,7 +15,7 @@ import (
 // avoid duplication. As a result, the returned slice of hosts is a collection of
 // existing hosts plus the hosts from the new subnet which do not exist in the
 // database.
-func mergeHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet) (hosts []dbmodel.Host, err error) {
+func mergeHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
 	if len(newSubnet.Hosts) == 0 {
 		return hosts, err
 	}
@@ -33,11 +33,21 @@ func mergeHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet) (host
 		found := false
 		// Iterate over the existing hosts to check if the host from the new
 		// subnet is there already.
-		for _, h := range existingHosts {
+		for i, h := range existingHosts {
 			host := h
 			if n.Equal(&host) {
 				// Host found and matches the new host so nothing to do.
 				found = true
+
+				// Check if there is already an association between this app and the
+				// given host. If there is, we need to reset the sequence number for
+				// it to force of the sequence number. Otherwise, the old sequence
+				// number will remain.
+				for j, lh := range host.LocalHosts {
+					if lh.AppID == app.ID {
+						hosts[i].LocalHosts[j].UpdateSeq = 0
+					}
+				}
 				break
 			}
 		}
@@ -92,7 +102,7 @@ func subnetExists(subnet *dbmodel.Subnet, existingSubnets []dbmodel.Subnet) (boo
 // configuration. All existing shared network matching the given configuration
 // are returned as they are. If there is no match a new shared network instance
 // is returned.
-func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int) (networks []dbmodel.SharedNetwork, err error) {
+func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int, app *dbmodel.App) (networks []dbmodel.SharedNetwork, err error) {
 	// Get all shared networks and the subnets within those networks from the
 	// application configuration.
 	if networkList, ok := config.GetTopLevelList("shared-networks"); ok {
@@ -132,7 +142,7 @@ func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int)
 						} else {
 							// Subnet already exists and may contain some hosts. Let's
 							// merge the hosts from the new subnet into the existing subnet.
-							hosts, err := mergeHosts(db, &dbNetwork.Subnets[idx], &subnet)
+							hosts, err := mergeHosts(db, &dbNetwork.Subnets[idx], &subnet, app)
 							if err != nil {
 								log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
 									subnet.Prefix, err)
@@ -155,7 +165,7 @@ func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int)
 // this configuration. All existing subnets matching the given configuration
 // are returned as they are. If there is no match a new subnet instance is
 // returned.
-func detectSubnets(db *dbops.PgDB, config *dbmodel.KeaConfig, family int) (subnets []dbmodel.Subnet, err error) {
+func detectSubnets(db *dbops.PgDB, config *dbmodel.KeaConfig, family int, app *dbmodel.App) (subnets []dbmodel.Subnet, err error) {
 	subnetParamName := "subnet4"
 	if family == 6 {
 		subnetParamName = "subnet6"
@@ -191,7 +201,7 @@ func detectSubnets(db *dbops.PgDB, config *dbmodel.KeaConfig, family int) (subne
 					subnets = append(subnets, dbSubnets[index])
 					// Subnet already exists and may contain some hosts. Let's
 					// merge the hosts from the new subnet into the existing subnet.
-					hosts, err := mergeHosts(db, &dbSubnets[index], subnet)
+					hosts, err := mergeHosts(db, &dbSubnets[index], subnet, app)
 					if err != nil {
 						log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
 							subnet.Prefix, err)
@@ -235,14 +245,14 @@ func DetectNetworks(db *dbops.PgDB, app *dbmodel.App) (networks []dbmodel.Shared
 		}
 
 		// Detect shared networks and the subnets.
-		detectedNetworks, err := detectSharedNetworks(db, d.Config, family)
+		detectedNetworks, err := detectSharedNetworks(db, d.Config, family, app)
 		if err != nil {
 			return networks, subnets, err
 		}
 		networks = append(networks, detectedNetworks...)
 
 		// Detect top level subnets.
-		detectedSubnets, err := detectSubnets(db, d.Config, family)
+		detectedSubnets, err := detectSubnets(db, d.Config, family, app)
 		if err != nil {
 			return []dbmodel.SharedNetwork{}, subnets, err
 		}

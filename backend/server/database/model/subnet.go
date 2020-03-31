@@ -468,7 +468,7 @@ func (s *Subnet) GetApp(appID int64) *App {
 // Iterates over the provided slice of subnets and stores them in the database
 // if they are not there yet. In addition, it associates the subnets with the
 // specified Kea application.
-func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App) (err error) {
+func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App, seq int64) (err error) {
 	for i := range subnets {
 		subnet := &subnets[i]
 		if subnet.ID == 0 {
@@ -486,7 +486,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App)
 			return err
 		}
 
-		err = CommitSubnetHostsIntoDB(tx, subnet, app, "config")
+		err = CommitSubnetHostsIntoDB(tx, subnet, app, "config", seq)
 		if err != nil {
 			return err
 		}
@@ -496,7 +496,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App)
 
 // Iterates over the shared networks, subnets and hosts and commits them to the database.
 // In addition it associates them with the specified app.
-func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets []Subnet, app *App) error {
+func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets []Subnet, app *App, seq int64) error {
 	// Begin transaction.
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
@@ -517,7 +517,7 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 			}
 		}
 		// Associate subnets with the app.
-		err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app)
+		err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app, seq)
 		if err != nil {
 			return err
 		}
@@ -525,7 +525,7 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 
 	// Finally, add top level subnets to the database and associate them with
 	// the Kea app.
-	err = commitSubnetsIntoDB(tx, 0, subnets, app)
+	err = commitSubnetsIntoDB(tx, 0, subnets, app, seq)
 	if err != nil {
 		return err
 	}

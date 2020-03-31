@@ -9,7 +9,7 @@ func init() {
 		_, err := db.Exec(`
              -- Trigger function invoked upon deletion of an association between
              -- apps and a host. It removes a host if this host has no more
-             -- associations with any app/
+             -- associations with any app.
              CREATE OR REPLACE FUNCTION wipe_dangling_host()
                  RETURNS trigger
                  LANGUAGE 'plpgsql'
@@ -60,10 +60,28 @@ func init() {
              EXCEPTION
                  WHEN duplicate_object THEN null;
              END $$;
+
+             -- Sequence returning numbers used during bulk updates of data within
+             -- the database.
+             CREATE SEQUENCE IF NOT EXISTS bulk_update_seq;
+             SELECT nextval('bulk_update_seq');
+
+             -- This column holds an update sequence value. When Stork fetches many
+             -- hosts via the host_cmds hooks library it sets the same value for all
+             -- updated hosts. That allows for determination which of the values haven't
+             -- been updated. Such records can be later removed. The value set for
+             -- the updated hosts is taken from the bulk_update_seq.
+             ALTER TABLE local_host ADD COLUMN
+                 update_seq BIGINT NOT NULL DEFAULT currval('bulk_update_seq');
+
+             -- It is common to select subnet by prefix.
+             CREATE INDEX host_update_seq_idx ON local_host(update_seq);
         `)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
+               ALTER TABLE local_host DROP COLUMN update_seq;
+               DROP SEQUENCE IF EXISTS bulk_update_seq;
                DROP TRIGGER IF EXISTS trigger_wipe_dangling_subnet ON local_subnet;
                DROP FUNCTION IF EXISTS wipe_dangling_subnet;
                DROP TRIGGER IF EXISTS trigger_wipe_dangling_host ON local_host;

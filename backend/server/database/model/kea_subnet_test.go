@@ -133,7 +133,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		},
 	}
 
-	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4)
+	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4, 1)
 	require.NoError(t, err)
 
 	// Add Kea app with DHCPv6 subnets, one global and one within a shared network.
@@ -185,7 +185,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			Prefix: "2001:db8:1::/64",
 		},
 	}
-	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6)
+	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6, 1)
 	require.NoError(t, err)
 
 	// Kea app with DHCPv4 and DHCPv6 subnets.
@@ -248,7 +248,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			},
 		},
 	}
-	err = CommitNetworksIntoDB(db, []SharedNetwork{}, appSubnets, a46)
+	err = CommitNetworksIntoDB(db, []SharedNetwork{}, appSubnets, a46, 1)
 	require.NoError(t, err)
 
 	// Get all subnets.
@@ -508,7 +508,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			Prefix: "192.168.0.0/24",
 		},
 	}
-	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4)
+	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4, 1)
 	require.NoError(t, err)
 
 	// add app kea with dhcp6 to machine
@@ -567,7 +567,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			Prefix: "2001:db8:1::/64",
 		},
 	}
-	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6)
+	err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6, 1)
 	require.NoError(t, err)
 
 	// Get all shared networks.

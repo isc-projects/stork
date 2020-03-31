@@ -63,6 +63,7 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 
 	return db, &genericConnOptions, func() {
 		TossSchema(t, db)
+		defer db.Close()
 	}
 }
 

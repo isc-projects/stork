@@ -157,7 +157,8 @@ func TestDetectNetworks(t *testing.T) {
 			err = dbmodel.AddHost(db, &host)
 			require.NoError(t, err)
 			require.NotZero(t, host.ID)
-			err = dbmodel.AddAppToHost(db, &host, app, "config")
+
+			err = dbmodel.AddAppToHost(db, &host, app, "config", 1)
 			require.NoError(t, err)
 		}
 	}
@@ -244,7 +245,7 @@ func TestDetectNetworks(t *testing.T) {
 	err = dbmodel.AddHost(db, &newHost)
 	require.NoError(t, err)
 	require.NotZero(t, newHost.ID)
-	err = dbmodel.AddAppToHost(db, &newHost, app, "config")
+	err = dbmodel.AddAppToHost(db, &newHost, app, "config", 1)
 	require.NoError(t, err)
 
 	// Verify that we have one top level subnet.

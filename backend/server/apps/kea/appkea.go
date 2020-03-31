@@ -366,7 +366,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App) error {
 
 	// For the given app, iterate over the networks and subnets and update their
 	// global instances accordingly in the database.
-	err = dbmodel.CommitNetworksIntoDB(tx, networks, subnets, app)
+	err = dbmodel.CommitNetworksIntoDB(tx, networks, subnets, app, 1)
 	if err != nil {
 		return err
 	}

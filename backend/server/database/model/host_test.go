@@ -493,7 +493,7 @@ func TestAddAppToHost(t *testing.T) {
 
 	// Associate the first host with the first app.
 	host := hosts[0]
-	err := AddAppToHost(db, &host, apps[0], "api")
+	err := AddAppToHost(db, &host, apps[0], "api", 1)
 	require.NoError(t, err)
 
 	// Fetch the host from the database.
@@ -545,9 +545,9 @@ func TestDeleteDanglingHosts(t *testing.T) {
 
 	// Associate two apps with a host.
 	host := hosts[0]
-	err := AddAppToHost(db, &host, apps[0], "api")
+	err := AddAppToHost(db, &host, apps[0], "api", 1)
 	require.NoError(t, err)
-	err = AddAppToHost(db, &host, apps[1], "api")
+	err = AddAppToHost(db, &host, apps[1], "api", 1)
 	require.NoError(t, err)
 
 	// Delete the first app. The host is still associated with the second
@@ -570,6 +570,67 @@ func TestDeleteDanglingHosts(t *testing.T) {
 	returnedList, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
 	require.NoError(t, err)
 	require.Empty(t, returnedList)
+}
+
+// This test verifies that it is possible to delete hosts/apps associations
+// having non-matching sequence numbers.
+func TestDeleteLocalHostsWithOtherSeq(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps and hosts into the database.
+	apps := addTestSubnetApps(t, db)
+	hosts := addTestHosts(t, db)
+
+	returned, err := GetAllHosts(db, 4)
+	require.NoError(t, err)
+	require.Len(t, returned, 2)
+
+	// Insert association of the apps with hosts and give them a sequence number
+	// of 123.
+	err = AddAppToHost(db, &hosts[0], apps[0], "api", 123)
+	require.NoError(t, err)
+	err = AddAppToHost(db, &hosts[1], apps[1], "api", 123)
+	require.NoError(t, err)
+
+	// Use matching sequence number.
+	err = DeleteLocalHostsWithOtherSeq(db, 123, "api")
+	require.NoError(t, err)
+
+	// The hosts should still be there.
+	returned, err = GetAllHosts(db, 4)
+	require.NoError(t, err)
+	require.Len(t, returned, 2)
+
+	// The same result of the data source is not matching.
+	err = DeleteLocalHostsWithOtherSeq(db, 234, "config")
+	require.NoError(t, err)
+
+	returned, err = GetAllHosts(db, 4)
+	require.NoError(t, err)
+	require.Len(t, returned, 2)
+
+	// This time, use the non-matching sequence number.
+	err = DeleteLocalHostsWithOtherSeq(db, 234, "api")
+	require.NoError(t, err)
+
+	// The hosts should be gone because all associations of
+	// these hosts with apps were removed.
+	returned, err = GetAllHosts(db, 4)
+	require.NoError(t, err)
+	require.Empty(t, returned)
+}
+
+// Tests that function getting next sequence number works correctly.
+func TestGetNextBulkSeq(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	for i := 0; i < 10; i++ {
+		seq, err := GetNextBulkUpdateSeq(db)
+		require.NoError(t, err)
+		require.EqualValues(t, i+2, seq)
+	}
 }
 
 // Tests the function checking if the host includes a reservation for the

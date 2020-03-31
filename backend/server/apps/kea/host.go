@@ -71,18 +71,33 @@ func (puller *HostsPuller) pullData() (int, error) {
 		return 0, err
 	}
 
+	// Get sequence number to be associated with updated and inserted hosts.
+	seq, err := dbmodel.GetNextBulkUpdateSeq(puller.Db)
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with getting next bulk update sequence number fetching hosts from Kea apps")
+		return 0, err
+	}
+
 	// Synchronize hosts from all Kea apps.
 	var lastErr error
 	appsOkCnt := 0
 	for i := range apps {
-		err := DetectAndCommitHostsIntoDB(puller.Db, puller.Agents, &apps[i])
+		err := DetectAndCommitHostsIntoDB(puller.Db, puller.Agents, &apps[i], seq)
 		if err != nil {
 			lastErr = err
-			log.Errorf("error occurred while getting stats from app %+v: %+v", apps[i], err)
+			log.Errorf("error occurred while fetching hosts from app %+v: %+v", apps[i], err)
 		} else {
 			appsOkCnt++
 		}
 	}
+
+	// Remove all associations between the hosts and tha apps that are no longer
+	// present.
+	err = dbmodel.DeleteLocalHostsWithOtherSeq(puller.Db, seq, "")
+	if err != nil {
+		log.Errorf("error occurred while deleting old hosts after update from Kea apps: %+v", err)
+	}
+
 	log.Printf("completed pulling hosts from Kea apps: %d/%d succeeded", appsOkCnt, len(apps))
 	return appsOkCnt, lastErr
 }
@@ -414,7 +429,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 // uses HostDetectionIterator mechanism to fetch the hosts, which will in
 // most cases result in multiple reservation-get-page commands sent to Kea
 // instance.
-func DetectAndCommitHostsIntoDB(db *dbops.PgDB, agents agentcomm.ConnectedAgents, app *dbmodel.App) error {
+func DetectAndCommitHostsIntoDB(db *dbops.PgDB, agents agentcomm.ConnectedAgents, app *dbmodel.App, seq int64) error {
 	tx, rollback, commit, err := dbops.Transaction(db)
 	if err != nil {
 		err = errors.WithMessagef(err, "problem with starting transaction for committing new hosts from host_cmds hooks library for app id %d", app.ID)
@@ -453,7 +468,7 @@ func DetectAndCommitHostsIntoDB(db *dbops.PgDB, agents agentcomm.ConnectedAgents
 		// the subnet with the new hosts (fetched via the Kea API). These
 		// hosts are merged into the existing hosts for this subnet and
 		// returned as mergedHosts.
-		mergedHosts, err := mergeHosts(db, subnet, subnet)
+		mergedHosts, err := mergeHosts(db, subnet, subnet, app)
 		if err != nil {
 			break
 		}
@@ -461,7 +476,7 @@ func DetectAndCommitHostsIntoDB(db *dbops.PgDB, agents agentcomm.ConnectedAgents
 		// new hosts into the subnet instance and commit everything to the
 		// database.
 		subnet.Hosts = mergedHosts
-		err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, app, "api")
+		err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, app, "api", seq)
 		if err != nil {
 			break
 		}

@@ -86,7 +86,7 @@ func TestGetSubnets(t *testing.T) {
 		},
 	}
 
-	err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a4)
+	err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a4, 1)
 	require.NoError(t, err)
 
 	// add app kea with dhcp6 to machine
@@ -121,7 +121,7 @@ func TestGetSubnets(t *testing.T) {
 			Prefix: "2001:db8:1::/64",
 		},
 	}
-	err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a6)
+	err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a6, 1)
 	require.NoError(t, err)
 
 	// add app kea with dhcp4 and dhcp6 to machine
@@ -204,7 +204,7 @@ func TestGetSubnets(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, appSubnets, a46)
+	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, appSubnets, a46, 1)
 	require.NoError(t, err)
 
 	// get all subnets
@@ -396,7 +396,7 @@ func TestGetSharedNetworks(t *testing.T) {
 		},
 	}
 
-	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, []dbmodel.Subnet{}, a4)
+	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, []dbmodel.Subnet{}, a4, 1)
 	require.NoError(t, err)
 
 	// add app kea with dhcp6 to machine
@@ -445,7 +445,7 @@ func TestGetSharedNetworks(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, []dbmodel.Subnet{}, a6)
+	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, []dbmodel.Subnet{}, a6, 1)
 	require.NoError(t, err)
 
 	// get all shared networks

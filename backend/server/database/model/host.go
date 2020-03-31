@@ -58,6 +58,7 @@ type LocalHost struct {
 	App        *App
 	Host       *Host
 	DataSource string
+	UpdateSeq  int64
 }
 
 // Associates a host with DHCP with host identifiers.
@@ -378,12 +379,29 @@ func DeleteHost(db *pg.DB, hostID int64) error {
 	return err
 }
 
+// Delete associations of the apps with hosts for which the sequence number is
+// different than the specified sequence number. These are usually hosts which
+// are no longer present in any of the apps monitored by Stork. The dataSource
+// is optional and it indicates the sources of hosts to be removed.
+func DeleteLocalHostsWithOtherSeq(db *pg.DB, seq int64, dataSource string) error {
+	q := db.Model(&LocalHost{}).
+		Where("local_host.update_seq != ?", seq)
+	if len(dataSource) > 0 {
+		q = q.Where("local_host.data_source = ?", dataSource)
+	}
+	_, err := q.Delete()
+	if err != nil {
+		err = errors.Wrapf(err, "problem with deleting associations between apps and hosts for sequence number %d and data source type %s", seq, dataSource)
+	}
+	return err
+}
+
 // Associates an applicatiopn with the host having a specified ID. Internally,
 // the association is made via the local_host table which holds information
 // about the host from the given app perspective. The source argument
 // indicates whether the host information was fetched from the app's configuration
 // or via the command.
-func AddAppToHost(dbIface interface{}, host *Host, app *App, source string) error {
+func AddAppToHost(dbIface interface{}, host *Host, app *App, source string, seq int64) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
 		err = errors.WithMessagef(err, "problem with starting transaction for associating an app %d with the host %d",
@@ -396,12 +414,20 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string) erro
 		AppID:      app.ID,
 		HostID:     host.ID,
 		DataSource: source,
+		UpdateSeq:  seq,
 	}
 
-	_, err = tx.Model(&localHost).
+	q := tx.Model(&localHost).
 		OnConflict("(app_id, host_id) DO UPDATE").
-		Set("data_source = EXCLUDED.data_source").
-		Insert()
+		Set("data_source = EXCLUDED.data_source")
+
+	for _, lh := range host.LocalHosts {
+		if lh.AppID == app.ID && lh.UpdateSeq == 0 {
+			q = q.Set("update_seq = EXCLUDED.update_seq")
+		}
+	}
+
+	_, err = q.Insert()
 	if err != nil {
 		err = errors.Wrapf(err, "problem with associating the app %d with the host %d",
 			app.ID, host.ID)
@@ -418,7 +444,7 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string) erro
 
 // Iterates over the hosts belonging to the given subnet and stores them
 // or updates in the database.
-func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string) (err error) {
+func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string, seq int64) (err error) {
 	for i := range subnet.Hosts {
 		// Make sure the host associated with the current subnet.
 		subnet.Hosts[i].SubnetID = subnet.ID
@@ -435,7 +461,7 @@ func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string)
 				return err
 			}
 		}
-		err = AddAppToHost(tx, &subnet.Hosts[i], app, source)
+		err = AddAppToHost(tx, &subnet.Hosts[i], app, source, seq)
 		if err != nil {
 			err = errors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
 				app.ID)
@@ -443,6 +469,22 @@ func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string)
 		}
 	}
 	return nil
+}
+
+// This function returns next value of the bulk_update_seq. The returned value
+// is used during bulk updates of data within a database. For example, when
+// inserting or updating many host reservations, sequence value for all host
+// reservations tha have been inserted or updated must be set to the same
+// sequence value. This allows for distinguishing the hosts that haven't been
+// updated. In such case, they can be removed.
+// todo: This function may be used to a separate file. For now it is here, because
+// the only supported use case is for hosts.
+func GetNextBulkUpdateSeq(db *dbops.PgDB) (seq int64, err error) {
+	_, err = db.QueryOne(pg.Scan(&seq), "SELECT nextval('bulk_update_seq')")
+	if err != nil {
+		err = errors.Wrapf(err, "problem with getting next bulk update sequence number")
+	}
+	return seq, err
 }
 
 // This function checks if the given host includes a reservation for the

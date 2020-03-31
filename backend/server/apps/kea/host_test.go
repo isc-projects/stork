@@ -51,6 +51,26 @@ func getTestConfigWithIPv4Subnets(t *testing.T) *dbmodel.KeaConfig {
 	return cfg
 }
 
+// Returns test Kea configuration including one IPv4 subnet.
+func getTestConfigWithOneIPv4Subnet(t *testing.T) *dbmodel.KeaConfig {
+	configStr := `{
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "id": 123,
+                    "subnet": "192.0.2.0/24"
+                }
+            ]
+        }
+    }`
+
+	cfg, err := dbmodel.NewKeaConfigFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	return cfg
+}
+
 // Returns test Kea configuration including multiple IPv6 subnets.
 func getTestConfigWithIPv6Subnets(t *testing.T) *dbmodel.KeaConfig {
 	configStr := `{
@@ -170,6 +190,79 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
     ]`, len(hosts), string(hostsAsJSON), fromValue, sourceIndex)
 
 	daemons, _ := agentcomm.NewKeaDaemons(fmt.Sprintf("dhcp%d", family))
+	command, _ := agentcomm.NewKeaCommand("reservation-get-page", daemons, nil)
+
+	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+}
+
+// This function mocks the response of the Kea servers to the reservation-get-page
+// command. It should be used to test cases that the second attempt to fetch hosts
+// reduces the number of hosts in the database.
+func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
+	var json string
+	switch callNo {
+	case 0:
+		json = `[
+            {
+                "result": 0,
+                "text": "Hosts found",
+                "arguments": {
+                    "count": 1,
+                    "hosts": [
+                        {
+                            "hw-address": "01:02:03:04:05:06",
+                            "ip-address": "192.0.2.10"
+                        },
+                        {
+                            "hw-address": "01:02:03:04:05:07",
+                            "ip-address": "192.0.2.11"
+                        }
+                    ],
+                    "next": {
+                        "from": 0,
+                        "source-index": 1
+                    }
+                }
+            }
+        ]`
+	case 1, 3:
+		json = `[
+            {
+                "result": 0,
+                "text": "Hosts found",
+                "arguments": {
+                    "count": 0,
+                    "hosts": [ ],
+                    "next": {
+                        "from": 0,
+                        "source-index": 1
+                    }
+                }
+            }
+        ]`
+	case 2:
+		json = `[
+            {
+                "result": 0,
+                "text": "Hosts found",
+                "arguments": {
+                    "count": 1,
+                    "hosts": [
+                        {
+                            "hw-address": "01:02:03:04:05:07",
+                            "ip-address": "192.0.2.11"
+                        }
+                    ],
+                    "next": {
+                        "from": 0,
+                        "source-index": 1
+                    }
+                }
+            }
+        ]`
+	}
+
+	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
 	command, _ := agentcomm.NewKeaCommand("reservation-get-page", daemons, nil)
 
 	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
@@ -755,7 +848,7 @@ func TestDetectAndCommitHostsIntoDB(t *testing.T) {
 	// Detect hosts to times in the row. This simulates periodic
 	// pull of the hosts for the given app.
 	for i := 0; i < 2; i++ {
-		err = DetectAndCommitHostsIntoDB(db, fa, &app)
+		err = DetectAndCommitHostsIntoDB(db, fa, &app, 1)
 		require.NoError(t, err)
 
 		hosts, err := dbmodel.GetAllHosts(db, 4)
@@ -861,4 +954,80 @@ func TestPullHostsIntoDB(t *testing.T) {
 		// the second time.
 		fa.CallNo = 0
 	}
+}
+
+// Test that hosts not returned in the subsequent attempts to fetch hosts
+// from host_cmds hooks library are removed from the database.
+func TestReduceHostsIntoDB(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Creates new app with provided configurations.
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	app := dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Details: dbmodel.AppKea{
+			Daemons: []*dbmodel.KeaDaemon{
+				{
+					Name:   "dhcp4",
+					Config: getTestConfigWithOneIPv4Subnet(t),
+				},
+			},
+		},
+	}
+	// Add the app to the database.
+	err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+	app.Machine = m
+
+	err = CommitAppIntoDB(db, &app)
+	require.NoError(t, err)
+
+	// Create server which returns two hosts at the first attempt and
+	// one host at the second attempt.
+	fa := storktest.NewFakeAgents(mockReservationGetPageReduceHosts, nil)
+
+	// The puller requires fetch interval to be present in the database.
+	err = dbmodel.InitializeSettings(db)
+	require.NoError(t, err)
+
+	// Create the puller instance.
+	puller, err := NewHostsPuller(db, fa)
+	require.NoError(t, err)
+	require.NotNil(t, puller)
+
+	// Get the hosts from Kea. This should result in having two hosts
+	// within the database.
+	count, err := puller.pullData()
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+
+	hosts, err := dbmodel.GetAllHosts(db, 4)
+	require.NoError(t, err)
+	require.Len(t, hosts, 2)
+
+	// Repeat the same test, but this time only one host should be returned.
+	puller, err = NewHostsPuller(db, fa)
+	require.NoError(t, err)
+	require.NotNil(t, puller)
+
+	count, err = puller.pullData()
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+
+	// The second host should have been removed from the database.
+	hosts, err = dbmodel.GetAllHosts(db, 4)
+	require.NoError(t, err)
+	require.Len(t, hosts, 1)
 }
