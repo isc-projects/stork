@@ -64,9 +64,13 @@ existing images, they will be overwritten.
 Premium Features
 ~~~~~~~~~~~~~~~~
 
-It is possible to run demo with premium features enabled in Kea apps. It requires starting
-demo with access token to Kea premium repositories. Access token can be found on
-https://cloudsmith.io/~isc/repos/kea-1-7-prv/setup/#formats-deb
+It is possible to run demo with premium features enabled in Kea
+apps. It requires starting demo with access token to Kea premium
+repositories. Access token can be found on
+https://cloudsmith.io/~isc/repos/kea-1-7-prv/setup/#formats-deb. The
+token can be found inside this URL on that page:
+``https://dl.cloudsmith.io/<access token>/isc/kea-1-7-prv/cfg/setup/bash.deb.sh``.
+This web page and the token is available only to ISC employees and ISC customers.
 
 .. code-block:: console
 
