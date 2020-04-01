@@ -1,6 +1,17 @@
 #!/bin/bash
+
+echo "Checking if the database exists"
+mysql --user=kea --password=kea --host=172.20.0.104 kea -e "select * from schema_version"
+
+if [ $? -eq 0 ]
+then
+    echo "Database apparently exists"
+    exit 0
+fi
+
 set -e
 
+echo "Initializing the database"
 kea-admin db-init mysql -u kea -p kea -n kea -h 172.20.0.104
 
 mysql --user=kea --password=kea --host=172.20.0.104 kea <<EOF
