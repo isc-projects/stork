@@ -88,8 +88,10 @@ if ENV['cs_repo_access_token']
 end
 if ENV['premium'] == 'true'
   DOCKER_COMPOSE_FILES='-f docker-compose.yaml -f docker-compose-premium.yaml'
+  DOCKER_COMPOSE_PREMIUM_OPTS = "--build-arg CS_REPO_ACCESS_TOKEN=#{ENV['cs_repo_access_token']}"
 else
   DOCKER_COMPOSE_FILES='-f docker-compose.yaml'
+  DOCKER_COMPOSE_PREMIUM_OPTS = ''
 end
 
 # build date
@@ -505,7 +507,7 @@ task :docker_up => [:build_backend, :build_ui] do
   if ENV['cache'] == 'false'
     cache_opt = '--no-cache'
   end
-  sh "docker-compose #{DOCKER_COMPOSE_FILES} build #{cache_opt}"
+  sh "docker-compose #{DOCKER_COMPOSE_FILES} build #{DOCKER_COMPOSE_PREMIUM_OPTS} #{cache_opt}"
   sh "docker-compose #{DOCKER_COMPOSE_FILES} up"
 end
 
@@ -560,7 +562,7 @@ end
 
 desc 'Build container with Stork Agent and Kea with host reseverations in db'
 task :build_kea_hosts_container => :build_agent do
-  sh "docker-compose #{DOCKER_COMPOSE_FILES} build --build-arg CS_REPO_ACCESS_TOKEN=#{ENV['cs_repo_access_token']} agent-kea-hosts"
+  sh "docker-compose #{DOCKER_COMPOSE_FILES} build #{DOCKER_COMPOSE_PREMIUM_OPTS} agent-kea-hosts"
 end
 
 desc 'Run container with Stork Agent and Kea with host reseverations in db'

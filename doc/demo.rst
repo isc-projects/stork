@@ -61,6 +61,18 @@ by the Stork server process.
 The installation procedure assumes those images are fully under Stork control. If there are
 existing images, they will be overwritten.
 
+Premium Features
+~~~~~~~~~~~~~~~~
+
+It is possible to run demo with premium features enabled in Kea apps. It requires starting
+demo with access token to Kea premium repositories. Access token can be found on
+https://cloudsmith.io/~isc/repos/kea-1-7-prv/setup/#formats-deb
+
+.. code-block:: console
+
+   $ rake docker_up cs_repo_access_token=<access token>
+
+
 Requirements
 ------------
 
