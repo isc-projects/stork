@@ -1,3 +1,8 @@
+* 48 [doc] marcin, sgoldlust
+
+    Documented the use of Host Reservations in Stork ARM.
+    (Gitlab #223)
+
 * 47 [func] marcin
 
     Stork server periodically fetches host reservations from the Kea
