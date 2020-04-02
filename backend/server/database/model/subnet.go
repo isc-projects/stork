@@ -233,7 +233,6 @@ func GetSubnetsByAppID(db *pg.DB, appID int64, family int) ([]Subnet, error) {
 	subnets := []Subnet{}
 
 	q := db.Model(&subnets).
-		DistinctOn("subnet.id").
 		Join("INNER JOIN local_subnet AS ls ON ls.subnet_id = subnet.id").
 		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
