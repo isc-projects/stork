@@ -74,7 +74,13 @@ func init() {
              ALTER TABLE local_host ADD COLUMN
                  update_seq BIGINT NOT NULL DEFAULT currval('bulk_update_seq');
 
-             -- It is common to select subnet by prefix.
+             -- Index for querying hosts by a sequence number assigned to the
+             -- local hosts. Using the sequence number it is possible to
+             -- delete those associations between apps and hosts which no
+             -- longer exist. In this case we delete all associations for
+             -- which the sequence number is unequal the sequence number of
+             -- the last update. To make it efficient an index is required
+             -- for sequence numbers.
              CREATE INDEX host_update_seq_idx ON local_host(update_seq);
         `)
 		return err
