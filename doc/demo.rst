@@ -40,7 +40,7 @@ Installation Steps
 
 The following command retrieves all required software (go, goswagger,
 nodejs, Angular dependencies, etc.) to the local directory. No root
-password is necessary. Then it prepares docker images and starts them
+password is necessary. Then it prepares Docker images and starts them
 up.
 
 .. code-block:: console
@@ -80,13 +80,13 @@ control. If there are existing images, they will be overwritten.
 Premium Features
 ~~~~~~~~~~~~~~~~
 
-It is possible to run demo with premium features enabled in Kea
-apps. It requires starting demo with access token to Kea premium
-repositories. Access token can be found on
+It is possible to run the demo with premium features enabled in Kea
+apps. It requires starting the demo with an access token to the Kea premium
+repositories. Access tokens can be found on
 https://cloudsmith.io/~isc/repos/kea-1-7-prv/setup/#formats-deb. The
 token can be found inside this URL on that page:
 ``https://dl.cloudsmith.io/<access token>/isc/kea-1-7-prv/cfg/setup/bash.deb.sh``.
-This web page and the token is available only to ISC employees and ISC customers.
+This web page and the token are available only to ISC employees and paid customers of ISC.
 
 .. code-block:: console
 
@@ -96,7 +96,7 @@ This web page and the token is available only to ISC employees and ISC customers
 Initialization
 --------------
 
-At the beginning some initial information needs to be added in the ``Stork Server``:
+``Stork Server`` requires some initial information:
 
 #. Go to http://localhost:8080/machines/all
 #. Add new machines (leave the default port):
@@ -111,7 +111,7 @@ DHCP Traffic Simulator
 ----------------------
 
 The traffic simulator allows DHCP traffic to be sent to selected
-subnets pre-configured in Kea instances. There is a limitation: it is
+subnets pre-configured in Kea instances, with a limitation: it is
 possible to send traffic to only one subnet from a given shared
 network.
 

@@ -68,13 +68,13 @@ Cloudsmith repository page.
 Installing on Debian/Ubuntu
 ---------------------------
 
-The basic steps for Debian and Ubuntu are:
+The first step for both Debian and Ubuntu is:
 
 .. code-block:: console
 
    $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.deb.sh' | sudo bash
 
-The next step is to install the package with ``Stork Server``:
+Next, install the package with ``Stork Server``:
 
 .. code-block:: console
 
@@ -92,13 +92,13 @@ It is possible to install both agent and server on the same machine.
 Installing on CentOS/RHEL/Fedora
 --------------------------------
 
-The basic steps for RPM-based distributions are:
+The first step for RPM-based distributions is:
 
 .. code-block:: console
 
    $ curl -1sLf 'https://dl.cloudsmith.io/public/isc/stork/cfg/setup/bash.rpm.sh' | sudo bash
 
-The next step is to install the package with ``Stork Server``:
+Next, install the package with ``Stork Server``:
 
 .. code-block:: console
 
@@ -113,15 +113,14 @@ Then, install ``Stork Agent``:
 It is possible to install both agent and server on the same machine.
 
 
-Initial Setup of Server
------------------------
+Initial Setup of the Stork Server
+---------------------------------
 
 These steps are the same for both Debian-based and RPM-based
 distributions that use `SystemD`.
 
-After installing ``Stork Server`` from the package, configuration of
-the basic settings is required. They are stored in
-``/etc/stork/server.env``.
+After installing ``Stork Server`` from the package, the basic settings
+must be configured. They are stored in ``/etc/stork/server.env``.
 
 These are the required settings to connect with the database:
 
@@ -146,7 +145,7 @@ To check the status:
    $ sudo systemctl status isc-stork-server
 
 By default, the ``Stork Server`` web service is exposed on port 8080,
-so now it can be visited in a web browser here: http://localhost:8080.
+so it can be visited in a web browser at http://localhost:8080.
 
 It is possible to put ``Stork Server`` behind an HTTP reverse proxy
 using `Nginx` or `Apache`. In the ``Stork Server`` package an example
@@ -154,14 +153,14 @@ configuration file is provided for `Nginx`, in
 `/usr/share/stork/examples/nginx-stork.conf`.
 
 
-Initial Setup of Stork Agent
-----------------------------
+Initial Setup of the Stork Agent
+--------------------------------
 
 These steps are the same for both Debian-based and RPM-based
 distributions that use `SystemD`.
 
-After installing ``Stork Agent`` from the package, configuration of the
-basic settings is required. They are stored in ``/etc/stork/agent.env``.
+After installing ``Stork Agent`` from the package, the basic settings
+must be configured. They are stored in ``/etc/stork/agent.env``.
 
 These are the required settings to connect with the database:
 
@@ -184,7 +183,7 @@ To check the status:
 
    $ sudo systemctl status isc-stork-server
 
-After starting the agent, it periodically tries to detect installed
+After starting, the agent periodically tries to detect installed
 Kea DHCP or BIND 9 services on the system.  If it finds them, they are
 reported to the ``Stork Server`` when it connects to the agent.
 
@@ -202,7 +201,7 @@ Prerequisites
 
 ``Stork`` sources can be built on Ubuntu 18.04 and Fedora 31.
 
-There are several dependencies that need to be installed to build
+There are two dependencies that need to be installed to build
 ``Stork`` sources:
 
  - Rake
@@ -210,13 +209,13 @@ There are several dependencies that need to be installed to build
 
 Other dependencies are installed locally and automatically by Rake tasks.
 
-For details about the environment, please see the Stork wiki
+For details about the environment, please see the Stork wiki at
 https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment.
 
 Download Sources
 ----------------
 
-Sources of Stork are available on the ISC GitLab:
+The Stork sources are available on the ISC GitLab instance:
 https://gitlab.isc.org/isc-projects/stork.
 
 To get the latest sources invoke:

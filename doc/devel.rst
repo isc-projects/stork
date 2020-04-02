@@ -9,7 +9,7 @@ Developer's Guide
    We acknowledge that users and developers have different needs, so
    the user and developer documents should eventually be
    separated. However, since the project is still in its early stages,
-   this section is kept in the Stork ARM for convenience only.
+   this section is kept in the Stork ARM for convenience.
 
 Rakefile
 ========
@@ -19,7 +19,7 @@ building source code, running linters, running unit tests, and running
 Stork services directly or in Docker containers.
 
 There are several other Rake targets. For a complete list of available
-tasks, use `rake -T`.  Also see `wiki
+tasks, use `rake -T`.  Also see the Stork `wiki
 <https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment#building-testing-and-running-stork>`_
 for detailed instructions.
 
@@ -27,9 +27,9 @@ for detailed instructions.
 Generating Documentation
 ========================
 
-To generate documentation, simply type ``rake doc``. You need to have
+To generate documentation, simply type ``rake doc``. 
 `Sphinx <http://www.sphinx-doc.org>`_ and `rtd-theme
-<https://github.com/readthedocs/sphinx_rtd_theme>`_ installed. The
+<https://github.com/readthedocs/sphinx_rtd_theme>`_ must be installed. The
 generated documentation will be available in the ``doc/singlehtml``
 directory.
 
@@ -37,16 +37,16 @@ directory.
 Setting Up the Development Environment
 ======================================
 
-The following steps will install Stork and its dependencies natively,
-i.e. on the host machine rather than using Docker images.
+The following steps install Stork and its dependencies natively,
+i.e. on the host machine, rather than using Docker images.
 
 First, PostgreSQL must be installed. This is OS-specific, so please
 follow the instructions from the :ref:`installation` chapter.
 
 Optional step: to initialize the database directly, the migrations
-tool must be built and used to initialize and upgrade the DB to the
-latest schema. However, this is completely optional as the database
-migration is triggered automatically upon the server startup.  This is
+tool must be built and used to initialize and upgrade the database to the
+latest schema. However, this is completely optional, as the database
+migration is triggered automatically upon server startup.  This is
 only useful if for some reason it is desirable to set up the database
 but not yet run the server. In most cases this step can be skipped.
 
@@ -56,9 +56,9 @@ but not yet run the server. In most cases this step can be skipped.
     $ backend/cmd/stork-db-migrate/stork-db-migrate init
     $ backend/cmd/stork-db-migrate/stork-db-migrate up
 
-Once the database environment set up, the next step is to build all
-the tools. Note the first command downloads some missing dependencies
-needed and installs them in a local directory. This is done only once
+Once the database environment is set up, the next step is to build all
+the tools. Note the first command below downloads some missing dependencies
+and installs them in a local directory. This is done only once
 and is not needed for future rebuilds, although it is safe to rerun
 the command.
 
@@ -68,12 +68,18 @@ the command.
     $ rake build_ui
 
 The environment should be ready to run! Open three consoles and run
-the following three commands in each console:
+the following three commands, one in each console:
 
 .. code-block:: console
 
     $ rake run_server
+
+.. code-block:: console 
+
     $ rake serve_ui
+
+.. code-block:: console
+
     $ rake run_agent
 
 Once all three processes are running, connect to http://localhost:4200
@@ -87,7 +93,7 @@ There are other Rake tasks for running preconfigured agents in Docker
 containers. They are exposed to the host on specific ports.
 
 When these agents are added as machines in the ``Stork Server`` UI,
-both a localhost address and a port port specific to a given container
+both a localhost address and a port specific to a given container
 must be specified. This is a list of ports for particular Rake tasks
 and containers:
 
@@ -174,7 +180,7 @@ All these steps are accomplished by Rakefile.
 Docker Containers
 =================
 
-To ease testing, there are several docker containers available,
+To ease testing, there are several Docker containers available,
 although not all of them are necessary.
 
 * ``server`` - This container is essential. It runs the Stork server,
@@ -184,7 +190,7 @@ although not all of them are necessary.
   database that is used by the Stork server. Without it, the Stork
   server will produce error messages about an unavailable database.
 * ``webui`` - This container is essential in most circumstances. It
-  provides the front web interface. It is potentially unnecessary with
+  provides the front-end web interface. It is potentially unnecessary with
   the custom development of a Stork API client.
 
 There are also several containers provided that are used as
@@ -201,15 +207,15 @@ simulate certain services that Stork is able to handle, including:
   monitoring its Kea DHCPv4 service.
 
 * ``agent-kea-ha1`` and ``agent-kea-ha2`` - These two containers
-  should, in general, be run together. They have each a Kea DHCPv4
+  should, in general, be run together. They each have a Kea DHCPv4
   server instance configured in a HA pair. With both running and
   registered as machines in Stork, users can observe certain HA
   mechanisms, such as one taking over the traffic if the partner
   becomes unavailable.
 
 * ``traffic-dhcp`` - This container is optional. If started, it will
-  transmit DHCP packets to agent-kea. It may be useful to observe
-  non-zero statistics coming from Kea. When running Stork in docker,
+  transmit DHCP packets to ``agent-kea``. It may be useful to observe
+  non-zero statistics coming from Kea. When running Stork in Docker,
   ``rake start_traffic_dhcp`` can be used to conveniently control
   traffic.
 
@@ -217,7 +223,7 @@ simulate certain services that Stork is able to handle, including:
   applications.  It is preconfigured to monitor Kea and BIND 9
   containers.
 
-* ``grafana`` - This is a container with Grafana - a dashboard for
+* ``grafana`` - This is a container with Grafana, a dashboard for
   Prometheus. It is preconfigured to pull data from a Prometheus
   container and show Stork dashboards.
 
@@ -235,15 +241,15 @@ is built on the latest Ubuntu LTS.
 
 There are two packages built for each system: a server and an agent.
 
-There are Rake tasks that perform the whole build procedure in a
-docker container: `build_rpms_in_docker` and
+There are Rake tasks that perform the entire build procedure in a
+Docker container: `build_rpms_in_docker` and
 `build_debs_in_docker`. It is also possible to build packages directly
 in the current operating system; this is provided by the `deb_agent`,
 `rpm_agent`, `deb_server`, and `rpm_server` Rake tasks.
 
 Internally, these packages are built by FPM
 (https://fpm.readthedocs.io/). The containers that are used to build
-packages are prebuilt with all dependencies required.  This is
-accomplished by the `build_fpm_containers` Rake task. The definitions
+packages are prebuilt with all dependencies required, using the
+`build_fpm_containers` Rake task. The definitions
 of these containers are placed in `docker/pkgs/centos-8.txt` and
 `docker/pkgs/ubuntu-18-04.txt`.

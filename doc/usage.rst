@@ -4,7 +4,7 @@
 Using Stork
 ***********
 
-This section describes how to use features available in ``Stork``. To
+This section describes how to use the features available in ``Stork``. To
 connect to ``Stork``, use a web browser and connect to port 8080. If
 Stork is running on a localhost, it can be reached by navigating to
 http://localhost:8080.
@@ -12,14 +12,11 @@ http://localhost:8080.
 Managing Users
 ==============
 
-Upon the initial installation the default administrator's account is
-created and can be used to sign in to the system via the web
-UI. Please use the login ``admin`` and password ``admin`` to initially
-sign in to the system.
+A default administrator account is created upon initial installation of Stork. It can be used to
+sign in to the system via the web UI, using the username ``admin`` and password ``admin``.
 
-To manage users, click on the ``Configuration`` menu and choose
-``Users``. A list of existing users is displayed, with at least one
-user, ``admin``.
+To manage users, click on the ``Configuration`` menu and choose ``Users`` to see a list of
+existing users. There will be at least one user, ``admin``.
 
 To add a new user, click ``Create User Account``. A new tab opens to
 specify the new account parameters. Some fields have specific
@@ -56,7 +53,7 @@ information.  Click on ``Change password`` in the menu bar on the left
 and specify the current password in the first input box. The new
 password must be specified and confirmed in the second and third input
 boxes, and must meet the password requirements specified in the
-previous section. When all entered data is valid the ``Save`` button
+previous section. When all entered data is valid, the ``Save`` button
 is activated for changing the password.
 
 
@@ -79,7 +76,7 @@ Assuming services will be monitored on a machine with the IP
     $ cd <stork-dir>
     $ scp backend/cmd/stork-agent login@192.0.2.1:/path
 
-On the machine to be monitored, the agent must be started by running:
+On the machine to be monitored, start the agent by running:
 
 .. code:: console
 
@@ -104,10 +101,10 @@ Registering a New Machine
 
 Once the agent is deployed and running on the machine to be monitored,
 the ``Stork Server`` must be instructed to start monitoring it. This
-can be done via the ``Services`` menu, under ``Machines``, which
-presents a list of currently registered machines.
+can be done via the ``Services`` menu, under ``Machines``, to
+see a list of currently registered machines.
 
-To add a new machine, click ``Add New Machine``, and specify the
+To add a new machine, click ``Add New Machine`` and specify the
 machine address (IP address, hostname, or FQDN) and a port.
 
 After the ``Add`` button is clicked, the server attempts to establish
@@ -128,8 +125,8 @@ Navigation to the discovered applications is also possible through the
 ``Services`` menu.
 
 
-Monitoring Machines
-~~~~~~~~~~~~~~~~~~~
+Monitoring a Machine
+~~~~~~~~~~~~~~~~~~~~
 
 Monitoring of registered machines is accomplished via the Services
 menu, under Machines. A list of currently registered machines is
@@ -148,8 +145,8 @@ The machine state can also be refreshed via the Action menu. On the
 Machines list, each machine has its own menu; click on the
 triple-lines button at the right side and choose the Refresh option.
 
-Deleting Machines
-~~~~~~~~~~~~~~~~~
+Deleting a Machine
+~~~~~~~~~~~~~~~~~~
 
 To stop monitoring a machine, go to the Machines list, find the
 machine to stop monitoring, click on the triple-lines button at the
@@ -199,7 +196,7 @@ to the DHCP server to manage. Stork is able to display this
 information.
 
 One way to inspect the subnets and pools within Kea is by looking at
-each Kea applications, to get an overview of what configurations a
+each Kea application to get an overview of what configurations a
 specific Kea application is serving. A list of configured subnets on
 that specific Kea application is displayed. The following picture
 shows a simple view of the Kea DHCPv6 server running with a single
@@ -242,7 +239,7 @@ becomes red).
 .. note::
 
    As of Stork 0.5.0, if two or more servers are handling the same
-   subnet (e.g. a HA pair), the same subnet will be listed multiple
+   subnet (e.g. a HA pair), the same subnet is listed multiple
    times. This limitation will be addressed in future releases.
 
 
@@ -262,66 +259,65 @@ Host Reservations
 Kea DHCP servers can be configured to assign static resources or parameters to the
 DHCP clients communicating with the servers. Most commonly these resources are the
 IP addresses or delegated prefixes. However, Kea also allows for assigning hostnames,
-PXE boot parameters, client classes DHCP options and others. The mechanism by which
-a given set of resources or/and parameters is associated with a given DHCP client
-is called "Host Reservations".
+PXE boot parameters, client classes, DHCP options, and others. The mechanism by which
+a given set of resources and/or parameters is associated with a given DHCP client
+is called "host reservations."
 
 A host reservation consists of one or more DHCP identifers used to associate the
-reservation with a client, e.g. MAC address, DUID, client identifier,
-and a collection of various resources or/and parameters to be returned to the
+reservation with a client, e.g. MAC address, DUID, or client identifier;
+and a collection of resources and/or parameters to be returned to the
 client if the client's DHCP message is associated with the host reservation by one
-of the identifiers. Stork is aimed to fully faciliate the management of host
-reservations in the future, i.e. create, update or remove reservations from within
-the UI. As of 0.6.0 release, Stork can merely detect existing host reservations
-specified both in the configuration files of the monitored Kea servers and the
-reservations stored in the host database backends and returned via the Kea
-host_cmds premium hooks library. It provides no means to update or delete host
-reservations.
+of the identifiers. In the future, Stork is expected to fully faciliate the management of host
+reservations, i.e. creating, updating, or removing reservations from within
+the UI. As of the 0.6.0 release, Stork can merely detect existing host reservations
+specified both in the configuration files of the monitored Kea servers and in the host database
+backends accessed via the Kea host_cmds premium hooks library. At present, Stork provides no means
+to update or delete host reservations.
 
-All reservations detected by Stork can be listed in the UI by selecting "DHCP"
-menu option and then selecting "Hosts".
+All reservations detected by Stork can be listed by selecting the ``DHCP``
+menu option and then selecting ``Hosts``.
 
 The first column in the presented view displays one or more DHCP identifiers
-for each host in the following format: ``hw-address=0a:1b:bd:43:5f:99`` where
-the ``hw-address`` is the identifier type. In this case the identifer type is
+for each host in the format ``hw-address=0a:1b:bd:43:5f:99``, where
+``hw-address`` is the identifier type. In this case, the identifier type is
 the MAC address of the DHCP client for which the reservation has been specified.
 Supported identifier types are described in the following sections of the Kea ARM:
 `Host Reservation in DHCPv4 <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#host-reservation-in-dhcpv4>`_
 and `Host Reservation in DHCPv6 <https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#host-reservation-in-dhcpv6>`_.
-If multiple identifiers are present for a reservation, this reservation will
+If multiple identifiers are present for a reservation, the reservation will
 be assigned when at least one of the identifiers matches the received DHCP packet.
 
-The second column, "IP Reservations", includes the static assignments of the
+The second column, ``IP Reservations``, includes the static assignments of the
 IP addresses and/or delegated prefixes to the clients. There may be one or
 more IP reservations for each host.
 
-The "Subnet" column contains the prefixes of the subnets to which the reserved
+The ``Subnet`` column contains the prefixes of the subnets to which the reserved
 IP addresses and prefixes belong.
 
-Finally, the "Servers #" column includes the number of Kea servers configured
-to assign each reservation to the client. This value will be typically greater
+Finally, the ``Servers #`` column includes the number of Kea servers configured
+to assign each reservation to the client. This value will typically be greater
 than one when Kea servers operate in the High Availability setup. In this case,
 each of the HA peers uses the same configuration and may allocate IP addresses
-and delegated prefixes to the same set of clients. This includes static assignments
+and delegated prefixes to the same set of clients, including static assignments
 via host reservations. If HA peers are configured correctly, the reservations
-they share will have the "Servers #" value of 2.
+they share will have a ``Servers #`` value of 2.
 
-The "Filter hosts" input box is located above the hosts table. It allows for
-filtering the hosts by identifier types, identifier values and IP reservations.
-When filtering by DHCP identifier values, it is not required to use colons between
-the pairs of hexadecimal digits. For example, the following reservation
-``hw-address=0a:1b:bd:43:5f:99`` will be found regardless if the filtering
-text is ``1b:bd:43`` and ``1bbd43``.
+The ``Filter hosts`` input box is located above the Hosts table. It allows
+filtering of hosts by identifier types, identifier values, and IP reservations.
+When filtering by DHCP identifier values, it is not necessary to use colons between
+the pairs of hexadecimal digits. For example, the reservation
+``hw-address=0a:1b:bd:43:5f:99`` will be found regardless of whether the filtering
+text is ``1b:bd:43`` or ``1bbd43``.
 
 Sources of Host Reservations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are two ways to configure the Kea servers to use host reservations. First,
-the host reservations can be specified within the Kea configuration files. See
+the host reservations can be specified within the Kea configuration files; see
 `Host Reservation in DHCPv4 <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#host-reservation-in-dhcpv4>`_
-for the details. Another way is to use host database backend as described in
+for details. The other way is to use a host database backend, as described in
 `Storing Host Reservations in MySQL, PostgreSQL, or Cassandra <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#storing-host-reservations-in-mysql-postgresql-or-cassandra>`_.
-The second solution requires that the given Kea server is configured to use the
+The second solution requires the given Kea server to be configured to use the
 host_cmds premium hooks library. This library implements control commands used
 to store and fetch the host reservations from the host database which the Kea
 server is connected to. If the host_cmds hooks library is not loaded, Stork
@@ -330,12 +326,12 @@ will only present the reservations specified within the Kea configuration files.
 Stork periodically fetches the reservations from the host database backends
 and updates them in the local database. The default interval at which Stork
 refreshes host reservation information is set to 60 seconds. This means that
-the update in the host reservation database will not be visible in Stork until
+an update in the host reservation database will not be visible in Stork until
 up to 60 seconds after it was applied. This interval is currently not configurable.
 
 .. note::
 
-   As of Stork 0.6.0 release, the list of host reservations has to be manually
+   As of the Stork 0.6.0 release, the list of host reservations must be manually
    refreshed by reloading the browser page to observe the most recent updates
    fetched from the Kea servers.
 
@@ -350,8 +346,7 @@ secondary/standby server. The status is not displayed for the server
 configured as an HA backup. See the `High Availability section in the
 Kea ARM
 <https://kea.readthedocs.io/en/latest/arm/hooks.html#ha-high-availability>`_
-for details about the various roles of the servers within the HA
-setup.
+for details about the roles of the servers within the HA setup.
 
 The following picture shows a typical High Availability status view
 displayed in the Stork UI.
@@ -366,16 +361,16 @@ application running on a different machine, and this machine may or
 may not be monitored by Stork. The statuses of both the local and the
 remote server are fetched by sending the `status-get
 <https://kea.readthedocs.io/en/latest/arm/hooks.html#the-status-get-command>`_
-command to the Kea server whose details are displayed (local
+command to the Kea server whose details are displayed (the local
 server). The local server periodically checks the status of its
 partner by sending the ``ha-heartbeat`` command to it. Therefore, this
-information is not always up to date; its age depends on the heartbeat
+information is not always up-to-date; its age depends on the heartbeat
 command interval (typically 10 seconds). The status of the remote
 server includes the age of the data displayed.
 
 The status information contains the role, state, and scopes served by
 each HA partner. In the usual HA case, both servers are in
-load-balancing state, which means that both are serving the DHCP
+load-balancing state, which means that both are serving DHCP
 clients and there is no failure. If the remote server crashes, the
 local server transitions to the partner-down state, which will be
 reflected in this view. If the local server crashes, this will
