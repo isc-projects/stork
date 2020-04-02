@@ -245,6 +245,7 @@ becomes red).
    subnet (e.g. a HA pair), the same subnet will be listed multiple
    times. This limitation will be addressed in future releases.
 
+
 IPv4 and IPv6 Networks
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -255,6 +256,88 @@ configured Kea servers.  The Shared Networks view allows for the
 inspection of networks and the subnets that belong in them. Pool
 utilization is shown for each subnet.
 
+Host Reservations
+~~~~~~~~~~~~~~~~~
+
+Kea DHCP servers can be configured to assign static resources or parameters to the
+DHCP clients communicating with the servers. Most commonly these resources are the
+IP addresses or delegated prefixes. However, Kea also allows for assigning hostnames,
+PXE boot parameters, client classes DHCP options and others. The mechanism by which
+a given set of resources or/and parameters is associated with a given DHCP client
+is called "Host Reservations".
+
+A host reservation consists of one or more DHCP identifers used to associate the
+reservation with a client, e.g. MAC address, DUID, client identifier,
+and a collection of various resources or/and parameters to be returned to the
+client if the client's DHCP message is associated with the host reservation by one
+of the identifiers. Stork is aimed to fully faciliate the management of host
+reservations in the future, i.e. create, update or remove reservations from within
+the UI. As of 0.6.0 release, Stork can merely detect existing host reservations
+specified both in the configuration files of the monitored Kea servers and the
+reservations stored in the host database backends and returned via the Kea
+host_cmds premium hooks library. It provides no means to update or delete host
+reservations.
+
+All reservations detected by Stork can be listed in the UI by selecting "DHCP"
+menu option and then selecting "Hosts".
+
+The first column in the presented view displays one or more DHCP identifiers
+for each host in the following format: ``hw-address=0a:1b:bd:43:5f:99`` where
+the ``hw-address`` is the identifier type. In this case the identifer type is
+the MAC address of the DHCP client for which the reservation has been specified.
+Supported identifier types are described in the following sections of the Kea ARM:
+`Host Reservation in DHCPv4 <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#host-reservation-in-dhcpv4>`_
+and `Host Reservation in DHCPv6 <https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#host-reservation-in-dhcpv6>`_.
+If multiple identifiers are present for a reservation, this reservation will
+be assigned when at least one of the identifiers matches the received DHCP packet.
+
+The second column, "IP Reservations", includes the static assignments of the
+IP addresses and/or delegated prefixes to the clients. There may be one or
+more IP reservations for each host.
+
+The "Subnet" column contains the prefixes of the subnets to which the reserved
+IP addresses and prefixes belong.
+
+Finally, the "Servers #" column includes the number of Kea servers configured
+to assign each reservation to the client. This value will be typically greater
+than one when Kea servers operate in the High Availability setup. In this case,
+each of the HA peers uses the same configuration and may allocate IP addresses
+and delegated prefixes to the same set of clients. This includes static assignments
+via host reservations. If HA peers are configured correctly, the reservations
+they share will have the "Servers #" value of 2.
+
+The "Filter hosts" input box is located above the hosts table. It allows for
+filtering the hosts by identifier types, identifier values and IP reservations.
+When filtering by DHCP identifier values, it is not required to use colons between
+the pairs of hexadecimal digits. For example, the following reservation
+``hw-address=0a:1b:bd:43:5f:99`` will be found regardless if the filtering
+text is ``1b:bd:43`` and ``1bbd43``.
+
+Sources of Host Reservations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are two ways to configure the Kea servers to use host reservations. First,
+the host reservations can be specified within the Kea configuration files. See
+`Host Reservation in DHCPv4 <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#host-reservation-in-dhcpv4>`_
+for the details. Another way is to use host database backend as described in
+`Storing Host Reservations in MySQL, PostgreSQL, or Cassandra <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#storing-host-reservations-in-mysql-postgresql-or-cassandra>`_.
+The second solution requires that the given Kea server is configured to use the
+host_cmds premium hooks library. This library implements control commands used
+to store and fetch the host reservations from the host database which the Kea
+server is connected to. If the host_cmds hooks library is not loaded, Stork
+will only present the reservations specified within the Kea configuration files.
+
+Stork periodically fetches the reservations from the host database backends
+and updates them in the local database. The default interval at which Stork
+refreshes host reservation information is set to 60 seconds. This means that
+the update in the host reservation database will not be visible in Stork until
+up to 60 seconds after it was applied. This interval is currently not configurable.
+
+.. note::
+
+   As of Stork 0.6.0 release, the list of host reservations has to be manually
+   refreshed by reloading the browser page to observe the most recent updates
+   fetched from the Kea servers.
 
 Kea High Availability Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
