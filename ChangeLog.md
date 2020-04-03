@@ -1,4 +1,3 @@
-=======
 Stork 0.6.0 released on 2020-04-03.
 
 * 50 [bug] marcin
@@ -12,14 +11,13 @@ Stork 0.6.0 released on 2020-04-03.
 
     Updated Prometheus & Grafana in the demo installation with BIND 9.
 
-    Implementated BIND 9 exporter in Go and embedded it in Stork
+    Implemented BIND 9 exporter in Go and embedded it in Stork
     Agent for showing Cache Hit Ratio.
 
     Implemented DNS traffic simulator as web app for the demo
     installation. Internally it runs a single query with dig, or
     starts flamethrower (a DNS performance tool) for selected server
     with indicated parameters.
-
     (Gitlab #10)
 
 * 48 [doc] marcin, sgoldlust
@@ -132,7 +130,6 @@ Stork 0.5.0 released on 2020-03-06.
     Implemented DHCP simulator as web app for the demo installation.
     Internally it starts perfdhcp for selected subnet with indicated
     parameters.
-
     (Gitlab #167)
 
 * 33 [func] marcin
