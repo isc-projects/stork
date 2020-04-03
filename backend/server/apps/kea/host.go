@@ -93,7 +93,7 @@ func (puller *HostsPuller) pullData() (int, error) {
 
 	// Remove all associations between the hosts and tha apps that are no longer
 	// present.
-	err = dbmodel.DeleteLocalHostsWithOtherSeq(puller.Db, seq, "")
+	err = dbmodel.DeleteLocalHostsWithOtherSeq(puller.Db, seq, "api")
 	if err != nil {
 		log.Errorf("error occurred while deleting old hosts after update from Kea apps: %+v", err)
 	}
@@ -149,7 +149,7 @@ func NewHostDetectionIterator(db *dbops.PgDB, app *dbmodel.App, agents agentcomm
 		serverIndex: 0,
 		family:      0,
 		from:        0,
-		sourceIndex: 0,
+		sourceIndex: 1,
 		url:         "",
 		subnets:     []dbmodel.Subnet{},
 		subnetIndex: 0,
@@ -163,7 +163,7 @@ func (iterator *HostDetectionIterator) reset() {
 	iterator.serverIndex = 0
 	iterator.family = 0
 	iterator.from = 0
-	iterator.sourceIndex = 0
+	iterator.sourceIndex = 1
 	iterator.subnets = make([]dbmodel.Subnet, 0)
 	iterator.subnetIndex = 0
 }
@@ -387,7 +387,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 			// end of the hosts list for this subnet. Let's move to the next one.
 			if len(returnedHosts) == 0 {
 				iterator.from = 0
-				iterator.sourceIndex = 0
+				iterator.sourceIndex = 1
 				iterator.subnetIndex++
 				continue
 			}
