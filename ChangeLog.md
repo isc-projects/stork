@@ -1,3 +1,10 @@
+* 50 [bug] marcin
+
+    Corrected a bug which caused unexpected deletion of the
+    host reservations fetched from the Kea configuration
+    files.
+    (Gitlab #225)
+
 * 49 [func] matthijs
 
     Updated Prometheus & Grafana in the demo installation with BIND 9.
