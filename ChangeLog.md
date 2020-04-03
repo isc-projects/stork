@@ -1,3 +1,6 @@
+=======
+Stork 0.6.0 released on 2020-04-03.
+
 * 50 [bug] marcin
 
     Corrected a bug which caused unexpected deletion of the
