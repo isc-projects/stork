@@ -77,6 +77,8 @@ MOCKERY = "#{GOBIN}/mockery"
 MOCKGEN = "#{GOBIN}/mockgen"
 RICHGO = "#{GOBIN}/richgo"
 
+WGET = 'wget --tries=inf --waitretry=3 --retry-on-http-error=429,500,503,504 '
+
 # Patch PATH env
 ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GO_DIR}/go/bin:#{ENV['PATH']}"
@@ -163,7 +165,7 @@ STORK_VERSION = stork_version
 
 file GO => [TOOLS_DIR, GOHOME_DIR] do
   sh "mkdir -p #{GO_DIR}"
-  sh "wget #{GO_URL} -O #{GO_DIR}/go.tar.gz"
+  sh "#{WGET} #{GO_URL} -O #{GO_DIR}/go.tar.gz"
   Dir.chdir(GO_DIR) do
     sh 'tar -zxf go.tar.gz'
   end
@@ -192,7 +194,7 @@ task :gen_server => [GO, GOSWAGGER, SERVER_GEN_FILES]
 
 file GOSWAGGER => TOOLS_DIR do
   sh "mkdir -p #{GOSWAGGER_DIR}"
-  sh "wget #{GOSWAGGER_URL} -O #{GOSWAGGER}"
+  sh "#{WGET} #{GOSWAGGER_URL} -O #{GOSWAGGER}"
   sh "chmod a+x #{GOSWAGGER}"
 end
 
@@ -204,7 +206,7 @@ end
 
 file PROTOC do
   sh "mkdir -p #{PROTOC_DIR}"
-  sh "wget #{PROTOC_URL} -O #{PROTOC_DIR}/protoc.zip"
+  sh "#{WGET} #{PROTOC_URL} -O #{PROTOC_DIR}/protoc.zip"
   Dir.chdir(PROTOC_DIR) do
     sh 'unzip protoc.zip'
   end
@@ -301,7 +303,7 @@ task :build_backend => [:build_agent, :build_server, :build_migrations]
 
 file GOLANGCILINT => TOOLS_DIR do
   Dir.chdir(TOOLS_DIR) do
-    sh "wget #{GOLANGCILINT_URL} -O golangci-lint.tar.gz"
+    sh "#{WGET} #{GOLANGCILINT_URL} -O golangci-lint.tar.gz"
     sh "tar -zxf golangci-lint.tar.gz"
   end
 end
@@ -435,12 +437,12 @@ task :gen_client => [SWAGGER_CODEGEN, SWAGGER_FILE] do
 end
 
 file SWAGGER_CODEGEN => TOOLS_DIR do
-  sh "wget #{SWAGGER_CODEGEN_URL} -O #{SWAGGER_CODEGEN}"
+  sh "#{WGET} #{SWAGGER_CODEGEN_URL} -O #{SWAGGER_CODEGEN}"
 end
 
 file NPX => TOOLS_DIR do
   Dir.chdir(TOOLS_DIR) do
-    sh "wget #{NODE_URL} -O #{TOOLS_DIR}/node.tar.xz"
+    sh "#{WGET} #{NODE_URL} -O #{TOOLS_DIR}/node.tar.xz"
     sh "tar -Jxf node.tar.xz"
   end
 end
@@ -610,19 +612,23 @@ end
 
 desc 'Build debs in Docker. It is used for developer purposes.'
 task :build_debs_in_docker do
-  sh "docker run -v $PWD:/repo --rm -ti registry.gitlab.isc.org/isc-projects/stork/pkgs-ubuntu-18-04:latest rake build_fresh STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+  sh "docker run -v $PWD:/repo --rm -ti registry.gitlab.isc.org/isc-projects/stork/pkgs-ubuntu-18-04:latest rake build_pkgs STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
 end
 
 desc 'Build RPMs in Docker. It is used for developer purposes.'
 task :build_rpms_in_docker do
-  sh "docker run -v $PWD:/repo --rm -ti registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest rake build_fresh STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+  sh "docker run -v $PWD:/repo --rm -ti registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest rake build_pkgs STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
 end
 
 # Internal task that copies sources and builds packages on a side. It is used by build_debs_in_docker and build_rpms_in_docker.
-task :build_fresh do
+task :build_pkgs do
   sh 'rm -rf /build && mkdir /build'
   sh 'git archive -o /stork.tar.gz HEAD'
   sh 'tar -C /build -zxvf /stork.tar.gz'
+  cwd = Dir.pwd
+  if Dir.exist?("#{cwd}/tools")
+    sh "cp -a #{cwd}/tools /build"
+  end
   if File.exist?('/etc/redhat-release')
     pkg_type = 'rpm'
   else
@@ -630,7 +636,8 @@ task :build_fresh do
   end
   sh "cd /build && rm -rf /build/root && rake #{pkg_type}_agent STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
   sh "cd /build && rm -rf /build/root && rake #{pkg_type}_server STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
-  sh 'mv /build/isc-stork* /repo'
+  sh "cp /build/isc-stork* #{cwd}"
+  sh "ls -al #{cwd}/isc-stork*"
 end
 
 desc 'Build all. It builds backend and UI.'

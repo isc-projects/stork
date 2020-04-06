@@ -116,8 +116,11 @@ debs:
   tags:
     - linux
     - amd64
+  before_script:
+    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   script:
-    - rake deb_agent deb_server
+    - rake build_pkgs
   artifacts:
     paths:
       - isc-stork-*deb
@@ -129,8 +132,11 @@ rpms:
   tags:
     - linux
     - amd64
+  before_script:
+    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   script:
-    - rake rpm_agent rpm_server
+    - rake build_pkgs
   artifacts:
     paths:
       - isc-stork-*rpm
