@@ -46,6 +46,12 @@ type BaseHAService struct {
 	SecondaryStatusCollectedAt time.Time
 	PrimaryLastState           string
 	SecondaryLastState         string
+	PrimaryLastScopes          []string `pg:",array"`
+	SecondaryLastScopes        []string `pg:",array"`
+	PrimaryReachable           bool
+	SecondaryReachable         bool
+	PrimaryLastFailoverAt      time.Time
+	SecondaryLastFailoverAt    time.Time
 }
 
 // A structure reflecting all SQL tables holding information about the

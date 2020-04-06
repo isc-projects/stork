@@ -170,6 +170,9 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 		SecondaryStatusCollectedAt: time.Now().UTC(),
 		PrimaryLastState:           "load-balancing",
 		SecondaryLastState:         "syncing",
+		PrimaryLastScopes:          []string{"server1", "server2"},
+		SecondaryLastScopes:        []string{},
+		PrimaryLastFailoverAt:      time.Now(),
 	}
 	err = AddService(db, service2)
 	require.NoError(t, err)
@@ -222,6 +225,12 @@ func TestUpdateBaseHAService(t *testing.T) {
 	require.Equal(t, service.SecondaryLastState, returned.HAService.SecondaryLastState)
 }
 
+		PrimaryScope:               []string{"server1"},
+		SecondaryScope:             []string{"server2"},
+	require.Len(t, service.HAService.PrimaryScope, 1)
+	require.Equal(t, "server1", service.HAService.PrimaryScope[0])
+	require.Len(t, service.HAService.SecondaryScope, 1)
+	require.Equal(t, "server2", service.HAService.SecondaryScope[0])
 // Test getting the service by id.
 func TestGetServiceById(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -253,6 +262,8 @@ func TestGetServiceById(t *testing.T) {
 	require.False(t, service.HAService.SecondaryStatusCollectedAt.IsZero())
 	require.Equal(t, "load-balancing", service.HAService.PrimaryLastState)
 	require.Equal(t, "syncing", service.HAService.SecondaryLastState)
+	require.False(t, service.HAService.PrimaryLastFailoverAt.IsZero())
+	require.True(t, service.HAService.SecondaryLastFailoverAt.IsZero())
 }
 
 // Test getting services for an app.
