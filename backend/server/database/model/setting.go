@@ -49,6 +49,11 @@ func InitializeSettings(db *pg.DB) error {
 			ValType: SettingValTypeInt,
 			Value:   "60",
 		},
+		{
+			Name:    "kea_status_puller_interval", // in seconds
+			ValType: SettingValTypeInt,
+			Value:   "30",
+		},
 	}
 
 	// Check if there are new settings vs existing ones. Add new ones to DB.
