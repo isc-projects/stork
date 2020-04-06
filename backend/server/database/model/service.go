@@ -105,16 +105,29 @@ func addServiceApps(dbIface interface{}, service *BaseService) (err error) {
 }
 
 // Associate an application with the service having a specified id.
-func AddAppToService(db *pg.DB, serviceID int64, app *App) error {
+func AddAppToService(dbIface interface{}, serviceID int64, app *App) error {
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with starting transaction for associating an app %d with the service %d",
+			app.ID, serviceID)
+		return err
+	}
+	defer rollback()
+
 	service := &BaseService{
 		ID: serviceID,
 	}
 	service.Apps = append(service.Apps, app)
-	err := addServiceApps(db, service)
-
+	err = addServiceApps(tx, service)
 	if err != nil {
 		err = errors.Wrapf(err, "problem with associating an app having id %d with service %d",
 			app.ID, serviceID)
+		return err
+	}
+
+	err = commit()
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with committing transaction associating an app %d with the service %d", app.ID, service.ID)
 	}
 	return err
 }
@@ -139,8 +152,8 @@ func DeleteAppFromService(db *pg.DB, serviceID, appID int64) (bool, error) {
 // Adds new service to the database and associates the applications with it.
 // This operation is performed in a transaction. There are several SQL tables
 // involved in this operation: service, app_to_service and optionally ha_service.
-func AddService(db *dbops.PgDB, service *Service) error {
-	tx, rollback, commit, err := dbops.Transaction(db)
+func AddService(dbIface interface{}, service *Service) error {
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
 		err = errors.WithMessagef(err, "problem with starting transaction for adding new service")
 		return err
@@ -164,10 +177,8 @@ func AddService(db *dbops.PgDB, service *Service) error {
 	// If this is HA service, let's add extra HA specific information into the
 	// ha_service table.
 	if service.HAService != nil {
-		service.HAService.ServiceID = service.ID
-		_, err = tx.Model(service.HAService).Insert()
+		err = AddHAService(tx, service.ID, service.HAService)
 		if err != nil {
-			err = errors.Wrapf(err, "problem with adding new High Availability service")
 			return err
 		}
 	}
@@ -181,23 +192,103 @@ func AddService(db *dbops.PgDB, service *Service) error {
 	return err
 }
 
+// Adds information about HA service and associate it with the given service ID.
+func AddHAService(dbIface interface{}, serviceID int64, haService *BaseHAService) error {
+	haService.ServiceID = serviceID
+
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		return err
+	}
+	defer rollback()
+
+	_, err = tx.Model(haService).Insert()
+	if err != nil {
+		err = errors.Wrapf(err, "problem with adding new HA service to the database")
+		return err
+	}
+
+	err = commit()
+	if err != nil {
+		err = errors.WithMessage(err, "problem with committing new HA service into the database")
+	}
+	return err
+}
+
 // Updates basic information about the service. It only affects the contents of the
 // service table in the database.
-func UpdateBaseService(db *dbops.PgDB, service *BaseService) error {
-	err := db.Update(service)
+func UpdateBaseService(dbIface interface{}, service *BaseService) error {
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with updating a service with id %d", service.ID)
+		return err
+	}
+	defer rollback()
+
+	err = tx.Update(service)
+	if err != nil {
+		err = errors.Wrapf(err, "problem with updating base service with id %d", service.ID)
+		return err
+	}
+
+	err = commit()
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with committing base service %d information after update",
+			service.ID)
 	}
 	return err
 }
 
 // Updates HA specific information for a service. It only affects the contents of
 // the ha_service table.
-func UpdateBaseHAService(db *dbops.PgDB, service *BaseHAService) error {
-	err := db.Update(service)
+func UpdateBaseHAService(dbIface interface{}, service *BaseHAService) error {
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with updating the HA configuration for service with id %d",
+		return err
+	}
+	defer rollback()
+
+	err = tx.Update(service)
+	if err != nil {
+		err = errors.Wrapf(err, "problem with updating the HA information for service with id %d",
 			service.ServiceID)
+		return err
+	}
+
+	err = commit()
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with committing HA information for service with id %d after update",
+			service.ServiceID)
+	}
+	return err
+}
+
+// Updates basic and detailed information about the service.
+func UpdateService(dbIface interface{}, service *Service) error {
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		return err
+	}
+	defer rollback()
+
+	err = UpdateBaseService(tx, &service.BaseService)
+	if err != nil {
+		return err
+	}
+
+	if service.HAService != nil {
+		if service.HAService.ID == 0 {
+			err = AddHAService(tx, service.ID, service.HAService)
+		} else {
+			err = UpdateBaseHAService(tx, service.HAService)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	err = commit()
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with committing service with id %d after update", service.ID)
 	}
 	return err
 }
@@ -309,6 +400,43 @@ func DeleteService(db *dbops.PgDB, serviceID int64) error {
 	_, err := db.Model(service).WherePK().Delete()
 	if err != nil {
 		err = errors.Wrapf(err, "problem with deleting the service having id %d", serviceID)
+	}
+	return err
+}
+
+// Iterates over the services and commits them to the database. It also associates them
+// with the specified app.
+func CommitServicesIntoDB(dbIface interface{}, services []Service, app *App) error {
+	// Begin transaction.
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		return err
+	}
+	defer rollback()
+
+	for i := range services {
+		if services[i].ID == 0 {
+			err = AddService(tx, &services[i])
+		} else {
+			err = UpdateService(tx, &services[i])
+		}
+		if err != nil {
+			err = errors.WithMessagef(err, "problem with committing services into the database")
+			return err
+		}
+		// Try to associate the app with the service. If the association already
+		// exists this is no-op.
+		err = AddAppToService(tx, services[i].ID, app)
+		if err != nil {
+			err = errors.WithMessagef(err, "problem with associating detected service %d with app having id %d",
+				services[i].ID, app.ID)
+			return err
+		}
+	}
+
+	err = commit()
+	if err != nil {
+		err = errors.WithMessage(err, "problem with committing services into the database")
 	}
 	return err
 }

@@ -111,19 +111,8 @@ func appArraysMatch(appArray1, appArray2 []*App) bool {
 	return true
 }
 
-// This function adds two services, each including 5 Kea applications.
-func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
-	service1 := &Service{
-		BaseService: BaseService{
-			Name: "service1",
-		},
-	}
-	service2 := &Service{
-		BaseService: BaseService{
-			Name: "service2",
-		},
-	}
-
+// Adds 10 test apps.
+func addTestApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 	// Add 10 machines, each including a single Kea app.
 	for i := 0; i < 10; i++ {
 		m := &Machine{
@@ -147,11 +136,31 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 		err = AddApp(db, a)
 		require.NoError(t, err)
 
+		apps = append(apps, a)
+	}
+	return apps
+}
+
+// This function adds two services, each including 5 Kea applications.
+func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
+	service1 := &Service{
+		BaseService: BaseService{
+			Name: "service1",
+		},
+	}
+	service2 := &Service{
+		BaseService: BaseService{
+			Name: "service2",
+		},
+	}
+
+	apps := addTestApps(t, db)
+	for i := range apps {
 		// 5 apps added to service 1, and 5 added to service 2.
 		if i%2 == 0 {
-			service1.Apps = append(service1.Apps, a)
+			service1.Apps = append(service1.Apps, apps[i])
 		} else {
-			service2.Apps = append(service2.Apps, a)
+			service2.Apps = append(service2.Apps, apps[i])
 		}
 	}
 
@@ -166,8 +175,8 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 		PrimaryID:                  service2.Apps[0].ID,
 		SecondaryID:                service2.Apps[1].ID,
 		BackupID:                   []int64{service2.Apps[2].ID, service2.Apps[3].ID},
-		PrimaryStatusCollectedAt:   time.Now().UTC(),
-		SecondaryStatusCollectedAt: time.Now().UTC(),
+		PrimaryStatusCollectedAt:   time.Now(),
+		SecondaryStatusCollectedAt: time.Now(),
 		PrimaryLastState:           "load-balancing",
 		SecondaryLastState:         "syncing",
 		PrimaryLastScopes:          []string{"server1", "server2"},
@@ -225,12 +234,48 @@ func TestUpdateBaseHAService(t *testing.T) {
 	require.Equal(t, service.SecondaryLastState, returned.HAService.SecondaryLastState)
 }
 
-		PrimaryScope:               []string{"server1"},
-		SecondaryScope:             []string{"server2"},
-	require.Len(t, service.HAService.PrimaryScope, 1)
-	require.Equal(t, "server1", service.HAService.PrimaryScope[0])
-	require.Len(t, service.HAService.SecondaryScope, 1)
-	require.Equal(t, "server2", service.HAService.SecondaryScope[0])
+// Test that the entire service information can be updated.
+func TestUpdateService(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	services := addTestServices(t, db)
+	require.GreaterOrEqual(t, len(services), 2)
+
+	// Update the existing service by adding HA specific information to it.
+	services[0].HAService = &BaseHAService{
+		HAType:                     "dhcp4",
+		PrimaryID:                  services[0].Apps[0].ID,
+		SecondaryID:                services[0].Apps[1].ID,
+		PrimaryStatusCollectedAt:   time.Now().UTC(),
+		SecondaryStatusCollectedAt: time.Now().UTC(),
+		PrimaryLastState:           "load-balancing",
+		SecondaryLastState:         "syncing",
+	}
+	err := UpdateService(db, services[0])
+	require.NoError(t, err)
+
+	// Make sure that the HA specific information was attached.
+	service, err := GetDetailedService(db, services[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, service)
+	require.Equal(t, "ha_dhcp", service.ServiceType)
+	require.NotNil(t, service.HAService)
+	require.Equal(t, "dhcp4", service.HAService.HAType)
+	require.Equal(t, "load-balancing", service.HAService.PrimaryLastState)
+	require.Equal(t, "syncing", service.HAService.SecondaryLastState)
+
+	// Try to update HA specific information.
+	service.HAService.SecondaryLastState = "load-balancing"
+	err = UpdateService(db, service)
+	require.NoError(t, err)
+
+	service, err = GetDetailedService(db, services[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, service.HAService)
+	require.Equal(t, "load-balancing", service.HAService.SecondaryLastState)
+}
+
 // Test getting the service by id.
 func TestGetServiceById(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -413,7 +458,7 @@ func TestAddAppToService(t *testing.T) {
 	err := AddAppToService(db, services[0].ID, services[1].Apps[0])
 	require.NoError(t, err)
 
-	// That service should not include 6 apps.
+	// That service should now include 6 apps.
 	service, err := GetDetailedService(db, services[0].ID)
 	require.NoError(t, err)
 	require.Len(t, service.Apps, 6)
@@ -436,6 +481,65 @@ func TestDeleteAppFromService(t *testing.T) {
 	service, err := GetDetailedService(db, 1)
 	require.NoError(t, err)
 	require.Len(t, service.Apps, 4)
+}
+
+// Test that multiple services can be added/updated and associated with an
+// app within a single transaction.
+func TestCommitServicesIntoDB(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	apps := addTestApps(t, db)
+
+	services := []Service{
+		{
+			BaseService: BaseService{
+				Name: "service1",
+			},
+		},
+		{
+			BaseService: BaseService{
+				Name: "service2",
+			},
+		},
+		{
+			BaseService: BaseService{
+				Name: "service3",
+			},
+		},
+	}
+
+	// Add first two services into db and associate with the first app.
+	err := CommitServicesIntoDB(db, services[:2], apps[0])
+	require.NoError(t, err)
+
+	// Get the services. There should be two in the database.
+	returned, err := GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, returned, 2)
+
+	for i := range returned {
+		// Make sure they are both associated with our app.
+		require.Len(t, returned[i].Apps, 1)
+		require.Equal(t, services[i].Name, returned[i].Name)
+		require.EqualValues(t, apps[0].ID, returned[i].Apps[0].ID)
+	}
+
+	// This time commit app #2 and #3 into db and associate them with the
+	// second app.
+	err = CommitServicesIntoDB(db, services[1:3], apps[1])
+	require.NoError(t, err)
+
+	// Get the services shanpshot from the db again.
+	returned, err = GetDetailedAllServices(db)
+	require.NoError(t, err)
+	require.Len(t, returned, 3)
+
+	// The first and third app should be associated with one app and the
+	// second one should be associated with both apps.
+	require.Len(t, returned[0].Apps, 1)
+	require.Len(t, returned[1].Apps, 2)
+	require.Len(t, returned[2].Apps, 1)
 }
 
 // Test the convenience function checking if the service is new,
