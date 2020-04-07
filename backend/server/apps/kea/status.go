@@ -2,12 +2,14 @@ package kea
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -24,6 +26,155 @@ type Status struct {
 }
 
 type AppStatus []Status
+
+// Instance of the puller which periodically checks the status of the Kea apps.
+// Besides basic status information the High Availability status is fetched.
+type StatusPuller struct {
+	*agentcomm.PeriodicPuller
+}
+
+// Create an instance of the puller which periodically checks the status of
+// the Kea apps.
+func NewStatusPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (*StatusPuller, error) {
+	haPuller := &StatusPuller{}
+	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Status",
+		"kea_status_puller_interval", haPuller.pullData)
+	if err != nil {
+		return nil, err
+	}
+	haPuller.PeriodicPuller = periodicPuller
+	return haPuller, nil
+}
+
+// Stops the timer triggering status checks.
+func (puller *StatusPuller) Shutdown() {
+	puller.PeriodicPuller.Shutdown()
+}
+
+// Gets the status of the Kea apps and stores useful information in the database.
+// The High Availability status is stored in the database for those apps which
+// have the HA enabled.
+func (puller *StatusPuller) pullData() (int, error) {
+	// Get the list of all Kea apps from the database.
+	apps, err := dbmodel.GetAppsByType(puller.Db, dbmodel.AppTypeKea)
+	if err != nil {
+		return 0, err
+	}
+
+	var lastErr error
+	appsOkCnt := 0
+	appsCnt := 0
+	for i := range apps {
+		// Before contacting the DHCP server, let's check if there is any service
+		// the app belongs to.
+		dbServices, err := dbmodel.GetDetailedServicesByAppID(puller.Db, apps[i].ID)
+		if err != nil {
+			log.Errorf("error occurred while getting services for Kea app %d: %s", apps[i].ID, err)
+			continue
+		}
+		// No services for this app, so nothing to do.
+		if len(dbServices) == 0 {
+			continue
+		}
+		appsCnt++
+		ctx := context.Background()
+		// Send the status-get command to both DHCPv4 and DHCPv6 server.
+		appStatus, err := GetDHCPStatus(ctx, puller.Agents, &apps[i])
+		if err != nil {
+			log.Errorf("error occurred while getting Kea app %d status: %s", apps[i].ID, err)
+		}
+		for _, status := range appStatus {
+			// If no HA status, there is nothing to do.
+			if status.HAServers == nil {
+				continue
+			}
+			// Find the matching service for the returned status.
+			index := -1
+			for i := range dbServices {
+				if dbServices[i].HAService != nil && dbServices[i].HAService.HAType == status.Daemon {
+					index = i
+				}
+			}
+			if index < 0 {
+				continue
+			}
+			// Check if the given app is a primary or secondary/standby server. If it is
+			// not, there is nothing to do.
+			service := dbServices[index].HAService
+			if service.PrimaryID != apps[i].ID && service.SecondaryID != apps[i].ID {
+				continue
+			}
+			// The status of the remote server should contain "age" value which indicates
+			// how many seconds ago the status of the remote server was gathered. If this
+			// value is present, calculate its timestamp.
+			agePresent := false
+			dur, err := time.ParseDuration(fmt.Sprintf("%ds", status.HAServers.Remote.Age))
+			if err == nil {
+				agePresent = true
+			}
+			// Get the current time.
+			now := time.Now().UTC()
+			// Depending if this server is primary or secondary/standby, we will fill in
+			// different columns of the ha_service table.
+			var (
+				primaryLastState   string
+				secondaryLastState string
+			)
+			switch apps[i].ID {
+			case service.PrimaryID:
+				// Primary responded giving its state as "local" server's state.
+				primaryLastState = status.HAServers.Local.State
+				service.PrimaryStatusCollectedAt = now
+				service.PrimaryLastScopes = status.HAServers.Local.Scopes
+				// The state of the secondary should have been returned as "remote"
+				// server's state.
+				secondaryLastState = status.HAServers.Remote.LastState
+				if agePresent {
+					// Record the time when the state of the secondary/standby was gathered.
+					// It was "dur" seconds before current time.
+					service.SecondaryStatusCollectedAt = now.Add(-dur)
+				}
+				service.SecondaryLastScopes = status.HAServers.Remote.LastScopes
+			case service.SecondaryID:
+				// The server which responded to the command was the secondary. Therfore,
+				// the primary's state is given as "remote" server's state.
+				primaryLastState = status.HAServers.Remote.LastState
+				if agePresent {
+					service.PrimaryStatusCollectedAt = now.Add(-dur)
+				}
+				service.PrimaryLastScopes = status.HAServers.Remote.LastScopes
+				// Record the secondary/standby server's state.
+				secondaryLastState = status.HAServers.Local.State
+				service.SecondaryStatusCollectedAt = now
+				service.SecondaryLastScopes = status.HAServers.Local.Scopes
+			}
+			// Finally, if any of the server's is in the partner-down state we should
+			// record it as failover event.
+			if primaryLastState != service.PrimaryLastState {
+				if primaryLastState == "partner-down" {
+					service.PrimaryLastFailoverAt = service.PrimaryStatusCollectedAt
+				}
+				service.PrimaryLastState = primaryLastState
+			}
+			if secondaryLastState != service.SecondaryLastState {
+				if secondaryLastState == "partner-down" {
+					service.SecondaryLastFailoverAt = service.SecondaryStatusCollectedAt
+				}
+				service.SecondaryLastState = secondaryLastState
+			}
+
+			// Update the information about the HA service in the database.
+			err = dbmodel.UpdateBaseHAService(puller.Db, service)
+			if err != nil {
+				log.Errorf("error occurred while updating HA services status for Kea app %d: %s", apps[i].ID, err)
+				continue
+			}
+		}
+		appsOkCnt++
+	}
+	log.Printf("completed pulling DHCP status from Kea apps: %d/%d succeeded", appsOkCnt, appsCnt)
+	return appsOkCnt, lastErr
+}
 
 // Sends the status-get command to Kea DHCP servers and returns this status to the caller.
 func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) (AppStatus, error) {

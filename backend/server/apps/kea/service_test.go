@@ -16,7 +16,7 @@ import (
 // server1, server2 ...  server5. The server1 is a primary, the server2
 // is a secondary, the server3 is a standby and the remaining ones are the
 // backup servers.
-func getTestConfig(rootName, thisServerName, mode string, peerNames ...string) *dbmodel.KeaConfig {
+func getHATestConfig(rootName, thisServerName, mode string, peerNames ...string) *dbmodel.KeaConfig {
 	type peerInfo struct {
 		URL  string
 		Role string
@@ -116,12 +116,12 @@ func TestDetectHAServices(t *testing.T) {
 			Daemons: []*dbmodel.KeaDaemon{
 				{
 					Name: "dhcp4",
-					Config: getTestConfig("Dhcp4", "server2", "load-balancing",
+					Config: getHATestConfig("Dhcp4", "server2", "load-balancing",
 						"server1", "server2", "server4"),
 				},
 				{
 					Name: "dhcp6",
-					Config: getTestConfig("Dhcp6", "server3", "hot-standby",
+					Config: getHATestConfig("Dhcp6", "server3", "hot-standby",
 						"server1", "server3"),
 				},
 			},
@@ -217,7 +217,7 @@ func TestDetectHAServices(t *testing.T) {
 			Daemons: []*dbmodel.KeaDaemon{
 				{
 					Name: "dhcp4",
-					Config: getTestConfig("Dhcp4", "server4", "load-balancing",
+					Config: getHATestConfig("Dhcp4", "server4", "load-balancing",
 						"server1", "server2", "server4"),
 				},
 			},
@@ -271,12 +271,12 @@ func TestDetectHAServices(t *testing.T) {
 			Daemons: []*dbmodel.KeaDaemon{
 				{
 					Name: "dhcp4",
-					Config: getTestConfig("Dhcp4", "server1", "load-balancing",
+					Config: getHATestConfig("Dhcp4", "server1", "load-balancing",
 						"server1", "server2", "server4"),
 				},
 				{
 					Name: "dhcp6",
-					Config: getTestConfig("Dhcp6", "server1", "hot-standby",
+					Config: getHATestConfig("Dhcp6", "server1", "hot-standby",
 						"server1", "server3"),
 				},
 			},
@@ -345,7 +345,7 @@ func TestDetectHAServices(t *testing.T) {
 			Daemons: []*dbmodel.KeaDaemon{
 				{
 					Name: "dhcp4",
-					Config: getTestConfig("Dhcp4", "server5", "load-balancing",
+					Config: getHATestConfig("Dhcp4", "server5", "load-balancing",
 						"server1", "server2", "server4", "server5"),
 				},
 			},
@@ -391,7 +391,7 @@ func TestAppBelongsToHAServiceBlankService(t *testing.T) {
 			Daemons: []*dbmodel.KeaDaemon{
 				{
 					Name: "dhcp4",
-					Config: getTestConfig("Dhcp4", "server2", "load-balancing",
+					Config: getHATestConfig("Dhcp4", "server2", "load-balancing",
 						"server1", "server2", "server4"),
 				},
 			},

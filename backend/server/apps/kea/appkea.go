@@ -371,6 +371,16 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App) error {
 		return err
 	}
 
+	// Check what HA services the app belongs to.
+	services := DetectHAServices(db, app)
+
+	// For the given app, iterate over the services and add/update them in the
+	// database.
+	err = dbmodel.CommitServicesIntoDB(tx, services, app)
+	if err != nil {
+		return err
+	}
+
 	// Commit the changes if everything went fine.
 	err = commit()
 	return err
