@@ -24,8 +24,8 @@ type StorkServer struct {
 	RestAPISettings restservice.RestAPISettings
 	RestAPI         *restservice.RestAPI
 
-	StatsPuller *kea.StatsPuller
-	HostsPuller *kea.HostsPuller
+	KeaStatsPuller *kea.StatsPuller
+	KeaHostsPuller *kea.HostsPuller
 }
 
 func (ss *StorkServer) ParseArgs() {
@@ -90,13 +90,13 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	}
 
 	// setup kea stats puller
-	ss.StatsPuller, err = kea.NewStatsPuller(ss.Db, ss.Agents)
+	ss.KeaStatsPuller, err = kea.NewStatsPuller(ss.Db, ss.Agents)
 	if err != nil {
 		return nil, err
 	}
 
 	// Setup Kea hosts puller.
-	ss.HostsPuller, err = kea.NewHostsPuller(ss.Db, ss.Agents)
+	ss.KeaHostsPuller, err = kea.NewHostsPuller(ss.Db, ss.Agents)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,8 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DbSettings, ss.Db, ss.Agents)
 	if err != nil {
-		ss.StatsPuller.Shutdown()
+		ss.KeaHostsPuller.Shutdown()
+		ss.KeaStatsPuller.Shutdown()
 		ss.Db.Close()
 		return nil, err
 	}
@@ -125,7 +126,8 @@ func (ss *StorkServer) Serve() {
 func (ss *StorkServer) Shutdown() {
 	log.Println("Shutting down Stork Server")
 	ss.RestAPI.Shutdown()
-	ss.StatsPuller.Shutdown()
+	ss.KeaHostsPuller.Shutdown()
+	ss.KeaStatsPuller.Shutdown()
 	ss.Db.Close()
 	ss.Agents.Shutdown()
 	log.Println("Stork Server shut down")
