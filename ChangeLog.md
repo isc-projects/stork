@@ -1,3 +1,8 @@
+* 51 [bug] matthijs
+
+    Added querying named stats from Bind 9 apps periodically.
+    (Gitlab #211)
+
 Stork 0.6.0 released on 2020-04-03.
 
 * 50 [bug] marcin

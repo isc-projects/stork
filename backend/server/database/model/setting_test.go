@@ -34,7 +34,11 @@ func TestInitializeSettings(t *testing.T) {
 	count := len(settings)
 
 	// check if given setting exists in db and has some default value
-	val, err := GetSettingInt(db, "kea_stats_puller_interval")
+	val, err := GetSettingInt(db, "bind9_stats_puller_interval")
+	require.NoError(t, err)
+	require.EqualValues(t, 60, val)
+
+	val, err = GetSettingInt(db, "kea_stats_puller_interval")
 	require.NoError(t, err)
 	require.EqualValues(t, 60, val)
 

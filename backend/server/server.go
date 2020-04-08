@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -24,8 +25,9 @@ type StorkServer struct {
 	RestAPISettings restservice.RestAPISettings
 	RestAPI         *restservice.RestAPI
 
-	KeaStatsPuller *kea.StatsPuller
-	KeaHostsPuller *kea.HostsPuller
+	Bind9StatsPuller *bind9.StatsPuller
+	KeaStatsPuller   *kea.StatsPuller
+	KeaHostsPuller   *kea.HostsPuller
 }
 
 func (ss *StorkServer) ParseArgs() {
@@ -89,6 +91,12 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		return nil, err
 	}
 
+	// setup bind9 stats puller
+	ss.Bind9StatsPuller, err = bind9.NewStatsPuller(ss.Db, ss.Agents)
+	if err != nil {
+		return nil, err
+	}
+
 	// setup kea stats puller
 	ss.KeaStatsPuller, err = kea.NewStatsPuller(ss.Db, ss.Agents)
 	if err != nil {
@@ -106,6 +114,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	if err != nil {
 		ss.KeaHostsPuller.Shutdown()
 		ss.KeaStatsPuller.Shutdown()
+		ss.Bind9StatsPuller.Shutdown()
 		ss.Db.Close()
 		return nil, err
 	}
@@ -128,6 +137,7 @@ func (ss *StorkServer) Shutdown() {
 	ss.RestAPI.Shutdown()
 	ss.KeaHostsPuller.Shutdown()
 	ss.KeaStatsPuller.Shutdown()
+	ss.Bind9StatsPuller.Shutdown()
 	ss.Db.Close()
 	ss.Agents.Shutdown()
 	log.Println("Stork Server shut down")

@@ -35,6 +35,11 @@ func InitializeSettings(db *pg.DB) error {
 	// list of all stork settings with default values
 	defaultSettings := []Setting{
 		{
+			Name:    "bind9_stats_puller_interval", // in seconds
+			ValType: SettingValTypeInt,
+			Value:   "60",
+		},
+		{
 			Name:    "kea_stats_puller_interval", // in seconds
 			ValType: SettingValTypeInt,
 			Value:   "60",
