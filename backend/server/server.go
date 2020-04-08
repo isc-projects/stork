@@ -28,6 +28,7 @@ type StorkServer struct {
 	Bind9StatsPuller *bind9.StatsPuller
 	KeaStatsPuller   *kea.StatsPuller
 	KeaHostsPuller   *kea.HostsPuller
+	StatusPuller     *kea.StatusPuller
 }
 
 func (ss *StorkServer) ParseArgs() {
@@ -117,6 +118,12 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		return nil, err
 	}
 
+	// Setup Kea status puller.
+	ss.StatusPuller, err = kea.NewStatusPuller(ss.Db, ss.Agents)
+	if err != nil {
+		return nil, err
+	}
+
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DbSettings, ss.Db, ss.Agents)
 	if err != nil {
@@ -146,6 +153,7 @@ func (ss *StorkServer) Shutdown() {
 	ss.KeaHostsPuller.Shutdown()
 	ss.KeaStatsPuller.Shutdown()
 	ss.Bind9StatsPuller.Shutdown()
+	ss.StatusPuller.Shutdown()
 	ss.Db.Close()
 	ss.Agents.Shutdown()
 	log.Println("Stork Server shut down")
