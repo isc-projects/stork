@@ -78,7 +78,7 @@ export class SharedNetworksPageComponent implements OnInit {
     getTotalAddresses(network) {
         let total = 0
         for (const sn of network.subnets) {
-            if (sn.stats) {
+            if (sn.localSubnets[0].stats) {
                 total += getTotalAddresses(sn)
             }
         }
@@ -91,19 +91,11 @@ export class SharedNetworksPageComponent implements OnInit {
     getAssignedAddresses(network) {
         let total = 0
         for (const sn of network.subnets) {
-            if (sn.stats) {
+            if (sn.localSubnets[0].stats) {
                 total += getAssignedAddresses(sn)
             }
         }
         return total
-    }
-
-    /**
-     * Get network addresses utilization (assigned / total) by summing up all subnets.
-     */
-    getNetworkUtilization(network) {
-        const utilization = (100 * this.getAssignedAddresses(network)) / this.getTotalAddresses(network)
-        return Math.floor(utilization)
     }
 
     /**
@@ -124,5 +116,21 @@ export class SharedNetworksPageComponent implements OnInit {
             return count.toLocaleString('en-US')
         }
         return humanCount(count)
+    }
+
+    getApps(net) {
+        const apps = []
+        const appIds = {}
+
+        for (const sn of net.subnets) {
+            for (const lsn of sn.localSubnets) {
+                if (!appIds.hasOwnProperty(lsn.appId)) {
+                    apps.push({ id: lsn.appId, machineAddress: lsn.machineAddress })
+                    appIds[lsn.appId] = true
+                }
+            }
+        }
+
+        return apps
     }
 }

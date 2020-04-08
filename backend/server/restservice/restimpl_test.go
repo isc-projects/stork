@@ -1,7 +1,6 @@
 package restservice
 
 import (
-	//"log"
 	"context"
 	"net/http"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
+	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
 	storktest "isc.org/stork/server/test"
@@ -945,4 +945,26 @@ func TestRestGetAppsStats(t *testing.T) {
 	require.EqualValues(t, 0, okRsp.Payload.KeaAppsNotOk)
 	require.EqualValues(t, 1, okRsp.Payload.Bind9AppsTotal)
 	require.EqualValues(t, 1, okRsp.Payload.Bind9AppsNotOk)
+}
+
+func TestGetDhcpOverview(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := storktest.NewFakeAgents(nil, nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// get overview, generally it should be empty
+	params := dhcp.GetDhcpOverviewParams{}
+	rsp := rapi.GetDhcpOverview(ctx, params)
+	require.IsType(t, &dhcp.GetDhcpOverviewOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetDhcpOverviewOK)
+	require.Len(t, okRsp.Payload.Subnets4.Items, 0)
+	require.Len(t, okRsp.Payload.Subnets6.Items, 0)
+	require.Len(t, okRsp.Payload.SharedNetworks4.Items, 0)
+	require.Len(t, okRsp.Payload.SharedNetworks6.Items, 0)
+	require.Len(t, okRsp.Payload.DhcpDaemons, 0)
 }

@@ -49,6 +49,9 @@ type Subnet struct {
 	LocalSubnets []*LocalSubnet
 
 	Hosts []Host
+
+	Utilization    int16
+	PdsUtilization int16
 }
 
 // Hook executed after inserting a subnet to the database. It updates subnet
@@ -324,9 +327,9 @@ func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
 // can be used to match the subnet prefix or pool ranges. The nil value disables
 // such filtering. This function returns a collection of subnets, the total number
 // of subnets and error.
-func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText *string) ([]Subnet, int64, error) {
+func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Subnet, int64, error) {
 	subnets := []Subnet{}
-	q := db.Model(&subnets).DistinctOn("subnet.id")
+	q := db.Model(&subnets)
 
 	// When filtering by appID we also need the local_subnet table as it holds the
 	// application identifier.
@@ -372,9 +375,25 @@ func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText 
 		})
 	}
 
-	q = q.OrderExpr("subnet.id ASC").
-		Offset(int(offset)).
-		Limit(int(limit))
+	// prepare sorting expression
+	sortExpr := ""
+	if sortField != "" {
+		if !strings.Contains(sortField, ".") {
+			sortExpr += "subnet."
+		}
+		sortExpr += sortField + " "
+	} else {
+		sortExpr = "subnet.id "
+	}
+	switch sortDir {
+	case SortDirDesc:
+		sortExpr += "DESC NULLS LAST"
+	default:
+		sortExpr += "ASC NULLS FIRST"
+	}
+	q = q.Order(sortExpr)
+	q = q.Offset(int(offset))
+	q = q.Limit(int(limit))
 
 	// This returns the limited results plus the total number of records.
 	total, err := q.SelectAndCount()
@@ -565,6 +584,41 @@ func (lsn *LocalSubnet) UpdateStats(db *pg.DB, stats map[string]interface{}) err
 	if err != nil {
 		err = errors.Wrapf(err, "problem with updating stats in local subnet: [app:%d, subnet:%d, local subnet:%d]",
 			lsn.AppID, lsn.SubnetID, lsn.LocalSubnetID)
+	}
+	return err
+}
+
+// Get list of Subnets with LocalSubnets grouped by SharedNetworkID
+func GetSubnetsWithLocalSubnets(db *pg.DB) ([]*Subnet, error) {
+	subnets := []*Subnet{}
+	q := db.Model(&subnets)
+	// only selected columns are returned for performance reasons
+	q = q.Column("id", "shared_network_id", "prefix")
+	q = q.Relation("LocalSubnets")
+	q = q.Order("shared_network_id ASC")
+
+	err := q.Select()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		err = errors.Wrap(err, "problem with getting all subnets")
+		return nil, err
+	}
+	return subnets, nil
+}
+
+// Update utilization in Subnet.
+func (s *Subnet) UpdateUtilization(db *pg.DB, utilization, pdsUtilization int16) error {
+	s.Utilization = utilization
+	s.PdsUtilization = pdsUtilization
+	q := db.Model(s)
+	q = q.Column("utilization", "pds_utilization")
+	q = q.WherePK()
+	_, err := q.Update()
+	if err != nil {
+		err = errors.Wrapf(err, "problem with updating utilization in the subnet: %d",
+			s.ID)
 	}
 	return err
 }

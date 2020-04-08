@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -20,6 +21,9 @@ type SharedNetwork struct {
 	Family    int `pg:"inet_family"`
 
 	Subnets []Subnet
+
+	Utilization    int16
+	PdsUtilization int16
 }
 
 // Adds new shared network to the database.
@@ -210,9 +214,9 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 // filterText can be used to match the shared network name or subnet prefix. The
 // nil value disables such filtering. This function returns a collection of
 // shared networks, the total number of shared networks and error.
-func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filterText *string) ([]SharedNetwork, int64, error) {
+func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SharedNetwork, int64, error) {
 	networks := []SharedNetwork{}
-	q := db.Model(&networks).DistinctOn("shared_network.id")
+	q := db.Model(&networks)
 
 	// If any of the filtering parameters are specified we need to explicitly join
 	// the subnets table so as we can access its columns in the Where clause.
@@ -253,7 +257,33 @@ func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filt
 		})
 	}
 
-	q = q.OrderExpr("shared_network.id ASC")
+	// There are join to subnets and local_subnets so to avoid multiple rows
+	// with the same shared_network do group by shared_network.id.
+	// It does not work with distinct on because this is in conflict with
+	// dynamic order by below (columns didn't match).
+	if appID != 0 || family != 0 || filterText != nil {
+		q = q.Group("shared_network.id")
+	}
+
+	// prepare sorting expression
+	sortExpr := ""
+	if sortField != "" {
+		if !strings.Contains(sortField, ".") {
+			sortExpr += "shared_network."
+		}
+		sortExpr += sortField + " "
+	} else {
+		sortExpr = "shared_network.id "
+	}
+	switch sortDir {
+	case SortDirDesc:
+		sortExpr += "DESC NULLS LAST"
+	default:
+		sortExpr += "ASC NULLS FIRST"
+	}
+	q = q.Order(sortExpr)
+	q = q.Offset(int(offset))
+	q = q.Limit(int(limit))
 
 	// This returns the limited results plus the total number of records.
 	total, err := q.SelectAndCount()
@@ -264,4 +294,22 @@ func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filt
 		err = errors.Wrapf(err, "problem with getting shared networks by page")
 	}
 	return networks, int64(total), err
+}
+
+// Update utilization in SharedNetwork.
+func UpdateUtilizationInSharedNetwork(db *pg.DB, sharedNetworID int64, utilization, pdsUtilization int16) error {
+	net := &SharedNetwork{
+		ID:             sharedNetworID,
+		Utilization:    utilization,
+		PdsUtilization: pdsUtilization,
+	}
+	q := db.Model(net)
+	q = q.Column("utilization", "pds_utilization")
+	q = q.WherePK()
+	_, err := q.Update()
+	if err != nil {
+		err = errors.Wrapf(err, "problem with updating utilization in the shared network: %d",
+			sharedNetworID)
+	}
+	return err
 }

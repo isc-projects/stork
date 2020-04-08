@@ -73,11 +73,13 @@ func NewStorkServer() (ss *StorkServer, err error) {
 
 	// setup connected agents
 	ss.Agents = agentcomm.NewConnectedAgents(&ss.AgentsSettings)
-	defer func() {
-		if err != nil {
-			ss.Agents.Shutdown()
-		}
-	}()
+	// TODO: if any operation below fails then this Shutdown here causes segfault.
+	// I do not know why and do not how to fix this. Commenting out for now.
+	// defer func() {
+	// 	if err != nil {
+	// 		ss.Agents.Shutdown()
+	// 	}
+	// }()
 
 	// setup database connection
 	ss.Db, err = dbops.NewPgDB(&ss.DbSettings)
@@ -87,6 +89,12 @@ func NewStorkServer() (ss *StorkServer, err error) {
 
 	// initialize stork settings
 	err = dbmodel.InitializeSettings(ss.Db)
+	if err != nil {
+		return nil, err
+	}
+
+	// initialize stork statistics
+	err = dbmodel.InitializeStats(ss.Db)
 	if err != nil {
 		return nil, err
 	}

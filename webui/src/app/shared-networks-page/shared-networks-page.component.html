@@ -65,14 +65,14 @@
                         }}</span>
                     </td>
                     <td>
-                        {{ getNetworkUtilization(net) }} %
+                        {{ net.utilization ? net.utilization : '0' }} %
                         <i
-                            *ngIf="getNetworkUtilization(net) > 80 && getNetworkUtilization(net) <= 90"
+                            *ngIf="net.utilization > 80 && net.utilization <= 90"
                             class="pi pi-exclamation-triangle"
                             style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange;"
                         ></i>
                         <i
-                            *ngIf="getNetworkUtilization(net) > 90"
+                            *ngIf="net.utilization > 90"
                             class="pi pi-exclamation-circle"
                             style="font-size: 1.5em; vertical-align: text-top; float: right; color: red;"
                         ></i>
@@ -81,7 +81,9 @@
                         <app-subnet-bar *ngFor="let sn of net.subnets" [subnet]="sn"></app-subnet-bar>
                     </td>
                     <td>
-                        <a routerLink="/apps/kea/{{ net.appId }}">{{ net.appId }} @ {{ net.machineAddress }}</a>
+                        <a *ngFor="let app of getApps(net)" routerLink="/apps/kea/{{ app.id }}"
+                            >{{ app.id }} @ {{ app.machineAddress }}</a
+                        >
                     </td>
                 </tr>
             </ng-template>

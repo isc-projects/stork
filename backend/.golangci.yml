@@ -6,8 +6,9 @@ linters:
     - lll
     - funlen
     - prealloc
-    - wsl       # TODO: reenable later
+    - wsl         # TODO: reenable later
     - interfacer  # A tool that suggests interfaces is prone to bad suggestions, so its usefulness in real code is limited.
+    - dupl        # there are some false positives (identical code but operating on different types so no posibility to unify)
 
 issues:
   max-same-issues: 3
@@ -18,7 +19,6 @@ issues:
       linters:
         - gocyclo
         - errcheck
-        - dupl
         - gosec
         - goconst
 

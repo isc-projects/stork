@@ -98,3 +98,22 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /overview:
+    get:
+      summary: Get overview of whole DHCP state.
+      description: >-
+        A bunch of different information about DHCP like most utilized subnets and shared networks,
+        and state of all Kea daemons.
+      operationId: getDhcpOverview
+      tags:
+        - DHCP
+      responses:
+        200:
+          description: Overview of DHCP state.
+          schema:
+            $ref: "#/definitions/DhcpOverview"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

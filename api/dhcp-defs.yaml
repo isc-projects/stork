@@ -60,12 +60,25 @@
 
 # Subnet
 
-  Subnet:
+  LocalSubnet:
     type: object
     properties:
       id:
         type: integer
       appId:
+        type: integer
+      machineAddress:
+        type: string
+      stats:
+        type: object
+      statsCollectedAt:
+        type: string
+        format: date-time
+
+  Subnet:
+    type: object
+    properties:
+      id:
         type: integer
       subnet:
         type: string
@@ -75,15 +88,14 @@
           type: string
       sharedNetwork:
         type: string
-      machineAddress:
-        type: string
       clientClass:
         type: string
-      stats:
-        type: object
-      statsCollectedAt:
-        type: string
-        format: date-time
+      utilization:
+        type: number
+      localSubnets:
+        type: array
+        items:
+          $ref: '#/definitions/LocalSubnet'
 
   Subnets:
     type: object
@@ -103,14 +115,12 @@
     properties:
       name:
         type: string
-      appId:
-        type: integer
       subnets:
         type: array
         items:
           $ref: '#/definitions/Subnet'
-      machineAddress:
-        type: string
+      utilization:
+        type: number
 
   SharedNetworks:
     type: object
@@ -121,3 +131,75 @@
           $ref: '#/definitions/SharedNetwork'
       total:
         type: integer
+
+# Overview
+
+  Dhcp4Stats:
+    type: object
+    properties:
+      assignedAddresses:
+        type: integer
+      totalAddresses:
+        type: integer
+      declinedAddresses:
+        type: integer
+
+  Dhcp6Stats:
+    type: object
+    properties:
+      assignedNAs:
+        type: integer
+      totalNAs:
+        type: integer
+      assignedPDs:
+        type: integer
+      totalPDs:
+        type: integer
+      declinedNAs:
+        type: integer
+
+  DhcpDaemon:
+    type: object
+    properties:
+      machineId:
+        type: integer
+      machine:
+        type: string
+      appId:
+        type: integer
+      appVersion:
+        type: string
+      name:
+        type: string
+      active:
+        type: boolean
+      lps15min:
+        type: integer
+      lps24h:
+        type: integer
+      utilization:
+        type: number
+      haStatus:
+        type: string
+      uptime:
+        type: integer
+
+  DhcpOverview:
+    type: object
+    properties:
+      subnets4:
+        $ref: '#/definitions/Subnets'
+      subnets6:
+        $ref: '#/definitions/Subnets'
+      sharedNetworks4:
+        $ref: '#/definitions/SharedNetworks'
+      sharedNetworks6:
+        $ref: '#/definitions/SharedNetworks'
+      dhcp4Stats:
+        $ref: '#/definitions/Dhcp4Stats'
+      dhcp6Stats:
+        $ref: '#/definitions/Dhcp6Stats'
+      dhcpDaemons:
+        type: array
+        items:
+          $ref: '#/definitions/DhcpDaemon'

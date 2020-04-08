@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core'
 
 import { DHCPService } from '../backend/api/api'
 import { humanCount } from '../utils'
-import { getSubnetUtilization, getTotalAddresses, getAssignedAddresses } from '../subnets'
+import { getTotalAddresses, getAssignedAddresses } from '../subnets'
 
 /**
  * Component for presenting DHCP subnets.
@@ -73,13 +73,6 @@ export class SubnetsPageComponent implements OnInit {
     }
 
     /**
-     * Get subnet addresses utilization.
-     */
-    getSubnetUtilization(subnet) {
-        return getSubnetUtilization(subnet)
-    }
-
-    /**
      * Prepare count for presenting in a column that it is easy to grasp by humans.
      */
     humanCount(count) {
@@ -106,7 +99,7 @@ export class SubnetsPageComponent implements OnInit {
      * Get total number of addresses in a subnet.
      */
     getTotalAddresses(subnet) {
-        if (subnet.stats) {
+        if (subnet.localSubnets[0].stats) {
             return getTotalAddresses(subnet)
         } else {
             return '?'
@@ -117,7 +110,7 @@ export class SubnetsPageComponent implements OnInit {
      * Get assigned number of addresses in a subnet.
      */
     getAssignedAddresses(subnet) {
-        if (subnet.stats) {
+        if (subnet.localSubnets[0].stats) {
             return getAssignedAddresses(subnet)
         } else {
             return '?'

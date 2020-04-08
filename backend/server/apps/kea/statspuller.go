@@ -34,6 +34,49 @@ func (statsPuller *StatsPuller) Shutdown() {
 	statsPuller.PeriodicPuller.Shutdown()
 }
 
+// Go through LocalSubnets and get max stats about assigned, total and declined addresses and PDs.
+func getStatsFromLocalSubnets(localSubnets []*dbmodel.LocalSubnet, family int, assignedKey, totalKey, declinedKey string) (int64, int64, int64, int64, int64, int16, int16) {
+	var snMaxUsed int16 = -1
+	var snMaxUsedPds int16 = -1
+	snTotal := int64(0)
+	snAssigned := int64(0)
+	snDeclined := int64(0)
+	snTotalPds := int64(0)
+	snAssignedPds := int64(0)
+	for _, lsn := range localSubnets {
+		totalIf := lsn.Stats[totalKey]
+		if totalIf == nil {
+			log.Warnf("missing key %s in LocalSubnet %d stats", totalKey, lsn.LocalSubnetID)
+			continue
+		}
+		total := totalIf.(float64)
+		if total > 0 {
+			assigned := lsn.Stats[assignedKey].(float64)
+			used := int16(1000 * assigned / total)
+			if snMaxUsed < used {
+				snMaxUsed = used
+				snTotal = int64(total)
+				snAssigned = int64(assigned)
+				snDeclined = int64(lsn.Stats[declinedKey].(float64))
+			}
+		}
+
+		if family == 6 {
+			total := lsn.Stats["total-pds"].(float64)
+			if total > 0 {
+				assigned := lsn.Stats["assigned-pds"].(float64)
+				used := int16(1000 * assigned / total)
+				if snMaxUsedPds < used {
+					snMaxUsedPds = used
+					snTotalPds = int64(total)
+					snAssignedPds = int64(assigned)
+				}
+			}
+		}
+	}
+	return snAssigned, snTotal, snDeclined, snAssignedPds, snTotalPds, snMaxUsed, snMaxUsedPds
+}
+
 // Pull stats periodically for all Kea apps which Stork is monitoring. The function returns a number
 // of apps for which the stats were successfully pulled and last encountered error.
 func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
@@ -57,6 +100,112 @@ func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
 		}
 	}
 	log.Printf("completed pulling lease stats from Kea apps: %d/%d succeeded", appsOkCnt, len(dbApps))
+
+	// estimate addresses utilization for subnets
+	subnets, err := dbmodel.GetSubnetsWithLocalSubnets(statsPuller.Db)
+	if err != nil {
+		return appsOkCnt, err
+	}
+
+	if len(subnets) == 0 {
+		return appsOkCnt, lastErr
+	}
+
+	// global stats to collect
+	statsMap := map[string]int64{
+		"assigned-addreses": 0,
+		"total-addreses":    0,
+		"declined-addreses": 0,
+		"assigned-nas":      0,
+		"total-nas":         0,
+		"assigned-pds":      0,
+		"total-pds":         0,
+		"declined-nas":      0,
+	}
+
+	// go through all Subnets and:
+	// 1) estimate utilization per Subnet and per SharedNetwork
+	// 2) estimate global stats
+	netTotal := int64(0)
+	netAssigned := int64(0)
+	netTotalPds := int64(0)
+	netAssignedPds := int64(0)
+	sharedNetworkID := subnets[0].SharedNetworkID
+	for _, sn := range subnets {
+		// We go through subnets which are sorted by shared network ID.
+		// When this ID changes it means that we completed scanning subnets of given
+		// shared network and we can store utilization data to shared network in db.
+		if sharedNetworkID != sn.SharedNetworkID && sharedNetworkID != 0 {
+			used := int16(0)
+			if netTotal > 0 {
+				used = int16(1000 * netAssigned / netTotal)
+			}
+			usedPds := int16(0)
+			if netTotalPds > 0 {
+				usedPds = int16(1000 * netAssignedPds / netTotalPds)
+			}
+			err := dbmodel.UpdateUtilizationInSharedNetwork(statsPuller.Db, sharedNetworkID, used, usedPds)
+			if err != nil {
+				lastErr = err
+				log.Errorf("cannot update utilization (%d, %d) in shared network %d: %s", used, usedPds, sharedNetworkID, err)
+				continue
+			}
+			netTotal = 0
+			netAssigned = 0
+			netTotalPds = 0
+			netAssignedPds = 0
+			sharedNetworkID = sn.SharedNetworkID
+		}
+
+		// prepare stats keys depending on IP version
+		family := sn.GetFamily()
+		totalKey := "total-addreses"
+		assignedKey := "assigned-addreses"
+		declinedKey := "declined-addreses"
+		if family == 6 {
+			totalKey = "total-nas"
+			assignedKey = "assigned-nas"
+			declinedKey = "declined-nas"
+		}
+
+		// go through LocalSubnets and get max stats about assigned, total and declined addresses and pds
+		snAssigned, snTotal, snDeclined, snAssignedPds, snTotalPds, snMaxUsed, snMaxUsedPds := getStatsFromLocalSubnets(sn.LocalSubnets, family, assignedKey, totalKey, declinedKey)
+
+		// add subnet counts to shared network ones and global stats
+		netTotal += snTotal
+		netAssigned += snAssigned
+		statsMap[assignedKey] += snAssigned
+		statsMap[totalKey] += snTotal
+		statsMap[declinedKey] += snDeclined
+		if family == 6 {
+			netTotalPds += snTotalPds
+			netAssignedPds += snAssignedPds
+			statsMap["assigned-pds"] += snAssignedPds
+			statsMap["total-pds"] += snTotalPds
+		}
+
+		// if utilization where not updated then they are still -1 so they need to be change to 0
+		if snMaxUsed < 0 {
+			snMaxUsed = 0
+		}
+		if snMaxUsedPds < 0 {
+			snMaxUsedPds = 0
+		}
+		// udpate utilization in subnet in db
+		err = sn.UpdateUtilization(statsPuller.Db, snMaxUsed, snMaxUsedPds)
+		if err != nil {
+			lastErr = err
+			log.Errorf("cannot update utilization (%d, %d) in subnet %d: %s", snMaxUsed, snMaxUsedPds, sn.ID, err)
+			continue
+		}
+	}
+
+	// update global statistics in db
+	err = dbmodel.SetStats(statsPuller.Db, statsMap)
+	if err != nil {
+		lastErr = err
+	}
+
 	return appsOkCnt, lastErr
 }
 

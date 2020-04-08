@@ -1,10 +1,15 @@
-<p-dialog header="New Machine" [(visible)]="newMachineDlgVisible">
-    Machine is located by address and port <br />
-    where 'address' is IP address or FQDN of machine, <br />
-    port is Stork agent listening port. <br />
-    Port can be omitted, default value is 8080.
-    <br />
-    <br />
+<p-dialog header="New Machine" [(visible)]="newMachineDlgVisible" [style]="{ width: '40vw' }">
+    <p style="padding-bottom: 1em;">
+        First, install Stork Agent on the machine with Kea or BIND 9. This is describer in
+        <a target="blank" href="/assets/arm/index.html#agent-deploy"
+            >the instruction<i class="pi pi-external-link" style="font-size: 1em;"></i></a
+        >.
+    </p>
+
+    <p style="padding-bottom: 1em;">
+        Machine is located by address and port where 'address' is IP address or FQDN of machine, port is Stork Agent
+        listening port. Port can be omitted, default value is 8080.
+    </p>
     <div>
         Address:
         <input
@@ -94,7 +99,6 @@
         #machinesTable
         [value]="machines"
         [paginator]="true"
-        paginatorPosition="top"
         [rows]="10"
         [lazy]="true"
         (onLazyLoad)="loadMachines($event)"
@@ -103,6 +107,16 @@
         [showCurrentPageReport]="true"
         currentPageReportTemplate="{currentPage} of {totalPages} pages"
     >
+        <ng-template pTemplate="emptymessage" let-columns>
+            <tr>
+                <td colspan="12">
+                    No machines found.
+                    <br />
+                    <br />
+                    Machines can be added by clicking <b>Add New Machine</b> button at the top.
+                </td>
+            </tr>
+        </ng-template>
         <ng-template pTemplate="header">
             <tr>
                 <th>Hostname</th>

@@ -6,10 +6,10 @@
 export function getTotalAddresses(subnet) {
     if (subnet.subnet.includes('.')) {
         // DHCPv4 stats
-        return subnet.stats['total-addreses']
+        return subnet.localSubnets[0].stats['total-addreses']
     } else {
         // DHCPv6 stats
-        let total = subnet.stats['total-nas']
+        let total = subnet.localSubnets[0].stats['total-nas']
         if (total === -1) {
             total = Number.MAX_SAFE_INTEGER
         }
@@ -24,23 +24,9 @@ export function getTotalAddresses(subnet) {
 export function getAssignedAddresses(subnet) {
     if (subnet.subnet.includes('.')) {
         // DHCPv4 stats
-        return subnet.stats['assigned-addreses']
+        return subnet.localSubnets[0].stats['assigned-addreses']
     } else {
         // DHCPv6 stats
-        return subnet.stats['assigned-nas']
+        return subnet.localSubnets[0].stats['assigned-nas']
     }
-}
-
-/**
- * Get subnet utilization based on stats. A percentage is returned as floored int.
- */
-export function getSubnetUtilization(subnet) {
-    let utilization = 0.0
-    if (!subnet.stats) {
-        return utilization
-    }
-    const total = getTotalAddresses(subnet)
-    const assigned = getAssignedAddresses(subnet)
-    utilization = (100 * assigned) / total
-    return Math.floor(utilization)
 }

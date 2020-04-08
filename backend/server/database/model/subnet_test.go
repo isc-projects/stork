@@ -618,3 +618,63 @@ func TestGetSubnetFamily(t *testing.T) {
 	s6 := &Subnet{Prefix: "2001:db8:1::0/24"}
 	require.EqualValues(t, 6, s6.GetFamily())
 }
+
+// Check getting subnets with local subnets
+func TestGetSubnetsWithLocalSubnets(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// prepare apps
+	apps := addTestSubnetApps(t, db)
+	require.Len(t, apps, 2)
+
+	// prepare a subnet
+	subnet := &Subnet{
+		Prefix: "192.0.2.0/24",
+	}
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// add association of the app to the subnet - this will create LocalSubnet
+	err = AddAppToSubnet(db, subnet, apps[0])
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// get subnet with its local subnet
+	subnets, err := GetSubnetsWithLocalSubnets(db)
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+	require.Len(t, subnets[0].LocalSubnets, 1)
+}
+
+// Check updating utilization in subnet
+func TestUpdateUtilization(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// prepare a subnet
+	subnet := &Subnet{
+		Prefix: "192.0.2.0/24",
+	}
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// get subnet and check if utilization is 0
+	returnedSubnet, err := GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedSubnet)
+	require.EqualValues(t, 0, returnedSubnet.Utilization)
+	require.EqualValues(t, 0, returnedSubnet.PdsUtilization)
+
+	// update utilization in subnet
+	returnedSubnet.UpdateUtilization(db, 10, 20)
+
+	// check if utilization was stored in db
+	returnedSubnet2, err := GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedSubnet2)
+	require.EqualValues(t, 10, returnedSubnet2.Utilization)
+	require.EqualValues(t, 20, returnedSubnet2.PdsUtilization)
+}

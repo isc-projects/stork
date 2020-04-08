@@ -204,6 +204,7 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, network.ID)
 
+	// update name and check if it was stored
 	network.Name = "different name"
 	err = UpdateSharedNetwork(db, &network)
 	require.NoError(t, err)
@@ -212,6 +213,16 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, returned)
 	require.Equal(t, network.Name, returned.Name)
+
+	// update utilization
+	err = UpdateUtilizationInSharedNetwork(db, network.ID, 10, 20)
+	require.NoError(t, err)
+
+	returned, err = GetSharedNetwork(db, network.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.EqualValues(t, 10, returned.Utilization)
+	require.EqualValues(t, 20, returned.PdsUtilization)
 }
 
 // Tests that the shared network can be deleted.

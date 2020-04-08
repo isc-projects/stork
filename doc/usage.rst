@@ -56,6 +56,9 @@ boxes, and must meet the password requirements specified in the
 previous section. When all entered data is valid, the ``Save`` button
 is activated for changing the password.
 
+.. This agent-deploy link is used in webui for pointing users to the instruction about deploying
+   agent. So change it always together with the link in webui to have them in sync.
+.. _agent-deploy:
 
 Deploying Stork Agent
 =====================

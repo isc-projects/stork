@@ -11,3 +11,4 @@ src/app/backend/*
 *.ico
 *.png
 dist
+src/assets/arm

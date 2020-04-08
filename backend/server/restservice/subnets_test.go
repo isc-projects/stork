@@ -215,7 +215,7 @@ func TestGetSubnets(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 5)
 	require.EqualValues(t, 5, okRsp.Payload.Total)
 	for _, sn := range okRsp.Payload.Items {
-		switch sn.ID {
+		switch sn.LocalSubnets[0].ID {
 		case 1:
 			require.Len(t, sn.Pools, 2)
 		case 2:
@@ -236,7 +236,8 @@ func TestGetSubnets(t *testing.T) {
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
-	require.Equal(t, a4.ID, okRsp.Payload.Items[0].AppID)
+	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
+	require.Equal(t, a4.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
 	require.EqualValues(t, 1, okRsp.Payload.Items[0].ID)
 
 	// get subnets from app a46
@@ -249,7 +250,10 @@ func TestGetSubnets(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 3)
 	require.EqualValues(t, 3, okRsp.Payload.Total)
 	// checking if returned subnet-ids have expected values
-	require.ElementsMatch(t, []int64{3, 4, 21}, []int64{okRsp.Payload.Items[0].ID, okRsp.Payload.Items[1].ID, okRsp.Payload.Items[2].ID})
+	require.ElementsMatch(t, []int64{3, 4, 21},
+		[]int64{okRsp.Payload.Items[0].LocalSubnets[0].ID,
+			okRsp.Payload.Items[1].LocalSubnets[0].ID,
+			okRsp.Payload.Items[2].LocalSubnets[0].ID})
 
 	// get v4 subnets
 	var dhcpVer int64 = 4
@@ -262,8 +266,9 @@ func TestGetSubnets(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
 	// checking if returned subnet-ids have expected values
-	require.True(t, (okRsp.Payload.Items[0].ID == 1 && okRsp.Payload.Items[1].ID == 3) ||
-		(okRsp.Payload.Items[0].ID == 3 && okRsp.Payload.Items[1].ID == 1))
+	require.True(t,
+		(okRsp.Payload.Items[0].LocalSubnets[0].ID == 1 && okRsp.Payload.Items[1].LocalSubnets[0].ID == 3) ||
+			(okRsp.Payload.Items[0].LocalSubnets[0].ID == 3 && okRsp.Payload.Items[1].LocalSubnets[0].ID == 1))
 
 	// get v6 subnets
 	dhcpVer = 6
@@ -276,7 +281,10 @@ func TestGetSubnets(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 3)
 	require.EqualValues(t, 3, okRsp.Payload.Total)
 	// checking if returned subnet-ids have expected values
-	require.ElementsMatch(t, []int64{2, 4, 21}, []int64{okRsp.Payload.Items[0].ID, okRsp.Payload.Items[1].ID, okRsp.Payload.Items[2].ID})
+	require.ElementsMatch(t, []int64{2, 4, 21},
+		[]int64{okRsp.Payload.Items[0].LocalSubnets[0].ID,
+			okRsp.Payload.Items[1].LocalSubnets[0].ID,
+			okRsp.Payload.Items[2].LocalSubnets[0].ID})
 
 	// get subnets by text '118.0.0/2'
 	text := "118.0.0/2"
@@ -288,9 +296,10 @@ func TestGetSubnets(t *testing.T) {
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
-	require.Equal(t, a46.ID, okRsp.Payload.Items[0].AppID)
+	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
+	require.Equal(t, a46.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
 	// checking if returned subnet-ids have expected values
-	require.EqualValues(t, 3, okRsp.Payload.Items[0].ID)
+	require.EqualValues(t, 3, okRsp.Payload.Items[0].LocalSubnets[0].ID)
 
 	// get subnets by text '0.150-192.168'
 	text = "0.150-192.168"
@@ -302,9 +311,10 @@ func TestGetSubnets(t *testing.T) {
 	okRsp = rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
-	require.Equal(t, a4.ID, okRsp.Payload.Items[0].AppID)
+	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
+	require.Equal(t, a4.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
 	// checking if returned subnet-ids have expected values
-	require.EqualValues(t, 1, okRsp.Payload.Items[0].ID)
+	require.EqualValues(t, 1, okRsp.Payload.Items[0].LocalSubnets[0].ID)
 }
 
 // Check getting shared networks via rest api functions.
@@ -476,7 +486,7 @@ func TestGetSharedNetworks(t *testing.T) {
 	okRsp = rsp.(*dhcp.GetSharedNetworksOK)
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
-	require.Equal(t, a4.ID, okRsp.Payload.Items[0].AppID)
-	require.Equal(t, a4.ID, okRsp.Payload.Items[1].AppID)
+	require.Equal(t, a4.ID, okRsp.Payload.Items[0].Subnets[0].LocalSubnets[0].AppID)
+	require.Equal(t, a4.ID, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].AppID)
 	require.ElementsMatch(t, []string{"mouse", "frog"}, []string{okRsp.Payload.Items[0].Name, okRsp.Payload.Items[1].Name})
 }

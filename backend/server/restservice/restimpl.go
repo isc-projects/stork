@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/asaskevich/govalidator"
@@ -19,6 +20,7 @@ import (
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
+	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
 )
@@ -799,5 +801,122 @@ func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStats
 	}
 
 	rsp := services.NewGetAppsStatsOK().WithPayload(&appsStats)
+	return rsp
+}
+
+// Get DHCP overview.
+func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOverviewParams) middleware.Responder {
+	// get list of mostly utilized subnets
+	subnets4, err := r.getSubnets(0, 5, 0, 4, nil, "utilization", dbmodel.SortDirDesc)
+	if err != nil {
+		msg := "cannot get subnets for v4 from db"
+		log.Error(err)
+		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	subnets6, err := r.getSubnets(0, 5, 0, 6, nil, "utilization", dbmodel.SortDirDesc)
+	if err != nil {
+		msg := "cannot get subnets for v6 from db"
+		log.Error(err)
+		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// get list of mostly utilized shared networks
+	sharedNetworks4, err := r.getSharedNetworks(0, 5, 0, 4, nil, "utilization", dbmodel.SortDirDesc)
+	if err != nil {
+		msg := "cannot get shared networks for v4 from db"
+		log.Error(err)
+		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	sharedNetworks6, err := r.getSharedNetworks(0, 5, 0, 6, nil, "utilization", dbmodel.SortDirDesc)
+	if err != nil {
+		msg := "cannot get shared networks for v6 from db"
+		log.Error(err)
+		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// get dhcp statistics
+	stats, err := dbmodel.GetAllStats(r.Db)
+	if err != nil {
+		msg := "cannot get statistics from db"
+		log.Error(err)
+		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	dhcp4Stats := &models.Dhcp4Stats{
+		AssignedAddresses: stats["assigned-adreses"],
+		TotalAddresses:    stats["total-addreses"],
+		DeclinedAddresses: stats["declined-addreses"],
+	}
+	dhcp6Stats := &models.Dhcp6Stats{
+		AssignedNAs: stats["assigned-nas"],
+		TotalNAs:    stats["total-nas"],
+		AssignedPDs: stats["assigned-pds"],
+		TotalPDs:    stats["total-pds"],
+		DeclinedNAs: stats["declined-nas"],
+	}
+
+	// get kea apps and daemons statuses
+	dbApps, err := dbmodel.GetAppsByType(r.Db, dbmodel.AppTypeKea)
+	if err != nil {
+		msg := "cannot get statistics from db"
+		log.Error(err)
+		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	var dhcpDaemons []*models.DhcpDaemon
+	for _, dbApp := range dbApps {
+		for _, dbDaemon := range dbApp.Details.(dbmodel.AppKea).Daemons {
+			if !strings.HasPrefix(dbDaemon.Name, "dhcp") {
+				continue
+			}
+			daemon := &models.DhcpDaemon{
+				MachineID:   dbApp.MachineID,
+				Machine:     dbApp.Machine.State.Hostname,
+				AppVersion:  dbApp.Meta.Version,
+				AppID:       dbApp.ID,
+				Name:        dbDaemon.Name,
+				Active:      dbDaemon.Active,
+				Lps15min:    0,
+				Lps24h:      0,
+				Utilization: 0,
+				HaStatus:    "load-balancing",
+				Uptime:      dbDaemon.Uptime,
+			}
+			dhcpDaemons = append(dhcpDaemons, daemon)
+		}
+	}
+
+	// combine gathered information
+	overview := &models.DhcpOverview{
+		Subnets4:        subnets4,
+		Subnets6:        subnets6,
+		SharedNetworks4: sharedNetworks4,
+		SharedNetworks6: sharedNetworks6,
+		Dhcp4Stats:      dhcp4Stats,
+		Dhcp6Stats:      dhcp6Stats,
+		DhcpDaemons:     dhcpDaemons,
+	}
+
+	rsp := dhcp.NewGetDhcpOverviewOK().WithPayload(overview)
 	return rsp
 }
