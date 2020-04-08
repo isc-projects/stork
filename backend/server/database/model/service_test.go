@@ -251,6 +251,8 @@ func TestUpdateService(t *testing.T) {
 		SecondaryStatusCollectedAt: time.Now().UTC(),
 		PrimaryLastState:           "load-balancing",
 		SecondaryLastState:         "syncing",
+		PrimaryLastScopes:          []string{"server1"},
+		SecondaryLastScopes:        []string{"server2"},
 	}
 	err := UpdateService(db, services[0])
 	require.NoError(t, err)
@@ -264,6 +266,10 @@ func TestUpdateService(t *testing.T) {
 	require.Equal(t, "dhcp4", service.HAService.HAType)
 	require.Equal(t, "load-balancing", service.HAService.PrimaryLastState)
 	require.Equal(t, "syncing", service.HAService.SecondaryLastState)
+	require.Len(t, service.HAService.PrimaryLastScopes, 1)
+	require.Equal(t, "server1", service.HAService.PrimaryLastScopes[0])
+	require.Len(t, service.HAService.SecondaryLastScopes, 1)
+	require.Equal(t, "server2", service.HAService.SecondaryLastScopes[0])
 
 	// Try to update HA specific information.
 	service.HAService.SecondaryLastState = "load-balancing"
