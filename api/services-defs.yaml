@@ -182,6 +182,10 @@
         type: integer
       cacheHitRatio:
         type: number
+      cacheHits:
+        type: integer
+      cacheMisses:
+        type: integer
 
   AppBind9:
     type: object

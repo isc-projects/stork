@@ -49,4 +49,17 @@ export class Bind9AppTabComponent implements OnInit {
     showDuration(duration) {
         return durationToString(duration)
     }
+
+    /**
+     * Get cache utilization based on stats.
+     * A percentage is returned as floored int.
+     */
+    getCacheUtilization(daemon) {
+        let utilization = 0.0
+        if (!daemon.cacheHitRatio) {
+            return utilization
+        }
+        utilization = 100 * daemon.cacheHitRatio
+        return Math.floor(utilization)
+    }
 }

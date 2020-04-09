@@ -58,7 +58,33 @@
                                     </tr>
                                     <tr>
                                         <td style="vertical-align: top;">Cache Hit Ratio</td>
-                                        <td>{{ daemon.cacheHitRatio }}</td>
+                                        <td>
+                                            <span
+                                                pTooltip="Hits: {{ daemon.cacheHits }}, Misses: {{
+                                                    daemon.cacheMisses
+                                                }}"
+                                            >
+                                                {{ daemon.cacheHitRatio ? getCacheUtilization(daemon) + '%' : '?' }}
+                                                <i
+                                                    *ngIf="getCacheUtilization(daemon) < 60"
+                                                    class="pi pi-exclamation-triangle"
+                                                    style="font-size: 1.5em; vertical-align: text-top; color: red;"
+                                                ></i>
+                                                <i
+                                                    *ngIf="
+                                                        getCacheUtilization(daemon) >= 60 &&
+                                                        getCacheUtilization(daemon) < 80
+                                                    "
+                                                    class="pi pi-exclamation-circle"
+                                                    style="font-size: 1.5em; vertical-align: text-top; color: orange;"
+                                                ></i>
+                                                <i
+                                                    *ngIf="getCacheUtilization(daemon) >= 80"
+                                                    class="pi pi-check-circle"
+                                                    style="font-size: 1.5em; vertical-align: text-top; color: green;"
+                                                ></i>
+                                            </span>
+                                        </td>
                                     </tr>
                                 </table>
                             </div>

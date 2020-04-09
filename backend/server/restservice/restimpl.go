@@ -588,6 +588,8 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 			ReloadedAt:    strfmt.DateTime(dbApp.Details.(dbmodel.AppBind9).Daemon.ReloadedAt),
 			ZoneCount:     dbApp.Details.(dbmodel.AppBind9).Daemon.ZoneCount,
 			AutoZoneCount: dbApp.Details.(dbmodel.AppBind9).Daemon.AutomaticZoneCount,
+			CacheHits:     dbApp.Details.(dbmodel.AppBind9).Daemon.CacheHits,
+			CacheMisses:   dbApp.Details.(dbmodel.AppBind9).Daemon.CacheMisses,
 			CacheHitRatio: dbApp.Details.(dbmodel.AppBind9).Daemon.CacheHitRatio,
 		}
 
