@@ -717,7 +717,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 	// If this is Kea application, get the Kea DHCP servers status which possibly
 	// includes HA status.
 	if dbApp.Type == dbmodel.AppTypeKea {
-		status, err := kea.GetDHCPStatus(ctx, r.Agents, dbApp)
+		keaServices, err := dbmodel.GetDetailedServicesByAppID(r.Db, dbApp.ID)
 		if err != nil {
 			log.Error(err)
 			msg := fmt.Sprintf("cannot get status of the app with id %d", params.ID)
@@ -727,29 +727,58 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 			return rsp
 		}
 
-		for _, s := range status {
-			keaStatus := models.KeaStatus{
-				Pid:    s.Pid,
-				Uptime: s.Uptime,
-				Reload: s.Reload,
-				Daemon: s.Daemon,
+		for _, s := range keaServices {
+			if s.HAService == nil {
+				continue
 			}
-
-			if s.HAServers != nil {
-				keaStatus.HaServers = &models.KeaStatusHaServers{
-					LocalServer: &models.KeaStatusHaServersLocalServer{
-						Role:   s.HAServers.Local.Role,
-						Scopes: s.HAServers.Local.Scopes,
-						State:  s.HAServers.Local.State,
-					},
-					RemoteServer: &models.KeaStatusHaServersRemoteServer{
-						Age:     s.HAServers.Remote.Age,
-						InTouch: s.HAServers.Remote.InTouch,
-						Role:    s.HAServers.Remote.Role,
-						Scopes:  s.HAServers.Remote.LastScopes,
-						State:   s.HAServers.Remote.LastState,
-					},
+			ha := s.HAService
+			keaStatus := models.KeaStatus{
+				Daemon: ha.HAType,
+			}
+			secondaryRole := "secondary"
+			if ha.HAMode == "hot-standby" {
+				secondaryRole = "standby"
+			}
+			// Calculate age.
+			age := make([]int64, 2)
+			now := time.Now().UTC()
+			for i, t := range []time.Time{ha.PrimaryStatusCollectedAt, ha.SecondaryStatusCollectedAt} {
+				// If status time hasn't been set yet, return a negative age value to
+				// indicate that it cannot be displayed.
+				if t.IsZero() || now.Before(t) {
+					age[i] = -1
+				} else {
+					age[i] = int64(now.Sub(t).Seconds())
 				}
+			}
+			// Format failover times into string.
+			failoverTime := make([]string, 2)
+			for i, t := range []time.Time{ha.PrimaryLastFailoverAt, ha.SecondaryLastFailoverAt} {
+				// Only display the non-zero failover times and the times that are
+				// before current time.
+				if !t.IsZero() && now.After(t) {
+					failoverTime[i] = t.Format(time.UnixDate)
+				}
+			}
+			keaStatus.HaServers = &models.KeaStatusHaServers{
+				PrimaryServer: &models.KeaStatusHaServersPrimaryServer{
+					ID:           ha.PrimaryID,
+					Age:          age[0],
+					InTouch:      ha.PrimaryReachable,
+					Role:         "primary",
+					Scopes:       ha.PrimaryLastScopes,
+					State:        ha.PrimaryLastState,
+					FailoverTime: failoverTime[0],
+				},
+				SecondaryServer: &models.KeaStatusHaServersSecondaryServer{
+					ID:           ha.SecondaryID,
+					Age:          age[1],
+					InTouch:      ha.SecondaryReachable,
+					Role:         secondaryRole,
+					Scopes:       ha.SecondaryLastScopes,
+					State:        ha.SecondaryLastState,
+					FailoverTime: failoverTime[1],
+				},
 			}
 
 			serviceStatus := &models.ServiceStatus{

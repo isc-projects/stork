@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -817,6 +818,55 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	}
 	err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
+	require.NotZero(t, keaApp.ID)
+
+	exampleTime := time.Now().UTC().Add(-5 * time.Second)
+	keaServices := []dbmodel.Service{
+		{
+			BaseService: dbmodel.BaseService{
+				ServiceType: "ha_dhcp",
+			},
+			HAService: &dbmodel.BaseHAService{
+				HAType:                     "dhcp4",
+				HAMode:                     "load-balancing",
+				PrimaryID:                  keaApp.ID,
+				PrimaryStatusCollectedAt:   exampleTime,
+				SecondaryStatusCollectedAt: exampleTime,
+				PrimaryLastState:           "load-balancing",
+				SecondaryLastState:         "load-balancing",
+				PrimaryLastScopes:          []string{"server1"},
+				SecondaryLastScopes:        []string{"server2"},
+				PrimaryLastFailoverAt:      exampleTime,
+				SecondaryLastFailoverAt:    exampleTime,
+			},
+		},
+		{
+			BaseService: dbmodel.BaseService{
+				ServiceType: "ha_dhcp",
+			},
+			HAService: &dbmodel.BaseHAService{
+				HAType:                     "dhcp6",
+				HAMode:                     "hot-standby",
+				PrimaryID:                  keaApp.ID,
+				PrimaryStatusCollectedAt:   exampleTime,
+				SecondaryStatusCollectedAt: exampleTime,
+				PrimaryLastState:           "hot-standby",
+				SecondaryLastState:         "waiting",
+				PrimaryLastScopes:          []string{"server1"},
+				SecondaryLastScopes:        []string{},
+				PrimaryLastFailoverAt:      exampleTime,
+				SecondaryLastFailoverAt:    exampleTime,
+			},
+		},
+	}
+
+	// Add the services and associate them with the app.
+	for i := range keaServices {
+		err = dbmodel.AddService(db, &keaServices[i])
+		require.NoError(t, err)
+		err = dbmodel.AddAppToService(db, keaServices[i].ID, keaApp)
+		require.NoError(t, err)
+	}
 
 	params := services.GetAppServicesStatusParams{
 		ID: keaApp.ID,
@@ -836,48 +886,46 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 
 	// Validate the status of the DHCPv4 pair.
 	status := statusList[0].Status.KeaStatus
-	require.EqualValues(t, 1234, status.Pid)
-	require.EqualValues(t, 1111, status.Reload)
-	require.EqualValues(t, 3024, status.Uptime)
 	require.NotNil(t, status.HaServers)
 
 	haStatus := status.HaServers
-	require.NotNil(t, haStatus.LocalServer)
-	require.NotNil(t, haStatus.RemoteServer)
+	require.NotNil(t, haStatus.PrimaryServer)
+	require.NotNil(t, haStatus.SecondaryServer)
 
-	require.Equal(t, "primary", haStatus.LocalServer.Role)
-	require.Len(t, haStatus.LocalServer.Scopes, 1)
-	require.Contains(t, haStatus.LocalServer.Scopes, "server1")
-	require.Equal(t, "load-balancing", haStatus.LocalServer.State)
+	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.ID)
+	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
+	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
+	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
+	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
+	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 
-	require.Equal(t, "secondary", haStatus.RemoteServer.Role)
-	require.Len(t, haStatus.RemoteServer.Scopes, 1)
-	require.Contains(t, haStatus.RemoteServer.Scopes, "server2")
-	require.Equal(t, "load-balancing", haStatus.RemoteServer.State)
-	require.EqualValues(t, 10, haStatus.RemoteServer.Age)
-	require.True(t, haStatus.RemoteServer.InTouch)
+	require.Equal(t, "secondary", haStatus.SecondaryServer.Role)
+	require.Len(t, haStatus.SecondaryServer.Scopes, 1)
+	require.Contains(t, haStatus.SecondaryServer.Scopes, "server2")
+	require.Equal(t, "load-balancing", haStatus.SecondaryServer.State)
+	require.GreaterOrEqual(t, haStatus.SecondaryServer.Age, int64(5))
+	require.True(t, haStatus.SecondaryServer.InTouch)
 
 	// Validate the status of the DHCPv6 pair.
 	status = statusList[1].Status.KeaStatus
-	require.EqualValues(t, 2345, status.Pid)
-	require.EqualValues(t, 2222, status.Reload)
-	require.EqualValues(t, 3333, status.Uptime)
 	require.NotNil(t, status.HaServers)
 
 	haStatus = status.HaServers
-	require.NotNil(t, haStatus.LocalServer)
-	require.NotNil(t, haStatus.RemoteServer)
+	require.NotNil(t, haStatus.PrimaryServer)
+	require.NotNil(t, haStatus.SecondaryServer)
 
-	require.Equal(t, "primary", haStatus.LocalServer.Role)
-	require.Len(t, haStatus.LocalServer.Scopes, 1)
-	require.Contains(t, haStatus.LocalServer.Scopes, "server1")
-	require.Equal(t, "hot-standby", haStatus.LocalServer.State)
+	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.ID)
+	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
+	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
+	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
+	require.Equal(t, "hot-standby", haStatus.PrimaryServer.State)
+	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 
-	require.Equal(t, "standby", haStatus.RemoteServer.Role)
-	require.Empty(t, haStatus.RemoteServer.Scopes)
-	require.Equal(t, "waiting", haStatus.RemoteServer.State)
-	require.EqualValues(t, 3, haStatus.RemoteServer.Age)
-	require.True(t, haStatus.RemoteServer.InTouch)
+	require.Equal(t, "standby", haStatus.SecondaryServer.Role)
+	require.Empty(t, haStatus.SecondaryServer.Scopes)
+	require.Equal(t, "waiting", haStatus.SecondaryServer.State)
+	require.GreaterOrEqual(t, haStatus.SecondaryServer.Age, int64(5))
+	require.True(t, haStatus.SecondaryServer.InTouch)
 }
 
 func TestRestGetAppsStats(t *testing.T) {

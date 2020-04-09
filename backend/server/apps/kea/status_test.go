@@ -373,6 +373,8 @@ func TestPullHAStatus(t *testing.T) {
 	require.Equal(t, "load-balancing", service.HAService.SecondaryLastState)
 	require.ElementsMatch(t, []string{"server1"}, service.HAService.PrimaryLastScopes)
 	require.ElementsMatch(t, []string{"server2"}, service.HAService.SecondaryLastScopes)
+	require.True(t, service.HAService.PrimaryReachable)
+	require.True(t, service.HAService.SecondaryReachable)
 	// The failover event hasn't been observed yet.
 	require.True(t, service.HAService.PrimaryLastFailoverAt.IsZero())
 	require.True(t, service.HAService.SecondaryLastFailoverAt.IsZero())
@@ -392,6 +394,8 @@ func TestPullHAStatus(t *testing.T) {
 	require.Equal(t, "hot-standby", service.HAService.SecondaryLastState)
 	require.ElementsMatch(t, []string{"server1"}, service.HAService.PrimaryLastScopes)
 	require.Empty(t, service.HAService.SecondaryLastScopes)
+	require.True(t, service.HAService.PrimaryReachable)
+	require.True(t, service.HAService.SecondaryReachable)
 
 	// Pull the data again.
 	count, err = puller.pullData()
@@ -417,6 +421,8 @@ func TestPullHAStatus(t *testing.T) {
 	require.Equal(t, "unavailable", service.HAService.SecondaryLastState)
 	require.ElementsMatch(t, []string{"server1", "server2"}, service.HAService.PrimaryLastScopes)
 	require.Empty(t, service.HAService.SecondaryLastScopes)
+	require.True(t, service.HAService.PrimaryReachable)
+	require.False(t, service.HAService.SecondaryReachable)
 	// The partner-down state is the indication that the failover took place.
 	// This should be recorded for the primary server.
 	require.False(t, service.HAService.PrimaryLastFailoverAt.IsZero())
@@ -434,4 +440,6 @@ func TestPullHAStatus(t *testing.T) {
 	require.True(t, service.HAService.SecondaryStatusCollectedAt.After(service.HAService.PrimaryStatusCollectedAt))
 	require.ElementsMatch(t, []string{"server1"}, service.HAService.PrimaryLastScopes)
 	require.Empty(t, service.HAService.SecondaryLastScopes)
+	require.True(t, service.HAService.PrimaryReachable)
+	require.False(t, service.HAService.SecondaryReachable)
 }

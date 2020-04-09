@@ -229,20 +229,22 @@
   KeaStatus:
     type: object
     properties:
-      pid:
-        type: integer
-      uptime:
-        type: integer
-      reload:
-        type: integer
       daemon:
         type: string
       haServers:
         type: object
         properties:
-          localServer:
+          primaryServer:
             type: object
             properties:
+              age:
+                type: integer
+              failoverTime:
+                type: string
+              id:
+                type: integer
+              inTouch:
+                type: boolean
               role:
                 type: string
               scopes:
@@ -251,10 +253,14 @@
                   type: string
               state:
                 type: string
-          remoteServer:
+          secondaryServer:
             type: object
             properties:
               age:
+                type: integer
+              failoverTime:
+                type: string
+              id:
                 type: integer
               inTouch:
                 type: boolean
