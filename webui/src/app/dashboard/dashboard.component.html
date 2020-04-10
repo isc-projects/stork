@@ -187,10 +187,10 @@
 
                     <tr *ngFor="let d of overview.dhcpDaemons">
                         <td>
-                            <a>{{ d.machine }}</a>
+                            <a routerLink="/machines/{{ d.machineId }}">{{ d.machine }}</a>
                         </td>
                         <td>
-                            <a>[{{ d.appId }}] Kea {{ d.appVersion }}</a>
+                            <a  routerLink="/apps/kea/{{ d.appId }}">[{{ d.appId }}] Kea {{ d.appVersion }}</a>
                         </td>
                         <td>{{ d.name }}</td>
                         <td>
