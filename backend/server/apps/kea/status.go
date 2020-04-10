@@ -14,6 +14,10 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+const (
+	HAStatusUnavailable = "unavailable"
+)
+
 // Represents a response from the single Kea server to the status-get
 // command. The HAServers value is nil if it is not present in the
 // response.
@@ -88,11 +92,11 @@ func (puller *StatusPuller) pullData() (int, error) {
 			}
 			switch apps[i].ID {
 			case dbServices[j].HAService.PrimaryID:
-				dbServices[j].HAService.PrimaryLastState = "unavailable"
+				dbServices[j].HAService.PrimaryLastState = HAStatusUnavailable
 				dbServices[j].HAService.PrimaryLastScopes = []string{}
 				dbServices[j].HAService.PrimaryReachable = false
 			case dbServices[j].HAService.SecondaryID:
-				dbServices[j].HAService.SecondaryLastState = "unavailable"
+				dbServices[j].HAService.SecondaryLastState = HAStatusUnavailable
 				dbServices[j].HAService.SecondaryLastScopes = []string{}
 				dbServices[j].HAService.SecondaryReachable = false
 			}
@@ -155,7 +159,7 @@ func (puller *StatusPuller) pullData() (int, error) {
 				// The state of the secondary should have been returned as "remote"
 				// server's state.
 				secondaryLastState = status.HAServers.Remote.LastState
-				if secondaryLastState != "unavailable" {
+				if secondaryLastState != HAStatusUnavailable {
 					service.SecondaryStatusCollectedAt = now
 					if agePresent {
 						// If there is age, we have to shift the timestamp backwards by age.
@@ -177,7 +181,7 @@ func (puller *StatusPuller) pullData() (int, error) {
 				// the primary's state is given as "remote" server's state.
 				primaryLastState = status.HAServers.Remote.LastState
 
-				if primaryLastState != "unavailable" {
+				if primaryLastState != HAStatusUnavailable {
 					service.PrimaryStatusCollectedAt = now
 					if agePresent {
 						// If there is age, we have to shift the timestamp backwards by age.
