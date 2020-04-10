@@ -168,7 +168,7 @@ deploy_demo:
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
   script:
-    - docker-compose build cs_repo_access_token=$CLOUDSMITH_REPO_ACCESS_TOKEN
+    - docker-compose -f docker-compose.yaml -f docker-compose-premium.yaml build --build-arg CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN
     - docker-compose push
     - scp -o StrictHostKeyChecking=no docker-compose.yaml jenkins@stork.lab.isc.org:~/deploy
     - scp -o StrictHostKeyChecking=no docker-compose-premium.yaml jenkins@stork.lab.isc.org:~/deploy
