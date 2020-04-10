@@ -77,30 +77,36 @@ func (puller *StatusPuller) pullData() (int, error) {
 			continue
 		}
 
-		// Let's first go over the services and set the flags indicating if the
-		// local server is reachable to false.
+		// Pick only those services for the app that have the HA type. At the
+		// same time reset the values in case the server doesn't respond to the
+		// command. These values will indicate that we can't say what is happening
+		// with the server we failed to connect to.
 		var haServices []dbmodel.Service
 		for j := range dbServices {
 			if dbServices[j].HAService == nil {
 				continue
 			}
-			haServices = append(haServices, dbServices[j])
-			if dbServices[j].HAService.PrimaryID == apps[i].ID {
+			switch apps[i].ID {
+			case dbServices[j].HAService.PrimaryID:
+				dbServices[j].HAService.PrimaryLastState = "unavailable"
 				dbServices[j].HAService.PrimaryLastScopes = []string{}
 				dbServices[j].HAService.PrimaryReachable = false
-			} else if dbServices[j].HAService.SecondaryID == apps[i].ID {
+			case dbServices[j].HAService.SecondaryID:
+				dbServices[j].HAService.SecondaryLastState = "unavailable"
 				dbServices[j].HAService.SecondaryLastScopes = []string{}
 				dbServices[j].HAService.SecondaryReachable = false
 			}
+			haServices = append(haServices, dbServices[j])
 		}
 
 		appsCnt++
 		ctx := context.Background()
-		// Send the status-get command to both DHCPv4 and DHCPv6 server.
+		// Send the status-get command to both DHCPv4 and DHCPv6 servers.
 		appStatus, err := GetDHCPStatus(ctx, puller.Agents, &apps[i])
 		if err != nil {
 			log.Errorf("error occurred while getting Kea app %d status: %s", apps[i].ID, err)
 		}
+		// Go over the returned status values and match with the daemons.
 		for _, status := range appStatus {
 			// If no HA status, there is nothing to do.
 			if status.HAServers == nil {
@@ -132,12 +138,13 @@ func (puller *StatusPuller) pullData() (int, error) {
 			}
 			// Get the current time.
 			now := time.Now().UTC()
-			// Depending if this server is primary or secondary/standby, we will fill in
-			// different columns of the ha_service table.
+
 			var (
 				primaryLastState   string
 				secondaryLastState string
 			)
+			// Depending if this server is primary or secondary/standby, we will fill in
+			// different columns of the ha_service table.
 			switch apps[i].ID {
 			case service.PrimaryID:
 				// Primary responded giving its state as "local" server's state.
@@ -148,27 +155,40 @@ func (puller *StatusPuller) pullData() (int, error) {
 				// The state of the secondary should have been returned as "remote"
 				// server's state.
 				secondaryLastState = status.HAServers.Remote.LastState
-				if agePresent {
-					// Record the time when the state of the secondary/standby was gathered.
-					// It was "dur" seconds before current time.
-					service.SecondaryStatusCollectedAt = now.Add(-dur)
+				if secondaryLastState != "unavailable" {
+					service.SecondaryStatusCollectedAt = now
+					if agePresent {
+						// If there is age, we have to shift the timestamp backwards by age.
+						service.SecondaryStatusCollectedAt = service.SecondaryStatusCollectedAt.Add(-dur)
+					}
+					service.SecondaryLastScopes = status.HAServers.Remote.LastScopes
+					service.SecondaryReachable = true
+				} else {
+					service.SecondaryLastScopes = []string{}
+					service.SecondaryReachable = false
 				}
-				service.SecondaryLastScopes = status.HAServers.Remote.LastScopes
-				service.SecondaryReachable = status.HAServers.Remote.InTouch
 			case service.SecondaryID:
-				// The server which responded to the command was the secondary. Therfore,
-				// the primary's state is given as "remote" server's state.
-				primaryLastState = status.HAServers.Remote.LastState
-				if agePresent {
-					service.PrimaryStatusCollectedAt = now.Add(-dur)
-				}
-				service.PrimaryLastScopes = status.HAServers.Remote.LastScopes
-				service.PrimaryReachable = status.HAServers.Remote.InTouch
 				// Record the secondary/standby server's state.
 				secondaryLastState = status.HAServers.Local.State
 				service.SecondaryStatusCollectedAt = now
 				service.SecondaryLastScopes = status.HAServers.Local.Scopes
 				service.SecondaryReachable = true
+				// The server which responded to the command was the secondary. Therfore,
+				// the primary's state is given as "remote" server's state.
+				primaryLastState = status.HAServers.Remote.LastState
+
+				if primaryLastState != "unavailable" {
+					service.PrimaryStatusCollectedAt = now
+					if agePresent {
+						// If there is age, we have to shift the timestamp backwards by age.
+						service.PrimaryStatusCollectedAt = service.PrimaryStatusCollectedAt.Add(-dur)
+					}
+					service.PrimaryLastScopes = status.HAServers.Remote.LastScopes
+					service.PrimaryReachable = true
+				} else {
+					service.PrimaryLastScopes = []string{}
+					service.PrimaryReachable = false
+				}
 			}
 			// Finally, if any of the server's is in the partner-down state we should
 			// record it as failover event.
@@ -186,8 +206,8 @@ func (puller *StatusPuller) pullData() (int, error) {
 			}
 		}
 
-		// Update the services as appropriate. This includes setting the "unreachable"
-		// flags if we faile to communicate with any of the servers.
+		// Update the services as appropriate regardless if we successfully communicated
+		// with the servers or not.
 		for j := range haServices {
 			// Update the information about the HA service in the database.
 			err = dbmodel.UpdateBaseHAService(puller.Db, haServices[j].HAService)

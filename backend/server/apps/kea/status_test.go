@@ -413,9 +413,7 @@ func TestPullHAStatus(t *testing.T) {
 	require.EqualValues(t, keaApp.ID, service.HAService.PrimaryID)
 	require.False(t, service.HAService.PrimaryStatusCollectedAt.IsZero())
 	require.False(t, service.HAService.SecondaryStatusCollectedAt.IsZero())
-	// The age of the secondary server state was 0 this time so the recorded
-	// timestamp of the primary and secondary should be equal.
-	require.True(t, service.HAService.PrimaryStatusCollectedAt.Equal(service.HAService.SecondaryStatusCollectedAt))
+
 	// The primary state is now partner-down and the secondary state is unknown.
 	require.Equal(t, "partner-down", service.HAService.PrimaryLastState)
 	require.Equal(t, "unavailable", service.HAService.SecondaryLastState)
