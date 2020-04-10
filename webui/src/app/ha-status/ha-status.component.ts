@@ -31,6 +31,13 @@ export class HaStatusComponent implements OnInit {
         interval(1000 * 10).subscribe(x => {
             this.refreshStatus()
         })
+        // Run the live age counters for both local and remote servers.
+        interval(1000).subscribe(x => {
+            if (this.hasStatus()) {
+                this.localServer().age += 1
+                this.remoteServer().age += 1
+            }
+        })
     }
 
     /**
@@ -123,6 +130,96 @@ export class HaStatusComponent implements OnInit {
                 this._receivedStatus = null
             }
         )
+    }
+
+    /**
+     * Returns the tooltip describing online/offline control status.
+     */
+    controlStatusTooltip(inTouch): string {
+        if (inTouch) {
+            return 'Server responds to the commands over the control channel.'
+        }
+        return 'Server does not respond to the commands over the control channel. It may be down!'
+    }
+
+    /**
+     * Returns tooltip describing various HA statuses.
+     */
+    haStateTooltip(state): string {
+        switch (state) {
+            case 'load-balancing':
+            case 'hot-standby':
+                return 'Normal operation.'
+            case 'partner-down':
+                return (
+                    'This server now responds to all DHCP queries because it detected ' +
+                    'that partner server is not functional!'
+                )
+            case 'waiting':
+                return 'This server is apparently booting up and will try to synchronize its lease database.'
+            case 'syncing':
+                return 'This saerver is synchronizing its database after failure.'
+            case 'ready':
+                return 'This server synchronized its lease database and will start normal operation shortly.'
+            case 'terminated':
+                return 'This server no longer participates in the HA setup because of the too high clock skew.'
+            case 'maintained':
+                return 'This server is under maintenance.'
+            case 'partner-maintained':
+                return 'This server responds to all DHCP queries for the partner being in maintenance.'
+            case 'unavailable':
+                return 'Communication with the server failed. It may have crashed or have been shut down.'
+            default:
+                return 'Refer to Kea manual for details.'
+        }
+        return ''
+    }
+
+    /**
+     * Returns tooltip for last failover time.
+     */
+    failoverTooltip(name): string {
+        return (
+            'This is the last time when the ' +
+            name +
+            ' server went to the partner-down state ' +
+            'because its partner was considered offline as a result of unexpected termination ' +
+            'or shutdown.'
+        )
+    }
+
+    /**
+     * Checks what icon should be returned for the local server.
+     *
+     * During normal operation the check icon is displayed. If the server is
+     * unavailable the red exclamation mark is shown. In other cases a warning
+     * exclamation mark on orange triangle is shown.
+     */
+    localServerWarnLevel(): string {
+        if (this.localStateOk()) {
+            return 'ok'
+        }
+        if (this.localServer().state === 'unavailable' || this.localServer().inTouch === false) {
+            return 'error'
+        }
+        return 'warn'
+    }
+
+    /**
+     * Checks what icon should be returned for the remote server.
+     *
+     * During normal operation the check icon is displayed. If the server is
+     * unavailable the red exclamation mark is shown. In other cases a warning
+     * exclamation mark on orange triangle is shown.
+     */
+    remoteServerWarnLevel(): string {
+        if (this.remoteStateOk()) {
+            return 'ok'
+        }
+        if (this.remoteServer().state === 'unavailable' || this.remoteServer().inTouch === false) {
+            return 'error'
+        }
+        return 'warn'
     }
 
     /**
