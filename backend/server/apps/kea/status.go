@@ -55,6 +55,87 @@ func (puller *StatusPuller) Shutdown() {
 	puller.PeriodicPuller.Shutdown()
 }
 
+// This function updates HA service status based on the response from the Kea
+// servers.
+func updateHAServiceStatus(status Status, app *dbmodel.App, service *dbmodel.BaseHAService) {
+	// The status of the remote server should contain "age" value which indicates
+	// how many seconds ago the status of the remote server was gathered. If this
+	// value is present, calculate its timestamp.
+	agePresent := false
+	dur, err := time.ParseDuration(fmt.Sprintf("%ds", status.HAServers.Remote.Age))
+	if err == nil {
+		agePresent = true
+	}
+	// Get the current time.
+	now := time.Now().UTC()
+
+	var (
+		primaryLastState   string
+		secondaryLastState string
+	)
+	// Depending if this server is primary or secondary/standby, we will fill in
+	// different columns of the ha_service table.
+	switch app.ID {
+	case service.PrimaryID:
+		// Primary responded giving its state as "local" server's state.
+		primaryLastState = status.HAServers.Local.State
+		service.PrimaryStatusCollectedAt = now
+		service.PrimaryLastScopes = status.HAServers.Local.Scopes
+		service.PrimaryReachable = true
+		// The state of the secondary should have been returned as "remote"
+		// server's state.
+		secondaryLastState = status.HAServers.Remote.LastState
+		if secondaryLastState != HAStatusUnavailable {
+			service.SecondaryStatusCollectedAt = now
+			if agePresent {
+				// If there is age, we have to shift the timestamp backwards by age.
+				service.SecondaryStatusCollectedAt = service.SecondaryStatusCollectedAt.Add(-dur)
+			}
+			service.SecondaryLastScopes = status.HAServers.Remote.LastScopes
+			service.SecondaryReachable = true
+		} else {
+			service.SecondaryLastScopes = []string{}
+			service.SecondaryReachable = false
+		}
+	case service.SecondaryID:
+		// Record the secondary/standby server's state.
+		secondaryLastState = status.HAServers.Local.State
+		service.SecondaryStatusCollectedAt = now
+		service.SecondaryLastScopes = status.HAServers.Local.Scopes
+		service.SecondaryReachable = true
+		// The server which responded to the command was the secondary. Therfore,
+		// the primary's state is given as "remote" server's state.
+		primaryLastState = status.HAServers.Remote.LastState
+
+		if primaryLastState != HAStatusUnavailable {
+			service.PrimaryStatusCollectedAt = now
+			if agePresent {
+				// If there is age, we have to shift the timestamp backwards by age.
+				service.PrimaryStatusCollectedAt = service.PrimaryStatusCollectedAt.Add(-dur)
+			}
+			service.PrimaryLastScopes = status.HAServers.Remote.LastScopes
+			service.PrimaryReachable = true
+		} else {
+			service.PrimaryLastScopes = []string{}
+			service.PrimaryReachable = false
+		}
+	}
+	// Finally, if any of the server's is in the partner-down state we should
+	// record it as failover event.
+	if primaryLastState != service.PrimaryLastState {
+		if primaryLastState == "partner-down" {
+			service.PrimaryLastFailoverAt = service.PrimaryStatusCollectedAt
+		}
+		service.PrimaryLastState = primaryLastState
+	}
+	if secondaryLastState != service.SecondaryLastState {
+		if secondaryLastState == "partner-down" {
+			service.SecondaryLastFailoverAt = service.SecondaryStatusCollectedAt
+		}
+		service.SecondaryLastState = secondaryLastState
+	}
+}
+
 // Gets the status of the Kea apps and stores useful information in the database.
 // The High Availability status is stored in the database for those apps which
 // have the HA enabled.
@@ -132,82 +213,8 @@ func (puller *StatusPuller) pullData() (int, error) {
 			if service.PrimaryID != apps[i].ID && service.SecondaryID != apps[i].ID {
 				continue
 			}
-			// The status of the remote server should contain "age" value which indicates
-			// how many seconds ago the status of the remote server was gathered. If this
-			// value is present, calculate its timestamp.
-			agePresent := false
-			dur, err := time.ParseDuration(fmt.Sprintf("%ds", status.HAServers.Remote.Age))
-			if err == nil {
-				agePresent = true
-			}
-			// Get the current time.
-			now := time.Now().UTC()
-
-			var (
-				primaryLastState   string
-				secondaryLastState string
-			)
-			// Depending if this server is primary or secondary/standby, we will fill in
-			// different columns of the ha_service table.
-			switch apps[i].ID {
-			case service.PrimaryID:
-				// Primary responded giving its state as "local" server's state.
-				primaryLastState = status.HAServers.Local.State
-				service.PrimaryStatusCollectedAt = now
-				service.PrimaryLastScopes = status.HAServers.Local.Scopes
-				service.PrimaryReachable = true
-				// The state of the secondary should have been returned as "remote"
-				// server's state.
-				secondaryLastState = status.HAServers.Remote.LastState
-				if secondaryLastState != HAStatusUnavailable {
-					service.SecondaryStatusCollectedAt = now
-					if agePresent {
-						// If there is age, we have to shift the timestamp backwards by age.
-						service.SecondaryStatusCollectedAt = service.SecondaryStatusCollectedAt.Add(-dur)
-					}
-					service.SecondaryLastScopes = status.HAServers.Remote.LastScopes
-					service.SecondaryReachable = true
-				} else {
-					service.SecondaryLastScopes = []string{}
-					service.SecondaryReachable = false
-				}
-			case service.SecondaryID:
-				// Record the secondary/standby server's state.
-				secondaryLastState = status.HAServers.Local.State
-				service.SecondaryStatusCollectedAt = now
-				service.SecondaryLastScopes = status.HAServers.Local.Scopes
-				service.SecondaryReachable = true
-				// The server which responded to the command was the secondary. Therfore,
-				// the primary's state is given as "remote" server's state.
-				primaryLastState = status.HAServers.Remote.LastState
-
-				if primaryLastState != HAStatusUnavailable {
-					service.PrimaryStatusCollectedAt = now
-					if agePresent {
-						// If there is age, we have to shift the timestamp backwards by age.
-						service.PrimaryStatusCollectedAt = service.PrimaryStatusCollectedAt.Add(-dur)
-					}
-					service.PrimaryLastScopes = status.HAServers.Remote.LastScopes
-					service.PrimaryReachable = true
-				} else {
-					service.PrimaryLastScopes = []string{}
-					service.PrimaryReachable = false
-				}
-			}
-			// Finally, if any of the server's is in the partner-down state we should
-			// record it as failover event.
-			if primaryLastState != service.PrimaryLastState {
-				if primaryLastState == "partner-down" {
-					service.PrimaryLastFailoverAt = service.PrimaryStatusCollectedAt
-				}
-				service.PrimaryLastState = primaryLastState
-			}
-			if secondaryLastState != service.SecondaryLastState {
-				if secondaryLastState == "partner-down" {
-					service.SecondaryLastFailoverAt = service.SecondaryStatusCollectedAt
-				}
-				service.SecondaryLastState = secondaryLastState
-			}
+			// Update primary and secondary status based on the response.
+			updateHAServiceStatus(status, &apps[i], service)
 		}
 
 		// Update the services as appropriate regardless if we successfully communicated
