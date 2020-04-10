@@ -16,8 +16,6 @@ export class HaStatusComponent implements OnInit {
     private _appId: number
     private _daemonName: string
     private _receivedStatus: Map<string, any>
-    private _statusErred: Map<string, boolean>
-    private _ageCounter: Map<string, number>
 
     constructor(private servicesApi: ServicesService) {}
 
@@ -28,17 +26,10 @@ export class HaStatusComponent implements OnInit {
      * the application.
      */
     ngOnInit() {
-        this._statusErred = new Map()
-        this._ageCounter = new Map()
-
         this.refreshStatus()
 
         interval(1000 * 10).subscribe(x => {
             this.refreshStatus()
-        })
-
-        interval(1000).subscribe(x => {
-            this._ageCounter[this.daemonName] += 1
         })
     }
 
@@ -75,52 +66,39 @@ export class HaStatusComponent implements OnInit {
     }
 
     /**
-     * Returns age of the remote server HA status.
-     *
-     * The remote server's status is periodically collected by the local server,
-     * i.e. the server to which Stork sends the status-get command.
-     *
-     * @returns Text indicating how old is the information about the status
-     *          of the remote server. It is displayed in seconds when it is
-     *          below 1 minute and in minutes otherwise.
-     */
-    get ageCounter(): string {
-        const age = this._ageCounter[this._daemonName]
-        if (!age || age === 0) {
-            return 'just now'
-        }
-        if (age < 60) {
-            return age + ' seconds ago'
-        }
-        return Math.round(age / 60) + ' minutes ago'
-    }
-
-    /**
      * Checks if the component has fetched the HA status for the current daemon.
      *
      * @returns true if the status has been fetched and is available for display.
      */
-    get hasStatus(): boolean {
+    hasStatus(): boolean {
         return this._receivedStatus && this._receivedStatus[this._daemonName]
-    }
-
-    /**
-     * Checks if the component has attempted to fetch the HA status and failed.
-     *
-     * If the status is erred, the error message is displayed indicating an issue
-     * with communication.
-     *
-     * @returns true if there was an error while fetching the HA status.
-     */
-    get hasErredStatus(): boolean {
-        return this._statusErred && this._statusErred[this._daemonName]
     }
 
     /**
      * Convenience function returning received status for the current daemon.
      */
-    haStatus() {
+    private haStatus() {
         return this._receivedStatus[this._daemonName]
+    }
+
+    /**
+     * Convenience function returning received status of the local server.
+     */
+    localServer() {
+        if (this._receivedStatus[this._daemonName].primaryServer.id === this.appId) {
+            return this._receivedStatus[this._daemonName].primaryServer
+        }
+        return this._receivedStatus[this._daemonName].secondaryServer
+    }
+
+    /**
+     * Convenience function returning received status of the remote server.
+     */
+    remoteServer() {
+        if (this._receivedStatus[this._daemonName].primaryServer.id !== this.appId) {
+            return this._receivedStatus[this._daemonName].primaryServer
+        }
+        return this._receivedStatus[this._daemonName].secondaryServer
     }
 
     /**
@@ -136,20 +114,12 @@ export class HaStatusComponent implements OnInit {
                     for (const s of data.items) {
                         if (s.status.haServers && s.status.daemon) {
                             this._receivedStatus[s.status.daemon] = s.status.haServers
-                            this._ageCounter[s.status.daemon] = s.status.haServers.remoteServer.age
-                            this._statusErred[s.status.daemon] = false
                         }
                     }
-                }
-                // We were unable to fetch the HA status for this server, thus
-                // we mark it as erred.
-                if (!this._receivedStatus || !this._receivedStatus[this._daemonName]) {
-                    this._statusErred[this._daemonName] = true
                 }
             },
             err => {
                 console.warn('failed to fetch the HA status for Kea application id ' + this.appId)
-                this._statusErred[this._daemonName] = true
                 this._receivedStatus = null
             }
         )
@@ -168,8 +138,7 @@ export class HaStatusComponent implements OnInit {
     localStateOk(): boolean {
         return (
             this.haStatus() &&
-            (this.haStatus().localServer.state === 'load-balancing' ||
-                this.haStatus().localServer.state === 'hot-standby')
+            (this.localServer().state === 'load-balancing' || this.localServer().state === 'hot-standby')
         )
     }
 
@@ -186,9 +155,34 @@ export class HaStatusComponent implements OnInit {
     remoteStateOk(): boolean {
         return (
             this.haStatus() &&
-            (this.haStatus().remoteServer.state === 'load-balancing' ||
-                this.haStatus().remoteServer.state === 'hot-standby')
+            (this.remoteServer().state === 'load-balancing' || this.remoteServer().state === 'hot-standby')
         )
+    }
+
+    /**
+     * Returns an array of scopes served by the local server.
+     *
+     * @returns array of strings including local server scopes.
+     */
+    private localServerScopes(): string[] {
+        let scopes: string[] = []
+        if (this.hasStatus() && this.localServer().scopes) {
+            scopes = this.localServer().scopes.join(', ')
+        }
+        return scopes
+    }
+
+    /**
+     * Returns an array of scopes served by the remote server.
+     *
+     * @returns array of strings including remote server scopes.
+     */
+    private remoteServerScopes(): string[] {
+        let scopes: string[] = []
+        if (this.hasStatus() && this.remoteServer().scopes) {
+            scopes = this.remoteServer().scopes.join(', ')
+        }
+        return scopes
     }
 
     /**
@@ -198,10 +192,10 @@ export class HaStatusComponent implements OnInit {
      *
      * @returns string containing comma separated list of scopes or (none).
      */
-    localScopes(): string {
+    formattedLocalScopes(): string {
         let scopes: string
-        if (this.hasStatus) {
-            scopes = this.haStatus().localServer.scopes.join(', ')
+        if (this.hasStatus() && this.localServer().scopes) {
+            scopes = this.localServer().scopes.join(', ')
         }
 
         return scopes || '(none)'
@@ -214,13 +208,57 @@ export class HaStatusComponent implements OnInit {
      *
      * @returns string containing comma separated list of scopes or (none).
      */
-    remoteScopes(): string {
+    formattedRemoteScopes(): string {
         let scopes: string
-        if (this.hasStatus) {
-            scopes = this.haStatus().remoteServer.scopes.join(', ')
+        if (this.hasStatus() && this.remoteServer().scopes) {
+            scopes = this.remoteServer().scopes.join(', ')
         }
 
         return scopes || '(none)'
+    }
+
+    /**
+     * Returns formatted value of age.
+     *
+     * The age indicates how long ago the status of one of the servers has
+     * been fetched. It is expressed in seconds. This function displays the
+     * age in seconds for the age below 1 minute. It displays the age in
+     * minutes otherwise. The nagative age value means that the age is not
+     * yet determined in which case a hyphen is displayed.
+     *
+     * @param age in seconds.
+     * @returns string containing formatted age.
+     */
+    formattedAge(age): string {
+        if (age && age < 0) {
+            return '-'
+        }
+        if (!age || age === 0) {
+            return 'just now'
+        }
+        if (age < 60) {
+            return age + ' seconds ago'
+        }
+        return Math.round(age / 60) + ' minutes ago'
+    }
+
+    /**
+     * Returns formatted status of the control channel.
+     *
+     * Depending on the value of the boolean parameter specified, this function
+     * returns the word "online" or "offline" to indicate the status of the
+     * communication with one of the servers.
+     *
+     * @param inTouch boolean value indicating if the communication with the
+     *                server was successful or not.
+     * @returns the descriptive information whether the server seems to be
+     *          online or offline.
+     */
+    formattedControlStatus(inTouch): string {
+        if (inTouch) {
+            return 'online'
+        }
+        return 'offline'
     }
 
     /**
@@ -233,31 +271,31 @@ export class HaStatusComponent implements OnInit {
      * groups of clients are served by which DHCP servers.
      */
     footerInfo(): string {
-        if (!this.hasStatus) {
+        if (!this.hasStatus()) {
             return 'No HA information available!'
         }
 
         // The local server serves no clients, so the remote serves all of them.
         // It may be a hot-standby case or partner-down case.
-        if (this.haStatus().localServer.scopes.length === 0 && this.haStatus().remoteServer.scopes.length > 0) {
+        if (this.localServerScopes().length === 0 && this.remoteServerScopes().length > 0) {
             return 'The remote server responds to the entire DHCP traffic.'
         }
 
         // The remote server serves no cliebts, so the local serves all of them.
         // It may be a hot-standby case or partner-down case.
-        if (this.haStatus().remoteServer.scopes.length === 0 && this.haStatus().localServer.scopes.length > 0) {
+        if (this.remoteServerScopes().length === 0 && this.localServerScopes().length > 0) {
             return 'The local server responds to the entire DHCP traffic.'
         }
 
         // This is the load-balancing case when both servers respond to some
         // DHCP traffic.
-        if (this.haStatus().remoteServer.scopes.length > 0 && this.haStatus().localServer.scopes.length > 0) {
+        if (this.remoteServerScopes().length > 0 && this.localServerScopes().length > 0) {
             return 'Both servers respond to the DHCP traffic.'
         }
 
         // If the HA service is being started, the servers synchronize their
         // databases and do not respond to any traffic.
-        if (this.haStatus().remoteServer.scopes.length === 0 && this.haStatus().localServer.scopes.length === 0) {
+        if (this.remoteServerScopes().length === 0 && this.localServerScopes().length === 0) {
             return 'No servers respond to the DHCP traffic.'
         }
     }

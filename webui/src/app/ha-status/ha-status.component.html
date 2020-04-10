@@ -1,31 +1,48 @@
 <div>
     <h4>High Availability</h4>
-    <div *ngIf="hasStatus" style="margin: 10px; width:600px" class="p-grid">
+    <div *ngIf="hasStatus" style="margin: 10px; width:700px" class="p-grid">
         <div class="p-col-6">
             <p-panel>
                 <p-header>Local server</p-header>
                 <table>
                     <tr>
+                        <td>Control status:</td>
+                        <td>
+                            <i *ngIf="localServer().inTouch" class="pi pi-check" style="color: #00a800"> </i>
+                            <i *ngIf="!localServer().inTouch" class="pi pi-times" style="color: #f11"> </i>
+                            <i>{{ formattedControlStatus(localServer().inTouch) }}</i>
+                        </td>
+                    </tr>
+                    <tr>
                         <td>State:</td>
                         <td>
-                            <i>{{ haStatus().localServer.state }}</i>
-                            <div
-                                *ngIf="!localStateOk()"
-                                class="ui-menuitem-icon pi pi-exclamation-circle"
-                                style="font-size: 1.6em; color: #f33;"
-                            ></div>
+                            <i *ngIf="localStateOk()" class="pi pi-check" style="color: #00a800"> </i>
+                            <i *ngIf="!localStateOk()" class="pi pi-times" style="color: #f11"> </i>
+                            <i>{{ localServer().state }}</i>
                         </td>
                     </tr>
                     <tr>
                         <td>Role:</td>
                         <td>
-                            <i>{{ haStatus().localServer.role }}</i>
+                            <i>{{ localServer().role }}</i>
                         </td>
                     </tr>
                     <tr>
                         <td>Scopes served:</td>
                         <td>
-                            <i>{{ localScopes() }}</i>
+                            <i>{{ formattedLocalScopes() }}</i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Last failover:</td>
+                        <td>
+                            <i>{{ localServer().failoverTime }}</i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Status fetched:</td>
+                        <td>
+                            <i>{{ formattedAge(localServer().age) }}</i>
                         </td>
                     </tr>
                 </table>
@@ -33,30 +50,45 @@
         </div>
         <div class="p-col-6">
             <p-panel>
-                <p-header>{{ 'Remote server (' + this.ageCounter + ')' }}</p-header>
+                <p-header>Remote server</p-header>
                 <table>
+                    <tr>
+                        <td>Control status:</td>
+                        <td>
+                            <i *ngIf="remoteServer().inTouch" class="pi pi-check" style="color: #00a800"> </i>
+                            <i *ngIf="!remoteServer().inTouch" class="pi pi-times" style="color: #f11"> </i>
+                            <i>{{ formattedControlStatus(remoteServer().inTouch) }}</i>
+                        </td>
+                    </tr>
                     <tr>
                         <td>State:</td>
                         <td>
-                            <i>{{ haStatus().remoteServer.state }}</i>
-                            <div
-                                *ngIf="!remoteStateOk()"
-                                class="ui-menuitem-icon pi pi-exclamation-circle"
-                                style="font-size: 1.6em; color: #f33;"
-                            ></div>
+                            <i *ngIf="remoteStateOk()" class="pi pi-check" style="color: #00a800"> </i>
+                            <i *ngIf="!remoteStateOk()" class="pi pi-times" style="color: #f11"> </i>
+                            <i>{{ remoteServer().state }}</i>
                         </td>
                     </tr>
                     <tr>
                         <td>Role:</td>
                         <td>
-                            <i>{{ haStatus().remoteServer.role }}</i>
+                            <i>{{ remoteServer().role }}</i>
                         </td>
                     </tr>
                     <tr>
                         <td>Scopes served:</td>
                         <td>
-                            <i>{{ remoteScopes() }}</i>
+                            <i>{{ formattedRemoteScopes() }}</i>
                         </td>
+                    </tr>
+                    <tr>
+                        <td>Last failover:</td>
+                        <td>
+                            <i>{{ remoteServer().failoverTime }}</i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Status fetched:</td>
+                        <td>{{ formattedAge(remoteServer().age) }}</td>
                     </tr>
                 </table>
             </p-panel>
@@ -69,10 +101,7 @@
         </div>
     </div>
 
-    <div *ngIf="hasErredStatus">
-        <p-message
-            severity="error"
-            text="Error occurred while trying to fetch High Availability status from the DHCP server."
-        ></p-message>
+    <div *ngIf="!hasStatus()">
+        <p-message severity="info" text="High Availability information is not available for this server."></p-message>
     </div>
 </div>
