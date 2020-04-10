@@ -239,6 +239,8 @@
             properties:
               age:
                 type: integer
+              controlAddress:
+                type: string
               failoverTime:
                 type: string
               id:
@@ -258,6 +260,8 @@
             properties:
               age:
                 type: integer
+              controlAddress:
+                type: string
               failoverTime:
                 type: string
               id:

@@ -808,7 +808,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 
 	// Add Kea application to the machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234)
 	keaApp := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -898,13 +898,15 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
 	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
+	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
 
 	require.Equal(t, "secondary", haStatus.SecondaryServer.Role)
 	require.Len(t, haStatus.SecondaryServer.Scopes, 1)
 	require.Contains(t, haStatus.SecondaryServer.Scopes, "server2")
 	require.Equal(t, "load-balancing", haStatus.SecondaryServer.State)
 	require.GreaterOrEqual(t, haStatus.SecondaryServer.Age, int64(5))
-	require.True(t, haStatus.SecondaryServer.InTouch)
+	require.False(t, haStatus.SecondaryServer.InTouch)
+	require.Empty(t, haStatus.SecondaryServer.ControlAddress)
 
 	// Validate the status of the DHCPv6 pair.
 	status = statusList[1].Status.KeaStatus
@@ -920,12 +922,14 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
 	require.Equal(t, "hot-standby", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
+	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
 
 	require.Equal(t, "standby", haStatus.SecondaryServer.Role)
 	require.Empty(t, haStatus.SecondaryServer.Scopes)
 	require.Equal(t, "waiting", haStatus.SecondaryServer.State)
 	require.GreaterOrEqual(t, haStatus.SecondaryServer.Age, int64(5))
-	require.True(t, haStatus.SecondaryServer.InTouch)
+	require.False(t, haStatus.SecondaryServer.InTouch)
+	require.Empty(t, haStatus.SecondaryServer.ControlAddress)
 }
 
 func TestRestGetAppsStats(t *testing.T) {
