@@ -61,9 +61,12 @@ export class DashboardComponent implements OnInit {
             }
         )
 
+        this.refreshDhcpOverview()
+    }
+
+    refreshDhcpOverview() {
         this.dhcpApi.getDhcpOverview().subscribe(
             data => {
-                console.info(data)
                 this.overview = data
             },
             err => {
@@ -74,8 +77,8 @@ export class DashboardComponent implements OnInit {
                 }
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: 'Cannot get applications statistics',
-                    detail: 'Getting applications statistics erred: ' + msg,
+                    summary: 'Cannot get DHCP overview',
+                    detail: 'Getting DHCP overview erred: ' + msg,
                     life: 10000,
                 })
             }

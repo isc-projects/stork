@@ -21,7 +21,16 @@
     </div>
 
     <div class="p-col-12" *ngIf="appsStats.keaAppsTotal > 0">
-        <p-panel header="DHCP">
+        <p-panel>
+            <p-header>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="ui-panel-title" style="font-size: 1.8em; display:inline-block; margin-top:2px;"
+                        >DHCP</span
+                    >
+                    <p-button icon="pi pi-refresh" (click)="refreshDhcpOverview()"></p-button>
+                </div>
+            </p-header>
+
             <h1 class="section-heading">DHCPv4</h1>
             <div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
                 <div>
@@ -190,7 +199,7 @@
                             <a routerLink="/machines/{{ d.machineId }}">{{ d.machine }}</a>
                         </td>
                         <td>
-                            <a  routerLink="/apps/kea/{{ d.appId }}">[{{ d.appId }}] Kea {{ d.appVersion }}</a>
+                            <a routerLink="/apps/kea/{{ d.appId }}">[{{ d.appId }}] Kea {{ d.appVersion }}</a>
                         </td>
                         <td>{{ d.name }}</td>
                         <td>

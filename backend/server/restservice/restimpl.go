@@ -860,7 +860,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	}
 
 	dhcp4Stats := &models.Dhcp4Stats{
-		AssignedAddresses: stats["assigned-adreses"],
+		AssignedAddresses: stats["assigned-addreses"],
 		TotalAddresses:    stats["total-addreses"],
 		DeclinedAddresses: stats["declined-addreses"],
 	}
