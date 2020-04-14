@@ -23,6 +23,7 @@ import (
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
+	storkutil "isc.org/stork/util"
 )
 
 // Get version of Stork server.
@@ -741,7 +742,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 			}
 			// Calculate age.
 			age := make([]int64, 2)
-			now := time.Now().UTC()
+			now := storkutil.UTCNow()
 			for i, t := range []time.Time{ha.PrimaryStatusCollectedAt, ha.SecondaryStatusCollectedAt} {
 				// If status time hasn't been set yet, return a negative age value to
 				// indicate that it cannot be displayed.

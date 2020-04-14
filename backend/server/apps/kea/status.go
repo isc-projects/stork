@@ -67,7 +67,7 @@ func updateHAServiceStatus(status Status, app *dbmodel.App, service *dbmodel.Bas
 		agePresent = true
 	}
 	// Get the current time.
-	now := time.Now().UTC()
+	now := storkutil.UTCNow()
 
 	var (
 		primaryLastState   string

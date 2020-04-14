@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
+	storkutil "isc.org/stork/util"
 )
 
 // accessPointsMatch compares two access points and returns true if they
@@ -247,8 +248,8 @@ func TestUpdateService(t *testing.T) {
 		HAType:                     "dhcp4",
 		PrimaryID:                  services[0].Apps[0].ID,
 		SecondaryID:                services[0].Apps[1].ID,
-		PrimaryStatusCollectedAt:   time.Now().UTC(),
-		SecondaryStatusCollectedAt: time.Now().UTC(),
+		PrimaryStatusCollectedAt:   storkutil.UTCNow(),
+		SecondaryStatusCollectedAt: storkutil.UTCNow(),
 		PrimaryLastState:           "load-balancing",
 		SecondaryLastState:         "syncing",
 		PrimaryLastScopes:          []string{"server1"},

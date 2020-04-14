@@ -17,6 +17,7 @@ import (
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
 	storktest "isc.org/stork/server/test"
+	storkutil "isc.org/stork/util"
 )
 
 // makeAccessPoint is an utility to make an array of one access point.
@@ -820,7 +821,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, keaApp.ID)
 
-	exampleTime := time.Now().UTC().Add(-5 * time.Second)
+	exampleTime := storkutil.UTCNow().Add(-5 * time.Second)
 	keaServices := []dbmodel.Service{
 		{
 			BaseService: dbmodel.BaseService{
