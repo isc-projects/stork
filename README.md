@@ -5,7 +5,7 @@ It is intended to be a spiritual successor of the earlier attempts - Kittiwake a
 
 It is currently in rapid development, with monthly releases with new features.
 
-For details, please see [Stork Administrator Reference Manual](https://stork.readthedocs.io).
+For details, please see [Stork Administrator Reference Manual](https://stork.readthedocs.io) or [Stork wiki](https://gitlab.isc.org/isc-projects/stork/-/wikis/home).
 
 # Build instructions
 
