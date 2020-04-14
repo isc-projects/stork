@@ -40,14 +40,14 @@ type StatusPuller struct {
 // Create an instance of the puller which periodically checks the status of
 // the Kea apps.
 func NewStatusPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (*StatusPuller, error) {
-	haPuller := &StatusPuller{}
+	puller := &StatusPuller{}
 	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Status",
-		"kea_status_puller_interval", haPuller.pullData)
+		"kea_status_puller_interval", puller.pullData)
 	if err != nil {
 		return nil, err
 	}
-	haPuller.PeriodicPuller = periodicPuller
-	return haPuller, nil
+	puller.PeriodicPuller = periodicPuller
+	return puller, nil
 }
 
 // Stops the timer triggering status checks.
