@@ -41,7 +41,7 @@
                         <tr *ngFor="let sn of overview.subnets4.items">
                             <td>[{{ sn.id }}]</td>
                             <td>{{ sn.subnet }}</td>
-                            <td style="padding-left: 1em;">{{ sn.adrUtilization ? sn.adrUtilization : '0' }}% used</td>
+                            <td style="padding-left: 1em;">{{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used</td>
                         </tr>
 
                         <tr>
@@ -60,7 +60,7 @@
                             <td>{{ net.name }}</td>
                             <td>{{ net.subnets.length }} subnets</td>
                             <td style="padding-left: 1em;">
-                                {{ net.adrUtilization ? net.adrUtilization : '0' }}% used
+                                {{ net.addrUtilization ? net.addrUtilization : '0' }}% used
                             </td>
                         </tr>
 
@@ -116,7 +116,7 @@
                         <tr *ngFor="let sn of overview.subnets6.items">
                             <td>[{{ sn.id }}]</td>
                             <td>{{ sn.subnet }}</td>
-                            <td style="padding-left: 1em;">{{ sn.adrUtilization ? sn.adrUtilization : '0' }}% used</td>
+                            <td style="padding-left: 1em;">{{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used</td>
                         </tr>
 
                         <tr>
@@ -135,7 +135,7 @@
                             <td>{{ net.name }}</td>
                             <td>{{ net.subnets.length }} subnets</td>
                             <td style="padding-left: 1em;">
-                                {{ net.adrUtilization ? net.adrUtilization : '0' }}% used
+                                {{ net.addrUtilization ? net.addrUtilization : '0' }}% used
                             </td>
                         </tr>
 
@@ -218,7 +218,7 @@
                         </td>
                         <!-- TODO <td>{{ d.lps15min }}</td> -->
                         <!-- <td>{{ d.lps25h }}</td> -->
-                        <!-- <td>{{ d.adrUtilization }}</td> -->
+                        <!-- <td>{{ d.addrUtilization }}</td> -->
                         <!-- <td> -->
                         <!--     <i -->
                         <!--         class="pi pi-check" -->

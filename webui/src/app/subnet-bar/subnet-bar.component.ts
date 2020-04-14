@@ -16,13 +16,13 @@ export class SubnetBarComponent {
     style: any
     tooltip = ''
 
-    constructor() {}
+    constructor() { }
 
     @Input()
     set subnet(subnet) {
         this._subnet = subnet
 
-        const util = subnet.adrUtilization ? subnet.adrUtilization : 0
+        const util = subnet.addrUtilization ? subnet.addrUtilization : 0
         const util2 = Math.floor(util)
 
         const style = {

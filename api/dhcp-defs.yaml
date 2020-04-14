@@ -90,7 +90,7 @@
         type: string
       clientClass:
         type: string
-      adrUtilization:
+      addrUtilization:
         type: number
       localSubnets:
         type: array
@@ -119,7 +119,7 @@
         type: array
         items:
           $ref: '#/definitions/Subnet'
-      adrUtilization:
+      addrUtilization:
         type: number
 
   SharedNetworks:
@@ -177,7 +177,7 @@
         type: integer
       lps24h:
         type: integer
-      adrUtilization:
+      addrUtilization:
         type: number
       haState:
         type: string

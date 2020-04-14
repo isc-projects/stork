@@ -50,8 +50,8 @@ type Subnet struct {
 
 	Hosts []Host
 
-	AdrUtilization int16
-	PdsUtilization int16
+	AddrUtilization int16
+	PdUtilization int16
 }
 
 // Hook executed after inserting a subnet to the database. It updates subnet
@@ -609,11 +609,11 @@ func (lsn *LocalSubnet) UpdateStats(db *pg.DB, stats map[string]interface{}) err
 }
 
 // Update utilization in Subnet.
-func (s *Subnet) UpdateUtilization(db *pg.DB, adrUtilization, pdsUtilization int16) error {
-	s.AdrUtilization = adrUtilization
-	s.PdsUtilization = pdsUtilization
+func (s *Subnet) UpdateUtilization(db *pg.DB, addrUtilization, pdUtilization int16) error {
+	s.AddrUtilization = addrUtilization
+	s.PdUtilization = pdUtilization
 	q := db.Model(s)
-	q = q.Column("adr_utilization", "pds_utilization")
+	q = q.Column("addr_utilization", "pd_utilization")
 	q = q.WherePK()
 	_, err := q.Update()
 	if err != nil {

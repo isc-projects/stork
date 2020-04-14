@@ -221,8 +221,8 @@ func TestUpdateSharedNetwork(t *testing.T) {
 	returned, err = GetSharedNetwork(db, network.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returned)
-	require.EqualValues(t, 10, returned.AdrUtilization)
-	require.EqualValues(t, 20, returned.PdsUtilization)
+	require.EqualValues(t, 10, returned.AddrUtilization)
+	require.EqualValues(t, 20, returned.PdUtilization)
 }
 
 // Tests that the shared network can be deleted.

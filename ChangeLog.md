@@ -1,6 +1,6 @@
 * 53 [func] godfryd
 
-    Added a dashboard that is presenting DHCP and DNS overview.
+    Added a dashboard presenting DHCP and DNS overview.
     (Gitlab #226)
 
 * 52 [func] godfryd
