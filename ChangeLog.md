@@ -1,3 +1,8 @@
+* 52 [func] godfryd
+
+    Added links to BIND 9 manual and Kea manual in Help menu.
+    (Gitlab #221)
+
 * 51 [bug] matthijs
 
     Added querying named stats from Bind 9 apps periodically.

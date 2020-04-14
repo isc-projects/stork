@@ -110,20 +110,32 @@ export class AppComponent implements OnInit {
             label: 'Help',
             items: [
                 {
-                    label: 'Manual',
+                    label: 'Stork Manual',
                     icon: 'fa fa-book',
                     url: '/assets/arm/index.html',
                     target: 'blank',
                 },
                 {
-                    label: 'API Docs (SwaggerUI)',
+                    label: 'Stork API Docs (SwaggerUI)',
                     icon: 'fa fa-code',
                     routerLink: '/swagger-ui',
                 },
                 {
-                    label: 'API Docs (Redoc)',
+                    label: 'Stork API Docs (Redoc)',
                     icon: 'fa fa-code',
                     url: '/api/docs',
+                    target: 'blank',
+                },
+                {
+                    label: 'BIND 9 Manual',
+                    icon: 'fa fa-book',
+                    url: 'https://bind9.readthedocs.io/',
+                    target: 'blank',
+                },
+                {
+                    label: 'Kea Manual',
+                    icon: 'fa fa-book',
+                    url: 'https://kea.readthedocs.io/',
                     target: 'blank',
                 },
             ],
