@@ -12,8 +12,6 @@ type BaseDaemon struct {
 	CreatedAt time.Time
 	AppID     int64
 	App       *App
-	ServiceID int64
-	Service   *BaseService
 }
 
 // A structure holding Kea DHCP specific information about the daemon. It
@@ -21,18 +19,17 @@ type BaseDaemon struct {
 // with Kea DHCPv4 or DHCPv6 specific information. It is embedded in the
 // Daemon structure.
 type KeaDhcpDaemon struct {
-	ID          int64
-	DaemonID    int64
-	Daemon      *BaseDaemon
-	HAServiceID int64
-	HAService   *BaseHAService
+	ID       int64
+	DaemonID int64
+	Daemon   *BaseDaemon
 	// TODO
 	// Active...
 	// StatusCollectedAt time.Time
 	// State             string
-	LPS15min    int
-	LPS24h      int
-	Utilization int16
+	LPS15min        int
+	LPS24h          int
+	AddrUtilization int16
+	PdUtilization   int16
 }
 
 // A structure reflecting all SQL tables holding information about the
