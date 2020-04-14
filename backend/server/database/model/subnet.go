@@ -51,7 +51,7 @@ type Subnet struct {
 	Hosts []Host
 
 	AddrUtilization int16
-	PdUtilization int16
+	PdUtilization   int16
 }
 
 // Hook executed after inserting a subnet to the database. It updates subnet

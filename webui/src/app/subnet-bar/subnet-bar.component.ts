@@ -16,7 +16,7 @@ export class SubnetBarComponent {
     style: any
     tooltip = ''
 
-    constructor() { }
+    constructor() {}
 
     @Input()
     set subnet(subnet) {

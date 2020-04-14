@@ -890,17 +890,17 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 				continue
 			}
 			daemon := &models.DhcpDaemon{
-				MachineID:      dbApp.MachineID,
-				Machine:        dbApp.Machine.State.Hostname,
-				AppVersion:     dbApp.Meta.Version,
-				AppID:          dbApp.ID,
-				Name:           dbDaemon.Name,
-				Active:         dbDaemon.Active,
-				Lps15min:       0,
-				Lps24h:         0,
+				MachineID:       dbApp.MachineID,
+				Machine:         dbApp.Machine.State.Hostname,
+				AppVersion:      dbApp.Meta.Version,
+				AppID:           dbApp.ID,
+				Name:            dbDaemon.Name,
+				Active:          dbDaemon.Active,
+				Lps15min:        0,
+				Lps24h:          0,
 				AddrUtilization: 0,
-				HaState:        "load-balancing",
-				Uptime:         dbDaemon.Uptime,
+				HaState:         "load-balancing",
+				Uptime:          dbDaemon.Uptime,
 			}
 			dhcpDaemons = append(dhcpDaemons, daemon)
 		}

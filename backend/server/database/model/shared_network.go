@@ -23,7 +23,7 @@ type SharedNetwork struct {
 	Subnets []Subnet
 
 	AddrUtilization int16
-	PdUtilization int16
+	PdUtilization   int16
 }
 
 // Adds new shared network to the database.
@@ -299,9 +299,9 @@ func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filt
 // Update utilization of addresses and delegated prefixes in a SharedNetwork.
 func UpdateUtilizationInSharedNetwork(db *pg.DB, sharedNetworkID int64, addrUtilization, pdUtilization int16) error {
 	net := &SharedNetwork{
-		ID:             sharedNetworkID,
+		ID:              sharedNetworkID,
 		AddrUtilization: addrUtilization,
-		PdUtilization: pdUtilization,
+		PdUtilization:   pdUtilization,
 	}
 	q := db.Model(net)
 	q = q.Column("addr_utilization", "pd_utilization")

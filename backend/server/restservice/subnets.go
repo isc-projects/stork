@@ -16,9 +16,9 @@ import (
 
 func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	subnet := &models.Subnet{
-		ID:             sn.ID,
-		Subnet:         sn.Prefix,
-		ClientClass:    sn.ClientClass,
+		ID:              sn.ID,
+		Subnet:          sn.Prefix,
+		ClientClass:     sn.ClientClass,
 		AddrUtilization: float64(sn.AddrUtilization) / 10,
 	}
 
@@ -143,8 +143,8 @@ func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterTe
 		}
 		// Create shared network.
 		sharedNetwork := &models.SharedNetwork{
-			Name:           net.Name,
-			Subnets:        subnets,
+			Name:            net.Name,
+			Subnets:         subnets,
 			AddrUtilization: float64(net.AddrUtilization) / 10,
 		}
 		sharedNetworks.Items = append(sharedNetworks.Items, sharedNetwork)

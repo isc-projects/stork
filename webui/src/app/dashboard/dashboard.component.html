@@ -41,7 +41,9 @@
                         <tr *ngFor="let sn of overview.subnets4.items">
                             <td>[{{ sn.id }}]</td>
                             <td>{{ sn.subnet }}</td>
-                            <td style="padding-left: 1em;">{{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used</td>
+                            <td style="padding-left: 1em;">
+                                {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
+                            </td>
                         </tr>
 
                         <tr>
@@ -116,7 +118,9 @@
                         <tr *ngFor="let sn of overview.subnets6.items">
                             <td>[{{ sn.id }}]</td>
                             <td>{{ sn.subnet }}</td>
-                            <td style="padding-left: 1em;">{{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used</td>
+                            <td style="padding-left: 1em;">
+                                {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
+                            </td>
                         </tr>
 
                         <tr>
