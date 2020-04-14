@@ -90,7 +90,7 @@
         type: string
       clientClass:
         type: string
-      utilization:
+      adrUtilization:
         type: number
       localSubnets:
         type: array
@@ -119,7 +119,7 @@
         type: array
         items:
           $ref: '#/definitions/Subnet'
-      utilization:
+      adrUtilization:
         type: number
 
   SharedNetworks:
@@ -177,9 +177,9 @@
         type: integer
       lps24h:
         type: integer
-      utilization:
+      adrUtilization:
         type: number
-      haStatus:
+      haState:
         type: string
       uptime:
         type: integer

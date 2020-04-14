@@ -7,6 +7,9 @@ import { ServicesService, DHCPService } from '../backend/api/api'
 import { AppsStats } from '../backend/model/appsStats'
 import { humanCount, durationToString } from '../utils'
 
+/**
+ * Component presenting dashboard with DHCP and DNS overview.
+ */
 @Component({
     selector: 'app-dashboard',
     templateUrl: './dashboard.component.html',
@@ -25,6 +28,8 @@ export class DashboardComponent implements OnInit {
     ) {}
 
     ngOnInit() {
+        // prepare initial data so it can be used in html templates
+        // before the actual data arrives from the server
         this.overview = {
             subnets4: { total: 0, items: [] },
             subnets6: { total: 0, items: [] },
@@ -41,6 +46,7 @@ export class DashboardComponent implements OnInit {
             bind9AppsNotOk: 0,
         }
 
+        // get stats about apps
         this.servicesApi.getAppsStats().subscribe(
             data => {
                 this.loaded = true
@@ -61,9 +67,13 @@ export class DashboardComponent implements OnInit {
             }
         )
 
+        // get DHCP overview from the server
         this.refreshDhcpOverview()
     }
 
+    /**
+     * Get or refresh DHCP overview data from the server
+     */
     refreshDhcpOverview() {
         this.dhcpApi.getDhcpOverview().subscribe(
             data => {
@@ -85,6 +95,9 @@ export class DashboardComponent implements OnInit {
         )
     }
 
+    /**
+     * Estimate percent based on numerator and denominator.
+     */
     getPercent(numerator, denominator) {
         if (denominator === undefined) {
             return 0
@@ -96,10 +109,16 @@ export class DashboardComponent implements OnInit {
         return Math.floor(percent)
     }
 
+    /**
+     * Make number human readable.
+     */
     humanCount(num) {
         return humanCount(num)
     }
 
+    /**
+     * Make duration human readable.
+     */
     showDuration(duration) {
         return durationToString(duration)
     }

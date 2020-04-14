@@ -807,9 +807,9 @@ func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStats
 // Get DHCP overview.
 func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOverviewParams) middleware.Responder {
 	// get list of mostly utilized subnets
-	subnets4, err := r.getSubnets(0, 5, 0, 4, nil, "utilization", dbmodel.SortDirDesc)
+	subnets4, err := r.getSubnets(0, 5, 0, 4, nil, "adr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		msg := "cannot get subnets for v4 from db"
+		msg := "cannot get IPv4 subnets from the db"
 		log.Error(err)
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -817,9 +817,9 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 		return rsp
 	}
 
-	subnets6, err := r.getSubnets(0, 5, 0, 6, nil, "utilization", dbmodel.SortDirDesc)
+	subnets6, err := r.getSubnets(0, 5, 0, 6, nil, "adr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		msg := "cannot get subnets for v6 from db"
+		msg := "cannot get IPv6 subnets from the db"
 		log.Error(err)
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -828,9 +828,9 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	}
 
 	// get list of mostly utilized shared networks
-	sharedNetworks4, err := r.getSharedNetworks(0, 5, 0, 4, nil, "utilization", dbmodel.SortDirDesc)
+	sharedNetworks4, err := r.getSharedNetworks(0, 5, 0, 4, nil, "adr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		msg := "cannot get shared networks for v4 from db"
+		msg := "cannot get IPv4 shared networks from the db"
 		log.Error(err)
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -838,9 +838,9 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 		return rsp
 	}
 
-	sharedNetworks6, err := r.getSharedNetworks(0, 5, 0, 6, nil, "utilization", dbmodel.SortDirDesc)
+	sharedNetworks6, err := r.getSharedNetworks(0, 5, 0, 6, nil, "adr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		msg := "cannot get shared networks for v6 from db"
+		msg := "cannot get IPv6 shared networks from the db"
 		log.Error(err)
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -890,17 +890,17 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 				continue
 			}
 			daemon := &models.DhcpDaemon{
-				MachineID:   dbApp.MachineID,
-				Machine:     dbApp.Machine.State.Hostname,
-				AppVersion:  dbApp.Meta.Version,
-				AppID:       dbApp.ID,
-				Name:        dbDaemon.Name,
-				Active:      dbDaemon.Active,
-				Lps15min:    0,
-				Lps24h:      0,
-				Utilization: 0,
-				HaStatus:    "load-balancing",
-				Uptime:      dbDaemon.Uptime,
+				MachineID:      dbApp.MachineID,
+				Machine:        dbApp.Machine.State.Hostname,
+				AppVersion:     dbApp.Meta.Version,
+				AppID:          dbApp.ID,
+				Name:           dbDaemon.Name,
+				Active:         dbDaemon.Active,
+				Lps15min:       0,
+				Lps24h:         0,
+				AdrUtilization: 0,
+				HaState:        "load-balancing",
+				Uptime:         dbDaemon.Uptime,
 			}
 			dhcpDaemons = append(dhcpDaemons, daemon)
 		}

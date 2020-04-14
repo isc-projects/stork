@@ -22,7 +22,7 @@ export class SubnetBarComponent {
     set subnet(subnet) {
         this._subnet = subnet
 
-        const util = subnet.utilization ? subnet.utilization : 0
+        const util = subnet.adrUtilization ? subnet.adrUtilization : 0
         const util2 = Math.floor(util)
 
         const style = {

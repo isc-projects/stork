@@ -645,7 +645,9 @@ func TestGetSubnetsWithLocalSubnets(t *testing.T) {
 	subnets, err := GetSubnetsWithLocalSubnets(db)
 	require.NoError(t, err)
 	require.Len(t, subnets, 1)
+	require.EqualValues(t, "192.0.2.0/24", subnets[0].Prefix)
 	require.Len(t, subnets[0].LocalSubnets, 1)
+	require.EqualValues(t, 123, subnets[0].LocalSubnets[0].LocalSubnetID)
 }
 
 // Check updating utilization in subnet
@@ -665,7 +667,7 @@ func TestUpdateUtilization(t *testing.T) {
 	returnedSubnet, err := GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet)
-	require.EqualValues(t, 0, returnedSubnet.Utilization)
+	require.EqualValues(t, 0, returnedSubnet.AdrUtilization)
 	require.EqualValues(t, 0, returnedSubnet.PdsUtilization)
 
 	// update utilization in subnet
@@ -675,6 +677,6 @@ func TestUpdateUtilization(t *testing.T) {
 	returnedSubnet2, err := GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet2)
-	require.EqualValues(t, 10, returnedSubnet2.Utilization)
+	require.EqualValues(t, 10, returnedSubnet2.AdrUtilization)
 	require.EqualValues(t, 20, returnedSubnet2.PdsUtilization)
 }

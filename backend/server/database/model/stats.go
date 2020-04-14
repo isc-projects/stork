@@ -12,7 +12,7 @@ type Statistic struct {
 	Value int64
 }
 
-// Initialize statistic in db. If new statistic needs to be added then add it to statsList list
+// Initialize global statistics in db. If new statistic needs to be added then add it to statsList list
 // and it will be automatically added to db here in this function.
 func InitializeStats(db *pg.DB) error {
 	// list of all stork global statistics
@@ -35,7 +35,7 @@ func InitializeStats(db *pg.DB) error {
 	return err
 }
 
-// Get all statistics values.
+// Get all global statistics values.
 func GetAllStats(db *pg.DB) (map[string]int64, error) {
 	statsList := []*Statistic{}
 	q := db.Model(&statsList)
@@ -52,7 +52,7 @@ func GetAllStats(db *pg.DB) (map[string]int64, error) {
 	return statsMap, nil
 }
 
-// Set a list of  statistics.
+// Set a list of global statistics.
 func SetStats(db *pg.DB, statsMap map[string]int64) error {
 	statsList := []*Statistic{}
 	for s, v := range statsMap {

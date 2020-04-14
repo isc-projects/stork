@@ -50,7 +50,7 @@ type Subnet struct {
 
 	Hosts []Host
 
-	Utilization    int16
+	AdrUtilization int16
 	PdsUtilization int16
 }
 
@@ -406,6 +406,26 @@ func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText 
 	return subnets, int64(total), err
 }
 
+// Get list of Subnets with LocalSubnets ordered by SharedNetworkID
+func GetSubnetsWithLocalSubnets(db *pg.DB) ([]*Subnet, error) {
+	subnets := []*Subnet{}
+	q := db.Model(&subnets)
+	// only selected columns are returned for performance reasons
+	q = q.Column("id", "shared_network_id", "prefix")
+	q = q.Relation("LocalSubnets")
+	q = q.Order("shared_network_id ASC")
+
+	err := q.Select()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		err = errors.Wrap(err, "problem with getting all subnets")
+		return nil, err
+	}
+	return subnets, nil
+}
+
 // Associates an application with the subnet having a specified ID and prefix.
 // Internally, the association is made via the local_subnet table which holds
 // information about the subnet from the given app perspective, local subnet
@@ -588,32 +608,12 @@ func (lsn *LocalSubnet) UpdateStats(db *pg.DB, stats map[string]interface{}) err
 	return err
 }
 
-// Get list of Subnets with LocalSubnets grouped by SharedNetworkID
-func GetSubnetsWithLocalSubnets(db *pg.DB) ([]*Subnet, error) {
-	subnets := []*Subnet{}
-	q := db.Model(&subnets)
-	// only selected columns are returned for performance reasons
-	q = q.Column("id", "shared_network_id", "prefix")
-	q = q.Relation("LocalSubnets")
-	q = q.Order("shared_network_id ASC")
-
-	err := q.Select()
-	if err != nil {
-		if err == pg.ErrNoRows {
-			return nil, nil
-		}
-		err = errors.Wrap(err, "problem with getting all subnets")
-		return nil, err
-	}
-	return subnets, nil
-}
-
 // Update utilization in Subnet.
-func (s *Subnet) UpdateUtilization(db *pg.DB, utilization, pdsUtilization int16) error {
-	s.Utilization = utilization
+func (s *Subnet) UpdateUtilization(db *pg.DB, adrUtilization, pdsUtilization int16) error {
+	s.AdrUtilization = adrUtilization
 	s.PdsUtilization = pdsUtilization
 	q := db.Model(s)
-	q = q.Column("utilization", "pds_utilization")
+	q = q.Column("adr_utilization", "pds_utilization")
 	q = q.WherePK()
 	_, err := q.Update()
 	if err != nil {

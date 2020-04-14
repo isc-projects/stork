@@ -1,3 +1,8 @@
+* 53 [func] godfryd
+
+    Added a dashboard that is presenting DHCP and DNS overview.
+    (Gitlab #226)
+
 * 52 [func] godfryd
 
     Added links to BIND 9 manual and Kea manual in Help menu.

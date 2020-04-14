@@ -70,14 +70,14 @@
                         }}</span>
                     </td>
                     <td>
-                        {{ sn.utilization ? sn.utilization : '0' }} %
+                        {{ sn.adrUtilization ? sn.adrUtilization : '0' }} %
                         <i
-                            *ngIf="sn.utilization > 80 && sn.utilization <= 90"
+                            *ngIf="sn.adrUtilization > 80 && sn.adrUtilization <= 90"
                             class="pi pi-exclamation-triangle"
                             style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange;"
                         ></i>
                         <i
-                            *ngIf="sn.utilization > 90"
+                            *ngIf="sn.adrUtilization > 90"
                             class="pi pi-exclamation-circle"
                             style="font-size: 1.5em; vertical-align: text-top; float: right; color: red;"
                         ></i>

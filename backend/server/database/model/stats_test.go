@@ -16,7 +16,7 @@ func TestStats(t *testing.T) {
 	// initialize stats to 0
 	InitializeStats(db)
 
-	// get all stats and checks some values
+	// get all stats and check some values
 	stats, err := GetAllStats(db)
 	require.NoError(t, err)
 	require.Len(t, stats, 8)
@@ -28,7 +28,7 @@ func TestStats(t *testing.T) {
 	err = SetStats(db, stats)
 	require.NoError(t, err)
 
-	// get again stats and check if the modification is there
+	// get stats again and check if they have been modified
 	stats, err = GetAllStats(db)
 	require.NoError(t, err)
 	require.Len(t, stats, 8)
