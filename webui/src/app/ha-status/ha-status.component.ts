@@ -17,6 +17,9 @@ export class HaStatusComponent implements OnInit {
     private _daemonName: string
     private _receivedStatus: Map<string, any>
 
+    public localStatusPanelClass = 'green-colored-panel'
+    public remoteStatusPanelClass = 'green-colored-panel'
+
     constructor(private servicesApi: ServicesService) {}
 
     /**
@@ -124,12 +127,51 @@ export class HaStatusComponent implements OnInit {
                         }
                     }
                 }
+                this.refreshPanelColors()
             },
             err => {
                 console.warn('failed to fetch the HA status for Kea application id ' + this.appId)
                 this._receivedStatus = null
             }
         )
+    }
+
+    /**
+     * Updates the HA local and remote servers' panel colors.
+     *
+     * The colors reflect the state of the HA. The green panel color
+     * indicates that the servers are in the desired states. The orange
+     * color of the panel indicates that some abnormal situation has
+     * occurred but it is not severe. For example, one of the servers
+     * is down but the orange colored server has taken over serving the
+     * DHCP clients. The red colored panel indicates an error which
+     * most likely requires Administrator's action. For example, the
+     * DHCP server has crashed.
+     */
+    private refreshPanelColors() {
+        switch (this.localServerWarnLevel()) {
+            case 'ok':
+                this.localStatusPanelClass = 'green-colored-panel'
+                break
+            case 'warn':
+                this.localStatusPanelClass = 'orange-colored-panel'
+                break
+            default:
+                this.localStatusPanelClass = 'red-colored-panel'
+                break
+        }
+
+        switch (this.remoteServerWarnLevel()) {
+            case 'ok':
+                this.remoteStatusPanelClass = 'green-colored-panel'
+                break
+            case 'warn':
+                this.remoteStatusPanelClass = 'orange-colored-panel'
+                break
+            default:
+                this.remoteStatusPanelClass = 'red-colored-panel'
+                break
+        }
     }
 
     /**
