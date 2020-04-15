@@ -742,7 +742,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 			}
 			// Calculate age.
 			age := make([]int64, 2)
-			statusTime := make([]string, 2)
+			statusTime := make([]strfmt.DateTime, 2)
 			now := storkutil.UTCNow()
 			for i, t := range []time.Time{ha.PrimaryStatusCollectedAt, ha.SecondaryStatusCollectedAt} {
 				// If status time hasn't been set yet, return a negative age value to
@@ -751,16 +751,16 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 					age[i] = -1
 				} else {
 					age[i] = int64(now.Sub(t).Seconds())
-					statusTime[i] = t.Format(time.UnixDate)
+					statusTime[i] = strfmt.DateTime(t)
 				}
 			}
 			// Format failover times into string.
-			failoverTime := make([]string, 2)
+			failoverTime := make([]strfmt.DateTime, 2)
 			for i, t := range []time.Time{ha.PrimaryLastFailoverAt, ha.SecondaryLastFailoverAt} {
 				// Only display the non-zero failover times and the times that are
 				// before current time.
 				if !t.IsZero() && now.After(t) {
-					failoverTime[i] = t.Format(time.UnixDate)
+					failoverTime[i] = strfmt.DateTime(t)
 				}
 			}
 			// Get the control addresses for apps taking part in HA.

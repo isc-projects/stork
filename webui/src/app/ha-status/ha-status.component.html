@@ -55,13 +55,17 @@
                     <tr>
                         <td>Last failover:</td>
                         <td>
-                            <i pTooltip="{{ failoverTooltip('local') }}">{{ localServer().failoverTime }}</i>
+                            <i pTooltip="{{ failoverTooltip('local') }}">{{
+                                localServer().failoverTime | localtime
+                            }}</i>
                         </td>
                     </tr>
                     <tr>
                         <td>Status time:</td>
                         <td>
-                            <i pTooltip="{{ statusTimeTooltip('local') }}">{{ localServer().statusTime }}</i>
+                            <i pTooltip="{{ statusTimeTooltip('local') }}">{{
+                                localServer().statusTime | localtime
+                            }}</i>
                         </td>
                     </tr>
                     <tr>
@@ -130,13 +134,17 @@
                     <tr>
                         <td>Last failover:</td>
                         <td>
-                            <i pTooltip="{{ failoverTooltip('remote') }}">{{ remoteServer().failoverTime }}</i>
+                            <i pTooltip="{{ failoverTooltip('remote') }}">{{
+                                remoteServer().failoverTime | localtime
+                            }}</i>
                         </td>
                     </tr>
                     <tr>
                         <td>Status time:</td>
                         <td>
-                            <i pTooltip="{{ statusTimeTooltip('remote') }}">{{ localServer().statusTime }}</i>
+                            <i pTooltip="{{ statusTimeTooltip('remote') }}">{{
+                                localServer().statusTime | localtime
+                            }}</i>
                         </td>
                     </tr>
                     <tr>

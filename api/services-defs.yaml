@@ -235,6 +235,7 @@
         type: string
       failoverTime:
         type: string
+        format: date-time
       id:
         type: integer
       inTouch:
@@ -249,6 +250,7 @@
         type: string
       statusTime:
         type: string
+        format: date-time
 
   KeaStatus:
     type: object

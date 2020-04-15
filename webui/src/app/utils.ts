@@ -19,7 +19,7 @@ export function datetimeToLocal(d) {
         if (d.year() < 2) {
             return ''
         }
-        return d.format('YYYY-MM-DD hh:mm:ss') + tz
+        return d.format('YYYY-MM-DD HH:mm:ss') + tz
     } catch (e) {
         return d
     }
