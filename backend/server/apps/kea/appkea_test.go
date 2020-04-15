@@ -217,7 +217,7 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 func TestGetDaemonHooksFrom1Daemon(t *testing.T) {
 	dbApp := dbmodel.App{
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name: "dhcp4",
 					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
@@ -246,7 +246,7 @@ func TestGetDaemonHooksFrom1Daemon(t *testing.T) {
 func TestGetDaemonHooksFrom2Daemons(t *testing.T) {
 	dbApp := dbmodel.App{
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name: "dhcp6",
 					Config: dbmodel.NewKeaConfig(&map[string]interface{}{

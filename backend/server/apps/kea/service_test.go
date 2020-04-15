@@ -113,7 +113,7 @@ func TestDetectHAServices(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name: "dhcp4",
 					Config: getHATestConfig("Dhcp4", "server2", "load-balancing",
@@ -214,7 +214,7 @@ func TestDetectHAServices(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name: "dhcp4",
 					Config: getHATestConfig("Dhcp4", "server4", "load-balancing",
@@ -268,7 +268,7 @@ func TestDetectHAServices(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name: "dhcp4",
 					Config: getHATestConfig("Dhcp4", "server1", "load-balancing",
@@ -342,7 +342,7 @@ func TestDetectHAServices(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name: "dhcp4",
 					Config: getHATestConfig("Dhcp4", "server5", "load-balancing",
@@ -388,7 +388,7 @@ func TestAppBelongsToHAServiceBlankService(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name: "dhcp4",
 					Config: getHATestConfig("Dhcp4", "server2", "load-balancing",

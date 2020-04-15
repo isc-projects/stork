@@ -115,7 +115,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 		return
 	}
 
-	bind9Daemon := dbmodel.Bind9Daemon{
+	bind9Daemon := dbmodel.Bind9DaemonJSON{
 		Pid:  0,
 		Name: "named",
 	}

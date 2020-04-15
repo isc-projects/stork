@@ -50,7 +50,7 @@ func TestGetSubnets(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{{
+			Daemons: []*dbmodel.KeaDaemonJSON{{
 				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
@@ -100,7 +100,7 @@ func TestGetSubnets(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{{
+			Daemons: []*dbmodel.KeaDaemonJSON{{
 				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 					"Dhcp6": &map[string]interface{}{
 						"subnet6": []map[string]interface{}{{
@@ -135,7 +135,7 @@ func TestGetSubnets(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{{
+			Daemons: []*dbmodel.KeaDaemonJSON{{
 				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
@@ -355,7 +355,7 @@ func TestGetSharedNetworks(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{{
+			Daemons: []*dbmodel.KeaDaemonJSON{{
 				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"shared-networks": []map[string]interface{}{{
@@ -420,7 +420,7 @@ func TestGetSharedNetworks(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{{
+			Daemons: []*dbmodel.KeaDaemonJSON{{
 				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 					"Dhcp6": &map[string]interface{}{
 						"shared-networks": []map[string]interface{}{{

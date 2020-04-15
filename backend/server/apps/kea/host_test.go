@@ -339,7 +339,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name:   "dhcp4",
 					Config: getTestConfigWithIPv4Subnets(t),
@@ -823,7 +823,7 @@ func TestDetectAndCommitHostsIntoDB(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name:   "dhcp4",
 					Config: getTestConfigWithIPv4Subnets(t),
@@ -903,7 +903,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name:   "dhcp4",
 					Config: getTestConfigWithIPv4Subnets(t),
@@ -978,7 +978,7 @@ func TestReduceHostsIntoDB(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name:   "dhcp4",
 					Config: getTestConfigWithOneIPv4Subnet(t),

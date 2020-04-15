@@ -123,7 +123,7 @@ type StatusGetResponse struct {
 // It also returns:
 // - list of all Kea daemons
 // - list of DHCP daemons (dhcpv4 and/or dhcpv6)
-func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caURL string, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.KeaDaemon) (agentcomm.KeaDaemons, agentcomm.KeaDaemons, error) {
+func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caURL string, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.KeaDaemonJSON) (agentcomm.KeaDaemons, agentcomm.KeaDaemons, error) {
 	// prepare the command to get config and version from CA
 	cmds := []*agentcomm.KeaCommand{
 		{
@@ -147,7 +147,7 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caURL
 	}
 
 	// process the response from CA
-	daemonsMap["ca"] = &dbmodel.KeaDaemon{
+	daemonsMap["ca"] = &dbmodel.KeaDaemonJSON{
 		Name:   "ca",
 		Active: true,
 	}
@@ -190,7 +190,7 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caURL
 
 // Get state of Kea application daemons (beside Control Agent) using ForwardToKeaOverHTTP function.
 // The state, that is stored into dbApp, includes: version, config and runtime state of indicated Kea daemons.
-func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, caURL string, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.KeaDaemon, allDaemons agentcomm.KeaDaemons, dhcpDaemons agentcomm.KeaDaemons) error {
+func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, caURL string, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.KeaDaemonJSON, allDaemons agentcomm.KeaDaemons, dhcpDaemons agentcomm.KeaDaemons) error {
 	now := storkutil.UTCNow()
 
 	// issue 3 commands to Kea daemons at once to get their state
@@ -222,7 +222,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 	}
 
 	for name := range allDaemons {
-		daemonsMap[name] = &dbmodel.KeaDaemon{
+		daemonsMap[name] = &dbmodel.KeaDaemonJSON{
 			Name:   name,
 			Active: true,
 		}
@@ -304,7 +304,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	defer cancel()
 
 	// get state from CA
-	daemonsMap := map[string]*dbmodel.KeaDaemon{}
+	daemonsMap := map[string]*dbmodel.KeaDaemonJSON{}
 	allDaemons, dhcpDaemons, err := getStateFromCA(ctx2, agents, caURL, dbApp, daemonsMap)
 
 	// if not problems then now get state from the rest of Kea daemons

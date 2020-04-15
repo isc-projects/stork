@@ -218,7 +218,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Active: true,
 					Name:   "dhcp4",

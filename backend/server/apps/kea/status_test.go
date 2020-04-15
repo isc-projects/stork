@@ -312,7 +312,7 @@ func TestPullHAStatus(t *testing.T) {
 		Active:       true,
 		AccessPoints: keaPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{
+			Daemons: []*dbmodel.KeaDaemonJSON{
 				{
 					Name: "dhcp4",
 					Config: getHATestConfig("Dhcp4", "server1", "load-balancing",

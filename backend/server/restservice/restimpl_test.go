@@ -378,7 +378,7 @@ func TestGetMachine(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{},
+			Daemons: []*dbmodel.KeaDaemonJSON{},
 		},
 	}
 	err = dbmodel.AddApp(db, s)
@@ -570,7 +570,7 @@ func TestGetApp(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{},
+			Daemons: []*dbmodel.KeaDaemonJSON{},
 		},
 	}
 	err = dbmodel.AddApp(db, s)
@@ -624,7 +624,7 @@ func TestRestGetApp(t *testing.T) {
 		Active:       true,
 		AccessPoints: keaPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{},
+			Daemons: []*dbmodel.KeaDaemonJSON{},
 		},
 	}
 	err = dbmodel.AddApp(db, keaApp)
@@ -698,7 +698,7 @@ func TestRestGetApps(t *testing.T) {
 		Active:       true,
 		AccessPoints: keaPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{},
+			Daemons: []*dbmodel.KeaDaemonJSON{},
 		},
 	}
 	err = dbmodel.AddApp(db, s1)
@@ -971,7 +971,7 @@ func TestRestGetAppsStats(t *testing.T) {
 		Active:       true,
 		AccessPoints: keaPoints,
 		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemon{},
+			Daemons: []*dbmodel.KeaDaemonJSON{},
 		},
 	}
 	err = dbmodel.AddApp(db, s1)

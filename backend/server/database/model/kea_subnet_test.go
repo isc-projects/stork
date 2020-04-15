@@ -31,7 +31,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: AppKea{
-			Daemons: []*KeaDaemon{{
+			Daemons: []*KeaDaemonJSON{{
 				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
@@ -146,7 +146,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: AppKea{
-			Daemons: []*KeaDaemon{{
+			Daemons: []*KeaDaemonJSON{{
 				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp6": &map[string]interface{}{
 						"subnet6": []map[string]interface{}{{
@@ -198,7 +198,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: AppKea{
-			Daemons: []*KeaDaemon{{
+			Daemons: []*KeaDaemonJSON{{
 				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
@@ -407,7 +407,7 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: AppKea{
-			Daemons: []*KeaDaemon{{
+			Daemons: []*KeaDaemonJSON{{
 				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{},
 				}),
@@ -447,7 +447,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: AppKea{
-			Daemons: []*KeaDaemon{{
+			Daemons: []*KeaDaemonJSON{{
 				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp4": &map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
@@ -521,7 +521,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 		Details: AppKea{
-			Daemons: []*KeaDaemon{{
+			Daemons: []*KeaDaemonJSON{{
 				Config: NewKeaConfig(&map[string]interface{}{
 					"Dhcp6": &map[string]interface{}{
 						"subnet6": []map[string]interface{}{{

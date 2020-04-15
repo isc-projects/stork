@@ -12,7 +12,7 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
-type Bind9Daemon struct {
+type Bind9DaemonJSON struct {
 	Pid                int32
 	Name               string
 	Version            string
@@ -26,7 +26,7 @@ type Bind9Daemon struct {
 	CacheHitRatio      float64
 }
 
-type KeaDaemon struct {
+type KeaDaemonJSON struct {
 	Pid             int32
 	Name            string
 	Active          bool
@@ -41,13 +41,13 @@ const AppTypeKea = "kea"
 
 type AppKea struct {
 	ExtendedVersion string
-	Daemons         []*KeaDaemon
+	Daemons         []*KeaDaemonJSON
 }
 
 const AppTypeBind9 = "bind9"
 
 type AppBind9 struct {
-	Daemon Bind9Daemon
+	Daemon Bind9DaemonJSON
 }
 
 // Part of app table in database that describes metadata of app. In DB it is stored as JSONB.

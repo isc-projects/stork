@@ -76,7 +76,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953)
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointStatistics, "127.0.0.1", "abcd", 8000)
 
-	daemon := dbmodel.Bind9Daemon{
+	daemon := dbmodel.Bind9DaemonJSON{
 		Pid:    0,
 		Name:   "named",
 		Active: true,
@@ -177,7 +177,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953)
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointStatistics, "127.0.0.1", "abcd", 8000)
 
-	daemon := dbmodel.Bind9Daemon{
+	daemon := dbmodel.Bind9DaemonJSON{
 		Pid:    0,
 		Name:   "named",
 		Active: true,
