@@ -226,6 +226,30 @@
       bind9AppsNotOk:
         type: integer
 
+  KeaHAServerStatus:
+    type: object
+    properties:
+      age:
+        type: integer
+      controlAddress:
+        type: string
+      failoverTime:
+        type: string
+      id:
+        type: integer
+      inTouch:
+        type: boolean
+      role:
+        type: string
+      scopes:
+        type: array
+        items:
+          type: string
+      state:
+        type: string
+      statusTime:
+        type: string
+
   KeaStatus:
     type: object
     properties:
@@ -235,47 +259,9 @@
         type: object
         properties:
           primaryServer:
-            type: object
-            properties:
-              age:
-                type: integer
-              controlAddress:
-                type: string
-              failoverTime:
-                type: string
-              id:
-                type: integer
-              inTouch:
-                type: boolean
-              role:
-                type: string
-              scopes:
-                type: array
-                items:
-                  type: string
-              state:
-                type: string
+            $ref: '#/definitions/KeaHAServerStatus'
           secondaryServer:
-            type: object
-            properties:
-              age:
-                type: integer
-              controlAddress:
-                type: string
-              failoverTime:
-                type: string
-              id:
-                type: integer
-              inTouch:
-                type: boolean
-              role:
-                type: string
-              scopes:
-                type: array
-                items:
-                  type: string
-              state:
-                type: string
+            $ref: '#/definitions/KeaHAServerStatus'
 
   ServiceStatus:
     type: object

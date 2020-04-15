@@ -1,6 +1,6 @@
 <div>
     <h4>High Availability</h4>
-    <div *ngIf="hasStatus()" style="margin: 10px; width:700px" class="p-grid">
+    <div *ngIf="hasStatus()" style="margin: 10px; width:750px" class="p-grid">
         <div class="p-col-6">
             <p-panel [styleClass]="localStatusPanelClass">
                 <p-header>
@@ -59,9 +59,15 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>Status fetched:</td>
+                        <td>Status time:</td>
                         <td>
-                            <i>{{ formattedAge(localServer().age) }}</i>
+                            <i pTooltip="{{ statusTimeTooltip('local') }}">{{ localServer().statusTime }}</i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Status collected:</td>
+                        <td>
+                            <i pTooltip="{{ collectedTooltip('local') }}">{{ formattedAge(localServer().age) }}</i>
                         </td>
                     </tr>
                 </table>
@@ -128,8 +134,16 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>Status fetched:</td>
-                        <td>{{ formattedAge(remoteServer().age) }}</td>
+                        <td>Status time:</td>
+                        <td>
+                            <i pTooltip="{{ statusTimeTooltip('remote') }}">{{ localServer().statusTime }}</i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Status collected:</td>
+                        <td>
+                            <i pTooltip="{{ collectedTooltip('remote') }}">{{ formattedAge(remoteServer().age) }}</i>
+                        </td>
                     </tr>
                 </table>
             </p-panel>

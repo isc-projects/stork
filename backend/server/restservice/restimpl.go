@@ -742,6 +742,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 			}
 			// Calculate age.
 			age := make([]int64, 2)
+			statusTime := make([]string, 2)
 			now := storkutil.UTCNow()
 			for i, t := range []time.Time{ha.PrimaryStatusCollectedAt, ha.SecondaryStatusCollectedAt} {
 				// If status time hasn't been set yet, return a negative age value to
@@ -750,6 +751,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 					age[i] = -1
 				} else {
 					age[i] = int64(now.Sub(t).Seconds())
+					statusTime[i] = t.Format(time.UnixDate)
 				}
 			}
 			// Format failover times into string.
@@ -777,25 +779,27 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 				}
 			}
 			keaStatus.HaServers = &models.KeaStatusHaServers{
-				PrimaryServer: &models.KeaStatusHaServersPrimaryServer{
-					ID:             ha.PrimaryID,
+				PrimaryServer: &models.KeaHAServerStatus{
 					Age:            age[0],
+					ControlAddress: controlAddress[0],
+					FailoverTime:   failoverTime[0],
+					ID:             ha.PrimaryID,
 					InTouch:        ha.PrimaryReachable,
 					Role:           "primary",
 					Scopes:         ha.PrimaryLastScopes,
 					State:          ha.PrimaryLastState,
-					FailoverTime:   failoverTime[0],
-					ControlAddress: controlAddress[0],
+					StatusTime:     statusTime[0],
 				},
-				SecondaryServer: &models.KeaStatusHaServersSecondaryServer{
-					ID:             ha.SecondaryID,
+				SecondaryServer: &models.KeaHAServerStatus{
 					Age:            age[1],
+					ControlAddress: controlAddress[1],
+					FailoverTime:   failoverTime[1],
+					ID:             ha.SecondaryID,
 					InTouch:        ha.SecondaryReachable,
 					Role:           secondaryRole,
 					Scopes:         ha.SecondaryLastScopes,
 					State:          ha.SecondaryLastState,
-					FailoverTime:   failoverTime[1],
-					ControlAddress: controlAddress[1],
+					StatusTime:     statusTime[1],
 				},
 			}
 

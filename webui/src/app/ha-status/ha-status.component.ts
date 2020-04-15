@@ -188,7 +188,9 @@ export class HaStatusComponent implements OnInit {
     }
 
     /**
-     * Returns tooltip describing various HA statuses.
+     * Returns tooltip describing various HA states.
+     *
+     * @param state HA state name for which the tooltip should be generated.
      */
     haStateTooltip(state): string {
         switch (state) {
@@ -222,6 +224,8 @@ export class HaStatusComponent implements OnInit {
 
     /**
      * Returns tooltip for last failover time.
+     *
+     * @param name a name of the server for which the tooltip should be generated.
      */
     failoverTooltip(name): string {
         return (
@@ -230,6 +234,43 @@ export class HaStatusComponent implements OnInit {
             ' server went to the partner-down state ' +
             'because its partner was considered offline as a result of unexpected termination ' +
             'or shutdown.'
+        )
+    }
+
+    /**
+     * Returns tooltip for status time.
+     *
+     * @param name a name of the server for which the tooltip should be generated.
+     */
+    statusTimeTooltip(name): string {
+        return (
+            'This is the time when the ' +
+            name +
+            ' server reported its state for the last time. ' +
+            'This is not neccessarily the time when the state information ' +
+            'was refreshed in the UI. The presented state information is ' +
+            'typically delayed by 10 to 30 seconds because it is cached by the Kea ' +
+            'servers and the Stork backend. Caching minimizes the performance ' +
+            'impact on the DHCP servers reporting their states over the control ' +
+            'channels.'
+        )
+    }
+
+    /**
+     * Returns tooltip for status age.
+     *
+     * The age indicates how long ago the given server reported its status.
+     *
+     * @param name a name of the server for which the tooltip should be generated.
+     */
+    collectedTooltip(name): string {
+        return (
+            'This is the duration between the "Status Time" and now, i.e. informs ' +
+            'how long ago the ' +
+            name +
+            ' server reported its state. The long duration ' +
+            'indicates that there is a communication problem with the server. The ' +
+            'typical duration is within the range between 10 and 30 seconds.'
         )
     }
 

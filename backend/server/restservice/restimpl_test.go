@@ -900,6 +900,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
+	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime)
 
 	require.Equal(t, "secondary", haStatus.SecondaryServer.Role)
 	require.Len(t, haStatus.SecondaryServer.Scopes, 1)
@@ -908,6 +909,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.GreaterOrEqual(t, haStatus.SecondaryServer.Age, int64(5))
 	require.False(t, haStatus.SecondaryServer.InTouch)
 	require.Empty(t, haStatus.SecondaryServer.ControlAddress)
+	require.NotEmpty(t, haStatus.SecondaryServer.StatusTime)
 
 	// Validate the status of the DHCPv6 pair.
 	status = statusList[1].Status.KeaStatus
