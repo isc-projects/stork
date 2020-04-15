@@ -22,7 +22,7 @@ at [Stork project page](https://gitlab.isc.org/isc-projects/stork). We're also o
 
 # Screenshots
 
-Here are some Stork screeshots.
+Here are some screenshots from Stork version 0.6.0. The UI is changing frequently.
 
 Login screen - this is where it all starts.
 
