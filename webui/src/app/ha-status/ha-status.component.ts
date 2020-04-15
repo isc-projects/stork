@@ -13,6 +13,9 @@ import { ServicesService } from '../backend/api/api'
     styleUrls: ['./ha-status.component.sass'],
 })
 export class HaStatusComponent implements OnInit {
+    private readonly _haRefreshInterval = 10000
+    private readonly _countUpInterval = 1000
+
     private _appId: number
     private _daemonName: string
     private _receivedStatus: Map<string, any>
@@ -31,11 +34,11 @@ export class HaStatusComponent implements OnInit {
     ngOnInit() {
         this.refreshStatus()
 
-        interval(1000 * 10).subscribe(x => {
+        interval(this._haRefreshInterval).subscribe(x => {
             this.refreshStatus()
         })
         // Run the live age counters for both local and remote servers.
-        interval(1000).subscribe(x => {
+        interval(this._countUpInterval).subscribe(x => {
             if (this.hasStatus()) {
                 this.localServer().age += 1
                 this.remoteServer().age += 1
