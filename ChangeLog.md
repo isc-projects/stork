@@ -1,3 +1,12 @@
+* 54 [func] marcin
+
+    Improved Kea High Availability status monitoring. The status is
+    cached in the database and thus it is available even if the
+    HA partners are offline. The presented status now includes
+    connectivity status between Stork and the Kea servers, the
+    time of the last failover event and others.
+    (Gitlab #226)
+
 * 53 [func] godfryd
 
     Added a dashboard presenting DHCP and DNS overview.
