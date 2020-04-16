@@ -27,7 +27,7 @@ export class SettingsPageComponent implements OnInit {
     ngOnInit() {
         this.settingsApi.getSettings().subscribe(
             data => {
-                let numericSettings = [
+                const numericSettings = [
                     'bind9_stats_puller_interval',
                     'kea_hosts_puller_interval',
                     'kea_stats_puller_interval',
@@ -35,12 +35,12 @@ export class SettingsPageComponent implements OnInit {
                 ]
                 const stringSettings = ['grafana_url', 'prometheus_url']
 
-                for (let s of numericSettings) {
+                for (const s of numericSettings) {
                     if (data[s] === undefined) {
                         data[s] = 0
                     }
                 }
-                for (let s of stringSettings) {
+                for (const s of stringSettings) {
                     if (data[s] === undefined) {
                         data[s] = ''
                     }
