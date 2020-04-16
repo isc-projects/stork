@@ -1,3 +1,11 @@
+* 55 [bug] godfryd
+
+    Fixed starting Stork server: now if password to database
+    is set to empty it does not ask for password in terminal.
+    It asks only when the STORK_DATABASE_PASSWORD environment
+    variable does not exist.
+    (Gitlab #203)
+
 * 54 [func] marcin
 
     Improved Kea High Availability status monitoring. The status is
