@@ -50,6 +50,18 @@ func TestAddApp(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
+		Daemons: []*Daemon{
+			{
+				Name:    "kea-dhcp4",
+				Version: "1.7.5",
+				Active:  true,
+			},
+			{
+				Name:    "kea-ctrl-agent",
+				Version: "1.7.5",
+				Active:  true,
+			},
+		},
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
@@ -127,28 +139,147 @@ func TestUpdateApp(t *testing.T) {
 
 	accessPoints := []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234)
+
+	dhcp4Config, err := NewKeaConfigFromJSON(`{
+        "Dhcp4": {
+            "valid-lifetime": 4000
+        }
+    }`)
+	require.NoError(t, err)
+	require.NotNil(t, dhcp4Config)
+
+	caConfig, err := NewKeaConfigFromJSON(`{
+        "Control-agent": {
+            "http-host": "10.20.30.40"
+        }
+    }`)
+	require.NoError(t, err)
+	require.NotNil(t, caConfig)
+
 	a := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
+		Daemons: []*Daemon{
+			{
+				Name:    "kea-dhcp4",
+				Version: "1.7.5",
+				Active:  true,
+				KeaDaemon: &KeaDaemon{
+					Config: dhcp4Config,
+					KeaDHCPDaemon: &KeaDHCPDaemon{
+						LPS15min: 1024,
+					},
+				},
+			},
+			{
+				Name:    "kea-ctrl-agent",
+				Version: "1.7.4",
+				Active:  false,
+				KeaDaemon: &KeaDaemon{
+					Config: caConfig,
+				},
+			},
+		},
 	}
 	err = AddApp(db, a)
 	require.NoError(t, err)
 	require.NotZero(t, a.ID)
 
-	// change active
+	// Make sure that the app along with the dependent information has been
+	// added to the database.
+	returned, err := GetAppByID(db, a.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.Len(t, returned.Daemons, 2)
+	require.NotZero(t, returned.Daemons[0].ID)
+	require.Equal(t, "kea-dhcp4", returned.Daemons[0].Name)
+	require.Equal(t, "1.7.5", returned.Daemons[0].Version)
+	require.True(t, returned.Daemons[0].Active)
+	require.NotNil(t, returned.Daemons[0].KeaDaemon)
+	require.NotZero(t, returned.Daemons[0].KeaDaemon.ID)
+
+	// Make sure that the configuration specified in the JSON format was
+	// read and parsed correctly.
+	require.NotNil(t, returned.Daemons[0].KeaDaemon.Config)
+	rootName, ok := returned.Daemons[0].KeaDaemon.Config.GetRootName()
+	require.True(t, ok)
+	require.Equal(t, "Dhcp4", rootName)
+
+	require.NotNil(t, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon)
+	require.NotZero(t, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.ID)
+	require.EqualValues(t, 1024, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.LPS15min)
+
+	require.NotZero(t, returned.Daemons[1].ID)
+	require.Equal(t, "kea-ctrl-agent", returned.Daemons[1].Name)
+	require.Equal(t, "1.7.4", returned.Daemons[1].Version)
+	require.False(t, returned.Daemons[1].Active)
+	require.NotNil(t, returned.Daemons[1].KeaDaemon)
+	require.NotZero(t, returned.Daemons[1].ID)
+	require.NotNil(t, returned.Daemons[1].KeaDaemon.Config)
+	require.Nil(t, returned.Daemons[1].KeaDaemon.KeaDHCPDaemon)
+
+	// Modify the app information.
 	a.Active = false
+
+	// Modify the daemons to make sure they also get updated. Some daemons
+	// are now gone, some are modified, some added.
+	a.Daemons[0] = &Daemon{
+		Name:    "kea-dhcp6",
+		Version: "1.7.6",
+		Active:  true,
+		KeaDaemon: &KeaDaemon{
+			KeaDHCPDaemon: &KeaDHCPDaemon{
+				LPS15min: 2048,
+			},
+		},
+	}
+
+	a.Daemons[1].Version = "1.7.5"
+	a.Daemons[1].Active = false
+
 	err = UpdateApp(db, a)
 	require.NoError(t, err)
 	require.False(t, a.Active)
 
-	returned, err := GetAppByID(db, a.ID)
+	// Validate the updated date.
+	updated, err := GetAppByID(db, a.ID)
 	require.NoError(t, err)
-	require.NotNil(t, returned)
-	require.EqualValues(t, a.ID, returned.ID)
-	require.False(t, returned.Active)
+	require.NotNil(t, updated)
+	require.EqualValues(t, a.ID, updated.ID)
+	require.False(t, updated.Active)
+	// Check daemons.
+	require.Len(t, updated.Daemons, 2)
+	// Make sure there are two distinct daemons.
+	require.NotEqual(t, updated.Daemons[0].Name, updated.Daemons[1].Name)
+	// Make sure that the daemon names are as expected.
+	for _, d := range updated.Daemons {
+		require.Contains(t, []string{"kea-dhcp6", "kea-ctrl-agent"}, d.Name,
+			"daemons haven't been updated together with the application")
+	}
+	// For each daemon name, check that the rest of values is fine.
+	for _, d := range updated.Daemons {
+		switch d.Name {
+		case "kea-dhcp6":
+			require.Equal(t, "1.7.6", d.Version)
+			require.True(t, d.Active)
+			require.NotNil(t, d.KeaDaemon)
+			require.Nil(t, d.KeaDaemon.Config)
+			require.NotNil(t, d.KeaDaemon.KeaDHCPDaemon)
+			require.EqualValues(t, 2048, d.KeaDaemon.KeaDHCPDaemon.LPS15min)
+		case "kea-ctrl-agent":
+			// The ID of the daemon should be preserved to keep data integrity if
+			// something is referencing the updated daemon.
+			require.EqualValues(t, returned.Daemons[1].ID, d.ID)
+			require.Equal(t, "1.7.5", d.Version)
+			require.False(t, d.Active)
+			require.NotNil(t, d.KeaDaemon)
+			require.NotNil(t, d.KeaDaemon.Config)
+			require.Nil(t, d.KeaDaemon.KeaDHCPDaemon)
+		}
+	}
 
 	// change access point
 	accessPoints = []*AccessPoint{}
@@ -163,12 +294,12 @@ func TestUpdateApp(t *testing.T) {
 	require.EqualValues(t, 2345, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
 
-	returned, err = GetAppByID(db, a.ID)
+	updated, err = GetAppByID(db, a.ID)
 	require.NoError(t, err)
-	require.NotNil(t, returned)
-	require.EqualValues(t, a.ID, returned.ID)
-	require.Len(t, returned.AccessPoints, 1)
-	pt = returned.AccessPoints[0]
+	require.NotNil(t, updated)
+	require.EqualValues(t, a.ID, updated.ID)
+	require.Len(t, updated.AccessPoints, 1)
+	pt = updated.AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "warm.example.org", pt.Address)
 	require.EqualValues(t, 2345, pt.Port)
@@ -191,17 +322,17 @@ func TestUpdateApp(t *testing.T) {
 	require.EqualValues(t, 1234, pt.Port)
 	require.Empty(t, pt.Key)
 
-	returned, err = GetAppByID(db, a.ID)
+	updated, err = GetAppByID(db, a.ID)
 	require.NoError(t, err)
-	require.NotNil(t, returned)
-	require.EqualValues(t, a.ID, returned.ID)
-	require.Len(t, returned.AccessPoints, 2)
-	pt = returned.AccessPoints[0]
+	require.NotNil(t, updated)
+	require.EqualValues(t, a.ID, updated.ID)
+	require.Len(t, updated.AccessPoints, 2)
+	pt = updated.AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "warm.example.org", pt.Address)
 	require.EqualValues(t, 2345, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
-	pt = returned.AccessPoints[1]
+	pt = updated.AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, pt.Type)
 	require.Equal(t, "cold.example.org", pt.Address)
 	require.EqualValues(t, 1234, pt.Port)
@@ -219,12 +350,12 @@ func TestUpdateApp(t *testing.T) {
 	require.EqualValues(t, 2345, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
 
-	returned, err = GetAppByID(db, a.ID)
+	updated, err = GetAppByID(db, a.ID)
 	require.NoError(t, err)
-	require.NotNil(t, returned)
-	require.EqualValues(t, a.ID, returned.ID)
-	require.Len(t, returned.AccessPoints, 1)
-	pt = returned.AccessPoints[0]
+	require.NotNil(t, updated)
+	require.EqualValues(t, a.ID, updated.ID)
+	require.Len(t, updated.AccessPoints, 1)
+	pt = updated.AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
 	require.Equal(t, "warm.example.org", pt.Address)
 	require.EqualValues(t, 2345, pt.Port)
@@ -298,9 +429,15 @@ func TestGetAppsByMachine(t *testing.T) {
 	s := &App{
 		ID:           0,
 		MachineID:    m.ID,
-		Type:         AppTypeKea,
+		Type:         AppTypeBind9,
 		Active:       true,
 		AccessPoints: accessPoints,
+		Daemons: []*Daemon{
+			{
+				Name:        "named",
+				Bind9Daemon: &Bind9Daemon{},
+			},
+		},
 	}
 	err = AddApp(db, s)
 	require.NoError(t, err)
@@ -312,7 +449,7 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.NoError(t, err)
 	app := apps[0]
 	require.Equal(t, m.ID, app.MachineID)
-	require.Equal(t, AppTypeKea, app.Type)
+	require.Equal(t, AppTypeBind9, app.Type)
 	// check access point
 	require.Len(t, app.AccessPoints, 1)
 	pt := app.AccessPoints[0]
@@ -320,6 +457,11 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.Equal(t, "localhost", pt.Address)
 	require.EqualValues(t, 1234, pt.Port)
 	require.Empty(t, pt.Key)
+
+	// Make sure that the daemon is returned.
+	require.Len(t, apps[0].Daemons, 1)
+	require.Equal(t, "named", apps[0].Daemons[0].Name)
+	require.NotNil(t, apps[0].Daemons[0].Bind9Daemon)
 
 	// test GetAccessPoint
 	pt, err = app.GetAccessPoint(AccessPointControl)
@@ -359,6 +501,14 @@ func TestGetAppsByType(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: keaPoints,
+		Daemons: []*Daemon{
+			{
+				Name: "kea-dhcp4",
+				KeaDaemon: &KeaDaemon{
+					KeaDHCPDaemon: &KeaDHCPDaemon{},
+				},
+			},
+		},
 	}
 	err = AddApp(db, aKea)
 	require.NoError(t, err)
@@ -373,6 +523,12 @@ func TestGetAppsByType(t *testing.T) {
 		Type:         AppTypeBind9,
 		Active:       true,
 		AccessPoints: bind9Points,
+		Daemons: []*Daemon{
+			{
+				Name:        "named",
+				Bind9Daemon: &Bind9Daemon{},
+			},
+		},
 	}
 	err = AddApp(db, aBind9)
 	require.NoError(t, err)
@@ -384,6 +540,9 @@ func TestGetAppsByType(t *testing.T) {
 	require.Len(t, apps, 1)
 	require.Equal(t, aKea.ID, apps[0].ID)
 	require.NotNil(t, apps[0].Machine)
+	require.Len(t, apps[0].Daemons, 1)
+	require.NotNil(t, apps[0].Daemons[0].KeaDaemon)
+	require.NotNil(t, apps[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
 
 	// check getting bind9 apps
 	apps, err = GetAppsByType(db, AppTypeBind9)
@@ -391,6 +550,8 @@ func TestGetAppsByType(t *testing.T) {
 	require.Len(t, apps, 1)
 	require.Equal(t, aBind9.ID, apps[0].ID)
 	require.NotNil(t, apps[0].Machine)
+	require.Len(t, apps[0].Daemons, 1)
+	require.NotNil(t, apps[0].Daemons[0].Bind9Daemon)
 }
 
 // Check getting app by its ID.
@@ -498,6 +659,13 @@ func TestGetAppsByPage(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: keaPoints,
+		Daemons: []*Daemon{
+			{
+				KeaDaemon: &KeaDaemon{
+					KeaDHCPDaemon: &KeaDHCPDaemon{},
+				},
+			},
+		},
 	}
 	err = AddApp(db, sKea)
 	require.NoError(t, err)
@@ -513,6 +681,11 @@ func TestGetAppsByPage(t *testing.T) {
 		Type:         AppTypeBind9,
 		Active:       true,
 		AccessPoints: bind9Points,
+		Daemons: []*Daemon{
+			{
+				Bind9Daemon: &Bind9Daemon{},
+			},
+		},
 	}
 	err = AddApp(db, sBind)
 	require.NoError(t, err)
@@ -530,6 +703,9 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
 	require.Equal(t, AppTypeKea, apps[0].Type)
+	require.Len(t, apps[0].Daemons, 1)
+	require.NotNil(t, apps[0].Daemons[0].KeaDaemon)
+	require.NotNil(t, apps[0].Daemons[0].KeaDaemon.KeaDHCPDaemon)
 	require.Len(t, apps[0].AccessPoints, 1)
 	pt := apps[0].AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
@@ -543,6 +719,8 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
 	require.Equal(t, AppTypeBind9, apps[0].Type)
+	require.Len(t, apps[0].Daemons, 1)
+	require.NotNil(t, apps[0].Daemons[0].Bind9Daemon)
 	require.Len(t, apps[0].AccessPoints, 1)
 	pt = apps[0].AccessPoints[0]
 	require.Equal(t, AccessPointControl, pt.Type)
@@ -633,6 +811,13 @@ func TestGetAllApps(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: keaPoints,
+		Daemons: []*Daemon{
+			{
+				KeaDaemon: &KeaDaemon{
+					KeaDHCPDaemon: &KeaDHCPDaemon{},
+				},
+			},
+		},
 	}
 	err = AddApp(db, aKea)
 	require.NoError(t, err)
@@ -648,6 +833,11 @@ func TestGetAllApps(t *testing.T) {
 		Type:         AppTypeBind9,
 		Active:       true,
 		AccessPoints: bind9Points,
+		Daemons: []*Daemon{
+			{
+				Bind9Daemon: &Bind9Daemon{},
+			},
+		},
 	}
 	err = AddApp(db, aBind)
 	require.NoError(t, err)
@@ -659,6 +849,18 @@ func TestGetAllApps(t *testing.T) {
 	require.Len(t, apps, 2)
 	require.True(t, apps[0].Type == AppTypeKea || apps[1].Type == AppTypeKea)
 	require.True(t, apps[0].Type == AppTypeBind9 || apps[1].Type == AppTypeBind9)
+
+	// Make sure that app specific fields are set.
+	for _, a := range apps {
+		require.Len(t, a.Daemons, 1)
+		switch a.Type {
+		case AppTypeKea:
+			require.NotNil(t, a.Daemons[0].KeaDaemon)
+			require.NotNil(t, a.Daemons[0].KeaDaemon.KeaDHCPDaemon)
+		case AppTypeBind9:
+			require.NotNil(t, a.Daemons[0].Bind9Daemon)
+		}
+	}
 }
 
 func TestAfterScanKea(t *testing.T) {

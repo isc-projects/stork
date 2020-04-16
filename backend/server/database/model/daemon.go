@@ -57,7 +57,7 @@ type Daemon struct {
 	ID              int64
 	Pid             int32
 	Name            string
-	Active          bool
+	Active          bool `pg:",use_zero"`
 	Version         string
 	ExtendedVersion string
 	Uptime          int64

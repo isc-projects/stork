@@ -67,6 +67,8 @@ type App struct {
 	Details   interface{} // here we have either AppKea or AppBind9
 
 	AccessPoints []*AccessPoint
+
+	Daemons []*Daemon
 }
 
 // This is a hook to go-pg that is called just after reading rows from database.
@@ -136,6 +138,84 @@ func updateAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
 	return nil
 }
 
+// Adds or updates daemons for an app. If any daemons already exist for the app,
+// they are removed and the new daemons will be added instead.
+func updateAppDaemons(tx *pg.Tx, app *App) (err error) {
+	// Delete the existing daemons, because the updated app may have different
+	// set of daemons. In particular, some of them may be gone.
+	ids := []int64{}
+	for _, d := range app.Daemons {
+		if d.ID > 0 {
+			ids = append(ids, d.ID)
+		}
+	}
+	q := tx.Model((*Daemon)(nil)).
+		Where("daemon.app_id = ?", app.ID)
+	if len(ids) > 0 {
+		q = q.Where("daemon.id NOT IN (?)", pg.In(ids))
+	}
+	_, err = q.Delete()
+	if err != nil {
+		return errors.Wrapf(err, "problem with deleting daemons for an updated app %d", app.ID)
+	}
+
+	// Add updated daemons.
+	for _, daemon := range app.Daemons {
+		// Make sure the inserted daemon references the app.
+		daemon.AppID = app.ID
+		if daemon.ID == 0 {
+			// Add the new entry to the daemon table.
+			_, err = tx.Model(daemon).Insert()
+		} else {
+			_, err = tx.Model(daemon).WherePK().Update()
+		}
+		if err != nil {
+			return errors.Wrapf(err, "problem with upserting daemon to app %d: %v", app.ID, daemon)
+		}
+
+		if daemon.KeaDaemon != nil {
+			// Make sure that the kea_daemon references the daemon.
+			daemon.KeaDaemon.DaemonID = daemon.ID
+			if daemon.KeaDaemon.ID == 0 {
+				_, err = tx.Model(daemon.KeaDaemon).Insert()
+			} else {
+				_, err = tx.Model(daemon.KeaDaemon).WherePK().Update()
+			}
+			if err != nil {
+				return errors.Wrapf(err, "problem with upserting Kea daemon to app %d: %v",
+					app.ID, daemon.KeaDaemon)
+			}
+
+			if daemon.KeaDaemon.KeaDHCPDaemon != nil {
+				// Make sure that the kea_dhcp_daemon references the kea_daemon.
+				daemon.KeaDaemon.KeaDHCPDaemon.KeaDaemonID = daemon.KeaDaemon.ID
+				if daemon.KeaDaemon.KeaDHCPDaemon.ID == 0 {
+					_, err = tx.Model(daemon.KeaDaemon.KeaDHCPDaemon).Insert()
+				} else {
+					_, err = tx.Model(daemon.KeaDaemon.KeaDHCPDaemon).WherePK().Update()
+				}
+				if err != nil {
+					return errors.Wrapf(err, "problem with upserting Kea DHCP daemon to app %d: %v",
+						app.ID, daemon.KeaDaemon.KeaDHCPDaemon)
+				}
+			}
+		} else if daemon.Bind9Daemon != nil {
+			// Make sure that the bind9_daemon references the daemon.
+			daemon.Bind9Daemon.DaemonID = daemon.ID
+			if daemon.Bind9Daemon.ID == 0 {
+				_, err = tx.Model(daemon.Bind9Daemon).Insert()
+			} else {
+				_, err = tx.Model(daemon.Bind9Daemon).WherePK().Update()
+			}
+			if err != nil {
+				return errors.Wrapf(err, "problem with upserting BIND9 daemon to app %d: %v",
+					app.ID, daemon.Bind9Daemon)
+			}
+		}
+	}
+	return nil
+}
+
 // Adds application into the database. The dbIface object may either be a pg.DB
 // object or pg.Tx. In the latter case this function uses existing transaction
 // to add an app.
@@ -152,6 +232,11 @@ func AddApp(dbIface interface{}, app *App) error {
 	err = tx.Insert(app)
 	if err != nil {
 		return errors.Wrapf(err, "problem with inserting app %v", app)
+	}
+
+	err = updateAppDaemons(tx, app)
+	if err != nil {
+		return errors.WithMessagef(err, "problem with inserting daemons for a new app")
 	}
 
 	// Add access points.
@@ -184,6 +269,11 @@ func UpdateApp(dbIface interface{}, app *App) error {
 		return errors.Wrapf(err, "problem with updating app %v", app)
 	}
 
+	err = updateAppDaemons(tx, app)
+	if err != nil {
+		return errors.WithMessagef(err, "problem with updating daemons for app %d", app.ID)
+	}
+
 	// Update access points.
 	err = updateAppAccessPoints(tx, app, true)
 	if err != nil {
@@ -200,6 +290,8 @@ func GetAppByID(db *pg.DB, id int64) (*App, error) {
 	q := db.Model(&app)
 	q = q.Relation("Machine")
 	q = q.Relation("AccessPoints")
+	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
+	q = q.Relation("Daemons.Bind9Daemon")
 	q = q.Where("app.id = ?", id)
 	err := q.Select()
 	if err == pg.ErrNoRows {
@@ -215,7 +307,10 @@ func GetAppsByMachine(db *pg.DB, machineID int64) ([]App, error) {
 
 	q := db.Model(&apps)
 	q = q.Relation("AccessPoints")
+	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
+	q = q.Relation("Daemons.Bind9Daemon")
 	q = q.Where("machine_id = ?", machineID)
+	q = q.OrderExpr("id ASC")
 	err := q.Select()
 	if err != nil {
 		return nil, errors.Wrapf(err, "problem with getting apps")
@@ -231,6 +326,15 @@ func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 	q = q.Where("type = ?", appType)
 	q = q.Relation("Machine")
 	q = q.Relation("AccessPoints")
+
+	switch appType {
+	case AppTypeKea:
+		q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
+	case AppTypeBind9:
+		q = q.Relation("Daemons.Bind9Daemon")
+	}
+
+	q = q.OrderExpr("id ASC")
 	err := q.Select()
 	if err != nil {
 		return nil, errors.Wrapf(err, "problem with getting %s apps", appType)
@@ -251,6 +355,8 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, text string, appType st
 	q := db.Model(&apps)
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Machine")
+	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
+	q = q.Relation("Daemons.Bind9Daemon")
 	if appType != "" {
 		q = q.Where("type = ?", appType)
 	}
@@ -277,20 +383,15 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, text string, appType st
 	return apps, int64(total), nil
 }
 
-func DeleteApp(db *pg.DB, app *App) error {
-	err := db.Delete(app)
-	if err != nil {
-		return errors.Wrapf(err, "problem with deleting app %v", app.ID)
-	}
-	return nil
-}
-
 func GetAllApps(db *pg.DB) ([]App, error) {
 	var apps []App
 
 	// prepare query
 	q := db.Model(&apps)
 	q = q.Relation("AccessPoints")
+	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
+	q = q.Relation("Daemons.Bind9Daemon")
+	q = q.OrderExpr("id ASC")
 
 	// retrieve apps from db
 	err := q.Select()
@@ -298,6 +399,14 @@ func GetAllApps(db *pg.DB) ([]App, error) {
 		return nil, errors.Wrapf(err, "problem with getting apps")
 	}
 	return apps, nil
+}
+
+func DeleteApp(db *pg.DB, app *App) error {
+	err := db.Delete(app)
+	if err != nil {
+		return errors.Wrapf(err, "problem with deleting app %v", app.ID)
+	}
+	return nil
 }
 
 // Returns a list of names of active DHCP deamons. This is useful for
