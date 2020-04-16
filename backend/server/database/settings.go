@@ -67,8 +67,7 @@ func (c *DatabaseSettings) PgParams() *PgOptions {
 // Fetches database password from the environment variable or prompts the user
 // for the password.
 func Password(settings *DatabaseSettings) {
-	passwd, ok := os.LookupEnv("STORK_DATABASE_PASSWORD")
-	if ok {
+	if passwd, ok := os.LookupEnv("STORK_DATABASE_PASSWORD"); ok {
 		settings.Password = passwd
 	} else {
 		// Prompt the user for database password.
