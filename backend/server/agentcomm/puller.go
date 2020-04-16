@@ -21,9 +21,13 @@ type PeriodicPuller struct {
 	Db                  *dbops.PgDB
 	Agents              ConnectedAgents
 	Ticker              *time.Ticker
+	Interval            int64
+	Active              bool
 	Done                chan bool
 	Wg                  *sync.WaitGroup
 }
+
+const InactiveInterval int64 = 60
 
 // Creates an instance of a new periodic puller. The periodic puller offers a mechanism
 // to periodically trigger an action. This action is supplied as a function instance.
@@ -38,6 +42,16 @@ func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, inter
 		return nil, err
 	}
 
+	// if interval in db is 0 then it means that puller is disabled,
+	// but it needs to check from time to time the interval in db
+	// to reenable itself when it gets to be > 0. When it is disabled
+	// then it checks db every 60 seconds (InactiveInterval).
+	active := true
+	if interval <= 0 {
+		interval = InactiveInterval
+		active = false
+	}
+
 	periodicPuller := &PeriodicPuller{
 		pullerName:          pullerName,
 		intervalSettingName: intervalSettingName,
@@ -45,6 +59,8 @@ func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, inter
 		Db:                  db,
 		Agents:              agents,
 		Ticker:              time.NewTicker(time.Duration(interval) * time.Second),
+		Interval:            interval,
+		Active:              active,
 		Done:                make(chan bool),
 		Wg:                  &sync.WaitGroup{},
 	}
@@ -73,9 +89,11 @@ func (puller *PeriodicPuller) pullerLoop() {
 		select {
 		// every N seconds execute user defined function
 		case <-puller.Ticker.C:
-			_, err := puller.pullFunc()
-			if err != nil {
-				log.Errorf("errors were encountered while pulling data from Kea apps: %+v", err)
+			if puller.Active {
+				_, err := puller.pullFunc()
+				if err != nil {
+					log.Errorf("errors were encountered while pulling data from Kea apps: %+v", err)
+				}
 			}
 		// wait for done signal from shutdown function
 		case <-puller.Done:
@@ -90,8 +108,21 @@ func (puller *PeriodicPuller) pullerLoop() {
 			log.Errorf("problem with getting interval setting %s from db: %+v",
 				puller.intervalSettingName, err)
 		} else {
-			puller.Ticker.Stop()
-			puller.Ticker = time.NewTicker(time.Duration(interval) * time.Second)
+			if interval <= 0 && puller.Active {
+				// if puller should be disabled but it is active then
+				if puller.Interval != InactiveInterval {
+					puller.Ticker.Stop()
+					puller.Ticker = time.NewTicker(time.Duration(InactiveInterval) * time.Second)
+					puller.Interval = InactiveInterval
+				}
+				puller.Active = false
+			} else if interval > 0 && interval != puller.Interval {
+				// if puller interval is changed and is not 0 (disabled)
+				puller.Ticker.Stop()
+				puller.Ticker = time.NewTicker(time.Duration(interval) * time.Second)
+				puller.Interval = interval
+				puller.Active = true
+			}
 		}
 	}
 }

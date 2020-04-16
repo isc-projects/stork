@@ -2,34 +2,58 @@
     <h2>Settings</h2>
     <form [formGroup]="settingsForm">
         <p-fieldset legend="Intervals">
-            <label style="display: block; margin-bottom: 1em;">
+            <label style="display: block;">
                 BIND 9 Statistics Puller Interval (in seconds):<br />
                 <input type="number" formControlName="bind9_stats_puller_interval" style="width: 100%" />
             </label>
+            <div *ngIf="hasError('bind9_stats_puller_interval', 'required')" style="color: red;">
+                This is required.
+            </div>
+            <div *ngIf="hasError('bind9_stats_puller_interval', 'min')" style="color: red;">
+                It has to be > 0.
+            </div>
 
-            <label style="display: block; margin-bottom: 1em;">
+            <label style="display: block; margin-top: 1em;">
                 Kea Statistics Puller Interval (in seconds):<br />
                 <input type="number" formControlName="kea_stats_puller_interval" style="width: 100%" />
             </label>
+            <div *ngIf="hasError('kea_stats_puller_interval', 'required')" style="color: red;">
+                This is required.
+            </div>
+            <div *ngIf="hasError('kea_stats_puller_interval', 'min')" style="color: red;">
+                It has to be > 0.
+            </div>
 
-            <label style="display: block;">
+            <label style="display: block; margin-top: 1em;">
                 Kea Hosts Puller Interval (in seconds):<br />
                 <input type="number" formControlName="kea_hosts_puller_interval" style="width: 100%" />
             </label>
+            <div *ngIf="hasError('kea_hosts_puller_interval', 'required')" style="color: red;">
+                This is required.
+            </div>
+            <div *ngIf="hasError('kea_hosts_puller_interval', 'min')" style="color: red;">
+                It has to be > 0.
+            </div>
 
-            <label style="display: block;">
+            <label style="display: block; margin-top: 1em;">
                 Kea Status Puller Interval (in seconds):<br />
                 <input type="number" formControlName="kea_status_puller_interval" style="width: 100%" />
             </label>
+            <div *ngIf="hasError('kea_status_puller_interval', 'required')" style="color: red;">
+                This is required.
+            </div>
+            <div *ngIf="hasError('kea_status_puller_interval', 'min')" style="color: red;">
+                It has to be > 0.
+            </div>
         </p-fieldset>
 
         <p-fieldset legend="Grafana & Prometheus">
-            <label style="display: block; margin-bottom: 1em;">
+            <label style="display: block;">
                 URL to Grafana:<br />
                 <input type="url" formControlName="grafana_url" style="width: 100%" />
             </label>
 
-            <label style="display: block;">
+            <label style="display: block margin-top: 1em;">
                 URL to Prometheus:<br />
                 <input type="url" formControlName="prometheus_url" style="width: 100%" />
             </label>
@@ -37,4 +61,7 @@
     </form>
 
     <button pButton type="button" label="Save Settings" (click)="saveSettings()" style="margin: 10px 0 0 4px;"></button>
+    <span *ngIf="settingsForm.invalid" style="color: red; margin-left: 20px;">
+        There are some issues in the form values.
+    </span>
 </div>
