@@ -36,9 +36,10 @@ paths:
           schema:
             $ref: "#/definitions/ApiError"
 
-  $include: ./users-paths.yaml
-  $include: ./services-paths.yaml
-  $include: ./dhcp-paths.yaml
+  $include: users-paths.yaml
+  $include: services-paths.yaml
+  $include: dhcp-paths.yaml
+  $include: settings-paths.yaml
 
 
 parameters:
@@ -89,3 +90,4 @@ definitions:
   $include: users-defs.yaml
   $include: services-defs.yaml
   $include: dhcp-defs.yaml
+  $include: settings-defs.yaml

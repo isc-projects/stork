@@ -15,8 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
-  "iteration": 1582271314700,
+  "iteration": 1586944803716,
   "links": [],
   "panels": [
     {
@@ -891,11 +890,10 @@
       {
         "allValue": ".*",
         "current": {
-          "selected": false,
           "tags": [],
-          "text": "agent-kea:9547",
+          "text": "All",
           "value": [
-            "agent-kea:9547"
+            "$__all"
           ]
         },
         "datasource": "Prometheus",
@@ -920,9 +918,11 @@
       {
         "allValue": ".*",
         "current": {
-          "selected": false,
+          "tags": [],
           "text": "All",
-          "value": "$__all"
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": "Prometheus",
         "definition": "kea_dhcp4_addresses_total",

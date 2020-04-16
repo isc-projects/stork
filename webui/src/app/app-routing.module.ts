@@ -13,6 +13,7 @@ import { PasswordChangePageComponent } from './password-change-page/password-cha
 import { HostsPageComponent } from './hosts-page/hosts-page.component'
 import { SubnetsPageComponent } from './subnets-page/subnets-page.component'
 import { SharedNetworksPageComponent } from './shared-networks-page/shared-networks-page.component'
+import { SettingsPageComponent } from './settings-page/settings-page.component'
 
 const routes: Routes = [
     {
@@ -69,17 +70,17 @@ const routes: Routes = [
         canActivate: [AuthGuard],
     },
     {
-        path: 'settings',
+        path: 'profile',
         component: ProfilePageComponent,
         canActivate: [AuthGuard],
     },
     {
-        path: 'settings/profile',
+        path: 'profile/settings',
         component: ProfilePageComponent,
         canActivate: [AuthGuard],
     },
     {
-        path: 'settings/password',
+        path: 'profile/password',
         component: PasswordChangePageComponent,
         canActivate: [AuthGuard],
     },
@@ -97,6 +98,11 @@ const routes: Routes = [
     {
         path: 'users/new',
         component: UsersPageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'settings',
+        component: SettingsPageComponent,
         canActivate: [AuthGuard],
     },
 

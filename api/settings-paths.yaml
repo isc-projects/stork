@@ -1,0 +1,36 @@
+  /settings:
+    get:
+      summary: Get a set of global settings.
+      description: >-
+        A set of global Stork settings.
+      operationId: getSettings
+      tags:
+        - Settings
+      responses:
+        200:
+          description: A set of settings
+          schema:
+            $ref: "#/definitions/Settings"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+    put:
+      summary: Update settings.
+      description: Update global settings.
+      operationId: updateSettings
+      tags:
+        - Settings
+      parameters:
+        - name: settings
+          in: body
+          description: Settings set
+          schema:
+            $ref: '#/definitions/Settings'
+      responses:
+        200:
+          description: Settings set
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

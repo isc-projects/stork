@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core'
 import { DHCPService } from '../backend/api/api'
 import { humanCount } from '../utils'
 import { getTotalAddresses, getAssignedAddresses } from '../subnets'
+import { SettingService } from '../setting.service'
 
 /**
  * Component for presenting DHCP subnets.
@@ -22,7 +23,9 @@ export class SubnetsPageComponent implements OnInit {
     dhcpVersions: any[]
     selectedDhcpVersion: any
 
-    constructor(private dhcpApi: DHCPService) {}
+    grafanaUrl: string
+
+    constructor(private dhcpApi: DHCPService, private settingSvc: SettingService) {}
 
     ngOnInit() {
         // prepare list of DHCP versions, this is used in subnets filtering
@@ -31,6 +34,10 @@ export class SubnetsPageComponent implements OnInit {
             { name: 'DHCPv4', value: '4' },
             { name: 'DHCPv6', value: '6' },
         ]
+
+        this.settingSvc.getSettings().subscribe(data => {
+            this.grafanaUrl = data['grafana_url']
+        })
     }
 
     /**

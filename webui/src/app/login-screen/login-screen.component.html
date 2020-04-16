@@ -18,11 +18,24 @@
         <div style="margin-top: 10vh;">
             <form [formGroup]="loginForm">
                 <div>
-                    <input type="text" formControlName="username" placeholder="User name" style="width: 100%;" />
+                    <input
+                        type="text"
+                        name="username"
+                        formControlName="username"
+                        placeholder="User name"
+                        style="width: 100%;"
+                    />
                 </div>
 
                 <div style="margin-top: 8px;">
-                    <input type="password" formControlName="password" placeholder="Password" style="width: 100%;" />
+                    <input
+                        type="password"
+                        name="password"
+                        formControlName="password"
+                        placeholder="Password"
+                        style="width: 100%;"
+                        (keydown)="keyDown($event)"
+                    />
                 </div>
                 <div style="margin-top: 18px;">
                     <button pButton type="button" label="Sign In" style="width: 100%;" (click)="signIn()"></button>

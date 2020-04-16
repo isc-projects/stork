@@ -69,6 +69,8 @@
         type: integer
       machineAddress:
         type: string
+      machineHostname:
+        type: string
       stats:
         type: object
       statsCollectedAt:

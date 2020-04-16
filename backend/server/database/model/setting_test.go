@@ -63,6 +63,12 @@ func TestInitializeSettings(t *testing.T) {
 	val, err = GetSettingInt(db, "kea_stats_puller_interval")
 	require.NoError(t, err)
 	require.EqualValues(t, 123, val)
+
+	// get all settings
+	settingsMap, err := GetAllSettings(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 123, settingsMap["kea_stats_puller_interval"])
+	require.Len(t, settingsMap, count)
 }
 
 // Check getting and setting settings.

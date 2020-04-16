@@ -26,7 +26,7 @@ const SettingValTypePasswd = 4
 type Setting struct {
 	Name    string `pg:",pk"`
 	ValType int64
-	Value   string
+	Value   string `pg:",use_zero"`
 }
 
 // Initialize settings in db. If new setting needs to be added then add it to defaultSettings list
@@ -53,6 +53,16 @@ func InitializeSettings(db *pg.DB) error {
 			Name:    "kea_status_puller_interval", // in seconds
 			ValType: SettingValTypeInt,
 			Value:   "30",
+		},
+		{
+			Name:    "grafana_url",
+			ValType: SettingValTypeStr,
+			Value:   "",
+		},
+		{
+			Name:    "prometheus_url",
+			ValType: SettingValTypeStr,
+			Value:   "",
 		},
 	}
 
@@ -131,6 +141,41 @@ func GetSettingPasswd(db *pg.DB, name string) (string, error) {
 		return "", err
 	}
 	return s.Value, nil
+}
+
+// Get all settings.
+func GetAllSettings(db *pg.DB) (map[string]interface{}, error) {
+	settings := []*Setting{}
+	q := db.Model(&settings)
+	err := q.Select()
+	if err != nil {
+		return nil, errors.Wrapf(err, "problem with getting all settings")
+	}
+
+	settingsMap := make(map[string]interface{})
+
+	for _, s := range settings {
+		switch s.ValType {
+		case SettingValTypeInt:
+			val, err := strconv.ParseInt(s.Value, 10, 64)
+			if err != nil {
+				return nil, errors.Wrapf(err, "problem with getting setting value of %s", s.Name)
+			}
+			settingsMap[s.Name] = val
+		case SettingValTypeBool:
+			val, err := strconv.ParseBool(s.Value)
+			if err != nil {
+				return nil, errors.Wrapf(err, "problem with getting setting value of %s", s.Name)
+			}
+			settingsMap[s.Name] = val
+		case SettingValTypeStr:
+			settingsMap[s.Name] = s.Value
+		case SettingValTypePasswd:
+			// do not return passwords to users
+		}
+	}
+
+	return settingsMap, nil
 }
 
 // Set int value of given setting by name.

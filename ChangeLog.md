@@ -1,3 +1,9 @@
+* 56 [func] godfryd
+
+    Added links to Grafana. Added web page for managing global
+    settings.
+    (Gitlab #231)
+
 * 55 [bug] godfryd
 
     Fixed starting Stork server: now if password to database

@@ -44,6 +44,19 @@
                             <td style="padding-left: 1em;">
                                 {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
                             </td>
+                            <td *ngIf="grafanaUrl">
+                                <a
+                                    href="{{ grafanaUrl }}/d/hRf18FvWz/?var-subnet={{
+                                        sn.localSubnets[0].id
+                                    }}&var-instance={{ sn.localSubnets[0].machineHostname }}:9547"
+                                    target="blank"
+                                >
+                                    <i
+                                        class="pi pi-chart-line"
+                                        style="font-size: 1.6em; vertical-align: bottom; padding-left: 6px;"
+                                    ></i>
+                                </a>
+                            </td>
                         </tr>
 
                         <tr>

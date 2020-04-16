@@ -28,6 +28,8 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { TooltipModule } from 'primeng/tooltip'
 import { PasswordModule } from 'primeng/password'
 import { CardModule } from 'primeng/card'
+import { SplitButtonModule } from 'primeng/splitbutton'
+import { FieldsetModule } from 'primeng/fieldset'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -57,6 +59,7 @@ import { SubnetsPageComponent } from './subnets-page/subnets-page.component'
 import { SharedNetworksPageComponent } from './shared-networks-page/shared-networks-page.component'
 import { SubnetBarComponent } from './subnet-bar/subnet-bar.component'
 import { HostsPageComponent } from './hosts-page/hosts-page.component'
+import { SettingsPageComponent } from './settings-page/settings-page.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -97,6 +100,7 @@ export function preinitApp(appInitService: AppInitService) {
         SharedNetworksPageComponent,
         SubnetBarComponent,
         HostsPageComponent,
+        SettingsPageComponent,
     ],
     imports: [
         BrowserModule,
@@ -129,6 +133,8 @@ export function preinitApp(appInitService: AppInitService) {
         TooltipModule,
         PasswordModule,
         CardModule,
+        SplitButtonModule,
+        FieldsetModule,
     ],
     providers: [
         {

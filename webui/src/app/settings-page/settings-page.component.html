@@ -1,0 +1,35 @@
+<div class="p-col-6">
+    <h2>Settings</h2>
+    <form [formGroup]="settingsForm">
+        <p-fieldset legend="Intervals">
+            <label style="display: block; margin-bottom: 1em;">
+                BIND 9 Statistics Puller Interval (in seconds):<br />
+                <input type="text" formControlName="bind9_stats_puller_interval" style="width: 100%" />
+            </label>
+
+            <label style="display: block; margin-bottom: 1em;">
+                Kea Statistics Puller Interval (in seconds):<br />
+                <input type="text" formControlName="kea_stats_puller_interval" style="width: 100%" />
+            </label>
+
+            <label style="display: block;">
+                Kea Hosts Puller Interval (in seconds):<br />
+                <input type="text" formControlName="kea_hosts_puller_interval" style="width: 100%" />
+            </label>
+        </p-fieldset>
+
+        <p-fieldset legend="Grafana & Prometheus">
+            <label style="display: block; margin-bottom: 1em;">
+                URL to Grafana:<br />
+                <input type="text" formControlName="grafana_url" style="width: 100%" />
+            </label>
+
+            <label style="display: block;">
+                URL to Prometheus:<br />
+                <input type="text" formControlName="prometheus_url" style="width: 100%" />
+            </label>
+        </p-fieldset>
+    </form>
+
+    <button pButton type="button" label="Save Settings" (click)="saveSettings()" style="margin: 10px 0 0 4px;"></button>
+</div>

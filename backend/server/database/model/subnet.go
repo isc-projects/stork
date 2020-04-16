@@ -349,7 +349,8 @@ func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText 
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets.App.AccessPoints")
+		Relation("LocalSubnets.App.AccessPoints").
+		Relation("LocalSubnets.App.Machine")
 
 	// Let's be liberal and allow other values than 0 too. The only special
 	// ones are 4 and 6.

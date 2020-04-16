@@ -235,7 +235,8 @@ func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filt
 		Relation("Subnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("Subnets.LocalSubnets.App.AccessPoints")
+		Relation("Subnets.LocalSubnets.App.AccessPoints").
+		Relation("Subnets.LocalSubnets.App.Machine")
 
 	// Let's be liberal and allow other values than 0 too. The only special
 	// ones are 4 and 6.

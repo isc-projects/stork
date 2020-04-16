@@ -57,4 +57,11 @@ export class LoginScreenComponent implements OnInit {
         this.auth.logout()
         this.router.navigate(['/login'])
     }
+
+    keyDown(event) {
+        if (event.key === 'Enter') {
+            this.auth.login(this.f.username.value, this.f.password.value, this.returnUrl)
+            this.router.navigate([this.returnUrl])
+        }
+    }
 }

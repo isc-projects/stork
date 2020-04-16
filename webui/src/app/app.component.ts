@@ -7,6 +7,7 @@ import { MenuItem } from 'primeng/api'
 import { GeneralService } from './backend/api/api'
 import { AuthService } from './auth.service'
 import { LoadingService } from './loading.service'
+import { SettingService } from './setting.service'
 
 @Component({
     selector: 'app-root',
@@ -19,6 +20,7 @@ export class AppComponent implements OnInit {
     storkBuildDate = 'unknown'
     currentUser = null
     loadingInProgress = new Observable()
+    userMenuItems: MenuItem[]
 
     menuItems: MenuItem[]
 
@@ -26,7 +28,8 @@ export class AppComponent implements OnInit {
         private router: Router,
         protected generalApi: GeneralService,
         private auth: AuthService,
-        private loadingService: LoadingService
+        private loadingService: LoadingService,
+        private settingSvc: SettingService
     ) {
         this.auth.currentUser.subscribe(x => {
             this.currentUser = x
@@ -36,6 +39,14 @@ export class AppComponent implements OnInit {
     }
 
     initMenuItems() {
+        this.userMenuItems = [
+            {
+                label: 'Profile',
+                icon: 'fa fa-cog',
+                routerLink: '/profile',
+            },
+        ]
+
         this.menuItems = []
         this.menuItems.push({
             label: 'DHCP',
@@ -87,25 +98,15 @@ export class AppComponent implements OnInit {
                             icon: 'fa fa-user',
                             routerLink: '/users',
                         },
+                        {
+                            label: 'Settings',
+                            icon: 'fa fa-cog',
+                            routerLink: '/settings',
+                        },
                     ],
                 },
             ])
         }
-        this.menuItems.push({
-            label: 'Profile',
-            items: [
-                {
-                    label: 'Settings',
-                    icon: 'fa fa-cog',
-                    routerLink: '/settings',
-                },
-                {
-                    label: 'Logout',
-                    icon: 'pi pi-sign-out',
-                    routerLink: '/logout',
-                },
-            ],
-        })
         this.menuItems.push({
             label: 'Help',
             items: [
@@ -148,6 +149,19 @@ export class AppComponent implements OnInit {
         this.generalApi.getVersion().subscribe(data => {
             this.storkVersion = data.version
             this.storkBuildDate = data.date
+        })
+
+        this.settingSvc.getSettings().subscribe(data => {
+            const grafanUrl = data['grafana_url']
+            const lastMenuItem = this.menuItems[this.menuItems.length - 1]
+            if (grafanUrl && lastMenuItem.label !== 'Grafana') {
+                this.menuItems.push({
+                    label: 'Grafana',
+                    icon: 'pi pi-chart-line',
+                    url: grafanUrl,
+                    target: 'blank',
+                })
+            }
         })
     }
 

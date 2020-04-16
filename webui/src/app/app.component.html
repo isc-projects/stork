@@ -25,15 +25,16 @@
                 animationDuration=".5s"
             ></p-progressSpinner>
             <input type="text" pInputText placeholder="Search" />
-            <button
-                pButton
-                label="Logout ({{ this.currentUser.username || this.currentUser.email }})"
-                (click)="signOut()"
-                icon="pi pi-sign-out"
-                style="margin-left:.25em"
-            ></button>
         </p-menubar>
     </div>
+
+    <p-splitButton
+        label="Logout ({{ this.currentUser.username || this.currentUser.email }})"
+        icon="pi pi-sign-out"
+        [style]="{ margin: '0 0.4em 0 0.25em' }"
+        (onClick)="signOut()"
+        [model]="userMenuItems"
+    ></p-splitButton>
 </div>
 
 <p-toast></p-toast>

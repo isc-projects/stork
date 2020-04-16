@@ -42,6 +42,7 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 			AppID:            lsn.App.ID,
 			ID:               lsn.LocalSubnetID,
 			MachineAddress:   fmt.Sprintf("%s:%d", ctrl.Address, ctrl.Port),
+			MachineHostname:  lsn.App.Machine.State.Hostname,
 			Stats:            lsn.Stats,
 			StatsCollectedAt: strfmt.DateTime(lsn.StatsCollectedAt),
 		}
@@ -62,11 +63,7 @@ func (r *RestAPI) getSubnets(offset, limit, appID, family int64, filterText *str
 		Total: total,
 	}
 
-	// todo: This logic has to change. According to the new data model, there is
-	// a single instance of a subnet and multiple apps attached to it. The way
-	// we do it currently is to iterate over the local subnets (and apps)
-	// associated with the global subnet and return them individually. Changing
-	// the current logic requires reworking the UI.
+	// go through subnets from db and change their format to ReST one
 	for _, snTmp := range dbSubnets {
 		sn := snTmp
 		subnet := subnetToRestAPI(&sn)
@@ -124,11 +121,7 @@ func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterTe
 		Total: total,
 	}
 
-	// todo: This logic has to change. According to the new data model, there is
-	// a single instance of a shared network and multiple apps attached to it.
-	// Currently we mostly assume that each shared network is served by individual
-	// server and we map the app id to the shared network. This will be reworked
-	// but changes to the UI are required.
+	// go through shared networks and their subnets from db and change their format to ReST one
 	for _, net := range dbSharedNetworks {
 		if len(net.Subnets) == 0 || len(net.Subnets[0].LocalSubnets) == 0 {
 			continue

@@ -23,17 +23,17 @@ export class SettingsMenuComponent implements OnInit {
     ngOnInit() {
         this.items = [
             {
-                label: 'User Settings',
+                label: 'User Profile',
                 items: [
                     {
-                        label: 'Profile',
+                        label: 'Settings',
                         icon: 'pi pi-user',
-                        routerLink: '/settings/profile',
+                        routerLink: '/profile/settings',
                     },
                     {
                         label: 'Change password',
                         icon: 'pi pi-lock',
-                        routerLink: '/settings/password',
+                        routerLink: '/profile/password',
                     },
                 ],
             },

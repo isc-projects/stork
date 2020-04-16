@@ -44,6 +44,9 @@
                     <th rowspan="2">Pools</th>
                     <th rowspan="2" style="width: 6rem;">Shared Network</th>
                     <th rowspan="2" style="width: 14rem;">AppID @ Machine</th>
+                    <th rowspan="2" style="width: 3rem;" *ngIf="grafanaUrl" pTooltip="Link to Grafana charts">
+                        <i class="pi pi-chart-line" style="font-size: 1.6em;"></i>
+                    </th>
                 </tr>
                 <tr>
                     <th>Total</th>
@@ -97,6 +100,16 @@
                         <a *ngFor="let lsn of sn.localSubnets" routerLink="/apps/kea/{{ lsn.appId }}"
                             >{{ lsn.appId }} @ {{ lsn.machineAddress }}</a
                         >
+                    </td>
+                    <td *ngIf="grafanaUrl">
+                        <a
+                            href="{{ grafanaUrl }}/d/hRf18FvWz/?var-subnet={{ sn.localSubnets[0].id }}&var-instance={{
+                                sn.localSubnets[0].machineHostname
+                            }}:9547"
+                            target="blank"
+                        >
+                            <i class="pi pi-chart-line" style="font-size: 1.6em;"></i>
+                        </a>
                     </td>
                 </tr>
             </ng-template>

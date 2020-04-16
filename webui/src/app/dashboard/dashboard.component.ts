@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core'
-import { Router } from '@angular/router'
 
 import { MessageService } from 'primeng/api'
 
 import { ServicesService, DHCPService } from '../backend/api/api'
 import { AppsStats } from '../backend/model/appsStats'
 import { humanCount, durationToString } from '../utils'
+import { SettingService } from '../setting.service'
 
 /**
  * Component presenting dashboard with DHCP and DNS overview.
@@ -19,12 +19,13 @@ export class DashboardComponent implements OnInit {
     loaded = false
     appsStats: AppsStats
     overview: any
+    grafanaUrl: string
 
     constructor(
-        private router: Router,
         private servicesApi: ServicesService,
         private dhcpApi: DHCPService,
-        private msgSrv: MessageService
+        private msgSrv: MessageService,
+        private settingSvc: SettingService
     ) {}
 
     ngOnInit() {
@@ -69,6 +70,10 @@ export class DashboardComponent implements OnInit {
 
         // get DHCP overview from the server
         this.refreshDhcpOverview()
+
+        this.settingSvc.getSettings().subscribe(data => {
+            this.grafanaUrl = data['grafana_url']
+        })
     }
 
     /**
