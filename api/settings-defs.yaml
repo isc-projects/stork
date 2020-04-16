@@ -3,11 +3,13 @@
     properties:
       bind9_stats_puller_interval:
         type: integer
-      kea_stats_puller_interval:
-        type: integer
-      kea_hosts_puller_interval:
-        type: integer
       grafana_url:
         type: string
+      kea_hosts_puller_interval:
+        type: integer
+      kea_stats_puller_interval:
+        type: integer
+      kea_status_puller_interval:
+        type: integer
       prometheus_url:
         type: string

@@ -16,9 +16,10 @@ export class SettingsPageComponent implements OnInit {
     constructor(private fb: FormBuilder, private settingsApi: SettingsService, private msgSrv: MessageService) {
         this.settingsForm = this.fb.group({
             bind9_stats_puller_interval: [''],
-            kea_stats_puller_interval: [''],
-            kea_hosts_puller_interval: [''],
             grafana_url: [''],
+            kea_hosts_puller_interval: [''],
+            kea_stats_puller_interval: [''],
+            kea_status_puller_interval: [''],
             prometheus_url: [''],
         })
     }

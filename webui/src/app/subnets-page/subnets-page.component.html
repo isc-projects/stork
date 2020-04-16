@@ -103,9 +103,7 @@
                     </td>
                     <td *ngIf="grafanaUrl">
                         <a
-                            href="{{ grafanaUrl }}/d/hRf18FvWz/?var-subnet={{ sn.localSubnets[0].id }}&var-instance={{
-                                sn.localSubnets[0].machineHostname
-                            }}:9547"
+                            [href]="getGrafanaUrl('dhcp4', sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
                             target="blank"
                         >
                             <i class="pi pi-chart-line" style="font-size: 1.6em;"></i>

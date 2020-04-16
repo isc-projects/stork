@@ -153,9 +153,9 @@ export class AppComponent implements OnInit {
 
         this.settingSvc.getSettings().subscribe(data => {
             const grafanUrl = data['grafana_url']
-            const lastMenuItem = this.menuItems[this.menuItems.length - 1]
-            if (grafanUrl && lastMenuItem.label !== 'Grafana') {
-                this.menuItems.push({
+            const menuItem2 = this.menuItems[2]
+            if (grafanUrl && menuItem2.label !== 'Grafana') {
+                this.menuItems.splice(2, 0, {
                     label: 'Grafana',
                     icon: 'pi pi-chart-line',
                     url: grafanUrl,

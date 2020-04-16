@@ -1,6 +1,13 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
+import { FormsModule, ReactiveFormsModule } from '@angular/forms'
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
+import { FieldsetModule } from 'primeng/fieldset'
+import { MessageService } from 'primeng/api'
+import { HttpClient } from '@angular/common/http'
+
 import { SettingsPageComponent } from './settings-page.component'
+import { SettingsService } from '../backend/api/api'
 
 describe('SettingsPageComponent', () => {
     let component: SettingsPageComponent
@@ -8,7 +15,9 @@ describe('SettingsPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
+            imports: [FormsModule, ReactiveFormsModule, BrowserAnimationsModule, FieldsetModule],
             declarations: [SettingsPageComponent],
+            providers: [SettingsService, MessageService, HttpClient],
         }).compileComponents()
     }))
 

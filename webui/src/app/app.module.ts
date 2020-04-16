@@ -106,7 +106,6 @@ export function preinitApp(appInitService: AppInitService) {
         BrowserModule,
         BrowserAnimationsModule,
         HttpClientModule,
-        FormsModule,
         AppRoutingModule,
         FormsModule,
         ReactiveFormsModule,

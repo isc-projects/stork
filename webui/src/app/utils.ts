@@ -59,3 +59,35 @@ export function humanCount(count) {
     } while (Math.abs(count) >= 1000 && u < units.length - 1)
     return count.toFixed(1) + ' ' + units[u]
 }
+
+/**
+ * Build URL to Grafana dashboard
+ */
+export function getGrafanaUrl(grafanaBaseUrl, name, subnet, instance) {
+    let url = null
+    if (name === 'dhcp4') {
+        if (instance) {
+            instance += ':9547'
+        }
+        console.info('grafanaBaseUrl', grafanaBaseUrl)
+        const b = grafanaBaseUrl.replace(/\/+$/, '')
+        console.info(b)
+        url = new URL('/d/hRf18FvWz/', b)
+    } else {
+        return ''
+    }
+
+    const sp = new URLSearchParams()
+    if (subnet) {
+        sp.append('var-subnet', subnet)
+    }
+    if (instance) {
+        sp.append('var-instance', instance)
+    }
+    const spStr = sp.toString()
+    let urlStr = url.href
+    if (spStr) {
+        urlStr += '?' + spStr
+    }
+    return urlStr
+}

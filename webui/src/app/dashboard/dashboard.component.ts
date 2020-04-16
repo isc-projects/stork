@@ -4,7 +4,7 @@ import { MessageService } from 'primeng/api'
 
 import { ServicesService, DHCPService } from '../backend/api/api'
 import { AppsStats } from '../backend/model/appsStats'
-import { humanCount, durationToString } from '../utils'
+import { humanCount, durationToString, getGrafanaUrl } from '../utils'
 import { SettingService } from '../setting.service'
 
 /**
@@ -126,5 +126,12 @@ export class DashboardComponent implements OnInit {
      */
     showDuration(duration) {
         return durationToString(duration)
+    }
+
+    /**
+     * Build URL to Grafana dashboard
+     */
+    getGrafanaUrl(name, subnet, instance) {
+        return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
     }
 }

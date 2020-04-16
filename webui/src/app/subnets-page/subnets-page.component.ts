@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 
 import { DHCPService } from '../backend/api/api'
-import { humanCount } from '../utils'
+import { humanCount, getGrafanaUrl } from '../utils'
 import { getTotalAddresses, getAssignedAddresses } from '../subnets'
 import { SettingService } from '../setting.service'
 
@@ -122,5 +122,12 @@ export class SubnetsPageComponent implements OnInit {
         } else {
             return '?'
         }
+    }
+
+    /**
+     * Build URL to Grafana dashboard
+     */
+    getGrafanaUrl(name, subnet, instance) {
+        return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
     }
 }
