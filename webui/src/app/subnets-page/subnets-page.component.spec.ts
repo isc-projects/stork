@@ -1,6 +1,14 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { SubnetsPageComponent } from './subnets-page.component'
+import { FormsModule } from '@angular/forms'
+import { DropdownModule } from 'primeng/dropdown'
+import { TableModule } from 'primeng/table'
+import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
+import { TooltipModule } from 'primeng/tooltip'
+import { RouterModule } from '@angular/router'
+import { DHCPService, SettingsService } from '../backend'
+import { HttpClient, HttpHandler } from '@angular/common/http'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -8,7 +16,9 @@ describe('SubnetsPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            declarations: [SubnetsPageComponent],
+            providers: [DHCPService, HttpClient, HttpHandler, SettingsService],
+            imports: [ FormsModule, DropdownModule, TableModule, TooltipModule, RouterModule ],
+            declarations: [SubnetsPageComponent, SubnetBarComponent],
         }).compileComponents()
     }))
 
