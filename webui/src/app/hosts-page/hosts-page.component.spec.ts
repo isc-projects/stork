@@ -1,6 +1,10 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { HostsPageComponent } from './hosts-page.component'
+import { FormsModule } from '@angular/forms'
+import { TableModule } from 'primeng/table'
+import { DHCPService } from '../backend'
+import { HttpClient, HttpHandler } from '@angular/common/http'
 
 describe('HostsPageComponent', () => {
     let component: HostsPageComponent
@@ -8,6 +12,8 @@ describe('HostsPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
+            providers: [DHCPService, HttpClient, HttpHandler],
+            imports: [FormsModule, TableModule],
             declarations: [HostsPageComponent],
         }).compileComponents()
     }))
