@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router'
 import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
+import { extractKeyValsAndPrepareQueryParams } from '../utils'
 
 /**
  * This component implemnents a page which displays hosts along with
@@ -64,35 +65,12 @@ export class HostsPageComponent implements OnInit {
     }
 
     /**
-     * Filters the list of hosts by text. Filtering is performed on the server
+     * Filters the list of hosts by text. The text may contain key=val pairs what
+     * allows filtering by other keys. Filtering is realized server-side.
      */
     keyUpFilterText(event) {
-        if (this.filterText.length >= 3 || event.key === 'Enter') {
-            let text = this.filterText
-
-            // find all occurences key=val in the text
-            const re = /(\w+)=(\w*)/g
-            const matches = []
-            let match = re.exec(text)
-            while (match !== null) {
-                matches.push(match)
-                match = re.exec(text)
-            }
-
-            const queryParams = {
-                appId: null,
-                text: null,
-            }
-            for (const m of matches) {
-                text = text.replace(m[0], '')
-                if (m[1].toLowerCase() === 'appid') {
-                    queryParams.appId = m[2]
-                }
-            }
-            text = text.trim()
-            if (text) {
-                queryParams.text = text
-            }
+        if (this.filterText.length >= 2 || event.key === 'Enter') {
+            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appid'])
 
             this.router.navigate(['/dhcp/hosts'], {
                 queryParams,

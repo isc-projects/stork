@@ -34,7 +34,7 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	for _, lsn := range sn.LocalSubnets {
 		ctrl, err := lsn.App.GetAccessPoint(dbmodel.AccessPointControl)
 		if err != nil {
-			log.Warnf("problem with getting access point to app: %d: %s", lsn.AppID, err)
+			log.Warnf("problem with getting access point for app: %d: %s", lsn.AppID, err)
 			continue
 		}
 

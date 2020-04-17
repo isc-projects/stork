@@ -85,7 +85,7 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		for _, dbLocalHost := range dbHost.LocalHosts {
 			ctrl, err := dbLocalHost.App.GetAccessPoint(dbmodel.AccessPointControl)
 			if err != nil {
-				log.Warnf("problem with getting access point to app: %d: %s", dbLocalHost.AppID, err)
+				log.Warnf("problem with getting access point for app: %d: %s", dbLocalHost.AppID, err)
 				continue
 			}
 

@@ -91,3 +91,38 @@ export function getGrafanaUrl(grafanaBaseUrl, name, subnet, instance) {
     }
     return urlStr
 }
+
+/**
+ * Extract key=val pairs from search text and prepare
+ * query params dict.
+ */
+export function extractKeyValsAndPrepareQueryParams(text, keys) {
+    // find all occurences key=val in the text
+    const re = /(\w+)=(\w*)/g
+    const matches = []
+    let match = re.exec(text)
+    while (match !== null) {
+        matches.push(match)
+        match = re.exec(text)
+    }
+
+    const queryParams = {
+        text: null,
+    }
+
+    for (const key of keys) {
+        queryParams[key] = null
+        for (const m of matches) {
+            if (m[1].toLowerCase() === 'appid') {
+                queryParams[key] = m[2]
+                text = text.replace(m[0], '')
+            }
+        }
+    }
+    text = text.trim()
+    if (text) {
+        queryParams.text = text
+    }
+
+    return queryParams
+}
