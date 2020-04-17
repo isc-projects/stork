@@ -163,8 +163,7 @@ func DetectHAServices(db *dbops.PgDB, dbApp *dbmodel.App) (services []dbmodel.Se
 			// This server configuration found.
 			thisServer := params.Peers[index]
 
-			// Next, check if there are any existing services for the URLs found
-			// in this configuration.
+			// Next, check if there are any existing services matching this app.
 			index = -1
 			dbServices, _ := dbmodel.GetDetailedAllServices(db)
 			for i, service := range dbServices {
