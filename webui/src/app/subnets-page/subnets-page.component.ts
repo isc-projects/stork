@@ -98,8 +98,9 @@ export class SubnetsPageComponent implements OnInit {
     }
 
     /**
-     * Filters list of subnets by text. The text may contain key=val pairs what
-     * allows filtering by other keys. Filtering is realized server-side.
+     * Filters list of subnets by text. The text may contain key=val
+     * pairs allowing filtering by various keys. Filtering is realized
+     * server-side.
      */
     keyupFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {

@@ -86,8 +86,9 @@ export class SharedNetworksPageComponent implements OnInit {
     }
 
     /**
-     * Filters list of networks by text. The text may contain key=val pairs what
-     * allows filtering by other keys. Filtering is realized server-side.
+     * Filters list of networks by text. The text may contain key=val
+     * pairs allowing filtering by various keys. Filtering is realized
+     * server-side.
      */
     keyupFilterText(event) {
         console.info(event)

@@ -65,8 +65,9 @@ export class HostsPageComponent implements OnInit {
     }
 
     /**
-     * Filters the list of hosts by text. The text may contain key=val pairs what
-     * allows filtering by other keys. Filtering is realized server-side.
+     * Filters the list of hosts by text. The text may contain key=val
+     * pairs allowing filtering by various keys. Filtering is realized
+     * server-side.
      */
     keyUpFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {

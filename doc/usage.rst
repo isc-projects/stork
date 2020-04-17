@@ -299,13 +299,13 @@ IP addresses and prefixes belong.
 
 Finally, the ``AppID @ Machine`` column includes one or more links to
 Kea applications configured to assign each reservation to the
-client. This value will typically be greater than one when Kea servers
-operate in the High Availability setup. In this case, each of the HA
-peers uses the same configuration and may allocate IP addresses and
-delegated prefixes to the same set of clients, including static
-assignments via host reservations. If HA peers are configured
-correctly, the reservations they share will have two links
-in ``AppID @ Machine`` column.
+client. The number of applications will typically be greater than one
+when Kea servers operate in the High Availability setup. In this case,
+each of the HA peers uses the same configuration and may allocate IP
+addresses and delegated prefixes to the same set of clients, including
+static assignments via host reservations. If HA peers are configured
+correctly, the reservations they share will have two links in ``AppID
+@ Machine`` column.
 
 The ``Filter hosts`` input box is located above the Hosts table. It allows
 filtering of hosts by identifier types, identifier values, and IP reservations.
