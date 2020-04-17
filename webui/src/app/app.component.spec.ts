@@ -1,11 +1,16 @@
 import { TestBed, async } from '@angular/core/testing'
 import { RouterTestingModule } from '@angular/router/testing'
 import { AppComponent } from './app.component'
+import { TooltipModule } from 'primeng/tooltip'
+import { MenubarModule } from 'primeng/menubar'
+import { SplitButtonModule } from 'primeng/splitbutton'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { ToastModule } from 'primeng/toast'
 
 describe('AppComponent', () => {
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
+            imports: [RouterTestingModule, TooltipModule, MenubarModule, SplitButtonModule, ProgressSpinnerModule, ToastModule],
             declarations: [AppComponent],
         }).compileComponents()
     }))
