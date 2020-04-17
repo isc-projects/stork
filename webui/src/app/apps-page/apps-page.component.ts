@@ -187,7 +187,7 @@ export class AppsPageComponent implements OnInit {
         })
     }
 
-    keyDownFilterText(appsTable, event) {
+    keyUpFilterText(appsTable, event) {
         if (this.filterText.length >= 3 || event.key === 'Enter') {
             appsTable.filter(this.filterText, 'text', 'equals')
         }

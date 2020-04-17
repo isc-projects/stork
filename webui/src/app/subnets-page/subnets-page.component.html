@@ -9,7 +9,7 @@
                 pInputText
                 [(ngModel)]="filterText"
                 placeholder="subnet or any other field"
-                (keydown)="keyDownFilterText(subnetsTable, $event)"
+                (keyup)="keyupFilterText($event)"
             />
         </span>
         <span style="margin-left: 40px;">
@@ -18,7 +18,7 @@
                 [options]="dhcpVersions"
                 [(ngModel)]="selectedDhcpVersion"
                 optionLabel="name"
-                (onChange)="filterByDhcpVersion(subnetsTable)"
+                (onChange)="filterByDhcpVersion()"
             ></p-dropdown>
         </span>
     </div>
@@ -97,7 +97,10 @@
                         {{ sn.sharedNetwork }}
                     </td>
                     <td>
-                        <a *ngFor="let lsn of sn.localSubnets" routerLink="/apps/kea/{{ lsn.appId }}"
+                        <a
+                            *ngFor="let lsn of sn.localSubnets"
+                            routerLink="/apps/kea/{{ lsn.appId }}"
+                            style="display: block;"
                             >{{ lsn.appId }} @ {{ lsn.machineAddress }}</a
                         >
                     </td>

@@ -9,7 +9,7 @@
                 pInputText
                 [(ngModel)]="filterText"
                 placeholder="IP or identifier"
-                (keydown)="keyDownFilterText(hostsTable, $event)"
+                (keyup)="keyUpFilterText($event)"
             />
         </span>
     </div>
@@ -31,7 +31,7 @@
                     <th rowspan="2" colspan="4">DHCP Identifiers</th>
                     <th colspan="6">IP Reservations</th>
                     <th rowspan="2" style="width: 14rem;">Subnet</th>
-                    <th rowspan="2">Servers #</th>
+                    <th rowspan="2">AppID @ Machine</th>
                 </tr>
                 <tr>
                     <th colspan="3">IP Addresses</th>
@@ -68,7 +68,9 @@
                         {{ h.subnetPrefix }}
                     </td>
                     <td align="center">
-                        {{ h.localHosts.length }}
+                        <a *ngFor="let lh of h.localHosts" routerLink="/apps/kea/{{ lh.appId }}" style="display: block;"
+                            >{{ lh.appId }} @ {{ lh.machineAddress }}</a
+                        >
                     </td>
                 </tr>
             </ng-template>

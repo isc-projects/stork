@@ -307,9 +307,16 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 // Filtering text allows for searching hosts by reserved IP addresses
 // and/or host identifiers specified using hexadecimal digits. It is
 // allowed to specify colons while searching by hosts by host identifiers.
-func GetHostsByPage(db *pg.DB, offset, limit int64, subnetID *int64, filterText *string) ([]Host, int64, error) {
+func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64, filterText *string) ([]Host, int64, error) {
 	hosts := []Host{}
 	q := db.Model(&hosts).DistinctOn("host.id")
+
+	// When filtering by appID we also need the local_host table as it holds the
+	// application identifier.
+	if appID != 0 {
+		q = q.Join("INNER JOIN local_host AS lh ON host.id = lh.host_id")
+		q = q.Where("lh.app_id = ?", appID)
+	}
 
 	if subnetID != nil {
 		if *subnetID == 0 {
@@ -344,7 +351,9 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, subnetID *int64, filterText 
 		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
-		Relation("LocalHosts")
+		Relation("LocalHosts").
+		Relation("LocalHosts.App").
+		Relation("LocalHosts.App.AccessPoints")
 
 	// Only join the subnet if querying all hosts or hosts belonging to a
 	// given subnet.

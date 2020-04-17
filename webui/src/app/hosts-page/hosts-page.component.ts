@@ -1,4 +1,7 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, ViewChild } from '@angular/core'
+import { Router, ActivatedRoute } from '@angular/router'
+
+import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 
@@ -16,6 +19,8 @@ import { DHCPService } from '../backend/api/api'
     styleUrls: ['./hosts-page.component.sass'],
 })
 export class HostsPageComponent implements OnInit {
+    @ViewChild('hostsTable', undefined) hostsTable: Table
+
     // hosts
     hosts: any[]
     totalHosts = 0
@@ -23,9 +28,23 @@ export class HostsPageComponent implements OnInit {
     // filters
     filterText = ''
 
-    constructor(private dhcpApi: DHCPService) {}
+    constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) {}
 
-    ngOnInit() {}
+    ngOnInit() {
+        // handle initial query params
+        const params = this.route.snapshot.queryParams
+        let text = ''
+        if (params.appId) {
+            text += ' appId=' + params.appId
+        }
+        this.filterText = text.trim()
+
+        // subscribe to subsequent changes to query params
+        this.route.queryParamMap.subscribe(data => {
+            const event = this.hostsTable.createLazyLoadMetadata()
+            this.loadHosts(event)
+        })
+    }
 
     /**
      * Loads hosts from the database into the component.
@@ -34,12 +53,11 @@ export class HostsPageComponent implements OnInit {
      *              number of rows to be returned and a text for hosts filtering.
      */
     loadHosts(event) {
-        let text
-        if (event.filters.text) {
-            text = event.filters.text.value
-        }
+        const params = this.route.snapshot.queryParams
+        const appId = params.appId
+        const text = params.text
 
-        this.dhcpApi.getHosts(event.first, event.rows, null, text).subscribe(data => {
+        this.dhcpApi.getHosts(event.first, event.rows, appId, null, text).subscribe(data => {
             this.hosts = data.items
             this.totalHosts = data.total
         })
@@ -48,9 +66,38 @@ export class HostsPageComponent implements OnInit {
     /**
      * Filters the list of hosts by text. Filtering is performed on the server
      */
-    keyDownFilterText(hostsTable, event) {
+    keyUpFilterText(event) {
         if (this.filterText.length >= 3 || event.key === 'Enter') {
-            hostsTable.filter(this.filterText, 'text', 'equals')
+            let text = this.filterText
+
+            // find all occurences key=val in the text
+            const re = /(\w+)=(\w*)/g
+            const matches = []
+            let match = re.exec(text)
+            while (match !== null) {
+                matches.push(match)
+                match = re.exec(text)
+            }
+
+            const queryParams = {
+                appId: null,
+                text: null,
+            }
+            for (const m of matches) {
+                text = text.replace(m[0], '')
+                if (m[1].toLowerCase() === 'appid') {
+                    queryParams.appId = m[2]
+                }
+            }
+            text = text.trim()
+            if (text) {
+                queryParams.text = text
+            }
+
+            this.router.navigate(['/dhcp/hosts'], {
+                queryParams,
+                queryParamsHandling: 'merge',
+            })
         }
     }
 }

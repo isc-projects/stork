@@ -1,4 +1,7 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, ViewChild } from '@angular/core'
+import { Router, ActivatedRoute } from '@angular/router'
+
+import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 import { humanCount, getGrafanaUrl } from '../utils'
@@ -14,6 +17,8 @@ import { SettingService } from '../setting.service'
     styleUrls: ['./subnets-page.component.sass'],
 })
 export class SubnetsPageComponent implements OnInit {
+    @ViewChild('subnetsTable', undefined) subnetsTable: Table
+
     // subnets
     subnets: any[]
     totalSubnets = 0
@@ -25,18 +30,42 @@ export class SubnetsPageComponent implements OnInit {
 
     grafanaUrl: string
 
-    constructor(private dhcpApi: DHCPService, private settingSvc: SettingService) {}
+    constructor(
+        private route: ActivatedRoute,
+        private router: Router,
+        private dhcpApi: DHCPService,
+        private settingSvc: SettingService
+    ) {}
 
     ngOnInit() {
         // prepare list of DHCP versions, this is used in subnets filtering
         this.dhcpVersions = [
-            { name: 'any', value: '0' },
+            { name: 'any', value: null },
             { name: 'DHCPv4', value: '4' },
             { name: 'DHCPv6', value: '6' },
         ]
 
         this.settingSvc.getSettings().subscribe(data => {
             this.grafanaUrl = data['grafana_url']
+        })
+
+        // handle initial query params
+        const params = this.route.snapshot.queryParams
+        if (params.dhcpVersion === '4') {
+            this.selectedDhcpVersion = this.dhcpVersions[1]
+        } else if (params.dhcpVersion === '6') {
+            this.selectedDhcpVersion = this.dhcpVersions[2]
+        }
+        let text = ''
+        if (params.appId) {
+            text += ' appId=' + params.appId
+        }
+        this.filterText = text.trim()
+
+        // subscribe to subsequent changes to query params
+        this.route.queryParamMap.subscribe(data => {
+            const event = this.subnetsTable.createLazyLoadMetadata()
+            this.loadSubnets(event)
         })
     }
 
@@ -47,17 +76,12 @@ export class SubnetsPageComponent implements OnInit {
      *              of rows to be returned, dhcp version and text for subnets filtering.
      */
     loadSubnets(event) {
-        let text
-        if (event.filters.text) {
-            text = event.filters.text.value
-        }
+        const params = this.route.snapshot.queryParams
+        const appId = params.appId
+        const dhcpVersion = params.dhcpVersion
+        const text = params.text
 
-        let dhcpVersion
-        if (event.filters.dhcpVersion) {
-            dhcpVersion = event.filters.dhcpVersion.value
-        }
-
-        this.dhcpApi.getSubnets(event.first, event.rows, null, dhcpVersion, text).subscribe(data => {
+        this.dhcpApi.getSubnets(event.first, event.rows, appId, dhcpVersion, text).subscribe(data => {
             this.subnets = data.items
             this.totalSubnets = data.total
         })
@@ -66,16 +90,48 @@ export class SubnetsPageComponent implements OnInit {
     /**
      * Filters list of subnets by DHCP versions. Filtering is realized server-side.
      */
-    filterByDhcpVersion(subnetsTable) {
-        subnetsTable.filter(this.selectedDhcpVersion.value, 'dhcpVersion', 'equals')
+    filterByDhcpVersion() {
+        this.router.navigate(['/dhcp/subnets'], {
+            queryParams: { dhcpVersion: this.selectedDhcpVersion.value },
+            queryParamsHandling: 'merge',
+        })
     }
 
     /**
      * Filters list of subnets by text. Filtering is realized server-side.
      */
-    keyDownFilterText(subnetsTable, event) {
+    keyupFilterText(event) {
         if (this.filterText.length >= 3 || event.key === 'Enter') {
-            subnetsTable.filter(this.filterText, 'text', 'equals')
+            let text = this.filterText
+
+            // find all occurences key=val in the text
+            const re = /(\w+)=(\w*)/g
+            const matches = []
+            let match = re.exec(text)
+            while (match !== null) {
+                matches.push(match)
+                match = re.exec(text)
+            }
+
+            const queryParams = {
+                appId: null,
+                text: null,
+            }
+            for (const m of matches) {
+                text = text.replace(m[0], '')
+                if (m[1].toLowerCase() === 'appid') {
+                    queryParams.appId = m[2]
+                }
+            }
+            text = text.trim()
+            if (text) {
+                queryParams.text = text
+            }
+
+            this.router.navigate(['/dhcp/subnets'], {
+                queryParams,
+                queryParamsHandling: 'merge',
+            })
         }
     }
 

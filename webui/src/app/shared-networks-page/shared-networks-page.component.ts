@@ -1,4 +1,7 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, ViewChild } from '@angular/core'
+import { Router, ActivatedRoute } from '@angular/router'
+
+import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 import { humanCount } from '../utils'
@@ -13,6 +16,8 @@ import { getTotalAddresses, getAssignedAddresses } from '../subnets'
     styleUrls: ['./shared-networks-page.component.sass'],
 })
 export class SharedNetworksPageComponent implements OnInit {
+    @ViewChild('networksTable', undefined) networksTable: Table
+
     // networks
     networks: any[]
     totalNetworks = 0
@@ -22,15 +27,34 @@ export class SharedNetworksPageComponent implements OnInit {
     dhcpVersions: any[]
     selectedDhcpVersion: any
 
-    constructor(private dhcpApi: DHCPService) {}
+    constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) {}
 
     ngOnInit() {
         // prepare list of DHCP versions, this is used in networks filtering
         this.dhcpVersions = [
-            { name: 'any', value: '0' },
+            { name: 'any', value: null },
             { name: 'DHCPv4', value: '4' },
             { name: 'DHCPv6', value: '6' },
         ]
+
+        // handle initial query params
+        const params = this.route.snapshot.queryParams
+        if (params.dhcpVersion === '4') {
+            this.selectedDhcpVersion = this.dhcpVersions[1]
+        } else if (params.dhcpVersion === '6') {
+            this.selectedDhcpVersion = this.dhcpVersions[2]
+        }
+        let text = ''
+        if (params.appId) {
+            text += ' appId=' + params.appId
+        }
+        this.filterText = text.trim()
+
+        // subscribe to subsequent changes to query params
+        this.route.queryParamMap.subscribe(data => {
+            const event = this.networksTable.createLazyLoadMetadata()
+            this.loadNetworks(event)
+        })
     }
 
     /**
@@ -40,17 +64,12 @@ export class SharedNetworksPageComponent implements OnInit {
      *              of rows to be returned, dhcp version and text for networks filtering.
      */
     loadNetworks(event) {
-        let text
-        if (event.filters.text) {
-            text = event.filters.text.value
-        }
+        const params = this.route.snapshot.queryParams
+        const appId = params.appId
+        const dhcpVersion = params.dhcpVersion
+        const text = params.text
 
-        let dhcpVersion
-        if (event.filters.dhcpVersion) {
-            dhcpVersion = event.filters.dhcpVersion.value
-        }
-
-        this.dhcpApi.getSharedNetworks(event.first, event.rows, null, dhcpVersion, text).subscribe(data => {
+        this.dhcpApi.getSharedNetworks(event.first, event.rows, appId, dhcpVersion, text).subscribe(data => {
             this.networks = data.items
             this.totalNetworks = data.total
         })
@@ -59,16 +78,49 @@ export class SharedNetworksPageComponent implements OnInit {
     /**
      * Filters list of networks by DHCP versions. Filtering is realized server-side.
      */
-    filterByDhcpVersion(networksTable) {
-        networksTable.filter(this.selectedDhcpVersion.value, 'dhcpVersion', 'equals')
+    filterByDhcpVersion() {
+        this.router.navigate(['/dhcp/shared-networks'], {
+            queryParams: { dhcpVersion: this.selectedDhcpVersion.value },
+            queryParamsHandling: 'merge',
+        })
     }
 
     /**
      * Filters list of networks by text. Filtering is realized server-side.
      */
-    keyDownFilterText(networksTable, event) {
+    keyupFilterText(event) {
+        console.info(event)
         if (this.filterText.length >= 3 || event.key === 'Enter') {
-            networksTable.filter(this.filterText, 'text', 'equals')
+            let text = this.filterText
+
+            // find all occurences key=val in the text
+            const re = /(\w+)=(\w*)/g
+            const matches = []
+            let match = re.exec(text)
+            while (match !== null) {
+                matches.push(match)
+                match = re.exec(text)
+            }
+
+            const queryParams = {
+                appId: null,
+                text: null,
+            }
+            for (const m of matches) {
+                text = text.replace(m[0], '')
+                if (m[1].toLowerCase() === 'appid') {
+                    queryParams.appId = m[2]
+                }
+            }
+            text = text.trim()
+            if (text) {
+                queryParams.text = text
+            }
+
+            this.router.navigate(['/dhcp/shared-networks'], {
+                queryParams,
+                queryParamsHandling: 'merge',
+            })
         }
     }
 

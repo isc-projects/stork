@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -26,8 +27,13 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		limit = *params.Limit
 	}
 
+	var appID int64 = 0
+	if params.AppID != nil {
+		appID = *params.AppID
+	}
+
 	// Get the hosts from the database.
-	dbHosts, total, err := dbmodel.GetHostsByPage(r.Db, start, limit, params.SubnetID, params.Text)
+	dbHosts, total, err := dbmodel.GetHostsByPage(r.Db, start, limit, appID, params.SubnetID, params.Text)
 	if err != nil {
 		msg := "problem with fetching hosts from the database"
 		log.Error(err)
@@ -77,9 +83,16 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		// Append local hosts containing associations of the host with
 		// apps.
 		for _, dbLocalHost := range dbHost.LocalHosts {
+			ctrl, err := dbLocalHost.App.GetAccessPoint(dbmodel.AccessPointControl)
+			if err != nil {
+				log.Warnf("problem with getting access point to app: %d: %s", dbLocalHost.AppID, err)
+				continue
+			}
+
 			localHost := models.LocalHost{
-				AppID:      dbLocalHost.AppID,
-				DataSource: dbLocalHost.DataSource,
+				AppID:          dbLocalHost.AppID,
+				MachineAddress: fmt.Sprintf("%s:%d", ctrl.Address, ctrl.Port),
+				DataSource:     dbLocalHost.DataSource,
 			}
 			host.LocalHosts = append(host.LocalHosts, &localHost)
 		}

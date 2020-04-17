@@ -1,6 +1,6 @@
 <p-dialog header="New Machine" [(visible)]="newMachineDlgVisible" [style]="{ width: '40vw' }">
     <p style="padding-bottom: 1em;">
-        First, install Stork Agent on the machine with Kea or BIND 9. This is describer in
+        First, install Stork Agent on the machine with Kea or BIND 9. This is described in
         <a target="blank" href="/assets/arm/index.html#agent-deploy"
             >the instruction<i class="pi pi-external-link" style="font-size: 1em;"></i></a
         >.
@@ -17,7 +17,7 @@
             style="width: 100%;"
             pInputText
             [(ngModel)]="machineAddress"
-            (keydown)="keyDownNewMachine($event)"
+            (keyup)="keyUpNewMachine($event)"
         />
     </div>
     <div style="margin-top: 10px;">
@@ -28,7 +28,7 @@
             placeholder="8080"
             pInputText
             [(ngModel)]="agentPort"
-            (keydown)="keyDownNewMachine($event)"
+            (keyup)="keyUpNewMachine($event)"
         />
     </div>
     <p-footer>
@@ -66,7 +66,7 @@
                     pInputText
                     [(ngModel)]="filterText"
                     placeholder="name or any other field"
-                    (keydown)="keyDownFilterText(machinesTable, $event)"
+                    (keyup)="keyUpFilterText(machinesTable, $event)"
                 />
             </span>
             <!-- <span style="margin-left: 40px;"> -->
@@ -222,13 +222,13 @@
                                     type="text"
                                     [(ngModel)]="machineTab.address"
                                     pInputText
-                                    (keydown)="machineAddressKeyDown($event, machineTab)"
+                                    (keyup)="machineAddressKeyUp($event, machineTab)"
                                 /><br />
                                 <input
                                     type="text"
                                     [(ngModel)]="machineTab.agentPort"
                                     pInputText
-                                    (keydown)="machineAddressKeyDown($event, machineTab)"
+                                    (keyup)="machineAddressKeyUp($event, machineTab)"
                                 />
                                 <button
                                     pButton

@@ -33,85 +33,76 @@
                         ></span>
                     </div>
                 </ng-template>
+
                 <ng-template pTemplate="content">
                     <div class="p-grid" style="padding: 0;">
-                        <div class="p-col-6">
-                            <div class="p-col-12">
-                                <h4>Overview</h4>
-                                <table style="width: 100%;">
-                                    <tr>
-                                        <td>Version</td>
-                                        <td>{{ daemon.version }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top;">Version Ext</td>
-                                        <td [innerHTML]="daemon.extendedVersion"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top;">Hooks</td>
-                                        <td>
-                                            <div *ngFor="let hook of daemon.hooks">
-                                                {{ hook }}
-                                            </div>
-                                            <div *ngIf="daemon.hooks.length === 0" style="color: #aaa">
-                                                no hooks
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top;">Uptime</td>
-                                        <td>{{ showDuration(daemon.uptime) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top;">Last Reloaded At</td>
-                                        <td>{{ daemon.reloadedAt | localtime }}</td>
-                                    </tr>
-                                </table>
-                            </div>
-
-                            <div *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'" class="p-col-12">
-                                <app-ha-status [appId]="appTab.app.id" [daemonName]="daemon.name"></app-ha-status>
-                            </div>
+                        <div class="p-col-12">
+                            <button
+                                routerLink="/dhcp/hosts"
+                                [queryParams]="{ appId: appTab.app.id }"
+                                label="Hosts Reservations"
+                                icon="fa fa-laptop"
+                                class="ui-button-secondary"
+                                type="button"
+                                pButton
+                                style="margin-right: 16px;"
+                            ></button>
+                            <button
+                                routerLink="/dhcp/subnets"
+                                [queryParams]="{ appId: appTab.app.id }"
+                                label="Subnets"
+                                icon="fa fa-project-diagram"
+                                type="button"
+                                class="ui-button-secondary"
+                                pButton
+                                style="margin-right: 16px;"
+                            ></button>
+                            <button
+                                routerLink="/dhcp/shared-networks"
+                                [queryParams]="{ appId: appTab.app.id }"
+                                label="Shared Networks"
+                                icon="fa fa-network-wired"
+                                class="ui-button-secondary"
+                                type="button"
+                                pButton
+                            ></button>
                         </div>
 
-                        <div class="p-col-6" *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'">
-                            <p-table
-                                #subnetsTable
-                                [value]="daemon.subnets"
-                                [paginator]="true"
-                                [rows]="10"
-                                [lazy]="true"
-                                (onLazyLoad)="loadSubnets(daemon, $event)"
-                                [totalRecords]="daemon.totalSubnets"
-                                [rowsPerPageOptions]="[10, 30, 100]"
-                                [showCurrentPageReport]="true"
-                                currentPageReportTemplate="{currentPage} of {totalPages} pages"
-                            >
-                                <ng-template pTemplate="header">
-                                    <tr>
-                                        <th style="width: 5rem;">Subnet ID</th>
-                                        <th style="width: 9rem;">Subnet</th>
-                                        <th>Pools</th>
-                                    </tr>
-                                </ng-template>
-                                <ng-template pTemplate="body" let-sn>
-                                    <tr>
-                                        <td>
-                                            {{ sn.id }}
-                                        </td>
-                                        <td>
-                                            {{ sn.subnet }}
-                                        </td>
-                                        <td>
-                                            {{ sn.pools.join(', ') }}
-                                        </td>
-                                    </tr>
-                                </ng-template>
-                                <ng-template pTemplate="paginatorright" let-state>
-                                    Total: {{ state.totalRecords > 0 ? state.totalRecords : '0' }}
-                                    {{ state.totalRecords === 1 ? 'subnet' : 'subnets' }}
-                                </ng-template>
-                            </p-table>
+                        <div class="p-col-4">
+                            <h4 style="margin-top: 2px;">Overview</h4>
+                            <table style="width: 100%;">
+                                <tr>
+                                    <td>Version</td>
+                                    <td>{{ daemon.version }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top;">Version Ext</td>
+                                    <td [innerHTML]="daemon.extendedVersion"></td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top;">Hooks</td>
+                                    <td>
+                                        <div *ngFor="let hook of daemon.hooks">
+                                            {{ hook }}
+                                        </div>
+                                        <div *ngIf="daemon.hooks.length === 0" style="color: #aaa">
+                                            no hooks
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top;">Uptime</td>
+                                    <td>{{ showDuration(daemon.uptime) }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top;">Last Reloaded At</td>
+                                    <td>{{ daemon.reloadedAt | localtime }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'" class="p-col-4">
+                            <app-ha-status [appId]="appTab.app.id" [daemonName]="daemon.name"></app-ha-status>
                         </div>
                     </div>
                 </ng-template>

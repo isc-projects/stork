@@ -348,8 +348,9 @@ func TestGetHostsByPageNoFiltering(t *testing.T) {
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
 	_ = addTestHosts(t, db)
 
-	returned, _, err := GetHostsByPage(db, 0, 10, nil, nil)
+	returned, total, err := GetHostsByPage(db, 0, 10, 0, nil, nil)
 	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
 }
 
@@ -363,16 +364,18 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 
 	// Get global hosts only.
 	subnetID := int64(0)
-	returned, _, err := GetHostsByPage(db, 0, 10, &subnetID, nil)
+	returned, total, err := GetHostsByPage(db, 0, 10, 0, &subnetID, nil)
 	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
 	require.Contains(t, returned, hosts[1])
 	require.Contains(t, returned, hosts[3])
 
 	// Get hosts associated with subnet id 1.
 	subnetID = int64(1)
-	returned, _, err = GetHostsByPage(db, 0, 10, &subnetID, nil)
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, &subnetID, nil)
 	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
 	require.EqualValues(t, hosts[0].ID, returned[0].ID)
 	require.EqualValues(t, 1, returned[0].SubnetID)
@@ -383,8 +386,9 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 
 	// Get hosts associated with subnet id 2.
 	subnetID = int64(2)
-	returned, _, err = GetHostsByPage(db, 0, 10, &subnetID, nil)
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, &subnetID, nil)
 	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
 	require.EqualValues(t, hosts[2].ID, returned[0].ID)
 	require.EqualValues(t, 2, returned[0].SubnetID)
@@ -392,6 +396,35 @@ func TestGetHostsByPageSubnet(t *testing.T) {
 	require.Equal(t, "2001:db8:1::/64", returned[0].Subnet.Prefix)
 	require.ElementsMatch(t, returned[0].HostIdentifiers, hosts[2].HostIdentifiers)
 	require.ElementsMatch(t, returned[0].IPReservations, hosts[2].IPReservations)
+}
+
+// Test that page of the hosts can be fetched with filtering by app id.
+func TestGetHostsByPageApp(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps and hosts into the database.
+	apps := addTestSubnetApps(t, db)
+	hosts := addTestHosts(t, db)
+
+	// Associate the first host with the first app.
+	err := AddAppToHost(db, &hosts[0], apps[0], "api", 1)
+	require.NoError(t, err)
+	err = AddAppToHost(db, &hosts[1], apps[0], "api", 1)
+	require.NoError(t, err)
+	err = AddAppToHost(db, &hosts[2], apps[1], "api", 1)
+	require.NoError(t, err)
+	err = AddAppToHost(db, &hosts[3], apps[1], "api", 1)
+	require.NoError(t, err)
+
+	// Get global hosts only.
+	returned, total, err := GetHostsByPage(db, 0, 10, apps[0].ID, nil, nil)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
+	require.Len(t, returned, 2)
+	require.True(t,
+		(returned[0].ID == hosts[0].ID && returned[1].ID == hosts[1].ID) ||
+			(returned[0].ID == hosts[1].ID && returned[1].ID == hosts[2].ID))
 }
 
 // Test that page of the hosts can be filtered by IP reservations.
@@ -403,8 +436,9 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	hosts := addTestHosts(t, db)
 
 	filterText := "0.2.4"
-	returned, _, err := GetHostsByPage(db, 0, 10, nil, &filterText)
+	returned, total, err := GetHostsByPage(db, 0, 10, 0, nil, &filterText)
 	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
 	require.NotNil(t, returned[0].Subnet)
 	require.Equal(t, "192.0.2.0/24", returned[0].Subnet.Prefix)
@@ -414,8 +448,9 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	require.Contains(t, returned, hosts[0])
 
 	filterText = "192.0.2"
-	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText)
 	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
 	require.NotNil(t, returned[0].Subnet)
 	require.Equal(t, "192.0.2.0/24", returned[0].Subnet.Prefix)
@@ -427,8 +462,9 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	require.Contains(t, returned, hosts[1])
 
 	filterText = "0"
-	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText)
 	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
 	require.Len(t, returned, 4)
 
 	for i := range returned {
@@ -439,14 +475,16 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 
 	// Filter by identifier value.
 	filterText = "01:02:03"
-	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText)
 	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
 	require.Len(t, returned, 3)
 
 	// Filter by identifier type.
 	filterText = "dui"
-	returned, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText)
 	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
 	require.Contains(t, returned, hosts[3])
 }
@@ -517,20 +555,21 @@ func TestAddAppToHost(t *testing.T) {
 	require.Len(t, returnedList[0].LocalHosts, 1)
 	require.Equal(t, "api", returnedList[0].LocalHosts[0].DataSource)
 	require.EqualValues(t, apps[0].ID, returnedList[0].LocalHosts[0].AppID)
-	// When fetching all hosts, the detailed app information should not be
-	// returned.
+	// When fetching all hosts, the detailed app information should not be returned.
 	require.Nil(t, returnedList[0].LocalHosts[0].App)
 
 	// Get the first host by reserved IP address.
 	filterText := "192.0.2.4"
-	returnedList, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	returnedList, total, err := GetHostsByPage(db, 0, 10, 0, nil, &filterText)
 	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
 	require.Len(t, returnedList, 1)
 	require.Len(t, returnedList[0].LocalHosts, 1)
 	require.Equal(t, "api", returnedList[0].LocalHosts[0].DataSource)
 	require.EqualValues(t, apps[0].ID, returnedList[0].LocalHosts[0].AppID)
-	// This time the detailed app information should not be included.
-	require.Nil(t, returnedList[0].LocalHosts[0].App)
+	// When fetching all hosts, the detailed app information
+	// should be returned as well.
+	require.NotNil(t, returnedList[0].LocalHosts[0].App)
 }
 
 // Tests that a host which is no longer associated with any app is deleted
@@ -557,8 +596,9 @@ func TestDeleteDanglingHosts(t *testing.T) {
 
 	// Make sure it is returned.
 	filterText := "192.0.2.4"
-	returnedList, _, err := GetHostsByPage(db, 0, 10, nil, &filterText)
+	returnedList, total, err := GetHostsByPage(db, 0, 10, 0, nil, &filterText)
 	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
 	require.Len(t, returnedList, 1)
 
 	// Delete the second app. The host is no longer associated with any
@@ -567,8 +607,9 @@ func TestDeleteDanglingHosts(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure the host is no longer returned.
-	returnedList, _, err = GetHostsByPage(db, 0, 10, nil, &filterText)
+	returnedList, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText)
 	require.NoError(t, err)
+	require.EqualValues(t, 0, total)
 	require.Empty(t, returnedList)
 }
 

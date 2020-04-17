@@ -17,8 +17,10 @@
   LocalHost:
     type: object
     properties:
-      appID:
+      appId:
         type: integer
+      machineAddress:
+        type: string
       dataSource:
         type: string
 

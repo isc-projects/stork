@@ -1,5 +1,5 @@
 <div>
-    <h4>High Availability</h4>
+    <h4 style="margin-top: 2px;">High Availability</h4>
     <div *ngIf="hasStatus()" style="margin: 10px; width:750px" class="p-grid">
         <div class="p-col-6">
             <p-panel [styleClass]="localStatusPanelClass">
@@ -165,6 +165,6 @@
     </div>
 
     <div *ngIf="!hasStatus()">
-        <p-message severity="info" text="High Availability information is not available for this server."></p-message>
+        <p-message severity="info" text="High Availability is not enabled on this server."></p-message>
     </div>
 </div>

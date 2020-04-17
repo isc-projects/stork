@@ -9,7 +9,7 @@
                 pInputText
                 [(ngModel)]="filterText"
                 placeholder="network or any other field"
-                (keydown)="keyDownFilterText(networksTable, $event)"
+                (keyup)="keyupFilterText($event)"
             />
         </span>
         <span style="margin-left: 40px;">
@@ -18,7 +18,7 @@
                 [options]="dhcpVersions"
                 [(ngModel)]="selectedDhcpVersion"
                 optionLabel="name"
-                (onChange)="filterByDhcpVersion(networksTable)"
+                (onChange)="filterByDhcpVersion()"
             ></p-dropdown>
         </span>
     </div>

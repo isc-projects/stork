@@ -226,7 +226,7 @@ export class MachinesPageComponent implements OnInit {
         this.newMachineDlgVisible = false
     }
 
-    keyDownNewMachine(event) {
+    keyUpNewMachine(event) {
         if (event.key === 'Enter') {
             this.addNewMachine()
         }
@@ -236,7 +236,7 @@ export class MachinesPageComponent implements OnInit {
         machinesTable.onLazyLoad.emit(machinesTable.createLazyLoadMetadata())
     }
 
-    keyDownFilterText(machinesTable, event) {
+    keyUpFilterText(machinesTable, event) {
         if (this.filterText.length >= 3 || event.key === 'Enter') {
             machinesTable.filter(this.filterText, 'text', 'equals')
         }
@@ -390,7 +390,7 @@ export class MachinesPageComponent implements OnInit {
         )
     }
 
-    machineAddressKeyDown(event, machineTab) {
+    machineAddressKeyUp(event, machineTab) {
         if (event.key === 'Enter') {
             this.saveMachine(machineTab)
         } else if (event.key === 'Escape') {

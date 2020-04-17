@@ -1,3 +1,10 @@
+* 58 [func] godfryd
+
+    Improved presenting Kea daemons on Kea app page. There have
+    been added links to subnet, shared network and hosts reservations
+    pages with filtering set to given app id.
+    (Gitlab #241)
+
 * 57 [bug] marcin
 
     Fixed a bug in the HA service detection when new Kea app was

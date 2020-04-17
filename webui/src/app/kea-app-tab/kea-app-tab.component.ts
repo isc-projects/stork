@@ -61,15 +61,4 @@ export class KeaAppTabComponent implements OnInit {
     showDuration(duration) {
         return durationToString(duration)
     }
-
-    loadSubnets(daemon, event) {
-        let dhcpVer = 4
-        if (daemon.name === 'dhcp6') {
-            dhcpVer = 6
-        }
-        this.dhcpApi.getSubnets(event.first, event.rows, this._appTab.app.id, dhcpVer).subscribe(data => {
-            daemon.subnets = data.items
-            daemon.totalSubnets = data.total
-        })
-    }
 }

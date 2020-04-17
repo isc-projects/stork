@@ -27,7 +27,7 @@
                     pInputText
                     [(ngModel)]="filterText"
                     placeholder="version or any other field"
-                    (keydown)="keyDownFilterText(appsTable, $event)"
+                    (keyup)="keyUpFilterText(appsTable, $event)"
                 />
             </span>
             <!-- TODO: this is a starting point for implementin a form for filtering apps. -->
@@ -53,7 +53,6 @@
         #appsTable
         [value]="apps"
         [paginator]="true"
-        paginatorPosition="top"
         [rows]="10"
         [lazy]="true"
         (onLazyLoad)="loadApps($event)"
