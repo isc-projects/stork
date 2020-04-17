@@ -30,10 +30,10 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: AppKea{
-			Daemons: []*KeaDaemonJSON{{
+		Daemons: []*Daemon{{
+			KeaDaemon: &KeaDaemon{
 				Config: NewKeaConfig(&map[string]interface{}{
-					"Dhcp4": &map[string]interface{}{
+					"Dhcp4": map[string]interface{}{
 						"subnet4": []map[string]interface{}{{
 							"id":     1,
 							"subnet": "192.168.0.0/24",
@@ -145,10 +145,10 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: AppKea{
-			Daemons: []*KeaDaemonJSON{{
+		Daemons: []*Daemon{{
+			KeaDaemon: &KeaDaemon{
 				Config: NewKeaConfig(&map[string]interface{}{
-					"Dhcp6": &map[string]interface{}{
+					"Dhcp6": map[string]interface{}{
 						"subnet6": []map[string]interface{}{{
 							"id":     2,
 							"subnet": "2001:db8:1::/64",
@@ -197,32 +197,37 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: AppKea{
-			Daemons: []*KeaDaemonJSON{{
-				Config: NewKeaConfig(&map[string]interface{}{
-					"Dhcp4": &map[string]interface{}{
-						"subnet4": []map[string]interface{}{{
-							"id":     3,
-							"subnet": "192.118.0.0/24",
-							"pools": []map[string]interface{}{{
-								"pool": "192.118.0.1-192.118.0.200",
+		Daemons: []*Daemon{
+			{
+				KeaDaemon: &KeaDaemon{
+					Config: NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": &map[string]interface{}{
+							"subnet4": []map[string]interface{}{{
+								"id":     3,
+								"subnet": "192.118.0.0/24",
+								"pools": []map[string]interface{}{{
+									"pool": "192.118.0.1-192.118.0.200",
+								}},
 							}},
-						}},
-					},
-				}),
-			}, {
-				Config: NewKeaConfig(&map[string]interface{}{
-					"Dhcp6": &map[string]interface{}{
-						"subnet6": []map[string]interface{}{{
-							"id":     4,
-							"subnet": "3001:db8:1::/64",
-							"pools": []map[string]interface{}{{
-								"pool": "3001:db8:1::/80",
+						},
+					}),
+				},
+			},
+			{
+				KeaDaemon: &KeaDaemon{
+					Config: NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": map[string]interface{}{
+							"subnet6": []map[string]interface{}{{
+								"id":     4,
+								"subnet": "3001:db8:1::/64",
+								"pools": []map[string]interface{}{{
+									"pool": "3001:db8:1::/80",
+								}},
 							}},
-						}},
-					},
-				}),
-			}},
+						},
+					}),
+				},
+			},
 		},
 	}
 	err = AddApp(db, a46)
@@ -406,12 +411,14 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: AppKea{
-			Daemons: []*KeaDaemonJSON{{
-				Config: NewKeaConfig(&map[string]interface{}{
-					"Dhcp4": &map[string]interface{}{},
-				}),
-			}},
+		Daemons: []*Daemon{
+			{
+				KeaDaemon: &KeaDaemon{
+					Config: NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": &map[string]interface{}{},
+					}),
+				},
+			},
 		},
 	}
 	err = AddApp(db, a4)
@@ -446,34 +453,35 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: AppKea{
-			Daemons: []*KeaDaemonJSON{{
-				Config: NewKeaConfig(&map[string]interface{}{
-					"Dhcp4": &map[string]interface{}{
-						"subnet4": []map[string]interface{}{{
-							"id":     1,
-							"subnet": "192.168.0.0/24",
-							"pools":  []map[string]interface{}{},
-						}},
-						"shared-networks": []map[string]interface{}{{
-							"name": "frog",
+		Daemons: []*Daemon{
+			{
+				KeaDaemon: &KeaDaemon{
+					Config: NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{
 							"subnet4": []map[string]interface{}{{
-								"id":     11,
-								"subnet": "192.1.0.0/24",
+								"id":     1,
+								"subnet": "192.168.0.0/24",
+								"pools":  []map[string]interface{}{},
 							}},
-						}, {
-							"name": "mouse",
-							"subnet4": []map[string]interface{}{{
-								"id":     12,
-								"subnet": "192.2.0.0/24",
+							"shared-networks": []map[string]interface{}{{
+								"name": "frog",
+								"subnet4": []map[string]interface{}{{
+									"id":     11,
+									"subnet": "192.1.0.0/24",
+								}},
 							}, {
-								"id":     13,
-								"subnet": "192.3.0.0/24",
+								"name": "mouse",
+								"subnet4": []map[string]interface{}{{
+									"id":     12,
+									"subnet": "192.2.0.0/24",
+								}, {
+									"id":     13,
+									"subnet": "192.3.0.0/24",
+								}},
 							}},
-						}},
-					},
-				}),
-			}},
+						},
+					}),
+				}},
 		},
 	}
 	err = AddApp(db, a4)
@@ -520,28 +528,30 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: AppKea{
-			Daemons: []*KeaDaemonJSON{{
-				Config: NewKeaConfig(&map[string]interface{}{
-					"Dhcp6": &map[string]interface{}{
-						"subnet6": []map[string]interface{}{{
-							"id":     2,
-							"subnet": "2001:db8:1::/64",
-							"pools":  []map[string]interface{}{},
-						}},
-						"shared-networks": []map[string]interface{}{{
-							"name": "fox",
+		Daemons: []*Daemon{
+			{
+				KeaDaemon: &KeaDaemon{
+					Config: NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": map[string]interface{}{
 							"subnet6": []map[string]interface{}{{
-								"id":     21,
-								"subnet": "5001:db8:1::/64",
-							}, {
-								"id":     22,
-								"subnet": "6001:db8:1::/64",
+								"id":     2,
+								"subnet": "2001:db8:1::/64",
+								"pools":  []map[string]interface{}{},
 							}},
-						}},
-					},
-				}),
-			}},
+							"shared-networks": []map[string]interface{}{{
+								"name": "fox",
+								"subnet6": []map[string]interface{}{{
+									"id":     21,
+									"subnet": "5001:db8:1::/64",
+								}, {
+									"id":     22,
+									"subnet": "6001:db8:1::/64",
+								}},
+							}},
+						},
+					}),
+				},
+			},
 		},
 	}
 	err = AddApp(db, a6)

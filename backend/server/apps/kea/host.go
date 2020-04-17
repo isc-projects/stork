@@ -302,8 +302,8 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 	}()
 
 	// If this is not Kea application there is nothing to do.
-	appKea, ok := iterator.app.Details.(dbmodel.AppKea)
-	if !ok {
+	appKea := iterator.app
+	if appKea.Type != dbmodel.AppTypeKea {
 		err = errors.Errorf("attempted to fetch host reservations for non Kea app")
 		return hosts, done, err
 	}
@@ -323,7 +323,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 	// previously.
 	serverIndex := 0
 	for _, d := range appKea.Daemons {
-		if d.Config == nil {
+		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil {
 			continue
 		}
 

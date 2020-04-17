@@ -36,7 +36,6 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 			Type:         dbmodel.AppTypeKea,
 			Active:       true,
 			AccessPoints: accessPoints,
-			Details:      dbmodel.AppKea{},
 		}
 
 		apps = append(apps, a)

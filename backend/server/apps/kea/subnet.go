@@ -229,13 +229,12 @@ func detectSubnets(db *dbops.PgDB, config *dbmodel.KeaConfig, family int, app *d
 // the shared networks.
 func DetectNetworks(db *dbops.PgDB, app *dbmodel.App) (networks []dbmodel.SharedNetwork, subnets []dbmodel.Subnet, err error) {
 	// If this is not Kea application there is nothing to do.
-	appKea, ok := app.Details.(dbmodel.AppKea)
-	if !ok {
+	if app.Type != dbmodel.AppTypeKea {
 		return networks, subnets, nil
 	}
 
-	for _, d := range appKea.Daemons {
-		if d.Config == nil {
+	for _, d := range app.Daemons {
+		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil {
 			continue
 		}
 
@@ -250,14 +249,14 @@ func DetectNetworks(db *dbops.PgDB, app *dbmodel.App) (networks []dbmodel.Shared
 		}
 
 		// Detect shared networks and the subnets.
-		detectedNetworks, err := detectSharedNetworks(db, d.Config, family, app)
+		detectedNetworks, err := detectSharedNetworks(db, d.KeaDaemon.Config, family, app)
 		if err != nil {
 			return networks, subnets, err
 		}
 		networks = append(networks, detectedNetworks...)
 
 		// Detect top level subnets.
-		detectedSubnets, err := detectSubnets(db, d.Config, family, app)
+		detectedSubnets, err := detectSubnets(db, d.KeaDaemon.Config, family, app)
 		if err != nil {
 			return []dbmodel.SharedNetwork{}, subnets, err
 		}

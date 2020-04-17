@@ -63,19 +63,21 @@ func TestGetAppState(t *testing.T) {
 	require.True(t, dbApp.Active)
 	require.Equal(t, dbApp.Meta.Version, "9.9.9")
 
-	daemon := dbApp.Details.(dbmodel.AppBind9).Daemon
+	require.Len(t, dbApp.Daemons, 1)
+	daemon := dbApp.Daemons[0]
+	require.NotNil(t, daemon.Bind9Daemon)
 	require.True(t, daemon.Active)
 	require.Equal(t, "named", daemon.Name)
 	require.Equal(t, "9.9.9", daemon.Version)
 	reloadedAt, _ := time.Parse(namedLongDateFormat, "Mon, 03 Feb 2020 14:39:36 GMT")
 	require.Equal(t, reloadedAt, daemon.ReloadedAt)
-	require.EqualValues(t, 5, daemon.ZoneCount)
-	require.EqualValues(t, 96, daemon.AutomaticZoneCount)
+	require.EqualValues(t, 5, daemon.Bind9Daemon.Stats.ZoneCount)
+	require.EqualValues(t, 96, daemon.Bind9Daemon.Stats.AutomaticZoneCount)
 
 	// Test statistics.
-	require.EqualValues(t, 40, daemon.CacheHits)
-	require.EqualValues(t, 10, daemon.CacheMisses)
-	require.EqualValues(t, 0.8, daemon.CacheHitRatio)
+	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.CacheHits)
+	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.CacheMisses)
+	require.EqualValues(t, 0.8, daemon.Bind9Daemon.Stats.CacheHitRatio)
 }
 
 // Tests that BIND 9 can be added and then updated in the database.

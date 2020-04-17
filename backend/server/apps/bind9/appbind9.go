@@ -57,9 +57,6 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 		log.Warnf("problem with retrieving stats from named: %s", err)
 	}
 
-	bind9App := dbApp.Details.(dbmodel.AppBind9)
-	bind9Daemon := bind9App.Daemon
-
 	if statsOutput.Views != nil {
 		for name, view := range statsOutput.Views {
 			// Only deal with the default view for now.
@@ -76,15 +73,11 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 			if total != 0 {
 				ratio = float64(hits) / total
 			}
-			bind9Daemon.CacheHitRatio = ratio
-			bind9Daemon.CacheHits = hits
-			bind9Daemon.CacheMisses = misses
+			dbApp.Daemons[0].Bind9Daemon.Stats.CacheHitRatio = ratio
+			dbApp.Daemons[0].Bind9Daemon.Stats.CacheHits = hits
+			dbApp.Daemons[0].Bind9Daemon.Stats.CacheMisses = misses
 			break
 		}
-	}
-
-	dbApp.Details = dbmodel.AppBind9{
-		Daemon: bind9Daemon,
 	}
 }
 
@@ -115,9 +108,10 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 		return
 	}
 
-	bind9Daemon := dbmodel.Bind9DaemonJSON{
-		Pid:  0,
-		Name: "named",
+	bind9Daemon := dbmodel.Daemon{
+		Pid:         0,
+		Name:        "named",
+		Bind9Daemon: &dbmodel.Bind9Daemon{},
 	}
 
 	// Get version
@@ -177,8 +171,8 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 		if err != nil {
 			log.Warnf("cannot get BIND 9 number of automatic zones: %s", err.Error())
 		}
-		bind9Daemon.ZoneCount = int64(count - autoCount)
-		bind9Daemon.AutomaticZoneCount = int64(autoCount)
+		bind9Daemon.Bind9Daemon.Stats.ZoneCount = int64(count - autoCount)
+		bind9Daemon.Bind9Daemon.Stats.AutomaticZoneCount = int64(autoCount)
 	} else {
 		log.Warnf("cannot get BIND 9 number of zones: unable to find number of zones in output")
 	}
@@ -186,8 +180,8 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	// Save status
 	dbApp.Active = bind9Daemon.Active
 	dbApp.Meta.Version = bind9Daemon.Version
-	dbApp.Details = dbmodel.AppBind9{
-		Daemon: bind9Daemon,
+	dbApp.Daemons = []*dbmodel.Daemon{
+		&bind9Daemon,
 	}
 
 	// Get statistics

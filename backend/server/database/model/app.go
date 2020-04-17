@@ -1,8 +1,6 @@
 package dbmodel
 
 import (
-	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -12,47 +10,15 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
-type Bind9DaemonJSON struct {
-	Pid                int32
-	Name               string
-	Version            string
-	Active             bool
-	Uptime             int64
-	ReloadedAt         time.Time
-	ZoneCount          int64
-	AutomaticZoneCount int64
-	CacheHits          int64
-	CacheMisses        int64
-	CacheHitRatio      float64
-}
-
-type KeaDaemonJSON struct {
-	Pid             int32
-	Name            string
-	Active          bool
-	Version         string
-	ExtendedVersion string
-	Config          *KeaConfig
-	Uptime          int64
-	ReloadedAt      time.Time
-}
-
-const AppTypeKea = "kea"
-
-type AppKea struct {
-	ExtendedVersion string
-	Daemons         []*KeaDaemonJSON
-}
-
-const AppTypeBind9 = "bind9"
-
-type AppBind9 struct {
-	Daemon Bind9DaemonJSON
-}
+const (
+	AppTypeKea   = "kea"
+	AppTypeBind9 = "bind9"
+)
 
 // Part of app table in database that describes metadata of app. In DB it is stored as JSONB.
 type AppMeta struct {
-	Version string
+	Version         string
+	ExtendedVersion string
 }
 
 // Represents an app held in app table in the database.
@@ -64,43 +30,10 @@ type App struct {
 	Type      string // currently supported types are: "kea" and "bind9"
 	Active    bool
 	Meta      AppMeta
-	Details   interface{} // here we have either AppKea or AppBind9
 
 	AccessPoints []*AccessPoint
 
 	Daemons []*Daemon
-}
-
-// This is a hook to go-pg that is called just after reading rows from database.
-// It reconverts app details from json string maps to particular Go structure.
-func (app *App) AfterScan(ctx context.Context) error {
-	if app.Details == nil {
-		return nil
-	}
-
-	bytes, err := json.Marshal(app.Details)
-	if err != nil {
-		return errors.Wrapf(err, "problem with marshaling %s app details: %v ", app.Type, app.Details)
-	}
-
-	switch app.Type {
-	case AppTypeKea:
-		var keaDetails AppKea
-		err = json.Unmarshal(bytes, &keaDetails)
-		if err != nil {
-			return errors.Wrapf(err, "problem with unmarshaling kea app details")
-		}
-		app.Details = keaDetails
-
-	case AppTypeBind9:
-		var bind9Details AppBind9
-		err = json.Unmarshal(bytes, &bind9Details)
-		if err != nil {
-			return errors.Wrapf(err, "problem with unmarshaling BIND 9 app details")
-		}
-		app.Details = bind9Details
-	}
-	return nil
 }
 
 // updateAppAccessPoints updates the associated application access points into
@@ -411,28 +344,31 @@ func DeleteApp(db *pg.DB, app *App) error {
 
 // Returns a list of names of active DHCP deamons. This is useful for
 // creating commands to be send to active DHCP servers.
-func (app *App) GetActiveDHCPDaemonNames() (deamons []string) {
-	if kea, ok := app.Details.(AppKea); ok {
-		for _, d := range kea.Daemons {
-			if d.Active && (d.Name == "dhcp4" || d.Name == "dhcp6") {
-				deamons = append(deamons, d.Name)
-			}
+func (app *App) GetActiveDHCPDaemonNames() (daemons []string) {
+	if app.Type != AppTypeKea {
+		return daemons
+	}
+	for _, d := range app.Daemons {
+		if d.Active && (d.Name == "dhcp4" || d.Name == "dhcp6") {
+			daemons = append(daemons, d.Name)
 		}
 	}
-	return deamons
+	return daemons
 }
 
 // Returns local subnet ID for a given subnet prefix. It iterates over the
 // daemons' configurations and searches for a subnet with matching prefix.
 // If the match isn't found, the value of 0 is returned.
 func (app *App) GetLocalSubnetID(prefix string) int64 {
-	if kea, ok := app.Details.(AppKea); ok {
-		for _, d := range kea.Daemons {
-			if d.Config != nil {
-				if id := d.Config.GetLocalSubnetID(prefix); id > 0 {
-					return id
-				}
-			}
+	if app.Type != AppTypeKea {
+		return 0
+	}
+	for _, d := range app.Daemons {
+		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil {
+			continue
+		}
+		if id := d.KeaDaemon.Config.GetLocalSubnetID(prefix); id > 0 {
+			return id
 		}
 	}
 	return 0

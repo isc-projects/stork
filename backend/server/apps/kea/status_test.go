@@ -311,15 +311,17 @@ func TestPullHAStatus(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: keaPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{
-				{
-					Name: "dhcp4",
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getHATestConfig("Dhcp4", "server1", "load-balancing",
 						"server1", "server2", "server4"),
 				},
-				{
-					Name: "dhcp6",
+			},
+			{
+				Name: "dhcp6",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getHATestConfig("Dhcp6", "server3", "hot-standby",
 						"server1", "server3", "server4"),
 				},

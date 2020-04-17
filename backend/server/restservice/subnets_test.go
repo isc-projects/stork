@@ -49,22 +49,24 @@ func TestGetSubnets(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{{
-				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-					"Dhcp4": &map[string]interface{}{
-						"subnet4": []map[string]interface{}{{
-							"id":     1,
-							"subnet": "192.168.0.0/24",
-							"pools": []map[string]interface{}{{
-								"pool": "192.168.0.1-192.168.0.100",
-							}, {
-								"pool": "192.168.0.150-192.168.0.200",
+		Daemons: []*dbmodel.Daemon{
+			{
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": &map[string]interface{}{
+							"subnet4": []map[string]interface{}{{
+								"id":     1,
+								"subnet": "192.168.0.0/24",
+								"pools": []map[string]interface{}{{
+									"pool": "192.168.0.1-192.168.0.100",
+								}, {
+									"pool": "192.168.0.150-192.168.0.200",
+								}},
 							}},
-						}},
-					},
-				}),
-			}},
+						},
+					}),
+				},
+			},
 		},
 	}
 	err = dbmodel.AddApp(db, a4)
@@ -99,18 +101,20 @@ func TestGetSubnets(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{{
-				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-					"Dhcp6": &map[string]interface{}{
-						"subnet6": []map[string]interface{}{{
-							"id":     2,
-							"subnet": "2001:db8:1::/64",
-							"pools":  []map[string]interface{}{},
-						}},
-					},
-				}),
-			}},
+		Daemons: []*dbmodel.Daemon{
+			{
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": &map[string]interface{}{
+							"subnet6": []map[string]interface{}{{
+								"id":     2,
+								"subnet": "2001:db8:1::/64",
+								"pools":  []map[string]interface{}{},
+							}},
+						},
+					}),
+				},
+			},
 		},
 	}
 	err = dbmodel.AddApp(db, a6)
@@ -134,39 +138,44 @@ func TestGetSubnets(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{{
-				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-					"Dhcp4": &map[string]interface{}{
-						"subnet4": []map[string]interface{}{{
-							"id":     3,
-							"subnet": "192.118.0.0/24",
-							"pools": []map[string]interface{}{{
-								"pool": "192.118.0.1-192.118.0.200",
+		Daemons: []*dbmodel.Daemon{
+			{
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": &map[string]interface{}{
+							"subnet4": []map[string]interface{}{{
+								"id":     3,
+								"subnet": "192.118.0.0/24",
+								"pools": []map[string]interface{}{{
+									"pool": "192.118.0.1-192.118.0.200",
+								}},
 							}},
-						}},
-					},
-				}),
-			}, {
-				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-					"Dhcp6": &map[string]interface{}{
-						"subnet6": []map[string]interface{}{{
-							"id":     4,
-							"subnet": "3001:db8:1::/64",
-							"pools": []map[string]interface{}{{
-								"pool": "3001:db8:1::/80",
-							}},
-						}},
-						"shared-networks": []map[string]interface{}{{
-							"name": "fox",
+						},
+					}),
+				},
+			},
+			{
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": &map[string]interface{}{
 							"subnet6": []map[string]interface{}{{
-								"id":     21,
-								"subnet": "5001:db8:1::/64",
+								"id":     4,
+								"subnet": "3001:db8:1::/64",
+								"pools": []map[string]interface{}{{
+									"pool": "3001:db8:1::/80",
+								}},
 							}},
-						}},
-					},
-				}),
-			}},
+							"shared-networks": []map[string]interface{}{{
+								"name": "fox",
+								"subnet6": []map[string]interface{}{{
+									"id":     21,
+									"subnet": "5001:db8:1::/64",
+								}},
+							}},
+						},
+					}),
+				},
+			},
 		},
 	}
 	err = dbmodel.AddApp(db, a46)
@@ -354,29 +363,31 @@ func TestGetSharedNetworks(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{{
-				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-					"Dhcp4": &map[string]interface{}{
-						"shared-networks": []map[string]interface{}{{
-							"name": "frog",
-							"subnet4": []map[string]interface{}{{
-								"id":     11,
-								"subnet": "192.1.0.0/24",
-							}},
-						}, {
-							"name": "mouse",
-							"subnet4": []map[string]interface{}{{
-								"id":     12,
-								"subnet": "192.2.0.0/24",
+		Daemons: []*dbmodel.Daemon{
+			{
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": &map[string]interface{}{
+							"shared-networks": []map[string]interface{}{{
+								"name": "frog",
+								"subnet4": []map[string]interface{}{{
+									"id":     11,
+									"subnet": "192.1.0.0/24",
+								}},
 							}, {
-								"id":     13,
-								"subnet": "192.3.0.0/24",
+								"name": "mouse",
+								"subnet4": []map[string]interface{}{{
+									"id":     12,
+									"subnet": "192.2.0.0/24",
+								}, {
+									"id":     13,
+									"subnet": "192.3.0.0/24",
+								}},
 							}},
-						}},
-					},
-				}),
-			}},
+						},
+					}),
+				},
+			},
 		},
 	}
 	err = dbmodel.AddApp(db, a4)
@@ -419,23 +430,25 @@ func TestGetSharedNetworks(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{{
-				Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-					"Dhcp6": &map[string]interface{}{
-						"shared-networks": []map[string]interface{}{{
-							"name": "fox",
-							"subnet6": []map[string]interface{}{{
-								"id":     21,
-								"subnet": "5001:db8:1::/64",
-							}, {
-								"id":     22,
-								"subnet": "6001:db8:1::/64",
+		Daemons: []*dbmodel.Daemon{
+			{
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": &map[string]interface{}{
+							"shared-networks": []map[string]interface{}{{
+								"name": "fox",
+								"subnet6": []map[string]interface{}{{
+									"id":     21,
+									"subnet": "5001:db8:1::/64",
+								}, {
+									"id":     22,
+									"subnet": "6001:db8:1::/64",
+								}},
 							}},
-						}},
-					},
-				}),
-			}},
+						},
+					}),
+				},
+			},
 		},
 	}
 	err = dbmodel.AddApp(db, a6)

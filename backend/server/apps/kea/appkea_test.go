@@ -216,10 +216,10 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 // Check if GetDaemonHooks returns hooks for given daemon.
 func TestGetDaemonHooksFrom1Daemon(t *testing.T) {
 	dbApp := dbmodel.App{
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{
-				{
-					Name: "dhcp4",
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 						"Dhcp4": map[string]interface{}{
 							"hooks-libraries": []interface{}{
@@ -245,10 +245,10 @@ func TestGetDaemonHooksFrom1Daemon(t *testing.T) {
 // Check getting hooks of 2 daemons
 func TestGetDaemonHooksFrom2Daemons(t *testing.T) {
 	dbApp := dbmodel.App{
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{
-				{
-					Name: "dhcp6",
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: "dhcp6",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 						"Dhcp6": map[string]interface{}{
 							"hooks-libraries": []interface{}{
@@ -262,8 +262,10 @@ func TestGetDaemonHooksFrom2Daemons(t *testing.T) {
 						},
 					}),
 				},
-				{
-					Name: "dhcp4",
+			},
+			{
+				Name: "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
 						"Dhcp4": map[string]interface{}{
 							"hooks-libraries": []interface{}{

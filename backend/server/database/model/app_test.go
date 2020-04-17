@@ -733,16 +733,16 @@ func TestGetAppsByPage(t *testing.T) {
 func TestGetActiveDHCPMultiple(t *testing.T) {
 	a := &App{
 		Type: AppTypeKea,
-		Details: AppKea{
-			Daemons: []*KeaDaemonJSON{
-				{
-					Active: true,
-					Name:   "dhcp4",
-				},
-				{
-					Active: true,
-					Name:   "dhcp6",
-				},
+		Daemons: []*Daemon{
+			{
+				Active:    true,
+				Name:      "dhcp4",
+				KeaDaemon: &KeaDaemon{},
+			},
+			{
+				Active:    true,
+				Name:      "dhcp6",
+				KeaDaemon: &KeaDaemon{},
 			},
 		},
 	}
@@ -757,16 +757,16 @@ func TestGetActiveDHCPMultiple(t *testing.T) {
 func TestGetActiveDHCPSingle(t *testing.T) {
 	a := &App{
 		Type: AppTypeKea,
-		Details: AppKea{
-			Daemons: []*KeaDaemonJSON{
-				{
-					Active: false,
-					Name:   "dhcp4",
-				},
-				{
-					Active: true,
-					Name:   "dhcp6",
-				},
+		Daemons: []*Daemon{
+			{
+				Active:    false,
+				Name:      "dhcp4",
+				KeaDaemon: &KeaDaemon{},
+			},
+			{
+				Active:    true,
+				Name:      "dhcp6",
+				KeaDaemon: &KeaDaemon{},
 			},
 		},
 	}
@@ -776,12 +776,16 @@ func TestGetActiveDHCPSingle(t *testing.T) {
 	require.Contains(t, daemons, "dhcp6")
 }
 
-// Test that empty list of deamons is returned if the application type
+// Test that empty list of deamons is returned if the daemon type
 // is not Kea.
 func TestGetActiveDHCPAppMismatch(t *testing.T) {
 	a := &App{
-		Type:    AppTypeKea,
-		Details: AppBind9{},
+		Type: AppTypeKea,
+		Daemons: []*Daemon{
+			{
+				Bind9Daemon: &Bind9Daemon{},
+			},
+		},
 	}
 	daemons := a.GetActiveDHCPDaemonNames()
 	require.Empty(t, daemons)
@@ -863,73 +867,6 @@ func TestGetAllApps(t *testing.T) {
 	}
 }
 
-func TestAfterScanKea(t *testing.T) {
-	ctx := context.Background()
-
-	// for now details are nil
-	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234)
-
-	aKea := &App{
-		ID:           0,
-		MachineID:    0,
-		Type:         AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-	}
-	err := aKea.AfterScan(ctx)
-	require.Nil(t, err)
-	require.Nil(t, aKea.Details)
-
-	// add some details
-	aKea.Details = map[string]interface{}{
-		"ExtendedVersion": "1.2.3",
-		"Daemons": []map[string]interface{}{
-			{
-				"Pid":  123,
-				"Name": "dhcp4",
-			},
-		},
-	}
-	err = aKea.AfterScan(ctx)
-	require.Nil(t, err)
-	require.NotNil(t, aKea.Details)
-	require.Equal(t, "1.2.3", aKea.Details.(AppKea).ExtendedVersion)
-	require.Equal(t, "dhcp4", aKea.Details.(AppKea).Daemons[0].Name)
-}
-
-func TestAfterScanBind(t *testing.T) {
-	ctx := context.Background()
-
-	// for now details are nil
-	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "abcd", 4321)
-
-	aBind := &App{
-		ID:           0,
-		MachineID:    0,
-		Type:         AppTypeBind9,
-		Active:       true,
-		AccessPoints: accessPoints,
-	}
-	err := aBind.AfterScan(ctx)
-	require.Nil(t, err)
-	require.Nil(t, aBind.Details)
-
-	// add some details
-	aBind.Details = map[string]interface{}{
-		"Daemon": map[string]interface{}{
-			"Pid":  123,
-			"Name": "named",
-		},
-	}
-	err = aBind.AfterScan(ctx)
-	require.Nil(t, err)
-	require.NotNil(t, aBind.Details)
-	require.Equal(t, "named", aBind.Details.(AppBind9).Daemon.Name)
-	require.EqualValues(t, 123, aBind.Details.(AppBind9).Daemon.Pid)
-}
-
 // Test that local subnet id of the Kea subnet can be extracted.
 func TestGetLocalSubnetID(t *testing.T) {
 	ctx := context.Background()
@@ -942,30 +879,27 @@ func TestGetLocalSubnetID(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-	}
-
-	// Add a DHCPv4 daemon with a simple configuration comprising a single subnet.
-	aKea.Details = map[string]interface{}{
-		"Daemons": []map[string]interface{}{
+		Daemons: []*Daemon{
 			{
-				"Name": "dhcp4",
-				"Config": &map[string]interface{}{
-					"Dhcp4": map[string]interface{}{
-						"subnet4": []map[string]interface{}{
-							{
-								"id":     1,
-								"subnet": "192.0.2.0/24",
+				KeaDaemon: &KeaDaemon{
+					Config: NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{
+							"subnet4": []map[string]interface{}{
+								{
+									"id":     1,
+									"subnet": "192.0.2.0/24",
+								},
 							},
 						},
-					},
+					}),
 				},
 			},
 		},
 	}
 
-	err := aKea.AfterScan(ctx)
+	err := aKea.Daemons[0].KeaDaemon.AfterScan(ctx)
 	require.Nil(t, err)
-	require.NotNil(t, aKea.Details)
+	require.NotNil(t, aKea.Daemons[0].KeaDaemon.Config)
 
 	// Try to find a non-existing subnet.
 	require.Zero(t, aKea.GetLocalSubnetID("192.0.3.0/24"))

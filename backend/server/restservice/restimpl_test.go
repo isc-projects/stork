@@ -377,9 +377,7 @@ func TestGetMachine(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{},
-		},
+		Daemons:      []*dbmodel.Daemon{},
 	}
 	err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
@@ -569,9 +567,7 @@ func TestGetApp(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{},
-		},
+		Daemons:      []*dbmodel.Daemon{},
 	}
 	err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
@@ -623,9 +619,7 @@ func TestRestGetApp(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: keaPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{},
-		},
+		Daemons:      []*dbmodel.Daemon{},
 	}
 	err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
@@ -648,7 +642,11 @@ func TestRestGetApp(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		Active:       true,
 		AccessPoints: bind9Points,
-		Details:      dbmodel.AppBind9{},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Bind9Daemon: &dbmodel.Bind9Daemon{},
+			},
+		},
 	}
 	err = dbmodel.AddApp(db, bind9App)
 	require.NoError(t, err)
@@ -697,8 +695,10 @@ func TestRestGetApps(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: keaPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{},
+		Daemons: []*dbmodel.Daemon{
+			{
+				KeaDaemon: &dbmodel.KeaDaemon{},
+			},
 		},
 	}
 	err = dbmodel.AddApp(db, s1)
@@ -713,7 +713,11 @@ func TestRestGetApps(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		Active:       true,
 		AccessPoints: bind9Points,
-		Details:      dbmodel.AppBind9{},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Bind9Daemon: &dbmodel.Bind9Daemon{},
+			},
+		},
 	}
 	err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
@@ -970,9 +974,7 @@ func TestRestGetAppsStats(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: keaPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{},
-		},
+		Daemons:      []*dbmodel.Daemon{},
 	}
 	err = dbmodel.AddApp(db, s1)
 	require.NoError(t, err)
@@ -986,7 +988,7 @@ func TestRestGetAppsStats(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		Active:       false,
 		AccessPoints: bind9Points,
-		Details:      dbmodel.AppBind9{},
+		Daemons:      []*dbmodel.Daemon{},
 	}
 	err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)

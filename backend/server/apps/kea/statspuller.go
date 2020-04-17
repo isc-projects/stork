@@ -276,8 +276,8 @@ func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 	// get active dhcp daemons
 	dhcpDaemons := make(agentcomm.KeaDaemons)
 	found := false
-	for _, d := range dbApp.Details.(dbmodel.AppKea).Daemons {
-		if d.Name == "dhcp4" || d.Name == "dhcp6" {
+	for _, d := range dbApp.Daemons {
+		if d.KeaDaemon != nil && (d.Name == "dhcp4" || d.Name == "dhcp6") {
 			dhcpDaemons[d.Name] = true
 			found = true
 		}

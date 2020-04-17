@@ -338,14 +338,16 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{
-				{
-					Name:   "dhcp4",
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv4Subnets(t),
 				},
-				{
-					Name:   "dhcp6",
+			},
+			{
+				Name: "dhcp6",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv6Subnets(t),
 				},
 			},
@@ -822,14 +824,16 @@ func TestDetectAndCommitHostsIntoDB(t *testing.T) {
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{
-				{
-					Name:   "dhcp4",
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv4Subnets(t),
 				},
-				{
-					Name:   "dhcp6",
+			},
+			{
+				Name: "dhcp6",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv6Subnets(t),
 				},
 			},
@@ -902,14 +906,16 @@ func TestPullHostsIntoDB(t *testing.T) {
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{
-				{
-					Name:   "dhcp4",
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv4Subnets(t),
 				},
-				{
-					Name:   "dhcp6",
+			},
+			{
+				Name: "dhcp6",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv6Subnets(t),
 				},
 			},
@@ -977,10 +983,10 @@ func TestReduceHostsIntoDB(t *testing.T) {
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
-		Details: dbmodel.AppKea{
-			Daemons: []*dbmodel.KeaDaemonJSON{
-				{
-					Name:   "dhcp4",
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithOneIPv4Subnet(t),
 				},
 			},

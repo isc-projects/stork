@@ -76,10 +76,11 @@ func TestStatsPullerPullStats(t *testing.T) {
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953)
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointStatistics, "127.0.0.1", "abcd", 8000)
 
-	daemon := dbmodel.Bind9DaemonJSON{
-		Pid:    0,
-		Name:   "named",
-		Active: true,
+	daemon := &dbmodel.Daemon{
+		Pid:         0,
+		Name:        "named",
+		Active:      true,
+		Bind9Daemon: &dbmodel.Bind9Daemon{},
 	}
 
 	machine1 := &dbmodel.Machine{
@@ -94,13 +95,15 @@ func TestStatsPullerPullStats(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		AccessPoints: accessPoints,
 		MachineID:    machine1.ID,
-		Details: dbmodel.AppBind9{
-			Daemon: daemon,
+		Daemons: []*dbmodel.Daemon{
+			daemon,
 		},
 	}
 	err = CommitAppIntoDB(db, &dbApp1)
 	require.NoError(t, err)
 
+	daemon.ID = 0
+	daemon.Bind9Daemon.ID = 0
 	machine2 := &dbmodel.Machine{
 		ID:        0,
 		Address:   "192.0.2.0",
@@ -113,8 +116,8 @@ func TestStatsPullerPullStats(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		AccessPoints: accessPoints,
 		MachineID:    machine2.ID,
-		Details: dbmodel.AppBind9{
-			Daemon: daemon,
+		Daemons: []*dbmodel.Daemon{
+			daemon,
 		},
 	}
 	err = CommitAppIntoDB(db, &dbApp2)
@@ -143,17 +146,21 @@ func TestStatsPullerPullStats(t *testing.T) {
 	// check collected stats
 	app1, err := dbmodel.GetAppByID(db, dbApp1.ID)
 	require.NoError(t, err)
-	daemon = app1.Details.(dbmodel.AppBind9).Daemon
-	require.EqualValues(t, 60, daemon.CacheHits)
-	require.EqualValues(t, 40, daemon.CacheMisses)
-	require.EqualValues(t, 0.6, daemon.CacheHitRatio)
+	require.Len(t, app1.Daemons, 1)
+	require.NotNil(t, app1.Daemons[0].Bind9Daemon)
+	daemon = app1.Daemons[0]
+	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.CacheHits)
+	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.CacheMisses)
+	require.EqualValues(t, 0.6, daemon.Bind9Daemon.Stats.CacheHitRatio)
 
 	app2, err := dbmodel.GetAppByID(db, dbApp2.ID)
 	require.NoError(t, err)
-	daemon = app2.Details.(dbmodel.AppBind9).Daemon
-	require.EqualValues(t, 60, daemon.CacheHits)
-	require.EqualValues(t, 40, daemon.CacheMisses)
-	require.EqualValues(t, 0.6, daemon.CacheHitRatio)
+	require.Len(t, app2.Daemons, 1)
+	require.NotNil(t, app2.Daemons[0].Bind9Daemon)
+	daemon = app2.Daemons[0]
+	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.CacheHits)
+	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.CacheMisses)
+	require.EqualValues(t, 0.6, daemon.Bind9Daemon.Stats.CacheHitRatio)
 }
 
 // Check if statistics-channel response is handled correctly when it is empty.
@@ -177,10 +184,11 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953)
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointStatistics, "127.0.0.1", "abcd", 8000)
 
-	daemon := dbmodel.Bind9DaemonJSON{
-		Pid:    0,
-		Name:   "named",
-		Active: true,
+	daemon := &dbmodel.Daemon{
+		Pid:         0,
+		Name:        "named",
+		Active:      true,
+		Bind9Daemon: &dbmodel.Bind9Daemon{},
 	}
 
 	machine := &dbmodel.Machine{
@@ -195,8 +203,8 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		AccessPoints: accessPoints,
 		MachineID:    machine.ID,
-		Details: dbmodel.AppBind9{
-			Daemon: daemon,
+		Daemons: []*dbmodel.Daemon{
+			daemon,
 		},
 	}
 	err = CommitAppIntoDB(db, &dbApp)
@@ -225,8 +233,10 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	// check collected stats
 	app1, err := dbmodel.GetAppByID(db, dbApp.ID)
 	require.NoError(t, err)
-	daemon = app1.Details.(dbmodel.AppBind9).Daemon
-	require.EqualValues(t, 0, daemon.CacheHits)
-	require.EqualValues(t, 0, daemon.CacheMisses)
-	require.EqualValues(t, 0, daemon.CacheHitRatio)
+	require.Len(t, app1.Daemons, 1)
+	require.NotNil(t, app1.Daemons[0].Bind9Daemon)
+	daemon = app1.Daemons[0]
+	require.EqualValues(t, 0, daemon.Bind9Daemon.Stats.CacheHits)
+	require.EqualValues(t, 0, daemon.Bind9Daemon.Stats.CacheMisses)
+	require.EqualValues(t, 0, daemon.Bind9Daemon.Stats.CacheHitRatio)
 }

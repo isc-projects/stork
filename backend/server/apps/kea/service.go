@@ -19,16 +19,12 @@ func appBelongsToHAService(app *dbmodel.App, service *dbmodel.Service) bool {
 	}
 
 	// Try to cast the App to AppKea. If that fails we bail again.
-	var (
-		appKea dbmodel.AppKea
-		ok     bool
-	)
-	if appKea, ok = app.Details.(dbmodel.AppKea); !ok {
+	if app.Type != dbmodel.AppTypeKea {
 		return false
 	}
 
 	var index int = -1
-	for i, d := range appKea.Daemons {
+	for i, d := range app.Daemons {
 		if d.Name == service.HAService.HAType {
 			index = i
 		}
@@ -40,11 +36,13 @@ func appBelongsToHAService(app *dbmodel.App, service *dbmodel.Service) bool {
 	}
 
 	// Successfully found the daemon. Get its instance.
-	appDaemon := appKea.Daemons[index]
+	appDaemon := app.Daemons[index]
+	if appDaemon.KeaDaemon == nil {
+		return false
+	}
 
 	// Get the applications's HA configuration and check if it is set.
-	var appConfigHA dbmodel.KeaConfigHA
-	_, appConfigHA, ok = appDaemon.Config.GetHAHooksLibrary()
+	_, appConfigHA, ok := appDaemon.KeaDaemon.Config.GetHAHooksLibrary()
 	if !ok || !appConfigHA.IsSet() {
 		return false
 	}
@@ -59,8 +57,8 @@ func appBelongsToHAService(app *dbmodel.App, service *dbmodel.Service) bool {
 			continue
 		}
 
-		var serviceAppKea dbmodel.AppKea
-		if serviceAppKea, ok = sa.Details.(dbmodel.AppKea); !ok {
+		serviceAppKea := sa
+		if serviceAppKea.Type != dbmodel.AppTypeKea {
 			continue
 		}
 
@@ -69,13 +67,13 @@ func appBelongsToHAService(app *dbmodel.App, service *dbmodel.Service) bool {
 		for _, serviceDaemon := range serviceAppKea.Daemons {
 			// Daemon doesn't match the service type. They must be both 'dhcp4'
 			// or 'dhcp6'.
-			if serviceDaemon.Name != appDaemon.Name {
+			if serviceDaemon.Name != appDaemon.Name || serviceDaemon.KeaDaemon == nil {
 				continue
 			}
 
 			// Get the HA configuration of the app belonging to the service.
 			var serviceDaemonConfigHA dbmodel.KeaConfigHA
-			_, serviceDaemonConfigHA, ok = serviceDaemon.Config.GetHAHooksLibrary()
+			_, serviceDaemonConfigHA, ok = serviceDaemon.KeaDaemon.Config.GetHAHooksLibrary()
 			if !ok || !serviceDaemonConfigHA.IsSet() || (*appConfigHA.Mode != *serviceDaemonConfigHA.Mode) {
 				// There is something wrong with the service or the mode is not matching.
 				// This service is not matching.
@@ -124,21 +122,20 @@ func appBelongsToHAService(app *dbmodel.App, service *dbmodel.Service) bool {
 // e.g. an app can belong to Kea DHCPv4 HA service and Kea DHCPv6 HA service.
 func DetectHAServices(db *dbops.PgDB, dbApp *dbmodel.App) (services []dbmodel.Service) {
 	// If this is not Kea application it does not belong to HA service.
-	appKea, ok := dbApp.Details.(dbmodel.AppKea)
-	if !ok {
+	if dbApp.Type != dbmodel.AppTypeKea {
 		return services
 	}
 
 	// If this is the Kea application, we need to iterate over the DHCP daemons and
 	// match their configuration against the services.
-	for _, d := range appKea.Daemons {
+	for _, d := range dbApp.Daemons {
 		// We only detct HA services for DHCP daemons. Other daemons do not support it.
-		if d.Config == nil || (d.Name != dhcp4 && d.Name != dhcp6) {
+		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil || (d.Name != dhcp4 && d.Name != dhcp6) {
 			continue
 		}
 
 		// Check if the configuration contains any HA configuration.
-		if _, params, ok := d.Config.GetHAHooksLibrary(); ok {
+		if _, params, ok := d.KeaDaemon.Config.GetHAHooksLibrary(); ok {
 			// Make sure that the required parameters are set.
 			if !params.IsSet() {
 				continue

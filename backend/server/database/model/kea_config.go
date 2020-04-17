@@ -235,7 +235,6 @@ func (c *KeaConfig) GetTopLevelList(name string) (list []interface{}, ok bool) {
 	if !ok {
 		return list, ok
 	}
-
 	if cfg, ok := (*c)[root]; ok {
 		if rootNode, ok := cfg.(map[string]interface{}); ok {
 			if listNode, ok := rootNode[name].([]interface{}); ok {

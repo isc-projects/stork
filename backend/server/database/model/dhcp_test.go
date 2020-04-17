@@ -115,10 +115,10 @@ func addTestSubnetApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 			Type:         AppTypeKea,
 			Active:       true,
 			AccessPoints: accessPoints,
-			Details: AppKea{
-				Daemons: []*KeaDaemonJSON{
-					{
-						Name:   "dhcp4",
+			Daemons: []*Daemon{
+				{
+					Name: "dhcp4",
+					KeaDaemon: &KeaDaemon{
 						Config: getTestConfigWithIPv4Subnets(t),
 					},
 				},

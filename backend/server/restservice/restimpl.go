@@ -43,7 +43,7 @@ func machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 		active := true
 		if app.Type == dbmodel.AppTypeKea {
 			if app.Active {
-				for _, d := range app.Details.(dbmodel.AppKea).Daemons {
+				for _, d := range app.Daemons {
 					if !d.Active {
 						active = false
 						break
@@ -548,7 +548,7 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 
 	if isKeaApp {
 		var keaDaemons []*models.KeaDaemon
-		for _, d := range dbApp.Details.(dbmodel.AppKea).Daemons {
+		for _, d := range dbApp.Daemons {
 			dmn := &models.KeaDaemon{
 				Pid:             int64(d.Pid),
 				Name:            d.Name,
@@ -574,7 +574,7 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 			models.AppBind9
 		}{
 			models.AppKea{
-				ExtendedVersion: dbApp.Details.(dbmodel.AppKea).ExtendedVersion,
+				ExtendedVersion: dbApp.Meta.ExtendedVersion,
 				Daemons:         keaDaemons,
 			},
 			models.AppBind9{},
@@ -583,17 +583,17 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 
 	if isBind9App {
 		bind9Daemon := &models.Bind9Daemon{
-			Pid:           int64(dbApp.Details.(dbmodel.AppBind9).Daemon.Pid),
-			Name:          dbApp.Details.(dbmodel.AppBind9).Daemon.Name,
-			Active:        dbApp.Details.(dbmodel.AppBind9).Daemon.Active,
-			Version:       dbApp.Details.(dbmodel.AppBind9).Daemon.Version,
-			Uptime:        dbApp.Details.(dbmodel.AppBind9).Daemon.Uptime,
-			ReloadedAt:    strfmt.DateTime(dbApp.Details.(dbmodel.AppBind9).Daemon.ReloadedAt),
-			ZoneCount:     dbApp.Details.(dbmodel.AppBind9).Daemon.ZoneCount,
-			AutoZoneCount: dbApp.Details.(dbmodel.AppBind9).Daemon.AutomaticZoneCount,
-			CacheHits:     dbApp.Details.(dbmodel.AppBind9).Daemon.CacheHits,
-			CacheMisses:   dbApp.Details.(dbmodel.AppBind9).Daemon.CacheMisses,
-			CacheHitRatio: dbApp.Details.(dbmodel.AppBind9).Daemon.CacheHitRatio,
+			Pid:           int64(dbApp.Daemons[0].Pid),
+			Name:          dbApp.Daemons[0].Name,
+			Active:        dbApp.Daemons[0].Active,
+			Version:       dbApp.Daemons[0].Version,
+			Uptime:        dbApp.Daemons[0].Uptime,
+			ReloadedAt:    strfmt.DateTime(dbApp.Daemons[0].ReloadedAt),
+			ZoneCount:     dbApp.Daemons[0].Bind9Daemon.Stats.ZoneCount,
+			AutoZoneCount: dbApp.Daemons[0].Bind9Daemon.Stats.AutomaticZoneCount,
+			CacheHits:     dbApp.Daemons[0].Bind9Daemon.Stats.CacheHits,
+			CacheMisses:   dbApp.Daemons[0].Bind9Daemon.Stats.CacheMisses,
+			CacheHitRatio: dbApp.Daemons[0].Bind9Daemon.Stats.CacheHitRatio,
 		}
 
 		app.Details = struct {
@@ -936,7 +936,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 
 	var dhcpDaemons []*models.DhcpDaemon
 	for _, dbApp := range dbApps {
-		for _, dbDaemon := range dbApp.Details.(dbmodel.AppKea).Daemons {
+		for _, dbDaemon := range dbApp.Daemons {
 			if !strings.HasPrefix(dbDaemon.Name, "dhcp") {
 				continue
 			}

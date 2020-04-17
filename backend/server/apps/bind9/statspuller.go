@@ -80,9 +80,6 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return err
 	}
 
-	bind9App := dbApp.Details.(dbmodel.AppBind9)
-	bind9Daemon := bind9App.Daemon
-
 	if statsOutput.Views != nil {
 		for name, view := range statsOutput.Views {
 			// Only deal with the default view for now.
@@ -99,15 +96,11 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 			if total != 0 {
 				ratio = float64(hits) / total
 			}
-			bind9Daemon.CacheHitRatio = ratio
-			bind9Daemon.CacheHits = hits
-			bind9Daemon.CacheMisses = misses
+			dbApp.Daemons[0].Bind9Daemon.Stats.CacheHitRatio = ratio
+			dbApp.Daemons[0].Bind9Daemon.Stats.CacheHits = hits
+			dbApp.Daemons[0].Bind9Daemon.Stats.CacheMisses = misses
 			break
 		}
-	}
-
-	dbApp.Details = dbmodel.AppBind9{
-		Daemon: bind9Daemon,
 	}
 
 	return CommitAppIntoDB(statsPuller.Db, dbApp)

@@ -1,7 +1,11 @@
 package dbmodel
 
 import (
+	"context"
+	"encoding/json"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // A structure holding Kea DHCP specific information about a daemon. It
@@ -22,7 +26,7 @@ type KeaDHCPDaemon struct {
 // reflects the information stored in the kea_daemon table.
 type KeaDaemon struct {
 	ID     int64
-	Config *KeaConfig
+	Config *KeaConfig `pg:",use_zero"`
 
 	DaemonID int64
 
@@ -41,9 +45,9 @@ type Bind9DaemonStats struct {
 
 // A structure holding BIND9 daemon specific information.
 type Bind9Daemon struct {
-	ID                 int64
-	DaemonID           int64
-	Stats              Bind9DaemonStats
+	ID       int64
+	DaemonID int64
+	Stats    Bind9DaemonStats
 }
 
 // A structure reflecting all SQL tables holding information about the
@@ -68,4 +72,24 @@ type Daemon struct {
 
 	KeaDaemon   *KeaDaemon
 	Bind9Daemon *Bind9Daemon
+}
+
+// This is a hook to go-pg that is called just after reading rows from database.
+// It reconverts KeaDaemon's configuration from json string maps to the
+// expected structure in GO.
+func (d *KeaDaemon) AfterScan(ctx context.Context) error {
+	if d.Config == nil {
+		return nil
+	}
+
+	bytes, err := json.Marshal(d.Config)
+	if err != nil {
+		return errors.Wrapf(err, "problem with marshalling Kea config: %+v ", *d.Config)
+	}
+
+	err = json.Unmarshal(bytes, d.Config)
+	if err != nil {
+		return errors.Wrapf(err, "problem with unmarshalling Kea config")
+	}
+	return nil
 }
