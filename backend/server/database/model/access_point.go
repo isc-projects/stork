@@ -36,25 +36,6 @@ func GetAllAccessPointsByAppID(db *dbops.PgDB, appID int64) ([]*AccessPoint, err
 	return accessPoints, nil
 }
 
-// GetAccessPointByAppID returns a specific access point for an app with given ID
-// and given access point type.
-func GetAccessPointByAppID(db *dbops.PgDB, appID int64, pointType string) (*AccessPoint, error) {
-	var accessPoint AccessPoint
-
-	err := db.Model(&accessPoint).
-		Where("app_id = ?", appID).
-		Where("type = ?", pointType).
-		First()
-
-	if err != nil && err != pg.ErrNoRows {
-		err = errors.Wrapf(err, "problem with getting access point for app id %d and type %s", appID, pointType)
-		return nil, err
-	}
-
-	// Can be at most one entry.
-	return &accessPoint, nil
-}
-
 // AppendAccessPoint is an utility function that appends an access point to a
 // list.
 func AppendAccessPoint(list []*AccessPoint, tp, address, key string, port int64) []*AccessPoint {

@@ -3,7 +3,6 @@ package kea
 import (
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
-	storkutil "isc.org/stork/util"
 )
 
 // Checks if the specified Kea app belongs to a given HA service.
@@ -166,22 +165,14 @@ func DetectHAServices(db *dbops.PgDB, dbApp *dbmodel.App) (services []dbmodel.Se
 
 			// Next, check if there are any existing services for the URLs found
 			// in this configuration.
-			var dbServices []dbmodel.Service
 			index = -1
-			for _, p := range params.Peers {
-				host, port := storkutil.ParseURL(*p.URL)
-				dbServices, _ = dbmodel.GetDetailedServicesByAppCtrlAddressPort(db, host, port)
-				index = -1
-				for i, service := range dbServices {
-					s := service
-					if (service.HAService != nil) &&
-						(service.HAService.HAType == d.Name) &&
-						appBelongsToHAService(dbApp, &s) {
-						index = i
-						break
-					}
-				}
-				if index >= 0 {
+			dbServices, _ := dbmodel.GetDetailedAllServices(db)
+			for i, service := range dbServices {
+				s := service
+				if (service.HAService != nil) &&
+					(service.HAService.HAType == d.Name) &&
+					appBelongsToHAService(dbApp, &s) {
+					index = i
 					break
 				}
 			}

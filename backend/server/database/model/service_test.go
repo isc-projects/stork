@@ -362,42 +362,6 @@ func TestGetServicesByAppID(t *testing.T) {
 	require.Equal(t, services[1].Name, appServices[1].Name)
 }
 
-// Test getting the services including applications which operate on a
-// given control address and port.
-func TestGetServicesByAppCtrlAddressPort(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	services := addTestServices(t, db)
-	require.GreaterOrEqual(t, len(services), 2)
-
-	// Get a service instance to which the forth application of the service1 belongs.
-	accessPoint, err := GetAccessPointByAppID(db, services[0].Apps[3].ID, AccessPointControl)
-	require.NoError(t, err)
-	appServices, err := GetDetailedServicesByAppCtrlAddressPort(db, accessPoint.Address, accessPoint.Port)
-	require.NoError(t, err)
-	require.Len(t, appServices, 1)
-
-	// Make sure that the first service was returned.
-	service := appServices[0]
-	require.Len(t, service.Apps, 5)
-	require.Equal(t, services[0].Name, service.Name)
-	require.True(t, appArraysMatch(service.Apps, services[0].Apps))
-
-	// Repeat the same test for the application belonging to the second service.
-	accessPoint, err = GetAccessPointByAppID(db, services[1].Apps[3].ID, AccessPointControl)
-	require.NoError(t, err)
-	appServices, err = GetDetailedServicesByAppCtrlAddressPort(db, accessPoint.Address, accessPoint.Port)
-	require.NoError(t, err)
-	require.Len(t, appServices, 1)
-
-	// Make sure that the second service was returned.
-	service = appServices[0]
-	require.Len(t, service.Apps, 5)
-	require.Equal(t, services[1].Name, service.Name)
-	require.True(t, appArraysMatch(service.Apps, services[1].Apps))
-}
-
 // Test getting all services.
 func TestGetAllServices(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
