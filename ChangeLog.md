@@ -1,4 +1,4 @@
-* 57 [func] marcin
+* 57 [bug] marcin
 
     Fixed a bug in the HA service detection when new Kea app was
     being added. The visible side effect of this bug was the lack
