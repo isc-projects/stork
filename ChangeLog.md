@@ -1,3 +1,11 @@
+* 57 [func] marcin
+
+    Fixed a bug in the HA service detection when new Kea app was
+    being added. The visible side effect of this bug was the lack
+    of the link to the remote server app in the HA status view
+    in the UI.
+    (Gitlab #240)
+
 * 56 [func] godfryd
 
     Added links to Grafana. Added web page for managing global
