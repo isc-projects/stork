@@ -1,6 +1,7 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { HostsTableComponent } from './hosts-table.component'
+import { TableModule } from 'primeng/table'
 
 describe('HostsTableComponent', () => {
     let component: HostsTableComponent
@@ -8,6 +9,7 @@ describe('HostsTableComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
+            imports: [TableModule],
             declarations: [HostsTableComponent],
         }).compileComponents()
     }))
