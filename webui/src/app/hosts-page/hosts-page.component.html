@@ -11,6 +11,29 @@
                 placeholder="IP or identifier"
                 (keyup)="keyUpFilterText($event)"
             />
+            <app-help-tip title="Hosts filtering">
+                <p>
+                    By default all hosts detected in your network are listed. Kea can store host reservations
+                    in two places: in configuration file or in a database. The reservations stored in a configuration
+                    file are retrieved all the time, while those from a database (MySQL, PostgreSQL or Cassandra) need
+                    Kea to have a <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#host-cmds-host-commands">host_cmds hook</a>
+                    loaded.
+                </p>
+
+                <p>
+                    Kea supports host reservations by different types: <b>hw-address</b> (MAC address), <b>client-id</b> (usable in IPv4 only),
+                    <b>duid</b> (typically used in IPv6, although also usable in IPv4 if your clients support it), <b>flex-id</b> and
+                    <b>circuit-id</b>. You can filter hosts by typing their identifier value, e.g. <b>00:01:02:03:04:05</b>, a part of the
+                    identifier (e.g. filter by initial 3 bytes of MAC address that denotes OUI, a unique identifier of the vendor, so
+                    effectively show devices produced by the same vendor), or identifier type (e.g. <b>hw-address</b> to show all reservations
+                    made by MAC address).
+                </p>
+
+                <p>
+                    You can also filter by IP address or part of it. For example, you can see all reservations in a 192.0.2.0/24 subnet
+                    if you use <b>192.0.2</b> as a filter string.
+                </p>
+            </app-help-tip>
         </span>
     </div>
     <div style="margin: 0 0 10px, 5x;">
