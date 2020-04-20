@@ -12,6 +12,29 @@
                 (keyup)="keyupFilterText($event)"
             />
         </span>
+        <app-help-tip title="filtering">
+            <p>
+                Shared networks on the table below can be filtered by text that is matched to several fields of a shared
+                network or related entities.
+            </p>
+            <p>
+                The table can present shared networks that meet certain criteria, e.g. <b>alpha</b> will show all shared
+                networks that contain alpha in their names.
+            </p>
+            <p>
+                Currently supported fields:
+            </p>
+            <ul>
+                <li>Name</li>
+            </ul>
+            <p>
+                Shared networks can be explicitly filtered by given field using expression: <i>field=value</i>, e.g.:
+                <i class="monospace">appId=2</i>. Currently support field for explicit filtering:
+            </p>
+            <ul>
+                <li class="monospace">appId</li>
+            </ul>
+        </app-help-tip>
         <span style="margin-left: 40px;">
             Protocol:
             <p-dropdown
