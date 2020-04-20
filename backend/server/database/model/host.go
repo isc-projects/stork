@@ -301,15 +301,14 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 
 // Fetches a collection of hosts from the database. The offset and
 // limit specify the beginning of the page and the maximum size of the
-// page.  The appID, if different than 0, is used to fetch hosts whose
-// local hosts belonging to indicated app. The optional subnetID is
-// used to fetch hosts belonging to the particular IPv4 or IPv6
-// subnet. If this value is set to nil all subnets are returned.  The
-// value of 0 indicates that only global hosts are to be returned.
-// Filtering text allows for searching hosts by reserved IP addresses
-// and/or host identifiers specified using hexadecimal digits. It is
-// allowed to specify colons while searching by hosts by host
-// identifiers.
+// page. The appID, if different than 0, is used to fetch hosts whose
+// local hosts belong to indicated app. The optional subnetID is used
+// to fetch hosts belonging to the particular IPv4 or IPv6 subnet. If
+// this value is set to nil all subnets are returned.  The value of 0
+// indicates that only global hosts are to be returned.  Filtering
+// text allows for searching hosts by reserved IP addresses and/or
+// host identifiers specified using hexadecimal digits. It is allowed
+// to specify colons while searching by hosts by host identifiers.
 func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64, filterText *string) ([]Host, int64, error) {
 	hosts := []Host{}
 	q := db.Model(&hosts).DistinctOn("host.id")
