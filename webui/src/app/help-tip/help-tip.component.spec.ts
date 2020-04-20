@@ -1,6 +1,7 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { HelpTipComponent } from './help-tip.component'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
 
 describe('HelpTipComponent', () => {
     let component: HelpTipComponent
@@ -8,6 +9,7 @@ describe('HelpTipComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
+            imports: [OverlayPanelModule],
             declarations: [HelpTipComponent],
         }).compileComponents()
     }))
