@@ -47,6 +47,8 @@ type Host struct {
 	IPReservations  []IPReservation
 
 	LocalHosts []LocalHost
+
+	Modified bool `pg:"-"`
 }
 
 // This structure links a host entry stored in the database with an app from
@@ -459,24 +461,27 @@ func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string,
 	for i := range subnet.Hosts {
 		// Make sure the host associated with the current subnet.
 		subnet.Hosts[i].SubnetID = subnet.ID
-		if subnet.Hosts[i].ID == 0 {
+		newHost := (subnet.Hosts[i].ID == 0)
+		if newHost {
 			err = AddHost(tx, &subnet.Hosts[i])
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to add detected host to the database")
 				return err
 			}
-		} else {
+		} else if subnet.Hosts[i].Modified {
 			err = UpdateHost(tx, &subnet.Hosts[i])
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to update detected host in the database")
 				return err
 			}
 		}
-		err = AddAppToHost(tx, &subnet.Hosts[i], app, source, seq)
-		if err != nil {
-			err = errors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
-				app.ID)
-			return err
+		if newHost || subnet.Hosts[i].Modified {
+			err = AddAppToHost(tx, &subnet.Hosts[i], app, source, seq)
+			if err != nil {
+				err = errors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
+					app.ID)
+				return err
+			}
 		}
 	}
 	return nil
