@@ -25,7 +25,7 @@ export class HelpTipComponent implements OnInit {
     /**
      * Width of the help box.
      */
-    @Input() width: string = '20vw'
+    @Input() width = '20vw'
 
     constructor() {}
 
