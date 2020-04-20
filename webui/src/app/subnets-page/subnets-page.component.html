@@ -13,43 +13,37 @@
             />
             <app-help-tip title="Subnets filtering">
                 <p>
-                    Subnets on the table below can be filtered by text
-                    that is matched to several fields of a subnet or
+                    Subnets on the table below can be filtered by text that is matched to several fields of a subnet or
                     related entities.
                 </p>
                 <p>
-                    The table can present subnets that meet certain criteria,
-                    e.g. <b>192.0</b> will show all subnets that contain
-                    192.0 octets. It can be also filtered by shared
-                    network name, and pools.
+                    The table can present subnets that meet certain criteria, e.g. <b>192.0</b> will show all subnets
+                    that contain 192.0 octets. It can be also filtered by shared network name, and pools.
                 </p>
                 <p>
                     Currently supported fields:
                 </p>
                 <ul>
-		    <li>Subnet Prefix</li>
-		    <li>Lower and Upper Bound of Pools</li>
+                    <li>Subnet Prefix</li>
+                    <li>Lower and Upper Bound of Pools</li>
                     <li>Shared Network Name</li>
                 </ul>
                 <p>
-                    Subnets can be explicitly filtered by given field using
-                    expression: <i>field=value</i>, e.g.: <i class="monospace">appId=2</i>.
-                    Currently support field for explicit filtering:
+                    Subnets can be explicitly filtered by given field using expression: <i>field=value</i>, e.g.:
+                    <i class="monospace">appId=2</i>. Currently support field for explicit filtering:
                 </p>
                 <ul>
-		    <li class="monospace">appId</li>
+                    <li class="monospace">appId</li>
                 </ul>
                 <p>
-                    Stork retrieves subnet information
-                    using <a href="https://kea.readthedocs.io/en/latest/api.html#config-get">config-get</a>
-                    command. This command returns all subnets
-                    configured in your configuration file. If you are
-                    using
-                    <a href="https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#configuration-backend-in-dhcpv4">config backend</a>,
-                    the subnets Kea retreived from the database will be listed here as well.
+                    Stork retrieves subnet information using
+                    <a href="https://kea.readthedocs.io/en/latest/api.html#config-get">config-get</a>
+                    command. This command returns all subnets configured in your configuration file. If you are using
+                    <a href="https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#configuration-backend-in-dhcpv4"
+                        >config backend</a
+                    >, the subnets Kea retreived from the database will be listed here as well.
                 </p>
             </app-help-tip>
-
         </span>
         <span style="margin-left: 40px;">
             Protocol:

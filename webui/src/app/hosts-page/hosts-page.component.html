@@ -1,30 +1,25 @@
 <div>
-    <h2>DHCP Hosts and Reservations
-            <app-help-tip title="this page">
-                <p>
-                    This page displays a list of hosts reservations in
-                    your network. Kea can store host reservations in
-                    two places: in configuration file or in a
-                    database. The reservations stored in a
-                    configuration file are retrieved all the time,
-                    while those from a database (MySQL, PostgreSQL or
-                    Cassandra) need Kea to have
-                    a <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#host-cmds-host-commands">host_cmds
-                    hook</a> loaded.
-                </p>
-                <p>
-                    Kea supports host reservations by different
-                    types:
-                </p>
-                <ul>
-                    <li><b>hw-address</b> -- MAC address,</li>
-                    <li><b>client-id</b> -- usable in IPv4 only,</li>
-                    <li><b>duid</b> - typically used in IPv6, although also
-                        usable in IPv4 if your clients support it,</li>
-                    <li><b>flex-id</b> and</li>
-                    <li><b>circuit-id</b>.</li>
-                </ul>
-            </app-help-tip>
+    <h2>
+        DHCP Hosts and Reservations
+        <app-help-tip title="this page">
+            <p>
+                This page displays a list of hosts reservations in your network. Kea can store host reservations in two
+                places: in configuration file or in a database. The reservations stored in a configuration file are
+                retrieved all the time, while those from a database (MySQL, PostgreSQL or Cassandra) need Kea to have a
+                <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#host-cmds-host-commands">host_cmds hook</a>
+                loaded.
+            </p>
+            <p>
+                Kea supports host reservations by different types:
+            </p>
+            <ul>
+                <li><b>hw-address</b> -- MAC address,</li>
+                <li><b>client-id</b> -- usable in IPv4 only,</li>
+                <li><b>duid</b> - typically used in IPv6, although also usable in IPv4 if your clients support it,</li>
+                <li><b>flex-id</b> and</li>
+                <li><b>circuit-id</b>.</li>
+            </ul>
+        </app-help-tip>
     </h2>
     <div style="margin: 0 0 10px 5px;">
         <span>
@@ -39,23 +34,17 @@
             />
             <app-help-tip title="filtering">
                 <p>
-                    Hosts in the table below can be filtered by text
-                    that is matched to several fields of a host or
+                    Hosts in the table below can be filtered by text that is matched to several fields of a host or
                     related entities.
                 </p>
                 <p>
-                    Hosts can be filtered by their identifier value,
-                    e.g. <b>00:01:02:03:04:05</b>, or a part of the
-                    identifier (e.g. filter by initial 3 bytes of MAC
-                    address that denotes OUI, a unique identifier of
-                    the vendor, so effectively show devices produced
-                    by the same vendor), or identifier type
-                    (e.g. <b>hw-address</b> to show all reservations
-                    made by MAC address).
+                    Hosts can be filtered by their identifier value, e.g. <b>00:01:02:03:04:05</b>, or a part of the
+                    identifier (e.g. filter by initial 3 bytes of MAC address that denotes OUI, a unique identifier of
+                    the vendor, so effectively show devices produced by the same vendor), or identifier type (e.g.
+                    <b>hw-address</b> to show all reservations made by MAC address).
                 </p>
                 <p>
-                    They can be also filtered by IP address or part of
-                    it. For example, all reservations in a
+                    They can be also filtered by IP address or part of it. For example, all reservations in a
                     192.0.2.0/24 subnet can found by entering
                     <b>192.0.2</b> as a filter text.
                 </p>
@@ -63,17 +52,16 @@
                     Currently supported fields:
                 </p>
                 <ul>
-		    <li>Identifier</li>
-		    <li>Identifier Type</li>
+                    <li>Identifier</li>
+                    <li>Identifier Type</li>
                     <li>Address</li>
                 </ul>
                 <p>
-                    Hosts can be explicitly filtered by given field using
-                    expression: <i>field=value</i>, e.g.: <i class="monospace">appId=2</i>.
-                    Currently support field for explicit filtering:
+                    Hosts can be explicitly filtered by given field using expression: <i>field=value</i>, e.g.:
+                    <i class="monospace">appId=2</i>. Currently support field for explicit filtering:
                 </p>
                 <ul>
-		    <li class="monospace">appId</li>
+                    <li class="monospace">appId</li>
                 </ul>
             </app-help-tip>
         </span>
