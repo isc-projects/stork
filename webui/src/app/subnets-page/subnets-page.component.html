@@ -11,6 +11,21 @@
                 placeholder="subnet or any other field"
                 (keyup)="keyupFilterText($event)"
             />
+            <app-help-tip title="Subnets filtering">
+                <p>
+                    By default all subnets detected in your network are listed. You can use this filter to limit the view to subnets
+                    that meet certain criteria, e.g. <b>192.0</b> will show all subnets that start with 192.0 octets. You can also
+                    filter by shared network name, and pools.
+                </p>
+
+                <p>
+                    Stork retrieves subnet information using <a href="https://kea.readthedocs.io/en/latest/api.html#config-get">config-get</a>
+                    command. This command returns all subnets configured in your configuration file. If you are using
+                    <a href="https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#configuration-backend-in-dhcpv4">config backend</a>,
+                    the subnets Kea retreived from the database will be listed here as well.
+                </p>
+            </app-help-tip>
+
         </span>
         <span style="margin-left: 40px;">
             Protocol:
