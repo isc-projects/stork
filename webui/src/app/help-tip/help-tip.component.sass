@@ -1,0 +1,19 @@
+.help-icon
+  vertical-align: middle
+  font-size: 1.8rem
+  color: #007ad9
+  cursor: pointer
+
+  &:hover
+    color: #005b9f
+
+.help-tip
+  // help box max width should be not larger than 60% of window width
+  max-width: 60vw
+  font-weight: normal
+
+::ng-deep body .ui-widget-content .help-tip p:not(:first-child)
+  margin-top: 10px
+
+::ng-deep body .ui-widget-content .help-tip ul:not(:first-child)
+  margin-top: 10px
