@@ -13,12 +13,11 @@
             />
             <app-help-tip title="filtering">
                 <p>
-                    Subnets on the table below can be filtered by text that is matched to several fields of a subnet or
-                    related entities.
+                    Subnets in the table below can be filtered by entering text in one or more of the fields to be matched.
                 </p>
                 <p>
                     The table can present subnets that meet certain criteria, e.g. <b>192.0</b> will show all subnets
-                    that contain 192.0 octets. It can be also filtered by shared network name, and pools.
+                    that contain 192.0 octets. It can also filter by shared network name and/or pools.
                 </p>
                 <p>
                     Currently supported fields:
@@ -29,19 +28,19 @@
                     <li>Shared Network Name</li>
                 </ul>
                 <p>
-                    Subnets can be explicitly filtered by given field using expression: <i>field=value</i>, e.g.:
-                    <i class="monospace">appId=2</i>. Currently support field for explicit filtering:
+                    Subnets can be explicitly filtered by a given field using an expression: <i>field=value</i>, e.g.:
+                    <i class="monospace">appId=2</i>. Currently supported fields for explicit filtering:
                 </p>
                 <ul>
                     <li class="monospace">appId</li>
                 </ul>
                 <p>
-                    Stork retrieves subnet information using
+                    Stork retrieves subnet information using the
                     <a href="https://kea.readthedocs.io/en/latest/api.html#config-get">config-get</a>
                     command. This command returns all subnets configured in your configuration file. If you are using
                     <a href="https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#configuration-backend-in-dhcpv4"
                         >config backend</a
-                    >, the subnets Kea retreived from the database will be listed here as well.
+                    >, the subnets Kea retrieves from the database are listed here as well.
                 </p>
             </app-help-tip>
         </span>

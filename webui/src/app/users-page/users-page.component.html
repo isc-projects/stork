@@ -151,24 +151,24 @@
             <div class="p-col-3">
                 <p-panel header="Creating new account" *ngIf="newUserTab">
                     <p>
-                        In order to create new user account please specify user login, user's first name and last name.
-                        The email is optional but we strongly recommend that it is specified. If the email is provided
-                        the user can sign in either using the login or the email. The password is mandatory and it is
-                        required that it is at least 8 characters long.
+                        To create a new user account, please specify user login, first name, and last name.
+                        An email address is optional but strongly recommended. If an email is provided,
+                        the user can sign in either using the login or the email address. The password is mandatory and
+                        must be at least 8 characters long.
                     </p>
                     <br />
                     <p>
-                        The user must be associated with one of the existing system groups. Currently there are two
-                        groups available: super-admin and admin. The users belonging to the super-admin group have full
-                        control over the system, including creation of the user accounts and modifying those accounts.
-                        The users beloging to the admin group have similar permissions with the exception that they are
+                        The user must be associated with an existing system group. Currently there are two
+                        groups available: super-admin and admin. Users belonging to the super-admin group have full
+                        control over the system, including creating and modifying user accounts.
+                        Users beloging to the admin group have similar permissions, with the exception that they are
                         not allowed to create and/or modify user accounts. However, they are allowed to update their own
                         passwords.
                     </p>
                 </p-panel>
                 <p-panel header="Creating new account" *ngIf="editedUserTab">
                     <p>
-                        Use this form to modify user account information, add lacking email address or change the group
+                        Use this form to modify user account information, add a missing email address, or change the group
                         that the user is associated with.
                     </p>
                     <br />
@@ -198,7 +198,7 @@
                                     <div class="p-col-12">
                                         <p-message
                                             severity="error"
-                                            text="Login must only contain letters, digits or underscore"
+                                            text="Login must only contain letters, digits, or underscore"
                                             *ngIf="
                                                 !userform.controls['userlogin'].valid &&
                                                 userform.controls['userlogin'].dirty
