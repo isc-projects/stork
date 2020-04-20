@@ -1,3 +1,12 @@
+* 59 [func] marcin
+
+    The list of hosts now includes a tag indicating if the host
+    has been specified in the Kea configuration file or a host
+    database. In addition, a bug has been fixed which caused some
+    hosts to be associated with more then one Kea app, even when
+    only one of them actually had them configured.
+    (Gitlab #246)
+
 * 58 [func] godfryd
 
     Improved presenting Kea daemons on Kea app page. There have
