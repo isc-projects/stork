@@ -1,0 +1,13 @@
+<i
+    class="pi pi-question-circle"
+    style="vertical-align: middle; font-size: 1.8em; color: #349EEE;"
+    (click)="toggleOverlay($event)"
+></i>
+
+<p-overlayPanel [showCloseIcon]="true">
+    <div [ngStyle]="{ width: width, 'max-width': '60vw' }">
+        <h3 style="margin: 4px 0 0 0;">Help for {{ title }}</h3>
+        <hr style="margin: 4px 0 12px 0; border: 1px solid #e3e3e3;" />
+        <ng-content></ng-content>
+    </div>
+</p-overlayPanel>

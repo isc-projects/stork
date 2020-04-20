@@ -30,6 +30,7 @@ import { PasswordModule } from 'primeng/password'
 import { CardModule } from 'primeng/card'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { FieldsetModule } from 'primeng/fieldset'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -60,6 +61,7 @@ import { SharedNetworksPageComponent } from './shared-networks-page/shared-netwo
 import { SubnetBarComponent } from './subnet-bar/subnet-bar.component'
 import { HostsPageComponent } from './hosts-page/hosts-page.component'
 import { SettingsPageComponent } from './settings-page/settings-page.component'
+import { HelpTipComponent } from './help-tip/help-tip.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -101,6 +103,7 @@ export function preinitApp(appInitService: AppInitService) {
         SubnetBarComponent,
         HostsPageComponent,
         SettingsPageComponent,
+        HelpTipComponent,
     ],
     imports: [
         BrowserModule,
@@ -134,6 +137,7 @@ export function preinitApp(appInitService: AppInitService) {
         CardModule,
         SplitButtonModule,
         FieldsetModule,
+        OverlayPanelModule,
     ],
     providers: [
         {
