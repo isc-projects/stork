@@ -12,7 +12,6 @@
                     a <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#host-cmds-host-commands">host_cmds
                     hook</a> loaded.
                 </p>
-
                 <p>
                     Kea supports host reservations by different
                     types:
@@ -44,9 +43,8 @@
                     that is matched to several fields of a host or
                     related entities.
                 </p>
-
                 <p>
-                    Hosts can be filter by their identifier value,
+                    Hosts can be filtered by their identifier value,
                     e.g. <b>00:01:02:03:04:05</b>, or a part of the
                     identifier (e.g. filter by initial 3 bytes of MAC
                     address that denotes OUI, a unique identifier of
@@ -55,24 +53,20 @@
                     (e.g. <b>hw-address</b> to show all reservations
                     made by MAC address).
                 </p>
-
                 <p>
                     They can be also filtered by IP address or part of
                     it. For example, all reservations in a
                     192.0.2.0/24 subnet can found by entering
                     <b>192.0.2</b> as a filter text.
                 </p>
-
                 <p>
                     Currently supported fields:
                 </p>
-
                 <ul>
 		    <li>Identifier</li>
 		    <li>Identifier Type</li>
                     <li>Address</li>
                 </ul>
-
                 <p>
                     Hosts can be explicitly filtered by given field using
                     expression: <i>field=value</i>, e.g.: <i class="monospace">appId=2</i>.
