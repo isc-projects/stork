@@ -81,10 +81,10 @@
         >
             <ng-template pTemplate="header">
                 <tr>
-                    <th rowspan="2" colspan="4">DHCP Identifiers</th>
+                    <th rowspan="2" colspan="3">DHCP Identifiers</th>
                     <th colspan="6">IP Reservations</th>
                     <th rowspan="2" style="width: 14rem;">Subnet</th>
-                    <th rowspan="2">AppID @ Machine</th>
+                    <th rowspan="2" colspan="2">AppID @ Machine</th>
                 </tr>
                 <tr>
                     <th colspan="3">IP Addresses</th>
@@ -93,7 +93,7 @@
             </ng-template>
             <ng-template pTemplate="body" let-h>
                 <tr>
-                    <td colspan="4">
+                    <td colspan="3">
                         <div
                             *ngFor="let i of h.hostIdentifiers"
                             style="display: inline-block; border-radius: 4px; background-color: #ddd; padding: 0 4px; margin: 0 4px 2px 0;"
@@ -120,10 +120,14 @@
                     <td align="center">
                         {{ h.subnetPrefix }}
                     </td>
-                    <td align="center">
+                    <td colspan="2" align="center">
                         <a *ngFor="let lh of h.localHosts" routerLink="/apps/kea/{{ lh.appId }}" style="display: block;"
-                            >{{ lh.appId }} @ {{ lh.machineAddress }}</a
-                        >
+                            >{{ lh.appId }} @ {{ lh.machineAddress }}
+                            <sup pTooltip="{{ hostDataSourceTooltip(lh.dataSource) }}">
+                                <span *ngIf="lh.dataSource === 'config'" id="cfg_srctag">config </span>
+                                <span *ngIf="lh.dataSource === 'api'" id="hostcmds_srctag">host_cmds </span>
+                            </sup>
+                        </a>
                     </td>
                 </tr>
             </ng-template>

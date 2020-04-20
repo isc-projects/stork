@@ -79,4 +79,23 @@ export class HostsPageComponent implements OnInit {
             })
         }
     }
+
+    /**
+     * Returns tooltip explaining where the server has the given host
+     * reservation specified, i.e. in the configuration file or a database.
+     *
+     * @param dataSource data source provided as a string.
+     * @returns The tooltip text.
+     */
+    hostDataSourceTooltip(dataSource): string {
+        switch (dataSource) {
+            case 'config':
+                return 'The server has this host specified in the configuration file.'
+            case 'api':
+                return 'The server has this host specified in the host database.'
+            default:
+                break
+        }
+        return ''
+    }
 }
