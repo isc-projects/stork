@@ -53,6 +53,9 @@ type Bind9DaemonStats struct {
 	CacheHits          int64
 	CacheMisses        int64
 	CacheHitRatio      float64
+	QueryHits          int64
+	QueryMisses        int64
+	QueryHitRatio      float64
 }
 
 // A structure holding BIND9 daemon specific information.

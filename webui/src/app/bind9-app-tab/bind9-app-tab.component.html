@@ -57,29 +57,29 @@
                                         <td>{{ daemon.zoneCount }}</td>
                                     </tr>
                                     <tr>
-                                        <td style="vertical-align: top;">Cache Hit Ratio</td>
+                                        <td style="vertical-align: top;">Query Hit Ratio</td>
                                         <td>
                                             <span
-                                                pTooltip="Hits: {{ daemon.cacheHits }}, Misses: {{
-                                                    daemon.cacheMisses
+                                                pTooltip="Hits: {{ daemon.queryHits }}, Misses: {{
+                                                    daemon.queryMisses
                                                 }}"
                                             >
-                                                {{ daemon.cacheHitRatio ? getCacheUtilization(daemon) + '%' : '?' }}
+                                                {{ daemon.queryHitRatio ? getQueryUtilization(daemon) + '%' : '?' }}
                                                 <i
-                                                    *ngIf="getCacheUtilization(daemon) < 60"
+                                                    *ngIf="getQueryUtilization(daemon) < 60"
                                                     class="pi pi-exclamation-triangle"
                                                     style="font-size: 1.5em; vertical-align: text-top; color: red;"
                                                 ></i>
                                                 <i
                                                     *ngIf="
-                                                        getCacheUtilization(daemon) >= 60 &&
-                                                        getCacheUtilization(daemon) < 80
+                                                        getQueryUtilization(daemon) >= 60 &&
+                                                        getQueryUtilization(daemon) < 80
                                                     "
                                                     class="pi pi-exclamation-circle"
                                                     style="font-size: 1.5em; vertical-align: text-top; color: orange;"
                                                 ></i>
                                                 <i
-                                                    *ngIf="getCacheUtilization(daemon) >= 80"
+                                                    *ngIf="getQueryUtilization(daemon) >= 80"
                                                     class="pi pi-check-circle"
                                                     style="font-size: 1.5em; vertical-align: text-top; color: green;"
                                                 ></i>

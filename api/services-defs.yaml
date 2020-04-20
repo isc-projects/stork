@@ -186,6 +186,12 @@
         type: integer
       cacheMisses:
         type: integer
+      queryHitRatio:
+        type: number
+      queryHits:
+        type: integer
+      queryMisses:
+        type: integer
 
   AppBind9:
     type: object

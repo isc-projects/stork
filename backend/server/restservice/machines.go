@@ -608,6 +608,9 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 			CacheHits:     dbApp.Daemons[0].Bind9Daemon.Stats.CacheHits,
 			CacheMisses:   dbApp.Daemons[0].Bind9Daemon.Stats.CacheMisses,
 			CacheHitRatio: dbApp.Daemons[0].Bind9Daemon.Stats.CacheHitRatio,
+			QueryHits:     dbApp.Daemons[0].Bind9Daemon.Stats.QueryHits,
+			QueryMisses:   dbApp.Daemons[0].Bind9Daemon.Stats.QueryMisses,
+			QueryHitRatio: dbApp.Daemons[0].Bind9Daemon.Stats.QueryHitRatio,
 		}
 
 		app.Details = struct {

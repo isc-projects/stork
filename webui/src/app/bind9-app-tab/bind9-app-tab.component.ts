@@ -51,15 +51,15 @@ export class Bind9AppTabComponent implements OnInit {
     }
 
     /**
-     * Get cache utilization based on stats.
+     * Get cache effectiveness based on stats.
      * A percentage is returned as floored int.
      */
-    getCacheUtilization(daemon) {
+    getQueryUtilization(daemon) {
         let utilization = 0.0
-        if (!daemon.cacheHitRatio) {
+        if (!daemon.queryHitRatio) {
             return utilization
         }
-        utilization = 100 * daemon.cacheHitRatio
+        utilization = 100 * daemon.queryHitRatio
         return Math.floor(utilization)
     }
 }

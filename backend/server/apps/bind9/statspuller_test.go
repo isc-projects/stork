@@ -154,6 +154,9 @@ func TestStatsPullerPullStats(t *testing.T) {
 	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.CacheHits)
 	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.CacheMisses)
 	require.EqualValues(t, 0.6, daemon.Bind9Daemon.Stats.CacheHitRatio)
+	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.QueryHits)
+	require.EqualValues(t, 90, daemon.Bind9Daemon.Stats.QueryMisses)
+	require.EqualValues(t, 0.1, daemon.Bind9Daemon.Stats.QueryHitRatio)
 
 	app2, err := dbmodel.GetAppByID(db, dbApp2.ID)
 	require.NoError(t, err)
@@ -163,6 +166,9 @@ func TestStatsPullerPullStats(t *testing.T) {
 	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.CacheHits)
 	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.CacheMisses)
 	require.EqualValues(t, 0.6, daemon.Bind9Daemon.Stats.CacheHitRatio)
+	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.QueryHits)
+	require.EqualValues(t, 90, daemon.Bind9Daemon.Stats.QueryMisses)
+	require.EqualValues(t, 0.1, daemon.Bind9Daemon.Stats.QueryHitRatio)
 }
 
 // Check if statistics-channel response is handled correctly when it is empty.

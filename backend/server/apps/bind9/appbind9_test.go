@@ -22,6 +22,8 @@ func mockNamed(callNo int, response interface{}) {
 					CacheStats: CacheStatsData{
 						CacheHits:   40,
 						CacheMisses: 10,
+						QueryHits:   70,
+						QueryMisses: 30,
 					},
 				},
 			},
@@ -30,6 +32,8 @@ func mockNamed(callNo int, response interface{}) {
 					CacheStats: CacheStatsData{
 						CacheHits:   1,
 						CacheMisses: 5,
+						QueryHits:   4,
+						QueryMisses: 6,
 					},
 				},
 			},
@@ -78,6 +82,9 @@ func TestGetAppState(t *testing.T) {
 	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.CacheHits)
 	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.CacheMisses)
 	require.EqualValues(t, 0.8, daemon.Bind9Daemon.Stats.CacheHitRatio)
+	require.EqualValues(t, 70, daemon.Bind9Daemon.Stats.QueryHits)
+	require.EqualValues(t, 30, daemon.Bind9Daemon.Stats.QueryMisses)
+	require.EqualValues(t, 0.7, daemon.Bind9Daemon.Stats.QueryHitRatio)
 }
 
 // Tests that BIND 9 can be added and then updated in the database.

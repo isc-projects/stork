@@ -42,7 +42,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 
 	require.NotNil(t, pke.HTTPClient)
 	require.NotNil(t, pke.HTTPServer)
-	require.Len(t, pke.CacheStatsMap, 3)
+	require.Len(t, pke.CacheStatsMap, 6)
 }
 
 // Check starting PromBind9Exporter and collecting stats.
@@ -54,7 +54,8 @@ func TestPromBind9ExporterStart(t *testing.T) {
 		Reply(200).
 		BodyString(`{"views": { "_default":
                             { "resolver": { "cachestats":
-                            { "CacheHits": 40, "CacheMisses": 10
+                            { "CacheHits": 40, "CacheMisses": 10,
+                              "QueryHits": 30,  "QueryMisses": 20
                             }}}}}`)
 	fam := &PromFakeBind9AppMonitor{}
 	pke := NewPromBind9Exporter(fam)
@@ -74,12 +75,22 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	time.Sleep(1500 * time.Millisecond)
 
 	// check if cache hits is 40
-	metric, _ := pke.CacheStatsMap["CacheHits"].GetMetricWith(prometheus.Labels{"cache": "_default"})
+	metric, _ := pke.CacheStatsMap["CacheHits"].GetMetricWith(prometheus.Labels{"view": "_default"})
 	require.Equal(t, 40.0, testutil.ToFloat64(metric))
-	// check if cache hits is 10
-	metric, _ = pke.CacheStatsMap["CacheMisses"].GetMetricWith(prometheus.Labels{"cache": "_default"})
+	// check if cache misses is 10
+	metric, _ = pke.CacheStatsMap["CacheMisses"].GetMetricWith(prometheus.Labels{"view": "_default"})
 	require.Equal(t, 10.0, testutil.ToFloat64(metric))
 	// check if cache hit ratio is 0.8
-	metric, _ = pke.CacheStatsMap["CacheHitRatio"].GetMetricWith(prometheus.Labels{"cache": "_default"})
+	metric, _ = pke.CacheStatsMap["CacheHitRatio"].GetMetricWith(prometheus.Labels{"view": "_default"})
 	require.Equal(t, 0.8, testutil.ToFloat64(metric))
+
+	// check if query hits is 30
+	metric, _ = pke.CacheStatsMap["QueryHits"].GetMetricWith(prometheus.Labels{"view": "_default"})
+	require.Equal(t, 30.0, testutil.ToFloat64(metric))
+	// check if query misses is 20
+	metric, _ = pke.CacheStatsMap["QueryMisses"].GetMetricWith(prometheus.Labels{"view": "_default"})
+	require.Equal(t, 20.0, testutil.ToFloat64(metric))
+	// check if query hit ratio is 0.6
+	metric, _ = pke.CacheStatsMap["QueryHitRatio"].GetMetricWith(prometheus.Labels{"view": "_default"})
+	require.Equal(t, 0.6, testutil.ToFloat64(metric))
 }

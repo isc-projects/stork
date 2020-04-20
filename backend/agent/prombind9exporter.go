@@ -61,30 +61,21 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 
 	// cache stats
 	cacheStatsMap := make(map[string]*prometheus.GaugeVec)
+	newPromGaugeVec := func(index, subsystem, name, help string) {
+		cacheStatsMap[index] = promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeBind9,
+			Subsystem: subsystem,
+			Name:      name,
+			Help:      help,
+		}, []string{"view"})
+	}
 
-	// cache hits
-	cacheStatsMap["CacheHits"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeBind9,
-		Subsystem: "cache",
-		Name:      "hits",
-		Help:      "Number of cache hits",
-	}, []string{"cache"})
-
-	// cache misses
-	cacheStatsMap["CacheMisses"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeBind9,
-		Subsystem: "cache",
-		Name:      "misses",
-		Help:      "Number of cache misses",
-	}, []string{"cache"})
-
-	// cache hit ratio
-	cacheStatsMap["CacheHitRatio"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeBind9,
-		Subsystem: "cache",
-		Name:      "hit_ratio",
-		Help:      "Cache effectiveness (cache hit ratio)",
-	}, []string{"cache"})
+	newPromGaugeVec("CacheHits", "cache", "hits", "Number of cache hits")
+	newPromGaugeVec("CacheMisses", "cache", "misses", "Number of cache misses")
+	newPromGaugeVec("CacheHitRatio", "cache", "hit_ratio", "Cache effectiveness (cache hit ratio)")
+	newPromGaugeVec("QueryHits", "query", "hits", "Number of query hits")
+	newPromGaugeVec("QueryMisses", "query", "misses", "Number of query misses")
+	newPromGaugeVec("QueryHitRatio", "query", "hit_ratio", "Query effectiveness (query hit ratio)")
 
 	pbe.CacheStatsMap = cacheStatsMap
 
@@ -219,8 +210,10 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
 			continue
 		}
 
-		var hit float64
-		var miss float64
+		var cacheHits float64
+		var cacheMisses float64
+		var queryHits float64
+		var queryMisses float64
 		for statName, statValueIfc := range cachestats {
 			// get stat value
 			statValue, ok := statValueIfc.(float64)
@@ -228,24 +221,36 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
 				log.Errorf("problem with casting statValue: %+v", statValueIfc)
 				continue
 			}
-			if statName == "CacheHits" {
-				hit = statValue
-			} else if statName == "CacheMisses" {
-				miss = statValue
+			switch statName {
+			case "CacheHits":
+				cacheHits = statValue
+			case "CacheMisses":
+				cacheMisses = statValue
+			case "QueryHits":
+				queryHits = statValue
+			case "QueryMisses":
+				queryMisses = statValue
 			}
 
 			// store stat value in proper prometheus object
 			stat, ok := pbe.CacheStatsMap[statName]
 			if ok {
-				stat.With(prometheus.Labels{"cache": "_default"}).Set(statValue)
+				stat.With(prometheus.Labels{"view": "_default"}).Set(statValue)
 			}
 		}
 
 		// Set Cache Hit Ratio
 		chrStat := pbe.CacheStatsMap["CacheHitRatio"]
-		total := hit + miss
+		total := cacheHits + cacheMisses
 		if total > 0 {
-			chrStat.With(prometheus.Labels{"cache": "_default"}).Set(hit / total)
+			chrStat.With(prometheus.Labels{"view": "_default"}).Set(cacheHits / total)
+		}
+
+		// Set Query Hit Ratio
+		chrStat = pbe.CacheStatsMap["QueryHitRatio"]
+		total = queryHits + queryMisses
+		if total > 0 {
+			chrStat.With(prometheus.Labels{"view": "_default"}).Set(queryHits / total)
 		}
 	}
 

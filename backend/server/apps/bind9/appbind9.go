@@ -22,6 +22,8 @@ const namedLongDateFormat = "Mon, 02 Jan 2006 15:04:05 MST"
 type CacheStatsData struct {
 	CacheHits   int64 `json:"CacheHits"`
 	CacheMisses int64 `json:"CacheMisses"`
+	QueryHits   int64 `json:"QueryHits"`
+	QueryMisses int64 `json:"QueryMisses"`
 }
 
 type ResolverData struct {
@@ -64,9 +66,10 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 			if name != "_default" {
 				continue
 			}
+
 			// Calculate the cache hit ratio: the number of
-			// responses that were retrieved from cache divided
-			// by the number of all responses.
+			// cache requests that were retrieved from cache
+			// divided by the number of all cache requests.
 			hits := view.Resolver.CacheStats.CacheHits
 			misses := view.Resolver.CacheStats.CacheMisses
 			ratio := float64(0)
@@ -77,6 +80,21 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 			dbApp.Daemons[0].Bind9Daemon.Stats.CacheHitRatio = ratio
 			dbApp.Daemons[0].Bind9Daemon.Stats.CacheHits = hits
 			dbApp.Daemons[0].Bind9Daemon.Stats.CacheMisses = misses
+
+			// Calculate the query hit ratio: the number of
+			// responses that were retrieved from cache divided
+			// by the number of all responses.
+			hits = view.Resolver.CacheStats.QueryHits
+			misses = view.Resolver.CacheStats.QueryMisses
+			ratio = float64(0)
+			total = float64(hits) + float64(misses)
+			if total != 0 {
+				ratio = float64(hits) / total
+			}
+
+			dbApp.Daemons[0].Bind9Daemon.Stats.QueryHitRatio = ratio
+			dbApp.Daemons[0].Bind9Daemon.Stats.QueryHits = hits
+			dbApp.Daemons[0].Bind9Daemon.Stats.QueryMisses = misses
 			break
 		}
 	}
