@@ -222,10 +222,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 	}
 
 	for name := range allDaemons {
-		daemonsMap[name] = &dbmodel.Daemon{
-			Name:   name,
-			Active: true,
-		}
+		daemonsMap[name] = dbmodel.NewKeaDaemon(name, true)
 	}
 
 	// process version-get responses
@@ -282,9 +279,6 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 				continue
 			}
 
-			if dmn.KeaDaemon == nil {
-				dmn.KeaDaemon = &dbmodel.KeaDaemon{}
-			}
 			dmn.KeaDaemon.Config = dbmodel.NewKeaConfig(cRsp.Arguments)
 		}
 	}

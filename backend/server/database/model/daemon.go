@@ -74,6 +74,36 @@ type Daemon struct {
 	Bind9Daemon *Bind9Daemon
 }
 
+// Creates an instance of a Kea daemon. If the daemon name is dhcp4 or
+// dhcp6, the instance of the KeaDHCPDaemon is also created.
+func NewKeaDaemon(name string, active ...bool) *Daemon {
+	daemon := &Daemon{
+		Name:      name,
+		KeaDaemon: &KeaDaemon{},
+	}
+	activeSlice := append([]bool{}, active...)
+	if len(activeSlice) > 0 {
+		daemon.Active = activeSlice[0]
+	}
+	if name == "dhcp4" || name == "dhcp6" {
+		daemon.KeaDaemon.KeaDHCPDaemon = &KeaDHCPDaemon{}
+	}
+	return daemon
+}
+
+// Creates an instance of the Bind9 daemon.
+func NewBind9Daemon(active ...bool) *Daemon {
+	daemon := &Daemon{
+		Name:        "named",
+		Bind9Daemon: &Bind9Daemon{},
+	}
+	activeSlice := append([]bool{}, active...)
+	if len(activeSlice) > 0 {
+		daemon.Active = activeSlice[0]
+	}
+	return daemon
+}
+
 // This is a hook to go-pg that is called just after reading rows from database.
 // It reconverts KeaDaemon's configuration from json string maps to the
 // expected structure in GO.

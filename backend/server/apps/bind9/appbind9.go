@@ -108,11 +108,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 		return
 	}
 
-	bind9Daemon := dbmodel.Daemon{
-		Pid:         0,
-		Name:        "named",
-		Bind9Daemon: &dbmodel.Bind9Daemon{},
-	}
+	bind9Daemon := dbmodel.NewBind9Daemon()
 
 	// Get version
 	pattern := regexp.MustCompile(`version:\s+(.+)\n`)
@@ -181,7 +177,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	dbApp.Active = bind9Daemon.Active
 	dbApp.Meta.Version = bind9Daemon.Version
 	dbApp.Daemons = []*dbmodel.Daemon{
-		&bind9Daemon,
+		bind9Daemon,
 	}
 
 	// Get statistics
