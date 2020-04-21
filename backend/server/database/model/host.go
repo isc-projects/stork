@@ -48,7 +48,11 @@ type Host struct {
 
 	LocalHosts []LocalHost
 
-	Modified bool `pg:"-"`
+	// This flag is used to indicate that some changes have been applied to
+	//the Host instance locally and that these changes should be applied in
+	// the database too. It also indicates that the new app should be
+	// associated with the host upon the call to the CommitSubnetHostsIntoDB.
+	UpdateOnCommit bool `pg:"-"`
 }
 
 // This structure links a host entry stored in the database with an app from
@@ -468,14 +472,14 @@ func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string,
 				err = errors.WithMessagef(err, "unable to add detected host to the database")
 				return err
 			}
-		} else if subnet.Hosts[i].Modified {
+		} else if subnet.Hosts[i].UpdateOnCommit {
 			err = UpdateHost(tx, &subnet.Hosts[i])
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to update detected host in the database")
 				return err
 			}
 		}
-		if newHost || subnet.Hosts[i].Modified {
+		if newHost || subnet.Hosts[i].UpdateOnCommit {
 			err = AddAppToHost(tx, &subnet.Hosts[i], app, source, seq)
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",

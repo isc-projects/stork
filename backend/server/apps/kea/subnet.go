@@ -39,7 +39,9 @@ func mergeHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet, app *
 				// Host found and matches the new host so nothing to do.
 				found = true
 
-				hosts[i].Modified = true
+				// Indicate that the host should be updated and that the new app should
+				// be associated with it upon the call to dbmodel.CommitSubnetHostsIntoDB.
+				hosts[i].UpdateOnCommit = true
 
 				// Check if there is already an association between this app and the
 				// given host. If there is, we need to reset the sequence number for
@@ -55,7 +57,7 @@ func mergeHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet, app *
 		}
 		if !found {
 			// Host doesn't exist yet, so let's add it.
-			newHost.Modified = true
+			newHost.UpdateOnCommit = true
 			hosts = append(hosts, newHost)
 		}
 	}
