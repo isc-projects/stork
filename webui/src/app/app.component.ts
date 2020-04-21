@@ -31,7 +31,7 @@ export class AppComponent implements OnInit {
         private loadingService: LoadingService,
         private settingSvc: SettingService
     ) {
-        this.auth.currentUser.subscribe(x => {
+        this.auth.currentUser.subscribe((x) => {
             this.currentUser = x
             this.initMenuItems()
         })
@@ -146,12 +146,12 @@ export class AppComponent implements OnInit {
     ngOnInit() {
         this.initMenuItems()
 
-        this.generalApi.getVersion().subscribe(data => {
+        this.generalApi.getVersion().subscribe((data) => {
             this.storkVersion = data.version
             this.storkBuildDate = data.date
         })
 
-        this.settingSvc.getSettings().subscribe(data => {
+        this.settingSvc.getSettings().subscribe((data) => {
             const grafanUrl = data['grafana_url']
             const menuItem2 = this.menuItems[2]
             if (grafanUrl && menuItem2.label !== 'Grafana') {

@@ -38,7 +38,7 @@ export class LoginScreenComponent implements OnInit {
             password: ['', Validators.required],
         })
 
-        this.api.getVersion().subscribe(data => {
+        this.api.getVersion().subscribe((data) => {
             console.info(data)
             this.version = data.version
         })

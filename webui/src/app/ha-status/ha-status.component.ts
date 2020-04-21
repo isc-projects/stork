@@ -34,11 +34,11 @@ export class HaStatusComponent implements OnInit {
     ngOnInit() {
         this.refreshStatus()
 
-        interval(this._haRefreshInterval).subscribe(x => {
+        interval(this._haRefreshInterval).subscribe((x) => {
             this.refreshStatus()
         })
         // Run the live age counters for both local and remote servers.
-        interval(this._countUpInterval).subscribe(x => {
+        interval(this._countUpInterval).subscribe((x) => {
             if (this.hasStatus()) {
                 this.localServer().age += 1
                 this.remoteServer().age += 1
@@ -121,7 +121,7 @@ export class HaStatusComponent implements OnInit {
      */
     private refreshStatus() {
         this.servicesApi.getAppServicesStatus(this.appId).subscribe(
-            data => {
+            (data) => {
                 if (data.items) {
                     this._receivedStatus = new Map()
                     for (const s of data.items) {
@@ -132,7 +132,7 @@ export class HaStatusComponent implements OnInit {
                 }
                 this.refreshPanelColors()
             },
-            err => {
+            (err) => {
                 console.warn('failed to fetch the HA status for Kea application id ' + this.appId)
                 this._receivedStatus = null
             }

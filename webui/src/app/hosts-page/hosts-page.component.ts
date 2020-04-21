@@ -43,7 +43,7 @@ export class HostsPageComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit() {
         // subscribe to subsequent changes to query params
-        this.route.queryParamMap.subscribe(data => {
+        this.route.queryParamMap.subscribe((data) => {
             const event = this.hostsTable.createLazyLoadMetadata()
             this.loadHosts(event)
         })
@@ -60,7 +60,7 @@ export class HostsPageComponent implements OnInit, AfterViewInit {
         const appId = params.appId
         const text = params.text
 
-        this.dhcpApi.getHosts(event.first, event.rows, appId, null, text).subscribe(data => {
+        this.dhcpApi.getHosts(event.first, event.rows, appId, null, text).subscribe((data) => {
             this.hosts = data.items
             this.totalHosts = data.total
         })

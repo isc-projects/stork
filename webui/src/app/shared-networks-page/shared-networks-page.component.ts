@@ -53,7 +53,7 @@ export class SharedNetworksPageComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit() {
         // subscribe to subsequent changes to query params
-        this.route.queryParamMap.subscribe(data => {
+        this.route.queryParamMap.subscribe((data) => {
             const event = this.networksTable.createLazyLoadMetadata()
             this.loadNetworks(event)
         })
@@ -71,7 +71,7 @@ export class SharedNetworksPageComponent implements OnInit, AfterViewInit {
         const dhcpVersion = params.dhcpVersion
         const text = params.text
 
-        this.dhcpApi.getSharedNetworks(event.first, event.rows, appId, dhcpVersion, text).subscribe(data => {
+        this.dhcpApi.getSharedNetworks(event.first, event.rows, appId, dhcpVersion, text).subscribe((data) => {
             this.networks = data.items
             this.totalNetworks = data.total
         })

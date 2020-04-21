@@ -1,23 +1,23 @@
 <div>
     <h4 style="margin-top: 2px;">High Availability</h4>
-    <div *ngIf="hasStatus()" style="margin: 10px; width:750px" class="p-grid">
+    <div *ngIf="hasStatus()" style="margin: 10px; width: 750px;" class="p-grid">
         <div class="p-col-6">
             <p-panel [styleClass]="localStatusPanelClass">
                 <p-header>
                     <span>
                         Local server
                     </span>
-                    <span *ngIf="localServerWarnLevel() == 'ok'" class="pi pi-check" style="color: #00df00"> </span>
+                    <span *ngIf="localServerWarnLevel() == 'ok'" class="pi pi-check" style="color: #00df00;"> </span>
                     <span
                         *ngIf="localServerWarnLevel() == 'warn'"
                         class="pi pi-exclamation-triangle"
-                        style="color: orange"
+                        style="color: orange;"
                     >
                     </span>
                     <span
                         *ngIf="localServerWarnLevel() == 'error'"
                         class="pi pi-exclamation-circle"
-                        style="color: #f33"
+                        style="color: #f33;"
                     >
                     </span>
                 </p-header>
@@ -25,8 +25,8 @@
                     <tr>
                         <td>Control status:</td>
                         <td>
-                            <i *ngIf="localServer().inTouch" class="pi pi-check" style="color: #00a800"> </i>
-                            <i *ngIf="!localServer().inTouch" class="pi pi-times" style="color: #f11"> </i>
+                            <i *ngIf="localServer().inTouch" class="pi pi-check" style="color: #00a800;"> </i>
+                            <i *ngIf="!localServer().inTouch" class="pi pi-times" style="color: #f11;"> </i>
                             <i pTooltip="{{ controlStatusTooltip(localServer().inTouch) }}">{{
                                 formattedControlStatus(localServer().inTouch)
                             }}</i>
@@ -35,8 +35,8 @@
                     <tr>
                         <td>State:</td>
                         <td>
-                            <i *ngIf="localStateOk()" class="pi pi-check" style="color: #00a800"> </i>
-                            <i *ngIf="!localStateOk()" class="pi pi-times" style="color: #f11"> </i>
+                            <i *ngIf="localStateOk()" class="pi pi-check" style="color: #00a800;"> </i>
+                            <i *ngIf="!localStateOk()" class="pi pi-times" style="color: #f11;"> </i>
                             <i pTooltip="{{ haStateTooltip(localServer().state) }}">{{ localServer().state }}</i>
                         </td>
                     </tr>
@@ -86,17 +86,17 @@
                             'Kea@' + remoteServer().controlAddress
                         }}</a></span
                     >
-                    <span *ngIf="remoteServerWarnLevel() == 'ok'" class="pi pi-check" style="color: #00df00"> </span>
+                    <span *ngIf="remoteServerWarnLevel() == 'ok'" class="pi pi-check" style="color: #00df00;"> </span>
                     <span
                         *ngIf="remoteServerWarnLevel() == 'warn'"
                         class="pi pi-exclamation-triangle"
-                        style="color: orange"
+                        style="color: orange;"
                     >
                     </span>
                     <span
                         *ngIf="remoteServerWarnLevel() == 'error'"
                         class="pi pi-exclamation-circle"
-                        style="color: #f33"
+                        style="color: #f33;"
                     >
                     </span>
                 </p-header>
@@ -104,8 +104,8 @@
                     <tr>
                         <td>Control status:</td>
                         <td>
-                            <i *ngIf="remoteServer().inTouch" class="pi pi-check" style="color: #00a800"> </i>
-                            <i *ngIf="!remoteServer().inTouch" class="pi pi-times" style="color: #f11"> </i>
+                            <i *ngIf="remoteServer().inTouch" class="pi pi-check" style="color: #00a800;"> </i>
+                            <i *ngIf="!remoteServer().inTouch" class="pi pi-times" style="color: #f11;"> </i>
                             <i pTooltip="{{ controlStatusTooltip(remoteServer().inTouch) }}">{{
                                 formattedControlStatus(remoteServer().inTouch)
                             }}</i>
@@ -114,8 +114,8 @@
                     <tr>
                         <td>State:</td>
                         <td>
-                            <i *ngIf="remoteStateOk()" class="pi pi-check" style="color: #00a800"> </i>
-                            <i *ngIf="!remoteStateOk()" class="pi pi-times" style="color: #f11"> </i>
+                            <i *ngIf="remoteStateOk()" class="pi pi-check" style="color: #00a800;"> </i>
+                            <i *ngIf="!remoteStateOk()" class="pi pi-times" style="color: #f11;"> </i>
                             <i pTooltip="{{ haStateTooltip(remoteServer().state) }}">{{ remoteServer().state }}</i>
                         </td>
                     </tr>

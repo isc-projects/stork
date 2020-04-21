@@ -26,7 +26,7 @@ export class SettingsPageComponent implements OnInit {
 
     ngOnInit() {
         this.settingsApi.getSettings().subscribe(
-            data => {
+            (data) => {
                 const numericSettings = [
                     'bind9_stats_puller_interval',
                     'kea_hosts_puller_interval',
@@ -48,7 +48,7 @@ export class SettingsPageComponent implements OnInit {
 
                 this.settingsForm.patchValue(data)
             },
-            err => {
+            (err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message
@@ -70,14 +70,14 @@ export class SettingsPageComponent implements OnInit {
         const settings = this.settingsForm.getRawValue()
 
         this.settingsApi.updateSettings(settings).subscribe(
-            data => {
+            (data) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'Settings updated',
                     detail: 'Updating settings succeeded.',
                 })
             },
-            err => {
+            (err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message

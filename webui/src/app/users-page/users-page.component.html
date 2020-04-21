@@ -1,13 +1,13 @@
 <p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
     <ng-template pTemplate="item" let-item let-i="index">
         <div style="display: flex; justify-content: space-between;">
-            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em"></div>
+            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em;"></div>
             <div class="ui-menuitem-text">
                 <b>{{ item.label }}</b>
             </div>
             <div
                 class="ui-menuitem-icon pi pi-times"
-                style="font-size: 1.3rem"
+                style="font-size: 1.3rem;"
                 (click)="closeTab($event, i)"
                 *ngIf="i !== 0"
             ></div>
@@ -75,7 +75,7 @@
 <div *ngIf="existingUserTab" class="ui-widget">
     <div style="display: flex; margin: 10px;">
         <div style="min-width: 600px;">
-            <div class="p-grid p-align-center" style="margin: 10px 0px">
+            <div class="p-grid p-align-center" style="margin: 10px 0px;">
                 <div class="p-col-12">
                     <div class="p-grid">
                         <div class="p-col-2">
@@ -190,7 +190,7 @@
                                             pInputText
                                             type="text"
                                             formControlName="userlogin"
-                                            style="width:80%"
+                                            style="width: 80%;"
                                             pattern="[a-zA-Z0-9_]*"
                                         />
                                     </div>
@@ -213,7 +213,7 @@
                             <div class="p-col-7">
                                 <div class="p-grid">
                                     <div class="p-col-12">
-                                        <input pInputText type="text" style="width:80%" formControlName="useremail" />
+                                        <input pInputText type="text" style="width: 80%;" formControlName="useremail" />
                                     </div>
                                     <div class="p-col-12">
                                         <p-message
@@ -239,7 +239,7 @@
                                             pInputText
                                             type="text"
                                             formControlName="userfirst"
-                                            style="width:80%"
+                                            style="width: 80%;"
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
                                     </div>
@@ -267,7 +267,7 @@
                                             pInputText
                                             type="text"
                                             formControlName="userlast"
-                                            style="width:80%"
+                                            style="width: 80%;"
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
                                     </div>
@@ -317,7 +317,7 @@
                                             pPassword
                                             type="password"
                                             formControlName="userpassword"
-                                            style="width:80%"
+                                            style="width: 80%;"
                                             pattern="[a-zA-Z0-9@.!\+\-]*"
                                         />
                                     </div>
@@ -346,7 +346,7 @@
                                             [feedback]="false"
                                             type="password"
                                             formControlName="userpassword2"
-                                            style="width:80%"
+                                            style="width: 80%;"
                                             pattern="{{ userform.controls['userpassword'].value }}"
                                         />
                                     </div>

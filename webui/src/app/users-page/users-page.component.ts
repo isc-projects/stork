@@ -308,11 +308,11 @@ export class UsersPageComponent implements OnInit {
      */
     loadUsers(event) {
         this.usersApi.getUsers(event.first, event.rows, event.filters.text).subscribe(
-            data => {
+            (data) => {
                 this.users = data.items
                 this.totalUsers = data.total
             },
-            err => {
+            (err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message
@@ -408,7 +408,7 @@ export class UsersPageComponent implements OnInit {
 
                 // We have no information about the user, so let's try to fetch it
                 // from the server.
-                this.usersApi.getUser(userId).subscribe(data => {
+                this.usersApi.getUser(userId).subscribe((data) => {
                     this.addUserTab(UserTabType.User, data)
                 })
             }
@@ -433,7 +433,7 @@ export class UsersPageComponent implements OnInit {
         const password = this.userform.controls.userpassword.value
         const account = { user, password }
         this.usersApi.createUser(account).subscribe(
-            data => {
+            (data) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'New user account created',
@@ -441,7 +441,7 @@ export class UsersPageComponent implements OnInit {
                 })
                 this.closeActiveTab()
             },
-            err => {
+            (err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message
@@ -474,7 +474,7 @@ export class UsersPageComponent implements OnInit {
         const account = { user, password }
 
         this.usersApi.updateUser(account).subscribe(
-            data => {
+            (data) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'User account updated',
@@ -482,7 +482,7 @@ export class UsersPageComponent implements OnInit {
                 })
                 this.closeActiveTab()
             },
-            err => {
+            (err) => {
                 console.info(err)
                 let msg = err.statusText
                 if (err.error && err.error.message) {

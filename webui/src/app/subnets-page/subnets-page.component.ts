@@ -45,7 +45,7 @@ export class SubnetsPageComponent implements OnInit, AfterViewInit {
             { name: 'DHCPv6', value: '6' },
         ]
 
-        this.settingSvc.getSettings().subscribe(data => {
+        this.settingSvc.getSettings().subscribe((data) => {
             this.grafanaUrl = data['grafana_url']
         })
 
@@ -65,7 +65,7 @@ export class SubnetsPageComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit() {
         // subscribe to subsequent changes to query params
-        this.route.queryParamMap.subscribe(data => {
+        this.route.queryParamMap.subscribe((data) => {
             const event = this.subnetsTable.createLazyLoadMetadata()
             this.loadSubnets(event)
         })
@@ -83,7 +83,7 @@ export class SubnetsPageComponent implements OnInit, AfterViewInit {
         const dhcpVersion = params.dhcpVersion
         const text = params.text
 
-        this.dhcpApi.getSubnets(event.first, event.rows, appId, dhcpVersion, text).subscribe(data => {
+        this.dhcpApi.getSubnets(event.first, event.rows, appId, dhcpVersion, text).subscribe((data) => {
             this.subnets = data.items
             this.totalSubnets = data.total
         })

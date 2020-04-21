@@ -76,7 +76,7 @@ export class AppsPageComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.route.paramMap.subscribe(params => {
+        this.route.paramMap.subscribe((params) => {
             const newAppType = params.get('appType')
             if (newAppType !== this.appType) {
                 this.appType = newAppType
@@ -133,7 +133,7 @@ export class AppsPageComponent implements OnInit {
                 if (!found) {
                     console.info('fetching app')
                     this.servicesApi.getApp(appId).subscribe(
-                        data => {
+                        (data) => {
                             if (data.type !== this.appType) {
                                 this.msgSrv.add({
                                     severity: 'error',
@@ -149,7 +149,7 @@ export class AppsPageComponent implements OnInit {
                             this.addAppTab(data)
                             this.switchToTab(this.tabs.length - 1)
                         },
-                        err => {
+                        (err) => {
                             let msg = err.statusText
                             if (err.error && err.error.message) {
                                 msg = err.error.message
@@ -178,7 +178,7 @@ export class AppsPageComponent implements OnInit {
             text = event.filters.text.value
         }
 
-        this.servicesApi.getApps(event.first, event.rows, text, this.appType).subscribe(data => {
+        this.servicesApi.getApps(event.first, event.rows, text, this.appType).subscribe((data) => {
             this.apps = data.items
             this.totalApps = data.total
             for (const s of this.apps) {
@@ -213,7 +213,7 @@ export class AppsPageComponent implements OnInit {
 
     _refreshAppState(app) {
         this.servicesApi.getApp(app.id).subscribe(
-            data => {
+            (data) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'App refreshed',
@@ -237,7 +237,7 @@ export class AppsPageComponent implements OnInit {
                     }
                 }
             },
-            err => {
+            (err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message

@@ -127,11 +127,11 @@ export class MachinesPageComponent implements OnInit {
                 // if machine is not loaded in list fetch it individually
                 if (!found) {
                     this.servicesApi.getMachine(machineId).subscribe(
-                        data => {
+                        (data) => {
                             this.addMachineTab(data)
                             this.switchToTab(this.tabs.length - 1)
                         },
-                        err => {
+                        (err) => {
                             let msg = err.statusText
                             if (err.error && err.error.message) {
                                 msg = err.error.message
@@ -162,7 +162,7 @@ export class MachinesPageComponent implements OnInit {
             app = event.filters.app.value
         }
 
-        this.servicesApi.getMachines(event.first, event.rows, text, app).subscribe(data => {
+        this.servicesApi.getMachines(event.first, event.rows, text, app).subscribe((data) => {
             this.machines = data.items
             this.totalMachines = data.total
         })
@@ -193,7 +193,7 @@ export class MachinesPageComponent implements OnInit {
 
         this.loadingService.start('adding new machine')
         this.servicesApi.createMachine(m).subscribe(
-            data => {
+            (data) => {
                 this.loadingService.stop('adding new machine')
                 this.msgSrv.add({
                     severity: 'success',
@@ -204,7 +204,7 @@ export class MachinesPageComponent implements OnInit {
                 this.addMachineTab(data)
                 this.router.navigate(['/machines/' + data.id])
             },
-            err => {
+            (err) => {
                 this.loadingService.stop('adding new machine')
                 console.info(err)
                 let msg = err.statusText
@@ -266,7 +266,7 @@ export class MachinesPageComponent implements OnInit {
 
     _refreshMachineState(machine) {
         this.servicesApi.getMachineState(machine.id).subscribe(
-            data => {
+            (data) => {
                 if (data.error) {
                     this.msgSrv.add({
                         severity: 'error',
@@ -304,7 +304,7 @@ export class MachinesPageComponent implements OnInit {
                     }
                 }
             },
-            err => {
+            (err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message
@@ -329,7 +329,7 @@ export class MachinesPageComponent implements OnInit {
 
         // connect method to delete machine
         this.machineMenuItems[1].command = () => {
-            this.servicesApi.deleteMachine(machine.id).subscribe(data => {
+            this.servicesApi.deleteMachine(machine.id).subscribe((data) => {
                 // remove from list of machines
                 for (let idx = 0; idx < this.machines.length; idx++) {
                     const m = this.machines[idx]
@@ -365,7 +365,7 @@ export class MachinesPageComponent implements OnInit {
         }
         const m = { address: machineTab.address, agentPort: parseInt(machineTab.agentPort, 10) }
         this.servicesApi.updateMachine(machineTab.machine.id, m).subscribe(
-            data => {
+            (data) => {
                 console.info('updated', data)
                 machineTab.machine.address = data.address
                 machineTab.activeInplace = false
@@ -375,7 +375,7 @@ export class MachinesPageComponent implements OnInit {
                     detail: 'Machine address update succeeded.',
                 })
             },
-            err => {
+            (err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message

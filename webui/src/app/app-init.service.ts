@@ -26,13 +26,13 @@ export class AppInitService {
     Init() {
         return new Promise<void>((resolve, reject) => {
             this.usersService.getGroups().subscribe(
-                data => {
+                (data) => {
                     if (data.items) {
                         this.groups = data.items
                     }
                     resolve()
                 },
-                completed => {
+                (completed) => {
                     resolve()
                 }
             )

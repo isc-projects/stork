@@ -110,7 +110,7 @@ export class AuthService {
     login(username: string, password: string, returnUrl: string) {
         let user: User
         this.api.createSession(username, password).subscribe(
-            data => {
+            (data) => {
                 if (data.id != null) {
                     user = new User()
 
@@ -133,7 +133,7 @@ export class AuthService {
                     this.router.navigate([returnUrl])
                 }
             },
-            err => {
+            (err) => {
                 this.msgSrv.add({ severity: 'error', summary: 'Invalid login or password' })
             }
         )
@@ -144,7 +144,7 @@ export class AuthService {
      * Destroys user session.
      */
     logout() {
-        this.api.deleteSession('response').subscribe(resp => {
+        this.api.deleteSession('response').subscribe((resp) => {
             localStorage.removeItem('currentUser')
             this.currentUserSubject.next(null)
         })

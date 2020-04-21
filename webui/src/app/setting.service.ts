@@ -12,11 +12,11 @@ export class SettingService {
 
     constructor(private settingsApi: SettingsService) {
         this.settingsApi.getSettings().subscribe(
-            data => {
+            (data) => {
                 this.settings = data
                 this.settingsBS.next(data)
             },
-            err => {
+            (err) => {
                 console.info('problem with getting settings', err)
             }
         )

@@ -49,11 +49,11 @@ export class DashboardComponent implements OnInit {
 
         // get stats about apps
         this.servicesApi.getAppsStats().subscribe(
-            data => {
+            (data) => {
                 this.loaded = true
                 this.appsStats = { ...this.appsStats, ...data }
             },
-            err => {
+            (err) => {
                 this.loaded = true
                 let msg = err.statusText
                 if (err.error && err.error.message) {
@@ -71,7 +71,7 @@ export class DashboardComponent implements OnInit {
         // get DHCP overview from the server
         this.refreshDhcpOverview()
 
-        this.settingSvc.getSettings().subscribe(data => {
+        this.settingSvc.getSettings().subscribe((data) => {
             this.grafanaUrl = data['grafana_url']
         })
     }
@@ -81,10 +81,10 @@ export class DashboardComponent implements OnInit {
      */
     refreshDhcpOverview() {
         this.dhcpApi.getDhcpOverview().subscribe(
-            data => {
+            (data) => {
                 this.overview = data
             },
-            err => {
+            (err) => {
                 this.loaded = true
                 let msg = err.statusText
                 if (err.error && err.error.message) {

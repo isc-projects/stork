@@ -13,7 +13,7 @@ export class ProfilePageComponent implements OnInit {
     currentUser = null
 
     constructor(private auth: AuthService) {
-        this.auth.currentUser.subscribe(x => {
+        this.auth.currentUser.subscribe((x) => {
             this.currentUser = x
         })
     }

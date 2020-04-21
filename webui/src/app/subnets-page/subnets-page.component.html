@@ -2,7 +2,7 @@
     <h2>DHCP Subnets</h2>
     <div style="margin: 0 0 10px 5px;">
         <span>
-            <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
+            <i class="fa fa-search" style="margin: 4px 4px 0 0;"></i>
             Filter subnets:
             <input
                 type="text"
@@ -121,7 +121,13 @@
                     <td>
                         <div
                             *ngFor="let p of sn.pools"
-                            style="display: inline-block; border-radius: 4px; background-color: #ddd; padding: 0 4px; margin: 0 4px 2px 0;"
+                            style="
+                                display: inline-block;
+                                border-radius: 4px;
+                                background-color: #ddd;
+                                padding: 0 4px;
+                                margin: 0 4px 2px 0;
+                            "
                         >
                             {{ p }}
                         </div>

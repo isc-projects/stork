@@ -23,7 +23,7 @@
     </h2>
     <div style="margin: 0 0 10px 5px;">
         <span>
-            <i class="fa fa-search" style="margin:4px 4px 0 0"></i>
+            <i class="fa fa-search" style="margin: 4px 4px 0 0;"></i>
             Filter hosts:
             <input
                 type="text"
@@ -96,7 +96,13 @@
                     <td>
                         <div
                             *ngFor="let i of h.hostIdentifiers"
-                            style="display: inline-block; border-radius: 4px; background-color: #ddd; padding: 0 4px; margin: 0 4px 2px 0;"
+                            style="
+                                display: inline-block;
+                                border-radius: 4px;
+                                background-color: #ddd;
+                                padding: 0 4px;
+                                margin: 0 4px 2px 0;
+                            "
                         >
                             {{ i.idType + '=' + i.idHexValue }}
                         </div>
@@ -104,7 +110,13 @@
                     <td>
                         <div
                             *ngFor="let r of h.addressReservations"
-                            style="display: inline-block; border-radius: 4px; background-color: #ddd; padding: 0 4px; margin: 0 4px 2px 0;"
+                            style="
+                                display: inline-block;
+                                border-radius: 4px;
+                                background-color: #ddd;
+                                padding: 0 4px;
+                                margin: 0 4px 2px 0;
+                            "
                         >
                             {{ r.address }}
                         </div>
@@ -112,7 +124,13 @@
                     <td>
                         <div
                             *ngFor="let r of h.prefixReservations"
-                            style="display: inline-block; border-radius: 4px; background-color: #ddd; padding: 0 4px; margin: 0 4px 2px 0;"
+                            style="
+                                display: inline-block;
+                                border-radius: 4px;
+                                background-color: #ddd;
+                                padding: 0 4px;
+                                margin: 0 4px 2px 0;
+                            "
                         >
                             {{ r.address }}
                         </div>

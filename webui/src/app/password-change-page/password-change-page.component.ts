@@ -62,13 +62,13 @@ export class PasswordChangePageComponent implements OnInit {
 
         // Send the old and new password to the server.
         this.usersApi.updateUserPassword(id, passwords).subscribe(
-            data => {
+            (data) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'User password updated',
                 })
             },
-            err => {
+            (err) => {
                 console.info(err)
                 let msg = err.statusText
                 if (err.error && err.error.message) {
