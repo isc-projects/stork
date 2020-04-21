@@ -93,7 +93,9 @@ func updateAppDaemons(tx *pg.Tx, app *App) (err error) {
 	}
 
 	// Add updated daemons.
-	for _, daemon := range app.Daemons {
+	for i := range app.Daemons {
+		daemon := app.Daemons[i]
+
 		// Make sure the inserted daemon references the app.
 		daemon.AppID = app.ID
 		if daemon.ID == 0 {
@@ -349,7 +351,7 @@ func (app *App) GetActiveDHCPDaemonNames() (daemons []string) {
 		return daemons
 	}
 	for _, d := range app.Daemons {
-		if d.Active && (d.Name == "dhcp4" || d.Name == "dhcp6") {
+		if d.Active && (d.Name == DaemonNameDHCPv4 || d.Name == DaemonNameDHCPv6) {
 			daemons = append(daemons, d.Name)
 		}
 	}

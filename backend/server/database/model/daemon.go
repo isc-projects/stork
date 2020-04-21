@@ -6,6 +6,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
+	dbops "isc.org/stork/server/database"
+)
+
+const (
+	DaemonNameBind9  = "named"
+	DaemonNameDHCPv4 = "dhcp4"
+	DaemonNameDHCPv6 = "dhcp6"
 )
 
 // A structure holding Kea DHCP specific information about a daemon. It
@@ -85,7 +93,7 @@ func NewKeaDaemon(name string, active ...bool) *Daemon {
 	if len(activeSlice) > 0 {
 		daemon.Active = activeSlice[0]
 	}
-	if name == "dhcp4" || name == "dhcp6" {
+	if name == DaemonNameDHCPv4 || name == DaemonNameDHCPv6 {
 		daemon.KeaDaemon.KeaDHCPDaemon = &KeaDHCPDaemon{}
 	}
 	return daemon
@@ -94,7 +102,7 @@ func NewKeaDaemon(name string, active ...bool) *Daemon {
 // Creates an instance of the Bind9 daemon.
 func NewBind9Daemon(active ...bool) *Daemon {
 	daemon := &Daemon{
-		Name:        "named",
+		Name:        DaemonNameBind9,
 		Bind9Daemon: &Bind9Daemon{},
 	}
 	activeSlice := append([]bool{}, active...)
@@ -102,6 +110,60 @@ func NewBind9Daemon(active ...bool) *Daemon {
 		daemon.Active = activeSlice[0]
 	}
 	return daemon
+}
+
+// Updates a daemon, including dependent Daemon, KeaDaemon, KeaDHCPDaemon
+// and Bind9Daemon if they are not nil.
+func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
+	// Start transaction if it hasn't been started yet.
+	tx, rollback, commit, err := dbops.Transaction(dbIface)
+	if err != nil {
+		return err
+	}
+	// Always rollback when this function ends. If the changes get committed
+	// first this is no-op.
+	defer rollback()
+
+	// Update common daemon instance.
+	_, err = tx.Model(daemon).WherePK().Update()
+	if err != nil {
+		return errors.Wrapf(err, "problem with updating daemon %d", daemon.ID)
+	}
+
+	// If this is a Kea daemon, we have to update Kea specific tables too.
+	if daemon.KeaDaemon != nil && daemon.KeaDaemon.ID != 0 {
+		// Make sure that the KeaDaemon points to the Daemon.
+		daemon.KeaDaemon.DaemonID = daemon.KeaDaemon.ID
+		_, err = tx.Model(daemon.KeaDaemon).WherePK().Update()
+		if err != nil {
+			return errors.Wrapf(err, "problem with updating general Kea specific information for daemon %d",
+				daemon.ID)
+		}
+
+		// If this is Kea DHCP daemon, there is one more table to update.
+		if daemon.KeaDaemon.KeaDHCPDaemon != nil && daemon.KeaDaemon.KeaDHCPDaemon.ID != 0 {
+			_, err = tx.Model(daemon.KeaDaemon.KeaDHCPDaemon).WherePK().Update()
+			if err != nil {
+				return errors.Wrapf(err, "problem with updating general Kea DHCP information for daemon %d",
+					daemon.ID)
+			}
+		}
+	} else if daemon.Bind9Daemon != nil && daemon.Bind9Daemon.ID != 0 {
+		// This is Bind9 daemon. Update the Bind9 specific table.
+		daemon.Bind9Daemon.DaemonID = daemon.Bind9Daemon.ID
+		_, err = tx.Model(daemon.Bind9Daemon).WherePK().Update()
+		if err != nil {
+			return errors.Wrapf(err, "problem with updating Bind9 specific information for daemon %d",
+				daemon.ID)
+		}
+	}
+
+	err = commit()
+	if err != nil {
+		err = errors.WithMessagef(err, "problem with committing daemon %d after update", daemon.ID)
+	}
+
+	return err
 }
 
 // This is a hook to go-pg that is called just after reading rows from database.
