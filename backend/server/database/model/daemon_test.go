@@ -139,7 +139,6 @@ func TestUpdateBind9Daemon(t *testing.T) {
 	daemon.Version = "9.20"
 
 	daemon.Bind9Daemon.Stats.ZoneCount = 123
-	daemon.Bind9Daemon.Stats.CacheHits = 5
 
 	err = UpdateDaemon(db, daemon)
 	require.NoError(t, err)
@@ -156,7 +155,6 @@ func TestUpdateBind9Daemon(t *testing.T) {
 	require.Equal(t, "9.20", daemon.Version)
 	require.NotNil(t, daemon.Bind9Daemon)
 	require.EqualValues(t, 123, daemon.Bind9Daemon.Stats.ZoneCount)
-	require.EqualValues(t, 5, daemon.Bind9Daemon.Stats.CacheHits)
 }
 
 // Returns all HA state names to which the daemon belongs and the

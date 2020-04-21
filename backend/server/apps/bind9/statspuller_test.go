@@ -148,27 +148,24 @@ func TestStatsPullerPullStats(t *testing.T) {
 	// check collected stats
 	app1, err := dbmodel.GetAppByID(db, dbApp1.ID)
 	require.NoError(t, err)
+
 	require.Len(t, app1.Daemons, 1)
 	require.NotNil(t, app1.Daemons[0].Bind9Daemon)
 	daemon = app1.Daemons[0]
-	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.CacheHits)
-	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.CacheMisses)
-	require.EqualValues(t, 0.6, daemon.Bind9Daemon.Stats.CacheHitRatio)
-	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.QueryHits)
-	require.EqualValues(t, 90, daemon.Bind9Daemon.Stats.QueryMisses)
-	require.EqualValues(t, 0.1, daemon.Bind9Daemon.Stats.QueryHitRatio)
+	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheHits"])
+	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheMisses"])
+	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryHits"])
+	require.EqualValues(t, 90, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryMisses"])
 
 	app2, err := dbmodel.GetAppByID(db, dbApp2.ID)
 	require.NoError(t, err)
 	require.Len(t, app2.Daemons, 1)
 	require.NotNil(t, app2.Daemons[0].Bind9Daemon)
 	daemon = app2.Daemons[0]
-	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.CacheHits)
-	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.CacheMisses)
-	require.EqualValues(t, 0.6, daemon.Bind9Daemon.Stats.CacheHitRatio)
-	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.QueryHits)
-	require.EqualValues(t, 90, daemon.Bind9Daemon.Stats.QueryMisses)
-	require.EqualValues(t, 0.1, daemon.Bind9Daemon.Stats.QueryHitRatio)
+	require.EqualValues(t, 60, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheHits"])
+	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheMisses"])
+	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryHits"])
+	require.EqualValues(t, 90, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryMisses"])
 }
 
 // Check if statistics-channel response is handled correctly when it is empty.
@@ -245,7 +242,5 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	require.Len(t, app1.Daemons, 1)
 	require.NotNil(t, app1.Daemons[0].Bind9Daemon)
 	daemon = app1.Daemons[0]
-	require.EqualValues(t, 0, daemon.Bind9Daemon.Stats.CacheHits)
-	require.EqualValues(t, 0, daemon.Bind9Daemon.Stats.CacheMisses)
-	require.EqualValues(t, 0, daemon.Bind9Daemon.Stats.CacheHitRatio)
+	require.Empty(t, daemon.Bind9Daemon.Stats.NamedStats.Views)
 }

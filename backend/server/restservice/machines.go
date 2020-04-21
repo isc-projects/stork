@@ -596,6 +596,24 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 	}
 
 	if isBind9App {
+		var queryHitRatio float64
+		var queryHits int64
+		var queryMisses int64
+		namedStats := dbApp.Daemons[0].Bind9Daemon.Stats.NamedStats
+		if namedStats != nil {
+			view, okView := namedStats.Views["_default"]
+			if okView {
+				queryHits, okHits := view.Resolver.CacheStats["QueryHits"]
+				queryMisses, okMisses := view.Resolver.CacheStats["QueryMisses"]
+				if okHits && okMisses {
+					queryTotal := float64(queryHits) + float64(queryMisses)
+					if queryTotal > 0 {
+						queryHitRatio = float64(queryHits) / queryTotal
+					}
+				}
+			}
+		}
+
 		bind9Daemon := &models.Bind9Daemon{
 			Pid:           int64(dbApp.Daemons[0].Pid),
 			Name:          dbApp.Daemons[0].Name,
@@ -605,12 +623,9 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 			ReloadedAt:    strfmt.DateTime(dbApp.Daemons[0].ReloadedAt),
 			ZoneCount:     dbApp.Daemons[0].Bind9Daemon.Stats.ZoneCount,
 			AutoZoneCount: dbApp.Daemons[0].Bind9Daemon.Stats.AutomaticZoneCount,
-			CacheHits:     dbApp.Daemons[0].Bind9Daemon.Stats.CacheHits,
-			CacheMisses:   dbApp.Daemons[0].Bind9Daemon.Stats.CacheMisses,
-			CacheHitRatio: dbApp.Daemons[0].Bind9Daemon.Stats.CacheHitRatio,
-			QueryHits:     dbApp.Daemons[0].Bind9Daemon.Stats.QueryHits,
-			QueryMisses:   dbApp.Daemons[0].Bind9Daemon.Stats.QueryMisses,
-			QueryHitRatio: dbApp.Daemons[0].Bind9Daemon.Stats.QueryHitRatio,
+			QueryHits:     queryHits,
+			QueryMisses:   queryMisses,
+			QueryHitRatio: queryHitRatio,
 		}
 
 		app.Details = struct {

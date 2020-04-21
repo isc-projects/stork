@@ -84,45 +84,34 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return err
 	}
 
+	namedStats := &dbmodel.Bind9NamedStats{}
+
 	if statsOutput.Views != nil {
+		viewStats := make(map[string]*dbmodel.Bind9StatsView)
+
 		for name, view := range statsOutput.Views {
 			// Only deal with the default view for now.
 			if name != "_default" {
 				continue
 			}
 
-			// Calculate the cache hit ratio: the number of
-			// cache requests that were retrieved from cache
-			// divided by the number of all cache requests.
-			hits := view.Resolver.CacheStats.CacheHits
-			misses := view.Resolver.CacheStats.CacheMisses
-			ratio := float64(0)
-			total := float64(hits) + float64(misses)
-			if total != 0 {
-				ratio = float64(hits) / total
-			}
-			dbApp.Daemons[0].Bind9Daemon.Stats.CacheHitRatio = ratio
-			dbApp.Daemons[0].Bind9Daemon.Stats.CacheHits = hits
-			dbApp.Daemons[0].Bind9Daemon.Stats.CacheMisses = misses
+			cacheStats := make(map[string]int64)
+			cacheStats["CacheHits"] = view.Resolver.CacheStats.CacheHits
+			cacheStats["CacheMisses"] = view.Resolver.CacheStats.CacheMisses
+			cacheStats["QueryHits"] = view.Resolver.CacheStats.QueryHits
+			cacheStats["QueryMisses"] = view.Resolver.CacheStats.QueryMisses
 
-			// Calculate the query hit ratio: the number of
-			// responses that were retrieved from cache divided
-			// by the number of all responses.
-			hits = view.Resolver.CacheStats.QueryHits
-			misses = view.Resolver.CacheStats.QueryMisses
-			ratio = float64(0)
-			total = float64(hits) + float64(misses)
-			if total != 0 {
-				ratio = float64(hits) / total
+			viewStats[name] = &dbmodel.Bind9StatsView{
+				Resolver: &dbmodel.Bind9StatsResolver{
+					CacheStats: cacheStats,
+				},
 			}
-			dbApp.Daemons[0].Bind9Daemon.Stats.QueryHitRatio = ratio
-			dbApp.Daemons[0].Bind9Daemon.Stats.QueryHits = hits
-			dbApp.Daemons[0].Bind9Daemon.Stats.QueryMisses = misses
-
-			err = dbmodel.UpdateDaemon(statsPuller.Db, dbApp.Daemons[0])
 			break
 		}
+
+		namedStats.Views = viewStats
 	}
 
-	return err
+	dbApp.Daemons[0].Bind9Daemon.Stats.NamedStats = namedStats
+	return dbmodel.UpdateDaemon(statsPuller.Db, dbApp.Daemons[0])
 }

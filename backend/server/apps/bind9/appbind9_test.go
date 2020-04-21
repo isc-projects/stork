@@ -79,12 +79,10 @@ func TestGetAppState(t *testing.T) {
 	require.EqualValues(t, 96, daemon.Bind9Daemon.Stats.AutomaticZoneCount)
 
 	// Test statistics.
-	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.CacheHits)
-	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.CacheMisses)
-	require.EqualValues(t, 0.8, daemon.Bind9Daemon.Stats.CacheHitRatio)
-	require.EqualValues(t, 70, daemon.Bind9Daemon.Stats.QueryHits)
-	require.EqualValues(t, 30, daemon.Bind9Daemon.Stats.QueryMisses)
-	require.EqualValues(t, 0.7, daemon.Bind9Daemon.Stats.QueryHitRatio)
+	require.EqualValues(t, 40, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheHits"])
+	require.EqualValues(t, 10, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["CacheMisses"])
+	require.EqualValues(t, 70, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryHits"])
+	require.EqualValues(t, 30, daemon.Bind9Daemon.Stats.NamedStats.Views["_default"].Resolver.CacheStats["QueryMisses"])
 }
 
 // Tests that BIND 9 can be added and then updated in the database.
