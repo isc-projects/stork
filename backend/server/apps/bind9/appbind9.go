@@ -47,7 +47,7 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 		return
 	}
 	statsAddress := storkutil.HostWithPortURL(statsChannel.Address, statsChannel.Port)
-	statsRequest := "json/v1/server"
+	statsRequest := "json/v1"
 	statsURL := fmt.Sprintf("%s%s", statsAddress, statsRequest)
 
 	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)

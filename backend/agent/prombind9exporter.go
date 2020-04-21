@@ -77,6 +77,46 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	newPromGaugeVec("QueryMisses", "query", "misses", "Number of query misses")
 	newPromGaugeVec("QueryHitRatio", "query", "hit_ratio", "Query effectiveness (query hit ratio)")
 
+	// bind_exporter stats
+
+	// boot_time_seconds
+	// config_time_seconds
+	// exporter_build_info
+	// incoming_queries_total
+	// incoming_requests_total
+	// process_cpu_seconds_total
+	// process_max_fds
+	// process_open_fds
+	// process_resident_memory_bytes
+	// process_start_time_seconds
+	// process_virtural_memory_bytes
+	// process_virtural_memory_max_bytes
+	// query_duplicates_total
+	// query_errors_total
+	// query_recursions_total
+	// resolver_cache_rrsets
+	// resolver_dnssec_validation_errors_total
+	// resolver_dnssec_validation_success_total
+	// resolver_queries_total
+	// resolver_query_duration_seconds_bucket
+	// resolver_query_duration_seconds_count
+	// resolver_query_duration_seconds_sum
+	// resolver_query_edns0_errors_total
+	// resolver_query_errors_total
+	// resolver_query_retries_total
+	// resolver_response_errors_total
+	// resolver_response_lame_total
+	// resolver_response_mismatch_total
+	// resolver_response_truncated_total
+	// resolver_response_mismatch_total
+	// response_total
+	// tasks_running
+	// up
+	// worker_threads
+	// zone_transfer_failure_total
+	// zone_transfer_rejected_total
+	// zone_transfer_success_total
+
 	pbe.CacheStatsMap = cacheStatsMap
 
 	return pbe
@@ -280,7 +320,7 @@ func (pbe *PromBind9Exporter) collectStats() error {
 			continue
 		}
 		address := storkutil.HostWithPortURL(sap.Address, sap.Port)
-		path := "json/v1/server"
+		path := "json/v1"
 		url := fmt.Sprintf("%s%s", address, path)
 		httpRsp, err := pbe.HTTPClient.Call(url, bytes.NewBuffer([]byte(request)))
 		if err != nil {

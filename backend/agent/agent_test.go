@@ -263,7 +263,7 @@ func TestForwardToNamedStatsSuccess(t *testing.T) {
 
 	// Forward the request with the expected body.
 	req := &agentapi.ForwardToNamedStatsReq{
-		Url:               "http://localhost:45634/json/v1/server",
+		Url:               "http://localhost:45634/json/v1",
 		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
 	}
 
@@ -283,14 +283,14 @@ func TestForwardToNamedStatsBadRequest(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndc)
 
 	defer gock.Off()
-	gock.New("http://localhost:45634/json/v1/server").
+	gock.New("http://localhost:45634/json/v1").
 		MatchHeader("Content-Type", "application/json").
 		Post("/").
 		Reply(400).
 		JSON([]map[string]string{{"HttpCode": "Bad Request"}})
 
 	req := &agentapi.ForwardToNamedStatsReq{
-		Url:               "http://localhost:45634/json/v1/server",
+		Url:               "http://localhost:45634/json/v1",
 		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
 	}
 
@@ -310,13 +310,13 @@ func TestForwardToNamedStatsHTTPEmptyBody(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndc)
 
 	defer gock.Off()
-	gock.New("http://localhost:45634/json/v1/server").
+	gock.New("http://localhost:45634/json/v1").
 		MatchHeader("Content-Type", "application/json").
 		Post("/").
 		Reply(200)
 
 	req := &agentapi.ForwardToNamedStatsReq{
-		Url:               "http://localhost:45634/json/v1/server",
+		Url:               "http://localhost:45634/json/v1",
 		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
 	}
 
@@ -336,7 +336,7 @@ func TestForwardToNamedStatsNoNamed(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndc)
 
 	req := &agentapi.ForwardToNamedStatsReq{
-		Url:               "http://localhost:45634/json/v1/server",
+		Url:               "http://localhost:45634/json/v1",
 		NamedStatsRequest: &agentapi.NamedStatsRequest{Request: ""},
 	}
 

@@ -74,7 +74,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return err
 	}
 	statsAddress := storkutil.HostWithPortURL(statsChannel.Address, statsChannel.Port)
-	statsRequest := "json/v1/server"
+	statsRequest := "json/v1"
 	statsURL := fmt.Sprintf("%s%s", statsAddress, statsRequest)
 
 	statsOutput := NamedStatsGetResponse{}
