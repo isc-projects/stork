@@ -54,7 +54,7 @@
         "prettier": "^1.19.1",
         "protractor": "^5.4.4",
         "ts-node": "~7.0.0",
-        "tslint": "~5.15.0",
+        "tslint": "^6.1.1",
         "tslint-angular": "^3.0.2",
         "tslint-config-prettier": "^1.18.0",
         "tslint-plugin-prettier": "^2.0.1",
