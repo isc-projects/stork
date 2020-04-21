@@ -3,7 +3,7 @@ require 'rake'
 
 # Tool Versions
 NODE_VER = '12.16.2'
-SWAGGER_CODEGEN_VER = '2.4.12'
+SWAGGER_CODEGEN_VER = '2.4.13'
 GOSWAGGER_VER = 'v0.21.0'
 GOLANGCILINT_VER = '1.21.0'
 GO_VER = '1.13.5'
