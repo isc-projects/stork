@@ -7,8 +7,8 @@ SWAGGER_CODEGEN_VER = '2.4.13'
 GOSWAGGER_VER = 'v0.23.0'
 GOLANGCILINT_VER = '1.21.0'
 GO_VER = '1.14.2'
-PROTOC_VER = '3.11.2'
-PROTOC_GEN_GO_VER = 'v1.3.3'
+PROTOC_VER = '3.11.4'
+PROTOC_GEN_GO_VER = 'v1.4.0'
 
 # Check host OS
 UNAME=`uname -s`
@@ -214,6 +214,7 @@ file PROTOC do
 end
 
 file PROTOC_GEN_GO do
+  sh "rm -rf \"$(#{GO} env GOPATH)\"/src/github.com/golang/protobuf"
   sh "#{GO} get -d -u #{PROTOC_GEN_GO_URL}"
   sh "git -C \"$(#{GO} env GOPATH)\"/src/github.com/golang/protobuf checkout #{PROTOC_GEN_GO_VER}"
   sh "#{GO} install github.com/golang/protobuf/protoc-gen-go"
