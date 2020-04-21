@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { Table } from 'primeng/table'
@@ -16,8 +16,8 @@ import { SettingService } from '../setting.service'
     templateUrl: './subnets-page.component.html',
     styleUrls: ['./subnets-page.component.sass'],
 })
-export class SubnetsPageComponent implements OnInit {
-    @ViewChild('subnetsTable', undefined) subnetsTable: Table
+export class SubnetsPageComponent implements OnInit, AfterViewInit {
+    @ViewChild('subnetsTable') subnetsTable: Table
 
     // subnets
     subnets: any[]
@@ -61,7 +61,9 @@ export class SubnetsPageComponent implements OnInit {
             text += ' appId=' + params.appId
         }
         this.filterText = text.trim()
+    }
 
+    ngAfterViewInit() {
         // subscribe to subsequent changes to query params
         this.route.queryParamMap.subscribe(data => {
             const event = this.subnetsTable.createLazyLoadMetadata()

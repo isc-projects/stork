@@ -14,7 +14,7 @@ import { OverlayPanel } from 'primeng/overlaypanel'
     styleUrls: ['./help-tip.component.sass'],
 })
 export class HelpTipComponent implements OnInit {
-    @ViewChild(OverlayPanel, undefined)
+    @ViewChild(OverlayPanel)
     overlay: OverlayPanel
 
     /**

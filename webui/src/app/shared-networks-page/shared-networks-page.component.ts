@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { Table } from 'primeng/table'
@@ -15,8 +15,8 @@ import { getTotalAddresses, getAssignedAddresses } from '../subnets'
     templateUrl: './shared-networks-page.component.html',
     styleUrls: ['./shared-networks-page.component.sass'],
 })
-export class SharedNetworksPageComponent implements OnInit {
-    @ViewChild('networksTable', undefined) networksTable: Table
+export class SharedNetworksPageComponent implements OnInit, AfterViewInit {
+    @ViewChild('networksTable') networksTable: Table
 
     // networks
     networks: any[]
@@ -49,7 +49,9 @@ export class SharedNetworksPageComponent implements OnInit {
             text += ' appId=' + params.appId
         }
         this.filterText = text.trim()
+    }
 
+    ngAfterViewInit() {
         // subscribe to subsequent changes to query params
         this.route.queryParamMap.subscribe(data => {
             const event = this.networksTable.createLazyLoadMetadata()

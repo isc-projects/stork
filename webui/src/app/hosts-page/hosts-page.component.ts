@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { Table } from 'primeng/table'
@@ -19,8 +19,8 @@ import { extractKeyValsAndPrepareQueryParams } from '../utils'
     templateUrl: './hosts-page.component.html',
     styleUrls: ['./hosts-page.component.sass'],
 })
-export class HostsPageComponent implements OnInit {
-    @ViewChild('hostsTable', undefined) hostsTable: Table
+export class HostsPageComponent implements OnInit, AfterViewInit {
+    @ViewChild('hostsTable') hostsTable: Table
 
     // hosts
     hosts: any[]
@@ -39,7 +39,9 @@ export class HostsPageComponent implements OnInit {
             text += ' appId=' + params.appId
         }
         this.filterText = text.trim()
+    }
 
+    ngAfterViewInit() {
         // subscribe to subsequent changes to query params
         this.route.queryParamMap.subscribe(data => {
             const event = this.hostsTable.createLazyLoadMetadata()
