@@ -17,7 +17,7 @@ stages:
 
 # cache
 cache:
-  key: one-shared-key
+  key: one-shared-key-2
   paths:
   - webui/node_modules/
   - tools/
