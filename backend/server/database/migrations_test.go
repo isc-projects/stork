@@ -117,7 +117,7 @@ func TestAvailableVersion(t *testing.T) {
 	defer cleanupDb(t, db)
 
 	avail := AvailableVersion()
-	require.GreaterOrEqual(t, avail, int64(21))
+	require.GreaterOrEqual(t, avail, int64(22))
 }
 
 // Test that current version is returned from the database.
