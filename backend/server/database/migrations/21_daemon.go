@@ -43,10 +43,7 @@ func init() {
             CREATE TABLE IF NOT EXISTS kea_dhcp_daemon (
                 id bigserial NOT NULL,
                 kea_daemon_id bigint NOT NULL,
-                lps15min integer,
-                lps24h integer,
-                addr_utilization smallint,
-                pd_utilization smallint,
+                stats jsonb,
                 CONSTRAINT kea_dhcp_daemon_pkey PRIMARY KEY (id),
                 CONSTRAINT kea_dhcp_daemon_id_unique UNIQUE (kea_daemon_id),
                 CONSTRAINT kea_dhcp_daemon_id_fkey FOREIGN KEY (kea_daemon_id)

@@ -16,26 +16,30 @@ const (
 	DaemonNameDHCPv6 = "dhcp6"
 )
 
-// A structure holding Kea DHCP specific information about a daemon. It
-// reflects the kea_dhcp_daemon table which extends the daemon and
-// kea_daemon tables with the Kea DHCPv4 or DHCPv6 specific information.
-type KeaDHCPDaemon struct {
-	tableName       struct{} `pg:"kea_dhcp_daemon"` //nolint:unused,structcheck
-	ID              int64
+// A structure reflecting Kea DHCP stats for daemon. It is stored
+// as a JSONB value in SQL and unmarshalled in this structure.
+type KeaDHCPDaemonStats struct {
 	LPS15min        int `pg:"lps15min"`
 	LPS24h          int `pg:"lps24h"`
 	AddrUtilization int16
 	PdUtilization   int16
+}
 
+// A structure holding Kea DHCP specific information about a daemon. It
+// reflects the kea_dhcp_daemon table which extends the daemon and
+// kea_daemon tables with the Kea DHCPv4 or DHCPv6 specific information.
+type KeaDHCPDaemon struct {
+	tableName   struct{} `pg:"kea_dhcp_daemon"` //nolint:unused,structcheck
+	ID          int64
 	KeaDaemonID int64
+	Stats       KeaDHCPDaemonStats
 }
 
 // A structure holding common information for all Kea daemons. It
 // reflects the information stored in the kea_daemon table.
 type KeaDaemon struct {
-	ID     int64
-	Config *KeaConfig `pg:",use_zero"`
-
+	ID       int64
+	Config   *KeaConfig `pg:",use_zero"`
 	DaemonID int64
 
 	KeaDHCPDaemon *KeaDHCPDaemon

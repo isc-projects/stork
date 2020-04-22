@@ -170,7 +170,9 @@ func TestUpdateApp(t *testing.T) {
 				KeaDaemon: &KeaDaemon{
 					Config: dhcp4Config,
 					KeaDHCPDaemon: &KeaDHCPDaemon{
-						LPS15min: 1024,
+						Stats: KeaDHCPDaemonStats{
+							LPS15min: 1024,
+						},
 					},
 				},
 			},
@@ -210,7 +212,7 @@ func TestUpdateApp(t *testing.T) {
 
 	require.NotNil(t, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon)
 	require.NotZero(t, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.ID)
-	require.EqualValues(t, 1024, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.LPS15min)
+	require.EqualValues(t, 1024, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.Stats.LPS15min)
 
 	require.NotZero(t, returned.Daemons[1].ID)
 	require.Equal(t, "kea-ctrl-agent", returned.Daemons[1].Name)
@@ -232,7 +234,9 @@ func TestUpdateApp(t *testing.T) {
 		Active:  true,
 		KeaDaemon: &KeaDaemon{
 			KeaDHCPDaemon: &KeaDHCPDaemon{
-				LPS15min: 2048,
+				Stats: KeaDHCPDaemonStats{
+					LPS15min: 2048,
+				},
 			},
 		},
 	}
@@ -268,7 +272,7 @@ func TestUpdateApp(t *testing.T) {
 			require.NotNil(t, d.KeaDaemon)
 			require.Nil(t, d.KeaDaemon.Config)
 			require.NotNil(t, d.KeaDaemon.KeaDHCPDaemon)
-			require.EqualValues(t, 2048, d.KeaDaemon.KeaDHCPDaemon.LPS15min)
+			require.EqualValues(t, 2048, d.KeaDaemon.KeaDHCPDaemon.Stats.LPS15min)
 		case "kea-ctrl-agent":
 			// The ID of the daemon should be preserved to keep data integrity if
 			// something is referencing the updated daemon.

@@ -89,8 +89,8 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
     }`)
 	require.NoError(t, err)
 
-	daemon.KeaDaemon.KeaDHCPDaemon.LPS15min = 1000
-	daemon.KeaDaemon.KeaDHCPDaemon.AddrUtilization = 90
+	daemon.KeaDaemon.KeaDHCPDaemon.Stats.LPS15min = 1000
+	daemon.KeaDaemon.KeaDHCPDaemon.Stats.AddrUtilization = 90
 
 	err = UpdateDaemon(db, daemon)
 	require.NoError(t, err)
@@ -108,8 +108,8 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	require.NotNil(t, daemon.KeaDaemon)
 	require.NotNil(t, daemon.KeaDaemon.Config)
 	require.NotNil(t, daemon.KeaDaemon.KeaDHCPDaemon)
-	require.EqualValues(t, 1000, daemon.KeaDaemon.KeaDHCPDaemon.LPS15min)
-	require.EqualValues(t, 90, daemon.KeaDaemon.KeaDHCPDaemon.AddrUtilization)
+	require.EqualValues(t, 1000, daemon.KeaDaemon.KeaDHCPDaemon.Stats.LPS15min)
+	require.EqualValues(t, 90, daemon.KeaDaemon.KeaDHCPDaemon.Stats.AddrUtilization)
 }
 
 // Test that Bind9 daemon is properly updated.
