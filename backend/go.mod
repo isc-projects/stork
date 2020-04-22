@@ -19,7 +19,7 @@ require (
 	github.com/go-pg/pg v8.0.6+incompatible
 	github.com/go-pg/pg/v9 v9.1.0
 	github.com/golang/mock v1.3.1
-	github.com/golang/protobuf v1.4.0-rc.4.0.20200313231945-b860323f09d0
+	github.com/golang/protobuf v1.3.2
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lib/pq v1.2.0
 	github.com/mitchellh/mapstructure v1.1.2
@@ -31,6 +31,5 @@ require (
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 	golang.org/x/net v0.0.0-20190923162816-aa69164e4478
 	google.golang.org/grpc v1.27.0
-	google.golang.org/protobuf v1.21.0
 	gopkg.in/h2non/gock.v1 v1.0.15
 )
