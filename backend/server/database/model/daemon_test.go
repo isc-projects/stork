@@ -19,17 +19,8 @@ func TestNewKeaDaemon(t *testing.T) {
 	require.Equal(t, DaemonNameDHCPv4, daemon.Name)
 	require.True(t, daemon.Active)
 
-	// Create the daemon with the default active flag.
-	daemon = NewKeaDaemon(DaemonNameDHCPv6)
-	require.NotNil(t, daemon)
-	require.NotNil(t, daemon.KeaDaemon)
-	require.NotNil(t, daemon.KeaDaemon.KeaDHCPDaemon)
-	require.Nil(t, daemon.Bind9Daemon)
-	require.Equal(t, DaemonNameDHCPv6, daemon.Name)
-	require.False(t, daemon.Active)
-
 	// Create the non DHCP daemon.
-	daemon = NewKeaDaemon("ca")
+	daemon = NewKeaDaemon("ca", false)
 	require.NotNil(t, daemon)
 	require.NotNil(t, daemon.KeaDaemon)
 	require.Nil(t, daemon.KeaDaemon.KeaDHCPDaemon)

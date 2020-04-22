@@ -88,14 +88,11 @@ type Daemon struct {
 
 // Creates an instance of a Kea daemon. If the daemon name is dhcp4 or
 // dhcp6, the instance of the KeaDHCPDaemon is also created.
-func NewKeaDaemon(name string, active ...bool) *Daemon {
+func NewKeaDaemon(name string, active bool) *Daemon {
 	daemon := &Daemon{
 		Name:      name,
 		KeaDaemon: &KeaDaemon{},
-	}
-	activeSlice := append([]bool{}, active...)
-	if len(activeSlice) > 0 {
-		daemon.Active = activeSlice[0]
+		Active:    active,
 	}
 	if name == DaemonNameDHCPv4 || name == DaemonNameDHCPv6 {
 		daemon.KeaDaemon.KeaDHCPDaemon = &KeaDHCPDaemon{}
@@ -104,14 +101,11 @@ func NewKeaDaemon(name string, active ...bool) *Daemon {
 }
 
 // Creates an instance of the Bind9 daemon.
-func NewBind9Daemon(active ...bool) *Daemon {
+func NewBind9Daemon(active bool) *Daemon {
 	daemon := &Daemon{
 		Name:        DaemonNameBind9,
+		Active:      active,
 		Bind9Daemon: &Bind9Daemon{},
-	}
-	activeSlice := append([]bool{}, active...)
-	if len(activeSlice) > 0 {
-		daemon.Active = activeSlice[0]
 	}
 	return daemon
 }
