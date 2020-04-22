@@ -137,7 +137,7 @@ func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
 	// If this is a Kea daemon, we have to update Kea specific tables too.
 	if daemon.KeaDaemon != nil && daemon.KeaDaemon.ID != 0 {
 		// Make sure that the KeaDaemon points to the Daemon.
-		daemon.KeaDaemon.DaemonID = daemon.KeaDaemon.ID
+		daemon.KeaDaemon.DaemonID = daemon.ID
 		_, err = tx.Model(daemon.KeaDaemon).WherePK().Update()
 		if err != nil {
 			return errors.Wrapf(err, "problem with updating general Kea specific information for daemon %d",
@@ -146,6 +146,7 @@ func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
 
 		// If this is Kea DHCP daemon, there is one more table to update.
 		if daemon.KeaDaemon.KeaDHCPDaemon != nil && daemon.KeaDaemon.KeaDHCPDaemon.ID != 0 {
+			daemon.KeaDaemon.KeaDHCPDaemon.KeaDaemonID = daemon.KeaDaemon.ID
 			_, err = tx.Model(daemon.KeaDaemon.KeaDHCPDaemon).WherePK().Update()
 			if err != nil {
 				return errors.Wrapf(err, "problem with updating general Kea DHCP information for daemon %d",
@@ -154,7 +155,7 @@ func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
 		}
 	} else if daemon.Bind9Daemon != nil && daemon.Bind9Daemon.ID != 0 {
 		// This is Bind9 daemon. Update the Bind9 specific table.
-		daemon.Bind9Daemon.DaemonID = daemon.Bind9Daemon.ID
+		daemon.Bind9Daemon.DaemonID = daemon.ID
 		_, err = tx.Model(daemon.Bind9Daemon).WherePK().Update()
 		if err != nil {
 			return errors.Wrapf(err, "problem with updating Bind9 specific information for daemon %d",
