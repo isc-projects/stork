@@ -82,7 +82,7 @@
                 <p-header>
                     <span
                         >Remote server:
-                        <a *ngIf="remoteServer().id > 0" routerLink="/apps/kea/{{ remoteServer().id }}">{{
+                        <a *ngIf="remoteServer().appId > 0" routerLink="/apps/kea/{{ remoteServer().appId }}">{{
                             'Kea@' + remoteServer().controlAddress
                         }}</a></span
                     >

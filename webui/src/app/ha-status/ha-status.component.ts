@@ -98,7 +98,7 @@ export class HaStatusComponent implements OnInit {
      * Convenience function returning received status of the local server.
      */
     localServer() {
-        if (this._receivedStatus[this._daemonName].primaryServer.id === this.appId) {
+        if (this._receivedStatus[this._daemonName].primaryServer.appId === this.appId) {
             return this._receivedStatus[this._daemonName].primaryServer
         }
         return this._receivedStatus[this._daemonName].secondaryServer
@@ -108,7 +108,7 @@ export class HaStatusComponent implements OnInit {
      * Convenience function returning received status of the remote server.
      */
     remoteServer() {
-        if (this._receivedStatus[this._daemonName].primaryServer.id !== this.appId) {
+        if (this._receivedStatus[this._daemonName].primaryServer.appId !== this.appId) {
             return this._receivedStatus[this._daemonName].primaryServer
         }
         return this._receivedStatus[this._daemonName].secondaryServer
