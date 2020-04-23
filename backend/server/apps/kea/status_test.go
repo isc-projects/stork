@@ -317,6 +317,7 @@ func TestPullHAStatus(t *testing.T) {
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getHATestConfig("Dhcp4", "server1", "load-balancing",
 						"server1", "server2", "server4"),
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
 				},
 			},
 			{
@@ -324,6 +325,7 @@ func TestPullHAStatus(t *testing.T) {
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getHATestConfig("Dhcp6", "server3", "hot-standby",
 						"server1", "server3", "server4"),
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
 				},
 			},
 		},
@@ -362,7 +364,7 @@ func TestPullHAStatus(t *testing.T) {
 	service := services[0]
 	require.NotNil(t, service.HAService)
 	// Our app has the primary role in this service.
-	require.EqualValues(t, keaApp.ID, service.HAService.PrimaryID)
+	require.EqualValues(t, keaApp.Daemons[0].ID, service.HAService.PrimaryID)
 	// The status should have been collected for primary and secondary.
 	require.False(t, service.HAService.PrimaryStatusCollectedAt.IsZero())
 	require.False(t, service.HAService.SecondaryStatusCollectedAt.IsZero())
@@ -383,8 +385,9 @@ func TestPullHAStatus(t *testing.T) {
 
 	// The second service for this app is the DHCPv6 service.
 	service = services[1]
+
 	require.NotNil(t, service.HAService)
-	require.EqualValues(t, keaApp.ID, service.HAService.SecondaryID)
+	require.EqualValues(t, keaApp.Daemons[1].ID, service.HAService.SecondaryID)
 	// The status should have been collected for standby and primary.
 	require.False(t, service.HAService.PrimaryStatusCollectedAt.IsZero())
 	require.False(t, service.HAService.SecondaryStatusCollectedAt.IsZero())
@@ -434,7 +437,7 @@ func TestPullHAStatus(t *testing.T) {
 	// returns a different state for this server.
 	service = services[1]
 	require.NotNil(t, service.HAService)
-	require.EqualValues(t, keaApp.ID, service.HAService.SecondaryID)
+	require.EqualValues(t, keaApp.Daemons[1].ID, service.HAService.SecondaryID)
 	require.False(t, service.HAService.PrimaryStatusCollectedAt.IsZero())
 	require.False(t, service.HAService.SecondaryStatusCollectedAt.IsZero())
 	require.True(t, service.HAService.SecondaryStatusCollectedAt.After(service.HAService.PrimaryStatusCollectedAt))

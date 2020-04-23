@@ -820,6 +820,9 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
 	}
 	err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
@@ -869,7 +872,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	for i := range keaServices {
 		err = dbmodel.AddService(db, &keaServices[i])
 		require.NoError(t, err)
-		err = dbmodel.AddAppToService(db, keaServices[i].ID, keaApp)
+		err = dbmodel.AddDaemonToService(db, keaServices[i].ID, keaApp.Daemons[0])
 		require.NoError(t, err)
 	}
 
@@ -897,13 +900,14 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.NotNil(t, haStatus.PrimaryServer)
 	require.NotNil(t, haStatus.SecondaryServer)
 
-	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.ID)
+	require.EqualValues(t, keaApp.Daemons[0].ID, haStatus.PrimaryServer.ID)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
 	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
 	require.Equal(t, "load-balancing", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
+	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.AppID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
 
 	require.Equal(t, "secondary", haStatus.SecondaryServer.Role)
@@ -923,7 +927,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.NotNil(t, haStatus.PrimaryServer)
 	require.NotNil(t, haStatus.SecondaryServer)
 
-	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.ID)
+	require.EqualValues(t, keaApp.Daemons[0].ID, haStatus.PrimaryServer.ID)
 	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
 	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
 	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")

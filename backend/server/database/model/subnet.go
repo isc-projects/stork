@@ -478,7 +478,7 @@ func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App) error {
 
 // Dissociates an application from the subnet having a specified id.
 // The first returned value indicates if any row was removed from the
-// app_to_service table.
+// daemon_to_service table.
 func DeleteAppFromSubnet(db *pg.DB, subnetID int64, appID int64) (bool, error) {
 	localSubnet := &LocalSubnet{
 		AppID:    appID,

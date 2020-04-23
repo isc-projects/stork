@@ -19,13 +19,13 @@ type BaseService struct {
 	ServiceType string
 	CreatedAt   time.Time
 
-	Apps []*App `pg:"many2many:app_to_service,fk:service_id,joinFK:app_id"`
+	Daemons []*Daemon `pg:"many2many:daemon_to_service,fk:service_id,joinFK:daemon_id"`
 }
 
-// A structure reflecting an app_to_service SQL table which associates
+// A structure reflecting a daemon_to_service SQL table which associates
 // applications with services in many to many relationship.
-type AppToService struct {
-	AppID     int64 `pg:",pk"`
+type DaemonToService struct {
+	DaemonID  int64 `pg:",pk"`
 	ServiceID int64 `pg:",pk"`
 }
 
@@ -70,24 +70,24 @@ type Service struct {
 // can be of pg.DB or pg.Tx type. In the first case, this function will
 // start new transaction for adding all association. In the second case
 // the already started transaction will be used.
-func addServiceApps(dbIface interface{}, service *BaseService) (err error) {
-	if len(service.Apps) == 0 {
+func addServiceDaemons(dbIface interface{}, service *BaseService) (err error) {
+	if len(service.Daemons) == 0 {
 		return nil
 	}
 
-	var assocs []AppToService
+	var assocs []DaemonToService
 
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessage(err, "problem with starting transaction for adding apps to a service")
+		err = errors.WithMessage(err, "problem with starting transaction for adding daemons to a service")
 	}
 	defer rollback()
 
-	// If there are any apps to be associated with the service, let's iterate over them
-	// and insert into the app_to_service table.
-	for _, a := range service.Apps {
-		assocs = append(assocs, AppToService{
-			AppID:     a.ID,
+	// If there are any daemons to be associated with the service, let's iterate over them
+	// and insert into the daemon_to_service table.
+	for _, d := range service.Daemons {
+		assocs = append(assocs, DaemonToService{
+			DaemonID:  d.ID,
 			ServiceID: service.ID,
 		})
 	}
@@ -98,18 +98,18 @@ func addServiceApps(dbIface interface{}, service *BaseService) (err error) {
 	// changes.
 	err = commit()
 	if err != nil {
-		err = errors.WithMessage(err, "problem with committing associations of application with the service")
+		err = errors.WithMessage(err, "problem with committing associations of daemon with the service")
 	}
 
 	return err
 }
 
-// Associate an application with the service having a specified id.
-func AddAppToService(dbIface interface{}, serviceID int64, app *App) error {
+// Associate a daemon with the service having a specified id.
+func AddDaemonToService(dbIface interface{}, serviceID int64, daemon *Daemon) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for associating an app %d with the service %d",
-			app.ID, serviceID)
+		err = errors.WithMessagef(err, "problem with starting transaction for associating a daemon %d with the service %d",
+			daemon.ID, serviceID)
 		return err
 	}
 	defer rollback()
@@ -117,41 +117,42 @@ func AddAppToService(dbIface interface{}, serviceID int64, app *App) error {
 	service := &BaseService{
 		ID: serviceID,
 	}
-	service.Apps = append(service.Apps, app)
-	err = addServiceApps(tx, service)
+	service.Daemons = append(service.Daemons, daemon)
+	err = addServiceDaemons(tx, service)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with associating an app having id %d with service %d",
-			app.ID, serviceID)
+		err = errors.Wrapf(err, "problem with associating a daemon having id %d with service %d",
+			daemon.ID, serviceID)
 		return err
 	}
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing transaction associating an app %d with the service %d", app.ID, service.ID)
+		err = errors.WithMessagef(err, "problem with committing transaction associating daemon %d with the service %d",
+			daemon.ID, service.ID)
 	}
 	return err
 }
 
-// Dissociate an application from the service having a specified id.
+// Dissociate a daemon from the service having a specified id.
 // The first returned value indicates if any row was removed from the
-// app_to_service table.
-func DeleteAppFromService(db *pg.DB, serviceID, appID int64) (bool, error) {
-	as := &AppToService{
-		AppID:     appID,
+// daemon_to_service table.
+func DeleteDaemonFromService(db *pg.DB, serviceID, daemonID int64) (bool, error) {
+	as := &DaemonToService{
+		DaemonID:  daemonID,
 		ServiceID: serviceID,
 	}
 	rows, err := db.Model(as).WherePK().Delete()
 	if err != nil && err != pg.ErrNoRows {
-		err = errors.Wrapf(err, "problem with deleting an app with id %d from the service %d",
-			appID, serviceID)
+		err = errors.Wrapf(err, "problem with deleting a daemon with id %d from the service %d",
+			daemonID, serviceID)
 		return false, err
 	}
 	return rows.RowsAffected() > 0, nil
 }
 
-// Adds new service to the database and associates the applications with it.
+// Adds new service to the database and associates the daemons with it.
 // This operation is performed in a transaction. There are several SQL tables
-// involved in this operation: service, app_to_service and optionally ha_service.
+// involved in this operation: service, daemon_to_service and optionally ha_service.
 func AddService(dbIface interface{}, service *Service) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
@@ -167,10 +168,10 @@ func AddService(dbIface interface{}, service *Service) error {
 		return err
 	}
 
-	// Add associations of the apps with the service.
-	err = addServiceApps(tx, &service.BaseService)
+	// Add associations of the daemons with the service.
+	err = addServiceDaemons(tx, &service.BaseService)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with associating apps with a new service")
+		err = errors.Wrapf(err, "problem with associating daemons with a new service")
 		return err
 	}
 
@@ -298,7 +299,8 @@ func GetDetailedService(db *dbops.PgDB, serviceID int64) (*Service, error) {
 	service := &Service{}
 	err := db.Model(service).
 		Relation("HAService").
-		Relation("Apps.AccessPoints").
+		Relation("Daemons.KeaDaemon.KeaDHCPDaemon").
+		Relation("Daemons.App").
 		Where("service.id = ?", serviceID).
 		Select()
 
@@ -317,11 +319,13 @@ func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) 
 	var services []Service
 
 	err := db.Model(&services).
-		Join("INNER JOIN app_to_service AS atos ON atos.service_id = service.id").
-		Join("INNER JOIN app AS a ON a.id = atos.app_id").
+		Join("INNER JOIN daemon_to_service AS dtos ON dtos.service_id = service.id").
+		Join("INNER JOIN daemon AS d ON d.id = dtos.daemon_id").
+		Join("INNER JOIN app AS a ON d.app_id = a.ID").
 		Relation("HAService").
-		Relation("Apps.AccessPoints").
-		Where("atos.app_id = ?", appID).
+		Relation("Daemons.KeaDaemon.KeaDHCPDaemon").
+		Relation("Daemons.App").
+		Where("app_id = ?", appID).
 		OrderExpr("service.id ASC").
 		Select()
 
@@ -333,8 +337,8 @@ func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) 
 	// Retrieve the access points. This should be incorporated in the
 	// above query, ideally.
 	for _, service := range services {
-		for _, app := range service.Apps {
-			app.AccessPoints, _ = GetAllAccessPointsByAppID(db, app.ID)
+		for _, daemon := range service.Daemons {
+			daemon.App.AccessPoints, _ = GetAllAccessPointsByAppID(db, daemon.App.ID)
 		}
 	}
 
@@ -347,7 +351,8 @@ func GetDetailedAllServices(db *dbops.PgDB) ([]Service, error) {
 
 	err := db.Model(&services).
 		Relation("HAService").
-		Relation("Apps.AccessPoints").
+		Relation("Daemons.KeaDaemon.KeaDHCPDaemon").
+		Relation("Daemons.App").
 		OrderExpr("id ASC").
 		Select()
 
@@ -374,8 +379,8 @@ func DeleteService(db *dbops.PgDB, serviceID int64) error {
 }
 
 // Iterates over the services and commits them to the database. It also associates them
-// with the specified app.
-func CommitServicesIntoDB(dbIface interface{}, services []Service, app *App) error {
+// with the specified daemon.
+func CommitServicesIntoDB(dbIface interface{}, services []Service, daemon *Daemon) error {
 	// Begin transaction.
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
@@ -395,10 +400,10 @@ func CommitServicesIntoDB(dbIface interface{}, services []Service, app *App) err
 		}
 		// Try to associate the app with the service. If the association already
 		// exists this is no-op.
-		err = AddAppToService(tx, services[i].ID, app)
+		err = AddDaemonToService(tx, services[i].ID, daemon)
 		if err != nil {
-			err = errors.WithMessagef(err, "problem with associating detected service %d with app having id %d",
-				services[i].ID, app.ID)
+			err = errors.WithMessagef(err, "problem with associating detected service %d with daemon having id %d",
+				services[i].ID, daemon.ID)
 			return err
 		}
 	}

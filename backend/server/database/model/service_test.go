@@ -59,52 +59,78 @@ func accessPointArraysMatch(pts1, pts2 []*AccessPoint) bool {
 	return true
 }
 
-// appsMatch compares two application and returns true if they match,
+// daemonsMatch compares two daemons and returns true if they match,
 // false otherwise.
-func appsMatch(app1, app2 *App) bool {
-	if app1.ID != app2.ID {
+func daemonsMatch(daemon1, daemon2 *Daemon) bool {
+	if daemon1.Pid != daemon2.Pid {
 		return false
 	}
-	if app1.CreatedAt != app2.CreatedAt {
+	if daemon1.Name != daemon2.Name {
 		return false
 	}
-	if app1.MachineID != app2.MachineID {
+	if daemon1.Active != daemon2.Active {
 		return false
 	}
-	if app1.Type != app2.Type {
+	if daemon1.Version != daemon2.Version {
 		return false
 	}
-	if app1.Active != app2.Active {
+	if daemon1.ExtendedVersion != daemon2.ExtendedVersion {
 		return false
 	}
-	return accessPointArraysMatch(app1.AccessPoints, app2.AccessPoints)
+	if daemon1.Uptime != daemon2.Uptime {
+		return false
+	}
+	if daemon1.CreatedAt != daemon2.CreatedAt {
+		return false
+	}
+	if (daemon1.App == nil && daemon2.App != nil) || (daemon1.App != nil && daemon2.App == nil) {
+		return false
+	}
+	if daemon1.App != nil {
+		if daemon1.App.ID != daemon2.App.ID {
+			return false
+		}
+		if daemon1.App.CreatedAt != daemon2.App.CreatedAt {
+			return false
+		}
+		if daemon1.App.MachineID != daemon2.App.MachineID {
+			return false
+		}
+		if daemon1.App.Type != daemon2.App.Type {
+			return false
+		}
+		if daemon1.App.Active != daemon2.App.Active {
+			return false
+		}
+	}
+	return accessPointArraysMatch(daemon1.App.AccessPoints, daemon2.App.AccessPoints)
 }
 
-// appArraysMatch compares two application arrays.  The two arrays may be
+// daemonArraysMatch compares two daemons arrays.  The two arrays may be
 // ordered differently, as long as the elements in the array are identical,
 // the two arrays are considered to match.  If so, this function returns
 // true, false otherwise.
-func appArraysMatch(appArray1, appArray2 []*App) bool {
-	if len(appArray1) != len(appArray2) {
+func daemonArraysMatch(daemonArray1, daemonArray2 []*Daemon) bool {
+	if len(daemonArray1) != len(daemonArray2) {
 		return false
 	}
 
-	if len(appArray1) == 0 {
+	if len(daemonArray1) == 0 {
 		return true
 	}
 
-	var found = make([]bool, len(appArray1))
+	var found = make([]bool, len(daemonArray1))
 
-	for i := 0; i < len(appArray1); i++ {
-		for j := 0; j < len(appArray2); j++ {
-			if appsMatch(appArray1[i], appArray2[j]) {
+	for i := 0; i < len(daemonArray1); i++ {
+		for j := 0; j < len(daemonArray2); j++ {
+			if daemonsMatch(daemonArray1[i], daemonArray2[j]) {
 				found[i] = true
 				break
 			}
 		}
 	}
 
-	for i := 0; i < len(appArray1); i++ {
+	for i := 0; i < len(daemonArray1); i++ {
 		if !found[i] {
 			return false
 		}
@@ -132,6 +158,9 @@ func addTestApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 			Type:         AppTypeKea,
 			Active:       true,
 			AccessPoints: accessPoints,
+			Daemons: []*Daemon{
+				NewKeaDaemon("dhcp4", true),
+			},
 		}
 
 		err = AddApp(db, a)
@@ -157,11 +186,12 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 
 	apps := addTestApps(t, db)
 	for i := range apps {
+		apps[i].Daemons[0].App = apps[i]
 		// 5 apps added to service 1, and 5 added to service 2.
 		if i%2 == 0 {
-			service1.Apps = append(service1.Apps, apps[i])
+			service1.Daemons = append(service1.Daemons, apps[i].Daemons[0])
 		} else {
-			service2.Apps = append(service2.Apps, apps[i])
+			service2.Daemons = append(service2.Daemons, apps[i].Daemons[0])
 		}
 	}
 
@@ -173,9 +203,9 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 	// Service 2 holds HA specific information.
 	service2.HAService = &BaseHAService{
 		HAType:                     "dhcp4",
-		PrimaryID:                  service2.Apps[0].ID,
-		SecondaryID:                service2.Apps[1].ID,
-		BackupID:                   []int64{service2.Apps[2].ID, service2.Apps[3].ID},
+		PrimaryID:                  service2.Daemons[0].ID,
+		SecondaryID:                service2.Daemons[1].ID,
+		BackupID:                   []int64{service2.Daemons[2].ID, service2.Daemons[3].ID},
 		PrimaryStatusCollectedAt:   time.Now(),
 		SecondaryStatusCollectedAt: time.Now(),
 		PrimaryLastState:           "load-balancing",
@@ -246,8 +276,8 @@ func TestUpdateService(t *testing.T) {
 	// Update the existing service by adding HA specific information to it.
 	services[0].HAService = &BaseHAService{
 		HAType:                     "dhcp4",
-		PrimaryID:                  services[0].Apps[0].ID,
-		SecondaryID:                services[0].Apps[1].ID,
+		PrimaryID:                  services[0].Daemons[0].ID,
+		SecondaryID:                services[0].Daemons[1].ID,
 		PrimaryStatusCollectedAt:   storkutil.UTCNow(),
 		SecondaryStatusCollectedAt: storkutil.UTCNow(),
 		PrimaryLastState:           "load-balancing",
@@ -295,21 +325,21 @@ func TestGetServiceById(t *testing.T) {
 	service, err := GetDetailedService(db, services[0].ID)
 	require.NoError(t, err)
 	require.NotNil(t, service)
-	require.Len(t, service.Apps, 5)
+	require.Len(t, service.Daemons, 5)
 	require.Nil(t, service.HAService)
 
 	// Get the second service. It should include HA specific info.
 	service, err = GetDetailedService(db, services[1].ID)
 	require.NoError(t, err)
 	require.NotNil(t, service)
-	require.Len(t, service.Apps, 5)
+	require.Len(t, service.Daemons, 5)
 	require.NotNil(t, service.HAService)
 	require.Equal(t, "dhcp4", service.HAService.HAType)
-	require.Equal(t, service.Apps[0].ID, service.HAService.PrimaryID)
-	require.Equal(t, service.Apps[1].ID, service.HAService.SecondaryID)
+	require.Equal(t, service.Daemons[0].ID, service.HAService.PrimaryID)
+	require.Equal(t, service.Daemons[1].ID, service.HAService.SecondaryID)
 	require.Len(t, service.HAService.BackupID, 2)
-	require.Contains(t, service.HAService.BackupID, service.Apps[2].ID)
-	require.Contains(t, service.HAService.BackupID, service.Apps[3].ID)
+	require.Contains(t, service.HAService.BackupID, service.Daemons[2].ID)
+	require.Contains(t, service.HAService.BackupID, service.Daemons[3].ID)
 	require.False(t, service.HAService.PrimaryStatusCollectedAt.IsZero())
 	require.False(t, service.HAService.SecondaryStatusCollectedAt.IsZero())
 	require.Equal(t, "load-balancing", service.HAService.PrimaryLastState)
@@ -327,34 +357,34 @@ func TestGetServicesByAppID(t *testing.T) {
 	require.GreaterOrEqual(t, len(services), 2)
 
 	// Get a service instance to which the forth application of the service1 belongs.
-	appServices, err := GetDetailedServicesByAppID(db, services[0].Apps[3].ID)
+	appServices, err := GetDetailedServicesByAppID(db, services[0].Daemons[3].AppID)
 	require.NoError(t, err)
 	require.Len(t, appServices, 1)
 
 	// Validate that the service returned is the service1.
 	service := appServices[0]
-	require.Len(t, service.Apps, 5)
+	require.Len(t, service.Daemons, 5)
 	require.Equal(t, services[0].Name, service.Name)
-	require.True(t, appArraysMatch(service.Apps, services[0].Apps))
+	require.True(t, daemonArraysMatch(service.Daemons, services[0].Daemons))
 
 	// Repeat the same test for the fifth application belonging to the service2.
-	appServices, err = GetDetailedServicesByAppID(db, services[1].Apps[4].ID)
+	appServices, err = GetDetailedServicesByAppID(db, services[1].Daemons[4].AppID)
 	require.NoError(t, err)
 	require.Len(t, appServices, 1)
 
 	// Validate that the returned service is the service2.
 	service = appServices[0]
-	require.Len(t, service.Apps, 5)
+	require.Len(t, service.Daemons, 5)
 	require.Equal(t, services[1].Name, service.Name)
-	require.True(t, appArraysMatch(service.Apps, services[1].Apps))
+	require.True(t, daemonArraysMatch(service.Daemons, services[1].Daemons))
 
 	// Finally, make one of the application shared between two services.
-	err = AddAppToService(db, services[0].ID, services[1].Apps[0])
+	err = AddDaemonToService(db, services[0].ID, services[1].Daemons[0])
 	require.NoError(t, err)
 
 	// When querying the services for this app, both service1 and 2 should
 	// be returned.
-	appServices, err = GetDetailedServicesByAppID(db, services[1].Apps[0].ID)
+	appServices, err = GetDetailedServicesByAppID(db, services[1].Daemons[0].AppID)
 	require.NoError(t, err)
 	require.Len(t, appServices, 2)
 
@@ -378,13 +408,13 @@ func TestGetAllServices(t *testing.T) {
 	// Services are sorted by ascending ID, so the first returned
 	// service should be the one inserted.
 	service := allServices[0]
-	require.Len(t, service.Apps, 5)
+	require.Len(t, service.Daemons, 5)
 	require.Nil(t, service.HAService)
 
 	service = allServices[1]
 	require.NoError(t, err)
 	require.NotNil(t, service)
-	require.Len(t, service.Apps, 5)
+	require.Len(t, service.Daemons, 5)
 
 	// Make sure that the HA specific information was returned for the
 	// second service.
@@ -424,15 +454,15 @@ func TestAddAppToService(t *testing.T) {
 	services := addTestServices(t, db)
 	require.GreaterOrEqual(t, len(services), 2)
 
-	// Try to add an app which belongs to the second service to the
+	// Try to add a daemon which belongs to the second service to the
 	// first service. It should succeed.
-	err := AddAppToService(db, services[0].ID, services[1].Apps[0])
+	err := AddDaemonToService(db, services[0].ID, services[1].Daemons[0])
 	require.NoError(t, err)
 
 	// That service should now include 6 apps.
 	service, err := GetDetailedService(db, services[0].ID)
 	require.NoError(t, err)
-	require.Len(t, service.Apps, 6)
+	require.Len(t, service.Daemons, 6)
 }
 
 // Test that a single app can be dissociated from the service.
@@ -443,15 +473,15 @@ func TestDeleteAppFromService(t *testing.T) {
 	services := addTestServices(t, db)
 	require.GreaterOrEqual(t, len(services), 2)
 
-	// Delete association of one of the apps with the first service.
-	ok, err := DeleteAppFromService(db, services[0].ID, services[0].Apps[0].ID)
+	// Delete association of one of the daemons with the first service.
+	ok, err := DeleteDaemonFromService(db, services[0].ID, services[0].Daemons[0].ID)
 	require.NoError(t, err)
 	require.True(t, ok)
 
 	// The service should now include 4 apps.
 	service, err := GetDetailedService(db, 1)
 	require.NoError(t, err)
-	require.Len(t, service.Apps, 4)
+	require.Len(t, service.Daemons, 4)
 }
 
 // Test that multiple services can be added/updated and associated with an
@@ -481,7 +511,7 @@ func TestCommitServicesIntoDB(t *testing.T) {
 	}
 
 	// Add first two services into db and associate with the first app.
-	err := CommitServicesIntoDB(db, services[:2], apps[0])
+	err := CommitServicesIntoDB(db, services[:2], apps[0].Daemons[0])
 	require.NoError(t, err)
 
 	// Get the services. There should be two in the database.
@@ -491,14 +521,14 @@ func TestCommitServicesIntoDB(t *testing.T) {
 
 	for i := range returned {
 		// Make sure they are both associated with our app.
-		require.Len(t, returned[i].Apps, 1)
+		require.Len(t, returned[i].Daemons, 1)
 		require.Equal(t, services[i].Name, returned[i].Name)
-		require.EqualValues(t, apps[0].ID, returned[i].Apps[0].ID)
+		require.EqualValues(t, apps[0].Daemons[0].ID, returned[i].Daemons[0].ID)
 	}
 
 	// This time commit app #2 and #3 into db and associate them with the
-	// second app.
-	err = CommitServicesIntoDB(db, services[1:3], apps[1])
+	// second app's daemon.
+	err = CommitServicesIntoDB(db, services[1:3], apps[1].Daemons[0])
 	require.NoError(t, err)
 
 	// Get the services shanpshot from the db again.
@@ -507,10 +537,10 @@ func TestCommitServicesIntoDB(t *testing.T) {
 	require.Len(t, returned, 3)
 
 	// The first and third app should be associated with one app and the
-	// second one should be associated with both apps.
-	require.Len(t, returned[0].Apps, 1)
-	require.Len(t, returned[1].Apps, 2)
-	require.Len(t, returned[2].Apps, 1)
+	// second one should be associated with both apps' daemons.
+	require.Len(t, returned[0].Daemons, 1)
+	require.Len(t, returned[1].Daemons, 2)
+	require.Len(t, returned[2].Daemons, 1)
 }
 
 // Test the convenience function checking if the service is new,

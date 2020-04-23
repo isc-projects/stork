@@ -81,6 +81,7 @@ type Daemon struct {
 	ReloadedAt      time.Time
 
 	AppID int64
+	App   *App
 
 	KeaDaemon   *KeaDaemon
 	Bind9Daemon *Bind9Daemon

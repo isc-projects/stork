@@ -763,24 +763,28 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 					failoverTime[i] = strfmt.DateTime(t)
 				}
 			}
-			// Get the control addresses for apps taking part in HA.
+			// Get the control addresses and app ids for daemons taking part in HA.
 			controlAddress := make([]string, 2)
-			for i := range s.Apps {
-				if s.Apps[i].ID == ha.PrimaryID {
-					ap, _ := s.Apps[i].GetAccessPoint("control")
+			appID := make([]int64, 2)
+			for i := range s.Daemons {
+				if s.Daemons[i].ID == ha.PrimaryID {
+					ap, _ := s.Daemons[i].App.GetAccessPoint("control")
 					if ap != nil {
 						controlAddress[0] = ap.Address
 					}
-				} else if s.Apps[i].ID == ha.SecondaryID {
-					ap, _ := s.Apps[i].GetAccessPoint("control")
+					appID[0] = s.Daemons[i].App.ID
+				} else if s.Daemons[i].ID == ha.SecondaryID {
+					ap, _ := s.Daemons[i].App.GetAccessPoint("control")
 					if ap != nil {
 						controlAddress[1] = ap.Address
 					}
+					appID[1] = s.Daemons[i].App.ID
 				}
 			}
 			keaStatus.HaServers = &models.KeaStatusHaServers{
 				PrimaryServer: &models.KeaHAServerStatus{
 					Age:            age[0],
+					AppID:          appID[0],
 					ControlAddress: controlAddress[0],
 					FailoverTime:   failoverTime[0],
 					ID:             ha.PrimaryID,
@@ -792,6 +796,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 				},
 				SecondaryServer: &models.KeaHAServerStatus{
 					Age:            age[1],
+					AppID:          appID[1],
 					ControlAddress: controlAddress[1],
 					FailoverTime:   failoverTime[1],
 					ID:             ha.SecondaryID,

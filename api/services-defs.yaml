@@ -231,6 +231,8 @@
     properties:
       age:
         type: integer
+      appId:
+        type: integer
       controlAddress:
         type: string
       failoverTime:

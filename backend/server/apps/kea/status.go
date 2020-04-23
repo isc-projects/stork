@@ -57,7 +57,7 @@ func (puller *StatusPuller) Shutdown() {
 
 // This function updates HA service status based on the response from the Kea
 // servers.
-func updateHAServiceStatus(status Status, app *dbmodel.App, service *dbmodel.BaseHAService) {
+func updateHAServiceStatus(status Status, daemon *dbmodel.Daemon, service *dbmodel.BaseHAService) {
 	// The status of the remote server should contain "age" value which indicates
 	// how many seconds ago the status of the remote server was gathered. If this
 	// value is present, calculate its timestamp.
@@ -75,7 +75,7 @@ func updateHAServiceStatus(status Status, app *dbmodel.App, service *dbmodel.Bas
 	)
 	// Depending if this server is primary or secondary/standby, we will fill in
 	// different columns of the ha_service table.
-	switch app.ID {
+	switch daemon.ID {
 	case service.PrimaryID:
 		// Primary responded giving its state as "local" server's state.
 		primaryLastState = status.HAServers.Local.State
@@ -153,6 +153,7 @@ func (puller *StatusPuller) pullData() (int, error) {
 		// Before contacting the DHCP server, let's check if there is any service
 		// the app belongs to.
 		dbServices, err := dbmodel.GetDetailedServicesByAppID(puller.Db, apps[i].ID)
+		fmt.Printf("dbServices = %+v\n", dbServices)
 		if err != nil {
 			log.Errorf("error occurred while getting services for Kea app %d: %s", apps[i].ID, err)
 			continue
@@ -171,17 +172,19 @@ func (puller *StatusPuller) pullData() (int, error) {
 			if dbServices[j].HAService == nil {
 				continue
 			}
-			switch apps[i].ID {
-			case dbServices[j].HAService.PrimaryID:
-				dbServices[j].HAService.PrimaryLastState = HAStatusUnavailable
-				dbServices[j].HAService.PrimaryLastScopes = []string{}
-				dbServices[j].HAService.PrimaryReachable = false
-			case dbServices[j].HAService.SecondaryID:
-				dbServices[j].HAService.SecondaryLastState = HAStatusUnavailable
-				dbServices[j].HAService.SecondaryLastScopes = []string{}
-				dbServices[j].HAService.SecondaryReachable = false
+			for _, d := range apps[i].Daemons {
+				switch d.ID {
+				case dbServices[j].HAService.PrimaryID:
+					dbServices[j].HAService.PrimaryLastState = HAStatusUnavailable
+					dbServices[j].HAService.PrimaryLastScopes = []string{}
+					dbServices[j].HAService.PrimaryReachable = false
+				case dbServices[j].HAService.SecondaryID:
+					dbServices[j].HAService.SecondaryLastState = HAStatusUnavailable
+					dbServices[j].HAService.SecondaryLastScopes = []string{}
+					dbServices[j].HAService.SecondaryReachable = false
+				}
+				haServices = append(haServices, dbServices[j])
 			}
-			haServices = append(haServices, dbServices[j])
 		}
 
 		appsCnt++
@@ -199,6 +202,7 @@ func (puller *StatusPuller) pullData() (int, error) {
 			}
 			// Find the matching service for the returned status.
 			index := -1
+
 			for i := range haServices {
 				if haServices[i].HAService.HAType == status.Daemon {
 					index = i
@@ -210,11 +214,12 @@ func (puller *StatusPuller) pullData() (int, error) {
 			// Check if the given app is a primary or secondary/standby server. If it is
 			// not, there is nothing to do.
 			service := haServices[index].HAService
-			if service.PrimaryID != apps[i].ID && service.SecondaryID != apps[i].ID {
-				continue
+			for _, daemon := range apps[i].Daemons {
+				if service.PrimaryID == daemon.ID || service.SecondaryID == daemon.ID {
+					// Update primary and secondary status based on the response.
+					updateHAServiceStatus(status, daemon, service)
+				}
 			}
-			// Update primary and secondary status based on the response.
-			updateHAServiceStatus(status, &apps[i], service)
 		}
 
 		// Update the services as appropriate regardless if we successfully communicated
