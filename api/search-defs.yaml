@@ -1,0 +1,17 @@
+  SearchResult:
+    type: object
+    properties:
+      machines:
+        $ref: '#/definitions/Machines'
+      apps:
+        $ref: '#/definitions/Apps'
+      subnets:
+        $ref: '#/definitions/Subnets'
+      sharedNetworks:
+        $ref: '#/definitions/SharedNetworks'
+      hosts:
+        $ref: '#/definitions/Hosts'
+      users:
+        $ref: '#/definitions/Users'
+      groups:
+        $ref: '#/definitions/Groups'

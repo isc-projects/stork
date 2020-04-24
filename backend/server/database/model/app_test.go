@@ -696,13 +696,13 @@ func TestGetAppsByPage(t *testing.T) {
 	require.NotZero(t, sBind.ID)
 
 	// get all apps
-	apps, total, err := GetAppsByPage(db, 0, 10, "", "")
+	apps, total, err := GetAppsByPage(db, 0, 10, nil, "", "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, apps, 2)
 	require.EqualValues(t, 2, total)
 
 	// get kea apps
-	apps, total, err = GetAppsByPage(db, 0, 10, "", AppTypeKea)
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, AppTypeKea, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
@@ -718,7 +718,7 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Empty(t, pt.Key)
 
 	// get bind apps
-	apps, total, err = GetAppsByPage(db, 0, 10, "", AppTypeBind9)
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, AppTypeBind9, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)

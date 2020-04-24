@@ -55,6 +55,7 @@
         "template-no-negated-async": true,
         "use-lifecycle-interface": true,
         "use-pipe-transform-interface": true,
+        "prefer-conditional-expression": false,
         "semicolon": false,
         "prettier": true
     },

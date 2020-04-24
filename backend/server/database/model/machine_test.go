@@ -148,7 +148,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	defer teardown()
 
 	// no machines yet but try to get some
-	ms, total, err := GetMachinesByPage(db, 0, 10, "")
+	ms, total, err := GetMachinesByPage(db, 0, 10, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 0, total)
 	require.Len(t, ms, 0)
@@ -182,25 +182,26 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	}
 
 	// get 10 machines from 0
-	ms, total, err = GetMachinesByPage(db, 0, 10, "")
+	ms, total, err = GetMachinesByPage(db, 0, 10, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 10)
 
 	// get 2 machines out of 10, from 0
-	ms, total, err = GetMachinesByPage(db, 0, 2, "")
+	ms, total, err = GetMachinesByPage(db, 0, 2, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 2)
 
 	// get 3 machines out of 10, from 2
-	ms, total, err = GetMachinesByPage(db, 2, 3, "")
+	ms, total, err = GetMachinesByPage(db, 2, 3, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 3)
 
 	// get 10 machines out of 10, from 0, but with '1' in contents; should return 2: 1 and 10
-	ms, total, err = GetMachinesByPage(db, 0, 10, "1")
+	text := "1"
+	ms, total, err = GetMachinesByPage(db, 0, 10, &text, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, ms, 2)
@@ -238,13 +239,15 @@ func TestGetMachinesByPageWithFiltering(t *testing.T) {
 	require.NoError(t, err)
 
 	// filter machines by json fields: redhat
-	ms, total, err := GetMachinesByPage(db, 0, 10, "redhat")
+	text := "redhat"
+	ms, total, err := GetMachinesByPage(db, 0, 10, &text, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, ms, 1)
 
 	// filter machines by json fields: my
-	ms, total, err = GetMachinesByPage(db, 0, 10, "my")
+	text = "my"
+	ms, total, err = GetMachinesByPage(db, 0, 10, &text, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, ms, 1)

@@ -260,10 +260,25 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 	return rsp
 }
 
+func (r *RestAPI) getMachines(offset, limit int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Machines, error) {
+	dbMachines, total, err := dbmodel.GetMachinesByPage(r.Db, offset, limit, filterText, sortField, sortDir)
+	if err != nil {
+		return nil, err
+	}
+	machines := &models.Machines{
+		Total: total,
+	}
+
+	for _, dbM := range dbMachines {
+		m := machineToRestAPI(dbM)
+		machines.Items = append(machines.Items, m)
+	}
+
+	return machines, nil
+}
+
 // Get machines where Stork Agent is running.
 func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesParams) middleware.Responder {
-	machines := []*models.Machine{}
-
 	var start int64 = 0
 	if params.Start != nil {
 		start = *params.Start
@@ -291,7 +306,7 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 		"app":   app,
 	}).Info("query machines")
 
-	dbMachines, total, err := dbmodel.GetMachinesByPage(r.Db, start, limit, text)
+	machines, err := r.getMachines(start, limit, params.Text, "", dbmodel.SortDirAny)
 	if err != nil {
 		log.Error(err)
 		msg := "cannot get machines from db"
@@ -300,17 +315,7 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 		})
 		return rsp
 	}
-
-	for _, dbM := range dbMachines {
-		mm := machineToRestAPI(dbM)
-		machines = append(machines, mm)
-	}
-
-	m := models.Machines{
-		Items: machines,
-		Total: total,
-	}
-	rsp := services.NewGetMachinesOK().WithPayload(&m)
+	rsp := services.NewGetMachinesOK().WithPayload(machines)
 	return rsp
 }
 
@@ -610,9 +615,23 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 	return &app
 }
 
-func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) middleware.Responder {
-	appsLst := []*models.App{}
+func (r *RestAPI) getApps(offset, limit int64, filterText *string, appType string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Apps, error) {
+	dbApps, total, err := dbmodel.GetAppsByPage(r.Db, offset, limit, filterText, appType, sortField, sortDir)
+	if err != nil {
+		return nil, err
+	}
+	apps := &models.Apps{
+		Total: total,
+	}
+	for _, dbA := range dbApps {
+		app := dbA
+		a := appToRestAPI(&app)
+		apps.Items = append(apps.Items, a)
+	}
+	return apps, nil
+}
 
+func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) middleware.Responder {
 	var start int64 = 0
 	if params.Start != nil {
 		start = *params.Start
@@ -623,24 +642,19 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 		limit = *params.Limit
 	}
 
-	text := ""
-	if params.Text != nil {
-		text = *params.Text
-	}
-
-	app := ""
+	appType := ""
 	if params.App != nil {
-		app = *params.App
+		appType = *params.App
 	}
 
 	log.WithFields(log.Fields{
 		"start": start,
 		"limit": limit,
-		"text":  text,
-		"app":   app,
+		"text":  params.Text,
+		"app":   appType,
 	}).Info("query apps")
 
-	dbApps, total, err := dbmodel.GetAppsByPage(r.Db, start, limit, text, app)
+	apps, err := r.getApps(start, limit, params.Text, appType, "", dbmodel.SortDirAny)
 	if err != nil {
 		log.Error(err)
 		msg := "cannot get apps from db"
@@ -649,18 +663,7 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 		})
 		return rsp
 	}
-
-	for _, dbA := range dbApps {
-		app := dbA
-		a := appToRestAPI(&app)
-		appsLst = append(appsLst, a)
-	}
-
-	a := models.Apps{
-		Items: appsLst,
-		Total: total,
-	}
-	rsp := services.NewGetAppsOK().WithPayload(&a)
+	rsp := services.NewGetAppsOK().WithPayload(apps)
 	return rsp
 }
 

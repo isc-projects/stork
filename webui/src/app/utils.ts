@@ -113,7 +113,7 @@ export function extractKeyValsAndPrepareQueryParams(text, keys) {
     for (const key of keys) {
         queryParams[key] = null
         for (const m of matches) {
-            if (m[1].toLowerCase() === 'appid') {
+            if (m[1] === key) {
                 queryParams[key] = m[2]
                 text = text.replace(m[0], '')
             }

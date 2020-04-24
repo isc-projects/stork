@@ -151,7 +151,6 @@ export class MachinesPageComponent implements OnInit {
     }
 
     loadMachines(event) {
-        console.info(event)
         let text
         if (event.filters.text) {
             text = event.filters.text.value

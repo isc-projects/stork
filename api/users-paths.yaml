@@ -170,6 +170,10 @@
       operationId: getGroups
       tags:
         - Users
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/filterTextParam'
       responses:
         200:
           description: List of groups returned.

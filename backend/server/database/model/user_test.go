@@ -251,7 +251,7 @@ func TestGetUsers(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByID)
+	users, total, err := GetUsersByPage(db, 0, 1000, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, users, 101)
 	require.EqualValues(t, 101, total)
@@ -264,14 +264,14 @@ func TestGetUsers(t *testing.T) {
 	}
 }
 
-// Tests that users can be fetched and sorted by login or email.
-func TestGetUsersSortByLoginEmail(t *testing.T) {
+// Tests that users can be fetched and sorted by login.
+func TestGetUsersSortByLogin(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByLoginEmail)
+	users, total, err := GetUsersByPage(db, 0, 1000, nil, "login", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, users, 101)
 	require.EqualValues(t, 101, total)
@@ -291,7 +291,7 @@ func TestGetUsersPage(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsers(db, 50, 10, SystemUserOrderByID)
+	users, total, err := GetUsersByPage(db, 50, 10, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, users, 10)
 	require.EqualValues(t, 51, users[0].ID)
@@ -312,7 +312,7 @@ func TestGetUsersLastPage(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsers(db, 90, 20, SystemUserOrderByID)
+	users, total, err := GetUsersByPage(db, 90, 20, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, users, 11)
 	require.EqualValues(t, 91, users[0].ID)
@@ -333,7 +333,7 @@ func TestGetUserByID(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsers(db, 0, 1000, SystemUserOrderByID)
+	users, total, err := GetUsersByPage(db, 0, 1000, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 101, total)
 
@@ -359,11 +359,11 @@ func TestUserGroups(t *testing.T) {
 		Lastname: "Smith",
 		Name:     "John",
 		Password: "pass",
-		Groups: SystemGroups{
-			&SystemGroup{
+		Groups: []*SystemGroup{
+			{
 				ID: 1,
 			},
-			&SystemGroup{
+			{
 				ID: 2,
 			},
 		},
@@ -388,8 +388,8 @@ func TestUserGroups(t *testing.T) {
 	require.True(t, returned.InGroup(&SystemGroup{Name: "admin"}))
 
 	// Remove the user from one of the groups.
-	user.Groups = SystemGroups{
-		&SystemGroup{
+	user.Groups = []*SystemGroup{
+		{
 			ID: 2,
 		},
 	}

@@ -136,6 +136,7 @@ func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterTe
 		}
 		// Create shared network.
 		sharedNetwork := &models.SharedNetwork{
+			ID:              net.ID,
 			Name:            net.Name,
 			Subnets:         subnets,
 			AddrUtilization: float64(net.AddrUtilization) / 10,

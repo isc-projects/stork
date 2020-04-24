@@ -1,0 +1,56 @@
+<input type="text" pInputText placeholder="Search" [(ngModel)]="searchText" (keyup)="searchRecords($event)" />
+
+<p-overlayPanel #searchResultsBox [showCloseIcon]="true">
+    <div style="display: flex;">
+        <div *ngIf="searchResults.subnets.items.length > 0" style="margin-right: 20px; min-width: 9em;">
+            <h4>Subnets</h4>
+            <div *ngFor="let sn of searchResults.subnets.items">[{{ sn.id }}] {{ sn.subnet }}</div>
+            <div style="margin-top: 10px;">
+                <a routerLink="/dhcp/subnets" [queryParams]="{ text: searchText }">more</a>
+            </div>
+        </div>
+        <div *ngIf="searchResults.sharedNetworks.items.length > 0" style="margin-right: 20px; min-width: 9em;">
+            <h4>Shared Networks</h4>
+            <div *ngFor="let net of searchResults.sharedNetworks.items">[{{ net.id }}] {{ net.name }}</div>
+            <div style="margin-top: 10px;">
+                <a routerLink="/dhcp/shared-networks" [queryParams]="{ text: searchText }">more</a>
+            </div>
+        </div>
+        <div *ngIf="searchResults.hosts.items.length > 0" style="margin-right: 20px; min-width: 9em;">
+            <h4>Hosts</h4>
+            <div *ngFor="let h of searchResults.hosts.items">
+                [{{ h.id }}]
+                <span *ngFor="let i of h.hostIdentifiers">
+                    {{ i.idType + '=' + i.idHexValue }}
+                </span>
+            </div>
+            <div style="margin-top: 10px;">
+                <a routerLink="/dhcp/hosts" [queryParams]="{ text: searchText }">more</a>
+            </div>
+        </div>
+        <div *ngIf="searchResults.machines.items.length > 0" style="margin-right: 20px; min-width: 9em;">
+            <h4>Machines</h4>
+            <div *ngFor="let m of searchResults.machines.items">[{{ m.id }}] {{ m.hostname }}</div>
+            <div style="margin-top: 10px;">
+                <a routerLink="/machines/all" [queryParams]="{ text: searchText }">more</a>
+            </div>
+        </div>
+        <div *ngIf="searchResults.apps.items.length > 0" style="margin-right: 20px; min-width: 9em;">
+            <h4>Apps</h4>
+            <div *ngFor="let a of searchResults.apps.items">[{{ a.id }}] {{ a.type }}@{{ a.machine.hostname }}</div>
+            <!-- TODO: not supported yet <div style="margin-top: 10px;"><a >more</a></div> -->
+        </div>
+        <div *ngIf="searchResults.users.items.length > 0" style="margin-right: 20px; min-width: 7em;">
+            <h4>Users</h4>
+            <div *ngFor="let u of searchResults.users.items">[{{ u.id }}] {{ u.email || u.login }}</div>
+            <div style="margin-top: 10px;">
+                <a routerLink="/users/" [queryParams]="{ text: searchText }">more</a>
+            </div>
+        </div>
+        <div *ngIf="searchResults.groups.items.length > 0" style="min-width: 9em;">
+            <h4>Groups</h4>
+            <div *ngFor="let g of searchResults.groups.items">[{{ g.id }}] {{ g.name }}</div>
+            <!-- TODO: not supported yet <div style="margin-top: 10px;"><a >more</a></div> -->
+        </div>
+    </div>
+</p-overlayPanel>

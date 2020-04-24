@@ -315,7 +315,7 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 // text allows for searching hosts by reserved IP addresses and/or
 // host identifiers specified using hexadecimal digits. It is allowed
 // to specify colons while searching by hosts by host identifiers.
-func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64, filterText *string) ([]Host, int64, error) {
+func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Host, int64, error) {
 	hosts := []Host{}
 	q := db.Model(&hosts).DistinctOn("host.id")
 
@@ -369,10 +369,11 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64
 		q = q.Relation("Subnet")
 	}
 
-	q = q.
-		OrderExpr("host.id ASC").
-		Offset(int(offset)).
-		Limit(int(limit))
+	// prepare sorting expression, offser and limit
+	ordExpr := prepareOrderExpr("host", sortField, sortDir)
+	q = q.OrderExpr(ordExpr)
+	q = q.Offset(int(offset))
+	q = q.Limit(int(limit))
 
 	total, err := q.SelectAndCount()
 	if err != nil {

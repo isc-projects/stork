@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core'
+import { Component, OnInit, ViewChild } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { Table } from 'primeng/table'
@@ -19,7 +19,7 @@ import { extractKeyValsAndPrepareQueryParams } from '../utils'
     templateUrl: './hosts-page.component.html',
     styleUrls: ['./hosts-page.component.sass'],
 })
-export class HostsPageComponent implements OnInit, AfterViewInit {
+export class HostsPageComponent implements OnInit {
     @ViewChild('hostsTable') hostsTable: Table
 
     // hosts
@@ -28,25 +28,40 @@ export class HostsPageComponent implements OnInit, AfterViewInit {
 
     // filters
     filterText = ''
+    queryParams = {
+        text: null,
+        appId: null,
+    }
 
     constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) {}
 
     ngOnInit() {
         // handle initial query params
-        const params = this.route.snapshot.queryParams
+        const ssParams = this.route.snapshot.queryParamMap
         let text = ''
-        if (params.appId) {
-            text += ' appId=' + params.appId
+        if (ssParams.get('text')) {
+            text += ' ' + ssParams.get('text')
+        }
+        if (ssParams.get('appId')) {
+            text += ' appId=' + ssParams.get('appId')
         }
         this.filterText = text.trim()
-    }
+        this.updateOurQueryParams(ssParams)
 
-    ngAfterViewInit() {
         // subscribe to subsequent changes to query params
-        this.route.queryParamMap.subscribe((data) => {
-            const event = this.hostsTable.createLazyLoadMetadata()
+        this.route.queryParamMap.subscribe((params) => {
+            this.updateOurQueryParams(params)
+            let event = { first: 0, rows: 10 }
+            if (this.hostsTable) {
+                event = this.hostsTable.createLazyLoadMetadata()
+            }
             this.loadHosts(event)
         })
+    }
+
+    updateOurQueryParams(params) {
+        this.queryParams.text = params.get('text')
+        this.queryParams.appId = params.get('appId')
     }
 
     /**
@@ -56,11 +71,9 @@ export class HostsPageComponent implements OnInit, AfterViewInit {
      *              number of rows to be returned and a text for hosts filtering.
      */
     loadHosts(event) {
-        const params = this.route.snapshot.queryParams
-        const appId = params.appId
-        const text = params.text
+        const params = this.queryParams
 
-        this.dhcpApi.getHosts(event.first, event.rows, appId, null, text).subscribe((data) => {
+        this.dhcpApi.getHosts(event.first, event.rows, params.appId, null, params.text).subscribe((data) => {
             this.hosts = data.items
             this.totalHosts = data.total
         })
@@ -73,8 +86,7 @@ export class HostsPageComponent implements OnInit, AfterViewInit {
      */
     keyUpFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appid'])
-
+            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId'])
             this.router.navigate(['/dhcp/hosts'], {
                 queryParams,
                 queryParamsHandling: 'merge',

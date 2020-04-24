@@ -87,13 +87,37 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 	return users.NewDeleteSessionOK()
 }
 
+func (r *RestAPI) getUsers(offset, limit int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Users, error) {
+	dbUsers, total, err := dbmodel.GetUsersByPage(r.Db, offset, limit, filterText, sortField, sortDir)
+	if err != nil {
+		return nil, err
+	}
+	users := &models.Users{
+		Total: total,
+	}
+	for _, u := range dbUsers {
+		users.Items = append(users.Items, newRestUser(u))
+	}
+	return users, nil
+}
+
 // Get users having an account in the system.
 func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) middleware.Responder {
-	systemUsers, total, err := dbmodel.GetUsers(r.Db, int(*params.Start), int(*params.Limit), dbmodel.SystemUserOrderByID)
+	var start int64 = 0
+	if params.Start != nil {
+		start = *params.Start
+	}
+
+	var limit int64 = 10
+	if params.Limit != nil {
+		limit = *params.Limit
+	}
+
+	usersRsp, err := r.getUsers(start, limit, params.Text, "", dbmodel.SortDirAny)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"start": int(*params.Start),
-			"limit": int(*params.Limit),
+			"start": start,
+			"limit": limit,
 		}).Errorf("failed to get users from the database with error: %s", err.Error())
 
 		msg := "failed to get users from the database"
@@ -104,16 +128,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 		return rsp
 	}
 
-	usersList := []*models.User{}
-	for _, u := range systemUsers {
-		usersList = append(usersList, newRestUser(*u))
-	}
-
-	u := models.Users{
-		Items: usersList,
-		Total: total,
-	}
-	rsp := users.NewGetUsersOK().WithPayload(&u)
+	rsp := users.NewGetUsersOK().WithPayload(usersRsp)
 	return rsp
 }
 
@@ -283,9 +298,34 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 	return users.NewUpdateUserPasswordOK()
 }
 
+func (r *RestAPI) getGroups(offset, limit int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Groups, error) {
+	dbGroups, total, err := dbmodel.GetGroupsByPage(r.Db, offset, limit, filterText, sortField, sortDir)
+	if err != nil {
+		return nil, err
+	}
+
+	groups := &models.Groups{
+		Total: total,
+	}
+	for _, g := range dbGroups {
+		groups.Items = append(groups.Items, newRestGroup(g))
+	}
+	return groups, nil
+}
+
 // Get groups defined in the system.
 func (r *RestAPI) GetGroups(ctx context.Context, params users.GetGroupsParams) middleware.Responder {
-	systemGroups, err := dbmodel.GetGroups(r.Db)
+	var start int64 = 0
+	if params.Start != nil {
+		start = *params.Start
+	}
+
+	var limit int64 = 10
+	if params.Limit != nil {
+		limit = *params.Limit
+	}
+
+	groups, err := r.getGroups(start, limit, params.Text, "", dbmodel.SortDirAny)
 	if err != nil {
 		log.Errorf("failed to get groups from the database with error: %s", err.Error())
 
@@ -297,15 +337,6 @@ func (r *RestAPI) GetGroups(ctx context.Context, params users.GetGroupsParams) m
 		return rsp
 	}
 
-	groupsList := []*models.Group{}
-	for _, g := range systemGroups {
-		groupsList = append(groupsList, newRestGroup(*g))
-	}
-
-	g := models.Groups{
-		Items: groupsList,
-		Total: int64(len(groupsList)),
-	}
-	rsp := users.NewGetGroupsOK().WithPayload(&g)
+	rsp := users.NewGetGroupsOK().WithPayload(groups)
 	return rsp
 }

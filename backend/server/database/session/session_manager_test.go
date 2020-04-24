@@ -43,12 +43,12 @@ func TestMiddlewareNewSession(t *testing.T) {
 		Lastname: "White",
 		Name:     "John C",
 
-		Groups: dbmodel.SystemGroups{
-			&dbmodel.SystemGroup{
+		Groups: []*dbmodel.SystemGroup{
+			{
 				ID:   5,
 				Name: "abc",
 			},
-			&dbmodel.SystemGroup{
+			{
 				ID:   25,
 				Name: "def",
 			},

@@ -39,8 +39,7 @@
             Protocol:
             <p-dropdown
                 [options]="dhcpVersions"
-                [(ngModel)]="selectedDhcpVersion"
-                optionLabel="name"
+                [(ngModel)]="queryParams.dhcpVersion"
                 (onChange)="filterByDhcpVersion()"
             ></p-dropdown>
         </span>

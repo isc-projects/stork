@@ -281,7 +281,7 @@ func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 // Fetches a collection of apps from the database. The offset and limit specify the
 // beginning of the page and the maximum size of the page. Limit has to be greater
 // then 0, otherwise error is returned.
-func GetAppsByPage(db *pg.DB, offset int64, limit int64, text string, appType string) ([]App, int64, error) {
+func GetAppsByPage(db *pg.DB, offset int64, limit int64, filterText *string, appType string, sortField string, sortDir SortDirEnum) ([]App, int64, error) {
 	if limit == 0 {
 		return nil, 0, errors.New("limit should be greater than 0")
 	}
@@ -296,23 +296,21 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, text string, appType st
 	if appType != "" {
 		q = q.Where("type = ?", appType)
 	}
-	if text != "" {
-		text = "%" + text + "%"
+	if filterText != nil {
+		text := "%" + *filterText + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
 			qq = qq.WhereOr("meta->>'Version' ILIKE ?", text)
 			return qq, nil
 		})
 	}
 
-	// and then, first get total count
-	total, err := q.Clone().Count()
-	if err != nil {
-		return nil, 0, errors.Wrapf(err, "problem with getting apps total")
-	}
+	// prepare sorting expression, offser and limit
+	ordExpr := prepareOrderExpr("app", sortField, sortDir)
+	q = q.OrderExpr(ordExpr)
+	q = q.Offset(int(offset))
+	q = q.Limit(int(limit))
 
-	// then retrieve given page of rows
-	q = q.Order("id ASC").Offset(int(offset)).Limit(int(limit))
-	err = q.Select()
+	total, err := q.SelectAndCount()
 	if err != nil {
 		return nil, 0, errors.Wrapf(err, "problem with getting apps")
 	}

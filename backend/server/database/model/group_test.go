@@ -12,8 +12,9 @@ func TestGetGroups(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	groups, err := GetGroups(db)
+	groups, total, err := GetGroupsByPage(db, 0, 10, nil, "", SortDirAny)
 	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
 	// There are two predefined groups.
 	require.Len(t, groups, 2)
 

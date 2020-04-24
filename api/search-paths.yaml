@@ -1,0 +1,24 @@
+  /records:
+    get:
+      summary: Search for records of different types.
+      description: >-
+        A list of hosts is returned in items field accompanied by total count
+        which indicates total available number of records for given filtering
+        parameters.
+      operationId: searchRecords
+      tags:
+        - Search
+      parameters:
+        - name: text
+          in: query
+          description: Search for records containing the given text.
+          type: string
+      responses:
+        200:
+          description: Search result. It includes several lists, one per record type.
+          schema:
+            $ref: "#/definitions/SearchResult"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

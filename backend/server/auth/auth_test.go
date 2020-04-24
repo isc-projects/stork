@@ -17,8 +17,8 @@ func authorizeAccept(t *testing.T, groupID int, path string) bool {
 		ID: 5,
 	}
 	if groupID > 0 {
-		user.Groups = dbmodel.SystemGroups{
-			&dbmodel.SystemGroup{
+		user.Groups = []*dbmodel.SystemGroup{
+			{
 				ID: groupID,
 			},
 		}

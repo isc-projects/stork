@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core'
+import { Component, OnInit, ViewChild } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { Table } from 'primeng/table'
@@ -15,7 +15,7 @@ import { getTotalAddresses, getAssignedAddresses } from '../subnets'
     templateUrl: './shared-networks-page.component.html',
     styleUrls: ['./shared-networks-page.component.sass'],
 })
-export class SharedNetworksPageComponent implements OnInit, AfterViewInit {
+export class SharedNetworksPageComponent implements OnInit {
     @ViewChild('networksTable') networksTable: Table
 
     // networks
@@ -25,38 +25,50 @@ export class SharedNetworksPageComponent implements OnInit, AfterViewInit {
     // filters
     filterText = ''
     dhcpVersions: any[]
-    selectedDhcpVersion: any
+    queryParams = {
+        text: null,
+        dhcpVersion: null,
+        appId: null,
+    }
 
     constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) {}
 
     ngOnInit() {
         // prepare list of DHCP versions, this is used in networks filtering
         this.dhcpVersions = [
-            { name: 'any', value: null },
-            { name: 'DHCPv4', value: '4' },
-            { name: 'DHCPv6', value: '6' },
+            { label: 'any', value: null },
+            { label: 'DHCPv4', value: '4' },
+            { label: 'DHCPv6', value: '6' },
         ]
 
-        // handle initial query params
-        const params = this.route.snapshot.queryParams
-        if (params.dhcpVersion === '4') {
-            this.selectedDhcpVersion = this.dhcpVersions[1]
-        } else if (params.dhcpVersion === '6') {
-            this.selectedDhcpVersion = this.dhcpVersions[2]
-        }
+        const ssParams = this.route.snapshot.queryParamMap
         let text = ''
-        if (params.appId) {
-            text += ' appId=' + params.appId
+        if (ssParams.get('text')) {
+            text += ' ' + ssParams.get('text')
+        }
+        if (ssParams.get('appId')) {
+            text += ' appId=' + ssParams.get('appId')
         }
         this.filterText = text.trim()
-    }
+        this.updateOurQueryParams(ssParams)
 
-    ngAfterViewInit() {
         // subscribe to subsequent changes to query params
-        this.route.queryParamMap.subscribe((data) => {
-            const event = this.networksTable.createLazyLoadMetadata()
+        this.route.queryParamMap.subscribe((params) => {
+            this.updateOurQueryParams(params)
+            let event = { first: 0, rows: 10 }
+            if (this.networksTable) {
+                event = this.networksTable.createLazyLoadMetadata()
+            }
             this.loadNetworks(event)
         })
+    }
+
+    updateOurQueryParams(params) {
+        if (['4', '6'].includes(params.get('dhcpVersion'))) {
+            this.queryParams.dhcpVersion = params.get('dhcpVersion')
+        }
+        this.queryParams.text = params.get('text')
+        this.queryParams.appId = params.get('appId')
     }
 
     /**
@@ -66,15 +78,13 @@ export class SharedNetworksPageComponent implements OnInit, AfterViewInit {
      *              of rows to be returned, dhcp version and text for networks filtering.
      */
     loadNetworks(event) {
-        const params = this.route.snapshot.queryParams
-        const appId = params.appId
-        const dhcpVersion = params.dhcpVersion
-        const text = params.text
-
-        this.dhcpApi.getSharedNetworks(event.first, event.rows, appId, dhcpVersion, text).subscribe((data) => {
-            this.networks = data.items
-            this.totalNetworks = data.total
-        })
+        const params = this.queryParams
+        this.dhcpApi
+            .getSharedNetworks(event.first, event.rows, params.appId, params.dhcpVersion, params.text)
+            .subscribe((data) => {
+                this.networks = data.items
+                this.totalNetworks = data.total
+            })
     }
 
     /**
@@ -82,7 +92,7 @@ export class SharedNetworksPageComponent implements OnInit, AfterViewInit {
      */
     filterByDhcpVersion() {
         this.router.navigate(['/dhcp/shared-networks'], {
-            queryParams: { dhcpVersion: this.selectedDhcpVersion.value },
+            queryParams: { dhcpVersion: this.queryParams.dhcpVersion },
             queryParamsHandling: 'merge',
         })
     }
@@ -93,9 +103,8 @@ export class SharedNetworksPageComponent implements OnInit, AfterViewInit {
      * server-side.
      */
     keyupFilterText(event) {
-        console.info(event)
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appid'])
+            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId'])
 
             this.router.navigate(['/dhcp/shared-networks'], {
                 queryParams,

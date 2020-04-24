@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core'
+import { Component, OnInit, ViewChild } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { Table } from 'primeng/table'
@@ -16,7 +16,7 @@ import { SettingService } from '../setting.service'
     templateUrl: './subnets-page.component.html',
     styleUrls: ['./subnets-page.component.sass'],
 })
-export class SubnetsPageComponent implements OnInit, AfterViewInit {
+export class SubnetsPageComponent implements OnInit {
     @ViewChild('subnetsTable') subnetsTable: Table
 
     // subnets
@@ -26,7 +26,11 @@ export class SubnetsPageComponent implements OnInit, AfterViewInit {
     // filters
     filterText = ''
     dhcpVersions: any[]
-    selectedDhcpVersion: any
+    queryParams = {
+        text: null,
+        dhcpVersion: null,
+        appId: null,
+    }
 
     grafanaUrl: string
 
@@ -40,9 +44,9 @@ export class SubnetsPageComponent implements OnInit, AfterViewInit {
     ngOnInit() {
         // prepare list of DHCP versions, this is used in subnets filtering
         this.dhcpVersions = [
-            { name: 'any', value: null },
-            { name: 'DHCPv4', value: '4' },
-            { name: 'DHCPv6', value: '6' },
+            { label: 'any', value: null },
+            { label: 'DHCPv4', value: '4' },
+            { label: 'DHCPv6', value: '6' },
         ]
 
         this.settingSvc.getSettings().subscribe((data) => {
@@ -50,25 +54,34 @@ export class SubnetsPageComponent implements OnInit, AfterViewInit {
         })
 
         // handle initial query params
-        const params = this.route.snapshot.queryParams
-        if (params.dhcpVersion === '4') {
-            this.selectedDhcpVersion = this.dhcpVersions[1]
-        } else if (params.dhcpVersion === '6') {
-            this.selectedDhcpVersion = this.dhcpVersions[2]
-        }
+        const ssParams = this.route.snapshot.queryParamMap
         let text = ''
-        if (params.appId) {
-            text += ' appId=' + params.appId
+        if (ssParams.get('text')) {
+            text += ' ' + ssParams.get('text')
+        }
+        if (ssParams.get('appId')) {
+            text += ' appId=' + ssParams.get('appId')
         }
         this.filterText = text.trim()
-    }
+        this.updateOurQueryParams(ssParams)
 
-    ngAfterViewInit() {
         // subscribe to subsequent changes to query params
-        this.route.queryParamMap.subscribe((data) => {
-            const event = this.subnetsTable.createLazyLoadMetadata()
+        this.route.queryParamMap.subscribe((params) => {
+            this.updateOurQueryParams(params)
+            let event = { first: 0, rows: 10 }
+            if (this.subnetsTable) {
+                event = this.subnetsTable.createLazyLoadMetadata()
+            }
             this.loadSubnets(event)
         })
+    }
+
+    updateOurQueryParams(params) {
+        if (['4', '6'].includes(params.get('dhcpVersion'))) {
+            this.queryParams.dhcpVersion = params.get('dhcpVersion')
+        }
+        this.queryParams.text = params.get('text')
+        this.queryParams.appId = params.get('appId')
     }
 
     /**
@@ -78,15 +91,14 @@ export class SubnetsPageComponent implements OnInit, AfterViewInit {
      *              of rows to be returned, dhcp version and text for subnets filtering.
      */
     loadSubnets(event) {
-        const params = this.route.snapshot.queryParams
-        const appId = params.appId
-        const dhcpVersion = params.dhcpVersion
-        const text = params.text
+        const params = this.queryParams
 
-        this.dhcpApi.getSubnets(event.first, event.rows, appId, dhcpVersion, text).subscribe((data) => {
-            this.subnets = data.items
-            this.totalSubnets = data.total
-        })
+        this.dhcpApi
+            .getSubnets(event.first, event.rows, params.appId, params.dhcpVersion, params.text)
+            .subscribe((data) => {
+                this.subnets = data.items
+                this.totalSubnets = data.total
+            })
     }
 
     /**
@@ -94,7 +106,7 @@ export class SubnetsPageComponent implements OnInit, AfterViewInit {
      */
     filterByDhcpVersion() {
         this.router.navigate(['/dhcp/subnets'], {
-            queryParams: { dhcpVersion: this.selectedDhcpVersion.value },
+            queryParams: { dhcpVersion: this.queryParams.dhcpVersion },
             queryParamsHandling: 'merge',
         })
     }
@@ -106,8 +118,7 @@ export class SubnetsPageComponent implements OnInit, AfterViewInit {
      */
     keyupFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appid'])
-
+            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId'])
             this.router.navigate(['/dhcp/subnets'], {
                 queryParams,
                 queryParamsHandling: 'merge',

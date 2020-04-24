@@ -14,36 +14,14 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Get list of hosts with specifying an offset and a limit. The hosts can be fetched
-// for a given subnet and with filtering by search text.
-func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) middleware.Responder {
-	var start int64 = 0
-	if params.Start != nil {
-		start = *params.Start
-	}
-
-	var limit int64 = 10
-	if params.Limit != nil {
-		limit = *params.Limit
-	}
-
-	var appID int64 = 0
-	if params.AppID != nil {
-		appID = *params.AppID
-	}
-
+func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Hosts, error) {
 	// Get the hosts from the database.
-	dbHosts, total, err := dbmodel.GetHostsByPage(r.Db, start, limit, appID, params.SubnetID, params.Text)
+	dbHosts, total, err := dbmodel.GetHostsByPage(r.Db, offset, limit, appID, subnetID, filterText, sortField, sortDir)
 	if err != nil {
-		msg := "problem with fetching hosts from the database"
-		log.Error(err)
-		rsp := dhcp.NewGetHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
+		return nil, err
 	}
 
-	hosts := models.Hosts{
+	hosts := &models.Hosts{
 		Total: total,
 	}
 
@@ -99,7 +77,39 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		hosts.Items = append(hosts.Items, &host)
 	}
 
+	return hosts, nil
+}
+
+// Get list of hosts with specifying an offset and a limit. The hosts can be fetched
+// for a given subnet and with filtering by search text.
+func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) middleware.Responder {
+	var start int64 = 0
+	if params.Start != nil {
+		start = *params.Start
+	}
+
+	var limit int64 = 10
+	if params.Limit != nil {
+		limit = *params.Limit
+	}
+
+	var appID int64 = 0
+	if params.AppID != nil {
+		appID = *params.AppID
+	}
+
+	// get hosts from db
+	hosts, err := r.getHosts(start, limit, appID, params.SubnetID, params.Text, "", dbmodel.SortDirAny)
+	if err != nil {
+		msg := "problem with fetching hosts from the database"
+		log.Error(err)
+		rsp := dhcp.NewGetHostsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
 	// Evernything fine.
-	rsp := dhcp.NewGetHostsOK().WithPayload(&hosts)
+	rsp := dhcp.NewGetHostsOK().WithPayload(hosts)
 	return rsp
 }

@@ -1,7 +1,6 @@
 package dbmodel
 
 import (
-	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -266,23 +265,9 @@ func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filt
 		q = q.Group("shared_network.id")
 	}
 
-	// prepare sorting expression
-	sortExpr := ""
-	if sortField != "" {
-		if !strings.Contains(sortField, ".") {
-			sortExpr += "shared_network."
-		}
-		sortExpr += sortField + " "
-	} else {
-		sortExpr = "shared_network.id "
-	}
-	switch sortDir {
-	case SortDirDesc:
-		sortExpr += "DESC NULLS LAST"
-	default:
-		sortExpr += "ASC NULLS FIRST"
-	}
-	q = q.Order(sortExpr)
+	// prepare sorting expression, offser and limit
+	ordExpr := prepareOrderExpr("shared_network", sortField, sortDir)
+	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))
 	q = q.Limit(int(limit))
 

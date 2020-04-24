@@ -1,3 +1,9 @@
+* 61 [func] godfryd
+
+    Implemented global search. It allows looking across different
+    entity types.
+    (Gitlab #256)
+
 * 60 [func] marcin
 
     HA state is presented in the dashboard.

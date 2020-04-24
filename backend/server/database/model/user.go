@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
 
 	dbops "isc.org/stork/server/database"
@@ -18,22 +19,13 @@ type SystemUser struct {
 	Name     string
 	Password string `pg:"password_hash"`
 
-	Groups SystemGroups `pg:"many2many:system_user_to_group,fk:user_id,joinFK:group_id"`
+	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,joinFK:group_id"`
 }
 
 type SystemUserToGroup struct {
 	UserID  int `pg:",pk,not_null,on_delete:CASCADE"`
 	GroupID int `pg:",pk,not_null,on_delete:CASCADE"`
 }
-
-type SystemUsers []*SystemUser
-
-type SystemUserOrderBy int
-
-const (
-	SystemUserOrderByID SystemUserOrderBy = iota
-	SystemUserOrderByLoginEmail
-)
 
 // Returns user's identity for logging purposes. It includes login, email or both.
 func (user *SystemUser) Identity() string {
@@ -232,37 +224,37 @@ func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 // beginning of the page and the maximum size of the page. If these values are set
 // to 0, all users are returned. Limit has to be greater
 // then 0, otherwise error is returned.
-func GetUsers(db *dbops.PgDB, offset, limit int, order SystemUserOrderBy) (users SystemUsers, total int64, err error) {
-	total = int64(0)
+func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SystemUser, int64, error) {
 	if limit == 0 {
-		return nil, total, errors.New("limit should be greater than 0")
+		return nil, 0, errors.New("limit should be greater than 0")
 	}
 
+	var users []SystemUser
 	q := db.Model(&users).Relation("Groups")
 
-	switch order {
-	case SystemUserOrderByLoginEmail:
-		q = q.OrderExpr("login ASC").OrderExpr("email ASC")
-	default:
-		q = q.OrderExpr("id ASC")
+	if filterText != nil {
+		text := "%" + *filterText + "%"
+		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
+			qq = qq.WhereOr("login ILIKE ?", text)
+			qq = qq.WhereOr("email ILIKE ?", text)
+			qq = qq.WhereOr("lastname ILIKE ?", text)
+			qq = qq.WhereOr("name ILIKE ?", text)
+			return qq, nil
+		})
 	}
 
-	// first get total count
-	totalInt, err := q.Clone().Count()
-	if err != nil {
-		return nil, total, errors.Wrapf(err, "problem with getting users total")
-	}
-	total = int64(totalInt)
+	// prepare sorting expression, offser and limit
+	ordExpr := prepareOrderExpr("system_user", sortField, sortDir)
+	q = q.OrderExpr(ordExpr)
+	q = q.Offset(int(offset))
+	q = q.Limit(int(limit))
 
-	// then do actual query
-	q = q.Offset(offset).Limit(limit)
-	err = q.Select()
-
+	total, err := q.SelectAndCount()
 	if err != nil {
 		err = errors.Wrapf(err, "problem with fetching a list of users from the database")
 	}
 
-	return users, total, err
+	return users, int64(total), err
 }
 
 // Fetches a user with a given id from the database. If the user does not exist

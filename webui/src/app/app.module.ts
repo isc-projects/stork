@@ -62,6 +62,7 @@ import { SubnetBarComponent } from './subnet-bar/subnet-bar.component'
 import { HostsPageComponent } from './hosts-page/hosts-page.component'
 import { SettingsPageComponent } from './settings-page/settings-page.component'
 import { HelpTipComponent } from './help-tip/help-tip.component'
+import { GlobalSearchComponent } from './global-search/global-search.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -104,6 +105,7 @@ export function preinitApp(appInitService: AppInitService) {
         HostsPageComponent,
         SettingsPageComponent,
         HelpTipComponent,
+        GlobalSearchComponent,
     ],
     imports: [
         BrowserModule,

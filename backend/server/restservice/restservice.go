@@ -161,6 +161,7 @@ func (r *RestAPI) Serve() (err error) {
 		UsersAPI:        r,
 		DhcpAPI:         r,
 		SettingsAPI:     r,
+		SearchAPI:       r,
 		Logger:          log.Infof,
 		InnerMiddleware: r.InnerMiddleware,
 		Authorizer:      r.Authorizer,

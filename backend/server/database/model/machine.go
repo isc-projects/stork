@@ -94,7 +94,7 @@ func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
 // Fetches a collection of machines from the database. The offset and limit specify the
 // beginning of the page and the maximum size of the page. Limit has to be greater
 // then 0, otherwise error is returned.
-func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Machine, int64, error) {
+func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Machine, int64, error) {
 	if limit == 0 {
 		return nil, 0, errors.New("limit should be greater than 0")
 	}
@@ -103,8 +103,8 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 	// prepare query
 	q := db.Model(&machines)
 	q = q.Relation("Apps.AccessPoints")
-	if text != "" {
-		text = "%" + text + "%"
+	if filterText != nil {
+		text := "%" + *filterText + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
 			qq = qq.WhereOr("address ILIKE ?", text).
 				WhereOr("state->>'AgentVersion' ILIKE ?", text).
@@ -122,15 +122,13 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, text string) ([]Mac
 		})
 	}
 
-	// and then, first get total count
-	total, err := q.Clone().Count()
-	if err != nil {
-		return nil, 0, errors.Wrapf(err, "problem with getting machines total")
-	}
+	// prepare sorting expression, offser and limit
+	ordExpr := prepareOrderExpr("machine", sortField, sortDir)
+	q = q.OrderExpr(ordExpr)
+	q = q.Offset(int(offset))
+	q = q.Limit(int(limit))
 
-	// then retrieve given page of rows
-	q = q.Order("id ASC").Offset(int(offset)).Limit(int(limit))
-	err = q.Select()
+	total, err := q.SelectAndCount()
 	if err != nil {
 		return nil, 0, errors.Wrapf(err, "problem with getting machines")
 	}
