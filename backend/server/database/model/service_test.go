@@ -392,6 +392,26 @@ func TestGetServicesByAppID(t *testing.T) {
 	require.Equal(t, services[1].Name, appServices[1].Name)
 }
 
+// Test that it is possible to get apps by type and get the services
+// returned along with them.
+func TestGetAppWithServices(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	services := addTestServices(t, db)
+	require.GreaterOrEqual(t, len(services), 2)
+
+	apps, err := GetAppsByType(db, AppTypeKea)
+	require.NoError(t, err)
+	require.Len(t, apps, 10)
+
+	// Make sure that all returned apps contain references to the services.
+	for _, app := range apps {
+		require.Len(t, app.Daemons, 1)
+		require.Len(t, app.Daemons[0].Services, 1, "Failed for daemon id %d", app.Daemons[0].ID)
+	}
+}
+
 // Test getting all services.
 func TestGetAllServices(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -553,4 +573,28 @@ func TestIsServiceNew(t *testing.T) {
 	// Set ID and expect that the service is no longer new.
 	s.ID = 100
 	require.False(t, s.IsNew())
+}
+
+// Verifies that the correct HA state is returned by the service for
+// the particular daemon ID.
+func TestGetDaemonHAState(t *testing.T) {
+	service := Service{
+		HAService: &BaseHAService{
+			HAType:             "dhcp4",
+			PrimaryID:          1,
+			SecondaryID:        2,
+			BackupID:           []int64{3, 4},
+			PrimaryLastState:   "load-balancing",
+			SecondaryLastState: "syncing",
+		},
+	}
+
+	require.Equal(t, "load-balancing", service.GetDaemonHAState(1))
+	require.Equal(t, "syncing", service.GetDaemonHAState(2))
+	require.Equal(t, "backup", service.GetDaemonHAState(3))
+	require.Equal(t, "backup", service.GetDaemonHAState(4))
+	require.Empty(t, service.GetDaemonHAState(5))
+
+	service.HAService = nil
+	require.Empty(t, service.GetDaemonHAState(1))
 }

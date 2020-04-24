@@ -83,6 +83,8 @@ type Daemon struct {
 	AppID int64
 	App   *App
 
+	Services []*Service `pg:"many2many:daemon_to_service,fk:daemon_id,joinFK:service_id"`
+
 	KeaDaemon   *KeaDaemon
 	Bind9Daemon *Bind9Daemon
 }

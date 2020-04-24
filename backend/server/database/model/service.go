@@ -420,3 +420,22 @@ func CommitServicesIntoDB(dbIface interface{}, services []Service, daemon *Daemo
 func (s Service) IsNew() bool {
 	return s.ID == 0
 }
+
+// Returns the High Availability state for the given service and daemon.
+func (s Service) GetDaemonHAState(daemonID int64) string {
+	if s.HAService == nil {
+		return ""
+	}
+	if s.HAService.PrimaryID == daemonID {
+		return s.HAService.PrimaryLastState
+	}
+	if s.HAService.SecondaryID == daemonID {
+		return s.HAService.SecondaryLastState
+	}
+	for _, id := range s.HAService.BackupID {
+		if id == daemonID {
+			return "backup"
+		}
+	}
+	return ""
+}

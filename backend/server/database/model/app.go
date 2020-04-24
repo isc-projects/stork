@@ -253,7 +253,7 @@ func GetAppsByMachine(db *pg.DB, machineID int64) ([]App, error) {
 	return apps, nil
 }
 
-// Fetches all app by type from the database.
+// Fetches all apps by type including the corresponding services.
 func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 	var apps []App
 
@@ -264,6 +264,7 @@ func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 
 	switch appType {
 	case AppTypeKea:
+		q = q.Relation("Daemons.Services.HAService")
 		q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	case AppTypeBind9:
 		q = q.Relation("Daemons.Bind9Daemon")
