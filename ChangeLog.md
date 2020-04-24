@@ -1,3 +1,8 @@
+* 60 [func] marcin
+
+    HA state is presented in the dashboard.
+    (Gitlab #251)
+
 * 59 [func] marcin
 
     The list of hosts now includes a tag indicating if the host
