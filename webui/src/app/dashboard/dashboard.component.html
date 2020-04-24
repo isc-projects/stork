@@ -242,13 +242,14 @@
                         <!-- <td>{{ d.addrUtilization }}</td> -->
                         <td>
                             <i
-                                *ngIf="d.haState"
                                 class="pi pi-{{ haStateIcon(d.haState) }}"
                                 style="font-size: 1.5em; vertical-align: text-bottom; color: {{
                                     haStateIconColor(haStateIcon(d.haState))
                                 }};"
                             ></i>
-                            {{ d.haState }}
+                            <span [ngStyle]="{ color: d.haState ? 'black' : 'grey' }">
+                                {{ showHAState(d.haState) }}
+                            </span>
                         </td>
                         <td>{{ showDuration(d.uptime) }}</td>
                     </tr>

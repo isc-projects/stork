@@ -138,9 +138,12 @@ export class DashboardComponent implements OnInit {
     /**
      * Returns the name of the icon to be shown for the given HA state
      *
-     * @returns check, times or exclamation triangle.
+     * @returns check, times, exclamation triangle or ban.
      */
     haStateIcon(haState) {
+        if (!haState || haState.length === 0) {
+            return 'ban'
+        }
         switch (haState) {
             case 'load-balancing':
             case 'hot-standby':
@@ -157,7 +160,8 @@ export class DashboardComponent implements OnInit {
     /**
      * Returns icon color for the given icon name.
      *
-     * @returns Green color for icon check, red for times and orange otherwise.
+     * @returns Green color for icon check, red for times, orange for
+     *          exclamation triangle, grey otherwise.
      */
     haStateIconColor(haStateIcon) {
         switch (haStateIcon) {
@@ -165,8 +169,23 @@ export class DashboardComponent implements OnInit {
                 return '#00a800'
             case 'times':
                 return '#f11'
-            default:
+            case 'exclamation-triangle':
                 return 'orange'
+            default:
+                return 'grey'
         }
+    }
+
+    /**
+     * Returns printable HA state value.
+     *
+     * @returns state name or 'not configured' if the state name
+     *          is empty.
+     */
+    showHAState(state) {
+        if (!state || state.length === 0) {
+            return 'not configured'
+        }
+        return state
     }
 }
