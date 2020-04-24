@@ -945,6 +945,10 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 			if !strings.HasPrefix(dbDaemon.Name, "dhcp") {
 				continue
 			}
+			haState := ""
+			for _, s := range dbDaemon.Services {
+				haState = s.GetDaemonHAState(dbDaemon.ID)
+			}
 			daemon := &models.DhcpDaemon{
 				MachineID:       dbApp.MachineID,
 				Machine:         dbApp.Machine.State.Hostname,
@@ -955,7 +959,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 				Lps15min:        0,
 				Lps24h:          0,
 				AddrUtilization: 0,
-				HaState:         "load-balancing",
+				HaState:         haState,
 				Uptime:          dbDaemon.Uptime,
 			}
 			dhcpDaemons = append(dhcpDaemons, daemon)
