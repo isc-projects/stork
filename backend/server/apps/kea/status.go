@@ -153,7 +153,6 @@ func (puller *StatusPuller) pullData() (int, error) {
 		// Before contacting the DHCP server, let's check if there is any service
 		// the app belongs to.
 		dbServices, err := dbmodel.GetDetailedServicesByAppID(puller.Db, apps[i].ID)
-		fmt.Printf("dbServices = %+v\n", dbServices)
 		if err != nil {
 			log.Errorf("error occurred while getting services for Kea app %d: %s", apps[i].ID, err)
 			continue
@@ -211,12 +210,11 @@ func (puller *StatusPuller) pullData() (int, error) {
 			if index < 0 {
 				continue
 			}
-			// Check if the given app is a primary or secondary/standby server. If it is
-			// not, there is nothing to do.
 			service := haServices[index].HAService
 			for _, daemon := range apps[i].Daemons {
+				// Update the HA service status only if the given server is primary
+				// or secondary.
 				if service.PrimaryID == daemon.ID || service.SecondaryID == daemon.ID {
-					// Update primary and secondary status based on the response.
 					updateHAServiceStatus(status, daemon, service)
 				}
 			}

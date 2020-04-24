@@ -5,9 +5,9 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Checks if the specified Kea app belongs to a given HA service.
-// This is done by matching the HA configuration of the given app
-// with the HA configurations of the other apps already associated
+// Checks if the specified Kea daemon belongs to a given HA service.
+// This is done by matching the HA configuration of the given daemon
+// with the HA configurations of the other daemons already associated
 // with the service. In particular, the HA mode must match and for
 // the peers' configurations the server names, URLs and roles must
 // match.
@@ -50,7 +50,7 @@ func daemonBelongsToHAService(daemon *dbmodel.Daemon, service *dbmodel.Service) 
 		// Now we have to compare the peers' configurations.
 		for _, servicePeer := range serviceDaemonConfigHA.Peers {
 			// For the given peer in the service let's find the corresponding one
-			// specified in the app's configuration.
+			// specified in the daemons's configuration.
 			ok = false
 			for _, daemonPeer := range daemonConfigHA.Peers {
 				if (*daemonPeer.Name == *servicePeer.Name) &&

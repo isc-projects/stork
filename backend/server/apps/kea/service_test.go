@@ -137,7 +137,7 @@ func TestDetectHAServices(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, app.ID)
 
-	// Run service detection for this app.
+	// Run service detection for all daemons in this app.
 	var services []dbmodel.Service
 	for i := range app.Daemons {
 		services = append(services, DetectHAServices(db, app.Daemons[i])...)
@@ -421,8 +421,8 @@ func TestAppBelongsToHAServiceBlankService(t *testing.T) {
 		},
 	}
 
-	// The app doesn't belong to the service because the service includes
+	// The daemon doesn't belong to the service because the service includes
 	// no meaningful information to make such determination. In that case
-	// it is up to the administrator to explicitly add the app to the service.
+	// it is up to the administrator to explicitly add the daemon to the service.
 	require.False(t, daemonBelongsToHAService(app.Daemons[0], service))
 }

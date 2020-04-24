@@ -23,7 +23,7 @@ type BaseService struct {
 }
 
 // A structure reflecting a daemon_to_service SQL table which associates
-// applications with services in many to many relationship.
+// daemons with services in many to many relationship.
 type DaemonToService struct {
 	DaemonID  int64 `pg:",pk"`
 	ServiceID int64 `pg:",pk"`
@@ -66,7 +66,7 @@ type Service struct {
 	HAService *BaseHAService
 }
 
-// Associates apps with a service in the database. The dbIface parameter
+// Associates daemons with a service in the database. The dbIface parameter
 // can be of pg.DB or pg.Tx type. In the first case, this function will
 // start new transaction for adding all association. In the second case
 // the already started transaction will be used.
