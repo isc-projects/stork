@@ -134,4 +134,39 @@ export class DashboardComponent implements OnInit {
     getGrafanaUrl(name, subnet, instance) {
         return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
     }
+
+    /**
+     * Returns the name of the icon to be shown for the given HA state
+     *
+     * @returns check, times or exclamation triangle.
+     */
+    haStateIcon(haState) {
+        switch (haState) {
+            case 'load-balancing':
+            case 'hot-standby':
+            case 'backup':
+                return 'check'
+            case 'unavailable':
+            case 'terminated':
+                return 'times'
+            default:
+                return 'exclamation-triangle'
+        }
+    }
+
+    /**
+     * Returns icon color for the given icon name.
+     *
+     * @returns Green color for icon check, red for times and orange otherwise.
+     */
+    haStateIconColor(haStateIcon) {
+        switch (haStateIcon) {
+            case 'check':
+                return '#00a800'
+            case 'times':
+                return '#f11'
+            default:
+                return 'orange'
+        }
+    }
 }

@@ -215,7 +215,7 @@
                         <!-- TODO <th>LPS (15min)</th> -->
                         <!-- <th>LPS (24h)</th> -->
                         <!-- <th>Pool Used</th> -->
-                        <!-- <th>HA Status</th> -->
+                        <th>HA Status</th>
                         <th>Uptime</th>
                     </tr>
 
@@ -240,13 +240,16 @@
                         <!-- TODO <td>{{ d.lps15min }}</td> -->
                         <!-- <td>{{ d.lps25h }}</td> -->
                         <!-- <td>{{ d.addrUtilization }}</td> -->
-                        <!-- <td> -->
-                        <!--     <i -->
-                        <!--         class="pi pi-check" -->
-                        <!--         style="font-size: 1.5em; vertical-align: text-bottom; color: #00a800;" -->
-                        <!--     ></i -->
-                        <!--     >{{ d.haStatus }} -->
-                        <!-- </td> -->
+                        <td>
+                            <i
+                                *ngIf="d.haState"
+                                class="pi pi-{{ haStateIcon(d.haState) }}"
+                                style="font-size: 1.5em; vertical-align: text-bottom; color: {{
+                                    haStateIconColor(haStateIcon(d.haState))
+                                }};"
+                            ></i>
+                            {{ d.haState }}
+                        </td>
                         <td>{{ showDuration(d.uptime) }}</td>
                     </tr>
 
