@@ -157,3 +157,46 @@ func TestUpdateBind9Daemon(t *testing.T) {
 	require.EqualValues(t, 123, daemon.Bind9Daemon.Stats.ZoneCount)
 	require.EqualValues(t, 5, daemon.Bind9Daemon.Stats.CacheHits)
 }
+
+// Returns all HA state names to which the daemon belongs.
+func TestGetHAStateNames(t *testing.T) {
+	daemon := NewKeaDaemon("dhcp4", true)
+	daemon.ID = 1
+	daemon.Services = []*Service{
+		{
+			BaseService: BaseService{
+				ID: 1,
+			},
+			HAService: &BaseHAService{
+				HAType:             "dhcp4",
+				PrimaryID:          1,
+				SecondaryID:        2,
+				BackupID:           []int64{3, 4},
+				PrimaryLastState:   "load-balancing",
+				SecondaryLastState: "syncing",
+			},
+		},
+		{
+			BaseService: BaseService{
+				ID: 2,
+			},
+		},
+		{
+			BaseService: BaseService{
+				ID: 3,
+			},
+			HAService: &BaseHAService{
+				HAType:             "dhcp4",
+				PrimaryID:          1,
+				SecondaryID:        5,
+				PrimaryLastState:   "hot-standby",
+				SecondaryLastState: "hot-standby",
+			},
+		},
+	}
+	states := daemon.GetHAStateNames()
+	require.Len(t, states, 2)
+
+	require.Contains(t, states, "load-balancing")
+	require.Contains(t, states, "hot-standby")
+}

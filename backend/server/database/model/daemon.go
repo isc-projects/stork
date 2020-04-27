@@ -187,3 +187,16 @@ func (d *KeaDaemon) AfterScan(ctx context.Context) error {
 	}
 	return nil
 }
+
+// Returns a slice containing HA state names of the daemon. This function assumes
+// that the daemon has been fetched from the database along with the services.
+// It doesn't perform database queries on its own.
+func (d *Daemon) GetHAStateNames() (states []string) {
+	for _, service := range d.Services {
+		state := service.GetDaemonHAState(d.ID)
+		if len(state) > 0 {
+			states = append(states, state)
+		}
+	}
+	return states
+}

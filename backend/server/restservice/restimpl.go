@@ -945,9 +945,14 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 			if !strings.HasPrefix(dbDaemon.Name, "dhcp") {
 				continue
 			}
+			// todo: Currently Kea supports only one HA relationship per daemon.
+			// Until we extend Kea to support multiple relationships per daemon
+			// or integrate ISC DHCP with Stork, the number of HA states returned
+			// will be 0 or 1. Therefore, we take the first HA state if it exists
+			// and return it over the REST API.
 			haState := ""
-			for _, s := range dbDaemon.Services {
-				haState = s.GetDaemonHAState(dbDaemon.ID)
+			if haStates := dbDaemon.GetHAStateNames(); len(haStates) > 0 {
+				haState = haStates[0]
 			}
 			daemon := &models.DhcpDaemon{
 				MachineID:       dbApp.MachineID,
