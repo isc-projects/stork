@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/pkg/errors"
 
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -365,4 +366,11 @@ func TestSearchRecords(t *testing.T) {
 	require.EqualValues(t, 0, okRsp.Payload.Subnets.Total)
 	require.Len(t, okRsp.Payload.Users.Items, 0)
 	require.EqualValues(t, 0, okRsp.Payload.Users.Total)
+}
+
+// Check handing error in search.
+func TestSearchErrorHandling(t *testing.T) {
+	err := errors.New("some error")
+	rsp := handleSearchError(err, "some msg")
+	require.EqualValues(t, "some msg", *rsp.(*search.SearchRecordsDefault).Payload.Message)
 }
