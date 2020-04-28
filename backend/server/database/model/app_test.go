@@ -663,6 +663,9 @@ func TestGetAppsByPage(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: keaPoints,
+		Meta: AppMeta{
+			Version: "1.2.3",
+		},
 		Daemons: []*Daemon{
 			{
 				KeaDaemon: &KeaDaemon{
@@ -685,6 +688,9 @@ func TestGetAppsByPage(t *testing.T) {
 		Type:         AppTypeBind9,
 		Active:       true,
 		AccessPoints: bind9Points,
+		Meta: AppMeta{
+			Version: "1.2.4",
+		},
 		Daemons: []*Daemon{
 			{
 				Bind9Daemon: &Bind9Daemon{},
@@ -731,6 +737,54 @@ func TestGetAppsByPage(t *testing.T) {
 	require.Equal(t, "localhost", pt.Address)
 	require.EqualValues(t, 4321, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
+
+	// get apps sorted by id descending
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "", SortDirDesc)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+	require.EqualValues(t, 2, total)
+	require.Equal(t, AppTypeBind9, apps[0].Type)
+	require.Equal(t, AppTypeKea, apps[1].Type)
+
+	// get apps sorted by id ascending
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "", SortDirAsc)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+	require.EqualValues(t, 2, total)
+	require.Equal(t, AppTypeKea, apps[0].Type)
+	require.Equal(t, AppTypeBind9, apps[1].Type)
+
+	// get apps sorted by type descending
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "type", SortDirDesc)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+	require.EqualValues(t, 2, total)
+	require.Equal(t, AppTypeKea, apps[0].Type)
+	require.Equal(t, AppTypeBind9, apps[1].Type)
+
+	// get apps sorted by type ascending
+	apps, total, err = GetAppsByPage(db, 0, 10, nil, "", "type", SortDirAsc)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+	require.EqualValues(t, 2, total)
+	require.Equal(t, AppTypeBind9, apps[0].Type)
+	require.Equal(t, AppTypeKea, apps[1].Type)
+
+	// get apps by filter text, case 1
+	text := "1.2.3"
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAny)
+	require.NoError(t, err)
+	require.Len(t, apps, 1)
+	require.EqualValues(t, 1, total)
+	require.Equal(t, AppTypeKea, apps[0].Type)
+
+	// get apps by filter text, case 2
+	text = "1.2.4"
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAny)
+	require.NoError(t, err)
+	require.Len(t, apps, 1)
+	require.EqualValues(t, 1, total)
+	require.Equal(t, AppTypeBind9, apps[0].Type)
 }
 
 // Test that two names of the active DHCP daemons are returned.

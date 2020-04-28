@@ -205,17 +205,29 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 	return err
 }
 
-// Fetches a collection of shared networks from the database. The offset and limit
-// specify the beginning of the page and the maximum size of the page. The appID
-// is used to filter shared networks to those handled by the given application.
-// The family is used to filter by IPv4 (if 4) or IPv6 (if 6). For all other values
-// of the family parameter both IPv4 and IPv6 shared networks are returned. The
-// filterText can be used to match the shared network name or subnet prefix. The
-// nil value disables such filtering. This function returns a collection of
-// shared networks, the total number of shared networks and error.
+// Fetches a collection of shared networks from the database. The
+// offset and limit specify the beginning of the page and the maximum
+// size of the page. The appID is used to filter shared networks to
+// those handled by the given application.  The family is used to
+// filter by IPv4 (if 4) or IPv6 (if 6). For all other values of the
+// family parameter both IPv4 and IPv6 shared networks are
+// returned. The filterText can be used to match the shared network
+// name or subnet prefix. The nil value disables such
+// filtering. sortField allows indicating sort column in database and
+// sortDir allows selection the order of sorting. If sortField is
+// empty then id is used for sorting.  in SortDirAny is used then ASC
+// order is used. This function returns a collection of shared
+// networks, the total number of shared networks and error.
 func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SharedNetwork, int64, error) {
 	networks := []SharedNetwork{}
 	q := db.Model(&networks)
+
+	// prepare distinct on expression to include sort field, otherwise distinct on will fail
+	distingOnFields := "shared_network.id"
+	if sortField != "" && sortField != "id" && sortField != "shared_network.id" {
+		distingOnFields = sortField + ", " + distingOnFields
+	}
+	q = q.DistinctOn(distingOnFields)
 
 	// If any of the filtering parameters are specified we need to explicitly join
 	// the subnets table so as we can access its columns in the Where clause.
@@ -255,14 +267,6 @@ func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filt
 				WhereOr("shared_network.name LIKE ?", "%"+*filterText+"%")
 			return q, nil
 		})
-	}
-
-	// There are join to subnets and local_subnets so to avoid multiple rows
-	// with the same shared_network do group by shared_network.id.
-	// It does not work with distinct on because this is in conflict with
-	// dynamic order by below (columns didn't match).
-	if appID != 0 || family != 0 || filterText != nil {
-		q = q.Group("shared_network.id")
 	}
 
 	// prepare sorting expression, offser and limit

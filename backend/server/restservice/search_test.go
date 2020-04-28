@@ -30,8 +30,8 @@ func TestSearchRecords(t *testing.T) {
 	okRsp := rsp.(*search.SearchRecordsOK)
 	require.Len(t, okRsp.Payload.Apps.Items, 0)
 	require.EqualValues(t, 0, okRsp.Payload.Apps.Total)
-	require.Len(t, okRsp.Payload.Groups.Items, 2)
-	require.EqualValues(t, 2, okRsp.Payload.Groups.Total)
+	require.Len(t, okRsp.Payload.Groups.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Groups.Total)
 	require.Len(t, okRsp.Payload.Hosts.Items, 0)
 	require.EqualValues(t, 0, okRsp.Payload.Hosts.Total)
 	require.Len(t, okRsp.Payload.Machines.Items, 0)
@@ -40,8 +40,8 @@ func TestSearchRecords(t *testing.T) {
 	require.EqualValues(t, 0, okRsp.Payload.SharedNetworks.Total)
 	require.Len(t, okRsp.Payload.Subnets.Items, 0)
 	require.EqualValues(t, 0, okRsp.Payload.Subnets.Total)
-	require.Len(t, okRsp.Payload.Users.Items, 1)
-	require.EqualValues(t, 1, okRsp.Payload.Users.Total)
+	require.Len(t, okRsp.Payload.Users.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Users.Total)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -228,7 +228,7 @@ func TestSearchRecords(t *testing.T) {
 	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, appSubnets, a46, 1)
 	require.NoError(t, err)
 
-	// search for fox
+	// search for 'fox' - shared network and subnet are expected
 	text := "fox"
 	params = search.SearchRecordsParams{
 		Text: &text,
@@ -248,6 +248,121 @@ func TestSearchRecords(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.SharedNetworks.Total)
 	require.Len(t, okRsp.Payload.Subnets.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Subnets.Total)
+	require.Len(t, okRsp.Payload.Users.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Users.Total)
+
+	// search for '192.118.0.0/24' - subnet is expected
+	text = "192.118.0.0/24"
+	params = search.SearchRecordsParams{
+		Text: &text,
+	}
+	rsp = rapi.SearchRecords(ctx, params)
+	require.IsType(t, &search.SearchRecordsOK{}, rsp)
+	okRsp = rsp.(*search.SearchRecordsOK)
+	require.Len(t, okRsp.Payload.Apps.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Apps.Total)
+	require.Len(t, okRsp.Payload.Groups.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Groups.Total)
+	require.Len(t, okRsp.Payload.Hosts.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Hosts.Total)
+	require.Len(t, okRsp.Payload.Machines.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Machines.Total)
+	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.SharedNetworks.Total)
+	require.Len(t, okRsp.Payload.Subnets.Items, 1)
+	require.EqualValues(t, 1, okRsp.Payload.Subnets.Total)
+	require.Len(t, okRsp.Payload.Users.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Users.Total)
+
+	// search for 'super' - group is expected
+	text = "super"
+	params = search.SearchRecordsParams{
+		Text: &text,
+	}
+	rsp = rapi.SearchRecords(ctx, params)
+	require.IsType(t, &search.SearchRecordsOK{}, rsp)
+	okRsp = rsp.(*search.SearchRecordsOK)
+	require.Len(t, okRsp.Payload.Apps.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Apps.Total)
+	require.Len(t, okRsp.Payload.Groups.Items, 1)
+	require.EqualValues(t, 1, okRsp.Payload.Groups.Total)
+	require.Len(t, okRsp.Payload.Hosts.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Hosts.Total)
+	require.Len(t, okRsp.Payload.Machines.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Machines.Total)
+	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.SharedNetworks.Total)
+	require.Len(t, okRsp.Payload.Subnets.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Subnets.Total)
+	require.Len(t, okRsp.Payload.Users.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Users.Total)
+
+	// search for 'admin' - user and group are expected
+	text = "admin"
+	params = search.SearchRecordsParams{
+		Text: &text,
+	}
+	rsp = rapi.SearchRecords(ctx, params)
+	require.IsType(t, &search.SearchRecordsOK{}, rsp)
+	okRsp = rsp.(*search.SearchRecordsOK)
+	require.Len(t, okRsp.Payload.Apps.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Apps.Total)
+	require.Len(t, okRsp.Payload.Groups.Items, 2)
+	require.EqualValues(t, 2, okRsp.Payload.Groups.Total)
+	require.Len(t, okRsp.Payload.Hosts.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Hosts.Total)
+	require.Len(t, okRsp.Payload.Machines.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Machines.Total)
+	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.SharedNetworks.Total)
+	require.Len(t, okRsp.Payload.Subnets.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Subnets.Total)
+	require.Len(t, okRsp.Payload.Users.Items, 1)
+	require.EqualValues(t, 1, okRsp.Payload.Users.Total)
+
+	// search for 'localhost' - machine is expected
+	text = "localhost"
+	params = search.SearchRecordsParams{
+		Text: &text,
+	}
+	rsp = rapi.SearchRecords(ctx, params)
+	require.IsType(t, &search.SearchRecordsOK{}, rsp)
+	okRsp = rsp.(*search.SearchRecordsOK)
+	require.Len(t, okRsp.Payload.Apps.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Apps.Total)
+	require.Len(t, okRsp.Payload.Groups.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Groups.Total)
+	require.Len(t, okRsp.Payload.Hosts.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Hosts.Total)
+	require.Len(t, okRsp.Payload.Machines.Items, 1)
+	require.EqualValues(t, 1, okRsp.Payload.Machines.Total)
+	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.SharedNetworks.Total)
+	require.Len(t, okRsp.Payload.Subnets.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Subnets.Total)
+	require.Len(t, okRsp.Payload.Users.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Users.Total)
+
+	// search for 'kea' - app is expected
+	text = "kea"
+	params = search.SearchRecordsParams{
+		Text: &text,
+	}
+	rsp = rapi.SearchRecords(ctx, params)
+	require.IsType(t, &search.SearchRecordsOK{}, rsp)
+	okRsp = rsp.(*search.SearchRecordsOK)
+	require.Len(t, okRsp.Payload.Apps.Items, 3)
+	require.EqualValues(t, 3, okRsp.Payload.Apps.Total)
+	require.Len(t, okRsp.Payload.Groups.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Groups.Total)
+	require.Len(t, okRsp.Payload.Hosts.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Hosts.Total)
+	require.Len(t, okRsp.Payload.Machines.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Machines.Total)
+	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.SharedNetworks.Total)
+	require.Len(t, okRsp.Payload.Subnets.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Subnets.Total)
 	require.Len(t, okRsp.Payload.Users.Items, 0)
 	require.EqualValues(t, 0, okRsp.Payload.Users.Total)
 }

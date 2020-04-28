@@ -91,9 +91,13 @@ func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
 	return nil
 }
 
-// Fetches a collection of machines from the database. The offset and limit specify the
-// beginning of the page and the maximum size of the page. Limit has to be greater
-// then 0, otherwise error is returned.
+// Fetches a collection of machines from the database. The offset and
+// limit specify the beginning of the page and the maximum size of the
+// page. Limit has to be greater then 0, otherwise error is
+// returned. sortField allows indicating sort column in database and
+// sortDir allows selection the order of sorting. If sortField is
+// empty then id is used for sorting.  in SortDirAny is used then ASC
+// order is used.
 func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Machine, int64, error) {
 	if limit == 0 {
 		return nil, 0, errors.New("limit should be greater than 0")

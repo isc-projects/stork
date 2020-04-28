@@ -2,9 +2,10 @@
     get:
       summary: Search for records of different types.
       description: >-
-        A list of hosts is returned in items field accompanied by total count
-        which indicates total available number of records for given filtering
-        parameters.
+        A set of lists of records is returned. Each list is made of items field
+        accompanied by total count. Currently there are returned the following
+        lists: subnets, shared networks, hosts, machines, applications, users
+        and groups.
       operationId: searchRecords
       tags:
         - Search

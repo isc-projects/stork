@@ -13,6 +13,7 @@ import (
 
 // Generates a bunch of users and stores them in the database.
 func generateTestUsers(t *testing.T, db *dbops.PgDB) {
+	faker.Seed(1)
 	for i := 0; i < 100; i++ {
 		login := faker.Word()
 		login = fmt.Sprintf("%s%d", login, i)
@@ -324,6 +325,24 @@ func TestGetUsersLastPage(t *testing.T) {
 		require.Greater(t, u.ID, prevID)
 		prevID = u.ID
 	}
+}
+
+// Check filtering users by text.
+func TestGetUsersPageByText(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	generateTestUsers(t, db)
+
+	text := "3"
+	users, total, err := GetUsersByPage(db, 0, 100, &text, "", SortDirAny)
+	require.NoError(t, err)
+	require.Len(t, users, 19)
+	require.EqualValues(t, 19, total)
+	require.EqualValues(t, "ut3", users[0].Login)
+	require.EqualValues(t, "qui32", users[5].Login)
+	require.EqualValues(t, "ut37", users[10].Login)
+	require.EqualValues(t, "est93", users[18].Login)
 }
 
 // Tests that user can be fetched by Id.

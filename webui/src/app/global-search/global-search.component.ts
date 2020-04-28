@@ -4,6 +4,10 @@ import { OverlayPanel } from 'primeng/overlaypanel'
 
 import { SearchService } from '../backend/api/api'
 
+/**
+ * Component for handling global search. It provides box
+ * for entering search text and a panel with results.
+ */
 @Component({
     selector: 'app-global-search',
     templateUrl: './global-search.component.html',
@@ -30,18 +34,26 @@ export class GlobalSearchComponent implements OnInit {
         }
     }
 
+    /**
+     * Search for records server-side, in the database.
+     */
     searchRecords(event) {
-        if (this.searchText.length >= 2 && event.key === 'Enter') {
+        const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'apps', 'users', 'groups']
+
+        if (this.searchText.length >= 2 || event.key === 'Enter') {
             this.searchApi.searchRecords(this.searchText).subscribe((data) => {
-                for (const k of ['subnets', 'sharedNetworks', 'hosts', 'machines', 'apps', 'users', 'groups']) {
+                for (const k of recordTypes) {
                     if (data[k] && data[k].items) {
                         this.searchResults[k] = data[k]
                     } else {
                         this.searchResults[k] = { items: [] }
                     }
                 }
-                this.searchResultsBox.hide()
                 this.searchResultsBox.show(event)
+                // this is a workaround to fix position when content of overlay panel changes
+                setTimeout(() => {
+                    this.searchResultsBox.align()
+                }, 100)
             })
         }
     }

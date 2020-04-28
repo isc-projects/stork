@@ -387,6 +387,38 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.Len(t, subnets[0].LocalSubnets, 1)
 	require.EqualValues(t, a46.ID, subnets[0].LocalSubnets[0].AppID)
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
+
+	// get subnets sorted by id ascending
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, nil, "", SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 7, total)
+	require.Len(t, subnets, 7)
+	require.EqualValues(t, 1, subnets[0].ID)
+	require.EqualValues(t, 7, subnets[6].ID)
+
+	// get subnets sorted by id descending
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, nil, "", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 7, total)
+	require.Len(t, subnets, 7)
+	require.EqualValues(t, 7, subnets[0].ID)
+	require.EqualValues(t, 1, subnets[6].ID)
+
+	// get subnets sorted by prefix ascending
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, nil, "prefix", SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 7, total)
+	require.Len(t, subnets, 7)
+	require.EqualValues(t, 1, subnets[0].ID)
+	require.EqualValues(t, 4, subnets[6].ID)
+
+	// get subnets sorted by prefix descending
+	subnets, total, err = GetSubnetsByPage(db, 0, 10, 0, 0, nil, "prefix", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 7, total)
+	require.Len(t, subnets, 7)
+	require.EqualValues(t, 4, subnets[0].ID)
+	require.EqualValues(t, 1, subnets[6].ID)
 }
 
 // Check if getting subnets works when there is no subnets in config of kea app.
@@ -639,4 +671,38 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	require.EqualValues(t, a4.ID, networks[0].Subnets[0].LocalSubnets[0].AppID)
 	require.EqualValues(t, a4.ID, networks[0].Subnets[1].LocalSubnets[0].AppID)
 	require.Equal(t, "mouse", networks[0].Name)
+
+	// check sorting by id asc
+	networks, total, err = GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, "", SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, networks, 3)
+	require.EqualValues(t, 1, networks[0].ID)
+	require.EqualValues(t, 3, networks[2].ID)
+
+	// check sorting by id desc
+	networks, total, err = GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, "", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, networks, 3)
+	require.EqualValues(t, 3, networks[0].ID)
+	require.EqualValues(t, 1, networks[2].ID)
+
+	// check sorting by name asc
+	networks, total, err = GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, "name", SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, networks, 3)
+	require.EqualValues(t, "fox", networks[0].Name)
+	require.EqualValues(t, "frog", networks[1].Name)
+	require.EqualValues(t, "mouse", networks[2].Name)
+
+	// check sorting by name desc
+	networks, total, err = GetSharedNetworksByPage(db, 0, 10, 0, 0, nil, "name", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, total)
+	require.Len(t, networks, 3)
+	require.EqualValues(t, "mouse", networks[0].Name)
+	require.EqualValues(t, "frog", networks[1].Name)
+	require.EqualValues(t, "fox", networks[2].Name)
 }

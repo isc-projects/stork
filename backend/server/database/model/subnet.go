@@ -319,14 +319,18 @@ func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
 	return subnets, err
 }
 
-// Fetches a collection of subnets from the database. The offset and limit
-// specify the beginning of the page and the maximum size of the page. The appID
-// is used to filter subnets to those handled by the given application.
-// The family is used to filter by IPv4 (if 4) or IPv6 (if 6). For all other values
-// of the family parameter both IPv4 and IPv6 subnets are returned. The filterText
-// can be used to match the subnet prefix or pool ranges. The nil value disables
-// such filtering. This function returns a collection of subnets, the total number
-// of subnets and error.
+// Fetches a collection of subnets from the database. The offset and
+// limit specify the beginning of the page and the maximum size of the
+// page. The appID is used to filter subnets to those handled by the
+// given application.  The family is used to filter by IPv4 (if 4) or
+// IPv6 (if 6). For all other values of the family parameter both IPv4
+// and IPv6 subnets are returned. The filterText can be used to match
+// the subnet prefix or pool ranges. The nil value disables such
+// filtering. sortField allows indicating sort column in database and
+// sortDir allows selection the order of sorting. If sortField is
+// empty then id is used for sorting.  in SortDirAny is used then ASC
+// order is used. This function returns a collection of subnets, the
+// total number of subnets and error.
 func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Subnet, int64, error) {
 	subnets := []Subnet{}
 	q := db.Model(&subnets)

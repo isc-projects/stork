@@ -21,8 +21,15 @@ type SystemGroup struct {
 	Users []*SystemUser `pg:"many2many:system_user_to_group,fk:group_id,joinFK:user_id"`
 }
 
-// Fetches all group definitions from the database ordered by id. It doesn't include
-// users associated with the groups.
+// Fetches a collection of groups from the database. The offset and
+// limit specify the beginning of the page and the maximum size of the
+// page. The filterText can be used to match the name of description
+// of a group. The nil value disables such filtering. sortField allows
+// indicating sort column in database and sortDir allows selection the
+// order of sorting. If sortField is empty then id is used for
+// sorting.  in SortDirAny is used then ASC order is used. This
+// function returns a collection of groups, the total number of groups
+// and error.
 func GetGroupsByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SystemGroup, int64, error) {
 	var groups []SystemGroup
 	q := db.Model(&groups)

@@ -220,10 +220,13 @@ func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 	return true, err
 }
 
-// Fetches a collection of users from the database. The offset and limit specify the
-// beginning of the page and the maximum size of the page. If these values are set
-// to 0, all users are returned. Limit has to be greater
-// then 0, otherwise error is returned.
+// Fetches a collection of users from the database. The offset and
+// limit specify the beginning of the page and the maximum size of the
+// page. If these values are set to 0, all users are returned. Limit
+// has to be greater then 0, otherwise error is returned. sortField
+// allows indicating sort column in database and sortDir allows
+// selection the order of sorting. If sortField is empty then id is
+// used for sorting.  in SortDirAny is used then ASC order is used.
 func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SystemUser, int64, error) {
 	if limit == 0 {
 		return nil, 0, errors.New("limit should be greater than 0")

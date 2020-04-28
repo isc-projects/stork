@@ -489,6 +489,47 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	require.Contains(t, returned, hosts[3])
 }
 
+// Test hosts can be sorted by different fields.
+func TestGetHostsByPageWithSorting(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
+	addTestHosts(t, db)
+
+	// check sorting by id asc
+	returned, total, err := GetHostsByPage(db, 0, 10, 0, nil, nil, "id", SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.EqualValues(t, 1, returned[0].ID)
+	require.EqualValues(t, 4, returned[3].ID)
+
+	// check sorting by id desc
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, "id", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.EqualValues(t, 4, returned[0].ID)
+	require.EqualValues(t, 1, returned[3].ID)
+
+	// check sorting by subnet_id asc
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, "subnet_id", SortDirAsc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.EqualValues(t, 2, returned[0].ID)
+	require.EqualValues(t, 3, returned[3].ID)
+
+	// check sorting by subnet_id desc
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, nil, "subnet_id", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, total)
+	require.Len(t, returned, 4)
+	require.EqualValues(t, 3, returned[0].ID)
+	require.EqualValues(t, 4, returned[3].ID)
+}
+
 // Test that the host and its identifiers and reservations can be
 // deleted.
 func TestDeleteHost(t *testing.T) {

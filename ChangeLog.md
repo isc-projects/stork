@@ -1,6 +1,6 @@
 * 61 [func] godfryd
 
-    Implemented global search. It allows looking across different
+    Implemented global search. It allows for looking across different
     entity types.
     (Gitlab #256)
 

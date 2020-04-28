@@ -278,9 +278,13 @@ func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 	return apps, nil
 }
 
-// Fetches a collection of apps from the database. The offset and limit specify the
-// beginning of the page and the maximum size of the page. Limit has to be greater
-// then 0, otherwise error is returned.
+// Fetches a collection of apps from the database. The offset and
+// limit specify the beginning of the page and the maximum size of the
+// page. Limit has to be greater then 0, otherwise error is
+// returned. sortField allows indicating sort column in database and
+// sortDir allows selection the order of sorting. If sortField is
+// empty then id is used for sorting.  in SortDirAny is used then ASC
+// order is used.
 func GetAppsByPage(db *pg.DB, offset int64, limit int64, filterText *string, appType string, sortField string, sortDir SortDirEnum) ([]App, int64, error) {
 	if limit == 0 {
 		return nil, 0, errors.New("limit should be greater than 0")
@@ -299,12 +303,13 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, filterText *string, app
 	if filterText != nil {
 		text := "%" + *filterText + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
+			qq = qq.WhereOr("type ILIKE ?", text)
 			qq = qq.WhereOr("meta->>'Version' ILIKE ?", text)
 			return qq, nil
 		})
 	}
 
-	// prepare sorting expression, offser and limit
+	// prepare sorting expression, offset and limit
 	ordExpr := prepareOrderExpr("app", sortField, sortDir)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))

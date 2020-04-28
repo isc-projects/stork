@@ -156,7 +156,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	// add 10 machines
 	for i := 1; i <= 10; i++ {
 		m := &Machine{
-			Address:   fmt.Sprintf("host-%d", i),
+			Address:   fmt.Sprintf("host-%d", 21-i),
 			AgentPort: int64(i),
 		}
 		err = AddMachine(db, m)
@@ -199,8 +199,8 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 3)
 
-	// get 10 machines out of 10, from 0, but with '1' in contents; should return 2: 1 and 10
-	text := "1"
+	// get 10 machines out of 10, from 0, but with '2' in contents; should return 1: 20 and 12
+	text := "2"
 	ms, total, err = GetMachinesByPage(db, 0, 10, &text, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 2, total)
@@ -218,8 +218,40 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	require.Len(t, ms[1].Apps[0].AccessPoints, 1)
 	require.Equal(t, "control", ms[1].Apps[0].AccessPoints[0].Type)
 	require.Equal(t, "localhost", ms[1].Apps[0].AccessPoints[0].Address)
-	require.EqualValues(t, 8010, ms[1].Apps[0].AccessPoints[0].Port)
+	require.EqualValues(t, 8009, ms[1].Apps[0].AccessPoints[0].Port)
 	require.Empty(t, ms[1].Apps[0].AccessPoints[0].Key)
+
+	// check sorting by id asc
+	ms, total, err = GetMachinesByPage(db, 0, 100, nil, "", SortDirAsc)
+	require.Nil(t, err)
+	require.EqualValues(t, 10, total)
+	require.Len(t, ms, 10)
+	require.EqualValues(t, 1, ms[0].ID)
+	require.EqualValues(t, 6, ms[5].ID)
+
+	// check sorting by id desc
+	ms, total, err = GetMachinesByPage(db, 0, 100, nil, "", SortDirDesc)
+	require.Nil(t, err)
+	require.EqualValues(t, 10, total)
+	require.Len(t, ms, 10)
+	require.EqualValues(t, 10, ms[0].ID)
+	require.EqualValues(t, 5, ms[5].ID)
+
+	// check sorting by address asc
+	ms, total, err = GetMachinesByPage(db, 0, 100, nil, "address", SortDirAsc)
+	require.Nil(t, err)
+	require.EqualValues(t, 10, total)
+	require.Len(t, ms, 10)
+	require.EqualValues(t, 10, ms[0].ID)
+	require.EqualValues(t, 5, ms[5].ID)
+
+	// check sorting by address desc
+	ms, total, err = GetMachinesByPage(db, 0, 100, nil, "address", SortDirDesc)
+	require.Nil(t, err)
+	require.EqualValues(t, 10, total)
+	require.Len(t, ms, 10)
+	require.EqualValues(t, 1, ms[0].ID)
+	require.EqualValues(t, 6, ms[5].ID)
 }
 
 func TestGetMachinesByPageWithFiltering(t *testing.T) {

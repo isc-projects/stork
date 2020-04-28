@@ -311,13 +311,24 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 // local hosts belong to indicated app. The optional subnetID is used
 // to fetch hosts belonging to the particular IPv4 or IPv6 subnet. If
 // this value is set to nil all subnets are returned.  The value of 0
-// indicates that only global hosts are to be returned.  Filtering
-// text allows for searching hosts by reserved IP addresses and/or
-// host identifiers specified using hexadecimal digits. It is allowed
-// to specify colons while searching by hosts by host identifiers.
+// indicates that only global hosts are to be returned. Filtering text
+// allows for searching hosts by reserved IP addresses and/or host
+// identifiers specified using hexadecimal digits. It is allowed to
+// specify colons while searching by hosts by host
+// identifiers. sortField allows indicating sort column in database
+// and sortDir allows selection the order of sorting. If sortField is
+// empty then id is used for sorting.  in SortDirAny is used then ASC
+// order is used.
 func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Host, int64, error) {
 	hosts := []Host{}
-	q := db.Model(&hosts).DistinctOn("host.id")
+	q := db.Model(&hosts)
+
+	// prepare distinct on expression to include sort field, otherwise distinct on will fail
+	distingOnFields := "host.id"
+	if sortField != "" && sortField != "id" && sortField != "host.id" {
+		distingOnFields = sortField + ", " + distingOnFields
+	}
+	q = q.DistinctOn(distingOnFields)
 
 	// When filtering by appID we also need the local_host table as it holds the
 	// application identifier.
