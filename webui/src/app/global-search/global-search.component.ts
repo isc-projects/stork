@@ -4,6 +4,8 @@ import { OverlayPanel } from 'primeng/overlaypanel'
 
 import { SearchService } from '../backend/api/api'
 
+const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'apps', 'users', 'groups']
+
 /**
  * Component for handling global search. It provides box
  * for entering search text and a panel with results.
@@ -23,14 +25,13 @@ export class GlobalSearchComponent implements OnInit {
     constructor(protected searchApi: SearchService) {}
 
     ngOnInit(): void {
-        this.searchResults = {
-            subnets: { items: [] },
-            sharedNetworks: { items: [] },
-            hosts: { items: [] },
-            machines: { items: [] },
-            apps: { items: [] },
-            users: { items: [] },
-            groups: { items: [] },
+        this.resetResults()
+    }
+
+    resetResults() {
+        this.searchResults = {}
+        for (const rt of recordTypes) {
+            this.searchResults[rt] = { items: [] }
         }
     }
 
@@ -38,10 +39,13 @@ export class GlobalSearchComponent implements OnInit {
      * Search for records server-side, in the database.
      */
     searchRecords(event) {
-        const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'apps', 'users', 'groups']
-
-        if (this.searchText.length >= 2 || event.key === 'Enter') {
+        if (event.key === 'Escape') {
+            this.resetResults()
+            this.searchText = ''
+            this.searchResultsBox.hide()
+        } else if (this.searchText.length >= 2 || event.key === 'Enter') {
             this.searchApi.searchRecords(this.searchText).subscribe((data) => {
+                this.resetResults()
                 for (const k of recordTypes) {
                     if (data[k] && data[k].items) {
                         this.searchResults[k] = data[k]
@@ -55,6 +59,16 @@ export class GlobalSearchComponent implements OnInit {
                     this.searchResultsBox.align()
                 }, 100)
             })
+        } else {
+            this.resetResults()
         }
+    }
+
+    noResults() {
+        let count = 0
+        for (const rt of recordTypes) {
+            count += this.searchResults[rt].items.length
+        }
+        return count === 0
     }
 }

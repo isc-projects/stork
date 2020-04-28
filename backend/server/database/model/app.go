@@ -305,6 +305,8 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, filterText *string, app
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
 			qq = qq.WhereOr("type ILIKE ?", text)
 			qq = qq.WhereOr("meta->>'Version' ILIKE ?", text)
+			qq = qq.WhereOr("machine.address ILIKE ?", text)
+			qq = qq.WhereOr("machine.state->>'Hostname' ILIKE ?", text)
 			return qq, nil
 		})
 	}
