@@ -1,6 +1,11 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { ProfilePageComponent } from './profile-page.component'
+import { HttpClient, HttpHandler } from '@angular/common/http'
+import { UsersService } from '../backend'
+import { Router } from '@angular/router'
+import { MessageService } from 'primeng/api'
+import { AuthService } from '../auth.service'
 
 describe('ProfilePageComponent', () => {
     let component: ProfilePageComponent
@@ -8,6 +13,7 @@ describe('ProfilePageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
+            providers: [MessageService, UsersService, HttpClient, HttpHandler, { provide: Router, useValue: {} }],
             declarations: [ProfilePageComponent],
         }).compileComponents()
     }))

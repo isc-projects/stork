@@ -6,7 +6,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { TooltipModule } from 'primeng/tooltip'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
-import { RouterModule } from '@angular/router'
+import { Router, ActivatedRoute } from '@angular/router'
 import { DHCPService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 
@@ -16,9 +16,13 @@ describe('SharedNetworksPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            imports: [FormsModule, DropdownModule, TableModule, TooltipModule, RouterModule],
+            imports: [FormsModule, DropdownModule, TableModule, TooltipModule],
             declarations: [SharedNetworksPageComponent, SubnetBarComponent],
-            providers: [DHCPService, HttpClient, HttpHandler]
+            providers: [{
+                provide: Router, useValue: {}
+            },{
+                provide: ActivatedRoute, useValue: {}
+            }, DHCPService, HttpClient, HttpHandler]
         }).compileComponents()
     }))
 

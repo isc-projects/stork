@@ -6,7 +6,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
-import { RouterModule } from '@angular/router'
+import { RouterModule, ActivatedRoute, Router } from '@angular/router'
 import { DHCPService, SettingsService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 
@@ -16,7 +16,12 @@ describe('SubnetsPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService, HttpClient, HttpHandler, SettingsService],
+            providers: [DHCPService, HttpClient, HttpHandler, SettingsService, {
+                provide: ActivatedRoute,
+                useValue: {}
+            }, {
+                provide: Router, useValue: {}
+            }],
             imports: [ FormsModule, DropdownModule, TableModule, TooltipModule, RouterModule ],
             declarations: [SubnetsPageComponent, SubnetBarComponent],
         }).compileComponents()
