@@ -341,7 +341,11 @@ func (pke *PromKeaExporter) setDaemonStats(daemonIdx int, rspIfc interface{}, ig
 		textIfc, ok := rsp["text"]
 		if ok {
 			text, ok := textIfc.(string)
-			if ok && (!strings.Contains(text, "server is likely to be offline") || !strings.Contains(text, "forwarding socket is not configured for the server type")) {
+			if ok {
+				if strings.Contains(text, "server is likely to be offline") || strings.Contains(text, "forwarding socket is not configured for the server type") {
+					log.Warnf("problem with connecting to dhcp daemon: %s", text)
+					return nil
+				}
 				return errors.Errorf("response result from Kea != 0: %d, text: %s", int(result), text)
 			}
 		}
@@ -441,7 +445,6 @@ func (pke *PromKeaExporter) collectStats() error {
 		if app.Type != AppTypeKea {
 			continue
 		}
-		log.Printf("APP %+v", app)
 
 		// get stats from kea
 		ctrl, err := getAccessPoint(app, AccessPointControl)
@@ -481,7 +484,8 @@ func (pke *PromKeaExporter) collectStats() error {
 			continue
 		}
 
-		// go though list of responses from daemons (it can have none or some responses from dhcp4/dhcp6)
+		// Go though list of responses from daemons (it can have none or some responses from dhcp4/dhcp6)
+		// and store collected stats in Prometheus structures.
 		for daemonIdx, rspIfc := range rspList {
 			err = pke.setDaemonStats(daemonIdx, rspIfc, ignoredStats)
 			if err != nil {
