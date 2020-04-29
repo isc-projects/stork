@@ -6,6 +6,7 @@ import { FormBuilder } from '@angular/forms'
 import { UsersService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
+import { of } from 'rxjs'
 
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent
@@ -13,15 +14,25 @@ describe('UsersPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            imports: [ ],
+            imports: [],
             declarations: [UsersPageComponent],
-            providers: [ FormBuilder, UsersService, HttpClient, HttpHandler, MessageService, {
-                provide: ActivatedRoute,
-                useValue: {}
-            }, {
-                provide: Router,
-                useValue: {}
-            }]
+            providers: [
+                FormBuilder,
+                UsersService,
+                HttpClient,
+                HttpHandler,
+                MessageService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        paramMap: of({}),
+                    },
+                },
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+            ],
         }).compileComponents()
     }))
 

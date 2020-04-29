@@ -9,6 +9,7 @@ import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { Router, ActivatedRoute } from '@angular/router'
 import { DHCPService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
+import { of } from 'rxjs'
 
 describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
@@ -18,11 +19,22 @@ describe('SharedNetworksPageComponent', () => {
         TestBed.configureTestingModule({
             imports: [FormsModule, DropdownModule, TableModule, TooltipModule],
             declarations: [SharedNetworksPageComponent, SubnetBarComponent],
-            providers: [{
-                provide: Router, useValue: {}
-            },{
-                provide: ActivatedRoute, useValue: {}
-            }, DHCPService, HttpClient, HttpHandler]
+            providers: [
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParams: {} },
+                        queryParamMap: of({}),
+                    },
+                },
+                DHCPService,
+                HttpClient,
+                HttpHandler,
+            ],
         }).compileComponents()
     }))
 

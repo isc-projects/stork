@@ -15,14 +15,17 @@ describe('Bind9AppTabComponent', () => {
         TestBed.configureTestingModule({
             imports: [TooltipModule, TabViewModule, RouterModule],
             declarations: [Bind9AppTabComponent, LocaltimePipe],
-            providers: [ LocationStrategy, {
-                provide: Router,
-                useValue: {}
-            }, {
-                provide: ActivatedRoute,
-                useValue: {}
-
-            }]
+            providers: [
+                LocationStrategy,
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+            ],
         }).compileComponents()
     }))
 

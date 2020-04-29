@@ -19,13 +19,20 @@ describe('KeaAppTabComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService, HttpClient, HttpHandler, LocationStrategy, {
-                provide: ActivatedRoute,
-                useValue: {}
-            }, {
-                provide: Router,
-                useValue: {}
-            }],
+            providers: [
+                DHCPService,
+                HttpClient,
+                HttpHandler,
+                LocationStrategy,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+            ],
             imports: [RouterModule, TableModule, TabViewModule, PanelModule, TooltipModule, MessageModule],
             declarations: [KeaAppTabComponent, HaStatusComponent, LocaltimePipe],
         }).compileComponents()

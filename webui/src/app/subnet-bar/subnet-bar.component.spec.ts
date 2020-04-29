@@ -17,6 +17,13 @@ describe('SubnetBarComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(SubnetBarComponent)
         component = fixture.componentInstance
+        component.subnet = {
+            localSubnets: [
+                {
+                    stats: null,
+                },
+            ],
+        }
         fixture.detectChanges()
     })
 

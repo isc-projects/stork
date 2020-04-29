@@ -6,9 +6,10 @@ import { DropdownModule } from 'primeng/dropdown'
 import { TableModule } from 'primeng/table'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
-import { RouterModule, ActivatedRoute, Router } from '@angular/router'
+import { RouterModule, ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { DHCPService, SettingsService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
+import { of } from 'rxjs'
 
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
@@ -16,13 +17,24 @@ describe('SubnetsPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService, HttpClient, HttpHandler, SettingsService, {
-                provide: ActivatedRoute,
-                useValue: {}
-            }, {
-                provide: Router, useValue: {}
-            }],
-            imports: [ FormsModule, DropdownModule, TableModule, TooltipModule, RouterModule ],
+            providers: [
+                DHCPService,
+                HttpClient,
+                HttpHandler,
+                SettingsService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParams: {} },
+                        queryParamMap: of({}),
+                    },
+                },
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+            ],
+            imports: [FormsModule, DropdownModule, TableModule, TooltipModule, RouterModule],
             declarations: [SubnetsPageComponent, SubnetBarComponent],
         }).compileComponents()
     }))

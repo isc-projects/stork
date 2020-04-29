@@ -10,11 +10,17 @@ describe('AuthGuard', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [RouterModule],
-            providers: [AuthGuard, HttpClient, HttpHandler, UsersService, MessageService, {
-                provide: Router,
-                useValue: {}
-            }
-            ]
+            providers: [
+                AuthGuard,
+                HttpClient,
+                HttpHandler,
+                UsersService,
+                MessageService,
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+            ],
         })
     })
 

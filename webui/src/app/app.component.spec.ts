@@ -13,9 +13,16 @@ import { MessageService } from 'primeng/api'
 describe('AppComponent', () => {
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule, TooltipModule, MenubarModule, SplitButtonModule, ProgressSpinnerModule, ToastModule],
+            imports: [
+                RouterTestingModule,
+                TooltipModule,
+                MenubarModule,
+                SplitButtonModule,
+                ProgressSpinnerModule,
+                ToastModule,
+            ],
             declarations: [AppComponent],
-            providers: [GeneralService, HttpClient, HttpHandler, UsersService, MessageService, SettingsService ]
+            providers: [GeneralService, HttpClient, HttpHandler, UsersService, MessageService, SettingsService],
         }).compileComponents()
     }))
 

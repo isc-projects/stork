@@ -15,13 +15,23 @@ describe('LoginScreenComponent', () => {
         TestBed.configureTestingModule({
             imports: [ReactiveFormsModule, FormsModule, RouterModule],
             declarations: [LoginScreenComponent],
-            providers: [GeneralService, HttpClient, HttpHandler, UsersService, MessageService, {
-                provide: Router,
-                useValue: {}
-            }, {
-                provide: ActivatedRoute,
-                useValue: {}
-            }]
+            providers: [
+                GeneralService,
+                HttpClient,
+                HttpHandler,
+                UsersService,
+                MessageService,
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParams: {} },
+                    },
+                },
+            ],
         }).compileComponents()
     }))
 

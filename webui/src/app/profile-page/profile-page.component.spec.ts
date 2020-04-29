@@ -6,6 +6,7 @@ import { UsersService } from '../backend'
 import { Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { AuthService } from '../auth.service'
+import { of } from 'rxjs'
 
 describe('ProfilePageComponent', () => {
     let component: ProfilePageComponent
@@ -13,7 +14,19 @@ describe('ProfilePageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [MessageService, UsersService, HttpClient, HttpHandler, { provide: Router, useValue: {} }],
+            providers: [
+                MessageService,
+                UsersService,
+                HttpClient,
+                HttpHandler,
+                { provide: Router, useValue: {} },
+                {
+                    provide: AuthService,
+                    useValue: {
+                        currentUser: of({}),
+                    },
+                },
+            ],
             declarations: [ProfilePageComponent],
         }).compileComponents()
     }))

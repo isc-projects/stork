@@ -17,7 +17,7 @@ describe('HaStatusComponent', () => {
         TestBed.configureTestingModule({
             imports: [PanelModule, TooltipModule, MessageModule, RouterModule],
             declarations: [HaStatusComponent, LocaltimePipe],
-            providers: [ServicesService, HttpClient, HttpHandler]
+            providers: [ServicesService, HttpClient, HttpHandler],
         }).compileComponents()
     }))
 

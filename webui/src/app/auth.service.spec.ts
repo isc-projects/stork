@@ -7,11 +7,20 @@ import { RouterModule, Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
 
 describe('AuthService', () => {
-    beforeEach(() => TestBed.configureTestingModule({
-        providers: [HttpClient, HttpHandler, UsersService, {
-            provide: Router, useValue: {}
-        }, MessageService]
-    }))
+    beforeEach(() =>
+        TestBed.configureTestingModule({
+            providers: [
+                HttpClient,
+                HttpHandler,
+                UsersService,
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+                MessageService,
+            ],
+        })
+    )
 
     it('should be created', () => {
         const service: AuthService = TestBed.inject(AuthService)

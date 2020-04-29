@@ -17,6 +17,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router'
 import { ServicesService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
+import { of } from 'rxjs'
 
 describe('AppsPageComponent', () => {
     let component: AppsPageComponent
@@ -24,15 +25,40 @@ describe('AppsPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [ServicesService, HttpClient, HttpHandler, MessageService, {
-                provide: ActivatedRoute,
-                useValue: {}
-            }, {
-                provide: Router,
-                useValue: {}
-            }],
-            imports: [TabMenuModule, MenuModule, FormsModule, TableModule, TooltipModule, TabViewModule, PanelModule, MessageModule, RouterModule],
-            declarations: [AppsPageComponent, Bind9AppTabComponent, KeaAppTabComponent, LocaltimePipe, HaStatusComponent]
+            providers: [
+                ServicesService,
+                HttpClient,
+                HttpHandler,
+                MessageService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        paramMap: of({}),
+                    },
+                },
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+            ],
+            imports: [
+                TabMenuModule,
+                MenuModule,
+                FormsModule,
+                TableModule,
+                TooltipModule,
+                TabViewModule,
+                PanelModule,
+                MessageModule,
+                RouterModule,
+            ],
+            declarations: [
+                AppsPageComponent,
+                Bind9AppTabComponent,
+                KeaAppTabComponent,
+                LocaltimePipe,
+                HaStatusComponent,
+            ],
         }).compileComponents()
     }))
 

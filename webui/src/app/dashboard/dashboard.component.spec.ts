@@ -17,13 +17,23 @@ describe('DashboardComponent', () => {
         TestBed.configureTestingModule({
             imports: [PanelModule, ButtonModule, RouterModule],
             declarations: [DashboardComponent],
-            providers: [ ServicesService, HttpClient, HttpHandler, LocationStrategy, DHCPService, MessageService, SettingsService, {
-                provide: Router,
-                useValue: {}
-            },{
-                provide: ActivatedRoute,
-                useValue: {}
-            }]
+            providers: [
+                ServicesService,
+                HttpClient,
+                HttpHandler,
+                LocationStrategy,
+                DHCPService,
+                MessageService,
+                SettingsService,
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+            ],
         }).compileComponents()
     }))
 

@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { ServicesService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
+import { of } from 'rxjs'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -12,13 +13,22 @@ describe('MachinesPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [ MessageService, {
-                provide: ActivatedRoute,
-                useValue: {}
-            }, {
-                provide: Router,
-                useValue: {}
-            }, ServicesService, HttpClient, HttpHandler],
+            providers: [
+                MessageService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        paramMap: of({}),
+                    },
+                },
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+                ServicesService,
+                HttpClient,
+                HttpHandler,
+            ],
             declarations: [MachinesPageComponent],
         }).compileComponents()
     }))

@@ -13,9 +13,17 @@ describe('PasswordChangePageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [ FormBuilder, UsersService, HttpClient, HttpHandler, MessageService, {
-                provide: Router, useValue: {}
-            }],
+            providers: [
+                FormBuilder,
+                UsersService,
+                HttpClient,
+                HttpHandler,
+                MessageService,
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+            ],
             declarations: [PasswordChangePageComponent],
         }).compileComponents()
     }))
