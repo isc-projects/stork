@@ -28,6 +28,9 @@ export class GlobalSearchComponent implements OnInit {
         this.resetResults()
     }
 
+    /**
+     * Reset results to be empty.
+     */
     resetResults() {
         this.searchResults = {}
         for (const rt of recordTypes) {
@@ -57,13 +60,16 @@ export class GlobalSearchComponent implements OnInit {
                 // this is a workaround to fix position when content of overlay panel changes
                 setTimeout(() => {
                     this.searchResultsBox.align()
-                }, 100)
+                }, 1000)
             })
         } else {
             this.resetResults()
         }
     }
 
+    /**
+     * Return true if there are no results.
+     */
     noResults() {
         let count = 0
         for (const rt of recordTypes) {

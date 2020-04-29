@@ -3,6 +3,7 @@ package restservice
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
 	log "github.com/sirupsen/logrus"
@@ -25,7 +26,7 @@ func handleSearchError(err error, text string) middleware.Responder {
 // If filter text is empty then empty result is returned.
 func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecordsParams) middleware.Responder {
 	// if empty text is provided then empty result is returned
-	if params.Text == nil || *params.Text == "" {
+	if params.Text == nil || strings.TrimSpace(*params.Text) == "" {
 		result := &models.SearchResult{
 			Subnets:        &models.Subnets{},
 			SharedNetworks: &models.SharedNetworks{},
@@ -38,45 +39,46 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 		rsp := search.NewSearchRecordsOK().WithPayload(result)
 		return rsp
 	}
+	text := strings.TrimSpace(*params.Text)
 
 	// get list of subnets
-	subnets, err := r.getSubnets(0, 5, 0, 0, params.Text, "", dbmodel.SortDirAny)
+	subnets, err := r.getSubnets(0, 5, 0, 0, &text, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "cannot get subnets from the db")
 	}
 
 	// get list of shared networks
-	sharedNetworks, err := r.getSharedNetworks(0, 5, 0, 0, params.Text, "", dbmodel.SortDirAny)
+	sharedNetworks, err := r.getSharedNetworks(0, 5, 0, 0, &text, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "cannot get shared networks from the db")
 	}
 
 	// get list of hosts
-	hosts, err := r.getHosts(0, 5, 0, nil, params.Text, "", dbmodel.SortDirAny)
+	hosts, err := r.getHosts(0, 5, 0, nil, &text, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "cannot get hosts from the db")
 	}
 
 	// get list of machines
-	machines, err := r.getMachines(0, 5, params.Text, "", dbmodel.SortDirAny)
+	machines, err := r.getMachines(0, 5, &text, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "cannot get machines from the db")
 	}
 
 	// get list of apps
-	apps, err := r.getApps(0, 5, params.Text, "", "", dbmodel.SortDirAny)
+	apps, err := r.getApps(0, 5, &text, "", "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "cannot get apps from the db")
 	}
 
 	// get list of users
-	users, err := r.getUsers(0, 5, params.Text, "", dbmodel.SortDirAny)
+	users, err := r.getUsers(0, 5, &text, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "cannot get users from the db")
 	}
 
 	// get list of groups
-	groups, err := r.getGroups(0, 5, params.Text, "", dbmodel.SortDirAny)
+	groups, err := r.getGroups(0, 5, &text, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "cannot get groups from the db")
 	}
