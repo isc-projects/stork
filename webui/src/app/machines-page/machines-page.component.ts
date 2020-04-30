@@ -5,6 +5,7 @@ import { MessageService, MenuItem } from 'primeng/api'
 
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
+import { ServerDataService } from '../server-data.service'
 
 interface AppType {
     name: string
@@ -44,6 +45,7 @@ export class MachinesPageComponent implements OnInit {
         private router: Router,
         private servicesApi: ServicesService,
         private msgSrv: MessageService,
+        private serverData: ServerDataService,
         private loadingService: LoadingService
     ) {}
 
@@ -201,6 +203,9 @@ export class MachinesPageComponent implements OnInit {
                 })
                 this.newMachineDlgVisible = false
                 this.addMachineTab(data)
+
+                this.serverData.forceReloadAppsStats()
+
                 this.router.navigate(['/machines/' + data.id])
             },
             (err) => {
@@ -329,6 +334,8 @@ export class MachinesPageComponent implements OnInit {
         // connect method to delete machine
         this.machineMenuItems[1].command = () => {
             this.servicesApi.deleteMachine(machine.id).subscribe((data) => {
+                this.serverData.forceReloadAppsStats()
+
                 // remove from list of machines
                 for (let idx = 0; idx < this.machines.length; idx++) {
                     const m = this.machines[idx]

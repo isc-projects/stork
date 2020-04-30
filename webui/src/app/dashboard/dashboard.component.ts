@@ -2,10 +2,11 @@ import { Component, OnInit } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
-import { ServicesService, DHCPService } from '../backend/api/api'
+import { DHCPService } from '../backend/api/api'
 import { AppsStats } from '../backend/model/appsStats'
 import { humanCount, durationToString, getGrafanaUrl } from '../utils'
 import { SettingService } from '../setting.service'
+import { ServerDataService } from '../server-data.service'
 
 /**
  * Component presenting dashboard with DHCP and DNS overview.
@@ -22,7 +23,7 @@ export class DashboardComponent implements OnInit {
     grafanaUrl: string
 
     constructor(
-        private servicesApi: ServicesService,
+        private serverData: ServerDataService,
         private dhcpApi: DHCPService,
         private msgSrv: MessageService,
         private settingSvc: SettingService
@@ -48,7 +49,7 @@ export class DashboardComponent implements OnInit {
         }
 
         // get stats about apps
-        this.servicesApi.getAppsStats().subscribe(
+        this.serverData.getAppsStats().subscribe(
             (data) => {
                 this.loaded = true
                 this.appsStats = { ...this.appsStats, ...data }
