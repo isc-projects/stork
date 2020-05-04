@@ -25,4 +25,6 @@ insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_a
 insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_address) values (unhex('08080808'), 2, 123, inet_aton('192.0.2.237'));
 insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_address) values (unhex('09090909'), 1, 123, inet_aton('192.0.2.238'));
 insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_address) values (unhex('0a0a0a0a'), 2, 123, inet_aton('192.0.2.239'));
+insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_address) values (unhex('080808080808'), 0, 0, inet_aton('192.0.2.240'));
+insert into hosts(dhcp_identifier, dhcp_identifier_type, dhcp4_subnet_id, ipv4_address) values (unhex('090909090909'), 0, 0, inet_aton('192.0.2.241'));
 EOF
