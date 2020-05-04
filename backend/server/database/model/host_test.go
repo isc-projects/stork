@@ -6,6 +6,7 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/stretchr/testify/require"
 
+	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -855,4 +856,62 @@ func TestHostIdentifierToHex(t *testing.T) {
 	}
 	require.Equal(t, "01:02:03:04:05:0a:0b", id.ToHex(":"))
 	require.Equal(t, "01020304050a0b", id.ToHex(""))
+}
+
+// Tests that global host reservations and their associations with the apps
+// are properly stored in the database.
+func TestCommitGlobalHostsIntoDB(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	tx, _, commit, err := dbops.Transaction(db)
+	require.NoError(t, err)
+
+	apps := addTestSubnetApps(t, db)
+
+	// Create two global hosts. The global hosts have no subnet ID.
+	hosts := []Host{
+		{
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{1, 2, 3, 4, 5, 6},
+				},
+			},
+			IPReservations: []IPReservation{
+				{
+					Address: "192.0.2.56",
+				},
+			},
+		},
+		{
+			HostIdentifiers: []HostIdentifier{
+				{
+					Type:  "client-id",
+					Value: []byte{1, 2, 3, 4},
+				},
+			},
+			IPReservations: []IPReservation{
+				{
+					Address: "192.0.2.156",
+				},
+			},
+		},
+	}
+	// Add the hosts and their associations with the app to the database.
+	err = CommitGlobalHostsIntoDB(tx, hosts, apps[0], "api", 1)
+	require.NoError(t, err)
+	require.NoError(t, commit())
+
+	// Fetch global hosts.
+	returned, err := GetHostsBySubnetID(db, 0)
+	require.NoError(t, err)
+	require.Len(t, returned, 2)
+
+	// Make sure that the returned hosts are associated with the given app
+	// and that they remain global, i.e. subnet id is unspecified.
+	for _, h := range returned {
+		require.Len(t, h.LocalHosts, 1)
+		require.EqualValues(t, apps[0].ID, h.LocalHosts[0].AppID)
+		require.Zero(t, h.SubnetID)
+	}
 }

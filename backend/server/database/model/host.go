@@ -283,7 +283,7 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 	}
 	defer rollback()
 
-	err = tx.Model(&hosts).
+	q := tx.Model(&hosts).
 		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("host_identifier.id ASC"), nil
 		}).
@@ -291,10 +291,20 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
 		Relation("LocalHosts").
-		Where("host.subnet_id = ?", subnetID).
-		OrderExpr("id ASC").
-		Select()
+		OrderExpr("id ASC")
 
+	// Subnet ID is never zero, it may be NULL. The reason for it is that we
+	// have a foreign key that requires subnet to exist for non NULL value.
+	// This constraint allows for NULL subnet_id though. Therefore, searching
+	// for a host with subnet_id of zero is really searching for a host with
+	// the NULL value.
+	if subnetID == 0 {
+		q = q.Where("host.subnet_id IS NULL")
+	} else {
+		q = q.Where("host.subnet_id = ?", subnetID)
+	}
+
+	err = q.Select()
 	if err != nil {
 		if err == pg.ErrNoRows {
 			return nil, nil
@@ -471,28 +481,27 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string, seq 
 	return err
 }
 
-// Iterates over the hosts belonging to the given subnet and stores them
-// or updates in the database.
-func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string, seq int64) (err error) {
-	for i := range subnet.Hosts {
-		// Make sure the host associated with the current subnet.
-		subnet.Hosts[i].SubnetID = subnet.ID
-		newHost := (subnet.Hosts[i].ID == 0)
+// Iterates over the list of hosts and commits them into the database. The hosts
+// can be associated with a subnet or can be made global.
+func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, source string, seq int64) (err error) {
+	for i := range hosts {
+		hosts[i].SubnetID = subnetID
+		newHost := (hosts[i].ID == 0)
 		if newHost {
-			err = AddHost(tx, &subnet.Hosts[i])
+			err = AddHost(tx, &hosts[i])
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to add detected host to the database")
 				return err
 			}
-		} else if subnet.Hosts[i].UpdateOnCommit {
-			err = UpdateHost(tx, &subnet.Hosts[i])
+		} else if hosts[i].UpdateOnCommit {
+			err = UpdateHost(tx, &hosts[i])
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to update detected host in the database")
 				return err
 			}
 		}
-		if newHost || subnet.Hosts[i].UpdateOnCommit {
-			err = AddAppToHost(tx, &subnet.Hosts[i], app, source, seq)
+		if newHost || hosts[i].UpdateOnCommit {
+			err = AddAppToHost(tx, &hosts[i], app, source, seq)
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
 					app.ID)
@@ -501,6 +510,17 @@ func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string,
 		}
 	}
 	return nil
+}
+
+// Iterates over the list of hosts and commits them as global hosts.
+func CommitGlobalHostsIntoDB(tx *pg.Tx, hosts []Host, app *App, source string, seq int64) (err error) {
+	return commitHostsIntoDB(tx, hosts, 0, app, source, seq)
+}
+
+// Iterates over the hosts belonging to the given subnet and stores them
+// or updates in the database.
+func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string, seq int64) (err error) {
+	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, app, source, seq)
 }
 
 // This function returns next value of the bulk_update_seq. The returned value

@@ -15,15 +15,11 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
-// Returns test Kea configuration including multiple IPv6 subnets.
+// Returns test Kea configuration including multiple IPv4 subnets.
 func getTestConfigWithIPv4Subnets(t *testing.T) *dbmodel.KeaConfig {
 	configStr := `{
         "Dhcp4": {
             "subnet4": [
-                {
-                    "id": 123,
-                    "subnet": "192.0.2.0/24"
-                },
                 {
                     "id": 234,
                     "subnet": "192.0.3.0/24"
@@ -76,10 +72,6 @@ func getTestConfigWithIPv6Subnets(t *testing.T) *dbmodel.KeaConfig {
 	configStr := `{
         "Dhcp6": {
             "subnet6": [
-                {
-                    "id": 123,
-                    "subnet": "2001:db8:2::/64"
-                },
                 {
                     "id": 234,
                     "subnet": "2001:db8:3::/64"
@@ -201,7 +193,7 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
 func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
 	var json string
 	switch callNo {
-	case 0:
+	case 1:
 		json = `[
             {
                 "result": 0,
@@ -225,7 +217,7 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
                 }
             }
         ]`
-	case 1, 3:
+	case 0, 2, 3, 5:
 		json = `[
             {
                 "result": 0,
@@ -240,7 +232,7 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
                 }
             }
         ]`
-	case 2:
+	case 4:
 		json = `[
             {
                 "result": 0,
@@ -266,6 +258,7 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
 	command, _ := agentcomm.NewKeaCommand("reservation-get-page", daemons, nil)
 
 	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
 }
 
 // Verifies that the specified host contains the specified host identifier and
@@ -373,17 +366,16 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 5, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 0, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "192.0.2.0/24", it.GetCurrentSubnet().Prefix)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, -1, it.subnetIndex)
+	require.Nil(t, it.GetCurrentSubnet())
 	testHost(t, hosts[0], "01:02:03:04:05:00", "192.0.2.10")
 	testHost(t, hosts[1], "01:02:03:04:05:01", "192.0.2.11")
 	testHost(t, hosts[2], "01:02:03:04:05:02", "192.0.2.12")
 	testHost(t, hosts[3], "01:02:03:04:05:03", "192.0.2.13")
 	testHost(t, hosts[4], "01:02:03:04:05:04", "192.0.2.14")
 	testReservationGetPageReceived(t, it)
-	require.EqualValues(t, 123, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Zero(t, (*fa.GetLastCommand().Arguments)["subnet-id"])
 	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
@@ -394,17 +386,16 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 10, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 0, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "192.0.2.0/24", it.GetCurrentSubnet().Prefix)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, -1, it.subnetIndex)
+	require.Nil(t, it.GetCurrentSubnet())
 	testHost(t, hosts[0], "01:02:03:04:05:05", "192.0.2.15")
 	testHost(t, hosts[1], "01:02:03:04:05:06", "192.0.2.16")
 	testHost(t, hosts[2], "01:02:03:04:05:07", "192.0.2.17")
 	testHost(t, hosts[3], "01:02:03:04:05:08", "192.0.2.18")
 	testHost(t, hosts[4], "01:02:03:04:05:09", "192.0.2.19")
 	testReservationGetPageReceived(t, it)
-	require.EqualValues(t, 123, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Zero(t, (*fa.GetLastCommand().Arguments)["subnet-id"])
 	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
@@ -415,8 +406,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 5, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 1, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 0, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "192.0.3.0/24", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:15", "192.0.3.10")
@@ -436,8 +427,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 10, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 1, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 0, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "192.0.3.0/24", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:20", "192.0.3.15")
@@ -457,8 +448,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 5, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 2, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 1, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "192.0.4.0/24", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:30", "192.0.4.10")
@@ -478,8 +469,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 10, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 2, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 1, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "192.0.4.0/24", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:35", "192.0.4.15")
@@ -499,8 +490,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 5, it.from)
 	require.EqualValues(t, 2, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 3, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 2, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "192.0.5.0/24", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:45", "192.0.5.10")
@@ -520,8 +511,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 10, it.from)
 	require.EqualValues(t, 2, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 3, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 2, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "192.0.5.0/24", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:50", "192.0.5.15")
@@ -541,8 +532,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 5, it.from)
 	require.EqualValues(t, 2, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 4, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 3, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "192.0.6.0/24", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:60", "192.0.6.10")
@@ -562,8 +553,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 10, it.from)
 	require.EqualValues(t, 2, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 4, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 3, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "192.0.6.0/24", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:65", "192.0.6.15")
@@ -583,17 +574,16 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 5, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 0, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "2001:db8:2::/64", it.GetCurrentSubnet().Prefix)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, -1, it.subnetIndex)
+	require.Nil(t, it.GetCurrentSubnet())
 	testHost(t, hosts[0], "01:02:03:04:05:00", "2001:db8:2::10")
 	testHost(t, hosts[1], "01:02:03:04:05:01", "2001:db8:2::11")
 	testHost(t, hosts[2], "01:02:03:04:05:02", "2001:db8:2::12")
 	testHost(t, hosts[3], "01:02:03:04:05:03", "2001:db8:2::13")
 	testHost(t, hosts[4], "01:02:03:04:05:04", "2001:db8:2::14")
 	testReservationGetPageReceived(t, it)
-	require.EqualValues(t, 123, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Zero(t, (*fa.GetLastCommand().Arguments)["subnet-id"])
 	require.NotContains(t, *fa.GetLastCommand().Arguments, "from")
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
@@ -604,17 +594,16 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 10, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 0, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "2001:db8:2::/64", it.GetCurrentSubnet().Prefix)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, -1, it.subnetIndex)
+	require.Nil(t, it.GetCurrentSubnet())
 	testHost(t, hosts[0], "01:02:03:04:05:05", "2001:db8:2::15")
 	testHost(t, hosts[1], "01:02:03:04:05:06", "2001:db8:2::16")
 	testHost(t, hosts[2], "01:02:03:04:05:07", "2001:db8:2::17")
 	testHost(t, hosts[3], "01:02:03:04:05:08", "2001:db8:2::18")
 	testHost(t, hosts[4], "01:02:03:04:05:09", "2001:db8:2::19")
 	testReservationGetPageReceived(t, it)
-	require.EqualValues(t, 123, (*fa.GetLastCommand().Arguments)["subnet-id"])
+	require.Zero(t, (*fa.GetLastCommand().Arguments)["subnet-id"])
 	require.Contains(t, *fa.GetLastCommand().Arguments, "from")
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
@@ -625,8 +614,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 5, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 1, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 0, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "2001:db8:3::/64", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:15", "2001:db8:3::10")
@@ -646,8 +635,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 10, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 1, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 0, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "2001:db8:3::/64", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:20", "2001:db8:3::15")
@@ -667,8 +656,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 5, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 2, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 1, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "2001:db8:4::/64", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:30", "2001:db8:4::10")
@@ -688,8 +677,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 10, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 2, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 1, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "2001:db8:4::/64", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:35", "2001:db8:4::15")
@@ -709,8 +698,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 5, it.from)
 	require.EqualValues(t, 2, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 3, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 2, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "2001:db8:5::/64", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:45", "2001:db8:5::10")
@@ -730,8 +719,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 10, it.from)
 	require.EqualValues(t, 2, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 3, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 2, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "2001:db8:5::/64", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:50", "2001:db8:5::15")
@@ -751,8 +740,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 5, it.from)
 	require.EqualValues(t, 2, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 4, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 3, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "2001:db8:6::/64", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:60", "2001:db8:6::10")
@@ -772,8 +761,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Len(t, hosts, 5)
 	require.EqualValues(t, 10, it.from)
 	require.EqualValues(t, 2, it.sourceIndex)
-	require.Len(t, it.subnets, 5)
-	require.EqualValues(t, 4, it.subnetIndex)
+	require.Len(t, it.subnets, 4)
+	require.EqualValues(t, 3, it.subnetIndex)
 	require.NotNil(t, it.GetCurrentSubnet())
 	require.Equal(t, "2001:db8:6::/64", it.GetCurrentSubnet().Prefix)
 	testHost(t, hosts[0], "01:02:03:04:05:65", "2001:db8:6::15")
@@ -797,7 +786,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 0, it.from)
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Empty(t, it.subnets)
-	require.EqualValues(t, 0, it.subnetIndex)
+	require.EqualValues(t, -1, it.subnetIndex)
 	require.Nil(t, it.GetCurrentSubnet())
 	testReservationGetPageReceived(t, it)
 	require.EqualValues(t, 678, (*fa.GetLastCommand().Arguments)["subnet-id"])
@@ -849,7 +838,7 @@ func TestDetectAndCommitHostsIntoDB(t *testing.T) {
 
 	fa := storktest.NewFakeAgents(mockReservationGetPage, nil)
 
-	// Detect hosts to times in the row. This simulates periodic
+	// Detect hosts two times in the row. This simulates periodic
 	// pull of the hosts for the given app.
 	for i := 0; i < 2; i++ {
 		err = DetectAndCommitHostsIntoDB(db, fa, &app, 1)

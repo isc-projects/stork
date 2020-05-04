@@ -152,7 +152,7 @@ func NewHostDetectionIterator(db *dbops.PgDB, app *dbmodel.App, agents agentcomm
 		sourceIndex: 1,
 		url:         "",
 		subnets:     []dbmodel.Subnet{},
-		subnetIndex: 0,
+		subnetIndex: -1,
 	}
 	return it
 }
@@ -165,7 +165,7 @@ func (iterator *HostDetectionIterator) reset() {
 	iterator.from = 0
 	iterator.sourceIndex = 1
 	iterator.subnets = make([]dbmodel.Subnet, 0)
-	iterator.subnetIndex = 0
+	iterator.subnetIndex = -1
 }
 
 // Iterates over the hosts fetched from the Kea server and converts them to
@@ -177,7 +177,9 @@ func (iterator *HostDetectionIterator) convertAndAssignHosts(fetchedHosts []dbmo
 		if err != nil {
 			continue
 		}
-		host.SubnetID = iterator.subnets[iterator.subnetIndex].ID
+		if iterator.subnetIndex >= 0 {
+			host.SubnetID = iterator.subnets[iterator.subnetIndex].ID
+		}
 		hosts = append(hosts, *host)
 	}
 	return hosts
@@ -195,19 +197,16 @@ func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel
 	}
 	// We need to set subnet-id. This required extracting the local subnet-id
 	// for the given app.
-	subnet := iterator.GetCurrentSubnet()
 	subnetID := int64(0)
-	for _, ls := range subnet.LocalSubnets {
-		if ls.AppID == iterator.app.ID {
-			subnetID = ls.LocalSubnetID
-			break
+	subnet := iterator.GetCurrentSubnet()
+	// The returned subnet will be nil if we're fetching global host reservations.
+	if subnet != nil {
+		for _, ls := range subnet.LocalSubnets {
+			if ls.AppID == iterator.app.ID {
+				subnetID = ls.LocalSubnetID
+				break
+			}
 		}
-	}
-	if subnetID == 0 {
-		// This is not possible if we have fetched subnets for the given app
-		// but let's be safe.
-		return hosts, agentcomm.KeaResponseError, false, errors.Errorf("specified subnet does not belong to the app with ID %d",
-			iterator.app.ID)
 	}
 	// The subnet-id and limit are mandatory.
 	arguments := map[string]interface{}{
@@ -227,8 +226,9 @@ func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel
 	if err != nil {
 		return hosts, agentcomm.KeaResponseError, false, err
 	}
+
 	commands := []*agentcomm.KeaCommand{command}
-	response := []ReservationGetPageResponse{}
+	response := make([]ReservationGetPageResponse, 1)
 	ctx := context.Background()
 	respResult, err := iterator.agents.ForwardToKeaOverHTTP(ctx, iterator.app.Machine.Address, iterator.app.Machine.AgentPort,
 		iterator.url, commands, &response)
@@ -275,7 +275,7 @@ func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel
 // returned by the DetectHostsFromHostCmds function. This allows for correlating
 // the returned hosts with the subnet.
 func (iterator *HostDetectionIterator) GetCurrentSubnet() *dbmodel.Subnet {
-	if iterator.subnetIndex >= len(iterator.subnets) {
+	if iterator.subnetIndex < 0 || iterator.subnetIndex >= len(iterator.subnets) {
 		return nil
 	}
 	return &iterator.subnets[iterator.subnetIndex]
@@ -355,15 +355,6 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 			if err != nil {
 				return hosts, done, errors.WithMessagef(err, "problem with getting Kea subnets upon an attempt to detect host reservations over the host_cmds hooks library")
 			}
-			// Start from the first subnet.
-			iterator.subnetIndex = 0
-			// If this server has no subnets and we're still at the first server, let's
-			// try the next one if exists.
-			if len(iterator.subnets) == 0 {
-				serverIndex++
-				iterator.serverIndex = serverIndex
-				continue
-			}
 		}
 
 		// Iterate over the subnets and for each subnet fetch the hosts.
@@ -424,6 +415,77 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 	return hosts, done, err
 }
 
+// Merges global or subnet specific hosts and returns the slice with merged
+// hosts. When subnetID of 0 is specified it indicates that the global hosts
+// are being merged. If the given host already exists in the database and a
+// new host is equal to it, the new host is not added. If none of the existing
+// hosts equals the new host, the new host is appended to the returned slice.
+// This function is called by mergeGlobalHosts and mergeSubnetHosts.
+func mergeHosts(db *dbops.PgDB, subnetID int64, newHosts []dbmodel.Host, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
+	if len(newHosts) == 0 {
+		return hosts, err
+	}
+
+	existingHosts, err := dbmodel.GetHostsBySubnetID(db, subnetID)
+	if err != nil {
+		return hosts, errors.WithMessagef(err, "problem with merging hosts for subnet %d", subnetID)
+	}
+	hosts = append(hosts, existingHosts...)
+
+	// Merge each new host.
+	for _, n := range newHosts {
+		newHost := n
+		found := false
+		// Iterate over the existing hosts to check if the new hosts are there already.
+		for i, h := range existingHosts {
+			host := h
+			if n.Equal(&host) {
+				// Host found and matches the new host so nothing to do.
+				found = true
+
+				// Indicate that the host should be updated and that the new app should
+				// be associated with it upon the call to dbmodel.CommitSubnetHostsIntoDB
+				// or dbmodel.CommitGlobalHostsIntoDB.
+				hosts[i].UpdateOnCommit = true
+
+				// Check if there is already an association between this app and the
+				// given host. If there is, we need to reset the sequence number for
+				// it to force of the sequence number. Otherwise, the old sequence
+				// number will remain.
+				for j, lh := range host.LocalHosts {
+					if lh.AppID == app.ID {
+						hosts[i].LocalHosts[j].UpdateSeq = 0
+					}
+				}
+				break
+			}
+		}
+		if !found {
+			// Host doesn't exist yet, so let's add it.
+			newHost.UpdateOnCommit = true
+			hosts = append(hosts, newHost)
+		}
+	}
+
+	return hosts, err
+}
+
+// Merges new set of global hosts with existing global hosts.
+func mergeGlobalHosts(db *dbops.PgDB, newHosts []dbmodel.Host, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
+	return mergeHosts(db, int64(0), newHosts, app)
+}
+
+// Merges hosts belonging to the new subnet into the hosts within existing subnet.
+// A host from the new subnet is added to the slice of returned hosts if such
+// host doesn't exist. If the host with exactly the same set of of identifiers
+// and IP reservation exists, it is not added to the slice of returned hosts to
+// avoid duplication. As a result, the returned slice of hosts is a collection of
+// existing hosts plus the hosts from the new subnet which do not exist in the
+// database.
+func mergeSubnetHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
+	return mergeHosts(db, existingSubnet.ID, newSubnet.Hosts, app)
+}
+
 // Fetches all host reservations stored in the hosts backend for the particular
 // Kea app. The app must have the host_cmds hooks library loaded. The function
 // uses HostDetectionIterator mechanism to fetch the hosts, which will in
@@ -447,14 +509,23 @@ func DetectAndCommitHostsIntoDB(db *dbops.PgDB, agents agentcomm.ConnectedAgents
 		if err != nil {
 			break
 		}
-		// This condition is rather impossible but let's make sure.
+		// This condition is unlikely but let's make sure.
 		if len(hosts) == 0 {
 			continue
 		}
-		// Same here. It is rather impossible but let's proceed until
-		// the iterator says we're done or there is an error.
 		subnet := it.GetCurrentSubnet()
+		// The subnet is nil when we're dealing with the global hosts.
 		if subnet == nil {
+			mergedHosts, err := mergeGlobalHosts(db, hosts, app)
+			if err != nil {
+				break
+			}
+			err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, app, "api", seq)
+			if err != nil {
+				break
+			}
+			// We're done with global hosts, so let's get the next chunk of
+			// hosts. They can be both global or subnet specific.
 			continue
 		}
 		// The returned hosts belong to the subnet, but the subnet instance
@@ -468,7 +539,7 @@ func DetectAndCommitHostsIntoDB(db *dbops.PgDB, agents agentcomm.ConnectedAgents
 		// the subnet with the new hosts (fetched via the Kea API). These
 		// hosts are merged into the existing hosts for this subnet and
 		// returned as mergedHosts.
-		mergedHosts, err := mergeHosts(db, subnet, subnet, app)
+		mergedHosts, err := mergeSubnetHosts(db, subnet, subnet, app)
 		if err != nil {
 			break
 		}
