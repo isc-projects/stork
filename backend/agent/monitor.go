@@ -166,7 +166,7 @@ func (sm *appMonitor) detectApps() {
 			found = true
 		}
 		if !found {
-			log.Printf("new %s app detected:", appNew.Type)
+			log.Printf("new or updated %s app detected:", appNew.Type)
 			for _, ap := range appNew.AccessPoints {
 				log.Printf("   %s: %s:%d", ap.Type, ap.Address, ap.Port)
 			}
