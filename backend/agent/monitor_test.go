@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -157,6 +158,11 @@ func TestDetectBind9App(t *testing.T) {
 	require.Equal(t, "127.0.0.80", point.Address)
 	require.EqualValues(t, 80, point.Port)
 	require.Empty(t, point.Key)
+
+	// check BIND 9 app detection when its conf file is relative to CWD of its process
+	app = detectBind9App([]string{"", "", "-c path.cfg"}, "/fake", cmdr)
+	require.NotNil(t, app)
+	require.Equal(t, app.Type, AppTypeBind9)
 }
 
 func makeKeaConfFile() (file *os.File, removeFunc func(string) error) {
@@ -180,10 +186,11 @@ func makeKeaConfFile() (file *os.File, removeFunc func(string) error) {
 
 func TestDetectKeaApp(t *testing.T) {
 	tmpFile, remove := makeKeaConfFile()
-	defer remove(tmpFile.Name())
+	tmpFilePath := tmpFile.Name()
+	defer remove(tmpFilePath)
 
 	// check kea app detection
-	app := detectKeaApp([]string{"", "", tmpFile.Name()}, "")
+	app := detectKeaApp([]string{"", "", tmpFilePath}, "")
 	require.NotNil(t, app)
 	require.Equal(t, AppTypeKea, app.Type)
 	require.Len(t, app.AccessPoints, 1)
@@ -192,6 +199,12 @@ func TestDetectKeaApp(t *testing.T) {
 	require.Equal(t, "localhost", ctrlPoint.Address)
 	require.EqualValues(t, 45634, ctrlPoint.Port)
 	require.Empty(t, ctrlPoint.Key)
+
+	// check kea app detection when kea conf file is relative to CWD of kea process
+	cwd, file := path.Split(tmpFilePath)
+	app = detectKeaApp([]string{"", "", file}, cwd)
+	require.NotNil(t, app)
+	require.Equal(t, AppTypeKea, app.Type)
 }
 
 func TestGetAccessPoint(t *testing.T) {

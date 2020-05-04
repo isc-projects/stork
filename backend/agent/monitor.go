@@ -45,6 +45,12 @@ type appMonitor struct {
 	apps []*App // list of detected apps on the host
 }
 
+// Names of apps that are being detected.
+const (
+	keaProcName = "kea-ctrl-agent"
+	namedProcName = "named"
+)
+
 func NewAppMonitor() AppMonitor {
 	sm := &appMonitor{
 		requests: make(chan chan []*App),
@@ -83,10 +89,10 @@ func (sm *appMonitor) detectApps() {
 	// where cmdline of the process contains given pattern with kea-ctrl-agent
 	// substring. Such found processes are being processed further and all other
 	// Kea daemons are discovered and queried for their versions, etc.
-	keaPtrn := regexp.MustCompile(`(.*)/kea-ctrl-agent\s+.*-c\s+(\S+)`)
+	keaPtrn := regexp.MustCompile(`(.*)kea-ctrl-agent\s+.*-c\s+(\S+)`)
 	// BIND 9 app is being detecting by browsing list of processes in the system
 	// where cmdline of the process contains given pattern with named substring.
-	bind9Ptrn := regexp.MustCompile(`(.*)/named\s+(.*)`)
+	bind9Ptrn := regexp.MustCompile(`(.*)named\s+(.*)`)
 
 	var apps []*App
 
@@ -96,7 +102,7 @@ func (sm *appMonitor) detectApps() {
 		cmdline := ""
 		cwd := ""
 		var err error
-		if procName == "kea-ctrl-agent" || procName == "named" {
+		if procName == keaProcName || procName == namedProcName {
 			cmdline, err = p.Cmdline()
 			if err != nil {
 				log.Warnf("cannot get process command line: %+v", err)
@@ -109,7 +115,7 @@ func (sm *appMonitor) detectApps() {
 			}
 		}
 
-		if procName == "kea-ctrl-agent" {
+		if procName == keaProcName {
 			// detect kea
 			m := keaPtrn.FindStringSubmatch(cmdline)
 			if m != nil {
@@ -121,7 +127,7 @@ func (sm *appMonitor) detectApps() {
 			continue
 		}
 
-		if procName == "named" {
+		if procName == namedProcName {
 			// detect bind9
 			m := bind9Ptrn.FindStringSubmatch(cmdline)
 			if m != nil {
@@ -132,38 +138,6 @@ func (sm *appMonitor) detectApps() {
 				}
 			}
 			continue
-		}
-	}
-
-	// check changes in apps and print them
-	for _, appNew := range apps {
-		found := false
-		for _, appOld := range sm.apps {
-			if appOld.Type != appNew.Type {
-				continue
-			}
-			if len(appNew.AccessPoints) != len(appOld.AccessPoints) {
-				continue
-			}
-			for idx, apNew := range appNew.AccessPoints {
-				apOld := appOld.AccessPoints[idx]
-				if apNew.Type != apOld.Type {
-					continue
-				}
-				if apNew.Address != apOld.Address {
-					continue
-				}
-				if apNew.Port != apOld.Port {
-					continue
-				}
-			}
-			found = true
-		}
-		if !found {
-			log.Printf("new %s app detected:", appNew.Type)
-			for _, ap := range appNew.AccessPoints {
-				log.Printf("   %s: %s:%d", ap.Type, ap.Address, ap.Port)
-			}
 		}
 	}
 

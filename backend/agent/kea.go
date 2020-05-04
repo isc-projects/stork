@@ -54,7 +54,7 @@ func detectKeaApp(match []string, cwd string) *App {
 	}
 	keaConfPath := match[2]
 
-	// if path to config is not absolute then join it with CWD of named
+	// if path to config is not absolute then join it with CWD of kea
 	if !strings.HasPrefix(keaConfPath, "/") {
 		keaConfPath = path.Join(cwd, keaConfPath)
 	}

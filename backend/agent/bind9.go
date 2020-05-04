@@ -2,7 +2,6 @@ package agent
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path"
 	"regexp"
 	"strconv"
@@ -28,6 +27,10 @@ type Bind9State struct {
 
 const RndcDefaultPort = 953
 const StatsChannelDefaultPort = 80
+
+const defaultNamedConfFile = "/etc/bind/named.conf"
+
+const namedCheckconf = "named-checkconf"
 
 // getRndcKey looks for the key with a given `name` in `contents`.
 //
@@ -129,7 +132,7 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 }
 
 // getCtrlAddressFromBind9Config retrieves the rndc control access address,
-// port, and secret key (if configured) from the configuration `path`.
+// port, and secret key (if configured) from the configuration `text`.
 //
 // Multiple controls clauses may be configured but currently this function
 // only matches the first one.  Multiple access points may be listed inside
@@ -171,7 +174,7 @@ func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlP
 }
 
 // getStatisticsChannelFromBind9Config retrieves the statistics channel access
-// address, port, and secret key (if configured) from the configuration `path`.
+// address, port, and secret key (if configured) from the configuration `text`.
 //
 // Multiple statistics-channels clauses may be configured but currently this
 // function only matches the first one.  Multiple access points may be listed
@@ -247,7 +250,7 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) (bind9
 		}
 	} else {
 		// config path not found in cmdline params so try to guess its location
-		bind9ConfPath = "/etc/bind/named.conf"
+		bind9ConfPath = defaultNamedConfFile
 	}
 
 	// no config file so nothing to do
@@ -255,8 +258,8 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) (bind9
 		return nil
 	}
 
-	// run named-checkconf on main config file and get preprocess content of whole config
-	prog := "named-checkconf"
+	// run named-checkconf on main config file and get preprocessed content of whole config
+	prog := namedCheckconf
 	if namedDir != "" {
 		prog = path.Join(namedDir, prog)
 	}
@@ -266,17 +269,6 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) (bind9
 		return nil
 	}
 	cfgText := string(out)
-
-	// Look for includes of other sub-config files. Combine whole config contents
-	// into one long string cfgText.
-	includePaths := findIncludesInBind9Config(cfgText)
-	for _, p := range includePaths {
-		t, err := ioutil.ReadFile(p)
-		if err != nil {
-			log.Warnf("cannot read BIND 9 config file (%s): %+v", p, err)
-		}
-		cfgText += "\n" + string(t)
-	}
 
 	// look for control address in config
 	address, port, key := getCtrlAddressFromBind9Config(cfgText)
