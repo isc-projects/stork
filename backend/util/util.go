@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"path"
 	"regexp"
 	"runtime"
@@ -106,4 +107,15 @@ func SetupLogging() {
 			return "", fmt.Sprintf("%20v:%-5d", filename, f.Line)
 		},
 	})
+}
+
+// helper code for mocking os/exec stuff... pathetic
+type Commander interface {
+	Output(string, ...string) ([]byte, error)
+}
+
+type RealCommander struct{}
+
+func (c RealCommander) Output(command string, args ...string) ([]byte, error) {
+	return exec.Command(command, args...).Output()
 }

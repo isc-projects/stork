@@ -123,38 +123,27 @@ func TestDetectApps(t *testing.T) {
 	am.Shutdown()
 }
 
-func makeNamedConfFile() (file *os.File, removeFunc func(string) error) {
-	// prepare named.conf file
-	file, err := ioutil.TempFile(os.TempDir(), "prefix-")
-	if err != nil {
-		log.Fatal("Cannot create temporary file", err)
-	}
-	removeFunc = os.Remove
+type TestCommander struct{}
 
-	text := []byte(string("keys \"foo\" {\n   algorithm \"hmac-md5\";\n   secret \"abcd\"; \n};\n"))
-	if _, err = file.Write(text); err != nil {
-		log.Fatal("Failed to write to temporary file", err)
-	}
-	text = []byte(string("controls {\n   inet 127.0.0.53 port 5353 allow { localhost; } keys { \"foo\";};\n};\n"))
-	if _, err = file.Write(text); err != nil {
-		log.Fatal("Failed to write to temporary file", err)
-	}
-	text = []byte(string("statistics-channels {\n   inet 127.0.0.80 port 80 allow { localhost; };\n};\n"))
-	if _, err = file.Write(text); err != nil {
-		log.Fatal("Failed to write to temporary file", err)
-	}
-	if err := file.Close(); err != nil {
-		log.Fatal(err)
-	}
-	return file, removeFunc
+func (c TestCommander) Output(command string, args ...string) ([]byte, error) {
+	text := `keys "foo" {
+                      algorithm "hmac-md5";
+                      secret "abcd";
+                 };
+	         controls {
+                      inet 127.0.0.53 port 5353 allow { localhost; } keys { "foo";};
+                 };
+                 statistics-channels {
+                      inet 127.0.0.80 port 80 allow { localhost; };
+                 };`
+
+	return []byte(text), nil
 }
 
 func TestDetectBind9App(t *testing.T) {
-	tmpFile, remove := makeNamedConfFile()
-	defer remove(tmpFile.Name())
-
 	// check BIND 9 app detection
-	app := detectBind9App([]string{"", tmpFile.Name()})
+	cmdr := &TestCommander{}
+	app := detectBind9App([]string{"", "", "-c /fake/path.cfg"}, "", cmdr)
 	require.NotNil(t, app)
 	require.Equal(t, app.Type, AppTypeBind9)
 	require.Len(t, app.AccessPoints, 2)
@@ -194,7 +183,7 @@ func TestDetectKeaApp(t *testing.T) {
 	defer remove(tmpFile.Name())
 
 	// check kea app detection
-	app := detectKeaApp([]string{"", tmpFile.Name()})
+	app := detectKeaApp([]string{"", "", tmpFile.Name()}, "")
 	require.NotNil(t, app)
 	require.Equal(t, AppTypeKea, app.Type)
 	require.Len(t, app.AccessPoints, 1)

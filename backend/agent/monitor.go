@@ -7,6 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/process"
 	log "github.com/sirupsen/logrus"
+
+	storkutil "isc.org/stork/util"
 )
 
 // An access point for an application to retrieve information such
@@ -81,26 +83,37 @@ func (sm *appMonitor) detectApps() {
 	// where cmdline of the process contains given pattern with kea-ctrl-agent
 	// substring. Such found processes are being processed further and all other
 	// Kea daemons are discovered and queried for their versions, etc.
-	keaPtrn := regexp.MustCompile(`kea-ctrl-agent.*-c\s+(\S+)`)
+	keaPtrn := regexp.MustCompile(`(.*)/kea-ctrl-agent\s+.*-c\s+(\S+)`)
 	// BIND 9 app is being detecting by browsing list of processes in the system
 	// where cmdline of the process contains given pattern with named substring.
-	bind9Ptrn := regexp.MustCompile(`named.*-c\s+(\S+)`)
+	bind9Ptrn := regexp.MustCompile(`(.*)/named\s+(.*)`)
 
 	var apps []*App
 
 	procs, _ := process.Processes()
 	for _, p := range procs {
 		procName, _ := p.Name()
-		if procName == "kea-ctrl-agent" {
-			cmdline, err := p.Cmdline()
+		cmdline := ""
+		cwd := ""
+		var err error
+		if procName == "kea-ctrl-agent" || procName == "named" {
+			cmdline, err = p.Cmdline()
 			if err != nil {
-				log.Warnf("cannot get process command line %+v", err)
+				log.Warnf("cannot get process command line: %+v", err)
+				continue
 			}
+			cwd, err = p.Cwd()
+			if err != nil {
+				log.Warnf("cannot get process current working directory: %+v", err)
+				cwd = ""
+			}
+		}
 
+		if procName == "kea-ctrl-agent" {
 			// detect kea
 			m := keaPtrn.FindStringSubmatch(cmdline)
 			if m != nil {
-				keaApp := detectKeaApp(m)
+				keaApp := detectKeaApp(m, cwd)
 				if keaApp != nil {
 					apps = append(apps, keaApp)
 				}
@@ -109,15 +122,11 @@ func (sm *appMonitor) detectApps() {
 		}
 
 		if procName == "named" {
-			cmdline, err := p.Cmdline()
-			if err != nil {
-				log.Warnf("cannot get process command line %+v", err)
-			}
-
 			// detect bind9
 			m := bind9Ptrn.FindStringSubmatch(cmdline)
 			if m != nil {
-				bind9App := detectBind9App(m)
+				cmdr := &storkutil.RealCommander{}
+				bind9App := detectBind9App(m, cwd, cmdr)
 				if bind9App != nil {
 					apps = append(apps, bind9App)
 				}
@@ -126,6 +135,39 @@ func (sm *appMonitor) detectApps() {
 		}
 	}
 
+	// check changes in apps and print them
+	for _, appNew := range apps {
+		found := false
+		for _, appOld := range sm.apps {
+			if appOld.Type != appNew.Type {
+				continue
+			}
+			if len(appNew.AccessPoints) != len(appOld.AccessPoints) {
+				continue
+			}
+			for idx, apNew := range appNew.AccessPoints {
+				apOld := appOld.AccessPoints[idx]
+				if apNew.Type != apOld.Type {
+					continue
+				}
+				if apNew.Address != apOld.Address {
+					continue
+				}
+				if apNew.Port != apOld.Port {
+					continue
+				}
+			}
+			found = true
+		}
+		if !found {
+			log.Printf("new %s app detected:", appNew.Type)
+			for _, ap := range appNew.AccessPoints {
+				log.Printf("   %s: %s:%d", ap.Type, ap.Address, ap.Port)
+			}
+		}
+	}
+
+	// remember detected apps
 	sm.apps = apps
 }
 

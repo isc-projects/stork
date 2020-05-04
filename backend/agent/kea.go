@@ -2,8 +2,10 @@ package agent
 
 import (
 	"io/ioutil"
+	"path"
 	"regexp"
 	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -45,8 +47,17 @@ func getCtrlAddressFromKeaConfig(path string) (string, int64) {
 	return address, int64(port)
 }
 
-func detectKeaApp(match []string) *App {
-	keaConfPath := match[1]
+func detectKeaApp(match []string, cwd string) *App {
+	if len(match) < 3 {
+		log.Warnf("problem with parsing Kea cmdline: %s", match[0])
+		return nil
+	}
+	keaConfPath := match[2]
+
+	// if path to config is not absolute then join it with CWD of named
+	if !strings.HasPrefix(keaConfPath, "/") {
+		keaConfPath = path.Join(cwd, keaConfPath)
+	}
 
 	address, port := getCtrlAddressFromKeaConfig(keaConfPath)
 	if port == 0 || len(address) == 0 {

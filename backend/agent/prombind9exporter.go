@@ -266,7 +266,6 @@ func (pbe *PromBind9Exporter) collectStats() error {
 		if app.Type != AppTypeBind9 {
 			continue
 		}
-		log.Printf("APP %+v", app)
 
 		// get stats from named
 		sap, err := getAccessPoint(app, AccessPointStatistics)

@@ -3,10 +3,14 @@ package agent
 import (
 	"fmt"
 	"io/ioutil"
+	"path"
 	"regexp"
 	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
+
+	storkutil "isc.org/stork/util"
 )
 
 type Bind9Daemon struct {
@@ -127,9 +131,6 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 // getCtrlAddressFromBind9Config retrieves the rndc control access address,
 // port, and secret key (if configured) from the configuration `path`.
 //
-// The controls clause can also be in an include file, but currently this
-// function is not following include paths.
-//
 // Multiple controls clauses may be configured but currently this function
 // only matches the first one.  Multiple access points may be listed inside
 // a single controls clause, but this function currently only matches the
@@ -146,27 +147,20 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 // Finding the key is done by looking if the control access point has a
 // keys parameter and if so, it looks in `path` for a key clause with the
 // same name.
-func getCtrlAddressFromBind9Config(path string) (controlAddress string, controlPort int64, controlKey string) {
-	text, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Warnf("cannot read BIND 9 config file (%s): %+v", path, err)
-		return "", 0, ""
-	}
-
+func getCtrlAddressFromBind9Config(text string) (controlAddress string, controlPort int64, controlKey string) {
 	// Match the following clause:
 	//     controls {
 	//         inet inet_spec [inet_spec] ;
 	//     };
 	ptrn := regexp.MustCompile(`(?s)controls\s*\{\s*(.*)\s*\}\s*;`)
-	controls := ptrn.FindStringSubmatch(string(text))
+	controls := ptrn.FindStringSubmatch(text)
 	if len(controls) == 0 {
-		log.Warnf("cannot parse BIND 9 controls clause: %+v, %+v", string(text), err)
 		return "", 0, ""
 	}
 
 	// We only pick the first match, but the controls clause
 	// can list multiple control access points.
-	controlAddress, controlPort, controlKey = parseInetSpec(string(text), controls[1])
+	controlAddress, controlPort, controlKey = parseInetSpec(text, controls[1])
 	if controlAddress != "" {
 		// If no port was provided, use the default rndc port.
 		if controlPort == 0 {
@@ -178,9 +172,6 @@ func getCtrlAddressFromBind9Config(path string) (controlAddress string, controlP
 
 // getStatisticsChannelFromBind9Config retrieves the statistics channel access
 // address, port, and secret key (if configured) from the configuration `path`.
-//
-// The statistics-channels clause can also be in an include file, but
-// currently this function is not following include paths.
 //
 // Multiple statistics-channels clauses may be configured but currently this
 // function only matches the first one.  Multiple access points may be listed
@@ -197,27 +188,21 @@ func getCtrlAddressFromBind9Config(path string) (controlAddress string, controlP
 // Finding the key is done by looking if the control access point has a
 // keys parameter and if so, it looks in `path` for a key clause with the
 // same name.
-func getStatisticsChannelFromBind9Config(path string) (statsAddress string, statsPort int64, statsKey string) {
-	text, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Warnf("cannot read BIND 9 config file (%s): %+v", path, err)
-		return "", 0, ""
-	}
-
+func getStatisticsChannelFromBind9Config(text string) (statsAddress string, statsPort int64, statsKey string) {
 	// Match the following clause:
 	//     statistics-channels {
 	//         inet inet_spec [inet_spec] ;
 	//     };
 	ptrn := regexp.MustCompile(`(?s)statistics-channels\s*\{\s*(.*)\s*\}\s*;`)
-	channels := ptrn.FindStringSubmatch(string(text))
+	channels := ptrn.FindStringSubmatch(text)
 	if len(channels) == 0 {
-		log.Warnf("cannot parse BIND 9 statistics-channels clause: %+v, %+v", string(text), err)
+		log.Warnf("cannot parse BIND 9 statistics-channels clause")
 		return "", 0, ""
 	}
 
 	// We only pick the first match, but the statistics-channels clause
 	// can list multiple control access points.
-	statsAddress, statsPort, statsKey = parseInetSpec(string(text), channels[1])
+	statsAddress, statsPort, statsKey = parseInetSpec(text, channels[1])
 	if statsAddress != "" {
 		// If no port was provided, use the default statschannel port.
 		if statsPort == 0 {
@@ -227,11 +212,76 @@ func getStatisticsChannelFromBind9Config(path string) (statsAddress string, stat
 	return statsAddress, statsPort, statsKey
 }
 
-func detectBind9App(match []string) (bind9App *App) {
-	bind9ConfPath := match[1]
+// Find include instructions in the config text and return paths
+// for files that should be included.
+func findIncludesInBind9Config(text string) []string {
+	// look for pattern: include "/etc/bind/named.conf.options";
+	r := regexp.MustCompile(`include "([^"]+)"`)
+	matches := r.FindAllStringSubmatch(text, -1)
+	var paths []string
+	for _, m := range matches {
+		paths = append(paths, m[1])
+	}
+	return paths
+}
 
-	address, port, key := getCtrlAddressFromBind9Config(bind9ConfPath)
+func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) (bind9App *App) {
+	if len(match) < 3 {
+		log.Warnf("problem with parsing BIND 9 cmdline: %s", match[0])
+		return nil
+	}
+
+	// try to find bind9 config file(s)
+	namedDir := match[1]
+	bind9Params := match[2]
+	bind9ConfPath := ""
+
+	// look for config file in cmd params
+	paramsPtrn := regexp.MustCompile(`-c\s+(\S+)`)
+	m := paramsPtrn.FindStringSubmatch(bind9Params)
+	if m != nil {
+		bind9ConfPath = m[1]
+		// if path to config is not absolute then join it with CWD of named
+		if !strings.HasPrefix(bind9ConfPath, "/") {
+			bind9ConfPath = path.Join(cwd, bind9ConfPath)
+		}
+	} else {
+		// config path not found in cmdline params so try to guess its location
+		bind9ConfPath = "/etc/bind/named.conf"
+	}
+
+	// no config file so nothing to do
+	if bind9ConfPath == "" {
+		return nil
+	}
+
+	// run named-checkconf on main config file and get preprocess content of whole config
+	prog := "named-checkconf"
+	if namedDir != "" {
+		prog = path.Join(namedDir, prog)
+	}
+	out, err := cmdr.Output(prog, "-p", bind9ConfPath)
+	if err != nil {
+		log.Warnf("cannot parse BIND 9 config file %s: %+v", bind9ConfPath, err)
+		return nil
+	}
+	cfgText := string(out)
+
+	// Look for includes of other sub-config files. Combine whole config contents
+	// into one long string cfgText.
+	includePaths := findIncludesInBind9Config(cfgText)
+	for _, p := range includePaths {
+		t, err := ioutil.ReadFile(p)
+		if err != nil {
+			log.Warnf("cannot read BIND 9 config file (%s): %+v", p, err)
+		}
+		cfgText += "\n" + string(t)
+	}
+
+	// look for control address in config
+	address, port, key := getCtrlAddressFromBind9Config(cfgText)
 	if port == 0 || len(address) == 0 {
+		log.Warnf("found BIND 9 config file (%s) but there are no controls defined", bind9ConfPath)
 		return nil
 	}
 	accessPoints := []AccessPoint{
@@ -243,7 +293,8 @@ func detectBind9App(match []string) (bind9App *App) {
 		},
 	}
 
-	address, port, key = getStatisticsChannelFromBind9Config(bind9ConfPath)
+	// look for statistics channel address in config
+	address, port, key = getStatisticsChannelFromBind9Config(cfgText)
 	if port > 0 && len(address) != 0 {
 		accessPoints = append(accessPoints, AccessPoint{
 			Type:    AccessPointStatistics,
