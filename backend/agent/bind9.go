@@ -215,19 +215,6 @@ func getStatisticsChannelFromBind9Config(text string) (statsAddress string, stat
 	return statsAddress, statsPort, statsKey
 }
 
-// Find include instructions in the config text and return paths
-// for files that should be included.
-func findIncludesInBind9Config(text string) []string {
-	// look for pattern: include "/etc/bind/named.conf.options";
-	r := regexp.MustCompile(`include "([^"]+)"`)
-	matches := r.FindAllStringSubmatch(text, -1)
-	var paths []string
-	for _, m := range matches {
-		paths = append(paths, m[1])
-	}
-	return paths
-}
-
 func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) (bind9App *App) {
 	if len(match) < 3 {
 		log.Warnf("problem with parsing BIND 9 cmdline: %s", match[0])

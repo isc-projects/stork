@@ -47,7 +47,7 @@ type appMonitor struct {
 
 // Names of apps that are being detected.
 const (
-	keaProcName = "kea-ctrl-agent"
+	keaProcName   = "kea-ctrl-agent"
 	namedProcName = "named"
 )
 
