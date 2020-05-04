@@ -83,7 +83,7 @@
                 <tr>
                     <th rowspan="2" style="width: 25rem;">DHCP Identifiers</th>
                     <th colspan="2" style="width: 40rem;">IP Reservations</th>
-                    <th rowspan="2" style="width: 14rem;">Subnet</th>
+                    <th rowspan="2" style="width: 14rem;">Global/Subnet</th>
                     <th rowspan="2" style="width: 20rem;">AppID @ Machine</th>
                 </tr>
                 <tr>
@@ -136,7 +136,7 @@
                         </div>
                     </td>
                     <td align="center">
-                        {{ h.subnetPrefix }}
+                        {{ h.subnetId && h.subnetId > 0 ? h.subnetPrefix : 'global' }}
                     </td>
                     <td align="center">
                         <a *ngFor="let lh of h.localHosts" routerLink="/apps/kea/{{ lh.appId }}" style="display: block;"
