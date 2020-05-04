@@ -199,7 +199,6 @@ func getStatisticsChannelFromBind9Config(text string) (statsAddress string, stat
 	ptrn := regexp.MustCompile(`(?s)statistics-channels\s*\{\s*(.*)\s*\}\s*;`)
 	channels := ptrn.FindStringSubmatch(text)
 	if len(channels) == 0 {
-		log.Warnf("cannot parse BIND 9 statistics-channels clause")
 		return "", 0, ""
 	}
 
@@ -260,7 +259,7 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) (bind9
 	// look for control address in config
 	address, port, key := getCtrlAddressFromBind9Config(cfgText)
 	if port == 0 || len(address) == 0 {
-		log.Warnf("found BIND 9 config file (%s) but there are no controls defined", bind9ConfPath)
+		log.Warnf("found BIND 9 config file (%s) but cannot parse controls clause", bind9ConfPath)
 		return nil
 	}
 	accessPoints := []AccessPoint{
@@ -281,6 +280,8 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) (bind9
 			Port:    port,
 			Key:     key,
 		})
+	} else {
+		log.Warnf("cannot parse BIND 9 statistics-channels clause")
 	}
 
 	return &App{
