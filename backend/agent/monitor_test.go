@@ -189,7 +189,7 @@ func TestDetectKeaApp(t *testing.T) {
 	tmpFilePath := tmpFile.Name()
 	defer remove(tmpFilePath)
 
-	checkApp := func (app *App) {
+	checkApp := func(app *App) {
 		require.NotNil(t, app)
 		require.Equal(t, AppTypeKea, app.Type)
 		require.Len(t, app.AccessPoints, 1)
