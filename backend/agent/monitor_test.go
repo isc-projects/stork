@@ -189,22 +189,25 @@ func TestDetectKeaApp(t *testing.T) {
 	tmpFilePath := tmpFile.Name()
 	defer remove(tmpFilePath)
 
+	checkApp := func (app *App) {
+		require.NotNil(t, app)
+		require.Equal(t, AppTypeKea, app.Type)
+		require.Len(t, app.AccessPoints, 1)
+		ctrlPoint := app.AccessPoints[0]
+		require.Equal(t, AccessPointControl, ctrlPoint.Type)
+		require.Equal(t, "localhost", ctrlPoint.Address)
+		require.EqualValues(t, 45634, ctrlPoint.Port)
+		require.Empty(t, ctrlPoint.Key)
+	}
+
 	// check kea app detection
 	app := detectKeaApp([]string{"", "", tmpFilePath}, "")
-	require.NotNil(t, app)
-	require.Equal(t, AppTypeKea, app.Type)
-	require.Len(t, app.AccessPoints, 1)
-	ctrlPoint := app.AccessPoints[0]
-	require.Equal(t, AccessPointControl, ctrlPoint.Type)
-	require.Equal(t, "localhost", ctrlPoint.Address)
-	require.EqualValues(t, 45634, ctrlPoint.Port)
-	require.Empty(t, ctrlPoint.Key)
+	checkApp(app)
 
 	// check kea app detection when kea conf file is relative to CWD of kea process
 	cwd, file := path.Split(tmpFilePath)
 	app = detectKeaApp([]string{"", "", file}, cwd)
-	require.NotNil(t, app)
-	require.Equal(t, AppTypeKea, app.Type)
+	checkApp(app)
 }
 
 func TestGetAccessPoint(t *testing.T) {
