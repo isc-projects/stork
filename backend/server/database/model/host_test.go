@@ -488,6 +488,15 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
 	require.Contains(t, returned, hosts[3])
+
+	// Filter by the word "global".
+	filterText = "glob"
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
+	require.Len(t, returned, 2)
+	require.Contains(t, returned, hosts[1])
+	require.Contains(t, returned, hosts[3])
 }
 
 // Test hosts can be sorted by different fields.
