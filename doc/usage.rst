@@ -270,12 +270,10 @@ A host reservation consists of one or more DHCP identifers used to associate the
 reservation with a client, e.g. MAC address, DUID, or client identifier;
 and a collection of resources and/or parameters to be returned to the
 client if the client's DHCP message is associated with the host reservation by one
-of the identifiers. In the future, Stork is expected to fully faciliate the management of host
-reservations, i.e. creating, updating, or removing reservations from within
-the UI. As of the 0.6.0 release, Stork can merely detect existing host reservations
-specified both in the configuration files of the monitored Kea servers and in the host database
-backends accessed via the Kea host_cmds premium hooks library. At present, Stork provides no means
-to update or delete host reservations.
+of the identifiers. Stork can detect existing host reservations specified both in
+the configuration files of the monitored Kea servers and in the host database
+backends accessed via the Kea host_cmds premium hooks library. At present, Stork
+provides no means to update or delete host reservations.
 
 All reservations detected by Stork can be listed by selecting the ``DHCP``
 menu option and then selecting ``Hosts``.
@@ -294,8 +292,10 @@ The second column, ``IP Reservations``, includes the static assignments of the
 IP addresses and/or delegated prefixes to the clients. There may be one or
 more IP reservations for each host.
 
-The ``Subnet`` column contains the prefixes of the subnets to which the reserved
-IP addresses and prefixes belong.
+The ``Global/Subnet`` column contains the prefixes of the subnets to which the reserved
+IP addresses and prefixes belong. If the reservation is global, i.e. is valid
+for all configured subnets of the given server, the word "global" is shown
+instead of the subnet prefix.
 
 Finally, the ``AppID @ Machine`` column includes one or more links to
 Kea applications configured to assign each reservation to the
@@ -311,11 +311,11 @@ in its configuration file or a host database (via host_cmds premium
 hooks library).
 
 The ``Filter hosts`` input box is located above the Hosts table. It allows
-filtering of hosts by identifier types, identifier values, and IP reservations.
-When filtering by DHCP identifier values, it is not necessary to use colons between
-the pairs of hexadecimal digits. For example, the reservation
-``hw-address=0a:1b:bd:43:5f:99`` will be found regardless of whether the filtering
-text is ``1b:bd:43`` or ``1bbd43``.
+filtering of hosts by identifier types, identifier values, IP reservations and
+the word "global". When filtering by DHCP identifier values, it is not
+necessary to use colons between the pairs of hexadecimal digits. For
+example, the reservation ``hw-address=0a:1b:bd:43:5f:99`` will be found
+regardless of whether the filtering text is ``1b:bd:43`` or ``1bbd43``.
 
 Sources of Host Reservations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -339,7 +339,7 @@ up to 60 seconds after it was applied. This interval is currently not configurab
 
 .. note::
 
-   As of the Stork 0.6.0 release, the list of host reservations must be manually
+   As of the Stork 0.7.0 release, the list of host reservations must be manually
    refreshed by reloading the browser page to observe the most recent updates
    fetched from the Kea servers.
 
