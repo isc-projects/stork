@@ -465,3 +465,31 @@ func TestNewSubnetFromKea(t *testing.T) {
 	require.Equal(t, "3000:1::/64", parsedSubnet.Hosts[0].IPReservations[2].Address)
 	require.Equal(t, "3000:2::/64", parsedSubnet.Hosts[0].IPReservations[3].Address)
 }
+
+// Verifies that the host instance can be created by parsing Kea
+// configuration.
+func TestNewHostFromKea(t *testing.T) {
+	rawHost := map[string]interface{}{
+		"duid": "01:02:03:04",
+		"ip-addresses": []interface{}{
+			"2001:db8:1::1",
+			"2001:db8:1::2",
+		},
+		"prefixes": []interface{}{
+			"3000:1::/64",
+			"3000:2::/64",
+		},
+	}
+
+	parsedHost, err := NewHostFromKea(&rawHost)
+	require.NoError(t, err)
+	require.NotNil(t, parsedHost)
+
+	require.Len(t, parsedHost.HostIdentifiers, 1)
+	require.Equal(t, "duid", parsedHost.HostIdentifiers[0].Type)
+	require.Len(t, parsedHost.IPReservations, 4)
+	require.Equal(t, "2001:db8:1::1", parsedHost.IPReservations[0].Address)
+	require.Equal(t, "2001:db8:1::2", parsedHost.IPReservations[1].Address)
+	require.Equal(t, "3000:1::/64", parsedHost.IPReservations[2].Address)
+	require.Equal(t, "3000:2::/64", parsedHost.IPReservations[3].Address)
+}

@@ -340,6 +340,14 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App) error {
 		return err
 	}
 
+	// Go over the global reservations stored in the Kea configuration and
+	// match them with the existing global hosts.
+	globalHosts, err := detectGlobalHostsFromConfig(db, app)
+	if err != nil {
+		err = errors.Wrapf(err, "unable to detect global host reservations for Kea app with id %d", app.ID)
+		return err
+	}
+
 	// Begin transaction.
 	tx, rollback, commit, err := dbops.Transaction(db)
 	if err != nil {
@@ -362,6 +370,13 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App) error {
 	// For the given app, iterate over the networks and subnets and update their
 	// global instances accordingly in the database.
 	err = dbmodel.CommitNetworksIntoDB(tx, networks, subnets, app, 1)
+	if err != nil {
+		return err
+	}
+
+	// For the given app, iterate over the global hosts and update their instances
+	// in the database or insert them into the database.
+	err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts, app, "config", 1)
 	if err != nil {
 		return err
 	}

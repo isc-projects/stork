@@ -420,8 +420,11 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 // are being merged. If the given host already exists in the database and a
 // new host is equal to it, the new host is not added. If none of the existing
 // hosts equals the new host, the new host is appended to the returned slice.
-// This function is called by mergeGlobalHosts and mergeSubnetHosts.
-func mergeHosts(db *dbops.PgDB, subnetID int64, newHosts []dbmodel.Host, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
+// The combineHosts boolean flag indicates if the returned hosts are the
+// combination of the existing hosts and new hosts (if true) or only new
+// hosts are returned (if false). This function is called by mergeGlobalHosts
+// and mergeSubnetHosts.
+func mergeHosts(db *dbops.PgDB, subnetID int64, newHosts []dbmodel.Host, combineHosts bool, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
 	if len(newHosts) == 0 {
 		return hosts, err
 	}
@@ -430,23 +433,23 @@ func mergeHosts(db *dbops.PgDB, subnetID int64, newHosts []dbmodel.Host, app *db
 	if err != nil {
 		return hosts, errors.WithMessagef(err, "problem with merging hosts for subnet %d", subnetID)
 	}
-	hosts = append(hosts, existingHosts...)
 
 	// Merge each new host.
-	for _, n := range newHosts {
-		newHost := n
+	for i := range newHosts {
+		newHost := &newHosts[i]
 		found := false
 		// Iterate over the existing hosts to check if the new hosts are there already.
-		for i, h := range existingHosts {
-			host := h
-			if n.Equal(&host) {
-				// Host found and matches the new host so nothing to do.
+		for ie := range existingHosts {
+			host := &existingHosts[ie]
+			if newHost.Equal(host) {
+				// This host already exist. It will be updated.
 				found = true
+				newHost = host
 
 				// Indicate that the host should be updated and that the new app should
 				// be associated with it upon the call to dbmodel.CommitSubnetHostsIntoDB
 				// or dbmodel.CommitGlobalHostsIntoDB.
-				hosts[i].UpdateOnCommit = true
+				newHost.UpdateOnCommit = true
 
 				// Check if there is already an association between this app and the
 				// given host. If there is, we need to reset the sequence number for
@@ -454,25 +457,24 @@ func mergeHosts(db *dbops.PgDB, subnetID int64, newHosts []dbmodel.Host, app *db
 				// number will remain.
 				for j, lh := range host.LocalHosts {
 					if lh.AppID == app.ID {
-						hosts[i].LocalHosts[j].UpdateSeq = 0
+						newHost.LocalHosts[j].UpdateSeq = 0
 					}
 				}
 				break
 			}
 		}
-		if !found {
+		if !found || !combineHosts {
 			// Host doesn't exist yet, so let's add it.
 			newHost.UpdateOnCommit = true
-			hosts = append(hosts, newHost)
+			hosts = append(hosts, *newHost)
 		}
+	}
+	// Also include existing hosts if we're asked to do so.
+	if combineHosts {
+		hosts = append(existingHosts, hosts...)
 	}
 
 	return hosts, err
-}
-
-// Merges new set of global hosts with existing global hosts.
-func mergeGlobalHosts(db *dbops.PgDB, newHosts []dbmodel.Host, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
-	return mergeHosts(db, int64(0), newHosts, app)
 }
 
 // Merges hosts belonging to the new subnet into the hosts within existing subnet.
@@ -483,7 +485,43 @@ func mergeGlobalHosts(db *dbops.PgDB, newHosts []dbmodel.Host, app *dbmodel.App)
 // existing hosts plus the hosts from the new subnet which do not exist in the
 // database.
 func mergeSubnetHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
-	return mergeHosts(db, existingSubnet.ID, newSubnet.Hosts, app)
+	return mergeHosts(db, existingSubnet.ID, newSubnet.Hosts, true, app)
+}
+
+// For a given Kea application it detects host reservations configured in the
+// configuration file.
+func detectGlobalHostsFromConfig(db *dbops.PgDB, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
+	// If this is not Kea application there is nothing to do.
+	if app.Type != dbmodel.AppTypeKea {
+		return hosts, nil
+	}
+
+	// Detect reservation for each Kea daemon.
+	for _, d := range app.Daemons {
+		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil {
+			continue
+		}
+		// Get the top level (global) reservations.
+		if reservationsList, ok := d.KeaDaemon.Config.GetTopLevelList("reservations"); ok {
+			if len(reservationsList) == 0 {
+				continue
+			}
+			// Iterate over the reservations found.
+			for _, r := range reservationsList {
+				if reservationMap, ok := r.(map[string]interface{}); ok {
+					// Parse the reservation.
+					host, err := dbmodel.NewHostFromKea(&reservationMap)
+					if err != nil {
+						log.Warnf("skipping invalid host reservation: %v", reservationMap)
+						continue
+					}
+					hosts = append(hosts, *host)
+				}
+			}
+		}
+	}
+	// Merge new hosts into the existing global hosts.
+	return mergeHosts(db, int64(0), hosts, false, app)
 }
 
 // Fetches all host reservations stored in the hosts backend for the particular
@@ -516,7 +554,7 @@ func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, a
 		subnet := it.GetCurrentSubnet()
 		// The subnet is nil when we're dealing with the global hosts.
 		if subnet == nil {
-			mergedHosts, err := mergeGlobalHosts(db, hosts, app)
+			mergedHosts, err := mergeHosts(db, int64(0), hosts, true, app)
 			if err != nil {
 				break
 			}

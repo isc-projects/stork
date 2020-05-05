@@ -212,6 +212,13 @@ func NewHostFromKeaConfigReservation(reservation KeaConfigReservation) (*Host, e
 	return &host, nil
 }
 
+// Creates new host instance from the pointer to the map of interfaces.
+func NewHostFromKea(rawHost *map[string]interface{}) (*Host, error) {
+	var parsedHost KeaConfigReservation
+	_ = mapstructure.Decode(rawHost, &parsedHost)
+	return NewHostFromKeaConfigReservation(parsedHost)
+}
+
 // Returns name of the root configuration node, e.g. Dhcp4.
 // The second returned value designates whether the root node
 // name was successfully found or not.

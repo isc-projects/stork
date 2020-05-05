@@ -10,6 +10,7 @@ import (
 	require "github.com/stretchr/testify/require"
 
 	"isc.org/stork/server/agentcomm"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
@@ -87,6 +88,60 @@ func getTestConfigWithIPv6Subnets(t *testing.T) *dbmodel.KeaConfig {
                 {
                     "id": 678,
                     "subnet": "2001:db8:6::/64"
+                }
+            ]
+        }
+    }`
+
+	cfg, err := dbmodel.NewKeaConfigFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	return cfg
+}
+
+// Returns test Kea configuration includin global host reservations.
+func getTestConfigWithIPv4GlobalHosts(t *testing.T) *dbmodel.KeaConfig {
+	configStr := `{
+        "Dhcp4": {
+            "reservations": [
+                {
+                    "hw-address": "aa:bb:cc:dd:ee:ff",
+                    "ip-address": "192.0.2.10",
+                    "hostname": "abc.example.org"
+                },
+                {
+                    "hw-address": "ff:ff:ff:ff:ff:ff",
+                    "ip-address": "192.0.2.11",
+                    "hostname": "foo.example.org"
+                }
+            ]
+        }
+    }`
+
+	cfg, err := dbmodel.NewKeaConfigFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	return cfg
+}
+
+// Returns test Kea configuration including global host reservations.
+func getTestConfigWithIPv6GlobalHosts(t *testing.T) *dbmodel.KeaConfig {
+	configStr := `{
+        "Dhcp6": {
+            "reservations": [
+                {
+                    "duid": "aa:bb:cc:dd",
+                    "ip-addresses": [ "2001:db8:1::10" ],
+                    "prefixes": [ "3000::/64" ],
+                    "hostname": "abc.example.org"
+                },
+                {
+                    "duid": "ff:ff:ff:ff",
+                    "ip-addresses": [ "2001:db8:1::11" ],
+                    "prefixes": [ "3001::/64" ],
+                    "hostname": "foo.example.org"
                 }
             ]
         }
@@ -307,6 +362,84 @@ func testReservationGetPageReceived(t *testing.T, iterator *HostDetectionIterato
 		// Depending on family we expect the service value to be set
 		// either to dhcp4 or dhcp6.
 		require.Contains(t, recordedDaemons, fmt.Sprintf("dhcp%d", iterator.family))
+	}
+}
+
+// Tests that host reservations can be extracted from the Kea app's
+// configuration.
+func TestDetectHostsFromConfig(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Creates new app with provided configurations.
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	app := dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: getTestConfigWithIPv4GlobalHosts(t),
+				},
+			},
+			{
+				Name: "dhcp6",
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: getTestConfigWithIPv6GlobalHosts(t),
+				},
+			},
+		},
+	}
+	// Add the app to the database.
+	err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+	app.Machine = m
+
+	// Detect global hosts in the configurations of the app.
+	hosts, err := detectGlobalHostsFromConfig(db, &app)
+	require.NoError(t, err)
+	require.Len(t, hosts, 4)
+
+	for _, h := range hosts {
+		// Hosts are global.
+		require.Zero(t, h.SubnetID)
+		// Each of them has single DHCP identifier.
+		require.Len(t, h.HostIdentifiers, 1)
+		// The hosts are not yet associated with an app.
+		require.Len(t, h.LocalHosts, 0)
+	}
+
+	// Commit the hosts into the database.
+	tx, _, commit, err := dbops.Transaction(db)
+	require.NoError(t, err)
+	err = dbmodel.CommitGlobalHostsIntoDB(tx, hosts, &app, "config", 1)
+	require.NoError(t, err)
+	err = commit()
+	require.NoError(t, err)
+
+	// Run the detection again.
+	hosts, err = detectGlobalHostsFromConfig(db, &app)
+	require.NoError(t, err)
+	require.Len(t, hosts, 4)
+
+	// Existing hosts should be returned.
+	for _, h := range hosts {
+		require.Zero(t, h.SubnetID)
+		require.Len(t, h.HostIdentifiers, 1)
+		// The hosts should have been already associated with our app.
+		require.Len(t, h.LocalHosts, 1)
+		require.Equal(t, app.ID, h.LocalHosts[0].AppID)
 	}
 }
 
