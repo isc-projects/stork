@@ -82,7 +82,7 @@ func (puller *HostsPuller) pullData() (int, error) {
 	var lastErr error
 	appsOkCnt := 0
 	for i := range apps {
-		err := DetectAndCommitHostsIntoDB(puller.Db, puller.Agents, &apps[i], seq)
+		err := updateHostsFromHostCmds(puller.Db, puller.Agents, &apps[i], seq)
 		if err != nil {
 			lastErr = err
 			log.Errorf("error occurred while fetching hosts from app %+v: %+v", apps[i], err)
@@ -491,7 +491,7 @@ func mergeSubnetHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet,
 // uses HostDetectionIterator mechanism to fetch the hosts, which will in
 // most cases result in multiple reservation-get-page commands sent to Kea
 // instance.
-func DetectAndCommitHostsIntoDB(db *dbops.PgDB, agents agentcomm.ConnectedAgents, app *dbmodel.App, seq int64) error {
+func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, app *dbmodel.App, seq int64) error {
 	tx, rollback, commit, err := dbops.Transaction(db)
 	if err != nil {
 		err = errors.WithMessagef(err, "problem with starting transaction for committing new hosts from host_cmds hooks library for app id %d", app.ID)

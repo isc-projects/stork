@@ -794,7 +794,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 
 // Test function which fetches host reservations from the Kea server over
 // the control channel and stores them in the database.
-func TestDetectAndCommitHostsIntoDB(t *testing.T) {
+func TestUpdateHostsFromHostCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -841,7 +841,7 @@ func TestDetectAndCommitHostsIntoDB(t *testing.T) {
 	// Detect hosts two times in the row. This simulates periodic
 	// pull of the hosts for the given app.
 	for i := 0; i < 2; i++ {
-		err = DetectAndCommitHostsIntoDB(db, fa, &app, 1)
+		err = updateHostsFromHostCmds(db, fa, &app, 1)
 		require.NoError(t, err)
 
 		hosts, err := dbmodel.GetAllHosts(db, 4)
