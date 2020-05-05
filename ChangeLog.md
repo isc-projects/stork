@@ -1,3 +1,8 @@
+* 62 [func] marcin
+
+    Global host reservations in Kea are shown in the UI.
+    (Gitlab #263)
+
 * 61 [func] godfryd
 
     Implemented global search. It allows for looking across different
