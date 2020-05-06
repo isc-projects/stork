@@ -1,7 +1,9 @@
 package agent
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -84,6 +86,50 @@ func (sm *appMonitor) run() {
 	}
 }
 
+func printNewOrUpdatedApps(newApps []*App, oldApps []*App) {
+	// look for new or updated apps
+	var newUpdatedApps []*App
+	for _, appNew := range newApps {
+		found := false
+		for _, appOld := range oldApps {
+			if appOld.Type != appNew.Type {
+				continue
+			}
+			if len(appNew.AccessPoints) != len(appOld.AccessPoints) {
+				continue
+			}
+			for idx, acPtNew := range appNew.AccessPoints {
+				acPtOld := appOld.AccessPoints[idx]
+				if acPtNew.Type != acPtOld.Type {
+					continue
+				}
+				if acPtNew.Address != acPtOld.Address {
+					continue
+				}
+				if acPtNew.Port != acPtOld.Port {
+					continue
+				}
+			}
+			found = true
+		}
+		if !found {
+			newUpdatedApps = append(newUpdatedApps, appNew)
+		}
+	}
+	// if found print new or updated apps
+	if len(newUpdatedApps) > 0 {
+		log.Printf("new or updated apps detected:")
+		for _, app := range newUpdatedApps {
+			var acPts []string
+			for _, acPt := range app.AccessPoints {
+				s := fmt.Sprintf("%s: %s:%d", acPt.Type, acPt.Address, acPt.Port)
+				acPts = append(acPts, s)
+			}
+			log.Printf("   %s: %s", app.Type, strings.Join(acPts, ", "))
+		}
+	}
+}
+
 func (sm *appMonitor) detectApps() {
 	// Kea app is being detected by browsing list of processes in the systam
 	// where cmdline of the process contains given pattern with kea-ctrl-agent
@@ -142,36 +188,7 @@ func (sm *appMonitor) detectApps() {
 	}
 
 	// check changes in apps and print them
-	for _, appNew := range apps {
-		found := false
-		for _, appOld := range sm.apps {
-			if appOld.Type != appNew.Type {
-				continue
-			}
-			if len(appNew.AccessPoints) != len(appOld.AccessPoints) {
-				continue
-			}
-			for idx, acPtNew := range appNew.AccessPoints {
-				acPtOld := appOld.AccessPoints[idx]
-				if acPtNew.Type != acPtOld.Type {
-					continue
-				}
-				if acPtNew.Address != acPtOld.Address {
-					continue
-				}
-				if acPtNew.Port != acPtOld.Port {
-					continue
-				}
-			}
-			found = true
-		}
-		if !found {
-			log.Printf("new or updated %s app detected:", appNew.Type)
-			for _, ap := range appNew.AccessPoints {
-				log.Printf("   %s: %s:%d", ap.Type, ap.Address, ap.Port)
-			}
-		}
-	}
+	printNewOrUpdatedApps(apps, sm.apps)
 
 	// remember detected apps
 	sm.apps = apps

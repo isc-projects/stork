@@ -271,3 +271,40 @@ func TestGetAccessPoint(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, point)
 }
+
+func TestPrintNewOrUpdatedApps(t *testing.T) {
+	bind9App := &App{
+		Type: AppTypeBind9,
+		AccessPoints: []AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "127.0.0.53",
+				Port:    int64(5353),
+				Key:     "hmac-md5:abcd",
+			},
+			{
+				Type:    AccessPointStatistics,
+				Address: "127.0.0.80",
+				Port:    int64(80),
+				Key:     "",
+			},
+		},
+	}
+
+	keaApp := &App{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    int64(45634),
+				Key:     "",
+			},
+		},
+	}
+
+	newApps := []*App{bind9App, keaApp}
+	var oldApps []*App
+
+	printNewOrUpdatedApps(newApps, oldApps)
+}
