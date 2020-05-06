@@ -1,3 +1,20 @@
+## container for building stork agent ##
+FROM ubuntu:18.04 AS builder
+WORKDIR /agent
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget xz-utils rake git openjdk-11-jre-headless gcc g++ unzip
+
+# copy base stuff to prepare environment for building
+COPY backend/go.mod /agent/backend/go.mod
+COPY backend/go.sum /agent/backend/go.sum
+COPY backend/version.go /agent/backend/version.go
+COPY Rakefile /agent/
+RUN rake prepare_env
+
+# copy agent related stuff for building agent part
+COPY backend /agent/backend
+RUN rake -t build_agent
+
+## container for running stork agent ##
 FROM ubuntu:18.04
 WORKDIR /agent
 # Install essentials.
@@ -12,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Tell CA to listen on all interfaces.
 RUN perl -pi -e 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/kea/kea-ctrl-agent.conf
 # Install Stork agent.
-COPY backend/cmd/stork-agent/stork-agent /agent/
+COPY --from=builder /agent/backend/cmd/stork-agent/stork-agent /agent/
 # Copy configuration files.
 COPY docker/supervisor-agent-kea.conf /etc/supervisor.conf
 COPY docker/kea-dhcp4.conf /etc/kea/

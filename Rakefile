@@ -503,7 +503,7 @@ end
 
 desc 'Build containers with everything and statup all services using docker-compose
 arguments: cache=false - forces rebuilding whole container'
-task :docker_up => [:build_backend, :build_ui] do
+task :docker_up do
   at_exit {
     sh "docker-compose #{DOCKER_COMPOSE_FILES} down"
   }
@@ -521,7 +521,7 @@ task :docker_down do
 end
 
 desc 'Build container with Stork Agent and Kea DHCPv4 server'
-task :build_kea_container => :build_agent do
+task :build_kea_container do
   sh 'docker-compose build agent-kea'
 end
 
@@ -534,7 +534,7 @@ task :run_kea_container do
 end
 
 desc 'Build container with Stork Agent and Kea DHCPv6 server'
-task :build_kea6_container => :build_agent do
+task :build_kea6_container do
   sh 'docker-compose build agent-kea6'
 end
 
@@ -548,7 +548,7 @@ end
 
 desc 'Build two containers with Stork Agent and Kea HA pair
 arguments: cache=false - forces rebuilding whole container'
-task :build_kea_ha_containers => :build_agent do
+task :build_kea_ha_containers do
   cache_opt = ''
   if ENV['cache'] == 'false'
     cache_opt = '--no-cache'
@@ -565,7 +565,7 @@ task :run_kea_ha_containers do
 end
 
 desc 'Build container with Stork Agent and Kea with host reseverations in db'
-task :build_kea_hosts_container => :build_agent do
+task :build_kea_hosts_container do
   sh "docker-compose #{DOCKER_COMPOSE_FILES} build #{DOCKER_COMPOSE_PREMIUM_OPTS} agent-kea-hosts"
 end
 
@@ -723,7 +723,10 @@ task :clean do
 end
 
 desc 'Download all dependencies'
-task :prepare_env => [GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX] do
+task :prepare_env => [GO, PROTOC, PROTOC_GEN_GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX] do
+  Dir.chdir('backend') do
+    sh "#{GO} mod download"
+  end
   sh "#{GO} get -u github.com/go-delve/delve/cmd/dlv"
   sh "#{GO} get -u github.com/aarzilli/gdlv"
 end

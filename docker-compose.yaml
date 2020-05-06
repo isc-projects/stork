@@ -208,11 +208,3 @@ networks:
     ipam:
      config:
        - subnet: 172.102.0.0/24
-  subnet-03:
-    ipam:
-     config:
-       - subnet: 172.103.0.0/24
-  subnet-04:
-    ipam:
-     config:
-       - subnet: 172.104.0.0/24
