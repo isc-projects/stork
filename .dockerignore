@@ -1,3 +1,4 @@
 .git
 tools/
 webui/node_modules/
+webui/dist

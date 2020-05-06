@@ -1,6 +1,25 @@
+## container for building stork webui ##
+FROM ubuntu:18.04 AS builder
+WORKDIR /server
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget xz-utils rake git openjdk-11-jre-headless gcc g++ unzip python3-sphinx python3-sphinx-rtd-theme
+
+# copy base stuff to prepare environment for building
+COPY backend/go.mod /server/backend/go.mod
+COPY backend/go.sum /server/backend/go.sum
+COPY backend/version.go /server/backend/version.go
+COPY Rakefile /server/
+RUN rake prepare_env
+
+# copy agent related stuff for building agent part
+COPY webui /server/webui
+COPY api /server/api
+COPY doc /server/doc
+RUN rake -t build_ui
+
+## container for running stork webui ##
 FROM nginx
 
-COPY webui/dist/stork /usr/share/nginx/html
+COPY --from=builder /server/webui/dist/stork /usr/share/nginx/html
 COPY webui/nginx.conf /tmp/nginx.conf.tpl
 
 EXPOSE 80
