@@ -489,7 +489,7 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	require.Len(t, returned, 1)
 	require.Contains(t, returned, hosts[3])
 
-	// Filter by the word "global".
+	// Filter by the "glob" text which is a substring of "global".
 	filterText = "glob"
 	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, "", SortDirAny)
 	require.NoError(t, err)

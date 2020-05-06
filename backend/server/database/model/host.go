@@ -369,7 +369,7 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64
 			q = q.WhereOr("text(r.address) LIKE ?", "%"+*filterText+"%").
 				WhereOr("i.type::text LIKE ?", "%"+*filterText+"%").
 				WhereOr("encode(i.value, 'hex') LIKE ?", "%"+colonlessFilterText+"%")
-			// If somone typed in "global" in the search box we have to search for all
+			// If someone typed in "global" in the search box we have to search for all
 			// global reservations, i.e. those that have subnet ID equal to NULL.
 			// We don't include this condition if it has been already included earlier
 			// in this function for subnetID parameter equal to 0.
