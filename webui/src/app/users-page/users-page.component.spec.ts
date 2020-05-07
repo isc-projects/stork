@@ -8,6 +8,12 @@ import { HttpClient, HttpHandler } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { of } from 'rxjs'
 
+class MockParamMap {
+    get(name: string): string | null {
+        return null
+    }
+}
+
 describe('UsersPageComponent', () => {
     let component: UsersPageComponent
     let fixture: ComponentFixture<UsersPageComponent>
@@ -25,7 +31,7 @@ describe('UsersPageComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useValue: {
-                        paramMap: of({}),
+                        paramMap: of(new MockParamMap()),
                     },
                 },
                 {
