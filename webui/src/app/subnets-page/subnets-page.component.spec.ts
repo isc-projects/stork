@@ -11,6 +11,12 @@ import { DHCPService, SettingsService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 import { of } from 'rxjs'
 
+class MockParamMap {
+    get(name: string): string | null {
+        return null
+    }
+}
+
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
     let fixture: ComponentFixture<SubnetsPageComponent>
@@ -25,8 +31,8 @@ describe('SubnetsPageComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useValue: {
-                        snapshot: { queryParams: {} },
-                        queryParamMap: of({}),
+                        snapshot: { queryParamMap: new MockParamMap() },
+                        queryParamMap: of(new MockParamMap())
                     },
                 },
                 {
