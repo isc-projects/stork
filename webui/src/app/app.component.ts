@@ -118,6 +118,12 @@ export class AppComponent implements OnInit {
                         icon: 'fa fa-server',
                         routerLink: '/machines/all',
                     },
+                    {
+                        label: 'Grafana',
+                        icon: 'pi pi-chart-line',
+                        url: '',
+                        visible: false
+                    },
                 ],
             },
             {
@@ -159,7 +165,7 @@ export class AppComponent implements OnInit {
                     {
                         label: 'BIND 9 Manual',
                         icon: 'fa fa-book',
-                        url: 'https://bind9.readthedocs.io/',
+                        url: 'https://downloads.isc.org/isc/bind9/cur/9.16/doc/arm/Bv9ARM.html',
                         target: 'blank',
                     },
                     {
@@ -179,16 +185,25 @@ export class AppComponent implements OnInit {
             this.storkBuildDate = data.date
         })
 
+        // If Grafana url is not empty, we need to make
+        // Services.Grafana menu choice visible and set it's url.
+        // Otherwise we need to make sure it's not visible.
         this.settingSvc.getSettings().subscribe((data) => {
-            const grafanUrl = data['grafana_url']
-            const menuItem2 = this.menuItems[2]
-            if (grafanUrl && menuItem2.label !== 'Grafana') {
-                this.menuItems.splice(2, 0, {
-                    label: 'Grafana',
-                    icon: 'pi pi-chart-line',
-                    url: grafanUrl,
-                    target: 'blank',
-                })
+            const grafanaUrl = data['grafana_url']
+            for (let i = 0; i < this.menuItems.length; i++) {
+                if (this.menuItems[i]['label'] === 'Services') {
+                    const services = this.menuItems[i];
+                    for (let j = 0; j < services.items.length; j++) {
+                        if (services.items[j]['label'] === 'Grafana') {
+                            if (grafanaUrl && grafanaUrl !== '') {
+                                this.menuItems[i].items[j]['visible'] = true
+                                this.menuItems[i].items[j]['url'] = grafanaUrl
+                            } else {
+                                this.menuItems[i].items[j]['visible'] = false
+                            }
+                        }
+                    }
+                }
             }
         })
     }

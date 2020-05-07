@@ -1597,7 +1597,8 @@
   "tags": [
     "dns",
     "bind",
-    "prometheus"
+    "prometheus",
+    "stork"
   ],
   "templating": {
     "list": [
@@ -1655,7 +1656,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "Bind DNS",
+  "title": "Stork Bind DNS",
   "uid": "QJCfAiCZk",
   "version": 3
 }
