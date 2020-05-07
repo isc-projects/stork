@@ -53,6 +53,8 @@ export class SubnetsPageComponent implements OnInit {
 
         this.settingSvc.getSettings().subscribe((data) => {
             this.grafanaUrl = data['grafana_url']
+        }, (error) => {
+            console.log(error)
         })
 
         // handle initial query params
@@ -75,6 +77,8 @@ export class SubnetsPageComponent implements OnInit {
                 event = this.subnetsTable.createLazyLoadMetadata()
             }
             this.loadSubnets(event)
+        }, (error) => {
+            console.log(error)
         })
     }
 
@@ -100,6 +104,8 @@ export class SubnetsPageComponent implements OnInit {
             .subscribe((data) => {
                 this.subnets = data.items
                 this.totalSubnets = data.total
+            }, (error) => {
+                console.log(error)
             })
     }
 
