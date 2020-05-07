@@ -122,7 +122,7 @@ export class AppComponent implements OnInit {
                         label: 'Grafana',
                         icon: 'pi pi-chart-line',
                         url: '',
-                        visible: false
+                        visible: false,
                     },
                 ],
             },
@@ -190,16 +190,16 @@ export class AppComponent implements OnInit {
         // Otherwise we need to make sure it's not visible.
         this.settingSvc.getSettings().subscribe((data) => {
             const grafanaUrl = data['grafana_url']
-            for (let i = 0; i < this.menuItems.length; i++) {
-                if (this.menuItems[i]['label'] === 'Services') {
-                    const services = this.menuItems[i];
-                    for (let j = 0; j < services.items.length; j++) {
-                        if (services.items[j]['label'] === 'Grafana') {
+
+            for (const menuItem of this.menuItems) {
+                if (menuItem['label'] === 'Services') {
+                    for (const subMenu of menuItem.items) {
+                        if (subMenu['label'] === 'Grafana') {
                             if (grafanaUrl && grafanaUrl !== '') {
-                                this.menuItems[i].items[j]['visible'] = true
-                                this.menuItems[i].items[j]['url'] = grafanaUrl
+                                subMenu['visible'] = true
+                                subMenu['url'] = grafanaUrl
                             } else {
-                                this.menuItems[i].items[j]['visible'] = false
+                                subMenu['visible'] = false
                             }
                         }
                     }
