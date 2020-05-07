@@ -32,7 +32,7 @@ describe('SubnetsPageComponent', () => {
                     provide: ActivatedRoute,
                     useValue: {
                         snapshot: { queryParamMap: new MockParamMap() },
-                        queryParamMap: of(new MockParamMap())
+                        queryParamMap: of(new MockParamMap()),
                     },
                 },
                 {

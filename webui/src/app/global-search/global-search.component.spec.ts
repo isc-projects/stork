@@ -11,11 +11,7 @@ describe('GlobalSearchComponent', () => {
     beforeEach(async(() => {
         TestBed.configureTestingModule({
             declarations: [GlobalSearchComponent],
-            providers: [
-                SearchService,
-                HttpClient,
-                HttpHandler
-            ]
+            providers: [SearchService, HttpClient, HttpHandler],
         }).compileComponents()
     }))
 
