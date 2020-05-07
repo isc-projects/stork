@@ -55,13 +55,17 @@ export class SharedNetworksPageComponent implements OnInit {
         this.updateOurQueryParams(ssParams)
 
         // subscribe to subsequent changes to query params
-        this.route.queryParamMap.subscribe((params) => {
+        this.route.queryParamMap.subscribe(
+            (params) => {
             this.updateOurQueryParams(params)
             let event = { first: 0, rows: 10 }
             if (this.networksTable) {
                 event = this.networksTable.createLazyLoadMetadata()
             }
             this.loadNetworks(event)
+        },
+        (error) => {
+            console.log(error)
         })
     }
 
@@ -83,9 +87,13 @@ export class SharedNetworksPageComponent implements OnInit {
         const params = this.queryParams
         this.dhcpApi
             .getSharedNetworks(event.first, event.rows, params.appId, params.dhcpVersion, params.text)
-            .subscribe((data) => {
+            .subscribe(
+            (data) => {
                 this.networks = data.items
                 this.totalNetworks = data.total
+            },
+            (error) => {
+                console.log(error)
             })
     }
 
