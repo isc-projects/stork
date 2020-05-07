@@ -38,8 +38,10 @@ export class AppComponent implements OnInit {
         this.auth.currentUser.subscribe((x) => {
             this.currentUser = x
             if (this.auth.superAdmin()) {
-                // super admin can see Configuration menu
-                this.menuItems[2].visible = true
+                // super admin can see Configuration/Users menu
+                this.menuItems[2].items[0]['visible'] = true
+            } else {
+                this.menuItems[2].items[0]['visible'] = false
             }
         })
 
@@ -120,10 +122,10 @@ export class AppComponent implements OnInit {
             },
             {
                 label: 'Configuration',
-                visible: false,
                 items: [
                     {
                         label: 'Users',
+                        visible: false,
                         icon: 'fa fa-user',
                         routerLink: '/users',
                     },
