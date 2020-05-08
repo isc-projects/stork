@@ -1,3 +1,5 @@
+Stork 0.7.0 released on 2020-05-08.
+
 * 62 [func] marcin
 
     Global host reservations in Kea are shown in the UI.

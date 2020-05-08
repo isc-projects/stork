@@ -1,6 +1,6 @@
 # Stork
 
-Stork is a new project led by ISC with the aim of delivering an ISC BIND 9 and ISC Kea DHCP use and monitoring dashboard. 
+Stork is a new project led by ISC with the aim of delivering an ISC BIND 9 and ISC Kea DHCP use and monitoring dashboard.
 It is intended to be a spiritual successor of the earlier attempts - Kittiwake and Anterius.
 
 It is currently in rapid development, with monthly releases with new features.
@@ -9,7 +9,7 @@ For details, please see [Stork Administrator Reference Manual](https://stork.rea
 
 # Build instructions
 
-The easiest way to run Stork is to install it using [RPM and deb packages](https://stork.readthedocs.io/en/v0.6.0/install.html#installing-from-packages).
+The easiest way to run Stork is to install it using [RPM and deb packages](https://stork.readthedocs.io/en/latest/install.html#installing-from-packages).
 The second easiest way is to use Docker (`rake docker_up`). However, it is
 possible to run Stork without docker. See Installation section of the Stork ARM.
 

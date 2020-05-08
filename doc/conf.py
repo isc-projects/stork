@@ -28,8 +28,6 @@ copyright = '2020, Internet Systems Consortium'
 author = 'Internet Systems Consortium'
 
 # get current stork version
-release = '0.6.0'
-
 version_file = '../backend/version.go'
 release = 'UNRELEASED'
 with open(version_file) as f:
