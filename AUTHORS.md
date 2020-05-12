@@ -3,11 +3,13 @@
 
 Primary developers:
 
-- Marcin Siodelski
-- Michał Nowikowski
-- Tomek Mrugalski
-- Matthijs Mekking
-- Witold Kręcicki
+- Marcin Siodelski (database, server, ui, kea)
+- Michał Nowikowski (server, agent, ui, prometheus, release engineering)
+- Tomek Mrugalski (documentation, testing, kea, project management)
+- Vicky Risk (product management, marketing)
+- Matthijs Mekking (BIND 9, prometheus)
+- Włodek Wencel (qa, release engineering)
+- Thomas Markwalder (kea)
 
 Primary area of work mentioned in parentheses. The list is in a
 roughly chronological order.
