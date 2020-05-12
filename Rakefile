@@ -65,7 +65,11 @@ SWAGGER_CODEGEN = "#{TOOLS_DIR}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
 GOSWAGGER_DIR = "#{TOOLS_DIR}/#{GOSWAGGER_VER}"
 GOSWAGGER = "#{GOSWAGGER_DIR}/#{GOSWAGGER_BIN}"
 NG = File.expand_path('webui/node_modules/.bin/ng')
-GOHOME_DIR = File.expand_path('~/go')
+if ENV['GOPATH']
+  GOHOME_DIR = ENV['GOPATH']
+else
+  GOHOME_DIR = File.expand_path('~/go')
+end
 GOBIN = "#{GOHOME_DIR}/bin"
 GO_DIR = "#{TOOLS_DIR}/#{GO_VER}"
 GO = "#{GO_DIR}/go/bin/go"
@@ -503,7 +507,7 @@ end
 
 desc 'Build containers with everything and statup all services using docker-compose
 arguments: cache=false - forces rebuilding whole container'
-task :docker_up do
+task :docker_up => :build_all_in_container do
   at_exit {
     sh "docker-compose #{DOCKER_COMPOSE_FILES} down"
   }
@@ -518,6 +522,19 @@ end
 desc 'Shut down all containers'
 task :docker_down do
   sh "docker-compose #{DOCKER_COMPOSE_FILES} down"
+end
+
+desc 'Build all in container'
+task :build_all_in_container do
+  sh "docker build -f docker/docker-builder.txt -t stork-builder ."
+  sh "docker run -v $PWD:/repo --rm -ti stork-builder rake build_all_copy_in_subdir"
+end
+
+# internal task used by build_all_in_container
+task :build_all_copy_in_subdir do
+  sh 'mkdir -p ./build-root'
+  sh 'rsync -av --exclude=webui/node_modules --exclude=webui/dist --exclude=webui/src/assets/arm --exclude=doc/_build --exclude=doc/doctrees --exclude=*~ api backend doc etc webui Rakefile ./build-root'
+  sh "cd ./build-root && GOPATH=/repo/build-root/go rake install_server install_agent"
 end
 
 desc 'Build container with Stork Agent and Kea DHCPv4 server'

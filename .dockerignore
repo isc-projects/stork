@@ -2,3 +2,5 @@
 tools/
 webui/node_modules/
 webui/dist
+build-root/
+!build-root/root

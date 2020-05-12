@@ -22,7 +22,7 @@
 /.vagrant
 
 # generated documentation
-/doc/singlehtml
+/doc/_build
 /doc/doctrees
 
 # output from backend unit tests coverage
@@ -47,3 +47,6 @@ TAGS
 /doc/man/stork-server.8
 /doc/_build/
 /webui/src/assets/arm/
+
+# build stuff when performing build all in a container
+/build-root

@@ -1,25 +1,4 @@
-## container for building stork server ##
-FROM ubuntu:18.04 AS builder
-WORKDIR /server
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget xz-utils rake git openjdk-11-jre-headless gcc g++ unzip python3-sphinx python3-sphinx-rtd-theme
-
-# copy base stuff to prepare environment for building
-COPY backend/go.mod /server/backend/go.mod
-COPY backend/go.sum /server/backend/go.sum
-COPY backend/version.go /server/backend/version.go
-COPY Rakefile /server/
-RUN rake prepare_env
-
-# copy server related stuff for building server part
-COPY backend /server/backend
-COPY api /server/api
-COPY webui /server/webui
-COPY doc /server/doc
-COPY etc /server/etc
-RUN rake -t install_server
-
-## container for running stork server ##
 FROM ubuntu:18.04
 WORKDIR /server
-COPY --from=builder /server/root/usr/bin/stork-server /server/
+COPY build-root/root/usr/bin/stork-server /server/
 CMD /server/stork-server
