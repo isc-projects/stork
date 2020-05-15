@@ -3,9 +3,21 @@
 set -e
 
 if [ -e /etc/redhat-release ]; then
+    # add stork-agent user
     useradd --system --home-dir /var/lib/ stork-agent
+
+    # add stork-agent user to named so it can read its config files
+    if [ $(getent group named) ]; then
+        usermod -aG named stork-agent
+    fi
 else
+    # add stork-agent user
     adduser --quiet --system --group --home /var/lib/ \
             --no-create-home --disabled-password --disabled-login \
             --gecos "Stork Agent User" stork-agent >/dev/null
+
+    # add stork-agent user to bind so it can read its config files
+    if [ $(getent group bind) ]; then
+        usermod -aG bind stork-agent
+    fi
 fi

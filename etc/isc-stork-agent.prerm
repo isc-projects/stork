@@ -2,3 +2,6 @@
 
 systemctl disable isc-stork-agent
 systemctl stop isc-stork-agent
+
+# remove stork-agent from any extra groups like e.g. bind
+usermod -G "" stork-agent
