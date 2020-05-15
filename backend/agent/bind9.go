@@ -251,7 +251,7 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) (bind9
 	}
 	out, err := cmdr.Output(prog, "-p", bind9ConfPath)
 	if err != nil {
-		log.Warnf("cannot parse BIND 9 config file %s: %+v", bind9ConfPath, err)
+		log.Warnf("cannot parse BIND 9 config file %s: %+v; %s", bind9ConfPath, err, out)
 		return nil
 	}
 	cfgText := string(out)

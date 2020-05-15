@@ -135,10 +135,10 @@ func (sm *appMonitor) detectApps() {
 	// where cmdline of the process contains given pattern with kea-ctrl-agent
 	// substring. Such found processes are being processed further and all other
 	// Kea daemons are discovered and queried for their versions, etc.
-	keaPtrn := regexp.MustCompile(`(.*)kea-ctrl-agent\s+.*-c\s+(\S+)`)
+	keaPtrn := regexp.MustCompile(`(.*?)kea-ctrl-agent\s+.*-c\s+(\S+)`)
 	// BIND 9 app is being detecting by browsing list of processes in the system
 	// where cmdline of the process contains given pattern with named substring.
-	bind9Ptrn := regexp.MustCompile(`(.*)named\s+(.*)`)
+	bind9Ptrn := regexp.MustCompile(`(.*?)named\s+(.*)`)
 
 	var apps []*App
 
