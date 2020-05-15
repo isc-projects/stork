@@ -65,7 +65,7 @@ func NewAppMonitor() AppMonitor {
 func (sm *appMonitor) run() {
 	log.Printf("Started app monitor")
 
-	// first detectin run immediatelly
+	// first detectin run immediately
 	sm.detectApps()
 
 	// prepare ticker

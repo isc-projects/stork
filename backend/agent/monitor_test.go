@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -120,7 +121,8 @@ func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
 
 func TestDetectApps(t *testing.T) {
 	am := NewAppMonitor()
-	am.(*appMonitor).detectApps()
+	// let gorouting in monitor do anything in background
+	time.Sleep(1 * time.Second)
 	am.Shutdown()
 }
 
