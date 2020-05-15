@@ -64,6 +64,11 @@ func NewAppMonitor() AppMonitor {
 
 func (sm *appMonitor) run() {
 	log.Printf("Started app monitor")
+
+	// first detectin run immediatelly
+	sm.detectApps()
+
+	// prepare ticker
 	const detectionInterval = 10 * time.Second
 	ticker := time.NewTicker(detectionInterval)
 	defer ticker.Stop()
