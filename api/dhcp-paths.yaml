@@ -23,6 +23,12 @@
           in: query
           description: Limit returned list of hosts to the ones containing the given text.
           type: string
+        - name: global
+          in: query
+          description: >-
+            If true then return only reservations from global scope, if false then return
+            only reservations from subnets, if null then both types of hosts are return.
+          type: boolean
       responses:
         200:
           description: List of hosts

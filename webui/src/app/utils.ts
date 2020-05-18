@@ -96,9 +96,9 @@ export function getGrafanaUrl(grafanaBaseUrl, name, subnet, instance) {
  * Extract key=val pairs from search text and prepare
  * query params dict.
  */
-export function extractKeyValsAndPrepareQueryParams(text, keys) {
+export function extractKeyValsAndPrepareQueryParams(text, keys, flags) {
     // find all occurences key=val in the text
-    const re = /(\w+)=(\w*)/g
+    const re = /(\w+):(\w*)/g
     const matches = []
     let match = re.exec(text)
     while (match !== null) {
@@ -106,19 +106,52 @@ export function extractKeyValsAndPrepareQueryParams(text, keys) {
         match = re.exec(text)
     }
 
+    // reset query params
     const queryParams = {
         text: null,
     }
-
     for (const key of keys) {
         queryParams[key] = null
-        for (const m of matches) {
+    }
+    for (const flag of flags) {
+        queryParams[flag] = null
+    }
+
+    // go through all match and...
+    for (const m of matches) {
+        let found = false
+
+        // look for keys
+        for (const key of keys) {
             if (m[1] === key) {
                 queryParams[key] = m[2]
-                text = text.replace(m[0], '')
+                found = true
+                break
             }
         }
+
+        // look for flags
+        if (flags && !found) {
+            for (const flag of flags) {
+                if (m[2] !== flag) {
+                    continue
+                }
+                if (m[1] === 'is') {
+                    queryParams[m[2]] = true
+                    found = true
+                } else if (m[1] === 'not') {
+                    queryParams[m[2]] = false
+                    found = true
+                }
+            }
+        }
+
+        // if found match then remove it from text
+        if (found) {
+            text = text.replace(m[0], '')
+        }
     }
+
     text = text.trim()
     if (text) {
         queryParams.text = text

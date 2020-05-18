@@ -49,8 +49,8 @@
                     <b>192.0.2</b> as the filter text.
                 </p>
                 <p>
-                    Global hosts, i.e. the hosts valid for all subnets, can be filtered out by typing the word
-                    <b>global</b>.
+                    Global hosts, i.e. the hosts valid for all subnets, can be filtered out by typing the expression
+                    <b>is:global</b>. <b>not:global</b> will return only hosts that are defined in some subnet.
                 </p>
                 <p>
                     Currently supported fields:
@@ -61,8 +61,8 @@
                     <li>Address</li>
                 </ul>
                 <p>
-                    Hosts can be explicitly filtered by a given field using an expression: <i>field=value</i>, e.g.:
-                    <i class="monospace">appId=2</i>. Currently supported fields for explicit filtering:
+                    Hosts can be explicitly filtered by a given field using an expression: <i>field:value</i>, e.g.:
+                    <i class="monospace">appId:2</i>. Currently supported fields for explicit filtering:
                 </p>
                 <ul>
                     <li class="monospace">appId</li>

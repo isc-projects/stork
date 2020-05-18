@@ -31,6 +31,7 @@ export class HostsPageComponent implements OnInit {
     queryParams = {
         text: null,
         appId: null,
+        global: null,
     }
 
     constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) {}
@@ -43,7 +44,13 @@ export class HostsPageComponent implements OnInit {
             text += ' ' + ssParams.get('text')
         }
         if (ssParams.get('appId')) {
-            text += ' appId=' + ssParams.get('appId')
+            text += ' appId:' + ssParams.get('appId')
+        }
+        const g = ssParams.get('global')
+        if (g === 'true') {
+            text += ' is:global'
+        } else if (g === 'false') {
+            text += ' not:global'
         }
         this.filterText = text.trim()
         this.updateOurQueryParams(ssParams)
@@ -62,6 +69,14 @@ export class HostsPageComponent implements OnInit {
     updateOurQueryParams(params) {
         this.queryParams.text = params.get('text')
         this.queryParams.appId = params.get('appId')
+        const g = params.get('global')
+        if (g === 'true') {
+            this.queryParams.global = true
+        } else if (g === 'false') {
+            this.queryParams.global = false
+        } else {
+            this.queryParams.global = null
+        }
     }
 
     /**
@@ -73,10 +88,12 @@ export class HostsPageComponent implements OnInit {
     loadHosts(event) {
         const params = this.queryParams
 
-        this.dhcpApi.getHosts(event.first, event.rows, params.appId, null, params.text).subscribe((data) => {
-            this.hosts = data.items
-            this.totalHosts = data.total
-        })
+        this.dhcpApi
+            .getHosts(event.first, event.rows, params.appId, null, params.text, params.global)
+            .subscribe((data) => {
+                this.hosts = data.items
+                this.totalHosts = data.total
+            })
     }
 
     /**
@@ -86,7 +103,7 @@ export class HostsPageComponent implements OnInit {
      */
     keyUpFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId'])
+            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId'], ['global'])
             this.router.navigate(['/dhcp/hosts'], {
                 queryParams,
                 queryParamsHandling: 'merge',

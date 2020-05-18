@@ -60,7 +60,7 @@ export class SubnetsPageComponent implements OnInit {
             text += ' ' + ssParams.get('text')
         }
         if (ssParams.get('appId')) {
-            text += ' appId=' + ssParams.get('appId')
+            text += ' appId:' + ssParams.get('appId')
         }
         this.filterText = text.trim()
         this.updateOurQueryParams(ssParams)
@@ -118,7 +118,7 @@ export class SubnetsPageComponent implements OnInit {
      */
     keyupFilterText(event) {
         if (this.filterText.length >= 2 || event.key === 'Enter') {
-            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId'])
+            const queryParams = extractKeyValsAndPrepareQueryParams(this.filterText, ['appId'], null)
             this.router.navigate(['/dhcp/subnets'], {
                 queryParams,
                 queryParamsHandling: 'merge',

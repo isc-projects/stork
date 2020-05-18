@@ -324,12 +324,15 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 // indicates that only global hosts are to be returned. Filtering text
 // allows for searching hosts by reserved IP addresses and/or host
 // identifiers specified using hexadecimal digits. It is allowed to
-// specify colons while searching by hosts by host
-// identifiers. sortField allows indicating sort column in database
-// and sortDir allows selection the order of sorting. If sortField is
-// empty then id is used for sorting.  in SortDirAny is used then ASC
-// order is used.
-func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Host, int64, error) {
+// specify colons while searching by hosts by host identifiers. If
+// global flag is true then on hosts from global scope are returned
+// (ie. not assigned to any subnet), if false then only hosts from
+// subnets are returned. sortField allows indicating sort column in
+// database and sortDir allows selection the order of sorting. If
+// sortField is empty then id is used for sorting.  in SortDirAny is
+// used then ASC order is used.
+//nolint:gocognit
+func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64, filterText *string, global *bool, sortField string, sortDir SortDirEnum) ([]Host, int64, error) {
 	hosts := []Host{}
 	q := db.Model(&hosts)
 
@@ -347,17 +350,21 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64
 		q = q.Where("lh.app_id = ?", appID)
 	}
 
-	if subnetID != nil {
-		if *subnetID == 0 {
-			// Get global hosts, i.e. the ones for which subnet ids are not
-			// specified.
-			q = q.Where("subnet_id IS NULL")
-		} else {
-			// Get hosts for matching subnet id.
-			q = q.Where("subnet_id = ?", *subnetID)
-		}
+	// filter by subnet id
+	if subnetID != nil && *subnetID != 0 {
+		// Get hosts for matching subnet id.
+		q = q.Where("subnet_id = ?", *subnetID)
 	}
 
+	// filter global or non-global hosts
+	if (global != nil && *global) || (subnetID != nil && *subnetID == 0) {
+		q = q.WhereOr("host.subnet_id IS NULL")
+	}
+	if global != nil && !*global {
+		q = q.WhereOr("host.subnet_id IS NOT NULL")
+	}
+
+	// filter by text
 	if filterText != nil && len(*filterText) > 0 {
 		// It is possible that the user is typing a search text with colons
 		// for host identifiers. We need to remove them because they are
@@ -369,13 +376,6 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64
 			q = q.WhereOr("text(r.address) LIKE ?", "%"+*filterText+"%").
 				WhereOr("i.type::text LIKE ?", "%"+*filterText+"%").
 				WhereOr("encode(i.value, 'hex') LIKE ?", "%"+colonlessFilterText+"%")
-			// If someone typed in "global" in the search box we have to search for all
-			// global reservations, i.e. those that have subnet ID equal to NULL.
-			// We don't include this condition if it has been already included earlier
-			// in this function for subnetID parameter equal to 0.
-			if strings.HasPrefix(string("global"), *filterText) && (subnetID == nil || *subnetID != 0) {
-				q = q.WhereOr("host.subnet_id IS NULL")
-			}
 			return q, nil
 		})
 	}
