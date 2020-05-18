@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -43,6 +44,8 @@ type AppMonitor interface {
 type appMonitor struct {
 	requests chan chan []*App // input to app monitor, ie. channel for receiving requests
 	quit     chan bool        // channel for stopping app monitor
+	running  bool
+	wg       *sync.WaitGroup
 
 	apps []*App // list of detected apps on the host
 }
@@ -57,15 +60,19 @@ func NewAppMonitor() AppMonitor {
 	sm := &appMonitor{
 		requests: make(chan chan []*App),
 		quit:     make(chan bool),
+		wg:       &sync.WaitGroup{},
 	}
+	sm.wg.Add(1)
 	go sm.run()
 	return sm
 }
 
 func (sm *appMonitor) run() {
 	log.Printf("Started app monitor")
+	sm.running = true
+	defer sm.wg.Done()
 
-	// first detectin run immediately
+	// run app detection one time immediately at startup
 	sm.detectApps()
 
 	// prepare ticker
@@ -86,6 +93,7 @@ func (sm *appMonitor) run() {
 		case <-sm.quit:
 			// exit run
 			log.Printf("Stopped app monitor")
+			sm.running = false
 			return
 		}
 	}
@@ -208,6 +216,7 @@ func (sm *appMonitor) GetApps() []*App {
 
 func (sm *appMonitor) Shutdown() {
 	sm.quit <- true
+	sm.wg.Wait()
 }
 
 // getAccessPoint retrieves the requested type of access point from the app.
