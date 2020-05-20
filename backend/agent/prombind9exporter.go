@@ -103,7 +103,7 @@ func (pbe *PromBind9Exporter) Start() {
 	// start HTTP server for metrics
 	go func() {
 		err := pbe.HTTPServer.ListenAndServe()
-		if err != nil {
+		if err != nil && err != http.ErrServerClosed {
 			log.Errorf("problem with serving Prometheus BIND 9 Exporter: %s", err.Error())
 		}
 	}()

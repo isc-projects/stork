@@ -15,8 +15,8 @@ import (
 
 // Global Agent settings.
 type AgentSettings struct {
-	PrometheusOnly bool `long:"prometheusOnly" description:"agent does not listen for stork only exports to prometheus" env:"STORK_AGENT_PROMETHEUS_ONLY"`
-	StorkOnly      bool `long:"storkOnly" description:"agent only listens for stork does not export to prometheus" env:"STORK_AGENT_PROMETHEUS_ONLY"`
+	PrometheusOnly bool `long:"listen-prometheus-only" description:"listen only for Prometheus requests" env:"STORK_AGENT_LISTEN_PROMETHEUS_ONLY"`
+	StorkOnly      bool `long:"listen-stork-only" description:"listen only for Stork Server requests" env:"STORK_AGENT_LISTEN_STORK_ONLY"`
 }
 
 func main() {
@@ -75,12 +75,15 @@ func main() {
 
 	// Only start the agent service if it's enabled.
 	if !agentSettings.PrometheusOnly {
-		storkAgent.Serve()
-	} else {
-		// We wait for ctl-c
-		log.Infof("Agent is running without listening for Stork")
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt, syscall.SIGINT)
-		<-c
+		go func() {
+			storkAgent.Serve()
+		}()
+
+		defer storkAgent.Shutdown()
 	}
+
+	// We wait for ctl-c
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGINT)
+	<-c
 }

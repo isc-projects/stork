@@ -33,6 +33,7 @@ type StorkAgent struct {
 
 	HTTPClient *HTTPClient // to communicate with Kea Control Agent and named statistics-channel
 	RndcClient *RndcClient // to communicate with BIND 9 via rndc
+	server     *grpc.Server
 }
 
 // API exposed to Stork Server
@@ -47,11 +48,15 @@ func NewStorkAgent(appMonitor AppMonitor) *StorkAgent {
 
 	httpClient := NewHTTPClient()
 
+	server := grpc.NewServer()
+
 	sa := &StorkAgent{
 		AppMonitor: appMonitor,
 		HTTPClient: httpClient,
 		RndcClient: rndcClient,
+		server:     server,
 	}
+
 	return sa
 }
 
@@ -252,8 +257,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 
 func (sa *StorkAgent) Serve() {
 	// Install gRPC API handlers.
-	server := grpc.NewServer()
-	agentapi.RegisterAgentServer(server, sa)
+	agentapi.RegisterAgentServer(sa.server, sa)
 
 	// Prepare listener on configured address.
 	addr := fmt.Sprintf("%s:%d", sa.Settings.Host, sa.Settings.Port)
@@ -266,7 +270,14 @@ func (sa *StorkAgent) Serve() {
 	log.WithFields(log.Fields{
 		"address": lis.Addr(),
 	}).Infof("started serving Stork Agent")
-	if err := server.Serve(lis); err != nil {
+	if err := sa.server.Serve(lis); err != nil {
 		log.Fatalf("Failed to listen on port: %+v", err)
+	}
+}
+
+func (sa *StorkAgent) Shutdown() {
+	log.Infof("stopping StorkAgent")
+	if sa.server != nil {
+		sa.server.GracefulStop()
 	}
 }
