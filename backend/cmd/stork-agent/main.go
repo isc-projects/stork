@@ -15,8 +15,8 @@ import (
 
 // Global Agent settings.
 type AgentSettings struct {
-    PrometheusOnly bool `long:"prometheusOnly" description:"agent does not listen for stork only exports to prometheus" env:"STORK_AGENT_PROMETHEUS_ONLY"`
-    StorkOnly      bool `long:"storkOnly" description:"agent only listens for stork does not export to prometheus" env:"STORK_AGENT_PROMETHEUS_ONLY"`
+	PrometheusOnly bool `long:"prometheusOnly" description:"agent does not listen for stork only exports to prometheus" env:"STORK_AGENT_PROMETHEUS_ONLY"`
+	StorkOnly      bool `long:"storkOnly" description:"agent only listens for stork does not export to prometheus" env:"STORK_AGENT_PROMETHEUS_ONLY"`
 }
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 	promBind9Exporter := agent.NewPromBind9Exporter(appMonitor)
 
 	// Prepare parse for command line flags.
-    var agentSettings AgentSettings
+	var agentSettings AgentSettings
 	parser := flags.NewParser(&agentSettings, flags.Default)
 	parser.ShortDescription = "Stork Agent"
 	parser.LongDescription = "Stork Agent"
@@ -58,29 +58,29 @@ func main() {
 	if _, err := parser.Parse(); err != nil {
 		if fe, ok := err.(*flags.Error); ok {
 			if fe.Type == flags.ErrHelp {
-		        os.Exit(0)
+				os.Exit(0)
 			}
 		}
 		log.Fatalf("FATAL error: %+v", err)
 	}
 
-    // Only start the exporters if they're enabled.
-    if !agentSettings.StorkOnly {
-	    promKeaExporter.Start()
-	    defer promKeaExporter.Shutdown()
+	// Only start the exporters if they're enabled.
+	if !agentSettings.StorkOnly {
+		promKeaExporter.Start()
+		defer promKeaExporter.Shutdown()
 
-	    promBind9Exporter.Start()
-	    defer promBind9Exporter.Shutdown()
-    }
+		promBind9Exporter.Start()
+		defer promBind9Exporter.Shutdown()
+	}
 
-    // Only start the agent service if it's enabled.
-    if !agentSettings.PrometheusOnly {
-	    storkAgent.Serve()
-    } else {
-        // We wait for ctl-c
-        log.Infof("Agent is running without listening for Stork")
-        c := make(chan os.Signal, 1)
-        signal.Notify(c, os.Interrupt, syscall.SIGINT)
-        <-c
-    }
+	// Only start the agent service if it's enabled.
+	if !agentSettings.PrometheusOnly {
+		storkAgent.Serve()
+	} else {
+		// We wait for ctl-c
+		log.Infof("Agent is running without listening for Stork")
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGINT)
+		<-c
+	}
 }

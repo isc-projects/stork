@@ -90,6 +90,15 @@ environment variables to specify which address the agent listens
 on. The ``--port`` or ``STORK_AGENT_PORT`` environment variables
 specify which TCP port the agent listens on.
 
+Normally, the agent will create a TCP socket on which to listen
+for commmands from a stork-server and create exporters which
+export data to Prometheus.  There are two command line flags
+which may be used to alter this behavior.  The ``--storkOnly`` flag
+instructs the agent to listen for commands from the stork-server,
+but not perfrom exports to Prometheus.  Conversely, the
+``--prometheusOnly`` flag, instructs the agent to export data to
+Prometheus without listening for commands from stork-server.
+
 .. note::
 
    Unless explicitly specified, the agent listens on all addresses on
