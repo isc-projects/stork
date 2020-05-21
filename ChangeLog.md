@@ -1,6 +1,6 @@
 * 63 [func] tmark
 
-    Added --prometheusOnly and --storkOnly command line
+    Added --listen-prometheus-only and --listen-stork-only command line
     flags to stork-agent.
     (Gitlab #213)
 

@@ -75,10 +75,7 @@ func main() {
 
 	// Only start the agent service if it's enabled.
 	if !agentSettings.PrometheusOnly {
-		go func() {
-			storkAgent.Serve()
-		}()
-
+		go storkAgent.Serve()
 		defer storkAgent.Shutdown()
 	}
 

@@ -40,6 +40,13 @@ The Stork Agent takes the following arguments:
    Specifies the TCP port to listen on for connections. The default is 8080. Can be controlled
    with $STORK_AGENT_PORT environment variable.
 
+``--listen-stork-only``
+   Instructs the agent to listen for commands from the Stork Server but not for Prometheus requests.
+   Can also be set with the $STORK_AGENT_LISTEN_STORK_ONLY environment variable.
+
+``--listen-prometheus-only``
+   Instructs the agent to listen for Prometheus requests but not for commands from the Stork Server.
+   Can also be set with the $STORK_AGENT_LISTEN_PROMETHEUS_ONLY environment variable.
 
 Configuration
 ~~~~~~~~~~~~~
