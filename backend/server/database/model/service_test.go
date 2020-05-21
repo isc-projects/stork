@@ -202,17 +202,27 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 
 	// Service 2 holds HA specific information.
 	service2.HAService = &BaseHAService{
-		HAType:                     "dhcp4",
-		PrimaryID:                  service2.Daemons[0].ID,
-		SecondaryID:                service2.Daemons[1].ID,
-		BackupID:                   []int64{service2.Daemons[2].ID, service2.Daemons[3].ID},
-		PrimaryStatusCollectedAt:   time.Now(),
-		SecondaryStatusCollectedAt: time.Now(),
-		PrimaryLastState:           "load-balancing",
-		SecondaryLastState:         "syncing",
-		PrimaryLastScopes:          []string{"server1", "server2"},
-		SecondaryLastScopes:        []string{},
-		PrimaryLastFailoverAt:      time.Now(),
+		HAType:                      "dhcp4",
+		PrimaryID:                   service2.Daemons[0].ID,
+		SecondaryID:                 service2.Daemons[1].ID,
+		BackupID:                    []int64{service2.Daemons[2].ID, service2.Daemons[3].ID},
+		PrimaryStatusCollectedAt:    time.Now(),
+		SecondaryStatusCollectedAt:  time.Now(),
+		PrimaryLastState:            "load-balancing",
+		SecondaryLastState:          "syncing",
+		PrimaryLastScopes:           []string{"server1", "server2"},
+		SecondaryLastScopes:         []string{},
+		PrimaryLastFailoverAt:       time.Now(),
+		PrimaryCommInterrupted:      true,
+		SecondaryCommInterrupted:    false,
+		PrimaryConnectingClients:    1,
+		SecondaryConnectingClients:  0,
+		PrimaryUnackedClients:       2,
+		SecondaryUnackedClients:     0,
+		PrimaryUnackedClientsLeft:   6,
+		SecondaryUnackedClientsLeft: 0,
+		PrimaryAnalyzedPackets:      9,
+		SecondaryAnalyzedPackets:    0,
 	}
 	err = AddService(db, service2)
 	require.NoError(t, err)
@@ -346,6 +356,16 @@ func TestGetServiceById(t *testing.T) {
 	require.Equal(t, "syncing", service.HAService.SecondaryLastState)
 	require.False(t, service.HAService.PrimaryLastFailoverAt.IsZero())
 	require.True(t, service.HAService.SecondaryLastFailoverAt.IsZero())
+	require.True(t, service.HAService.PrimaryCommInterrupted)
+	require.False(t, service.HAService.SecondaryCommInterrupted)
+	require.EqualValues(t, 1, service.HAService.PrimaryConnectingClients)
+	require.Zero(t, service.HAService.SecondaryConnectingClients)
+	require.EqualValues(t, 2, service.HAService.PrimaryUnackedClients)
+	require.Zero(t, service.HAService.SecondaryUnackedClients)
+	require.EqualValues(t, 6, service.HAService.PrimaryUnackedClientsLeft)
+	require.Zero(t, service.HAService.SecondaryUnackedClientsLeft)
+	require.EqualValues(t, 9, service.HAService.PrimaryAnalyzedPackets)
+	require.Zero(t, service.HAService.SecondaryAnalyzedPackets)
 }
 
 // Test getting services for an app.

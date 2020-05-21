@@ -34,24 +34,34 @@ type DaemonToService struct {
 // High Availability specific information. It is embedded in the
 // Service structure.
 type BaseHAService struct {
-	tableName                  struct{} `pg:"ha_service"` //nolint:unused,structcheck
-	ID                         int64
-	ServiceID                  int64
-	HAType                     string
-	HAMode                     string
-	PrimaryID                  int64
-	SecondaryID                int64
-	BackupID                   []int64 `pg:",array"`
-	PrimaryStatusCollectedAt   time.Time
-	SecondaryStatusCollectedAt time.Time
-	PrimaryLastState           string
-	SecondaryLastState         string
-	PrimaryLastScopes          []string `pg:",array"`
-	SecondaryLastScopes        []string `pg:",array"`
-	PrimaryReachable           bool
-	SecondaryReachable         bool
-	PrimaryLastFailoverAt      time.Time
-	SecondaryLastFailoverAt    time.Time
+	tableName                   struct{} `pg:"ha_service"` //nolint:unused,structcheck
+	ID                          int64
+	ServiceID                   int64
+	HAType                      string
+	HAMode                      string
+	PrimaryID                   int64
+	SecondaryID                 int64
+	BackupID                    []int64 `pg:",array"`
+	PrimaryStatusCollectedAt    time.Time
+	SecondaryStatusCollectedAt  time.Time
+	PrimaryLastState            string
+	SecondaryLastState          string
+	PrimaryLastScopes           []string `pg:",array"`
+	SecondaryLastScopes         []string `pg:",array"`
+	PrimaryReachable            bool
+	SecondaryReachable          bool
+	PrimaryLastFailoverAt       time.Time
+	SecondaryLastFailoverAt     time.Time
+	PrimaryCommInterrupted      bool
+	SecondaryCommInterrupted    bool
+	PrimaryConnectingClients    int64
+	SecondaryConnectingClients  int64
+	PrimaryUnackedClients       int64
+	SecondaryUnackedClients     int64
+	PrimaryUnackedClientsLeft   int64
+	SecondaryUnackedClientsLeft int64
+	PrimaryAnalyzedPackets      int64
+	SecondaryAnalyzedPackets    int64
 }
 
 // A structure reflecting all SQL tables holding information about the
