@@ -132,7 +132,12 @@ func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
                                 "in-touch": true,
                                 "role": "secondary",
                                 "last-scopes": [ "server2" ],
-                                "last-state": "load-balancing"
+                                "last-state": "load-balancing",
+                                "communication-interrupted": true,
+                                "connecting-clients": 1,
+                                "unacked-clients": 2,
+                                "unacked-clients-left": 3,
+                                "analyzed-packets": 10
                             }
                         }
                     }
@@ -160,7 +165,12 @@ func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
                                      "in-touch": true,
                                      "role": "primary",
                                      "last-scopes": [ "server1" ],
-                                     "last-state": "waiting"
+                                     "last-state": "waiting",
+                                     "communication-interrupted": true,
+                                     "connecting-clients": 2,
+                                     "unacked-clients": 3,
+                                     "unacked-clients-left": 4,
+                                     "analyzed-packets": 15
                                  }
                              }
                       }
@@ -189,7 +199,12 @@ func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
                                     "in-touch": false,
                                     "role": "secondary",
                                     "last-scopes": [ ],
-                                    "last-state": "unavailable"
+                                    "last-state": "unavailable",
+                                    "communication-interrupted": true,
+                                    "connecting-clients": 2,
+                                    "unacked-clients": 3,
+                                    "unacked-clients-left": 1,
+                                    "analyzed-packets": 20
                                 }
                            }
                     }
@@ -598,6 +613,15 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 	require.True(t, service.HAService.PrimaryLastFailoverAt.IsZero())
 	require.True(t, service.HAService.SecondaryLastFailoverAt.IsZero())
 
+	// These fields are only available in Kea 1.7.8+.
+	if version178 {
+		require.True(t, service.HAService.SecondaryCommInterrupted)
+		require.EqualValues(t, 1, service.HAService.SecondaryConnectingClients)
+		require.EqualValues(t, 2, service.HAService.SecondaryUnackedClients)
+		require.EqualValues(t, 3, service.HAService.SecondaryUnackedClientsLeft)
+		require.EqualValues(t, 10, service.HAService.SecondaryAnalyzedPackets)
+	}
+
 	// The second service for this app is the DHCPv6 service.
 	service = services[1]
 
@@ -616,6 +640,15 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 	require.Empty(t, service.HAService.SecondaryLastScopes)
 	require.True(t, service.HAService.PrimaryReachable)
 	require.True(t, service.HAService.SecondaryReachable)
+
+	// These fields are only available in Kea 1.7.8+.
+	if version178 {
+		require.True(t, service.HAService.PrimaryCommInterrupted)
+		require.EqualValues(t, 2, service.HAService.PrimaryConnectingClients)
+		require.EqualValues(t, 3, service.HAService.PrimaryUnackedClients)
+		require.EqualValues(t, 4, service.HAService.PrimaryUnackedClientsLeft)
+		require.EqualValues(t, 15, service.HAService.PrimaryAnalyzedPackets)
+	}
 
 	// Pull the data again.
 	count, err = puller.pullData()
@@ -646,6 +679,16 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 	require.False(t, service.HAService.PrimaryLastFailoverAt.IsZero())
 	require.True(t, service.HAService.SecondaryLastFailoverAt.IsZero())
 
+	// These fields are only available in Kea 1.7.8+.
+	if version178 {
+		require.True(t, service.HAService.SecondaryCommInterrupted)
+		// In the partner-down state they should be all reset.
+		require.Zero(t, service.HAService.SecondaryConnectingClients)
+		require.Zero(t, service.HAService.SecondaryUnackedClients)
+		require.Zero(t, service.HAService.SecondaryUnackedClientsLeft)
+		require.Zero(t, service.HAService.SecondaryAnalyzedPackets)
+	}
+
 	// The second service for this app is the DHCPv6 service. The status should
 	// remain the same for the DHCPv6 server because we were unable to communicate
 	// with the server. The state may be overridden if the partner of that server
@@ -660,6 +703,15 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 	require.Empty(t, service.HAService.SecondaryLastScopes)
 	require.True(t, service.HAService.PrimaryReachable)
 	require.False(t, service.HAService.SecondaryReachable)
+
+	// These fields are only available in Kea 1.7.8+.
+	if version178 {
+		require.True(t, service.HAService.PrimaryCommInterrupted)
+		require.EqualValues(t, 2, service.HAService.PrimaryConnectingClients)
+		require.EqualValues(t, 3, service.HAService.PrimaryUnackedClients)
+		require.EqualValues(t, 4, service.HAService.PrimaryUnackedClientsLeft)
+		require.EqualValues(t, 15, service.HAService.PrimaryAnalyzedPackets)
+	}
 }
 
 // Test that HA status can be fetched and updated via the HA status puller

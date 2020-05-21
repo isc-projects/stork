@@ -16,6 +16,8 @@ import (
 
 const (
 	HAStatusUnavailable = "unavailable"
+	HAStatusLoadBalancing = "load-balancing"
+	HAStatusHotStandby = "hot-standby"
 )
 
 // === status-get response structs ================================================
@@ -150,6 +152,20 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 			service.SecondaryLastScopes = []string{}
 			service.SecondaryReachable = false
 		}
+		service.SecondaryCommInterrupted = status.Remote.CommInterrupted
+
+		// Failover procedure should only be monitored during normal operation.
+		if primaryLastState == HAStatusLoadBalancing || primaryLastState == HAStatusHotStandby {
+			service.SecondaryConnectingClients = status.Remote.ConnectingClients
+			service.SecondaryUnackedClients = status.Remote.UnackedClients
+			service.SecondaryUnackedClientsLeft = status.Remote.UnackedClientsLeft
+			service.SecondaryAnalyzedPackets = status.Remote.AnalyzedPackets
+		} else {
+			service.SecondaryConnectingClients = 0
+			service.SecondaryUnackedClients = 0
+			service.SecondaryUnackedClientsLeft = 0
+			service.SecondaryAnalyzedPackets = 0
+		}
 	case service.SecondaryID:
 		// Record the secondary/standby server's state.
 		secondaryLastState = status.Local.State
@@ -171,6 +187,20 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 		} else {
 			service.PrimaryLastScopes = []string{}
 			service.PrimaryReachable = false
+		}
+		service.PrimaryCommInterrupted = status.Remote.CommInterrupted
+
+		// Failover procedure should only be monitored during normal operation.
+		if secondaryLastState == HAStatusLoadBalancing || secondaryLastState == HAStatusHotStandby {
+			service.PrimaryConnectingClients = status.Remote.ConnectingClients
+			service.PrimaryUnackedClients = status.Remote.UnackedClients
+			service.PrimaryUnackedClientsLeft = status.Remote.UnackedClientsLeft
+			service.PrimaryAnalyzedPackets = status.Remote.AnalyzedPackets
+		} else {
+			service.PrimaryConnectingClients = 0
+			service.PrimaryUnackedClients = 0
+			service.PrimaryUnackedClientsLeft = 0
+			service.PrimaryAnalyzedPackets = 0
 		}
 	}
 	// Finally, if any of the server's is in the partner-down state we should
