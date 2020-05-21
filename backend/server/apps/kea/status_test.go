@@ -101,6 +101,108 @@ func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
 	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
 }
 
+// Generates a response to the status-get command including two status
+// structures, one for DHCPv4 and one for DHCPv6. Format supported by
+// Kea 1.7.8 onwards.
+func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
+	daemons, _ := agentcomm.NewKeaDaemons("dhcp4", "dhcp6")
+	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	var json string
+	switch callNo {
+	case 0:
+		json = `[{
+            "result": 0,
+            "text": "Everything is fine",
+            "arguments": {
+                "pid": 1234,
+                "uptime": 3024,
+                "reload": 1111,
+                "high-availability": [
+                    {
+                        "ha-mode": "load-balancing",
+                        "ha-servers":
+                            {
+                                "local": {
+                                "role": "primary",
+                                "scopes": [ "server1" ],
+                                "state": "load-balancing"
+                            },
+                            "remote": {
+                                "age": 10,
+                                "in-touch": true,
+                                "role": "secondary",
+                                "last-scopes": [ "server2" ],
+                                "last-state": "load-balancing"
+                            }
+                        }
+                    }
+               ]
+         }},
+         {
+             "result": 0,
+             "text": "Everything is fine",
+             "arguments": {
+                 "pid": 2345,
+                 "uptime": 3333,
+                 "reload": 2222,
+                 "high-availability": [
+                     {
+                         "ha-mode": "hot-standby",
+                         "ha-servers":
+                             {
+                                 "local": {
+                                     "role": "standby",
+                                     "scopes": [ ],
+                                     "state": "hot-standby"
+                                 },
+                                 "remote": {
+                                     "age": 3,
+                                     "in-touch": true,
+                                     "role": "primary",
+                                     "last-scopes": [ "server1" ],
+                                     "last-state": "waiting"
+                                 }
+                             }
+                      }
+                 ]
+          }}]`
+	default:
+		json = `[{
+            "result": 0,
+            "text": "Everything is fine",
+            "arguments": {
+                "pid": 1234,
+                "uptime": 3024,
+                "reload": 1111,
+                "high-availability": [
+                    {
+                        "ha-mode": "hot-standby",
+                        "ha-servers":
+                            {
+                                "local": {
+                                    "role": "primary",
+                                    "scopes": [ "server1", "server2" ],
+                                    "state": "partner-down"
+                                },
+                                "remote": {
+                                    "age": 0,
+                                    "in-touch": false,
+                                    "role": "secondary",
+                                    "last-scopes": [ ],
+                                    "last-state": "unavailable"
+                                }
+                           }
+                    }
+               ]
+         }},
+         {
+             "result": 1,
+             "text": "Unable to communicate"
+         }]`
+	}
+	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+}
+
 // Generate test response to status-get command including status of the
 // HA pair doing load balancing.
 func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
@@ -131,6 +233,50 @@ func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
                     }
                 }
             }
+    ]`
+	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+}
+
+// Generate test response to status-get command including status of the
+// HA pair doing load balancing. Format supported by Kea 1.7.8 onwards.
+func mockGetStatusLoadBalancing178(callNo int, cmdResponses []interface{}) {
+	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
+	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	json := `[
+        {
+            "result": 0,
+            "text": "Everything is fine",
+            "arguments": {
+                "pid": 1234,
+                "uptime": 3024,
+                "reload": 1111,
+                "high-availability": [
+                    {
+                        "ha-mode": "load-balancing",
+                        "ha-servers":
+                            {
+                                "local": {
+                                    "role": "primary",
+                                    "scopes": [ "server1" ],
+                                    "state": "load-balancing"
+                                },
+                                "remote": {
+                                    "age": 10,
+                                    "in-touch": true,
+                                    "role": "secondary",
+                                    "last-scopes": [ "server2" ],
+                                    "last-state": "load-balancing",
+                                    "communication-interrupted": true,
+                                    "connecting-clients": 1,
+                                    "unacked-clients": 2,
+                                    "unacked-clients-left": 3,
+                                    "analyzed-packets": 10
+                                }
+                            }
+                    }
+                ]
+            }
+        }
     ]`
 	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
 }
@@ -217,6 +363,65 @@ func TestGetDHCPStatus(t *testing.T) {
 	require.True(t, remote.InTouch)
 }
 
+// Test status-get command when HA status is returned by Kea 1.7.8 or
+// later.
+func TestGetDHCPStatus178(t *testing.T) {
+	fa := storktest.NewFakeAgents(mockGetStatusLoadBalancing178, nil)
+
+	var accessPoints []*dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
+
+	app := dbmodel.App{
+		AccessPoints: accessPoints,
+		Machine: &dbmodel.Machine{
+			Address:   "192.0.2.0",
+			AgentPort: 1111,
+		},
+	}
+
+	appStatus, err := GetDHCPStatus(context.Background(), fa, &app)
+	require.NoError(t, err)
+	require.NotNil(t, appStatus)
+
+	require.Len(t, appStatus, 1)
+
+	status := appStatus[0]
+
+	// Common fields must be always present.
+	require.EqualValues(t, 1234, status.Pid)
+	require.EqualValues(t, 3024, status.Uptime)
+	require.EqualValues(t, 1111, status.Reload)
+	require.Equal(t, "dhcp4", status.Daemon)
+
+	// The HA status should be returned in the high-availability argument.
+	require.Nil(t, status.HAServers)
+
+	require.Len(t, status.HA, 1)
+
+	require.Equal(t, "load-balancing", status.HA[0].HAMode)
+
+	// Test HA status of the server receiving the command.
+	local := status.HA[0].HAServers.Local
+	require.Equal(t, "primary", local.Role)
+	require.Len(t, local.Scopes, 1)
+	require.Contains(t, local.Scopes, "server1")
+	require.Equal(t, "load-balancing", local.State)
+
+	// Test HA status of the partner.
+	remote := status.HA[0].HAServers.Remote
+	require.Equal(t, "secondary", remote.Role)
+	require.Len(t, remote.LastScopes, 1)
+	require.Contains(t, remote.LastScopes, "server2")
+	require.Equal(t, "load-balancing", remote.LastState)
+	require.EqualValues(t, 10, remote.Age)
+	require.True(t, remote.InTouch)
+	require.True(t, remote.CommInterrupted)
+	require.EqualValues(t, 1, remote.ConnectingClients)
+	require.EqualValues(t, 2, remote.UnackedClients)
+	require.EqualValues(t, 3, remote.UnackedClientsLeft)
+	require.EqualValues(t, 10, remote.AnalyzedPackets)
+}
+
 // Test status-get command when HA status is not returned.
 func TestGetDHCPStatusNoHA(t *testing.T) {
 	fa := storktest.NewFakeAgents(mockGetStatusNoHA, nil)
@@ -247,6 +452,7 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 
 	// This time, HA status should not be present.
 	require.Nil(t, status.HAServers)
+	require.Empty(t, status.HA)
 }
 
 // Test the case when the Kea CA is unable to communicate with the
@@ -289,8 +495,11 @@ func TestNewStatusPuller(t *testing.T) {
 }
 
 // Test that HA status can be fetched and updated via the HA status puller
-// mechanism.
-func TestPullHAStatus(t *testing.T) {
+// mechanism. This is a generic test which can be used to validate the
+// behavior for two different formats of the status-get response, one for
+// Kea versions earlier than 1.7.8 and the second for Kea version 1.7.8
+// and later.
+func testPullHAStatus(t *testing.T, version178 bool) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -340,9 +549,15 @@ func TestPullHAStatus(t *testing.T) {
 	err = dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
+	var fa *storktest.FakeAgents
+
 	// Configure the fake control agents to mimic returning a status of
 	// two HA services for Kea.
-	fa := storktest.NewFakeAgents(mockGetStatusWithHA, nil)
+	if version178 {
+		fa = storktest.NewFakeAgents(mockGetStatusWithHA178, nil)
+	} else {
+		fa = storktest.NewFakeAgents(mockGetStatusWithHA, nil)
+	}
 
 	// Create the puller which normally fetches the HA status periodically.
 	puller, err := NewStatusPuller(db, fa)
@@ -445,4 +660,16 @@ func TestPullHAStatus(t *testing.T) {
 	require.Empty(t, service.HAService.SecondaryLastScopes)
 	require.True(t, service.HAService.PrimaryReachable)
 	require.False(t, service.HAService.SecondaryReachable)
+}
+
+// Test that HA status can be fetched and updated via the HA status puller
+// mechanism.
+func TestPullHAStatus(t *testing.T) {
+	testPullHAStatus(t, false)
+}
+
+// Test that HA status can be fetched and updated via the HA status puller
+// mechanism for Kea versions 1.7.8 and later.
+func TestPullHAStatus178(t *testing.T) {
+	testPullHAStatus(t, true)
 }

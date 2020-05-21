@@ -110,12 +110,12 @@ func (puller *StatusPuller) Shutdown() {
 
 // This function updates HA service status based on the response from the Kea
 // servers.
-func updateHAServiceStatus(status Status, daemon *dbmodel.Daemon, service *dbmodel.BaseHAService) {
+func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, service *dbmodel.BaseHAService) {
 	// The status of the remote server should contain "age" value which indicates
 	// how many seconds ago the status of the remote server was gathered. If this
 	// value is present, calculate its timestamp.
 	agePresent := false
-	dur, err := time.ParseDuration(fmt.Sprintf("%ds", status.HAServers.Remote.Age))
+	dur, err := time.ParseDuration(fmt.Sprintf("%ds", status.Remote.Age))
 	if err == nil {
 		agePresent = true
 	}
@@ -131,20 +131,20 @@ func updateHAServiceStatus(status Status, daemon *dbmodel.Daemon, service *dbmod
 	switch daemon.ID {
 	case service.PrimaryID:
 		// Primary responded giving its state as "local" server's state.
-		primaryLastState = status.HAServers.Local.State
+		primaryLastState = status.Local.State
 		service.PrimaryStatusCollectedAt = now
-		service.PrimaryLastScopes = status.HAServers.Local.Scopes
+		service.PrimaryLastScopes = status.Local.Scopes
 		service.PrimaryReachable = true
 		// The state of the secondary should have been returned as "remote"
 		// server's state.
-		secondaryLastState = status.HAServers.Remote.LastState
+		secondaryLastState = status.Remote.LastState
 		if secondaryLastState != HAStatusUnavailable {
 			service.SecondaryStatusCollectedAt = now
 			if agePresent {
 				// If there is age, we have to shift the timestamp backwards by age.
 				service.SecondaryStatusCollectedAt = service.SecondaryStatusCollectedAt.Add(-dur)
 			}
-			service.SecondaryLastScopes = status.HAServers.Remote.LastScopes
+			service.SecondaryLastScopes = status.Remote.LastScopes
 			service.SecondaryReachable = true
 		} else {
 			service.SecondaryLastScopes = []string{}
@@ -152,13 +152,13 @@ func updateHAServiceStatus(status Status, daemon *dbmodel.Daemon, service *dbmod
 		}
 	case service.SecondaryID:
 		// Record the secondary/standby server's state.
-		secondaryLastState = status.HAServers.Local.State
+		secondaryLastState = status.Local.State
 		service.SecondaryStatusCollectedAt = now
-		service.SecondaryLastScopes = status.HAServers.Local.Scopes
+		service.SecondaryLastScopes = status.Local.Scopes
 		service.SecondaryReachable = true
 		// The server which responded to the command was the secondary. Therfore,
 		// the primary's state is given as "remote" server's state.
-		primaryLastState = status.HAServers.Remote.LastState
+		primaryLastState = status.Remote.LastState
 
 		if primaryLastState != HAStatusUnavailable {
 			service.PrimaryStatusCollectedAt = now
@@ -166,7 +166,7 @@ func updateHAServiceStatus(status Status, daemon *dbmodel.Daemon, service *dbmod
 				// If there is age, we have to shift the timestamp backwards by age.
 				service.PrimaryStatusCollectedAt = service.PrimaryStatusCollectedAt.Add(-dur)
 			}
-			service.PrimaryLastScopes = status.HAServers.Remote.LastScopes
+			service.PrimaryLastScopes = status.Remote.LastScopes
 			service.PrimaryReachable = true
 		} else {
 			service.PrimaryLastScopes = []string{}
@@ -249,7 +249,7 @@ func (puller *StatusPuller) pullData() (int, error) {
 		// Go over the returned status values and match with the daemons.
 		for _, status := range appStatus {
 			// If no HA status, there is nothing to do.
-			if status.HAServers == nil {
+			if status.HAServers == nil && len(status.HA) == 0 {
 				continue
 			}
 			// Find the matching service for the returned status.
@@ -268,7 +268,16 @@ func (puller *StatusPuller) pullData() (int, error) {
 				// Update the HA service status only if the given server is primary
 				// or secondary.
 				if service.PrimaryID == daemon.ID || service.SecondaryID == daemon.ID {
-					updateHAServiceStatus(status, daemon, service)
+					// todo: Currently Kea supports only one HA service per daemon. This
+					// will change but for now it is safe to assume that only one status
+					// is returned. Supporting more requires some mechanisms to
+					// distinguish the HA relationships which should be first designed
+					// on the Kea side.
+					if len(status.HA) > 0 {
+						updateHAServiceStatus(&status.HA[0].HAServers, daemon, service)
+					} else if status.HAServers != nil {
+						updateHAServiceStatus(status.HAServers, daemon, service)
+					}
 				}
 			}
 		}
