@@ -253,6 +253,16 @@
       statusTime:
         type: string
         format: date-time
+      commInterrupted:
+        type: boolean
+      connectingClients:
+        type: integer
+      unackedClients:
+        type: integer
+      unackedClientsLeft:
+        type: integer
+      analyzedPackets:
+        type: integer
 
   KeaStatus:
     type: object

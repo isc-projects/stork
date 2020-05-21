@@ -730,65 +730,6 @@ func TestRestGetApps(t *testing.T) {
 	require.EqualValues(t, 2, okRsp.Payload.Total)
 }
 
-// Generates a response to the status-get command including two status
-// structures, one for DHCPv4 and one for DHCPv6. Both contain HA
-// status information.
-func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
-	daemons, _ := agentcomm.NewKeaDaemons("dhcp4", "dhcp6")
-	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
-	json := `[
-        {
-            "result": 0,
-            "text": "Everything is fine",
-            "arguments": {
-                "pid": 1234,
-                "uptime": 3024,
-                "reload": 1111,
-                "ha-servers":
-                    {
-                        "local": {
-                            "role": "primary",
-                            "scopes": [ "server1" ],
-                            "state": "load-balancing"
-                        },
-                        "remote": {
-                            "age": 10,
-                            "in-touch": true,
-                            "role": "secondary",
-                            "last-scopes": [ "server2" ],
-                            "last-state": "load-balancing"
-                        }
-                    }
-              }
-         },
-         {
-             "result": 0,
-             "text": "Everything is fine",
-             "arguments": {
-                 "pid": 2345,
-                 "uptime": 3333,
-                 "reload": 2222,
-                 "ha-servers":
-                     {
-                         "local": {
-                             "role": "primary",
-                             "scopes": [ "server1" ],
-                             "state": "hot-standby"
-                         },
-                         "remote": {
-                             "age": 3,
-                             "in-touch": true,
-                             "role": "standby",
-                             "last-scopes": [ ],
-                             "last-state": "waiting"
-                         }
-                     }
-               }
-          }
-    ]`
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
-}
-
 // Test that status of two HA services for a Kea application is parsed
 // correctly.
 func TestRestGetAppServicesStatus(t *testing.T) {
@@ -798,7 +739,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	settings := RestAPISettings{}
 	// Configure the fake control agents to mimic returning a status of
 	// two HA services for Kea.
-	fa := storktest.NewFakeAgents(mockGetStatusWithHA, nil)
+	fa := storktest.NewFakeAgents(nil, nil)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -835,17 +776,27 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 				ServiceType: "ha_dhcp",
 			},
 			HAService: &dbmodel.BaseHAService{
-				HAType:                     "dhcp4",
-				HAMode:                     "load-balancing",
-				PrimaryID:                  keaApp.ID,
-				PrimaryStatusCollectedAt:   exampleTime,
-				SecondaryStatusCollectedAt: exampleTime,
-				PrimaryLastState:           "load-balancing",
-				SecondaryLastState:         "load-balancing",
-				PrimaryLastScopes:          []string{"server1"},
-				SecondaryLastScopes:        []string{"server2"},
-				PrimaryLastFailoverAt:      exampleTime,
-				SecondaryLastFailoverAt:    exampleTime,
+				HAType:                      "dhcp4",
+				HAMode:                      "load-balancing",
+				PrimaryID:                   keaApp.ID,
+				PrimaryStatusCollectedAt:    exampleTime,
+				SecondaryStatusCollectedAt:  exampleTime,
+				PrimaryLastState:            "load-balancing",
+				SecondaryLastState:          "load-balancing",
+				PrimaryLastScopes:           []string{"server1"},
+				SecondaryLastScopes:         []string{"server2"},
+				PrimaryLastFailoverAt:       exampleTime,
+				SecondaryLastFailoverAt:     exampleTime,
+				PrimaryCommInterrupted:      true,
+				SecondaryCommInterrupted:    true,
+				PrimaryConnectingClients:    7,
+				SecondaryConnectingClients:  9,
+				PrimaryUnackedClients:       3,
+				SecondaryUnackedClients:     4,
+				PrimaryUnackedClientsLeft:   8,
+				SecondaryUnackedClientsLeft: 9,
+				PrimaryAnalyzedPackets:      10,
+				SecondaryAnalyzedPackets:    11,
 			},
 		},
 		{
@@ -853,17 +804,27 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 				ServiceType: "ha_dhcp",
 			},
 			HAService: &dbmodel.BaseHAService{
-				HAType:                     "dhcp6",
-				HAMode:                     "hot-standby",
-				PrimaryID:                  keaApp.ID,
-				PrimaryStatusCollectedAt:   exampleTime,
-				SecondaryStatusCollectedAt: exampleTime,
-				PrimaryLastState:           "hot-standby",
-				SecondaryLastState:         "waiting",
-				PrimaryLastScopes:          []string{"server1"},
-				SecondaryLastScopes:        []string{},
-				PrimaryLastFailoverAt:      exampleTime,
-				SecondaryLastFailoverAt:    exampleTime,
+				HAType:                      "dhcp6",
+				HAMode:                      "hot-standby",
+				PrimaryID:                   keaApp.ID,
+				PrimaryStatusCollectedAt:    exampleTime,
+				SecondaryStatusCollectedAt:  exampleTime,
+				PrimaryLastState:            "hot-standby",
+				SecondaryLastState:          "waiting",
+				PrimaryLastScopes:           []string{"server1"},
+				SecondaryLastScopes:         []string{},
+				PrimaryLastFailoverAt:       exampleTime,
+				SecondaryLastFailoverAt:     exampleTime,
+				PrimaryCommInterrupted:      true,
+				SecondaryCommInterrupted:    false,
+				PrimaryConnectingClients:    5,
+				SecondaryConnectingClients:  0,
+				PrimaryUnackedClients:       2,
+				SecondaryUnackedClients:     0,
+				PrimaryUnackedClientsLeft:   9,
+				SecondaryUnackedClientsLeft: 0,
+				PrimaryAnalyzedPackets:      123,
+				SecondaryAnalyzedPackets:    0,
 			},
 		},
 	}
@@ -909,6 +870,11 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
 	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.AppID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
+	require.True(t, haStatus.PrimaryServer.CommInterrupted)
+	require.EqualValues(t, 7, haStatus.PrimaryServer.ConnectingClients)
+	require.EqualValues(t, 3, haStatus.PrimaryServer.UnackedClients)
+	require.EqualValues(t, 8, haStatus.PrimaryServer.UnackedClientsLeft)
+	require.EqualValues(t, 10, haStatus.PrimaryServer.AnalyzedPackets)
 
 	require.Equal(t, "secondary", haStatus.SecondaryServer.Role)
 	require.Len(t, haStatus.SecondaryServer.Scopes, 1)
@@ -918,6 +884,11 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.False(t, haStatus.SecondaryServer.InTouch)
 	require.Empty(t, haStatus.SecondaryServer.ControlAddress)
 	require.NotEmpty(t, haStatus.SecondaryServer.StatusTime.String())
+	require.True(t, haStatus.SecondaryServer.CommInterrupted)
+	require.EqualValues(t, 9, haStatus.SecondaryServer.ConnectingClients)
+	require.EqualValues(t, 4, haStatus.SecondaryServer.UnackedClients)
+	require.EqualValues(t, 9, haStatus.SecondaryServer.UnackedClientsLeft)
+	require.EqualValues(t, 11, haStatus.SecondaryServer.AnalyzedPackets)
 
 	// Validate the status of the DHCPv6 pair.
 	status = statusList[1].Status.KeaStatus
@@ -934,6 +905,11 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, "hot-standby", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
+	require.True(t, haStatus.PrimaryServer.CommInterrupted)
+	require.EqualValues(t, 5, haStatus.PrimaryServer.ConnectingClients)
+	require.EqualValues(t, 2, haStatus.PrimaryServer.UnackedClients)
+	require.EqualValues(t, 9, haStatus.PrimaryServer.UnackedClientsLeft)
+	require.EqualValues(t, 123, haStatus.PrimaryServer.AnalyzedPackets)
 
 	require.Equal(t, "standby", haStatus.SecondaryServer.Role)
 	require.Empty(t, haStatus.SecondaryServer.Scopes)
@@ -941,6 +917,11 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.GreaterOrEqual(t, haStatus.SecondaryServer.Age, int64(5))
 	require.False(t, haStatus.SecondaryServer.InTouch)
 	require.Empty(t, haStatus.SecondaryServer.ControlAddress)
+	require.False(t, haStatus.SecondaryServer.CommInterrupted)
+	require.Zero(t, haStatus.SecondaryServer.ConnectingClients)
+	require.Zero(t, haStatus.SecondaryServer.UnackedClients)
+	require.Zero(t, haStatus.SecondaryServer.UnackedClientsLeft)
+	require.Zero(t, haStatus.SecondaryServer.AnalyzedPackets)
 }
 
 func TestRestGetAppsStats(t *testing.T) {
