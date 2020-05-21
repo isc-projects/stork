@@ -78,46 +78,6 @@ type VersionGetResponse struct {
 	Arguments *VersionGetRespArgs `json:"arguments,omitempty"`
 }
 
-// === status-get response structs ================================================
-
-// Represents the status of the local server (the one that
-// responded to the command).
-type HALocalStatus struct {
-	Role   string
-	Scopes []string
-	State  string
-}
-
-// Represents the status of the remote server.
-type HARemoteStatus struct {
-	Age        int64
-	InTouch    bool `json:"in-touch"`
-	Role       string
-	LastScopes []string `json:"last-scopes"`
-	LastState  string   `json:"last-state"`
-}
-
-// Represents the status of the HA enabled Kea servers.
-type HAServersStatus struct {
-	Local  HALocalStatus
-	Remote HARemoteStatus
-}
-
-// Represents a response from the single Kea server to the status-get
-// command. The HAServers value is nil if it is not present in the
-// response (i.e. the Kea server has HA disabled).
-type StatusGetRespArgs struct {
-	Pid       int64
-	Uptime    int64
-	Reload    int64
-	HAServers *HAServersStatus `json:"ha-servers"`
-}
-
-type StatusGetResponse struct {
-	agentcomm.KeaResponseHeader
-	Arguments *StatusGetRespArgs `json:"arguments,omitempty"`
-}
-
 // Get state of Kea application Control Agent using ForwardToKeaOverHTTP function.
 // The state, that is stored into dbApp, includes: version and config of CA.
 // It also returns:

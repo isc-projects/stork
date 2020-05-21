@@ -18,15 +18,68 @@ const (
 	HAStatusUnavailable = "unavailable"
 )
 
-// Represents a response from the single Kea server to the status-get
-// command. The HAServers value is nil if it is not present in the
-// response.
-type Status struct {
+// === status-get response structs ================================================
+
+// Represents the status of the local server (the one that
+// responded to the command).
+type HALocalStatus struct {
+	Role   string
+	Scopes []string
+	State  string
+}
+
+// Represents the status of the remote server.
+type HARemoteStatus struct {
+	Age                int64
+	InTouch            bool `json:"in-touch"`
+	Role               string
+	LastScopes         []string `json:"last-scopes"`
+	LastState          string   `json:"last-state"`
+	CommInterrupted    bool     `json:"communication-interrupted"`
+	ConnectingClients  int64    `json:"connecting-clients"`
+	UnackedClients     int64    `json:"unacked-clients"`
+	UnackedClientsLeft int64    `json:"unacked-clients-left"`
+	AnalyzedPackets    int64    `json:"analyzed-packets"`
+}
+
+// Represents the status of the HA enabled Kea servers.
+type HAServersStatus struct {
+	Local  HALocalStatus
+	Remote HARemoteStatus
+}
+
+// Represent a status of a single HA relationship encapsulated in the
+// high-availability list of a status-get response.
+type HARelationshipStatus struct {
+	HAMode    string          `json:"ha-mode"`
+	HAServers HAServersStatus `json:"ha-servers"`
+}
+
+// Represents the arguments of the response to the status-get command.
+// In Kea 1.7.8 the data structure of the response was modified. In the
+// earlier versions of Kea, the ha-servers argument contained the status
+// of the HA pair. In the later versions there is a list of the HA
+// relationships under high-availability list. We support both for
+// backward compatibility.
+type StatusGetRespArgs struct {
 	Pid       int64
 	Uptime    int64
 	Reload    int64
-	HAServers *HAServersStatus `json:"ha-servers"`
-	Daemon    string
+	HAServers *HAServersStatus       `json:"ha-servers"`
+	HA        []HARelationshipStatus `json:"high-availability"`
+}
+
+// Represents a response from the single Kea server to the status-get
+// command.
+type StatusGetResponse struct {
+	agentcomm.KeaResponseHeader
+	Arguments *StatusGetRespArgs `json:"arguments,omitempty"`
+}
+
+// Holds the status of the Kea server.
+type Status struct {
+	StatusGetRespArgs
+	Daemon string
 }
 
 type AppStatus []Status
