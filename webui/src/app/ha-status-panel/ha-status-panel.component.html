@@ -1,0 +1,91 @@
+<p-panel [styleClass]="statusPanelClass">
+    <p-header>
+        <span>
+            {{ panelTitle }}
+            <a *ngIf="showServerLink && serverStatus.appId > 0" routerLink="/apps/kea/{{ serverStatus.appId }}">{{
+                'Kea@' + serverStatus.controlAddress
+            }}</a>
+        </span>
+        <span *ngIf="serverWarnLevel() == 'ok'" class="pi pi-check" style="color: #00a800;"> </span>
+        <span *ngIf="serverWarnLevel() == 'warn'" class="pi pi-exclamation-triangle" style="color: orange;"> </span>
+        <span *ngIf="serverWarnLevel() == 'error'" class="pi pi-exclamation-circle" style="color: #f11;"> </span>
+    </p-header>
+    <table>
+        <tr>
+            <td>Status time:</td>
+            <td>
+                <i pTooltip="{{ statusTimeTooltip() }}">{{ formattedTime(serverStatus.statusTime) }}</i>
+            </td>
+        </tr>
+        <tr>
+            <td>Status checked:</td>
+            <td>
+                <i pTooltip="{{ collectedTooltip() }}">{{ formattedAge(serverStatus.age) }}</i>
+            </td>
+        </tr>
+        <tr>
+            <td>Role:</td>
+            <td>
+                <i>{{ serverStatus.role }}</i>
+            </td>
+        </tr>
+        <tr>
+            <td>Control status:</td>
+            <td>
+                <i *ngIf="serverStatus.inTouch" class="pi pi-check" style="color: #00a800;"> </i>
+                <i *ngIf="!serverStatus.inTouch" class="pi pi-times" style="color: #f11;"> </i>
+                <i pTooltip="{{ controlStatusTooltip() }}">{{ formattedControlStatus() }}</i>
+            </td>
+        </tr>
+        <tr *ngIf="extendedFormatSupported()">
+            <td>Heartbeat status:</td>
+            <td>
+                <i *ngIf="!serverStatus.commInterrupted" class="pi pi-check" style="color: #00a800;"> </i>
+                <i *ngIf="serverStatus.commInterrupted > 0" class="pi pi-times" style="color: #f11;"> </i>
+                <i pTooltip="{{ heartbeatStatusTooltip() }}">{{ formattedHeartbeatStatus() }}</i>
+            </td>
+        </tr>
+        <tr>
+            <td>State:</td>
+            <td>
+                <i *ngIf="stateOk()" class="pi pi-check" style="color: #00a800;"> </i>
+                <i *ngIf="!stateOk()" class="pi pi-times" style="color: #f11;"> </i>
+                <i pTooltip="{{ haStateTooltip() }}">{{ serverStatus.state }}</i>
+            </td>
+        </tr>
+        <tr>
+            <td>Scopes served:</td>
+            <td>
+                <i>{{ formattedLocalScopes() }}</i>
+            </td>
+        </tr>
+        <tr>
+            <td>Last time in partner-down:</td>
+            <td>
+                <i pTooltip="{{ failoverTooltip() }}">{{ formattedTime(serverStatus.failoverTime) }}</i>
+            </td>
+        </tr>
+        <tr *ngIf="extendedFormatSupported()">
+            <td>Unacked clients:</td>
+            <td>
+                <i pTooltip="{{ unackedClientsTooltip() }}">{{ formattedUnackedClients() }}</i>
+            </td>
+        </tr>
+        <tr *ngIf="extendedFormatSupported()">
+            <td>Connecting clients:</td>
+            <td>
+                <i pTooltip="{{ connectingClientsTooltip() }}">
+                    {{ formattedFailoverNumber(serverStatus.connectingClients) }}
+                </i>
+            </td>
+        </tr>
+        <tr *ngIf="extendedFormatSupported()">
+            <td>Analyzed packets:</td>
+            <td>
+                <i pTooltip="{{ analyzedPacketsTooltip() }}">
+                    {{ formattedFailoverNumber(serverStatus.analyzedPackets) }}
+                </i>
+            </td>
+        </tr>
+    </table>
+</p-panel>

@@ -2,164 +2,31 @@
     <h4 style="margin-top: 2px;">High Availability</h4>
     <div *ngIf="hasStatus()" style="margin: 10px; width: 750px;" class="p-grid">
         <div class="p-col-6">
-            <p-panel [styleClass]="localStatusPanelClass">
-                <p-header>
-                    <span>
-                        Local server
-                    </span>
-                    <span *ngIf="localServerWarnLevel() == 'ok'" class="pi pi-check" style="color: #00a800;"> </span>
-                    <span
-                        *ngIf="localServerWarnLevel() == 'warn'"
-                        class="pi pi-exclamation-triangle"
-                        style="color: orange;"
-                    >
-                    </span>
-                    <span
-                        *ngIf="localServerWarnLevel() == 'error'"
-                        class="pi pi-exclamation-circle"
-                        style="color: #f11;"
-                    >
-                    </span>
-                </p-header>
-                <table>
-                    <tr>
-                        <td>Control status:</td>
-                        <td>
-                            <i *ngIf="localServer().inTouch" class="pi pi-check" style="color: #00a800;"> </i>
-                            <i *ngIf="!localServer().inTouch" class="pi pi-times" style="color: #f11;"> </i>
-                            <i pTooltip="{{ controlStatusTooltip(localServer().inTouch) }}">{{
-                                formattedControlStatus(localServer().inTouch)
-                            }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>State:</td>
-                        <td>
-                            <i *ngIf="localStateOk()" class="pi pi-check" style="color: #00a800;"> </i>
-                            <i *ngIf="!localStateOk()" class="pi pi-times" style="color: #f11;"> </i>
-                            <i pTooltip="{{ haStateTooltip(localServer().state) }}">{{ localServer().state }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Role:</td>
-                        <td>
-                            <i>{{ localServer().role }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Scopes served:</td>
-                        <td>
-                            <i>{{ formattedLocalScopes() }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Last failover:</td>
-                        <td>
-                            <i pTooltip="{{ failoverTooltip('local') }}">{{
-                                localServer().failoverTime | localtime
-                            }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Status time:</td>
-                        <td>
-                            <i pTooltip="{{ statusTimeTooltip('local') }}">{{
-                                localServer().statusTime | localtime
-                            }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Status collected:</td>
-                        <td>
-                            <i pTooltip="{{ collectedTooltip('local') }}">{{ formattedAge(localServer().age) }}</i>
-                        </td>
-                    </tr>
-                </table>
-            </p-panel>
+            <app-ha-status-panel
+                panelTitle="Local server"
+                serverName="local"
+                [showServerLink]="false"
+                [serverStatus]="localServer()"
+            ></app-ha-status-panel>
         </div>
         <div class="p-col-6">
-            <p-panel [styleClass]="remoteStatusPanelClass">
-                <p-header>
-                    <span
-                        >Remote server:
-                        <a *ngIf="remoteServer().appId > 0" routerLink="/apps/kea/{{ remoteServer().appId }}">{{
-                            'Kea@' + remoteServer().controlAddress
-                        }}</a></span
-                    >
-                    <span *ngIf="remoteServerWarnLevel() == 'ok'" class="pi pi-check" style="color: #00a800;"> </span>
-                    <span
-                        *ngIf="remoteServerWarnLevel() == 'warn'"
-                        class="pi pi-exclamation-triangle"
-                        style="color: orange;"
-                    >
-                    </span>
-                    <span
-                        *ngIf="remoteServerWarnLevel() == 'error'"
-                        class="pi pi-exclamation-circle"
-                        sdatyle="color: #f11;"
-                    >
-                    </span>
-                </p-header>
-                <table>
-                    <tr>
-                        <td>Control status:</td>
-                        <td>
-                            <i *ngIf="remoteServer().inTouch" class="pi pi-check" style="color: #00a800;"> </i>
-                            <i *ngIf="!remoteServer().inTouch" class="pi pi-times" style="color: #f11;"> </i>
-                            <i pTooltip="{{ controlStatusTooltip(remoteServer().inTouch) }}">{{
-                                formattedControlStatus(remoteServer().inTouch)
-                            }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>State:</td>
-                        <td>
-                            <i *ngIf="remoteStateOk()" class="pi pi-check" style="color: #00a800;"> </i>
-                            <i *ngIf="!remoteStateOk()" class="pi pi-times" style="color: #f11;"> </i>
-                            <i pTooltip="{{ haStateTooltip(remoteServer().state) }}">{{ remoteServer().state }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Role:</td>
-                        <td>
-                            <i>{{ remoteServer().role }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Scopes served:</td>
-                        <td>
-                            <i>{{ formattedRemoteScopes() }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Last failover:</td>
-                        <td>
-                            <i pTooltip="{{ failoverTooltip('remote') }}">{{
-                                remoteServer().failoverTime | localtime
-                            }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Status time:</td>
-                        <td>
-                            <i pTooltip="{{ statusTimeTooltip('remote') }}">{{
-                                localServer().statusTime | localtime
-                            }}</i>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Status collected:</td>
-                        <td>
-                            <i pTooltip="{{ collectedTooltip('remote') }}">{{ formattedAge(remoteServer().age) }}</i>
-                        </td>
-                    </tr>
-                </table>
-            </p-panel>
+            <app-ha-status-panel
+                panelTitle="Remote server"
+                serverName="remote"
+                showServerLink="true"
+                [serverStatus]="remoteServer()"
+            ></app-ha-status-panel>
         </div>
         <div class="p-col-12">
             <p-panel>
-                <p-header>Note</p-header>
+                <p-header>Notes</p-header>
                 {{ footerInfo() }}
+                <span *ngIf="localFailoverProgress() >= 0">
+                    <p-progressBar [value]="localFailoverProgress()"></p-progressBar>
+                </span>
+                <span *ngIf="remoteFailoverProgress() >= 0">
+                    <p-progressBar [value]="remoteFailoverProgress()"></p-progressBar>
+                </span>
             </p-panel>
         </div>
     </div>

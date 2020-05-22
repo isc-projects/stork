@@ -40,8 +40,16 @@ export class HaStatusComponent implements OnInit {
         // Run the live age counters for both local and remote servers.
         interval(this._countUpInterval).subscribe((x) => {
             if (this.hasStatus()) {
-                this.localServer().age += 1
-                this.remoteServer().age += 1
+                // Only increase the age counters if they are non-negative.
+                // Negative values indicate that the status age was unknown,
+                // probably because the server was down when attempted to get
+                // its status.
+                if (this.localServer().age >= 0) {
+                    this.localServer().age += 1
+                }
+                if (this.remoteServer().age >= 0) {
+                    this.remoteServer().age += 1
+                }
             }
         })
     }
@@ -88,13 +96,6 @@ export class HaStatusComponent implements OnInit {
     }
 
     /**
-     * Convenience function returning received status for the current daemon.
-     */
-    private haStatus() {
-        return this._receivedStatus[this._daemonName]
-    }
-
-    /**
      * Convenience function returning received status of the local server.
      */
     localServer() {
@@ -130,215 +131,11 @@ export class HaStatusComponent implements OnInit {
                         }
                     }
                 }
-                this.refreshPanelColors()
             },
             (err) => {
                 console.warn('failed to fetch the HA status for Kea application id ' + this.appId)
                 this._receivedStatus = null
             }
-        )
-    }
-
-    /**
-     * Updates the HA local and remote servers' panel colors.
-     *
-     * The colors reflect the state of the HA. The green panel color
-     * indicates that the servers are in the desired states. The orange
-     * color of the panel indicates that some abnormal situation has
-     * occurred but it is not severe. For example, one of the servers
-     * is down but the orange colored server has taken over serving the
-     * DHCP clients. The red colored panel indicates an error which
-     * most likely requires Administrator's action. For example, the
-     * DHCP server has crashed.
-     */
-    private refreshPanelColors() {
-        switch (this.localServerWarnLevel()) {
-            case 'ok':
-                this.localStatusPanelClass = 'green-colored-panel'
-                break
-            case 'warn':
-                this.localStatusPanelClass = 'orange-colored-panel'
-                break
-            default:
-                this.localStatusPanelClass = 'red-colored-panel'
-                break
-        }
-
-        switch (this.remoteServerWarnLevel()) {
-            case 'ok':
-                this.remoteStatusPanelClass = 'green-colored-panel'
-                break
-            case 'warn':
-                this.remoteStatusPanelClass = 'orange-colored-panel'
-                break
-            default:
-                this.remoteStatusPanelClass = 'red-colored-panel'
-                break
-        }
-    }
-
-    /**
-     * Returns the tooltip describing online/offline control status.
-     */
-    controlStatusTooltip(inTouch): string {
-        if (inTouch) {
-            return 'Server responds to the commands over the control channel.'
-        }
-        return 'Server does not respond to the commands over the control channel. It may be down!'
-    }
-
-    /**
-     * Returns tooltip describing various HA states.
-     *
-     * @param state HA state name for which the tooltip should be generated.
-     */
-    haStateTooltip(state): string {
-        switch (state) {
-            case 'load-balancing':
-            case 'hot-standby':
-                return 'Normal operation.'
-            case 'partner-down':
-                return (
-                    'This server now responds to all DHCP queries because it detected ' +
-                    'that partner server is not functional!'
-                )
-            case 'waiting':
-                return 'This server is apparently booting up and will try to synchronize its lease database.'
-            case 'syncing':
-                return 'This saerver is synchronizing its database after failure.'
-            case 'ready':
-                return 'This server synchronized its lease database and will start normal operation shortly.'
-            case 'terminated':
-                return 'This server no longer participates in the HA setup because of the too high clock skew.'
-            case 'maintained':
-                return 'This server is under maintenance.'
-            case 'partner-maintained':
-                return 'This server responds to all DHCP queries for the partner being in maintenance.'
-            case 'unavailable':
-                return 'Communication with the server failed. It may have crashed or have been shut down.'
-            default:
-                return 'Refer to Kea manual for details.'
-        }
-        return ''
-    }
-
-    /**
-     * Returns tooltip for last failover time.
-     *
-     * @param name a name of the server for which the tooltip should be generated.
-     */
-    failoverTooltip(name): string {
-        return (
-            'This is the last time when the ' +
-            name +
-            ' server went to the partner-down state ' +
-            'because its partner was considered offline as a result of unexpected termination ' +
-            'or shutdown.'
-        )
-    }
-
-    /**
-     * Returns tooltip for status time.
-     *
-     * @param name a name of the server for which the tooltip should be generated.
-     */
-    statusTimeTooltip(name): string {
-        return (
-            'This is the time when the ' +
-            name +
-            ' server reported its state for the last time. ' +
-            'This is not neccessarily the time when the state information ' +
-            'was refreshed in the UI. The presented state information is ' +
-            'typically delayed by 10 to 30 seconds because it is cached by the Kea ' +
-            'servers and the Stork backend. Caching minimizes the performance ' +
-            'impact on the DHCP servers reporting their states over the control ' +
-            'channels.'
-        )
-    }
-
-    /**
-     * Returns tooltip for status age.
-     *
-     * The age indicates how long ago the given server reported its status.
-     *
-     * @param name a name of the server for which the tooltip should be generated.
-     */
-    collectedTooltip(name): string {
-        return (
-            'This is the duration between the "Status Time" and now, i.e. informs ' +
-            'how long ago the ' +
-            name +
-            ' server reported its state. The long duration ' +
-            'indicates that there is a communication problem with the server. The ' +
-            'typical duration is within the range between 10 and 30 seconds.'
-        )
-    }
-
-    /**
-     * Checks what icon should be returned for the local server.
-     *
-     * During normal operation the check icon is displayed. If the server is
-     * unavailable the red exclamation mark is shown. In other cases a warning
-     * exclamation mark on orange triangle is shown.
-     */
-    localServerWarnLevel(): string {
-        if (this.localStateOk()) {
-            return 'ok'
-        }
-        if (this.localServer().state === 'unavailable' || this.localServer().inTouch === false) {
-            return 'error'
-        }
-        return 'warn'
-    }
-
-    /**
-     * Checks what icon should be returned for the remote server.
-     *
-     * During normal operation the check icon is displayed. If the server is
-     * unavailable the red exclamation mark is shown. In other cases a warning
-     * exclamation mark on orange triangle is shown.
-     */
-    remoteServerWarnLevel(): string {
-        if (this.remoteStateOk()) {
-            return 'ok'
-        }
-        if (this.remoteServer().state === 'unavailable' || this.remoteServer().inTouch === false) {
-            return 'error'
-        }
-        return 'warn'
-    }
-
-    /**
-     * Checks if the state of the local HA enabled server is good.
-     *
-     * The desired state is either load-balancing or hot-standby. In other
-     * cases it means that the servers are booting up or there is some issue
-     * with the partner causing the local server to go to partner-down.
-     *
-     * @returns true if the server is in the load-balancing or hot-standby
-     *          state. This is used in the UI to highlight a potential problem.
-     */
-    localStateOk(): boolean {
-        return (
-            this.hasStatus() &&
-            (this.localServer().state === 'load-balancing' || this.localServer().state === 'hot-standby')
-        )
-    }
-
-    /**
-     * Checks if the state of the remote HA enabled server is good.
-     *
-     * The desired state is either load-balancing or hot-standby. In other
-     * cases it means that the servers are booting up or there is some issue
-     * with the partner causing the local server to go to partner-down.
-     *
-     * @returns true if the server is in the load-balancing or hot-standby
-     *          state. This is used in the UI to highlight a potential problem.
-     */
-    remoteStateOk(): boolean {
-        return (
-            this.hasStatus() &&
-            (this.remoteServer().state === 'load-balancing' || this.remoteServer().state === 'hot-standby')
         )
     }
 
@@ -369,79 +166,57 @@ export class HaStatusComponent implements OnInit {
     }
 
     /**
-     * Returns a comma separated list of HA scopes served by the local server.
+     * Return the value of the failover progressbar for the local server.
      *
-     * This string is printed in the UI in the local server status box.
+     * The failover progress is calculated as the number of unacked clients
+     * divided by the number of max-unacked-clients for that server and
+     * expressed in percentage.
      *
-     * @returns string containing comma separated list of scopes or (none).
+     * @return Progress value or -1 if there is no failover in progress.
      */
-    formattedLocalScopes(): string {
-        let scopes: string
-        if (this.hasStatus() && this.localServer().scopes) {
-            scopes = this.localServer().scopes.join(', ')
+    localFailoverProgress(): number {
+        if (!this.localServer()) {
+            return -1
         }
-
-        return scopes || '(none)'
+        let unacked = 0
+        if (this.localServer().unackedClients > 0) {
+            unacked = this.localServer().unackedClients
+        }
+        let all = unacked
+        if (this.localServer().unackedClientsLeft > 0) {
+            all += this.localServer().unackedClientsLeft
+        }
+        if (all == 0) {
+            return -1
+        }
+        return Math.floor((100 * unacked) / (all + 1))
     }
 
     /**
-     * Returns a comma separated list of HA scopes served by the remote server.
+     * Return the value of the failover progressbar for the remote server.
      *
-     * This string is printed in the UI in the remote server status box.
+     * The failover progress is calculated as the number of unacked clients
+     * divided by the number of max-unacked-clients for that server and
+     * expressed in percentage.
      *
-     * @returns string containing comma separated list of scopes or (none).
+     * @return Progress value or -1 if there is no failover in progress.
      */
-    formattedRemoteScopes(): string {
-        let scopes: string
-        if (this.hasStatus() && this.remoteServer().scopes) {
-            scopes = this.remoteServer().scopes.join(', ')
+    remoteFailoverProgress(): number {
+        if (!this.remoteServer()) {
+            return -1
         }
-
-        return scopes || '(none)'
-    }
-
-    /**
-     * Returns formatted value of age.
-     *
-     * The age indicates how long ago the status of one of the servers has
-     * been fetched. It is expressed in seconds. This function displays the
-     * age in seconds for the age below 1 minute. It displays the age in
-     * minutes otherwise. The nagative age value means that the age is not
-     * yet determined in which case a hyphen is displayed.
-     *
-     * @param age in seconds.
-     * @returns string containing formatted age.
-     */
-    formattedAge(age): string {
-        if (age && age < 0) {
-            return '-'
+        let unacked = 0
+        if (this.remoteServer().unackedClients > 0) {
+            unacked = this.remoteServer().unackedClients
         }
-        if (!age || age === 0) {
-            return 'just now'
+        let all = unacked
+        if (this.remoteServer().unackedClientsLeft > 0) {
+            all += this.remoteServer().unackedClientsLeft
         }
-        if (age < 60) {
-            return age + ' seconds ago'
+        if (all == 0) {
+            return -1
         }
-        return Math.round(age / 60) + ' minutes ago'
-    }
-
-    /**
-     * Returns formatted status of the control channel.
-     *
-     * Depending on the value of the boolean parameter specified, this function
-     * returns the word "online" or "offline" to indicate the status of the
-     * communication with one of the servers.
-     *
-     * @param inTouch boolean value indicating if the communication with the
-     *                server was successful or not.
-     * @returns the descriptive information whether the server seems to be
-     *          online or offline.
-     */
-    formattedControlStatus(inTouch): string {
-        if (inTouch) {
-            return 'online'
-        }
-        return 'offline'
+        return Math.floor((100 * unacked) / (all + 1))
     }
 
     /**
@@ -456,6 +231,25 @@ export class HaStatusComponent implements OnInit {
     footerInfo(): string {
         if (!this.hasStatus()) {
             return 'No HA information available!'
+        }
+
+        const localFailoverProgress = this.localFailoverProgress()
+        const remoteFailoverProgress = this.remoteFailoverProgress()
+
+        if (localFailoverProgress >= 0 && remoteFailoverProgress >= 0) {
+            return 'Both servers started failover procedure failing to see each other:'
+        }
+
+        if (localFailoverProgress >= 0) {
+            // Note that the failover for the local server (in case of the local
+            // server failure) is conducted by the remote server and vice versa.
+            return 'Failover procedure in progress by remote server:'
+        }
+
+        if (remoteFailoverProgress >= 0) {
+            // Note that the failover for the remote server (in case of the remote
+            // server failure) is conducted by the local server and vice versa.
+            return 'Failover procedure in progress on local server:'
         }
 
         // The local server serves no clients, so the remote serves all of them.

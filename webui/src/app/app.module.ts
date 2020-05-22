@@ -63,6 +63,7 @@ import { HostsPageComponent } from './hosts-page/hosts-page.component'
 import { SettingsPageComponent } from './settings-page/settings-page.component'
 import { HelpTipComponent } from './help-tip/help-tip.component'
 import { GlobalSearchComponent } from './global-search/global-search.component'
+import { HaStatusPanelComponent } from './ha-status-panel/ha-status-panel.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -106,6 +107,7 @@ export function preinitApp(appInitService: AppInitService) {
         SettingsPageComponent,
         HelpTipComponent,
         GlobalSearchComponent,
+        HaStatusPanelComponent,
     ],
     imports: [
         BrowserModule,
