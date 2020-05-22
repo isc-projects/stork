@@ -201,6 +201,9 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 	require.NoError(t, err)
 
 	// Service 2 holds HA specific information.
+	commInterrupted := make([]bool, 2)
+	commInterrupted[0] = true
+	commInterrupted[1] = false
 	service2.HAService = &BaseHAService{
 		HAType:                      "dhcp4",
 		PrimaryID:                   service2.Daemons[0].ID,
@@ -213,8 +216,8 @@ func addTestServices(t *testing.T, db *dbops.PgDB) []*Service {
 		PrimaryLastScopes:           []string{"server1", "server2"},
 		SecondaryLastScopes:         []string{},
 		PrimaryLastFailoverAt:       time.Now(),
-		PrimaryCommInterrupted:      true,
-		SecondaryCommInterrupted:    false,
+		PrimaryCommInterrupted:      &commInterrupted[0],
+		SecondaryCommInterrupted:    &commInterrupted[1],
 		PrimaryConnectingClients:    1,
 		SecondaryConnectingClients:  0,
 		PrimaryUnackedClients:       2,
@@ -356,8 +359,10 @@ func TestGetServiceById(t *testing.T) {
 	require.Equal(t, "syncing", service.HAService.SecondaryLastState)
 	require.False(t, service.HAService.PrimaryLastFailoverAt.IsZero())
 	require.True(t, service.HAService.SecondaryLastFailoverAt.IsZero())
-	require.True(t, service.HAService.PrimaryCommInterrupted)
-	require.False(t, service.HAService.SecondaryCommInterrupted)
+	require.NotNil(t, *service.HAService.PrimaryCommInterrupted)
+	require.True(t, *service.HAService.PrimaryCommInterrupted)
+	require.NotNil(t, *service.HAService.SecondaryCommInterrupted)
+	require.False(t, *service.HAService.SecondaryCommInterrupted)
 	require.EqualValues(t, 1, service.HAService.PrimaryConnectingClients)
 	require.Zero(t, service.HAService.SecondaryConnectingClients)
 	require.EqualValues(t, 2, service.HAService.PrimaryUnackedClients)

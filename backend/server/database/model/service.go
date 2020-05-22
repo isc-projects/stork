@@ -52,8 +52,8 @@ type BaseHAService struct {
 	SecondaryReachable          bool
 	PrimaryLastFailoverAt       time.Time
 	SecondaryLastFailoverAt     time.Time
-	PrimaryCommInterrupted      bool
-	SecondaryCommInterrupted    bool
+	PrimaryCommInterrupted      *bool `pg:",use_zero"`
+	SecondaryCommInterrupted    *bool `pg:",use_zero"`
 	PrimaryConnectingClients    int64
 	SecondaryConnectingClients  int64
 	PrimaryUnackedClients       int64

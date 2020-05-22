@@ -430,7 +430,8 @@ func TestGetDHCPStatus178(t *testing.T) {
 	require.Equal(t, "load-balancing", remote.LastState)
 	require.EqualValues(t, 10, remote.Age)
 	require.True(t, remote.InTouch)
-	require.True(t, remote.CommInterrupted)
+	require.NotNil(t, remote.CommInterrupted)
+	require.True(t, *remote.CommInterrupted)
 	require.EqualValues(t, 1, remote.ConnectingClients)
 	require.EqualValues(t, 2, remote.UnackedClients)
 	require.EqualValues(t, 3, remote.UnackedClientsLeft)
@@ -615,7 +616,8 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 
 	// These fields are only available in Kea 1.7.8+.
 	if version178 {
-		require.True(t, service.HAService.SecondaryCommInterrupted)
+		require.NotNil(t, service.HAService.SecondaryCommInterrupted)
+		require.True(t, *service.HAService.SecondaryCommInterrupted)
 		require.EqualValues(t, 1, service.HAService.SecondaryConnectingClients)
 		require.EqualValues(t, 2, service.HAService.SecondaryUnackedClients)
 		require.EqualValues(t, 3, service.HAService.SecondaryUnackedClientsLeft)
@@ -643,7 +645,8 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 
 	// These fields are only available in Kea 1.7.8+.
 	if version178 {
-		require.True(t, service.HAService.PrimaryCommInterrupted)
+		require.NotNil(t, service.HAService.PrimaryCommInterrupted)
+		require.True(t, *service.HAService.PrimaryCommInterrupted)
 		require.EqualValues(t, 2, service.HAService.PrimaryConnectingClients)
 		require.EqualValues(t, 3, service.HAService.PrimaryUnackedClients)
 		require.EqualValues(t, 4, service.HAService.PrimaryUnackedClientsLeft)
@@ -681,7 +684,8 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 
 	// These fields are only available in Kea 1.7.8+.
 	if version178 {
-		require.True(t, service.HAService.SecondaryCommInterrupted)
+		require.NotNil(t, service.HAService.SecondaryCommInterrupted)
+		require.True(t, *service.HAService.SecondaryCommInterrupted)
 		// In the partner-down state they should be all reset.
 		require.Zero(t, service.HAService.SecondaryConnectingClients)
 		require.Zero(t, service.HAService.SecondaryUnackedClients)
@@ -706,7 +710,8 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 
 	// These fields are only available in Kea 1.7.8+.
 	if version178 {
-		require.True(t, service.HAService.PrimaryCommInterrupted)
+		require.NotNil(t, service.HAService.PrimaryCommInterrupted)
+		require.True(t, *service.HAService.PrimaryCommInterrupted)
 		require.EqualValues(t, 2, service.HAService.PrimaryConnectingClients)
 		require.EqualValues(t, 3, service.HAService.PrimaryUnackedClients)
 		require.EqualValues(t, 4, service.HAService.PrimaryUnackedClientsLeft)

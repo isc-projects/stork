@@ -37,7 +37,7 @@ type HARemoteStatus struct {
 	Role               string
 	LastScopes         []string `json:"last-scopes"`
 	LastState          string   `json:"last-state"`
-	CommInterrupted    bool     `json:"communication-interrupted"`
+	CommInterrupted    *bool    `json:"communication-interrupted"`
 	ConnectingClients  int64    `json:"connecting-clients"`
 	UnackedClients     int64    `json:"unacked-clients"`
 	UnackedClientsLeft int64    `json:"unacked-clients-left"`

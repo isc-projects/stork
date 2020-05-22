@@ -254,7 +254,7 @@
         type: string
         format: date-time
       commInterrupted:
-        type: boolean
+        type: integer
       connectingClients:
         type: integer
       unackedClients:

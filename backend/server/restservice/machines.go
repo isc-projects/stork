@@ -784,6 +784,19 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 					appID[1] = s.Daemons[i].App.ID
 				}
 			}
+			// Get the communication state value.
+			commInterrupted := make([]int64, 2)
+			for i, c := range []*bool{ha.PrimaryCommInterrupted, ha.SecondaryCommInterrupted} {
+				if c == nil {
+					// Negative value indicates that the communication state is unknown.
+					// Quite possibly that we're running earlier Kea version that doesn't
+					// provide this information.
+					commInterrupted[i] = -1
+				} else if *c {
+					// Communication interrupted.
+					commInterrupted[i] = 1
+				}
+			}
 			keaStatus.HaServers = &models.KeaStatusHaServers{
 				PrimaryServer: &models.KeaHAServerStatus{
 					Age:                age[0],
@@ -796,7 +809,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 					Scopes:             ha.PrimaryLastScopes,
 					State:              ha.PrimaryLastState,
 					StatusTime:         statusTime[0],
-					CommInterrupted:    ha.PrimaryCommInterrupted,
+					CommInterrupted:    commInterrupted[0],
 					ConnectingClients:  ha.PrimaryConnectingClients,
 					UnackedClients:     ha.PrimaryUnackedClients,
 					UnackedClientsLeft: ha.PrimaryUnackedClientsLeft,
@@ -813,7 +826,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 					Scopes:             ha.SecondaryLastScopes,
 					State:              ha.SecondaryLastState,
 					StatusTime:         statusTime[1],
-					CommInterrupted:    ha.SecondaryCommInterrupted,
+					CommInterrupted:    commInterrupted[1],
 					ConnectingClients:  ha.SecondaryConnectingClients,
 					UnackedClients:     ha.SecondaryUnackedClients,
 					UnackedClientsLeft: ha.SecondaryUnackedClientsLeft,

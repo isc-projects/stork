@@ -770,6 +770,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.NotZero(t, keaApp.ID)
 
 	exampleTime := storkutil.UTCNow().Add(-5 * time.Second)
+	commInterrupted := []bool{true, true}
 	keaServices := []dbmodel.Service{
 		{
 			BaseService: dbmodel.BaseService{
@@ -787,8 +788,8 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 				SecondaryLastScopes:         []string{"server2"},
 				PrimaryLastFailoverAt:       exampleTime,
 				SecondaryLastFailoverAt:     exampleTime,
-				PrimaryCommInterrupted:      true,
-				SecondaryCommInterrupted:    true,
+				PrimaryCommInterrupted:      &commInterrupted[0],
+				SecondaryCommInterrupted:    &commInterrupted[1],
 				PrimaryConnectingClients:    7,
 				SecondaryConnectingClients:  9,
 				PrimaryUnackedClients:       3,
@@ -815,8 +816,8 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 				SecondaryLastScopes:         []string{},
 				PrimaryLastFailoverAt:       exampleTime,
 				SecondaryLastFailoverAt:     exampleTime,
-				PrimaryCommInterrupted:      true,
-				SecondaryCommInterrupted:    false,
+				PrimaryCommInterrupted:      &commInterrupted[0],
+				SecondaryCommInterrupted:    nil,
 				PrimaryConnectingClients:    5,
 				SecondaryConnectingClients:  0,
 				PrimaryUnackedClients:       2,
@@ -870,7 +871,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
 	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.AppID)
 	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
-	require.True(t, haStatus.PrimaryServer.CommInterrupted)
+	require.EqualValues(t, 1, haStatus.PrimaryServer.CommInterrupted)
 	require.EqualValues(t, 7, haStatus.PrimaryServer.ConnectingClients)
 	require.EqualValues(t, 3, haStatus.PrimaryServer.UnackedClients)
 	require.EqualValues(t, 8, haStatus.PrimaryServer.UnackedClientsLeft)
@@ -884,7 +885,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.False(t, haStatus.SecondaryServer.InTouch)
 	require.Empty(t, haStatus.SecondaryServer.ControlAddress)
 	require.NotEmpty(t, haStatus.SecondaryServer.StatusTime.String())
-	require.True(t, haStatus.SecondaryServer.CommInterrupted)
+	require.EqualValues(t, 1, haStatus.SecondaryServer.CommInterrupted)
 	require.EqualValues(t, 9, haStatus.SecondaryServer.ConnectingClients)
 	require.EqualValues(t, 4, haStatus.SecondaryServer.UnackedClients)
 	require.EqualValues(t, 9, haStatus.SecondaryServer.UnackedClientsLeft)
@@ -905,7 +906,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Equal(t, "hot-standby", haStatus.PrimaryServer.State)
 	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
 	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
-	require.True(t, haStatus.PrimaryServer.CommInterrupted)
+	require.EqualValues(t, 1, haStatus.PrimaryServer.CommInterrupted)
 	require.EqualValues(t, 5, haStatus.PrimaryServer.ConnectingClients)
 	require.EqualValues(t, 2, haStatus.PrimaryServer.UnackedClients)
 	require.EqualValues(t, 9, haStatus.PrimaryServer.UnackedClientsLeft)
@@ -917,7 +918,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.GreaterOrEqual(t, haStatus.SecondaryServer.Age, int64(5))
 	require.False(t, haStatus.SecondaryServer.InTouch)
 	require.Empty(t, haStatus.SecondaryServer.ControlAddress)
-	require.False(t, haStatus.SecondaryServer.CommInterrupted)
+	require.EqualValues(t, -1, haStatus.SecondaryServer.CommInterrupted)
 	require.Zero(t, haStatus.SecondaryServer.ConnectingClients)
 	require.Zero(t, haStatus.SecondaryServer.UnackedClients)
 	require.Zero(t, haStatus.SecondaryServer.UnackedClientsLeft)
