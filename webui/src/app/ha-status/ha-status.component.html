@@ -9,7 +9,7 @@
                 [serverStatus]="localServer()"
             ></app-ha-status-panel>
         </div>
-        <div class="p-col-6">
+        <div class="p-col-6" *ngIf="remoteServer()">
             <app-ha-status-panel
                 panelTitle="Remote server"
                 serverName="remote"
@@ -17,7 +17,7 @@
                 [serverStatus]="remoteServer()"
             ></app-ha-status-panel>
         </div>
-        <div class="p-col-12">
+        <div class="p-col-12" *ngIf="remoteServer()">
             <p-panel>
                 <p-header>Notes</p-header>
                 {{ footerInfo() }}
