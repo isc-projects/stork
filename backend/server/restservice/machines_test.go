@@ -925,6 +925,110 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	require.Zero(t, haStatus.SecondaryServer.AnalyzedPackets)
 }
 
+// Test that status of a HA service providing passive-backup mode is
+// parsed correctly.
+func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	// Configure the fake control agents to mimic returning a status of
+	// two HA services for Kea.
+	fa := storktest.NewFakeAgents(nil, nil)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add a machine.
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add Kea application to the machine
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234)
+	keaApp := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
+	}
+	err = dbmodel.AddApp(db, keaApp)
+	require.NoError(t, err)
+	require.NotZero(t, keaApp.ID)
+
+	exampleTime := storkutil.UTCNow().Add(-5 * time.Second)
+	keaServices := []dbmodel.Service{
+		{
+			BaseService: dbmodel.BaseService{
+				ServiceType: "ha_dhcp",
+			},
+			HAService: &dbmodel.BaseHAService{
+				HAType:                      "dhcp4",
+				HAMode:                      "passive-backup",
+				PrimaryID:                   keaApp.ID,
+				PrimaryStatusCollectedAt:    exampleTime,
+				PrimaryLastState:            "passive-backup",
+				PrimaryLastScopes:           []string{"server1"},
+			},
+		},
+	}
+
+	// Add the services and associate them with the app.
+	for i := range keaServices {
+		err = dbmodel.AddService(db, &keaServices[i])
+		require.NoError(t, err)
+		err = dbmodel.AddDaemonToService(db, keaServices[i].ID, keaApp.Daemons[0])
+		require.NoError(t, err)
+	}
+
+	params := services.GetAppServicesStatusParams{
+		ID: keaApp.ID,
+	}
+	rsp := rapi.GetAppServicesStatus(ctx, params)
+
+	// Make sure that the response is ok.
+	require.IsType(t, &services.GetAppServicesStatusOK{}, rsp)
+	okRsp := rsp.(*services.GetAppServicesStatusOK)
+	require.NotNil(t, okRsp.Payload.Items)
+
+	// There should be one structure returned with a status of the
+	// DHCPv4 server.
+	require.Len(t, okRsp.Payload.Items, 1)
+
+	statusList := okRsp.Payload.Items
+
+	// Validate the status of the DHCPv4 pair.
+	status := statusList[0].Status.KeaStatus
+	require.NotNil(t, status.HaServers)
+
+	haStatus := status.HaServers
+	require.NotNil(t, haStatus.PrimaryServer)
+	require.Nil(t, haStatus.SecondaryServer)
+
+	require.EqualValues(t, keaApp.Daemons[0].ID, haStatus.PrimaryServer.ID)
+	require.Equal(t, "primary", haStatus.PrimaryServer.Role)
+	require.Len(t, haStatus.PrimaryServer.Scopes, 1)
+	require.Contains(t, haStatus.PrimaryServer.Scopes, "server1")
+	require.Equal(t, "passive-backup", haStatus.PrimaryServer.State)
+	require.GreaterOrEqual(t, haStatus.PrimaryServer.Age, int64(5))
+	require.Equal(t, "127.0.0.1", haStatus.PrimaryServer.ControlAddress)
+	require.EqualValues(t, keaApp.ID, haStatus.PrimaryServer.AppID)
+	require.NotEmpty(t, haStatus.PrimaryServer.StatusTime.String())
+	require.EqualValues(t, -1, haStatus.PrimaryServer.CommInterrupted)
+	require.Zero(t, haStatus.PrimaryServer.ConnectingClients)
+	require.Zero(t, haStatus.PrimaryServer.UnackedClients)
+	require.Zero(t, haStatus.PrimaryServer.UnackedClientsLeft)
+	require.Zero(t, haStatus.PrimaryServer.AnalyzedPackets)
+}
+
 func TestRestGetAppsStats(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

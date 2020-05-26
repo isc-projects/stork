@@ -815,7 +815,12 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 					UnackedClientsLeft: ha.PrimaryUnackedClientsLeft,
 					AnalyzedPackets:    ha.PrimaryAnalyzedPackets,
 				},
-				SecondaryServer: &models.KeaHAServerStatus{
+			}
+
+			// Including the information about the secondary server only
+			// makes sense for load-balancing and hot-standby mode.
+			if ha.HAMode != "passive-backup" {
+				keaStatus.HaServers.SecondaryServer = &models.KeaHAServerStatus{
 					Age:                age[1],
 					AppID:              appID[1],
 					ControlAddress:     controlAddress[1],
@@ -831,7 +836,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 					UnackedClients:     ha.SecondaryUnackedClients,
 					UnackedClientsLeft: ha.SecondaryUnackedClientsLeft,
 					AnalyzedPackets:    ha.SecondaryAnalyzedPackets,
-				},
+				}
 			}
 
 			serviceStatus := &models.ServiceStatus{
