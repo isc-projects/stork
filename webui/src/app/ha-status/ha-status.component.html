@@ -7,6 +7,7 @@
                 serverName="local"
                 [showServerLink]="false"
                 [serverStatus]="localServer()"
+                [singleActiveServer]="!remoteServer()"
             ></app-ha-status-panel>
         </div>
         <div class="p-col-6" *ngIf="remoteServer()">

@@ -186,7 +186,7 @@ export class HaStatusComponent implements OnInit {
         if (this.localServer().unackedClientsLeft > 0) {
             all += this.localServer().unackedClientsLeft
         }
-        if (all == 0) {
+        if (all === 0) {
             return -1
         }
         return Math.floor((100 * unacked) / (all + 1))
@@ -213,7 +213,7 @@ export class HaStatusComponent implements OnInit {
         if (this.remoteServer().unackedClientsLeft > 0) {
             all += this.remoteServer().unackedClientsLeft
         }
-        if (all == 0) {
+        if (all === 0) {
             return -1
         }
         return Math.floor((100 * unacked) / (all + 1))

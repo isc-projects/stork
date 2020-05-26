@@ -24,6 +24,9 @@ export class HaStatusPanelComponent implements OnInit {
     public serverName: string
 
     @Input()
+    public singleActiveServer = false
+
+    @Input()
     public showServerLink = false
 
     constructor() {}
@@ -88,6 +91,13 @@ export class HaStatusPanelComponent implements OnInit {
                 return (
                     'This server now responds to all DHCP queries because it detected ' +
                     'that partner server is not functional!'
+                )
+            case 'passive-backup':
+                return (
+                    'The server has no active partner like in load-balancing or hot-standby ' +
+                    'mode. This server may be configured to send lease updates to the ' +
+                    'backup servers, but there is no automatic failover triggered in case ' +
+                    'of failure.'
                 )
             case 'waiting':
                 return 'This server is apparently booting up and will try to synchronize its lease database.'

@@ -59,7 +59,7 @@
                 <i>{{ formattedLocalScopes() }}</i>
             </td>
         </tr>
-        <tr>
+        <tr *ngIf="!singleActiveServer">
             <td>Last time in partner-down:</td>
             <td>
                 <i pTooltip="{{ failoverTooltip() }}">{{ formattedTime(serverStatus.failoverTime) }}</i>
