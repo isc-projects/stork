@@ -12,15 +12,25 @@
     </p-header>
     <table>
         <tr>
-            <td>Status time:</td>
-            <td>
-                <i pTooltip="{{ statusTimeTooltip() }}">{{ formattedTime(serverStatus.statusTime) }}</i>
+            <td style="width: 45%;">Status time:</td>
+            <td style="width: 50%;">
+                <i>{{ formattedTime(serverStatus.statusTime) }}</i>
+            </td>
+            <td style="width: 5%;">
+                <app-help-tip title="status time">
+                    <p>{{ statusTimeHelptip() }}</p>
+                </app-help-tip>
             </td>
         </tr>
         <tr>
             <td>Status checked:</td>
             <td>
-                <i pTooltip="{{ collectedTooltip() }}">{{ formattedAge(serverStatus.age) }}</i>
+                <i>{{ formattedAge(serverStatus.age) }}</i>
+            </td>
+            <td>
+                <app-help-tip title="status checked">
+                    <p>{{ collectedHelptip() }}</p>
+                </app-help-tip>
             </td>
         </tr>
         <tr>
@@ -28,13 +38,19 @@
             <td>
                 <i>{{ serverStatus.role }}</i>
             </td>
+            <td></td>
         </tr>
         <tr>
             <td>Control status:</td>
             <td>
                 <i *ngIf="serverStatus.inTouch" class="pi pi-check" style="color: #00a800;"> </i>
                 <i *ngIf="!serverStatus.inTouch" class="pi pi-times" style="color: #f11;"> </i>
-                <i pTooltip="{{ controlStatusTooltip() }}">{{ formattedControlStatus() }}</i>
+                <i>{{ formattedControlStatus() }}</i>
+            </td>
+            <td>
+                <app-help-tip title="control status">
+                    <p>{{ controlStatusHelptip() }}</p>
+                </app-help-tip>
             </td>
         </tr>
         <tr *ngIf="extendedFormatSupported()">
@@ -42,7 +58,12 @@
             <td>
                 <i *ngIf="!serverStatus.commInterrupted" class="pi pi-check" style="color: #00a800;"> </i>
                 <i *ngIf="serverStatus.commInterrupted > 0" class="pi pi-times" style="color: #f11;"> </i>
-                <i pTooltip="{{ heartbeatStatusTooltip() }}">{{ formattedHeartbeatStatus() }}</i>
+                <i>{{ formattedHeartbeatStatus() }}</i>
+            </td>
+            <td>
+                <app-help-tip title="heartbeat status">
+                    <p>{{ heartbeatStatusHelptip() }}</p>
+                </app-help-tip>
             </td>
         </tr>
         <tr>
@@ -50,7 +71,12 @@
             <td>
                 <i *ngIf="stateOk()" class="pi pi-check" style="color: #00a800;"> </i>
                 <i *ngIf="!stateOk()" class="pi pi-times" style="color: #f11;"> </i>
-                <i pTooltip="{{ haStateTooltip() }}">{{ serverStatus.state }}</i>
+                <i>{{ serverStatus.state }}</i>
+            </td>
+            <td>
+                <app-help-tip title="state">
+                    <p>{{ haStateHelptip() }}</p>
+                </app-help-tip>
             </td>
         </tr>
         <tr>
@@ -58,33 +84,50 @@
             <td>
                 <i>{{ formattedLocalScopes() }}</i>
             </td>
+            <td></td>
         </tr>
         <tr *ngIf="!singleActiveServer">
-            <td>Last time in partner-down:</td>
+            <td>Last in partner-down:</td>
             <td>
-                <i pTooltip="{{ failoverTooltip() }}">{{ formattedTime(serverStatus.failoverTime) }}</i>
+                <i>{{ formattedTime(serverStatus.failoverTime) }}</i>
+            </td>
+            <td>
+                <app-help-tip title="last in partner-down">
+                    <p>{{ failoverHelptip() }}</p>
+                </app-help-tip>
             </td>
         </tr>
         <tr *ngIf="extendedFormatSupported()">
             <td>Unacked clients:</td>
             <td>
-                <i pTooltip="{{ unackedClientsTooltip() }}">{{ formattedUnackedClients() }}</i>
+                <i>{{ formattedUnackedClients() }}</i>
+            </td>
+            <td>
+                <app-help-tip title="unacked clients">
+                    <p>{{ unackedClientsHelptip() }}</p>
+                </app-help-tip>
             </td>
         </tr>
         <tr *ngIf="extendedFormatSupported()">
             <td>Connecting clients:</td>
             <td>
-                <i pTooltip="{{ connectingClientsTooltip() }}">
-                    {{ formattedFailoverNumber(serverStatus.connectingClients) }}
-                </i>
+                <i>{{ formattedFailoverNumber(serverStatus.connectingClients) }}</i>
+            </td>
+            <td>
+                <app-help-tip title="connecting clients">
+                    <p>{{ connectingClientsHelptip() }}</p>
+                </app-help-tip>
             </td>
         </tr>
         <tr *ngIf="extendedFormatSupported()">
             <td>Analyzed packets:</td>
             <td>
-                <i pTooltip="{{ analyzedPacketsTooltip() }}">
-                    {{ formattedFailoverNumber(serverStatus.analyzedPackets) }}
-                </i>
+                <i>{{ formattedFailoverNumber(serverStatus.analyzedPackets) }}</i>
+            </td>
+            <td>
+                <app-help-tip title="analyzed packets">
+                    <p>{{ analyzedPacketsHelptip() }}</p>
+                </app-help-tip>
             </td>
         </tr>
     </table>

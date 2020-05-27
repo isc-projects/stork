@@ -103,9 +103,9 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Returns the tooltip describing online/offline control status.
+     * Returns the help tip describing online/offline control status.
      */
-    controlStatusTooltip(): string {
+    controlStatusHelptip(): string {
         if (!this.hasStatus()) {
             return ''
         }
@@ -116,9 +116,9 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Returns tooltip describing various HA states.
+     * Returns help tip describing various HA states.
      */
-    haStateTooltip(): string {
+    haStateHelptip(): string {
         if (!this.hasStatus()) {
             return ''
         }
@@ -159,9 +159,9 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Returns tooltip for last failover time.
+     * Returns help tip for last failover time.
      */
-    failoverTooltip(): string {
+    failoverHelptip(): string {
         return (
             'This is the last time when the ' +
             this.serverName +
@@ -172,9 +172,9 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Returns tooltip for status time.
+     * Returns help tip for status time.
      */
-    statusTimeTooltip(): string {
+    statusTimeHelptip(): string {
         return (
             'This is the time when the ' +
             this.serverName +
@@ -189,11 +189,11 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Returns tooltip for status age.
+     * Returns help tip for status age.
      *
      * The age indicates how long ago the given server reported its status.
      */
-    collectedTooltip(): string {
+    collectedHelptip(): string {
         return (
             'This is the duration between the "Status Time" and now, i.e. informs ' +
             'how long ago the ' +
@@ -205,9 +205,9 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Returns tooltip for the heartbeat status.
+     * Returns help tip for the heartbeat status.
      */
-    heartbeatStatusTooltip(): string {
+    heartbeatStatusHelptip(): string {
         if (!this.serverStatus.commInterrupted || this.serverStatus.commInterrupted < 0) {
             return 'Status of the heartbeat communication with the ' + this.serverName + ' server is unknown.'
         } else if (this.serverStatus.commInterrupted > 0) {
@@ -224,9 +224,9 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Returns tooltip for the number of unacked clients.
+     * Returns help tip for the number of unacked clients.
      */
-    unackedClientsTooltip(): string {
+    unackedClientsHelptip(): string {
         return (
             'This is the number of clients considered unacked by the partner. ' +
             'This value is only set when the partner lost heartbeat communication ' +
@@ -239,11 +239,11 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Returns tooltip for the number of connecting clients counted by
+     * Returns help tip for the number of connecting clients counted by
      * the partner server when the heartbeat communication between them is
      * interrupted.
      */
-    connectingClientsTooltip(): string {
+    connectingClientsHelptip(): string {
         return (
             'This is the total number of clients trying to get new lease ' +
             'from the server with which the partner server is unable to ' +
@@ -254,10 +254,10 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Returns tooltip for the number of packets directed to the server when
+     * Returns help tip for the number of packets directed to the server when
      * the heartbeat communication to this server gets interrupted.
      */
-    analyzedPacketsTooltip(): string {
+    analyzedPacketsHelptip(): string {
         return (
             'This is the total number of packets directed to the server ' +
             'with which the partner is unable to communicate via heartbeat. ' +
