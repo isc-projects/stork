@@ -1,3 +1,9 @@
+* 65 [func] marcin
+
+    Extended High Availability information is displayed for Kea
+    versions 1.7.8 and later.
+    (Gitlab #276)
+
 * 64 [func] godfryd
 
     Changed the syntax for search expressions (`is:<flags>` and
