@@ -14,23 +14,62 @@ import { datetimeToLocal } from '../utils'
     styleUrls: ['./ha-status-panel.component.sass'],
 })
 export class HaStatusPanelComponent implements OnInit {
+    /**
+     * Holds status fetched for this server from the backend.
+     */
     private _serverStatus
+
+    /**
+     * Holds the style class of the panel view.
+     *
+     * The code may dynamically switch to a different class depending
+     * on the server status. Switching to a different class causes the
+     * panel to change its color to highlight warnings and errors.
+     */
     public statusPanelClass = 'green-colored-panel'
 
+    /**
+     * Panel title set by the parent component.
+     */
     @Input()
     public panelTitle: string
 
+    /**
+     * Server name set by the parent component.
+     */
     @Input()
     public serverName: string
 
+    /**
+     * Indicates if monitoring one or two active servers.
+     *
+     * Two active servers are monitored in load-balancing and hot-standby
+     * modes. A single server is monitored in the passive-backup mode. The
+     * panel view is adjusted if this is single server case, e.g. the
+     * last failover time is not presented.
+     */
     @Input()
     public singleActiveServer = false
 
+    /**
+     * Indicates if the link to the app should be presented in the panel title.
+     *
+     * The link is presented for the remote servers. It is not presented for
+     * the local servers. The parent component sets this flag.
+     */
     @Input()
     public showServerLink = false
 
+    /**
+     * No-op constructor.
+     */
     constructor() {}
 
+    /**
+     * No-op initialization.
+     *
+     * The pre-initialization is performed by the parent component.
+     */
     ngOnInit(): void {}
 
     /**
@@ -48,14 +87,14 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Returns status information of the server.
+     * Returns status information fetched for the server.
      */
     get serverStatus() {
         return this._serverStatus
     }
 
     /**
-     * Checks if the component has fetched the HA status for the server.
+     * Checks if the parent component has fetched the HA status for the server.
      *
      * @returns true if the status has been fetched and is available for display.
      */
@@ -229,10 +268,10 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Updates the HA local and remote servers' panel colors.
+     * Updates the panel colors according to the status fetched.
      *
      * The colors reflect the state of the HA. The green panel color
-     * indicates that the servers are in the desired states. The orange
+     * indicates that the server is in a desired state. The orange
      * color of the panel indicates that some abnormal situation has
      * occurred but it is not severe. For example, one of the servers
      * is down but the orange colored server has taken over serving the
@@ -268,6 +307,9 @@ export class HaStatusPanelComponent implements OnInit {
      *          otherwise.
      */
     extendedFormatSupported(): boolean {
+        // Negative value of the commInterrupted is explicitly indicating
+        // that the extended format is not supported. A zero or positive
+        // value indicates it is supported.
         return this.hasStatus() && (!this.serverStatus.commInterrupted || this.serverStatus.commInterrupted >= 0)
     }
 
@@ -289,7 +331,7 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Checks if the state of the HA enabled server is good.
+     * Checks if the state of the server is good.
      *
      * The desired state is either load-balancing, hot-standby or passive-backup.
      * In other cases it means that the servers are booting up or there is some
@@ -372,7 +414,7 @@ export class HaStatusPanelComponent implements OnInit {
     /**
      * Returns timestamp as local time or 'n/a'.
      *
-     * @param Time value to be converted.
+     * @param t Time value to be converted.
      *
      * @returns Time in local time or 'n/a' if the timestamp is equal to 0.
      */
@@ -392,7 +434,7 @@ export class HaStatusPanelComponent implements OnInit {
      *
      * @returns 'unknown' if extended format is not supported for this server,
      *          'ok' if the server is responding to the heartbeats,
-     *          'heartbeat failed' otherwise.
+     *          'failed' otherwise.
      */
     formattedHeartbeatStatus(): string {
         if (this.serverStatus.commInterrupted < 0) {
@@ -428,6 +470,9 @@ export class HaStatusPanelComponent implements OnInit {
         let s = 'n/a'
         let unacked = 0
         let all = 0
+        // Monitor unacked clients only if we're in the communication interrupted
+        // state, i.e. heartbeat communication has been failing for a certain
+        // period of time.
         if (this.hasStatus && this.serverStatus.commInterrupted > 0) {
             if (this.serverStatus.unackedClients != null) {
                 unacked = this.serverStatus.unackedClients
@@ -437,7 +482,9 @@ export class HaStatusPanelComponent implements OnInit {
                 all += this.serverStatus.unackedClientsLeft
             }
         }
-
+        // If both unacked and unacked left values are 0 there is nothing
+        // to print. It looks that we don't monitor unacked clients for
+        // this server.
         if (all > 0) {
             s = unacked + ' of ' + (all + 1)
         }

@@ -20,9 +20,6 @@ export class HaStatusComponent implements OnInit {
     private _daemonName: string
     private _receivedStatus: Map<string, any>
 
-    public localStatusPanelClass = 'green-colored-panel'
-    public remoteStatusPanelClass = 'green-colored-panel'
-
     constructor(private servicesApi: ServicesService) {}
 
     /**
@@ -47,7 +44,7 @@ export class HaStatusComponent implements OnInit {
                 if (this.localServer().age >= 0) {
                     this.localServer().age += 1
                 }
-                if (this.remoteServer().age >= 0) {
+                if (this.remoteServer() && this.remoteServer().age >= 0) {
                     this.remoteServer().age += 1
                 }
             }
@@ -58,9 +55,9 @@ export class HaStatusComponent implements OnInit {
      * Sets Kea application id for which the High Availability state
      * is presented.
      *
-     * This should be id of one of the active Kea servers. Stork will
-     * communicate with this server to fetch its HA state and the state
-     * of its partner.
+     * This should be id of one of the active Kea servers. The HA status
+     * of this server and its partner (if it has partner) will be fetched
+     * and presented.
      *
      * @param appId The application id.
      */
@@ -166,52 +163,27 @@ export class HaStatusComponent implements OnInit {
     }
 
     /**
-     * Return the value of the failover progressbar for the local server.
+     * Returns the value of the failover progress bar for the selected server.
      *
      * The failover progress is calculated as the number of unacked clients
-     * divided by the number of max-unacked-clients for that server and
+     * divided by the number of max-unacked-clients+1 for that server and
      * expressed in percentage.
      *
+     * @param server Data structure holding the status of the local or remote
+     *               server.
      * @return Progress value or -1 if there is no failover in progress.
      */
-    localFailoverProgress(): number {
-        if (!this.localServer()) {
+    serverFailoverProgress(server): number {
+        if (!server) {
             return -1
         }
         let unacked = 0
-        if (this.localServer().unackedClients > 0) {
-            unacked = this.localServer().unackedClients
+        if (server.unackedClients > 0) {
+            unacked = server.unackedClients
         }
         let all = unacked
-        if (this.localServer().unackedClientsLeft > 0) {
-            all += this.localServer().unackedClientsLeft
-        }
-        if (all === 0) {
-            return -1
-        }
-        return Math.floor((100 * unacked) / (all + 1))
-    }
-
-    /**
-     * Return the value of the failover progressbar for the remote server.
-     *
-     * The failover progress is calculated as the number of unacked clients
-     * divided by the number of max-unacked-clients for that server and
-     * expressed in percentage.
-     *
-     * @return Progress value or -1 if there is no failover in progress.
-     */
-    remoteFailoverProgress(): number {
-        if (!this.remoteServer()) {
-            return -1
-        }
-        let unacked = 0
-        if (this.remoteServer().unackedClients > 0) {
-            unacked = this.remoteServer().unackedClients
-        }
-        let all = unacked
-        if (this.remoteServer().unackedClientsLeft > 0) {
-            all += this.remoteServer().unackedClientsLeft
+        if (server.unackedClientsLeft > 0) {
+            all += server.unackedClientsLeft
         }
         if (all === 0) {
             return -1
@@ -233,8 +205,8 @@ export class HaStatusComponent implements OnInit {
             return 'No HA information available!'
         }
 
-        const localFailoverProgress = this.localFailoverProgress()
-        const remoteFailoverProgress = this.remoteFailoverProgress()
+        const localFailoverProgress = this.serverFailoverProgress(this.localServer())
+        const remoteFailoverProgress = this.serverFailoverProgress(this.remoteServer())
 
         if (localFailoverProgress >= 0 && remoteFailoverProgress >= 0) {
             return 'Both servers started failover procedure failing to see each other:'
@@ -249,7 +221,7 @@ export class HaStatusComponent implements OnInit {
         if (remoteFailoverProgress >= 0) {
             // Note that the failover for the remote server (in case of the remote
             // server failure) is conducted by the local server and vice versa.
-            return 'Failover procedure in progress on local server:'
+            return 'Failover procedure in progress by local server:'
         }
 
         // The local server serves no clients, so the remote serves all of them.

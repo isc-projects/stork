@@ -22,11 +22,11 @@
             <p-panel>
                 <p-header>Notes</p-header>
                 {{ footerInfo() }}
-                <span *ngIf="localFailoverProgress() >= 0">
-                    <p-progressBar [value]="localFailoverProgress()"></p-progressBar>
+                <span *ngIf="serverFailoverProgress(localServer()) >= 0">
+                    <p-progressBar [value]="serverFailoverProgress(localServer())"></p-progressBar>
                 </span>
-                <span *ngIf="remoteFailoverProgress() >= 0">
-                    <p-progressBar [value]="remoteFailoverProgress()"></p-progressBar>
+                <span *ngIf="serverFailoverProgress(remoteServer()) >= 0">
+                    <p-progressBar [value]="serverFailoverProgress(remoteServer())"></p-progressBar>
                 </span>
             </p-panel>
         </div>
