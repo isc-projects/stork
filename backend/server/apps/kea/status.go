@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	HAStatusUnavailable = "unavailable"
+	HAStatusUnavailable   = "unavailable"
 	HAStatusLoadBalancing = "load-balancing"
-	HAStatusHotStandby = "hot-standby"
+	HAStatusHotStandby    = "hot-standby"
 )
 
 // === status-get response structs ================================================
@@ -155,12 +155,13 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 		service.SecondaryCommInterrupted = status.Remote.CommInterrupted
 
 		// Failover procedure should only be monitored during normal operation.
-		if primaryLastState == HAStatusLoadBalancing || primaryLastState == HAStatusHotStandby {
+		switch primaryLastState {
+		case HAStatusLoadBalancing, HAStatusHotStandby:
 			service.SecondaryConnectingClients = status.Remote.ConnectingClients
 			service.SecondaryUnackedClients = status.Remote.UnackedClients
 			service.SecondaryUnackedClientsLeft = status.Remote.UnackedClientsLeft
 			service.SecondaryAnalyzedPackets = status.Remote.AnalyzedPackets
-		} else {
+		default:
 			service.SecondaryConnectingClients = 0
 			service.SecondaryUnackedClients = 0
 			service.SecondaryUnackedClientsLeft = 0
@@ -191,12 +192,13 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 		service.PrimaryCommInterrupted = status.Remote.CommInterrupted
 
 		// Failover procedure should only be monitored during normal operation.
-		if secondaryLastState == HAStatusLoadBalancing || secondaryLastState == HAStatusHotStandby {
+		switch secondaryLastState {
+		case HAStatusLoadBalancing, HAStatusHotStandby:
 			service.PrimaryConnectingClients = status.Remote.ConnectingClients
 			service.PrimaryUnackedClients = status.Remote.UnackedClients
 			service.PrimaryUnackedClientsLeft = status.Remote.UnackedClientsLeft
 			service.PrimaryAnalyzedPackets = status.Remote.AnalyzedPackets
-		} else {
+		default:
 			service.PrimaryConnectingClients = 0
 			service.PrimaryUnackedClients = 0
 			service.PrimaryUnackedClientsLeft = 0

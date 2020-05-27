@@ -971,12 +971,12 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 				ServiceType: "ha_dhcp",
 			},
 			HAService: &dbmodel.BaseHAService{
-				HAType:                      "dhcp4",
-				HAMode:                      "passive-backup",
-				PrimaryID:                   keaApp.ID,
-				PrimaryStatusCollectedAt:    exampleTime,
-				PrimaryLastState:            "passive-backup",
-				PrimaryLastScopes:           []string{"server1"},
+				HAType:                   "dhcp4",
+				HAMode:                   "passive-backup",
+				PrimaryID:                keaApp.ID,
+				PrimaryStatusCollectedAt: exampleTime,
+				PrimaryLastState:         "passive-backup",
+				PrimaryLastScopes:        []string{"server1"},
 			},
 		},
 	}
