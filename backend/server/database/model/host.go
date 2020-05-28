@@ -324,7 +324,7 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 // indicates that only global hosts are to be returned. Filtering text
 // allows for searching hosts by reserved IP addresses and/or host
 // identifiers specified using hexadecimal digits. It is allowed to
-// specify colons while searching by hosts by host identifiers. If
+// specify colons while searching for hosts by host identifiers. If
 // global flag is true then on hosts from global scope are returned
 // (ie. not assigned to any subnet), if false then only hosts from
 // subnets are returned. sortField allows indicating sort column in
