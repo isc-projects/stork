@@ -752,3 +752,9 @@ desc 'Generate ctags for Emacs'
 task :ctags do
   sh 'etags.ctags -f TAGS -R --exclude=webui/node_modules --exclude=webui/dist --exclude=tools .'
 end
+
+desc 'Prepare containers that are using in GitLab CI processes'
+task :build_ci_containers do
+  sh 'docker build --no-cache -f docker/docker-ci-base.txt -t registry.gitlab.isc.org/isc-projects/stork/ci-base:latest docker/'
+  #sh 'docker push registry.gitlab.isc.org/isc-projects/stork/ci-base:latest'
+end
