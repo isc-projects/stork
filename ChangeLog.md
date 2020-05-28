@@ -1,3 +1,10 @@
+* 64 [func] godfryd
+
+    Changed the syntax for search expressions (`is:<flags>` and
+    `not:<flag>`). E.g. `is:global` should be used instead of just
+    `global`.
+    (Gitlab #267)
+
 * 63 [func] tmark
 
     Added --listen-prometheus-only and --listen-stork-only command line

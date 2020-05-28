@@ -331,7 +331,6 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 // database and sortDir allows selection the order of sorting. If
 // sortField is empty then id is used for sorting. If SortDirAny is
 // used then ASC order is used.
-//nolint:gocognit
 func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64, filterText *string, global *bool, sortField string, sortDir SortDirEnum) ([]Host, int64, error) {
 	hosts := []Host{}
 	q := db.Model(&hosts)

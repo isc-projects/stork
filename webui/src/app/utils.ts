@@ -93,8 +93,9 @@ export function getGrafanaUrl(grafanaBaseUrl, name, subnet, instance) {
 }
 
 /**
- * Extract key=val pairs from search text and prepare
- * query params dict.
+ * Extract key:val pairs, is:<flag> and not:<flag> from search text
+ * and prepare query params dict. Expected keys are passed as keys
+ * and expected flags are passed as flags.
  */
 export function extractKeyValsAndPrepareQueryParams(text, keys, flags) {
     // find all occurences key=val in the text
@@ -117,7 +118,7 @@ export function extractKeyValsAndPrepareQueryParams(text, keys, flags) {
         queryParams[flag] = null
     }
 
-    // go through all match and...
+    // go through all matches and...
     for (const m of matches) {
         let found = false
 

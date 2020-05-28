@@ -319,12 +319,13 @@ whether the host reservation for the given server has been specified
 in its configuration file or a host database (via host_cmds premium
 hooks library).
 
-The ``Filter hosts`` input box is located above the Hosts table. It allows
-filtering of hosts by identifier types, identifier values, IP reservations and
-the word "global". When filtering by DHCP identifier values, it is not
-necessary to use colons between the pairs of hexadecimal digits. For
-example, the reservation ``hw-address=0a:1b:bd:43:5f:99`` will be found
-regardless of whether the filtering text is ``1b:bd:43`` or ``1bbd43``.
+The ``Filter hosts`` input box is located above the Hosts table. It
+allows filtering of hosts by identifier types, identifier values, IP
+reservations and by globality i.e. ``is:global`` and ``not:global``.
+When filtering by DHCP identifier values, it is not necessary to use
+colons between the pairs of hexadecimal digits. For example, the
+reservation ``hw-address=0a:1b:bd:43:5f:99`` will be found regardless
+of whether the filtering text is ``1b:bd:43`` or ``1bbd43``.
 
 Sources of Host Reservations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

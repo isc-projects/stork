@@ -10,6 +10,10 @@ linters:
     - interfacer  # A tool that suggests interfaces is prone to bad suggestions, so its usefulness in real code is limited.
     - dupl        # there are some false positives (identical code but operating on different types so no posibility to unify)
 
+linters-settings:
+  gocognit:
+    min-complexity: 40
+
 issues:
   max-same-issues: 3
 
