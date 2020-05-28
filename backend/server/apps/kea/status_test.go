@@ -344,7 +344,7 @@ func TestGetDHCPStatus(t *testing.T) {
 		},
 	}
 
-	appStatus, err := GetDHCPStatus(context.Background(), fa, &app)
+	appStatus, err := getDHCPStatus(context.Background(), fa, &app)
 	require.NoError(t, err)
 	require.NotNil(t, appStatus)
 
@@ -394,7 +394,7 @@ func TestGetDHCPStatus178(t *testing.T) {
 		},
 	}
 
-	appStatus, err := GetDHCPStatus(context.Background(), fa, &app)
+	appStatus, err := getDHCPStatus(context.Background(), fa, &app)
 	require.NoError(t, err)
 	require.NotNil(t, appStatus)
 
@@ -453,7 +453,7 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 		},
 	}
 
-	appStatus, err := GetDHCPStatus(context.Background(), fa, &app)
+	appStatus, err := getDHCPStatus(context.Background(), fa, &app)
 	require.NoError(t, err)
 	require.NotNil(t, appStatus)
 
@@ -487,7 +487,7 @@ func TestGetDHCPStatusError(t *testing.T) {
 		},
 	}
 
-	appStatus, err := GetDHCPStatus(context.Background(), fa, &app)
+	appStatus, err := getDHCPStatus(context.Background(), fa, &app)
 	require.NoError(t, err)
 	require.NotNil(t, appStatus)
 

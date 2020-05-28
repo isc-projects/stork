@@ -81,13 +81,14 @@ type StatusGetResponse struct {
 	Arguments *StatusGetRespArgs `json:"arguments,omitempty"`
 }
 
-// Holds the status of the Kea server.
-type Status struct {
+// Holds the status of the Kea daemon.
+type daemonStatus struct {
 	StatusGetRespArgs
 	Daemon string
 }
 
-type AppStatus []Status
+// Holds the status of the Kea app.
+type appStatus []daemonStatus
 
 // Instance of the puller which periodically checks the status of the Kea apps.
 // Besides basic status information the High Availability status is fetched.
@@ -277,7 +278,7 @@ func (puller *StatusPuller) pullData() (int, error) {
 		appsCnt++
 		ctx := context.Background()
 		// Send the status-get command to both DHCPv4 and DHCPv6 servers.
-		appStatus, err := GetDHCPStatus(ctx, puller.Agents, &apps[i])
+		appStatus, err := getDHCPStatus(ctx, puller.Agents, &apps[i])
 		if err != nil {
 			log.Errorf("error occurred while getting Kea app %d status: %s", apps[i].ID, err)
 		}
@@ -335,7 +336,7 @@ func (puller *StatusPuller) pullData() (int, error) {
 }
 
 // Sends the status-get command to Kea DHCP servers and returns this status to the caller.
-func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) (AppStatus, error) {
+func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) (appStatus, error) {
 	// This command is only sent to the DHCP deamons.
 	daemons, _ := agentcomm.NewKeaDaemons(dbApp.GetActiveDHCPDaemonNames()...)
 
@@ -354,10 +355,7 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	caURL := storkutil.HostWithPortURL(ctrlPoint.Address, ctrlPoint.Port)
 
 	// The Kea response will be stored in this slice of structures.
-	response := []struct {
-		agentcomm.KeaResponseHeader
-		Arguments *Status
-	}{}
+	response := []StatusGetResponse{}
 
 	// Send the command and receive the response.
 	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caURL, []*agentcomm.KeaCommand{cmd}, &response)
@@ -372,13 +370,16 @@ func GetDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	}
 
 	// Extract the status value.
-	appStatus := AppStatus{}
+	appStatus := appStatus{}
 	for _, r := range response {
 		if r.Result != 0 && (len(r.Daemon) > 0) {
 			log.Warn(errors.Errorf("status-get command failed for Kea daemon %s", r.Daemon))
 		} else if r.Arguments != nil {
-			appStatus = append(appStatus, *r.Arguments)
-			appStatus[len(appStatus)-1].Daemon = r.Daemon
+			daemonStatus := daemonStatus{
+				StatusGetRespArgs: *r.Arguments,
+				Daemon:            r.Daemon,
+			}
+			appStatus = append(appStatus, daemonStatus)
 		}
 	}
 
