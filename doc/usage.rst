@@ -380,11 +380,12 @@ may not be monitored by Stork. The statuses of both the local and the
 remote server are fetched by sending the `status-get
 <https://kea.readthedocs.io/en/latest/arm/hooks.html#the-status-get-command>`_
 command to the Kea server whose details are displayed (the local
-server). The local server periodically checks the status of its
-partner by sending the ``ha-heartbeat`` command to it. Therefore, this
-information is not always up-to-date; its age depends on the heartbeat
-command interval (typically 10 seconds). The status of the remote
-server includes the age of the data displayed.
+server). In the load-balancing and hot-standby modes the local server
+periodically checks the status of its partner by sending the
+``ha-heartbeat`` command to it. Therefore, this information is not
+always up-to-date; its age depends on the heartbeat command interval
+(typically 10 seconds). The status of the remote server includes the
+age of the data displayed.
 
 The status information contains the role, state, and scopes served by
 each HA partner. In the usual HA case, both servers are in
@@ -395,6 +396,27 @@ reflected in this view. If the local server crashes, this will
 manifest itself as a communication problem between Stork and the
 server.
 
+As of Stork 0.8.0 release, the High Availability view may also
+contain the information about the heartbeat status between the two
+servers and the information about the failover progress. This information
+is only available while monitoring Kea 1.7.8 versions and later.
+
+The failover progress information is only presented when one of the
+active servers has been unable to communicate with the partner via
+the heartbeat exchange for a time exceeding the max-heartbeat-delay
+threshold. If the server is configured to monitor the DHCP traffic
+directed to the partner to verify that the partner is not responding
+to this traffic before transitioning to the partner-down state, the
+information about the number of unacked clients (clients which failed
+to get the lease), connecting clients (all clients currently trying
+to get the lease from the partner) and the number of analyzed
+packets are displayed. The system administrator may use this information
+to diagnose why the failover transition has not taken place or when
+such transition is likely to happen.
+
+More about High Availability status information provided by Kea can
+be found in the `Kea ARM
+<https://kea.readthedocs.io/en/latest/arm/hooks.html#the-status-get-command>`_.
 
 Dashboard
 =========
