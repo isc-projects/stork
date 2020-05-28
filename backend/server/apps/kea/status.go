@@ -121,7 +121,7 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 	// how many seconds ago the status of the remote server was gathered. If this
 	// value is present, calculate its timestamp.
 	agePresent := false
-	dur, err := time.ParseDuration(fmt.Sprintf("%ds", status.Remote.Age))
+	age, err := time.ParseDuration(fmt.Sprintf("%ds", status.Remote.Age))
 	if err == nil {
 		agePresent = true
 	}
@@ -148,7 +148,7 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 			service.SecondaryStatusCollectedAt = now
 			if agePresent {
 				// If there is age, we have to shift the timestamp backwards by age.
-				service.SecondaryStatusCollectedAt = service.SecondaryStatusCollectedAt.Add(-dur)
+				service.SecondaryStatusCollectedAt = service.SecondaryStatusCollectedAt.Add(-age)
 			}
 			service.SecondaryLastScopes = status.Remote.LastScopes
 			service.SecondaryReachable = true
@@ -185,7 +185,7 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 			service.PrimaryStatusCollectedAt = now
 			if agePresent {
 				// If there is age, we have to shift the timestamp backwards by age.
-				service.PrimaryStatusCollectedAt = service.PrimaryStatusCollectedAt.Add(-dur)
+				service.PrimaryStatusCollectedAt = service.PrimaryStatusCollectedAt.Add(-age)
 			}
 			service.PrimaryLastScopes = status.Remote.LastScopes
 			service.PrimaryReachable = true
