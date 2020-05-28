@@ -64,11 +64,14 @@ type HARelationshipStatus struct {
 // relationships under high-availability list. We support both for
 // backward compatibility.
 type StatusGetRespArgs struct {
-	Pid       int64
-	Uptime    int64
-	Reload    int64
-	HAServers *HAServersStatus       `json:"ha-servers"`
-	HA        []HARelationshipStatus `json:"high-availability"`
+	Pid    int64
+	Uptime int64
+	Reload int64
+	// HAServers contains the HA status sent by Kea versions earlier
+	// than 1.7.8.
+	HAServers *HAServersStatus `json:"ha-servers"`
+	// HA contains the HA status sent by Kea versions 1.7.8+.
+	HA []HARelationshipStatus `json:"high-availability"`
 }
 
 // Represents a response from the single Kea server to the status-get
