@@ -53,6 +53,11 @@ export class AppComponent implements OnInit {
                 visible: false,
                 items: [
                     {
+                        label: 'Dashboard',
+                        icon: 'fa fa-stethoscope',
+                        routerLink: '',
+                    },
+                    {
                         label: 'Hosts',
                         icon: 'fa fa-laptop',
                         routerLink: '/dhcp/hosts',
