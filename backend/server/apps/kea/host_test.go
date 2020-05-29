@@ -198,6 +198,7 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
 		for i := 0; i < 5; i++ {
 			host := dbmodel.KeaConfigReservation{
 				HWAddress: fmt.Sprintf("01:02:03:04:05:%02d", callNo*5+i),
+				Hostname:  fmt.Sprintf("host%02d", callNo*5+i),
 			}
 			switch family {
 			case 4:
@@ -329,6 +330,7 @@ func testHost(t *testing.T, host dbmodel.Host, identifier string, address string
 	identifierBytes, err := hex.DecodeString(identifier)
 	require.NoError(t, err)
 	require.Equal(t, identifierBytes, host.HostIdentifiers[0].Value)
+	require.NotEmpty(t, host.Hostname)
 }
 
 // Tests that valid reservation-get-page received command was received by
