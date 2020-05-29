@@ -86,9 +86,10 @@
         >
             <ng-template pTemplate="header">
                 <tr>
-                    <th rowspan="2" style="width: 25rem;">DHCP Identifiers</th>
-                    <th colspan="2" style="width: 40rem;">IP Reservations</th>
-                    <th rowspan="2" style="width: 14rem;">Global/Subnet</th>
+                    <th rowspan="2" style="width: 22rem;">DHCP Identifiers</th>
+                    <th colspan="2" style="width: 35rem;">IP Reservations</th>
+                    <th rowspan="2" style="width: 15rem;">Hostname</th>
+                    <th rowspan="2" style="width: 12rem;">Global/Subnet</th>
                     <th rowspan="2" style="width: 20rem;">AppID @ Machine</th>
                 </tr>
                 <tr>
@@ -139,6 +140,9 @@
                         >
                             {{ r.address }}
                         </div>
+                    </td>
+                    <td align="center">
+                        {{ h.hostname ? h.hostname : '' }}
                     </td>
                     <td align="center">
                         {{ h.subnetId && h.subnetId > 0 ? h.subnetPrefix : 'global' }}
