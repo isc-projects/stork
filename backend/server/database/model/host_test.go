@@ -120,6 +120,7 @@ func TestAddHost(t *testing.T) {
 
 	// Add a host with two identifiers and two reservations.
 	host := &Host{
+		Hostname: "host.example.org",
 		HostIdentifiers: []HostIdentifier{
 			{
 				Type:  "hw-address",
@@ -149,6 +150,7 @@ func TestAddHost(t *testing.T) {
 	require.NotNil(t, returned)
 
 	require.Equal(t, host.ID, returned.ID)
+	require.Equal(t, "host.example.org", host.Hostname)
 	require.Len(t, returned.HostIdentifiers, 2)
 	require.Len(t, returned.IPReservations, 2)
 

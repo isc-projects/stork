@@ -43,6 +43,8 @@ type Host struct {
 	SubnetID  int64
 	Subnet    *Subnet
 
+	Hostname string
+
 	HostIdentifiers []HostIdentifier
 	IPReservations  []IPReservation
 
