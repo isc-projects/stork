@@ -5,9 +5,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-ce
 # Install Kea.
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/isc/kea-1-7/cfg/setup/bash.deb.sh' | bash
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        isc-kea-dhcp4-server=1.7.4-isc0012520200128102739 \
-        isc-kea-ctrl-agent=1.7.4-isc0012520200128102739 \
-        isc-kea-common=1.7.4-isc0012520200128102739 \
+        isc-kea-dhcp4-server=1.7.8-isc0023920200525101542 \
+        isc-kea-ctrl-agent=1.7.8-isc0023920200525101542 \
+        isc-kea-common=1.7.8-isc0023920200525101542 \
         && mkdir -p /var/run/kea/
 # Tell CA to listen on all interfaces.
 RUN perl -pi -e 's/8000/8002/g' /etc/kea/kea-ctrl-agent.conf && perl -pi -e 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/kea/kea-ctrl-agent.conf
