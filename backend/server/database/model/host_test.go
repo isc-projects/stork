@@ -52,6 +52,7 @@ func addTestHosts(t *testing.T, db *pg.DB) []Host {
 					Address: "192.0.2.5/32",
 				},
 			},
+			Hostname: "first.example.org",
 		},
 		{
 			HostIdentifiers: []HostIdentifier{
@@ -86,6 +87,7 @@ func addTestHosts(t *testing.T, db *pg.DB) []Host {
 					Address: "2001:db8:1::1/128",
 				},
 			},
+			Hostname: "second.example.org",
 		},
 		{
 			HostIdentifiers: []HostIdentifier{
@@ -430,7 +432,8 @@ func TestGetHostsByPageApp(t *testing.T) {
 			(returned[0].ID == hosts[1].ID && returned[1].ID == hosts[2].ID))
 }
 
-// Test that page of the hosts can be filtered by IP reservations.
+// Test that page of the hosts can be filtered by IP reservations and
+// hostnames.
 func TestGetHostsByPageFilteringText(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -490,6 +493,19 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
 	require.Contains(t, returned, hosts[3])
+
+	// Filter by hostname.
+	filterText = "example"
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
+	require.Len(t, returned, 2)
+	// Reset subnet, so as we can use Contain function to compare the rest of the
+	// host information.
+	returned[0].Subnet = nil
+	returned[1].Subnet = nil
+	require.Contains(t, returned, hosts[0])
+	require.Contains(t, returned, hosts[2])
 }
 
 // Test that page of the hosts can be global/not global hosts.

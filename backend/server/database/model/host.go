@@ -324,8 +324,8 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 // to fetch hosts belonging to the particular IPv4 or IPv6 subnet. If
 // this value is set to nil all subnets are returned.  The value of 0
 // indicates that only global hosts are to be returned. Filtering text
-// allows for searching hosts by reserved IP addresses and/or host
-// identifiers specified using hexadecimal digits. It is allowed to
+// allows for searching hosts by reserved IP addresses, host identifiers
+// specified using hexadecimal digits and hostnames. It is allowed to
 // specify colons while searching for hosts by host identifiers. If
 // global flag is true then only hosts from the global scope are returned
 // (i.e. not assigned to any subnet), if false then only hosts from
@@ -376,7 +376,8 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64
 		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
 			q = q.WhereOr("text(r.address) LIKE ?", "%"+*filterText+"%").
 				WhereOr("i.type::text LIKE ?", "%"+*filterText+"%").
-				WhereOr("encode(i.value, 'hex') LIKE ?", "%"+colonlessFilterText+"%")
+				WhereOr("encode(i.value, 'hex') LIKE ?", "%"+colonlessFilterText+"%").
+				WhereOr("host.hostname LIKE ?", "%"+*filterText+"%")
 			return q, nil
 		})
 	}
