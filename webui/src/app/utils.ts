@@ -114,8 +114,10 @@ export function extractKeyValsAndPrepareQueryParams(text, keys, flags) {
     for (const key of keys) {
         queryParams[key] = null
     }
-    for (const flag of flags) {
-        queryParams[flag] = null
+    if (flags) {
+        for (const flag of flags) {
+            queryParams[flag] = null
+        }
     }
 
     // go through all matches and...
