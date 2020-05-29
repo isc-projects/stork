@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
@@ -37,12 +35,13 @@ func (fam *PromFakeBind9AppMonitor) Shutdown() {
 // Check creating PromBind9Exporter, check if prometheus stats are set up.
 func TestNewPromBind9ExporterBasic(t *testing.T) {
 	fam := &PromFakeBind9AppMonitor{}
-	pke := NewPromBind9Exporter(fam)
-	defer pke.Shutdown()
+	pbe := NewPromBind9Exporter(fam)
+	defer pbe.Shutdown()
 
-	require.NotNil(t, pke.HTTPClient)
-	require.NotNil(t, pke.HTTPServer)
-	require.Len(t, pke.CacheStatsMap, 6)
+	require.NotNil(t, pbe.HTTPClient)
+	require.NotNil(t, pbe.HTTPServer)
+	require.Len(t, pbe.serverStatsDesc, 4)
+	require.Len(t, pbe.viewStatsDesc, 6)
 }
 
 // Check starting PromBind9Exporter and collecting stats.
@@ -52,45 +51,67 @@ func TestPromBind9ExporterStart(t *testing.T) {
 		Post("/").
 		Persist().
 		Reply(200).
-		BodyString(`{"views": { "_default":
-                            { "resolver": { "cachestats":
-                            { "CacheHits": 40, "CacheMisses": 10,
-                              "QueryHits": 30,  "QueryMisses": 20
-                            }}}}}`)
+		BodyString(`{ "json-stats-version": "1.2",
+                              "boot-time": "2020-04-21T07:13:08.888Z",
+                              "config-time": "2020-04-21T07:13:09.989Z",
+                              "current-time": "2020-04-21T07:19:28.258Z",
+                              "version":"9.16.2",
+                              "qtypes": {
+                                  "A": 201,
+                                  "AAAA": 200,
+                                  "DNSKEY": 53
+                              },
+			      "views": {
+                                "_default": {
+                                  "resolver": {
+                                    "cachestats": {
+                                      "CacheHits": 40,
+                                      "CacheMisses": 10,
+                                      "QueryHits": 30,
+                                      "QueryMisses": 20
+                                    }
+                                  }
+                                }
+                              }
+                            }`)
 	fam := &PromFakeBind9AppMonitor{}
-	pke := NewPromBind9Exporter(fam)
-	defer pke.Shutdown()
+	pbe := NewPromBind9Exporter(fam)
+	defer pbe.Shutdown()
 
-	gock.InterceptClient(pke.HTTPClient.client)
+	gock.InterceptClient(pbe.HTTPClient.client)
 
 	// prepare sane settings
-	pke.Settings.Port = 1234
-	pke.Settings.Interval = 1 // 1 second
+	pbe.Settings.Port = 1234
+	pbe.Settings.Interval = 1 // 1 second
 
 	// start exporter
-	pke.Start()
-	require.NotNil(t, pke.Ticker)
+	pbe.Start()
 
-	// wait 1.5 seconds that collecting is invoked at least once
-	time.Sleep(1500 * time.Millisecond)
+	// boot_time_seconds
+	expect, _ := time.Parse(time.RFC3339, "2020-04-21T07:13:08.888Z")
+	require.EqualValues(t, expect, pbe.stats.BootTime)
+	// config_time_seconds
+	expect, _ = time.Parse(time.RFC3339, "2020-04-21T07:13:09.989Z")
+	require.EqualValues(t, expect, pbe.stats.ConfigTime)
+	// current_time_seconds
+	expect, _ = time.Parse(time.RFC3339, "2020-04-21T07:19:28.258Z")
+	require.EqualValues(t, expect, pbe.stats.CurrentTime)
 
-	// check if cache hits is 40
-	metric, _ := pke.CacheStatsMap["CacheHits"].GetMetricWith(prometheus.Labels{"view": "_default"})
-	require.Equal(t, 40.0, testutil.ToFloat64(metric))
-	// check if cache misses is 10
-	metric, _ = pke.CacheStatsMap["CacheMisses"].GetMetricWith(prometheus.Labels{"view": "_default"})
-	require.Equal(t, 10.0, testutil.ToFloat64(metric))
-	// check if cache hit ratio is 0.8
-	metric, _ = pke.CacheStatsMap["CacheHitRatio"].GetMetricWith(prometheus.Labels{"view": "_default"})
-	require.Equal(t, 0.8, testutil.ToFloat64(metric))
+	// incoming_queries_total
+	require.EqualValues(t, 201.0, pbe.stats.IncomingQueries["A"])
+	require.EqualValues(t, 200.0, pbe.stats.IncomingQueries["AAAA"])
+	require.EqualValues(t, 53.0, pbe.stats.IncomingQueries["DNSKEY"])
 
-	// check if query hits is 30
-	metric, _ = pke.CacheStatsMap["QueryHits"].GetMetricWith(prometheus.Labels{"view": "_default"})
-	require.Equal(t, 30.0, testutil.ToFloat64(metric))
-	// check if query misses is 20
-	metric, _ = pke.CacheStatsMap["QueryMisses"].GetMetricWith(prometheus.Labels{"view": "_default"})
-	require.Equal(t, 20.0, testutil.ToFloat64(metric))
-	// check if query hit ratio is 0.6
-	metric, _ = pke.CacheStatsMap["QueryHitRatio"].GetMetricWith(prometheus.Labels{"view": "_default"})
-	require.Equal(t, 0.6, testutil.ToFloat64(metric))
+	// resolver_cache_hit_ratio
+	require.EqualValues(t, 0.8, pbe.stats.Views["_default"].ResolverCachestats["CacheHitRatio"])
+	// resolver_cache_hits
+	require.EqualValues(t, 40.0, pbe.stats.Views["_default"].ResolverCachestats["CacheHits"])
+	// resolver_cache_misses
+	require.EqualValues(t, 10.0, pbe.stats.Views["_default"].ResolverCachestats["CacheMisses"])
+	// resolver_query_hit_ratio
+	require.EqualValues(t, 0.6, pbe.stats.Views["_default"].ResolverCachestats["QueryHitRatio"])
+	// resolver_query_hits
+	require.EqualValues(t, 30.0, pbe.stats.Views["_default"].ResolverCachestats["QueryHits"])
+	// resolver_query_misses
+	require.EqualValues(t, 20.0, pbe.stats.Views["_default"].ResolverCachestats["QueryMisses"])
 }
