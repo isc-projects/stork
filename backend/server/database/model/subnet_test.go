@@ -428,6 +428,80 @@ func TestGetSubnetsByAppID(t *testing.T) {
 	require.Empty(t, returnedSubnets)
 }
 
+// This test verifies that subnets can be filitered by search text.
+// In particular, it verifies that matching with address pools works
+// as expected and that duplicates are eliminated from the result
+// set when the text matches multiple pools in the same subnet.
+func TestGetSubnetsByPage(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add two subnets with multiple address pools.
+	subnets := []Subnet{
+		{
+			Prefix: "192.0.2.0/24",
+			AddressPools: []AddressPool{
+				{
+					LowerBound: "192.0.2.1",
+					UpperBound: "192.0.2.10",
+				},
+				{
+					LowerBound: "192.0.2.11",
+					UpperBound: "192.0.2.20",
+				},
+				{
+					LowerBound: "192.0.2.21",
+					UpperBound: "192.0.2.30",
+				},
+			},
+		},
+		{
+			Prefix: "192.0.3.0/24",
+			AddressPools: []AddressPool{
+				{
+					LowerBound: "192.0.3.1",
+					UpperBound: "192.0.3.10",
+				},
+				{
+					LowerBound: "192.0.3.11",
+					UpperBound: "192.0.3.20",
+				},
+			},
+		},
+	}
+	for i := range subnets {
+		err := AddSubnet(db, &subnets[i])
+		require.NoError(t, err)
+		require.NotZero(t, subnets[i].ID)
+	}
+
+	// This should match two subnets.
+	filterText := "192.0"
+	returned, count, err := GetSubnetsByPage(db, 0, 10, 0, 4, &filterText, "prefix", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, count)
+	require.Len(t, returned, 2)
+	// The subnets are returned in descending prefix order.
+	require.Equal(t, "192.0.3.0/24", returned[0].Prefix)
+	require.Equal(t, "192.0.2.0/24", returned[1].Prefix)
+
+	// This should match multiple pools in the first subnet. However,
+	// only one record should be returned.
+	filterText = "192.0.2.1"
+	returned, count, err = GetSubnetsByPage(db, 0, 10, 0, 4, &filterText, "prefix", SortDirDesc)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	require.Len(t, returned, 1)
+	require.Equal(t, "192.0.2.0/24", returned[0].Prefix)
+
+	// This should have no match.
+	filterText = "192.0.5.0"
+	returned, count, err = GetSubnetsByPage(db, 0, 10, 0, 4, &filterText, "id", SortDirAsc)
+	require.NoError(t, err)
+	require.Zero(t, count)
+	require.Empty(t, returned)
+}
+
 // Test that the subnet can be fetched by local ID and app ID.
 func TestGetAppLocalSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

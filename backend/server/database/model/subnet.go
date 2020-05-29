@@ -333,7 +333,7 @@ func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
 // total number of subnets and error.
 func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Subnet, int64, error) {
 	subnets := []Subnet{}
-	q := db.Model(&subnets)
+	q := db.Model(&subnets).Distinct()
 
 	// When filtering by appID we also need the local_subnet table as it holds the
 	// application identifier.
