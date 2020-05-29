@@ -30,6 +30,7 @@ func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, filterTe
 		host := models.Host{
 			ID:       dbHost.ID,
 			SubnetID: dbHost.SubnetID,
+			Hostname: dbHost.Hostname,
 		}
 		// Include subnet prefix if this is subnet specific host.
 		if dbHost.Subnet != nil {

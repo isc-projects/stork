@@ -62,6 +62,7 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 	hosts = []dbmodel.Host{
 		{
 			SubnetID: 1,
+			Hostname: "first.example.org",
 			HostIdentifiers: []dbmodel.HostIdentifier{
 				{
 					Type:  "hw-address",
@@ -236,6 +237,9 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	require.NotNil(t, "2001:db8:1::/64", items[2].SubnetPrefix)
 	require.Empty(t, items[3].SubnetPrefix)
 	require.Empty(t, items[4].SubnetPrefix)
+
+	// Hosts
+	require.Equal(t, "first.example.org", items[0].Hostname)
 
 	// The first host should be associated with two apps.
 	require.Len(t, items[0].LocalHosts, 2)

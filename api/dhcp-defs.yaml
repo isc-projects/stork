@@ -45,6 +45,8 @@
         type: array
         items:
           $ref: '#/definitions/IPReservation'
+      hostname:
+        type: string
       localHosts:
         type: array
         items:
