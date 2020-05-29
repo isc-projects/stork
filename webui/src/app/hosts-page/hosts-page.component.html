@@ -1,16 +1,14 @@
 <div>
     <h2>
-        DHCP Hosts and Reservations
+        DHCP Host Reservations
         <app-help-tip title="this page">
             <p>
-                This page displays a list of host reservations in the network. Kea can store host reservations in two
-                places: a configuration file or a database. The reservations stored in a configuration file are
-                retrieved continuously, while those from a database (MySQL, PostgreSQL, or Cassandra) need Kea to have a
-                <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#host-cmds-host-commands">host_cmds hook</a>
-                loaded.
+                This page displays a list of host reservations in the network. Kea can store host reservations in either a configuration file or a database. Reservations stored in a configuration file are
+                retrieved continuously. Kea must have a <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#host-cmds-host-commands">host_cmds hook</a>
+                loaded to retrieve host reservations stored in a database (MySQL, PostgreSQL, or Cassandra).
             </p>
             <p>
-                Kea supports host reservations by different types:
+                Kea supports multiple host reservations identifier types:
             </p>
             <ul>
                 <li><b>hw-address</b> -- MAC address,</li>
