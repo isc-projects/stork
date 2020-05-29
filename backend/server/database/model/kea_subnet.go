@@ -10,6 +10,7 @@ type KeaConfigReservation struct {
 	IPAddress   string   `mapstructure:"ip-address" json:"ip-address,omitempty"`
 	IPAddresses []string `mapstructure:"ip-addresses" json:"ip-addresses,omitempty"`
 	Prefixes    []string `mapstructure:"prefixes" json:"prefixes,omitempty"`
+	Hostname    string   `mapstructure:"hostname" json:"hostname,omitempty"`
 }
 
 // Represents address pool structure within Kea configuration.

@@ -161,6 +161,7 @@ func NewSubnetFromKea(rawSubnet *map[string]interface{}) (*Subnet, error) {
 // Kea configuration.
 func NewHostFromKeaConfigReservation(reservation KeaConfigReservation) (*Host, error) {
 	var host Host
+	host.Hostname = reservation.Hostname
 	structType := reflect.TypeOf(reservation)
 	value := reflect.ValueOf(reservation)
 

@@ -479,6 +479,7 @@ func TestNewHostFromKea(t *testing.T) {
 			"3000:1::/64",
 			"3000:2::/64",
 		},
+		"hostname": "hostname.example.org",
 	}
 
 	parsedHost, err := NewHostFromKea(&rawHost)
@@ -492,4 +493,5 @@ func TestNewHostFromKea(t *testing.T) {
 	require.Equal(t, "2001:db8:1::2", parsedHost.IPReservations[1].Address)
 	require.Equal(t, "3000:1::/64", parsedHost.IPReservations[2].Address)
 	require.Equal(t, "3000:2::/64", parsedHost.IPReservations[3].Address)
+	require.Equal(t, "hostname.example.org", parsedHost.Hostname)
 }
