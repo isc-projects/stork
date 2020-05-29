@@ -1,3 +1,11 @@
+* 66 [bug] marcin
+
+    Corrected a bug which caused presenting duplicated subnets when
+    the subnets where filtered by text. This issue occurred when
+    multiple pools belonging to a subnet were matched by the
+    filtering text.
+    (Gitlab #245)
+
 * 65 [func] marcin
 
     Extended High Availability information is displayed for Kea
