@@ -1,3 +1,9 @@
+* 67 [func] marcin
+
+    Hostname reservations are now fetched from Kea servers and displayed
+    in the UI. It is also possible to filter hosts by hostname reservations.
+    (Gitlab #303)
+
 * 66 [bug] marcin
 
     Corrected a bug which caused presenting duplicated subnets when
