@@ -301,6 +301,10 @@ The second column, ``IP Reservations``, includes the static assignments of the
 IP addresses and/or delegated prefixes to the clients. There may be one or
 more IP reservations for each host.
 
+The ``Hostname`` column contains an optional hostname reservation, i.e. the
+hostname assigned to the particular client by the DHCP servers via the
+Hostname or Client FQDN option.
+
 The ``Global/Subnet`` column contains the prefixes of the subnets to which the reserved
 IP addresses and prefixes belong. If the reservation is global, i.e. is valid
 for all configured subnets of the given server, the word "global" is shown
@@ -320,8 +324,8 @@ in its configuration file or a host database (via host_cmds premium
 hooks library).
 
 The ``Filter hosts`` input box is located above the Hosts table. It
-allows filtering of hosts by identifier types, identifier values, IP
-reservations and by globality i.e. ``is:global`` and ``not:global``.
+allows for filtering the hosts by identifier types, identifier values, IP
+reservations, hostnames and by globality i.e. ``is:global`` and ``not:global``.
 When filtering by DHCP identifier values, it is not necessary to use
 colons between the pairs of hexadecimal digits. For example, the
 reservation ``hw-address=0a:1b:bd:43:5f:99`` will be found regardless
