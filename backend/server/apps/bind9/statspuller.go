@@ -9,18 +9,22 @@ import (
 
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
+	"isc.org/stork/server/eventcenter"
 	storkutil "isc.org/stork/util"
 )
 
 type StatsPuller struct {
 	*agentcomm.PeriodicPuller
+	EventCenter eventcenter.EventCenter
 }
 
 // Create a StatsPuller object that in background pulls BIND 9 statistics.
 // Beneath it spawns a goroutine that pulls stats periodically from the BIND 9
 // statistics-channel.
-func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*StatsPuller, error) {
-	statsPuller := &StatsPuller{}
+func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter) (*StatsPuller, error) {
+	statsPuller := &StatsPuller{
+		EventCenter: eventCenter,
+	}
 	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "BIND 9 Stats", "bind9_stats_puller_interval",
 		statsPuller.pullStats)
 	if err != nil {
@@ -99,9 +103,11 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 			dbApp.Daemons[0].Bind9Daemon.Stats.CacheHitRatio = ratio
 			dbApp.Daemons[0].Bind9Daemon.Stats.CacheHits = hits
 			dbApp.Daemons[0].Bind9Daemon.Stats.CacheMisses = misses
+
+			err = dbmodel.UpdateDaemon(statsPuller.Db, dbApp.Daemons[0])
 			break
 		}
 	}
 
-	return CommitAppIntoDB(statsPuller.Db, dbApp)
+	return err
 }

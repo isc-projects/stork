@@ -72,10 +72,14 @@ func updateAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
 }
 
 // Adds or updates daemons for an app. If any daemons already exist for the app,
-// they are removed and the new daemons will be added instead.
-func updateAppDaemons(tx *pg.Tx, app *App) (err error) {
-	// Delete the existing daemons, because the updated app may have different
-	// set of daemons. In particular, some of them may be gone.
+// they are removed and the new daemons will be added instead. Return list of
+// added daemons, deleted daemons and error if occurred.
+func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
+	// Delete the existing daemons in database but not present in
+	// app.Daemons list. The app.Daemons list contains new or
+	// updated list of daemons. So, any daemons associated with
+	// this app in the database but missing from the app.Daemons
+	// list are going to be deleted from the database.
 	ids := []int64{}
 	for _, d := range app.Daemons {
 		if d.ID > 0 {
@@ -87,12 +91,14 @@ func updateAppDaemons(tx *pg.Tx, app *App) (err error) {
 	if len(ids) > 0 {
 		q = q.Where("daemon.id NOT IN (?)", pg.In(ids))
 	}
-	_, err = q.Delete()
+	var deletedDaemons []*Daemon
+	_, err := q.Returning("*").Delete(&deletedDaemons)
 	if err != nil {
-		return errors.Wrapf(err, "problem with deleting daemons for an updated app %d", app.ID)
+		return nil, nil, errors.Wrapf(err, "problem with deleting daemons for an updated app %d", app.ID)
 	}
 
 	// Add updated daemons.
+	var addedDaemons []*Daemon
 	for i := range app.Daemons {
 		daemon := app.Daemons[i]
 
@@ -101,11 +107,12 @@ func updateAppDaemons(tx *pg.Tx, app *App) (err error) {
 		if daemon.ID == 0 {
 			// Add the new entry to the daemon table.
 			_, err = tx.Model(daemon).Insert()
+			addedDaemons = append(addedDaemons, daemon)
 		} else {
 			_, err = tx.Model(daemon).WherePK().Update()
 		}
 		if err != nil {
-			return errors.Wrapf(err, "problem with upserting daemon to app %d: %v", app.ID, daemon)
+			return nil, nil, errors.Wrapf(err, "problem with upserting daemon to app %d: %v", app.ID, daemon)
 		}
 
 		if daemon.KeaDaemon != nil {
@@ -117,7 +124,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) (err error) {
 				_, err = tx.Model(daemon.KeaDaemon).WherePK().Update()
 			}
 			if err != nil {
-				return errors.Wrapf(err, "problem with upserting Kea daemon to app %d: %v",
+				return nil, nil, errors.Wrapf(err, "problem with upserting Kea daemon to app %d: %v",
 					app.ID, daemon.KeaDaemon)
 			}
 
@@ -130,7 +137,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) (err error) {
 					_, err = tx.Model(daemon.KeaDaemon.KeaDHCPDaemon).WherePK().Update()
 				}
 				if err != nil {
-					return errors.Wrapf(err, "problem with upserting Kea DHCP daemon to app %d: %v",
+					return nil, nil, errors.Wrapf(err, "problem with upserting Kea DHCP daemon to app %d: %v",
 						app.ID, daemon.KeaDaemon.KeaDHCPDaemon)
 				}
 			}
@@ -143,22 +150,23 @@ func updateAppDaemons(tx *pg.Tx, app *App) (err error) {
 				_, err = tx.Model(daemon.Bind9Daemon).WherePK().Update()
 			}
 			if err != nil {
-				return errors.Wrapf(err, "problem with upserting BIND9 daemon to app %d: %v",
+				return nil, nil, errors.Wrapf(err, "problem with upserting BIND9 daemon to app %d: %v",
 					app.ID, daemon.Bind9Daemon)
 			}
 		}
 	}
-	return nil
+	return addedDaemons, deletedDaemons, nil
 }
 
-// Adds application into the database. The dbIface object may either be a pg.DB
-// object or pg.Tx. In the latter case this function uses existing transaction
-// to add an app.
-func AddApp(dbIface interface{}, app *App) error {
+// Adds application into the database. The dbIface object may either
+// be a pg.DB object or pg.Tx. In the latter case this function uses
+// existing transaction to add an app. Returns a list of added daemons,
+// deleted daemons and error if occurred.
+func AddApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 	// Start transaction if it hasn't been started yet.
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	// Always rollback when this function ends. If the changes get committed
 	// first this is no-op.
@@ -166,34 +174,39 @@ func AddApp(dbIface interface{}, app *App) error {
 
 	err = tx.Insert(app)
 	if err != nil {
-		return errors.Wrapf(err, "problem with inserting app %v", app)
+		return nil, nil, errors.Wrapf(err, "problem with inserting app %v", app)
 	}
 
-	err = updateAppDaemons(tx, app)
+	addedDaemons, deletedDaemons, err := updateAppDaemons(tx, app)
 	if err != nil {
-		return errors.WithMessagef(err, "problem with inserting daemons for a new app")
+		return nil, nil, errors.WithMessagef(err, "problem with inserting daemons for a new app")
 	}
 
 	// Add access points.
 	err = updateAppAccessPoints(tx, app, false)
 	if err != nil {
-		return errors.Wrapf(err, "problem with adding access points to app: %+v", app)
+		return nil, nil, errors.Wrapf(err, "problem with adding access points to app: %+v", app)
 	}
 
 	// Commit the changes if necessary.
 	err = commit()
-	return err
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return addedDaemons, deletedDaemons, nil
 }
 
-// Updates application in the database. An error is returned if the app
-// does not exist. The dbIface object may either be a pg.DB object or
-// pg.Tx. In the latter case this function uses existing transaction
-// to add an app.
-func UpdateApp(dbIface interface{}, app *App) error {
+// Updates application in the database. An error is returned if the
+// app does not exist. The dbIface object may either be a pg.DB object
+// or pg.Tx. In the latter case this function uses existing
+// transaction to add an app. Returns a list of added daemons, deleted
+// daemons and error if occurred.
+func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 	// Start transaction if it hasn't been started yet.
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	// Always rollback when this function ends. If the changes get committed
 	// first this is no-op.
@@ -201,23 +214,27 @@ func UpdateApp(dbIface interface{}, app *App) error {
 
 	err = tx.Update(app)
 	if err != nil {
-		return errors.Wrapf(err, "problem with updating app %v", app)
+		return nil, nil, errors.Wrapf(err, "problem with updating app %v", app)
 	}
 
-	err = updateAppDaemons(tx, app)
+	addedDaemons, deletedDaemons, err := updateAppDaemons(tx, app)
 	if err != nil {
-		return errors.WithMessagef(err, "problem with updating daemons for app %d", app.ID)
+		return nil, nil, errors.WithMessagef(err, "problem with updating daemons for app %d", app.ID)
 	}
 
 	// Update access points.
 	err = updateAppAccessPoints(tx, app, true)
 	if err != nil {
-		return errors.Wrapf(err, "problem with updating access points to app: %+v", app)
+		return nil, nil, errors.Wrapf(err, "problem with updating access points to app: %+v", app)
 	}
 
 	// Commit the changes if necessary.
 	err = commit()
-	return err
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return addedDaemons, deletedDaemons, nil
 }
 
 func GetAppByID(db *pg.DB, id int64) (*App, error) {
@@ -237,8 +254,8 @@ func GetAppByID(db *pg.DB, id int64) (*App, error) {
 	return &app, nil
 }
 
-func GetAppsByMachine(db *pg.DB, machineID int64) ([]App, error) {
-	var apps []App
+func GetAppsByMachine(db *pg.DB, machineID int64) ([]*App, error) {
+	var apps []*App
 
 	q := db.Model(&apps)
 	q = q.Relation("AccessPoints")
@@ -273,7 +290,7 @@ func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 	q = q.OrderExpr("id ASC")
 	err := q.Select()
 	if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting %s apps", appType)
+		return nil, errors.Wrapf(err, "problem with getting %s apps from database", appType)
 	}
 	return apps, nil
 }
@@ -283,7 +300,7 @@ func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 // page. Limit has to be greater then 0, otherwise error is
 // returned. sortField allows indicating sort column in database and
 // sortDir allows selection the order of sorting. If sortField is
-// empty then id is used for sorting.  in SortDirAny is used then ASC
+// empty then id is used for sorting. If SortDirAny is used then ASC
 // order is used.
 func GetAppsByPage(db *pg.DB, offset int64, limit int64, filterText *string, appType string, sortField string, sortDir SortDirEnum) ([]App, int64, error) {
 	if limit == 0 {

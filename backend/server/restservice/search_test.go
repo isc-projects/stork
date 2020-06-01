@@ -20,7 +20,8 @@ func TestSearchRecords(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -82,7 +83,7 @@ func TestSearchRecords(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddApp(db, a4)
+	_, _, err = dbmodel.AddApp(db, a4)
 	require.NoError(t, err)
 
 	appSubnets := []dbmodel.Subnet{
@@ -101,7 +102,7 @@ func TestSearchRecords(t *testing.T) {
 		},
 	}
 
-	err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a4, 1)
+	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a4, 1)
 	require.NoError(t, err)
 
 	// add app kea with dhcp6 to machine
@@ -130,7 +131,7 @@ func TestSearchRecords(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddApp(db, a6)
+	_, _, err = dbmodel.AddApp(db, a6)
 	require.NoError(t, err)
 
 	appSubnets = []dbmodel.Subnet{
@@ -138,7 +139,7 @@ func TestSearchRecords(t *testing.T) {
 			Prefix: "2001:db8:1::/64",
 		},
 	}
-	err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a6, 1)
+	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, appSubnets, a6, 1)
 	require.NoError(t, err)
 
 	// add app kea with dhcp4 and dhcp6 to machine
@@ -191,7 +192,7 @@ func TestSearchRecords(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddApp(db, a46)
+	_, _, err = dbmodel.AddApp(db, a46)
 	require.NoError(t, err)
 
 	appNetworks := []dbmodel.SharedNetwork{
@@ -226,7 +227,7 @@ func TestSearchRecords(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.CommitNetworksIntoDB(db, appNetworks, appSubnets, a46, 1)
+	_, err = dbmodel.CommitNetworksIntoDB(db, appNetworks, appSubnets, a46, 1)
 	require.NoError(t, err)
 
 	// search for 'fox' - shared network and subnet are expected

@@ -63,7 +63,7 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 			NewKeaDaemon(DaemonNameDHCPv4, true),
 		},
 	}
-	err = AddApp(db, app)
+	_, _, err = AddApp(db, app)
 	require.NoError(t, err)
 	require.NotNil(t, app)
 	require.Len(t, app.Daemons, 1)
@@ -127,7 +127,7 @@ func TestUpdateBind9Daemon(t *testing.T) {
 			NewBind9Daemon(true),
 		},
 	}
-	err = AddApp(db, app)
+	_, _, err = AddApp(db, app)
 	require.NoError(t, err)
 	require.NotNil(t, app)
 	require.Len(t, app.Daemons, 1)

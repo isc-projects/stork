@@ -36,7 +36,8 @@ func TestGetVersion(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -54,7 +55,8 @@ func TestGetMachineStateOnly(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -182,7 +184,8 @@ func TestGetMachineAndAppsState(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(mockGetAppsState, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -203,7 +206,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: keaPoints,
 	}
-	err = dbmodel.AddApp(db, keaApp)
+	_, _, err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
 	m.Apps = append(m.Apps, keaApp)
 
@@ -216,7 +219,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		AccessPoints: bind9Points,
 	}
-	err = dbmodel.AddApp(db, bind9App)
+	_, _, err = dbmodel.AddApp(db, bind9App)
 	require.NoError(t, err)
 	m.Apps = append(m.Apps, bind9App)
 
@@ -251,7 +254,8 @@ func TestCreateMachine(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -307,7 +311,8 @@ func TestGetMachines(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -329,7 +334,8 @@ func TestGetMachine(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -379,7 +385,7 @@ func TestGetMachine(t *testing.T) {
 		AccessPoints: accessPoints,
 		Daemons:      []*dbmodel.Daemon{},
 	}
-	err = dbmodel.AddApp(db, s)
+	_, _, err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, s.ID)
 
@@ -401,7 +407,8 @@ func TestUpdateMachine(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -485,7 +492,8 @@ func TestDeleteMachine(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -536,7 +544,8 @@ func TestGetApp(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -569,7 +578,7 @@ func TestGetApp(t *testing.T) {
 		AccessPoints: accessPoints,
 		Daemons:      []*dbmodel.Daemon{},
 	}
-	err = dbmodel.AddApp(db, s)
+	_, _, err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
 
 	// get added app
@@ -588,7 +597,8 @@ func TestRestGetApp(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -621,7 +631,7 @@ func TestRestGetApp(t *testing.T) {
 		AccessPoints: keaPoints,
 		Daemons:      []*dbmodel.Daemon{},
 	}
-	err = dbmodel.AddApp(db, keaApp)
+	_, _, err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
 
 	// get added kea app
@@ -648,7 +658,7 @@ func TestRestGetApp(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddApp(db, bind9App)
+	_, _, err = dbmodel.AddApp(db, bind9App)
 	require.NoError(t, err)
 
 	// get added BIND 9 app
@@ -667,7 +677,8 @@ func TestRestGetApps(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -701,7 +712,7 @@ func TestRestGetApps(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddApp(db, s1)
+	_, _, err = dbmodel.AddApp(db, s1)
 	require.NoError(t, err)
 
 	// add app BIND 9 to machine
@@ -719,7 +730,7 @@ func TestRestGetApps(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddApp(db, s2)
+	_, _, err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
 
 	// get added apps
@@ -740,7 +751,8 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	// Configure the fake control agents to mimic returning a status of
 	// two HA services for Kea.
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -765,7 +777,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 			dbmodel.NewKeaDaemon("dhcp4", true),
 		},
 	}
-	err = dbmodel.AddApp(db, keaApp)
+	_, _, err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
 	require.NotZero(t, keaApp.ID)
 
@@ -935,7 +947,8 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 	// Configure the fake control agents to mimic returning a status of
 	// two HA services for Kea.
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -960,7 +973,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 			dbmodel.NewKeaDaemon("dhcp4", true),
 		},
 	}
-	err = dbmodel.AddApp(db, keaApp)
+	_, _, err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
 	require.NotZero(t, keaApp.ID)
 
@@ -1035,7 +1048,8 @@ func TestRestGetAppsStats(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1066,7 +1080,7 @@ func TestRestGetAppsStats(t *testing.T) {
 		AccessPoints: keaPoints,
 		Daemons:      []*dbmodel.Daemon{},
 	}
-	err = dbmodel.AddApp(db, s1)
+	_, _, err = dbmodel.AddApp(db, s1)
 	require.NoError(t, err)
 
 	// add app bind9 to machine
@@ -1080,7 +1094,7 @@ func TestRestGetAppsStats(t *testing.T) {
 		AccessPoints: bind9Points,
 		Daemons:      []*dbmodel.Daemon{},
 	}
-	err = dbmodel.AddApp(db, s2)
+	_, _, err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
 
 	// get added app
@@ -1100,7 +1114,8 @@ func TestGetDhcpOverview(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 

@@ -19,6 +19,7 @@ import (
 	"isc.org/stork/server/apps/kea"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	"isc.org/stork/server/gen/restapi/operations/general"
@@ -122,7 +123,7 @@ func appCompare(dbApp *dbmodel.App, app *agentcomm.App) bool {
 	return controlPortEqual
 }
 
-func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents) string {
+func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter) string {
 	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -147,8 +148,13 @@ func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 	}
 
 	// If there are any new apps then get their state and add to db.
-	// Old ones are just updated.
-	oldAppsList := dbMachine.Apps
+	// Old ones are just updated. Use GetAppsByMachine to retrieve
+	// machine's apps with their daemons.
+	oldAppsList, err := dbmodel.GetAppsByMachine(db, dbMachine.ID)
+	if err != nil {
+		log.Error(err)
+		return "cannot get machine's apps from db"
+	}
 	dbMachine.Apps = []*dbmodel.App{}
 	for _, app := range state.Apps {
 		// look for old app
@@ -185,17 +191,17 @@ func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 
 		switch app.Type {
 		case dbmodel.AppTypeKea:
-			kea.GetAppState(ctx2, agents, dbApp)
-			err = kea.CommitAppIntoDB(db, dbApp)
+			events := kea.GetAppState(ctx2, agents, dbApp)
+			err = kea.CommitAppIntoDB(db, dbApp, eventCenter, events)
 		case dbmodel.AppTypeBind9:
 			bind9.GetAppState(ctx2, agents, dbApp)
-			err = bind9.CommitAppIntoDB(db, dbApp)
+			err = bind9.CommitAppIntoDB(db, dbApp, eventCenter)
 		default:
 			err = nil
 		}
 
 		if err != nil {
-			log.Error(err)
+			log.Errorf("cannot store application state: %+v", err)
 			return "problem with storing application state in the database"
 		}
 
@@ -246,7 +252,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
-	errStr := getMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents)
+	errStr := getMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents, r.EventCenter)
 	if errStr != "" {
 		rsp := services.NewGetMachineStateDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
@@ -383,9 +389,10 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 			})
 			return rsp
 		}
+		r.EventCenter.AddInfoEvent("added {machine}", dbMachine)
 	}
 
-	errStr := getMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents)
+	errStr := getMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents, r.EventCenter)
 	if errStr != "" {
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
@@ -518,6 +525,8 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 		})
 		return rsp
 	}
+
+	r.EventCenter.AddInfoEvent("removed {machine}", dbMachine)
 
 	rsp := services.NewDeleteMachineOK()
 

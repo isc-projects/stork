@@ -298,6 +298,8 @@ func TestCommitAppIntoDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	fec := &storktest.FakeEventCenter{}
+
 	machine := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -317,13 +319,13 @@ func TestCommitAppIntoDB(t *testing.T) {
 		AccessPoints: accessPoints,
 	}
 
-	err = CommitAppIntoDB(db, app)
+	err = CommitAppIntoDB(db, app, fec, nil)
 	require.NoError(t, err)
 
 	accessPoints = []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 2345)
 	app.AccessPoints = accessPoints
-	err = CommitAppIntoDB(db, app)
+	err = CommitAppIntoDB(db, app, fec, nil)
 	require.NoError(t, err)
 
 	returned, err := dbmodel.GetAppByID(db, app.ID)

@@ -1,0 +1,22 @@
+  Event:
+    type: object
+    properties:
+      id:
+        type: integer
+      createdAt:
+        type: string
+        format: date-time
+      text:
+        type: string
+      level:
+        type: integer
+
+  Events:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Event'
+      total:
+        type: integer

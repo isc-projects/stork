@@ -404,7 +404,7 @@ func TestDetectHostsFromConfig(t *testing.T) {
 		},
 	}
 	// Add the app to the database.
-	err = dbmodel.AddApp(db, &app)
+	_, _, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	app.Machine = m
 
@@ -451,6 +451,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	fec := &storktest.FakeEventCenter{}
+
 	m := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -482,11 +484,11 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 		},
 	}
 	// Add the app to the database.
-	err = dbmodel.AddApp(db, &app)
+	_, _, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	app.Machine = m
 
-	err = CommitAppIntoDB(db, &app)
+	err = CommitAppIntoDB(db, &app, fec, nil)
 	require.NoError(t, err)
 
 	fa := storktest.NewFakeAgents(mockReservationGetPage, nil)
@@ -933,6 +935,8 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	fec := &storktest.FakeEventCenter{}
+
 	m := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -964,11 +968,11 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 		},
 	}
 	// Add the app to the database.
-	err = dbmodel.AddApp(db, &app)
+	_, _, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	app.Machine = m
 
-	err = CommitAppIntoDB(db, &app)
+	err = CommitAppIntoDB(db, &app, fec, nil)
 	require.NoError(t, err)
 
 	fa := storktest.NewFakeAgents(mockReservationGetPage, nil)
@@ -1015,6 +1019,8 @@ func TestPullHostsIntoDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	fec := &storktest.FakeEventCenter{}
+
 	m := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -1046,11 +1052,11 @@ func TestPullHostsIntoDB(t *testing.T) {
 		},
 	}
 	// Add the app to the database.
-	err = dbmodel.AddApp(db, &app)
+	_, _, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	app.Machine = m
 
-	err = CommitAppIntoDB(db, &app)
+	err = CommitAppIntoDB(db, &app, fec, nil)
 	require.NoError(t, err)
 
 	fa := storktest.NewFakeAgents(mockReservationGetPage, nil)
@@ -1092,6 +1098,8 @@ func TestReduceHostsIntoDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	fec := &storktest.FakeEventCenter{}
+
 	m := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
@@ -1117,11 +1125,11 @@ func TestReduceHostsIntoDB(t *testing.T) {
 		},
 	}
 	// Add the app to the database.
-	err = dbmodel.AddApp(db, &app)
+	_, _, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	app.Machine = m
 
-	err = CommitAppIntoDB(db, &app)
+	err = CommitAppIntoDB(db, &app, fec, nil)
 	require.NoError(t, err)
 
 	// Create server which returns two hosts at the first attempt and

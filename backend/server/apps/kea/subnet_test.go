@@ -7,6 +7,7 @@ import (
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
+	storktest "isc.org/stork/server/test"
 )
 
 // Creates an app instance used in the tests. The index value should be incremented
@@ -61,7 +62,7 @@ func createAppWithSubnets(t *testing.T, db *dbops.PgDB, index int64, v4Config, v
 		},
 	}
 	// Add the app to the database.
-	err = dbmodel.AddApp(db, &app)
+	_, _, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	return &app
 }
@@ -389,6 +390,8 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	fec := &storktest.FakeEventCenter{}
+
 	// Create the Kea app supporting DHCPv4 and DHCPv6.
 	v4Config := `
         {
@@ -435,7 +438,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
             }
         }`
 	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
-	err := CommitAppIntoDB(db, app)
+	err := CommitAppIntoDB(db, app, fec, nil)
 	require.NoError(t, err)
 
 	// The configuration didn't include any shared network, so it should
@@ -517,7 +520,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
             }
         }`
 	app = createAppWithSubnets(t, db, 1, v4Config, "")
-	err = CommitAppIntoDB(db, app)
+	err = CommitAppIntoDB(db, app, fec, nil)
 	require.NoError(t, err)
 
 	// There should be one shared network in the database.
@@ -582,7 +585,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
             }
         }`
 	app = createAppWithSubnets(t, db, 2, v4Config, "")
-	err = CommitAppIntoDB(db, app)
+	err = CommitAppIntoDB(db, app, fec, nil)
 	require.NoError(t, err)
 
 	// There should still be just one shared network.
@@ -597,7 +600,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 
 	// Adding the same subnet again should be fine and should not result in
 	// any conflicts.
-	err = CommitAppIntoDB(db, app)
+	err = CommitAppIntoDB(db, app, fec, nil)
 	require.NoError(t, err)
 
 	networks, err = dbmodel.GetAllSharedNetworks(db, 4)

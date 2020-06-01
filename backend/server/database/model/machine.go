@@ -68,6 +68,7 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64)
 func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	machine := Machine{}
 	q := db.Model(&machine).Where("machine.id = ?", id)
+	q = q.Relation("Apps.Daemons")
 	q = q.Relation("Apps.AccessPoints")
 	err := q.Select()
 	if err == pg.ErrNoRows {

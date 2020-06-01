@@ -14,7 +14,7 @@
     </div>
 
     <div class="p-col-12" style="padding: 0;">
-        <p-tabView>
+        <p-tabView [activeIndex]="activeTabIndex">
             <p-tabPanel *ngFor="let daemon of daemons">
                 <ng-template pTemplate="header">
                     <div>

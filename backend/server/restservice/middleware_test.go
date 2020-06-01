@@ -50,7 +50,8 @@ func TestInnerMiddleware(t *testing.T) {
 	defer teardown()
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	sm, err := dbsession.NewSessionMgr(&rapi.DbSettings.BaseDatabaseSettings)
 	require.NoError(t, err)
@@ -58,4 +59,31 @@ func TestInnerMiddleware(t *testing.T) {
 
 	handler := rapi.InnerMiddleware(nil)
 	require.NotNil(t, handler)
+}
+
+// Check if fileServerMiddleware works and handles requests correctly.
+func TestSSEMiddleware(t *testing.T) {
+	requestReceived := false
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestReceived = true
+	})
+
+	fec := &storktest.FakeEventCenter{}
+
+	handler := sseMiddleware(nextHandler, fec)
+
+	// let request sse
+	req := httptest.NewRequest("GET", "http://localhost/sse", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.EqualValues(t, 200, resp.StatusCode)
+	require.False(t, requestReceived)
+
+	// let request something else than sse, it should be forwarded to nextHandler
+	req = httptest.NewRequest("GET", "http://localhost/api/users", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	require.True(t, requestReceived)
 }

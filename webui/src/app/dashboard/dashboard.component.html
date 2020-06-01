@@ -1,6 +1,12 @@
 <div style="margin: 4px -4px;" class="p-grid p-align-stretch" *ngIf="loaded">
     <div class="p-col-4" *ngIf="appsStats.keaAppsTotal === 0 && appsStats.bind9AppsTotal === 0">
-        <p-panel header="Welcome to Stork!">
+        <p-panel>
+            <p-header>
+                <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px;"
+                    >Welcome to Stork!</span
+                >
+            </p-header>
+
             <p style="padding-bottom: 1em;">
                 Stork is a monitoring solution for <em>ISC Kea DHCP</em> and <em>ISC BIND 9</em>.
             </p>
@@ -19,8 +25,11 @@
             </p>
         </p-panel>
     </div>
+    <div class="p-col-5" *ngIf="appsStats.keaAppsTotal === 0 && appsStats.bind9AppsTotal === 0">
+        <!-- fill empty space between welcome panel and events panel -->
+    </div>
 
-    <div class="p-col-12" *ngIf="appsStats.keaAppsTotal > 0">
+    <div class="p-col-9" *ngIf="appsStats.keaAppsTotal > 0">
         <p-panel>
             <p-header>
                 <div style="display: flex; justify-content: space-between;">
@@ -264,26 +273,13 @@
                         </td>
                         <td>{{ showDuration(d.uptime) }}</td>
                     </tr>
-
-                    <!-- EXAMPLE <tr> -->
-                    <!--     <td><a>kea-2.example.com</a></td> -->
-                    <!--     <td><a>[2] Kea 1.6.2</a></td> -->
-                    <!--     <td>DHCPv4</td> -->
-                    <!--     <td> -->
-                    <!--         <i class="pi pi-times" style="font-size: 1.5em; vertical-align: text-top; color: #f11;"></i> -->
-                    <!--     </td> -->
-                    <!--     <td>120</td> -->
-                    <!--     <td>180</td> -->
-                    <!--     <td>40%</td> -->
-                    <!--     <td> -->
-                    <!--         <i class="pi pi-times" style="font-size: 1.5em; vertical-align: text-top; color: #f11;"></i -->
-                    <!--         >partner-down -->
-                    <!--     </td> -->
-                    <!--     <td>3h</td> -->
-                    <!-- </tr> -->
                 </table>
             </div>
         </p-panel>
+    </div>
+
+    <div class="p-col-3">
+        <app-events-panel></app-events-panel>
     </div>
 
     <!-- TODO: for now do not show empty DNS dashboard

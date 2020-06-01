@@ -26,10 +26,11 @@ func TestStatsPullerBasic(t *testing.T) {
 	err := db.Insert(&setting)
 	require.NoError(t, err)
 
-	// prepare fake agents
+	// prepare fake agents and eventcenter
 	fa := storktest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
 
-	sp, _ := NewStatsPuller(db, fa)
+	sp, _ := NewStatsPuller(db, fa, fec)
 	sp.Shutdown()
 }
 
@@ -69,6 +70,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 		agentcomm.UnmarshalNamedStatsResponse(json, statsOutput)
 	}
 	fa := storktest.NewFakeAgents(nil, bind9Mock)
+	fec := &storktest.FakeEventCenter{}
 
 	// prepare bind9 apps
 	var err error
@@ -99,7 +101,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 			daemon,
 		},
 	}
-	err = CommitAppIntoDB(db, &dbApp1)
+	err = CommitAppIntoDB(db, &dbApp1, fec)
 	require.NoError(t, err)
 
 	daemon.ID = 0
@@ -120,7 +122,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 			daemon,
 		},
 	}
-	err = CommitAppIntoDB(db, &dbApp2)
+	err = CommitAppIntoDB(db, &dbApp2, fec)
 	require.NoError(t, err)
 
 	// set one setting that is needed by puller
@@ -133,7 +135,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare stats puller
-	sp, err := NewStatsPuller(db, fa)
+	sp, err := NewStatsPuller(db, fa, fec)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -177,6 +179,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 		agentcomm.UnmarshalNamedStatsResponse(json, statsOutput)
 	}
 	fa := storktest.NewFakeAgents(nil, bind9Mock)
+	fec := &storktest.FakeEventCenter{}
 
 	// prepare bind9 app
 	var err error
@@ -207,7 +210,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 			daemon,
 		},
 	}
-	err = CommitAppIntoDB(db, &dbApp)
+	err = CommitAppIntoDB(db, &dbApp, fec)
 	require.NoError(t, err)
 
 	// set one setting that is needed by puller
@@ -220,7 +223,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare stats puller
-	sp, err := NewStatsPuller(db, fa)
+	sp, err := NewStatsPuller(db, fa, fec)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()

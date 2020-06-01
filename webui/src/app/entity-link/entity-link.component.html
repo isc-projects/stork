@@ -1,0 +1,26 @@
+<span class="entity" [ngSwitch]="entity">
+    <!-- daemon -->
+    <ng-container *ngSwitchCase="'daemon'">
+        <a routerLink="/apps/{{ attrs.appType }}/{{ attrs.appId }}" [queryParams]="{ daemon: attrs.name }">
+            {{ attrs.id }}. {{ attrs.name }} daemon
+        </a>
+    </ng-container>
+
+    <!-- app -->
+    <ng-container *ngSwitchCase="'app'">
+        <a routerLink="/apps/{{ attrs.type }}/{{ attrs.id }}">
+            {{ attrs.id }}. {{ attrs.type }} app {{ attrs.version }}
+        </a>
+    </ng-container>
+
+    <!-- machine -->
+    <ng-container *ngSwitchCase="'machine'">
+        <a routerLink="/machines/{{ attrs.id }}"> machine {{ attrs.id }}. {{ attrs.address }} </a>
+    </ng-container>
+
+    <!-- subnet -->
+    <ng-container *ngSwitchCase="'subnet'"> subnet {{ attrs.id }}. {{ attrs.prefix }} </ng-container>
+
+    <!-- unsupported -->
+    <ng-container *ngSwitchDefault>{{ entity }}</ng-container>
+</span>

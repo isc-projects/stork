@@ -11,6 +11,7 @@ import (
 	"isc.org/stork/server/apps/kea"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/restservice"
 )
 
@@ -29,6 +30,8 @@ type StorkServer struct {
 	KeaStatsPuller   *kea.StatsPuller
 	KeaHostsPuller   *kea.HostsPuller
 	StatusPuller     *kea.StatusPuller
+
+	EventCenter eventcenter.EventCenter
 }
 
 func (ss *StorkServer) ParseArgs() {
@@ -94,6 +97,9 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		return nil, err
 	}
 
+	// setup event center
+	ss.EventCenter = eventcenter.NewEventCenter(ss.Db)
+
 	// initialize stork statistics
 	err = dbmodel.InitializeStats(ss.Db)
 	if err != nil {
@@ -101,7 +107,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	}
 
 	// setup bind9 stats puller
-	ss.Bind9StatsPuller, err = bind9.NewStatsPuller(ss.Db, ss.Agents)
+	ss.Bind9StatsPuller, err = bind9.NewStatsPuller(ss.Db, ss.Agents, ss.EventCenter)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +131,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	}
 
 	// setup ReST API service
-	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DbSettings, ss.Db, ss.Agents)
+	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DbSettings, ss.Db, ss.Agents, ss.EventCenter)
 	if err != nil {
 		ss.KeaHostsPuller.Shutdown()
 		ss.KeaStatsPuller.Shutdown()
@@ -134,6 +140,9 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		return nil, err
 	}
 	ss.RestAPI = r
+
+	ss.EventCenter.AddInfoEvent("started Stork server")
+
 	return ss, nil
 }
 
@@ -148,12 +157,14 @@ func (ss *StorkServer) Serve() {
 
 // Shutdown for Stork Server state
 func (ss *StorkServer) Shutdown() {
+	ss.EventCenter.AddInfoEvent("shutting down Stork server")
 	log.Println("Shutting down Stork Server")
 	ss.RestAPI.Shutdown()
 	ss.KeaHostsPuller.Shutdown()
 	ss.KeaStatsPuller.Shutdown()
 	ss.Bind9StatsPuller.Shutdown()
 	ss.StatusPuller.Shutdown()
+	ss.EventCenter.Shutdown()
 	ss.Db.Close()
 	ss.Agents.Shutdown()
 	log.Println("Stork Server shut down")

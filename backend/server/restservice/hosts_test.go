@@ -147,7 +147,7 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 	// Add apps to the database.
 	for i, a := range apps {
 		app := a
-		err := dbmodel.AddApp(db, &app)
+		_, _, err := dbmodel.AddApp(db, &app)
 		require.NoError(t, err)
 		require.NotZero(t, app.ID)
 		apps[i] = app
@@ -171,7 +171,8 @@ func TestGetHostsNoFiltering(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -260,7 +261,8 @@ func TestGetHostsBySubnetID(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -285,7 +287,8 @@ func TestGetHostsWithFiltering(t *testing.T) {
 
 	settings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 

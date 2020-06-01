@@ -3,6 +3,12 @@
         "target": "http://localhost:8080",
         "secure": false
     },
+    "/sse": {
+        "target": "http://localhost:8080",
+        "secure": false,
+        "logLevel": "debug",
+        "changeOrigin": true
+    },
     "/swagger.json": {
         "target": "http://localhost:8080",
         "secure": false

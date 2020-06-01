@@ -86,7 +86,6 @@ export class DashboardComponent implements OnInit {
                 this.overview = data
             },
             (err) => {
-                this.loaded = true
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message

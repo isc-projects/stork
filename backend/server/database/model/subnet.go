@@ -496,8 +496,8 @@ func (s *Subnet) GetApp(appID int64) *App {
 
 // Iterates over the provided slice of subnets and stores them in the database
 // if they are not there yet. In addition, it associates the subnets with the
-// specified Kea application.
-func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App, seq int64) (err error) {
+// specified Kea application. Returns a list of added subnets.
+func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App, seq int64) (addedSubnets []*Subnet, err error) {
 	for i := range subnets {
 		subnet := &subnets[i]
 		if subnet.ID == 0 {
@@ -506,32 +506,36 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App,
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to add detected subnet %s to the database",
 					subnet.Prefix)
-				return err
+				return nil, err
 			}
+			addedSubnets = append(addedSubnets, subnet)
 		}
 		err = AddAppToSubnet(tx, subnet, app)
 		if err != nil {
 			err = errors.WithMessagef(err, "unable to associate detected subnet %s with Kea app having id %d", subnet.Prefix, app.ID)
-			return err
+			return nil, err
 		}
 
 		err = CommitSubnetHostsIntoDB(tx, subnet, app, "config", seq)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return addedSubnets, nil
 }
 
 // Iterates over the shared networks, subnets and hosts and commits them to the database.
-// In addition it associates them with the specified app.
-func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets []Subnet, app *App, seq int64) error {
+// In addition it associates them with the specified app. Returns a list of added subnets.
+func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets []Subnet, app *App, seq int64) ([]*Subnet, error) {
 	// Begin transaction.
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer rollback()
+
+	var addedSubnets []*Subnet
+	var addedSubnetsToNet []*Subnet
 
 	// Go over the networks that the Kea app belongs to.
 	for i := range networks {
@@ -542,26 +546,28 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 			if err != nil {
 				err = errors.WithMessagef(err, "unable to add detected shared network %s to the database",
 					network.Name)
-				return err
+				return nil, err
 			}
 		}
 		// Associate subnets with the app.
-		err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app, seq)
+		addedSubnetsToNet, err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app, seq)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		addedSubnets = append(addedSubnets, addedSubnetsToNet...)
 	}
 
 	// Finally, add top level subnets to the database and associate them with
 	// the Kea app.
-	err = commitSubnetsIntoDB(tx, 0, subnets, app, seq)
+	addedSubnetsToNet, err = commitSubnetsIntoDB(tx, 0, subnets, app, seq)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	addedSubnets = append(addedSubnets, addedSubnetsToNet...)
 
 	// Commit the changes if everything went fine.
 	err = commit()
-	return err
+	return addedSubnets, err
 }
 
 // Fetch all local subnets for indicated app.

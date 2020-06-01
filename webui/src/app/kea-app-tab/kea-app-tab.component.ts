@@ -1,10 +1,9 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
+import { ActivatedRoute } from '@angular/router'
 
 import moment from 'moment-timezone'
 
 import { MessageService, MenuItem } from 'primeng/api'
-
-import { DHCPService } from '../backend/api/api'
 
 import { durationToString } from '../utils'
 
@@ -19,13 +18,17 @@ export class KeaAppTabComponent implements OnInit {
 
     daemons: any[] = []
 
-    constructor(private dhcpApi: DHCPService) {}
+    activeTabIndex = 0
+
+    constructor(private route: ActivatedRoute) {}
 
     ngOnInit() {}
 
     @Input()
     set appTab(appTab) {
         this._appTab = appTab
+
+        const activeDaemonTabName = this.route.snapshot.queryParams.daemon || null
 
         const daemonMap = []
         for (const d of appTab.app.details.daemons) {
@@ -39,12 +42,18 @@ export class KeaAppTabComponent implements OnInit {
             ['netconf', 'NETCONF'],
         ]
         const daemons = []
+        let idx = 0
         for (const dm of DMAP) {
             if (daemonMap[dm[0]] !== undefined) {
                 daemonMap[dm[0]].niceName = dm[1]
                 daemonMap[dm[0]].subnets = []
                 daemonMap[dm[0]].totalSubnets = 0
                 daemons.push(daemonMap[dm[0]])
+
+                if (dm[0] === activeDaemonTabName) {
+                    this.activeTabIndex = idx
+                }
+                idx += 1
             }
         }
         this.daemons = daemons

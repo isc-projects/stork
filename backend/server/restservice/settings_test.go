@@ -21,7 +21,8 @@ func TestSettings(t *testing.T) {
 	// prepare rest api
 	rSettings := RestAPISettings{}
 	fa := storktest.NewFakeAgents(nil, nil)
-	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
 	ctx := context.Background()
 

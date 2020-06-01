@@ -21,6 +21,7 @@ import (
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbsession "isc.org/stork/server/database/session"
+	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/gen/restapi"
 	"isc.org/stork/server/gen/restapi/operations"
 )
@@ -50,6 +51,7 @@ type RestAPI struct {
 	DbSettings     *dbops.DatabaseSettings
 	Db             *dbops.PgDB
 	SessionManager *dbsession.SessionMgr
+	EventCenter    eventcenter.EventCenter
 
 	Agents agentcomm.ConnectedAgents
 
@@ -64,12 +66,13 @@ type RestAPI struct {
 }
 
 // Do API initialization.
-func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, db *pg.DB, agents agentcomm.ConnectedAgents) (*RestAPI, error) {
+func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, db *pg.DB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter) (*RestAPI, error) {
 	r := &RestAPI{
-		Settings:   settings,
-		DbSettings: dbSettings,
-		Db:         db,
-		Agents:     agents,
+		Settings:    settings,
+		DbSettings:  dbSettings,
+		Db:          db,
+		Agents:      agents,
+		EventCenter: eventCenter,
 	}
 	return r, nil
 }
@@ -162,6 +165,7 @@ func (r *RestAPI) Serve() (err error) {
 		DhcpAPI:         r,
 		SettingsAPI:     r,
 		SearchAPI:       r,
+		EventsAPI:       r,
 		Logger:          log.Infof,
 		InnerMiddleware: r.InnerMiddleware,
 		Authorizer:      r.Authorizer,
@@ -212,7 +216,7 @@ func (r *RestAPI) Serve() (err error) {
 	if s.StaticFilesDir == "" {
 		s.StaticFilesDir = "./webui/dist/stork/"
 	}
-	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir)
+	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir, r.EventCenter)
 
 	if r.TLS {
 		err = prepareTLS(httpServer, s)

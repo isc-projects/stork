@@ -130,7 +130,7 @@ func addTestSubnetApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 
 	// Add the apps to be database.
 	for _, app := range apps {
-		err := AddApp(db, app)
+		_, _, err := AddApp(db, app)
 		require.NoError(t, err)
 	}
 	return apps

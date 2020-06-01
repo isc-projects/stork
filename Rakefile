@@ -122,7 +122,8 @@ SWAGGER_API_FILES = [
   'api/users-defs.yaml', 'api/users-paths.yaml',
   'api/dhcp-defs.yaml', 'api/dhcp-paths.yaml',
   'api/settings-defs.yaml', 'api/settings-paths.yaml',
-  'api/search-defs.yaml', 'api/search-paths.yaml'
+  'api/search-defs.yaml', 'api/search-paths.yaml',
+  'api/events-defs.yaml', 'api/events-paths.yaml'
 ]
 AGENT_PROTO_FILE = File.expand_path('backend/api/agent.proto')
 AGENT_PB_GO_FILE = File.expand_path('backend/api/agent.pb.go')
@@ -314,6 +315,11 @@ file GOLANGCILINT => TOOLS_DIR do
   end
 end
 
+desc 'Build Stork backend continuously whenever source files change'
+task :backend_live do
+  sh 'find backend -name "*.go" | entr rake build_backend'
+end
+
 desc 'Check backend source code
 arguments: fix=true - fixes some of the found issues'
 task :lint_go => [GO, GOLANGCILINT, MOCKERY, MOCKGEN, :gen_agent, :gen_server] do
@@ -466,10 +472,10 @@ task :build_ui => [NG, :gen_client, :doc] do
   end
 end
 
-desc 'Serve angular app'
+desc 'Build Stork Angular app continuously whenever source files change'
 task :serve_ui => [NG, :gen_client, :doc] do
   Dir.chdir('webui') do
-    sh 'npx ng serve --disable-host-check --proxy-config proxy.conf.json'
+    sh 'npx ng build --watch'
   end
 end
 

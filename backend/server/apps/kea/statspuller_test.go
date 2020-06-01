@@ -100,7 +100,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
 	nets, snets, err := DetectNetworks(db, app)
 	require.NoError(t, err)
-	err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app, 1)
+	_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app, 1)
 	require.NoError(t, err)
 
 	// set one setting that is needed by puller
@@ -230,7 +230,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddApp(db, a)
+	_, _, err = dbmodel.AddApp(db, a)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, a.ID)
 

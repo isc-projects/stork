@@ -1,0 +1,7 @@
+<ng-container *ngFor="let part of textParts" [ngSwitch]="part[0]">
+    <ng-container *ngSwitchCase="'text'">
+        {{ part[1] }}
+    </ng-container>
+
+    <app-entity-link *ngSwitchDefault [entity]="part[0]" [attrs]="part[1]"></app-entity-link>
+</ng-container>

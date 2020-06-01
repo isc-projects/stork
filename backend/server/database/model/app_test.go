@@ -29,7 +29,7 @@ func TestAddApp(t *testing.T) {
 		ID:   0,
 		Type: AppTypeKea,
 	}
-	err = AddApp(db, s)
+	_, _, err = AddApp(db, s)
 	require.NotNil(t, err)
 
 	// add app but without type, error should be raised
@@ -37,7 +37,7 @@ func TestAddApp(t *testing.T) {
 		ID:        0,
 		MachineID: m.ID,
 	}
-	err = AddApp(db, s)
+	_, _, err = AddApp(db, s)
 	require.NotNil(t, err)
 
 	// add app, no error expected
@@ -63,7 +63,7 @@ func TestAddApp(t *testing.T) {
 			},
 		},
 	}
-	err = AddApp(db, s)
+	_, _, err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotZero(t, s.ID)
 
@@ -77,7 +77,7 @@ func TestAddApp(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-	err = AddApp(db, s)
+	_, _, err = AddApp(db, s)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "duplicate")
 
@@ -91,7 +91,7 @@ func TestAddApp(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-	err = AddApp(db, s)
+	_, _, err = AddApp(db, s)
 	require.Nil(t, err)
 
 	// add app with two control points - error should be raised.
@@ -105,7 +105,7 @@ func TestAddApp(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-	err = AddApp(db, s)
+	_, _, err = AddApp(db, s)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "duplicate")
 
@@ -119,7 +119,7 @@ func TestAddApp(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-	err = AddApp(db, s)
+	_, _, err = AddApp(db, s)
 	require.NotNil(t, err)
 }
 
@@ -186,7 +186,7 @@ func TestUpdateApp(t *testing.T) {
 			},
 		},
 	}
-	err = AddApp(db, a)
+	_, _, err = AddApp(db, a)
 	require.NoError(t, err)
 	require.NotZero(t, a.ID)
 
@@ -244,7 +244,7 @@ func TestUpdateApp(t *testing.T) {
 	a.Daemons[1].Version = "1.7.5"
 	a.Daemons[1].Active = false
 
-	err = UpdateApp(db, a)
+	_, _, err = UpdateApp(db, a)
 	require.NoError(t, err)
 	require.False(t, a.Active)
 
@@ -289,7 +289,7 @@ func TestUpdateApp(t *testing.T) {
 	accessPoints = []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "warm.example.org", "abcd", 2345)
 	a.AccessPoints = accessPoints
-	err = UpdateApp(db, a)
+	_, _, err = UpdateApp(db, a)
 	require.NoError(t, err)
 	require.Len(t, a.AccessPoints, 1)
 	pt := a.AccessPoints[0]
@@ -312,7 +312,7 @@ func TestUpdateApp(t *testing.T) {
 	// add access point
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointStatistics, "cold.example.org", "", 1234)
 	a.AccessPoints = accessPoints
-	err = UpdateApp(db, a)
+	_, _, err = UpdateApp(db, a)
 	require.NoError(t, err)
 	require.Len(t, a.AccessPoints, 2)
 	pt = a.AccessPoints[0]
@@ -345,7 +345,7 @@ func TestUpdateApp(t *testing.T) {
 	// delete access point
 	accessPoints = accessPoints[0:1]
 	a.AccessPoints = accessPoints
-	err = UpdateApp(db, a)
+	_, _, err = UpdateApp(db, a)
 	require.NoError(t, err)
 	require.Len(t, a.AccessPoints, 1)
 	pt = a.AccessPoints[0]
@@ -398,7 +398,7 @@ func TestDeleteApp(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-	err = AddApp(db, s)
+	_, _, err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotZero(t, s.ID)
 
@@ -443,7 +443,7 @@ func TestGetAppsByMachine(t *testing.T) {
 			},
 		},
 	}
-	err = AddApp(db, s)
+	_, _, err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotZero(t, s.ID)
 
@@ -514,7 +514,7 @@ func TestGetAppsByType(t *testing.T) {
 			},
 		},
 	}
-	err = AddApp(db, aKea)
+	_, _, err = AddApp(db, aKea)
 	require.NoError(t, err)
 	require.NotZero(t, aKea.ID)
 
@@ -534,7 +534,7 @@ func TestGetAppsByType(t *testing.T) {
 			},
 		},
 	}
-	err = AddApp(db, aBind9)
+	_, _, err = AddApp(db, aBind9)
 	require.NoError(t, err)
 	require.NotZero(t, aBind9.ID)
 
@@ -591,7 +591,7 @@ func TestGetAppByID(t *testing.T) {
 		AccessPoints: accessPoints,
 	}
 
-	err = AddApp(db, s)
+	_, _, err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotZero(t, s.ID)
 
@@ -674,7 +674,7 @@ func TestGetAppsByPage(t *testing.T) {
 			},
 		},
 	}
-	err = AddApp(db, sKea)
+	_, _, err = AddApp(db, sKea)
 	require.NoError(t, err)
 	require.NotZero(t, sKea.ID)
 
@@ -697,7 +697,7 @@ func TestGetAppsByPage(t *testing.T) {
 			},
 		},
 	}
-	err = AddApp(db, sBind)
+	_, _, err = AddApp(db, sBind)
 	require.NoError(t, err)
 	require.NotZero(t, sBind.ID)
 
@@ -881,7 +881,7 @@ func TestGetAllApps(t *testing.T) {
 			},
 		},
 	}
-	err = AddApp(db, aKea)
+	_, _, err = AddApp(db, aKea)
 	require.NoError(t, err)
 	require.NotZero(t, aKea.ID)
 
@@ -901,7 +901,7 @@ func TestGetAllApps(t *testing.T) {
 			},
 		},
 	}
-	err = AddApp(db, aBind)
+	_, _, err = AddApp(db, aBind)
 	require.NoError(t, err)
 	require.NotZero(t, aBind.ID)
 

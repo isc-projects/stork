@@ -64,6 +64,9 @@ import { SettingsPageComponent } from './settings-page/settings-page.component'
 import { HelpTipComponent } from './help-tip/help-tip.component'
 import { GlobalSearchComponent } from './global-search/global-search.component'
 import { HaStatusPanelComponent } from './ha-status-panel/ha-status-panel.component'
+import { EventTextComponent } from './event-text/event-text.component'
+import { EntityLinkComponent } from './entity-link/entity-link.component'
+import { EventsPanelComponent } from './events-panel/events-panel.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -108,6 +111,9 @@ export function preinitApp(appInitService: AppInitService) {
         HelpTipComponent,
         GlobalSearchComponent,
         HaStatusPanelComponent,
+        EventTextComponent,
+        EntityLinkComponent,
+        EventsPanelComponent,
     ],
     imports: [
         BrowserModule,

@@ -41,6 +41,7 @@ paths:
   $include: dhcp-paths.yaml
   $include: settings-paths.yaml
   $include: search-paths.yaml
+  $include: events-paths.yaml
 
 
 parameters:
@@ -93,3 +94,4 @@ definitions:
   $include: dhcp-defs.yaml
   $include: settings-defs.yaml
   $include: search-defs.yaml
+  $include: events-defs.yaml

@@ -1,0 +1,21 @@
+  /events:
+    get:
+      summary: Get list of last events.
+      description: >-
+        A list of last events is returned in items field accompanied by total count
+        which indicates total available number of events.
+      operationId: getEvents
+      tags:
+        - Events
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+      responses:
+        200:
+          description: List of events.
+          schema:
+            $ref: "#/definitions/Events"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/auth"
+	"isc.org/stork/server/eventcenter"
 )
 
 // Install a middleware that traces ReST calls using logrus.
@@ -62,20 +63,34 @@ func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler
 	})
 }
 
+// Install a middleware that is serving `server-sent events` (SSE).
+func sseMiddleware(next http.Handler, eventCenter eventcenter.EventCenter) http.Handler {
+	log.Info("installed SSE middleware")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/sse") {
+			eventCenter.ServeHTTP(w, r)
+		} else {
+			// pass request to another handler
+			next.ServeHTTP(w, r)
+		}
+	})
+}
+
+// Global middleware function provides a common place to setup middlewares for
+// the server. It is invoked before everything.
+func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir string, eventCenter eventcenter.EventCenter) http.Handler {
+	// last handler is executed first for incoming request
+	handler = fileServerMiddleware(handler, staticFilesDir)
+	handler = sseMiddleware(handler, eventCenter)
+	handler = loggingMiddleware(handler)
+	return handler
+}
+
 // Inner middleware function provides a common place to setup middlewares for
 // the server. It is invoked after routing but before authentication, binding and validation
 func (r *RestAPI) InnerMiddleware(handler http.Handler) http.Handler {
 	// last handler is executed first for incoming request
 	handler = r.SessionManager.SessionMiddleware(handler)
-	return handler
-}
-
-// Global middleware function provides a common place to setup middlewares for
-// the server. It is invoked before everything.
-func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir string) http.Handler {
-	// last handler is executed first for incoming request
-	handler = fileServerMiddleware(handler, staticFilesDir)
-	handler = loggingMiddleware(handler)
 	return handler
 }
 

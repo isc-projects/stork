@@ -10,6 +10,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"
+	storktest "isc.org/stork/server/test"
 )
 
 // Tests that user account without necessary fields is rejected via REST API.
@@ -18,7 +19,8 @@ func TestCreateUserNegative(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
-	rapi, _ := NewRestAPI(nil, dbSettings, db, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, _ := NewRestAPI(nil, dbSettings, db, nil, fec)
 
 	// Both login and email missing here.
 	su := dbmodel.SystemUser{
@@ -46,7 +48,8 @@ func TestCreateUser(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
-	rapi, _ := NewRestAPI(nil, dbSettings, db, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, _ := NewRestAPI(nil, dbSettings, db, nil, fec)
 
 	su := dbmodel.SystemUser{
 		Email:    "jb@example.org",
@@ -90,7 +93,8 @@ func TestUpdateUser(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
-	rapi, err := NewRestAPI(nil, dbSettings, db, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(nil, dbSettings, db, nil, fec)
 	require.NoError(t, err)
 
 	// Create new user in the database.
@@ -141,7 +145,8 @@ func TestUpdateUserPassword(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
-	rapi, err := NewRestAPI(nil, dbSettings, db, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(nil, dbSettings, db, nil, fec)
 	require.NoError(t, err)
 
 	// Create new user in the database.
@@ -188,7 +193,8 @@ func TestGetGroups(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
-	rapi, _ := NewRestAPI(nil, dbSettings, db, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, _ := NewRestAPI(nil, dbSettings, db, nil, fec)
 
 	params := users.GetGroupsParams{}
 
@@ -207,7 +213,8 @@ func TestGetUsers(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
-	rapi, err := NewRestAPI(nil, dbSettings, db, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(nil, dbSettings, db, nil, fec)
 	require.NoError(t, err)
 
 	// Create new user in the database.
@@ -261,7 +268,8 @@ func TestGetUser(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
-	rapi, err := NewRestAPI(nil, dbSettings, db, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(nil, dbSettings, db, nil, fec)
 	require.NoError(t, err)
 
 	// Create new user in the database.

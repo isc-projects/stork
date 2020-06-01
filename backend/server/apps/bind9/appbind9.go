@@ -12,6 +12,7 @@ import (
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	"isc.org/stork/server/eventcenter"
 	storkutil "isc.org/stork/util"
 )
 
@@ -184,11 +185,13 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 }
 
 // Inserts or updates information about BIND 9 app in the database.
-func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App) (err error) {
+func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter) (err error) {
 	if app.ID == 0 {
-		err = dbmodel.AddApp(db, app)
+		_, _, err = dbmodel.AddApp(db, app)
+		eventCenter.AddInfoEvent("added {app}", app.Machine, app)
 	} else {
-		err = dbmodel.UpdateApp(db, app)
+		_, _, err = dbmodel.UpdateApp(db, app)
+		eventCenter.AddInfoEvent("updated {app}", app.Machine, app)
 	}
 	// todo: perform any additional actions required after storing the
 	// app in the db.

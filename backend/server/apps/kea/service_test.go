@@ -133,7 +133,7 @@ func TestDetectHAServices(t *testing.T) {
 	}
 
 	// Add the app to the database so as it gets its ID.
-	err = dbmodel.AddApp(db, &app)
+	_, _, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	require.NotZero(t, app.ID)
 
@@ -234,7 +234,7 @@ func TestDetectHAServices(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddApp(db, &app)
+	_, _, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	require.NotZero(t, app.ID)
 
@@ -297,7 +297,7 @@ func TestDetectHAServices(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddApp(db, &app)
+	_, _, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	require.NotZero(t, app.ID)
 
@@ -370,7 +370,7 @@ func TestDetectHAServices(t *testing.T) {
 			},
 		},
 	}
-	err = dbmodel.AddApp(db, &app)
+	_, _, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	require.NotZero(t, app.ID)
 
