@@ -24,7 +24,7 @@
                 visit the <a routerLink="/machines/all">machines page</a>.
                 
                 Stork uses the status-get command to collect information about Kea status. This command was introduced in Kea 1.7.3.
-                We are looking into backporting this to Kea 1.6.x but at the moment, Stork requires Kea 1.7.3 or higher.
+                We may backport this command to Kea 1.6.x but at the moment, Stork requires Kea 1.7.3 or higher.
             </p>
         </p-panel>
     </div>
@@ -90,6 +90,11 @@
                 <div>
                     <h2 class="section-heading">
                         Shared Networks: {{ overview.sharedNetworks4.total ? overview.sharedNetworks4.total : '0' }}
+                        <app-help-tip title="subnets listed">
+                            <p>
+                            This list shows the 5 shared networks with the highest utilization.
+                            </p>
+                        </app-help-tip>
                     </h2>
                     <table>
                         <tr *ngFor="let net of overview.sharedNetworks4.items">
