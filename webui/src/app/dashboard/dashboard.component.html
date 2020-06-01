@@ -12,16 +12,19 @@
             </p>
 
             <p style="padding-bottom: 1em;">
-                There is a
+                The 
                 <a target="blank" href="/assets/arm/index.html"
                     >Stork documentation<i class="pi pi-external-link" style="font-size: 1em;"></i
                 ></a>
-                which describes how to configure and use Stork.
+                describes how to configure and use Stork.
             </p>
 
             <p>
-                Currently, there are no machines with Kea or BIND 9 to monitor defined in Stork. To add new machine
-                visit <a routerLink="/machines/all">machines page</a>.
+                Currently, there are no machines to monitor defined in Stork. To add a new machine
+                visit the <a routerLink="/machines/all">machines page</a>.
+                
+                Stork uses the status-get command to collect information about Kea status. This command was introduced in Kea 1.7.3.
+                We are looking into backporting this to Kea 1.6.x but at the moment, Stork requires Kea 1.7.3 or higher.
             </p>
         </p-panel>
     </div>
@@ -45,6 +48,11 @@
                 <div>
                     <h2 class="section-heading">
                         Subnets: {{ overview.subnets4.total ? overview.subnets4.total : '0' }}
+                         <app-help-tip title="subnets listed">
+                            <p>
+                            This list shows the 5 DHCPv4 subnets with the highest utilization.
+                            </p>
+                        </app-help-tip>
                     </h2>
                     <table>
                         <tr *ngFor="let sn of overview.subnets4.items">
@@ -139,6 +147,11 @@
                 <div>
                     <h2 class="section-heading">
                         Subnets: {{ overview.subnets6.total ? overview.subnets6.total : '0' }}
+                         <app-help-tip title="subnets listed">
+                            <p>
+                            This list shows the 5 DHCPv6 subnets with the highest utilization.
+                            </p>
+                        </app-help-tip>
                     </h2>
                     <table>
                         <tr *ngFor="let sn of overview.subnets6.items">
