@@ -2,7 +2,7 @@
     get:
       summary: Get list of most recent events.
       description: >-
-        A list of last events is returned in items field accompanied by total count
+        A list of most recent events is returned in items field accompanied by total count
         which indicates total available number of events.
       operationId: getEvents
       tags:
