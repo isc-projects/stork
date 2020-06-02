@@ -12,19 +12,22 @@
             </p>
 
             <p style="padding-bottom: 1em;">
-                The 
+                The
                 <a target="blank" href="/assets/arm/index.html"
                     >Stork documentation<i class="pi pi-external-link" style="font-size: 1em;"></i
                 ></a>
                 describes how to configure and use Stork.
             </p>
 
+            <p style="padding-bottom: 1em;">
+                Currently, there are no machines to monitor defined in Stork. To add a new machine visit the
+                <a routerLink="/machines/all">machines page</a>.
+            </p>
+
             <p>
-                Currently, there are no machines to monitor defined in Stork. To add a new machine
-                visit the <a routerLink="/machines/all">machines page</a>.
-                
-                Stork uses the status-get command to collect information about Kea status. This command was introduced in Kea 1.7.3.
-                We may backport this command to Kea 1.6.x but at the moment, Stork requires Kea 1.7.3 or higher.
+                Stork uses the status-get command to collect information about Kea status. This command was introduced
+                in Kea 1.7.3. We may backport this command to Kea 1.6.x but at the moment, Stork requires Kea 1.7.3 or
+                higher.
             </p>
         </p-panel>
     </div>
@@ -48,9 +51,10 @@
                 <div>
                     <h2 class="section-heading">
                         Subnets: {{ overview.subnets4.total ? overview.subnets4.total : '0' }}
-                         <app-help-tip title="subnets listed">
+                        <app-help-tip title="subnets listed">
                             <p>
-                            This list shows the 5 DHCPv4 subnets with the highest utilization.
+                                This list shows the 5 DHCPv4 subnets with the highest utilization. Currently total
+                                number of subnets is {{ overview.subnets4.total ? overview.subnets4.total : '0' }}.
                             </p>
                         </app-help-tip>
                     </h2>
@@ -90,9 +94,11 @@
                 <div>
                     <h2 class="section-heading">
                         Shared Networks: {{ overview.sharedNetworks4.total ? overview.sharedNetworks4.total : '0' }}
-                        <app-help-tip title="subnets listed">
+                        <app-help-tip title="networks listed">
                             <p>
-                            This list shows the 5 shared networks with the highest utilization.
+                                This list shows the 5 shared networks with the highest utilization. Currently total
+                                number of networks is
+                                {{ overview.sharedNetworks4.total ? overview.sharedNetworks4.total : '0' }}.
                             </p>
                         </app-help-tip>
                     </h2>
@@ -152,9 +158,10 @@
                 <div>
                     <h2 class="section-heading">
                         Subnets: {{ overview.subnets6.total ? overview.subnets6.total : '0' }}
-                         <app-help-tip title="subnets listed">
+                        <app-help-tip title="subnets listed">
                             <p>
-                            This list shows the 5 DHCPv6 subnets with the highest utilization.
+                                This list shows the 5 DHCPv6 subnets with the highest utilization. Currently total
+                                number of subnets is {{ overview.subnets6.total ? overview.subnets6.total : '0' }}.
                             </p>
                         </app-help-tip>
                     </h2>
@@ -177,6 +184,13 @@
                 <div>
                     <h2 class="section-heading">
                         Shared Networks: {{ overview.sharedNetworks6.total ? overview.sharedNetworks6.total : '0' }}
+                        <app-help-tip title="networks listed">
+                            <p>
+                                This list shows the 5 shared networks with the highest utilization. Currently total
+                                number of networks is
+                                {{ overview.sharedNetworks6.total ? overview.sharedNetworks6.total : '0' }}.
+                            </p>
+                        </app-help-tip>
                     </h2>
                     <table>
                         <tr *ngFor="let net of overview.sharedNetworks6.items">
