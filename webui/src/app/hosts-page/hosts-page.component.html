@@ -34,9 +34,15 @@
             />
             <app-help-tip title="filtering">
                 <p>
-                    Hosts in the table below can be filtered by entering text in the search box; the table shows any
-                    hosts matching the search text.
+                    Hosts in the table below can be filtered by entering a text in the search box; the table shows
+                    all hosts matching the filter text. Currently supported fields for such filtering are:
                 </p>
+                <ul>
+                    <li>Identifier</li>
+                    <li>Identifier Type</li>
+                    <li>Address</li>
+                    <li>Hostname</li>
+                </ul>
                 <p>
                     Hosts can be filtered by their identifier value, e.g. <b>00:01:02:03:04:05</b>; a part of the
                     identifier (e.g. filter by the initial 3 bytes of a MAC address that denotes OUI, a unique
@@ -54,16 +60,9 @@
                     that are associated with certain subnets.
                 </p>
                 <p>
-                    Currently supported fields:
-                </p>
-                <ul>
-                    <li>Identifier</li>
-                    <li>Identifier Type</li>
-                    <li>Address</li>
-                </ul>
-                <p>
-                    Hosts can be explicitly filtered by a given field using an expression: <i>field:value</i>, e.g.:
-                    <i class="monospace">appId:2</i>. Currently supported fields for explicit filtering:
+                    In addition, hosts can be filtered by an explicitly selected field using an expression:
+                    <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>.
+                    Currently supported field for explicit filtering is:
                 </p>
                 <ul>
                     <li class="monospace">appId</li>
