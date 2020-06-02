@@ -1,6 +1,6 @@
   /events:
     get:
-      summary: Get list of last events.
+      summary: Get list of most recent events.
       description: >-
         A list of last events is returned in items field accompanied by total count
         which indicates total available number of events.
