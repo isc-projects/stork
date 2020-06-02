@@ -30,6 +30,7 @@ const (
 )
 
 type PromBind9ViewStats struct {
+	ResolverCache map[string]float64
 	ResolverCachestats map[string]float64
 }
 
@@ -126,6 +127,11 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	viewStatsDesc["CacheMisses"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "resolver", "cache_misses"),
 		"Total number of cache misses.", []string{"view"}, nil)
+	// resolver_cache_rrsets
+	viewStatsDesc["cache"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "resolver", "cache_rrsets"),
+		"Number of RRSets in Cache database.",
+		[]string{"view", "type"}, nil)
 	// resolver_query_hit_ratio
 	viewStatsDesc["QueryHitRatio"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "resolver", "query_hit_ratio"),
@@ -149,7 +155,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	// query_duplicates_total
 	// query_errors_total
 	// query_recursions_total
-	// resolver_cache_rrsets
 	// resolver_dnssec_validation_errors_total
 	// resolver_dnssec_validation_success_total
 	// resolver_queries_total
@@ -235,13 +240,22 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			value, label)
 	}
 
-	// resolver_cache_hit_ratio
-	// resolver_cache_hits
-	// resolver_cache_misses
-	// resolver_query_hit_ratio
-	// resolver_query_hits
-	// resolver_query_misses
 	for view, viewStats := range pbe.stats.Views {
+		// resolver_cache_rrsets
+		for rrType, statValue := range viewStats.ResolverCache {
+			if desc, ok := pbe.viewStatsDesc["cache"]; ok {
+				ch <- prometheus.MustNewConstMetric(
+					desc, prometheus.CounterValue,
+					statValue, view, rrType)
+			}
+		}
+
+		// resolver_cache_hit_ratio
+		// resolver_cache_hits
+		// resolver_cache_misses
+		// resolver_query_hit_ratio
+		// resolver_query_hits
+		// resolver_query_misses
 		for statName, statValue := range viewStats.ResolverCachestats {
 			if desc, ok := pbe.viewStatsDesc[statName]; ok {
 				ch <- prometheus.MustNewConstMetric(
@@ -411,6 +425,30 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
 			continue
 		}
 
+		// Parse cache.
+		cacheIfc, ok := resolver["cache"]
+		if !ok {
+			log.Errorf("no 'cachestats' in resolver: %+v", resolver)
+			continue
+		}
+		cacheRRsets, ok := cacheIfc.(map[string]interface{})
+		if !ok {
+			log.Errorf("problem with casting cacheIfc: %+v", cacheIfc)
+			continue
+		}
+
+		// resolver_cache_rrsets
+		for statName, statValueIfc := range cacheRRsets {
+			// get stat value
+			statValue, ok := statValueIfc.(float64)
+			if !ok {
+				log.Errorf("problem with casting statValue: %+v", statValueIfc)
+				continue
+			}
+			// store stat value
+			pbe.stats.Views[viewName].ResolverCache[statName] = statValue
+		}
+
 		// Parse cachestats.
 		cachestatsIfc, ok := resolver["cachestats"]
 		if !ok {
@@ -529,9 +567,11 @@ func (pbe *PromBind9Exporter) collectStats() error {
 func (pbe *PromBind9Exporter) initViewStats(viewName string) {
 	_, ok := pbe.stats.Views[viewName]
 	if !ok {
+		resolverCache := make(map[string]float64)
 		resolverCachestats := make(map[string]float64)
 
 		pbe.stats.Views[viewName] = PromBind9ViewStats{
+			ResolverCache: resolverCache,
 			ResolverCachestats: resolverCachestats,
 		}
 	}

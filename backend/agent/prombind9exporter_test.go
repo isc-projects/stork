@@ -41,7 +41,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
 	require.Len(t, pbe.serverStatsDesc, 5)
-	require.Len(t, pbe.viewStatsDesc, 6)
+	require.Len(t, pbe.viewStatsDesc, 7)
 }
 
 // Check starting PromBind9Exporter and collecting stats.
@@ -69,6 +69,11 @@ func TestPromBind9ExporterStart(t *testing.T) {
 			      "views": {
                                 "_default": {
                                   "resolver": {
+                                    "cache": {
+                                      "A": 37,
+                                      "AAAA": 38,
+                                      "DS": 2
+                                    },
                                     "cachestats": {
                                       "CacheHits": 40,
                                       "CacheMisses": 10,
@@ -110,6 +115,11 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 454.0, pbe.stats.IncomingRequests["QUERY"])
 	require.EqualValues(t, 1.0, pbe.stats.IncomingRequests["UPDATE"])
 	require.EqualValues(t, 0.0, pbe.stats.IncomingRequests["IQUERY"])
+
+	// resolver_cache_rrsets
+	require.EqualValues(t, 37.0, pbe.stats.Views["_default"].ResolverCache["A"])
+	require.EqualValues(t, 38.0, pbe.stats.Views["_default"].ResolverCache["AAAA"])
+	require.EqualValues(t, 2.0, pbe.stats.Views["_default"].ResolverCache["DS"])
 
 	// resolver_cache_hit_ratio
 	require.EqualValues(t, 0.8, pbe.stats.Views["_default"].ResolverCachestats["CacheHitRatio"])
