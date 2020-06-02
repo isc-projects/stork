@@ -39,6 +39,7 @@ type PromBind9ExporterStats struct {
 	ConfigTime      time.Time
 	CurrentTime     time.Time
 	IncomingQueries map[string]float64
+	IncomingRequests map[string]float64
 	Views           map[string]PromBind9ViewStats
 }
 
@@ -108,6 +109,10 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	serverStatsDesc["qtypes"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_queries_total"),
 		"Number of incoming DNS queries.", []string{"type"}, nil)
+	// incoming_requests_total
+	serverStatsDesc["opcodes"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
+		"Number of incoming DNS requests.", []string{"opcode"}, nil)
 
 	// resolver_cache_hit_ratio
 	viewStatsDesc["CacheHitRatio"] = prometheus.NewDesc(
@@ -134,7 +139,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		prometheus.BuildFQName(namespace, "resolver", "query_misses"),
 		"Total number of queries that were not in cache.", []string{"view"}, nil)
 
-	// incoming_requests_total
 	// process_cpu_seconds_total
 	// process_max_fds
 	// process_open_fds
@@ -223,6 +227,13 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			prometheus.CounterValue,
 			value, label)
 	}
+	// incoming_requests_total
+	for label, value := range pbe.stats.IncomingRequests {
+		ch <- prometheus.MustNewConstMetric(
+			pbe.serverStatsDesc["opcodes"],
+			prometheus.CounterValue,
+			value, label)
+	}
 
 	// resolver_cache_hit_ratio
 	// resolver_cache_hits
@@ -291,6 +302,40 @@ func (pbe *PromBind9Exporter) Shutdown() {
 	log.Printf("Stopped Prometheus BIND 9 Exporter")
 }
 
+// getStat is an utility to get a statistic from a map.
+func getStat(statMap map[string]interface{}, statName string) interface{} {
+	value, ok := statMap[statName]
+	if !ok {
+		log.Errorf("no '%s' in response:", statName)
+		return nil
+	}
+	return value
+}
+
+// scrapeServerStat is an utility to get a server statistic from a map.
+func (pbe *PromBind9Exporter) scrapeServerStat(statMap map[string]interface{}, statName string) (map[string]float64, error) {
+	storageMap := make(map[string]float64)
+
+	statIfc := getStat(statMap, statName)
+	if statIfc != nil {
+		stats, ok := statIfc.(map[string]interface{})
+		if !ok {
+			return nil, errors.Errorf("problem with casting '%s' interface", statName)
+		}
+		for labelName, labelValueIfc := range stats {
+			// get value
+			labelValue, ok := labelValueIfc.(float64)
+			if !ok {
+				log.Errorf("problem with casting %s labelValue: %+v", labelName, labelValueIfc)
+				continue
+			}
+			// store stat value
+			storageMap[labelName] = labelValue
+		}
+	}
+	return storageMap, nil
+}
+
 // setDaemonStats stores the stat values from a daemon in the proper prometheus object.
 func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
 	rsp, ok := rspIfc.(map[string]interface{})
@@ -301,33 +346,23 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
 	var timeVal time.Time
 	var timeStr string
 	var err error
-	getStat := func(statName string) interface{} {
-		value, ok := rsp[statName]
-		if !ok {
-			log.Errorf("no '%s' in response:", statName)
-			return nil
-		}
-		return value
 
-	}
 	// boot_time_seconds
-	timeStr = getStat("boot-time").(string)
+	timeStr = getStat(rsp, "boot-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		return errors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.BootTime = timeVal
-
 	// config_time_seconds
-	timeStr = getStat("config-time").(string)
+	timeStr = getStat(rsp, "config-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		return errors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.ConfigTime = timeVal
-
 	// current_time_seconds
-	timeStr = getStat("current-time").(string)
+	timeStr = getStat(rsp, "current-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		return errors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
@@ -335,22 +370,14 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
 	pbe.stats.CurrentTime = timeVal
 
 	// incoming_queries_total
-	qtypesIfc := getStat("qtypes")
-	if qtypesIfc != nil {
-		qtypes, ok := qtypesIfc.(map[string]interface{})
-		if !ok {
-			return errors.Errorf("problem with casting 'qtypes' interface")
-		}
-		for labelName, labelValueIfc := range qtypes {
-			// get value
-			labelValue, ok := labelValueIfc.(float64)
-			if !ok {
-				log.Errorf("problem with casting %s labelValue: %+v", labelName, labelValueIfc)
-				continue
-			}
-			// store stat value
-			pbe.stats.IncomingQueries[labelName] = labelValue
-		}
+	pbe.stats.IncomingQueries, err = pbe.scrapeServerStat(rsp, "qtypes")
+	if err != nil {
+		return errors.Errorf("problem with parsing 'qtypes': %+v", err)
+	}
+	// incoming_requests_total
+	pbe.stats.IncomingRequests, err = pbe.scrapeServerStat(rsp, "opcodes")
+	if err != nil {
+		return errors.Errorf("problem with parsing 'opcodes': %+v", err)
 	}
 
 	// Parse views.

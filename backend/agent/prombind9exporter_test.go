@@ -40,7 +40,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
-	require.Len(t, pbe.serverStatsDesc, 4)
+	require.Len(t, pbe.serverStatsDesc, 5)
 	require.Len(t, pbe.viewStatsDesc, 6)
 }
 
@@ -60,6 +60,11 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                   "A": 201,
                                   "AAAA": 200,
                                   "DNSKEY": 53
+                              },
+                              "opcodes": {
+                                  "QUERY": 454,
+                                  "IQUERY": 0,
+                                  "UPDATE": 1
                               },
 			      "views": {
                                 "_default": {
@@ -101,6 +106,10 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 201.0, pbe.stats.IncomingQueries["A"])
 	require.EqualValues(t, 200.0, pbe.stats.IncomingQueries["AAAA"])
 	require.EqualValues(t, 53.0, pbe.stats.IncomingQueries["DNSKEY"])
+	// incoming_requests_total
+	require.EqualValues(t, 454.0, pbe.stats.IncomingRequests["QUERY"])
+	require.EqualValues(t, 1.0, pbe.stats.IncomingRequests["UPDATE"])
+	require.EqualValues(t, 0.0, pbe.stats.IncomingRequests["IQUERY"])
 
 	// resolver_cache_hit_ratio
 	require.EqualValues(t, 0.8, pbe.stats.Views["_default"].ResolverCachestats["CacheHitRatio"])
