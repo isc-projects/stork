@@ -132,7 +132,7 @@ func (ec *eventCenter) mainLoop() {
 				log.Errorf("problem with adding event to db: %+v", err)
 				continue
 			}
-			ec.sseBroker.DispatchEvent(event)
+			ec.sseBroker.dispatchEvent(event)
 		}
 	}
 }

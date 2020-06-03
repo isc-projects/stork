@@ -71,7 +71,7 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 // Dispatch event to all subscribers.
-func (sb *SSEBroker) DispatchEvent(event *dbmodel.Event) {
+func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
 	sb.subscribersMutex.Lock()
 	defer sb.subscribersMutex.Unlock()
 
