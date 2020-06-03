@@ -164,6 +164,19 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		prometheus.BuildFQName(namespace, "resolver", "query_misses"),
 		"Total number of queries that were not in cache.", []string{"view"}, nil)
 
+	// zone_transfer_failure_total
+	serverStatsDesc["XfrFail"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
+		"Number of failed zone transfers.", nil, nil)
+	// zone_transfer_rejected_total
+	serverStatsDesc["XfrRej"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_transfer_rejected_total"),
+		"Number of rejected zone transfers.", nil, nil)
+	// zone_transfer_success_total
+	serverStatsDesc["XfrSuccess"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "zone_transfer_success_total"),
+		"Number of successful zone transfers.", nil, nil)
+
 	// process_cpu_seconds_total
 	// process_max_fds
 	// process_open_fds
@@ -189,9 +202,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	// tasks_running
 	// up
 	// worker_threads
-	// zone_transfer_failure_total
-	// zone_transfer_rejected_total
-	// zone_transfer_success_total
 
 	pbe.serverStatsDesc = serverStatsDesc
 	pbe.viewStatsDesc = viewStatsDesc
@@ -296,6 +306,20 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 	if ok {
 		ch <- prometheus.MustNewConstMetric(
 			pbe.serverStatsDesc["RecursClients"],
+			prometheus.CounterValue, value)
+	}
+
+	// zone_transfer_failure_total
+	// zone_transfer_rejected_total
+	// zone_transfer_success_total
+	xfrStats := []string{"XfrFail", "XfrRej", "XfrSuccess"}
+	for _, label := range xfrStats {
+		value, ok = pbe.stats.NsStats[label]
+		if !ok {
+			value = 0
+		}
+		ch <- prometheus.MustNewConstMetric(
+			pbe.serverStatsDesc[label],
 			prometheus.CounterValue, value)
 	}
 
@@ -456,6 +480,9 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
 	// query_errors_total
 	// query_recursion_total
 	// recursive_clients
+	// zone_transfer_failure_total
+	// zone_transfer_rejected_total
+	// zone_transfer_success_total
 	pbe.stats.NsStats, err = pbe.scrapeServerStat(rsp, "nsstats")
 	if err != nil {
 		return errors.Errorf("problem with parsing 'nsstats': %+v", err)

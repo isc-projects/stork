@@ -11,6 +11,7 @@ COPY build-root/root/usr/bin/stork-agent /agent/
 # Copy configuration files.
 COPY docker/supervisor-agent-bind9.conf /etc/supervisor.conf
 COPY docker/named.conf /etc/bind/
+COPY docker/db.test /etc/bind/
 RUN chown root:bind /etc/bind/rndc.key
 RUN chmod 640 /etc/bind/rndc.key
 # Start supervisor.

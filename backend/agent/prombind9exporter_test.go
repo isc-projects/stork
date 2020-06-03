@@ -40,7 +40,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
-	require.Len(t, pbe.serverStatsDesc, 9)
+	require.Len(t, pbe.serverStatsDesc, 12)
 	require.Len(t, pbe.viewStatsDesc, 7)
 }
 
@@ -77,7 +77,10 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                   "QryNoauthAns":222,
                                   "QryRecursion":303,
                                   "QrySuccess":111,
-                                  "QryUDP":404
+                                  "QryUDP":404,
+                                  "XfrFail": 2,
+                                  "XfrRej": 11,
+                                  "XfrSuccess": 22
                               },
 			      "views": {
                                 "_default": {
@@ -156,4 +159,11 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 30.0, pbe.stats.Views["_default"].ResolverCachestats["QueryHits"])
 	// resolver_query_misses
 	require.EqualValues(t, 20.0, pbe.stats.Views["_default"].ResolverCachestats["QueryMisses"])
+
+	// zone_transfer_failure_total
+	require.EqualValues(t, 2.0, pbe.stats.NsStats["XfrFail"])
+	// zone_transfer_rejected_total
+	require.EqualValues(t, 11.0, pbe.stats.NsStats["XfrRej"])
+	// zone_transfer_success_total
+	require.EqualValues(t, 22.0, pbe.stats.NsStats["XfrSuccess"])
 }
