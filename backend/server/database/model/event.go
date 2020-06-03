@@ -12,8 +12,8 @@ import (
 // Event levels.
 const (
 	EvInfo = 0 // informational
-	EvWarn = 1 // someone should look into this
-	EvErro = 2 // there is a serious problem
+	EvWarning = 1 // someone should look into this
+	EvError = 2 // there is a serious problem
 )
 
 // Relations between the event and other entities.

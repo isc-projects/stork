@@ -16,8 +16,8 @@ import (
 // An interface to EventCenter
 type EventCenter interface {
 	AddInfoEvent(text string, objects ...interface{})
-	AddWarnEvent(text string, objects ...interface{})
-	AddErroEvent(text string, objects ...interface{})
+	AddWarningEvent(text string, objects ...interface{})
+	AddErrorEvent(text string, objects ...interface{})
 	AddEvent(event *dbmodel.Event)
 	Shutdown()
 	ServeHTTP(w http.ResponseWriter, req *http.Request)
@@ -56,16 +56,16 @@ func (ec *eventCenter) AddInfoEvent(text string, objects ...interface{}) {
 	ec.addEvent(dbmodel.EvInfo, text, objects...)
 }
 
-// Add an event on warn level to EventCenter. It takes event text and relating objects.
+// Add an event on warning level to EventCenter. It takes event text and relating objects.
 // The event is stored in database and dispatched to subscribers.
-func (ec *eventCenter) AddWarnEvent(text string, objects ...interface{}) {
-	ec.addEvent(dbmodel.EvWarn, text, objects...)
+func (ec *eventCenter) AddWarningEvent(text string, objects ...interface{}) {
+	ec.addEvent(dbmodel.EvWarning, text, objects...)
 }
 
-// Add an event on erro level to EventCenter. It takes event text and relating objects.
+// Add an event on error level to EventCenter. It takes event text and relating objects.
 // The event is stored in database and dispatched to subscribers.
-func (ec *eventCenter) AddErroEvent(text string, objects ...interface{}) {
-	ec.addEvent(dbmodel.EvErro, text, objects...)
+func (ec *eventCenter) AddErrorEvent(text string, objects ...interface{}) {
+	ec.addEvent(dbmodel.EvError, text, objects...)
 }
 
 // Create an event but it is not passed to EventCenter. It can be added later using

@@ -330,7 +330,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 							text += "up"
 						} else if !dmn.Active && oldDmn.Active {
 							text += "down"
-							lvl = dbmodel.EvErro
+							lvl = dbmodel.EvError
 						}
 						ev := eventcenter.CreateEvent(lvl, text, dbApp.Machine, dbApp, oldDmn)
 						events = append(events, ev)
@@ -347,7 +347,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 					// check if daemon has been restarted
 					if dmn.Uptime < oldDmn.Uptime {
 						text := "{daemon} has been restarted"
-						ev := eventcenter.CreateEvent(dbmodel.EvWarn, text, dbApp.Machine, dbApp, oldDmn)
+						ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, dbApp.Machine, dbApp, oldDmn)
 						events = append(events, ev)
 					}
 					break

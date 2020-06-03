@@ -12,9 +12,9 @@ type FakeEventCenter struct {
 
 func (fec *FakeEventCenter) AddInfoEvent(text string, objects ...interface{}) {
 }
-func (fec *FakeEventCenter) AddWarnEvent(text string, objects ...interface{}) {
+func (fec *FakeEventCenter) AddWarningEvent(text string, objects ...interface{}) {
 }
-func (fec *FakeEventCenter) AddErroEvent(text string, objects ...interface{}) {
+func (fec *FakeEventCenter) AddErrorEvent(text string, objects ...interface{}) {
 }
 func (fec *FakeEventCenter) AddEvent(event *dbmodel.Event) {
 }
