@@ -72,7 +72,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		},
 	}
 
-	_, _, err = AddApp(db, a4)
+	_, err = AddApp(db, a4)
 	require.NoError(t, err)
 	// Specify the shared networks to be committed as global shared networks
 	// and associated with this app.
@@ -165,7 +165,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			}},
 		},
 	}
-	_, _, err = AddApp(db, a6)
+	_, err = AddApp(db, a6)
 	require.NoError(t, err)
 
 	appNetworks = []SharedNetwork{
@@ -230,7 +230,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, a46)
+	_, err = AddApp(db, a46)
 	require.NoError(t, err)
 
 	appSubnets = []Subnet{
@@ -453,7 +453,7 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, a4)
+	_, err = AddApp(db, a4)
 	require.NoError(t, err)
 
 	// Get all subnets -> empty list should be retruned
@@ -516,7 +516,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 				}},
 		},
 	}
-	_, _, err = AddApp(db, a4)
+	_, err = AddApp(db, a4)
 	require.NoError(t, err)
 
 	appNetworks := []SharedNetwork{
@@ -586,7 +586,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, a6)
+	_, err = AddApp(db, a6)
 	require.NoError(t, err)
 
 	appNetworks = []SharedNetwork{

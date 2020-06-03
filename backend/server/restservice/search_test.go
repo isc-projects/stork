@@ -83,7 +83,7 @@ func TestSearchRecords(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = dbmodel.AddApp(db, a4)
+	_, err = dbmodel.AddApp(db, a4)
 	require.NoError(t, err)
 
 	appSubnets := []dbmodel.Subnet{
@@ -131,7 +131,7 @@ func TestSearchRecords(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = dbmodel.AddApp(db, a6)
+	_, err = dbmodel.AddApp(db, a6)
 	require.NoError(t, err)
 
 	appSubnets = []dbmodel.Subnet{
@@ -192,7 +192,7 @@ func TestSearchRecords(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = dbmodel.AddApp(db, a46)
+	_, err = dbmodel.AddApp(db, a46)
 	require.NoError(t, err)
 
 	appNetworks := []dbmodel.SharedNetwork{

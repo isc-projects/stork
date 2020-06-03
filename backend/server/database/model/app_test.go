@@ -25,26 +25,28 @@ func TestAddApp(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// add app but without machine, error should be raised
-	s := &App{
+	a1 := &App{
 		ID:   0,
 		Type: AppTypeKea,
 	}
-	_, _, err = AddApp(db, s)
+	addedDaemons, err := AddApp(db, a1)
 	require.NotNil(t, err)
+	require.Len(t, addedDaemons, 0)
 
 	// add app but without type, error should be raised
-	s = &App{
+	a2 := &App{
 		ID:        0,
 		MachineID: m.ID,
 	}
-	_, _, err = AddApp(db, s)
+	addedDaemons, err = AddApp(db, a2)
 	require.NotNil(t, err)
+	require.Len(t, addedDaemons, 0)
 
 	// add app, no error expected
 	var accessPoints []*AccessPoint
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234)
 
-	s = &App{
+	a3 := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeKea,
@@ -63,64 +65,86 @@ func TestAddApp(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, s)
+	addedDaemons, err = AddApp(db, a3)
 	require.NoError(t, err)
-	require.NotZero(t, s.ID)
+	require.NotZero(t, a3.ID)
+	require.Len(t, addedDaemons, 2)
+
+	// add the same app but with no daemon this time
+	a3.Daemons = []*Daemon{
+		{
+			Name:    "kea-dhcp4",
+			Version: "1.7.5",
+			Active:  true,
+		},
+		{
+			Name:    "kea-ctrl-agent",
+			Version: "1.7.5",
+			Active:  true,
+		},
+	}
+	addedDaemons, err = AddApp(db, a3)
+	require.NotNil(t, err)
+	require.Len(t, addedDaemons, 0)
 
 	// add app for the same machine and ctrl port - error should be raised
 	accessPoints = []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234)
-	s = &App{
+	a4 := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeBind9,
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-	_, _, err = AddApp(db, s)
+	addedDaemons, err = AddApp(db, a4)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "duplicate")
+	require.Len(t, addedDaemons, 0)
 
 	// add app with empty control address, no error expected.
 	accessPoints = []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "abcd", 4321)
-	s = &App{
+	a5 := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeBind9,
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-	_, _, err = AddApp(db, s)
+	addedDaemons, err = AddApp(db, a5)
 	require.Nil(t, err)
+	require.Len(t, addedDaemons, 0)
 
 	// add app with two control points - error should be raised.
 	accessPoints = []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "dns1.example.org", "", 5555)
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "dns2.example.org", "", 5656)
-	s = &App{
+	a6 := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeBind9,
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-	_, _, err = AddApp(db, s)
+	addedDaemons, err = AddApp(db, a6)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "duplicate")
+	require.Len(t, addedDaemons, 0)
 
 	// add app with explicit access point, bad type - error should be raised.
 	accessPoints = []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, "foobar", "dns1.example.org", "", 6666)
-	s = &App{
+	a7 := &App{
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeBind9,
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-	_, _, err = AddApp(db, s)
+	addedDaemons, err = AddApp(db, a7)
 	require.NotNil(t, err)
+	require.Len(t, addedDaemons, 0)
 }
 
 // Test that the app can be updated in the database.
@@ -186,7 +210,7 @@ func TestUpdateApp(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, a)
+	_, err = AddApp(db, a)
 	require.NoError(t, err)
 	require.NotZero(t, a.ID)
 
@@ -244,9 +268,11 @@ func TestUpdateApp(t *testing.T) {
 	a.Daemons[1].Version = "1.7.5"
 	a.Daemons[1].Active = false
 
-	_, _, err = UpdateApp(db, a)
+	addedDaemons, deletedDaemons, err := UpdateApp(db, a)
 	require.NoError(t, err)
 	require.False(t, a.Active)
+	require.Len(t, addedDaemons, 1)
+	require.Len(t, deletedDaemons, 1)
 
 	// Validate the updated date.
 	updated, err := GetAppByID(db, a.ID)
@@ -289,7 +315,7 @@ func TestUpdateApp(t *testing.T) {
 	accessPoints = []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "warm.example.org", "abcd", 2345)
 	a.AccessPoints = accessPoints
-	_, _, err = UpdateApp(db, a)
+	addedDaemons, deletedDaemons, err = UpdateApp(db, a)
 	require.NoError(t, err)
 	require.Len(t, a.AccessPoints, 1)
 	pt := a.AccessPoints[0]
@@ -297,6 +323,8 @@ func TestUpdateApp(t *testing.T) {
 	require.Equal(t, "warm.example.org", pt.Address)
 	require.EqualValues(t, 2345, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
+	require.Len(t, addedDaemons, 0)
+	require.Len(t, deletedDaemons, 0)
 
 	updated, err = GetAppByID(db, a.ID)
 	require.NoError(t, err)
@@ -312,7 +340,7 @@ func TestUpdateApp(t *testing.T) {
 	// add access point
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointStatistics, "cold.example.org", "", 1234)
 	a.AccessPoints = accessPoints
-	_, _, err = UpdateApp(db, a)
+	addedDaemons, deletedDaemons, err = UpdateApp(db, a)
 	require.NoError(t, err)
 	require.Len(t, a.AccessPoints, 2)
 	pt = a.AccessPoints[0]
@@ -325,6 +353,8 @@ func TestUpdateApp(t *testing.T) {
 	require.Equal(t, "cold.example.org", pt.Address)
 	require.EqualValues(t, 1234, pt.Port)
 	require.Empty(t, pt.Key)
+	require.Len(t, addedDaemons, 0)
+	require.Len(t, deletedDaemons, 0)
 
 	updated, err = GetAppByID(db, a.ID)
 	require.NoError(t, err)
@@ -345,7 +375,7 @@ func TestUpdateApp(t *testing.T) {
 	// delete access point
 	accessPoints = accessPoints[0:1]
 	a.AccessPoints = accessPoints
-	_, _, err = UpdateApp(db, a)
+	addedDaemons, deletedDaemons, err = UpdateApp(db, a)
 	require.NoError(t, err)
 	require.Len(t, a.AccessPoints, 1)
 	pt = a.AccessPoints[0]
@@ -353,6 +383,8 @@ func TestUpdateApp(t *testing.T) {
 	require.Equal(t, "warm.example.org", pt.Address)
 	require.EqualValues(t, 2345, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
+	require.Len(t, addedDaemons, 0)
+	require.Len(t, deletedDaemons, 0)
 
 	updated, err = GetAppByID(db, a.ID)
 	require.NoError(t, err)
@@ -398,7 +430,7 @@ func TestDeleteApp(t *testing.T) {
 		Active:       true,
 		AccessPoints: accessPoints,
 	}
-	_, _, err = AddApp(db, s)
+	_, err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotZero(t, s.ID)
 
@@ -443,7 +475,7 @@ func TestGetAppsByMachine(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, s)
+	_, err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotZero(t, s.ID)
 
@@ -514,7 +546,7 @@ func TestGetAppsByType(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, aKea)
+	_, err = AddApp(db, aKea)
 	require.NoError(t, err)
 	require.NotZero(t, aKea.ID)
 
@@ -534,7 +566,7 @@ func TestGetAppsByType(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, aBind9)
+	_, err = AddApp(db, aBind9)
 	require.NoError(t, err)
 	require.NotZero(t, aBind9.ID)
 
@@ -591,7 +623,7 @@ func TestGetAppByID(t *testing.T) {
 		AccessPoints: accessPoints,
 	}
 
-	_, _, err = AddApp(db, s)
+	_, err = AddApp(db, s)
 	require.NoError(t, err)
 	require.NotZero(t, s.ID)
 
@@ -674,7 +706,7 @@ func TestGetAppsByPage(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, sKea)
+	_, err = AddApp(db, sKea)
 	require.NoError(t, err)
 	require.NotZero(t, sKea.ID)
 
@@ -697,7 +729,7 @@ func TestGetAppsByPage(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, sBind)
+	_, err = AddApp(db, sBind)
 	require.NoError(t, err)
 	require.NotZero(t, sBind.ID)
 
@@ -881,7 +913,7 @@ func TestGetAllApps(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, aKea)
+	_, err = AddApp(db, aKea)
 	require.NoError(t, err)
 	require.NotZero(t, aKea.ID)
 
@@ -901,7 +933,7 @@ func TestGetAllApps(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, aBind)
+	_, err = AddApp(db, aBind)
 	require.NoError(t, err)
 	require.NotZero(t, aBind.ID)
 

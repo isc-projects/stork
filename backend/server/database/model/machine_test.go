@@ -64,7 +64,7 @@ func TestGetMachineByAddress(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, a)
+	_, err = AddApp(db, a)
 	require.NoError(t, err)
 
 	// get added machine
@@ -120,7 +120,7 @@ func TestGetMachineByID(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = AddApp(db, a)
+	_, err = AddApp(db, a)
 	require.NoError(t, err)
 
 	// get added machine
@@ -177,7 +177,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 				},
 			},
 		}
-		_, _, err = AddApp(db, a)
+		_, err = AddApp(db, a)
 		require.NoError(t, err)
 	}
 
@@ -329,7 +329,7 @@ func TestDeleteMachineWithApps(t *testing.T) {
 		MachineID: m.ID,
 		Type:      AppTypeKea,
 	}
-	_, _, err = AddApp(db, a)
+	_, err = AddApp(db, a)
 	require.NoError(t, err)
 	appID := a.ID
 	require.NotEqual(t, 0, appID)

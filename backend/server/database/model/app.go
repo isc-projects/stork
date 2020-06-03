@@ -160,13 +160,13 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 
 // Adds application into the database. The dbIface object may either
 // be a pg.DB object or pg.Tx. In the latter case this function uses
-// existing transaction to add an app. Returns a list of added daemons,
-// deleted daemons and error if occurred.
-func AddApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
+// existing transaction to add an app. Returns a list of added daemons
+// and error if occurred.
+func AddApp(dbIface interface{}, app *App) ([]*Daemon, error) {
 	// Start transaction if it hasn't been started yet.
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	// Always rollback when this function ends. If the changes get committed
 	// first this is no-op.
@@ -174,27 +174,30 @@ func AddApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 
 	err = tx.Insert(app)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "problem with inserting app %v", app)
+		return nil, errors.Wrapf(err, "problem with inserting app %v", app)
 	}
 
 	addedDaemons, deletedDaemons, err := updateAppDaemons(tx, app)
 	if err != nil {
-		return nil, nil, errors.WithMessagef(err, "problem with inserting daemons for a new app")
+		return nil, errors.WithMessagef(err, "problem with inserting daemons for a new app")
+	}
+	if len(deletedDaemons) > 0 {
+		return nil, errors.Errorf("problem with deleting daemons for a new app")
 	}
 
 	// Add access points.
 	err = updateAppAccessPoints(tx, app, false)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "problem with adding access points to app: %+v", app)
+		return nil, errors.Wrapf(err, "problem with adding access points to app: %+v", app)
 	}
 
 	// Commit the changes if necessary.
 	err = commit()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return addedDaemons, deletedDaemons, nil
+	return addedDaemons, nil
 }
 
 // Updates application in the database. An error is returned if the

@@ -62,7 +62,7 @@ func createAppWithSubnets(t *testing.T, db *dbops.PgDB, index int64, v4Config, v
 		},
 	}
 	// Add the app to the database.
-	_, _, err = dbmodel.AddApp(db, &app)
+	_, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	return &app
 }

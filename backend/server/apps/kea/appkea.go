@@ -397,7 +397,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 	var addedDaemons, deletedDaemons []*dbmodel.Daemon
 	if app.ID == 0 {
 		// New app, insert it.
-		addedDaemons, deletedDaemons, err = dbmodel.AddApp(tx, app)
+		addedDaemons, err = dbmodel.AddApp(tx, app)
 		newApp = true
 	} else {
 		// Existing app, update it if needed.

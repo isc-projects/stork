@@ -606,7 +606,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 		AccessPoints: accessPoints,
 	}
 	// Add the app to the database.
-	_, _, err = AddApp(db, &app)
+	_, err = AddApp(db, &app)
 	require.NoError(t, err)
 
 	// Create a shared network and subnet.

@@ -230,7 +230,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = dbmodel.AddApp(db, a)
+	_, err = dbmodel.AddApp(db, a)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, a.ID)
 

@@ -206,7 +206,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: keaPoints,
 	}
-	_, _, err = dbmodel.AddApp(db, keaApp)
+	_, err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
 	m.Apps = append(m.Apps, keaApp)
 
@@ -219,7 +219,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		AccessPoints: bind9Points,
 	}
-	_, _, err = dbmodel.AddApp(db, bind9App)
+	_, err = dbmodel.AddApp(db, bind9App)
 	require.NoError(t, err)
 	m.Apps = append(m.Apps, bind9App)
 
@@ -385,7 +385,7 @@ func TestGetMachine(t *testing.T) {
 		AccessPoints: accessPoints,
 		Daemons:      []*dbmodel.Daemon{},
 	}
-	_, _, err = dbmodel.AddApp(db, s)
+	_, err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, s.ID)
 
@@ -578,7 +578,7 @@ func TestGetApp(t *testing.T) {
 		AccessPoints: accessPoints,
 		Daemons:      []*dbmodel.Daemon{},
 	}
-	_, _, err = dbmodel.AddApp(db, s)
+	_, err = dbmodel.AddApp(db, s)
 	require.NoError(t, err)
 
 	// get added app
@@ -631,7 +631,7 @@ func TestRestGetApp(t *testing.T) {
 		AccessPoints: keaPoints,
 		Daemons:      []*dbmodel.Daemon{},
 	}
-	_, _, err = dbmodel.AddApp(db, keaApp)
+	_, err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
 
 	// get added kea app
@@ -658,7 +658,7 @@ func TestRestGetApp(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = dbmodel.AddApp(db, bind9App)
+	_, err = dbmodel.AddApp(db, bind9App)
 	require.NoError(t, err)
 
 	// get added BIND 9 app
@@ -712,7 +712,7 @@ func TestRestGetApps(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = dbmodel.AddApp(db, s1)
+	_, err = dbmodel.AddApp(db, s1)
 	require.NoError(t, err)
 
 	// add app BIND 9 to machine
@@ -730,7 +730,7 @@ func TestRestGetApps(t *testing.T) {
 			},
 		},
 	}
-	_, _, err = dbmodel.AddApp(db, s2)
+	_, err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
 
 	// get added apps
@@ -777,7 +777,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 			dbmodel.NewKeaDaemon("dhcp4", true),
 		},
 	}
-	_, _, err = dbmodel.AddApp(db, keaApp)
+	_, err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
 	require.NotZero(t, keaApp.ID)
 
@@ -973,7 +973,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 			dbmodel.NewKeaDaemon("dhcp4", true),
 		},
 	}
-	_, _, err = dbmodel.AddApp(db, keaApp)
+	_, err = dbmodel.AddApp(db, keaApp)
 	require.NoError(t, err)
 	require.NotZero(t, keaApp.ID)
 
@@ -1080,7 +1080,7 @@ func TestRestGetAppsStats(t *testing.T) {
 		AccessPoints: keaPoints,
 		Daemons:      []*dbmodel.Daemon{},
 	}
-	_, _, err = dbmodel.AddApp(db, s1)
+	_, err = dbmodel.AddApp(db, s1)
 	require.NoError(t, err)
 
 	// add app bind9 to machine
@@ -1094,7 +1094,7 @@ func TestRestGetAppsStats(t *testing.T) {
 		AccessPoints: bind9Points,
 		Daemons:      []*dbmodel.Daemon{},
 	}
-	_, _, err = dbmodel.AddApp(db, s2)
+	_, err = dbmodel.AddApp(db, s2)
 	require.NoError(t, err)
 
 	// get added app

@@ -163,7 +163,7 @@ func addTestApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 			},
 		}
 
-		_, _, err = AddApp(db, a)
+		_, err = AddApp(db, a)
 		require.NoError(t, err)
 
 		apps = append(apps, a)

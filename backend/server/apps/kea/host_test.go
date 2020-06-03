@@ -404,7 +404,7 @@ func TestDetectHostsFromConfig(t *testing.T) {
 		},
 	}
 	// Add the app to the database.
-	_, _, err = dbmodel.AddApp(db, &app)
+	_, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	app.Machine = m
 
@@ -484,7 +484,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 		},
 	}
 	// Add the app to the database.
-	_, _, err = dbmodel.AddApp(db, &app)
+	_, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	app.Machine = m
 
@@ -968,7 +968,7 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 		},
 	}
 	// Add the app to the database.
-	_, _, err = dbmodel.AddApp(db, &app)
+	_, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	app.Machine = m
 
@@ -1052,7 +1052,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 		},
 	}
 	// Add the app to the database.
-	_, _, err = dbmodel.AddApp(db, &app)
+	_, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	app.Machine = m
 
@@ -1125,7 +1125,7 @@ func TestReduceHostsIntoDB(t *testing.T) {
 		},
 	}
 	// Add the app to the database.
-	_, _, err = dbmodel.AddApp(db, &app)
+	_, err = dbmodel.AddApp(db, &app)
 	require.NoError(t, err)
 	app.Machine = m
 
