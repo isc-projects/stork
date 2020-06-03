@@ -33,6 +33,7 @@ const (
 type PromBind9ViewStats struct {
 	ResolverCache      map[string]float64
 	ResolverCachestats map[string]float64
+	ResolverStats      map[string]float64
 }
 
 // Statistics to be exported.
@@ -164,6 +165,17 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		prometheus.BuildFQName(namespace, "resolver", "query_misses"),
 		"Total number of queries that were not in cache.", []string{"view"}, nil)
 
+	// resolver_dnssec_validation_errors_total
+	viewStatsDesc["DNSSECValidationFail"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "resolver", "dnssec_validation_errors_total"),
+		"Number of DNSSEC validation attempt errors.",
+		[]string{"view"}, nil)
+	// resolver_dnssec_validation_success_total
+	viewStatsDesc["DNSSECValidationSuccess"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "resolver", "dnssec_validation_success_total"),
+		"Number of DNSSEC validation attempts succeeded.",
+		[]string{"view", "result"}, nil)
+
 	// zone_transfer_failure_total
 	serverStatsDesc["XfrFail"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
@@ -184,8 +196,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	// process_start_time_seconds
 	// process_virtural_memory_bytes
 	// process_virtural_memory_max_bytes
-	// resolver_dnssec_validation_errors_total
-	// resolver_dnssec_validation_success_total
 	// resolver_queries_total
 	// resolver_query_duration_seconds_bucket
 	// resolver_query_duration_seconds_count
@@ -347,6 +357,26 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 					statValue, view)
 			}
 		}
+
+		// resolver_dnssec_validation_errors_total
+		rstatValue, ok := viewStats.ResolverStats["ValFail"]
+		if !ok {
+			rstatValue = 0
+		}
+		ch <- prometheus.MustNewConstMetric(
+			pbe.viewStatsDesc["DNSSECValidationFail"],
+			prometheus.CounterValue, rstatValue, view)
+		// resolver_dnssec_validation_success_total
+		valSuccess := []string{"ValOk", "ValNegOk"}
+		for _, label := range valSuccess {
+			rstatValue, ok = viewStats.ResolverStats[label]
+			if !ok {
+				rstatValue = 0
+			}
+			ch <- prometheus.MustNewConstMetric(
+				pbe.viewStatsDesc["DNSSECValidationSuccess"],
+				prometheus.CounterValue, rstatValue, view, label)
+		}
 	}
 }
 
@@ -432,38 +462,174 @@ func (pbe *PromBind9Exporter) scrapeServerStat(statMap map[string]interface{}, s
 	return storageMap, nil
 }
 
-// setDaemonStats stores the stat values from a daemon in the proper prometheus object.
-func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
-	rsp, ok := rspIfc.(map[string]interface{})
-	if !ok {
-		return errors.Errorf("problem with casting rspIfc: %+v", rspIfc)
-	}
-
+// scrapeTimeStats stores time related statistics from statMap.
+func (pbe *PromBind9Exporter) scrapeTimeStats(statMap map[string]interface{}) (err error) {
 	var timeVal time.Time
 	var timeStr string
-	var err error
 
 	// boot_time_seconds
-	timeStr = getStat(rsp, "boot-time").(string)
+	timeStr = getStat(statMap, "boot-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		return errors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.BootTime = timeVal
 	// config_time_seconds
-	timeStr = getStat(rsp, "config-time").(string)
+	timeStr = getStat(statMap, "config-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		return errors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.ConfigTime = timeVal
 	// current_time_seconds
-	timeStr = getStat(rsp, "current-time").(string)
+	timeStr = getStat(statMap, "current-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		return errors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.CurrentTime = timeVal
+
+	return nil
+}
+
+func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc interface{}) {
+	pbe.initViewStats(viewName)
+
+	viewStats, ok := viewStatsIfc.(map[string]interface{})
+	if !ok {
+		log.Errorf("problem with casting viewStatsIfc: %+v", viewStatsIfc)
+		return
+	}
+
+	// Parse resolver.
+	resolverIfc, ok := viewStats["resolver"]
+	if !ok {
+		log.Errorf("no 'resolver' in viewStats: %+v", viewStats)
+		return
+	}
+	resolver, ok := resolverIfc.(map[string]interface{})
+	if !ok {
+		log.Errorf("problem with casting resolverIfc: %+v", resolverIfc)
+		return
+	}
+
+	// Parse stats.
+	statsIfc, ok := resolver["stats"]
+	if !ok {
+		log.Errorf("no 'stats' in resolver: %+v", resolver)
+		return
+	}
+	resolverStats, ok := statsIfc.(map[string]interface{})
+	if !ok {
+		log.Errorf("problem with casting statsIfc: %+v", statsIfc)
+		return
+	}
+
+	// resolver_dnssec_validation_errors_total
+	// resolver_dnssec_validation_success_total
+	for statName, statValueIfc := range resolverStats {
+		// get stat value
+		statValue, ok := statValueIfc.(float64)
+		if !ok {
+			log.Errorf("problem with casting statValue: %+v", statValueIfc)
+			continue
+		}
+		// store stat value
+		pbe.stats.Views[viewName].ResolverStats[statName] = statValue
+	}
+
+	// Parse cache.
+	cacheIfc, ok := resolver["cache"]
+	if !ok {
+		log.Errorf("no 'cachestats' in resolver: %+v", resolver)
+		return
+	}
+	cacheRRsets, ok := cacheIfc.(map[string]interface{})
+	if !ok {
+		log.Errorf("problem with casting cacheIfc: %+v", cacheIfc)
+		return
+	}
+
+	// resolver_cache_rrsets
+	for statName, statValueIfc := range cacheRRsets {
+		// get stat value
+		statValue, ok := statValueIfc.(float64)
+		if !ok {
+			log.Errorf("problem with casting statValue: %+v", statValueIfc)
+			continue
+		}
+		// store stat value
+		pbe.stats.Views[viewName].ResolverCache[statName] = statValue
+	}
+
+	// Parse cachestats.
+	cachestatsIfc, ok := resolver["cachestats"]
+	if !ok {
+		log.Errorf("no 'cachestats' in resolver: %+v", resolver)
+		return
+	}
+	cachestats, ok := cachestatsIfc.(map[string]interface{})
+	if !ok {
+		log.Errorf("problem with casting cachestatsIfc: %+v", cachestatsIfc)
+		return
+	}
+
+	// resolver_cache_hit_ratio
+	// resolver_cache_hits
+	// resolver_cache_misses
+	// resolver_query_hit_ratio
+	// resolver_query_hits
+	// resolver_query_misses
+	var cacheHits float64
+	var cacheMisses float64
+	var queryHits float64
+	var queryMisses float64
+	for statName, statValueIfc := range cachestats {
+		// get stat value
+		statValue, ok := statValueIfc.(float64)
+		if !ok {
+			log.Errorf("problem with casting statValue: %+v", statValueIfc)
+			continue
+		}
+		switch statName {
+		case "CacheHits":
+			cacheHits = statValue
+		case "CacheMisses":
+			cacheMisses = statValue
+		case "QueryHits":
+			queryHits = statValue
+		case "QueryMisses":
+			queryMisses = statValue
+		}
+
+		// store stat value
+		pbe.stats.Views[viewName].ResolverCachestats[statName] = statValue
+	}
+
+	total := cacheHits + cacheMisses
+	if total > 0 {
+		pbe.stats.Views[viewName].ResolverCachestats["CacheHitRatio"] = cacheHits / total
+	}
+	total = queryHits + queryMisses
+	if total > 0 {
+		pbe.stats.Views[viewName].ResolverCachestats["QueryHitRatio"] = queryHits / total
+	}
+}
+
+// setDaemonStats stores the stat values from a daemon in the proper prometheus object.
+func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
+	rsp, ok := rspIfc.(map[string]interface{})
+	if !ok {
+		return errors.Errorf("problem with casting rspIfc: %+v", rspIfc)
+	}
+
+	// boot_time_seconds
+	// config_time_seconds
+	// current_time_seconds
+	err := pbe.scrapeTimeStats(rsp)
+	if err != nil {
+		return err
+	}
 
 	// incoming_queries_total
 	pbe.stats.IncomingQueries, err = pbe.scrapeServerStat(rsp, "qtypes")
@@ -500,102 +666,8 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
 	}
 
 	for viewName, viewStatsIfc := range views {
-		pbe.initViewStats(viewName)
-
-		viewStats, ok := viewStatsIfc.(map[string]interface{})
-		if !ok {
-			log.Errorf("problem with casting viewStatsIfc: %+v", viewStatsIfc)
-			continue
-		}
-		// Parse resolver.
-		resolverIfc, ok := viewStats["resolver"]
-		if !ok {
-			log.Errorf("no 'resolver' in viewStats: %+v", viewStats)
-			continue
-		}
-		resolver, ok := resolverIfc.(map[string]interface{})
-		if !ok {
-			log.Errorf("problem with casting resolverIfc: %+v", resolverIfc)
-			continue
-		}
-
-		// Parse cache.
-		cacheIfc, ok := resolver["cache"]
-		if !ok {
-			log.Errorf("no 'cachestats' in resolver: %+v", resolver)
-			continue
-		}
-		cacheRRsets, ok := cacheIfc.(map[string]interface{})
-		if !ok {
-			log.Errorf("problem with casting cacheIfc: %+v", cacheIfc)
-			continue
-		}
-
-		// resolver_cache_rrsets
-		for statName, statValueIfc := range cacheRRsets {
-			// get stat value
-			statValue, ok := statValueIfc.(float64)
-			if !ok {
-				log.Errorf("problem with casting statValue: %+v", statValueIfc)
-				continue
-			}
-			// store stat value
-			pbe.stats.Views[viewName].ResolverCache[statName] = statValue
-		}
-
-		// Parse cachestats.
-		cachestatsIfc, ok := resolver["cachestats"]
-		if !ok {
-			log.Errorf("no 'cachestats' in resolver: %+v", resolver)
-			continue
-		}
-		cachestats, ok := cachestatsIfc.(map[string]interface{})
-		if !ok {
-			log.Errorf("problem with casting cachestatsIfc: %+v", cachestatsIfc)
-			continue
-		}
-
-		// resolver_cache_hit_ratio
-		// resolver_cache_hits
-		// resolver_cache_misses
-		// resolver_query_hit_ratio
-		// resolver_query_hits
-		// resolver_query_misses
-		var cacheHits float64
-		var cacheMisses float64
-		var queryHits float64
-		var queryMisses float64
-		for statName, statValueIfc := range cachestats {
-			// get stat value
-			statValue, ok := statValueIfc.(float64)
-			if !ok {
-				log.Errorf("problem with casting statValue: %+v", statValueIfc)
-				continue
-			}
-			switch statName {
-			case "CacheHits":
-				cacheHits = statValue
-			case "CacheMisses":
-				cacheMisses = statValue
-			case "QueryHits":
-				queryHits = statValue
-			case "QueryMisses":
-				queryMisses = statValue
-			}
-
-			// store stat value
-			pbe.stats.Views[viewName].ResolverCachestats[statName] = statValue
-		}
-		total := cacheHits + cacheMisses
-		if total > 0 {
-			pbe.stats.Views[viewName].ResolverCachestats["CacheHitRatio"] = cacheHits / total
-		}
-		total = queryHits + queryMisses
-		if total > 0 {
-			pbe.stats.Views[viewName].ResolverCachestats["QueryHitRatio"] = queryHits / total
-		}
+		pbe.scrapeViewStats(viewName, viewStatsIfc)
 	}
-
 	return nil
 }
 
@@ -663,10 +735,12 @@ func (pbe *PromBind9Exporter) initViewStats(viewName string) {
 	if !ok {
 		resolverCache := make(map[string]float64)
 		resolverCachestats := make(map[string]float64)
+		resolverStats := make(map[string]float64)
 
 		pbe.stats.Views[viewName] = PromBind9ViewStats{
 			ResolverCache:      resolverCache,
 			ResolverCachestats: resolverCachestats,
+			ResolverStats:      resolverStats,
 		}
 	}
 }

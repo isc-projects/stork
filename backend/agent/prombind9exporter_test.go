@@ -41,7 +41,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
 	require.Len(t, pbe.serverStatsDesc, 12)
-	require.Len(t, pbe.viewStatsDesc, 7)
+	require.Len(t, pbe.viewStatsDesc, 9)
 }
 
 // Check starting PromBind9Exporter and collecting stats.
@@ -95,6 +95,12 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                       "CacheMisses": 10,
                                       "QueryHits": 30,
                                       "QueryMisses": 20
+                                    },
+                                    "stats": {
+                                        "ValAttempt": 25,
+                                        "ValFail": 5,
+                                        "ValNegOk": 3,
+                                        "ValOk": 17
                                     }
                                   }
                                 }
@@ -159,6 +165,12 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 30.0, pbe.stats.Views["_default"].ResolverCachestats["QueryHits"])
 	// resolver_query_misses
 	require.EqualValues(t, 20.0, pbe.stats.Views["_default"].ResolverCachestats["QueryMisses"])
+
+	// resolver_dnssec_validation_errors_total
+	require.EqualValues(t, 5.0, pbe.stats.Views["_default"].ResolverStats["ValFail"])
+	// resolver_dnssec_validation_success_total
+	require.EqualValues(t, 3.0, pbe.stats.Views["_default"].ResolverStats["ValNegOk"])
+	require.EqualValues(t, 17.0, pbe.stats.Views["_default"].ResolverStats["ValOk"])
 
 	// zone_transfer_failure_total
 	require.EqualValues(t, 2.0, pbe.stats.NsStats["XfrFail"])
