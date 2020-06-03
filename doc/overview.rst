@@ -32,10 +32,15 @@ the `Kea DHCP` and `BIND 9` services. It provides an integrated,
 centralized front end for interacting with these services.
 Only one ``Stork Server`` is deployed in a network.
 
-Stork uses the ``status-get`` command to communicate with Kea, and 
-therefore will only work with a version of Kea that supports ``status'get``. 
-The ``status-get`` command was introduced in Kea 1.7.3.  At this time, Stork 
-works with Kea version 1.7.3 and later versions only.
+Stork uses the `status-get` command to communicate with Kea, and 
+therefore will only work with a version of Kea that supports `status'get`. 
+The `status-get` command was introduced in Kea 1.7.3.  At this time, Stork 
+works with Kea version 1.7.3 and later versions only, although we intend to 
+backport the `status-get` command to Kea 1.6.3.
+
+Stork requires the premium Host Commands hook library to retrieve host 
+reservations stored in an external database. Stork can retrieve host reservations
+stored locally in the Kea configuration without any additional hook libraries.
 
 .. figure:: static/arch.png
    :align: center
