@@ -68,7 +68,7 @@ func (ec *eventCenter) AddErrorEvent(text string, objects ...interface{}) {
 	ec.addEvent(dbmodel.EvError, text, objects...)
 }
 
-// Create an event but it is not passed to EventCenter. It can be added later using
+// Create an event without passing it to EventCenter. It can be added later using
 // AddEvent method of EventCenter. It takes event level, text and relating objects.
 func CreateEvent(level int, text string, objects ...interface{}) *dbmodel.Event {
 	relations := &dbmodel.Relations{}
