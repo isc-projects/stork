@@ -40,7 +40,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
-	require.Len(t, pbe.serverStatsDesc, 5)
+	require.Len(t, pbe.serverStatsDesc, 9)
 	require.Len(t, pbe.viewStatsDesc, 7)
 }
 
@@ -65,6 +65,19 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                   "QUERY": 454,
                                   "IQUERY": 0,
                                   "UPDATE": 1
+                              },
+                              "nsstats": {
+                                  "ReqEdns0":100,
+                                  "Requestv4":206,
+                                  "RespEDNS0":123,
+                                  "Response":454,
+                                  "QryDropped":9,
+                                  "QryDuplicate":15,
+                                  "QryFailure":3,
+                                  "QryNoauthAns":222,
+                                  "QryRecursion":303,
+                                  "QrySuccess":111,
+                                  "QryUDP":404
                               },
 			      "views": {
                                 "_default": {
@@ -115,6 +128,16 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 454.0, pbe.stats.IncomingRequests["QUERY"])
 	require.EqualValues(t, 1.0, pbe.stats.IncomingRequests["UPDATE"])
 	require.EqualValues(t, 0.0, pbe.stats.IncomingRequests["IQUERY"])
+
+	// query_duplicates_total
+	require.EqualValues(t, 15.0, pbe.stats.NsStats["QryDuplicate"])
+	// query_errors_total
+	require.EqualValues(t, 9.0, pbe.stats.NsStats["QryDropped"])
+	require.EqualValues(t, 3.0, pbe.stats.NsStats["QryFailure"])
+	// query_recursion_total
+	require.EqualValues(t, 303.0, pbe.stats.NsStats["QryRecursion"])
+	// recursive_clients (unset value)
+	require.EqualValues(t, 0.0, pbe.stats.NsStats["RecursClients"])
 
 	// resolver_cache_rrsets
 	require.EqualValues(t, 37.0, pbe.stats.Views["_default"].ResolverCache["A"])

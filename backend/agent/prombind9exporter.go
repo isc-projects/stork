@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -30,18 +31,19 @@ const (
 )
 
 type PromBind9ViewStats struct {
-	ResolverCache map[string]float64
+	ResolverCache      map[string]float64
 	ResolverCachestats map[string]float64
 }
 
 // Statistics to be exported.
 type PromBind9ExporterStats struct {
-	BootTime        time.Time
-	ConfigTime      time.Time
-	CurrentTime     time.Time
-	IncomingQueries map[string]float64
+	BootTime         time.Time
+	ConfigTime       time.Time
+	CurrentTime      time.Time
+	IncomingQueries  map[string]float64
 	IncomingRequests map[string]float64
-	Views           map[string]PromBind9ViewStats
+	NsStats          map[string]float64
+	Views            map[string]PromBind9ViewStats
 }
 
 // Main structure for Prometheus BIND 9 Exporter. It holds its settings,
@@ -115,6 +117,23 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
 		"Number of incoming DNS requests.", []string{"opcode"}, nil)
 
+	// query_duplicates_total
+	serverStatsDesc["QryDuplicate"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "query_duplicates_total"),
+		"Number of duplicated queries received.", nil, nil)
+	// query_errors_total
+	serverStatsDesc["QryErrors"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "query_errors_total"),
+		"Number of query failures.", []string{"error"}, nil)
+	// query_recursions_total
+	serverStatsDesc["QryRecursion"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "query_recursions_total"),
+		"Number of queries causing recursion.", nil, nil)
+	// recursive_clients
+	serverStatsDesc["RecursClients"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "recursive_clients"),
+		"Number of current recursive clients.", nil, nil)
+
 	// resolver_cache_hit_ratio
 	viewStatsDesc["CacheHitRatio"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "resolver", "cache_hit_ratio"),
@@ -152,9 +171,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	// process_start_time_seconds
 	// process_virtural_memory_bytes
 	// process_virtural_memory_max_bytes
-	// query_duplicates_total
-	// query_errors_total
-	// query_recursions_total
 	// resolver_dnssec_validation_errors_total
 	// resolver_dnssec_validation_success_total
 	// resolver_queries_total
@@ -199,7 +215,7 @@ func (pbe *PromBind9Exporter) Describe(ch chan<- *prometheus.Desc) {
 	}
 }
 
-// collectTime fetches time stats.
+// collectTime collects time stats.
 func (pbe *PromBind9Exporter) collectTime(ch chan<- prometheus.Metric, key string, timeStat time.Time) {
 	if !timeStat.IsZero() {
 		ch <- prometheus.MustNewConstMetric(
@@ -212,9 +228,12 @@ func (pbe *PromBind9Exporter) collectTime(ch chan<- prometheus.Metric, key strin
 // Collect fetches the stats from configured location and delivers them
 // as Prometheus metrics. It implements prometheus.Collector.
 func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
-	err := pbe.collectStats()
+	hasBind9, err := pbe.collectStats()
 	if err != nil {
 		log.Errorf("some errors were encountered while collecting stats from BIND 9: %+v", err)
+		return
+	}
+	if !hasBind9 {
 		return
 	}
 
@@ -240,6 +259,47 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			value, label)
 	}
 
+	// query_duplicates_total
+	value, ok := pbe.stats.NsStats["QryDuplicate"]
+	if !ok {
+		value = 0
+	}
+	ch <- prometheus.MustNewConstMetric(
+		pbe.serverStatsDesc["QryDuplicate"],
+		prometheus.CounterValue, value)
+	// query_errors_total
+	trimQryPrefix := func(name string) string {
+		return strings.TrimPrefix(name, "Qry")
+	}
+	qryErrors := []string{"QryDropped", "QryFailure"}
+	for _, label := range qryErrors {
+		value, ok = pbe.stats.NsStats[label]
+		if !ok {
+			value = 0
+		}
+
+		ch <- prometheus.MustNewConstMetric(
+			pbe.serverStatsDesc["QryErrors"],
+			prometheus.CounterValue,
+			value, trimQryPrefix(label))
+	}
+	// query_recursion_total
+	value, ok = pbe.stats.NsStats["QryRecursion"]
+	if !ok {
+		value = 0
+	}
+	ch <- prometheus.MustNewConstMetric(
+		pbe.serverStatsDesc["QryRecursion"],
+		prometheus.CounterValue, value)
+	// recursive_clients
+	value, ok = pbe.stats.NsStats["RecursClients"]
+	if ok {
+		ch <- prometheus.MustNewConstMetric(
+			pbe.serverStatsDesc["RecursClients"],
+			prometheus.CounterValue, value)
+	}
+
+	// View metrics.
 	for view, viewStats := range pbe.stats.Views {
 		// resolver_cache_rrsets
 		for rrType, statValue := range viewStats.ResolverCache {
@@ -264,17 +324,15 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			}
 		}
 	}
-
 }
 
 // Start goroutine with main loop for collecting stats and HTTP server for
 // exposing them to Prometheus.
 func (pbe *PromBind9Exporter) Start() {
 	// initial collect
-	err := pbe.collectStats()
+	_, err := pbe.collectStats()
 	if err != nil {
 		log.Errorf("some errors were encountered while collecting stats from BIND 9: %+v", err)
-		return
 	}
 
 	// register collectors
@@ -394,6 +452,15 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
 		return errors.Errorf("problem with parsing 'opcodes': %+v", err)
 	}
 
+	// query_duplicates_total
+	// query_errors_total
+	// query_recursion_total
+	// recursive_clients
+	pbe.stats.NsStats, err = pbe.scrapeServerStat(rsp, "nsstats")
+	if err != nil {
+		return errors.Errorf("problem with parsing 'nsstats': %+v", err)
+	}
+
 	// Parse views.
 	viewsIfc, ok := rsp["views"]
 	if !ok {
@@ -506,9 +573,7 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) error {
 }
 
 // collecStats collects stats from all bind9 apps.
-func (pbe *PromBind9Exporter) collectStats() error {
-	var lastErr error
-
+func (pbe *PromBind9Exporter) collectStats() (hasBind9 bool, lastErr error) {
 	// Request to named statistics-channel for getting all server stats.
 	request := `{}`
 
@@ -519,6 +584,7 @@ func (pbe *PromBind9Exporter) collectStats() error {
 		if app.Type != AppTypeBind9 {
 			continue
 		}
+		hasBind9 = true
 
 		// get stats from named
 		sap, err := getAccessPoint(app, AccessPointStatistics)
@@ -556,11 +622,12 @@ func (pbe *PromBind9Exporter) collectStats() error {
 
 		err = pbe.setDaemonStats(rspIfc)
 		if err != nil {
+			lastErr = err
 			log.Errorf("cannot get stat from daemon: %+v", err)
 		}
 	}
 
-	return lastErr
+	return hasBind9, lastErr
 }
 
 // initViewStats initializes the maps for storing metrics.
@@ -571,7 +638,7 @@ func (pbe *PromBind9Exporter) initViewStats(viewName string) {
 		resolverCachestats := make(map[string]float64)
 
 		pbe.stats.Views[viewName] = PromBind9ViewStats{
-			ResolverCache: resolverCache,
+			ResolverCache:      resolverCache,
 			ResolverCachestats: resolverCachestats,
 		}
 	}
