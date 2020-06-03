@@ -85,6 +85,8 @@ func CreateEvent(level int, text string, objects ...interface{}) *dbmodel.Event 
 		} else if s, ok := obj.(*dbmodel.Subnet); ok {
 			text = strings.Replace(text, "{subnet}", subnetTag(s), -1)
 			relations.SubnetID = s.ID
+		} else {
+			log.Warnf("unknown object passed to CreateEvent: %v", obj)
 		}
 	}
 	e := &dbmodel.Event{

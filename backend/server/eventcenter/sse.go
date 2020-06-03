@@ -11,7 +11,8 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Subcriber.
+// Subcriber. For now empty. It will store rules for events
+// that subscriber is interested in.
 type Subscriber struct {
 }
 
@@ -84,4 +85,11 @@ func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
 	for ch := range sb.subscribers {
 		ch <- evJSON
 	}
+}
+
+// Get count of subscribers.
+func (sb *SSEBroker) getSubscribersCount() int {
+	sb.subscribersMutex.Lock()
+	defer sb.subscribersMutex.Unlock()
+	return len(sb.subscribers)
 }
