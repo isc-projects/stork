@@ -119,6 +119,13 @@ func TestGetMachineByID(t *testing.T) {
 				Key:       "abcd",
 			},
 		},
+		Daemons: []*Daemon{
+			{
+				Name:    "kea-dhcp4",
+				Version: "1.7.5",
+				Active:  true,
+			},
+		},
 	}
 	_, err = AddApp(db, a)
 	require.NoError(t, err)
@@ -133,6 +140,8 @@ func TestGetMachineByID(t *testing.T) {
 	require.Equal(t, "dns.example.", m.Apps[0].AccessPoints[0].Address)
 	require.EqualValues(t, 953, m.Apps[0].AccessPoints[0].Port)
 	require.Equal(t, "abcd", m.Apps[0].AccessPoints[0].Key)
+	require.Len(t, m.Apps[0].Daemons, 1)
+	require.Equal(t, "kea-dhcp4", m.Apps[0].Daemons[0].Name)
 
 	// delete machine
 	err = DeleteMachine(db, m)
