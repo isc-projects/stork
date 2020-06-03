@@ -75,16 +75,16 @@ func CreateEvent(level int, text string, objects ...interface{}) *dbmodel.Event 
 	for _, obj := range objects {
 		if d, ok := obj.(*dbmodel.Daemon); ok {
 			text = strings.Replace(text, "{daemon}", daemonTag(d), -1)
-			relations.Daemon = d.ID
+			relations.DaemonID = d.ID
 		} else if app, ok := obj.(*dbmodel.App); ok {
 			text = strings.Replace(text, "{app}", appTag(app), -1)
-			relations.App = app.ID
+			relations.AppID = app.ID
 		} else if m, ok := obj.(*dbmodel.Machine); ok {
 			text = strings.Replace(text, "{machine}", machineTag(m), -1)
-			relations.Machine = m.ID
+			relations.MachineID = m.ID
 		} else if s, ok := obj.(*dbmodel.Subnet); ok {
 			text = strings.Replace(text, "{subnet}", subnetTag(s), -1)
-			relations.Subnet = s.ID
+			relations.SubnetID = s.ID
 		}
 	}
 	e := &dbmodel.Event{

@@ -17,7 +17,7 @@ func TestEvent(t *testing.T) {
 		Text:  "some info event",
 		Level: EvInfo,
 		Relations: &Relations{
-			Machine: 1,
+			MachineID: 1,
 		},
 	}
 
@@ -30,7 +30,7 @@ func TestEvent(t *testing.T) {
 		Text:  "some erro event",
 		Level: EvError,
 		Relations: &Relations{
-			App: 2,
+			AppID: 2,
 		},
 	}
 
@@ -53,7 +53,7 @@ func TestEvent(t *testing.T) {
 		infoEv = events[0]
 	}
 	require.EqualValues(t, EvError, erroEv.Level)
-	require.EqualValues(t, 2, erroEv.Relations.App)
+	require.EqualValues(t, 2, erroEv.Relations.AppID)
 	require.EqualValues(t, EvInfo, infoEv.Level)
-	require.EqualValues(t, 1, infoEv.Relations.Machine)
+	require.EqualValues(t, 1, infoEv.Relations.MachineID)
 }

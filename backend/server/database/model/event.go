@@ -11,17 +11,17 @@ import (
 
 // Event levels.
 const (
-	EvInfo = 0 // informational
+	EvInfo    = 0 // informational
 	EvWarning = 1 // someone should look into this
-	EvError = 2 // there is a serious problem
+	EvError   = 2 // there is a serious problem
 )
 
 // Relations between the event and other entities.
 type Relations struct {
-	Machine int64 `json:",omitempty"`
-	App     int64 `json:",omitempty"`
-	Subnet  int64 `json:",omitempty"`
-	Daemon  int64 `json:",omitempty"`
+	MachineID int64 `json:",omitempty"`
+	AppID     int64 `json:",omitempty"`
+	SubnetID  int64 `json:",omitempty"`
+	DaemonID  int64 `json:",omitempty"`
 }
 
 // Represents an event held in event table in the database.

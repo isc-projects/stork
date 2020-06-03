@@ -22,7 +22,7 @@ func TestEvents(t *testing.T) {
 		Text:  "some event",
 		Level: dbmodel.EvInfo,
 		Relations: &dbmodel.Relations{
-			App: 2,
+			AppID: 2,
 		},
 	}
 
