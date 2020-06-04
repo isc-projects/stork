@@ -425,7 +425,25 @@ be found in the `Kea ARM
 Dashboard
 =========
 
-The Main Stork page presents a simple dashboard. It includes some
-statistics about the monitored applications, such as the total number
-of Kea and BIND 9 applications, and the number of misbehaving
-applications.
+The Main Stork page presents a dashboard. It contains a panel with
+information about DHCP and a panel with events observed or noticed by
+Stork server.
+
+DHCP Panel
+~~~~~~~~~~
+
+DHCP panel includes two sections: one for DHCPv4 and one for DHCPv6.
+Each section contains 3 kinds of information:
+
+- list of up to 5 subnets with the highest pool utilization
+- list of up to 5 shared networks with the highest pool utilization
+- statistics about DHCP
+
+Events Panel
+~~~~~~~~~~~~
+
+Events panel presents list of the most recent events that were noticed
+by Stork server. There are 3 severity levels of events: info, warning
+and error. Events that are related to particular entities like machine
+or application provide a link to a web page with information about
+given object.

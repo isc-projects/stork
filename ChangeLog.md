@@ -3,7 +3,7 @@
     Implemented basic event mechanism. EventCenter was added that
     collects events from other modules and dispatches to subscribers
     i.e. web browser using server-sent events. Added fetching list of
-    events and presenting them in UI, next to the dashboard page.
+    events and presenting them in UI, in dashboard page, in events.
     panel. Added receiving events in UI, in events panel via SSE and
     presenting them.
     (Gitlab #275)
