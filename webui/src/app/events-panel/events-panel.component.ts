@@ -4,6 +4,10 @@ import { MessageService } from 'primeng/api'
 
 import { EventsService } from '../backend/api/api'
 
+/**
+ * A component that presents events list. Each event has its own row.
+ * Event's text is rendered by EventTextComponent.
+ */
 @Component({
     selector: 'app-events-panel',
     templateUrl: './events-panel.component.html',
@@ -20,6 +24,9 @@ export class EventsPanelComponent implements OnInit {
         this.registerServerSentEvents()
     }
 
+    /**
+     * Load the most recent events from Stork server
+     */
     refreshEvents() {
         this.eventsApi.getEvents().subscribe(
             (data) => {
@@ -40,6 +47,9 @@ export class EventsPanelComponent implements OnInit {
         )
     }
 
+    /**
+     * Register for SSE for all events.
+     */
     registerServerSentEvents() {
         const source = new EventSource('/sse')
 
@@ -78,6 +88,10 @@ export class EventsPanelComponent implements OnInit {
         return source
     }
 
+    /**
+     * Take an event received via SSE and put it to list of all events
+     * so it is presented in events panel.
+     */
     eventHandler(event) {
         // decapitalize fields
         const ev = {
