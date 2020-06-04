@@ -4,7 +4,7 @@ import { MessageService } from 'primeng/api'
 
 import { DHCPService } from '../backend/api/api'
 import { AppsStats } from '../backend/model/appsStats'
-import { humanCount, durationToString, getGrafanaUrl } from '../utils'
+import { datetimeToLocal, durationToString, getGrafanaUrl, humanCount } from '../utils'
 import { SettingService } from '../setting.service'
 import { ServerDataService } from '../server-data.service'
 
@@ -188,5 +188,27 @@ export class DashboardComponent implements OnInit {
             return 'not configured'
         }
         return state
+    }
+
+    /**
+     * Returns printable time when failover was last triggered for a
+     * given daemon.
+     *
+     * @param state current HA state of the daemon.
+     * @param t timestamp of the last failure.
+     *
+     * @returns empty string of the state is unavailable, timestamp in local
+     *          time if it is non-zero or 'never' if the specified timestamp
+     *          is zero.
+     */
+    showHAFailureTime(state, t) {
+        if (!state || state.length === 0) {
+            return ''
+        }
+        const localTime = datetimeToLocal(t)
+        if (localTime.length === 0) {
+            return 'never'
+        }
+        return localTime
     }
 }

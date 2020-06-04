@@ -216,6 +216,7 @@
                         <!-- <th>LPS (24h)</th> -->
                         <!-- <th>Pool Used</th> -->
                         <th>HA State</th>
+                        <th>Detected Failure w/HA</th>
                         <th>Uptime</th>
                     </tr>
 
@@ -247,8 +248,18 @@
                                     haStateIconColor(haStateIcon(d.haState))
                                 }};"
                             ></i>
-                            <span [ngStyle]="{ color: d.haState ? 'black' : 'grey' }">
+                            <span *ngIf="d.haState">
+                                <a routerLink="/apps/kea/{{ d.appId }}">
+                                    {{ showHAState(d.haState) }}
+                                </a>
+                            </span>
+                            <span *ngIf="!d.haState" style="color: 'grey';">
                                 {{ showHAState(d.haState) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span [ngStyle]="{ color: d.haState ? 'black' : 'grey' }">
+                                {{ showHAFailureTime(d.haState, d.haFailureAt) }}
                             </span>
                         </td>
                         <td>{{ showDuration(d.uptime) }}</td>
