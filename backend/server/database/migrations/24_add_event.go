@@ -8,7 +8,7 @@ func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(
 			`-- Events table.
-             CREATE TABLE public.event (
+             CREATE TABLE IF NOT EXISTS public.event (
                  id           SERIAL PRIMARY KEY,
 	         created_at   TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
                  text         TEXT NOT NULL,
@@ -20,7 +20,7 @@ func init() {
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(
 			`-- Remove table with events.
-             DROP TABLE public.event;`)
+             DROP TABLE IF EXISTS public.event;`)
 		return err
 	})
 }
