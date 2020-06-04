@@ -42,7 +42,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
 	require.Len(t, pbe.serverStatsDesc, 12)
-	require.Len(t, pbe.viewStatsDesc, 14)
+	require.Len(t, pbe.viewStatsDesc, 18)
 }
 
 // Check starting PromBind9Exporter and collecting stats.
@@ -107,6 +107,13 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                     },
                                     "stats": {
                                         "EDNS0Fail": 5,
+                                        "FORMERR": 13,
+                                        "NXDOMAIN": 50,
+                                        "SERVFAIL": 404,
+                                        "OtherError": 42,
+                                        "Lame": 9,
+                                        "Mismatch": 10,
+                                        "Truncated": 7,
                                         "QueryAbort": 1,
                                         "QueryTimeout": 10,
                                         "QryRTT10": 2,
@@ -227,6 +234,18 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 10.0, pbe.stats.Views["_default"].ResolverStats["QueryTimeout"])
 	require.EqualValues(t, 0.0, pbe.stats.Views["_default"].ResolverStats["QuerySockFail"])
 	require.EqualValues(t, 71.0, pbe.stats.Views["_default"].ResolverStats["Retry"])
+
+	// resolver_response_errors_total
+	require.EqualValues(t, 13.0, pbe.stats.Views["_default"].ResolverStats["FORMERR"])
+	require.EqualValues(t, 50.0, pbe.stats.Views["_default"].ResolverStats["NXDOMAIN"])
+	require.EqualValues(t, 404.0, pbe.stats.Views["_default"].ResolverStats["SERVFAIL"])
+	require.EqualValues(t, 42.0, pbe.stats.Views["_default"].ResolverStats["OtherError"])
+	// resolver_response_lame_total
+	// resolver_response_mismatch_total
+	// resolver_response_truncated_total
+	require.EqualValues(t, 9.0, pbe.stats.Views["_default"].ResolverStats["Lame"])
+	require.EqualValues(t, 10.0, pbe.stats.Views["_default"].ResolverStats["Mismatch"])
+	require.EqualValues(t, 7.0, pbe.stats.Views["_default"].ResolverStats["Truncated"])
 
 	// zone_transfer_failure_total
 	require.EqualValues(t, 2.0, pbe.stats.NsStats["XfrFail"])
