@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -41,7 +42,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
 	require.Len(t, pbe.serverStatsDesc, 12)
-	require.Len(t, pbe.viewStatsDesc, 10)
+	require.Len(t, pbe.viewStatsDesc, 11)
 }
 
 // Check starting PromBind9Exporter and collecting stats.
@@ -105,6 +106,12 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                         "DNSKEY": 4
                                     },
                                     "stats": {
+                                        "QryRTT10": 2,
+                                        "QryRTT100": 18,
+                                        "QryRTT500": 37,
+                                        "QryRTT800": 3,
+                                        "QryRTT1600": 1,
+                                        "QryRTT1600+": 4,
                                         "ValAttempt": 25,
                                         "ValFail": 5,
                                         "ValNegOk": 3,
@@ -187,6 +194,26 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 6.0, pbe.stats.Views["_default"].ResolverQtypes["DS"])
 	require.EqualValues(t, 7.0, pbe.stats.Views["_default"].ResolverQtypes["NS"])
 	require.EqualValues(t, 21.0, pbe.stats.Views["_default"].ResolverQtypes["RRSIG"])
+
+	// resolver_query_duration_seconds_bucket
+	// resolver_query_duration_seconds_count
+	// resolver_query_duration_seconds_sum
+	require.EqualValues(t, 2.0, pbe.stats.Views["_default"].ResolverStats["QryRTT10"])
+	require.EqualValues(t, 18.0, pbe.stats.Views["_default"].ResolverStats["QryRTT100"])
+	require.EqualValues(t, 37.0, pbe.stats.Views["_default"].ResolverStats["QryRTT500"])
+	require.EqualValues(t, 3.0, pbe.stats.Views["_default"].ResolverStats["QryRTT800"])
+	require.EqualValues(t, 1.0, pbe.stats.Views["_default"].ResolverStats["QryRTT1600"])
+	require.EqualValues(t, 4.0, pbe.stats.Views["_default"].ResolverStats["QryRTT1600+"])
+	count, _, buckets, err := pbe.qryRTTHistogram(pbe.stats.Views["_default"].ResolverStats)
+	require.EqualValues(t, 65.0, count)
+	require.Len(t, buckets, 6)
+	require.EqualValues(t, 2, buckets[0.01])
+	require.EqualValues(t, 20, buckets[0.1])
+	require.EqualValues(t, 57, buckets[0.5])
+	require.EqualValues(t, 60, buckets[0.8])
+	require.EqualValues(t, 61, buckets[1.6])
+	require.EqualValues(t, 65, buckets[math.Inf(0)])
+	require.Nil(t, err)
 
 	// zone_transfer_failure_total
 	require.EqualValues(t, 2.0, pbe.stats.NsStats["XfrFail"])

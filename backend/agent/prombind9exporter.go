@@ -6,7 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -28,6 +31,7 @@ type PromBind9ExporterSettings struct {
 
 const (
 	namespace = "bind9"
+	qryRTT    = "QryRTT"
 )
 
 type PromBind9ViewStats struct {
@@ -183,6 +187,14 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		"Number of outgoing DNS queries.",
 		[]string{"view", "type"}, nil)
 
+	// resolver_query_duration_seconds_bucket
+	// resolver_query_duration_seconds_count
+	// resolver_query_duration_seconds_sum
+	viewStatsDesc["QueryDuration"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "resolver", "query_duration_seconds"),
+		"Resolver query round-trip time in seconds.",
+		[]string{"view"}, nil)
+
 	// zone_transfer_failure_total
 	serverStatsDesc["XfrFail"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
@@ -203,9 +215,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	// process_start_time_seconds
 	// process_virtural_memory_bytes
 	// process_virtural_memory_max_bytes
-	// resolver_query_duration_seconds_bucket
-	// resolver_query_duration_seconds_count
-	// resolver_query_duration_seconds_sum
 	// resolver_query_edns0_errors_total
 	// resolver_query_errors_total
 	// resolver_query_retries_total
@@ -249,6 +258,49 @@ func (pbe *PromBind9Exporter) collectTime(ch chan<- prometheus.Metric, key strin
 			prometheus.GaugeValue,
 			float64(timeStat.Unix()))
 	}
+}
+
+// qryRTTHistrogram collects a histogram from QryRTT statistics.
+// RTT buckets are per second, for example bucket[0.8] stores how many query
+// round trips took up to 800 milliseconds (cumulative counter).
+// The total sum of all observed values is exposed with sum, but since named
+// does not output the actual RTT values, this is not applicable.
+// The count of events that have been observed is exposed with count and is
+// identical to bucket[+Inf].
+func (pbe *PromBind9Exporter) qryRTTHistogram(stats map[string]float64) (uint64, float64, map[float64]uint64, error) {
+	buckets := map[float64]uint64{}
+
+	for statName, statValue := range stats {
+		if strings.HasPrefix(statName, qryRTT) {
+			var bucket float64
+			var err error
+			if strings.HasSuffix(statName, "+") {
+				bucket = math.Inf(0)
+			} else {
+				rtt := strings.TrimPrefix(statName, qryRTT)
+				bucket, err = strconv.ParseFloat(rtt, 64)
+				if err != nil {
+					return 0, math.NaN(), buckets, fmt.Errorf("could not parse RTT: %s", rtt)
+				}
+			}
+			buckets[bucket/1000] = uint64(statValue)
+		}
+	}
+
+	// cumulative count
+	keys := make([]float64, 0, len(buckets))
+	for b := range buckets {
+		keys = append(keys, b)
+	}
+	sort.Float64s(keys)
+
+	var count uint64
+	for _, k := range keys {
+		count += buckets[k]
+		buckets[k] = count
+	}
+
+	return count, math.NaN(), buckets, nil
 }
 
 // Collect fetches the stats from configured location and delivers them
@@ -361,6 +413,15 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 					desc, prometheus.CounterValue,
 					statValue, view)
 			}
+		}
+
+		// resolver_query_duration_seconds_bucket
+		// resolver_query_duration_seconds_count
+		// resolver_query_duration_seconds_sum
+		if count, sum, buckets, err := pbe.qryRTTHistogram(viewStats.ResolverStats); err == nil {
+			ch <- prometheus.MustNewConstHistogram(
+				pbe.viewStatsDesc["QueryDuration"],
+				count, sum, buckets, view)
 		}
 
 		// resolver_queries_total
