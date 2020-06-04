@@ -44,4 +44,7 @@ func TestEvents(t *testing.T) {
 	okRsp := rsp.(*events.GetEventsOK)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
+	ev2 := okRsp.Payload.Items[0]
+	require.EqualValues(t, "some event", ev2.Text)
+	require.EqualValues(t, dbmodel.EvInfo, ev2.Level)
 }
