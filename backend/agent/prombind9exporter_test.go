@@ -41,7 +41,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
-	require.Len(t, pbe.serverStatsDesc, 13)
+	require.Len(t, pbe.serverStatsDesc, 16)
 	require.Len(t, pbe.viewStatsDesc, 18)
 }
 
@@ -85,6 +85,10 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                   "XfrFail": 2,
                                   "XfrRej": 11,
                                   "XfrSuccess": 22
+                              },
+			      "taskmgr": {
+                                  "tasks-running": 1,
+                                  "worker-threads": 4
                               },
 			      "views": {
                                 "_default": {
@@ -147,6 +151,7 @@ func TestPromBind9ExporterStart(t *testing.T) {
 
 	// start exporter
 	pbe.Start()
+	require.EqualValues(t, 1, pbe.up)
 
 	// boot_time_seconds
 	expect, _ := time.Parse(time.RFC3339, "2020-04-21T07:13:08.888Z")
@@ -257,6 +262,11 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 111.0, pbe.stats.NsStats["QrySuccess"])
 	require.EqualValues(t, 0.0, pbe.stats.NsStats["QryFORMERR"])
 	require.EqualValues(t, 0.0, pbe.stats.NsStats["QryReferral"])
+
+	// tasks_running
+	require.EqualValues(t, 1.0, pbe.stats.TaskMgr["tasks-running"])
+	// worker_threads
+	require.EqualValues(t, 4.0, pbe.stats.TaskMgr["worker-threads"])
 
 	// zone_transfer_failure_total
 	require.EqualValues(t, 2.0, pbe.stats.NsStats["XfrFail"])

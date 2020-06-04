@@ -49,6 +49,7 @@ type PromBind9ExporterStats struct {
 	IncomingQueries  map[string]float64
 	IncomingRequests map[string]float64
 	NsStats          map[string]float64
+	TaskMgr          map[string]float64
 	Views            map[string]PromBind9ViewStats
 }
 
@@ -67,7 +68,7 @@ type PromBind9Exporter struct {
 	DoneCollector chan bool
 	Wg            *sync.WaitGroup
 
-	up              prometheus.Gauge
+	up              int
 	serverStatsDesc map[string]*prometheus.Desc
 	viewStatsDesc   map[string]*prometheus.Desc
 
@@ -88,12 +89,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		DoneCollector: make(chan bool),
 		Wg:            &sync.WaitGroup{},
 	}
-
-	pbe.up = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: namespace,
-		Name:      "up",
-		Help:      "Was the Bind instance query successful?",
-	})
 
 	// bind_exporter stats
 	serverStatsDesc := make(map[string]*prometheus.Desc)
@@ -253,6 +248,22 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		"Number of responses sent.",
 		[]string{"result"}, nil)
 
+	// tasks_running
+	serverStatsDesc["tasks-running"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "tasks_running"),
+		"Number of running tasks.",
+		nil, nil)
+	// up
+	serverStatsDesc["up"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "up"),
+		"Was the Bind instance query successful?",
+		nil, nil)
+	// worker_threads
+	serverStatsDesc["worker-threads"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "worker_threads"),
+		"Total number of available worker threads.",
+		nil, nil)
+
 	// zone_transfer_failure_total
 	serverStatsDesc["XfrFail"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
@@ -276,9 +287,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	// process_start_time_seconds
 	// process_virtural_memory_bytes
 	// process_virtural_memory_max_bytes
-	// tasks_running
-	// up
-	// worker_threads
 
 	pbe.serverStatsDesc = serverStatsDesc
 	pbe.viewStatsDesc = viewStatsDesc
@@ -384,11 +392,19 @@ func (pbe *PromBind9Exporter) collectResolverLabelStat(statName, view string, vi
 // as Prometheus metrics. It implements prometheus.Collector.
 func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 	hasBind9, err := pbe.collectStats()
-	if err != nil {
-		log.Errorf("some errors were encountered while collecting stats from BIND 9: %+v", err)
+	if !hasBind9 {
 		return
 	}
-	if !hasBind9 {
+
+	// up
+	ch <- prometheus.MustNewConstMetric(pbe.serverStatsDesc["up"], prometheus.GaugeValue, float64(pbe.up))
+
+	if err != nil {
+		log.Errorf("some errors were encountered while collecting stats from BIND 9: %+v", err)
+	}
+
+	// if not up or error encountered, don't bother collecting.
+	if pbe.up == 0 || err != nil {
 		return
 	}
 
@@ -473,6 +489,20 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			pbe.serverStatsDesc["ServerResponses"],
 			prometheus.CounterValue,
 			value, trimQryPrefix(label))
+	}
+
+	// tasks_running
+	// worker_threads
+	taskMgrStats := []string{"tasks-running", "worker-threads"}
+	for _, label := range taskMgrStats {
+		value, ok = pbe.stats.TaskMgr[label]
+		if !ok {
+			value = 0
+		}
+
+		ch <- prometheus.MustNewConstMetric(
+			pbe.serverStatsDesc[label],
+			prometheus.GaugeValue, value)
 	}
 
 	// zone_transfer_failure_total
@@ -628,7 +658,6 @@ func (pbe *PromBind9Exporter) scrapeServerStat(statMap map[string]interface{}, s
 			// get value
 			labelValue, ok := labelValueIfc.(float64)
 			if !ok {
-				log.Errorf("problem with casting %s labelValue: %+v", labelName, labelValueIfc)
 				continue
 			}
 			// store stat value
@@ -854,6 +883,13 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 		return errors.Errorf("problem with parsing 'nsstats': %+v", err)
 	}
 
+	// tasks_running
+	// worker_threads
+	pbe.stats.TaskMgr, err = pbe.scrapeServerStat(rsp, "taskmgr")
+	if err != nil {
+		return errors.Errorf("problem with parsing 'nsstats': %+v", err)
+	}
+
 	// Parse views.
 	viewsIfc, ok := rsp["views"]
 	if !ok {
@@ -875,6 +911,8 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 func (pbe *PromBind9Exporter) collectStats() (hasBind9 bool, lastErr error) {
 	// Request to named statistics-channel for getting all server stats.
 	request := `{}`
+
+	pbe.up = 0
 
 	// go through all bind9 apps discovered by monitor and query them for stats
 	apps := pbe.AppMonitor.GetApps()
@@ -924,6 +962,8 @@ func (pbe *PromBind9Exporter) collectStats() (hasBind9 bool, lastErr error) {
 			lastErr = err
 			log.Errorf("cannot get stat from daemon: %+v", err)
 		}
+
+		pbe.up = 1
 	}
 
 	return hasBind9, lastErr
