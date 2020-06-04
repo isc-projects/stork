@@ -2,6 +2,7 @@ package eventcenter
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -88,7 +89,18 @@ func TestAddEvent(t *testing.T) {
 	ec.AddWarningEvent("some text", subnet, app)
 	ec.AddErrorEvent("some text", daemon, machine)
 
-	events, total, err := dbmodel.GetEventsByPage(db, 0, 10, "", dbmodel.SortDirAny)
+	// events are stored in db in separate goroutine so it may be delay
+	// so wait for it a little bit
+	var events []dbmodel.Event
+	var total int64
+	var err error
+	for i := 1; i <= 10; i++ {
+		time.Sleep(10 * time.Millisecond)
+		events, total, err = dbmodel.GetEventsByPage(db, 0, 10, "", dbmodel.SortDirAny)
+		if total == 3 {
+			break
+		}
+	}
 	require.NoError(t, err)
 	require.EqualValues(t, total, 3)
 	require.Len(t, events, 3)
