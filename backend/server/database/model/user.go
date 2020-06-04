@@ -254,6 +254,9 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sor
 
 	total, err := q.SelectAndCount()
 	if err != nil {
+		if err == pg.ErrNoRows {
+			return []SystemUser{}, 0, nil
+		}
 		err = errors.Wrapf(err, "problem with fetching a list of users from the database")
 	}
 

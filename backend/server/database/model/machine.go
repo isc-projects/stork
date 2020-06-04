@@ -135,6 +135,9 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 
 	total, err := q.SelectAndCount()
 	if err != nil {
+		if err == pg.ErrNoRows {
+			return []Machine{}, 0, nil
+		}
 		return nil, 0, errors.Wrapf(err, "problem with getting machines")
 	}
 

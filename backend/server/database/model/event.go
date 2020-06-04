@@ -66,6 +66,9 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, sortField string, sor
 
 	total, err := q.SelectAndCount()
 	if err != nil {
+		if err == pg.ErrNoRows {
+			return []Event{}, 0, nil
+		}
 		return nil, 0, errors.Wrapf(err, "problem with getting events")
 	}
 	return events, int64(total), nil

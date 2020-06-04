@@ -339,6 +339,9 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, filterText *string, app
 
 	total, err := q.SelectAndCount()
 	if err != nil {
+		if err == pg.ErrNoRows {
+			return []App{}, 0, nil
+		}
 		return nil, 0, errors.Wrapf(err, "problem with getting apps")
 	}
 	return apps, int64(total), nil
