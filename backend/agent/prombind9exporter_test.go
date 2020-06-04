@@ -42,7 +42,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
 	require.Len(t, pbe.serverStatsDesc, 12)
-	require.Len(t, pbe.viewStatsDesc, 11)
+	require.Len(t, pbe.viewStatsDesc, 14)
 }
 
 // Check starting PromBind9Exporter and collecting stats.
@@ -106,12 +106,16 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                         "DNSKEY": 4
                                     },
                                     "stats": {
+                                        "EDNS0Fail": 5,
+                                        "QueryAbort": 1,
+                                        "QueryTimeout": 10,
                                         "QryRTT10": 2,
                                         "QryRTT100": 18,
                                         "QryRTT500": 37,
                                         "QryRTT800": 3,
                                         "QryRTT1600": 1,
                                         "QryRTT1600+": 4,
+                                        "Retry": 71,
                                         "ValAttempt": 25,
                                         "ValFail": 5,
                                         "ValNegOk": 3,
@@ -214,6 +218,15 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 61, buckets[1.6])
 	require.EqualValues(t, 65, buckets[math.Inf(0)])
 	require.Nil(t, err)
+
+	// resolver_query_edns0_errors_total
+	// resolver_query_errors_total
+	// resolver_query_retries_total
+	require.EqualValues(t, 5.0, pbe.stats.Views["_default"].ResolverStats["EDNS0Fail"])
+	require.EqualValues(t, 1.0, pbe.stats.Views["_default"].ResolverStats["QueryAbort"])
+	require.EqualValues(t, 10.0, pbe.stats.Views["_default"].ResolverStats["QueryTimeout"])
+	require.EqualValues(t, 0.0, pbe.stats.Views["_default"].ResolverStats["QuerySockFail"])
+	require.EqualValues(t, 71.0, pbe.stats.Views["_default"].ResolverStats["Retry"])
 
 	// zone_transfer_failure_total
 	require.EqualValues(t, 2.0, pbe.stats.NsStats["XfrFail"])

@@ -171,12 +171,12 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		"Total number of queries that were not in cache.", []string{"view"}, nil)
 
 	// resolver_dnssec_validation_errors_total
-	viewStatsDesc["DNSSECValidationFail"] = prometheus.NewDesc(
+	viewStatsDesc["ValFail"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "resolver", "dnssec_validation_errors_total"),
 		"Number of DNSSEC validation attempt errors.",
 		[]string{"view"}, nil)
 	// resolver_dnssec_validation_success_total
-	viewStatsDesc["DNSSECValidationSuccess"] = prometheus.NewDesc(
+	viewStatsDesc["ValSuccess"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "resolver", "dnssec_validation_success_total"),
 		"Number of DNSSEC validation attempts succeeded.",
 		[]string{"view", "result"}, nil)
@@ -194,6 +194,19 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		prometheus.BuildFQName(namespace, "resolver", "query_duration_seconds"),
 		"Resolver query round-trip time in seconds.",
 		[]string{"view"}, nil)
+
+	// resolver_query_edns0_errors_total
+	viewStatsDesc["EDNS0Fail"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "resolver", "query_edns0_errors_total"),
+		"Number of EDNS(0) query errors.", []string{"view"}, nil)
+	// resolver_query_retries_total
+	viewStatsDesc["Retry"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "resolver", "query_retries_total"),
+		"Number of resolver query retries.", []string{"view"}, nil)
+	// resolver_query_errors_total
+	viewStatsDesc["ResolverQueryErrors"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "resolver", "query_errors_total"),
+		"Number of resolver queries failed.", []string{"view", "error"}, nil)
 
 	// zone_transfer_failure_total
 	serverStatsDesc["XfrFail"] = prometheus.NewDesc(
@@ -215,9 +228,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	// process_start_time_seconds
 	// process_virtural_memory_bytes
 	// process_virtural_memory_max_bytes
-	// resolver_query_edns0_errors_total
-	// resolver_query_errors_total
-	// resolver_query_retries_total
 	// resolver_response_errors_total
 	// resolver_response_lame_total
 	// resolver_response_mismatch_total
@@ -301,6 +311,17 @@ func (pbe *PromBind9Exporter) qryRTTHistogram(stats map[string]float64) (uint64,
 	}
 
 	return count, math.NaN(), buckets, nil
+}
+
+// collectResolverStat fetches a specific resolver view statistic.
+func (pbe *PromBind9Exporter) collectResolverStat(statName, view string, viewStat PromBind9ViewStats, ch chan<- prometheus.Metric) {
+	statValue, ok := viewStat.ResolverStats[statName]
+	if !ok {
+		statValue = 0
+	}
+	ch <- prometheus.MustNewConstMetric(
+		pbe.viewStatsDesc[statName],
+		prometheus.CounterValue, statValue, view)
 }
 
 // Collect fetches the stats from configured location and delivers them
@@ -393,6 +414,8 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	// View metrics.
 	for view, viewStats := range pbe.stats.Views {
+		var rstatValue float64
+
 		// resolver_cache_rrsets
 		for rrType, statValue := range viewStats.ResolverCache {
 			ch <- prometheus.MustNewConstMetric(
@@ -424,6 +447,24 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 				count, sum, buckets, view)
 		}
 
+		// resolver_query_edns0_errors_total
+		pbe.collectResolverStat("EDNS0Fail", view, viewStats, ch)
+
+		// resolver_query_errors_total
+		resolverQueryErrors := []string{"QueryAbort", "QuerySockFail", "QueryTimeout"}
+		for _, label := range resolverQueryErrors {
+			rstatValue, ok = viewStats.ResolverStats[label]
+			if !ok {
+				rstatValue = 0
+			}
+			ch <- prometheus.MustNewConstMetric(
+				pbe.viewStatsDesc["ResolverQueryErrors"],
+				prometheus.CounterValue, rstatValue, view, label)
+		}
+
+		// resolver_query_retries_total
+		pbe.collectResolverStat("Retry", view, viewStats, ch)
+
 		// resolver_queries_total
 		for statName, statValue := range viewStats.ResolverQtypes {
 			ch <- prometheus.MustNewConstMetric(
@@ -433,13 +474,8 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 		}
 
 		// resolver_dnssec_validation_errors_total
-		rstatValue, ok := viewStats.ResolverStats["ValFail"]
-		if !ok {
-			rstatValue = 0
-		}
-		ch <- prometheus.MustNewConstMetric(
-			pbe.viewStatsDesc["DNSSECValidationFail"],
-			prometheus.CounterValue, rstatValue, view)
+		pbe.collectResolverStat("ValFail", view, viewStats, ch)
+
 		// resolver_dnssec_validation_success_total
 		valSuccess := []string{"ValOk", "ValNegOk"}
 		for _, label := range valSuccess {
@@ -448,7 +484,7 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 				rstatValue = 0
 			}
 			ch <- prometheus.MustNewConstMetric(
-				pbe.viewStatsDesc["DNSSECValidationSuccess"],
+				pbe.viewStatsDesc["ValSuccess"],
 				prometheus.CounterValue, rstatValue, view, label)
 		}
 	}
