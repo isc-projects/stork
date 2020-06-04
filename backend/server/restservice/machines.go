@@ -981,9 +981,15 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 			// or integrate ISC DHCP with Stork, the number of HA states returned
 			// will be 0 or 1. Therefore, we take the first HA state if it exists
 			// and return it over the REST API.
-			haState := ""
-			if haStates := dbDaemon.GetHAStateNames(); len(haStates) > 0 {
-				haState = haStates[0]
+			var (
+				haState     string
+				haFailureAt strfmt.DateTime
+			)
+			if haOverview := dbDaemon.GetHAOverview(); len(haOverview) > 0 {
+				haState = haOverview[0].State
+				if !haOverview[0].LastFailureAt.IsZero() {
+					haFailureAt = strfmt.DateTime(haOverview[0].LastFailureAt)
+				}
 			}
 			daemon := &models.DhcpDaemon{
 				MachineID:       dbApp.MachineID,
@@ -996,6 +1002,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 				Lps24h:          0,
 				AddrUtilization: 0,
 				HaState:         haState,
+				HaFailureAt:     haFailureAt,
 				Uptime:          dbDaemon.Uptime,
 			}
 			dhcpDaemons = append(dhcpDaemons, daemon)

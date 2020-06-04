@@ -189,6 +189,9 @@
         type: number
       haState:
         type: string
+      haFailureAt:
+        type: string
+        format: date-time
       uptime:
         type: integer
 

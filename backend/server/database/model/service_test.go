@@ -623,3 +623,31 @@ func TestGetDaemonHAState(t *testing.T) {
 	service.HAService = nil
 	require.Empty(t, service.GetDaemonHAState(1))
 }
+
+// Test that the partner's failure time is returned correctly.
+func TestGetPartnerHAFailureTime(t *testing.T) {
+	// If this is not HA service, the time returned should be zero.
+	service := Service{}
+	failureTime := service.GetPartnerHAFailureTime(1)
+	require.Zero(t, failureTime)
+
+	primaryFailoverAt := time.Date(2020, 6, 4, 11, 32, 0, 0, time.UTC)
+	service.HAService = &BaseHAService{
+		HAType:                "dhcp4",
+		PrimaryID:             1,
+		SecondaryID:           2,
+		BackupID:              []int64{3, 4},
+		PrimaryLastState:      "load-balancing",
+		SecondaryLastState:    "load-balancing",
+		PrimaryLastFailoverAt: primaryFailoverAt,
+	}
+
+	// Specify primary id, which should return its failure time based
+	// on the failover time of the secondary. This should be zero.
+	failureTime = service.GetPartnerHAFailureTime(1)
+	require.Zero(t, failureTime)
+	// When specifying secondary id, the failure time returned should be
+	// the primary's failover time.
+	failureTime = service.GetPartnerHAFailureTime(2)
+	require.Equal(t, primaryFailoverAt, failureTime)
+}

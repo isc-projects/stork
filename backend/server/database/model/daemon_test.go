@@ -6,6 +6,8 @@ import (
 	require "github.com/stretchr/testify/require"
 
 	dbtest "isc.org/stork/server/database/test"
+
+	"time"
 )
 
 // Test that new instance of the generic Kea daemon can be created.
@@ -158,8 +160,10 @@ func TestUpdateBind9Daemon(t *testing.T) {
 	require.EqualValues(t, 5, daemon.Bind9Daemon.Stats.CacheHits)
 }
 
-// Returns all HA state names to which the daemon belongs.
-func TestGetHAStateNames(t *testing.T) {
+// Returns all HA state names to which the daemon belongs and the
+// failure times.
+func TestGetHAOverview(t *testing.T) {
+	failoverAt := time.Date(2020, 6, 4, 11, 32, 0, 0, time.UTC)
 	daemon := NewKeaDaemon("dhcp4", true)
 	daemon.ID = 1
 	daemon.Services = []*Service{
@@ -168,12 +172,13 @@ func TestGetHAStateNames(t *testing.T) {
 				ID: 1,
 			},
 			HAService: &BaseHAService{
-				HAType:             "dhcp4",
-				PrimaryID:          1,
-				SecondaryID:        2,
-				BackupID:           []int64{3, 4},
-				PrimaryLastState:   "load-balancing",
-				SecondaryLastState: "syncing",
+				HAType:                "dhcp4",
+				PrimaryID:             1,
+				SecondaryID:           2,
+				BackupID:              []int64{3, 4},
+				PrimaryLastState:      "load-balancing",
+				SecondaryLastState:    "syncing",
+				PrimaryLastFailoverAt: failoverAt,
 			},
 		},
 		{
@@ -186,17 +191,21 @@ func TestGetHAStateNames(t *testing.T) {
 				ID: 3,
 			},
 			HAService: &BaseHAService{
-				HAType:             "dhcp4",
-				PrimaryID:          1,
-				SecondaryID:        5,
-				PrimaryLastState:   "hot-standby",
-				SecondaryLastState: "hot-standby",
+				HAType:                  "dhcp4",
+				PrimaryID:               1,
+				SecondaryID:             5,
+				PrimaryLastState:        "hot-standby",
+				SecondaryLastState:      "hot-standby",
+				SecondaryLastFailoverAt: failoverAt,
 			},
 		},
 	}
-	states := daemon.GetHAStateNames()
-	require.Len(t, states, 2)
+	overviews := daemon.GetHAOverview()
+	require.Len(t, overviews, 2)
 
-	require.Contains(t, states, "load-balancing")
-	require.Contains(t, states, "hot-standby")
+	require.Equal(t, "load-balancing", overviews[0].State)
+	require.Zero(t, overviews[0].LastFailureAt)
+
+	require.Equal(t, "hot-standby", overviews[1].State)
+	require.Equal(t, failoverAt, overviews[1].LastFailureAt)
 }

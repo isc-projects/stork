@@ -89,6 +89,13 @@ type Daemon struct {
 	Bind9Daemon *Bind9Daemon
 }
 
+// Structure representing HA service information displayed for the daemon
+// in the dashboard.
+type DaemonServiceOverview struct {
+	State         string
+	LastFailureAt time.Time
+}
+
 // Creates an instance of a Kea daemon. If the daemon name is dhcp4 or
 // dhcp6, the instance of the KeaDHCPDaemon is also created.
 func NewKeaDaemon(name string, active bool) *Daemon {
@@ -188,15 +195,18 @@ func (d *KeaDaemon) AfterScan(ctx context.Context) error {
 	return nil
 }
 
-// Returns a slice containing HA state names of the daemon. This function assumes
-// that the daemon has been fetched from the database along with the services.
-// It doesn't perform database queries on its own.
-func (d *Daemon) GetHAStateNames() (states []string) {
+// Returns a slice containing HA information specific for the daemon. This function
+// assumes that the daemon has been fetched from the database along with the
+// services. It doesn't perform database queries on its own.
+func (d *Daemon) GetHAOverview() (overviews []DaemonServiceOverview) {
 	for _, service := range d.Services {
-		state := service.GetDaemonHAState(d.ID)
-		if len(state) > 0 {
-			states = append(states, state)
+		if service.HAService == nil {
+			continue
 		}
+		var overview DaemonServiceOverview
+		overview.State = service.GetDaemonHAState(d.ID)
+		overview.LastFailureAt = service.GetPartnerHAFailureTime(d.ID)
+		overviews = append(overviews, overview)
 	}
-	return states
+	return overviews
 }

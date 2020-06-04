@@ -449,3 +449,20 @@ func (s Service) GetDaemonHAState(daemonID int64) string {
 	}
 	return ""
 }
+
+// Returns last failover time of the given daemon's partner, i.e. the
+// time when the given daemon was considered offline for the last time
+// by the HA peer. The partner may have crashed but it may also be
+// the case that the communication with it was interrupted even though
+// it was online.
+func (s Service) GetPartnerHAFailureTime(daemonID int64) (failureTime time.Time) {
+	if s.HAService == nil {
+		return failureTime
+	}
+	if s.HAService.PrimaryID == daemonID {
+		failureTime = s.HAService.SecondaryLastFailoverAt
+	} else if s.HAService.SecondaryID == daemonID {
+		failureTime = s.HAService.PrimaryLastFailoverAt
+	}
+	return failureTime
+}
