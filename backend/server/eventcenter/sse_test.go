@@ -34,7 +34,7 @@ func TestSSEBroker(t *testing.T) {
 			}
 		}
 		ev := &dbmodel.Event{
-			Text: "some text",
+			Text:  "some text",
 			Level: dbmodel.EvInfo,
 		}
 		ec.(*eventCenter).sseBroker.dispatchEvent(ev)
