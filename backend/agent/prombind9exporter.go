@@ -33,6 +33,7 @@ const (
 type PromBind9ViewStats struct {
 	ResolverCache      map[string]float64
 	ResolverCachestats map[string]float64
+	ResolverQtypes     map[string]float64
 	ResolverStats      map[string]float64
 }
 
@@ -176,6 +177,12 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		"Number of DNSSEC validation attempts succeeded.",
 		[]string{"view", "result"}, nil)
 
+	// resolver_queries_total
+	viewStatsDesc["ResolverQueries"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "resolver", "queries_total"),
+		"Number of outgoing DNS queries.",
+		[]string{"view", "type"}, nil)
+
 	// zone_transfer_failure_total
 	serverStatsDesc["XfrFail"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
@@ -196,7 +203,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	// process_start_time_seconds
 	// process_virtural_memory_bytes
 	// process_virtural_memory_max_bytes
-	// resolver_queries_total
 	// resolver_query_duration_seconds_bucket
 	// resolver_query_duration_seconds_count
 	// resolver_query_duration_seconds_sum
@@ -337,11 +343,10 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 	for view, viewStats := range pbe.stats.Views {
 		// resolver_cache_rrsets
 		for rrType, statValue := range viewStats.ResolverCache {
-			if desc, ok := pbe.viewStatsDesc["cache"]; ok {
-				ch <- prometheus.MustNewConstMetric(
-					desc, prometheus.CounterValue,
-					statValue, view, rrType)
-			}
+			ch <- prometheus.MustNewConstMetric(
+				pbe.viewStatsDesc["cache"],
+				prometheus.CounterValue,
+				statValue, view, rrType)
 		}
 
 		// resolver_cache_hit_ratio
@@ -356,6 +361,14 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 					desc, prometheus.CounterValue,
 					statValue, view)
 			}
+		}
+
+		// resolver_queries_total
+		for statName, statValue := range viewStats.ResolverQtypes {
+			ch <- prometheus.MustNewConstMetric(
+				pbe.viewStatsDesc["ResolverQueries"],
+				prometheus.CounterValue,
+				statValue, view, statName)
 		}
 
 		// resolver_dnssec_validation_errors_total
@@ -536,6 +549,30 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 		}
 		// store stat value
 		pbe.stats.Views[viewName].ResolverStats[statName] = statValue
+	}
+
+	// Parse qtypes.
+	qtypesIfc, ok := resolver["qtypes"]
+	if !ok {
+		log.Errorf("no 'qtypes' in resolver: %+v", resolver)
+		return
+	}
+	qtypes, ok := qtypesIfc.(map[string]interface{})
+	if !ok {
+		log.Errorf("problem with casting qtypesIfc: %+v", qtypesIfc)
+		return
+	}
+
+	// resolver_queries_total
+	for qtype, statValueIfc := range qtypes {
+		// get stat value
+		statValue, ok := statValueIfc.(float64)
+		if !ok {
+			log.Errorf("problem with casting statValue: %+v", statValueIfc)
+			continue
+		}
+		// store stat value
+		pbe.stats.Views[viewName].ResolverQtypes[qtype] = statValue
 	}
 
 	// Parse cache.
@@ -735,11 +772,13 @@ func (pbe *PromBind9Exporter) initViewStats(viewName string) {
 	if !ok {
 		resolverCache := make(map[string]float64)
 		resolverCachestats := make(map[string]float64)
+		resolverQtypes := make(map[string]float64)
 		resolverStats := make(map[string]float64)
 
 		pbe.stats.Views[viewName] = PromBind9ViewStats{
 			ResolverCache:      resolverCache,
 			ResolverCachestats: resolverCachestats,
+			ResolverQtypes:     resolverQtypes,
 			ResolverStats:      resolverStats,
 		}
 	}

@@ -41,7 +41,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
 	require.Len(t, pbe.serverStatsDesc, 12)
-	require.Len(t, pbe.viewStatsDesc, 9)
+	require.Len(t, pbe.viewStatsDesc, 10)
 }
 
 // Check starting PromBind9Exporter and collecting stats.
@@ -95,6 +95,14 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                       "CacheMisses": 10,
                                       "QueryHits": 30,
                                       "QueryMisses": 20
+                                    },
+                                    "qtypes": {
+                                        "A": 37,
+                                        "NS": 7,
+                                        "AAAA": 36,
+                                        "DS": 6,
+                                        "RRSIG": 21,
+                                        "DNSKEY": 4
                                     },
                                     "stats": {
                                         "ValAttempt": 25,
@@ -171,6 +179,14 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	// resolver_dnssec_validation_success_total
 	require.EqualValues(t, 3.0, pbe.stats.Views["_default"].ResolverStats["ValNegOk"])
 	require.EqualValues(t, 17.0, pbe.stats.Views["_default"].ResolverStats["ValOk"])
+
+	// resolver_queries_total
+	require.EqualValues(t, 37.0, pbe.stats.Views["_default"].ResolverQtypes["A"])
+	require.EqualValues(t, 36.0, pbe.stats.Views["_default"].ResolverQtypes["AAAA"])
+	require.EqualValues(t, 4.0, pbe.stats.Views["_default"].ResolverQtypes["DNSKEY"])
+	require.EqualValues(t, 6.0, pbe.stats.Views["_default"].ResolverQtypes["DS"])
+	require.EqualValues(t, 7.0, pbe.stats.Views["_default"].ResolverQtypes["NS"])
+	require.EqualValues(t, 21.0, pbe.stats.Views["_default"].ResolverQtypes["RRSIG"])
 
 	// zone_transfer_failure_total
 	require.EqualValues(t, 2.0, pbe.stats.NsStats["XfrFail"])
