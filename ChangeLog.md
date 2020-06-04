@@ -1,3 +1,8 @@
+* 68 [func] marcin
+
+    Display last failure detected by High Availability for a daemon.
+    (Gitlab #308)
+
 * 67 [func] marcin
 
     Hostname reservations are now fetched from Kea servers and displayed
