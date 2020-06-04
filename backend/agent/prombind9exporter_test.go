@@ -41,7 +41,7 @@ func TestNewPromBind9ExporterBasic(t *testing.T) {
 
 	require.NotNil(t, pbe.HTTPClient)
 	require.NotNil(t, pbe.HTTPServer)
-	require.Len(t, pbe.serverStatsDesc, 12)
+	require.Len(t, pbe.serverStatsDesc, 13)
 	require.Len(t, pbe.viewStatsDesc, 18)
 }
 
@@ -77,6 +77,9 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                   "QryFailure":3,
                                   "QryNoauthAns":222,
                                   "QryRecursion":303,
+                                  "QryNxrrset":5,
+                                  "QryNXDOMAIN":55,
+                                  "QrySERVFAIL":555,
                                   "QrySuccess":111,
                                   "QryUDP":404,
                                   "XfrFail": 2,
@@ -246,6 +249,14 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 9.0, pbe.stats.Views["_default"].ResolverStats["Lame"])
 	require.EqualValues(t, 10.0, pbe.stats.Views["_default"].ResolverStats["Mismatch"])
 	require.EqualValues(t, 7.0, pbe.stats.Views["_default"].ResolverStats["Truncated"])
+
+	// responses_total
+	require.EqualValues(t, 5.0, pbe.stats.NsStats["QryNxrrset"])
+	require.EqualValues(t, 55.0, pbe.stats.NsStats["QryNXDOMAIN"])
+	require.EqualValues(t, 555.0, pbe.stats.NsStats["QrySERVFAIL"])
+	require.EqualValues(t, 111.0, pbe.stats.NsStats["QrySuccess"])
+	require.EqualValues(t, 0.0, pbe.stats.NsStats["QryFORMERR"])
+	require.EqualValues(t, 0.0, pbe.stats.NsStats["QryReferral"])
 
 	// zone_transfer_failure_total
 	require.EqualValues(t, 2.0, pbe.stats.NsStats["XfrFail"])

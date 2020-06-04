@@ -247,6 +247,12 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		"Number of truncated responses received.",
 		[]string{"view"}, nil)
 
+	// responses_total
+	serverStatsDesc["ServerResponses"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "responses_total"),
+		"Number of responses sent.",
+		[]string{"result"}, nil)
+
 	// zone_transfer_failure_total
 	serverStatsDesc["XfrFail"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "zone_transfer_failure_total"),
@@ -270,7 +276,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	// process_start_time_seconds
 	// process_virtural_memory_bytes
 	// process_virtural_memory_max_bytes
-	// response_total
 	// tasks_running
 	// up
 	// worker_threads
@@ -447,6 +452,27 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(
 			pbe.serverStatsDesc["RecursClients"],
 			prometheus.CounterValue, value)
+	}
+
+	// responses_total
+	serverResponses := []string{
+		"QrySuccess",
+		"QryReferral",
+		"QryNxrrset",
+		"QrySERVFAIL",
+		"QryFORMERR",
+		"QryNXDOMAIN",
+	}
+	for _, label := range serverResponses {
+		value, ok = pbe.stats.NsStats[label]
+		if !ok {
+			value = 0
+		}
+
+		ch <- prometheus.MustNewConstMetric(
+			pbe.serverStatsDesc["ServerResponses"],
+			prometheus.CounterValue,
+			value, trimQryPrefix(label))
 	}
 
 	// zone_transfer_failure_total
