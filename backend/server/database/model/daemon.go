@@ -138,7 +138,7 @@ type Bind9StatsTraffic struct {
 
 // A structure holding named statistics.
 type Bind9NamedStats struct {
-	JsonStatsVersion string
+	JSONStatsVersion string
 	BootTime         string
 	ConfigTime       string
 	CurrentTime      string

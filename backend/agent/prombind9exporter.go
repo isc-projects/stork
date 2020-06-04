@@ -17,8 +17,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/version"
 	log "github.com/sirupsen/logrus"
 
+	"isc.org/stork"
 	storkutil "isc.org/stork/util"
 )
 
@@ -109,8 +111,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		prometheus.BuildFQName(namespace, "", "current_time_seconds"),
 		"Current time unix epoch in seconds as reported by named.",
 		nil, nil)
-
-	// exporter_build_info
 
 	// incoming_queries_total
 	serverStatsDesc["qtypes"] = prometheus.NewDesc(
@@ -280,14 +280,6 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		"Number of successful zone transfers.",
 		nil, nil)
 
-	// process_cpu_seconds_total
-	// process_max_fds
-	// process_open_fds
-	// process_resident_memory_bytes
-	// process_start_time_seconds
-	// process_virtural_memory_bytes
-	// process_virtural_memory_max_bytes
-
 	pbe.serverStatsDesc = serverStatsDesc
 	pbe.viewStatsDesc = viewStatsDesc
 
@@ -391,8 +383,8 @@ func (pbe *PromBind9Exporter) collectResolverLabelStat(statName, view string, vi
 // Collect fetches the stats from configured location and delivers them
 // as Prometheus metrics. It implements prometheus.Collector.
 func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
-	hasBind9, err := pbe.collectStats()
-	if !hasBind9 {
+	bind9Pid, err := pbe.collectStats()
+	if bind9Pid == 0 {
 		return
 	}
 
@@ -590,13 +582,25 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 // exposing them to Prometheus.
 func (pbe *PromBind9Exporter) Start() {
 	// initial collect
-	_, err := pbe.collectStats()
+	bind9Pid, err := pbe.collectStats()
 	if err != nil {
 		log.Errorf("some errors were encountered while collecting stats from BIND 9: %+v", err)
 	}
 
 	// register collectors
+	version.Version = stork.Version
+	prometheus.MustRegister(version.NewCollector("bind9_exporter"))
 	prometheus.MustRegister(pbe)
+	if bind9Pid > 0 {
+		procExporter := prometheus.NewProcessCollector(
+			prometheus.ProcessCollectorOpts{
+				PidFn: func() (int, error) {
+					return int(bind9Pid), nil
+				},
+				Namespace: namespace,
+			})
+		prometheus.MustRegister(procExporter)
+	}
 
 	// set address for listening from settings
 	addrPort := fmt.Sprintf("%s:%d", pbe.Settings.Host, pbe.Settings.Port)
@@ -908,7 +912,7 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 }
 
 // collecStats collects stats from all bind9 apps.
-func (pbe *PromBind9Exporter) collectStats() (hasBind9 bool, lastErr error) {
+func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 	// Request to named statistics-channel for getting all server stats.
 	request := `{}`
 
@@ -921,7 +925,7 @@ func (pbe *PromBind9Exporter) collectStats() (hasBind9 bool, lastErr error) {
 		if app.Type != AppTypeBind9 {
 			continue
 		}
-		hasBind9 = true
+		bind9Pid = app.Pid
 
 		// get stats from named
 		sap, err := getAccessPoint(app, AccessPointStatistics)
@@ -966,7 +970,7 @@ func (pbe *PromBind9Exporter) collectStats() (hasBind9 bool, lastErr error) {
 		pbe.up = 1
 	}
 
-	return hasBind9, lastErr
+	return bind9Pid, lastErr
 }
 
 // initViewStats initializes the maps for storing metrics.

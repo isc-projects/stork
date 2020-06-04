@@ -28,6 +28,7 @@ const AccessPointControl = "control"
 const AccessPointStatistics = "statistics"
 
 type App struct {
+	Pid          int32
 	Type         string
 	AccessPoints []AccessPoint
 }
@@ -180,6 +181,7 @@ func (sm *appMonitor) detectApps() {
 			if m != nil {
 				keaApp := detectKeaApp(m, cwd)
 				if keaApp != nil {
+					keaApp.Pid = p.Pid
 					apps = append(apps, keaApp)
 				}
 			}
@@ -193,6 +195,7 @@ func (sm *appMonitor) detectApps() {
 				cmdr := &storkutil.RealCommander{}
 				bind9App := detectBind9App(m, cwd, cmdr)
 				if bind9App != nil {
+					bind9App.Pid = p.Pid
 					apps = append(apps, bind9App)
 				}
 			}
