@@ -11,7 +11,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -56,19 +55,14 @@ type PromBind9ExporterStats struct {
 }
 
 // Main structure for Prometheus BIND 9 Exporter. It holds its settings,
-// references to app monitor, HTTP client, HTTP server, and main loop
-// controlling elements like ticker, and mappings between BIND 9 stats
-// names to prometheus stats.
+// references to app monitor, HTTP client, HTTP server, and mappings
+// between BIND 9 stats names to prometheus stats.
 type PromBind9Exporter struct {
 	Settings PromBind9ExporterSettings
 
 	AppMonitor AppMonitor
 	HTTPClient *HTTPClient
 	HTTPServer *http.Server
-
-	Ticker        *time.Ticker
-	DoneCollector chan bool
-	Wg            *sync.WaitGroup
 
 	up              int
 	serverStatsDesc map[string]*prometheus.Desc
@@ -85,11 +79,9 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		Handler: mux,
 	}
 	pbe := &PromBind9Exporter{
-		AppMonitor:    appMonitor,
-		HTTPClient:    NewHTTPClient(),
-		HTTPServer:    srv,
-		DoneCollector: make(chan bool),
-		Wg:            &sync.WaitGroup{},
+		AppMonitor: appMonitor,
+		HTTPClient: NewHTTPClient(),
+		HTTPServer: srv,
 	}
 
 	// bind_exporter stats
