@@ -9,7 +9,7 @@
         <table class="events-table">
             <tr *ngFor="let ev of events.items">
                 <td style="width: 6em;">{{ ev.createdAt | localtime }}</td>
-                <td *ngIf="ev.level === undefined || ev.level === 0" style="font-size: 1.5em; color: #4da5f0;">
+                <td *ngIf="ev.level === undefined || ev.level === 0" style="font-size: 1.5em; color: #1de6dc;">
                     <i class="pi pi-info-circle"></i>
                 </td>
                 <td *ngIf="ev.level === 1" style="font-size: 1.5em; color: orange;">
