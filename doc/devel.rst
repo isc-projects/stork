@@ -27,7 +27,7 @@ for detailed instructions.
 Generating Documentation
 ========================
 
-To generate documentation, simply type ``rake doc``. 
+To generate documentation, simply type ``rake doc``.
 `Sphinx <http://www.sphinx-doc.org>`_ and `rtd-theme
 <https://github.com/readthedocs/sphinx_rtd_theme>`_ must be installed. The
 generated documentation will be available in the ``doc/singlehtml``
@@ -74,7 +74,7 @@ the following three commands, one in each console:
 
     $ rake run_server
 
-.. code-block:: console 
+.. code-block:: console
 
     $ rake serve_ui
 
@@ -82,7 +82,7 @@ the following three commands, one in each console:
 
     $ rake run_agent
 
-Once all three processes are running, connect to http://localhost:4200
+Once all three processes are running, connect to http://localhost:8080
 via a web browser. See :ref:`usage` for initial password information
 or for adding new machines to the server.
 
