@@ -1,3 +1,10 @@
+* 70 [func] matthijs
+
+    Implementated Bind exporter and embedded it in Stork Agent.
+    It is based on bind_exporter:
+    https://github.com/prometheus-community/bind_exporter
+    (Gitlab #218)
+
 * 69 [func] godfryd
 
     Implemented basic events mechanism. The events pertaining to
