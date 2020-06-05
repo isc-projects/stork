@@ -1,11 +1,10 @@
 * 69 [func] godfryd
 
-    Implemented basic event mechanism. EventCenter was added that
-    collects events from other modules and dispatches to subscribers
-    i.e. web browser using server-sent events. Added fetching list of
-    events and presenting them in UI, in events panel on dashboard
-    page. Added receiving events in UI, in events panel via SSE and
-    presenting them.  (Gitlab #275)
+    Implemented basic events mechanism. The events pertaining to
+    machines, apps, daemons, subnets and other entities are displayed
+    on the dashboard page. The server-sent events (SSE) mechanism is
+    used by the browser to refresh the list of events.
+    (Gitlab #275)
 
 * 68 [func] marcin
 
