@@ -442,8 +442,8 @@ Each section contains 3 kinds of information:
 Events Panel
 ~~~~~~~~~~~~
 
-Events panel presents list of the most recent events that were noticed
-by Stork server. There are 3 severity levels of events: info, warning
-and error. Events that are related to particular entities like machine
-or application provide a link to a web page with information about
-given object.
+Events panel presents the list of the most recent events captured by
+the Stork server. There are 3 severity levels of the events: info, warning
+and error. Events pertaining to the particular entities, e.g. machines
+or applications, provide a link to a web page containing the information
+about the given object.
