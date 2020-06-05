@@ -2,10 +2,6 @@ FROM ubuntu:18.04
 WORKDIR /agent
 # Install essentials and BIND9.
 RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-certificates gnupg apt-transport-https supervisor bind9 wget prometheus-node-exporter
-# Install BIND9 exporter for Prometheus.
-RUN wget https://github.com/prometheus-community/bind_exporter/releases/download/v0.3.0/bind_exporter-0.3.0.linux-amd64.tar.gz && \
-        tar -zxvf bind_exporter-0.3.0.linux-amd64.tar.gz && \
-        mv bind_exporter-0.3.0.linux-amd64/bind_exporter /usr/bin
 # Install Stork agent.
 COPY build-root/root/usr/bin/stork-agent /agent/
 # Copy configuration files.

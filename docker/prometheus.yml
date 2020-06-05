@@ -7,7 +7,7 @@ scrape_configs:
   # basic node exportes exposing machine health
   - job_name: 'node'
     static_configs:
-      - targets: ['agent-kea:9100', 'agent-bind9:9100']
+      - targets: ['agent-kea:9100', 'agent-bind9:9100', 'agent-bind9-2:9100']
 
   # statistics from Kea
   - job_name: 'kea'
@@ -17,4 +17,4 @@ scrape_configs:
   # statistics from bind9, requires bind-exporter
   - job_name: 'bind9'
     static_configs:
-      - targets: ['agent-bind9:9119', 'agent-bind9:9548']
+      - targets: ['agent-bind9:9119', 'agent-bind9-2:9119']

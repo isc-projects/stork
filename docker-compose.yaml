@@ -106,7 +106,21 @@ services:
       - "8080"
       - "9100"  # node_exporter for prometheus
       - "9119"  # bind_exporter for prometheus
-      - "9548"  # bind9_exporter for prometheus
+
+  agent-bind9-2:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/docker-agent-bind9.txt
+    image: registry.gitlab.isc.org/isc-projects/stork/agent-bind9:latest
+    hostname: agent-bind9-2
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.54
+    expose:
+      - "8080"
+      - "9100"  # node_exporter for prometheus
+      - "9119"  # bind_exporter for prometheus
 
   webui:
     build:

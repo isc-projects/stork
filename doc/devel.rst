@@ -202,6 +202,9 @@ to handle:
   container, the agent can be added as a machine and Stork will begin
   monitoring its BIND 9 service.
 
+* ``agent-bind9-2`` - This container also runs a BIND 9 server, for
+  the purpose of experimenting with two different DNS servers.
+
 * ``agent-kea`` - This container runs a Kea DHCPv4 server. With this
   container, the agent can be added as a machine and Stork will begin
   monitoring its Kea DHCPv4 service.

@@ -27,12 +27,12 @@ import (
 // Settings for Prometheus BIND 9 Exporter
 type PromBind9ExporterSettings struct {
 	Host     string `long:"prometheus-bind9-exporter-host" description:"the IP to listen on" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"`
-	Port     int    `long:"prometheus-bind9-exporter-port" description:"the port to listen on for connections" default:"9548" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"`
+	Port     int    `long:"prometheus-bind9-exporter-port" description:"the port to listen on for connections" default:"9119" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"`
 	Interval int    `long:"prometheus-bind9-exporter-interval" description:"interval of collecting BIND 9 stats in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"`
 }
 
 const (
-	namespace = "bind9"
+	namespace = "bind"
 	qryRTT    = "QryRTT"
 )
 
@@ -589,7 +589,7 @@ func (pbe *PromBind9Exporter) Start() {
 
 	// register collectors
 	version.Version = stork.Version
-	prometheus.MustRegister(version.NewCollector("bind9_exporter"))
+	prometheus.MustRegister(version.NewCollector("bind_exporter"))
 	prometheus.MustRegister(pbe)
 	if bind9Pid > 0 {
 		procExporter := prometheus.NewProcessCollector(

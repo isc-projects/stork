@@ -57,6 +57,7 @@ The installation procedure creates several Docker images:
 - `stork_server`: a server backend,
 - `postgres`: a PostgreSQL database used by the server,
 - `stork_agent-bind9`: an agent with BIND 9,
+- `stork_agent-bind9-2`: an second agent with BIND 9,
 - `stork_agent-kea`: an agent with a Kea DHCPv4 server,
 - `stork_agent-kea6`: an agent with a Kea DHCPv6 server,
 - `stork_agent-kea-ha1`: the primary Kea DHCPv4 server in High Availability mode,
@@ -108,6 +109,7 @@ Initialization
    #. agent-kea-ha1
    #. agent-kea-ha2
    #. agent-bind9
+   #. agent-bind9-2
 
 DHCP Traffic Simulator
 ----------------------
@@ -130,10 +132,11 @@ Prometheus
 
 The Prometheus instance is preconfigured and pulls statistics from:
 
-- node exporters: agent-kea:9100, agent-bind9:9100
+- node exporters: agent-kea:9100, agent-bind9:9100, agent-bind9:9100
 - kea exporters embedded in stork-agent: agent-kea:9547,
   agent-kea6:9547, agent-kea-ha1:9547, agent-kea-ha2:9547
-- bind9 exporter: agent-bind9:9119, agent-bind9:9548
+- bind exporters embedded in stork-agent: agent-bind9:9119,
+  agent-bind9-2:9119
 
 The Prometheus web page can be found at: http://localhost:9090/
 
