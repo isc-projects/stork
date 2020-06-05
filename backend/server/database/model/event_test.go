@@ -25,7 +25,7 @@ func TestEvent(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, ev1.ID)
 
-	// add erro event
+	// add error event
 	ev2 := &Event{
 		Text:  "some error event",
 		Level: EvError,
