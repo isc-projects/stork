@@ -2,12 +2,11 @@ package dbmodel
 
 import (
 	"testing"
+	"time"
 
 	require "github.com/stretchr/testify/require"
 
 	dbtest "isc.org/stork/server/database/test"
-
-	"time"
 )
 
 // Test that new instance of the generic Kea daemon can be created.
