@@ -11,8 +11,8 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Subcriber. For now empty. It will store rules for events
-// that subscriber is interested in.
+// Subcriber. For now empty so subscriber gets all events. It will
+// store rules for events that subscriber is interested in.
 type Subscriber struct {
 }
 
