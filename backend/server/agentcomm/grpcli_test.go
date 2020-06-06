@@ -103,9 +103,10 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 		Return(&rsp, nil)
 
 	ctx := context.Background()
-	command, _ := NewKeaCommand("test-command", nil, nil)
+	daemons, _ := NewKeaDaemons("dhcp4", "dhcp6")
+	command, _ := NewKeaCommand("test-command", daemons, nil)
 	actualResponse := KeaResponseList{}
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "http://localhost:8000/", []*KeaCommand{command}, &actualResponse)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "localhost", 8000, []*KeaCommand{command}, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse)
 	require.NoError(t, cmdsResult.Error)
@@ -124,6 +125,21 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 	require.NotNil(t, responseList[1].Arguments)
 	require.Len(t, *responseList[1].Arguments, 1)
 	require.Contains(t, *responseList[1].Arguments, "success")
+
+	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.Zero(t, agent.Stats.CurrentErrors)
+
+	appCommStats, ok := agent.Stats.AppCommStats[AppCommStatsKey{"localhost", 8000}].(*AgentKeaCommStats)
+	require.True(t, ok)
+
+	require.Zero(t, appCommStats.CurrentErrorsCA)
+	require.Contains(t, appCommStats.CurrentErrorsDaemons, "dhcp4")
+	require.Contains(t, appCommStats.CurrentErrorsDaemons, "dhcp6")
+
+	require.EqualValues(t, 1, appCommStats.CurrentErrorsDaemons["dhcp4"])
+	require.Zero(t, appCommStats.CurrentErrorsDaemons["dhcp6"])
 }
 
 // Test that two commands can be successfully forwarded to Kea and the response
@@ -168,11 +184,12 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 		Return(&rsp, nil)
 
 	ctx := context.Background()
-	command1, _ := NewKeaCommand("test-command", nil, nil)
-	command2, _ := NewKeaCommand("test-command", nil, nil)
+	daemons, _ := NewKeaDaemons("dhcp4", "dhcp6")
+	command1, _ := NewKeaCommand("test-command", daemons, nil)
+	command2, _ := NewKeaCommand("test-command", daemons, nil)
 	actualResponse1 := KeaResponseList{}
 	actualResponse2 := KeaResponseList{}
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "http://localhost:8000/", []*KeaCommand{command1, command2}, &actualResponse1, &actualResponse2)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "localhost", 8000, []*KeaCommand{command1, command2}, &actualResponse1, &actualResponse2)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse1)
 	require.NotNil(t, actualResponse2)
@@ -200,6 +217,21 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 	require.Equal(t, 1, responseList[0].Result)
 	require.Equal(t, "operation failed", responseList[0].Text)
 	require.Nil(t, responseList[0].Arguments)
+
+	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.Zero(t, agent.Stats.CurrentErrors)
+
+	appCommStats, ok := agent.Stats.AppCommStats[AppCommStatsKey{"localhost", 8000}].(*AgentKeaCommStats)
+	require.True(t, ok)
+
+	require.Zero(t, appCommStats.CurrentErrorsCA)
+	require.Contains(t, appCommStats.CurrentErrorsDaemons, "dhcp4")
+	require.Contains(t, appCommStats.CurrentErrorsDaemons, "dhcp6")
+
+	require.EqualValues(t, 2, appCommStats.CurrentErrorsDaemons["dhcp4"])
+	require.Zero(t, appCommStats.CurrentErrorsDaemons["dhcp6"])
 }
 
 // Test that the error is returned when the response to the forwarded Kea command
@@ -228,13 +260,23 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	ctx := context.Background()
 	command, _ := NewKeaCommand("test-command", nil, nil)
 	actualResponse := KeaResponseList{}
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "http://localhost:8080/", []*KeaCommand{command}, &actualResponse)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "localhost", 8080, []*KeaCommand{command}, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, cmdsResult)
 	require.NoError(t, cmdsResult.Error)
 	require.Len(t, cmdsResult.CmdsErrors, 1)
 	// and now for our command we get an error
 	require.Error(t, cmdsResult.CmdsErrors[0])
+
+	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.Zero(t, agent.Stats.CurrentErrors)
+
+	appCommStats, ok := agent.Stats.AppCommStats[AppCommStatsKey{"localhost", 8080}].(*AgentKeaCommStats)
+	require.True(t, ok)
+
+	require.EqualValues(t, 1, appCommStats.CurrentErrorsCA)
 }
 
 // Test that a statistics request can be successfully forwarded to named
@@ -272,11 +314,20 @@ func TestForwardToNamedStats(t *testing.T) {
 
 	ctx := context.Background()
 	actualResponse := NamedStatsGetResponse{}
-	err := agents.ForwardToNamedStats(ctx, "127.0.0.1", 8080, "http://localhost:8000/", &actualResponse)
+	err := agents.ForwardToNamedStats(ctx, "127.0.0.1", 8080, "localhost", 8000, "", &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse)
 	require.Len(t, *actualResponse.Views, 1)
 	require.Contains(t, *actualResponse.Views, "_default")
+
+	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.Zero(t, agent.Stats.CurrentErrors)
+
+	appCommStats, ok := agent.Stats.AppCommStats[AppCommStatsKey{"localhost", 8000}].(*AgentBind9CommStats)
+	require.True(t, ok)
+	require.Zero(t, appCommStats.CurrentErrorsStats)
 }
 
 // Test that the error is returned when the response to the forwarded
@@ -302,8 +353,17 @@ func TestForwardToNamedStatsInvalidResponse(t *testing.T) {
 
 	ctx := context.Background()
 	actualResponse := NamedStatsGetResponse{}
-	err := agents.ForwardToNamedStats(ctx, "127.0.0.1", 8080, "http://localhost:8000/", &actualResponse)
+	err := agents.ForwardToNamedStats(ctx, "127.0.0.1", 8080, "localhost", 8000, "", &actualResponse)
 	require.Error(t, err)
+
+	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.Zero(t, agent.Stats.CurrentErrors)
+
+	appCommStats, ok := agent.Stats.AppCommStats[AppCommStatsKey{"localhost", 8000}].(*AgentBind9CommStats)
+	require.True(t, ok)
+	require.EqualValues(t, 1, appCommStats.CurrentErrorsStats)
 }
 
 // Test that a command can be successfully forwarded to rndc and the response
@@ -338,4 +398,14 @@ func TestForwardRndcCommand(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, out.Output, "all good")
 	require.NoError(t, out.Error)
+
+	agent, err := agents.GetConnectedAgent("127.0.0.1:8080")
+	require.NoError(t, err)
+	require.NotNil(t, agent)
+	require.Zero(t, agent.Stats.CurrentErrors)
+
+	appCommStats, ok := agent.Stats.AppCommStats[AppCommStatsKey{"127.0.0.1", 953}].(*AgentBind9CommStats)
+	require.True(t, ok)
+
+	require.Zero(t, appCommStats.CurrentErrorsRNDC)
 }

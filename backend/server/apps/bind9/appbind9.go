@@ -2,7 +2,6 @@ package bind9
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strconv"
 	"time"
@@ -13,7 +12,6 @@ import (
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
-	storkutil "isc.org/stork/util"
 )
 
 // Provide example date format how named returns dates.
@@ -46,16 +44,13 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 		log.Warnf("problem with getting named statistics-channel access point: %s", err)
 		return
 	}
-	statsAddress := storkutil.HostWithPortURL(statsChannel.Address, statsChannel.Port)
-	statsRequest := "json/v1"
-	statsURL := fmt.Sprintf("%s%s", statsAddress, statsRequest)
 
 	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
 	// store all collected details in app db record
 	statsOutput := NamedStatsGetResponse{}
-	err = agents.ForwardToNamedStats(ctx2, dbApp.Machine.Address, dbApp.Machine.AgentPort, statsURL, &statsOutput)
+	err = agents.ForwardToNamedStats(ctx2, dbApp.Machine.Address, dbApp.Machine.AgentPort, statsChannel.Address, statsChannel.Port, "json/v1", &statsOutput)
 	if err != nil {
 		log.Warnf("problem with retrieving stats from named: %s", err)
 	}

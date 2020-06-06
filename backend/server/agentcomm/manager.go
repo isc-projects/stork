@@ -65,6 +65,13 @@ func doCall(ctx context.Context, agent *Agent, in interface{}) (interface{}, err
 	default:
 		err = errors.New("doCall: unsupported request type")
 	}
+
+	if err != nil {
+		agent.Stats.CurrentErrors++
+	} else {
+		agent.Stats.CurrentErrors = 0
+	}
+
 	return response, err
 }
 

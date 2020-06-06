@@ -352,13 +352,11 @@ func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	if err != nil {
 		return nil, err
 	}
-	caURL := storkutil.HostWithPortURL(ctrlPoint.Address, ctrlPoint.Port)
-
 	// The Kea response will be stored in this slice of structures.
 	response := []StatusGetResponse{}
 
 	// Send the command and receive the response.
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caURL, []*agentcomm.KeaCommand{cmd}, &response)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, []*agentcomm.KeaCommand{cmd}, &response)
 	if err != nil {
 		return nil, err
 	}

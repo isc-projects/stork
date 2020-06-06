@@ -15,11 +15,40 @@ import (
 type AgentsSettings struct {
 }
 
-// Runtime information about the agent, e.g. connection.
+// Holds runtime communication statistics with Kea daemons via
+// a given agent.
+type AgentKeaCommStats struct {
+	CurrentErrorsCA      int64
+	CurrentErrorsDaemons map[string]int64
+}
+
+// Holds runtime communication statistics with Bind9 daemon for
+// a given agent.
+type AgentBind9CommStats struct {
+	CurrentErrorsRNDC  int64
+	CurrentErrorsStats int64
+}
+
+type AppCommStatsKey struct {
+	Address string
+	Port    int64
+}
+
+// Holds runtime statistics of communication with a given agent and
+// with the apps behind this agent.
+type AgentStats struct {
+	CurrentErrors int64
+	AppCommStats  map[AppCommStatsKey]interface{}
+	mutex         *sync.Mutex
+}
+
+// Runtime information about the agent, e.g. connection, communication
+// statistics.
 type Agent struct {
 	Address  string
 	Client   agentapi.AgentClient
 	GrpcConn *grpc.ClientConn
+	Stats    AgentStats
 }
 
 // Prepare gRPC connection to agent.
@@ -50,8 +79,8 @@ type ConnectedAgents interface {
 	GetConnectedAgent(address string) (*Agent, error)
 	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
 	ForwardRndcCommand(ctx context.Context, agentAddress string, agentPort int64, rndcSettings Bind9Control, command string) (*RndcOutput, error)
-	ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsURL string, statsOutput interface{}) error
-	ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caURL string, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
+	ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
+	ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caAddress string, caPort int64, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.
@@ -104,6 +133,8 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	// Agent not found so allocate agent and prepare connection
 	agent = new(Agent)
 	agent.Address = address
+	agent.Stats.AppCommStats = make(map[AppCommStatsKey]interface{})
+	agent.Stats.mutex = new(sync.Mutex)
 	err := agent.MakeGrpcConnection()
 	if err != nil {
 		return nil, err

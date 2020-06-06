@@ -10,7 +10,6 @@ import (
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
-	storkutil "isc.org/stork/util"
 )
 
 const (
@@ -134,7 +133,8 @@ type HostDetectionIterator struct {
 	family      int
 	from        int64
 	sourceIndex int64
-	url         string
+	caAddress   string
+	caPort      int64
 	subnets     []dbmodel.Subnet
 	subnetIndex int
 }
@@ -150,7 +150,8 @@ func NewHostDetectionIterator(db *dbops.PgDB, app *dbmodel.App, agents agentcomm
 		family:      0,
 		from:        0,
 		sourceIndex: 1,
-		url:         "",
+		caAddress:   "",
+		caPort:      0,
 		subnets:     []dbmodel.Subnet{},
 		subnetIndex: -1,
 	}
@@ -231,7 +232,7 @@ func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel
 	response := make([]ReservationGetPageResponse, 1)
 	ctx := context.Background()
 	respResult, err := iterator.agents.ForwardToKeaOverHTTP(ctx, iterator.app.Machine.Address, iterator.app.Machine.AgentPort,
-		iterator.url, commands, &response)
+		iterator.caAddress, iterator.caPort, commands, &response)
 	if err != nil {
 		// Can retry because the error may go away upon the next attempt.
 		return hosts, agentcomm.KeaResponseError, true, err
@@ -308,15 +309,16 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 		return hosts, done, err
 	}
 
-	// During the first call to this function we have to initialize the URL of
-	// the Kea app we wicll be communicating with. We don't repeat this operation
+	// During the first call to this function we have to initialize the access point
+	// of the Kea app we will be communicating with. We don't repeat this operation
 	// for subequent calls.
-	if len(iterator.url) == 0 {
+	if len(iterator.caAddress) == 0 {
 		ctrlPoint, err := iterator.app.GetAccessPoint(dbmodel.AccessPointControl)
 		if err != nil {
 			return hosts, done, errors.WithMessagef(err, "problem with getting Kea access points upon an attempt to detect host reservations over the host_cmds hooks library")
 		}
-		iterator.url = storkutil.HostWithPortURL(ctrlPoint.Address, ctrlPoint.Port)
+		iterator.caAddress = ctrlPoint.Address
+		iterator.caPort = ctrlPoint.Port
 	}
 
 	// Count the servers we have iterated over to make sure we use the one we used

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"isc.org/stork/server/agentcomm"
+	storkutil "isc.org/stork/util"
 )
 
 // Helper struct to mock Agents behavior.
@@ -89,8 +90,8 @@ func (fa *FakeAgents) GetLastCommand() *agentcomm.KeaCommand {
 // function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents.
-func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caURL string, commands []*agentcomm.KeaCommand, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
-	fa.RecordedURL = caURL
+func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caAddress string, caPort int64, commands []*agentcomm.KeaCommand, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
+	fa.RecordedURL = storkutil.HostWithPortURL(caAddress, caPort)
 	result := &agentcomm.KeaCmdsResult{}
 	for _, cmd := range commands {
 		fa.RecordedCommands = append(fa.RecordedCommands, *cmd)
@@ -109,8 +110,8 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, agentAddress str
 // to this function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents.
-func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsURL string, statsOutput interface{}) error {
-	fa.RecordedStatsURL = statsURL
+func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, path string, statsOutput interface{}) error {
+	fa.RecordedStatsURL = storkutil.HostWithPortURL(statsAddress, statsPort) + path
 
 	// Generate response.
 	if fa.mockNamedFunc != nil {

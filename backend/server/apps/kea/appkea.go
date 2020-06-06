@@ -85,7 +85,7 @@ type VersionGetResponse struct {
 // It also returns:
 // - list of all Kea daemons
 // - list of DHCP daemons (dhcpv4 and/or dhcpv6)
-func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caURL string, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon) (agentcomm.KeaDaemons, agentcomm.KeaDaemons, error) {
+func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caAddress string, caPort int64, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon) (agentcomm.KeaDaemons, agentcomm.KeaDaemons, error) {
 	// prepare the command to get config and version from CA
 	cmds := []*agentcomm.KeaCommand{
 		{
@@ -100,7 +100,7 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caURL
 	versionGetResp := []VersionGetResponse{}
 	caConfigGetResp := []CAConfigGetResponse{}
 
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caURL, cmds, &versionGetResp, &caConfigGetResp)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caAddress, caPort, cmds, &versionGetResp, &caConfigGetResp)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -167,7 +167,7 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caURL
 
 // Get state of Kea application daemons (beside Control Agent) using ForwardToKeaOverHTTP function.
 // The state, that is stored into dbApp, includes: version, config and runtime state of indicated Kea daemons.
-func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, caURL string, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, allDaemons agentcomm.KeaDaemons, dhcpDaemons agentcomm.KeaDaemons) error {
+func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, caAddress string, caPort int64, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, allDaemons agentcomm.KeaDaemons, dhcpDaemons agentcomm.KeaDaemons) error {
 	now := storkutil.UTCNow()
 
 	// issue 3 commands to Kea daemons at once to get their state
@@ -190,7 +190,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 	statusGetResp := []StatusGetResponse{}
 	configGetResp := []agentcomm.KeaResponse{}
 
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caURL, cmds, &versionGetResp, &statusGetResp, &configGetResp)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caAddress, caPort, cmds, &versionGetResp, &statusGetResp, &configGetResp)
 	if err != nil {
 		return err
 	}
@@ -283,18 +283,17 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 		log.Warnf("problem with getting kea access control point: %s", err)
 		return nil
 	}
-	caURL := storkutil.HostWithPortURL(ctrlPoint.Address, ctrlPoint.Port)
 
 	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
 	// get state from CA
 	daemonsMap := map[string]*dbmodel.Daemon{}
-	allDaemons, dhcpDaemons, err := getStateFromCA(ctx2, agents, caURL, dbApp, daemonsMap)
+	allDaemons, dhcpDaemons, err := getStateFromCA(ctx2, agents, ctrlPoint.Address, ctrlPoint.Port, dbApp, daemonsMap)
 
 	// if no problems then now get state from the rest of Kea daemons
 	if err == nil {
-		err = getStateFromDaemons(ctx2, agents, caURL, dbApp, daemonsMap, allDaemons, dhcpDaemons)
+		err = getStateFromDaemons(ctx2, agents, ctrlPoint.Address, ctrlPoint.Port, dbApp, daemonsMap, allDaemons, dhcpDaemons)
 		if err != nil {
 			log.Warnf("problem with getting state from kea daemons: %s", err)
 		}

@@ -9,7 +9,6 @@ import (
 
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
-	storkutil "isc.org/stork/util"
 )
 
 type StatsPuller struct {
@@ -271,8 +270,6 @@ func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 	if err != nil {
 		return err
 	}
-	caURL := storkutil.HostWithPortURL(ctrlPoint.Address, ctrlPoint.Port)
-
 	// get active dhcp daemons
 	dhcpDaemons := make(agentcomm.KeaDaemons)
 	found := false
@@ -306,7 +303,7 @@ func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 	statsResp1 := []StatLeaseGetResponse{}
 	statsResp2 := []StatLeaseGetResponse{}
 	ctx := context.Background()
-	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caURL, cmds, &statsResp1, &statsResp2)
+	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, cmds, &statsResp1, &statsResp2)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,6 @@ package bind9
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-pg/pg/v9"
 	log "github.com/sirupsen/logrus"
@@ -10,7 +9,6 @@ import (
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
-	storkutil "isc.org/stork/util"
 )
 
 type StatsPuller struct {
@@ -73,13 +71,10 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	if err != nil {
 		return err
 	}
-	statsAddress := storkutil.HostWithPortURL(statsChannel.Address, statsChannel.Port)
-	statsRequest := "json/v1"
-	statsURL := fmt.Sprintf("%s%s", statsAddress, statsRequest)
 
 	statsOutput := NamedStatsGetResponse{}
 	ctx := context.Background()
-	err = statsPuller.Agents.ForwardToNamedStats(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, statsURL, &statsOutput)
+	err = statsPuller.Agents.ForwardToNamedStats(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, statsChannel.Address, statsChannel.Port, "json/v1", &statsOutput)
 	if err != nil {
 		return err
 	}
