@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"fmt"
 
 	flags "github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
@@ -17,6 +18,7 @@ import (
 type AgentSettings struct {
 	PrometheusOnly bool `long:"listen-prometheus-only" description:"listen only for Prometheus requests" env:"STORK_AGENT_LISTEN_PROMETHEUS_ONLY"`
 	StorkOnly      bool `long:"listen-stork-only" description:"listen only for Stork Server requests" env:"STORK_AGENT_LISTEN_STORK_ONLY"`
+	Version        bool `short:"v" long:"version" description:"show software version"`
 }
 
 func main() {
@@ -61,7 +63,12 @@ func main() {
 				os.Exit(0)
 			}
 		}
-		log.Fatalf("FATAL error: %+v", err)
+		log.Fatalf("FATAL error during parsing: %+v", err)
+	}
+
+	if agentSettings.Version {
+		fmt.Printf("%s\n", stork.Version)
+		os.Exit(0)
 	}
 
 	// Only start the exporters if they're enabled.
