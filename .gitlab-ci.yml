@@ -5,6 +5,7 @@ variables:
   POSTGRES_DB: storktest
   POSTGRES_USER: storktest
   POSTGRES_PASSWORD: storktest
+  POSTGRES_IN_DOCKER: 'yes'
 
 # this is used to build docker images of stork (using DIND)
   DOCKER_DRIVER: overlay2
@@ -31,12 +32,13 @@ cache:
   tags:
     - linux
     - amd64
+    - ssd
   before_script:
-    - apt-get update
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y wget xz-utils rake openjdk-11-jre-headless gcc g++ chromium-browser unzip python3-sphinx python3-sphinx-rtd-theme
-    - rake prepare_env
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+    - apt-get update
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget xz-utils rake openjdk-11-jre-headless gcc g++ chromium-browser unzip python3-sphinx python3-sphinx-rtd-theme iputils-ping
+    - rake prepare_env
 
 lint_go:
   extends: .base_build
@@ -49,6 +51,9 @@ unittest_backend:
     - name: registry.gitlab.isc.org/isc-projects/stork/ci-postgres:11
       alias: postgres
   script:
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends postgresql-client
+    - echo 'postgres:*:*:storktest:storktest' > ~/.pgpass
+    - chmod 600 ~/.pgpass
     - rake unittest_backend
 
 ci_ui:
@@ -83,6 +88,7 @@ danger:
   tags:
     - linux
     - amd64
+    - ssd
   image: registry.gitlab.isc.org/isc-projects/stork/ci-danger
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
@@ -100,6 +106,7 @@ tarball:
   tags:
     - linux
     - amd64
+    - ssd
   script:
     - rake tarball
   artifacts:
@@ -116,6 +123,7 @@ debs:
   tags:
     - linux
     - amd64
+    - ssd
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
@@ -132,6 +140,7 @@ rpms:
   tags:
     - linux
     - amd64
+    - ssd
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
@@ -153,6 +162,7 @@ deploy_demo:
     - linux
     - docker
     - amd64
+    - ssd
   services:
     - docker:dind
   before_script:
@@ -190,6 +200,7 @@ deploy_pkgs:
     - linux
     - docker
     - amd64
+    - ssd
   dependencies:
     - rpms
     - debs

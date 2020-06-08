@@ -348,7 +348,7 @@ task :fmt_go => [GO, :gen_agent, :gen_server] do
 end
 
 desc 'Run backend unit tests'
-task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_agent] do
+task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_agent, :build_migrations] do
   at_exit {
     sh 'rm -f backend/server/agentcomm/api_mock.go'
   }
@@ -370,6 +370,29 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     test_regex = ''
   end
 
+  # establish location of postgresql database
+  pgsql_host = 'localhost'
+  pgsql_port = '5432'
+  if ENV['POSTGRES_ADDR']
+    pgsql_addr = ENV['POSTGRES_ADDR']
+    if pgsql_addr.include? ':'
+      pgsql_host, pgsql_port = pgsql_addr.split(':')
+    else
+      pgsql_host = pgsql_addr
+    end
+  end
+
+  # prepare database for unit tests: clear any remainings from previuos runs, prepare up-to-date template db
+  if ENV['POSTGRES_IN_DOCKER'] != 'yes'
+    sh %{
+       for db in $(psql -t -h #{pgsql_host} -p #{pgsql_port} -U storktest -c \"select datname from pg_database where datname ~ 'storktest.*'\"); do
+         dropdb -h #{pgsql_host} -p #{pgsql_port} -U storktest $db
+       done
+       createdb -h #{pgsql_host} -p #{pgsql_port} -U storktest -O storktest storktest
+    }
+  end
+  sh "STORK_DATABASE_PASSWORD=storktest ./backend/cmd/stork-db-migrate/stork-db-migrate -d storktest -u storktest --db-host #{pgsql_host} -p #{pgsql_port} up"
+
   if ENV['dbtrace'] == 'true'
     ENV['STORK_DATABASE_TRACE'] = 'true'
   end
@@ -382,7 +405,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
       if ENV['richgo'] == 'false'
         gotool = GO
       end
-      sh "#{gotool} test -race -v -count=1 -p 1 #{cov_params} #{test_regex} #{scope}"  # count=1 disables caching results
+      sh "#{gotool} test -race -v #{cov_params} #{test_regex} #{scope}"  # count=1 disables caching results
     end
 
     # check coverage level (run it only for full tests scope)
@@ -429,6 +452,7 @@ task :unittest_backend_db do
   }
   sh "docker run --name stork-ut-pgsql -d -p 5678:5432 -e POSTGRES_DB=storktest -e POSTGRES_USER=storktest -e POSTGRES_PASSWORD=storktest postgres:11"
   ENV['POSTGRES_ADDR'] = "localhost:5678"
+  ENV['POSTGRES_IN_DOCKER'] = 'yes'
   Rake::Task["unittest_backend"].invoke
 end
 

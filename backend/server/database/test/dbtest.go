@@ -1,11 +1,14 @@
 package dbtest
 
 import (
+	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -47,8 +50,34 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 		pgConnOptions.Addr = addr
 	}
 
-	// Create an instance of the database using test credentials.
+	// Connect to base `postgres` database to be able to create test database.
+	pgConnOptions.Database = "postgres"
 	db, err := dbops.NewPgDbConn(&pgConnOptions)
+	if db == nil {
+		log.Fatalf("unable to create database instance: %+v", err)
+	}
+	require.NoError(t, err)
+
+	// Create test database from template. Template db is storktest (no tests should use it directly).
+	// Test database name is storktest + big random number e.g.: storktest9817239871871478571.
+	rand.Seed(time.Now().UnixNano())
+	dbName := fmt.Sprintf("storktest%d", rand.Int63())
+
+	cmd := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
+	_, err = db.Exec(cmd)
+	require.NoError(t, err)
+
+	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE storktest;`, dbName)
+	_, err = db.Exec(cmd)
+	require.NoError(t, err)
+
+	db.Close()
+
+	// Create an instance of the test database.
+	pgConnOptions.Database = dbName
+	genericConnOptions.BaseDatabaseSettings.DbName = dbName
+
+	db, err = dbops.NewPgDbConn(&pgConnOptions)
 	if db == nil {
 		log.Fatalf("unable to create database instance: %+v", err)
 	}
@@ -59,25 +88,7 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 		db.AddQueryHook(dbops.DbLogger{})
 	}
 
-	createSchema(t, db)
-
 	return db, &genericConnOptions, func() {
-		TossSchema(t, db)
-		defer db.Close()
+		db.Close()
 	}
-}
-
-// Create the database schema to the latest version.
-func createSchema(t *testing.T, db *dbops.PgDB) {
-	TossSchema(t, db)
-	_, _, err := dbops.Migrate(db, "init")
-	require.NoError(t, err)
-	_, _, err = dbops.Migrate(db, "up")
-	require.NoError(t, err)
-}
-
-// Remove the database schema.
-func TossSchema(t *testing.T, db *dbops.PgDB) {
-	err := dbops.Toss(db)
-	require.NoError(t, err)
 }
