@@ -69,7 +69,8 @@ func NewAppMonitor() AppMonitor {
 }
 
 func (sm *appMonitor) run() {
-	log.Printf("Started app monitor")
+	// Removed log entry about starting app monitor. It was confusing when the agent
+	// is called with --version. Also, this message on its own is not useful.
 	sm.running = true
 	defer sm.wg.Done()
 

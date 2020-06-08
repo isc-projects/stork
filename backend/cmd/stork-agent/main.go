@@ -24,7 +24,6 @@ type AgentSettings struct {
 func main() {
 	// Setup logging
 	storkutil.SetupLogging()
-	log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
 
 	// Start app monitor
 	appMonitor := agent.NewAppMonitor()
@@ -70,6 +69,9 @@ func main() {
 		fmt.Printf("%s\n", stork.Version)
 		os.Exit(0)
 	}
+
+	// We need to print this statement only after we check if the only purpose is to print a version.
+	log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
 
 	// Only start the exporters if they're enabled.
 	if !agentSettings.StorkOnly {
