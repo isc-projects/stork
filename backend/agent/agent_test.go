@@ -438,11 +438,11 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 }
 
 // Aux function checks if a list of expected strings is present in the string
-func checkOutput(output string, exp []string) bool {
+func checkOutput(output string, exp []string, reason string) bool {
 	for _, x := range exp {
-		fmt.Printf("Checking if %s exists.\n", x)
+		fmt.Printf("Checking if %s exists in %s.\n", x, reason)
 		if strings.Index(output, x) == -1 {
-			fmt.Printf("ERROR: Expected string [%s] not found.\n", x)
+			fmt.Printf("ERROR: Expected string [%s] not found in %s.\n", x, reason)
 			return false
 		}
 	}
@@ -463,7 +463,7 @@ func TestCommandLineOptions(t *testing.T) {
 	require.NoError(t, err)
 
 	// Now check that all expected command-line switches are really there.
-	require.True(t, checkOutput(string(output), exp_switches))
+	require.True(t, checkOutput(string(output), exp_switches, "stork-agent -h output"))
 }
 
 // This test checks if all expected command-line options are documented
@@ -472,7 +472,7 @@ func TestCommandLineOptionsDoc(t *testing.T) {
 	require.NoError(t, err)
 	man, err := ioutil.ReadAll(file)
 
-	require.True(t, checkOutput(string(man), exp_switches))
+	require.True(t, checkOutput(string(man), exp_switches, "stork-agent.8.rst"))
 }
 
 // This test checks if stork-agent --version (and -v) report expected version.
