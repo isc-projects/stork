@@ -136,6 +136,103 @@ export class DashboardComponent implements OnInit {
     }
 
     /**
+     * Returns the name of the icon to be used in the Active column
+     *
+     * The icon selected depends on whether the daemon is active or not
+     * active and whether there is a communication with the daemon or
+     * not.
+     *
+     * @param daemon data structure holding the information about the daemon.
+     *
+     * @returns ban icon if the daemon is not active, times icon if the daemon
+     *          should be active but the communication with it is borken and
+     *          check icon if the communication with the active daemon is ok.
+     */
+    activeIconName(daemon) {
+        if (!daemon.active) {
+            return 'ban'
+        }
+        if (
+            (daemon.agentCommErrors && daemon.agentCommErrors > 0) ||
+            (daemon.caCommErrors && daemon.caCommErrors > 0) ||
+            (daemon.daemonCommErrors && daemon.daemonCommErrors > 0)
+        ) {
+            return 'times'
+        }
+        return 'check'
+    }
+
+    /**
+     * Returns the color of the icon used in the Active column
+     *
+     * @param daemon data structure holding the information about the daemon.
+     *
+     * @returns grey color if the daemon is not active, red if the daemon is
+     *          active but there are communication issues, green if the
+     *          communication with the active daemon is ok.
+     */
+    activeIconColor(daemon) {
+        if (!daemon.active) {
+            return 'grey'
+        }
+        if (
+            (daemon.agentCommErrors && daemon.agentCommErrors > 0) ||
+            (daemon.caCommErrors && daemon.caCommErrors > 0) ||
+            (daemon.daemonCommErrors && daemon.daemonCommErrors > 0)
+        ) {
+            return '#f11'
+        }
+        return '#00a800'
+    }
+
+    /**
+     * Returns tooltip for the icon presented in the Active column
+     *
+     * @param daemon data structure holding the information about the daemon.
+     *
+     * @returns Tooltip as text. It includes hints about the communication
+     *          problems when such problems occur, e.g. it includes the
+     *          hint whether the communication is with the agent or daemon.
+     */
+    activeIconTooltip(daemon) {
+        if (!daemon.active) {
+            return (
+                'Configuration for this daemon was found but the daemon was ' +
+                'not running at the time when the application was detected.'
+            )
+        }
+        if (daemon.agentCommErrors && daemon.agentCommErrors > 0) {
+            return (
+                'Communication with the Stork Agent on this machine ' +
+                'is broken. Last ' +
+                daemon.agentCommErrors +
+                ' attempt(s) to ' +
+                'communicate with the agent failed.'
+            )
+        }
+        if (daemon.caCommErrors && daemon.caCommErrors > 0) {
+            return (
+                'Communication with the Kea Control Agent on this machine ' +
+                'is broken. The Stork Agent appears to work fine but the ' +
+                'Kea CA is down or returns errors. Last ' +
+                daemon.caCommErrors +
+                ' attempt(s) to communicate with Kea CA failed.'
+            )
+        }
+        if (daemon.daemonCommErrors && daemon.daemonCommErrors > 0) {
+            return (
+                'Communication with the daemon on this machine ' +
+                'is broken. The Stork Agent and Kea Control Agent appear to ' +
+                'work fine, but the daemon behind Kea CA does not respond or ' +
+                'responds with errors. Last ' +
+                daemon.daemonCommErrors +
+                ' attempt(s) to communicate with the daemon failed.'
+            )
+        }
+        return 'Communication with the daemon is ok.'
+    }
+
+    /**
      * Returns the name of the icon to be shown for the given HA state
      *
      * @returns check, times, exclamation triangle or ban.

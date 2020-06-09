@@ -271,11 +271,12 @@
                         <td>{{ d.name }}</td>
                         <td>
                             <i
-                                class="pi pi-{{ d.active ? 'check' : 'times' }}"
+                                pTooltip="{{ activeIconTooltip(d) }}"
+                                class="pi pi-{{ activeIconName(d) }}"
                                 [ngStyle]="{
                                     'font-size': '1.5em',
                                     'vertical-align': 'text-bottom',
-                                    color: d.active ? '#00a800' : '#f11'
+                                    color: activeIconColor(d)
                                 }"
                             ></i>
                         </td>
