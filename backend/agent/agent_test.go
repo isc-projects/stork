@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 	"os/exec"
+	"io/ioutil"
+	"os"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -447,6 +449,12 @@ func checkOutput(output string, exp []string) bool {
 	return true
 }
 
+// This is the list of all parameters we expect to see there.
+var	exp_switches = []string{ "-v", "--version", "--listen-prometheus-only", "--listen-stork-only",
+    "--host", "--port", "--prometheus-kea-exporter-host", "--prometheus-kea-exporter-port",
+	"--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-host",
+	"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval" }
+
 // This test checks if stork-agent -h reports all expected command-line options
 func TestCommandLineOptions(t *testing.T) {
 	// Run the --help version and get its output.
@@ -454,13 +462,17 @@ func TestCommandLineOptions(t *testing.T) {
 	output, err := agentCmd.Output()
 	require.NoError(t, err)
 
-	// This is the list of all parameters we expect to see there.
-	exp := []string{ "-v", "--version", "--listen-prometheus-only", "--listen-stork-only", "--host",
-					 "--port=", "--prometheus-kea-exporter-host", "--prometheus-kea-exporter-port",
-					 "--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-host",
-					 "--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval" }
+	// Now check that all expected command-line switches are really there.
+	require.True(t, checkOutput(string(output), exp_switches))
+}
 
-	require.True(t, checkOutput(string(output), exp))
+// This test checks if all expected command-line options are documented
+func TestCommandLineOptionsDoc(t *testing.T) {
+    file, err := os.Open("../../doc/man/stork-agent.8.rst")
+	require.NoError(t, err)
+	man, err := ioutil.ReadAll(file)
+
+	require.True(t, checkOutput(string(man), exp_switches))
 }
 
 // This test checks if stork-agent --version (and -v) report expected version.
