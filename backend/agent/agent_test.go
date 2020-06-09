@@ -455,10 +455,16 @@ var	exp_switches = []string{ "-v", "--version", "--listen-prometheus-only", "--l
 	"--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-host",
 	"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval" }
 
-// This test checks if stork-agent -h reports all expected command-line options
-func TestCommandLineOptions(t *testing.T) {
+// Location of the stork-agent binary
+const AGENT_BIN = "../cmd/stork-agent/stork-agent"
+
+// Location of the stork-agent man page
+const AGENT_MAN = "../../doc/man/stork-agent.8.rst"
+
+// This test checks if stork-agent -h reports all expected command-line switches
+func TestCommandLineSwitches(t *testing.T) {
 	// Run the --help version and get its output.
-	agentCmd := exec.Command("../cmd/stork-agent/stork-agent", "-h")
+	agentCmd := exec.Command(AGENT_BIN, "-h")
 	output, err := agentCmd.Output()
 	require.NoError(t, err)
 
@@ -466,12 +472,14 @@ func TestCommandLineOptions(t *testing.T) {
 	require.True(t, checkOutput(string(output), exp_switches, "stork-agent -h output"))
 }
 
-// This test checks if all expected command-line options are documented
-func TestCommandLineOptionsDoc(t *testing.T) {
-    file, err := os.Open("../../doc/man/stork-agent.8.rst")
+// This test checks if all expected command-line switches are documented
+func TestCommandLineSwitchesDoc(t *testing.T) {
+	// Read the contents of the man page
+    file, err := os.Open(AGENT_MAN)
 	require.NoError(t, err)
 	man, err := ioutil.ReadAll(file)
 
+	// And check that all expected switches are mentioned there.
 	require.True(t, checkOutput(string(man), exp_switches, "stork-agent.8.rst"))
 }
 
@@ -481,8 +489,8 @@ func TestCommandLineVersion(t *testing.T) {
 	for _, opt := range []string {"-v", "--version"} {
 		fmt.Printf("Checking %s\n", opt)
 
-		//TODO: This should better detect the directory.
-		agentCmd := exec.Command("../cmd/stork-agent/stork-agent", opt)
+		// Run the agent with specific switch.
+		agentCmd := exec.Command(AGENT_BIN, opt)
 		output, err := agentCmd.Output()
 		require.NoError(t, err)
 
