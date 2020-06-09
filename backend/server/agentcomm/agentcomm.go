@@ -2,6 +2,7 @@ package agentcomm
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -77,6 +78,7 @@ func (agent *Agent) MakeGrpcConnection() error {
 type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
+	GetConnectedAgentStats(adddress string, port int64) *AgentStats
 	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
 	ForwardRndcCommand(ctx context.Context, agentAddress string, agentPort int64, rndcSettings Bind9Control, command string) (*RndcOutput, error)
 	ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
@@ -145,4 +147,17 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	log.Printf("connecting to new agent on %v", address)
 
 	return agent, nil
+}
+
+// Returns statistics for the connected agent. The statistics include number
+// of errors to communicate with the agent and the number of errors to
+// communicate with the apps behind the agent.
+func (agents *connectedAgentsData) GetConnectedAgentStats(address string, port int64) *AgentStats {
+	if port != 0 {
+		address = fmt.Sprintf("%s:%d", address, port)
+	}
+	if agent, ok := agents.AgentsMap[address]; ok {
+		return &agent.Stats
+	}
+	return nil
 }

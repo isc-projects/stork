@@ -63,6 +63,11 @@ func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error
 	return nil, nil
 }
 
+// Returns fake statistics for the selected connected agent.
+func (fa *FakeAgents) GetConnectedAgentStats(address string, port int64) *agentcomm.AgentStats {
+	return nil
+}
+
 // FakeAgents specific implementation of the GetState.
 func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort int64) (*agentcomm.State, error) {
 	if fa.MachineState != nil {
