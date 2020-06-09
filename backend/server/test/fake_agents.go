@@ -65,7 +65,18 @@ func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error
 
 // Returns fake statistics for the selected connected agent.
 func (fa *FakeAgents) GetConnectedAgentStats(address string, port int64) *agentcomm.AgentStats {
-	return nil
+	stats := agentcomm.AgentStats{
+		CurrentErrors: 1,
+		AppCommStats: map[agentcomm.AppCommStatsKey]interface{}{
+			{Address: "localhost", Port: 1234}: &agentcomm.AgentKeaCommStats{
+				CurrentErrorsCA: 2,
+				CurrentErrorsDaemons: map[string]int64{
+					"dhcp4": 5,
+				},
+			},
+		},
+	}
+	return &stats
 }
 
 // FakeAgents specific implementation of the GetState.

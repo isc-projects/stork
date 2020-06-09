@@ -1016,19 +1016,39 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 					haFailureAt = strfmt.DateTime(haOverview[0].LastFailureAt)
 				}
 			}
+			agentErrors := int64(0)
+			caErrors := int64(0)
+			daemonErrors := int64(0)
+			agentStats := r.Agents.GetConnectedAgentStats(dbApp.Machine.Address, dbApp.Machine.AgentPort)
+			if agentStats != nil {
+				agentErrors = agentStats.CurrentErrors
+				accessPoint, _ := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
+				if accessPoint != nil {
+					if keaStats, ok := agentStats.AppCommStats[agentcomm.AppCommStatsKey{
+						Address: accessPoint.Address,
+						Port:    accessPoint.Port,
+					}].(*agentcomm.AgentKeaCommStats); ok {
+						caErrors = keaStats.CurrentErrorsCA
+						daemonErrors = keaStats.CurrentErrorsDaemons[dbDaemon.Name]
+					}
+				}
+			}
 			daemon := &models.DhcpDaemon{
-				MachineID:       dbApp.MachineID,
-				Machine:         dbApp.Machine.State.Hostname,
-				AppVersion:      dbApp.Meta.Version,
-				AppID:           dbApp.ID,
-				Name:            dbDaemon.Name,
-				Active:          dbDaemon.Active,
-				Lps15min:        0,
-				Lps24h:          0,
-				AddrUtilization: 0,
-				HaState:         haState,
-				HaFailureAt:     haFailureAt,
-				Uptime:          dbDaemon.Uptime,
+				MachineID:        dbApp.MachineID,
+				Machine:          dbApp.Machine.State.Hostname,
+				AppVersion:       dbApp.Meta.Version,
+				AppID:            dbApp.ID,
+				Name:             dbDaemon.Name,
+				Active:           dbDaemon.Active,
+				Lps15min:         0,
+				Lps24h:           0,
+				AddrUtilization:  0,
+				HaState:          haState,
+				HaFailureAt:      haFailureAt,
+				Uptime:           dbDaemon.Uptime,
+				AgentCommErrors:  agentErrors,
+				CaCommErrors:     caErrors,
+				DaemonCommErrors: daemonErrors,
 			}
 			dhcpDaemons = append(dhcpDaemons, daemon)
 		}

@@ -194,6 +194,12 @@
         format: date-time
       uptime:
         type: integer
+      agentCommErrors:
+        type: integer
+      caCommErrors:
+        type: integer
+      daemonCommErrors:
+        type: integer
 
   DhcpOverview:
     type: object

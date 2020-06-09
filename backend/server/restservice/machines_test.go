@@ -1119,6 +1119,29 @@ func TestGetDhcpOverview(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add app kea to machine
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	app := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
 	// get overview, generally it should be empty
 	params := dhcp.GetDhcpOverviewParams{}
 	rsp := rapi.GetDhcpOverview(ctx, params)
@@ -1128,5 +1151,9 @@ func TestGetDhcpOverview(t *testing.T) {
 	require.Len(t, okRsp.Payload.Subnets6.Items, 0)
 	require.Len(t, okRsp.Payload.SharedNetworks4.Items, 0)
 	require.Len(t, okRsp.Payload.SharedNetworks6.Items, 0)
-	require.Len(t, okRsp.Payload.DhcpDaemons, 0)
+	require.Len(t, okRsp.Payload.DhcpDaemons, 1)
+
+	require.EqualValues(t, 1, okRsp.Payload.DhcpDaemons[0].AgentCommErrors)
+	require.EqualValues(t, 2, okRsp.Payload.DhcpDaemons[0].CaCommErrors)
+	require.EqualValues(t, 5, okRsp.Payload.DhcpDaemons[0].DaemonCommErrors)
 }
