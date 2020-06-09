@@ -26,7 +26,69 @@ every stork deployment, there should be exactly one stork-server.
 Arguments
 ~~~~~~~~~
 
-Currently stork-server takes no arguments.
+The Stork Server takes the following arguments:
+
+``-h`` or ``--help``
+   Displays list of available parameters.
+
+``-v`` or ``--version``
+   Returns stork-agent version.
+
+``-d`` or ``--db-name=``
+   The name of the database to connect to (default: stork) [$STORK_DATABASE_NAME]
+
+``-u`` or ``--db-user``
+   The user name to be used for database connections (default: stork) [$STORK_DATABASE_USER_NAME]
+
+``--db-host``
+   The name of the host where database is available (default: localhost) [$STORK_DATABASE_HOST]
+
+``-p`` or ``--db-port``
+   The port on which the database is available (default: 5432) [$STORK_DATABASE_PORT]
+
+``--db-trace-queries``
+   Enable tracing SQL queries [$STORK_DATABASE_TRACE]
+
+``--rest-cleanup-timeout``
+   grace period for which to wait before killing idle connections (default: 10s)
+
+``--rest-graceful-timeout``
+   grace period for which to wait before shutting down the server (default: 15s)
+
+``--rest-max-header-size``
+   controls the maximum number of bytes the server will read parsing the request header's keys and
+   values, including the request line. It does not limit the size of the request body. (default: 1MiB)
+
+``--rest-host``
+   the IP to listen on [$STORK_REST_HOST]
+
+``--rest-port``
+   the port to listen on for connections (default: 8080) [$STORK_REST_PORT]
+
+``--rest-listen-limit``
+   limit the number of outstanding requests
+
+``--rest-keep-alive``
+   set the TCP keep-alive timeouts on accepted connections. It prunes dead TCP connections ( e.g. closing laptop mid-download) (default: 3m)
+
+``--rest-read-timeout``
+   maximum duration before timing out read of the request (default: 30s)
+
+``--rest-write-timeout``
+   maximum duration before timing out write of the response (default: 60s)
+
+``--rest-tls-certificate``
+   the certificate to use for secure connections [$STORK_REST_TLS_CERTIFICATE]
+
+``--rest-tls-key``
+   the private key to use for secure connections [$STORK_REST_TLS_PRIVATE_KEY]
+
+``--rest-tls-ca``
+   the certificate authority file to be used with mutual tls auth [$STORK_REST_TLS_CA_CERTIFICATE]
+
+``--rest-static-files-dir``
+   Directory with static files for UI [$STORK_REST_STATIC_FILES_DIR]
+
 
 Mailing List and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
