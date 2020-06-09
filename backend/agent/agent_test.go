@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"os/exec"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -431,4 +433,51 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, agentapi.Status_OK, rsp.Status.Code)
 	require.Empty(t, rsp.Status.Message)
+}
+
+// Aux function checks if a list of expected strings is present in the string
+func checkOutput(output string, exp []string) bool {
+	for _, x := range exp {
+		fmt.Printf("Checking if %s exists.\n", x)
+		if strings.Index(output, x) == -1 {
+			fmt.Printf("ERROR: Expected string [%s] not found.\n", x)
+			return false
+		}
+	}
+	return true
+}
+
+// This test checks if stork-agent -h reports all expected command-line options
+func TestCommandLineOptions(t *testing.T) {
+	// Run the --help version and get its output.
+	agentCmd := exec.Command("../cmd/stork-agent/stork-agent", "-h")
+	output, err := agentCmd.Output()
+	require.NoError(t, err)
+
+	// This is the list of all parameters we expect to see there.
+	exp := []string{ "-v", "--version", "--listen-prometheus-only", "--listen-stork-only", "--host",
+					 "--port=", "--prometheus-kea-exporter-host", "--prometheus-kea-exporter-port",
+					 "--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-host",
+					 "--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval" }
+
+	require.True(t, checkOutput(string(output), exp))
+}
+
+// This test checks if stork-agent --version (and -v) report expected version.
+func TestCommandLineVersion(t *testing.T) {
+	// Let's repeat the test twice (for -v and then for --version)
+	for _, opt := range []string {"-v", "--version"} {
+		fmt.Printf("Checking %s\n", opt)
+
+		//TODO: This should better detect the directory.
+		agentCmd := exec.Command("../cmd/stork-agent/stork-agent", opt)
+		output, err := agentCmd.Output()
+		require.NoError(t, err)
+
+		// Clean up the output (remove end of line)
+		ver := strings.TrimSpace(string(output))
+
+		// Check if it equals expected version.
+		require.True(t, ver == stork.Version)
+	}
 }
