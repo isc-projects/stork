@@ -32,6 +32,9 @@ The Stork Agent takes the following arguments:
 ``-h`` or ``--help``
    Displays list of available parameters.
 
+``-v`` or ``--version``
+   Returns stork-agent version.
+
 ``--host=hostname``
    Specifies the IP to listen on. Can be controlled with $STORK_AGENT_ADDRESS environment
    variable. The default value is ``::``.
