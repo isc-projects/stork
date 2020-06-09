@@ -603,13 +603,11 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 		if namedStats != nil {
 			view, okView := namedStats.Views["_default"]
 			if okView {
-				queryHits, okHits := view.Resolver.CacheStats["QueryHits"]
-				queryMisses, okMisses := view.Resolver.CacheStats["QueryMisses"]
-				if okHits && okMisses {
-					queryTotal := float64(queryHits) + float64(queryMisses)
-					if queryTotal > 0 {
-						queryHitRatio = float64(queryHits) / queryTotal
-					}
+				queryHits = view.Resolver.CacheStats["QueryHits"]
+				queryMisses = view.Resolver.CacheStats["QueryMisses"]
+				queryTotal := float64(queryHits) + float64(queryMisses)
+				if queryTotal > 0 {
+					queryHitRatio = float64(queryHits) / queryTotal
 				}
 			}
 		}

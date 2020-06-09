@@ -315,6 +315,32 @@ func (pbe *PromBind9Exporter) qryRTTHistogram(stats map[string]float64) (uint64,
 	buckets := map[float64]uint64{}
 
 	for statName, statValue := range stats {
+		// Find all statistics QryRTT<n>[+].
+		// Each statistic represents a bucket with the number of
+		// queries whose RTTs are up to <n> milliseconds, excluding
+		// the count of previous buckets. Furthermore, if the
+		// statistic ends in '+', this specifies the number of queries
+		// whose RTT was is higher than <n> milliseconds.  So if we
+		// have the following statistics:
+		//
+		//     QryRTT10: 5
+		//     QryRTT50: 40
+		//     QryRTT100: 10
+		//     QryRTT100+: 1
+		//
+		// We have 5 queries whose RTT was below 10ms, 40 queries whose
+		// RTT was between 10ms and 50ms, 10 queries whose RTT was
+		// between 50ms and 100ms, and one query whose RTT was above
+		// 100ms.
+		// Each <n> represents a bucket and if the statistic ended in
+		// a '+' we will consider that those queries took up to an
+		// infinite time. Buckets are represented as seconds, so the
+		// expected buckets to return are:
+		//
+		//    0.01: 5
+		//    0.05: 45
+		//    0.1 : 55
+		//    Inf:  56
 		if strings.HasPrefix(statName, qryRTT) {
 			var bucket float64
 			var err error
@@ -903,7 +929,7 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	return nil
 }
 
-// collecStats collects stats from all bind9 apps.
+// collectStats collects stats from all bind9 apps.
 func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 	// Request to named statistics-channel for getting all server stats.
 	request := `{}`

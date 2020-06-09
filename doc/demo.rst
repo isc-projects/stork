@@ -57,7 +57,7 @@ The installation procedure creates several Docker images:
 - `stork_server`: a server backend,
 - `postgres`: a PostgreSQL database used by the server,
 - `stork_agent-bind9`: an agent with BIND 9,
-- `stork_agent-bind9-2`: an second agent with BIND 9,
+- `stork_agent-bind9-2`: a second agent with BIND 9,
 - `stork_agent-kea`: an agent with a Kea DHCPv4 server,
 - `stork_agent-kea6`: an agent with a Kea DHCPv6 server,
 - `stork_agent-kea-ha1`: the primary Kea DHCPv4 server in High Availability mode,

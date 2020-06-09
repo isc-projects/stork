@@ -180,18 +180,14 @@
         type: integer
       autoZoneCount:
         type: integer
-      cacheHitRatio:
-        type: number
-      cacheHits:
-        type: integer
-      cacheMisses:
-        type: integer
       queryHitRatio:
         type: number
       queryHits:
         type: integer
+        x-omitempty: false
       queryMisses:
         type: integer
+        x-omitempty: false
 
   AppBind9:
     type: object
