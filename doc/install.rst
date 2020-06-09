@@ -17,6 +17,17 @@ the Ubuntu 18.04 system.  They have been tested and run on the Fedora
 The ``Stork Agent`` does not require any specific dependencies to
 run. It can be run immediately after installation.
 
+Stork uses the `status-get` command to communicate with Kea, and 
+therefore will only work with a version of Kea that supports `status'get`. 
+The `status-get` command was introduced in Kea 1.7.3.  At this time, Stork 
+works with Kea version 1.7.3 and later versions only, although we intend to 
+backport the `status-get` command to Kea 1.6.3.
+
+Stork requires the premium Host Commands hook library to retrieve host 
+reservations stored in an external database. Stork can retrieve host reservations
+stored locally in the Kea configuration without any additional hook libraries.
+
+
 For the ``Stork Server``, a PostgreSQL database
 (https://www.postgresql.org/) using at least version 11 of PostgreSQL
 is required.  (The installation procedure for PostgreSQL is
