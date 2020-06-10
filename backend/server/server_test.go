@@ -77,6 +77,6 @@ func TestCommandLineVersion(t *testing.T) {
 		ver := strings.TrimSpace(string(output))
 
 		// Check if it equals expected version.
-		require.True(t, ver == stork.Version)
+		require.Equal(t, ver, stork.Version)
 	}
 }

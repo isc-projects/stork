@@ -472,7 +472,7 @@ func TestCommandLineSwitches(t *testing.T) {
 	require.True(t, checkOutput(string(output), exp_switches, "stork-agent -h output"))
 }
 
-// This test checks if all expected command-line switches are documented
+// This test checks if all expected command-line switches are documented in the man page.
 func TestCommandLineSwitchesDoc(t *testing.T) {
 	// Read the contents of the man page
     file, err := os.Open(AGENT_MAN)
@@ -498,6 +498,6 @@ func TestCommandLineVersion(t *testing.T) {
 		ver := strings.TrimSpace(string(output))
 
 		// Check if it equals expected version.
-		require.True(t, ver == stork.Version)
+		require.Equal(t, ver, stork.Version)
 	}
 }

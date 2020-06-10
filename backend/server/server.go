@@ -44,7 +44,7 @@ type ServerSettings struct {
 func (ss *StorkServer) ParseArgs() {
 	// Process command line flags.
 	var serverSettings ServerSettings
-	parser := flags.NewParser(&serverSettings, flags.Default) // TODO: change nil to some main group of server settings
+	parser := flags.NewParser(&serverSettings, flags.Default)
 	parser.ShortDescription = "Stork Server"
 	parser.LongDescription = "Stork Server is a Kea and BIND 9 Dashboard"
 
@@ -78,6 +78,7 @@ func (ss *StorkServer) ParseArgs() {
 	}
 
 	if (serverSettings.Version) {
+		// If user specified --version or -v, print the version and quit.
 		fmt.Printf("%s\n", stork.Version)
 		os.Exit(0)
 	}

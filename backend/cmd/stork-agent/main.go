@@ -66,6 +66,7 @@ func main() {
 	}
 
 	if agentSettings.Version {
+		// If user specified --version or -v, print the version and quit.
 		fmt.Printf("%s\n", stork.Version)
 		os.Exit(0)
 	}

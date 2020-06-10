@@ -52,19 +52,19 @@ The Stork Agent takes the following arguments:
    Can also be set with the $STORK_AGENT_LISTEN_PROMETHEUS_ONLY environment variable.
 
 ``--prometheus-kea-exporter-host``
-   Instructs the agent to open Prometheus Kea exporter socket on specific address.
+   Instructs the agent to open Prometheus Kea exporter socket on specified address.
 
 ``--prometheus-kea-exporter-port``
-   Instructs the agent to open Prometheus Kea exporter socket on specific port.
+   Instructs the agent to open Prometheus Kea exporter socket on specified port.
 
 ``--prometheus-kea-exporter-interval``
    Instruct the agent to how frequently the statistics should be pulled from Kea.
 
 ``--prometheus-bind9-exporter-host``
-   Instructs the agent to open Prometheus BIND 9 exporter socket on specific address.
+   Instructs the agent to open Prometheus BIND 9 exporter socket on specified address.
 
 ``--prometheus-bind9-exporter-port``
-   Instructs the agent to open Prometheus BIND 9 exporter socket on specific port.
+   Instructs the agent to open Prometheus BIND 9 exporter socket on specified port.
 
 ``--prometheus-bind9-exporter-interval``
    Instruct the agent to how frequently the statistics should be pulled from BIND 9.
