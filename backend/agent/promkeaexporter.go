@@ -249,7 +249,6 @@ func NewPromKeaExporter(appMonitor AppMonitor) *PromKeaExporter {
 		Help:      "Cumulative number of assigned PD prefixes since server startup",
 	}, []string{"subnet"})
 
-
 	pke.PktStatsMap = pktStatsMap
 	pke.Adr4StatsMap = adr4StatsMap
 	pke.Adr6StatsMap = adr6StatsMap
