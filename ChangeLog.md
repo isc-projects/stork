@@ -1,6 +1,7 @@
 * 71 [bug] godfryd
 
-    Fixed handling unsupported stats collected from Kea.
+    Prevent Stork Agent crashes encountered when unknown statistics
+    was returned by Kea.
     (Gitlab #316)
 
 * 70 [func] matthijs
