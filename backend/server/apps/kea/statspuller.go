@@ -93,7 +93,7 @@ func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
 		err := statsPuller.getLeaseStatsFromApp(&dbApp2)
 		if err != nil {
 			lastErr = err
-			log.Errorf("error occurred while getting stats from app %+v: %+v", dbApp, err)
+			log.Errorf("error occurred while getting stats from app %d: %+v", dbApp.ID, err)
 		} else {
 			appsOkCnt++
 		}

@@ -84,7 +84,7 @@ func (puller *HostsPuller) pullData() (int, error) {
 		err := updateHostsFromHostCmds(puller.Db, puller.Agents, &apps[i], seq)
 		if err != nil {
 			lastErr = err
-			log.Errorf("error occurred while fetching hosts from app %+v: %+v", apps[i], err)
+			log.Errorf("error occurred while fetching hosts from app %d: %+v", apps[i].ID, err)
 		} else {
 			appsOkCnt++
 		}
@@ -239,8 +239,13 @@ func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel
 	}
 
 	if respResult.Error != nil {
-		// Can retry beause the erroor may go away.
+		// Can retry beause the error may go away.
 		return hosts, agentcomm.KeaResponseError, true, respResult.Error
+	}
+
+	if len(respResult.CmdsErrors) > 0 && respResult.CmdsErrors[0] != nil {
+		// Can retry beause the error may go away.
+		return hosts, agentcomm.KeaResponseError, true, respResult.CmdsErrors[0]
 	}
 
 	// The following two would rather be fatal errors and retrying wouldn't help.

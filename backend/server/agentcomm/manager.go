@@ -66,12 +66,6 @@ func doCall(ctx context.Context, agent *Agent, in interface{}) (interface{}, err
 		err = errors.New("doCall: unsupported request type")
 	}
 
-	if err != nil {
-		agent.Stats.CurrentErrors++
-	} else {
-		agent.Stats.CurrentErrors = 0
-	}
-
 	return response, err
 }
 
@@ -81,6 +75,7 @@ func (agents *connectedAgentsData) handleRequest(req *commLoopReq) {
 	// get agent and its grpc connection
 	agent, err := agents.GetConnectedAgent(req.AgentAddr)
 	if err != nil {
+		agent.Stats.CurrentErrors++
 		req.RespChan <- &channelResp{Response: nil, Err: err}
 		return
 	}
@@ -90,24 +85,36 @@ func (agents *connectedAgentsData) handleRequest(req *commLoopReq) {
 	response, err := doCall(ctx, agent, req.ReqData)
 
 	if err != nil {
+		agent.Stats.CurrentErrors++
 		// GetConnectedAgent remembers the grpc connection so it might
 		// return an already existing connection.  This connection may
 		// be broken so we should retry at least once.
 		err2 := agent.MakeGrpcConnection()
 		if err2 != nil {
-			log.Warn(err)
-			req.RespChan <- &channelResp{Response: nil, Err: errors.Wrap(err2, "problem with connection to agent")}
+			log.WithFields(log.Fields{
+				"agent": agent.Address,
+			}).Warn(err)
+			req.RespChan <- &channelResp{
+				Response: nil,
+				Err:      errors.WithMessagef(err2, "grpc manager is unable to re-establish connection with the agent %s", agent.Address),
+			}
 			return
 		}
 
 		// do call once again
 		response, err2 = doCall(ctx, agent, req.ReqData)
 		if err2 != nil {
-			log.Warn(err)
-			req.RespChan <- &channelResp{Response: nil, Err: errors.Wrap(err2, "problem with connection to agent")}
+			log.WithFields(log.Fields{
+				"agent": agent.Address,
+			}).Warn(err)
+			req.RespChan <- &channelResp{
+				Response: nil,
+				Err:      errors.WithMessagef(err2, "grpc manager is unable to re-establish connection with the agent %s", agent.Address),
+			}
 			return
 		}
 	}
 
-	req.RespChan <- &channelResp{Response: response, Err: err}
+	agent.Stats.CurrentErrors = 0
+	req.RespChan <- &channelResp{Response: response, Err: nil}
 }

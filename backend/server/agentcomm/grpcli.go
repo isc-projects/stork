@@ -2,12 +2,14 @@ package agentcomm
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"reflect"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	agentapi "isc.org/stork/api"
 	storkutil "isc.org/stork/util"
@@ -137,7 +139,26 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, agent
 	// Send the command to the Stork agent.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to forward rndc command %s to agent %s", command, addrPort)
+		if agent, agentExists := agents.AgentsMap[addrPort]; agentExists {
+			agent.Stats.mutex.Lock()
+			defer agent.Stats.mutex.Unlock()
+			if agent.Stats.CurrentErrors == 1 {
+				// If this is the first time we failed to communicate with the
+				// agent, let's print the stack trace for debugging purposes.
+				err = errors.WithStack(err)
+			} else {
+				// This is not the first time we can't communicate with the
+				// agent. Let's be brief and say that the communication is
+				// still broken.
+				err = fmt.Errorf("failed to send rndc command via the agent %s, the agent is still not responding",
+					agent.Address)
+			}
+			// Log the commands that failed.
+			log.WithFields(log.Fields{
+				"agent": addrPort,
+				"rndc":  net.JoinHostPort(rndcSettings.Address, strconv.FormatInt(rndcSettings.Port, 10)),
+			}).Warnf("failed to send the following rndc command: %s", command)
+		}
 		return nil, err
 	}
 	response := resp.(*agentapi.ForwardRndcCommandRsp)
@@ -177,6 +198,18 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, agent
 		}
 		if err != nil || result.Error != nil {
 			bind9CommStats.CurrentErrorsRNDC++
+			// This is not the first tie the BIND9 RNDC is not responding, so let's
+			// print the brief message.
+			if bind9CommStats.CurrentErrorsRNDC > 1 {
+				result.Error = fmt.Errorf("failed to send rndc command via the agent %s, BIND9 is still not responding",
+					agent.Address)
+				err = result.Error
+				// Log the commands that failed.
+				log.WithFields(log.Fields{
+					"agent": addrPort,
+					"rndc":  net.JoinHostPort(rndcSettings.Address, strconv.FormatInt(rndcSettings.Port, 10)),
+				}).Warnf("failed to send the following rndc command: %s", command)
+			}
 		} else {
 			bind9CommStats.CurrentErrorsRNDC = 0
 		}
@@ -204,7 +237,27 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agen
 	// Send the commands to the Stork agent.
 	storkRsp, err := agents.sendAndRecvViaQueue(addrPort, storkReq)
 	if err != nil {
-		return errors.Wrapf(err, "failed to forward named statistics commands to agent %s, to %s, commands were: %+v", addrPort, statsURL, storkReq.NamedStatsRequest)
+		if agent, agentExists := agents.AgentsMap[addrPort]; agentExists {
+			agent.Stats.mutex.Lock()
+			defer agent.Stats.mutex.Unlock()
+			if agent.Stats.CurrentErrors == 1 {
+				// If this is the first time we failed to communicate with the
+				// agent, let's print the stack trace for debugging purposes.
+				err = errors.WithStack(err)
+			} else {
+				// This is not the first time we can't communicate with the
+				// agent. Let's be brief and say that the communication is
+				// still broken.
+				err = fmt.Errorf("failed to send named statistics command via the agent %s, the agent is still not responding",
+					agent.Address)
+			}
+			// Log the commands that failed.
+			log.WithFields(log.Fields{
+				"agent":     addrPort,
+				"stats URL": statsURL,
+			}).Warnf("failed to send the following named statistics command: %+v", storkReq.NamedStatsRequest)
+		}
+		return err
 	}
 	fdRsp := storkRsp.(*agentapi.ForwardToNamedStatsRsp)
 
@@ -238,6 +291,17 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agen
 		}
 		if err != nil {
 			bind9CommStats.CurrentErrorsStats++
+			// This is not the first tie the BIND9 stats is not responding, so let's
+			// print the brief message.
+			if bind9CommStats.CurrentErrorsStats > 1 {
+				err = fmt.Errorf("failed to send named stats command via the agent %s, BIND9 is still not responding",
+					agent.Address)
+				// Log the commands that failed.
+				log.WithFields(log.Fields{
+					"agent":     addrPort,
+					"stats URL": statsURL,
+				}).Warnf("failed to send the following named stats command: %s", storkReq.NamedStatsRequest)
+			}
 		} else {
 			bind9CommStats.CurrentErrorsStats = 0
 		}
@@ -271,7 +335,26 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, age
 	// Send the commands to the Stork agent.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, fdReq)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to forward Kea commands to agent %s, to %s, commands were: %+v", addrPort, caURL, fdReq.KeaRequests)
+		if agent, agentExists := agents.AgentsMap[addrPort]; agentExists {
+			agent.Stats.mutex.Lock()
+			defer agent.Stats.mutex.Unlock()
+			if agent.Stats.CurrentErrors == 1 {
+				// If this is the first time we failed to communicate with the
+				// agent, let's print the stack trace for debugging purposes.
+				err = errors.WithStack(err)
+			} else {
+				// This is not the first time we can't communicate with the
+				// agent. Let's be brief and say that the communication is
+				// still broken.
+				err = fmt.Errorf("failed to send Kea commands via the agent %s, the agent is still not responding",
+					agent.Address)
+			}
+			// Log the commands that failed.
+			log.WithFields(log.Fields{
+				"agent": addrPort,
+				"kea":   caURL,
+			}).Warnf("failed to send the following commands: %+v", fdReq.KeaRequests)
+		}
 		return nil, err
 	}
 	fdRsp := resp.(*agentapi.ForwardToKeaOverHTTPRsp)
@@ -403,6 +486,17 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, age
 	// let's reset the counter.
 	if caErrors > 0 {
 		keaCommStats.CurrentErrorsCA += caErrors
+		// This is not the first tie the Kea Control Agent is not responding, so let's
+		// print the brief message.
+		if keaCommStats.CurrentErrorsCA > 1 {
+			for i := range result.CmdsErrors {
+				result.CmdsErrors[i] = fmt.Errorf("failed to send commands to the Kea Control Agent %s, the Kea CA is still not responding", caURL)
+			}
+			log.WithFields(log.Fields{
+				"agent": addrPort,
+				"kea":   caURL,
+			}).Warnf("failed to send the following commands: %+v", fdReq.KeaRequests)
+		}
 	} else {
 		keaCommStats.CurrentErrorsCA = 0
 	}

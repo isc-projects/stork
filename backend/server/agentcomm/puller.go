@@ -35,7 +35,7 @@ const InactiveInterval int64 = 60
 // interval available in the database. The intervalSettingName is a name of this
 // setting in the database. The pullerName is used for logging purposes.
 func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, intervalSettingName string, pullFunc func() (int, error)) (*PeriodicPuller, error) {
-	log.Printf("Starting %s Puller", pullerName)
+	log.Printf("starting %s Puller", pullerName)
 
 	interval, err := dbmodel.GetSettingInt(db, intervalSettingName)
 	if err != nil {
@@ -68,17 +68,17 @@ func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, inter
 	periodicPuller.Wg.Add(1)
 	go periodicPuller.pullerLoop()
 
-	log.Printf("Started %s Puller", periodicPuller.pullerName)
+	log.Printf("started %s Puller", periodicPuller.pullerName)
 	return periodicPuller, nil
 }
 
 // Terminates the puller, i.e. the puller no longer triggers the
 // user defined function.
 func (puller *PeriodicPuller) Shutdown() {
-	log.Printf("Stopping %s Puller", puller.pullerName)
+	log.Printf("stopping %s Puller", puller.pullerName)
 	puller.Done <- true
 	puller.Wg.Wait()
-	log.Printf("Stopped %s Puller", puller.pullerName)
+	log.Printf("stopped %s Puller", puller.pullerName)
 }
 
 // This function controls the timing of the function execution and captures the
@@ -92,7 +92,7 @@ func (puller *PeriodicPuller) pullerLoop() {
 			if puller.Active {
 				_, err := puller.pullFunc()
 				if err != nil {
-					log.Errorf("errors were encountered while pulling data from Kea apps: %+v", err)
+					log.Errorf("errors were encountered while pulling data from apps: %+v", err)
 				}
 			}
 		// wait for done signal from shutdown function

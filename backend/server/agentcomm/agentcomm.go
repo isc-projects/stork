@@ -128,7 +128,9 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	// Look for agent in Agents map and if found then return it
 	agent, ok := agents.AgentsMap[address]
 	if ok {
-		log.Printf("connecting to existing agent on %v", address)
+		log.WithFields(log.Fields{
+			"address": address,
+		}).Info("connecting to existing agent")
 		return agent, nil
 	}
 
@@ -144,7 +146,9 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 
 	// Store it in Agents map
 	agents.AgentsMap[address] = agent
-	log.Printf("connecting to new agent on %v", address)
+	log.WithFields(log.Fields{
+		"address": address,
+	}).Info("connecting to new agent")
 
 	return agent, nil
 }

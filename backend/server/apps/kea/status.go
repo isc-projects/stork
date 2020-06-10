@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
@@ -243,7 +242,7 @@ func (puller *StatusPuller) pullData() (int, error) {
 		// the app belongs to.
 		dbServices, err := dbmodel.GetDetailedServicesByAppID(puller.Db, apps[i].ID)
 		if err != nil {
-			log.Errorf("error occurred while getting services for Kea app %d: %s", apps[i].ID, err)
+			log.Errorf("error while getting services for Kea app %d: %+v", apps[i].ID, err)
 			continue
 		}
 		// No services for this app, so nothing to do.
@@ -280,7 +279,7 @@ func (puller *StatusPuller) pullData() (int, error) {
 		// Send the status-get command to both DHCPv4 and DHCPv6 servers.
 		appStatus, err := getDHCPStatus(ctx, puller.Agents, &apps[i])
 		if err != nil {
-			log.Errorf("error occurred while getting Kea app %d status: %s", apps[i].ID, err)
+			log.Errorf("error occurred while getting Kea app %d status: %+v", apps[i].ID, err)
 		}
 		// Go over the returned status values and match with the daemons.
 		for _, status := range appStatus {
@@ -324,7 +323,7 @@ func (puller *StatusPuller) pullData() (int, error) {
 			// Update the information about the HA service in the database.
 			err = dbmodel.UpdateBaseHAService(puller.Db, haServices[j].HAService)
 			if err != nil {
-				log.Errorf("error occurred while updating HA services status for Kea app %d: %s", apps[i].ID, err)
+				log.Errorf("error occurred while updating HA services status for Kea app %d: %+v", apps[i].ID, err)
 				continue
 			}
 		}
@@ -371,7 +370,7 @@ func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	appStatus := appStatus{}
 	for _, r := range response {
 		if r.Result != 0 && (len(r.Daemon) > 0) {
-			log.Warn(errors.Errorf("status-get command failed for Kea daemon %s", r.Daemon))
+			log.Warnf("status-get command failed for Kea daemon %s", r.Daemon)
 		} else if r.Arguments != nil {
 			daemonStatus := daemonStatus{
 				StatusGetRespArgs: *r.Arguments,
