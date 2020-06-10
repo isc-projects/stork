@@ -540,7 +540,7 @@ end
 # internal task used by build_all_in_container
 task :build_all_copy_in_subdir do
   sh 'mkdir -p ./build-root'
-  sh 'rsync -av --exclude=webui/node_modules --exclude=webui/dist --exclude=webui/src/assets/arm --exclude=doc/_build --exclude=doc/doctrees --exclude=*~ api backend doc etc webui Rakefile ./build-root'
+  sh 'rsync -av --exclude=webui/node_modules --exclude=webui/dist --exclude=webui/src/assets/arm --exclude=doc/_build --exclude=doc/doctrees --exclude=backend/server/gen --exclude=*~ --delete api backend doc etc webui Rakefile ./build-root'
   sh "cd ./build-root && GOPATH=/repo/build-root/go rake install_server install_agent"
 end
 
