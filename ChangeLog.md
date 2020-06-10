@@ -1,3 +1,8 @@
+* 71 [bug] godfryd
+
+    Fixed handling unsupported stats collected from Kea.
+    (Gitlab #316)
+
 * 70 [func] matthijs
 
     Implementated Bind exporter and embedded it in Stork Agent.
