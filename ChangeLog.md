@@ -1,3 +1,5 @@
+Stork 0.8.0 released on 2020-06-10.
+
 * 71 [bug] godfryd
 
     Prevent Stork Agent crashes encountered when unknown statistics
