@@ -414,8 +414,12 @@ func (pke *PromKeaExporter) setDaemonStats(daemonIdx int, rspIfc interface{}, ig
 		// store stat value in proper prometheus object
 		if strings.HasPrefix(statName, "pkt") {
 			// if this is pkt stat
-			statDescr := pke.PktStatsMap[statName]
-			statDescr.Stat.With(prometheus.Labels{"operation": statDescr.Operation}).Set(statValue)
+			statDescr, ok := pke.PktStatsMap[statName]
+			if ok {
+				statDescr.Stat.With(prometheus.Labels{"operation": statDescr.Operation}).Set(statValue)
+			} else {
+				log.Printf("encountered unsupported stat: %s", statName)
+			}
 		} else if strings.HasPrefix(statName, "subnet[") {
 			// if this is address per subnet stat
 			re := regexp.MustCompile(`subnet\[(\d+)\]\.(.+)`)
