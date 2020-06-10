@@ -1,6 +1,6 @@
   /hosts:
     get:
-      summary: Get list of hosts and DHCP reservations.
+      summary: Get list of DHCP host reservations.
       description: >-
         A list of hosts is returned in items field accompanied by total count
         which indicates total available number of records for given filtering

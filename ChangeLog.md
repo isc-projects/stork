@@ -74,7 +74,7 @@ Stork 0.7.0 released on 2020-05-08.
 * 58 [func] godfryd
 
     Improved presenting Kea daemons on Kea app page. There have
-    been added links to subnet, shared network and hosts reservations
+    been added links to subnet, shared network and host reservations
     pages with filtering set to given app id.
     (Gitlab #241)
 
