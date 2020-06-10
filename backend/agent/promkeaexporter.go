@@ -185,6 +185,12 @@ func NewPromKeaExporter(appMonitor AppMonitor) *PromKeaExporter {
 		Name:      "addresses_total",
 		Help:      "Size of subnet address pool",
 	}, []string{"subnet"})
+	adr4StatsMap["cumulative-assigned-addresses"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: AppTypeKea,
+		Subsystem: "dhcp4",
+		Name:      "cumulative_addresses_assigned_total",
+		Help:      "Cumulative number of assigned addresses since server startup",
+	}, []string{"subnet"})
 
 	// addresses dhcp6
 	adr6StatsMap := make(map[string]*prometheus.GaugeVec)
@@ -230,6 +236,19 @@ func NewPromKeaExporter(appMonitor AppMonitor) *PromKeaExporter {
 		Name:      "addresses_declined_reclaimed_total",
 		Help:      "Declined addresses that were reclaimed",
 	}, []string{"subnet"})
+	adr6StatsMap["cumulative-assigned-nas"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: AppTypeKea,
+		Subsystem: "dhcp6",
+		Name:      "cumulative_nas_assigned_total",
+		Help:      "Cumulative number of assigned NA addresses since server startup",
+	}, []string{"subnet"})
+	adr6StatsMap["cumulative-assigned-pds"] = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: AppTypeKea,
+		Subsystem: "dhcp6",
+		Name:      "cumulative_pds_assigned_total",
+		Help:      "Cumulative number of assigned PD prefixes since server startup",
+	}, []string{"subnet"})
+
 
 	pke.PktStatsMap = pktStatsMap
 	pke.Adr4StatsMap = adr4StatsMap
@@ -406,13 +425,18 @@ func (pke *PromKeaExporter) setDaemonStats(daemonIdx int, rspIfc interface{}, ig
 			name := matches[2]
 
 			var stat *prometheus.GaugeVec
+			var ok bool
 			// daemon 0 is dhcp4, 1 is dhcp6
 			if daemonIdx == 0 {
-				stat = pke.Adr4StatsMap[name]
+				stat, ok = pke.Adr4StatsMap[name]
 			} else {
-				stat = pke.Adr6StatsMap[name]
+				stat, ok = pke.Adr6StatsMap[name]
 			}
-			stat.With(prometheus.Labels{"subnet": subnetID}).Set(statValue)
+			if ok {
+				stat.With(prometheus.Labels{"subnet": subnetID}).Set(statValue)
+			} else {
+				log.Printf("encountered unsupported stat: %s", name)
+			}
 		}
 	}
 
