@@ -455,9 +455,9 @@ func checkOutput(output string, exp []string, reason string) bool {
 // This is the list of all parameters we expect to be supported by stork-agent.
 func getExpectedSwitches() []string {
 	return []string{"-v", "--version", "--listen-prometheus-only", "--listen-stork-only",
-	"--host", "--port", "--prometheus-kea-exporter-host", "--prometheus-kea-exporter-port",
-	"--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-host",
-	"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval"}
+		"--host", "--port", "--prometheus-kea-exporter-host", "--prometheus-kea-exporter-port",
+		"--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-host",
+		"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval"}
 }
 
 // Location of the stork-agent binary

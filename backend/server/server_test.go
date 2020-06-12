@@ -28,10 +28,10 @@ func checkOutput(output string, exp []string, reason string) bool {
 // This is the list of all parameters we expect to see there.
 func getExpectedSwitches() []string {
 	return []string{"-v", "--version", "-d", "--db-name", "-u", "--db-user", "--db-host",
-	"-p", "--db-port", "--db-trace-queries", "--rest-cleanup-timeout", "--rest-graceful-timeout",
-	"--rest-max-header-size", "--rest-host", "--rest-port", "--rest-listen-limit",
-	"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
-	"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir"}
+		"-p", "--db-port", "--db-trace-queries", "--rest-cleanup-timeout", "--rest-graceful-timeout",
+		"--rest-max-header-size", "--rest-host", "--rest-port", "--rest-listen-limit",
+		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
+		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir"}
 }
 
 // Location of the stork-server binary
