@@ -88,9 +88,6 @@ ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GO_DIR}/go/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
 
-TMP=ENV['PATH']
-puts "#### PATH= #{TMP}"
-
 # premium support
 if ENV['cs_repo_access_token']
   ENV['premium'] = 'true'
@@ -375,7 +372,6 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     ENV['STORK_DATABASE_TRACE'] = 'true'
   end
   Dir.chdir('backend') do
-    sh "echo #{GO} generate -v ./..."
     sh "#{GO} generate -v ./..."
     if ENV['debug'] == 'true'
       sh "dlv #{headless} test #{scope}"
