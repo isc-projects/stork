@@ -26,11 +26,13 @@ func checkOutput(output string, exp []string, reason string) bool {
 }
 
 // This is the list of all parameters we expect to see there.
-var exp_switches = []string{"-v", "--version", "-d", "--db-name", "-u", "--db-user", "--db-host",
+func getExpectedSwitches() []string {
+	return []string{"-v", "--version", "-d", "--db-name", "-u", "--db-user", "--db-host",
 	"-p", "--db-port", "--db-trace-queries", "--rest-cleanup-timeout", "--rest-graceful-timeout",
 	"--rest-max-header-size", "--rest-host", "--rest-port", "--rest-listen-limit",
 	"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
 	"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir"}
+}
 
 // Location of the stork-server binary
 const ServerBin = "../cmd/stork-server/stork-server"
@@ -46,7 +48,7 @@ func TestCommandLineSwitches(t *testing.T) {
 	require.NoError(t, err)
 
 	// Now check that all expected command-line switches are really there.
-	require.True(t, checkOutput(string(output), exp_switches, "stork-agent -h output"))
+	require.True(t, checkOutput(string(output), getExpectedSwitches(), "stork-agent -h output"))
 }
 
 // This test checks if all expected command-line switches are documented
@@ -58,7 +60,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 	require.NoError(t, err)
 
 	// And check that all expected switches are mentioned there.
-	require.True(t, checkOutput(string(man), exp_switches, "stork-agent.8.rst"))
+	require.True(t, checkOutput(string(man), getExpectedSwitches(), "stork-agent.8.rst"))
 }
 
 // This test checks if stork-agent --version (and -v) report expected version.

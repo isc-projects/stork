@@ -452,11 +452,13 @@ func checkOutput(output string, exp []string, reason string) bool {
 	return true
 }
 
-// This is the list of all parameters we expect to see there.
-var exp_switches = []string{"-v", "--version", "--listen-prometheus-only", "--listen-stork-only",
+// This is the list of all parameters we expect to be supported by stork-agent.
+func getExpectedSwitches() []string {
+	return []string{"-v", "--version", "--listen-prometheus-only", "--listen-stork-only",
 	"--host", "--port", "--prometheus-kea-exporter-host", "--prometheus-kea-exporter-port",
 	"--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-host",
 	"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval"}
+}
 
 // Location of the stork-agent binary
 const AgentBin = "../cmd/stork-agent/stork-agent"
@@ -472,7 +474,7 @@ func TestCommandLineSwitches(t *testing.T) {
 	require.NoError(t, err)
 
 	// Now check that all expected command-line switches are really there.
-	require.True(t, checkOutput(string(output), exp_switches, "stork-agent -h output"))
+	require.True(t, checkOutput(string(output), getExpectedSwitches(), "stork-agent -h output"))
 }
 
 // This test checks if all expected command-line switches are documented in the man page.
@@ -484,7 +486,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 	require.NoError(t, err)
 
 	// And check that all expected switches are mentioned there.
-	require.True(t, checkOutput(string(man), exp_switches, "stork-agent.8.rst"))
+	require.True(t, checkOutput(string(man), getExpectedSwitches(), "stork-agent.8.rst"))
 }
 
 // This test checks if stork-agent --version (and -v) report expected version.
