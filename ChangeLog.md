@@ -1,3 +1,8 @@
+* 71 [func] tomek
+
+    Implemented version reporting in agent and server.
+    (Gitlab #265)
+
 Stork 0.8.0 released on 2020-06-10.
 
 * 71 [bug] godfryd
