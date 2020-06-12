@@ -539,7 +539,7 @@ end
 desc 'Build all in container'
 task :build_all_in_container do
   sh "docker build -f docker/docker-builder.txt -t stork-builder ."
-  sh "docker run -v $PWD:/repo --rm -ti stork-builder rake build_all_copy_in_subdir"
+  sh "docker run -v $PWD:/repo --rm stork-builder rake build_all_copy_in_subdir"
 end
 
 # internal task used by build_all_in_container

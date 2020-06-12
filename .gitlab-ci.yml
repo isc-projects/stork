@@ -146,7 +146,7 @@ rpms:
 ### demo deploy jobs ###
 
 deploy_demo:
-  stage: deploy
+  stage: build
   when: manual
   image: docker:latest
   tags:
@@ -155,19 +155,17 @@ deploy_demo:
     - amd64
   services:
     - docker:dind
-  dependencies:
-    - build_webui
-    - build_backend
   before_script:
     - ip -6 route del default
     - docker info
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
     - apk update
     - apk upgrade
-    - apk add docker-compose
+    - apk add docker-compose ruby-rake
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
   script:
+    - rake build_all_in_container
     - docker-compose -f docker-compose.yaml -f docker-compose-premium.yaml build --build-arg CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN
     - docker-compose push
     - scp -o StrictHostKeyChecking=no docker-compose.yaml jenkins@stork.lab.isc.org:~/deploy
