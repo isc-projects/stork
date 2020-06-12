@@ -3,11 +3,11 @@ package agent
 import (
 	"context"
 	"fmt"
-	"testing"
-	"os/exec"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
+	"testing"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -444,7 +444,7 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 func checkOutput(output string, exp []string, reason string) bool {
 	for _, x := range exp {
 		fmt.Printf("Checking if %s exists in %s.\n", x, reason)
-		if strings.Index(output, x) == -1 {
+		if !strings.Contains(output, x) {
 			fmt.Printf("ERROR: Expected string [%s] not found in %s.\n", x, reason)
 			return false
 		}
@@ -453,21 +453,21 @@ func checkOutput(output string, exp []string, reason string) bool {
 }
 
 // This is the list of all parameters we expect to see there.
-var	exp_switches = []string{ "-v", "--version", "--listen-prometheus-only", "--listen-stork-only",
-    "--host", "--port", "--prometheus-kea-exporter-host", "--prometheus-kea-exporter-port",
+var exp_switches = []string{"-v", "--version", "--listen-prometheus-only", "--listen-stork-only",
+	"--host", "--port", "--prometheus-kea-exporter-host", "--prometheus-kea-exporter-port",
 	"--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-host",
-	"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval" }
+	"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval"}
 
 // Location of the stork-agent binary
-const AGENT_BIN = "../cmd/stork-agent/stork-agent"
+const AgentBin = "../cmd/stork-agent/stork-agent"
 
 // Location of the stork-agent man page
-const AGENT_MAN = "../../doc/man/stork-agent.8.rst"
+const AgentMan = "../../doc/man/stork-agent.8.rst"
 
 // This test checks if stork-agent -h reports all expected command-line switches
 func TestCommandLineSwitches(t *testing.T) {
 	// Run the --help version and get its output.
-	agentCmd := exec.Command(AGENT_BIN, "-h")
+	agentCmd := exec.Command(AgentBin, "-h")
 	output, err := agentCmd.Output()
 	require.NoError(t, err)
 
@@ -478,9 +478,10 @@ func TestCommandLineSwitches(t *testing.T) {
 // This test checks if all expected command-line switches are documented in the man page.
 func TestCommandLineSwitchesDoc(t *testing.T) {
 	// Read the contents of the man page
-    file, err := os.Open(AGENT_MAN)
+	file, err := os.Open(AgentMan)
 	require.NoError(t, err)
 	man, err := ioutil.ReadAll(file)
+	require.NoError(t, err)
 
 	// And check that all expected switches are mentioned there.
 	require.True(t, checkOutput(string(man), exp_switches, "stork-agent.8.rst"))
@@ -489,11 +490,11 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 // This test checks if stork-agent --version (and -v) report expected version.
 func TestCommandLineVersion(t *testing.T) {
 	// Let's repeat the test twice (for -v and then for --version)
-	for _, opt := range []string {"-v", "--version"} {
+	for _, opt := range []string{"-v", "--version"} {
 		fmt.Printf("Checking %s\n", opt)
 
 		// Run the agent with specific switch.
-		agentCmd := exec.Command(AGENT_BIN, opt)
+		agentCmd := exec.Command(AgentBin, opt)
 		output, err := agentCmd.Output()
 		require.NoError(t, err)
 

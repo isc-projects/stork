@@ -1,12 +1,13 @@
 package server
 
 import (
-	"os"
 	"fmt"
+	"os"
 
 	flags "github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 
+	"isc.org/stork"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"
@@ -14,7 +15,6 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/restservice"
-	"isc.org/stork"
 )
 
 // Global Stork Server state
@@ -37,13 +37,13 @@ type StorkServer struct {
 }
 
 // Global server settings (called application settings in go-flags nomenclature).
-type ServerSettings struct {
-	Version        bool `short:"v" long:"version" description:"show software version"`
+type Settings struct {
+	Version bool `short:"v" long:"version" description:"show software version"`
 }
 
 func (ss *StorkServer) ParseArgs() {
 	// Process command line flags.
-	var serverSettings ServerSettings
+	var serverSettings Settings
 	parser := flags.NewParser(&serverSettings, flags.Default)
 	parser.ShortDescription = "Stork Server"
 	parser.LongDescription = "Stork Server is a Kea and BIND 9 Dashboard"
@@ -77,7 +77,7 @@ func (ss *StorkServer) ParseArgs() {
 		os.Exit(code)
 	}
 
-	if (serverSettings.Version) {
+	if serverSettings.Version {
 		// If user specified --version or -v, print the version and quit.
 		fmt.Printf("%s\n", stork.Version)
 		os.Exit(0)

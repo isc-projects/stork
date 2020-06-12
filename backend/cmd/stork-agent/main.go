@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
-	"fmt"
 
 	flags "github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
