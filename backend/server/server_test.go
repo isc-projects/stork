@@ -80,31 +80,3 @@ func TestCommandLineVersion(t *testing.T) {
 		require.Equal(t, ver, stork.Version)
 	}
 }
-
-// This test attempts to test ParseArgs code. There are couple problems with it.
-// First, if -v or -h option is used, the parser calls os.Exit(), which ends the test.
-// It is reported as successful, but the later part of the test is never used.
-//
-// When other parameters are used (such as setting ports, hostnames, etc.), the test
-// aborts, because the server tries to connect to a database and prints an error
-// about inappropriate ioctl for device. This can be worked around by setting up
-// STORK_DATABASE_PASSWORD env variable to storktest. If that's done, then the server
-// actually starts and the test never finishes.
-func TestParseArgs(t *testing.T) {
-
-	// Let's set some fake command line parameters. We need to remember the actual params
-	// and later restore them.
-	testArgs := []string{os.Args[0], "-v"}
-	oldArgs := os.Args
-	os.Args = testArgs
-
-	// Now create the server.
-	ss, err := NewStorkServer()
-	require.NoError(t, err)
-	require.NotNil(t, ss)
-
-	// TODO: Check actual parameters.
-
-	// Ok, let's restore the old parameters.
-	os.Args = oldArgs
-}

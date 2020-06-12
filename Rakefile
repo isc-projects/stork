@@ -88,6 +88,9 @@ ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GO_DIR}/go/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
 
+TMP=ENV['PATH']
+puts "#### PATH= #{TMP}"
+
 # premium support
 if ENV['cs_repo_access_token']
   ENV['premium'] = 'true'
@@ -372,6 +375,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     ENV['STORK_DATABASE_TRACE'] = 'true'
   end
   Dir.chdir('backend') do
+    sh "echo #{GO} generate -v ./..."
     sh "#{GO} generate -v ./..."
     if ENV['debug'] == 'true'
       sh "dlv #{headless} test #{scope}"
@@ -402,7 +406,12 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
                        'CreateSession', 'DeleteSession', 'Listen', 'Shutdown', 'NewRestUser',
                        'CreateUser', 'UpdateUser', 'SetupLogging', 'UTCNow', 'detectApps',
                        'prepareTLS', 'handleRequest', 'pullerLoop', 'Output', 'Collect',
-                       'collectTime', 'collectResolverStat', 'collectResolverLabelStat']
+                       'collectTime', 'collectResolverStat', 'collectResolverLabelStat',
+
+                       # Those two are tested in backend/server/server_test.go, in TestCommandLineSwitches*
+                       # However, due to how it's executed (calling external binary), it's not detected
+                       # by coverage.
+                       'ParseArgs', 'NewStorkServer']
         if cov < 35 and not ignore_list.include? func
           puts "FAIL: %-80s %5s%% < 35%%" % ["#{file} #{func}", "#{cov}"]
           problem = true
