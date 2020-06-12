@@ -72,14 +72,13 @@ func NewAppMonitor() AppMonitor {
 // This function starts the actual monitor. This start is delayed in case we want to only
 // do command line parameters parsing, e.g. to print version or help and quit.
 func (sm *appMonitor) Start() {
-	log.Printf("Started app monitor")
 	sm.wg.Add(1)
 	go sm.run()
 }
 
 func (sm *appMonitor) run() {
-	// Removed log entry about starting app monitor. It was confusing when the agent
-	// is called with --version. Also, this message on its own is not useful.
+	log.Printf("Started app monitor")
+
 	sm.running = true
 	defer sm.wg.Done()
 
