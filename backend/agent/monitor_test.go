@@ -12,6 +12,7 @@ import (
 
 func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
+	am.Start()
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
 	am.Shutdown()

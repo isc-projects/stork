@@ -74,6 +74,9 @@ func main() {
 	// We need to print this statement only after we check if the only purpose is to print a version.
 	log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
 
+	// Let's start the app monitor.
+	appMonitor.Start()
+
 	// Only start the exporters if they're enabled.
 	if !agentSettings.StorkOnly {
 		promKeaExporter.Start()

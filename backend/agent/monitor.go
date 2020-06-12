@@ -39,6 +39,7 @@ const AppTypeBind9 = "bind9"
 
 type AppMonitor interface {
 	GetApps() []*App
+	Start()
 	Shutdown()
 }
 
@@ -57,15 +58,23 @@ const (
 	namedProcName = "named"
 )
 
+// Creates an AppMonitor instance. It used to start it as well, but this is now done
+// by a dedicated method Start(). Make sure you call Start() before using app monitor.
 func NewAppMonitor() AppMonitor {
 	sm := &appMonitor{
 		requests: make(chan chan []*App),
 		quit:     make(chan bool),
 		wg:       &sync.WaitGroup{},
 	}
+	return sm
+}
+
+// This function starts the actual monitor. This start is delayed in case we want to only
+// do command line parameters parsing, e.g. to print version or help and quit.
+func (sm *appMonitor) Start() {
+	log.Printf("Started app monitor")
 	sm.wg.Add(1)
 	go sm.run()
-	return sm
 }
 
 func (sm *appMonitor) run() {

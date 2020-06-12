@@ -27,6 +27,9 @@ func (fam *PromFakeAppMonitor) GetApps() []*App {
 func (fam *PromFakeAppMonitor) Shutdown() {
 }
 
+func (fam *PromFakeAppMonitor) Start() {
+}
+
 // Check creating PromKeaExporter, check if prometheus stats are set up.
 func TestNewPromKeaExporterBasic(t *testing.T) {
 	fam := &PromFakeAppMonitor{}

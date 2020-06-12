@@ -33,6 +33,9 @@ func (fam *PromFakeBind9AppMonitor) GetApps() []*App {
 func (fam *PromFakeBind9AppMonitor) Shutdown() {
 }
 
+func (fam *PromFakeBind9AppMonitor) Start() {
+}
+
 // Check creating PromBind9Exporter, check if prometheus stats are set up.
 func TestNewPromBind9ExporterBasic(t *testing.T) {
 	fam := &PromFakeBind9AppMonitor{}

@@ -72,6 +72,9 @@ func (fam *FakeAppMonitor) GetApps() []*App {
 func (fam *FakeAppMonitor) Shutdown() {
 }
 
+func (fam *FakeAppMonitor) Start() {
+}
+
 // makeAccessPoint is an utility to make single element app access point slice.
 func makeAccessPoint(tp, address, key string, port int64) (ap []AccessPoint) {
 	return append(ap, AccessPoint{
