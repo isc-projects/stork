@@ -660,7 +660,7 @@ func (pbe *PromBind9Exporter) Shutdown() {
 func getStat(statMap map[string]interface{}, statName string) interface{} {
 	value, ok := statMap[statName]
 	if !ok {
-		log.Errorf("no '%s' in response:", statName)
+		log.Infof("no '%s' in response:", statName)
 		return nil
 	}
 	return value
@@ -731,7 +731,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 	// Parse resolver.
 	resolverIfc, ok := viewStats["resolver"]
 	if !ok {
-		log.Errorf("no 'resolver' in viewStats: %+v", viewStats)
+		log.Infof("no 'resolver' in viewStats: %+v", viewStats)
 		return
 	}
 	resolver, ok := resolverIfc.(map[string]interface{})
@@ -743,7 +743,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 	// Parse stats.
 	statsIfc, ok := resolver["stats"]
 	if !ok {
-		log.Errorf("no 'stats' in resolver: %+v", resolver)
+		log.Infof("no 'stats' in resolver: %+v", resolver)
 		return
 	}
 	resolverStats, ok := statsIfc.(map[string]interface{})
@@ -768,7 +768,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 	// Parse qtypes.
 	qtypesIfc, ok := resolver["qtypes"]
 	if !ok {
-		log.Errorf("no 'qtypes' in resolver: %+v", resolver)
+		log.Infof("no 'qtypes' in resolver: %+v", resolver)
 		return
 	}
 	qtypes, ok := qtypesIfc.(map[string]interface{})
@@ -792,7 +792,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 	// Parse cache.
 	cacheIfc, ok := resolver["cache"]
 	if !ok {
-		log.Errorf("no 'cachestats' in resolver: %+v", resolver)
+		log.Infof("no 'cachestats' in resolver: %+v", resolver)
 		return
 	}
 	cacheRRsets, ok := cacheIfc.(map[string]interface{})
@@ -816,7 +816,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 	// Parse cachestats.
 	cachestatsIfc, ok := resolver["cachestats"]
 	if !ok {
-		log.Errorf("no 'cachestats' in resolver: %+v", resolver)
+		log.Infof("no 'cachestats' in resolver: %+v", resolver)
 		return
 	}
 	cachestats, ok := cachestatsIfc.(map[string]interface{})
