@@ -54,7 +54,7 @@ PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v#{P
 PROTOC_GEN_GO_URL = 'github.com/golang/protobuf/protoc-gen-go'
 SWAGGER_CODEGEN_URL = "https://oss.sonatype.org/content/repositories/releases/io/swagger/swagger-codegen-cli/#{SWAGGER_CODEGEN_VER}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
 NODE_URL = "https://nodejs.org/dist/v#{NODE_VER}/node-v#{NODE_VER}-#{NODE_SUFFIX}.tar.xz"
-MOCKERY_URL = 'github.com/vektra/mockery/.../'
+MOCKERY_URL = 'github.com/vektra/mockery/.../@v1.0.0'
 MOCKGEN_URL = 'github.com/golang/mock/mockgen'
 RICHGO_URL = 'github.com/kyoh86/richgo'
 
@@ -227,7 +227,9 @@ file PROTOC_GEN_GO do
 end
 
 file MOCKERY do
-  sh "#{GO} get -u #{MOCKERY_URL}"
+  Dir.chdir('backend') do
+    sh "#{GO} get #{MOCKERY_URL}"
+  end
 end
 
 file MOCKGEN do
