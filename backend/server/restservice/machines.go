@@ -533,7 +533,7 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 	return rsp
 }
 
-func appToRestAPI(dbApp *dbmodel.App) *models.App {
+func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	app := models.App{
 		ID:      dbApp.ID,
 		Type:    dbApp.Type,
@@ -560,19 +560,40 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 	isKeaApp := dbApp.Type == dbmodel.AppTypeKea
 	isBind9App := dbApp.Type == dbmodel.AppTypeBind9
 
+	agentErrors := int64(0)
+	agentStats := r.Agents.GetConnectedAgentStats(dbApp.Machine.Address, dbApp.Machine.AgentPort)
+	var accessPoint *dbmodel.AccessPoint
+	if agentStats != nil {
+		agentErrors = agentStats.CurrentErrors
+		accessPoint, _ = dbApp.GetAccessPoint(dbmodel.AccessPointControl)
+	}
+
 	if isKeaApp {
+		var keaStats *agentcomm.AgentKeaCommStats
+		if agentStats != nil && accessPoint != nil {
+			keaStats, _ = agentStats.AppCommStats[agentcomm.AppCommStatsKey{
+				Address: accessPoint.Address,
+				Port:    accessPoint.Port,
+			}].(*agentcomm.AgentKeaCommStats)
+		}
 		var keaDaemons []*models.KeaDaemon
 		for _, d := range dbApp.Daemons {
 			dmn := &models.KeaDaemon{
-				Pid:             int64(d.Pid),
-				Name:            d.Name,
-				Active:          d.Active,
-				Version:         d.Version,
-				ExtendedVersion: d.ExtendedVersion,
-				Uptime:          d.Uptime,
-				ReloadedAt:      strfmt.DateTime(d.ReloadedAt),
-				Hooks:           []string{},
+				Pid:              int64(d.Pid),
+				Name:             d.Name,
+				Active:           d.Active,
+				Version:          d.Version,
+				ExtendedVersion:  d.ExtendedVersion,
+				Uptime:           d.Uptime,
+				ReloadedAt:       strfmt.DateTime(d.ReloadedAt),
+				Hooks:            []string{},
+				AgentCommErrors:  agentErrors,
 			}
+			if keaStats != nil {
+				dmn.CaCommErrors = keaStats.CurrentErrorsCA
+				dmn.DaemonCommErrors = keaStats.CurrentErrorsDaemons[d.Name]
+			}
+
 			hooksByDaemon := kea.GetDaemonHooks(dbApp)
 			if hooksByDaemon != nil {
 				hooksList, ok := hooksByDaemon[d.Name]
@@ -613,19 +634,29 @@ func appToRestAPI(dbApp *dbmodel.App) *models.App {
 		}
 
 		bind9Daemon := &models.Bind9Daemon{
-			Pid:           int64(dbApp.Daemons[0].Pid),
-			Name:          dbApp.Daemons[0].Name,
-			Active:        dbApp.Daemons[0].Active,
-			Version:       dbApp.Daemons[0].Version,
-			Uptime:        dbApp.Daemons[0].Uptime,
-			ReloadedAt:    strfmt.DateTime(dbApp.Daemons[0].ReloadedAt),
-			ZoneCount:     dbApp.Daemons[0].Bind9Daemon.Stats.ZoneCount,
-			AutoZoneCount: dbApp.Daemons[0].Bind9Daemon.Stats.AutomaticZoneCount,
-			QueryHits:     queryHits,
-			QueryMisses:   queryMisses,
-			QueryHitRatio: queryHitRatio,
+			Pid:             int64(dbApp.Daemons[0].Pid),
+			Name:            dbApp.Daemons[0].Name,
+			Active:          dbApp.Daemons[0].Active,
+			Version:         dbApp.Daemons[0].Version,
+			Uptime:          dbApp.Daemons[0].Uptime,
+			ReloadedAt:      strfmt.DateTime(dbApp.Daemons[0].ReloadedAt),
+			ZoneCount:       dbApp.Daemons[0].Bind9Daemon.Stats.ZoneCount,
+			AutoZoneCount:   dbApp.Daemons[0].Bind9Daemon.Stats.AutomaticZoneCount,
+			QueryHits:       queryHits,
+			QueryMisses:     queryMisses,
+			QueryHitRatio:   queryHitRatio,
+			AgentCommErrors: agentErrors,
 		}
-
+		var bind9Stats *agentcomm.AgentBind9CommStats
+		if agentStats != nil && accessPoint != nil {
+			if bind9Stats, _ = agentStats.AppCommStats[agentcomm.AppCommStatsKey{
+				Address: accessPoint.Address,
+				Port:    accessPoint.Port,
+			}].(*agentcomm.AgentBind9CommStats); bind9Stats != nil {
+				bind9Daemon.RndcCommErrors = bind9Stats.CurrentErrorsRNDC
+				bind9Daemon.StatsCommErrors = bind9Stats.CurrentErrorsStats
+			}
+		}
 		app.Details = struct {
 			models.AppKea
 			models.AppBind9
@@ -650,7 +681,7 @@ func (r *RestAPI) getApps(offset, limit int64, filterText *string, appType strin
 	}
 	for _, dbA := range dbApps {
 		app := dbA
-		a := appToRestAPI(&app)
+		a := r.appToRestAPI(&app)
 		apps.Items = append(apps.Items, a)
 	}
 	return apps, nil
@@ -712,9 +743,9 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 
 	var a *models.App
 	if dbApp.Type == dbmodel.AppTypeBind9 {
-		a = appToRestAPI(dbApp)
+		a = r.appToRestAPI(dbApp)
 	} else if dbApp.Type == dbmodel.AppTypeKea {
-		a = appToRestAPI(dbApp)
+		a = r.appToRestAPI(dbApp)
 	}
 	rsp := services.NewGetAppOK().WithPayload(a)
 	return rsp

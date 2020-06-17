@@ -252,7 +252,7 @@
                         <th>Host</th>
                         <th>[ID] App Version</th>
                         <th>Daemon</th>
-                        <th>Active</th>
+                        <th>Status</th>
                         <!-- TODO <th>LPS (15min)</th> -->
                         <!-- <th>LPS (24h)</th> -->
                         <!-- <th>Pool Used</th> -->
@@ -271,12 +271,12 @@
                         <td>{{ d.name }}</td>
                         <td>
                             <i
-                                pTooltip="{{ activeIconTooltip(d) }}"
-                                class="pi pi-{{ activeIconName(d) }}"
+                                pTooltip="{{ daemonStatusIconTooltip(d) }}"
+                                class="pi {{ daemonStatusIconName(d) }}"
                                 [ngStyle]="{
                                     'font-size': '1.5em',
                                     'vertical-align': 'text-bottom',
-                                    color: activeIconColor(d)
+                                    color: daemonStatusIconColor(d)
                                 }"
                             ></i>
                         </td>

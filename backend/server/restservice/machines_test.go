@@ -708,6 +708,7 @@ func TestRestGetApps(t *testing.T) {
 		AccessPoints: keaPoints,
 		Daemons: []*dbmodel.Daemon{
 			{
+				Name:      "dhcp4",
 				KeaDaemon: &dbmodel.KeaDaemon{},
 			},
 		},
@@ -739,6 +740,26 @@ func TestRestGetApps(t *testing.T) {
 	require.IsType(t, &services.GetAppsOK{}, rsp)
 	okRsp = rsp.(*services.GetAppsOK)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
+
+	// Verify that the communication error counters are returned. See fake_agents.go
+	// to see where those counters are set.
+	require.Len(t, okRsp.Payload.Items, 2)
+	for _, app := range okRsp.Payload.Items {
+		if app.Type == dbmodel.AppTypeKea {
+			appKea := app.Details.AppKea
+			require.Len(t, appKea.Daemons, 1)
+			daemon := appKea.Daemons[0]
+			require.EqualValues(t, 1, daemon.AgentCommErrors)
+			require.EqualValues(t, 2, daemon.CaCommErrors)
+			require.EqualValues(t, 5, daemon.DaemonCommErrors)
+		} else if app.Type == dbmodel.AppTypeBind9 {
+			appBind9 := app.Details.AppBind9
+			daemon := appBind9.Daemon
+			require.EqualValues(t, 1, daemon.AgentCommErrors)
+			require.EqualValues(t, 2, daemon.RndcCommErrors)
+			require.EqualValues(t, 3, daemon.StatsCommErrors)
+		}
+	}
 }
 
 // Test that status of two HA services for a Kea application is parsed

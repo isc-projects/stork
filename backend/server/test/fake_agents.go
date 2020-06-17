@@ -74,6 +74,10 @@ func (fa *FakeAgents) GetConnectedAgentStats(address string, port int64) *agentc
 					"dhcp4": 5,
 				},
 			},
+			{Address: "localhost", Port: 4321}: &agentcomm.AgentBind9CommStats{
+				CurrentErrorsRNDC: 2,
+				CurrentErrorsStats: 3,
+			},
 		},
 	}
 	return &stats

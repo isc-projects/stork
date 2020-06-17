@@ -162,3 +162,137 @@ export function extractKeyValsAndPrepareQueryParams(text, keys, flags) {
 
     return queryParams
 }
+
+/**
+ * Returns boolean value indicating if there is an issue with communication
+ * with the given daemon
+ *
+ * @param daemon data structure holding the information about the daemon.
+ *
+ * @return true if there is a communication problem with the daemon,
+ *         false otherwise.
+ */
+export function daemonStatusErred(daemon) {
+    return (
+        (daemon.agentCommErrors && daemon.agentCommErrors > 0) ||
+        (daemon.caCommErrors && daemon.caCommErrors > 0) ||
+        (daemon.daemonCommErrors && daemon.daemonCommErrors > 0) ||
+        (daemon.rndcCommErrors && daemon.rndcCommErrors > 0) ||
+        (daemon.statsCommErrors && daemon.statsCommErrors > 0)
+    )
+}
+
+/**
+ * Returns the name of the icon to be used to indicate daemon status
+ *
+ * The icon selected depends on whether the daemon is active or not
+ * active and whether there is a communication with the daemon or
+ * not.
+ *
+ * @param daemon data structure holding the information about the daemon.
+ *
+ * @returns ban icon if the daemon is not active, times icon if the daemon
+ *  should be active but the communication with it is borken and
+ *  check icon if the communication with the active daemon is ok.
+ */
+export function daemonStatusIconName(daemon) {
+    if (!daemon.active) {
+        return 'pi-ban'
+    }
+    if (daemonStatusErred(daemon)) {
+        return 'pi-times'
+    }
+    return 'pi-check'
+}
+
+/**
+ * Returns the color of the icon used to indicate daemon status
+ *
+ * @param daemon data structure holding the information about the daemon.
+ *
+ * @returns grey color if the daemon is not active, red if the daemon is
+ *          active but there are communication issues, green if the
+ *          communication with the active daemon is ok.
+ */
+export function daemonStatusIconColor(daemon) {
+    if (!daemon.active) {
+        return 'grey'
+    }
+    if (daemonStatusErred(daemon)) {
+        return '#f11'
+    }
+    return '#00a800'
+}
+
+/**
+ * Returns tooltip for the icon presented for the daemon status
+ *
+ * @param daemon data structure holding the information about the daemon.
+ *
+ * @returns Tooltip as text. It includes hints about the communication
+ *          problems when such problems occur, e.g. it includes the
+ *          hint whether the communication is with the agent or daemon.
+ */
+export function daemonStatusIconTooltip(daemon) {
+    if (!daemon.active) {
+        return (
+            'Configuration for this daemon was found but the daemon was ' +
+            'not running at the time when the application was detected.'
+        )
+    }
+    if (daemon.agentCommErrors && daemon.agentCommErrors > 0) {
+        return (
+            'Communication with the Stork Agent on this machine ' +
+            'is broken. Last ' +
+            daemon.agentCommErrors +
+            ' attempt(s) to ' +
+            'communicate with the agent failed. Please make sure ' +
+            'that the agent is up on this machine and that the firewall ' +
+            'settings permit to communicate with the agent.'
+        )
+    }
+    if (daemon.caCommErrors && daemon.caCommErrors > 0) {
+        return (
+            'Communication with the Kea Control Agent on this machine ' +
+            'is broken. The Stork Agent appears to work fine but the ' +
+            'Kea CA is down or returns errors. Last ' +
+            daemon.caCommErrors +
+            ' attempt(s) to communicate with Kea CA failed. Please ' +
+            'make sure that Kea CA is up and the firewall settings permit ' +
+            'for the communication between the Stork Agent and Kea CA running ' +
+            'on that machine.'
+        )
+    }
+    if (daemon.daemonCommErrors && daemon.daemonCommErrors > 0) {
+        return (
+            'Communication with the daemon on this machine ' +
+            'is broken. The Stork Agent and Kea Control Agent appear to ' +
+            'work fine, but the daemon behind Kea CA does not respond or ' +
+            'responds with errors. Last ' +
+            daemon.daemonCommErrors +
+            ' attempt(s) to communicate with the daemon failed. Please ' +
+            'make sure that the daemon is up and is reachable from the ' +
+            'Kea Control Agent over the control channel (unix domain socket).'
+        )
+    }
+    if (daemon.rndcCommErrors && daemon.rndcCommErrors > 0) {
+        return (
+            'Communication with the BIND9 daemon over RNDC is broken. The ' +
+            'Stork Agent appears to work fine, but the BIND9 daemon may ' +
+            'be down or responds with errors. Last ' +
+            daemon.rndcCommErrors +
+            ' attempt(s) to communicate with BIND9 daemon failed.'
+        )
+    }
+    if (daemon.statsCommErrors && daemon.statsCommErrors > 0) {
+        return (
+            'Communication with BIND9 statistics endpoint is broken. The ' +
+            'Stork Agent appears to work fine, but the BIND9 statistics channel ' +
+            'seems to be unreachable or responds with errors. Last ' +
+            daemon.statsCommErrors +
+            ' attempt(s) to communicate with the BIND9 daemon over ' +
+            'the statistics channel failed.'
+        )
+    }
+    return 'Communication with the daemon is ok.'
+}

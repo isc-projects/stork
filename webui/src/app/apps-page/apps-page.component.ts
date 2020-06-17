@@ -3,6 +3,7 @@ import { ActivatedRoute, ParamMap, Router, NavigationEnd } from '@angular/router
 
 import { MessageService, MenuItem } from 'primeng/api'
 
+import { daemonStatusIconName, daemonStatusIconColor, daemonStatusIconTooltip } from '../utils'
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
 
@@ -302,5 +303,48 @@ export class AppsPageComponent implements OnInit {
         }
 
         return daemons
+    }
+
+    /**
+     * Returns the name of the icon used in presenting daemon status
+     *
+     * The icon selected depends on whether the daemon is active or not
+     * active and whether there is a communication with the daemon or
+     * not.
+     *
+     * @param daemon data structure holding the information about the daemon.
+     *
+     * @returns ban icon if the daemon is not active, times icon if the daemon
+     *          should be active but the communication with it is borken and
+     *          check icon if the communication with the active daemon is ok.
+     */
+    daemonStatusIconName(daemon) {
+        return daemonStatusIconName(daemon)
+    }
+
+    /**
+     * Returns the color of the icon used in presenting daemon status
+     *
+     * @param daemon data structure holding the information about the daemon.
+     *
+     * @returns grey color if the daemon is not active, red if the daemon is
+     *          active but there are communication issues, green if the
+     *          communication with the active daemon is ok.
+     */
+    daemonStatusIconColor(daemon) {
+        return daemonStatusIconColor(daemon)
+    }
+
+    /**
+     * Returns tooltip for the icon in presenting daemon status
+     *
+     * @param daemon data structure holding the information about the daemon.
+     *
+     * @returns Tooltip as text. It includes hints about the communication
+     *          problems when such problems occur, e.g. it includes the
+     *          hint whether the communication is with the agent or daemon.
+     */
+    daemonStatusIconTooltip(daemon) {
+        return daemonStatusIconTooltip(daemon)
     }
 }

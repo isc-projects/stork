@@ -4,7 +4,15 @@ import { MessageService } from 'primeng/api'
 
 import { DHCPService } from '../backend/api/api'
 import { AppsStats } from '../backend/model/appsStats'
-import { datetimeToLocal, durationToString, getGrafanaUrl, humanCount } from '../utils'
+import {
+    datetimeToLocal,
+    durationToString,
+    getGrafanaUrl,
+    humanCount,
+    daemonStatusIconName,
+    daemonStatusIconColor,
+    daemonStatusIconTooltip,
+} from '../utils'
 import { SettingService } from '../setting.service'
 import { ServerDataService } from '../server-data.service'
 
@@ -136,7 +144,7 @@ export class DashboardComponent implements OnInit {
     }
 
     /**
-     * Returns the name of the icon to be used in the Active column
+     * Returns the name of the icon to be used in the Status column
      *
      * The icon selected depends on whether the daemon is active or not
      * active and whether there is a communication with the daemon or
@@ -148,22 +156,12 @@ export class DashboardComponent implements OnInit {
      *          should be active but the communication with it is borken and
      *          check icon if the communication with the active daemon is ok.
      */
-    activeIconName(daemon) {
-        if (!daemon.active) {
-            return 'ban'
-        }
-        if (
-            (daemon.agentCommErrors && daemon.agentCommErrors > 0) ||
-            (daemon.caCommErrors && daemon.caCommErrors > 0) ||
-            (daemon.daemonCommErrors && daemon.daemonCommErrors > 0)
-        ) {
-            return 'times'
-        }
-        return 'check'
+    daemonStatusIconName(daemon) {
+        return daemonStatusIconName(daemon)
     }
 
     /**
-     * Returns the color of the icon used in the Active column
+     * Returns the color of the icon used in the Status column
      *
      * @param daemon data structure holding the information about the daemon.
      *
@@ -171,22 +169,12 @@ export class DashboardComponent implements OnInit {
      *          active but there are communication issues, green if the
      *          communication with the active daemon is ok.
      */
-    activeIconColor(daemon) {
-        if (!daemon.active) {
-            return 'grey'
-        }
-        if (
-            (daemon.agentCommErrors && daemon.agentCommErrors > 0) ||
-            (daemon.caCommErrors && daemon.caCommErrors > 0) ||
-            (daemon.daemonCommErrors && daemon.daemonCommErrors > 0)
-        ) {
-            return '#f11'
-        }
-        return '#00a800'
+    daemonStatusIconColor(daemon) {
+        return daemonStatusIconColor(daemon)
     }
 
     /**
-     * Returns tooltip for the icon presented in the Active column
+     * Returns tooltip for the icon presented in the Status column
      *
      * @param daemon data structure holding the information about the daemon.
      *
@@ -194,42 +182,8 @@ export class DashboardComponent implements OnInit {
      *          problems when such problems occur, e.g. it includes the
      *          hint whether the communication is with the agent or daemon.
      */
-    activeIconTooltip(daemon) {
-        if (!daemon.active) {
-            return (
-                'Configuration for this daemon was found but the daemon was ' +
-                'not running at the time when the application was detected.'
-            )
-        }
-        if (daemon.agentCommErrors && daemon.agentCommErrors > 0) {
-            return (
-                'Communication with the Stork Agent on this machine ' +
-                'is broken. Last ' +
-                daemon.agentCommErrors +
-                ' attempt(s) to ' +
-                'communicate with the agent failed.'
-            )
-        }
-        if (daemon.caCommErrors && daemon.caCommErrors > 0) {
-            return (
-                'Communication with the Kea Control Agent on this machine ' +
-                'is broken. The Stork Agent appears to work fine but the ' +
-                'Kea CA is down or returns errors. Last ' +
-                daemon.caCommErrors +
-                ' attempt(s) to communicate with Kea CA failed.'
-            )
-        }
-        if (daemon.daemonCommErrors && daemon.daemonCommErrors > 0) {
-            return (
-                'Communication with the daemon on this machine ' +
-                'is broken. The Stork Agent and Kea Control Agent appear to ' +
-                'work fine, but the daemon behind Kea CA does not respond or ' +
-                'responds with errors. Last ' +
-                daemon.daemonCommErrors +
-                ' attempt(s) to communicate with the daemon failed.'
-            )
-        }
-        return 'Communication with the daemon is ok.'
+    daemonStatusIconTooltip(daemon) {
+        return daemonStatusIconTooltip(daemon)
     }
 
     /**

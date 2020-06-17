@@ -149,6 +149,13 @@
         type: array
         items:
           type: string
+      agentCommErrors:
+        type: integer
+      caCommErrors:
+        type: integer
+      daemonCommErrors:
+        type: integer
+
 
   AppKea:
     type: object
@@ -188,6 +195,12 @@
       queryMisses:
         type: integer
         x-omitempty: false
+      agentCommErrors:
+        type: integer
+      rndcCommErrors:
+        type: integer
+      statsCommErrors:
+        type: integer
 
   AppBind9:
     type: object

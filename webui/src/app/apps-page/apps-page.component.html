@@ -82,10 +82,11 @@
                 <td>
                     <span
                         *ngFor="let d of sortDaemonsByImportance(s)"
-                        [ngStyle]="{ color: d.active ? '#00a800' : '#f11' }"
+                        pTooltip="{{ daemonStatusIconTooltip(d) }}"
+                        [ngStyle]="{ color: daemonStatusIconColor(d) }"
                     >
                         <i
-                            class="pi pi-{{ d.active ? 'check' : 'times' }}"
+                            class="pi {{ daemonStatusIconName(d) }}"
                             [ngStyle]="{
                                 'font-size': '1.5em',
                                 'vertical-align': d.active ? 'text-bottom' : 'text-top'
