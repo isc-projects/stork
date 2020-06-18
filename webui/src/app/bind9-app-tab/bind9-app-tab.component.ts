@@ -58,6 +58,13 @@ export class Bind9AppTabComponent implements OnInit {
     }
 
     /**
+     * Returns information about currently selected app tab.
+     */
+    get appTab() {
+        return this._appTab
+    }
+
+    /**
      * Initializes information about the daemon according to the information
      * carried in the provided parameter.
      *
@@ -80,13 +87,6 @@ export class Bind9AppTabComponent implements OnInit {
             }
         }
         this.daemons = daemons
-    }
-
-    /**
-     * Returns information about currently selected app tab.
-     */
-    get appTab() {
-        return this._appTab
     }
 
     /**

@@ -63,6 +63,13 @@ export class KeaAppTabComponent implements OnInit {
     }
 
     /**
+     * Returns information about currently selected app tab.
+     */
+    get appTab() {
+        return this._appTab
+    }
+
+    /**
      * Initializes information about the daemons according to the information
      * carried in the provided parameter.
      *
@@ -102,13 +109,6 @@ export class KeaAppTabComponent implements OnInit {
             }
         }
         this.daemons = daemons
-    }
-
-    /**
-     * Returns information about currently selected app tab.
-     */
-    get appTab() {
-        return this._appTab
     }
 
     /**
