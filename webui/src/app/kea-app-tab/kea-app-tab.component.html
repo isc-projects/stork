@@ -64,10 +64,10 @@
                             ></button>
                         </div>
 
-                        <div *ngIf="daemonStatusErred(daemon)" class="p-col-4">
-                            <p-message severity="error" [text]="daemonStatusErrorText(daemon)"></p-message>
+                        <div *ngIf="daemon.statusErred" class="p-col-4">
+                            <p-message severity="error" text="{{ daemonStatusErrorText(daemon) }}"></p-message>
                         </div>
-                        <div *ngIf="daemonStatusErred(daemon)" class="p-col-8"></div>
+                        <div *ngIf="daemon.statusErred" class="p-col-8"></div>
 
                         <div *ngIf="!daemon.active" class="p-col-4">
                             <p-message

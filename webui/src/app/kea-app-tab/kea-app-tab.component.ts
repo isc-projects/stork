@@ -1,5 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
+import { BehaviorSubject } from 'rxjs'
 
 import moment from 'moment-timezone'
 
@@ -21,6 +22,7 @@ import {
 export class KeaAppTabComponent implements OnInit {
     private _appTab: any
     @Output() refreshApp = new EventEmitter<number>()
+    @Input() refreshedAppTab: any
 
     daemons: any[] = []
 
@@ -28,16 +30,52 @@ export class KeaAppTabComponent implements OnInit {
 
     constructor(private route: ActivatedRoute) {}
 
-    ngOnInit() {}
+    /**
+     * Subscribes to the updates of the information about daemons
+     *
+     * The information about the daemons may be updated as a result of
+     * pressing the refresh button in the app tab. In such case, this
+     * component emits an event to which the parent component reacts
+     * and updates the daemons. When the daemons are updated, it
+     * notifies this compoment via the subscription mechanism.
+     */
+    ngOnInit() {
+        this.refreshedAppTab.subscribe((data) => {
+            if (data) {
+                this.initDaemons(data.app.details.daemons)
+            }
+        })
+    }
 
+    /**
+     * Selects new application tab
+     *
+     * As a result, the local information about the daemons is updated.
+     *
+     * @param appTab pointer to the new app tab data structure.
+     */
     @Input()
     set appTab(appTab) {
         this._appTab = appTab
+        // Refresh local information about the daemons presented by this
+        // component.
+        this.initDaemons(appTab.app.details.daemons)
+    }
 
+    /**
+     * Initializes information about the daemons according to the information
+     * carried in the provided parameter.
+     *
+     * As a result of invoking this function, the view of the component will be
+     * updated.
+     *
+     * @param appTabDaemons information about the daemons stored in the app tab
+     *                      data structure.
+     */
+    private initDaemons(appTabDaemons) {
         const activeDaemonTabName = this.route.snapshot.queryParams.daemon || null
-
         const daemonMap = []
-        for (const d of appTab.app.details.daemons) {
+        for (const d of appTabDaemons) {
             daemonMap[d.name] = d
         }
         const DMAP = [
@@ -54,6 +92,7 @@ export class KeaAppTabComponent implements OnInit {
                 daemonMap[dm[0]].niceName = dm[1]
                 daemonMap[dm[0]].subnets = []
                 daemonMap[dm[0]].totalSubnets = 0
+                daemonMap[dm[0]].statusErred = this.daemonStatusErred(daemonMap[dm[0]])
                 daemons.push(daemonMap[dm[0]])
 
                 if (dm[0] === activeDaemonTabName) {
@@ -65,29 +104,45 @@ export class KeaAppTabComponent implements OnInit {
         this.daemons = daemons
     }
 
+    /**
+     * Returns information about currently selected app tab.
+     */
     get appTab() {
         return this._appTab
     }
 
+    /**
+     * An action triggered when refresh button is pressed.
+     */
     refreshAppState() {
         this.refreshApp.emit(this._appTab.app.id)
     }
 
+    /**
+     * Converts duration to pretty string.
+     *
+     * @param duration duration value to be converted.
+     *
+     * @returns duration as text
+     */
     showDuration(duration) {
         return durationToString(duration)
     }
 
     /**
      * Returns boolean value indicating if there is an issue with communication
-     * with the active daemon
+     * with the active daemon.
      *
      * @param daemon data structure holding the information about the daemon.
      *
      * @return true if there is a communication problem with the daemon,
      *         false otherwise.
      */
-    daemonStatusErred(daemon) {
-        return daemon.active && daemonStatusErred(daemon)
+    private daemonStatusErred(daemon): boolean {
+        if (daemon.active && daemonStatusErred(daemon)) {
+            return true
+        }
+        return false
     }
 
     /**

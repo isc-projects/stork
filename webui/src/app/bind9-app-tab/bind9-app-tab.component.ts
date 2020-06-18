@@ -20,38 +20,89 @@ import {
 export class Bind9AppTabComponent implements OnInit {
     private _appTab: any
     @Output() refreshApp = new EventEmitter<number>()
+    @Input() refreshedAppTab: any
 
     daemons: any[] = []
 
     constructor() {}
 
-    ngOnInit() {}
+    /**
+     * Subscribes to the updates of the information about daemons
+     *
+     * The information about the daemons may be updated as a result of
+     * pressing the refresh button in the app tab. In such case, this
+     * component emits an event to which the parent component reacts
+     * and updates the daemons. When the daemons are updated, it
+     * notifies this compoment via the subscription mechanism.
+     */
+    ngOnInit() {
+        this.refreshedAppTab.subscribe((data) => {
+            if (data) {
+                this.initDaemon(data.app.details.daemon)
+            }
+        })
+    }
 
+    /**
+     * Selects new application tab
+     *
+     * As a result, the local information about the daemons is updated.
+     *
+     * @param appTab pointer to the new app tab data structure.
+     */
     @Input()
     set appTab(appTab) {
         this._appTab = appTab
+        // Refresh local information about the daemon presented by this component.
+        this.initDaemon(appTab.app.details.daemon)
+    }
 
+    /**
+     * Initializes information about the daemon according to the information
+     * carried in the provided parameter.
+     *
+     * As a result of invoking this function, the view of the component will be
+     * updated.
+     *
+     * @param appTabDaemons information about the daemon stored in the app tab
+     *                      data structure.
+     */
+    private initDaemon(appTabDaemon) {
         const daemonMap = []
-        daemonMap[appTab.app.details.daemon.name] = appTab.app.details.daemon
+        daemonMap[appTabDaemon.name] = appTabDaemon
         const DMAP = [['named', 'named']]
         const daemons = []
         for (const dm of DMAP) {
             if (daemonMap[dm[0]] !== undefined) {
                 daemonMap[dm[0]].niceName = dm[1]
+                daemonMap[dm[0]].statusErred = this.daemonStatusErred(daemonMap[dm[0]])
                 daemons.push(daemonMap[dm[0]])
             }
         }
         this.daemons = daemons
     }
 
+    /**
+     * Returns information about currently selected app tab.
+     */
     get appTab() {
         return this._appTab
     }
 
+    /**
+     * An action triggered when refresh button is pressed.
+     */
     refreshAppState() {
         this.refreshApp.emit(this._appTab.app.id)
     }
 
+    /**
+     * Converts duration to pretty string.
+     *
+     * @param duration duration value to be converted.
+     *
+     * @returns duration as text
+     */
     showDuration(duration) {
         return durationToString(duration)
     }
@@ -78,8 +129,11 @@ export class Bind9AppTabComponent implements OnInit {
      * @return true if there is a communication problem with the daemon,
      *         false otherwise.
      */
-    daemonStatusErred(daemon) {
-        return daemon.active && daemonStatusErred(daemon)
+    private daemonStatusErred(daemon): boolean {
+        if (daemon.active && daemonStatusErred(daemon)) {
+            return true
+        }
+        return false
     }
 
     /**

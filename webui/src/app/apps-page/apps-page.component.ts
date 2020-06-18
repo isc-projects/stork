@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core'
 import { ActivatedRoute, ParamMap, Router, NavigationEnd } from '@angular/router'
+import { BehaviorSubject } from 'rxjs'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
-import { daemonStatusIconName, daemonStatusIconColor, daemonStatusIconTooltip } from '../utils'
+import { daemonStatusErred, daemonStatusIconName, daemonStatusIconColor, daemonStatusIconTooltip } from '../utils'
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
 
@@ -15,6 +16,25 @@ function htmlizeExtVersion(app) {
         for (const d of app.details.daemons) {
             if (d.extendedVersion) {
                 d.extendedVersion = d.extendedVersion.replace(/\n/g, '<br>')
+            }
+        }
+    }
+}
+
+/**
+ * Sets boolean flag indicating if there are communication errors with
+ * daemons belonging to the app.
+ *
+ * @param app app for which the communication status with the daemons
+ *            should be updated.
+ */
+function setDaemonStatusErred(app) {
+    if (app.details.daemons) {
+        for (const d of app.details.daemons) {
+            if (d.active && daemonStatusErred(d)) {
+                d.statusErred = true
+            } else {
+                d.statusErred = false
             }
         }
     }
@@ -45,6 +65,8 @@ export class AppsPageComponent implements OnInit {
     activeItem: MenuItem
     openedApps: any
     appTab: any
+
+    refreshedAppTab = new BehaviorSubject(this.appTab)
 
     constructor(
         private route: ActivatedRoute,
@@ -147,6 +169,7 @@ export class AppsPageComponent implements OnInit {
                             }
 
                             htmlizeExtVersion(data)
+                            setDaemonStatusErred(data)
                             this.addAppTab(data)
                             this.switchToTab(this.tabs.length - 1)
                         },
@@ -184,6 +207,7 @@ export class AppsPageComponent implements OnInit {
             this.totalApps = data.total
             for (const s of this.apps) {
                 htmlizeExtVersion(s)
+                setDaemonStatusErred(s)
             }
         })
     }
@@ -222,6 +246,7 @@ export class AppsPageComponent implements OnInit {
                 })
 
                 htmlizeExtVersion(data)
+                setDaemonStatusErred(data)
 
                 // refresh app in app list
                 for (const s of this.apps) {
@@ -234,6 +259,8 @@ export class AppsPageComponent implements OnInit {
                 for (const s of this.openedApps) {
                     if (s.app.id === data.id) {
                         Object.assign(s.app, data)
+                        // Notify the child component about the update.
+                        this.refreshedAppTab.next(this.appTab)
                         break
                     }
                 }
