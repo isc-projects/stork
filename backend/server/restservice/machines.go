@@ -579,15 +579,15 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		var keaDaemons []*models.KeaDaemon
 		for _, d := range dbApp.Daemons {
 			dmn := &models.KeaDaemon{
-				Pid:              int64(d.Pid),
-				Name:             d.Name,
-				Active:           d.Active,
-				Version:          d.Version,
-				ExtendedVersion:  d.ExtendedVersion,
-				Uptime:           d.Uptime,
-				ReloadedAt:       strfmt.DateTime(d.ReloadedAt),
-				Hooks:            []string{},
-				AgentCommErrors:  agentErrors,
+				Pid:             int64(d.Pid),
+				Name:            d.Name,
+				Active:          d.Active,
+				Version:         d.Version,
+				ExtendedVersion: d.ExtendedVersion,
+				Uptime:          d.Uptime,
+				ReloadedAt:      strfmt.DateTime(d.ReloadedAt),
+				Hooks:           []string{},
+				AgentCommErrors: agentErrors,
 			}
 			if keaStats != nil {
 				dmn.CaCommErrors = keaStats.CurrentErrorsCA
