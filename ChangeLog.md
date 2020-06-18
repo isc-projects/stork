@@ -1,4 +1,13 @@
-* 71 [func] tomek
+* 73 [func] marcin
+
+    Monitor communication issues between Stork and the applications.
+    If there is a communication problem with any app it is highlighted
+    via appropriate icon and a text that describes the problem. The
+    server logs were adjusted to indicate if the communication issue
+    is new or has been occuring for a longer period of time.
+    (Gitlab #305)
+
+* 72 [func] tomek
 
     Implemented version reporting in agent and server.
     (Gitlab #265)
