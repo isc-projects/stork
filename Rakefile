@@ -573,8 +573,11 @@ end
 
 desc 'Build all in container'
 task :build_all_in_container do
-  sh "docker build -f docker/docker-builder.txt -t stork-builder ."
-  sh "docker run -v $PWD:/repo --rm stork-builder rake build_all_copy_in_subdir"
+  # we increase the locked memory limit up to 512kb to work around the problem ocurring on Ubuntu 20.04.
+  # for details, see: https://github.com/golang/go/issues/35777 and https://github.com/golang/go/issues/37436
+  # The workaround added --ulimit memlock=512 to docker build and --privileged to docker run.
+  sh "docker build --ulimit memlock=512 -f docker/docker-builder.txt -t stork-builder ."
+  sh "docker run --privileged -v $PWD:/repo --rm stork-builder rake build_all_copy_in_subdir"
 end
 
 # internal task used by build_all_in_container
