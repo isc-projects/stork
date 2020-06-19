@@ -71,7 +71,7 @@
 
                         <div *ngIf="!daemon.active" class="p-col-4">
                             <p-message
-                                severity="info"
+                                severity="warn"
                                 text="This server is not monitored by Stork as it was not running at the time when the machine was added to Stork. The configuration for this server was detected in the Kea Control Agent's configuration file. That's why it appears on the list of daemons."
                             ></p-message>
                         </div>
