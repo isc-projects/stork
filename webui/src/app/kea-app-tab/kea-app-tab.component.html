@@ -32,7 +32,7 @@
 
                 <ng-template pTemplate="content">
                     <div class="p-grid" style="padding: 0;">
-                        <div class="p-col-12">
+                        <div *ngIf="daemon.active" class="p-col-12">
                             <button
                                 routerLink="/dhcp/hosts"
                                 [queryParams]="{ appId: appTab.app.id }"
