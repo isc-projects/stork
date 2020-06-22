@@ -65,6 +65,7 @@ type PromBind9Exporter struct {
 	HTTPServer *http.Server
 
 	up              int
+	Registry        *prometheus.Registry
 	serverStatsDesc map[string]*prometheus.Desc
 	viewStatsDesc   map[string]*prometheus.Desc
 
@@ -73,15 +74,10 @@ type PromBind9Exporter struct {
 
 // Create new Prometheus BIND 9 Exporter.
 func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.Handler())
-	srv := &http.Server{
-		Handler: mux,
-	}
 	pbe := &PromBind9Exporter{
 		AppMonitor: appMonitor,
 		HTTPClient: NewHTTPClient(),
-		HTTPServer: srv,
+		Registry:   prometheus.NewRegistry(),
 	}
 
 	// bind_exporter stats
@@ -281,6 +277,15 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		IncomingQueries: incomingQueries,
 		Views:           views,
 	}
+
+	// prepare http handler
+	mux := http.NewServeMux()
+	hdlr := promhttp.HandlerFor(pbe.Registry, promhttp.HandlerOpts{})
+	mux.Handle("/metrics", hdlr)
+	pbe.HTTPServer = &http.Server{
+		Handler: mux,
+	}
+
 	return pbe
 }
 
@@ -607,8 +612,8 @@ func (pbe *PromBind9Exporter) Start() {
 
 	// register collectors
 	version.Version = stork.Version
-	prometheus.MustRegister(version.NewCollector("bind_exporter"))
-	prometheus.MustRegister(pbe)
+	pbe.Registry.MustRegister(version.NewCollector("bind_exporter"))
+	pbe.Registry.MustRegister(pbe)
 	if bind9Pid > 0 {
 		procExporter := prometheus.NewProcessCollector(
 			prometheus.ProcessCollectorOpts{
@@ -617,7 +622,7 @@ func (pbe *PromBind9Exporter) Start() {
 				},
 				Namespace: namespace,
 			})
-		prometheus.MustRegister(procExporter)
+		pbe.Registry.MustRegister(procExporter)
 	}
 
 	// set address for listening from settings
@@ -651,7 +656,7 @@ func (pbe *PromBind9Exporter) Shutdown() {
 	}
 
 	// unregister bind9 counters from prometheus framework
-	prometheus.Unregister(pbe)
+	pbe.Registry.Unregister(pbe)
 
 	log.Printf("Stopped Prometheus BIND 9 Exporter")
 }
