@@ -347,6 +347,14 @@ task :fmt_go => [GO, :gen_agent, :gen_server] do
   end
 end
 
+def remove_remaining_databases(pgsql_host, pgsql_port)
+    sh %{
+       for db in $(psql -t -h #{pgsql_host} -p #{pgsql_port} -U storktest -c \"select datname from pg_database where datname ~ 'storktest.*'\"); do
+         dropdb -h #{pgsql_host} -p #{pgsql_port} -U storktest $db
+       done
+    }
+end
+
 desc 'Run backend unit tests'
 task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_agent, :build_migrations] do
   at_exit {
@@ -382,14 +390,10 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     end
   end
 
-  # prepare database for unit tests: clear any remainings from previuos runs, prepare up-to-date template db
+  # prepare database for unit tests: clear any remainings from previous runs, prepare up-to-date template db
   if ENV['POSTGRES_IN_DOCKER'] != 'yes'
-    sh %{
-       for db in $(psql -t -h #{pgsql_host} -p #{pgsql_port} -U storktest -c \"select datname from pg_database where datname ~ 'storktest.*'\"); do
-         dropdb -h #{pgsql_host} -p #{pgsql_port} -U storktest $db
-       done
-       createdb -h #{pgsql_host} -p #{pgsql_port} -U storktest -O storktest storktest
-    }
+    remove_remaining_databases(pgsql_host, pgsql_port)
+    sh "createdb -h #{pgsql_host} -p #{pgsql_port} -U storktest -O storktest storktest"
   end
   sh "STORK_DATABASE_PASSWORD=storktest ./backend/cmd/stork-db-migrate/stork-db-migrate -d storktest -u storktest --db-host #{pgsql_host} -p #{pgsql_port} up"
 
@@ -406,6 +410,11 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
         gotool = GO
       end
       sh "#{gotool} test -race -v #{cov_params} #{test_regex} #{scope}"  # count=1 disables caching results
+    end
+
+    # drop test databases
+    if ENV['POSTGRES_IN_DOCKER'] != 'yes'
+      remove_remaining_databases(pgsql_host, pgsql_port)
     end
 
     # check coverage level (run it only for full tests scope)

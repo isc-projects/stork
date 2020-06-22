@@ -103,6 +103,15 @@ and containers:
   preconfigured HA, ports 8881 and 8882
 - `rake run_bind9_container`: port 9999
 
+Installing Git Hooks
+--------------------
+
+There is a simple git hook that inserts the issue number in the commit
+message automatically; to use it, go to the ``utils`` directory and
+run the ``git-hooks-install`` script. It will copy the necessary file
+to the ``.git/hooks`` directory.
+
+
 Agent API
 =========
 
@@ -146,15 +155,6 @@ state, the following command can be used:
       "hostID": "c41337a1-0ec3-3896-a954-a1f85e849d53"
     }
 
-Installing Git Hooks
-====================
-
-There is a simple git hook that inserts the issue number in the commit
-message automatically; to use it, go to the ``utils`` directory and
-run the ``git-hooks-install`` script. It will copy the necessary file
-to the ``.git/hooks`` directory.
-
-
 ReST API
 ========
 
@@ -176,6 +176,57 @@ for:
 * the backend in Go lang by go-swagger
 
 All these steps are accomplished by Rakefile.
+
+Backend Unit Tests
+==================
+
+There are unit tests for backend part (agent and server) written in Go.
+They can be run using Rake:
+
+.. code:: console
+
+          $ rake unittest_backend
+
+This requires preparing a database in PostgreSQL. One way to avoid
+doing this manually is automatically running PostgreSQL in a docker
+container by Rake. This can be achieved by the following Rake task:
+
+.. code:: console
+
+          $ rake unittest_backend_db
+
+This one task spawns a container with PostgreSQL in the background
+and then it runs unit tests. After the end of tests the database
+is shutdown and removed.
+
+Unit Tests Database
+-------------------
+
+Otherwise, a database must be prepared in the following way:
+
+.. code-block:: psql
+
+    postgres=# CREATE USER storktest WITH PASSWORD 'storktest';
+    CREATE ROLE
+    postgres=# ALTER ROLE storktest SUPERUSER;
+    ALTER ROLE
+
+To point unit tests to our specific database set ``POSTGRES_ADDR``
+environment variable, e.g.:
+
+.. code:: console
+
+          $ rake unittest_backend POSTGRES_ADDR=host:port
+
+By default it points to ``localhost:5432``.
+
+Unit Tests Coverage
+-------------------
+
+At the end of tests execution there is coverage report presented. If
+coverage of any module is below a threshold of 35% then an error is
+raised.
+
 
 Docker Containers
 =================
