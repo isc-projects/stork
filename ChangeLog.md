@@ -1,3 +1,12 @@
+* 74 [bug] marcin
+
+    Fixed a security problem whereby an unlogged user had access to some
+    restricted pages. If the unlogged user tries to access a restricted
+    page, the user is redirected to the login page. If the user tries
+    to access a page without proper privileges, the HTTP 403 page is
+    displayed.
+    (Gitlab #119)
+
 * 73 [func] marcin
 
     Monitor communication issues between Stork and the applications.
