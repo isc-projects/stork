@@ -67,6 +67,7 @@ import { HaStatusPanelComponent } from './ha-status-panel/ha-status-panel.compon
 import { EventTextComponent } from './event-text/event-text.component'
 import { EntityLinkComponent } from './entity-link/entity-link.component'
 import { EventsPanelComponent } from './events-panel/events-panel.component'
+import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -114,6 +115,7 @@ export function preinitApp(appInitService: AppInitService) {
         EventTextComponent,
         EntityLinkComponent,
         EventsPanelComponent,
+        ForbiddenPageComponent,
     ],
     imports: [
         BrowserModule,

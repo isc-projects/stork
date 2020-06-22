@@ -14,6 +14,7 @@ import { HostsPageComponent } from './hosts-page/hosts-page.component'
 import { SubnetsPageComponent } from './subnets-page/subnets-page.component'
 import { SharedNetworksPageComponent } from './shared-networks-page/shared-networks-page.component'
 import { SettingsPageComponent } from './settings-page/settings-page.component'
+import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.component'
 
 const routes: Routes = [
     {
@@ -104,6 +105,10 @@ const routes: Routes = [
         path: 'settings',
         component: SettingsPageComponent,
         canActivate: [AuthGuard],
+    },
+    {
+        path: 'forbidden',
+        component: ForbiddenPageComponent,
     },
 
     // otherwise redirect to home

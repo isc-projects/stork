@@ -9,11 +9,19 @@ export class AuthInterceptor implements HttpInterceptor {
     constructor(private router: Router) {}
 
     private handleAuthError(err: HttpErrorResponse): Observable<any> {
-        if (err.status === 401) {
-            // User is apparently not logged as it got Unauthorized error.
-            // Redirect the user to the login page.
-            this.router.navigateByUrl('/login')
-            return of(err.message)
+        switch (err.status) {
+            case 401:
+                // User is apparently not logged as it got Unauthorized error.
+                // Redirect the user to the login page.
+                this.router.navigateByUrl('/login')
+                return of(err.message)
+            case 403:
+                // User has no access to the given view. Let's redirect the
+                // user to the error page.
+                this.router.navigateByUrl('/forbidden', { skipLocationChange: true })
+                return of(err.message)
+            default:
+                return throwError(err)
         }
         return throwError(err)
     }
