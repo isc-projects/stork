@@ -18,6 +18,9 @@ securityDefinitions:
     in: header
     name: Cookie
 
+security:
+  - Token: []
+
 paths:
   /version:
     get:

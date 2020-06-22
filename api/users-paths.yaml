@@ -2,6 +2,7 @@
     post:
       summary: Logs in a user to the system
       operationId: createSession
+      security: []
       tags:
         - Users
       parameters:
@@ -41,8 +42,6 @@
       description: >-
         Returns all users having an account in the system.
       operationId: getUsers
-      security:
-        - Token: []
       tags:
         - Users
       parameters:
@@ -63,8 +62,6 @@
       description: >-
         Creates new user account in the system.
       operationId: createUser
-      security:
-        - Token: []
       tags:
         - Users
       parameters:
@@ -89,8 +86,6 @@
       description: >-
         Updates exsiting user account in the system.
       operationId: updateUser
-      security:
-        - Token: []
       tags:
         - Users
       parameters:
@@ -113,8 +108,6 @@
       summary: Get the specific user.
       description: Returns user by id.
       operationId: getUser
-      security:
-        - Token: []
       tags:
         - Users
       parameters:
@@ -138,8 +131,6 @@
       summary: Updates user password.
       description: Updates user password.
       operationId: updateUserPassword
-      security:
-        - Token: []
       tags:
         - Users
       parameters:
@@ -168,6 +159,7 @@
       description: >-
         Returns all groups defined for the system.
       operationId: getGroups
+      security: []
       tags:
         - Users
       parameters:
