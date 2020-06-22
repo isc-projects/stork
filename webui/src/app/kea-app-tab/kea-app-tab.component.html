@@ -79,38 +79,35 @@
 
                         <div *ngIf="daemon.active" class="p-col-4">
                             <h4 style="margin-top: 2px;">Overview</h4>
-                            <p-panel>
-                                <p-header> Kea {{ daemon.niceName }} daemon details </p-header>
-                                <table style="width: 100%;">
-                                    <tr>
-                                        <td>Version</td>
-                                        <td>{{ daemon.version }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top;">Version Ext</td>
-                                        <td [innerHTML]="daemon.extendedVersion"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top;">Hooks</td>
-                                        <td>
-                                            <div *ngFor="let hook of daemon.hooks">
-                                                {{ hook }}
-                                            </div>
-                                            <div *ngIf="daemon.hooks.length === 0" style="color: #aaa;">
-                                                no hooks
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top;">Uptime</td>
-                                        <td>{{ showDuration(daemon.uptime) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="vertical-align: top;">Last Reloaded At</td>
-                                        <td>{{ daemon.reloadedAt | localtime }}</td>
-                                    </tr>
-                                </table>
-                            </p-panel>
+                            <table style="width: 100%;">
+                                <tr>
+                                    <td>Version</td>
+                                    <td>{{ daemon.version }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top;">Version Ext</td>
+                                    <td [innerHTML]="daemon.extendedVersion"></td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top;">Hooks</td>
+                                    <td>
+                                        <div *ngFor="let hook of daemon.hooks">
+                                            {{ hook }}
+                                        </div>
+                                        <div *ngIf="daemon.hooks.length === 0" style="color: #aaa;">
+                                            no hooks
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top;">Uptime</td>
+                                    <td>{{ showDuration(daemon.uptime) }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align: top;">Last Reloaded At</td>
+                                    <td>{{ daemon.reloadedAt | localtime }}</td>
+                                </tr>
+                            </table>
                         </div>
 
                         <div
