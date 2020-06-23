@@ -433,8 +433,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
         ignore_list = ['DetectServices', 'RestartKea', 'Serve', 'BeforeQuery', 'AfterQuery',
                        'Identity', 'LogoutHandler', 'NewDatabaseSettings', 'ConnectionParams',
                        'Password', 'loggingMiddleware', 'GlobalMiddleware', 'Authorizer',
-                       'CreateSession', 'DeleteSession', 'Listen', 'Shutdown', 'NewRestUser',
-                       'CreateUser', 'UpdateUser', 'SetupLogging', 'UTCNow', 'detectApps',
+                       'Listen', 'Shutdown', 'SetupLogging', 'UTCNow', 'detectApps',
                        'prepareTLS', 'handleRequest', 'pullerLoop', 'Output', 'Collect',
                        'collectTime', 'collectResolverStat', 'collectResolverLabelStat',
 

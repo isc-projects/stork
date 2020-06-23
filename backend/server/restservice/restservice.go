@@ -67,13 +67,21 @@ type RestAPI struct {
 
 // Do API initialization.
 func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, db *pg.DB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter) (*RestAPI, error) {
-	r := &RestAPI{
-		Settings:    settings,
-		DbSettings:  dbSettings,
-		Db:          db,
-		Agents:      agents,
-		EventCenter: eventCenter,
+	// Initialize sessions with access to the database.
+	sm, err := dbsession.NewSessionMgr(&dbSettings.BaseDatabaseSettings)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to establish connection to the session database")
 	}
+
+	r := &RestAPI{
+		Settings:       settings,
+		DbSettings:     dbSettings,
+		Db:             db,
+		SessionManager: sm,
+		Agents:         agents,
+		EventCenter:    eventCenter,
+	}
+
 	return r, nil
 }
 
@@ -150,13 +158,6 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 
 // Serve the API
 func (r *RestAPI) Serve() (err error) {
-	// Initialize sessions with access to the database.
-	sm, err := dbsession.NewSessionMgr(&r.DbSettings.BaseDatabaseSettings)
-	if err != nil {
-		return errors.Wrap(err, "unable to establish connection to the session database")
-	}
-	r.SessionManager = sm
-
 	// Initiate the http handler, with the objects that are implementing the business logic.
 	h, err := restapi.Handler(restapi.Config{
 		GeneralAPI:      r,

@@ -51,22 +51,42 @@ func TestCreateUser(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 	rapi, _ := NewRestAPI(nil, dbSettings, db, nil, fec)
 
+	// Try empty request, variant 1 - it should raise an error
+	params := users.CreateUserParams{}
+	rsp := rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+
+	// Try empty request, variant 2 - it should raise an error
+	params = users.CreateUserParams{
+		Account: &models.UserAccount{},
+	}
+	rsp = rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+
+	// Try empty request, variant 3 - it should raise an error
+	params = users.CreateUserParams{
+		Account: &models.UserAccount{
+			User: &models.User{},
+		},
+	}
+	rsp = rapi.CreateUser(ctx, params)
+	require.IsType(t, &users.CreateUserDefault{}, rsp)
+
+	// Create the user and verify the response.
 	su := dbmodel.SystemUser{
 		Email:    "jb@example.org",
 		Lastname: "Born",
 		Login:    "jb",
 		Name:     "John",
 	}
-
-	params := users.CreateUserParams{
+	params = users.CreateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
 			Password: models.Password("pass"),
 		},
 	}
 
-	// Create the user and verify the response.
-	rsp := rapi.CreateUser(ctx, params)
+	rsp = rapi.CreateUser(ctx, params)
 	require.IsType(t, &users.CreateUserOK{}, rsp)
 	okRsp := rsp.(*users.CreateUserOK)
 	require.Greater(t, *okRsp.Payload.ID, int64(0))
@@ -108,15 +128,36 @@ func TestUpdateUser(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
+	// Try empty request, variant 1 - it should raise an error
+	params := users.UpdateUserParams{}
+	rsp := rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+
+	// Try empty request, variant 2 - it should raise an error
+	params = users.UpdateUserParams{
+		Account: &models.UserAccount{},
+	}
+	rsp = rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+
+	// Try empty request, variant 3 - it should raise an error
+	params = users.UpdateUserParams{
+		Account: &models.UserAccount{
+			User: &models.User{},
+		},
+	}
+	rsp = rapi.UpdateUser(ctx, params)
+	require.IsType(t, &users.UpdateUserDefault{}, rsp)
+
 	// Modify some values and update the user.
 	su.Lastname = "Born"
-	params := users.UpdateUserParams{
+	params = users.UpdateUserParams{
 		Account: &models.UserAccount{
 			User:     newRestUser(su),
 			Password: models.Password("pass"),
 		},
 	}
-	rsp := rapi.UpdateUser(ctx, params)
+	rsp = rapi.UpdateUser(ctx, params)
 	require.IsType(t, &users.UpdateUserOK{}, rsp)
 
 	// Also check that the user has been updated in the database.
@@ -185,6 +226,13 @@ func TestUpdateUserPassword(t *testing.T) {
 	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
 	defaultRsp := rsp.(*users.UpdateUserPasswordDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+
+	// Try empty request - it should raise an error.
+	params = users.UpdateUserPasswordParams{
+		ID: int64(user.ID),
+	}
+	rsp = rapi.UpdateUserPassword(ctx, params)
+	require.IsType(t, &users.UpdateUserPasswordDefault{}, rsp)
 }
 
 // Tests that multiple groups can be fetched from the database.
@@ -229,19 +277,28 @@ func TestGetUsers(t *testing.T) {
 	require.False(t, con)
 	require.NoError(t, err)
 
+	// Try empty request - it should work
+	params := users.GetUsersParams{}
+
+	rsp := rapi.GetUsers(ctx, params)
+	require.IsType(t, &users.GetUsersOK{}, rsp)
+	okRsp := rsp.(*users.GetUsersOK)
+	require.EqualValues(t, 2, okRsp.Payload.Total) // we expect 2 users (admin and john doe)
+	require.Len(t, okRsp.Payload.Items, 2)         // make sure there's entry with 2 users
+
 	// Retrieve all users using the API
 	var limit int64 = 99999
 	var start int64 = 0
 	var text string = ""
-	params := users.GetUsersParams{
+	params = users.GetUsersParams{
 		Limit: &limit,
 		Start: &start,
 		Text:  &text,
 	}
 
-	rsp := rapi.GetUsers(ctx, params)
+	rsp = rapi.GetUsers(ctx, params)
 	require.IsType(t, &users.GetUsersOK{}, rsp)
-	okRsp := rsp.(*users.GetUsersOK)
+	okRsp = rsp.(*users.GetUsersOK)
 	require.EqualValues(t, 2, okRsp.Payload.Total) // we expect 2 users (admin and john doe)
 	require.Len(t, okRsp.Payload.Items, 2)         // make sure there's entry with 2 users
 
@@ -301,4 +358,51 @@ func TestGetUser(t *testing.T) {
 
 	// TODO: check that the new user belongs to a group
 	// require.Len(t, okRsp.Payload.Groups, 1)
+}
+
+// Tests that
+func TestCreateSession(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctx := context.Background()
+	fec := &storktest.FakeEventCenter{}
+	rapi, _ := NewRestAPI(nil, dbSettings, db, nil, fec)
+
+	user := &dbmodel.SystemUser{
+		Email:    "jan@example.org",
+		Lastname: "Kowalski",
+		Name:     "Jan",
+		Password: "pass",
+	}
+	con, err := dbmodel.CreateUser(db, user)
+	require.False(t, con)
+	require.NoError(t, err)
+
+	// try empty request - it should raise an error
+	params := users.CreateSessionParams{}
+	rsp := rapi.CreateSession(ctx, params)
+	require.IsType(t, &users.CreateSessionBadRequest{}, rsp)
+
+	// for next tests there is some data required in the context, let's prepare it
+	ctx2, err := rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	// provide wrong credentials - it should raise an error
+	params.Useremail = user.Email
+	params.Userpassword = "bad pass"
+	rsp = rapi.CreateSession(ctx2, params)
+	require.IsType(t, &users.CreateSessionBadRequest{}, rsp)
+
+	// provide correct credentials - it should create a new session
+	params.Useremail = user.Email
+	params.Userpassword = user.Password
+	rsp = rapi.CreateSession(ctx2, params)
+	require.IsType(t, &users.CreateSessionOK{}, rsp)
+	okRsp := rsp.(*users.CreateSessionOK)
+	require.Greater(t, *okRsp.Payload.ID, int64(0))
+
+	delParams := users.DeleteSessionParams{}
+	rsp = rapi.DeleteSession(ctx2, delParams)
+	require.IsType(t, &users.DeleteSessionOK{}, rsp)
 }

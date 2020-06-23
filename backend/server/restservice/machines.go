@@ -350,6 +350,14 @@ func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachinePara
 
 // Add a machine where Stork Agent is running.
 func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachineParams) middleware.Responder {
+	if params.Machine == nil || params.Machine.Address == nil {
+		log.Warnf("cannot create machine: missing parameters")
+		msg := "missing parameters"
+		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 	addr := *params.Machine.Address
 	if !govalidator.IsHost(*params.Machine.Address) {
 		log.Warnf("problem with parsing address %s", addr)
@@ -409,6 +417,14 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 // Get one machine by ID where Stork Agent is running.
 func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachineParams) middleware.Responder {
+	if params.Machine == nil || params.Machine.Address == nil {
+		log.Warnf("cannot update machine: missing parameters")
+		msg := "missing parameters"
+		rsp := services.NewUpdateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
 	addr := *params.Machine.Address
 	if !govalidator.IsHost(*params.Machine.Address) {
 		log.Warnf("problem with parsing address %s", addr)

@@ -53,13 +53,13 @@ func newRestGroup(g dbmodel.SystemGroup) *models.Group {
 // Attempts to login the user to the system.
 func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionParams) middleware.Responder {
 	user := &dbmodel.SystemUser{}
-	login := *params.Useremail
+	login := params.Useremail
 	if strings.Contains(login, "@") {
 		user.Email = login
 	} else {
 		user.Login = login
 	}
-	user.Password = *params.Userpassword
+	user.Password = params.Userpassword
 
 	ok, err := dbmodel.Authenticate(r.Db, user)
 	if ok {
@@ -167,8 +167,27 @@ func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middl
 
 // Creates new user account in the database.
 func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams) middleware.Responder {
+	if params.Account == nil {
+		log.Warnf("failed to create new user account: missing data")
+
+		msg := fmt.Sprintf("failed to create new user account: missing data")
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		return users.NewCreateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
+	}
 	u := params.Account.User
 	p := params.Account.Password
+
+	if u == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
+		log.Warnf("failed to create new user account: missing data")
+
+		msg := fmt.Sprintf("failed to create new user account: missing data")
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		return users.NewCreateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
+	}
 
 	su := &dbmodel.SystemUser{
 		Login:    *u.Login,
@@ -194,7 +213,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 			rspErr := models.APIError{
 				Message: &msg,
 			}
-			return users.NewCreateUserDefault(409).WithPayload(&rspErr)
+			return users.NewCreateUserDefault(http.StatusConflict).WithPayload(&rspErr)
 		}
 		log.Errorf("failed to create new user account for user %s: %s", su.Identity(), err.Error())
 
@@ -211,8 +230,27 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 
 // Updates existing user account in the database.
 func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams) middleware.Responder {
+	if params.Account == nil {
+		log.Warnf("failed to update user account: missing data")
+
+		msg := fmt.Sprintf("failed to update user account: missing data")
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		return users.NewUpdateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
+	}
 	u := params.Account.User
 	p := params.Account.Password
+
+	if u == nil || u.ID == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
+		log.Warnf("failed to update user account: missing data")
+
+		msg := fmt.Sprintf("failed to update user account: missing data")
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		return users.NewUpdateUserDefault(http.StatusBadRequest).WithPayload(&rspErr)
+	}
 
 	su := &dbmodel.SystemUser{
 		ID:       int(*u.ID),
@@ -237,7 +275,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		rsp := users.NewUpdateUserDefault(409).WithPayload(&rspErr)
+		rsp := users.NewUpdateUserDefault(http.StatusConflict).WithPayload(&rspErr)
 		return rsp
 	} else if err != nil {
 		log.WithFields(log.Fields{
@@ -262,6 +300,16 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUserPasswordParams) middleware.Responder {
 	id := int(params.ID)
 	passwords := params.Passwords
+	if passwords == nil {
+		log.Warnf("failed to update password for user id %d: missing data", id)
+
+		msg := "failed to update password for user: missing data"
+		rspErr := models.APIError{
+			Message: &msg,
+		}
+		rsp := users.NewUpdateUserPasswordDefault(http.StatusInternalServerError).WithPayload(&rspErr)
+		return rsp
+	}
 
 	// Try to change the password for the given user id. Including old password
 	// for verification and the new password which will only be set if this

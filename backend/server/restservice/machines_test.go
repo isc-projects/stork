@@ -259,15 +259,27 @@ func TestCreateMachine(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
+	// empty request, variant 1 - should raise an error
+	params := services.CreateMachineParams{}
+	rsp := rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineDefault{}, rsp)
+
+	// empty request, variant 2 - should raise an error
+	params = services.CreateMachineParams{
+		Machine: &models.Machine{},
+	}
+	rsp = rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineDefault{}, rsp)
+
 	// bad host
 	addr := "//a/"
-	params := services.CreateMachineParams{
+	params = services.CreateMachineParams{
 		Machine: &models.Machine{
 			Address:   &addr,
 			AgentPort: 8080,
 		},
 	}
-	rsp := rapi.CreateMachine(ctx, params)
+	rsp = rapi.CreateMachine(ctx, params)
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp := rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
@@ -412,16 +424,28 @@ func TestUpdateMachine(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
+	// empty request, variant 1 - should raise an error
+	params := services.UpdateMachineParams{}
+	rsp := rapi.UpdateMachine(ctx, params)
+	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
+
+	// empty request, variant 2 - should raise an error
+	params = services.UpdateMachineParams{
+		Machine: &models.Machine{},
+	}
+	rsp = rapi.UpdateMachine(ctx, params)
+	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
+
 	// update non-existing machine
 	addr := "localhost"
-	params := services.UpdateMachineParams{
+	params = services.UpdateMachineParams{
 		ID: 123,
 		Machine: &models.Machine{
 			Address:   &addr,
 			AgentPort: 8080,
 		},
 	}
-	rsp := rapi.UpdateMachine(ctx, params)
+	rsp = rapi.UpdateMachine(ctx, params)
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
 	defaultRsp := rsp.(*services.UpdateMachineDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))

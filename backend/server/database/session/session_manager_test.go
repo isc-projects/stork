@@ -1,6 +1,7 @@
 package dbsession
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -89,4 +90,18 @@ func TestMiddlewareNewSession(t *testing.T) {
 
 	// Check that the session token was stored in the database.
 	require.True(t, mgr.HasToken(value))
+}
+
+func TestLoad(t *testing.T) {
+	// Reset database schema.
+	_, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	mgr, err := NewSessionMgr(&dbSettings.BaseDatabaseSettings)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	_, err = mgr.Load(ctx, "")
+	require.NoError(t, err)
 }

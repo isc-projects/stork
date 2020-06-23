@@ -125,3 +125,9 @@ func (s *SessionMgr) Logged(ctx context.Context) (ok bool, user *dbmodel.SystemU
 
 	return true, user
 }
+
+// This function is only for testing purposes to prepare request context.
+func (s *SessionMgr) Load(ctx context.Context, token string) (context.Context, error) {
+	ctx2, err := s.scsSessionMgr.Load(ctx, token)
+	return ctx2, err
+}
