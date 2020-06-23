@@ -188,21 +188,23 @@ They can be run using Rake:
           $ rake unittest_backend
 
 This requires preparing a database in PostgreSQL. One way to avoid
-doing this manually is automatically running PostgreSQL in a docker
-container by Rake. This can be achieved by the following Rake task:
+doing this manually is by using a docker container with PostgreSQL
+which is automatically created when running the following Rake task:
 
 .. code:: console
 
           $ rake unittest_backend_db
 
-This one task spawns a container with PostgreSQL in the background
-and then it runs unit tests. After the end of tests the database
-is shutdown and removed.
+This one task spawns a container with PostgreSQL in the background and
+then it runs unit tests. When the tests are completed the database is
+shutdown and removed.
 
 Unit Tests Database
 -------------------
 
-Otherwise, a database must be prepared in the following way:
+When docker container with a database is not used for unit tests, the
+PostgreSQL server must be stared and the following role must be
+created:
 
 .. code-block:: psql
 
