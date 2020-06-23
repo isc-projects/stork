@@ -1,3 +1,9 @@
+* 75 [bug] matthijs
+
+    Bind exporter did not unregister all Prometheus collectors on
+    shutdown.
+    (Gitlab #326)
+
 * 74 [bug] marcin
 
     Fixed a security problem whereby an unlogged user had access to some

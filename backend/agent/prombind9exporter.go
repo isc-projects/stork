@@ -65,6 +65,8 @@ type PromBind9Exporter struct {
 	HTTPServer *http.Server
 
 	up              int
+	procID          int32
+	procExporter    prometheus.Collector
 	Registry        *prometheus.Registry
 	serverStatsDesc map[string]*prometheus.Desc
 	viewStatsDesc   map[string]*prometheus.Desc
@@ -406,8 +408,9 @@ func (pbe *PromBind9Exporter) collectResolverLabelStat(statName, view string, vi
 // Collect fetches the stats from configured location and delivers them
 // as Prometheus metrics. It implements prometheus.Collector.
 func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
-	bind9Pid, err := pbe.collectStats()
-	if bind9Pid == 0 {
+	var err error
+	pbe.procID, err = pbe.collectStats()
+	if pbe.procID == 0 {
 		return
 	}
 
@@ -605,24 +608,24 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 // exposing them to Prometheus.
 func (pbe *PromBind9Exporter) Start() {
 	// initial collect
-	bind9Pid, err := pbe.collectStats()
+	var err error
+	pbe.procID, err = pbe.collectStats()
 	if err != nil {
 		log.Errorf("some errors were encountered while collecting stats from BIND 9: %+v", err)
 	}
 
 	// register collectors
 	version.Version = stork.Version
-	pbe.Registry.MustRegister(version.NewCollector("bind_exporter"))
-	pbe.Registry.MustRegister(pbe)
-	if bind9Pid > 0 {
-		procExporter := prometheus.NewProcessCollector(
+	pbe.Registry.MustRegister(pbe, version.NewCollector("bind_exporter"))
+	if pbe.procID > 0 {
+		pbe.procExporter = prometheus.NewProcessCollector(
 			prometheus.ProcessCollectorOpts{
 				PidFn: func() (int, error) {
-					return int(bind9Pid), nil
+					return int(pbe.procID), nil
 				},
 				Namespace: namespace,
 			})
-		pbe.Registry.MustRegister(procExporter)
+		pbe.Registry.MustRegister(pbe.procExporter)
 	}
 
 	// set address for listening from settings
@@ -656,6 +659,9 @@ func (pbe *PromBind9Exporter) Shutdown() {
 	}
 
 	// unregister bind9 counters from prometheus framework
+	if pbe.procID > 0 {
+		pbe.Registry.Unregister(pbe.procExporter)
+	}
 	pbe.Registry.Unregister(pbe)
 
 	log.Printf("Stopped Prometheus BIND 9 Exporter")
