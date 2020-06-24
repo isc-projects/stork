@@ -4,24 +4,30 @@ import { Injectable } from '@angular/core'
 import { throwError, of, Observable } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
+import { AuthService } from './auth.service'
+
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-    constructor(private router: Router) {}
+    constructor(private router: Router, private auth: AuthService) {}
 
     private handleAuthError(err: HttpErrorResponse): Observable<any> {
-        switch (err.status) {
-            case 401:
-                // User is apparently not logged in as it got Unauthorized error.
-                // Redirect the user to the login page.
-                this.router.navigateByUrl('/login')
-                return of(err.message)
-            case 403:
-                // User has no access to the given view. Let's redirect the
-                // user to the error page.
-                this.router.navigateByUrl('/forbidden', { skipLocationChange: true })
-                return of(err.message)
-            default:
-                return throwError(err)
+        // The server sometimes returns HTTP Error 403 when the session expires
+        // but the browser still remembers it in the local storage. The 403 may
+        // also be returned for the authorized user but not having access to the
+        // particular view. Therefore, we need to look into the error message
+        // field. The 'user unauthorized' means that the user is not logged in.
+        if (err.status === 401 || (err.error && err.error.message === 'user unauthorized')) {
+            // User is apparently not logged in as it got Unauthorized error.
+            // Remove the session information from the local storage and redirect
+            // the user to the login page.
+            this.auth.destroyLocalSession()
+            this.router.navigateByUrl('/login')
+            return of(err.message)
+        } else if (err.status === 403) {
+            // User has no access to the given view. Let's redirect the
+            // user to the error page.
+            this.router.navigateByUrl('/forbidden', { skipLocationChange: true })
+            return of(err.message)
         }
         return throwError(err)
     }

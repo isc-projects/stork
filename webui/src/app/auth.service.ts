@@ -145,9 +145,16 @@ export class AuthService {
      */
     logout() {
         this.api.deleteSession('response').subscribe((resp) => {
-            localStorage.removeItem('currentUser')
-            this.currentUserSubject.next(null)
+            this.destroyLocalSession()
         })
+    }
+
+    /**
+     * Destroys session information in the local storage.
+     */
+    destroyLocalSession() {
+        localStorage.removeItem('currentUser')
+        this.currentUserSubject.next(null)
     }
 
     /**
