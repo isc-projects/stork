@@ -1,3 +1,8 @@
+* 76 [func] marcin
+
+    Pool utilization in the Stork dashboard is shown with a progress bar.
+    (Gitlab #235)
+
 * 75 [bug] matthijs
 
     Bind exporter did not unregister all Prometheus collectors on
