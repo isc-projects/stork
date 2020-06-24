@@ -61,9 +61,19 @@
                     <table>
                         <tr *ngFor="let sn of overview.subnets4.items">
                             <td>[{{ sn.id }}]</td>
-                            <td>{{ sn.subnet }}</td>
+                            <td><app-subnet-bar [subnet]="sn"></app-subnet-bar></td>
                             <td style="padding-left: 1em;">
                                 {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
+                                <i
+                                    *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
+                                    class="pi pi-exclamation-triangle"
+                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange;"
+                                ></i>
+                                <i
+                                    *ngIf="sn.addrUtilization > 90"
+                                    class="pi pi-exclamation-circle"
+                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: red;"
+                                ></i>
                             </td>
                             <td *ngIf="grafanaUrl">
                                 <a
@@ -168,9 +178,19 @@
                     <table>
                         <tr *ngFor="let sn of overview.subnets6.items">
                             <td>[{{ sn.id }}]</td>
-                            <td>{{ sn.subnet }}</td>
+                            <td><app-subnet-bar [subnet]="sn"></app-subnet-bar></td>
                             <td style="padding-left: 1em;">
                                 {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
+                                <i
+                                    *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
+                                    class="pi pi-exclamation-triangle"
+                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange;"
+                                ></i>
+                                <i
+                                    *ngIf="sn.addrUtilization > 90"
+                                    class="pi pi-exclamation-circle"
+                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: red;"
+                                ></i>
                             </td>
                         </tr>
 
