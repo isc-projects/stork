@@ -35,8 +35,11 @@ def _refresh_servers():
     try:
         app.servers = dict(items=[], total=0)
 
+        s = requests.Session()
+        s.post('http://server:8080/api/sessions?useremail=admin&userpassword=admin')
+
         url = 'http://server:8080/api/apps/'
-        r = requests.get(url)
+        r = s.get(url)
         data = r.json()
 
         if not data:

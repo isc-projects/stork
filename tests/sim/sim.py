@@ -24,8 +24,11 @@ def _refresh_subnets():
     try:
         app.subnets = dict(items=[], total=0)
 
+        s = requests.Session()
+        s.post('http://server:8080/api/sessions?useremail=admin&userpassword=admin')
+
         url = 'http://server:8080/api/subnets?start=0&limit=100'
-        r = requests.get(url)
+        r = s.get(url)
         data = r.json()
 
         if not data:
