@@ -8,7 +8,7 @@ import { AuthService } from './auth.service'
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-    constructor(private router: Router, private auth: AuthService) { }
+    constructor(private router: Router, private auth: AuthService) {}
 
     private handleAuthError(err: HttpErrorResponse): Observable<any> {
         // The server sometimes returns HTTP Error 403 when the session expires
