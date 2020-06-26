@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core'
 import { Observable, Subject, merge, timer } from 'rxjs'
-import { filter, switchMap, shareReplay, takeUntil } from 'rxjs/operators'
+import { switchMap, shareReplay, takeUntil } from 'rxjs/operators'
 
 import { ServicesService } from './backend/api/api'
 import { AppsStats } from './backend/model/appsStats'
@@ -14,7 +14,6 @@ import { AppsStats } from './backend/model/appsStats'
 export class ServerDataService {
     private appsStats: Observable<AppsStats>
     private reload = new Subject<void>()
-    private valid = false
 
     constructor(private servicesApi: ServicesService) {}
 
@@ -35,11 +34,6 @@ export class ServerDataService {
             )
         }
 
-        if (!this.valid) {
-            this.forceReloadAppsStats()
-            this.valid = true
-        }
-
         return this.appsStats
     }
 
@@ -48,12 +42,5 @@ export class ServerDataService {
      */
     forceReloadAppsStats() {
         this.reload.next()
-    }
-
-    /**
-     * Invalidates cached responses forcing to reload on next subscription
-     */
-    invalidate() {
-        this.valid = false
     }
 }

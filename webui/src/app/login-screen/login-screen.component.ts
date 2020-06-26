@@ -39,6 +39,7 @@ export class LoginScreenComponent implements OnInit {
         })
 
         this.api.getVersion().subscribe((data) => {
+            console.info(data)
             this.version = data.version
         })
     }
