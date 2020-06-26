@@ -4,6 +4,7 @@ import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 import { MenuItem, MessageService, SelectItem } from 'primeng/api'
 
 import { AuthService } from '../auth.service'
+import { ServerDataService } from '../server-data.service'
 import { UsersService } from '../backend/api/api'
 import { UserAccount } from '../backend/model/models'
 
@@ -92,6 +93,7 @@ function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
     styleUrls: ['./users-page.component.sass'],
 })
 export class UsersPageComponent implements OnInit {
+    private groups: any[]
     // users table
     users: any[]
     totalUsers: number
@@ -113,6 +115,7 @@ export class UsersPageComponent implements OnInit {
         private formBuilder: FormBuilder,
         private usersApi: UsersService,
         private msgSrv: MessageService,
+        private serverData: ServerDataService,
         public auth: AuthService
     ) {}
 
@@ -224,16 +227,11 @@ export class UsersPageComponent implements OnInit {
             userlast: this.userTab.user.lastname,
         })
 
-        if (
-            this.auth.groups &&
-            this.auth.groups.length > 0 &&
-            this.userTab.user.groups &&
-            this.userTab.user.groups.length > 0
-        ) {
+        if (this.groups && this.groups.length > 0 && this.userTab.user.groups && this.userTab.user.groups.length > 0) {
             userform.patchValue({
                 usergroup: {
-                    id: this.auth.groups[this.userTab.user.groups[0] - 1].id,
-                    name: this.auth.groups[this.userTab.user.groups[0] - 1].name,
+                    id: this.groups[this.userTab.user.groups[0] - 1].id,
+                    name: this.groups[this.userTab.user.groups[0] - 1].name,
                 },
             })
         }
@@ -343,14 +341,20 @@ export class UsersPageComponent implements OnInit {
                 value: null,
             },
         ]
-        for (const i in this.auth.groups) {
-            if (this.auth.groups.hasOwnProperty(i)) {
-                this.userGroups.push({
-                    label: this.auth.groups[i].name,
-                    value: { id: this.auth.groups[i].id, name: this.auth.groups[i].name },
-                })
+        // Get all groups from the server.
+        this.serverData.getGroups().subscribe((data) => {
+            if (data.items) {
+                this.groups = data.items
+                for (const i in this.groups) {
+                    if (this.groups.hasOwnProperty(i)) {
+                        this.userGroups.push({
+                            label: this.groups[i].name,
+                            value: { id: this.groups[i].id, name: this.groups[i].name },
+                        })
+                    }
+                }
             }
-        }
+        })
 
         // Open the default tab
         this.tabs = [{ label: 'Users', routerLink: '/users/list' }]
@@ -519,5 +523,27 @@ export class UsersPageComponent implements OnInit {
      */
     userFormCancel() {
         this.closeActiveTab()
+    }
+
+    /**
+     * Returns group name for the particular group id
+     *
+     * @param groupId group id for which the name should be returned.
+     * @returns group name.
+     */
+    public groupName(groupId): string {
+        // The super-admin group is well known and doesn't require
+        // iterating over the list of groups fetched from the server.
+        // Especially, if the server didn't respond properly for
+        // some reason, we still want to be able to handle the
+        // super-admin group.
+        if (groupId === 1) {
+            return 'super-admin'
+        }
+        const groupIdx = groupId - 1
+        if (this.groups && this.groups.hasOwnProperty(groupIdx)) {
+            return this.groups[groupIdx].name
+        }
+        return 'unknown'
     }
 }

@@ -41,7 +41,6 @@ import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
 import { AuthInterceptor } from './auth-interceptor'
 import { AuthService } from './auth.service'
-import { AppInitService } from './app-init.service'
 import { LoginScreenComponent } from './login-screen/login-screen.component'
 import { DashboardComponent } from './dashboard/dashboard.component'
 import { HostsTableComponent } from './hosts-table/hosts-table.component'
@@ -75,16 +74,6 @@ export function cfgFactory() {
         withCredentials: true,
     }
     return new Configuration(params)
-}
-
-/**
- * Invokes pre-initialization of the application before the
- * components are initialized.
- */
-export function preinitApp(appInitService: AppInitService) {
-    return (): Promise<any> => {
-        return appInitService.Init()
-    }
 }
 
 @NgModule({
@@ -152,12 +141,6 @@ export function preinitApp(appInitService: AppInitService) {
         OverlayPanelModule,
     ],
     providers: [
-        {
-            provide: APP_INITIALIZER,
-            useFactory: preinitApp,
-            deps: [AppInitService],
-            multi: true,
-        },
         {
             provide: HTTP_INTERCEPTORS,
             useClass: AuthInterceptor,

@@ -62,7 +62,7 @@
                 </td>
                 <td align="center">{{ u.name }}</td>
                 <td align="center">{{ u.lastname }}</td>
-                <td align="center">{{ u.groups.length > 0 ? auth.groupName(u.groups[0]) : 0 }}</td>
+                <td align="center">{{ u.groups.length > 0 ? groupName(u.groups[0]) : 0 }}</td>
             </tr>
         </ng-template>
         <ng-template pTemplate="paginatorright" let-state>
@@ -122,7 +122,7 @@
                             Group:
                         </div>
                         <div class="p-col-10">
-                            {{ userTab.user.groups.length > 0 ? auth.groupName(userTab.user.groups[0]) : 0 }}
+                            {{ userTab.user.groups.length > 0 ? groupName(userTab.user.groups[0]) : 0 }}
                         </div>
                     </div>
                 </div>

@@ -6,7 +6,6 @@ import { map } from 'rxjs/operators'
 
 import { MessageService } from 'primeng/api'
 
-import { AppInitService } from './app-init.service'
 import { UsersService } from './backend/api/users.service'
 
 export class User {
@@ -34,18 +33,15 @@ export class AuthService {
     private currentUserSubject: BehaviorSubject<User>
     public currentUser: Observable<User>
     public user: User
-    public groups: SystemGroup[]
 
     constructor(
         private http: HttpClient,
         private api: UsersService,
         private router: Router,
-        private msgSrv: MessageService,
-        private appInit: AppInitService
+        private msgSrv: MessageService
     ) {
         this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')))
         this.currentUser = this.currentUserSubject.asObservable()
-        this.initSystemGroups()
     }
 
     /**
@@ -53,51 +49,6 @@ export class AuthService {
      */
     public get currentUserValue(): User {
         return this.currentUserSubject.value
-    }
-
-    /**
-     * Returns name of the system group fetched from the database.
-     *
-     * @param groupId Identifier of the group in the database, counted
-     *                from 1.
-     * @returns Group name or unknown string if the group is not found.
-     */
-    public groupName(groupId): string {
-        // The super-admin group is well known and doesn't require
-        // iterating over the list of groups fetched from the server.
-        // Especially, if the server didn't respond properly for
-        // some reason, we still want to be able to handle the
-        // super-admin group.
-        if (groupId === 1) {
-            return 'super-admin'
-        }
-        const groupIdx = groupId - 1
-        if (this.groups.hasOwnProperty(groupIdx)) {
-            return this.groups[groupIdx].name
-        }
-        return 'unknown'
-    }
-
-    /**
-     * Initializes a list of system groups.
-     *
-     * The groups are fetched from the database by the {@link AppInitService}
-     * prior to page load.
-     */
-    initSystemGroups() {
-        this.groups = []
-        const groups = this.appInit.groups
-        if (groups) {
-            for (const i in groups) {
-                if (groups.hasOwnProperty(i)) {
-                    const group = new SystemGroup()
-                    group.id = groups[i].id
-                    group.name = groups[i].name
-                    group.description = groups[i].description
-                    this.groups.push(group)
-                }
-            }
-        }
     }
 
     /**
@@ -158,27 +109,18 @@ export class AuthService {
     }
 
     /**
-     * Checks if the current user belongs to the specified group.
-     *
-     * @returns true if the user belongs to the group.
-     */
-    groupMember(groupName: string): boolean {
-        if (this.currentUserValue && this.currentUserValue.groups) {
-            for (const i in this.currentUserValue.groups) {
-                if (this.groupName(this.currentUserValue.groups[i]) === groupName) {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-
-    /**
      * Convenience function checking if the current user has the super admin role.
      *
      * @returns true if the user has super-admin group.
      */
     superAdmin(): boolean {
-        return this.groupMember('super-admin')
+        if (this.currentUserValue && this.currentUserValue.groups) {
+            for (const i in this.currentUserValue.groups) {
+                if (this.currentUserValue.groups[i] === 1) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 }
