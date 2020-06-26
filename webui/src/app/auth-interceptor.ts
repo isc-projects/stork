@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpInterceptor, HttpEvent, HttpHandler, HttpRequest } from '@angular/common/http'
 import { Router } from '@angular/router'
 import { Injectable } from '@angular/core'
-import { throwError, of, Observable } from 'rxjs'
+import { throwError, EMPTY, Observable } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
 import { AuthService } from './auth.service'
@@ -22,12 +22,12 @@ export class AuthInterceptor implements HttpInterceptor {
             // the user to the login page.
             this.auth.destroyLocalSession()
             this.router.navigateByUrl('/login')
-            return throwError(err)
+            return EMPTY
         } else if (err.status === 403) {
             // User has no access to the given view. Let's redirect the
             // user to the error page.
             this.router.navigateByUrl('/forbidden', { skipLocationChange: true })
-            return throwError(err)
+            return EMPTY
         }
         return throwError(err)
     }
