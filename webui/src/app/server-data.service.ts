@@ -34,7 +34,7 @@ export class ServerDataService {
                 switchMap((_) =>
                     this.servicesApi.getAppsStats().pipe(
                         // use subpipe to not complete source due to error
-                        catchError((err) => EMPTY) // in case of error drop the response at all (it should not be cached)
+                        catchError((err) => EMPTY) // in case of error drop the response (it should not be cached)
                     )
                 ),
                 shareReplay(1) // cache the response for all subscribers
