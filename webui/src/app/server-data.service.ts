@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core'
-import { Observable, Subject, merge, timer } from 'rxjs'
-import { switchMap, shareReplay, takeUntil } from 'rxjs/operators'
+import { Observable, Subject, merge, timer, empty } from 'rxjs'
+import { switchMap, shareReplay, catchError, filter } from 'rxjs/operators'
 
+import { AuthService } from './auth.service'
 import { ServicesService } from './backend/api/api'
 import { AppsStats } from './backend/model/appsStats'
 
@@ -15,7 +16,7 @@ export class ServerDataService {
     private appsStats: Observable<AppsStats>
     private reload = new Subject<void>()
 
-    constructor(private servicesApi: ServicesService) {}
+    constructor(private auth: AuthService, private servicesApi: ServicesService) { }
 
     /**
      * Get apps stats from the server and cache it for other subscribers.
@@ -28,8 +29,11 @@ export class ServerDataService {
 
             // For each timer tick and and for each reload
             // make an http request to fetch new data
-            this.appsStats = merge(refreshTimer, this.reload).pipe(
-                switchMap((_) => this.servicesApi.getAppsStats()),
+            this.appsStats = merge(refreshTimer, this.reload, this.auth.currentUser).pipe(
+                filter(x => x !== null), // filter out trigger which is logout ie user changed to null
+                switchMap((_) => this.servicesApi.getAppsStats().pipe( // use subpipe to not complete source due to error
+                    catchError(_ => empty()) // in case of error drop the response at all (it should not be cached)
+                )),
                 shareReplay(1) // cache the response for all subscribers
             )
         }
