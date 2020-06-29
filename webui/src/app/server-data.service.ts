@@ -47,6 +47,13 @@ export class ServerDataService {
     }
 
     /**
+     * Force reloading cache for apps stats.
+     */
+    forceReloadAppsStats() {
+        this.reloadAppStats.next()
+    }
+
+    /**
      * Get system groups from the server and cache it for other subscribers.
      *
      * Cache is refreshed upon user login.
@@ -69,14 +76,14 @@ export class ServerDataService {
     }
 
     /**
-     * Returns name of the system group fetched from the database.
+     * Get name of the system group fetched from the database indicated by group ID.
      *
      * @param groupId Identifier of the group in the database, counted
      *                from 1.
      * @param groupItems List of all groups returned by the server.
      * @returns Group name or unknown string if the group is not found.
      */
-    public groupName(groupId: number, groupItems: any[]): string {
+    public getGroupName(groupId: number, groupItems: any[]): string {
         // The superadmin group is well known and doesn't require
         // iterating over the list of groups fetched from the server.
         // Especially, if the server didn't respond properly for
@@ -85,17 +92,11 @@ export class ServerDataService {
         if (groupId === 1) {
             return 'superadmin'
         }
-        const groupIdx = groupId
-        if (groupItems.hasOwnProperty(groupIdx)) {
-            return this.groups[groupIdx].name
+        for (const grp of groupItems) {
+            if (grp.id === groupId) {
+                return grp.name
+            }
         }
         return 'unknown'
-    }
-
-    /**
-     * Force reloading cache for apps stats.
-     */
-    forceReloadAppsStats() {
-        this.reloadAppStats.next()
     }
 }

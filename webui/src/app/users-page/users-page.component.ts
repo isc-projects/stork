@@ -526,12 +526,12 @@ export class UsersPageComponent implements OnInit {
     }
 
     /**
-     * Returns group name for the particular group id
+     * Return group name for the particular group id
      *
      * @param groupId group id for which the name should be returned.
      * @returns group name.
      */
-    public groupName(groupId): string {
+    public getGroupName(groupId): string {
         // The super-admin group is well known and doesn't require
         // iterating over the list of groups fetched from the server.
         // Especially, if the server didn't respond properly for
@@ -540,9 +540,10 @@ export class UsersPageComponent implements OnInit {
         if (groupId === 1) {
             return 'super-admin'
         }
-        const groupIdx = groupId - 1
-        if (this.groups && this.groups.hasOwnProperty(groupIdx)) {
-            return this.groups[groupIdx].name
+        for (const grp of this.groups) {
+            if (grp.id === groupId) {
+                return grp.name
+            }
         }
         return 'unknown'
     }

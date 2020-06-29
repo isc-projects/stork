@@ -30,7 +30,7 @@ export class ProfilePageComponent implements OnInit {
                 this.groups = data.items
                 if (this.currentUser.groups && this.currentUser.groups.length > 0) {
                     // Set the group name to be displayed for the current user.
-                    this.groupName = this.serverData.groupName(this.currentUser.groups[0], this.groups)
+                    this.groupName = this.serverData.getGroupName(this.currentUser.groups[0], this.groups)
                 }
             }
         })
