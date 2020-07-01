@@ -1,3 +1,5 @@
+Stork 0.9.0 released on 2020-07-01.
+
 * 76 [func] marcin
 
     Pool utilization in the Stork dashboard is shown with a progress bar.
