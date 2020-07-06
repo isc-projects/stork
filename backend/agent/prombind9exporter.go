@@ -617,16 +617,14 @@ func (pbe *PromBind9Exporter) Start() {
 	// register collectors
 	version.Version = stork.Version
 	pbe.Registry.MustRegister(pbe, version.NewCollector("bind_exporter"))
-	if pbe.procID > 0 {
-		pbe.procExporter = prometheus.NewProcessCollector(
-			prometheus.ProcessCollectorOpts{
-				PidFn: func() (int, error) {
-					return int(pbe.procID), nil
-				},
-				Namespace: namespace,
-			})
-		pbe.Registry.MustRegister(pbe.procExporter)
-	}
+	pbe.procExporter = prometheus.NewProcessCollector(
+		prometheus.ProcessCollectorOpts{
+			PidFn: func() (int, error) {
+				return int(pbe.procID), nil
+			},
+			Namespace: namespace,
+		})
+	pbe.Registry.MustRegister(pbe.procExporter)
 
 	// set address for listening from settings
 	addrPort := fmt.Sprintf("%s:%d", pbe.Settings.Host, pbe.Settings.Port)

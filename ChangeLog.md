@@ -1,5 +1,11 @@
 Stork 0.9.0 released on 2020-07-01.
 
+* 77 [bug] matthijs
+
+    BIND 9 process collector would not be created if named process was
+    started after Stork Agent.
+    (Gitlab #325)
+
 * 76 [func] marcin
 
     Pool utilization in the Stork dashboard is shown with a progress bar.
