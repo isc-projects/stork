@@ -23,6 +23,19 @@ type KeaConfigHooksLibrary struct {
 	Parameters map[string]interface{}
 }
 
+// Structure representing output_options for a logger.
+type KeaConfigLoggerOutputOptions struct {
+	Output string
+}
+
+// Structure representing a single logger configuration.
+type KeaConfigLogger struct {
+	Name          string
+	OutputOptions []KeaConfigLoggerOutputOptions `mapstructure:"output_options"`
+	Severity      string
+	DebugLevel    int `mapstructure:"debuglevel"`
+}
+
 // Structure representing a configuration of a HA peer.
 type Peer struct {
 	Name         *string
@@ -402,4 +415,12 @@ func (c KeaConfigHA) IsSet() bool {
 	}
 	// Check other required parameters.
 	return c.ThisServerName != nil && c.Mode != nil
+}
+
+// Parses a list of loggers specified for the server.
+func (c *KeaConfig) GetLoggers() (parsedLoggers []KeaConfigLogger) {
+	if loggersList, ok := c.GetTopLevelList("loggers"); ok {
+		_ = mapstructure.Decode(loggersList, &parsedLoggers)
+	}
+	return parsedLoggers
 }
