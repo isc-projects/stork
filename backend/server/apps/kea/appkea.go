@@ -268,6 +268,12 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 			}
 
 			dmn.KeaDaemon.Config = dbmodel.NewKeaConfig(cRsp.Arguments)
+			// Extract loggers' configuration and store it in the dedicated SQL tables.
+			loggers := dmn.KeaDaemon.Config.GetLoggers()
+			for _, logger := range loggers {
+				targets := dbmodel.NewLogTargetsFromKea(logger)
+				dmn.LogTargets = append(dmn.LogTargets, targets...)
+			}
 		}
 	}
 

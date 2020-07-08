@@ -424,3 +424,17 @@ func (c *KeaConfig) GetLoggers() (parsedLoggers []KeaConfigLogger) {
 	}
 	return parsedLoggers
 }
+
+// Creates log targets from Kea logger configuration. The Kea logger configuration
+// can comprise multiple output options. Therefore, this function may return multiple
+// targets, each correposnding to a single output option.
+func NewLogTargetsFromKea(logger KeaConfigLogger) (targets []*LogTarget) {
+	for _, opt := range logger.OutputOptions {
+		target := &LogTarget{
+			Name:   logger.Name,
+			Output: opt.Output,
+		}
+		targets = append(targets, target)
+	}
+	return targets
+}

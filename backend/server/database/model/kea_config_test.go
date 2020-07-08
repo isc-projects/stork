@@ -543,3 +543,25 @@ func TestGetLoggers(t *testing.T) {
 	require.Equal(t, "DEBUG", loggers[1].Severity)
 	require.Equal(t, 99, loggers[1].DebugLevel)
 }
+
+// Test that log targets can be created from parsed Kea logger config.
+func TestNewLogTargetsFromKea(t *testing.T) {
+	logger := KeaConfigLogger{
+		Name: "logger-name",
+		OutputOptions: []KeaConfigLoggerOutputOptions{
+			{
+				Output: "stdout",
+			},
+			{
+				Output: "/tmp/log",
+			},
+		},
+	}
+
+	targets := NewLogTargetsFromKea(logger)
+	require.Len(t, targets, 2)
+	require.Equal(t, "logger-name", targets[0].Name)
+	require.Equal(t, "stdout", targets[0].Output)
+	require.Equal(t, "logger-name", targets[1].Name)
+	require.Equal(t, "/tmp/log", targets[1].Output)
+}
