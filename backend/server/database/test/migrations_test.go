@@ -87,7 +87,7 @@ func TestAvailableVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	avail := dbops.AvailableVersion()
-	require.GreaterOrEqual(t, avail, int64(24))
+	require.GreaterOrEqual(t, avail, int64(26))
 }
 
 // Test that current version is returned from the database.

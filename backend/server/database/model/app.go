@@ -154,6 +154,38 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 					app.ID, daemon.Bind9Daemon)
 			}
 		}
+
+		// Identify and delete the log targets that no longer exist for the daemon.
+		ids = []int64{}
+		for _, t := range daemon.LogTargets {
+			if t.ID > 0 {
+				ids = append(ids, t.ID)
+			}
+		}
+		q := tx.Model((*LogTarget)(nil)).
+			Where("log_target.daemon_id = ?", daemon.ID)
+		if len(ids) > 0 {
+			q = q.Where("log_target.id NOT IN (?)", pg.In(ids))
+		}
+		_, err := q.Delete()
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "problem with deleting log targets for updated daemon %d",
+				daemon.ID)
+		}
+
+		// Insert or update log targets.
+		for i := range daemon.LogTargets {
+			if daemon.LogTargets[i].ID == 0 {
+				daemon.LogTargets[i].DaemonID = daemon.ID
+				_, err = tx.Model(daemon.LogTargets[i]).Insert()
+			} else {
+				_, err = tx.Model(daemon.LogTargets[i]).WherePK().Update()
+			}
+			if err != nil {
+				return nil, nil, errors.Wrapf(err, "problem with upserting log target %s to daemon %d: %v",
+					daemon.LogTargets[i].Output, daemon.ID, daemon)
+			}
+		}
 	}
 	return addedDaemons, deletedDaemons, nil
 }
@@ -247,6 +279,7 @@ func GetAppByID(db *pg.DB, id int64) (*App, error) {
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
+	q = q.Relation("Daemons.LogTargets")
 	q = q.Where("app.id = ?", id)
 	err := q.Select()
 	if err == pg.ErrNoRows {
@@ -264,6 +297,7 @@ func GetAppsByMachine(db *pg.DB, machineID int64) ([]*App, error) {
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
+	q = q.Relation("Daemons.LogTargets")
 	q = q.Where("machine_id = ?", machineID)
 	q = q.OrderExpr("id ASC")
 	err := q.Select()
@@ -281,6 +315,7 @@ func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 	q = q.Where("type = ?", appType)
 	q = q.Relation("Machine")
 	q = q.Relation("AccessPoints")
+	q = q.Relation("Daemons.LogTargets")
 
 	switch appType {
 	case AppTypeKea:
@@ -317,6 +352,7 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, filterText *string, app
 	q = q.Relation("Machine")
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
+	q = q.Relation("Daemons.LogTargets")
 	if appType != "" {
 		q = q.Where("type = ?", appType)
 	}
@@ -355,6 +391,7 @@ func GetAllApps(db *pg.DB) ([]App, error) {
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
+	q = q.Relation("Daemons.LogTargets")
 	q = q.OrderExpr("id ASC")
 
 	// retrieve apps from db

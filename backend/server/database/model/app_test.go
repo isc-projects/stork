@@ -199,6 +199,14 @@ func TestUpdateApp(t *testing.T) {
 						},
 					},
 				},
+				LogTargets: []*LogTarget{
+					{
+						Output: "stdout",
+					},
+					{
+						Output: "/tmp/filename.log",
+					},
+				},
 			},
 			{
 				Name:    "kea-ctrl-agent",
@@ -206,6 +214,14 @@ func TestUpdateApp(t *testing.T) {
 				Active:  false,
 				KeaDaemon: &KeaDaemon{
 					Config: caConfig,
+				},
+				LogTargets: []*LogTarget{
+					{
+						Output: "stdout",
+					},
+					{
+						Output: "/tmp/filename.log",
+					},
 				},
 			},
 		},
@@ -238,6 +254,9 @@ func TestUpdateApp(t *testing.T) {
 	require.NotZero(t, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.ID)
 	require.EqualValues(t, 1024, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.Stats.LPS15min)
 
+	// Make sure that the logging targets were stored.
+	require.Len(t, returned.Daemons[0].LogTargets, 2)
+
 	require.NotZero(t, returned.Daemons[1].ID)
 	require.Equal(t, "kea-ctrl-agent", returned.Daemons[1].Name)
 	require.Equal(t, "1.7.4", returned.Daemons[1].Version)
@@ -246,6 +265,7 @@ func TestUpdateApp(t *testing.T) {
 	require.NotZero(t, returned.Daemons[1].ID)
 	require.NotNil(t, returned.Daemons[1].KeaDaemon.Config)
 	require.Nil(t, returned.Daemons[1].KeaDaemon.KeaDHCPDaemon)
+	require.Len(t, returned.Daemons[1].LogTargets, 2)
 
 	// Modify the app information.
 	a.Active = false
@@ -267,6 +287,7 @@ func TestUpdateApp(t *testing.T) {
 
 	a.Daemons[1].Version = "1.7.5"
 	a.Daemons[1].Active = false
+	a.Daemons[1].LogTargets = a.Daemons[1].LogTargets[:1]
 
 	addedDaemons, deletedDaemons, err := UpdateApp(db, a)
 	require.NoError(t, err)
@@ -299,6 +320,8 @@ func TestUpdateApp(t *testing.T) {
 			require.Nil(t, d.KeaDaemon.Config)
 			require.NotNil(t, d.KeaDaemon.KeaDHCPDaemon)
 			require.EqualValues(t, 2048, d.KeaDaemon.KeaDHCPDaemon.Stats.LPS15min)
+			require.Zero(t, d.LogTargets)
+
 		case "kea-ctrl-agent":
 			// The ID of the daemon should be preserved to keep data integrity if
 			// something is referencing the updated daemon.
@@ -308,6 +331,7 @@ func TestUpdateApp(t *testing.T) {
 			require.NotNil(t, d.KeaDaemon)
 			require.NotNil(t, d.KeaDaemon.Config)
 			require.Nil(t, d.KeaDaemon.KeaDHCPDaemon)
+			require.Len(t, d.LogTargets, 1)
 		}
 	}
 
