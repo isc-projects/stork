@@ -77,19 +77,19 @@
                         </div>
                         <div *ngIf="!daemon.active" class="p-col-8"></div>
 
-                        <div *ngIf="daemon.active" class="p-col-4">
+                        <div *ngIf="daemon.active" class="p-col-12">
                             <h4 style="margin-top: 2px;">Overview</h4>
                             <table style="width: 100%;">
                                 <tr>
-                                    <td>Version</td>
+                                    <td style="width: 10rem;">Version</td>
                                     <td>{{ daemon.version }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="vertical-align: top;">Version Ext</td>
+                                    <td style="width: 10rem; vertical-align: top;">Version Ext</td>
                                     <td [innerHTML]="daemon.extendedVersion"></td>
                                 </tr>
                                 <tr>
-                                    <td style="vertical-align: top;">Hooks</td>
+                                    <td style="with: 10rem; vertical-align: top;">Hooks</td>
                                     <td>
                                         <div *ngFor="let hook of daemon.hooks">
                                             {{ hook }}
@@ -100,19 +100,46 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="vertical-align: top;">Uptime</td>
+                                    <td style="width: 10rem; vertical-align: top;">Uptime</td>
                                     <td>{{ showDuration(daemon.uptime) }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="vertical-align: top;">Last Reloaded At</td>
+                                    <td style="width: 10rem; vertical-align: top;">Last Reloaded At</td>
                                     <td>{{ daemon.reloadedAt | localtime }}</td>
                                 </tr>
                             </table>
                         </div>
+                        <div *ngIf="daemon.active" class="p-col-6">
+                            <h4 style="margin-top: 2px;">Loggers</h4>
+                            <p-table [value]="daemon.logTargets"
+                                     style="width: 200px">
+                                <ng-template pTemplate="header">
+                                    <tr>
+                                        <th style="width: 20rem; align: left;">Logger</th>
+                                        <th>Output Location</th>
+                                    </tr>
+                                </ng-template>
+                                <ng-template pTemplate="body" let-logTarget>
+                                    <tr>
+                                        <td>{{ logTarget.name }}</td>
+                                        <td>
+                                            <i>{{ logTarget.output }}</i>
+                                        </td>
+                                    </tr>
+                                </ng-template>
+                                <ng-template pTemplate="emptymessage" let-columns>
+                                    <tr>
+                                        <td [attr.colspan]="2">
+                                            No loggers found
+                                        </td>
+                                    </tr>
+                                </ng-template>
+                            </p-table>
+                        </div>
 
                         <div
                             *ngIf="daemon.active && (daemon.name === 'dhcp4' || daemon.name === 'dhcp6')"
-                            class="p-col-4"
+                            class="p-col-12"
                         >
                             <app-ha-status [appId]="appTab.app.id" [daemonName]="daemon.name"></app-ha-status>
                         </div>
