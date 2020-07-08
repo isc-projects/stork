@@ -47,7 +47,7 @@
   "gnetId": 1666,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1594129801494,
+  "iteration": 1594282813791,
   "links": [],
   "panels": [
     {
@@ -409,6 +409,7 @@
             {
               "expr": "node_memory_MemTotal{instance=~\"$instance\"} - (node_memory_MemFree{instance=~\"$instance\"} + node_memory_Buffers{instance=~\"$instance\"} + node_memory_Cached{instance=~\"$instance\"})",
               "intervalFactor": 2,
+              "legendFormat": "Total ({{ instance }})",
               "refId": "A"
             },
             {
@@ -508,7 +509,7 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 12,
         "x": 0,
         "y": 2
@@ -521,7 +522,7 @@
         "current": false,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": false
@@ -593,65 +594,71 @@
       }
     },
     {
-      "aliasColors": {},
+      "aliasColors": {
+        "TCP (agent-bind9-2:9119)": "orange",
+        "TCP (agent-bind9:9119)": "red",
+        "UDP (agent-bind9:9119)": "green"
+      },
       "bars": false,
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "description": "The number of queries that are received over TCP/UDP.",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 12,
         "x": 12,
         "y": 2
       },
       "hiddenSeries": false,
-      "id": 8,
+      "id": 37,
       "legend": {
-        "alignAsTable": true,
         "avg": false,
         "current": false,
         "max": false,
         "min": false,
-        "rightSide": true,
         "show": true,
         "total": false,
         "values": false
       },
       "lines": true,
       "linewidth": 1,
-      "links": [],
       "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
       "percentage": false,
-      "pointradius": 5,
+      "pointradius": 2,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "increase(bind_responses_total{instance=~\"$instance\"}[120s])",
+          "expr": "increase(bind_incoming_queries_tcp{instance=~\"$instance\"}[120s])",
           "intervalFactor": 2,
-          "legendFormat": "{{ result }} ({{ instance }})",
-          "refId": "A",
-          "step": 4,
-          "target": ""
+          "legendFormat": "TCP ({{ instance }})",
+          "refId": "A"
+        },
+        {
+          "expr": "increase(bind_incoming_queries_udp{instance=~\"$instance\"}[120s])",
+          "intervalFactor": 2,
+          "legendFormat": "UDP ({{ instance }})",
+          "refId": "B"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Response Results",
+      "title": "Query Transport",
       "tooltip": {
         "shared": true,
-        "sort": 2,
+        "sort": 0,
         "value_type": "individual"
       },
       "type": "graph",
@@ -695,9 +702,9 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 7,
-        "w": 12,
+        "w": 8,
         "x": 0,
-        "y": 9
+        "y": 10
       },
       "hiddenSeries": false,
       "id": 12,
@@ -786,9 +793,102 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 9
+        "w": 8,
+        "x": 8,
+        "y": 10
+      },
+      "hiddenSeries": false,
+      "id": 8,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "increase(bind_responses_total{instance=~\"$instance\"}[120s])",
+          "intervalFactor": 2,
+          "legendFormat": "{{ result }} ({{ instance }})",
+          "refId": "A",
+          "step": 4,
+          "target": ""
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Response Results",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 10
       },
       "hiddenSeries": false,
       "id": 9,
@@ -890,7 +990,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 17
       },
       "id": 22,
       "panels": [],
@@ -911,7 +1011,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 17
+        "y": 18
       },
       "hiddenSeries": false,
       "id": 31,
@@ -999,7 +1099,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 17
+        "y": 18
       },
       "hiddenSeries": false,
       "id": 33,
@@ -1087,7 +1187,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 25
+        "y": 26
       },
       "hiddenSeries": false,
       "id": 29,
@@ -1175,7 +1275,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 25
+        "y": 26
       },
       "hiddenSeries": false,
       "id": 10,
@@ -1261,7 +1361,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 34
       },
       "id": 23,
       "panels": [],
@@ -1281,7 +1381,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 34
+        "y": 35
       },
       "hiddenSeries": false,
       "id": 11,
@@ -1380,7 +1480,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 34
+        "y": 35
       },
       "hiddenSeries": false,
       "id": 15,
@@ -1496,7 +1596,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 41
+        "y": 42
       },
       "hiddenSeries": false,
       "id": 35,
@@ -1584,7 +1684,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 41
+        "y": 42
       },
       "hiddenSeries": false,
       "id": 13,
@@ -1747,5 +1847,5 @@
   "timezone": "browser",
   "title": "Stork Bind DNS",
   "uid": "QJCfAiCZk",
-  "version": 5
+  "version": 2
 }

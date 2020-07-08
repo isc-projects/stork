@@ -107,11 +107,27 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		prometheus.BuildFQName(namespace, "", "incoming_queries_total"),
 		"Number of incoming DNS queries.",
 		[]string{"type"}, nil)
+	// incoming_queries_tcp
+	serverStatsDesc["QryTCP"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "incoming_queries_tcp"),
+		"Number of incoming TCP queries.",
+		nil, nil)
+	// incoming_queryies_udp
+	serverStatsDesc["QryUDP"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "incoming_queries_udp"),
+		"Number of incoming UDP queries.",
+		nil, nil)
+
 	// incoming_requests_total
 	serverStatsDesc["opcodes"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_requests_total"),
 		"Number of incoming DNS requests.",
 		[]string{"opcode"}, nil)
+	// incoming_requests_tcp
+	serverStatsDesc["ReqTCP"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "incoming_requests_tcp"),
+		"Number of incoming TCP requests.",
+		nil, nil)
 
 	// query_duplicates_total
 	serverStatsDesc["QryDuplicate"] = prometheus.NewDesc(
@@ -448,8 +464,33 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 			value, label)
 	}
 
+	// incoming_requests_tcp
+	value, ok := pbe.stats.NsStats["ReqTCP"]
+	if !ok {
+		value = 0
+	}
+	ch <- prometheus.MustNewConstMetric(
+		pbe.serverStatsDesc["ReqTCP"],
+		prometheus.CounterValue, value)
+	// query_tcp_total
+	value, ok = pbe.stats.NsStats["QryTCP"]
+	if !ok {
+		value = 0
+	}
+	ch <- prometheus.MustNewConstMetric(
+		pbe.serverStatsDesc["QryTCP"],
+		prometheus.CounterValue, value)
+	// query_udp_total
+	value, ok = pbe.stats.NsStats["QryUDP"]
+	if !ok {
+		value = 0
+	}
+	ch <- prometheus.MustNewConstMetric(
+		pbe.serverStatsDesc["QryUDP"],
+		prometheus.CounterValue, value)
+
 	// query_duplicates_total
-	value, ok := pbe.stats.NsStats["QryDuplicate"]
+	value, ok = pbe.stats.NsStats["QryDuplicate"]
 	if !ok {
 		value = 0
 	}
