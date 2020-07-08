@@ -307,7 +307,7 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 		rspErr := models.APIError{
 			Message: &msg,
 		}
-		rsp := users.NewUpdateUserPasswordDefault(http.StatusInternalServerError).WithPayload(&rspErr)
+		rsp := users.NewUpdateUserPasswordDefault(http.StatusBadRequest).WithPayload(&rspErr)
 		return rsp
 	}
 

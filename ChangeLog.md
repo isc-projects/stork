@@ -1,3 +1,9 @@
+* 78 [bug] godfryd
+
+    Fixed crashes when empty requests were sent to ReST API endpoints
+    for users and machines.
+    (Gitlab #310, #311, #312)
+
 Stork 0.9.0 released on 2020-07-01.
 
 * 77 [bug] matthijs

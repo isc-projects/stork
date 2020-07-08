@@ -263,6 +263,9 @@ func TestCreateMachine(t *testing.T) {
 	params := services.CreateMachineParams{}
 	rsp := rapi.CreateMachine(ctx, params)
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
+	defaultRsp := rsp.(*services.CreateMachineDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "missing parameters", *defaultRsp.Payload.Message)
 
 	// empty request, variant 2 - should raise an error
 	params = services.CreateMachineParams{
@@ -270,6 +273,9 @@ func TestCreateMachine(t *testing.T) {
 	}
 	rsp = rapi.CreateMachine(ctx, params)
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
+	defaultRsp = rsp.(*services.CreateMachineDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "missing parameters", *defaultRsp.Payload.Message)
 
 	// bad host
 	addr := "//a/"
@@ -281,7 +287,7 @@ func TestCreateMachine(t *testing.T) {
 	}
 	rsp = rapi.CreateMachine(ctx, params)
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
-	defaultRsp := rsp.(*services.CreateMachineDefault)
+	defaultRsp = rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "cannot parse address", *defaultRsp.Payload.Message)
 
@@ -427,7 +433,10 @@ func TestUpdateMachine(t *testing.T) {
 	// empty request, variant 1 - should raise an error
 	params := services.UpdateMachineParams{}
 	rsp := rapi.UpdateMachine(ctx, params)
+	defaultRsp := rsp.(*services.UpdateMachineDefault)
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "missing parameters", *defaultRsp.Payload.Message)
 
 	// empty request, variant 2 - should raise an error
 	params = services.UpdateMachineParams{
@@ -435,6 +444,9 @@ func TestUpdateMachine(t *testing.T) {
 	}
 	rsp = rapi.UpdateMachine(ctx, params)
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
+	defaultRsp = rsp.(*services.UpdateMachineDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "missing parameters", *defaultRsp.Payload.Message)
 
 	// update non-existing machine
 	addr := "localhost"
@@ -447,7 +459,7 @@ func TestUpdateMachine(t *testing.T) {
 	}
 	rsp = rapi.UpdateMachine(ctx, params)
 	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
-	defaultRsp := rsp.(*services.UpdateMachineDefault)
+	defaultRsp = rsp.(*services.UpdateMachineDefault)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 	require.Equal(t, "cannot find machine with id 123", *defaultRsp.Payload.Message)
 
