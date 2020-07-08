@@ -1,3 +1,14 @@
+  LogTarget:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      name:
+        type: string
+      output:
+        type: string
+
   Machine:
     type: object
     required:
@@ -155,7 +166,10 @@
         type: integer
       daemonCommErrors:
         type: integer
-
+      logTargets:
+        type: array
+        items:
+          $ref: '#/definitions/LogTarget'
 
   AppKea:
     type: object

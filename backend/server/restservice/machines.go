@@ -617,6 +617,13 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 					dmn.Hooks = hooksList
 				}
 			}
+
+			for _, logTarget := range d.LogTargets {
+				dmn.LogTargets = append(dmn.LogTargets, &models.LogTarget{
+					Name:   logTarget.Name,
+					Output: logTarget.Output,
+				})
+			}
 			keaDaemons = append(keaDaemons, dmn)
 		}
 
