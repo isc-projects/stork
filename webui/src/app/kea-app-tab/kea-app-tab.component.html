@@ -109,19 +109,20 @@
                                 </tr>
                             </table>
                         </div>
-                        <div *ngIf="daemon.active" class="p-col-6">
+                        <div *ngIf="daemon.active" class="p-col-8">
                             <h4 style="margin-top: 2px;">Loggers</h4>
-                            <p-table [value]="daemon.logTargets"
-                                     style="width: 200px">
+                            <p-table [value]="daemon.logTargets">
                                 <ng-template pTemplate="header">
                                     <tr>
-                                        <th style="width: 20rem; align: left;">Logger</th>
+                                        <th style="width: 20rem;">Logger</th>
+                                        <th style="width: 10rem;">Severity</th>
                                         <th>Output Location</th>
                                     </tr>
                                 </ng-template>
                                 <ng-template pTemplate="body" let-logTarget>
                                     <tr>
                                         <td>{{ logTarget.name }}</td>
+                                        <td align="center">{{ logTarget.severity }}</td>
                                         <td>
                                             <i>{{ logTarget.output }}</i>
                                         </td>
@@ -129,7 +130,7 @@
                                 </ng-template>
                                 <ng-template pTemplate="emptymessage" let-columns>
                                     <tr>
-                                        <td [attr.colspan]="2">
+                                        <td [attr.colspan]="3">
                                             No loggers found
                                         </td>
                                     </tr>

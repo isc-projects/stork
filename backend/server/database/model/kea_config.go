@@ -431,8 +431,9 @@ func (c *KeaConfig) GetLoggers() (parsedLoggers []KeaConfigLogger) {
 func NewLogTargetsFromKea(logger KeaConfigLogger) (targets []*LogTarget) {
 	for _, opt := range logger.OutputOptions {
 		target := &LogTarget{
-			Name:   logger.Name,
-			Output: opt.Output,
+			Name:     logger.Name,
+			Severity: strings.ToLower(logger.Severity),
+			Output:   opt.Output,
 		}
 		targets = append(targets, target)
 	}

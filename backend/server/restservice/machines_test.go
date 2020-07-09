@@ -748,7 +748,9 @@ func TestRestGetApps(t *testing.T) {
 				KeaDaemon: &dbmodel.KeaDaemon{},
 				LogTargets: []*dbmodel.LogTarget{
 					{
-						Output: "/tmp/log",
+						Name:     "kea-dhcp4",
+						Severity: "DEBUG",
+						Output:   "/tmp/log",
 					},
 				},
 			},
@@ -794,6 +796,9 @@ func TestRestGetApps(t *testing.T) {
 			require.EqualValues(t, 2, daemon.CaCommErrors)
 			require.EqualValues(t, 5, daemon.DaemonCommErrors)
 			require.Len(t, daemon.LogTargets, 1)
+			require.Equal(t, "kea-dhcp4", daemon.LogTargets[0].Name)
+			require.Equal(t, "debug", daemon.LogTargets[0].Severity)
+			require.Equal(t, "/tmp/log", daemon.LogTargets[0].Output)
 		} else if app.Type == dbmodel.AppTypeBind9 {
 			appBind9 := app.Details.AppBind9
 			daemon := appBind9.Daemon

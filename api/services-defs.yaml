@@ -6,6 +6,8 @@
         readOnly: true
       name:
         type: string
+      severity:
+        type: string
       output:
         type: string
 

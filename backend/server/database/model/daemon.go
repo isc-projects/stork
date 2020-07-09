@@ -21,6 +21,7 @@ type LogTarget struct {
 	ID        int64
 	DaemonID  int64
 	Name      string
+	Severity  string
 	Output    string
 	CreatedAt time.Time
 }
