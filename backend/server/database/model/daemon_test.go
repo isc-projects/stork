@@ -208,3 +208,47 @@ func TestGetHAOverview(t *testing.T) {
 	require.Equal(t, "hot-standby", overviews[1].State)
 	require.Equal(t, failoverAt, overviews[1].LastFailureAt)
 }
+
+// Test getting daemon by ID.
+func TestGetDaemonByID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// get non-existing daemon
+	dmn, err := GetDaemonByID(db, 123)
+	require.NoError(t, err)
+	require.Nil(t, dmn)
+
+	// create machine and then app with daemon
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotZero(t, m.ID)
+
+	// add app but without machine, error should be raised
+	app := &App{
+		ID:        0,
+		MachineID: m.ID,
+		Type:      AppTypeKea,
+		Daemons: []*Daemon{
+			NewKeaDaemon(DaemonNameDHCPv4, true),
+		},
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+	require.Len(t, app.Daemons, 1)
+	daemon := app.Daemons[0]
+	require.NotZero(t, daemon.ID)
+
+	// get daemon, now it should be there
+	dmn, err = GetDaemonByID(db, daemon.ID)
+	require.NoError(t, err)
+	require.NotNil(t, dmn)
+	require.EqualValues(t, daemon.ID, dmn.ID)
+	require.EqualValues(t, daemon.Active, dmn.Active)
+}

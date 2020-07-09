@@ -11,5 +11,7 @@
         type: integer
       kea_status_puller_interval:
         type: integer
+      apps_state_puller_interval:
+        type: integer
       prometheus_url:
         type: string

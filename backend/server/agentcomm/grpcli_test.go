@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	agentapi "isc.org/stork/api"
+	dbmodel "isc.org/stork/server/database/model"
+	storktest "isc.org/stork/server/test"
 )
 
 // makeAccessPoint is an utility to make single element app access point slice.
@@ -25,7 +27,8 @@ func makeAccessPoint(tp, address, key string, port int64) (ap []*agentapi.Access
 // should be invoked when the unit test finishes.
 func setupGrpcliTestCase(t *testing.T) (*MockAgentClient, ConnectedAgents, func()) {
 	settings := AgentsSettings{}
-	agents := NewConnectedAgents(&settings)
+	fec := &storktest.FakeEventCenter{}
+	agents := NewConnectedAgents(&settings, fec)
 
 	// pre-add an agent
 	addr := "127.0.0.1:8080"
@@ -106,7 +109,19 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 	daemons, _ := NewKeaDaemons("dhcp4", "dhcp6")
 	command, _ := NewKeaCommand("test-command", daemons, nil)
 	actualResponse := KeaResponseList{}
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "localhost", 8000, []*KeaCommand{command}, &actualResponse)
+	dbApp := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*KeaCommand{command}, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse)
 	require.NoError(t, cmdsResult.Error)
@@ -189,7 +204,19 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 	command2, _ := NewKeaCommand("test-command", daemons, nil)
 	actualResponse1 := KeaResponseList{}
 	actualResponse2 := KeaResponseList{}
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "localhost", 8000, []*KeaCommand{command1, command2}, &actualResponse1, &actualResponse2)
+	dbApp := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*KeaCommand{command1, command2}, &actualResponse1, &actualResponse2)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse1)
 	require.NotNil(t, actualResponse2)
@@ -260,7 +287,19 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	ctx := context.Background()
 	command, _ := NewKeaCommand("test-command", nil, nil)
 	actualResponse := KeaResponseList{}
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, "127.0.0.1", 8080, "localhost", 8080, []*KeaCommand{command}, &actualResponse)
+	dbApp := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*KeaCommand{command}, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, cmdsResult)
 	require.NoError(t, cmdsResult.Error)
@@ -273,7 +312,7 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 	require.NotNil(t, agent)
 	require.Zero(t, agent.Stats.CurrentErrors)
 
-	appCommStats, ok := agent.Stats.AppCommStats[AppCommStatsKey{"localhost", 8080}].(*AgentKeaCommStats)
+	appCommStats, ok := agent.Stats.AppCommStats[AppCommStatsKey{"localhost", 8000}].(*AgentKeaCommStats)
 	require.True(t, ok)
 
 	require.EqualValues(t, 1, appCommStats.CurrentErrorsCA)
@@ -372,12 +411,6 @@ func TestForwardRndcCommand(t *testing.T) {
 	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
 	defer teardown()
 
-	rndcSettings := Bind9Control{
-		Address: "127.0.0.1",
-		Port:    953,
-		Key:     "",
-	}
-
 	rsp := agentapi.ForwardRndcCommandRsp{
 		Status: &agentapi.Status{
 			Code: 0,
@@ -394,7 +427,20 @@ func TestForwardRndcCommand(t *testing.T) {
 		Return(&rsp, nil)
 
 	ctx := context.Background()
-	out, err := agents.ForwardRndcCommand(ctx, "127.0.0.1", 8080, rndcSettings, "test")
+	dbApp := &dbmodel.App{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "127.0.0.1",
+			Port:    953,
+			Key:     "",
+		}},
+	}
+
+	out, err := agents.ForwardRndcCommand(ctx, dbApp, "test")
 	require.NoError(t, err)
 	require.Equal(t, out.Output, "all good")
 	require.NoError(t, out.Error)

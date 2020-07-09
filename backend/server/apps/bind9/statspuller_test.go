@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"isc.org/stork/server/agentcomm"
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
@@ -27,7 +28,7 @@ func TestStatsPullerBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare fake agents and eventcenter
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 
 	sp, _ := NewStatsPuller(db, fa, fec)
@@ -69,7 +70,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 
 		agentcomm.UnmarshalNamedStatsResponse(json, statsOutput)
 	}
-	fa := storktest.NewFakeAgents(nil, bind9Mock)
+	fa := agentcommtest.NewFakeAgents(nil, bind9Mock)
 	fec := &storktest.FakeEventCenter{}
 
 	// prepare bind9 apps
@@ -181,7 +182,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 
 		agentcomm.UnmarshalNamedStatsResponse(json, statsOutput)
 	}
-	fa := storktest.NewFakeAgents(nil, bind9Mock)
+	fa := agentcommtest.NewFakeAgents(nil, bind9Mock)
 	fec := &storktest.FakeEventCenter{}
 
 	// prepare bind9 app

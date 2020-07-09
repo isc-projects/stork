@@ -265,3 +265,32 @@
           description: generic error reesponse
           schema:
             $ref: '#/definitions/ApiError'
+
+  /daemons/{id}:
+    put:
+      summary: Update daemon.
+      description: Update daemon.
+      operationId: updateDaemon
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Daemon ID.
+        - in: body
+          name: daemon
+          description: Daemon details
+          schema:
+            type: object
+            properties:
+              monitored:
+                type: boolean
+      responses:
+        200:
+          description: Daemon information.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

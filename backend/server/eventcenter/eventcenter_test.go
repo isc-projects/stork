@@ -96,7 +96,7 @@ func TestAddEvent(t *testing.T) {
 	var err error
 	for i := 1; i <= 10; i++ {
 		time.Sleep(10 * time.Millisecond)
-		events, total, err = dbmodel.GetEventsByPage(db, 0, 10, "", dbmodel.SortDirAny)
+		events, total, err = dbmodel.GetEventsByPage(db, 0, 10, nil, nil, "", dbmodel.SortDirAny)
 		if total == 3 {
 			break
 		}

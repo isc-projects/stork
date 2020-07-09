@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"isc.org/stork/server/agentcomm"
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/apps/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -35,7 +36,7 @@ func TestGetVersion(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -54,7 +55,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -183,7 +184,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(mockGetAppsState, nil)
+	fa := agentcommtest.NewFakeAgents(mockGetAppsState, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -253,7 +254,7 @@ func TestCreateMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -328,7 +329,7 @@ func TestGetMachines(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -351,7 +352,7 @@ func TestGetMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -424,7 +425,7 @@ func TestUpdateMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -527,7 +528,7 @@ func TestDeleteMachine(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -579,7 +580,7 @@ func TestGetApp(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -632,7 +633,7 @@ func TestRestGetApp(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -712,7 +713,7 @@ func TestRestGetApps(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -818,7 +819,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	settings := RestAPISettings{}
 	// Configure the fake control agents to mimic returning a status of
 	// two HA services for Kea.
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -1014,7 +1015,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 	settings := RestAPISettings{}
 	// Configure the fake control agents to mimic returning a status of
 	// two HA services for Kea.
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -1115,7 +1116,7 @@ func TestRestGetAppsStats(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -1181,7 +1182,7 @@ func TestGetDhcpOverview(t *testing.T) {
 	defer teardown()
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -1224,4 +1225,72 @@ func TestGetDhcpOverview(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.DhcpDaemons[0].AgentCommErrors)
 	require.EqualValues(t, 2, okRsp.Payload.DhcpDaemons[0].CaCommErrors)
 	require.EqualValues(t, 5, okRsp.Payload.DhcpDaemons[0].DaemonCommErrors)
+}
+
+// Test updating daemon.
+func TestUpdateDaemon(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	// Configure the fake control agents to mimic returning a status of
+	// two HA services for Kea.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add a machine.
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add Kea application to the machine
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234)
+	keaApp := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, keaApp)
+	require.NoError(t, err)
+	require.NotZero(t, keaApp.ID)
+	require.NotZero(t, keaApp.Daemons[0].ID)
+
+	// get added app
+	getAppParams := services.GetAppParams{
+		ID: keaApp.ID,
+	}
+	rsp := rapi.GetApp(ctx, getAppParams)
+	require.IsType(t, &services.GetAppOK{}, rsp)
+	okRsp := rsp.(*services.GetAppOK)
+	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
+	require.True(t, okRsp.Payload.Details.AppKea.Daemons[0].Monitored) // now it is true
+
+	// update daemon: change monitored to false
+	params := services.UpdateDaemonParams{
+		ID: keaApp.Daemons[0].ID,
+		Daemon: services.UpdateDaemonBody{
+			Monitored: false,
+		},
+	}
+	rsp = rapi.UpdateDaemon(ctx, params)
+	require.IsType(t, &services.UpdateDaemonOK{}, rsp)
+
+	// get app with modified daemon
+	rsp = rapi.GetApp(ctx, getAppParams)
+	require.IsType(t, &services.GetAppOK{}, rsp)
+	okRsp = rsp.(*services.GetAppOK)
+	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
+	require.False(t, okRsp.Payload.Details.AppKea.Daemons[0].Monitored) // now it is false
 }

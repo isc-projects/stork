@@ -6,6 +6,8 @@ import moment from 'moment-timezone'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
+import { ServicesService } from '../backend/api/api'
+
 import {
     durationToString,
     daemonStatusErred,
@@ -28,7 +30,7 @@ export class KeaAppTabComponent implements OnInit {
 
     activeTabIndex = 0
 
-    constructor(private route: ActivatedRoute) {}
+    constructor(private route: ActivatedRoute, private servicesApi: ServicesService) {}
 
     /**
      * Subscribes to the updates of the information about daemons
@@ -187,6 +189,19 @@ export class KeaAppTabComponent implements OnInit {
      */
     daemonStatusErrorText(daemon) {
         return daemonStatusIconTooltip(daemon)
+    }
+
+    changeMonitored(daemon) {
+        console.info(daemon)
+        const dmn = { monitored: !daemon.monitored }
+        this.servicesApi.updateDaemon(daemon.id, dmn).subscribe(
+            (data) => {
+                daemon.monitored = dmn.monitored
+            },
+            (err) => {
+                console.warn('failed to update monitoring flag in daemon')
+            }
+        )
     }
 
     /**

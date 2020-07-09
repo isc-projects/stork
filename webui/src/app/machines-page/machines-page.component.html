@@ -219,7 +219,7 @@
             ></button>
         </div>
 
-        <div class="p-col-6">
+        <div class="p-col-4">
             <h3>System Information</h3>
             <table>
                 <tr>
@@ -341,45 +341,50 @@
                 </tr>
             </table>
         </div>
-        <div class="p-col-6">
-            <div *ngFor="let srv of machineTab.machine.apps">
-                <div *ngIf="srv.type == 'kea'">
-                    <h3>Kea App</h3>
+        <div class="p-col-4">
+            <h3>Applications</h3>
+            <div *ngFor="let app of machineTab.machine.apps">
+                <div *ngIf="app.type == 'kea'">
+                    <h4>Kea App</h4>
                     Active:
-                    <span [ngStyle]="{ color: srv.active ? '#00a800' : '#f11' }">
+                    <span [ngStyle]="{ color: app.active ? '#00a800' : '#f11' }">
                         <i
-                            class="pi pi-{{ srv.active ? 'check' : 'exclamation-circle' }}"
+                            class="pi pi-{{ app.active ? 'check' : 'exclamation-circle' }}"
                             [ngStyle]="{
                                 'font-size': '1.5em',
-                                'vertical-align': srv.active ? 'text-bottom' : 'text-top'
+                                'vertical-align': app.active ? 'text-bottom' : 'text-top'
                             }"
                         ></i>
-                        {{ srv.active ? 'yes' : 'no' }}
+                        {{ app.active ? 'yes' : 'no' }}
                     </span>
                     <br />
-                    Version: {{ srv.version }}
+                    Version: {{ app.version }}
                     <br />
-                    <a routerLink="/apps/{{ srv.type }}/{{ srv.id }}">link to details</a>
+                    <a routerLink="/apps/{{ app.type }}/{{ app.id }}">link to details</a>
                 </div>
-                <div *ngIf="srv.type == 'bind9'">
-                    <h3>BIND 9 App</h3>
+                <div *ngIf="app.type == 'bind9'">
+                    <h4>BIND 9 App</h4>
                     Active:
-                    <span [ngStyle]="{ color: srv.active ? '#00a800' : '#f11' }">
+                    <span [ngStyle]="{ color: app.active ? '#00a800' : '#f11' }">
                         <i
-                            class="pi pi-{{ srv.active ? 'check' : 'exclamation-circle' }}"
+                            class="pi pi-{{ app.active ? 'check' : 'exclamation-circle' }}"
                             [ngStyle]="{
                                 'font-size': '1.5em',
-                                'vertical-align': srv.active ? 'text-bottom' : 'text-top'
+                                'vertical-align': app.active ? 'text-bottom' : 'text-top'
                             }"
                         ></i>
-                        {{ srv.active ? 'yes' : 'no' }}
+                        {{ app.active ? 'yes' : 'no' }}
                     </span>
                     <br />
-                    Version: {{ srv.version }}
+                    Version: {{ app.version }}
                     <br />
-                    <a routerLink="/apps/{{ srv.type }}/{{ srv.id }}">link to details</a>
+                    <a routerLink="/apps/{{ app.type }}/{{ app.id }}">link to details</a>
                 </div>
             </div>
+        </div>
+        <div class="p-col-4">
+            <h3>Events</h3>
+            <app-events-panel #eventsTable [filter]="{ machine: machineTab.machine.id }"></app-events-panel>
         </div>
     </div>
 </div>

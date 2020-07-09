@@ -58,11 +58,13 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		select {
 		case event := <-ch:
 			// send received event to subscriber and flush the connection
+			log.Printf("to %p sent %s", s, event)
 			fmt.Fprintf(w, "data: %s\n\n", event)
 			w.(http.Flusher).Flush()
 
 		case <-req.Context().Done():
 			// connection is closed so unsubscribe subscriber
+			log.Printf("connection with %p closed", s)
 			sb.subscribersMutex.Lock()
 			delete(sb.subscribers, ch)
 			sb.subscribersMutex.Unlock()

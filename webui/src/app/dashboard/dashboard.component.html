@@ -332,7 +332,19 @@
     </div>
 
     <div class="p-col-3">
-        <app-events-panel></app-events-panel>
+        <p-panel>
+            <p-header>
+                <div style="display: flex; justify-content: space-between;">
+                    <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px;"
+                        >Events</span
+                    >
+                    <p-button icon="pi pi-refresh" (click)="eventsTable.refreshEvents()"></p-button>
+                </div>
+            </p-header>
+            <div style="max-height: calc(100vh - 10rem); overflow-y: auto; margin: 0 -0.8em 0 0;">
+                <app-events-panel #eventsTable></app-events-panel>
+            </div>
+        </p-panel>
     </div>
 
     <!-- TODO: for now do not show empty DNS dashboard

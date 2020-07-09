@@ -1,9 +1,10 @@
-package storktest
+package agentcommtest
 
 import (
 	"context"
 
 	"isc.org/stork/server/agentcomm"
+	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
 
@@ -110,8 +111,14 @@ func (fa *FakeAgents) GetLastCommand() *agentcomm.KeaCommand {
 // function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents.
-func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caAddress string, caPort int64, commands []*agentcomm.KeaCommand, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
-	fa.RecordedURL = storkutil.HostWithPortURL(caAddress, caPort)
+func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.App, commands []*agentcomm.KeaCommand, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
+	ctrlPoint, _ := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
+	caAddress := ctrlPoint.Address
+	caPort := ctrlPoint.Port
+
+	caURL := storkutil.HostWithPortURL(caAddress, caPort)
+
+	fa.RecordedURL = caURL
 	result := &agentcomm.KeaCmdsResult{}
 	for _, cmd := range commands {
 		fa.RecordedCommands = append(fa.RecordedCommands, *cmd)
@@ -146,10 +153,11 @@ func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, agentAddress stri
 // so as they can be later validated. It also returns a custom response
 // to the command by calling the function specified in the call to
 // NewFakeAgents.
-func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, agentAddress string, agentPort int64, rndcSettings agentcomm.Bind9Control, command string) (*agentcomm.RndcOutput, error) {
-	fa.RecordedAddress = rndcSettings.Address
-	fa.RecordedPort = rndcSettings.Port
-	fa.RecordedKey = rndcSettings.Key
+func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, dbApp *dbmodel.App, command string) (*agentcomm.RndcOutput, error) {
+	ctrlPoint, _ := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
+	fa.RecordedAddress = ctrlPoint.Address
+	fa.RecordedPort = ctrlPoint.Port
+	fa.RecordedKey = ctrlPoint.Key
 	fa.RecordedCommand = command
 
 	if fa.mockRndcOutput != "" {

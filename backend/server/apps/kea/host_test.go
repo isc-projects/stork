@@ -10,6 +10,7 @@ import (
 	require "github.com/stretchr/testify/require"
 
 	"isc.org/stork/server/agentcomm"
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -336,7 +337,7 @@ func testHost(t *testing.T, host dbmodel.Host, identifier string, address string
 // Tests that valid reservation-get-page received command was received by
 // the fake agents.
 func testReservationGetPageReceived(t *testing.T, iterator *HostDetectionIterator) {
-	agents, ok := iterator.agents.(*storktest.FakeAgents)
+	agents, ok := iterator.agents.(*agentcommtest.FakeAgents)
 	require.True(t, ok)
 	// This function is not called before first command is sent.
 	require.GreaterOrEqual(t, len(agents.RecordedCommands), 1)
@@ -390,13 +391,15 @@ func TestDetectHostsFromConfig(t *testing.T) {
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
 			{
-				Name: "dhcp4",
+				Name:   "dhcp4",
+				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv4GlobalHosts(t),
 				},
 			},
 			{
-				Name: "dhcp6",
+				Name:   "dhcp6",
+				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv6GlobalHosts(t),
 				},
@@ -470,13 +473,15 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
 			{
-				Name: "dhcp4",
+				Name:   "dhcp4",
+				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv4Subnets(t),
 				},
 			},
 			{
-				Name: "dhcp6",
+				Name:   "dhcp6",
+				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv6Subnets(t),
 				},
@@ -491,7 +496,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	err = CommitAppIntoDB(db, &app, fec, nil)
 	require.NoError(t, err)
 
-	fa := storktest.NewFakeAgents(mockReservationGetPage, nil)
+	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
 
 	it := NewHostDetectionIterator(db, &app, fa, 5)
 	require.NotNil(t, it)
@@ -954,13 +959,15 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
 			{
-				Name: "dhcp4",
+				Name:   "dhcp4",
+				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv4Subnets(t),
 				},
 			},
 			{
-				Name: "dhcp6",
+				Name:   "dhcp6",
+				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv6Subnets(t),
 				},
@@ -975,7 +982,7 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 	err = CommitAppIntoDB(db, &app, fec, nil)
 	require.NoError(t, err)
 
-	fa := storktest.NewFakeAgents(mockReservationGetPage, nil)
+	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
 
 	// Detect hosts two times in the row. This simulates periodic
 	// pull of the hosts for the given app.
@@ -1038,13 +1045,15 @@ func TestPullHostsIntoDB(t *testing.T) {
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
 			{
-				Name: "dhcp4",
+				Name:   "dhcp4",
+				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv4Subnets(t),
 				},
 			},
 			{
-				Name: "dhcp6",
+				Name:   "dhcp6",
+				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv6Subnets(t),
 				},
@@ -1059,7 +1068,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 	err = CommitAppIntoDB(db, &app, fec, nil)
 	require.NoError(t, err)
 
-	fa := storktest.NewFakeAgents(mockReservationGetPage, nil)
+	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
 
 	// The puller requires fetch interval to be present in the database.
 	err = dbmodel.InitializeSettings(db)
@@ -1117,7 +1126,8 @@ func TestReduceHostsIntoDB(t *testing.T) {
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
 			{
-				Name: "dhcp4",
+				Name:   "dhcp4",
+				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithOneIPv4Subnet(t),
 				},
@@ -1134,7 +1144,7 @@ func TestReduceHostsIntoDB(t *testing.T) {
 
 	// Create server which returns two hosts at the first attempt and
 	// one host at the second attempt.
-	fa := storktest.NewFakeAgents(mockReservationGetPageReduceHosts, nil)
+	fa := agentcommtest.NewFakeAgents(mockReservationGetPageReduceHosts, nil)
 
 	// The puller requires fetch interval to be present in the database.
 	err = dbmodel.InitializeSettings(db)

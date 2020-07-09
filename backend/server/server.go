@@ -9,6 +9,7 @@ import (
 
 	"isc.org/stork"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps"
 	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"
 	dbops "isc.org/stork/server/database"
@@ -28,10 +29,11 @@ type StorkServer struct {
 	RestAPISettings restservice.RestAPISettings
 	RestAPI         *restservice.RestAPI
 
+	AppsStatePuller  *apps.StatePuller
 	Bind9StatsPuller *bind9.StatsPuller
 	KeaStatsPuller   *kea.StatsPuller
 	KeaHostsPuller   *kea.HostsPuller
-	StatusPuller     *kea.StatusPuller
+	HAStatusPuller   *kea.HAStatusPuller
 
 	EventCenter eventcenter.EventCenter
 }
@@ -89,16 +91,6 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	ss = &StorkServer{}
 	ss.ParseArgs()
 
-	// setup connected agents
-	ss.Agents = agentcomm.NewConnectedAgents(&ss.AgentsSettings)
-	// TODO: if any operation below fails then this Shutdown here causes segfault.
-	// I do not know why and do not how to fix this. Commenting out for now.
-	// defer func() {
-	// 	if err != nil {
-	// 		ss.Agents.Shutdown()
-	// 	}
-	// }()
-
 	// setup database connection
 	ss.Db, err = dbops.NewPgDB(&ss.DbSettings)
 	if err != nil {
@@ -114,8 +106,24 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	// setup event center
 	ss.EventCenter = eventcenter.NewEventCenter(ss.Db)
 
+	// setup connected agents
+	ss.Agents = agentcomm.NewConnectedAgents(&ss.AgentsSettings, ss.EventCenter)
+	// TODO: if any operation below fails then this Shutdown here causes segfault.
+	// I do not know why and do not how to fix this. Commenting out for now.
+	// defer func() {
+	// 	if err != nil {
+	// 		ss.Agents.Shutdown()
+	// 	}
+	// }()
+
 	// initialize stork statistics
 	err = dbmodel.InitializeStats(ss.Db)
+	if err != nil {
+		return nil, err
+	}
+
+	// setup apps state puller
+	ss.AppsStatePuller, err = apps.NewStatePuller(ss.Db, ss.Agents, ss.EventCenter)
 	if err != nil {
 		return nil, err
 	}
@@ -138,8 +146,8 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		return nil, err
 	}
 
-	// Setup Kea status puller.
-	ss.StatusPuller, err = kea.NewStatusPuller(ss.Db, ss.Agents)
+	// Setup Kea HA status puller.
+	ss.HAStatusPuller, err = kea.NewHAStatusPuller(ss.Db, ss.Agents)
 	if err != nil {
 		return nil, err
 	}
@@ -147,15 +155,17 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DbSettings, ss.Db, ss.Agents, ss.EventCenter)
 	if err != nil {
+		ss.HAStatusPuller.Shutdown()
 		ss.KeaHostsPuller.Shutdown()
 		ss.KeaStatsPuller.Shutdown()
 		ss.Bind9StatsPuller.Shutdown()
+		ss.AppsStatePuller.Shutdown()
 		ss.Db.Close()
 		return nil, err
 	}
 	ss.RestAPI = r
 
-	ss.EventCenter.AddInfoEvent("started Stork server")
+	ss.EventCenter.AddInfoEvent("started Stork server", "version: "+stork.Version+"\nbuild date: "+stork.BuildDate)
 
 	return ss, nil
 }
@@ -174,12 +184,13 @@ func (ss *StorkServer) Shutdown() {
 	ss.EventCenter.AddInfoEvent("shutting down Stork server")
 	log.Println("Shutting down Stork Server")
 	ss.RestAPI.Shutdown()
+	ss.HAStatusPuller.Shutdown()
 	ss.KeaHostsPuller.Shutdown()
 	ss.KeaStatsPuller.Shutdown()
 	ss.Bind9StatsPuller.Shutdown()
-	ss.StatusPuller.Shutdown()
+	ss.AppsStatePuller.Shutdown()
+	ss.Agents.Shutdown()
 	ss.EventCenter.Shutdown()
 	ss.Db.Close()
-	ss.Agents.Shutdown()
 	log.Println("Stork Server shut down")
 }

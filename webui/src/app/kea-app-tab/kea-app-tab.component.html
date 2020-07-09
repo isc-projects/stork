@@ -8,21 +8,24 @@
             (click)="refreshAppState()"
             style="float: right;"
         ></button>
-        <h3>Kea App {{ appTab.app.id }}.</h3>
+        <h2>Kea App {{ appTab.app.id }}.</h2>
         Machine:
         <a routerLink="/machines/{{ appTab.app.machine.id }}">{{ appTab.app.machine.address }}</a>
     </div>
 
     <div class="p-col-12" style="padding: 0;">
-        <p-tabView [activeIndex]="activeTabIndex">
-            <p-tabPanel *ngFor="let daemon of daemons">
+        <p-tabView [activeIndex]="activeTabIndex" styleClass="daemon-tabs" class="daemon-tabs" ngClass="daemon-tabs">
+            <p-tabPanel
+                *ngFor="let daemon of daemons"
+                styleClass="daemon-tabs"
+                class="daemon-tabs"
+                ngClass="daemon-tabs"
+            >
                 <ng-template pTemplate="header">
                     <div>
                         <span
                             class="pi {{ daemonStatusIconName(daemon) }}"
-                            style="font-size: 1.6em; vertical-align: bottom; color: {{
-                                daemonStatusIconColor(daemon)
-                            }};"
+                            style="font-size: 1.6em; vertical-align: bottom; font-weight: bold;"
                         ></span>
                         <span style="margin-right: 0.5em; font-weight: bold;">
                             {{ daemon.niceName }}
@@ -31,54 +34,80 @@
                 </ng-template>
 
                 <ng-template pTemplate="content">
-                    <div class="p-grid" style="padding: 0;">
-                        <div *ngIf="daemon.active" class="p-col-12">
-                            <button
-                                routerLink="/dhcp/hosts"
-                                [queryParams]="{ appId: appTab.app.id }"
-                                label="Host Reservations"
-                                icon="fa fa-laptop"
-                                class="ui-button-secondary"
-                                type="button"
-                                pButton
-                                style="margin-right: 16px;"
-                            ></button>
-                            <button
-                                routerLink="/dhcp/subnets"
-                                [queryParams]="{ appId: appTab.app.id }"
-                                label="Subnets"
-                                icon="fa fa-project-diagram"
-                                type="button"
-                                class="ui-button-secondary"
-                                pButton
-                                style="margin-right: 16px;"
-                            ></button>
-                            <button
-                                routerLink="/dhcp/shared-networks"
-                                [queryParams]="{ appId: appTab.app.id }"
-                                label="Shared Networks"
-                                icon="fa fa-network-wired"
-                                class="ui-button-secondary"
-                                type="button"
-                                pButton
-                            ></button>
-                        </div>
+                    <div style="background: #d9d9d9; padding: 10px; width: 100%;">
+                        <span style="display: inline-block; margin-right: 30px; padding: 0.4em 0;">
+                            <p-inputSwitch
+                                [ngModel]="daemon.monitored"
+                                (onChange)="changeMonitored(daemon)"
+                                [style]="{ 'vertical-align': 'middle', 'margin-right': '8px' }"
+                            ></p-inputSwitch>
+                            <span>Monitoring</span>
+                        </span>
+                        <button
+                            *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
+                            routerLink="/dhcp/hosts"
+                            [queryParams]="{ appId: appTab.app.id }"
+                            label="Host Reservations"
+                            icon="fa fa-laptop"
+                            class="ui-button-secondary"
+                            type="button"
+                            pButton
+                            style="margin-right: 16px;"
+                        ></button>
+                        <button
+                            *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
+                            routerLink="/dhcp/subnets"
+                            [queryParams]="{ appId: appTab.app.id }"
+                            label="Subnets"
+                            icon="fa fa-project-diagram"
+                            type="button"
+                            class="ui-button-secondary"
+                            pButton
+                            style="margin-right: 16px;"
+                        ></button>
+                        <button
+                            *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
+                            routerLink="/dhcp/shared-networks"
+                            [queryParams]="{ appId: appTab.app.id }"
+                            label="Shared Networks"
+                            icon="fa fa-network-wired"
+                            class="ui-button-secondary"
+                            type="button"
+                            pButton
+                        ></button>
+                    </div>
 
+                    <div class="p-grid" style="padding: 12px;">
                         <div *ngIf="daemon.statusErred" class="p-col-4">
                             <p-message severity="error" text="{{ daemonStatusErrorText(daemon) }}"></p-message>
                         </div>
                         <div *ngIf="daemon.statusErred" class="p-col-8"></div>
 
+                        <!-- warning about not-active and not-monitored -->
                         <div *ngIf="!daemon.active" class="p-col-4">
                             <p-message
+                                *ngIf="!daemon.monitored"
                                 severity="warn"
-                                text="This daemon is not monitored by Stork as it was not running at the time when the machine was added to Stork. The configuration for this daemon was detected in the Kea Control Agent's configuration file. That's why it appears on the list of daemons."
-                            ></p-message>
+                                text="This daemon is currently not monitored by Stork.
+                                      The daemon was either manually disabled or it was never running correctly
+                                      (was never active) since it was added to Stork server. The configuration
+                                      for this daemon was detected in the Kea Control Agent's configuration
+                                      file. That's why it appears on the list of daemons."
+                            >
+                            </p-message>
+                            <p-message
+                                *ngIf="daemon.monitored"
+                                severity="error"
+                                text="There is observed issue in communication with the daemon."
+                            >
+                            </p-message>
                         </div>
+                        <!-- fill horizontally all 12 cols -->
                         <div *ngIf="!daemon.active" class="p-col-8"></div>
 
-                        <div *ngIf="daemon.active" class="p-col-12">
-                            <h4 style="margin-top: 2px;">Overview</h4>
+                        <!-- Overview -->
+                        <div class="p-col-4" [ngClass]="{ disabled: !daemon.active }">
+                            <h3 style="margin-top: 2px;">Overview</h3>
                             <table style="width: 100%;">
                                 <tr>
                                     <td style="width: 10rem;">Version</td>
@@ -143,11 +172,19 @@
                             </p-table>
                         </div>
 
+                        <!-- High Availability -->
                         <div
-                            *ngIf="daemon.active && (daemon.name === 'dhcp4' || daemon.name === 'dhcp6')"
+                            *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
                             class="p-col-12"
+                            [ngClass]="{ disabled: !daemon.active }"
                         >
                             <app-ha-status [appId]="appTab.app.id" [daemonName]="daemon.name"></app-ha-status>
+                        </div>
+
+                        <!-- Events -->
+                        <div class="p-col-4">
+                            <h3 style="margin-top: 2px;">Events</h3>
+                            <app-events-panel #eventsTable [filter]="{ daemon: daemon.id }"></app-events-panel>
                         </div>
                     </div>
                 </ng-template>

@@ -10,6 +10,8 @@
         type: string
       level:
         type: integer
+      details:
+        type: string
 
   Events:
     type: object

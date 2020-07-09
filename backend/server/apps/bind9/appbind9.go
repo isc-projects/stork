@@ -89,25 +89,12 @@ func GetAppStatistics(ctx context.Context, agents agentcomm.ConnectedAgents, dbA
 // Get state of named daemon using ForwardRndcCommand function.
 // The state that is stored into dbApp includes: version, number of zones, and
 // some runtime state.
-func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) {
-	// Get rndc control settings
-	ctrlPoint, err := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
-	if err != nil {
-		log.Warnf("problem with getting BIND 9 control point: %s", err)
-		return
-	}
-
-	rndcSettings := agentcomm.Bind9Control{
-		Address: ctrlPoint.Address,
-		Port:    ctrlPoint.Port,
-		Key:     ctrlPoint.Key,
-	}
-
+func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, eventCenter eventcenter.EventCenter) {
 	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
 	command := "status"
-	out, err := agents.ForwardRndcCommand(ctx2, dbApp.Machine.Address, dbApp.Machine.AgentPort, rndcSettings, command)
+	out, err := agents.ForwardRndcCommand(ctx2, dbApp, command)
 	if err != nil {
 		log.Warnf("problem with getting BIND 9 status: %s", err)
 		return
@@ -195,7 +182,6 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		eventCenter.AddInfoEvent("added {app}", app.Machine, app)
 	} else {
 		_, _, err = dbmodel.UpdateApp(db, app)
-		eventCenter.AddInfoEvent("updated {app}", app.Machine, app)
 	}
 	// todo: perform any additional actions required after storing the
 	// app in the db.

@@ -91,14 +91,14 @@ type appStatus []daemonStatus
 
 // Instance of the puller which periodically checks the status of the Kea apps.
 // Besides basic status information the High Availability status is fetched.
-type StatusPuller struct {
+type HAStatusPuller struct {
 	*agentcomm.PeriodicPuller
 }
 
 // Create an instance of the puller which periodically checks the status of
 // the Kea apps.
-func NewStatusPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (*StatusPuller, error) {
-	puller := &StatusPuller{}
+func NewHAStatusPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (*HAStatusPuller, error) {
+	puller := &HAStatusPuller{}
 	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Status",
 		"kea_status_puller_interval", puller.pullData)
 	if err != nil {
@@ -109,7 +109,7 @@ func NewStatusPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (*StatusP
 }
 
 // Stops the timer triggering status checks.
-func (puller *StatusPuller) Shutdown() {
+func (puller *HAStatusPuller) Shutdown() {
 	puller.PeriodicPuller.Shutdown()
 }
 
@@ -227,7 +227,7 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 // Gets the status of the Kea apps and stores useful information in the database.
 // The High Availability status is stored in the database for those apps which
 // have the HA enabled.
-func (puller *StatusPuller) pullData() (int, error) {
+func (puller *HAStatusPuller) pullData() (int, error) {
 	// Get the list of all Kea apps from the database.
 	apps, err := dbmodel.GetAppsByType(puller.Db, dbmodel.AppTypeKea)
 	if err != nil {
@@ -347,15 +347,11 @@ func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	ctrlPoint, err := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
-	if err != nil {
-		return nil, err
-	}
 	// The Kea response will be stored in this slice of structures.
 	response := []StatusGetResponse{}
 
 	// Send the command and receive the response.
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, []*agentcomm.KeaCommand{cmd}, &response)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*agentcomm.KeaCommand{cmd}, &response)
 	if err != nil {
 		return nil, err
 	}

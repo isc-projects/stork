@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnInit, Input } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
@@ -17,6 +17,8 @@ export class EventsPanelComponent implements OnInit {
     events: any = []
     errorCnt = 0
 
+    @Input() filter: any = { daemon: null, machine: null }
+
     constructor(private eventsApi: EventsService, private msgSrv: MessageService) {}
 
     ngOnInit(): void {
@@ -28,7 +30,7 @@ export class EventsPanelComponent implements OnInit {
      * Load the most recent events from Stork server
      */
     refreshEvents() {
-        this.eventsApi.getEvents().subscribe(
+        this.eventsApi.getEvents(this.filter.daemon, this.filter.machine).subscribe(
             (data) => {
                 this.events = data
             },
@@ -57,6 +59,7 @@ export class EventsPanelComponent implements OnInit {
             'error',
             (ev) => {
                 // some error appeared - close session and start again but after 10s or 5mins
+                console.info('sse error', ev)
                 source.close()
                 this.errorCnt += 1
                 if (this.errorCnt < 10) {
@@ -78,6 +81,7 @@ export class EventsPanelComponent implements OnInit {
             'message',
             (ev) => {
                 const data = JSON.parse(ev.data)
+                console.info('sse data', data)
                 this.eventHandler(data)
                 // when events are coming then reset error counter
                 this.errorCnt = 0
@@ -96,7 +100,9 @@ export class EventsPanelComponent implements OnInit {
         // decapitalize fields
         const ev = {
             text: event.Text,
-            leve: event.Level,
+            details: event.Details,
+            level: event.Level,
+            createAt: event.CreateAt,
         }
 
         // put new event in front of all events
@@ -107,5 +113,16 @@ export class EventsPanelComponent implements OnInit {
             this.events.items.pop()
         }
         this.events.total += 1
+    }
+
+    expandEvent(ev) {
+        if (ev.showDetails === undefined) {
+            ev.details = ev.details.replace(/\n/g, '<br>')
+        }
+        if (ev.showDetails) {
+            ev.showDetails = false
+        } else {
+            ev.showDetails = true
+        }
     }
 }

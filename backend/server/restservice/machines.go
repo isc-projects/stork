@@ -191,10 +191,10 @@ func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 
 		switch app.Type {
 		case dbmodel.AppTypeKea:
-			events := kea.GetAppState(ctx2, agents, dbApp)
+			events := kea.GetAppState(ctx2, agents, dbApp, eventCenter)
 			err = kea.CommitAppIntoDB(db, dbApp, eventCenter, events)
 		case dbmodel.AppTypeBind9:
-			bind9.GetAppState(ctx2, agents, dbApp)
+			bind9.GetAppState(ctx2, agents, dbApp, eventCenter)
 			err = bind9.CommitAppIntoDB(db, dbApp, eventCenter)
 		default:
 			err = nil
@@ -595,9 +595,11 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		var keaDaemons []*models.KeaDaemon
 		for _, d := range dbApp.Daemons {
 			dmn := &models.KeaDaemon{
+				ID:              d.ID,
 				Pid:             int64(d.Pid),
 				Name:            d.Name,
 				Active:          d.Active,
+				Monitored:       d.Monitored,
 				Version:         d.Version,
 				ExtendedVersion: d.ExtendedVersion,
 				Uptime:          d.Uptime,
@@ -659,9 +661,11 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		}
 
 		bind9Daemon := &models.Bind9Daemon{
+			ID:              dbApp.Daemons[0].ID,
 			Pid:             int64(dbApp.Daemons[0].Pid),
 			Name:            dbApp.Daemons[0].Name,
 			Active:          dbApp.Daemons[0].Active,
+			Monitored:       dbApp.Daemons[0].Monitored,
 			Version:         dbApp.Daemons[0].Version,
 			Uptime:          dbApp.Daemons[0].Uptime,
 			ReloadedAt:      strfmt.DateTime(dbApp.Daemons[0].ReloadedAt),
@@ -1122,5 +1126,39 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	}
 
 	rsp := dhcp.NewGetDhcpOverviewOK().WithPayload(overview)
+	return rsp
+}
+
+// Update a daemon.
+func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemonParams) middleware.Responder {
+	dbDaemon, err := dbmodel.GetDaemonByID(r.Db, params.ID)
+	if err != nil {
+		msg := fmt.Sprintf("cannot get daemon with id %d from db", params.ID)
+		log.Error(err)
+		rsp := services.NewUpdateDaemonDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbDaemon == nil {
+		msg := fmt.Sprintf("cannot find daemon with id %d", params.ID)
+		rsp := services.NewUpdateDaemonDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	dbDaemon.Monitored = params.Daemon.Monitored
+
+	err = dbmodel.UpdateDaemon(r.Db, dbDaemon)
+	if err != nil {
+		msg := fmt.Sprintf("failed updating daemon with id %d", params.ID)
+		rsp := services.NewUpdateDaemonDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	rsp := services.NewUpdateDaemonOK()
 	return rsp
 }

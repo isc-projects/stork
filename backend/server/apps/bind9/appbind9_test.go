@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
@@ -45,7 +46,8 @@ func mockNamed(callNo int, response interface{}) {
 func TestGetAppState(t *testing.T) {
 	ctx := context.Background()
 
-	fa := storktest.NewFakeAgents(nil, mockNamed)
+	fa := agentcommtest.NewFakeAgents(nil, mockNamed)
+	fec := &storktest.FakeEventCenter{}
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953)
@@ -58,7 +60,7 @@ func TestGetAppState(t *testing.T) {
 		},
 	}
 
-	GetAppState(ctx, fa, &dbApp)
+	GetAppState(ctx, fa, &dbApp, fec)
 
 	require.Equal(t, "127.0.0.1", fa.RecordedAddress)
 	require.EqualValues(t, 953, fa.RecordedPort)

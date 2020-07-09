@@ -6,3 +6,32 @@
   padding-left: 20px
   line-height: 2.286em
   height: 2.286em
+
+
+.disabled
+  color: #999
+
+
+// icons style on daemon tabs (when active and not)
+.icon-not-monitored
+  color: grey
+
+::ng-deep .ui-tabview-selected .icon-not-monitored
+  color: #d9d9d9
+
+.icon-not-active
+  color: #f11
+
+::ng-deep .ui-tabview-selected .icon-not-active
+  color: #ffa4a4
+
+.icon-ok
+  color: #00a800
+
+::ng-deep .ui-tabview-selected .icon-ok
+  color: #54ff45
+
+
+// remove padding from daemon tabs panels so grey bar sticks to borders
+::ng-deep body .daemon-tabs.ui-tabview .ui-tabview-panels
+  padding: 0

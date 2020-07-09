@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
 
 	dbops "isc.org/stork/server/database"
@@ -182,6 +183,7 @@ type Daemon struct {
 	Pid             int32
 	Name            string
 	Active          bool `pg:",use_zero"`
+	Monitored       bool `pg:",use_zero"`
 	Version         string
 	ExtendedVersion string
 	Uptime          int64
@@ -211,8 +213,9 @@ type DaemonServiceOverview struct {
 func NewKeaDaemon(name string, active bool) *Daemon {
 	daemon := &Daemon{
 		Name:      name,
-		KeaDaemon: &KeaDaemon{},
 		Active:    active,
+		Monitored: true,
+		KeaDaemon: &KeaDaemon{},
 	}
 	if name == DaemonNameDHCPv4 || name == DaemonNameDHCPv6 {
 		daemon.KeaDaemon.KeaDHCPDaemon = &KeaDHCPDaemon{}
@@ -225,9 +228,25 @@ func NewBind9Daemon(active bool) *Daemon {
 	daemon := &Daemon{
 		Name:        DaemonNameBind9,
 		Active:      active,
+		Monitored:   true,
 		Bind9Daemon: &Bind9Daemon{},
 	}
 	return daemon
+}
+
+// Get daemon by ID.
+func GetDaemonByID(db *pg.DB, id int64) (*Daemon, error) {
+	app := Daemon{}
+	q := db.Model(&app)
+	q = q.Relation("App")
+	q = q.Where("daemon.id = ?", id)
+	err := q.Select()
+	if err == pg.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, errors.Wrapf(err, "problem with getting daemon %v", id)
+	}
+	return &app, nil
 }
 
 // Updates a daemon, including dependent Daemon, KeaDaemon, KeaDHCPDaemon

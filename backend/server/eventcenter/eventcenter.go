@@ -72,6 +72,7 @@ func (ec *eventCenter) AddErrorEvent(text string, objects ...interface{}) {
 // AddEvent method of EventCenter. It takes event level, text and relating objects.
 func CreateEvent(level int, text string, objects ...interface{}) *dbmodel.Event {
 	relations := &dbmodel.Relations{}
+	var details string
 	for _, obj := range objects {
 		if d, ok := obj.(*dbmodel.Daemon); ok {
 			text = strings.Replace(text, "{daemon}", daemonTag(d), -1)
@@ -85,6 +86,10 @@ func CreateEvent(level int, text string, objects ...interface{}) *dbmodel.Event 
 		} else if s, ok := obj.(*dbmodel.Subnet); ok {
 			text = strings.Replace(text, "{subnet}", subnetTag(s), -1)
 			relations.SubnetID = s.ID
+		} else if s, ok := obj.(string); ok {
+			if len(s) > 0 {
+				details = s
+			}
 		} else {
 			log.Warnf("unknown object passed to CreateEvent: %v", obj)
 		}
@@ -93,6 +98,7 @@ func CreateEvent(level int, text string, objects ...interface{}) *dbmodel.Event 
 		Text:      text,
 		Level:     level,
 		Relations: relations,
+		Details:   details,
 	}
 	return e
 }

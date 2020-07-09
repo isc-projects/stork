@@ -66,6 +66,10 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 
 // Get stats from given bind9 app.
 func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
+	// if app or daemon not active then do nothing
+	if len(dbApp.Daemons) > 0 && !dbApp.Daemons[0].Active {
+		return nil
+	}
 	// prepare URL to statistics-channel
 	statsChannel, err := dbApp.GetAccessPoint(dbmodel.AccessPointStatistics)
 	if err != nil {

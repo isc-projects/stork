@@ -171,11 +171,15 @@
   KeaDaemon:
     type: object
     properties:
+      id:
+        type: integer
       pid:
         type: integer
       name:
         type: string
       active:
+        type: boolean
+      monitored:
         type: boolean
       version:
         type: string
@@ -214,11 +218,15 @@
   Bind9Daemon:
     type: object
     properties:
+      id:
+        type: integer
       pid:
         type: integer
       name:
         type: string
       active:
+        type: boolean
+      monitored:
         type: boolean
       version:
         type: string

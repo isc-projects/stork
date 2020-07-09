@@ -196,13 +196,13 @@ export function daemonStatusErred(daemon) {
  *  check icon if the communication with the active daemon is ok.
  */
 export function daemonStatusIconName(daemon) {
+    if (!daemon.monitored) {
+        return 'pi-ban icon-not-monitored'
+    }
     if (!daemon.active) {
-        return 'pi-ban'
+        return 'pi-times icon-not-active'
     }
-    if (daemonStatusErred(daemon)) {
-        return 'pi-times'
-    }
-    return 'pi-check'
+    return 'pi-check icon-ok'
 }
 
 /**
@@ -215,10 +215,10 @@ export function daemonStatusIconName(daemon) {
  *          communication with the active daemon is ok.
  */
 export function daemonStatusIconColor(daemon) {
-    if (!daemon.active) {
+    if (!daemon.monitored) {
         return 'grey'
     }
-    if (daemonStatusErred(daemon)) {
+    if (!daemon.active) {
         return '#f11'
     }
     return '#00a800'
@@ -234,12 +234,6 @@ export function daemonStatusIconColor(daemon) {
  *          hint whether the communication is with the agent or daemon.
  */
 export function daemonStatusIconTooltip(daemon) {
-    if (!daemon.active) {
-        return (
-            'Configuration for this daemon was found but the daemon was ' +
-            'not running at the time when the application was detected.'
-        )
-    }
     if (daemon.agentCommErrors && daemon.agentCommErrors > 0) {
         return (
             'Communication with the Stork Agent on this machine ' +

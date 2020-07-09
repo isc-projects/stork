@@ -300,6 +300,20 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return err
 	}
 
+	// get active dhcp daemons
+	dhcpDaemons := make(agentcomm.KeaDaemons)
+	found := false
+	for _, d := range dbApp.Daemons {
+		if d.KeaDaemon != nil && d.Active && (d.Name == "dhcp4" || d.Name == "dhcp6") {
+			dhcpDaemons[d.Name] = true
+			found = true
+		}
+	}
+	// if no dhcp daemons found then exit
+	if !found {
+		return nil
+	}
+
 	// If we're running RPS, age off obsolete RPS data.
 	if statsPuller.RpsWorker != nil {
 		_ = statsPuller.RpsWorker.AgeOffRpsIntervals()
@@ -359,7 +373,11 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 	// forward commands to kea
 	ctx := context.Background()
+
 	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, cmds, responses...)
+
+	// This was the code on #324: added raising events on communication issues
+	//	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp, cmds, &statsResp1, &statsResp2)
 	if err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ import (
 	//log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/agentcomm"
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
@@ -173,7 +174,8 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 			mockGetConfigFromOtherDaemonsResponse(1, cmdResponses)
 		}
 	}
-	fa := storktest.NewFakeAgents(keaMock, nil)
+	fa := agentcommtest.NewFakeAgents(keaMock, nil)
+	fec := &storktest.FakeEventCenter{}
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234)
@@ -186,7 +188,7 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 		},
 	}
 
-	GetAppState(ctx, fa, &dbApp)
+	GetAppState(ctx, fa, &dbApp, fec)
 
 	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
 	require.Equal(t, "version-get", fa.RecordedCommands[0].Command)
@@ -204,7 +206,8 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 			mockGetConfigFromOtherDaemonsResponse(2, cmdResponses)
 		}
 	}
-	fa := storktest.NewFakeAgents(keaMock, nil)
+	fa := agentcommtest.NewFakeAgents(keaMock, nil)
+	fec := &storktest.FakeEventCenter{}
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234)
@@ -217,7 +220,48 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 		},
 	}
 
-	GetAppState(ctx, fa, &dbApp)
+	GetAppState(ctx, fa, &dbApp, fec)
+
+	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
+	require.Equal(t, "version-get", fa.RecordedCommands[0].Command)
+	require.Equal(t, "config-get", fa.RecordedCommands[1].Command)
+}
+
+// Check GetAppState when app already exists.
+func TestGetAppStateForExistingApp(t *testing.T) {
+	ctx := context.Background()
+
+	// check getting config of 1 daemon
+	keaMock := func(callNo int, cmdResponses []interface{}) {
+		if callNo == 0 {
+			mockGetConfigFromCAResponse(1, cmdResponses)
+		} else if callNo == 1 {
+			mockGetConfigFromOtherDaemonsResponse(1, cmdResponses)
+		}
+	}
+	fa := agentcommtest.NewFakeAgents(keaMock, nil)
+	fec := &storktest.FakeEventCenter{}
+
+	var accessPoints []*dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234)
+
+	dbApp := dbmodel.App{
+		ID:           1,
+		AccessPoints: accessPoints,
+		Machine: &dbmodel.Machine{
+			Address:   "192.0.2.0",
+			AgentPort: 1111,
+		},
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:      "dhcp4",
+				Active:    false,
+				KeaDaemon: &dbmodel.KeaDaemon{},
+			},
+		},
+	}
+
+	GetAppState(ctx, fa, &dbApp, fec)
 
 	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
 	require.Equal(t, "version-get", fa.RecordedCommands[0].Command)

@@ -8,6 +8,14 @@
       tags:
         - Events
       parameters:
+        - name: daemon
+          in: query
+          description: Daemon ID.
+          type: integer
+        - name: machine
+          in: query
+          description: Machine ID.
+          type: integer
         - $ref: '#/parameters/paginationStartParam'
         - $ref: '#/parameters/paginationLimitParam'
       responses:

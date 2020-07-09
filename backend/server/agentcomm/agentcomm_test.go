@@ -4,13 +4,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	storktest "isc.org/stork/server/test"
 )
 
 // Test that it is possible to connect to a new agent and that the
 // statistics can be gathered for this agent.
 func TestConnectingToAgent(t *testing.T) {
 	settings := AgentsSettings{}
-	agents := NewConnectedAgents(&settings)
+	fec := &storktest.FakeEventCenter{}
+	agents := NewConnectedAgents(&settings, fec)
 	defer agents.Shutdown()
 
 	// connect one agent and check if it is in agents map

@@ -1,25 +1,27 @@
-<p-panel>
-    <p-header>
-        <div style="display: flex; justify-content: space-between;">
-            <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px;">Events</span>
-            <p-button icon="pi pi-refresh" (click)="refreshEvents()"></p-button>
-        </div>
-    </p-header>
-    <div style="max-height: calc(100vh - 10rem); overflow-y: auto; margin: 0 -0.8em 0 0;">
-        <table class="events-table">
-            <tr *ngFor="let ev of events.items">
-                <td style="width: 6em;">{{ ev.createdAt | localtime }}</td>
-                <td *ngIf="ev.level === undefined || ev.level === 0" style="font-size: 1.5em; color: #1de6dc;">
-                    <i class="pi pi-info-circle"></i>
-                </td>
-                <td *ngIf="ev.level === 1" style="font-size: 1.5em; color: orange;">
-                    <i class="pi pi-exclamation-triangle"></i>
-                </td>
-                <td *ngIf="ev.level === 2" style="font-size: 1.5em; color: red;">
-                    <i class="pi pi-exclamation-circle"></i>
-                </td>
-                <td><app-event-text [text]="ev.text"></app-event-text></td>
-            </tr>
-        </table>
-    </div>
-</p-panel>
+<table class="events-table">
+    <ng-container *ngFor="let ev of events.items; index as i">
+        <tr [class.odd-row]="i % 2 === 0">
+            <td *ngIf="ev.level === undefined || ev.level === 0" style="font-size: 1.5em; color: #9db2d3;">
+                <i class="pi pi-info-circle"></i>
+            </td>
+            <td *ngIf="ev.level === 1" style="font-size: 1.5em; color: orange;">
+                <i class="pi pi-exclamation-triangle"></i>
+            </td>
+            <td *ngIf="ev.level === 2" style="font-size: 1.5em; color: red;">
+                <i class="pi pi-exclamation-circle"></i>
+            </td>
+            <td style="width: 6em;">{{ ev.createdAt | localtime }}</td>
+            <td>
+                <app-event-text [text]="ev.text"></app-event-text>
+                <a *ngIf="ev.details" (click)="expandEvent(ev)" style="cursor: pointer;">
+                    <i *ngIf="!ev.showDetails" class="pi pi-angle-double-down" style="vertical-align: text-bottom;"></i>
+                    <i *ngIf="ev.showDetails" class="pi pi-angle-double-up" style="vertical-align: text-bottom;"></i>
+                </a>
+            </td>
+        </tr>
+        <tr *ngIf="ev.showDetails" [class.odd-row]="i % 2 === 0">
+            <td></td>
+            <td colspan="2" [innerHTML]="ev.details"></td>
+        </tr>
+    </ng-container>
+</table>

@@ -1,21 +1,23 @@
-<span class="entity" [ngSwitch]="entity">
+<span [ngSwitch]="entity">
     <!-- daemon -->
     <ng-container *ngSwitchCase="'daemon'">
+        daemon
         <a routerLink="/apps/{{ attrs.appType }}/{{ attrs.appId }}" [queryParams]="{ daemon: attrs.name }">
-            daemon [{{ attrs.id }}] {{ attrs.name }}
+            [{{ attrs.id }}] {{ attrs.name }}
         </a>
     </ng-container>
 
     <!-- app -->
     <ng-container *ngSwitchCase="'app'">
+        app
         <a routerLink="/apps/{{ attrs.type }}/{{ attrs.id }}">
-            app [{{ attrs.id }}] {{ attrs.type }} {{ attrs.version }}
+            [{{ attrs.id }}] {{ attrs.type }} {{ attrs.version }}
         </a>
     </ng-container>
 
     <!-- machine -->
     <ng-container *ngSwitchCase="'machine'">
-        <a routerLink="/machines/{{ attrs.id }}"> machine [{{ attrs.id }}] {{ attrs.address }} </a>
+        machine <a routerLink="/machines/{{ attrs.id }}"> [{{ attrs.id }}] {{ attrs.address }} </a>
     </ng-container>
 
     <!-- subnet -->

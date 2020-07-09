@@ -133,8 +133,6 @@ type HostDetectionIterator struct {
 	family      int
 	from        int64
 	sourceIndex int64
-	caAddress   string
-	caPort      int64
 	subnets     []dbmodel.Subnet
 	subnetIndex int
 }
@@ -150,8 +148,6 @@ func NewHostDetectionIterator(db *dbops.PgDB, app *dbmodel.App, agents agentcomm
 		family:      0,
 		from:        0,
 		sourceIndex: 1,
-		caAddress:   "",
-		caPort:      0,
 		subnets:     []dbmodel.Subnet{},
 		subnetIndex: -1,
 	}
@@ -231,8 +227,7 @@ func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel
 	commands := []*agentcomm.KeaCommand{command}
 	response := make([]ReservationGetPageResponse, 1)
 	ctx := context.Background()
-	respResult, err := iterator.agents.ForwardToKeaOverHTTP(ctx, iterator.app.Machine.Address, iterator.app.Machine.AgentPort,
-		iterator.caAddress, iterator.caPort, commands, &response)
+	respResult, err := iterator.agents.ForwardToKeaOverHTTP(ctx, iterator.app, commands, &response)
 	if err != nil {
 		// Can retry because the error may go away upon the next attempt.
 		return hosts, agentcomm.KeaResponseError, true, err
@@ -314,23 +309,11 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 		return hosts, done, err
 	}
 
-	// During the first call to this function we have to initialize the access point
-	// of the Kea app we will be communicating with. We don't repeat this operation
-	// for subequent calls.
-	if len(iterator.caAddress) == 0 {
-		ctrlPoint, err := iterator.app.GetAccessPoint(dbmodel.AccessPointControl)
-		if err != nil {
-			return hosts, done, errors.WithMessagef(err, "problem with getting Kea access points upon an attempt to detect host reservations over the host_cmds hooks library")
-		}
-		iterator.caAddress = ctrlPoint.Address
-		iterator.caPort = ctrlPoint.Port
-	}
-
 	// Count the servers we have iterated over to make sure we use the one we used
 	// previously.
 	serverIndex := 0
 	for _, d := range appKea.Daemons {
-		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil {
+		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil || !d.Active {
 			continue
 		}
 

@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"isc.org/stork/server/agentcomm"
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
-	storktest "isc.org/stork/server/test"
 )
 
 // Check creating and shutting down StatsPuller.
@@ -27,7 +27,7 @@ func TestStatsPullerBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare fake agents
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 
 	sp, _ := NewStatsPuller(db, fa)
 	require.NotEmpty(t, sp.RpsWorker)
@@ -221,7 +221,7 @@ func TestStatsPullerPullStats(t *testing.T) {
                 }]`
 		agentcomm.UnmarshalKeaResponseList(rpsCmd[0], json, cmdResponses[3])
 	}
-	fa := storktest.NewFakeAgents(keaMock, nil)
+	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
 	// prepare apps with subnets and local subnets
 	v4Config := `
@@ -309,7 +309,6 @@ func TestStatsPullerPullStats(t *testing.T) {
 		}
 	}
 	require.Equal(t, 5, snCnt)
-
 	// We should have two rows in RpsWorker.PreviousRps map one for each daemon
 	require.Equal(t, 2, len(sp.RpsWorker.PreviousRps))
 
@@ -323,3 +322,71 @@ func TestStatsPullerPullStats(t *testing.T) {
 	require.NotEqual(t, nil, previous)
 	require.EqualValues(t, 66, previous.Value)
 }
+
+// Check if Kea response to stat-leaseX-get command is handled correctly when it is
+// empty or when stats hooks library is not loaded.
+func TestStatsPullerEmptyResponse(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// prepare fake agents
+	keaMock := func(callNo int, cmdResponses []interface{}) {
+		// DHCPv4
+		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
+		command, _ := agentcomm.NewKeaCommand("stat-lease4-get", daemons, nil)
+		// simulate empty response
+		json := `[{
+                            "result": 0,
+                            "text": "Everything is fine",
+                            "arguments": {}
+                         }]`
+		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+
+		// DHCPv6
+		daemons, _ = agentcomm.NewKeaDaemons("dhcp6")
+		command, _ = agentcomm.NewKeaCommand("stat-lease6-get", daemons, nil)
+		// simulate not loaded stat plugin in kea
+		json = `[{
+                           "result": 2,
+                           "text": "'stat-lease6-get' command not supported."
+                        }]`
+		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[1])
+	}
+	fa := agentcommtest.NewFakeAgents(keaMock, nil)
+
+	// add one machine with one kea app
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, m.ID)
+
+	var accessPoints []*dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "cool.example.org", "", 1234)
+	a := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Active:    true,
+				Name:      "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{},
+			},
+			{
+				Active:    true,
+				Name:      "dhcp6",
+				KeaDaemon: &dbmodel.KeaDaemon{},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, a)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, a.ID)
+}
+

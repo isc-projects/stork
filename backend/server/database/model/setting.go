@@ -55,6 +55,11 @@ func InitializeSettings(db *pg.DB) error {
 			Value:   "30",
 		},
 		{
+			Name:    "apps_state_puller_interval", // in seconds
+			ValType: SettingValTypeInt,
+			Value:   "30",
+		},
+		{
 			Name:    "grafana_url",
 			ValType: SettingValTypeStr,
 			Value:   "",

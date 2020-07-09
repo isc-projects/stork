@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc"
 
 	agentapi "isc.org/stork/api"
+	dbmodel "isc.org/stork/server/database/model"
+	"isc.org/stork/server/eventcenter"
 )
 
 // Settings specific to communication with Agents
@@ -19,8 +21,8 @@ type AgentsSettings struct {
 // Holds runtime communication statistics with Kea daemons via
 // a given agent.
 type AgentKeaCommStats struct {
-	CurrentErrorsCA      int64
-	CurrentErrorsDaemons map[string]int64
+	CurrentErrorsCA      int64            // generall errors in communication to/via CA
+	CurrentErrorsDaemons map[string]int64 // errors returned by particular daemon (including CA)
 }
 
 // Holds runtime communication statistics with Bind9 daemon for
@@ -80,15 +82,16 @@ type ConnectedAgents interface {
 	GetConnectedAgent(address string) (*Agent, error)
 	GetConnectedAgentStats(adddress string, port int64) *AgentStats
 	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
-	ForwardRndcCommand(ctx context.Context, agentAddress string, agentPort int64, rndcSettings Bind9Control, command string) (*RndcOutput, error)
+	ForwardRndcCommand(ctx context.Context, dbApp *dbmodel.App, command string) (*RndcOutput, error)
 	ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
-	ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caAddress string, caPort int64, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
+	ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.App, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
 	TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset int64) ([]string, error)
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.
 type connectedAgentsData struct {
 	Settings     *AgentsSettings
+	EventCenter  eventcenter.EventCenter
 	AgentsMap    map[string]*Agent
 	CommLoopReqs chan *commLoopReq
 	DoneCommLoop chan bool
@@ -96,9 +99,10 @@ type connectedAgentsData struct {
 }
 
 // Create new ConnectedAgents objects.
-func NewConnectedAgents(settings *AgentsSettings) ConnectedAgents {
+func NewConnectedAgents(settings *AgentsSettings, eventCenter eventcenter.EventCenter) ConnectedAgents {
 	agents := connectedAgentsData{
 		Settings:     settings,
+		EventCenter:  eventCenter,
 		AgentsMap:    make(map[string]*Agent),
 		CommLoopReqs: make(chan *commLoopReq),
 		DoneCommLoop: make(chan bool),

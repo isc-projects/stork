@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
@@ -20,7 +21,7 @@ func TestSettings(t *testing.T) {
 
 	// prepare rest api
 	rSettings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa, fec)
 	require.NoError(t, err)

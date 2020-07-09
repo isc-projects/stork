@@ -31,6 +31,7 @@ type Event struct {
 	Text      string
 	Level     int `pg:",use_zero"`
 	Relations *Relations
+	Details   string
 }
 
 // Add given event to the database.
@@ -49,7 +50,7 @@ func AddEvent(db *pg.DB, event *Event) error {
 // sortDir allows selection the order of sorting. If sortField is
 // empty then id is used for sorting. If SortDirAny is used then ASC
 // order is used.
-func GetEventsByPage(db *pg.DB, offset int64, limit int64, sortField string, sortDir SortDirEnum) ([]Event, int64, error) {
+func GetEventsByPage(db *pg.DB, offset int64, limit int64, daemonID *int64, machineID *int64, sortField string, sortDir SortDirEnum) ([]Event, int64, error) {
 	if limit == 0 {
 		return nil, 0, errors.New("limit should be greater than 0")
 	}
@@ -57,6 +58,12 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, sortField string, sor
 
 	// prepare query
 	q := db.Model(&events)
+	if daemonID != nil {
+		q = q.Where("CAST (relations->'DaemonID' AS INTEGER) = ?", *daemonID)
+	}
+	if machineID != nil {
+		q = q.Where("CAST (relations->'MachineID' AS INTEGER) = ?", *machineID)
+	}
 
 	// prepare sorting expression, offset and limit
 	ordExpr := prepareOrderExpr("event", sortField, sortDir)

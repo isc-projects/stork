@@ -209,15 +209,22 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 // Forwards one or more Kea commands sent by the Stork server to the appropriate Kea instance over
 // HTTP (via Control Agent).
 func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) (*agentapi.ForwardToKeaOverHTTPRsp, error) {
-	reqURL := in.GetUrl()
-
-	requests := in.GetKeaRequests()
-
+	// prepare base response
 	response := &agentapi.ForwardToKeaOverHTTPRsp{
 		Status: &agentapi.Status{
 			Code: agentapi.Status_OK, // all ok
 		},
 	}
+
+	// check URL to CA
+	reqURL := in.GetUrl()
+	if reqURL == "" {
+		response.Status.Code = agentapi.Status_ERROR
+		response.Status.Message = "Incorrect URL to Kea CA"
+		return response, nil
+	}
+
+	requests := in.GetKeaRequests()
 
 	// forward requests to kea one by one
 	for _, req := range requests {
@@ -229,7 +236,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 		if err != nil {
 			log.WithFields(log.Fields{
 				"URL": reqURL,
-			}).Errorf("Failed to forward commands to Kea: %+v", err)
+			}).Errorf("Failed to forward commands to Kea CA: %+v", err)
 			rsp.Status.Code = agentapi.Status_ERROR
 			rsp.Status.Message = fmt.Sprintf("Failed to forward commands to Kea: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)

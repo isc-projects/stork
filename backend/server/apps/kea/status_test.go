@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"isc.org/stork/server/agentcomm"
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
@@ -331,7 +332,7 @@ func mockGetStatusError(callNo int, cmdResponses []interface{}) {
 
 // Test status-get command when HA status is returned.
 func TestGetDHCPStatus(t *testing.T) {
-	fa := storktest.NewFakeAgents(mockGetStatusLoadBalancing, nil)
+	fa := agentcommtest.NewFakeAgents(mockGetStatusLoadBalancing, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
@@ -381,7 +382,7 @@ func TestGetDHCPStatus(t *testing.T) {
 // Test status-get command when HA status is returned by Kea 1.7.8 or
 // later.
 func TestGetDHCPStatus178(t *testing.T) {
-	fa := storktest.NewFakeAgents(mockGetStatusLoadBalancing178, nil)
+	fa := agentcommtest.NewFakeAgents(mockGetStatusLoadBalancing178, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
@@ -440,7 +441,7 @@ func TestGetDHCPStatus178(t *testing.T) {
 
 // Test status-get command when HA status is not returned.
 func TestGetDHCPStatusNoHA(t *testing.T) {
-	fa := storktest.NewFakeAgents(mockGetStatusNoHA, nil)
+	fa := agentcommtest.NewFakeAgents(mockGetStatusNoHA, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
@@ -474,7 +475,7 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 // Test the case when the Kea CA is unable to communicate with the
 // Kea deamon.
 func TestGetDHCPStatusError(t *testing.T) {
-	fa := storktest.NewFakeAgents(mockGetStatusError, nil)
+	fa := agentcommtest.NewFakeAgents(mockGetStatusError, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
@@ -496,7 +497,7 @@ func TestGetDHCPStatusError(t *testing.T) {
 
 // Test that new instance of the puller for fetching HA services status can
 // be created and shut down.
-func TestNewStatusPuller(t *testing.T) {
+func TestNewHAStatusPuller(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -504,7 +505,7 @@ func TestNewStatusPuller(t *testing.T) {
 	err := dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
-	puller, err := NewStatusPuller(db, nil)
+	puller, err := NewHAStatusPuller(db, nil)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 	defer puller.Shutdown()
@@ -567,18 +568,18 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 	err = dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
-	var fa *storktest.FakeAgents
+	var fa *agentcommtest.FakeAgents
 
 	// Configure the fake control agents to mimic returning a status of
 	// two HA services for Kea.
 	if version178 {
-		fa = storktest.NewFakeAgents(mockGetStatusWithHA178, nil)
+		fa = agentcommtest.NewFakeAgents(mockGetStatusWithHA178, nil)
 	} else {
-		fa = storktest.NewFakeAgents(mockGetStatusWithHA, nil)
+		fa = agentcommtest.NewFakeAgents(mockGetStatusWithHA, nil)
 	}
 
 	// Create the puller which normally fetches the HA status periodically.
-	puller, err := NewStatusPuller(db, fa)
+	puller, err := NewHAStatusPuller(db, fa)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
