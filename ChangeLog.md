@@ -1,3 +1,9 @@
+* 80 [func] marcin
+
+    List of loggers used by Kea server is fetched and displayed in the
+    Kea application tab.
+    (Gitlab #342)
+
 * 79 [ui] vicky, tomek, marcin
 
     Added explicit link to DHCP dashboard.
