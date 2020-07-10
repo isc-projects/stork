@@ -485,6 +485,7 @@ func (pbe *PromBind9Exporter) qryRTTHistogram(stats map[string]float64) (uint64,
 func (pbe *PromBind9Exporter) trafficSizesHistogram(stats map[string]float64) (uint64, float64, map[float64]uint64, error) {
 	buckets := map[float64]uint64{}
 
+	buckets[math.Inf(0)] = 0
 	for statName, statValue := range stats {
 		// Find all traffic statistics.
 		var bucket float64

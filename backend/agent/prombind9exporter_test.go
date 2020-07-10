@@ -85,6 +85,7 @@ func TestPromBind9ExporterStart(t *testing.T) {
                                   "QrySERVFAIL":555,
                                   "QrySuccess":111,
                                   "QryUDP":404,
+                                  "QryTCP":303,
                                   "XfrFail": 2,
                                   "XfrRej": 11,
                                   "XfrSuccess": 22
@@ -92,6 +93,26 @@ func TestPromBind9ExporterStart(t *testing.T) {
 			      "taskmgr": {
                                   "tasks-running": 1,
                                   "worker-threads": 4
+                              },
+                              "traffic": {
+                                  "dns-udp-requests-sizes-received-ipv4":{
+                                      "32-47":206,
+                                      "128+":24
+                                  },
+                                  "dns-udp-responses-sizes-sent-ipv4":{
+                                      "96-111":196,
+                                      "112-127":10
+                                  },
+                                  "dns-tcp-requests-sizes-received-ipv4":{
+                                      "32-47":12
+                                  },
+                                  "dns-tcp-responses-sizes-sent-ipv4":{
+                                      "128-143":12
+                                  },
+                                  "dns-tcp-requests-sizes-received-ipv6":{
+                                  },
+                                  "dns-tcp-responses-sizes-sent-ipv6":{
+                                  }
                               },
 			      "views": {
                                 "_default": {
@@ -174,6 +195,11 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 454.0, pbe.stats.IncomingRequests["QUERY"])
 	require.EqualValues(t, 1.0, pbe.stats.IncomingRequests["UPDATE"])
 	require.EqualValues(t, 0.0, pbe.stats.IncomingRequests["IQUERY"])
+
+	// incoming_queries_tcp
+	require.EqualValues(t, 303.0, pbe.stats.NsStats["QryTCP"])
+	// incoming_queries_udp
+	require.EqualValues(t, 404.0, pbe.stats.NsStats["QryUDP"])
 
 	// query_duplicates_total
 	require.EqualValues(t, 15.0, pbe.stats.NsStats["QryDuplicate"])
@@ -270,6 +296,70 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	require.EqualValues(t, 1.0, pbe.stats.TaskMgr["tasks-running"])
 	// worker_threads
 	require.EqualValues(t, 4.0, pbe.stats.TaskMgr["worker-threads"])
+
+	// traffic_incoming_requests_udp4_size
+	require.EqualValues(t, 206.0, pbe.stats.TrafficStats["dns-udp-requests-sizes-received-ipv4"].SizeCount["32-47"])
+	require.EqualValues(t, 24.0, pbe.stats.TrafficStats["dns-udp-requests-sizes-received-ipv4"].SizeCount["128+"])
+	count, _, buckets, err = pbe.trafficSizesHistogram(pbe.stats.TrafficStats["dns-udp-requests-sizes-received-ipv4"].SizeCount)
+	require.EqualValues(t, 230.0, count)
+	require.Len(t, buckets, 2)
+	require.EqualValues(t, 206, buckets[47])
+	require.EqualValues(t, 230, buckets[math.Inf(0)])
+	require.Nil(t, err)
+	// traffic_responses_udp4_size
+	require.EqualValues(t, 196.0, pbe.stats.TrafficStats["dns-udp-responses-sizes-sent-ipv4"].SizeCount["96-111"])
+	require.EqualValues(t, 10.0, pbe.stats.TrafficStats["dns-udp-responses-sizes-sent-ipv4"].SizeCount["112-127"])
+	count, _, buckets, err = pbe.trafficSizesHistogram(pbe.stats.TrafficStats["dns-udp-responses-sizes-sent-ipv4"].SizeCount)
+	require.EqualValues(t, 206.0, count)
+	require.Len(t, buckets, 3)
+	require.EqualValues(t, 196, buckets[111])
+	require.EqualValues(t, 206, buckets[127])
+	require.EqualValues(t, 206, buckets[math.Inf(0)])
+	require.Nil(t, err)
+	// traffic_incoming_requests_tcp4_size
+	require.EqualValues(t, 12.0, pbe.stats.TrafficStats["dns-tcp-requests-sizes-received-ipv4"].SizeCount["32-47"])
+	count, _, buckets, err = pbe.trafficSizesHistogram(pbe.stats.TrafficStats["dns-tcp-requests-sizes-received-ipv4"].SizeCount)
+	require.EqualValues(t, 12.0, count)
+	require.Len(t, buckets, 2)
+	require.EqualValues(t, 12, buckets[47])
+	require.EqualValues(t, 12, buckets[math.Inf(0)])
+	require.Nil(t, err)
+	// traffic_responses_tcp4_size
+	require.EqualValues(t, 12.0, pbe.stats.TrafficStats["dns-tcp-responses-sizes-sent-ipv4"].SizeCount["128-143"])
+	count, _, buckets, err = pbe.trafficSizesHistogram(pbe.stats.TrafficStats["dns-tcp-responses-sizes-sent-ipv4"].SizeCount)
+	require.EqualValues(t, 12.0, count)
+	require.Len(t, buckets, 2)
+	require.EqualValues(t, 12, buckets[143])
+	require.EqualValues(t, 12, buckets[math.Inf(0)])
+	require.Nil(t, err)
+	// traffic_incoming_requests_udp6_size
+	require.Len(t, pbe.stats.TrafficStats["dns-udp-requests-sizes-received-ipv6"].SizeCount, 0)
+	count, _, buckets, err = pbe.trafficSizesHistogram(pbe.stats.TrafficStats["dns-udp-requests-sizes-received-ipv6"].SizeCount)
+	require.EqualValues(t, 0.0, count)
+	require.Len(t, buckets, 1)
+	require.EqualValues(t, 0, buckets[math.Inf(0)])
+	require.Nil(t, err)
+	// traffic_responses_udp6_size
+	require.Len(t, pbe.stats.TrafficStats["dns-udp-responses-sizes-sent-ipv6"].SizeCount, 0)
+	count, _, buckets, err = pbe.trafficSizesHistogram(pbe.stats.TrafficStats["dns-udp-responses-sizes-sent-ipv6"].SizeCount)
+	require.EqualValues(t, 0.0, count)
+	require.Len(t, buckets, 1)
+	require.EqualValues(t, 0, buckets[math.Inf(0)])
+	require.Nil(t, err)
+	// traffic_incoming_requests_tcp6_size
+	require.Len(t, pbe.stats.TrafficStats["dns-tcp-requests-sizes-received-ipv6"].SizeCount, 0)
+	count, _, buckets, err = pbe.trafficSizesHistogram(pbe.stats.TrafficStats["dns-tcp-requests-sizes-received-ipv6"].SizeCount)
+	require.EqualValues(t, 0.0, count)
+	require.Len(t, buckets, 1)
+	require.EqualValues(t, 0, buckets[math.Inf(0)])
+	require.Nil(t, err)
+	// traffic_responses_tcp6_size
+	require.Len(t, pbe.stats.TrafficStats["dns-tcp-responses-sizes-sent-ipv6"].SizeCount, 0)
+	count, _, buckets, err = pbe.trafficSizesHistogram(pbe.stats.TrafficStats["dns-tcp-responses-sizes-sent-ipv6"].SizeCount)
+	require.EqualValues(t, 0.0, count)
+	require.Len(t, buckets, 1)
+	require.EqualValues(t, 0, buckets[math.Inf(0)])
+	require.Nil(t, err)
 
 	// zone_transfer_failure_total
 	require.EqualValues(t, 2.0, pbe.stats.NsStats["XfrFail"])
