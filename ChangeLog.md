@@ -1,3 +1,8 @@
+* 88 [bug] godfryd
+
+    Fixed upgrading RPM packages.
+    (Gitlab #334)
+
 * 87 [doc] marcin
 
     Described Kea log viewer in the ARM.

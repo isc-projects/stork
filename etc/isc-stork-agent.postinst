@@ -3,8 +3,10 @@
 set -e
 
 if [ -e /etc/redhat-release ]; then
-    # add stork-agent user
-    useradd --system --home-dir /var/lib/ stork-agent
+    # add stork-agent user if does not exists
+    if [ ! $(getent passwd stork-agent) ]; then
+        useradd --system --home-dir /var/lib/ stork-agent
+    fi
 
     # add stork-agent user to named so it can read its config files
     if [ $(getent group named) ]; then

@@ -1,7 +1,22 @@
 #!/bin/sh
 
-systemctl disable isc-stork-agent
-systemctl stop isc-stork-agent
+if [ -e /etc/redhat-release ]; then
+    case "$1" in
+        0) # This is a yum/dnf remove.
+            systemctl disable isc-stork-agent
+            systemctl stop isc-stork-agent
 
-# remove stork-agent from any extra groups like e.g. bind
-usermod -G "" stork-agent
+            # remove stork-agent from any extra groups like e.g. bind
+            usermod -G "" stork-agent
+            ;;
+        1)  # This is a yum/dnf upgrade.
+            # do nothing
+            ;;
+    esac
+else
+    systemctl disable isc-stork-agent
+    systemctl stop isc-stork-agent
+
+    # remove stork-agent from any extra groups like e.g. bind
+    usermod -G "" stork-agent
+fi
