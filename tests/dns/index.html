@@ -22,6 +22,16 @@
                     <el-input v-model="scope.row.qname"></el-input>
                 </template>
             </el-table-column>
+            <el-table-column label="Query Type" min-width="3em">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.qtype"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column label="Query Transport" min-width="3em">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.transport"></el-input>
+                </template>
+            </el-table-column>
             <el-table-column label="Clients" min-width="8em">
                 <template slot-scope="scope">
                     <el-input-number v-model="scope.row.clients" :max="50"></el-input-number>
@@ -63,7 +73,9 @@
                 queryServer: function (idx) {
                     var srv = this.servers[idx]
                     var data = {attempts: srv.attempts,
-                                qname: srv.qname}
+                                qname: srv.qname,
+                                qtype: srv.qtype,
+                                transport: srv.transport}
                     axios.put('/query/' + idx, data).then(function (response) {
                         this.servers.length = 0;
                         this.servers.push(...response.data.items);
@@ -73,7 +85,9 @@
                     var srv = this.servers[idx]
                     var data = {state: state,
                                 attempts: srv.attempts,
-                                qname: srv.qname}
+                                qname: srv.qname,
+                                qtype: srv.qtype,
+                                transport: srv.transport}
                     axios.put('/perf/' + idx, data).then(function (response) {
                         this.servers.length = 0;
                         this.servers.push(...response.data.items);

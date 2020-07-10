@@ -11,8 +11,12 @@ app = None
 def run_dig(server):
     clients = server['clients']
     qname = server['qname']
+    qtype = server['qtype']
+    tcp = "+notcp"
+    if server['transport'] == 'tcp':
+        tcp = "+tcp"
     address = server['machine']['address']
-    cmd = 'dig +tries=1 +retry=0 @%s %s' % (address, qname)
+    cmd = 'dig %s +tries=1 +retry=0 @%s %s %s' % (tcp, address, qname, qtype)
     print('exec %d times: %s' % (clients, cmd), file=sys.stderr)
     for i in range(0, clients):
         args = shlex.split(cmd)
@@ -23,9 +27,14 @@ def start_flamethrower(server):
     rate = server['rate']*1000
     clients = server['clients']
     qname = server['qname']
+    qtype = server['qtype']
+    transport = "udp"
+    if server['transport'] == 'tcp':
+        transport = "tcp"
     address = server['machine']['address']
     # send one query (-q) per client (-c) every 'rate' millisecond (-d)
-    cmd = 'flame -q 1 -c %d -d %d -r %s %s' % (clients, rate, qname, address)
+    # on transport (-P) with qname (-r) and qtype (-T)
+    cmd = 'flame -q 1 -c %d -d %d -P %s -r %s -T %s %s' % (clients, rate, transport, qname, qtype, address)
     args = shlex.split(cmd)
     print('exec: %s' % cmd, file=sys.stderr)
     return subprocess.Popen(args)
@@ -50,6 +59,8 @@ def _refresh_servers():
                 srv['clients'] = 1
                 srv['rate'] = 1
                 srv['qname'] = 'example.com'
+                srv['qtype'] = 'A'
+                srv['transport'] = 'udp'
                 srv['proc'] = None
                 srv['state'] = 'stop'
                 app.servers['items'].append(srv)
@@ -67,6 +78,8 @@ def serialize_servers(servers):
                                   address=srv['machine']['address'],
                                   clients=srv['clients'],
                                   rate=srv['rate'],
+                                  transport=srv['transport'],
+                                  qtype=srv['qtype'],
                                   qname=srv['qname']))
     return json.dumps(data)
 
@@ -98,8 +111,17 @@ def put_query_params(index):
     if 'qname' in data:
         server['qname'] = data['qname']
 
+    if 'qtype' in data:
+        server['qtype'] = data['qtype']
+
+    if 'transport' in data:
+        server['transport'] = data['transport']
+
     if 'clients' in data:
         server['clients'] = data['clients']
+
+    if 'rate' in data:
+        server['rate'] = data['rate']
 
     run_dig(server)
 
@@ -112,6 +134,12 @@ def put_perf_params(index):
 
     if 'qname' in data:
         server['qname'] = data['qname']
+
+    if 'qtype' in data:
+        server['qtype'] = data['qtype']
+
+    if 'transport' in data:
+        server['transport'] = data['transport']
 
     if 'clients' in data:
         server['clients'] = data['clients']
