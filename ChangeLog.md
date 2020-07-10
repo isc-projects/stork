@@ -1,3 +1,9 @@
+* 81 [func] matthijs
+
+    Add more query details to BIND 9 exporter and Grafana dashboard:
+    queries by duration, which transport protocol is used, packet sizes.
+    (Gitlab #63)
+
 * 80 [func] marcin
 
     List of loggers used by Kea server is fetched and displayed in the
@@ -22,6 +28,8 @@ Stork 0.9.0 released on 2020-07-01.
     BIND 9 process collector would not be created if named process was
     started after Stork Agent.
     (Gitlab #325)
+
+Stork 0.9.0 released on 2020-07-01.
 
 * 76 [func] marcin
 
