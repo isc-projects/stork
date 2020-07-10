@@ -36,6 +36,7 @@ func TestRpsPullerBasic(t *testing.T) {
 	sp.Shutdown()
 }
 
+// Convenience function that creates a machine with one Kea app and two daemons.
 func addMachine(t *testing.T, db *dbops.PgDB) {
 	// add one machine with one kea app
 	m := &dbmodel.Machine{
@@ -82,8 +83,7 @@ func addMachine(t *testing.T, db *dbops.PgDB) {
 	require.NoError(t, err)
 }
 
-// Check if Kea response to statistic-get command is handled correctly when it is
-// empty
+// Check if Kea response to statistic-get command is handled correctly when it is empty
 func TestRpsPullerEmptyResponse(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -96,7 +96,7 @@ func TestRpsPullerEmptyResponse(t *testing.T) {
 		// simulate empty response
 		json := `[{
                             "result": 0,
-                            "text": "Everything is fine",
+                            "text": "Empty arguments",
                             "arguments": {}
                          }]`
 		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
@@ -107,7 +107,7 @@ func TestRpsPullerEmptyResponse(t *testing.T) {
 		// missing arguments
 		json = `[{
                             "result": 0,
-                            "text": "Everything is fine",
+                            "text": "No Arguments",
                         }]`
 		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[1])
 	}
@@ -129,11 +129,12 @@ func TestRpsPullerEmptyResponse(t *testing.T) {
 }
 
 // Check if pulling stats works.
-func TestRpsPullerTomsPullRps(t *testing.T) {
+func TestRpsPullerPullRps(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// prepare fake agents
+	// Prepare fake agents. They will return an incremented statisic value with
+	// each subsequent call.  We don't bother about the timestamps, they are not used.
 	keaMock := func(callNo int, cmdResponses []interface{}) {
 		// DHCPv4
 		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
@@ -206,7 +207,7 @@ func TestRpsPullerTomsPullRps(t *testing.T) {
 	require.NotEqual(t, nil, current4)
 	require.Equal(t, int64(10), current4.Value)
 	// The current recorded time should be two seconds later than the previous time.
-	require.GreaterOrEqual(t, int64(2), (current4.SampledAt.Unix() - previous4.SampledAt.Unix()))
+	require.GreaterOrEqual(t, (current4.SampledAt.Unix() - previous4.SampledAt.Unix()), int64(2))
 
 	// Row 2 should be dhcp6 daemon, it should have an RPS value of 14
 	current6 := sp.PreviousRps[2]

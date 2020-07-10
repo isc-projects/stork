@@ -19,6 +19,7 @@ type RpsInterval struct {
 func GetAllRpsIntervals(db *pg.DB) ([]*RpsInterval, error) {
 	rpsIntervals := []*RpsInterval{}
 	q := db.Model(&rpsIntervals)
+	q = q.Order("kea_daemon_id", "start_time")
 	err := q.Select()
 	if err != nil {
 		return nil, errors.Wrapf(err, "problem with getting all RPS intervals")
@@ -27,11 +28,46 @@ func GetAllRpsIntervals(db *pg.DB) ([]*RpsInterval, error) {
 	return rpsIntervals, nil
 }
 
+// Returns an array of the total RPS per daemon within a given time frame
+// One element per daemon, ordered by daemon id where:
+// RpsInterval.StartTime = 0 (unused)
+// RpsInterval.Responses = total of number of responses
+// RpsInterval.Duration = total of the interval durations
+func GetTotalRpsOverInterval(db *pg.DB, startTime time.Time, endTime time.Time) ([]*RpsInterval, error) {
+	rpsTotals := []*RpsInterval{}
+
+	q := db.Model(&rpsTotals)
+	q = q.Column("kea_daemon_id")
+	q = q.ColumnExpr("sum(responses) as responses")
+	q = q.ColumnExpr("sum(duration) as duration")
+	q = q.Order("kea_daemon_id")
+	q = q.Group("kea_daemon_id")
+	q = q.Where("start_time >= ? and start_time <= ?", startTime, endTime)
+
+	err := q.Select()
+	if err != nil {
+		return nil, errors.Wrapf(err, "problem with getting all RPS intervals")
+	}
+
+	return rpsTotals, nil
+}
+
 // Add an interval to the database
 func AddRpsInterval(db *pg.DB, rpsInterval *RpsInterval) error {
 	err := db.Insert(rpsInterval)
 	if err != nil {
 		err = errors.Wrapf(err, "problem with inserting rpsInterval %+v", rpsInterval)
+	}
+	return err
+}
+
+// Delete all records whose start_time is older than a given time
+func AgeOffRpsInterval(db *pg.DB, startTime time.Time) error {
+	// Delete records.
+	_, err := db.Model(&RpsInterval{}).Where("start_time < ?", startTime).Delete()
+
+	if err == nil {
+		err = errors.Wrapf(err, "problem with deleting from rpsInterval")
 	}
 	return err
 }
