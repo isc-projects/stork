@@ -35,6 +35,10 @@ const (
 	qryRTT    = "QryRTT"
 )
 
+type PromBind9TrafficStats struct {
+	SizeCount map[string]float64
+}
+
 type PromBind9ViewStats struct {
 	ResolverCache      map[string]float64
 	ResolverCachestats map[string]float64
@@ -51,6 +55,7 @@ type PromBind9ExporterStats struct {
 	IncomingRequests map[string]float64
 	NsStats          map[string]float64
 	TaskMgr          map[string]float64
+	TrafficStats     map[string]PromBind9TrafficStats
 	Views            map[string]PromBind9ViewStats
 }
 
@@ -64,12 +69,13 @@ type PromBind9Exporter struct {
 	HTTPClient *HTTPClient
 	HTTPServer *http.Server
 
-	up              int
-	procID          int32
-	procExporter    prometheus.Collector
-	Registry        *prometheus.Registry
-	serverStatsDesc map[string]*prometheus.Desc
-	viewStatsDesc   map[string]*prometheus.Desc
+	up               int
+	procID           int32
+	procExporter     prometheus.Collector
+	Registry         *prometheus.Registry
+	serverStatsDesc  map[string]*prometheus.Desc
+	trafficStatsDesc map[string]*prometheus.Desc
+	viewStatsDesc    map[string]*prometheus.Desc
 
 	stats PromBind9ExporterStats
 }
@@ -84,6 +90,7 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 
 	// bind_exporter stats
 	serverStatsDesc := make(map[string]*prometheus.Desc)
+	trafficStatsDesc := make(map[string]*prometheus.Desc)
 	viewStatsDesc := make(map[string]*prometheus.Desc)
 
 	// boot_time_seconds
@@ -127,6 +134,78 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	serverStatsDesc["ReqTCP"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_requests_tcp"),
 		"Number of incoming TCP requests.",
+		nil, nil)
+
+	// traffic_incoming_requests_udp4_size_bucket
+	// traffic_incoming_requests_udp4_size_count
+	// traffic_incoming_requests_udp4_size_sum
+	trafficStatsDesc["dns-udp-requests-sizes-received-ipv4"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "traffic_incoming_requests_udp4_size"),
+		"Size of DNS requests (UDP/IPv4).",
+		nil, nil)
+	// traffic_incoming_requests_udp6_size_bucket
+	// traffic_incoming_requests_udp6_size_count
+	// traffic_incoming_requests_udp6_size_sum
+	trafficStatsDesc["dns-udp-requests-sizes-received-ipv6"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "traffic_incoming_requests_udp6_size"),
+		"Size of DNS requests (UDP/IPv6).",
+		nil, nil)
+	// traffic_incoming_requests_tcp4_size_bucket
+	// traffic_incoming_requests_tcp4_size_count
+	// traffic_incoming_requests_tcp4_size_sum
+	trafficStatsDesc["dns-tcp-requests-sizes-received-ipv4"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "traffic_incoming_requests_tcp4_size"),
+		"Size of DNS requests (TCP/IPv4).",
+		nil, nil)
+	// traffic_incoming_requests_tcp6_size_bucket
+	// traffic_incoming_requests_tcp6_size_count
+	// traffic_incoming_requests_tcp6_size_sum
+	trafficStatsDesc["dns-tcp-requests-sizes-received-ipv6"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "traffic_incoming_requests_tcp6_size"),
+		"Size of DNS requests (UDP/IPv4).",
+		nil, nil)
+	// traffic_incoming_requests_total_size_bucket
+	// traffic_incoming_requests_total_size_count
+	// traffic_incoming_requests_total_size_sum
+	trafficStatsDesc["dns-total-requests-sizes-sent"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "traffic_incoming_requests_total_size"),
+		"Size of DNS requests (any transport).",
+		nil, nil)
+
+	// traffic_responses_udp4_size_bucket
+	// traffic_responses_udp4_size_count
+	// traffic_responses_udp4_size_sum
+	trafficStatsDesc["dns-udp-responses-sizes-sent-ipv4"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "traffic_responses_udp4_size"),
+		"Size of DNS responses (UDP/IPv4).",
+		nil, nil)
+	// traffic_responses_udp6_size_bucket
+	// traffic_responses_udp6_size_count
+	// traffic_responses_udp6_size_sum
+	trafficStatsDesc["dns-udp-responses-sizes-sent-ipv6"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "traffic_responses_udp6_size"),
+		"Size of DNS responses (UDP/IPv6).",
+		nil, nil)
+	// traffic_responses_tcp4_size_bucket
+	// traffic_responses_tcp4_size_count
+	// traffic_responses_tcp4_size_sum
+	trafficStatsDesc["dns-tcp-responses-sizes-sent-ipv4"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "traffic_responses_tcp4_size"),
+		"Size of DNS responses (TCP/IPv4).",
+		nil, nil)
+	// traffic_responses_tcp6_size_bucket
+	// traffic_responses_tcp6_size_count
+	// traffic_responses_tcp6_size_sum
+	trafficStatsDesc["dns-tcp-responses-sizes-sent-ipv6"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "traffic_responses_tcp6_size"),
+		"Size of DNS responses (TCP/IPv6).",
+		nil, nil)
+	// traffic_responses_total_size_bucket
+	// traffic_responses_total_size_count
+	// traffic_responses_total_size_sum
+	trafficStatsDesc["dns-total-responses-sizes-sent"] = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "traffic_responses_total_size"),
+		"Size of DNS responses (any transport).",
 		nil, nil)
 
 	// query_duplicates_total
@@ -287,6 +366,7 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 		nil, nil)
 
 	pbe.serverStatsDesc = serverStatsDesc
+	pbe.trafficStatsDesc = trafficStatsDesc
 	pbe.viewStatsDesc = viewStatsDesc
 
 	incomingQueries := make(map[string]float64)
@@ -378,6 +458,55 @@ func (pbe *PromBind9Exporter) qryRTTHistogram(stats map[string]float64) (uint64,
 			}
 			buckets[bucket/1000] = uint64(statValue)
 		}
+	}
+
+	// cumulative count
+	keys := make([]float64, 0, len(buckets))
+	for b := range buckets {
+		keys = append(keys, b)
+	}
+	sort.Float64s(keys)
+
+	var count uint64
+	for _, k := range keys {
+		count += buckets[k]
+		buckets[k] = count
+	}
+
+	return count, math.NaN(), buckets, nil
+}
+
+// trafficSizesHistrogram collects a histogram from the traffic statistics.
+// Size buckets are in bytes, for example bucket[47] stores how many packets
+// were at most 47 bytes long (cumulative counter).  The total sum of all
+// observed values is exposed with sum, but since named does not output the
+// actual sizes, this is not applicable. The count of events that have been
+// observed is exposed with count and is identical to bucket[+Inf].
+func (pbe *PromBind9Exporter) trafficSizesHistogram(stats map[string]float64) (uint64, float64, map[float64]uint64, error) {
+	buckets := map[float64]uint64{}
+
+	for statName, statValue := range stats {
+		// Find all traffic statistics.
+		var bucket float64
+		var err error
+		if strings.HasSuffix(statName, "+") {
+			bucket = math.Inf(0)
+		} else {
+			// The statistic name is of the format:
+			//    <sizeMin>-<sizeMax>
+			// Fetch the maximum size and put in corresponding
+			// bucket.
+			sizes := strings.SplitAfter(statName, "-")
+			if len(sizes) != 2 {
+				// bad format
+				continue
+			}
+			bucket, err = strconv.ParseFloat(sizes[1], 64)
+			if err != nil {
+				return 0, math.NaN(), buckets, fmt.Errorf("could not parse size: %s", sizes[1])
+			}
+		}
+		buckets[bucket] = uint64(statValue)
 	}
 
 	// cumulative count
@@ -576,6 +705,26 @@ func (pbe *PromBind9Exporter) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(
 			pbe.serverStatsDesc[label],
 			prometheus.CounterValue, value)
+	}
+
+	// Traffic metrics.
+
+	// traffic_incoming_requests_udp4_size_{bucket,count,sum}
+	// traffic_incoming_requests_udp6_size_{bucket,count,sum}
+	// traffic_incoming_requests_tcp4_size_{bucket,count,sum}
+	// traffic_incoming_requests_tcp6_size_{bucket,count,sum}
+	// traffic_incoming_requests_total_size_{bucket,count,sum}
+	// traffic_responses_udp4_size_{bucket,count,sum}
+	// traffic_responses_udp6_size_{bucket,count,sum}
+	// traffic_responses_tcp4_size_{bucket,count,sum}
+	// traffic_responses_tcp6_size_{bucket,count,sum}
+	// traffic_responses_total_size_{bucket,count,sum}
+	for label, trafficStats := range pbe.stats.TrafficStats {
+		if count, sum, buckets, err := pbe.trafficSizesHistogram(trafficStats.SizeCount); err == nil {
+			ch <- prometheus.MustNewConstHistogram(
+				pbe.trafficStatsDesc[label],
+				count, sum, buckets)
+		}
 	}
 
 	// View metrics.
@@ -961,6 +1110,37 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	if err != nil {
 		return errors.Errorf("problem with parsing 'nsstats': %+v", err)
 	}
+
+	// Parse traffic stats.
+	trafficIfc, ok := rsp["traffic"]
+	if !ok {
+		return errors.Errorf("no 'traffic' in response: %+v", rsp)
+	}
+	traffic := trafficIfc.(map[string]interface{})
+	if !ok {
+		return errors.Errorf("problem with casting trafficIfc: %+v", trafficIfc)
+	}
+	trafficMap := make(map[string]PromBind9TrafficStats)
+	for trafficName, trafficStatsIfc := range traffic {
+		sizeCounts := make(map[string]float64)
+		trafficStats, ok := trafficStatsIfc.(map[string]interface{})
+		if !ok {
+			return errors.Errorf("problem with casting '%s' interface", trafficName)
+		}
+		for labelName, labelValueIfc := range trafficStats {
+			// get value
+			labelValue, ok := labelValueIfc.(float64)
+			if !ok {
+				continue
+			}
+			// store stat value
+			sizeCounts[labelName] = labelValue
+		}
+		trafficMap[trafficName] = PromBind9TrafficStats{
+			SizeCount: sizeCounts,
+		}
+	}
+	pbe.stats.TrafficStats = trafficMap
 
 	// Parse views.
 	viewsIfc, ok := rsp["views"]

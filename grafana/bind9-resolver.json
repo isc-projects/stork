@@ -23,6 +23,12 @@
       "version": ""
     },
     {
+      "type": "panel",
+      "id": "heatmap",
+      "name": "Heatmap",
+      "version": ""
+    },
+    {
       "type": "datasource",
       "id": "prometheus",
       "name": "Prometheus",
@@ -47,7 +53,7 @@
   "gnetId": 1666,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1594282813791,
+  "iteration": 1594389643114,
   "links": [],
   "panels": [
     {
@@ -701,8 +707,8 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 7,
-        "w": 8,
+        "h": 9,
+        "w": 12,
         "x": 0,
         "y": 10
       },
@@ -792,102 +798,9 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 8,
-        "y": 10
-      },
-      "hiddenSeries": false,
-      "id": 8,
-      "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": true,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "increase(bind_responses_total{instance=~\"$instance\"}[120s])",
-          "intervalFactor": 2,
-          "legendFormat": "{{ result }} ({{ instance }})",
-          "refId": "A",
-          "step": 4,
-          "target": ""
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Response Results",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
+        "h": 9,
+        "w": 12,
+        "x": 12,
         "y": 10
       },
       "hiddenSeries": false,
@@ -984,13 +897,201 @@
       }
     },
     {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "hiddenSeries": false,
+      "id": 8,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "increase(bind_responses_total{instance=~\"$instance\"}[120s])",
+          "intervalFactor": 2,
+          "legendFormat": "{{ result }} ({{ instance }})",
+          "refId": "A",
+          "step": 4,
+          "target": ""
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Response Results",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#FADE2A",
+        "colorScale": "linear",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "max": null,
+        "min": 0,
+        "mode": "opacity"
+      },
+      "dataFormat": "tsbuckets",
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "DNS response sizes",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
+      "id": 38,
+      "legend": {
+        "show": false
+      },
+      "maxPerRow": null,
+      "options": {},
+      "repeat": null,
+      "repeatDirection": "h",
+      "reverseYBuckets": false,
+      "targets": [
+        {
+          "expr": "sum(increase(bind_traffic_responses_udp4_size_bucket{instance=~\"$instance\"}[120s])) by (le)",
+          "format": "heatmap",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "{{ le }}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(bind_traffic_responses_udp6_size_bucket{instance=~\"$instance\"}[120s])) by (le)",
+          "format": "heatmap",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "{{ le }}",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(increase(bind_traffic_responses_tcp4_size_bucket{instance=~\"$instance\"}[120s])) by (le)",
+          "format": "heatmap",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "{{ le }}",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(increase(bind_traffic_responses_tcp6_size_bucket{instance=~\"$instance\"}[120s])) by (le)",
+          "format": "heatmap",
+          "hide": false,
+          "intervalFactor": 2,
+          "legendFormat": "{{ le }}",
+          "refId": "D"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Response Sizes",
+      "tooltip": {
+        "show": true,
+        "showHistogram": true
+      },
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": null,
+        "format": "bytes",
+        "logBase": 1,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
+    },
+    {
       "collapsed": false,
       "datasource": "${DS_PROMETHEUS}",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 27
       },
       "id": 22,
       "panels": [],
@@ -1011,7 +1112,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 28
       },
       "hiddenSeries": false,
       "id": 31,
@@ -1040,7 +1141,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "increase(bind_resolver_query_hits[120s])",
+          "expr": "increase(bind_resolver_query_hits{instance=~\"$instance\"}[120s])",
           "legendFormat": "{{ view }} / {{ instance }}",
           "refId": "A"
         }
@@ -1099,7 +1200,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 28
       },
       "hiddenSeries": false,
       "id": 33,
@@ -1128,7 +1229,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "increase(bind_resolver_query_misses[120s])",
+          "expr": "increase(bind_resolver_query_misses{instance=~\"$instance\"}[120s])",
           "legendFormat": "{{ view }} / {{ instance }}",
           "refId": "A"
         }
@@ -1187,7 +1288,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 26
+        "y": 36
       },
       "hiddenSeries": false,
       "id": 29,
@@ -1216,7 +1317,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg_over_time(bind_resolver_query_hit_ratio[120s])",
+          "expr": "avg_over_time(bind_resolver_query_hit_ratio{instance=~\"$instance\"}[120s])",
           "legendFormat": "{{ view }} ({{ instance }})",
           "refId": "A"
         }
@@ -1275,7 +1376,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 26
+        "y": 36
       },
       "hiddenSeries": false,
       "id": 10,
@@ -1361,7 +1462,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 44
       },
       "id": 23,
       "panels": [],
@@ -1381,7 +1482,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 35
+        "y": 45
       },
       "hiddenSeries": false,
       "id": 11,
@@ -1480,7 +1581,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 35
+        "y": 45
       },
       "hiddenSeries": false,
       "id": 15,
@@ -1584,93 +1685,70 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
+      "cards": {
+        "cardPadding": null,
+        "cardRound": null
+      },
+      "color": {
+        "cardColor": "#F2495C",
+        "colorScale": "linear",
+        "colorScheme": "interpolateOranges",
+        "exponent": 0.5,
+        "min": 0,
+        "mode": "opacity"
+      },
+      "dataFormat": "tsbuckets",
       "datasource": "${DS_PROMETHEUS}",
       "description": "How long it took to resolve the query",
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 42
+        "y": 52
       },
-      "hiddenSeries": false,
+      "heatmap": {},
+      "hideZeroBuckets": false,
+      "highlightCards": true,
       "id": 35,
       "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
+        "show": false
       },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "options": {},
+      "reverseYBuckets": false,
       "targets": [
         {
-          "expr": "increase(bind_resolver_query_duration_seconds_bucket{instance=~\"$instance\"}[120s])",
-          "intervalFactor": 2,
-          "legendFormat": "{{ instance }} / {{ le }}",
+          "expr": "sum(increase(bind_resolver_query_duration_seconds_bucket{instance=~\"$instance\"}[120s])) by (le)",
+          "format": "heatmap",
+          "intervalFactor": 1,
+          "legendFormat": "{{ le }}",
           "refId": "A"
         }
       ],
-      "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
       "title": "Query by Duration",
       "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
         "show": true,
-        "values": []
+        "showHistogram": true
       },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "heatmap",
+      "xAxis": {
+        "show": true
+      },
+      "xBucketNumber": null,
+      "xBucketSize": null,
+      "yAxis": {
+        "decimals": null,
+        "format": "µs",
+        "logBase": 1,
+        "max": null,
+        "min": null,
+        "show": true,
+        "splitFactor": null
+      },
+      "yBucketBound": "auto",
+      "yBucketNumber": null,
+      "yBucketSize": null
     },
     {
       "aliasColors": {},
@@ -1684,7 +1762,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 42
+        "y": 52
       },
       "hiddenSeries": false,
       "id": 13,
@@ -1847,5 +1925,5 @@
   "timezone": "browser",
   "title": "Stork Bind DNS",
   "uid": "QJCfAiCZk",
-  "version": 2
+  "version": 7
 }
