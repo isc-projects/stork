@@ -1,3 +1,8 @@
+* 79 [ui] vicky, tomek, marcin
+
+    Added explicit link to DHCP dashboard.
+    (Gitlab #280)
+
 * 78 [bug] godfryd
 
     Fixed crashes when empty requests were sent to ReST API endpoints
@@ -558,5 +563,6 @@ LEGEND
           fix except that it will be handled as confidential and will cause
  	      security patch releases.
 * [perf]  Performance related change.
+* [ui]    User Interface change.
 
 *: Backward incompatible or operational change.
