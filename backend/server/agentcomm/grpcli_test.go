@@ -409,3 +409,30 @@ func TestForwardRndcCommand(t *testing.T) {
 
 	require.Zero(t, appCommStats.CurrentErrorsRNDC)
 }
+
+// Test the gRPC call which fetches the tail of the specified text file.
+func TestTailTextFile(t *testing.T) {
+	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
+	defer teardown()
+
+	rsp := agentapi.TailTextFileRsp{
+		Status: &agentapi.Status{
+			Code: 0,
+		},
+		Lines: []string{
+			"Text returned by",
+			"mock agent client",
+		},
+	}
+
+	mockAgentClient.EXPECT().TailTextFile(gomock.Any(), gomock.Any()).
+		Return(&rsp, nil)
+
+	ctx := context.Background()
+	tail, err := agents.TailTextFile(ctx, "127.0.0.1", 8080, "/tmp/log.txt", -2, 2)
+	require.NoError(t, err)
+	require.Len(t, tail, 2)
+
+	require.Equal(t, "Text returned by", tail[0])
+	require.Equal(t, "mock agent client", tail[1])
+}

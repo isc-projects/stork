@@ -1,11 +1,13 @@
 package agent
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -252,6 +254,36 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 		response.KeaResponses = append(response.KeaResponses, rsp)
 	}
 
+	return response, nil
+}
+
+// Returns the tail of the specified file, typically a log file.
+func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFileReq) (*agentapi.TailTextFileRsp, error) {
+	response := &agentapi.TailTextFileRsp{
+		Status: &agentapi.Status{
+			Code: agentapi.Status_OK, // all ok
+		},
+	}
+
+	f, err := os.Open(in.Path)
+	if err != nil {
+		response.Status.Code = agentapi.Status_ERROR
+		response.Status.Message = "Failed to open file for tailing"
+		return response, err
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	_, err = f.Seek(in.Offset, int(in.Whence))
+	if err != nil {
+		response.Status.Code = agentapi.Status_ERROR
+		response.Status.Message = "Failed to seek in the file opened for tailing"
+		return response, err
+	}
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		response.Lines = append(response.Lines, s.Text())
+	}
 	return response, nil
 }
 

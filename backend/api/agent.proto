@@ -17,6 +17,9 @@ service Agent {
 
   // Forward commands (one or more) to Kea Control Agent and return results.
   rpc ForwardToKeaOverHTTP(ForwardToKeaOverHTTPReq) returns (ForwardToKeaOverHTTPRsp) {}
+
+  // Get the tail of the specified file, typically a log file.
+  rpc TailTextFile(TailTextFileReq) returns (TailTextFileRsp) {}
 }
 
 
@@ -160,4 +163,23 @@ message ForwardToNamedStatsRsp {
   Status status = 1;
 
   NamedStatsResponse namedStatsResponse = 2;
+}
+
+// Log file tailing request
+message TailTextFileReq {
+  // File to be tailed.
+  string path = 1;
+
+  // Seek info.
+  int64 offset = 2;
+  int64 whence = 3;
+}
+
+// Log file tailing response
+message TailTextFileRsp {
+  // Call execution status.
+  Status status = 1;
+
+  // Array of lines.
+  repeated string lines = 2;
 }

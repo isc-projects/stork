@@ -62,6 +62,8 @@ func doCall(ctx context.Context, agent *Agent, in interface{}) (interface{}, err
 		response, err = agent.Client.ForwardToNamedStats(ctx, inData)
 	case *agentapi.ForwardToKeaOverHTTPReq:
 		response, err = agent.Client.ForwardToKeaOverHTTP(ctx, inData)
+	case *agentapi.TailTextFileReq:
+		response, err = agent.Client.TailTextFile(ctx, inData)
 	default:
 		err = errors.New("doCall: unsupported request type")
 	}

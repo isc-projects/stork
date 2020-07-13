@@ -513,3 +513,31 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, age
 	// Everything was fine, so return no error.
 	return result, nil
 }
+
+// Get the tail of the remote text file.
+func (agents *connectedAgentsData) TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset, whence int64) ([]string, error) {
+	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
+
+	// Get the path to the file and the (seek) info indicating the location
+	// from which the tail should be fetched.
+	req := &agentapi.TailTextFileReq{
+		Path:   path,
+		Offset: offset,
+		Whence: whence,
+	}
+
+	// Send the request via queue.
+	agentResponse, err := agents.sendAndRecvViaQueue(addrPort, req)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"agent": addrPort,
+			"file":  path,
+		}).Warnf("failed to fetch text file contents")
+
+		return []string{}, errors.Wrapf(err, "failed to fetch text file contents: %s", path)
+	}
+
+	response := agentResponse.(*agentapi.TailTextFileRsp)
+
+	return response.Lines, nil
+}

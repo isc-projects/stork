@@ -162,3 +162,8 @@ func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, agentAddress strin
 
 	return nil, nil
 }
+
+// Mimics tailing text file.
+func (fa *FakeAgents) TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset, whence int64) ([]string, error) {
+	return []string{"lorem ipsum"}, nil
+}

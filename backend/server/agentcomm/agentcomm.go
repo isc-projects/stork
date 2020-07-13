@@ -83,6 +83,7 @@ type ConnectedAgents interface {
 	ForwardRndcCommand(ctx context.Context, agentAddress string, agentPort int64, rndcSettings Bind9Control, command string) (*RndcOutput, error)
 	ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
 	ForwardToKeaOverHTTP(ctx context.Context, agentAddress string, agentPort int64, caAddress string, caPort int64, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
+	TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset, whence int64) ([]string, error)
 }
 
 // Agents management map. It tracks Agents currently connected to the Server.

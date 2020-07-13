@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strings"
@@ -438,6 +439,36 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, agentapi.Status_OK, rsp.Status.Code)
 	require.Empty(t, rsp.Status.Message)
+}
+
+// Test that the tail of the text file can be fetched.
+func TestTailTextFile(t *testing.T) {
+	sa, ctx := setupAgentTest(mockRndc)
+
+	filename := fmt.Sprintf("test%d.log", rand.Int63())
+	f, err := os.Create(filename)
+	require.NoError(t, err)
+	defer func() {
+		_ = os.Remove(filename)
+	}()
+
+	fmt.Fprintln(f, "This is a file")
+	fmt.Fprintln(f, "which is used")
+	fmt.Fprintln(f, "in testing CatTextFile")
+
+	// Forward the request with the expected body.
+	req := &agentapi.TailTextFileReq{
+		Offset: -37,
+		Whence: 2,
+		Path:   filename,
+	}
+
+	rsp, err := sa.TailTextFile(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.Len(t, rsp.Lines, 2)
+	require.Equal(t, "which is used", rsp.Lines[0])
+	require.Equal(t, "in testing CatTextFile", rsp.Lines[1])
 }
 
 // Aux function checks if a list of expected strings is present in the string
