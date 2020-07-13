@@ -55,7 +55,7 @@ export class AppComponent implements OnInit {
                     {
                         label: 'DHCP Dashboard',
                         icon: 'fa fa-tachometer-alt',
-                        routerLink: '/',
+                        routerLink: '/dashboard',
                     },
                     {
                         label: 'Hosts',

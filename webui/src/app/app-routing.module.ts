@@ -19,6 +19,11 @@ import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.componen
 const routes: Routes = [
     {
         path: '',
+        pathMatch: 'full',
+        redirectTo: 'dashboard'
+    },
+    {
+        path: 'dashboard',
         component: DashboardComponent,
         canActivate: [AuthGuard],
     },
