@@ -53,9 +53,9 @@ export class AppComponent implements OnInit {
                 visible: false,
                 items: [
                     {
-                        label: 'Dashboard',
-                        icon: 'fa fa-stethoscope',
-                        routerLink: '',
+                        label: 'DHCP Dashboard',
+                        icon: 'fa fa-tachometer-alt',
+                        routerLink: '/',
                     },
                     {
                         label: 'Hosts',
