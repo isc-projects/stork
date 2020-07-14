@@ -188,4 +188,17 @@ export class KeaAppTabComponent implements OnInit {
     daemonStatusErrorText(daemon) {
         return daemonStatusIconTooltip(daemon)
     }
+
+    /**
+     * Checks if the specified log target can be viewed
+     *
+     * Only the logs that are stored in the file can be viewed in Stork. The
+     * logs output to stdout, stderr or syslog can't be viewed in Stork.
+     *
+     * @param target log target output location
+     * @returns true if the log target can be viewed, false otherwise.
+     */
+    logTargetViewable(target): boolean {
+        return target !== 'stdout' && target !== 'stderr' && !target.startsWith('syslog')
+    }
 }
