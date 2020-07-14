@@ -620,6 +620,7 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 
 			for _, logTarget := range d.LogTargets {
 				dmn.LogTargets = append(dmn.LogTargets, &models.LogTarget{
+					ID:       logTarget.ID,
 					Name:     logTarget.Name,
 					Severity: logTarget.Severity,
 					Output:   logTarget.Output,
