@@ -11,6 +11,37 @@
       output:
         type: string
 
+  LogTail:
+    type: object
+    required:
+      - logTargetOutput
+      - agentAddress
+      - agentPort
+      - appId
+      - appType
+      - contents
+    properties:
+      logTargetOutput:
+        readOnly: true
+        type: string
+      agentAddress:
+        readOnly: true
+        type: string
+      agentPort:
+        readOnly: true
+        type: integer
+      appId:
+        readOnly: true
+        type: integer
+      appType:
+        readOnly: true
+        type: string
+      contents:
+        readOnly: true
+        type: array
+        items:
+          type: string
+
   Machine:
     type: object
     required:

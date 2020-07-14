@@ -235,3 +235,28 @@
           description: generic error response
           schema:
             $ref: '#/definitions/ApiError'
+
+  /logs/{id}:
+    get:
+      summary: Gets the tail of the given log file.
+      description: >-
+        Returns the tail of the specified log file. It is possible to specify the offset
+        from which the log should be returned.
+      operationId: getLogTail
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Log file identifier in the database.
+      responses:
+        200:
+          description: Tail of the log file returned successfully.
+          schema:
+            $ref: '#/definitions/LogTail'
+        default:
+          description: generic error reesponse
+          schema:
+            $ref: '#/definitions/ApiError'
