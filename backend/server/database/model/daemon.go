@@ -16,16 +16,6 @@ const (
 	DaemonNameDHCPv6 = "dhcp6"
 )
 
-// A structure reflecting information about a logger used by a daemon.
-type LogTarget struct {
-	ID        int64 // Logger ID
-	DaemonID  int64
-	Name      string
-	Severity  string
-	Output    string
-	CreatedAt time.Time
-}
-
 // KEA
 
 // A structure reflecting Kea DHCP stats for daemon. It is stored
