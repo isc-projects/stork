@@ -109,14 +109,14 @@
                                 </tr>
                             </table>
                         </div>
-                        <div *ngIf="daemon.active" class="p-col-8">
+                        <div *ngIf="daemon.active" class="p-col-7">
                             <h4 style="margin-top: 2px;">Loggers</h4>
                             <p-table [value]="daemon.logTargets">
                                 <ng-template pTemplate="header">
                                     <tr>
                                         <th style="width: 20rem;">Logger</th>
                                         <th style="width: 10rem;">Severity</th>
-                                        <th>Output Location</th>
+                                        <th style="width: 30rem;">Output Location</th>
                                     </tr>
                                 </ng-template>
                                 <ng-template pTemplate="body" let-logTarget>
