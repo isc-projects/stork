@@ -8,6 +8,10 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
+// Current schema version. This value must be bumped up every
+// time the schema is updated.
+const expectedSchemaVersion int64 = 26
+
 // Common function which tests a selected migration action.
 func testMigrateAction(t *testing.T, db *dbops.PgDB, expectedOldVersion, expectedNewVersion int64, action ...string) {
 	oldVersion, newVersion, err := dbops.Migrate(db, action...)
@@ -87,7 +91,7 @@ func TestAvailableVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	avail := dbops.AvailableVersion()
-	require.GreaterOrEqual(t, avail, int64(26))
+	require.Equal(t, avail, expectedSchemaVersion)
 }
 
 // Test that current version is returned from the database.
