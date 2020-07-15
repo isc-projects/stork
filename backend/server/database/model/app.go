@@ -175,7 +175,12 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 
 		// Insert or update log targets.
 		for i := range daemon.LogTargets {
+			// If the log target has no id yet, it means that it is not yet
+			// present in the database and should be inserted. Otherwise,
+			// it is updated.
 			if daemon.LogTargets[i].ID == 0 {
+				// Make sure that the inserted log target is linked with the
+				// daemon.
 				daemon.LogTargets[i].DaemonID = daemon.ID
 				_, err = tx.Model(daemon.LogTargets[i]).Insert()
 			} else {
