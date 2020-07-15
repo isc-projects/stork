@@ -147,7 +147,7 @@ export class LogViewPageComponent implements OnInit {
      *
      * @returns name of the color in which the message with the given severity should
      *          be highlighted, i.e. red for fatal and error messages, orange for
-     *          warnings and white for other error messages.
+     *          warnings, cyan for info and white for other error messages.
      */
     logSeverityColor(block) {
         switch (block) {
@@ -156,6 +156,8 @@ export class LogViewPageComponent implements OnInit {
                 return 'red'
             case 'WARN':
                 return 'orange'
+            case 'INFO':
+                return 'cyan'
             default:
                 return 'white'
         }
