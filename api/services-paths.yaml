@@ -251,6 +251,11 @@
           type: integer
           required: true
           description: Log file identifier in the database.
+        - in: query
+          name: maxLength
+          type: integer
+          required: false
+          description: Maximum length of the data fetched.
       responses:
         200:
           description: Tail of the log file returned successfully.

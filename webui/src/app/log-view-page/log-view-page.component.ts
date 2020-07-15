@@ -22,6 +22,9 @@ import { ServicesService } from '../backend/api/api'
 export class LogViewPageComponent implements OnInit {
     panelTitle = 'Loading....'
 
+    maxLengthChunk = 4000
+    maxLength = this.maxLengthChunk
+
     appId: number
     appType: string
     appTypeCapitalized: string
@@ -68,7 +71,7 @@ export class LogViewPageComponent implements OnInit {
      */
     fetchLogTail() {
         this.loaded = false
-        this.servicesApi.getLogTail(this.logId).subscribe(
+        this.servicesApi.getLogTail(this.logId, this.maxLength).subscribe(
             (data) => {
                 // Set panel title.
                 this.panelTitle = data.logTargetOutput
@@ -122,6 +125,29 @@ export class LogViewPageComponent implements OnInit {
                 })
             }
         )
+    }
+
+    /**
+     * Increases the size of the log to be fetched and re-fetches the log.
+     *
+     * This action is triggered when the plus button is clicked.
+     */
+    fetchMoreLog() {
+        this.maxLength += this.maxLengthChunk
+        this.fetchLogTail()
+    }
+
+    /**
+     * Decreases the size of the log to be fetched and re-fetches the log.
+     *
+     * This action is triggered when the plus button is clicked. The action is
+     * no-op if the max length is already equal or less than 4000 bytes.
+     */
+    fetchLessLog() {
+        if (this.maxLength > this.maxLengthChunk) {
+            this.maxLength -= this.maxLengthChunk
+            this.fetchLogTail()
+        }
     }
 
     /**

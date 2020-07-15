@@ -49,9 +49,15 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 		return rsp
 	}
 
+	// Set the maximum length of the data fetched. Default is 4000 bytes.
+	maxLength := int64(4000)
+	if params.MaxLength != nil {
+		maxLength = *params.MaxLength
+	}
+
 	// Send the request to the agent to tail the file.
 	contents, err := r.Agents.TailTextFile(ctx, dbLogTarget.Daemon.App.Machine.Address,
-		dbLogTarget.Daemon.App.Machine.AgentPort, dbLogTarget.Output, -4000, 2)
+		dbLogTarget.Daemon.App.Machine.AgentPort, dbLogTarget.Output, -maxLength, 2)
 	if err != nil {
 		msg := fmt.Sprintf("cannot tail the log file with id %d", params.ID)
 		rsp := services.NewGetLogTailDefault(http.StatusInternalServerError).WithPayload(&models.APIError{

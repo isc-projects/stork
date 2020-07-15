@@ -11,13 +11,34 @@
             <span class="ui-panel-title" style="margin-top: 5px; display: inline-block;">
                 {{ panelTitle }}
             </span>
-            <p-button icon="pi pi-refresh" (click)="fetchLogTail()"></p-button>
+            <span>
+                <p-button
+                    style="margin-left: 5px;"
+                    icon="pi pi-plus"
+                    pTooltip="Fetch and present more logs."
+                    (click)="fetchMoreLog()"
+                ></p-button>
+                <p-button
+                    style="margin-left: 5px;"
+                    icon="pi pi-minus"
+                    pTooltip="Fetch and present less logs."
+                    [disabled]="maxLength <= maxLengthChunk"
+                    (click)="fetchLessLog()"
+                ></p-button>
+                <p-button
+                    style="margin-left: 5px;"
+                    icon="pi pi-refresh"
+                    pTooltip="Refresh logs without changing the length of the presented data."
+                    (click)="fetchLogTail()"
+                ></p-button>
+            </span>
         </div>
     </p-header>
-    <div *ngIf="contents && contents.length > 0">...</div>
+    <div *ngIf="loaded && (!contents || contents.length === 0)">(empty)</div>
+    <div *ngIf="contents && contents.length > 1">...</div>
     <div *ngFor="let line of contents; let i = index">
         <span *ngFor="let block of parseLogLine(line)" style="color:{{ logSeverityColor(block) }}">
-            {{ i > 0 ? block : '' }}
+            {{ i > 0 || contents.length === 1 ? block : '' }}
         </span>
     </div>
 
@@ -28,4 +49,15 @@
         fill="#000000"
         animationDuration=".5s"
     ></p-progressSpinner>
+
+    <p-footer>
+        <div style="display: flex; justify-content: right;">
+            <p-button
+                style="margin-left: 5px;"
+                icon="pi pi-refresh"
+                pTooltip="Refresh logs without changing the length of the presented data."
+                (click)="fetchLogTail()"
+            ></p-button>
+        </div>
+    </p-footer>
 </p-panel>
