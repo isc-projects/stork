@@ -117,7 +117,7 @@ export class LogViewPageComponent implements OnInit {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Unable to get log file',
-                    detail: 'Getting log with ID ' + this.appId + ' erred: ' + msg,
+                    detail: 'Getting log with ID ' + this.logId + ' erred: ' + msg,
                     life: 10000,
                 })
             }
