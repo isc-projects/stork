@@ -29,7 +29,7 @@
                     style="margin-left: 5px;"
                     icon="pi pi-refresh"
                     pTooltip="Refresh logs without changing the length of the presented data."
-                    (click)="fetchLogTail()"
+                    (click)="refreshLog()"
                 ></p-button>
             </span>
         </div>
@@ -51,12 +51,12 @@
     ></p-progressSpinner>
 
     <p-footer>
-        <div style="display: flex; justify-content: right;">
+        <div style="display: flex; justify-content: flex-end;">
             <p-button
                 style="margin-left: 5px;"
                 icon="pi pi-refresh"
                 pTooltip="Refresh logs without changing the length of the presented data."
-                (click)="fetchLogTail()"
+                (click)="refreshLog()"
             ></p-button>
         </div>
     </p-footer>

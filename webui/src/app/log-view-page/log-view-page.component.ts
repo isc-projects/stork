@@ -28,7 +28,7 @@ export class LogViewPageComponent implements OnInit {
     appId: number
     appType: string
     appTypeCapitalized: string
-    logId: number
+    private _logId: number
     contents: string[]
 
     /**
@@ -54,7 +54,7 @@ export class LogViewPageComponent implements OnInit {
         this.route.paramMap.subscribe((params) => {
             const logIdStr = params.get('id')
             if (logIdStr) {
-                this.logId = parseInt(logIdStr, 10)
+                this._logId = parseInt(logIdStr, 10)
                 this.fetchLogTail()
             }
         })
@@ -69,9 +69,9 @@ export class LogViewPageComponent implements OnInit {
      * is filled with the data and the loaded flag is set to true to
      * disable the spinner.
      */
-    fetchLogTail() {
+    private fetchLogTail() {
         this.loaded = false
-        this.servicesApi.getLogTail(this.logId, this.maxLength).subscribe(
+        this.servicesApi.getLogTail(this._logId, this.maxLength).subscribe(
             (data) => {
                 // Set panel title.
                 this.panelTitle = data.logTargetOutput
@@ -120,11 +120,23 @@ export class LogViewPageComponent implements OnInit {
                 this.msgSrv.add({
                     severity: 'error',
                     summary: 'Unable to get log file',
-                    detail: 'Getting log with ID ' + this.logId + ' erred: ' + msg,
+                    detail: 'Getting log with ID ' + this._logId + ' erred: ' + msg,
                     life: 10000,
                 })
             }
         )
+    }
+
+    /**
+     * Refreshes the log.
+     *
+     * This action is triggered when the refresh button is clicked.
+     */
+    refreshLog() {
+        if (!this.loaded) {
+            return
+        }
+        this.fetchLogTail()
     }
 
     /**
@@ -133,6 +145,9 @@ export class LogViewPageComponent implements OnInit {
      * This action is triggered when the plus button is clicked.
      */
     fetchMoreLog() {
+        if (!this.loaded) {
+            return
+        }
         this.maxLength += this.maxLengthChunk
         this.fetchLogTail()
     }
@@ -144,6 +159,9 @@ export class LogViewPageComponent implements OnInit {
      * no-op if the max length is already equal or less than 4000 bytes.
      */
     fetchLessLog() {
+        if (!this.loaded) {
+            return
+        }
         if (this.maxLength > this.maxLengthChunk) {
             this.maxLength -= this.maxLengthChunk
             this.fetchLogTail()
