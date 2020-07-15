@@ -32,6 +32,7 @@ type StorkServer struct {
 	KeaStatsPuller   *kea.StatsPuller
 	KeaHostsPuller   *kea.HostsPuller
 	StatusPuller     *kea.StatusPuller
+	KeaRpsPuller     *kea.RpsPuller
 
 	EventCenter eventcenter.EventCenter
 }
@@ -144,6 +145,12 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		return nil, err
 	}
 
+	// Setup Kea Rps puller.
+	ss.KeaRpsPuller, err = kea.NewRpsPuller(ss.Db, ss.Agents)
+	if err != nil {
+		return nil, err
+	}
+
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DbSettings, ss.Db, ss.Agents, ss.EventCenter)
 	if err != nil {
@@ -176,6 +183,7 @@ func (ss *StorkServer) Shutdown() {
 	ss.RestAPI.Shutdown()
 	ss.KeaHostsPuller.Shutdown()
 	ss.KeaStatsPuller.Shutdown()
+	ss.KeaRpsPuller.Shutdown()
 	ss.Bind9StatsPuller.Shutdown()
 	ss.StatusPuller.Shutdown()
 	ss.EventCenter.Shutdown()

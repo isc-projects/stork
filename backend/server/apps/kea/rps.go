@@ -143,11 +143,18 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	// Iterate over active daemons, adding commands for dhcp4 and dhcp6 daemons
 	dhcp4Daemons := make(agentcomm.KeaDaemons)
 	var dhcp4Daemon *dbmodel.KeaDaemon
+	var dhcp4Arguments = RpsGetDhcp4Arguments()
 
 	dhcp6Daemons := make(agentcomm.KeaDaemons)
 	var dhcp6Daemon *dbmodel.KeaDaemon
+	var dhcp6Arguments = RpsGetDhcp6Arguments()
+
+	// Since we might have dhcp4 only, dhcp6 only or both, we build an array
+	// of expected responses.
+	var responses [2]interface{}
+	rspIdx := 0
 	for _, d := range dbApp.Daemons {
-		if d.KeaDaemon != nil {
+		if d.KeaDaemon != nil && d.Active {
 			switch d.Name {
 			case "dhcp4":
 				dhcp4Daemon = d.KeaDaemon
@@ -155,14 +162,18 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 				cmds = append(cmds, &agentcomm.KeaCommand{
 					Command:   "statistic-get",
 					Daemons:   &dhcp4Daemons,
-					Arguments: &map[string]interface{}{"name": "pkt4-ack-sent"}})
+					Arguments: &dhcp4Arguments})
+				// fill in the response type
+				responses[rspIdx] = &[]StatGetResponse4{}
+				rspIdx++
 			case "dhcp6":
 				dhcp6Daemon = d.KeaDaemon
 				dhcp6Daemons["dhcp6"] = true
 				cmds = append(cmds, &agentcomm.KeaCommand{
 					Command:   "statistic-get",
 					Daemons:   &dhcp6Daemons,
-					Arguments: &map[string]interface{}{"name": "pkt6-reply-sent"}})
+					Arguments: &dhcp6Arguments})
+				responses[rspIdx] = &[]StatGetResponse6{}
 			}
 		}
 	}
@@ -172,11 +183,16 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return nil
 	}
 
+	for i := 0; i < len(cmds); i++ {
+		log.Printf("TKM rpsPuller cmds: %d: %+v", i, cmds[i].Command)
+		log.Printf("TKM rpsPuller cmds: %d: %+v", i, cmds[i].Daemons)
+		log.Printf("TKM rpsPuller cmds: %d: %+v", i, cmds[i].Arguments)
+	}
+
 	// forward commands to kea
-	statsResp4 := []StatGetResponse4{}
-	statsResp6 := []StatGetResponse6{}
 	ctx := context.Background()
-	cmdsResult, err := rpsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, cmds, &statsResp4, &statsResp6)
+
+	cmdsResult, err := rpsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, cmds, responses[0], responses[1])
 
 	if err != nil {
 		return err
@@ -185,28 +201,40 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return cmdsResult.Error
 	}
 
+	rspIdx = 0
+	// If we have a daemon, we should have a result
 	if dhcp4Daemon != nil {
-		// If we have a daemon, we should have a result
-		if len(statsResp4) == 0 {
-			log.Printf("no response to RPS get for KeaDaemon:%d", dhcp4Daemon.DaemonID)
+		statsResp4, ok := responses[rspIdx].(*[]StatGetResponse4)
+		if !ok {
+			log.Printf("response type is invalid: %+v", responses[rspIdx])
 		} else {
-			// Calculate and store the RPS interval for this daemon for this cycle
-			err = rpsPuller.updateDaemonRps(dhcp4Daemon.DaemonID,
-				statsResp4[0].Arguments.Samples)
+			samples, err := rpsPuller.extractSamples4(dhcp4Daemon.DaemonID, *statsResp4)
+			if err == nil {
+				// Calculate and store the RPS interval for this daemon for this cycle
+				err = rpsPuller.updateDaemonRps(dhcp4Daemon.DaemonID, samples)
+			}
+
 			if err != nil {
 				log.Printf("could not update dhcp4 RPS interval: %s", err)
 			}
 		}
+
+		// Bump the response index
+		rspIdx++
 	}
 
+	// If we have a daemon, we should have a result
 	if dhcp6Daemon != nil {
-		// If we have a daemon, we should have a result
-		if len(statsResp6) == 0 {
-			log.Printf("no response to RPS get for KeaDaemon:%d", dhcp6Daemon.DaemonID)
+		statsResp6, ok := responses[rspIdx].(*[]StatGetResponse6)
+		if !ok {
+			log.Printf("response type is invalid: %+v", responses[rspIdx])
 		} else {
-			// Calculate and store the RPS interval for this daemon for this cycle
-			err = rpsPuller.updateDaemonRps(dhcp6Daemon.DaemonID,
-				statsResp6[0].Arguments.Samples)
+			samples, err := rpsPuller.extractSamples6(dhcp6Daemon.DaemonID, *statsResp6)
+			if err == nil {
+				// Calculate and store the RPS interval for this daemon for this cycle
+				err = rpsPuller.updateDaemonRps(dhcp6Daemon.DaemonID, samples)
+			}
+
 			if err != nil {
 				log.Printf("could not update dhcp6 RPS interval: %s", err)
 			}
@@ -214,6 +242,56 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	}
 
 	return nil
+}
+
+// Exract the list of statistic samples from a dhcp4 statistic-get response if the response is valid.
+func (rpsPuller *RpsPuller) extractSamples4(daemonID int64, statsResp []StatGetResponse4) ([]interface{}, error) {
+	if len(statsResp) == 0 {
+		err := fmt.Errorf("empty RPS response for KeaDaemon:%d", daemonID)
+		return nil, err
+	}
+
+	if statsResp[0].Result != 0 {
+		err := fmt.Errorf("error result in RPS response for for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		return nil, err
+	}
+
+	if statsResp[0].Arguments == nil {
+		err := fmt.Errorf("missing Arguments from RPS response for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		return nil, err
+	}
+
+	if statsResp[0].Arguments.Samples == nil {
+		err := fmt.Errorf("missing Samples from RPS response for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		return nil, err
+	}
+
+	return statsResp[0].Arguments.Samples, nil
+}
+
+// Exract the list of statistic samples from a dhcp6 statistic-get response if the response is valid.
+func (rpsPuller *RpsPuller) extractSamples6(daemonID int64, statsResp []StatGetResponse6) ([]interface{}, error) {
+	if len(statsResp) == 0 {
+		err := fmt.Errorf("empty RPS response for KeaDaemon:%d", daemonID)
+		return nil, err
+	}
+
+	if statsResp[0].Result != 0 {
+		err := fmt.Errorf("error result in RPS response for for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		return nil, err
+	}
+
+	if statsResp[0].Arguments == nil {
+		err := fmt.Errorf("missing Arguments from RPS response for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		return nil, err
+	}
+
+	if statsResp[0].Arguments.Samples == nil {
+		err := fmt.Errorf("missing Samples from RPS response for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		return nil, err
+	}
+
+	return statsResp[0].Arguments.Samples, nil
 }
 
 // Uses the most recent Kea statistic value for packets sent to calculate and
@@ -224,6 +302,12 @@ func (rpsPuller *RpsPuller) updateDaemonRps(daemonID int64, samples []interface{
 	value, sampledAt, err := getSampleRow(samples, 0)
 	if err != nil {
 		return fmt.Errorf("could not extract RPS stat: %s", err)
+	}
+
+	if value < 0 {
+		// Shouldn't happen but if it does, we'll record a 0.
+		log.Warnf("discarding response value: %d returned from KeaDaemonID: %d", value, daemonID)
+		value = int64(0)
 	}
 
 	// If we have a previous recording, calculate a delta row for it
@@ -237,7 +321,7 @@ func (rpsPuller *RpsPuller) updateDaemonRps(daemonID int64, samples []interface{
 		interval.Duration = (sampledAt.Unix() - previous.SampledAt.Unix())
 
 		// Calculate the delta in responses sent.
-		if value > previous.Value {
+		if value >= previous.Value {
 			// New value is larger, we assume we have contiguous data.
 			interval.Responses = value - previous.Value
 		} else {
@@ -246,6 +330,7 @@ func (rpsPuller *RpsPuller) updateDaemonRps(daemonID int64, samples []interface{
 			interval.Responses = value
 		}
 
+		log.Printf("TKM insert interval: %+v", interval)
 		err = dbmodel.AddRpsInterval(rpsPuller.Db, interval)
 	}
 
@@ -282,7 +367,19 @@ func getSampleRow(samples []interface{}, rowIdx int) (int64, time.Time, error) {
 	}
 
 	// Not sure why unmarshalling makes it a float64, but we need an int64.
+	log.Printf("TKM value before cast: %+v", row[0].(float64))
+
 	value := int64(row[0].(float64))
 
 	return value, sampledAt, nil
+}
+
+// "Static" constant for dhcp4 statistic-get command argument
+func RpsGetDhcp4Arguments() map[string]interface{} {
+	return map[string]interface{}{"name": "pkt4-ack-sent"}
+}
+
+// "Static" constant for dhcp6 statistic-get command argument
+func RpsGetDhcp6Arguments() map[string]interface{} {
+	return map[string]interface{}{"name": "pkt6-reply-sent"}
 }
