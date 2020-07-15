@@ -67,6 +67,7 @@ import { EventTextComponent } from './event-text/event-text.component'
 import { EntityLinkComponent } from './entity-link/entity-link.component'
 import { EventsPanelComponent } from './events-panel/events-panel.component'
 import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.component'
+import { LogViewPageComponent } from './log-view-page/log-view-page.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -105,6 +106,7 @@ export function cfgFactory() {
         EntityLinkComponent,
         EventsPanelComponent,
         ForbiddenPageComponent,
+        LogViewPageComponent,
     ],
     imports: [
         BrowserModule,

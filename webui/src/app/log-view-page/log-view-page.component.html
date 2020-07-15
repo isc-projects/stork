@@ -1,0 +1,31 @@
+<div style="margin-top: 20px;">
+    <a *ngIf="appId" routerLink="/apps/{{ appType }}/{{ appId }}">
+        <span class="fa fa-arrow-left"></span>
+        <span style="margin-left: 5px;">Back to {{ appTypeCapitalized }} view</span>
+    </a>
+</div>
+
+<p-panel styleClass="log-tail-panel" [style]="{ 'margin-top': '10px' }">
+    <p-header>
+        <div style="display: flex; justify-content: space-between;">
+            <span class="ui-panel-title" style="margin-top: 5px; display: inline-block;">
+                {{ panelTitle }}
+            </span>
+            <p-button icon="pi pi-refresh" (click)="fetchLogTail()"></p-button>
+        </div>
+    </p-header>
+    <div *ngIf="contents && contents.length > 0">...</div>
+    <div *ngFor="let line of contents; let i = index">
+        <span *ngFor="let block of parseLogLine(line)" style="color:{{ logSeverityColor(block) }}">
+            {{ i > 0 ? block : '' }}
+        </span>
+    </div>
+
+    <p-progressSpinner
+        *ngIf="!loaded"
+        [style]="{ width: '30px', height: '30px', 'vertical-align': 'top', 'margin-right': '20px' }"
+        strokeWidth="6"
+        fill="#000000"
+        animationDuration=".5s"
+    ></p-progressSpinner>
+</p-panel>

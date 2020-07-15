@@ -15,6 +15,7 @@ import { SubnetsPageComponent } from './subnets-page/subnets-page.component'
 import { SharedNetworksPageComponent } from './shared-networks-page/shared-networks-page.component'
 import { SettingsPageComponent } from './settings-page/settings-page.component'
 import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.component'
+import { LogViewPageComponent } from './log-view-page/log-view-page.component'
 
 const routes: Routes = [
     {
@@ -114,6 +115,11 @@ const routes: Routes = [
     {
         path: 'forbidden',
         component: ForbiddenPageComponent,
+    },
+    {
+        path: 'logs/:id',
+        component: LogViewPageComponent,
+        canActivate: [AuthGuard],
     },
 
     // otherwise redirect to home
