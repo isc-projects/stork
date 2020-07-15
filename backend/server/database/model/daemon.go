@@ -18,7 +18,7 @@ const (
 
 // A structure reflecting information about a logger used by a daemon.
 type LogTarget struct {
-	ID        int64
+	ID        int64 // Logger ID
 	DaemonID  int64
 	Name      string
 	Severity  string
