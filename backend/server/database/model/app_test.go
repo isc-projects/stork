@@ -201,10 +201,14 @@ func TestUpdateApp(t *testing.T) {
 				},
 				LogTargets: []*LogTarget{
 					{
-						Output: "stdout",
+						Name:     "frog",
+						Severity: "ERROR",
+						Output:   "stdout",
 					},
 					{
-						Output: "/tmp/filename.log",
+						Name:     "lion",
+						Severity: "FATAL",
+						Output:   "/tmp/filename.log",
 					},
 				},
 			},
@@ -217,10 +221,14 @@ func TestUpdateApp(t *testing.T) {
 				},
 				LogTargets: []*LogTarget{
 					{
-						Output: "stdout",
+						Name:     "foo",
+						Severity: "INFO",
+						Output:   "stdout",
 					},
 					{
-						Output: "/tmp/filename.log",
+						Name:     "bar",
+						Severity: "DEBUG",
+						Output:   "/tmp/filename.log",
 					},
 				},
 			},
@@ -256,6 +264,19 @@ func TestUpdateApp(t *testing.T) {
 
 	// Make sure that the logging targets were stored.
 	require.Len(t, returned.Daemons[0].LogTargets, 2)
+	require.NotEqual(t, returned.Daemons[0].LogTargets[0].Name, returned.Daemons[0].LogTargets[1].Name)
+	for _, target := range returned.Daemons[0].LogTargets {
+		require.NotZero(t, target.ID)
+		require.NotZero(t, target.CreatedAt)
+		require.True(t, target.Name == "frog" || target.Name == "lion")
+		if target.Name == "frog" {
+			require.Equal(t, "error", target.Severity)
+			require.Equal(t, "stdout", target.Output)
+		} else {
+			require.Equal(t, "fatal", target.Severity)
+			require.Equal(t, "/tmp/filename.log", target.Output)
+		}
+	}
 
 	require.NotZero(t, returned.Daemons[1].ID)
 	require.Equal(t, "kea-ctrl-agent", returned.Daemons[1].Name)
@@ -265,7 +286,21 @@ func TestUpdateApp(t *testing.T) {
 	require.NotZero(t, returned.Daemons[1].ID)
 	require.NotNil(t, returned.Daemons[1].KeaDaemon.Config)
 	require.Nil(t, returned.Daemons[1].KeaDaemon.KeaDHCPDaemon)
+
 	require.Len(t, returned.Daemons[1].LogTargets, 2)
+	require.NotEqual(t, returned.Daemons[1].LogTargets[0].Name, returned.Daemons[1].LogTargets[1].Name)
+	for _, target := range returned.Daemons[1].LogTargets {
+		require.NotZero(t, target.ID)
+		require.NotZero(t, target.CreatedAt)
+		require.True(t, target.Name == "foo" || target.Name == "bar")
+		if target.Name == "foo" {
+			require.Equal(t, "info", target.Severity)
+			require.Equal(t, "stdout", target.Output)
+		} else {
+			require.Equal(t, "debug", target.Severity)
+			require.Equal(t, "/tmp/filename.log", target.Output)
+		}
+	}
 
 	// Modify the app information.
 	a.Active = false
@@ -320,7 +355,7 @@ func TestUpdateApp(t *testing.T) {
 			require.Nil(t, d.KeaDaemon.Config)
 			require.NotNil(t, d.KeaDaemon.KeaDHCPDaemon)
 			require.EqualValues(t, 2048, d.KeaDaemon.KeaDHCPDaemon.Stats.LPS15min)
-			require.Zero(t, d.LogTargets)
+			require.Empty(t, d.LogTargets)
 
 		case "kea-ctrl-agent":
 			// The ID of the daemon should be preserved to keep data integrity if
