@@ -568,3 +568,45 @@ func TestNewLogTargetsFromKea(t *testing.T) {
 	require.Equal(t, "/tmp/log", targets[1].Output)
 	require.Equal(t, "debug", targets[1].Severity)
 }
+
+// Verifies that a list of loggers is parsed correctly for a daemon.
+func TestGetControlSockets(t *testing.T) {
+	configStr := `{
+        "Control-agent": {
+            "control-sockets": {
+                "dhcp4": {
+                    "socket-type": "unix",
+                    "socket-name": "/path/to/the/unix/socket-v4"
+                },
+                "dhcp6": {
+                    "socket-type": "unix",
+                    "socket-name": "/path/to/the/unix/socket-v6"
+                },
+                "d2": {
+                    "socket-type": "unix",
+                    "socket-name": "/path/to/the/unix/socket-d2"
+                }
+            }
+        }
+    }`
+
+	cfg, err := NewKeaConfigFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	sockets := cfg.GetControlSockets()
+
+	require.NotNil(t, sockets.D2)
+	require.Equal(t, "unix", sockets.D2.SocketType)
+	require.Equal(t, "/path/to/the/unix/socket-d2", sockets.D2.SocketName)
+
+	require.NotNil(t, sockets.Dhcp4)
+	require.Equal(t, "unix", sockets.Dhcp4.SocketType)
+	require.Equal(t, "/path/to/the/unix/socket-v4", sockets.Dhcp4.SocketName)
+
+	require.NotNil(t, sockets.Dhcp6)
+	require.Equal(t, "unix", sockets.Dhcp6.SocketType)
+	require.Equal(t, "/path/to/the/unix/socket-v6", sockets.Dhcp6.SocketName)
+
+	require.Nil(t, sockets.NetConf)
+}

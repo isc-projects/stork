@@ -28,29 +28,40 @@ func mockGetConfigFromCAResponse(daemons int, cmdResponses []interface{}) {
 			},
 		},
 	}
-	list2 := cmdResponses[1].(*[]CAConfigGetResponse)
-	*list2 = []CAConfigGetResponse{
+	list2 := cmdResponses[1].(*[]agentcomm.KeaResponse)
+	*list2 = []agentcomm.KeaResponse{
 		{
 			KeaResponseHeader: agentcomm.KeaResponseHeader{
 				Result: 0,
 				Daemon: "ca",
 			},
-			Arguments: &CAConfigGetRespArgs{
-				ControlAgent: &ControlAgentData{
-					ControlSockets: &ControlSocketsData{
-						Dhcp4: &SocketData{
-							SocketName: "aaaa",
-							SocketType: "unix",
-						},
-					},
-				},
-			},
 		},
 	}
 	if daemons > 1 {
-		(*list2)[0].Arguments.ControlAgent.ControlSockets.Dhcp6 = &SocketData{
-			SocketName: "bbbb",
-			SocketType: "unix",
+		(*list2)[0].Arguments = &map[string]interface{}{
+			"Control-agent": map[string]interface{}{
+				"control-sockets": map[string]interface{}{
+					"dhcp4": map[string]interface{}{
+						"socket-name": "aaa",
+						"socket-type": "unix",
+					},
+					"dhcp6": map[string]interface{}{
+						"socket-name": "bbbb",
+						"socket-type": "unix",
+					},
+				},
+			},
+		}
+	} else {
+		(*list2)[0].Arguments = &map[string]interface{}{
+			"Control-agent": map[string]interface{}{
+				"control-sockets": map[string]interface{}{
+					"dhcp4": map[string]interface{}{
+						"socket-name": "aaa",
+						"socket-type": "unix",
+					},
+				},
+			},
 		}
 	}
 }

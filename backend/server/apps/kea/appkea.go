@@ -42,33 +42,6 @@ func GetDaemonHooks(dbApp *dbmodel.App) map[string][]string {
 	return hooksByDaemon
 }
 
-// === CA config-get response structs ================================================
-
-type SocketData struct {
-	SocketName string `json:"socket-name"`
-	SocketType string `json:"socket-type"`
-}
-
-type ControlSocketsData struct {
-	D2      *SocketData
-	Dhcp4   *SocketData
-	Dhcp6   *SocketData
-	NetConf *SocketData
-}
-
-type ControlAgentData struct {
-	ControlSockets *ControlSocketsData `json:"control-sockets"`
-}
-
-type CAConfigGetRespArgs struct {
-	ControlAgent *ControlAgentData `json:"Control-agent"`
-}
-
-type CAConfigGetResponse struct {
-	agentcomm.KeaResponseHeader
-	Arguments *CAConfigGetRespArgs
-}
-
 // === version-get response structs ===============================================
 
 type VersionGetRespArgs struct {
@@ -98,7 +71,7 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caAdd
 
 	// get version and config from CA
 	versionGetResp := []VersionGetResponse{}
-	caConfigGetResp := []CAConfigGetResponse{}
+	caConfigGetResp := []agentcomm.KeaResponse{}
 
 	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, caAddress, caPort, cmds, &versionGetResp, &caConfigGetResp)
 	if err != nil {
@@ -115,16 +88,18 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caAdd
 	for _, dmn := range dbApp.Daemons {
 		if dmn.Name == "ca" {
 			dmnCopy := *dmn
+			// Since this is Kea daemon, make sure that the KeaDaemon structure is
+			// initialized to avoid nil pointer dereference.
+			if dmnCopy.KeaDaemon == nil {
+				dmnCopy.KeaDaemon = &dbmodel.KeaDaemon{}
+			}
 			daemonsMap["ca"] = &dmnCopy
 			found = true
 		}
 	}
 	// if not found then prepare new record
 	if !found {
-		daemonsMap["ca"] = &dbmodel.Daemon{
-			Name:   "ca",
-			Active: true,
-		}
+		daemonsMap["ca"] = dbmodel.NewKeaDaemon("ca", true)
 	}
 
 	// if no error in the response then copy retrieved info about CA to its record
@@ -148,18 +123,29 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, caAdd
 	// prepare a set of available daemons
 	allDaemons := make(agentcomm.KeaDaemons)
 	dhcpDaemons := make(agentcomm.KeaDaemons)
-	if caConfigGetResp[0].Arguments.ControlAgent.ControlSockets != nil {
-		if caConfigGetResp[0].Arguments.ControlAgent.ControlSockets.Dhcp4 != nil {
-			allDaemons[dhcp4] = true
-			dhcpDaemons[dhcp4] = true
-		}
-		if caConfigGetResp[0].Arguments.ControlAgent.ControlSockets.Dhcp6 != nil {
-			allDaemons[dhcp6] = true
-			dhcpDaemons[dhcp6] = true
-		}
-		if caConfigGetResp[0].Arguments.ControlAgent.ControlSockets.D2 != nil {
-			allDaemons[d2] = true
-		}
+
+	dmn := daemonsMap["ca"]
+	dmn.KeaDaemon.Config = dbmodel.NewKeaConfig(caConfigGetResp[0].Arguments)
+	sockets := dmn.KeaDaemon.Config.GetControlSockets()
+	if sockets.Dhcp4 != nil {
+		allDaemons[dhcp4] = true
+		dhcpDaemons[dhcp4] = true
+	}
+	if sockets.Dhcp6 != nil {
+		allDaemons[dhcp6] = true
+		dhcpDaemons[dhcp6] = true
+	}
+	if sockets.D2 != nil {
+		allDaemons[d2] = true
+	}
+
+	// Setup CA loggers.
+	dmn.LogTargets = []*dbmodel.LogTarget{}
+	// Extract loggers' configuration and store it in the dedicated SQL tables.
+	loggers := dmn.KeaDaemon.Config.GetLoggers()
+	for _, logger := range loggers {
+		targets := dbmodel.NewLogTargetsFromKea(logger)
+		dmn.LogTargets = append(dmn.LogTargets, targets...)
 	}
 
 	return allDaemons, dhcpDaemons, nil
@@ -204,6 +190,11 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 		for _, dmn := range dbApp.Daemons {
 			if dmn.Name == name {
 				dmnCopy := *dmn
+				// Since this is Kea daemon, make sure that the KeaDaemon structure is
+				// initialized to avoid nil pointer dereference.
+				if dmnCopy.KeaDaemon == nil {
+					dmnCopy.KeaDaemon = &dbmodel.KeaDaemon{}
+				}
 				daemonsMap[name] = &dmnCopy
 				found = true
 			}

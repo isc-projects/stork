@@ -55,6 +55,22 @@ type KeaConfigHA struct {
 	Peers             []Peer
 }
 
+// Structure representing a configuration of the control socket in the
+// Kea Control Agent.
+type KeaConfigControlSocket struct {
+	SocketName string `mapstructure:"socket-name"`
+	SocketType string `mapstructure:"socket-type"`
+}
+
+// Structure representing configuration of multiple control sockets in
+// in the Kea Control Agent.
+type KeaConfigControlSockets struct {
+	D2      *KeaConfigControlSocket
+	Dhcp4   *KeaConfigControlSocket
+	Dhcp6   *KeaConfigControlSocket
+	NetConf *KeaConfigControlSocket
+}
+
 // Creates new instance from the pointer to the map of interfaces.
 func NewKeaConfig(rawCfg *map[string]interface{}) *KeaConfig {
 	newCfg := KeaConfig(*rawCfg)
@@ -267,6 +283,24 @@ func (c *KeaConfig) GetTopLevelList(name string) (list []interface{}, ok bool) {
 	return list, false
 }
 
+// Returns a map found at the top level of the configuration under a
+// given name. If the given parameter does not exist or it is not
+// a map, the ok value returned is set to false.
+func (c *KeaConfig) GetTopLevelMap(name string) (m map[string]interface{}, ok bool) {
+	root, ok := c.GetRootName()
+	if !ok {
+		return m, ok
+	}
+	if cfg, ok := (*c)[root]; ok {
+		if rootNode, ok := cfg.(map[string]interface{}); ok {
+			if mapNode, ok := rootNode[name].(map[string]interface{}); ok {
+				return mapNode, ok
+			}
+		}
+	}
+	return m, false
+}
+
 // Returns a list of all hooks libraries found in the configuration.
 func (c *KeaConfig) GetHooksLibraries() (parsedLibraries []KeaConfigHooksLibrary) {
 	if hooksLibrariesList, ok := c.GetTopLevelList("hooks-libraries"); ok {
@@ -438,4 +472,12 @@ func NewLogTargetsFromKea(logger KeaConfigLogger) (targets []*LogTarget) {
 		targets = append(targets, target)
 	}
 	return targets
+}
+
+// Parses a map of control sockets in Kea Control Agent.
+func (c *KeaConfig) GetControlSockets() (parsedSockets KeaConfigControlSockets) {
+	if socketsMap, ok := c.GetTopLevelMap("control-sockets"); ok {
+		_ = mapstructure.Decode(socketsMap, &parsedSockets)
+	}
+	return parsedSockets
 }

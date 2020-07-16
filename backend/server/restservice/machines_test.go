@@ -107,19 +107,19 @@ func mockGetAppsState(callNo int, cmdResponses []interface{}) {
 				},
 			},
 		}
-		list2 := cmdResponses[1].(*[]kea.CAConfigGetResponse)
-		*list2 = []kea.CAConfigGetResponse{
+		list2 := cmdResponses[1].(*[]agentcomm.KeaResponse)
+		*list2 = []agentcomm.KeaResponse{
 			{
 				KeaResponseHeader: agentcomm.KeaResponseHeader{
 					Result: 0,
 					Daemon: "ca",
 				},
-				Arguments: &kea.CAConfigGetRespArgs{
-					ControlAgent: &kea.ControlAgentData{
-						ControlSockets: &kea.ControlSocketsData{
-							Dhcp4: &kea.SocketData{
-								SocketName: "aaaa",
-								SocketType: "unix",
+				Arguments: &map[string]interface{}{
+					"Control-agent": map[string]interface{}{
+						"control-sockets": map[string]interface{}{
+							"dhcp4": map[string]interface{}{
+								"socket-name": "aaa",
+								"socket-type": "unix",
 							},
 						},
 					},
