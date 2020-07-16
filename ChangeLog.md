@@ -1,3 +1,8 @@
+* 82 [func] marcin
+
+    Viewing the tail of the remote log files is enabled in the UI.
+    (Gitlab #344)
+
 * 81 [func] matthijs
 
     Add more query details to BIND 9 exporter and Grafana dashboard:
@@ -28,8 +33,6 @@ Stork 0.9.0 released on 2020-07-01.
     BIND 9 process collector would not be created if named process was
     started after Stork Agent.
     (Gitlab #325)
-
-Stork 0.9.0 released on 2020-07-01.
 
 * 76 [func] marcin
 
