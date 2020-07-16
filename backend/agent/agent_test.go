@@ -454,12 +454,11 @@ func TestTailTextFile(t *testing.T) {
 
 	fmt.Fprintln(f, "This is a file")
 	fmt.Fprintln(f, "which is used")
-	fmt.Fprintln(f, "in testing CatTextFile")
+	fmt.Fprintln(f, "in testing TailTextFile")
 
 	// Forward the request with the expected body.
 	req := &agentapi.TailTextFileReq{
-		Offset: -37,
-		Whence: 2,
+		Offset: 38,
 		Path:   filename,
 	}
 
@@ -468,7 +467,21 @@ func TestTailTextFile(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, rsp.Lines, 2)
 	require.Equal(t, "which is used", rsp.Lines[0])
-	require.Equal(t, "in testing CatTextFile", rsp.Lines[1])
+	require.Equal(t, "in testing TailTextFile", rsp.Lines[1])
+
+	// Test the case when the offset is beyond the file size.
+	req = &agentapi.TailTextFileReq{
+		Offset: 200,
+		Path:   filename,
+	}
+
+	rsp, err = sa.TailTextFile(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.Len(t, rsp.Lines, 3)
+	require.Equal(t, "This is a file", rsp.Lines[0])
+	require.Equal(t, "which is used", rsp.Lines[1])
+	require.Equal(t, "in testing TailTextFile", rsp.Lines[2])
 }
 
 // Aux function checks if a list of expected strings is present in the string

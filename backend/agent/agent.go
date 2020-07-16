@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -274,7 +275,21 @@ func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFil
 	defer func() {
 		_ = f.Close()
 	}()
-	_, err = f.Seek(in.Offset, int(in.Whence))
+
+	stat, err := f.Stat()
+	if err != nil {
+		response.Status.Code = agentapi.Status_ERROR
+		response.Status.Message = "Failed to stat the file opened for tailing"
+		return response, err
+	}
+
+	offset := in.Offset
+	// Can't go beyond the file size.
+	if offset > stat.Size() {
+		offset = stat.Size()
+	}
+
+	_, err = f.Seek(-offset, io.SeekEnd)
 	if err != nil {
 		response.Status.Code = agentapi.Status_ERROR
 		response.Status.Message = "Failed to seek in the file opened for tailing"

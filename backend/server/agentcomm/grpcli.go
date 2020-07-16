@@ -515,7 +515,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, age
 }
 
 // Get the tail of the remote text file.
-func (agents *connectedAgentsData) TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset, whence int64) ([]string, error) {
+func (agents *connectedAgentsData) TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset int64) ([]string, error) {
 	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
 
 	// Get the path to the file and the (seek) info indicating the location
@@ -523,7 +523,6 @@ func (agents *connectedAgentsData) TailTextFile(ctx context.Context, agentAddres
 	req := &agentapi.TailTextFileReq{
 		Path:   path,
 		Offset: offset,
-		Whence: whence,
 	}
 
 	// Send the request via queue.

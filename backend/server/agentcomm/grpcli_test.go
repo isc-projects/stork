@@ -429,7 +429,7 @@ func TestTailTextFile(t *testing.T) {
 		Return(&rsp, nil)
 
 	ctx := context.Background()
-	tail, err := agents.TailTextFile(ctx, "127.0.0.1", 8080, "/tmp/log.txt", -2, 2)
+	tail, err := agents.TailTextFile(ctx, "127.0.0.1", 8080, "/tmp/log.txt", 2)
 	require.NoError(t, err)
 	require.Len(t, tail, 2)
 

@@ -172,7 +172,6 @@ message TailTextFileReq {
 
   // Seek info.
   int64 offset = 2;
-  int64 whence = 3;
 }
 
 // Log file tailing response
