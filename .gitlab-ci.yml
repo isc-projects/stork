@@ -169,6 +169,7 @@ system_testing:
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   script:
     - ls -al
+    - which gitlab-runner
     - apt-get update
     - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-venv
     - python3 -m venv venv

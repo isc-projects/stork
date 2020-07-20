@@ -113,6 +113,9 @@ class Container:
                 continue
             prefix = '%15s:%s' % (self.name, output)
             prefix = colors.color(prefix, **self.style) + colors.color(':', fg='white', style='bold')
+            # ignore encoding errors
+            line = line.encode('utf-8', errors='ignore').decode('ascii', errors='ignore')
+
             print('%s %s' % (prefix, line))
 
     def run(self, cmd, env=None, ignore_error=False):
