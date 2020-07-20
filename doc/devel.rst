@@ -220,7 +220,16 @@ environment variable, e.g.:
 
           $ rake unittest_backend POSTGRES_ADDR=host:port
 
-By default it points to ``localhost:5432``.
+By default it points to ``localhost:5432``. Similarly, if the db
+setup requires a password, it's convenient to set up PGPASSWORD variable
+to 'storktest'. This can be done the following way:
+
+.. code:: console
+
+          $ rake unittest_backend PGPASSWORD=storktest
+
+Note there's no need to create the storktest database itself. It is created
+and destroyed by the Rakefile target.
 
 Unit Tests Coverage
 -------------------
