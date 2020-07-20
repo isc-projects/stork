@@ -118,13 +118,22 @@ class Container:
 
             print('%s %s' % (prefix, line))
 
-    def run(self, cmd, env=None, ignore_error=False):
+    def run(self, cmd, env=None, ignore_error=False, attempts=1, sleep_time_after_attempt=None):
         cmd2 = shlex.split(cmd)
-        result = self.cntr.execute(cmd2, env)
-        out = 'run: %s\n' % cmd
-        out += result[1]
-        self._trace_logs(out, 'out')
-        self._trace_logs(result[2], 'err')
+
+        for attempt in range(attempts):
+            result = self.cntr.execute(cmd2, env)
+            out = 'run: %s\n' % cmd
+            out += result[1]
+            self._trace_logs(out, 'out')
+            self._trace_logs(result[2], 'err')
+            if result[0] == 0:
+                break
+            elif attempt < attempts - 1:
+                print('command failed, retry, attempt %d/%d' % (attempt, attempts))
+                if sleep_time_after_attempt:
+                    time.sleep(sleep_time_after_attempt)
+
         if result[0] != 0 and not ignore_error:
             raise Exception('problem with cmd: %s' % cmd)
 
@@ -250,7 +259,7 @@ class StorkAgentContainer(Container):
             self.run('apt-get update')
             self.run('apt-get install --no-install-recommends -y curl', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
         else:
-            self.run('yum install -y curl')
+            self.run('yum install -y curl', attempts=3, sleep_time_after_attempt=3)
 
     def install_kea(self):
         if self.pkg_format == 'deb':
@@ -270,7 +279,7 @@ class StorkAgentContainer(Container):
             cmd += " isc-kea-{kea_version}.el7 isc-kea-hooks-{kea_version}.el7 isc-kea-libs-{kea_version}.el7"
 
         cmd = cmd.format(kea_version=kea_version)
-        self.run(cmd)
+        self.run(cmd, attempts=3, sleep_time_after_attempt=3)
         self.run("mkdir -p /var/run/kea/")
         self.run("perl -pi -e 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/kea/kea-ctrl-agent.conf")
         if self.pkg_format == 'deb':
