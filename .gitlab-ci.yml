@@ -157,10 +157,10 @@ rpms:
 
 system_testing:
   stage: test
+  image: stork-tests-ubuntu-18.04-x86_64
   tags:
-    - linux
+    - libvirt
     - amd64
-    - ssd
   dependencies:
     - rpms
     - debs
