@@ -181,9 +181,9 @@
         type: string
       active:
         type: boolean
-      lps15min:
+      rps1:
         type: integer
-      lps24h:
+      rps2:
         type: integer
       addrUtilization:
         type: number

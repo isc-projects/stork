@@ -52,6 +52,30 @@ func GetTotalRpsOverInterval(db *pg.DB, startTime time.Time, endTime time.Time) 
 	return rpsTotals, nil
 }
 
+// Returns an array of the total RPS per daemon within a given time frame
+// One element per daemon, ordered by daemon id where:
+// RpsInterval.StartTime = 0 (unused)
+// RpsInterval.Responses = total of number of responses
+// RpsInterval.Duration = total of the interval durations
+func GetTotalRpsOverIntervalForDaemon(db *pg.DB, startTime time.Time, endTime time.Time, daemonID int64) ([]*RpsInterval, error) {
+    rpsTotals := []*RpsInterval{}
+
+    q := db.Model(&rpsTotals)
+    q = q.Column("kea_daemon_id")
+    q = q.ColumnExpr("sum(responses) as responses")
+    q = q.ColumnExpr("sum(duration) as duration")
+    q = q.Group("kea_daemon_id")
+    q = q.Where("kea_daemon_id = ? and start_time >= ? and start_time <= ?", daemonID, startTime, endTime)
+
+    err := q.Select()
+    if err != nil {
+        return nil, errors.Wrapf(err, "problem with getting RPS interval for daemon: %d", daemonID)
+    }
+
+    return rpsTotals, nil
+}
+
+
 // Add an interval to the database
 func AddRpsInterval(db *pg.DB, rpsInterval *RpsInterval) error {
 	err := db.Insert(rpsInterval)

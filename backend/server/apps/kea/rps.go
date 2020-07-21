@@ -18,6 +18,8 @@ import (
 type RpsPuller struct {
 	*agentcomm.PeriodicPuller
 	PreviousRps map[int64]StatSample // map of last known values per Daemon
+    Interval1Secs time.Duration
+    Interval2Secs time.Duration
 }
 
 // Represents a time/value pair
@@ -85,6 +87,8 @@ func NewRpsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*RpsPuller, erro
 	}
 	rpsPuller.PeriodicPuller = periodicPuller
 	rpsPuller.PreviousRps = map[int64]StatSample{}
+    rpsPuller.Interval1Secs = (time.Second * 15 * 60)
+    rpsPuller.Interval2Secs = (time.Second * 24 * 60 * 60)
 	return rpsPuller, nil
 }
 
@@ -97,8 +101,8 @@ func (rpsPuller *RpsPuller) Shutdown() {
 // returns the number of apps for which the stats were successfully pulled and last
 // encountered error.
 func (rpsPuller *RpsPuller) pullStats() (int, error) {
-	// Age off records more than 24 hrs 30 min old
-	deleteTime := storkutil.UTCNow().Add(time.Duration(-88200) * time.Second)
+	// Age off records more than Interval2Secs old.
+	deleteTime := storkutil.UTCNow().Add(-rpsPuller.Interval2Secs)
 	err := dbmodel.AgeOffRpsInterval(rpsPuller.Db, deleteTime)
 	if err != nil {
 		return 0, err
@@ -114,8 +118,7 @@ func (rpsPuller *RpsPuller) pullStats() (int, error) {
 	var lastErr error
 	appsOkCnt := 0
 	for _, dbApp := range dbApps {
-		dbApp2 := dbApp
-		err := rpsPuller.getStatsFromApp(&dbApp2)
+		err := rpsPuller.getStatsFromApp(&dbApp)
 		if err != nil {
 			lastErr = err
 			log.Errorf("error occurred while getting RPS stats from app %d: %+v", dbApp.ID, err)
@@ -125,7 +128,6 @@ func (rpsPuller *RpsPuller) pullStats() (int, error) {
 	}
 
 	log.Printf("completed pulling RPS stats from Kea apps: %d/%d succeeded", appsOkCnt, len(dbApps))
-
 	return appsOkCnt, lastErr
 }
 
@@ -142,11 +144,11 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 	// Iterate over active daemons, adding commands for dhcp4 and dhcp6 daemons
 	dhcp4Daemons := make(agentcomm.KeaDaemons)
-	var dhcp4Daemon *dbmodel.KeaDaemon
+	var dhcp4Daemon *dbmodel.Daemon
 	var dhcp4Arguments = RpsGetDhcp4Arguments()
 
 	dhcp6Daemons := make(agentcomm.KeaDaemons)
-	var dhcp6Daemon *dbmodel.KeaDaemon
+	var dhcp6Daemon *dbmodel.Daemon
 	var dhcp6Arguments = RpsGetDhcp6Arguments()
 
 	// Since we might have dhcp4 only, dhcp6 only or both, we build an array
@@ -157,7 +159,7 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		if d.KeaDaemon != nil && d.Active {
 			switch d.Name {
 			case "dhcp4":
-				dhcp4Daemon = d.KeaDaemon
+				dhcp4Daemon = d
 				dhcp4Daemons["dhcp4"] = true
 				cmds = append(cmds, &agentcomm.KeaCommand{
 					Command:   "statistic-get",
@@ -167,7 +169,7 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 				responses[rspIdx] = &[]StatGetResponse4{}
 				rspIdx++
 			case "dhcp6":
-				dhcp6Daemon = d.KeaDaemon
+				dhcp6Daemon = d
 				dhcp6Daemons["dhcp6"] = true
 				cmds = append(cmds, &agentcomm.KeaCommand{
 					Command:   "statistic-get",
@@ -181,12 +183,6 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	// If there are no commands, nothing to do
 	if len(cmds) == 0 {
 		return nil
-	}
-
-	for i := 0; i < len(cmds); i++ {
-		log.Printf("TKM rpsPuller cmds: %d: %+v", i, cmds[i].Command)
-		log.Printf("TKM rpsPuller cmds: %d: %+v", i, cmds[i].Daemons)
-		log.Printf("TKM rpsPuller cmds: %d: %+v", i, cmds[i].Arguments)
 	}
 
 	// forward commands to kea
@@ -206,16 +202,21 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	if dhcp4Daemon != nil {
 		statsResp4, ok := responses[rspIdx].(*[]StatGetResponse4)
 		if !ok {
-			log.Printf("response type is invalid: %+v", responses[rspIdx])
+			log.Errorf("response type is invalid: %+v", responses[rspIdx])
 		} else {
-			samples, err := rpsPuller.extractSamples4(dhcp4Daemon.DaemonID, *statsResp4)
+			samples, err := rpsPuller.extractSamples4(*statsResp4)
 			if err == nil {
 				// Calculate and store the RPS interval for this daemon for this cycle
-				err = rpsPuller.updateDaemonRps(dhcp4Daemon.DaemonID, samples)
+				err = rpsPuller.updateDaemonRpsIntervals(dhcp4Daemon, samples)
+
+                // Now we'll update the Kea RPS statistics based on the updated interval data
+                if (err == nil) {
+                    err = rpsPuller.updateKeaDaemonRpsStats(dhcp4Daemon)
+                }
 			}
 
 			if err != nil {
-				log.Printf("could not update dhcp4 RPS interval: %s", err)
+				log.Errorf("could not update dhcp4 RPS data for %+v, %s", dhcp4Daemon, err)
 			}
 		}
 
@@ -227,16 +228,21 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	if dhcp6Daemon != nil {
 		statsResp6, ok := responses[rspIdx].(*[]StatGetResponse6)
 		if !ok {
-			log.Printf("response type is invalid: %+v", responses[rspIdx])
+			log.Errorf("response type is invalid: %+v", responses[rspIdx])
 		} else {
-			samples, err := rpsPuller.extractSamples6(dhcp6Daemon.DaemonID, *statsResp6)
+			samples, err := rpsPuller.extractSamples6(*statsResp6)
 			if err == nil {
 				// Calculate and store the RPS interval for this daemon for this cycle
-				err = rpsPuller.updateDaemonRps(dhcp6Daemon.DaemonID, samples)
+				err = rpsPuller.updateDaemonRpsIntervals(dhcp6Daemon, samples)
+
+                // Now we'll update the Kea RPS statistics based on the updated interval data
+                if (err == nil) {
+                    err = rpsPuller.updateKeaDaemonRpsStats(dhcp6Daemon)
+                }
 			}
 
 			if err != nil {
-				log.Printf("could not update dhcp6 RPS interval: %s", err)
+				log.Errorf("could not update dhcp6 RPS data for %+v, %s", dhcp6Daemon, err)
 			}
 		}
 	}
@@ -245,24 +251,24 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 }
 
 // Exract the list of statistic samples from a dhcp4 statistic-get response if the response is valid.
-func (rpsPuller *RpsPuller) extractSamples4(daemonID int64, statsResp []StatGetResponse4) ([]interface{}, error) {
+func (rpsPuller *RpsPuller) extractSamples4(statsResp []StatGetResponse4) ([]interface{}, error) {
 	if len(statsResp) == 0 {
-		err := fmt.Errorf("empty RPS response for KeaDaemon:%d", daemonID)
+		err := fmt.Errorf("empty RPS response")
 		return nil, err
 	}
 
 	if statsResp[0].Result != 0 {
-		err := fmt.Errorf("error result in RPS response for for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		err := fmt.Errorf("error result in RPS response: %+v", statsResp)
 		return nil, err
 	}
 
 	if statsResp[0].Arguments == nil {
-		err := fmt.Errorf("missing Arguments from RPS response for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		err := fmt.Errorf("missing Arguments from RPS response %+v", statsResp)
 		return nil, err
 	}
 
 	if statsResp[0].Arguments.Samples == nil {
-		err := fmt.Errorf("missing Samples from RPS response for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		err := fmt.Errorf("missing Samples from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
@@ -270,24 +276,24 @@ func (rpsPuller *RpsPuller) extractSamples4(daemonID int64, statsResp []StatGetR
 }
 
 // Exract the list of statistic samples from a dhcp6 statistic-get response if the response is valid.
-func (rpsPuller *RpsPuller) extractSamples6(daemonID int64, statsResp []StatGetResponse6) ([]interface{}, error) {
+func (rpsPuller *RpsPuller) extractSamples6(statsResp []StatGetResponse6) ([]interface{}, error) {
 	if len(statsResp) == 0 {
-		err := fmt.Errorf("empty RPS response for KeaDaemon:%d", daemonID)
+		err := fmt.Errorf("empty RPS response")
 		return nil, err
 	}
 
 	if statsResp[0].Result != 0 {
-		err := fmt.Errorf("error result in RPS response for for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		err := fmt.Errorf("error result in RPS response: %+v", statsResp)
 		return nil, err
 	}
 
 	if statsResp[0].Arguments == nil {
-		err := fmt.Errorf("missing Arguments from RPS response for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		err := fmt.Errorf("missing Arguments from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
 	if statsResp[0].Arguments.Samples == nil {
-		err := fmt.Errorf("missing Samples from RPS response for KeaDaemon:%d, response: %+v", daemonID, statsResp)
+		err := fmt.Errorf("missing Samples from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
@@ -296,7 +302,7 @@ func (rpsPuller *RpsPuller) extractSamples6(daemonID int64, statsResp []StatGetR
 
 // Uses the most recent Kea statistic value for packets sent to calculate and
 // store an RPS interval row for the current interval for the given daemon.
-func (rpsPuller *RpsPuller) updateDaemonRps(daemonID int64, samples []interface{}) error {
+func (rpsPuller *RpsPuller) updateDaemonRpsIntervals(daemon *dbmodel.Daemon, samples []interface{}) error {
 	// The first row of the samples is the most recent value and the only
 	// one we care about. Fetch it.
 	value, sampledAt, err := getSampleRow(samples, 0)
@@ -304,6 +310,7 @@ func (rpsPuller *RpsPuller) updateDaemonRps(daemonID int64, samples []interface{
 		return fmt.Errorf("could not extract RPS stat: %s", err)
 	}
 
+    daemonID := daemon.KeaDaemon.DaemonID
 	if value < 0 {
 		// Shouldn't happen but if it does, we'll record a 0.
 		log.Warnf("discarding response value: %d returned from KeaDaemonID: %d", value, daemonID)
@@ -330,7 +337,6 @@ func (rpsPuller *RpsPuller) updateDaemonRps(daemonID int64, samples []interface{
 			interval.Responses = value
 		}
 
-		log.Printf("TKM insert interval: %+v", interval)
 		err = dbmodel.AddRpsInterval(rpsPuller.Db, interval)
 	}
 
@@ -338,6 +344,60 @@ func (rpsPuller *RpsPuller) updateDaemonRps(daemonID int64, samples []interface{
 	rpsPuller.PreviousRps[daemonID] = StatSample{sampledAt, value}
 
 	return err
+}
+
+// Update the RPS value for both intervals for given daemon.
+// Uses the RpsInterval table contents to get the total responses and duration
+// for both intervals and then updates the Daemon's statistics in the db. 
+func (rpsPuller *RpsPuller) updateKeaDaemonRpsStats(daemon *dbmodel.Daemon) error {
+
+    endTime := storkutil.UTCNow();
+    startTime1 := endTime.Add(-rpsPuller.Interval1Secs)
+    daemonID := daemon.KeaDaemon.DaemonID
+
+    // Fetch interval totals for interval 1.
+    rps1, err := dbmodel.GetTotalRpsOverIntervalForDaemon(rpsPuller.Db, startTime1, endTime, daemonID)
+    if (err != nil) {
+		return fmt.Errorf("query for RPS interval 1 data failed: %s", err)
+    }
+
+    // Calculate RPS for interval 1.
+    daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1 = calculateRps(rps1)
+
+    // Fetch interval totals for interval 1.
+    startTime2 := endTime.Add(-rpsPuller.Interval2Secs)
+    rps2, err := dbmodel.GetTotalRpsOverIntervalForDaemon(rpsPuller.Db, startTime2, endTime, daemonID)
+    if (err != nil) {
+		return fmt.Errorf("query for RPS interval 2 data failed: %s", err)
+    }
+
+    // Calculate RPS for interval 2.
+    daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2 = calculateRps(rps2)
+
+    // Update the daemon statistics.
+    log.Printf("Updating KeaDHCPDaemonStats: %+v", daemon.KeaDaemon.KeaDHCPDaemon.Stats)
+    return dbmodel.UpdateDaemon(rpsPuller.Db, daemon)
+}
+
+// Calculate the RPS for the first row in a set of RpsIntervals
+func calculateRps(totals []*dbmodel.RpsInterval) int {
+    if (len(totals) == 0) {
+        return 0
+    }
+
+    responses := totals[0].Responses;
+    duration := totals[0].Duration;
+    if (responses <= 0 || duration <= 0) {
+        return 0
+    }
+
+    // If it's a fraction, return 1 (unless we move to floats)
+    if (responses <= duration) {
+        return 1
+    }
+
+    // Return the rate.
+    return (int(responses / duration))
 }
 
 // Returns the statistic value and sample time from a given row within a
@@ -367,8 +427,6 @@ func getSampleRow(samples []interface{}, rowIdx int) (int64, time.Time, error) {
 	}
 
 	// Not sure why unmarshalling makes it a float64, but we need an int64.
-	log.Printf("TKM value before cast: %+v", row[0].(float64))
-
 	value := int64(row[0].(float64))
 
 	return value, sampledAt, nil

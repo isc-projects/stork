@@ -273,8 +273,8 @@
                         <th>[ID] App Version</th>
                         <th>Daemon</th>
                         <th>Status</th>
-                        <!-- TODO <th>LPS (15min)</th> -->
-                        <!-- <th>LPS (24h)</th> -->
+                        <th>RPS (15min)</th>
+                        <th>RPS (24h)</th>
                         <!-- <th>Pool Used</th> -->
                         <th>HA State</th>
                         <th>Detected Failure w/HA</th>
@@ -300,8 +300,8 @@
                                 }"
                             ></i>
                         </td>
-                        <!-- TODO <td>{{ d.lps15min }}</td> -->
-                        <!-- <td>{{ d.lps25h }}</td> -->
+                        <td>{{ d.rps1 }}</td>
+                        <td>{{ d.rps2 }}</td>
                         <!-- <td>{{ d.addrUtilization }}</td> -->
                         <td>
                             <i

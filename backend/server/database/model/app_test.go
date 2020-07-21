@@ -195,7 +195,8 @@ func TestUpdateApp(t *testing.T) {
 					Config: dhcp4Config,
 					KeaDHCPDaemon: &KeaDHCPDaemon{
 						Stats: KeaDHCPDaemonStats{
-							LPS15min: 1024,
+							RPS1: 1024,
+							RPS2: 2048,
 						},
 					},
 				},
@@ -260,7 +261,8 @@ func TestUpdateApp(t *testing.T) {
 
 	require.NotNil(t, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon)
 	require.NotZero(t, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.ID)
-	require.EqualValues(t, 1024, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.Stats.LPS15min)
+	require.EqualValues(t, 1024, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.Stats.RPS1)
+	require.EqualValues(t, 2048, returned.Daemons[0].KeaDaemon.KeaDHCPDaemon.Stats.RPS2)
 
 	// Make sure that the logging targets were stored.
 	require.Len(t, returned.Daemons[0].LogTargets, 2)
@@ -314,7 +316,8 @@ func TestUpdateApp(t *testing.T) {
 		KeaDaemon: &KeaDaemon{
 			KeaDHCPDaemon: &KeaDHCPDaemon{
 				Stats: KeaDHCPDaemonStats{
-					LPS15min: 2048,
+					RPS1: 2048,
+					RPS2: 4096,
 				},
 			},
 		},
@@ -354,9 +357,9 @@ func TestUpdateApp(t *testing.T) {
 			require.NotNil(t, d.KeaDaemon)
 			require.Nil(t, d.KeaDaemon.Config)
 			require.NotNil(t, d.KeaDaemon.KeaDHCPDaemon)
-			require.EqualValues(t, 2048, d.KeaDaemon.KeaDHCPDaemon.Stats.LPS15min)
+			require.EqualValues(t, 2048, d.KeaDaemon.KeaDHCPDaemon.Stats.RPS1)
+			require.EqualValues(t, 4096, d.KeaDaemon.KeaDHCPDaemon.Stats.RPS2)
 			require.Empty(t, d.LogTargets)
-
 		case "kea-ctrl-agent":
 			// The ID of the daemon should be preserved to keep data integrity if
 			// something is referencing the updated daemon.

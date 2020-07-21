@@ -81,7 +81,8 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
     }`)
 	require.NoError(t, err)
 
-	daemon.KeaDaemon.KeaDHCPDaemon.Stats.LPS15min = 1000
+	daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1 = 1000
+	daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2 = 2000
 	daemon.KeaDaemon.KeaDHCPDaemon.Stats.AddrUtilization = 90
 
 	err = UpdateDaemon(db, daemon)
@@ -100,7 +101,8 @@ func TestUpdateKeaDHCPDaemon(t *testing.T) {
 	require.NotNil(t, daemon.KeaDaemon)
 	require.NotNil(t, daemon.KeaDaemon.Config)
 	require.NotNil(t, daemon.KeaDaemon.KeaDHCPDaemon)
-	require.EqualValues(t, 1000, daemon.KeaDaemon.KeaDHCPDaemon.Stats.LPS15min)
+	require.EqualValues(t, 1000, daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1)
+	require.EqualValues(t, 2000, daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2)
 	require.EqualValues(t, 90, daemon.KeaDaemon.KeaDHCPDaemon.Stats.AddrUtilization)
 }
 
