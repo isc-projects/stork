@@ -162,7 +162,7 @@ func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
 	// traffic_incoming_requests_tcp6_size_sum
 	trafficStatsDesc["dns-tcp-requests-sizes-received-ipv6"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "traffic_incoming_requests_tcp6_size"),
-		"Size of DNS requests (UDP/IPv4).",
+		"Size of DNS requests (TCP/IPv6).",
 		nil, nil)
 	// traffic_incoming_requests_total_size_bucket
 	// traffic_incoming_requests_total_size_count
@@ -476,14 +476,16 @@ func (pbe *PromBind9Exporter) qryRTTHistogram(stats map[string]float64) (uint64,
 	return count, math.NaN(), buckets, nil
 }
 
-// trafficSizesHistrogram collects a histogram from the traffic statistics.
-// Size buckets are in bytes, for example bucket[47] stores how many packets
-// were at most 47 bytes long (cumulative counter).  The total sum of all
-// observed values is exposed with sum, but since named does not output the
-// actual sizes, this is not applicable. The count of events that have been
-// observed is exposed with count and is identical to bucket[+Inf].
-func (pbe *PromBind9Exporter) trafficSizesHistogram(stats map[string]float64) (uint64, float64, map[float64]uint64, error) {
-	buckets := map[float64]uint64{}
+// trafficSizesHistrogram collects a histogram from the traffic statistics as.
+// 'buckets'.  Size buckets are in bytes, for example bucket[47] stores how
+// many packets were at most 47 bytes long (cumulative counter).  The total
+// sum of all observed values is exposed with 'sum', but since named does not
+// output the actual sizes, this is not applicable. The count of events that
+// have been observed is exposed with 'count' and is identical to bucket[+Inf].
+func (pbe *PromBind9Exporter) trafficSizesHistogram(stats map[string]float64) (count uint64, sum float64, buckets map[float64]uint64, err error) {
+	count = 0
+	sum = math.NaN()
+	buckets = map[float64]uint64{}
 
 	buckets[math.Inf(0)] = 0
 	for statName, statValue := range stats {
@@ -517,13 +519,12 @@ func (pbe *PromBind9Exporter) trafficSizesHistogram(stats map[string]float64) (u
 	}
 	sort.Float64s(keys)
 
-	var count uint64
 	for _, k := range keys {
 		count += buckets[k]
 		buckets[k] = count
 	}
 
-	return count, math.NaN(), buckets, nil
+	return count, sum, buckets, nil
 }
 
 // collectResolverStat fetches a specific resolver view statistic.
@@ -1117,7 +1118,7 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	if !ok {
 		return errors.Errorf("no 'traffic' in response: %+v", rsp)
 	}
-	traffic := trafficIfc.(map[string]interface{})
+	traffic, ok := trafficIfc.(map[string]interface{})
 	if !ok {
 		return errors.Errorf("problem with casting trafficIfc: %+v", trafficIfc)
 	}
