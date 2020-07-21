@@ -16,8 +16,8 @@ import (
 
 // Global Agent settings.
 type AgentSettings struct {
-	PrometheusOnly bool `long:"listen-prometheus-only" description:"listen only for Prometheus requests" env:"STORK_AGENT_LISTEN_PROMETHEUS_ONLY"`
-	StorkOnly      bool `long:"listen-stork-only" description:"listen only for Stork Server requests" env:"STORK_AGENT_LISTEN_STORK_ONLY"`
+	PrometheusOnly bool `long:"listen-prometheus-only" description:"listen for Prometheus requests only, but not for commands from the Stork Server." env:"STORK_AGENT_LISTEN_PROMETHEUS_ONLY"`
+	StorkOnly      bool `long:"listen-stork-only" description:"listen for commands from the Stork Server only, but not for Prometheus requests." env:"STORK_AGENT_LISTEN_STORK_ONLY"`
 	Version        bool `short:"v" long:"version" description:"show software version"`
 }
 

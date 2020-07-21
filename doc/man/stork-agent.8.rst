@@ -27,57 +27,59 @@ the stork agent and uses it to monitor services remotely.
 Arguments
 ~~~~~~~~~
 
-The Stork Agent takes the following arguments:
+Stork does not use explicit configuration file. Instead, its behavior can be controlled with
+command line switches and/or variables. The Stork Agent takes the following command line switches.
+Equivalent environment variables are listed in square brackets, where applicable.
+
+``--listen-stork-only``
+   listen for commands from the Stork Server only, but not for Prometheus requests.
+   [$STORK_AGENT_LISTEN_STORK_ONLY]
+
+``--listen-prometheus-only``
+   listen for Prometheus requests only, but not for commands from the Stork Server.
+   [$STORK_AGENT_LISTEN_PROMETHEUS_ONLY]
+
+``-v`` or ``--version``
+   show software version.
+
+Stork Server flags:
+
+``--host=``
+   Specifies the IP or hostname to listen on. [$STORK_AGENT_ADDRESS]
+
+``--port=``
+   Specifies the TCP port to listen on for connections. (default: 8080) [$STORK_AGENT_PORT]
+
+Prometheus Kea Exporter flags:
+
+``--prometheus-kea-exporter-host=``
+   the IP or hostname to listen on for incoming Prometheus connection (default: 0.0.0.0)
+   [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS]
+
+``--prometheus-kea-exporter-port=``
+   the port to listen on for incoming Prometheus connection (default: 9547)
+   [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT]
+
+``--prometheus-kea-exporter-interval=``
+   specifies how often the agent collects stats from Kea, in seconds (default: 10)
+   [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL]
+
+Prometheus BIND 9 Exporter flags:
+
+``--prometheus-bind9-exporter-host=``
+   the IP or hostname to listen on for incoming Prometheus connection (default: 0.0.0.0)
+   [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS]
+
+``--prometheus-bind9-exporter-port=``
+   the port to listen on for incoming Prometheus connection (default: 9119)
+   [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT]
+
+``--prometheus-bind9-exporter-interval=``
+   specifies how often the agent collects stats from BIND 9, in seconds (default: 10)
+   [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL]
 
 ``-h`` or ``--help``
    Displays list of available parameters.
-
-``-v`` or ``--version``
-   Returns stork-agent version.
-
-``--host=hostname``
-   Specifies the IP to listen on. Can be controlled with $STORK_AGENT_ADDRESS environment
-   variable. The default value is ``::``.
-
-``--port=1234``
-   Specifies the TCP port to listen on for connections. The default is 8080. Can be controlled
-   with $STORK_AGENT_PORT environment variable.
-
-``--listen-stork-only``
-   Instructs the agent to listen for commands from the Stork Server but not for Prometheus requests.
-   Can also be set with the $STORK_AGENT_LISTEN_STORK_ONLY environment variable.
-
-``--listen-prometheus-only``
-   Instructs the agent to listen for Prometheus requests but not for commands from the Stork Server.
-   Can also be set with the $STORK_AGENT_LISTEN_PROMETHEUS_ONLY environment variable.
-
-``--prometheus-kea-exporter-host``
-   Instructs the agent to open Prometheus Kea exporter socket on specified address.
-
-``--prometheus-kea-exporter-port``
-   Instructs the agent to open Prometheus Kea exporter socket on specified port.
-
-``--prometheus-kea-exporter-interval``
-   Instruct the agent to how frequently the statistics should be pulled from Kea.
-
-``--prometheus-bind9-exporter-host``
-   Instructs the agent to open Prometheus BIND 9 exporter socket on specified address.
-
-``--prometheus-bind9-exporter-port``
-   Instructs the agent to open Prometheus BIND 9 exporter socket on specified port.
-
-``--prometheus-bind9-exporter-interval``
-   Instruct the agent to how frequently the statistics should be pulled from BIND 9.
-
-Configuration
-~~~~~~~~~~~~~
-
-Stork agent uses two environment variables to control its behavior:
-
-- STORK_AGENT_ADDRESS - if defined, governs which IP address to listen on
-
-- STORK_AGENT_PORT - if defined, it controls which port to listen on. The
-  default is 8080.
 
 
 Mailing List and Support

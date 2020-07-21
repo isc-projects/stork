@@ -25,9 +25,9 @@ import (
 
 // Settings for Prometheus BIND 9 Exporter
 type PromBind9ExporterSettings struct {
-	Host     string `long:"prometheus-bind9-exporter-host" description:"the IP to listen on" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"`
-	Port     int    `long:"prometheus-bind9-exporter-port" description:"the port to listen on for connections" default:"9119" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"`
-	Interval int    `long:"prometheus-bind9-exporter-interval" description:"interval of collecting BIND 9 stats in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"`
+	Host     string `long:"prometheus-bind9-exporter-host" description:"the IP or hostname to listen on for incoming Prometheus connection" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"`
+	Port     int    `long:"prometheus-bind9-exporter-port" description:"the port to listen on for incoming Prometheus connection" default:"9119" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"`
+	Interval int    `long:"prometheus-bind9-exporter-interval" description:"specifies how often the agent collects stats from BIND 9, in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"`
 }
 
 const (

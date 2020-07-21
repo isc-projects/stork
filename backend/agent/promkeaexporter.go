@@ -23,9 +23,9 @@ import (
 
 // Settings for Prometheus Kea Exporter
 type PromKeaExporterSettings struct {
-	Host     string `long:"prometheus-kea-exporter-host" description:"the IP to listen on" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS"`
-	Port     int    `long:"prometheus-kea-exporter-port" description:"the port to listen on for connections" default:"9547" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT"`
-	Interval int    `long:"prometheus-kea-exporter-interval" description:"interval of collecting Kea stats in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL"`
+	Host     string `long:"prometheus-kea-exporter-host" description:"the IP or hostname to listen on for incoming Prometheus connection" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS"`
+	Port     int    `long:"prometheus-kea-exporter-port" description:"the port to listen on for incoming Prometheus connection" default:"9547" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT"`
+	Interval int    `long:"prometheus-kea-exporter-interval" description:"specifies how often the agent collects stats from Kea, in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL"`
 }
 
 // Stats descriptor that holds reference to prometheus stats
