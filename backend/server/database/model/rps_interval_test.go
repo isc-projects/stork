@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-    "github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v9"
 	require "github.com/stretchr/testify/require"
 	dbtest "isc.org/stork/server/database/test"
 	storkutil "isc.org/stork/util"
@@ -107,12 +107,12 @@ func TestRpsIntervalTotals(t *testing.T) {
 	}
 
 	// Get totals that span the whole table
-    startTime = timeZero;
-    endTime := storkutil.UTCNow();
+	startTime = timeZero
+	endTime := storkutil.UTCNow()
 	rpsTotals, err = GetTotalRpsOverInterval(db, startTime, endTime)
 	require.NoError(t, err)
 	require.Len(t, rpsTotals, 3)
-    expDuration := (intervals * 5)
+	expDuration := (intervals * 5)
 
 	// Verify the totals.
 	for row := 0; row < daemons; row++ {
@@ -128,9 +128,9 @@ func TestRpsIntervalTotals(t *testing.T) {
 
 		require.EqualValues(t, expResponses, interval.Responses)
 
-        // Now check the RPS values when pulled for a single daemon.
-        checkIntervalPerDaemon(t, db, startTime, endTime,
-            interval.KeaDaemonID, interval.Responses, interval.Duration)
+		// Now check the RPS values when pulled for a single daemon.
+		checkIntervalPerDaemon(t, db, startTime, endTime,
+			interval.KeaDaemonID, interval.Responses, interval.Duration)
 	}
 
 	// Fetch totals for a time frame containing only the first two intervals
@@ -154,9 +154,9 @@ func TestRpsIntervalTotals(t *testing.T) {
 
 		require.EqualValues(t, expResponses, interval.Responses)
 
-        // Now check the RPS values when pulled for a single daemon.
-        checkIntervalPerDaemon(t, db, startTime, endTime,
-            interval.KeaDaemonID, interval.Responses, interval.Duration)
+		// Now check the RPS values when pulled for a single daemon.
+		checkIntervalPerDaemon(t, db, startTime, endTime,
+			interval.KeaDaemonID, interval.Responses, interval.Duration)
 	}
 
 	// Fetch totals for a time frame containing only the middle three intervals
@@ -180,9 +180,9 @@ func TestRpsIntervalTotals(t *testing.T) {
 
 		require.EqualValues(t, expResponses, interval.Responses)
 
-        // Now check the RPS values when pulled for a single daemon.
-        checkIntervalPerDaemon(t, db, startTime, endTime,
-            interval.KeaDaemonID, interval.Responses, interval.Duration)
+		// Now check the RPS values when pulled for a single daemon.
+		checkIntervalPerDaemon(t, db, startTime, endTime,
+			interval.KeaDaemonID, interval.Responses, interval.Duration)
 	}
 
 	// Fetch totals for a time frame containing only the last interval
@@ -201,9 +201,9 @@ func TestRpsIntervalTotals(t *testing.T) {
 		expResponses := int64(5) * int64(math.Pow10(daemon))
 		require.EqualValues(t, expResponses, interval.Responses)
 
-        // Now check the RPS values when pulled for a single daemon.
-        checkIntervalPerDaemon(t, db, startTime, endTime,
-            interval.KeaDaemonID, interval.Responses, interval.Duration)
+		// Now check the RPS values when pulled for a single daemon.
+		checkIntervalPerDaemon(t, db, startTime, endTime,
+			interval.KeaDaemonID, interval.Responses, interval.Duration)
 	}
 }
 
@@ -211,8 +211,8 @@ func checkIntervalPerDaemon(t *testing.T, db *pg.DB, startTime time.Time, endTim
 	rpsTotals, err := GetTotalRpsOverIntervalForDaemon(db, startTime, endTime, daemonID)
 	require.NoError(t, err)
 	require.Len(t, rpsTotals, 1)
-    interval := rpsTotals[0]
-    require.EqualValues(t, daemonID, interval.KeaDaemonID)
-    require.EqualValues(t, expDuration, interval.Duration)
-    require.EqualValues(t, expResponses, interval.Responses)
+	interval := rpsTotals[0]
+	require.EqualValues(t, daemonID, interval.KeaDaemonID)
+	require.EqualValues(t, expDuration, interval.Duration)
+	require.EqualValues(t, expResponses, interval.Responses)
 }

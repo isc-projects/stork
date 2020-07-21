@@ -58,18 +58,18 @@ func addMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Active bool
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
 			{
-				Active:    dhcp4Active,
-				Name:      "dhcp4",
+				Active: dhcp4Active,
+				Name:   "dhcp4",
 				KeaDaemon: &dbmodel.KeaDaemon{
-                    KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-                },
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+				},
 			},
 			{
-				Active:    dhcp6Active,
-				Name:      "dhcp6",
+				Active: dhcp6Active,
+				Name:   "dhcp6",
 				KeaDaemon: &dbmodel.KeaDaemon{
-                    KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-                },
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+				},
 			},
 		},
 	}
@@ -88,14 +88,14 @@ func addMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Active bool
 }
 
 func checkDaemonRpsStats(t *testing.T, db *dbops.PgDB, keaDaemonID int64, interval1 int, interval2 int) {
-    daemon := &dbmodel.KeaDHCPDaemon{};
-    err := db.Model(daemon).
-        Where("kea_daemon_id = ?", keaDaemonID).
-        Select()
+	daemon := &dbmodel.KeaDHCPDaemon{}
+	err := db.Model(daemon).
+		Where("kea_daemon_id = ?", keaDaemonID).
+		Select()
 
-    require.NoError(t, err)
-    require.Equal(t, interval1, daemon.Stats.RPS1)
-    require.Equal(t, interval2, daemon.Stats.RPS2)
+	require.NoError(t, err)
+	require.Equal(t, interval1, daemon.Stats.RPS1)
+	require.Equal(t, interval2, daemon.Stats.RPS2)
 }
 
 // Check if Kea response to statistic-get command is handled correctly
@@ -372,9 +372,9 @@ func TestRpsPullerPullRps(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, rpsIntervals, 0)
 
-    // Verify daemon RPS stat values are all 0.
-    checkDaemonRpsStats(t, db, 1, 0, 0);
-    checkDaemonRpsStats(t, db, 2, 0, 0);
+	// Verify daemon RPS stat values are all 0.
+	checkDaemonRpsStats(t, db, 1, 0, 0)
+	checkDaemonRpsStats(t, db, 2, 0, 0)
 
 	// sleep two seconds so we will have a later recorded time
 	time.Sleep(2 * time.Second)
@@ -425,9 +425,9 @@ func TestRpsPullerPullRps(t *testing.T) {
 	require.GreaterOrEqual(t, (current6.SampledAt.Unix() - previous6.SampledAt.Unix()), interval.Duration)
 	require.EqualValues(t, 7, interval.Responses)
 
-    // Verify daemon RPS stat values are as expected.
-    checkDaemonRpsStats(t, db, 1, 2, 2);
-    checkDaemonRpsStats(t, db, 2, 3, 3);
+	// Verify daemon RPS stat values are as expected.
+	checkDaemonRpsStats(t, db, 1, 2, 2)
+	checkDaemonRpsStats(t, db, 2, 3, 3)
 }
 
 // Verifies that getting stat values that are less than or equal to the previous
@@ -499,39 +499,39 @@ func TestRpsPullerValuePermutations(t *testing.T) {
 		require.Len(t, rpsIntervals, pass)
 
 		// After the first pass, verify the content of the newest interval row
-        // and the kea_dhcp_daemon table.
+		// and the kea_dhcp_daemon table.
 		if pass > 0 {
 			require.Equal(t, expectedResponses[pass-1], rpsIntervals[pass-1].Responses)
 
-            // Verify daemon RPS stats are as expected.  We calculate them from
-            // the recorded intervals to avoid sporadic timing differences in duration
-            // which can cause the test to fail.
-            expectedRps := getExpectedRps(rpsIntervals, pass)
-            checkDaemonRpsStats(t, db, 1, expectedRps, expectedRps);
+			// Verify daemon RPS stats are as expected.  We calculate them from
+			// the recorded intervals to avoid sporadic timing differences in duration
+			// which can cause the test to fail.
+			expectedRps := getExpectedRps(rpsIntervals, pass)
+			checkDaemonRpsStats(t, db, 1, expectedRps, expectedRps)
 		}
 
-        // Sleep for 1 second to ensure durations are at least that long.
-	    time.Sleep(1 * time.Second)
+		// Sleep for 1 second to ensure durations are at least that long.
+		time.Sleep(1 * time.Second)
 	}
 }
 
 // Calculte the RPS from an array of RpsIntervals.
 func getExpectedRps(rpsIntervals []*dbmodel.RpsInterval, endIdx int) int {
-    var responses int64
-    var duration int64
+	var responses int64
+	var duration int64
 
-    for  idx := 0; idx < endIdx; idx++ {
-        responses += rpsIntervals[idx].Responses;
-        duration += rpsIntervals[idx].Duration;
-    }
+	for idx := 0; idx < endIdx; idx++ {
+		responses += rpsIntervals[idx].Responses
+		duration += rpsIntervals[idx].Duration
+	}
 
-    if duration <= 0 {
-        return 0;
-    }
+	if duration <= 0 {
+		return 0
+	}
 
-    if responses < duration {
-        return 1;
-    }
+	if responses < duration {
+		return 1
+	}
 
-    return (int(responses / duration))
+	return (int(responses / duration))
 }

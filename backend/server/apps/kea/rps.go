@@ -18,8 +18,8 @@ import (
 type RpsPuller struct {
 	*agentcomm.PeriodicPuller
 	PreviousRps map[int64]StatSample // map of last known values per Daemon
-    Interval1Secs time.Duration
-    Interval2Secs time.Duration
+	Interval1   time.Duration
+	Interval2   time.Duration
 }
 
 // Represents a time/value pair
@@ -87,8 +87,8 @@ func NewRpsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*RpsPuller, erro
 	}
 	rpsPuller.PeriodicPuller = periodicPuller
 	rpsPuller.PreviousRps = map[int64]StatSample{}
-    rpsPuller.Interval1Secs = (time.Second * 15 * 60)
-    rpsPuller.Interval2Secs = (time.Second * 24 * 60 * 60)
+	rpsPuller.Interval1 = (time.Second * 15 * 60)
+	rpsPuller.Interval2 = (time.Second * 24 * 60 * 60)
 	return rpsPuller, nil
 }
 
@@ -101,8 +101,8 @@ func (rpsPuller *RpsPuller) Shutdown() {
 // returns the number of apps for which the stats were successfully pulled and last
 // encountered error.
 func (rpsPuller *RpsPuller) pullStats() (int, error) {
-	// Age off records more than Interval2Secs old.
-	deleteTime := storkutil.UTCNow().Add(-rpsPuller.Interval2Secs)
+	// Age off records more than Interval2 old.
+	deleteTime := storkutil.UTCNow().Add(-rpsPuller.Interval2)
 	err := dbmodel.AgeOffRpsInterval(rpsPuller.Db, deleteTime)
 	if err != nil {
 		return 0, err
@@ -118,7 +118,8 @@ func (rpsPuller *RpsPuller) pullStats() (int, error) {
 	var lastErr error
 	appsOkCnt := 0
 	for _, dbApp := range dbApps {
-		err := rpsPuller.getStatsFromApp(&dbApp)
+		dbApp2 := dbApp
+		err := rpsPuller.getStatsFromApp(&dbApp2)
 		if err != nil {
 			lastErr = err
 			log.Errorf("error occurred while getting RPS stats from app %d: %+v", dbApp.ID, err)
@@ -209,10 +210,10 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 				// Calculate and store the RPS interval for this daemon for this cycle
 				err = rpsPuller.updateDaemonRpsIntervals(dhcp4Daemon, samples)
 
-                // Now we'll update the Kea RPS statistics based on the updated interval data
-                if (err == nil) {
-                    err = rpsPuller.updateKeaDaemonRpsStats(dhcp4Daemon)
-                }
+				// Now we'll update the Kea RPS statistics based on the updated interval data
+				if err == nil {
+					err = rpsPuller.updateKeaDaemonRpsStats(dhcp4Daemon)
+				}
 			}
 
 			if err != nil {
@@ -235,10 +236,10 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 				// Calculate and store the RPS interval for this daemon for this cycle
 				err = rpsPuller.updateDaemonRpsIntervals(dhcp6Daemon, samples)
 
-                // Now we'll update the Kea RPS statistics based on the updated interval data
-                if (err == nil) {
-                    err = rpsPuller.updateKeaDaemonRpsStats(dhcp6Daemon)
-                }
+				// Now we'll update the Kea RPS statistics based on the updated interval data
+				if err == nil {
+					err = rpsPuller.updateKeaDaemonRpsStats(dhcp6Daemon)
+				}
 			}
 
 			if err != nil {
@@ -310,7 +311,7 @@ func (rpsPuller *RpsPuller) updateDaemonRpsIntervals(daemon *dbmodel.Daemon, sam
 		return fmt.Errorf("could not extract RPS stat: %s", err)
 	}
 
-    daemonID := daemon.KeaDaemon.DaemonID
+	daemonID := daemon.KeaDaemon.DaemonID
 	if value < 0 {
 		// Shouldn't happen but if it does, we'll record a 0.
 		log.Warnf("discarding response value: %d returned from KeaDaemonID: %d", value, daemonID)
@@ -348,56 +349,55 @@ func (rpsPuller *RpsPuller) updateDaemonRpsIntervals(daemon *dbmodel.Daemon, sam
 
 // Update the RPS value for both intervals for given daemon.
 // Uses the RpsInterval table contents to get the total responses and duration
-// for both intervals and then updates the Daemon's statistics in the db. 
+// for both intervals and then updates the Daemon's statistics in the db.
 func (rpsPuller *RpsPuller) updateKeaDaemonRpsStats(daemon *dbmodel.Daemon) error {
+	endTime := storkutil.UTCNow()
+	startTime1 := endTime.Add(-rpsPuller.Interval1)
+	daemonID := daemon.KeaDaemon.DaemonID
 
-    endTime := storkutil.UTCNow();
-    startTime1 := endTime.Add(-rpsPuller.Interval1Secs)
-    daemonID := daemon.KeaDaemon.DaemonID
-
-    // Fetch interval totals for interval 1.
-    rps1, err := dbmodel.GetTotalRpsOverIntervalForDaemon(rpsPuller.Db, startTime1, endTime, daemonID)
-    if (err != nil) {
+	// Fetch interval totals for interval 1.
+	rps1, err := dbmodel.GetTotalRpsOverIntervalForDaemon(rpsPuller.Db, startTime1, endTime, daemonID)
+	if err != nil {
 		return fmt.Errorf("query for RPS interval 1 data failed: %s", err)
-    }
+	}
 
-    // Calculate RPS for interval 1.
-    daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1 = calculateRps(rps1)
+	// Calculate RPS for interval 1.
+	daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1 = calculateRps(rps1)
 
-    // Fetch interval totals for interval 1.
-    startTime2 := endTime.Add(-rpsPuller.Interval2Secs)
-    rps2, err := dbmodel.GetTotalRpsOverIntervalForDaemon(rpsPuller.Db, startTime2, endTime, daemonID)
-    if (err != nil) {
+	// Fetch interval totals for interval 1.
+	startTime2 := endTime.Add(-rpsPuller.Interval2)
+	rps2, err := dbmodel.GetTotalRpsOverIntervalForDaemon(rpsPuller.Db, startTime2, endTime, daemonID)
+	if err != nil {
 		return fmt.Errorf("query for RPS interval 2 data failed: %s", err)
-    }
+	}
 
-    // Calculate RPS for interval 2.
-    daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2 = calculateRps(rps2)
+	// Calculate RPS for interval 2.
+	daemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2 = calculateRps(rps2)
 
-    // Update the daemon statistics.
-    log.Printf("Updating KeaDHCPDaemonStats: %+v", daemon.KeaDaemon.KeaDHCPDaemon.Stats)
-    return dbmodel.UpdateDaemon(rpsPuller.Db, daemon)
+	// Update the daemon statistics.
+	log.Printf("Updating KeaDHCPDaemonStats: %+v", daemon.KeaDaemon.KeaDHCPDaemon.Stats)
+	return dbmodel.UpdateDaemon(rpsPuller.Db, daemon)
 }
 
 // Calculate the RPS for the first row in a set of RpsIntervals
 func calculateRps(totals []*dbmodel.RpsInterval) int {
-    if (len(totals) == 0) {
-        return 0
-    }
+	if len(totals) == 0 {
+		return 0
+	}
 
-    responses := totals[0].Responses;
-    duration := totals[0].Duration;
-    if (responses <= 0 || duration <= 0) {
-        return 0
-    }
+	responses := totals[0].Responses
+	duration := totals[0].Duration
+	if responses <= 0 || duration <= 0 {
+		return 0
+	}
 
-    // If it's a fraction, return 1 (unless we move to floats)
-    if (responses <= duration) {
-        return 1
-    }
+	// If it's a fraction, return 1 (unless we move to floats)
+	if responses <= duration {
+		return 1
+	}
 
-    // Return the rate.
-    return (int(responses / duration))
+	// Return the rate.
+	return (int(responses / duration))
 }
 
 // Returns the statistic value and sample time from a given row within a
