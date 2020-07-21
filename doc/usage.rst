@@ -69,9 +69,11 @@ monitored. Currently, there are no automated deployment routines and
 ``Stork Agent`` must be installed manually.  This can be done in one
 of two ways: from RPM or deb packages (described in the
 :ref:`installation` chapter), or by simply copying the ``Stork Agent``
-binary to the destination machine manually.
+binary to the destination machine manually. The packages are usually far
+more convenient.
 
-Assuming services will be monitored on a machine with the IP
+Assuming you choose to not use the packages, the Stork Agent binary can
+be copied manually. Assuming services will be monitored on a machine with the IP
 192.0.2.1, enter the following on the Stork server command line:
 
 .. code:: console
