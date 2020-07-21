@@ -661,7 +661,7 @@ desc 'Builds Stork documentation, using Sphinx'
 task :doc do
   sh "sphinx-build -M html doc/ doc/_build #{SPHINXOPTS}"
   sh 'mkdir -p webui/src/assets/arm'
-  sh 'cp -a doc/_build/singlehtml/* webui/src/assets/arm'
+  sh 'cp -a doc/_build/html/* webui/src/assets/arm'
   sh "sphinx-build -M man doc/ doc/ #{SPHINXOPTS}"
 end
 
