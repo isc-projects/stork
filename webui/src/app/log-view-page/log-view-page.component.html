@@ -9,7 +9,28 @@
     <p-header>
         <div style="display: flex; justify-content: space-between;">
             <span class="ui-panel-title" style="margin-top: 5px; display: inline-block;">
-                {{ panelTitle }}
+                <ng-container *ngIf="!loaded">
+                    Loading...
+                </ng-container>
+
+                <ng-container *ngIf="loaded">
+                    Log {{ data.logTargetOutput }}
+                    from
+                    <app-entity-link entity="app" [attrs]="{ id: appId, type: appType, version: '' }"></app-entity-link>
+                    on
+                    <app-entity-link
+                        entity="machine"
+                        [attrs]="{ id: data.machine.id, address: data.machine.address }"
+                    ></app-entity-link>
+
+                    <ng-container *ngIf="loadingError">
+                        - loading failed: {{ loadingError }}
+                        <i
+                            class="pi pi-exclamation-circle"
+                            style="font-size: 1.75em; vertical-align: bottom; color: red;"
+                        ></i>
+                    </ng-container>
+                </ng-container>
             </span>
             <span>
                 <p-button

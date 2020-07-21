@@ -149,7 +149,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 			"Key":     accessPoints[0].Key,
 		}).Errorf("Failed to forward commands to rndc: %+v", err)
 		rndcRsp.Status.Code = agentapi.Status_ERROR
-		rndcRsp.Status.Message = "Failed to forward commands to rndc"
+		rndcRsp.Status.Message = fmt.Sprintf("Failed to forward commands to rndc: %s", err.Error())
 	} else {
 		rndcRsp.Status.Code = agentapi.Status_OK
 		rndcRsp.Response = string(output)
@@ -157,7 +157,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 
 	response.Status = rndcRsp.Status
 	response.RndcResponse = rndcRsp
-	return response, err
+	return response, nil
 }
 
 // ForwardToNamedStats forwards a statistics request to the named daemon.
@@ -181,7 +181,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 			"URL": reqURL,
 		}).Errorf("Failed to forward commands to named: %+v", err)
 		rsp.Status.Code = agentapi.Status_ERROR
-		rsp.Status.Message = "Failed to forward commands to named"
+		rsp.Status.Message = fmt.Sprintf("Failed to forward commands to named: %s", err.Error())
 		response.NamedStatsResponse = rsp
 		return response, nil
 	}
@@ -194,7 +194,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 			"URL": reqURL,
 		}).Errorf("Failed to read the body of the named response: %+v", err)
 		rsp.Status.Code = agentapi.Status_ERROR
-		rsp.Status.Message = "Failed to read the body of the named response"
+		rsp.Status.Message = fmt.Sprintf("Failed to read the body of the named response: %s", err.Error())
 		response.NamedStatsResponse = rsp
 		return response, nil
 	}
@@ -231,7 +231,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 				"URL": reqURL,
 			}).Errorf("Failed to forward commands to Kea: %+v", err)
 			rsp.Status.Code = agentapi.Status_ERROR
-			rsp.Status.Message = "Failed to forward commands to Kea"
+			rsp.Status.Message = fmt.Sprintf("Failed to forward commands to Kea: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
 			continue
 		}
@@ -244,7 +244,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 				"URL": reqURL,
 			}).Errorf("Failed to read the body of the Kea response to forwarded commands: %+v", err)
 			rsp.Status.Code = agentapi.Status_ERROR
-			rsp.Status.Message = "Failed to read the body of the Kea response"
+			rsp.Status.Message = fmt.Sprintf("Failed to read the body of the Kea response: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
 			continue
 		}
@@ -269,8 +269,8 @@ func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFil
 	f, err := os.Open(in.Path)
 	if err != nil {
 		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = "Failed to open file for tailing"
-		return response, err
+		response.Status.Message = fmt.Sprintf("Failed to open file for tailing: %s", err.Error())
+		return response, nil
 	}
 	defer func() {
 		_ = f.Close()
@@ -279,8 +279,8 @@ func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFil
 	stat, err := f.Stat()
 	if err != nil {
 		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = "Failed to stat the file opened for tailing"
-		return response, err
+		response.Status.Message = fmt.Sprintf("Failed to stat the file opened for tailing: %s", err.Error())
+		return response, nil
 	}
 
 	offset := in.Offset
@@ -292,8 +292,8 @@ func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFil
 	_, err = f.Seek(-offset, io.SeekEnd)
 	if err != nil {
 		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = "Failed to seek in the file opened for tailing"
-		return response, err
+		response.Status.Message = fmt.Sprintf("Failed to seek in the file opened for tailing: %s", err.Error())
+		return response, nil
 	}
 	s := bufio.NewScanner(f)
 	for s.Scan() {

@@ -170,7 +170,7 @@ message TailTextFileReq {
   // File to be tailed.
   string path = 1;
 
-  // Seek info.
+  // Seek info. The offset is counted from the end of file.
   int64 offset = 2;
 }
 

@@ -20,8 +20,6 @@ import { ServicesService } from '../backend/api/api'
     styleUrls: ['./log-view-page.component.sass'],
 })
 export class LogViewPageComponent implements OnInit {
-    panelTitle = 'Loading....'
-
     maxLengthChunk = 4000
     maxLength = this.maxLengthChunk
 
@@ -30,6 +28,7 @@ export class LogViewPageComponent implements OnInit {
     appTypeCapitalized: string
     private _logId: number
     contents: string[]
+    data: any
 
     /**
      * Indicates if the new request for data has been sent and the
@@ -37,6 +36,7 @@ export class LogViewPageComponent implements OnInit {
      * activated to indicate that the data are loading.
      */
     loaded = false
+    loadingError = null
 
     /**
      * Constructor
@@ -73,30 +73,8 @@ export class LogViewPageComponent implements OnInit {
         this.loaded = false
         this.servicesApi.getLogTail(this._logId, this.maxLength).subscribe(
             (data) => {
-                // Set panel title.
-                this.panelTitle = data.logTargetOutput
-
-                let agentAddress = ''
-                if (data.agentAddress) {
-                    agentAddress = data.agentAddress
-                }
-
-                let agentPort = 0
-                if (data.agentPort && data.agentPort > 0) {
-                    agentPort = data.agentPort
-                }
-
-                if (agentAddress.length > 0 || agentPort > 0) {
-                    this.panelTitle += ' (' + agentAddress
-                }
-
-                if (agentPort > 0) {
-                    this.panelTitle += ':' + agentPort
-                }
-
-                if (agentAddress.length > 0 || agentPort > 0) {
-                    this.panelTitle += ')'
-                }
+                // store received data
+                this.data = data
 
                 // Set other data.
                 this.appId = data.appId
@@ -109,6 +87,19 @@ export class LogViewPageComponent implements OnInit {
 
                 // Disable the spinner.
                 this.loaded = true
+
+                // handle error case
+                if (data.error) {
+                    this.msgSrv.add({
+                        severity: 'error',
+                        summary: 'Unable to get log file',
+                        detail: 'Getting log with ID ' + this._logId + ' erred: ' + data.error,
+                        life: 10000,
+                    })
+                    this.loadingError = data.error
+                } else {
+                    this.loadingError = null
+                }
             },
             (err) => {
                 this.loaded = true
@@ -123,6 +114,8 @@ export class LogViewPageComponent implements OnInit {
                     detail: 'Getting log with ID ' + this._logId + ' erred: ' + msg,
                     life: 10000,
                 })
+
+                this.loadingError = msg
             }
         )
     }

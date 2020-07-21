@@ -15,8 +15,6 @@
     type: object
     required:
       - logTargetOutput
-      - agentAddress
-      - agentPort
       - appId
       - appType
       - contents
@@ -24,12 +22,8 @@
       logTargetOutput:
         readOnly: true
         type: string
-      agentAddress:
-        readOnly: true
-        type: string
-      agentPort:
-        readOnly: true
-        type: integer
+      machine:
+        $ref: '#/definitions/AppMachine'
       appId:
         readOnly: true
         type: integer
@@ -41,6 +35,9 @@
         type: array
         items:
           type: string
+      error:
+        readOnly: true
+        type: string
 
   Machine:
     type: object

@@ -415,7 +415,7 @@ func TestForwardRndcCommandError(t *testing.T) {
 	// Expect an error status code and some message.
 	rsp, err := sa.ForwardRndcCommand(ctx, req)
 	require.NotNil(t, rsp)
-	require.Error(t, err)
+	require.NoError(t, err)
 	require.Equal(t, agentapi.Status_ERROR, rsp.Status.Code)
 	require.NotEmpty(t, rsp.Status.Message)
 }

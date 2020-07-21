@@ -58,22 +58,24 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 	// Send the request to the agent to tail the file.
 	contents, err := r.Agents.TailTextFile(ctx, dbLogTarget.Daemon.App.Machine.Address,
 		dbLogTarget.Daemon.App.Machine.AgentPort, dbLogTarget.Output, maxLength)
+
+	errStr := ""
 	if err != nil {
-		msg := fmt.Sprintf("cannot tail the log file with id %d", params.ID)
-		rsp := services.NewGetLogTailDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
+		errStr = err.Error()
 	}
 
 	// Everything ok. Return the response.
 	tail := &models.LogTail{
-		AgentAddress:    dbLogTarget.Daemon.App.Machine.Address,
-		AgentPort:       dbLogTarget.Daemon.App.Machine.AgentPort,
+		Machine: &models.AppMachine{
+			ID:       dbLogTarget.Daemon.App.MachineID,
+			Address:  dbLogTarget.Daemon.App.Machine.Address,
+			Hostname: dbLogTarget.Daemon.App.Machine.State.Hostname,
+		},
 		AppID:           dbLogTarget.Daemon.App.ID,
 		AppType:         dbLogTarget.Daemon.App.Type,
 		LogTargetOutput: dbLogTarget.Output,
 		Contents:        contents,
+		Error:           errStr,
 	}
 	rsp := services.NewGetLogTailOK().WithPayload(tail)
 

@@ -70,8 +70,8 @@ func TestGetLogTail(t *testing.T) {
 	okRsp := rsp.(*services.GetLogTailOK).Payload
 
 	// Make sure that all values have been set correctly.
-	require.Equal(t, "localhost", okRsp.AgentAddress)
-	require.EqualValues(t, 8080, okRsp.AgentPort)
+	require.Equal(t, "localhost", okRsp.Machine.Address)
+	require.EqualValues(t, m.ID, okRsp.Machine.ID)
 	require.EqualValues(t, a.ID, okRsp.AppID)
 	require.Equal(t, a.Type, okRsp.AppType)
 	require.Equal(t, "/tmp/filename.log", okRsp.LogTargetOutput)

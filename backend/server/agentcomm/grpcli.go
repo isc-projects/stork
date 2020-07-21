@@ -533,10 +533,14 @@ func (agents *connectedAgentsData) TailTextFile(ctx context.Context, agentAddres
 			"file":  path,
 		}).Warnf("failed to fetch text file contents")
 
-		return []string{}, errors.Wrapf(err, "failed to fetch text file contents: %s", path)
+		return nil, errors.Wrapf(err, "failed to fetch text file contents: %s", path)
 	}
 
 	response := agentResponse.(*agentapi.TailTextFileRsp)
+
+	if response.Status.Code != agentapi.Status_OK {
+		return nil, errors.New(response.Status.Message)
+	}
 
 	return response.Lines, nil
 }
