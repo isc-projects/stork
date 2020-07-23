@@ -1,13 +1,13 @@
 <table class="events-table">
     <ng-container *ngFor="let ev of events.items; index as i">
         <tr [class.odd-row]="i % 2 === 0">
-            <td *ngIf="ev.level === undefined || ev.level === 0" style="font-size: 1.5em; color: #9db2d3;">
+            <td *ngIf="ev.level === undefined || ev.level === 0" style="font-size: 1.5em; color: #9db2d3; width: 1em;">
                 <i class="pi pi-info-circle"></i>
             </td>
-            <td *ngIf="ev.level === 1" style="font-size: 1.5em; color: orange;">
+            <td *ngIf="ev.level === 1" style="font-size: 1.5em; color: orange; width: 1em;">
                 <i class="pi pi-exclamation-triangle"></i>
             </td>
-            <td *ngIf="ev.level === 2" style="font-size: 1.5em; color: red;">
+            <td *ngIf="ev.level === 2" style="font-size: 1.5em; color: red; width: 1em;">
                 <i class="pi pi-exclamation-circle"></i>
             </td>
             <td style="width: 6em;">{{ ev.createdAt | localtime }}</td>

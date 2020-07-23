@@ -6,6 +6,7 @@ import (
 	"net"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -542,7 +543,7 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 				"kea":   caURL,
 			}).Warnf("communication failed: %+v", fdReq.KeaRequests)
 			dmn := daemonsMap["ca"]
-			agents.EventCenter.AddErrorEvent("communication with {daemon} failed", caErrorStr, &dmn)
+			agents.EventCenter.AddErrorEvent("communication with {daemon} failed", strings.TrimSpace(caErrorStr), &dmn)
 		}
 	} else {
 		keaCommStats.CurrentErrorsCA = 0

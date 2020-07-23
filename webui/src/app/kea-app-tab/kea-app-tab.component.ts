@@ -192,7 +192,6 @@ export class KeaAppTabComponent implements OnInit {
     }
 
     changeMonitored(daemon) {
-        console.info(daemon)
         const dmn = { monitored: !daemon.monitored }
         this.servicesApi.updateDaemon(daemon.id, dmn).subscribe(
             (data) => {

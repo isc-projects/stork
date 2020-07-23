@@ -78,10 +78,11 @@
                     </div>
 
                     <div class="p-grid" style="padding: 12px;">
+                        <!-- box with error message if there is communication issue or other problem with daemon -->
                         <div *ngIf="daemon.statusErred" class="p-col-4">
                             <p-message severity="error" text="{{ daemonStatusErrorText(daemon) }}"></p-message>
                         </div>
-                        <div *ngIf="daemon.statusErred" class="p-col-8"></div>
+                        <div *ngIf="daemon.statusErred" class="p-col-8"><!-- fill horizontally all 12 cols --></div>
 
                         <!-- warning about not-active and not-monitored -->
                         <div *ngIf="!daemon.active" class="p-col-4">
@@ -102,87 +103,85 @@
                             >
                             </p-message>
                         </div>
-                        <!-- fill horizontally all 12 cols -->
-                        <div *ngIf="!daemon.active" class="p-col-8"></div>
+                        <div *ngIf="!daemon.active" class="p-col-8"><!-- fill horizontally all 12 cols --></div>
 
-                        <!-- Overview -->
-                        <div class="p-col-4" [ngClass]="{ disabled: !daemon.active }">
-                            <h3 style="margin-top: 2px;">Overview</h3>
-                            <table style="width: 100%;">
-                                <tr>
-                                    <td style="width: 10rem;">Version</td>
-                                    <td>{{ daemon.version }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="width: 10rem; vertical-align: top;">Version Ext</td>
-                                    <td [innerHTML]="daemon.extendedVersion"></td>
-                                </tr>
-                                <tr>
-                                    <td style="with: 10rem; vertical-align: top;">Hooks</td>
-                                    <td>
-                                        <div *ngFor="let hook of daemon.hooks">
-                                            {{ hook }}
-                                        </div>
-                                        <div *ngIf="daemon.hooks.length === 0" style="color: #aaa;">
-                                            no hooks
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="width: 10rem; vertical-align: top;">Uptime</td>
-                                    <td>{{ showDuration(daemon.uptime) }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="width: 10rem; vertical-align: top;">Last Reloaded At</td>
-                                    <td>{{ daemon.reloadedAt | localtime }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div *ngIf="daemon.active" class="p-col-7">
-                            <h4 style="margin-top: 2px;">Loggers</h4>
-                            <p-table [value]="daemon.logTargets">
-                                <ng-template pTemplate="header">
+                        <div class="p-col-7">
+                            <!-- Overview -->
+                            <div style="margin-bottom: 14px;" [ngClass]="{ disabled: !daemon.active }">
+                                <h3 style="margin-top: 2px;">Overview</h3>
+                                <table style="width: 100%;">
                                     <tr>
-                                        <th style="width: 10rem;">Logger</th>
-                                        <th style="width: 7rem;">Severity</th>
-                                        <th style="width: 30rem;">Output Location</th>
+                                        <td style="width: 10rem;">Version</td>
+                                        <td>{{ daemon.version }}</td>
                                     </tr>
-                                </ng-template>
-                                <ng-template pTemplate="body" let-logTarget>
                                     <tr>
-                                        <td>{{ logTarget.name }}</td>
-                                        <td align="center">{{ logTarget.severity }}</td>
+                                        <td style="width: 10rem; vertical-align: top;">Version Ext</td>
+                                        <td [innerHTML]="daemon.extendedVersion"></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="with: 10rem; vertical-align: top;">Hooks</td>
                                         <td>
-                                            <i *ngIf="!logTargetViewable(logTarget.output)">{{ logTarget.output }}</i>
-                                            <a
-                                                *ngIf="logTargetViewable(logTarget.output)"
-                                                routerLink="/logs/{{ logTarget.id }}"
-                                                ><i>{{ logTarget.output }}</i></a
-                                            >
+                                            <div *ngFor="let hook of daemon.hooks">
+                                                {{ hook }}
+                                            </div>
+                                            <div *ngIf="daemon.hooks.length === 0" style="color: #aaa;">
+                                                no hooks
+                                            </div>
                                         </td>
                                     </tr>
-                                </ng-template>
-                                <ng-template pTemplate="emptymessage" let-columns>
                                     <tr>
-                                        <td [attr.colspan]="3">
-                                            No loggers found
-                                        </td>
+                                        <td style="width: 10rem; vertical-align: top;">Uptime</td>
+                                        <td>{{ showDuration(daemon.uptime) }}</td>
                                     </tr>
-                                </ng-template>
-                            </p-table>
-                        </div>
+                                    <tr>
+                                        <td style="width: 10rem; vertical-align: top;">Last Reloaded At</td>
+                                        <td>{{ daemon.reloadedAt | localtime }}</td>
+                                    </tr>
+                                </table>
+                            </div>
 
-                        <!-- High Availability -->
-                        <div
-                            *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
-                            class="p-col-12"
-                            [ngClass]="{ disabled: !daemon.active }"
-                        >
-                            <app-ha-status [appId]="appTab.app.id" [daemonName]="daemon.name"></app-ha-status>
+                            <!-- High Availability -->
+                            <div
+                                *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
+                                style="margin-bottom: 18px;"
+                                [ngClass]="{ disabled: !daemon.active }"
+                            >
+                                <app-ha-status [appId]="appTab.app.id" [daemonName]="daemon.name"></app-ha-status>
+                            </div>
+
+                            <!-- Loggers -->
+                            <div class="" [ngClass]="{ disabled: !daemon.active }">
+                                <h3 style="margin-top: 2px;">Loggers</h3>
+                                <p-table [value]="daemon.logTargets">
+                                    <ng-template pTemplate="header">
+                                        <tr>
+                                            <th style="width: 10rem;">Logger</th>
+                                            <th style="width: 5rem;">Severity</th>
+                                            <th>Output Location</th>
+                                        </tr>
+                                    </ng-template>
+                                    <ng-template pTemplate="body" let-logTarget>
+                                        <tr>
+                                            <td>{{ logTarget.name }}</td>
+                                            <td align="center">{{ logTarget.severity }}</td>
+                                            <td>
+                                                <i>{{ logTarget.output }}</i>
+                                            </td>
+                                        </tr>
+                                    </ng-template>
+                                    <ng-template pTemplate="emptymessage" let-columns>
+                                        <tr>
+                                            <td [attr.colspan]="3">
+                                                No loggers found
+                                            </td>
+                                        </tr>
+                                    </ng-template>
+                                </p-table>
+                            </div>
                         </div>
 
                         <!-- Events -->
-                        <div class="p-col-4">
+                        <div class="p-col-5">
                             <h3 style="margin-top: 2px;">Events</h3>
                             <app-events-panel #eventsTable [filter]="{ daemon: daemon.id }"></app-events-panel>
                         </div>

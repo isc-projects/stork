@@ -329,20 +329,13 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 	daemonsErrors := map[string]string{}
 	allDaemons, dhcpDaemons, err := getStateFromCA(ctx2, agents, dbApp, daemonsMap, daemonsErrors)
 	if err != nil {
-		log.Warnf("problem with getting state from kea CA: %s", err)
-		errStr, ok := daemonsErrors["ca"]
-		if !ok {
-			errStr = fmt.Sprintf("%s", err)
-		}
-		eventCenter.AddErrorEvent("cannot get state from Kea CA from {app} on {machine}", errStr, dbApp.Machine, dbApp)
+		log.Warnf("problem with getting state from Kea CA: %s", err)
 	}
 
 	// if no problems then now get state from the rest of Kea daemons
 	err = getStateFromDaemons(ctx2, agents, dbApp, daemonsMap, allDaemons, dhcpDaemons, daemonsErrors)
 	if err != nil {
-		log.Warnf("problem with getting state from kea daemons: %s", err)
-		errStr := fmt.Sprintf("%s", err)
-		eventCenter.AddErrorEvent("cannot get state from Kea CA from {app} on {machine}", errStr, dbApp.Machine, dbApp)
+		log.Warnf("problem with getting state from Kea daemons: %s", err)
 	}
 
 	newActive, overrideDaemons, newDaemons, events := findChangesAndRaiseEvents(dbApp, daemonsMap, daemonsErrors)
@@ -374,12 +367,12 @@ func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmode
 					if !ok {
 						errStr = ""
 					}
-					ev := eventcenter.CreateEvent(dbmodel.EvError, "{daemon} is down", errStr, dbApp.Machine, dbApp, oldDmn)
+					ev := eventcenter.CreateEvent(dbmodel.EvError, "{daemon} is unreachable", errStr, dbApp.Machine, dbApp, oldDmn)
 					events = append(events, ev)
 				}
 			}
 			if dbApp.Active {
-				ev := eventcenter.CreateEvent(dbmodel.EvError, "{app} is down", dbApp.Machine, dbApp)
+				ev := eventcenter.CreateEvent(dbmodel.EvError, "{app} is unreachable", dbApp.Machine, dbApp)
 				events = append(events, ev)
 			}
 			return false, false, nil, events
@@ -405,9 +398,9 @@ func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmode
 						lvl := dbmodel.EvWarning
 						text := "{daemon} is "
 						if dmn.Active && !oldDmn.Active {
-							text += "up"
+							text += "reachable now"
 						} else if !dmn.Active && oldDmn.Active {
-							text += "down"
+							text += "unreachable"
 							lvl = dbmodel.EvError
 						}
 						errStr, ok := daemonsErrors[oldDmn.Name]

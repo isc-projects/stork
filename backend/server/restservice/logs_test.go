@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/restapi/operations/services"
@@ -55,7 +56,7 @@ func TestGetLogTail(t *testing.T) {
 	require.NotZero(t, a.Daemons[0].LogTargets[0].ID)
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
@@ -128,7 +129,7 @@ func TestLogTailBadParams(t *testing.T) {
 	}
 
 	settings := RestAPISettings{}
-	fa := storktest.NewFakeAgents(nil, nil)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
