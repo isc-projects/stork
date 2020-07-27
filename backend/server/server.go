@@ -146,7 +146,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	}
 
 	// Setup Kea Rps puller.
-	ss.KeaRpsPuller, err = kea.NewRpsPuller(ss.Db, ss.Agents)
+	ss.KeaRpsPuller, err = kea.NewRpsPuller(ss.Db, ss.Agents, true)
 	if err != nil {
 		return nil, err
 	}

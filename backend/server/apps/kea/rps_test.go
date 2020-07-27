@@ -14,7 +14,7 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
-// Check creating and shutting down RpsPuller.
+// Check creating and shutting down RpsPuller with PeriodicPuller.
 func TestRpsPullerBasic(t *testing.T) {
 	// prepare db
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -32,7 +32,39 @@ func TestRpsPullerBasic(t *testing.T) {
 	// prepare fake agents
 	fa := storktest.NewFakeAgents(nil, nil)
 
-	sp, _ := NewRpsPuller(db, fa)
+	// Create the puller.
+	sp, _ := NewRpsPuller(db, fa, true)
+
+	// Should have a periodic puller.
+	require.NotEmpty(t, sp.PeriodicPuller)
+	sp.Shutdown()
+}
+
+// Check creating and shutting down RpsPuller without PeriodicPuller.
+func TestRpsPullerBasicWithoutPuller(t *testing.T) {
+	// prepare db
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// set one setting that is needed by puller
+	setting := dbmodel.Setting{
+		Name:    "kea_stats_puller_interval",
+		ValType: dbmodel.SettingValTypeInt,
+		Value:   "60",
+	}
+	err := db.Insert(&setting)
+	require.NoError(t, err)
+
+	// prepare fake agents
+	fa := storktest.NewFakeAgents(nil, nil)
+
+	// Create the puller.
+	sp, _ := NewRpsPuller(db, fa, false)
+
+	// Should not have a periodic puller.
+	require.Empty(t, sp.PeriodicPuller)
+
+	// Shutdown should be harmless.
 	sp.Shutdown()
 }
 
@@ -134,7 +166,7 @@ func TestRpsPullerEmptyOrInvalidResponses(t *testing.T) {
 	addMachine(t, db, true, true)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa)
+	sp, err := NewRpsPuller(db, fa, true)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -172,7 +204,7 @@ func TestRpsPullerNoActiveDaemons(t *testing.T) {
 	addMachine(t, db, false, false)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa)
+	sp, err := NewRpsPuller(db, fa, true)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -219,7 +251,7 @@ func TestRpsPullerDhcp4Only(t *testing.T) {
 	addMachine(t, db, true, false)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa)
+	sp, err := NewRpsPuller(db, fa, true)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -272,7 +304,7 @@ func TestRpsPullerDhcp6Only(t *testing.T) {
 	addMachine(t, db, false, true)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa)
+	sp, err := NewRpsPuller(db, fa, true)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -339,7 +371,7 @@ func TestRpsPullerPullRps(t *testing.T) {
 	addMachine(t, db, true, true)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa)
+	sp, err := NewRpsPuller(db, fa, true)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -477,7 +509,7 @@ func TestRpsPullerValuePermutations(t *testing.T) {
 	addMachine(t, db, true, false)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa)
+	sp, err := NewRpsPuller(db, fa, true)
 	require.NoError(t, err) // shutdown stats puller at the end
 	defer sp.Shutdown()
 

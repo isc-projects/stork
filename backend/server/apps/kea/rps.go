@@ -79,13 +79,18 @@ type ResponseArguments6 struct {
 // periodically from Kea apps (that are stored in database).  These are
 // used to calculate and store RPS interval data per Kea daemon in the database.
 // For now we tie it to same pull interval value used for Kea lease stats.
-func NewRpsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*RpsPuller, error) {
+func NewRpsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, startPeriodic bool) (*RpsPuller, error) {
 	rpsPuller := &RpsPuller{}
-	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea RPS Stats", "kea_stats_puller_interval", rpsPuller.pullStats)
-	if err != nil {
-		return nil, err
+
+	if startPeriodic {
+		periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea RPS Stats", "kea_stats_puller_interval", rpsPuller.pullStats)
+		if err != nil {
+			return nil, err
+		}
+
+		rpsPuller.PeriodicPuller = periodicPuller
 	}
-	rpsPuller.PeriodicPuller = periodicPuller
+
 	rpsPuller.PreviousRps = map[int64]StatSample{}
 	rpsPuller.Interval1 = (time.Second * 15 * 60)
 	rpsPuller.Interval2 = (time.Second * 24 * 60 * 60)
@@ -94,19 +99,17 @@ func NewRpsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*RpsPuller, erro
 
 // Shutdown RpsPuller. It stops goroutine that pulls stats.
 func (rpsPuller *RpsPuller) Shutdown() {
-	rpsPuller.PeriodicPuller.Shutdown()
+	if rpsPuller.PeriodicPuller != nil {
+		rpsPuller.PeriodicPuller.Shutdown()
+	}
 }
 
 // Pull RPS stats periodically for all Kea apps which Stork is monitoring. The function
 // returns the number of apps for which the stats were successfully pulled and last
-// encountered error.
+// encountered error.  This used if the RpsPuller is running it's own PeriodicPuller.
 func (rpsPuller *RpsPuller) pullStats() (int, error) {
-	// Age off records more than Interval2 old.
-	deleteTime := storkutil.UTCNow().Add(-rpsPuller.Interval2)
-	err := dbmodel.AgeOffRpsInterval(rpsPuller.Db, deleteTime)
-	if err != nil {
-		return 0, err
-	}
+	// Delete obsolete data.
+	rpsPuller.AgeOffRpsIntervals()
 
 	// Get list of all kea apps from database
 	dbApps, err := dbmodel.GetAppsByType(rpsPuller.Db, dbmodel.AppTypeKea)
@@ -133,6 +136,7 @@ func (rpsPuller *RpsPuller) pullStats() (int, error) {
 }
 
 // Generates RPS interval data for each daemon in a given Kea app
+// This used if the RpsPuller is running it's own PeriodicPuller.
 func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	// Prepare URL to CA
 	ctrlPoint, err := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
@@ -140,43 +144,28 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return err
 	}
 
-	// Issue two commands to dhcp daemons at once to get their lease stats for v4 and v6
+	// Slices for tracking commands, the daemons they're sent to, and the responses
 	cmds := []*agentcomm.KeaCommand{}
+	responses := []interface{}{}
+	cmdDaemons := []*dbmodel.Daemon{}
+
+	dhcp4Daemons := make(agentcomm.KeaDaemons)
+	dhcp6Daemons := make(agentcomm.KeaDaemons)
 
 	// Iterate over active daemons, adding commands for dhcp4 and dhcp6 daemons
-	dhcp4Daemons := make(agentcomm.KeaDaemons)
-	var dhcp4Daemon *dbmodel.Daemon
-	var dhcp4Arguments = RpsGetDhcp4Arguments()
-
-	dhcp6Daemons := make(agentcomm.KeaDaemons)
-	var dhcp6Daemon *dbmodel.Daemon
-	var dhcp6Arguments = RpsGetDhcp6Arguments()
-
 	// Since we might have dhcp4 only, dhcp6 only or both, we build an array
 	// of expected responses.
-	var responses [2]interface{}
-	rspIdx := 0
 	for _, d := range dbApp.Daemons {
 		if d.KeaDaemon != nil && d.Active {
 			switch d.Name {
-			case "dhcp4":
-				dhcp4Daemon = d
-				dhcp4Daemons["dhcp4"] = true
-				cmds = append(cmds, &agentcomm.KeaCommand{
-					Command:   "statistic-get",
-					Daemons:   &dhcp4Daemons,
-					Arguments: &dhcp4Arguments})
-				// fill in the response type
-				responses[rspIdx] = &[]StatGetResponse4{}
-				rspIdx++
-			case "dhcp6":
-				dhcp6Daemon = d
-				dhcp6Daemons["dhcp6"] = true
-				cmds = append(cmds, &agentcomm.KeaCommand{
-					Command:   "statistic-get",
-					Daemons:   &dhcp6Daemons,
-					Arguments: &dhcp6Arguments})
-				responses[rspIdx] = &[]StatGetResponse6{}
+			case dhcp4:
+				cmdDaemons = append(cmdDaemons, d)
+				dhcp4Daemons[dhcp4] = true
+				responses = append(responses, rpsPuller.AddCmd4(&cmds, &dhcp4Daemons))
+			case dhcp6:
+				cmdDaemons = append(cmdDaemons, d)
+				dhcp6Daemons[dhcp6] = true
+				responses = append(responses, rpsPuller.AddCmd6(&cmds, &dhcp6Daemons))
 			}
 		}
 	}
@@ -189,7 +178,7 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	// forward commands to kea
 	ctx := context.Background()
 
-	cmdsResult, err := rpsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, cmds, responses[0], responses[1])
+	cmdsResult, err := rpsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, cmds, responses...)
 
 	if err != nil {
 		return err
@@ -198,57 +187,92 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return cmdsResult.Error
 	}
 
-	rspIdx = 0
-	// If we have a daemon, we should have a result
-	if dhcp4Daemon != nil {
-		statsResp4, ok := responses[rspIdx].(*[]StatGetResponse4)
-		if !ok {
-			log.Errorf("response type is invalid: %+v", responses[rspIdx])
-		} else {
-			samples, err := rpsPuller.extractSamples4(*statsResp4)
-			if err == nil {
-				// Calculate and store the RPS interval for this daemon for this cycle
-				err = rpsPuller.updateDaemonRpsIntervals(dhcp4Daemon, samples)
-
-				// Now we'll update the Kea RPS statistics based on the updated interval data
-				if err == nil {
-					err = rpsPuller.updateKeaDaemonRpsStats(dhcp4Daemon)
-				}
-			}
-
-			if err != nil {
-				log.Errorf("could not update dhcp4 RPS data for %+v, %s", dhcp4Daemon, err)
-			}
-		}
-
-		// Bump the response index
-		rspIdx++
-	}
-
-	// If we have a daemon, we should have a result
-	if dhcp6Daemon != nil {
-		statsResp6, ok := responses[rspIdx].(*[]StatGetResponse6)
-		if !ok {
-			log.Errorf("response type is invalid: %+v", responses[rspIdx])
-		} else {
-			samples, err := rpsPuller.extractSamples6(*statsResp6)
-			if err == nil {
-				// Calculate and store the RPS interval for this daemon for this cycle
-				err = rpsPuller.updateDaemonRpsIntervals(dhcp6Daemon, samples)
-
-				// Now we'll update the Kea RPS statistics based on the updated interval data
-				if err == nil {
-					err = rpsPuller.updateKeaDaemonRpsStats(dhcp6Daemon)
-				}
-			}
-
-			if err != nil {
-				log.Errorf("could not update dhcp6 RPS data for %+v, %s", dhcp6Daemon, err)
-			}
+	for idx := 0; idx < len(cmds); idx++ {
+		switch cmdDaemons[idx].Name {
+		case dhcp4:
+			rpsPuller.Response4Handler(cmdDaemons[idx], responses[idx])
+		case dhcp6:
+			rpsPuller.Response6Handler(cmdDaemons[idx], responses[idx])
 		}
 	}
 
 	return nil
+}
+
+// Ages off obsolete RPS interval data.
+func (rpsPuller *RpsPuller) AgeOffRpsIntervals() error {
+	// Age off records more than Interval2 old.
+	deleteTime := storkutil.UTCNow().Add(-rpsPuller.Interval2)
+	err := dbmodel.AgeOffRpsInterval(rpsPuller.Db, deleteTime)
+	return err
+}
+
+// Appends the statistic-get command for DHCP4 to the given commond list. It returns
+// an instance of the expected response type.
+func (rpsPuller *RpsPuller) AddCmd4(cmds *[]*agentcomm.KeaCommand, dhcp4Daemons *agentcomm.KeaDaemons) interface{} {
+	dhcp4Arguments := RpsGetDhcp4Arguments()
+	*cmds = append(*cmds, &agentcomm.KeaCommand{
+		Command:   "statistic-get",
+		Daemons:   dhcp4Daemons,
+		Arguments: &dhcp4Arguments})
+	return (&[]StatGetResponse4{})
+}
+
+// Appends the statistic-get command for DHCP4 to the given commond list. It returns
+// an instance of the expected response type.
+func (rpsPuller *RpsPuller) AddCmd6(cmds *[]*agentcomm.KeaCommand, dhcp6Daemons *agentcomm.KeaDaemons) interface{} {
+	dhcp6Arguments := RpsGetDhcp6Arguments()
+	*cmds = append(*cmds, &agentcomm.KeaCommand{
+		Command:   "statistic-get",
+		Daemons:   dhcp6Daemons,
+		Arguments: &dhcp6Arguments})
+	return (&[]StatGetResponse6{})
+}
+
+// Processes the statistic-get command response for DHCP4.
+func (rpsPuller *RpsPuller) Response4Handler(daemon *dbmodel.Daemon, response interface{}) {
+	statsResp4, ok := response.(*[]StatGetResponse4)
+	if !ok {
+		log.Errorf("response type is invalid: %+v", response)
+	}
+
+	samples, err := rpsPuller.extractSamples4(*statsResp4)
+	if err == nil {
+		// Calculate and store the RPS interval for this daemon for this cycle
+		err = rpsPuller.updateDaemonRpsIntervals(daemon, samples)
+
+		// Now we'll update the Kea RPS statistics based on the updated interval data
+		if err == nil {
+			err = rpsPuller.updateKeaDaemonRpsStats(daemon)
+		}
+	}
+
+	if err != nil {
+		log.Errorf("could not update dhcp4 RPS data for %+v, %s", daemon, err)
+	}
+}
+
+// Processes the statistic-get command response for DHCP4.
+func (rpsPuller *RpsPuller) Response6Handler(daemon *dbmodel.Daemon, response interface{}) {
+	statsResp6, ok := response.(*[]StatGetResponse6)
+	if !ok {
+		log.Errorf("response type is invalid: %+v", response)
+	}
+
+	samples, err := rpsPuller.extractSamples6(*statsResp6)
+	if err == nil {
+		// Calculate and store the RPS interval for this daemon for this cycle
+		err = rpsPuller.updateDaemonRpsIntervals(daemon, samples)
+
+		// Now we'll update the Kea RPS statistics based on the updated interval data
+		if err == nil {
+			err = rpsPuller.updateKeaDaemonRpsStats(daemon)
+		}
+	}
+
+	if err != nil {
+		log.Errorf("could not update dhcp6 RPS data for %+v, %s", daemon, err)
+	}
 }
 
 // Exract the list of statistic samples from a dhcp4 statistic-get response if the response is valid.
