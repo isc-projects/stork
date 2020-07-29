@@ -304,6 +304,11 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 		return err
 	}
 
+	// If we're running RPS, age off obsolete RPS data.
+	if statsPuller.RpsPuller != nil {
+		_ = statsPuller.RpsPuller.AgeOffRpsIntervals()
+	}
+
 	// Slices for tracking commands, the daemons they're sent to, and the responses
 	cmds := []*agentcomm.KeaCommand{}
 	cmdDaemons := []*dbmodel.Daemon{}
