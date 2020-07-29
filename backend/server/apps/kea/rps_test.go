@@ -169,8 +169,8 @@ func TestRpsPullerEmptyOrInvalidResponses(t *testing.T) {
 	for call := 0; call < len(jsonResponses); call++ {
 		// invoke pulling stats
 		appsOkCnt, err := sp.pullStats()
-		require.NoError(t, err)
-		require.Equal(t, 1, appsOkCnt)
+		require.Error(t, err)
+		require.Equal(t, 0, appsOkCnt)
 
 		// Make sure we recorded 1 command per daemon per iteration
 		require.Equal(t, (cmdIdx + 2), len(fa.RecordedCommands))
