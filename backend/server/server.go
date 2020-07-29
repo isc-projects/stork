@@ -128,7 +128,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	}
 
 	// setup kea stats puller
-	ss.KeaStatsPuller, err = kea.NewStatsPuller(ss.Db, ss.Agents)
+	ss.KeaStatsPuller, err = kea.NewStatsPuller(ss.Db, ss.Agents, true)
 	if err != nil {
 		return nil, err
 	}
@@ -141,12 +141,6 @@ func NewStorkServer() (ss *StorkServer, err error) {
 
 	// Setup Kea status puller.
 	ss.StatusPuller, err = kea.NewStatusPuller(ss.Db, ss.Agents)
-	if err != nil {
-		return nil, err
-	}
-
-	// Setup Kea Rps puller.
-	ss.KeaRpsPuller, err = kea.NewRpsPuller(ss.Db, ss.Agents, true)
 	if err != nil {
 		return nil, err
 	}

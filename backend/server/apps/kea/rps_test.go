@@ -14,6 +14,8 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
+const rpsTestInterval string = "rpsTestInterval"
+
 // Check creating and shutting down RpsPuller with PeriodicPuller.
 func TestRpsPullerBasic(t *testing.T) {
 	// prepare db
@@ -22,7 +24,7 @@ func TestRpsPullerBasic(t *testing.T) {
 
 	// set one setting that is needed by puller
 	setting := dbmodel.Setting{
-		Name:    "kea_stats_puller_interval",
+		Name:    rpsTestInterval,
 		ValType: dbmodel.SettingValTypeInt,
 		Value:   "60",
 	}
@@ -33,7 +35,7 @@ func TestRpsPullerBasic(t *testing.T) {
 	fa := storktest.NewFakeAgents(nil, nil)
 
 	// Create the puller.
-	sp, _ := NewRpsPuller(db, fa, true)
+	sp, _ := NewRpsPuller(db, fa, rpsTestInterval)
 
 	// Should have a periodic puller.
 	require.NotEmpty(t, sp.PeriodicPuller)
@@ -46,30 +48,22 @@ func TestRpsPullerBasicWithoutPuller(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// set one setting that is needed by puller
-	setting := dbmodel.Setting{
-		Name:    "kea_stats_puller_interval",
-		ValType: dbmodel.SettingValTypeInt,
-		Value:   "60",
-	}
-	err := db.Insert(&setting)
-	require.NoError(t, err)
-
 	// prepare fake agents
 	fa := storktest.NewFakeAgents(nil, nil)
 
 	// Create the puller.
-	sp, _ := NewRpsPuller(db, fa, false)
+	sp, _ := NewRpsPuller(db, fa, "")
 
 	// Should not have a periodic puller.
-	require.Empty(t, sp.PeriodicPuller)
+	require.NotEmpty(t, sp.PeriodicPuller)
+	require.False(t, sp.PeriodicPuller.Active)
 
 	// Shutdown should be harmless.
 	sp.Shutdown()
 }
 
 // Convenience function that creates a machine with one Kea app and two daemons.
-func addMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Active bool) {
+func rpsTestAddMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Active bool) {
 	// add one machine with one kea app
 	m := &dbmodel.Machine{
 		ID:        0,
@@ -111,7 +105,7 @@ func addMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Active bool
 
 	// set one setting that is needed by puller
 	setting := dbmodel.Setting{
-		Name:    "kea_stats_puller_interval",
+		Name:    rpsTestInterval,
 		ValType: dbmodel.SettingValTypeInt,
 		Value:   "60",
 	}
@@ -163,10 +157,10 @@ func TestRpsPullerEmptyOrInvalidResponses(t *testing.T) {
 	fa := storktest.NewFakeAgents(keaMock, nil)
 
 	// Create a machine with one app and two kea daemons
-	addMachine(t, db, true, true)
+	rpsTestAddMachine(t, db, true, true)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, true)
+	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -201,10 +195,10 @@ func TestRpsPullerNoActiveDaemons(t *testing.T) {
 	fa := storktest.NewFakeAgents(keaMock, nil)
 
 	// Create a machine with one app and two daemons: dhcp4 inactive, dhcp6 inactive
-	addMachine(t, db, false, false)
+	rpsTestAddMachine(t, db, false, false)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, true)
+	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -248,10 +242,10 @@ func TestRpsPullerDhcp4Only(t *testing.T) {
 	fa := storktest.NewFakeAgents(keaMock, nil)
 
 	// Create a machine with one app and two daemons: dhcp4 active, dhcp6 inactive
-	addMachine(t, db, true, false)
+	rpsTestAddMachine(t, db, true, false)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, true)
+	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -301,10 +295,10 @@ func TestRpsPullerDhcp6Only(t *testing.T) {
 	fa := storktest.NewFakeAgents(keaMock, nil)
 
 	// Create a machine with one app and two daemons: dhcp4 inactive, dhcp6 active
-	addMachine(t, db, false, true)
+	rpsTestAddMachine(t, db, false, true)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, true)
+	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -368,10 +362,10 @@ func TestRpsPullerPullRps(t *testing.T) {
 	fa := storktest.NewFakeAgents(keaMock, nil)
 
 	// Create a machine with one app and two daemons: dhcp4 active, dhcp6 active
-	addMachine(t, db, true, true)
+	rpsTestAddMachine(t, db, true, true)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, true)
+	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
 	defer sp.Shutdown()
@@ -506,10 +500,10 @@ func TestRpsPullerValuePermutations(t *testing.T) {
 	fa := storktest.NewFakeAgents(keaMock, nil)
 
 	// Create a machine with one app and two daemons: dhcp4 active, dhcp6 false
-	addMachine(t, db, true, false)
+	rpsTestAddMachine(t, db, true, false)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, true)
+	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
 	require.NoError(t, err) // shutdown stats puller at the end
 	defer sp.Shutdown()
 

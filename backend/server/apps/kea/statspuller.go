@@ -2,6 +2,7 @@ package kea
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
@@ -13,18 +14,30 @@ import (
 
 type StatsPuller struct {
 	*agentcomm.PeriodicPuller
+	*RpsPuller
 }
 
 // Create a StatsPuller object that in background pulls Kea stats about leases.
 // Beneath it spawns a goroutine that pulls stats periodically from Kea apps (that are stored in database).
-func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*StatsPuller, error) {
+func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, includeRpsPuller bool) (*StatsPuller, error) {
 	statsPuller := &StatsPuller{}
 	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Stats", "kea_stats_puller_interval",
-		statsPuller.pullLeaseStats)
+		statsPuller.pullStats)
 	if err != nil {
 		return nil, err
 	}
 	statsPuller.PeriodicPuller = periodicPuller
+
+	if includeRpsPuller {
+		// Create RpsPuller instance without its own PeriodicPuller
+		rpsPuller, err := NewRpsPuller(db, agents, "")
+		if err != nil {
+			return nil, err
+		}
+
+		statsPuller.RpsPuller = rpsPuller
+	}
+
 	return statsPuller, nil
 }
 
@@ -78,7 +91,7 @@ func getStatsFromLocalSubnets(localSubnets []*dbmodel.LocalSubnet, family int, a
 
 // Pull stats periodically for all Kea apps which Stork is monitoring. The function returns a number
 // of apps for which the stats were successfully pulled and last encountered error.
-func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
+func (statsPuller *StatsPuller) pullStats() (int, error) {
 	// get list of all kea apps from database
 	dbApps, err := dbmodel.GetAppsByType(statsPuller.Db, dbmodel.AppTypeKea)
 	if err != nil {
@@ -90,7 +103,7 @@ func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
 	appsOkCnt := 0
 	for _, dbApp := range dbApps {
 		dbApp2 := dbApp
-		err := statsPuller.getLeaseStatsFromApp(&dbApp2)
+		err := statsPuller.getStatsFromApp(&dbApp2)
 		if err != nil {
 			lastErr = err
 			log.Errorf("error occurred while getting stats from app %d: %+v", dbApp.ID, err)
@@ -98,7 +111,7 @@ func (statsPuller *StatsPuller) pullLeaseStats() (int, error) {
 			appsOkCnt++
 		}
 	}
-	log.Printf("completed pulling lease stats from Kea apps: %d/%d succeeded", appsOkCnt, len(dbApps))
+	fmt.Printf("completed pulling lease stats from Kea apps: %d/%d succeeded", appsOkCnt, len(dbApps))
 
 	// estimate addresses utilization for subnets
 	subnets, err := dbmodel.GetSubnetsWithLocalSubnets(statsPuller.Db)
@@ -232,11 +245,32 @@ type localSubnetKey struct {
 	Family        int
 }
 
-// Take a stats set from dhcp4 or dhcp6 daemon and store them in LocalSubnet in database.
-func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLeaseGet, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
+// Process lease stats results from the given command response for given daemon.
+func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMap map[localSubnetKey]*dbmodel.LocalSubnet, dbApp *dbmodel.App, family int) error {
 	var lastErr error
+	var sr []StatLeaseGetResponse
+
+	statsResp, ok := response.(*[]StatLeaseGetResponse)
+	if !ok {
+		return fmt.Errorf("response is empty: %+v", sr)
+	}
+
+	sr = *statsResp
+	if len(sr) == 0 {
+		return fmt.Errorf("response is empty: %+v", sr)
+	}
+
+	if sr[0].Arguments == nil {
+		return fmt.Errorf("missing Arguments from Lease Stats response %+v", sr[0])
+	}
+
+	resultSet := &sr[0].Arguments.ResultSet
+	if resultSet == nil {
+		return fmt.Errorf("missing ResultSet from Lease Stats response %+v", sr[0])
+	}
 
 	for _, row := range resultSet.Rows {
+		fmt.Printf("row is: %+v", row)
 		stats := make(map[string]interface{})
 		var sn *dbmodel.LocalSubnet
 		var lsnID int64
@@ -263,67 +297,84 @@ func (statsPuller *StatsPuller) storeDaemonStats(resultSet *ResultSetInStatLease
 	return lastErr
 }
 
-// Get lease stats from given kea app.
-func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
-	// prepare URL to CA
+func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
+	// Prepare URL to CA
 	ctrlPoint, err := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
 	if err != nil {
 		return err
 	}
-	// get active dhcp daemons
-	dhcpDaemons := make(agentcomm.KeaDaemons)
-	found := false
+
+	// Slices for tracking commands, the daemons they're sent to, and the responses
+	cmds := []*agentcomm.KeaCommand{}
+	cmdDaemons := []*dbmodel.Daemon{}
+	responses := []interface{}{}
+
+	// Iterate over active daemons, adding commands and response containers
+	// for dhcp4 and dhcp6 daemons.
 	for _, d := range dbApp.Daemons {
-		if d.KeaDaemon != nil && (d.Name == "dhcp4" || d.Name == "dhcp6") {
-			dhcpDaemons[d.Name] = true
-			found = true
+		if d.KeaDaemon != nil && d.Active {
+			switch d.Name {
+			case dhcp4:
+				// Add daemon, cmd, and response for DHCP4 lease stats
+				cmdDaemons = append(cmdDaemons, d)
+				dhcp4Daemons, _ := agentcomm.NewKeaDaemons(dhcp4)
+				cmds = append(cmds, &agentcomm.KeaCommand{
+					Command: "stat-lease4-get",
+					Daemons: dhcp4Daemons,
+				})
+
+				responses = append(responses, &[]StatLeaseGetResponse{})
+
+				// Add daemon, cmd and response for DHCP4 RPS stats if we have an RpsPuller
+				if statsPuller.RpsPuller != nil {
+					cmdDaemons = append(cmdDaemons, d)
+					responses = append(responses, statsPuller.RpsPuller.AddCmd4(&cmds, dhcp4Daemons))
+				}
+			case dhcp6:
+
+				// Add daemon, cmd and response for DHCP6 lease stats
+				cmdDaemons = append(cmdDaemons, d)
+				dhcp6Daemons, _ := agentcomm.NewKeaDaemons(dhcp6)
+				cmds = append(cmds, &agentcomm.KeaCommand{
+					Command: "stat-lease6-get",
+					Daemons: dhcp6Daemons,
+				})
+
+				responses = append(responses, &[]StatLeaseGetResponse{})
+
+				// Add daemon, cmd and response for DHCP6 RPS stats if we have an RpsPuller
+				if statsPuller.RpsPuller != nil {
+					cmdDaemons = append(cmdDaemons, d)
+					responses = append(responses, statsPuller.RpsPuller.AddCmd6(&cmds, dhcp6Daemons))
+				}
+			}
 		}
 	}
-	// if no dhcp daemons found then exit
-	if !found {
+
+	// If there are no commands, nothing to do
+	if len(cmds) == 0 {
 		return nil
 	}
 
-	// issue 2 commands to dhcp daemons at once to get their lease stats for v4 and v6
-	cmds := []*agentcomm.KeaCommand{}
-	if dhcpDaemons["dhcp4"] {
-		cmds = append(cmds, &agentcomm.KeaCommand{
-			Command: "stat-lease4-get",
-			Daemons: &dhcpDaemons,
-		})
-	}
-	if dhcpDaemons["dhcp6"] {
-		cmds = append(cmds, &agentcomm.KeaCommand{
-			Command: "stat-lease6-get",
-			Daemons: &dhcpDaemons,
-		})
-	}
-
 	// forward commands to kea
-	statsResp1 := []StatLeaseGetResponse{}
-	statsResp2 := []StatLeaseGetResponse{}
 	ctx := context.Background()
-	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, cmds, &statsResp1, &statsResp2)
+	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, cmds, responses...)
 	if err != nil {
 		return err
 	}
+
 	if cmdsResult.Error != nil {
 		return cmdsResult.Error
 	}
 
-	// assign responses to v4 and v6 depending on active daemons
-	var stats4Resp []StatLeaseGetResponse
-	var stats6Resp []StatLeaseGetResponse
-	if dhcpDaemons["dhcp4"] {
-		stats4Resp = statsResp1
-		if dhcpDaemons["dhcp6"] {
-			stats6Resp = statsResp2
-		}
-	} else if dhcpDaemons["dhcp6"] {
-		stats6Resp = statsResp1
-	}
+	// Process the response for each command for each daemon.
+	return statsPuller.processAppResponses(dbApp, cmds, cmdDaemons, responses)
+}
 
-	// get app's local subnets
+// Iterates through the commands for each daemon and processes the command responses
+// Was part of getStatsFromApp() until lint_go complained about cognitive complexity.
+func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*agentcomm.KeaCommand, cmdDaemons []*dbmodel.Daemon, responses []interface{}) error {
+	// Lease statistic processing needs app's local subnets
 	subnets, err := dbmodel.GetAppLocalSubnets(statsPuller.Db, dbApp.ID)
 	if err != nil {
 		return err
@@ -337,20 +388,39 @@ func (statsPuller *StatsPuller) getLeaseStatsFromApp(dbApp *dbmodel.App) error {
 		subnetsMap[localSubnetKey{sn.LocalSubnetID, family}] = sn
 	}
 
-	// process response from kea daemons
 	var lastErr error
-	for idx, srs := range [][]StatLeaseGetResponse{stats4Resp, stats6Resp} {
-		family := 4
-		if idx == 1 {
-			family = 6
-		}
-		for _, sr := range srs {
-			if sr.Arguments == nil {
-				continue
+	for idx := 0; idx < len(cmds); idx++ {
+		switch cmdDaemons[idx].Name {
+		case dhcp4:
+			switch cmds[idx].Command {
+			case "stat-lease4-get":
+				err = statsPuller.storeDaemonStats(responses[idx], subnetsMap, dbApp, 4)
+				if err != nil {
+					log.Errorf("error handling stat-lease4-get response: %+v", err)
+					lastErr = err
+				}
+			case "statistic-get":
+				err = statsPuller.RpsPuller.Response4Handler(cmdDaemons[idx], responses[idx])
+				if err != nil {
+					log.Errorf("error handling statistic-get (v4) response: %+v", err)
+					lastErr = err
+				}
 			}
-			err = statsPuller.storeDaemonStats(&sr.Arguments.ResultSet, subnetsMap, dbApp, family)
-			if err != nil {
-				lastErr = err
+
+		case dhcp6:
+			switch cmds[idx].Command {
+			case "stat-lease6-get":
+				err = statsPuller.storeDaemonStats(responses[idx], subnetsMap, dbApp, 6)
+				if err != nil {
+					log.Errorf("error handling stat-lease6-get response: %+v", err)
+					lastErr = err
+				}
+			case "statistic-get":
+				err = statsPuller.RpsPuller.Response6Handler(cmdDaemons[idx], responses[idx])
+				if err != nil {
+					log.Errorf("error handling statistic-get (v6) response: %+v", err)
+					lastErr = err
+				}
 			}
 		}
 	}

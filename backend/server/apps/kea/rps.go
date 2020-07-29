@@ -78,16 +78,22 @@ type ResponseArguments6 struct {
 // Beneath it spawns a goroutine that pulls the response sent statistics
 // periodically from Kea apps (that are stored in database).  These are
 // used to calculate and store RPS interval data per Kea daemon in the database.
-// For now we tie it to same pull interval value used for Kea lease stats.
-func NewRpsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, startPeriodic bool) (*RpsPuller, error) {
+func NewRpsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, intervalName string) (*RpsPuller, error) {
 	rpsPuller := &RpsPuller{}
 
-	if startPeriodic {
-		periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea RPS Stats", "kea_stats_puller_interval", rpsPuller.pullStats)
+	// Run our own polling.  Otherwise someone else is calling the shots.
+	if intervalName != "" {
+		periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea RPS Stats", intervalName, rpsPuller.pullStats)
 		if err != nil {
 			return nil, err
 		}
 
+		rpsPuller.PeriodicPuller = periodicPuller
+	} else {
+		// We still need a puller instance for its Db member.
+		periodicPuller := &agentcomm.PeriodicPuller{
+			Db: db,
+		}
 		rpsPuller.PeriodicPuller = periodicPuller
 	}
 
@@ -99,7 +105,7 @@ func NewRpsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, startPeriodic boo
 
 // Shutdown RpsPuller. It stops goroutine that pulls stats.
 func (rpsPuller *RpsPuller) Shutdown() {
-	if rpsPuller.PeriodicPuller != nil {
+	if rpsPuller.PeriodicPuller.Active {
 		rpsPuller.PeriodicPuller.Shutdown()
 	}
 }
@@ -109,7 +115,10 @@ func (rpsPuller *RpsPuller) Shutdown() {
 // encountered error.  This used if the RpsPuller is running it's own PeriodicPuller.
 func (rpsPuller *RpsPuller) pullStats() (int, error) {
 	// Delete obsolete data.
-	rpsPuller.AgeOffRpsIntervals()
+	err := rpsPuller.AgeOffRpsIntervals()
+	if err != nil {
+		log.Errorf("error aging of RPS interval data: %+v", err)
+	}
 
 	// Get list of all kea apps from database
 	dbApps, err := dbmodel.GetAppsByType(rpsPuller.Db, dbmodel.AppTypeKea)
@@ -183,20 +192,30 @@ func (rpsPuller *RpsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	if err != nil {
 		return err
 	}
+
 	if cmdsResult.Error != nil {
 		return cmdsResult.Error
 	}
 
+	var lastErr error
 	for idx := 0; idx < len(cmds); idx++ {
 		switch cmdDaemons[idx].Name {
 		case dhcp4:
-			rpsPuller.Response4Handler(cmdDaemons[idx], responses[idx])
+			err = rpsPuller.Response4Handler(cmdDaemons[idx], responses[idx])
+			if err != nil {
+				log.Errorf("error handling statistic-get (v4) response: %+v", err)
+				lastErr = err
+			}
 		case dhcp6:
-			rpsPuller.Response6Handler(cmdDaemons[idx], responses[idx])
+			err = rpsPuller.Response6Handler(cmdDaemons[idx], responses[idx])
+			if err != nil {
+				log.Errorf("error handling statistic-get (v6) response: %+v", err)
+				lastErr = err
+			}
 		}
 	}
 
-	return nil
+	return lastErr
 }
 
 // Ages off obsolete RPS interval data.
@@ -230,10 +249,10 @@ func (rpsPuller *RpsPuller) AddCmd6(cmds *[]*agentcomm.KeaCommand, dhcp6Daemons 
 }
 
 // Processes the statistic-get command response for DHCP4.
-func (rpsPuller *RpsPuller) Response4Handler(daemon *dbmodel.Daemon, response interface{}) {
+func (rpsPuller *RpsPuller) Response4Handler(daemon *dbmodel.Daemon, response interface{}) error {
 	statsResp4, ok := response.(*[]StatGetResponse4)
 	if !ok {
-		log.Errorf("response type is invalid: %+v", response)
+		return fmt.Errorf("response type is invalid: %+v", response)
 	}
 
 	samples, err := rpsPuller.extractSamples4(*statsResp4)
@@ -248,15 +267,17 @@ func (rpsPuller *RpsPuller) Response4Handler(daemon *dbmodel.Daemon, response in
 	}
 
 	if err != nil {
-		log.Errorf("could not update dhcp4 RPS data for %+v, %s", daemon, err)
+		return fmt.Errorf("could not update dhcp4 RPS data for %+v, %s", daemon, err)
 	}
+
+	return nil
 }
 
 // Processes the statistic-get command response for DHCP4.
-func (rpsPuller *RpsPuller) Response6Handler(daemon *dbmodel.Daemon, response interface{}) {
+func (rpsPuller *RpsPuller) Response6Handler(daemon *dbmodel.Daemon, response interface{}) error {
 	statsResp6, ok := response.(*[]StatGetResponse6)
 	if !ok {
-		log.Errorf("response type is invalid: %+v", response)
+		return fmt.Errorf("response type is invalid: %+v", response)
 	}
 
 	samples, err := rpsPuller.extractSamples6(*statsResp6)
@@ -271,8 +292,10 @@ func (rpsPuller *RpsPuller) Response6Handler(daemon *dbmodel.Daemon, response in
 	}
 
 	if err != nil {
-		log.Errorf("could not update dhcp6 RPS data for %+v, %s", daemon, err)
+		return fmt.Errorf("could not update dhcp6 RPS data for %+v, %s", daemon, err)
 	}
+
+	return nil
 }
 
 // Exract the list of statistic samples from a dhcp4 statistic-get response if the response is valid.
