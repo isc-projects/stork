@@ -98,7 +98,7 @@ func (rpsWorker *RpsWorker) AgeOffRpsIntervals() error {
 
 // Appends the statistic-get command for DHCP4 to the given commond list. It returns
 // an instance of the expected response type.
-func (rpsWorker *RpsWorker) AddCmd4(cmds *[]*agentcomm.KeaCommand, dhcp4Daemons *agentcomm.KeaDaemons) interface{} {
+func RpsAddCmd4(cmds *[]*agentcomm.KeaCommand, dhcp4Daemons *agentcomm.KeaDaemons) interface{} {
 	dhcp4Arguments := RpsGetDhcp4Arguments()
 	*cmds = append(*cmds, &agentcomm.KeaCommand{
 		Command:   "statistic-get",
@@ -109,7 +109,7 @@ func (rpsWorker *RpsWorker) AddCmd4(cmds *[]*agentcomm.KeaCommand, dhcp4Daemons 
 
 // Appends the statistic-get command for DHCP4 to the given commond list. It returns
 // an instance of the expected response type.
-func (rpsWorker *RpsWorker) AddCmd6(cmds *[]*agentcomm.KeaCommand, dhcp6Daemons *agentcomm.KeaDaemons) interface{} {
+func RpsAddCmd6(cmds *[]*agentcomm.KeaCommand, dhcp6Daemons *agentcomm.KeaDaemons) interface{} {
 	dhcp6Arguments := RpsGetDhcp6Arguments()
 	*cmds = append(*cmds, &agentcomm.KeaCommand{
 		Command:   "statistic-get",

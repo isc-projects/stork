@@ -127,7 +127,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	}
 
 	// setup kea stats puller
-	ss.KeaStatsPuller, err = kea.NewStatsPuller(ss.Db, ss.Agents, true)
+	ss.KeaStatsPuller, err = kea.NewStatsPuller(ss.Db, ss.Agents)
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,7 @@ type StatsPuller struct {
 
 // Create a StatsPuller object that in background pulls Kea stats about leases.
 // Beneath it spawns a goroutine that pulls stats periodically from Kea apps (that are stored in database).
-func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, includeRpsWorker bool) (*StatsPuller, error) {
+func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*StatsPuller, error) {
 	statsPuller := &StatsPuller{}
 	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Stats", "kea_stats_puller_interval",
 		statsPuller.pullStats)
@@ -28,15 +28,12 @@ func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, includeRpsWorke
 	}
 	statsPuller.PeriodicPuller = periodicPuller
 
-	if includeRpsWorker {
-		// Create RpsWorker instance without its own PeriodicPuller
-		rpsWorker, err := NewRpsWorker(db)
-		if err != nil {
-			return nil, err
-		}
-
-		statsPuller.RpsWorker = rpsWorker
+	// Create RpsWorker instance
+	rpsWorker, err := NewRpsWorker(db)
+	if err != nil {
+		return nil, err
 	}
+	statsPuller.RpsWorker = rpsWorker
 
 	return statsPuller, nil
 }
@@ -333,7 +330,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 				// Add daemon, cmd and response for DHCP4 RPS stats if we have an RpsWorker
 				if statsPuller.RpsWorker != nil {
 					cmdDaemons = append(cmdDaemons, d)
-					responses = append(responses, statsPuller.RpsWorker.AddCmd4(&cmds, dhcp4Daemons))
+					responses = append(responses, RpsAddCmd4(&cmds, dhcp4Daemons))
 				}
 			case dhcp6:
 
@@ -350,7 +347,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 				// Add daemon, cmd and response for DHCP6 RPS stats if we have an RpsWorker
 				if statsPuller.RpsWorker != nil {
 					cmdDaemons = append(cmdDaemons, d)
-					responses = append(responses, statsPuller.RpsWorker.AddCmd6(&cmds, dhcp6Daemons))
+					responses = append(responses, RpsAddCmd6(&cmds, dhcp6Daemons))
 				}
 			}
 		}
