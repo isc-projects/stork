@@ -78,6 +78,10 @@ type ResponseArguments6 struct {
 // Beneath it spawns a goroutine that pulls the response sent statistics
 // periodically from Kea apps (that are stored in database).  These are
 // used to calculate and store RPS interval data per Kea daemon in the database.
+// If it is blank, the RpsPuller will not start its PeriodicPuller, allowing
+// it to driven externally.  If intervalName is not blank, the RpsPuller will
+// start its PeriodicPuller, using the value as the name of the db setting for
+// the periodic interval.
 func NewRpsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, intervalName string) (*RpsPuller, error) {
 	rpsPuller := &RpsPuller{}
 
@@ -98,8 +102,9 @@ func NewRpsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, intervalName stri
 	}
 
 	rpsPuller.PreviousRps = map[int64]StatSample{}
-	rpsPuller.Interval1 = (time.Second * 15 * 60)
-	rpsPuller.Interval2 = (time.Second * 24 * 60 * 60)
+	// The interval values may some day be configurable
+	rpsPuller.Interval1 = (time.Minute * 15)
+	rpsPuller.Interval2 = (time.Hour * 24)
 	return rpsPuller, nil
 }
 
@@ -267,7 +272,7 @@ func (rpsPuller *RpsPuller) Response4Handler(daemon *dbmodel.Daemon, response in
 	}
 
 	if err != nil {
-		return fmt.Errorf("could not update dhcp4 RPS data for %+v, %s", daemon, err)
+		return errors.WithMessagef(err, "could not update dhcp4 RPS data for %+v", daemon)
 	}
 
 	return nil
@@ -292,7 +297,7 @@ func (rpsPuller *RpsPuller) Response6Handler(daemon *dbmodel.Daemon, response in
 	}
 
 	if err != nil {
-		return fmt.Errorf("could not update dhcp6 RPS data for %+v, %s", daemon, err)
+		return errors.WithMessagef(err, "could not update dhcp4 RPS data for %+v", daemon)
 	}
 
 	return nil
@@ -353,9 +358,9 @@ func (rpsPuller *RpsPuller) extractSamples6(statsResp []StatGetResponse6) ([]int
 func (rpsPuller *RpsPuller) updateDaemonRpsIntervals(daemon *dbmodel.Daemon, samples []interface{}) error {
 	// The first row of the samples is the most recent value and the only
 	// one we care about. Fetch it.
-	value, sampledAt, err := getSampleRow(samples, 0)
+	value, sampledAt, err := getFirstSample(samples)
 	if err != nil {
-		return fmt.Errorf("could not extract RPS stat: %s", err)
+		return errors.WithMessagef(err, "could not extract RPS statistic")
 	}
 
 	daemonID := daemon.KeaDaemon.DaemonID
@@ -405,7 +410,7 @@ func (rpsPuller *RpsPuller) updateKeaDaemonRpsStats(daemon *dbmodel.Daemon) erro
 	// Fetch interval totals for interval 1.
 	rps1, err := dbmodel.GetTotalRpsOverIntervalForDaemon(rpsPuller.Db, startTime1, endTime, daemonID)
 	if err != nil {
-		return fmt.Errorf("query for RPS interval 1 data failed: %s", err)
+		return errors.WithMessagef(err, "query for RPS interval 1 data failed")
 	}
 
 	// Calculate RPS for interval 1.
@@ -415,7 +420,7 @@ func (rpsPuller *RpsPuller) updateKeaDaemonRpsStats(daemon *dbmodel.Daemon) erro
 	startTime2 := endTime.Add(-rpsPuller.Interval2)
 	rps2, err := dbmodel.GetTotalRpsOverIntervalForDaemon(rpsPuller.Db, startTime2, endTime, daemonID)
 	if err != nil {
-		return fmt.Errorf("query for RPS interval 2 data failed: %s", err)
+		return errors.WithMessagef(err, "query for RPS interval 2 data failed")
 	}
 
 	// Calculate RPS for interval 2.
@@ -452,21 +457,20 @@ func calculateRps(totals []*dbmodel.RpsInterval) int {
 // We use current Stork server time so interval times across Daemons are
 // consistent and relative to us. In other words, we don't care when Kea
 // modified the value, we care about when we got it.
-func getSampleRow(samples []interface{}, rowIdx int) (int64, time.Time, error) {
+func getFirstSample(samples []interface{}) (int64, time.Time, error) {
 	sampledAt := storkutil.UTCNow()
 	if samples == nil {
 		return 0, sampledAt, errors.New("samples cannot be nil")
 	}
 
-	if len(samples) < (rowIdx + 1) {
+	if len(samples) == 0 {
 		// Not enough rows
-		return 0, sampledAt, fmt.Errorf("sampleList does not a row at idx: %d", rowIdx)
+		return 0, sampledAt, fmt.Errorf("sampleList is empty")
 	}
 
-	row, ok := samples[rowIdx].([]interface{})
+	row, ok := samples[0].([]interface{})
 	if !ok {
-		return 0, sampledAt, fmt.Errorf("problem with casting sample row: %+v",
-			samples[rowIdx])
+		return 0, sampledAt, fmt.Errorf("problem with casting sample row: %+v", samples[0])
 	}
 
 	if len(row) != 2 {

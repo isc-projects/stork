@@ -111,7 +111,7 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 			appsOkCnt++
 		}
 	}
-	fmt.Printf("completed pulling lease stats from Kea apps: %d/%d succeeded", appsOkCnt, len(dbApps))
+	log.Printf("completed pulling lease stats from Kea apps: %d/%d succeeded", appsOkCnt, len(dbApps))
 
 	// estimate addresses utilization for subnets
 	subnets, err := dbmodel.GetSubnetsWithLocalSubnets(statsPuller.Db)

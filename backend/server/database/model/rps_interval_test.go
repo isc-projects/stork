@@ -64,7 +64,7 @@ func TestRpsIntervalBasics(t *testing.T) {
 	require.Len(t, rpsIntervals, 0)
 }
 
-// Verifies operation of rps_interval.GetTotalRpsOverInterval()
+// Verifies operation of rps_interval.GetTotalRpsOverIntervalForDaemon()
 // It populates the RpsInterval and then tests four invocations
 // with varying time frames.
 func TestRpsIntervalTotals(t *testing.T) {
@@ -80,11 +80,6 @@ func TestRpsIntervalTotals(t *testing.T) {
 	// then back it up 60 seconds
 	timeZero := storkutil.UTCNow().Round(time.Second)
 	timeZero = timeZero.Add(time.Duration(-60) * time.Second)
-
-	// Getting totals with no rows should return no rows.
-	rpsTotals, err := GetTotalRpsOverInterval(db, timeZero, storkutil.UTCNow())
-	require.NoError(t, err)
-	require.Len(t, rpsTotals, 0)
 
 	startTime := timeZero
 	intervals := 5
@@ -109,101 +104,54 @@ func TestRpsIntervalTotals(t *testing.T) {
 	// Get totals that span the whole table
 	startTime = timeZero
 	endTime := storkutil.UTCNow()
-	rpsTotals, err = GetTotalRpsOverInterval(db, startTime, endTime)
-	require.NoError(t, err)
-	require.Len(t, rpsTotals, 3)
-	expDuration := (intervals * 5)
+	expDuration := int64(intervals * 5)
 
 	// Verify the totals.
-	for row := 0; row < daemons; row++ {
-		interval := rpsTotals[row]
-		daemon := row + 1
-		require.EqualValues(t, daemon, interval.KeaDaemonID)
-		require.EqualValues(t, expDuration, interval.Duration)
-
+	for daemon := 1; daemon <= daemons; daemon++ {
 		var expResponses int64
 		for interval := 1; interval <= intervals; interval++ {
 			expResponses += int64(interval) * int64(math.Pow10(daemon))
 		}
 
-		require.EqualValues(t, expResponses, interval.Responses)
-
 		// Now check the RPS values when pulled for a single daemon.
 		checkIntervalPerDaemon(t, db, startTime, endTime,
-			interval.KeaDaemonID, interval.Responses, interval.Duration)
+			int64(daemon), expResponses, expDuration)
 	}
 
 	// Fetch totals for a time frame containing only the first two intervals
 	startTime = timeZero
 	endTime = timeZero.Add(time.Duration(7) * time.Second)
-	rpsTotals, err = GetTotalRpsOverInterval(db, startTime, endTime)
-	require.NoError(t, err)
-	require.Len(t, rpsTotals, 3)
+	intervals = 2
 
 	// Verify the totals.
-	for row := 0; row < daemons; row++ {
-		interval := rpsTotals[row]
-		daemon := row + 1
-		require.EqualValues(t, daemon, interval.KeaDaemonID)
-		require.EqualValues(t, 10, interval.Duration)
-
+	expDuration = int64(intervals * 5)
+	for daemon := 1; daemon <= daemons; daemon++ {
 		var expResponses int64
-		for interval := 1; interval <= 2; interval++ {
+		for interval := 1; interval <= intervals; interval++ {
 			expResponses += int64(interval) * int64(math.Pow10(daemon))
 		}
 
-		require.EqualValues(t, expResponses, interval.Responses)
-
 		// Now check the RPS values when pulled for a single daemon.
 		checkIntervalPerDaemon(t, db, startTime, endTime,
-			interval.KeaDaemonID, interval.Responses, interval.Duration)
-	}
-
-	// Fetch totals for a time frame containing only the middle three intervals
-	startTime = timeZero.Add(time.Duration(5) * time.Second)
-	endTime = startTime.Add(time.Duration(10) * time.Second)
-	rpsTotals, err = GetTotalRpsOverInterval(db, startTime, endTime)
-	require.NoError(t, err)
-	require.Len(t, rpsTotals, 3)
-
-	// Verify the totals.
-	for row := 0; row < daemons; row++ {
-		interval := rpsTotals[row]
-		daemon := row + 1
-		require.EqualValues(t, daemon, interval.KeaDaemonID)
-		require.EqualValues(t, 15, interval.Duration)
-
-		var expResponses int64
-		for interval := 2; interval <= 4; interval++ {
-			expResponses += int64(interval) * int64(math.Pow10(daemon))
-		}
-
-		require.EqualValues(t, expResponses, interval.Responses)
-
-		// Now check the RPS values when pulled for a single daemon.
-		checkIntervalPerDaemon(t, db, startTime, endTime,
-			interval.KeaDaemonID, interval.Responses, interval.Duration)
+			int64(daemon), expResponses, expDuration)
 	}
 
 	// Fetch totals for a time frame containing only the last interval
 	startTime = timeZero.Add(time.Duration(20) * time.Second)
 	endTime = storkutil.UTCNow().Round(time.Second)
-	rpsTotals, err = GetTotalRpsOverInterval(db, startTime, endTime)
-	require.NoError(t, err)
-	require.Len(t, rpsTotals, 3)
+	intervals = 1
 
 	// Verify the totals.
-	for row := 0; row < daemons; row++ {
-		interval := rpsTotals[row]
-		daemon := row + 1
-		require.EqualValues(t, daemon, interval.KeaDaemonID)
-		require.EqualValues(t, 5, interval.Duration)
-		expResponses := int64(5) * int64(math.Pow10(daemon))
-		require.EqualValues(t, expResponses, interval.Responses)
+	expDuration = int64(intervals * 5)
+	for daemon := 1; daemon <= daemons; daemon++ {
+		var expResponses int64
+		for interval := 1; interval <= intervals; interval++ {
+			expResponses += int64(5) * int64(math.Pow10(daemon))
+		}
 
 		// Now check the RPS values when pulled for a single daemon.
 		checkIntervalPerDaemon(t, db, startTime, endTime,
-			interval.KeaDaemonID, interval.Responses, interval.Duration)
+			int64(daemon), expResponses, expDuration)
 	}
 }
 
