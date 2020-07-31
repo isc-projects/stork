@@ -14,12 +14,12 @@ import (
 
 type StatsPuller struct {
 	*agentcomm.PeriodicPuller
-	*RpsPuller
+	*RpsWorker
 }
 
 // Create a StatsPuller object that in background pulls Kea stats about leases.
 // Beneath it spawns a goroutine that pulls stats periodically from Kea apps (that are stored in database).
-func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, includeRpsPuller bool) (*StatsPuller, error) {
+func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, includeRpsWorker bool) (*StatsPuller, error) {
 	statsPuller := &StatsPuller{}
 	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Stats", "kea_stats_puller_interval",
 		statsPuller.pullStats)
@@ -28,14 +28,14 @@ func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, includeRpsPulle
 	}
 	statsPuller.PeriodicPuller = periodicPuller
 
-	if includeRpsPuller {
-		// Create RpsPuller instance without its own PeriodicPuller
-		rpsPuller, err := NewRpsPuller(db, agents, "")
+	if includeRpsWorker {
+		// Create RpsWorker instance without its own PeriodicPuller
+		rpsWorker, err := NewRpsWorker(db)
 		if err != nil {
 			return nil, err
 		}
 
-		statsPuller.RpsPuller = rpsPuller
+		statsPuller.RpsWorker = rpsWorker
 	}
 
 	return statsPuller, nil
@@ -305,8 +305,8 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	}
 
 	// If we're running RPS, age off obsolete RPS data.
-	if statsPuller.RpsPuller != nil {
-		_ = statsPuller.RpsPuller.AgeOffRpsIntervals()
+	if statsPuller.RpsWorker != nil {
+		_ = statsPuller.RpsWorker.AgeOffRpsIntervals()
 	}
 
 	// Slices for tracking commands, the daemons they're sent to, and the responses
@@ -330,10 +330,10 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 				responses = append(responses, &[]StatLeaseGetResponse{})
 
-				// Add daemon, cmd and response for DHCP4 RPS stats if we have an RpsPuller
-				if statsPuller.RpsPuller != nil {
+				// Add daemon, cmd and response for DHCP4 RPS stats if we have an RpsWorker
+				if statsPuller.RpsWorker != nil {
 					cmdDaemons = append(cmdDaemons, d)
-					responses = append(responses, statsPuller.RpsPuller.AddCmd4(&cmds, dhcp4Daemons))
+					responses = append(responses, statsPuller.RpsWorker.AddCmd4(&cmds, dhcp4Daemons))
 				}
 			case dhcp6:
 
@@ -347,10 +347,10 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 				responses = append(responses, &[]StatLeaseGetResponse{})
 
-				// Add daemon, cmd and response for DHCP6 RPS stats if we have an RpsPuller
-				if statsPuller.RpsPuller != nil {
+				// Add daemon, cmd and response for DHCP6 RPS stats if we have an RpsWorker
+				if statsPuller.RpsWorker != nil {
 					cmdDaemons = append(cmdDaemons, d)
-					responses = append(responses, statsPuller.RpsPuller.AddCmd6(&cmds, dhcp6Daemons))
+					responses = append(responses, statsPuller.RpsWorker.AddCmd6(&cmds, dhcp6Daemons))
 				}
 			}
 		}
@@ -405,7 +405,7 @@ func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*
 					lastErr = err
 				}
 			case "statistic-get":
-				err = statsPuller.RpsPuller.Response4Handler(cmdDaemons[idx], responses[idx])
+				err = statsPuller.RpsWorker.Response4Handler(cmdDaemons[idx], responses[idx])
 				if err != nil {
 					log.Errorf("error handling statistic-get (v4) response: %+v", err)
 					lastErr = err
@@ -421,7 +421,7 @@ func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*
 					lastErr = err
 				}
 			case "statistic-get":
-				err = statsPuller.RpsPuller.Response6Handler(cmdDaemons[idx], responses[idx])
+				err = statsPuller.RpsWorker.Response6Handler(cmdDaemons[idx], responses[idx])
 				if err != nil {
 					log.Errorf("error handling statistic-get (v6) response: %+v", err)
 					lastErr = err

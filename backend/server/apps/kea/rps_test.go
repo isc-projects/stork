@@ -11,127 +11,13 @@ import (
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
-	storktest "isc.org/stork/server/test"
 )
-
-const rpsTestInterval string = "rpsTestInterval"
-
-// Check creating and shutting down RpsPuller with PeriodicPuller.
-func TestRpsPullerBasic(t *testing.T) {
-	// prepare db
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// set one setting that is needed by puller
-	setting := dbmodel.Setting{
-		Name:    rpsTestInterval,
-		ValType: dbmodel.SettingValTypeInt,
-		Value:   "60",
-	}
-	err := db.Insert(&setting)
-	require.NoError(t, err)
-
-	// prepare fake agents
-	fa := storktest.NewFakeAgents(nil, nil)
-
-	// Create the puller.
-	sp, _ := NewRpsPuller(db, fa, rpsTestInterval)
-
-	// Should have a periodic puller.
-	require.NotEmpty(t, sp.PeriodicPuller)
-	sp.Shutdown()
-}
-
-// Check creating and shutting down RpsPuller without PeriodicPuller.
-func TestRpsPullerBasicWithoutPuller(t *testing.T) {
-	// prepare db
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// prepare fake agents
-	fa := storktest.NewFakeAgents(nil, nil)
-
-	// Create the puller.
-	sp, _ := NewRpsPuller(db, fa, "")
-
-	// Should not have a periodic puller.
-	require.NotEmpty(t, sp.PeriodicPuller)
-	require.False(t, sp.PeriodicPuller.Active)
-
-	// Shutdown should be harmless.
-	sp.Shutdown()
-}
-
-// Convenience function that creates a machine with one Kea app and two daemons.
-func rpsTestAddMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Active bool) {
-	// add one machine with one kea app
-	m := &dbmodel.Machine{
-		ID:        0,
-		Address:   "localhost",
-		AgentPort: 8080,
-	}
-	err := dbmodel.AddMachine(db, m)
-	require.NoError(t, err)
-	require.NotEqual(t, 0, m.ID)
-
-	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "cool.example.org", "", 1234)
-	a := &dbmodel.App{
-		ID:           0,
-		MachineID:    m.ID,
-		Type:         dbmodel.AppTypeKea,
-		Active:       true,
-		AccessPoints: accessPoints,
-		Daemons: []*dbmodel.Daemon{
-			{
-				Active: dhcp4Active,
-				Name:   "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-			{
-				Active: dhcp6Active,
-				Name:   "dhcp6",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-				},
-			},
-		},
-	}
-	_, err = dbmodel.AddApp(db, a)
-	require.NoError(t, err)
-	require.NotEqual(t, 0, a.ID)
-
-	// set one setting that is needed by puller
-	setting := dbmodel.Setting{
-		Name:    rpsTestInterval,
-		ValType: dbmodel.SettingValTypeInt,
-		Value:   "60",
-	}
-	err = db.Insert(&setting)
-	require.NoError(t, err)
-}
-
-func checkDaemonRpsStats(t *testing.T, db *dbops.PgDB, keaDaemonID int64, interval1 int, interval2 int) {
-	daemon := &dbmodel.KeaDHCPDaemon{}
-	err := db.Model(daemon).
-		Where("kea_daemon_id = ?", keaDaemonID).
-		Select()
-
-	require.NoError(t, err)
-	require.Equal(t, interval1, daemon.Stats.RPS1)
-	require.Equal(t, interval2, daemon.Stats.RPS2)
-}
 
 // Check if Kea response to statistic-get command is handled correctly
 // when it is empty or malformed.
-func TestRpsPullerEmptyOrInvalidResponses(t *testing.T) {
+func TestRpsWorkerEmptyOrInvalidResponses(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-
-	dhcp4Arguments := RpsGetDhcp4Arguments()
-	dhcp6Arguments := RpsGetDhcp6Arguments()
 
 	// JSON response to send per call number
 	jsonResponses := []string{
@@ -140,256 +26,71 @@ func TestRpsPullerEmptyOrInvalidResponses(t *testing.T) {
 		`[{ "result": 1, "text": "Error response", }]`,
 	}
 
-	// Prepare fake agent which returns a response based on callNo
-	keaMock := func(callNo int, cmdResponses []interface{}) {
-		require.Less(t, callNo, len(jsonResponses))
-
-		// DHCPv4
-		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-		command, _ := agentcomm.NewKeaCommand("statistic-get", daemons, &dhcp4Arguments)
-		agentcomm.UnmarshalKeaResponseList(command, jsonResponses[callNo], cmdResponses[0])
-
-		// DHCPv6
-		daemons, _ = agentcomm.NewKeaDaemons("dhcp6")
-		command, _ = agentcomm.NewKeaCommand("statistic-get", daemons, &dhcp6Arguments)
-		agentcomm.UnmarshalKeaResponseList(command, jsonResponses[callNo], cmdResponses[1])
-	}
-	fa := storktest.NewFakeAgents(keaMock, nil)
-
 	// Create a machine with one app and two kea daemons
-	rpsTestAddMachine(t, db, true, true)
+	dhcp4Daemon, dhcp6Daemon := rpsTestAddMachine(t, db, true, true)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
+	rps, err := NewRpsWorker(db)
 	require.NoError(t, err)
-	// shutdown stats puller at the end
-	defer sp.Shutdown()
 
-	cmdIdx := 0
 	for call := 0; call < len(jsonResponses); call++ {
-		// invoke pulling stats
-		appsOkCnt, err := sp.pullStats()
+		err := rpsTestInvokeResponse4Handler(rps, dhcp4Daemon, jsonResponses[call])
 		require.Error(t, err)
-		require.Equal(t, 0, appsOkCnt)
 
-		// Make sure we recorded 1 command per daemon per iteration
-		require.Equal(t, (cmdIdx + 2), len(fa.RecordedCommands))
-		require.Equal(t, &dhcp4Arguments, fa.RecordedCommands[cmdIdx].Arguments)
-		cmdIdx++
-		require.Equal(t, &dhcp6Arguments, fa.RecordedCommands[cmdIdx].Arguments)
-		cmdIdx++
+		err = rpsTestInvokeResponse6Handler(rps, dhcp6Daemon, jsonResponses[call])
+		require.Error(t, err)
 	}
-}
-
-// Verifies that no commands are sent or processed when neither
-// dhcp4 or dhcp6 daeamons in an App are active.
-func TestRpsPullerNoActiveDaemons(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// Prepare a fake agent that will bomb if it gets called.
-	keaMock := func(callNo int, cmdResponses []interface{}) {
-		// We should not get here at all.
-		require.Equal(t, -1, callNo)
-	}
-	fa := storktest.NewFakeAgents(keaMock, nil)
-
-	// Create a machine with one app and two daemons: dhcp4 inactive, dhcp6 inactive
-	rpsTestAddMachine(t, db, false, false)
-
-	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
-	require.NoError(t, err)
-	// shutdown stats puller at the end
-	defer sp.Shutdown()
-
-	// invoke pulling stats
-	appsOkCnt, err := sp.pullStats()
-	require.NoError(t, err)
-	require.Equal(t, 1, appsOkCnt)
-
-	// We should have no recorded commands in the agent.
-	require.Equal(t, 0, len(fa.RecordedCommands))
-
-	// We should have no rows in PreviousRps map for dhcp4 daemon
-	require.Equal(t, 0, len(sp.PreviousRps))
-}
-
-// Verifies that a command is only issued and response processed
-// for the dhcp4 daemon, when the dhcp6 daemon is inactive.
-func TestRpsPullerDhcp4Only(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	dhcp4Arguments := RpsGetDhcp4Arguments()
-
-	// Prepare fake agents. They will return an incremented statisic value with
-	// each subsequent call.  We don't bother about the timestamps, they are not used.
-	keaMock := func(callNo int, cmdResponses []interface{}) {
-		// DHCPv4
-		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-		command, _ := agentcomm.NewKeaCommand("statistic-get", daemons, &dhcp4Arguments)
-
-		json := fmt.Sprintf(`[{
-                            "result": 0,
-                            "text": "Everything is fine",
-                            "arguments": {
-                                "pkt4-ack-sent": [ [ %d, "2019-07-30 10:13:00.000000" ] ]
-                            }}]`, ((callNo + 1) * 5))
-
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
-	}
-	fa := storktest.NewFakeAgents(keaMock, nil)
-
-	// Create a machine with one app and two daemons: dhcp4 active, dhcp6 inactive
-	rpsTestAddMachine(t, db, true, false)
-
-	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
-	require.NoError(t, err)
-	// shutdown stats puller at the end
-	defer sp.Shutdown()
-
-	// invoke pulling stats
-	appsOkCnt, err := sp.pullStats()
-	require.NoError(t, err)
-	require.Equal(t, 1, appsOkCnt)
-
-	// We should have one dhcp4 command recorded in the agent.
-	require.Equal(t, 1, len(fa.RecordedCommands))
-	require.Equal(t, &dhcp4Arguments, fa.RecordedCommands[0].Arguments)
-
-	// We should have one row in PreviousRps map for dhcp4 daemon
-	require.Equal(t, 1, len(sp.PreviousRps))
-
-	// Row 1 should be dhcp4 daemon, it should have an RPS value of 5
-	previous := sp.PreviousRps[1]
-	require.NotEqual(t, nil, previous)
-	require.EqualValues(t, 5, previous.Value)
-}
-
-// Verifies that a command is only issued and response processed
-// for the dhcp6 daemon, when the dhcp4 daemon is inactive.
-func TestRpsPullerDhcp6Only(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	dhcp6Arguments := RpsGetDhcp6Arguments()
-
-	// Prepare fake agents. They will return an incremented statisic value with
-	// each subsequent call.  We don't bother about the timestamps, they are not used.
-	keaMock := func(callNo int, cmdResponses []interface{}) {
-		// DHCPv6
-		daemons, _ := agentcomm.NewKeaDaemons("dhcp6")
-		command, _ := agentcomm.NewKeaCommand("statistic-get", daemons, &dhcp6Arguments)
-
-		json := fmt.Sprintf(`[{
-                            "result": 0,
-                            "text": "Everything is fine",
-                            "arguments": {
-                                "pkt6-reply-sent": [ [ %d, "2019-07-30 10:13:00.000000" ] ]
-                            }}]`, ((callNo + 1) * 7))
-
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
-	}
-	fa := storktest.NewFakeAgents(keaMock, nil)
-
-	// Create a machine with one app and two daemons: dhcp4 inactive, dhcp6 active
-	rpsTestAddMachine(t, db, false, true)
-
-	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
-	require.NoError(t, err)
-	// shutdown stats puller at the end
-	defer sp.Shutdown()
-
-	// invoke pulling stats
-	appsOkCnt, err := sp.pullStats()
-	require.NoError(t, err)
-	require.Equal(t, 1, appsOkCnt)
-
-	// We should have one dhcp6 command recorded in the agent.
-	require.Equal(t, 1, len(fa.RecordedCommands))
-	require.Equal(t, &dhcp6Arguments, fa.RecordedCommands[0].Arguments)
-
-	// We should have one row in PreviousRps map for dhcp6 daemon
-	require.Equal(t, 1, len(sp.PreviousRps))
-
-	// Row 1 should be dhcp6 daemon, it should have an RPS value of 7
-	previous := sp.PreviousRps[2]
-	require.NotEqual(t, nil, previous)
-	require.EqualValues(t, 7, previous.Value)
 }
 
 // Check if pulling and calculating stats for both servers works correctly.
 // This test includes verification of RPS_INTERVAL table contents.
-func TestRpsPullerPullRps(t *testing.T) {
+func TestRpsWorkerPullRps(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	dhcp4Arguments := RpsGetDhcp4Arguments()
-	dhcp6Arguments := RpsGetDhcp6Arguments()
-
-	// Prepare a fake agent to return an incremented statisic value with  each subsequent call.
-	// We don't bother about the timestamp values, they are not used.
-	keaMock := func(callNo int, cmdResponses []interface{}) {
-		// DHCPv4
-		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-		command, _ := agentcomm.NewKeaCommand("statistic-get", daemons, &dhcp4Arguments)
-
-		json := fmt.Sprintf(`[{
+	var makeJSON4 = func(callNo int) string {
+		return (fmt.Sprintf(`[{
                             "result": 0,
                             "text": "Everything is fine",
                             "arguments": {
                                 "pkt4-ack-sent": [ [ %d, "2019-07-30 10:13:00.000000" ] ]
-                            }}]`, ((callNo + 1) * 5))
+                            }}]`, (callNo * 5)))
+	}
 
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
-
-		// DHCPv6
-		daemons, _ = agentcomm.NewKeaDaemons("dhcp6")
-		command, _ = agentcomm.NewKeaCommand("statistic-get", daemons, &dhcp6Arguments)
-
-		json = fmt.Sprintf(`[{
+	var makeJSON6 = func(callNo int) string {
+		return (fmt.Sprintf(`[{
                            "result": 0,
                            "text": "Everything is fine",
                            "arguments": {
                                 "pkt6-reply-sent": [ [ %d, "2019-07-30 10:13:00.000000" ] ]
-                           }}]`, ((callNo + 1) * 7))
-
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[1])
+                           }}]`, (callNo * 7)))
 	}
-	fa := storktest.NewFakeAgents(keaMock, nil)
 
-	// Create a machine with one app and two daemons: dhcp4 active, dhcp6 active
-	rpsTestAddMachine(t, db, true, true)
+	// Create a machine with one app and two kea daemons
+	dhcp4Daemon, dhcp6Daemon := rpsTestAddMachine(t, db, true, true)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
+	rps, err := NewRpsWorker(db)
 	require.NoError(t, err)
-	// shutdown stats puller at the end
-	defer sp.Shutdown()
 
-	// invoke pulling stats
-	appsOkCnt, err := sp.pullStats()
+	// Process a round of statistics for both daemons (equates to a single pull cycle)
+	callNo := 1
+	err = rpsTestInvokeResponse4Handler(rps, dhcp4Daemon, makeJSON4(callNo))
 	require.NoError(t, err)
-	require.Equal(t, 1, appsOkCnt)
 
-	// We should have two commands, one for each daemon recorded in the agent.
-	require.Equal(t, 2, len(fa.RecordedCommands))
-	require.Equal(t, &dhcp4Arguments, fa.RecordedCommands[0].Arguments)
-	require.Equal(t, &dhcp6Arguments, fa.RecordedCommands[1].Arguments)
+	err = rpsTestInvokeResponse6Handler(rps, dhcp6Daemon, makeJSON6(callNo))
+	require.NoError(t, err)
 
 	// We should have two rows in PreviousRps map, one for each daemon
-	require.Equal(t, 2, len(sp.PreviousRps))
+	require.Equal(t, 2, len(rps.PreviousRps))
 
 	// Row 1 should be dhcp4 daemon, it should have an RPS value of 5
-	previous4 := sp.PreviousRps[1]
+	previous4 := rps.PreviousRps[1]
 	require.NotEqual(t, nil, previous4)
 	require.EqualValues(t, 5, previous4.Value)
 
 	// Row 2 should be dhcp6 daemon, it should have an RPS value of 7
-	previous6 := sp.PreviousRps[2]
+	previous6 := rps.PreviousRps[2]
 	require.NotEqual(t, nil, previous6)
 	require.EqualValues(t, 7, previous6.Value)
 
@@ -405,28 +106,26 @@ func TestRpsPullerPullRps(t *testing.T) {
 	// sleep two seconds so we will have a later recorded time
 	time.Sleep(2 * time.Second)
 
-	// Pull the stats again
-	appsOkCnt, err = sp.pullStats()
+	// Do another "pull"
+	callNo++
+	err = rpsTestInvokeResponse4Handler(rps, dhcp4Daemon, makeJSON4(callNo))
 	require.NoError(t, err)
-	require.Equal(t, 1, appsOkCnt)
 
-	// We should have two more commands, one for each daemon recorded in the agent.
-	require.Equal(t, 4, len(fa.RecordedCommands))
-	require.Equal(t, &dhcp4Arguments, fa.RecordedCommands[2].Arguments)
-	require.Equal(t, &dhcp6Arguments, fa.RecordedCommands[3].Arguments)
+	err = rpsTestInvokeResponse6Handler(rps, dhcp6Daemon, makeJSON6(callNo))
+	require.NoError(t, err)
 
 	// We should still only have two rows in PreviousRps map, one for each daemon
-	require.Equal(t, 2, len(sp.PreviousRps))
+	require.Equal(t, 2, len(rps.PreviousRps))
 
 	// Row 1 should be dhcp4 daemon, it should have an RPS value of 10
-	current4 := sp.PreviousRps[1]
+	current4 := rps.PreviousRps[1]
 	require.NotEqual(t, nil, current4)
 	require.Equal(t, int64(10), current4.Value)
 	// The current recorded time should be two seconds later than the previous time.
 	require.GreaterOrEqual(t, (current4.SampledAt.Unix() - previous4.SampledAt.Unix()), int64(2))
 
 	// Row 2 should be dhcp6 daemon, it should have an RPS value of 14
-	current6 := sp.PreviousRps[2]
+	current6 := rps.PreviousRps[2]
 	require.NotEqual(t, nil, current6)
 	require.EqualValues(t, 14, current6.Value)
 	// The current recorded time should be two seconds later than the previous time.
@@ -458,12 +157,10 @@ func TestRpsPullerPullRps(t *testing.T) {
 
 // Verifies that getting stat values that are less than or equal to the previous
 // value are handled correctly.  This is only tested for dhcp4, as this is primarily
-// a verification of RpsPuller.updateDaemonRps() logic, which is common to both.
-func TestRpsPullerValuePermutations(t *testing.T) {
+// a verification of RpsWorker.updateDaemonRps() logic, which is common to both.
+func TestRpsWorkerValuePermutations(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-
-	dhcp4Arguments := RpsGetDhcp4Arguments()
 
 	// Array of statistic values "returned" in statistic-get
 	// between 200 and 35, this simulates kea-restart, rollover, or stat reset
@@ -478,44 +175,31 @@ func TestRpsPullerValuePermutations(t *testing.T) {
 	// Array of expected RpsInterval.Responses for each interval row added
 	expectedResponses := []int64{100, 35, 0, 15, 0, 10, 0, 17}
 
-	// Createa a fake agent that returns a statistic value from statValues[] using
-	// callNo as an index.
-	keaMock := func(callNo int, cmdResponses []interface{}) {
-		// DHCPv4
-		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-		command, _ := agentcomm.NewKeaCommand("statistic-get", daemons, &dhcp4Arguments)
-
-		require.Less(t, callNo, len(statValues))
-
-		json := fmt.Sprintf(`[{
+	var makeJSON4 = func(value int64) string {
+		resp := fmt.Sprintf(`[{
                             "result": 0,
                             "text": "Everything is fine",
                             "arguments": {
                                 "pkt4-ack-sent": [ [ %d, "2019-07-30 10:13:00.000000" ] ]
-                            }}]`, statValues[callNo])
-
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+                            }}]`, value)
+		return (resp)
 	}
 
-	fa := storktest.NewFakeAgents(keaMock, nil)
-
 	// Create a machine with one app and two daemons: dhcp4 active, dhcp6 false
-	rpsTestAddMachine(t, db, true, false)
+	dhcp4Daemon, _ := rpsTestAddMachine(t, db, true, false)
 
 	// prepare stats puller
-	sp, err := NewRpsPuller(db, fa, rpsTestInterval)
-	require.NoError(t, err) // shutdown stats puller at the end
-	defer sp.Shutdown()
+	rps, err := NewRpsWorker(db)
+	require.NoError(t, err)
 
 	for pass := 0; pass < len(statValues); pass++ {
-		// invoke pulling stats
-		appsOkCnt, err := sp.pullStats()
+		// Process the next command response
+		err = rpsTestInvokeResponse4Handler(rps, dhcp4Daemon, makeJSON4(statValues[pass]))
 		require.NoError(t, err)
-		require.Equal(t, 1, appsOkCnt)
 
 		// Verify the contents of PreviousRps map
-		require.Equal(t, 1, len(sp.PreviousRps))
-		previous := sp.PreviousRps[1]
+		require.Equal(t, 1, len(rps.PreviousRps))
+		previous := rps.PreviousRps[1]
 		require.NotEqual(t, nil, previous)
 		require.EqualValues(t, expectedPrevious[pass], previous.Value)
 
@@ -541,7 +225,63 @@ func TestRpsPullerValuePermutations(t *testing.T) {
 	}
 }
 
-// Calculte the RPS from an array of RpsIntervals.
+// Convenience function that creates a machine with one Kea app and two daemons.
+func rpsTestAddMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Active bool) (*dbmodel.Daemon, *dbmodel.Daemon) {
+	// add one machine with one kea app
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, m.ID)
+
+	var accessPoints []*dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "cool.example.org", "", 1234)
+	a := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Active: dhcp4Active,
+				Name:   dhcp4,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+				},
+			},
+			{
+				Active: dhcp6Active,
+				Name:   dhcp6,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, a)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, a.ID)
+
+	return a.Daemons[0], a.Daemons[1]
+}
+
+// Verifies RPS values for both intervals for a given daemon
+func checkDaemonRpsStats(t *testing.T, db *dbops.PgDB, keaDaemonID int64, interval1 int, interval2 int) {
+	daemon := &dbmodel.KeaDHCPDaemon{}
+	err := db.Model(daemon).
+		Where("kea_daemon_id = ?", keaDaemonID).
+		Select()
+
+	require.NoError(t, err)
+	require.Equal(t, interval1, daemon.Stats.RPS1)
+	require.Equal(t, interval2, daemon.Stats.RPS2)
+}
+
+// Calculate the RPS from an array of RpsIntervals.
 func getExpectedRps(rpsIntervals []*dbmodel.RpsInterval, endIdx int) int {
 	var responses int64
 	var duration int64
@@ -560,4 +300,30 @@ func getExpectedRps(rpsIntervals []*dbmodel.RpsInterval, endIdx int) int {
 	}
 
 	return (int(responses / duration))
+}
+
+// Marshall a given json response to a DHCP4 command and pass that into Response4Handler
+func rpsTestInvokeResponse4Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonResponse string) error {
+	cmds := []*agentcomm.KeaCommand{}
+	responses := []interface{}{}
+
+	dhcp4Daemons, _ := agentcomm.NewKeaDaemons(dhcp4)
+	responses = append(responses, rps.AddCmd4(&cmds, dhcp4Daemons))
+	agentcomm.UnmarshalKeaResponseList(cmds[0], jsonResponse, responses[0])
+
+	err := rps.Response4Handler(daemon, responses[0])
+	return err
+}
+
+// Marshall a given json response to a DHCP6 command and pass that into Response6Handler
+func rpsTestInvokeResponse6Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonResponse string) error {
+	cmds := []*agentcomm.KeaCommand{}
+	responses := []interface{}{}
+
+	dhcp6Daemons, _ := agentcomm.NewKeaDaemons(dhcp6)
+	responses = append(responses, rps.AddCmd6(&cmds, dhcp6Daemons))
+	agentcomm.UnmarshalKeaResponseList(cmds[0], jsonResponse, responses[0])
+
+	err := rps.Response6Handler(daemon, responses[0])
+	return err
 }

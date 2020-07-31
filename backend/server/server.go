@@ -32,7 +32,6 @@ type StorkServer struct {
 	KeaStatsPuller   *kea.StatsPuller
 	KeaHostsPuller   *kea.HostsPuller
 	StatusPuller     *kea.StatusPuller
-	KeaRpsPuller     *kea.RpsPuller
 
 	EventCenter eventcenter.EventCenter
 }
@@ -177,7 +176,6 @@ func (ss *StorkServer) Shutdown() {
 	ss.RestAPI.Shutdown()
 	ss.KeaHostsPuller.Shutdown()
 	ss.KeaStatsPuller.Shutdown()
-	ss.KeaRpsPuller.Shutdown()
 	ss.Bind9StatsPuller.Shutdown()
 	ss.StatusPuller.Shutdown()
 	ss.EventCenter.Shutdown()

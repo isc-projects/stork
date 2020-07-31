@@ -30,7 +30,7 @@ func TestStatsPullerBasic(t *testing.T) {
 	fa := storktest.NewFakeAgents(nil, nil)
 
 	sp, _ := NewStatsPuller(db, fa, true)
-	require.NotEmpty(t, sp.RpsPuller)
+	require.NotEmpty(t, sp.RpsWorker)
 
 	sp.Shutdown()
 }
@@ -114,7 +114,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 	err = db.Insert(&setting)
 	require.NoError(t, err)
 
-	// prepare stats puller without RpsPuller
+	// prepare stats puller without RpsWorker
 	sp, err := NewStatsPuller(db, fa, false)
 	require.NoError(t, err)
 
@@ -246,7 +246,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	err = db.Insert(&setting)
 	require.NoError(t, err)
 
-	// prepare stats puller without RpsPuller
+	// prepare stats puller without RpsWorker
 	sp, err := NewStatsPuller(db, fa, false)
 	require.NoError(t, err)
 	// shutdown stats puller at the end
@@ -259,7 +259,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 }
 
 // Check if pulling stats works when RPS is included.
-// RpsPuller has a thorough set of unit tests so in this
+// RpsWorker has a thorough set of unit tests so in this
 // we verify only that it has entries in its internal
 // Map of statistics fetched.  This is enough to demonstrate
 // that it is operational.  We repeat the lease stats
@@ -365,7 +365,7 @@ func TestStatsPullerPullStatsWithRps(t *testing.T) {
 	err = db.Insert(&setting)
 	require.NoError(t, err)
 
-	// prepare stats puller with RpsPuller
+	// prepare stats puller with RpsWorker
 	sp, err := NewStatsPuller(db, fa, true)
 	require.NoError(t, err)
 
@@ -421,16 +421,16 @@ func TestStatsPullerPullStatsWithRps(t *testing.T) {
 	}
 	require.Equal(t, 5, snCnt)
 
-	// We should have two rows in RpsPuller.PreviousRps map one for each daemon
-	require.Equal(t, 2, len(sp.RpsPuller.PreviousRps))
+	// We should have two rows in RpsWorker.PreviousRps map one for each daemon
+	require.Equal(t, 2, len(sp.RpsWorker.PreviousRps))
 
 	// Entry for ID 1 should be dhcp4 daemon, it should have an RPS value of 44
-	previous := sp.RpsPuller.PreviousRps[1]
+	previous := sp.RpsWorker.PreviousRps[1]
 	require.NotEqual(t, nil, previous)
 	require.EqualValues(t, 44, previous.Value)
 
 	// Entry for ID 2 should be dhcp6 daemon, it should have an RPS value of 66
-	previous = sp.RpsPuller.PreviousRps[2]
+	previous = sp.RpsWorker.PreviousRps[2]
 	require.NotEqual(t, nil, previous)
 	require.EqualValues(t, 66, previous.Value)
 }
