@@ -294,11 +294,6 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 }
 
 func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
-	// Prepare URL to CA
-	ctrlPoint, err := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
-	if err != nil {
-		return err
-	}
 
 	// get active dhcp daemons
 	dhcpDaemons := make(agentcomm.KeaDaemons)
@@ -374,10 +369,8 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	// forward commands to kea
 	ctx := context.Background()
 
-	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp.Machine.Address, dbApp.Machine.AgentPort, ctrlPoint.Address, ctrlPoint.Port, cmds, responses...)
+	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp, cmds, responses...)
 
-	// This was the code on #324: added raising events on communication issues
-	//	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp, cmds, &statsResp1, &statsResp2)
 	if err != nil {
 		return err
 	}

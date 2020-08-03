@@ -85,7 +85,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 		_ = RpsAddCmd6(&rpsCmd, daemons)
 		agentcomm.UnmarshalKeaResponseList(rpsCmd[0], json, cmdResponses[3])
 	}
-	fa := storktest.NewFakeAgents(keaMock, nil)
+	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
 	// add one machine with one kea app
 	m := &dbmodel.Machine{
@@ -325,34 +325,9 @@ func TestStatsPullerPullStats(t *testing.T) {
 
 // Check if Kea response to stat-leaseX-get command is handled correctly when it is
 // empty or when stats hooks library is not loaded.
-func TestStatsPullerEmptyResponse(t *testing.T) {
+func TestStatsPullerEmptyResponse2(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-
-	// prepare fake agents
-	keaMock := func(callNo int, cmdResponses []interface{}) {
-		// DHCPv4
-		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-		command, _ := agentcomm.NewKeaCommand("stat-lease4-get", daemons, nil)
-		// simulate empty response
-		json := `[{
-                            "result": 0,
-                            "text": "Everything is fine",
-                            "arguments": {}
-                         }]`
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
-
-		// DHCPv6
-		daemons, _ = agentcomm.NewKeaDaemons("dhcp6")
-		command, _ = agentcomm.NewKeaCommand("stat-lease6-get", daemons, nil)
-		// simulate not loaded stat plugin in kea
-		json = `[{
-                           "result": 2,
-                           "text": "'stat-lease6-get' command not supported."
-                        }]`
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[1])
-	}
-	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
 	// add one machine with one kea app
 	m := &dbmodel.Machine{
