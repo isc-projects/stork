@@ -267,7 +267,6 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 	}
 
 	for _, row := range resultSet.Rows {
-		fmt.Printf("row is: %+v", row)
 		stats := make(map[string]interface{})
 		var sn *dbmodel.LocalSubnet
 		var lsnID int64
