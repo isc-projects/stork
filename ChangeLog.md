@@ -1,3 +1,7 @@
+* 83 [func] tmark
+    Added RPS (Response Per Second) statistics to DHCP Dashboard
+    (Gitlab #252)
+
 * 82 [func] marcin
 
     Viewing the tail of the remote log files is enabled in the UI.
