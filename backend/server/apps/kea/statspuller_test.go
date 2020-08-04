@@ -364,4 +364,3 @@ func TestStatsPullerEmptyResponse2(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, a.ID)
 }
-

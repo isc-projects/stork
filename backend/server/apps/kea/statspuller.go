@@ -294,7 +294,6 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 }
 
 func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
-
 	// get active dhcp daemons
 	dhcpDaemons := make(agentcomm.KeaDaemons)
 	found := false
