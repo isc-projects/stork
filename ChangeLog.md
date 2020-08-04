@@ -1,3 +1,9 @@
+* 84 [func] godfryd
+    Added stop/start monitoring button to better control which services
+    are monitored. Communication failures now generate events that are
+    recorded in the events system. Machine view now shows events.
+    (Gitlab #324, #339)
+
 * 83 [func] tmark
     Added RPS (Response Per Second) statistics to DHCP Dashboard
     (Gitlab #252)
