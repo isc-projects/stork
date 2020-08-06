@@ -67,6 +67,10 @@ Then, prepare the database:
     stork=# create extension pgcrypto;
     CREATE EXTENSION
 
+.. note::
+
+   Make sure the actual password is stronger than 'stork' which is trivial to guess.
+   Using default passwords is a security risk.
 
 Installing from Packages
 ========================
