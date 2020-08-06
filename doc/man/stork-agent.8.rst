@@ -22,7 +22,7 @@ Description
 
 The ``stork-agent`` is a small tool that is being run on the systems
 that are running BIND 9 and Kea services. Stork server connects to
-the stork agent and uses it to monitor services remotely.
+the Stork Agent and uses it to monitor services remotely.
 
 Arguments
 ~~~~~~~~~
