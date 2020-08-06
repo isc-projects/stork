@@ -29,9 +29,12 @@ stored locally in the Kea configuration without any additional hook libraries.
 
 
 For the ``Stork Server``, a PostgreSQL database
-(https://www.postgresql.org/) using at least version 11 of PostgreSQL
-is required.  (The installation procedure for PostgreSQL is
-OS-specific and is not included here.)
+(https://www.postgresql.org/) using at least version 11
+is required. The general installation procedure for PostgreSQL is
+OS-specific and is not included here. However, please keep in mind that Stork
+uses pgcrypto extensions, which are often coming in a separate package. For
+example, you need postgresql-crypto package on Fedora and postgresql12-contrib
+on RHEL and CentOS.
 
 These instructions prepare a database for use with the ``Stork
 Server``, with the `stork` database user and `stork` password.  Next,
@@ -39,7 +42,8 @@ a database called `stork` is created and the `pgcrypto` extension is
 enabled in the database.
 
 First, connect to PostgreSQL using `psql` and the `postgres`
-administration user:
+administration user. Depending on your system configuration, this may require
+switching to `postgres` user, using `su postgres` command first.
 
 .. code-block:: console
 
