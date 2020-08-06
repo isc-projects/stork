@@ -1,3 +1,8 @@
+* 91 [doc] tomek
+
+    Update man pages and installation instructions.
+    (Gitlab #202, #266, #307)
+
 * 90 [ui] tomek
 
     Clarified machines page, added tooltips. Updated color scheme
