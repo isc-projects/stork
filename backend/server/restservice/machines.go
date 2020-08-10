@@ -1100,6 +1100,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 				AppID:            dbApp.ID,
 				Name:             dbDaemon.Name,
 				Active:           dbDaemon.Active,
+				Monitored:        dbDaemon.Monitored,
 				Rps1:             int64(dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1),
 				Rps2:             int64(dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2),
 				AddrUtilization:  0,
