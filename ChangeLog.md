@@ -1,3 +1,8 @@
+* 87 [doc] marcin
+
+    Described Kea log viewer in the ARM.
+    (Gitlab #349)
+
 * 86 [func] tmark 
 
     Added tool tip to RPS columns on DHCP dashboard.
