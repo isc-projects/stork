@@ -1,3 +1,10 @@
+* 85 [bug] marcin
+
+    Fixed regression in the log viewer functionality which removed links
+    to the log files on the Kea app pages. In addition, improved
+    error message presentation on the log viewer pages.
+    (Gitlab #359)
+
 * 84 [func] godfryd
     Added stop/start monitoring button to better control which services
     are monitored. Communication failures now generate events that are
