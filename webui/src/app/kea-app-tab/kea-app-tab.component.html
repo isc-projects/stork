@@ -165,7 +165,14 @@
                                             <td>{{ logTarget.name }}</td>
                                             <td align="center">{{ logTarget.severity }}</td>
                                             <td>
-                                                <i>{{ logTarget.output }}</i>
+                                                <i *ngIf="!logTargetViewable(logTarget.output)">{{
+                                                    logTarget.output
+                                                }}</i>
+                                                <a
+                                                    *ngIf="logTargetViewable(logTarget.output)"
+                                                    routerLink="/logs/{{ logTarget.id }}"
+                                                    ><i>{{ logTarget.output }}</i></a
+                                                >
                                             </td>
                                         </tr>
                                     </ng-template>
