@@ -9,13 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         isc-kea-ctrl-agent=1.7.8-isc0023920200525101542 \
         isc-kea-common=1.7.8-isc0023920200525101542 \
         && mkdir -p /var/run/kea/
-# Tell CA to listen on all interfaces.
-RUN perl -pi -e 's/8000/8001/g' /etc/kea/kea-ctrl-agent.conf && perl -pi -e 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/kea/kea-ctrl-agent.conf
 # Install Stork agent.
 COPY build-root/root/usr/bin/stork-agent /agent/
 # Copy configuration files.
 COPY docker/supervisor-agent-kea.conf /etc/supervisor.conf
 COPY docker/kea-dhcp4-ha1.conf /etc/kea/kea-dhcp4.conf
 COPY docker/agent-kea-ctrl-agent.conf /etc/kea/kea-ctrl-agent.conf
+# Correct port for HA-1.
+RUN perl -pi -e 's/8000/8001/g' /etc/kea/kea-ctrl-agent.conf
 # Start supervisor.
 CMD ["supervisord", "-c", "/etc/supervisor.conf"]
