@@ -3,7 +3,10 @@
 set -e
 
 if [ -e /etc/redhat-release ]; then
-    useradd --system --home-dir /var/lib/ stork-server
+    # add stork-server user if does not exists
+    if [ ! $(getent passwd stork-server) ]; then
+        useradd --system --home-dir /var/lib/ stork-server
+    fi
 else
     adduser --quiet --system --group --home /var/lib/ \
             --no-create-home --disabled-password --disabled-login \
