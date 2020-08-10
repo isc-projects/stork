@@ -38,7 +38,7 @@ func init() {
                AS $function$
              BEGIN
                IF NEW.password_hash IS NOT NULL THEN
-                 NEW.password_hash := crypt(NEW.password_hash, gen_salt('md5'));
+                 NEW.password_hash := crypt(NEW.password_hash, gen_salt('bf'));
                ELSIF OLD.password_hash IS NOT NULL THEN
                  NEW.password_hash := OLD.password_hash;
                END IF;

@@ -1,3 +1,9 @@
+* 89 [func] godfryd
+
+    Changed md5 to blowfish as algorithm in hash function used to store
+    password in PostgreSQL database.
+    (Gitlab #356)
+
 * 88 [bug] godfryd
 
     Fixed upgrading RPM agent and server packages. There was a problem
