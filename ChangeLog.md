@@ -1,6 +1,7 @@
 * 88 [bug] godfryd
 
-    Fixed upgrading RPM packages.
+    Fixed upgrading RPM agent packages. There was a problem of re-adding
+    stork-agent user that already exists in upgrade case.
     (Gitlab #334)
 
 * 87 [doc] marcin
