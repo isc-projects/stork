@@ -195,12 +195,9 @@ export class DashboardComponent implements OnInit {
      * @returns Tooltip as text.
      */
     daemonRpsTooltip(daemon, interval) {
-        var typeStr = (daemon.name == 'dhcp4' ? 'ACKs' : 'REPLYs')
-        var intervalStr = (interval == 1 ? '15 minutes' : '24 hours')
-
-        var tip = 'Number of ' + typeStr + ' sent by the daemon per second over the last '
-                   + intervalStr
-        return tip
+        const typeStr = daemon.name === 'dhcp4' ? 'ACKs' : 'REPLYs'
+        const intervalStr = interval === 1 ? '15 minutes' : '24 hours'
+        return 'Number of ' + typeStr + ' sent by the daemon per second over the last ' + intervalStr
     }
 
     /**
