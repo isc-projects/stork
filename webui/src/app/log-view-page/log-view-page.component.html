@@ -24,9 +24,9 @@
 
                 <ng-container *ngIf="loaded">
                     Log {{ data.logTargetOutput }}
-                    from
+                    from the
                     <app-entity-link entity="app" [attrs]="{ id: appId, type: appType, version: '' }"></app-entity-link>
-                    on
+                    on the
                     <app-entity-link
                         entity="machine"
                         [attrs]="{ id: data.machine.id, address: data.machine.address }"
