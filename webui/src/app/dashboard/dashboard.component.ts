@@ -187,6 +187,23 @@ export class DashboardComponent implements OnInit {
     }
 
     /**
+     * Returns tooltip for an RPS column
+     *
+     * @param daemon data structure holding the information about the daemon.
+     * @param interval indicates whether this is RPS for interval 1 or 2
+     *
+     * @returns Tooltip as text.
+     */
+    daemonRpsTooltip(daemon, interval) {
+        var typeStr = (daemon.name == 'dhcp4' ? 'ACKs' : 'REPLYs')
+        var intervalStr = (interval == 1 ? '15 minutes' : '24 hours')
+
+        var tip = 'Number of ' + typeStr + ' sent by the daemon per second over the last '
+                   + intervalStr
+        return tip
+    }
+
+    /**
      * Returns the name of the icon to be shown for the given HA state
      *
      * @returns check, times, exclamation triangle or ban.

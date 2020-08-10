@@ -1,3 +1,8 @@
+* 86 [func] tmark 
+
+    Added tool tip to RPS columns on DHCP dashboard.
+    (Gitlab #363)
+
 * 85 [bug] marcin
 
     Fixed regression in the log viewer functionality which removed links
@@ -6,12 +11,14 @@
     (Gitlab #359)
 
 * 84 [func] godfryd
+
     Added stop/start monitoring button to better control which services
     are monitored. Communication failures now generate events that are
     recorded in the events system. Machine view now shows events.
     (Gitlab #324, #339)
 
 * 83 [func] tmark
+
     Added RPS (Response Per Second) statistics to DHCP Dashboard
     (Gitlab #252)
 
