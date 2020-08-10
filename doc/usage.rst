@@ -422,6 +422,53 @@ More about High Availability status information provided by Kea can
 be found in the `Kea ARM
 <https://kea.readthedocs.io/en/latest/arm/hooks.html#the-status-get-command>`_.
 
+Viewing Kea Logs
+~~~~~~~~~~~~~~~~
+
+Stork offers a simple logs viewing mechanism to diagnose issues with
+monitored applications.
+
+.. note::
+
+   As of Kea 0.10 release, this mechanism only supports viewing Kea log
+   files. Viewing BIND9 logs is not supported yet. Monitoring other
+   logging locations such as: stdout, stderr or syslog is also not
+   supported.
+
+Kea can be configured to log into multiple destinations. Different types
+of log messages may be output into different log files, syslog, stdout
+or stderr. The list of log destinations used by the Kea application
+is available on the Kea app page. Click on the Kea app whose logs you
+want to view. Next, select the Kea daemon by clicking on one of the
+tabs, e.g. ``DHCPv4`` tab. Scroll down to the ``Loggers`` section.
+
+This section contains a table with a list of configured loggers for
+the selected daemon. For each configured logger the logger's name,
+logging severity and output location are presented. The possible output
+locations are: log file, stdout, stderr or syslog. It is only possible to view
+the logs output to the log files. Therefore, for each log file there is a
+link which leads to the log viewer showing the selected file's contents.
+The loggers which output to the stdout, stderr and syslog are also listed
+but the links to the log viewer are not available for them.
+
+Clicking on the selected log file navigates to the log viewer for this file.
+By default, the viewer displays the tail of the log file up to 4000 characters.
+Depending on the network latency and the size of the log file, it may take
+several seconds or more before the log contents are fetched and displayed.
+
+The log viewer title bar comprises three buttons. The button with the refresh
+icon triggers log data fetch without modifying the size of the presented
+data. Clicking on the ``+`` button extends the size of the viewed log tail
+by 4000 characters and refreshes the data in the log viewer. Conversely,
+clicking on the ``-`` button reduces the amount of presented data by
+4000 characters. Every time any of these buttons is clicked, the viewer
+discards currently presented data and displays the latest part of the
+log file tail.
+
+Please keep in mind that extending the size of the viewed log tail may
+cause slowness of the log viewer and network congestion as you increase
+the amount of data fetched from the monitored machine.
+
 Dashboard
 =========
 
