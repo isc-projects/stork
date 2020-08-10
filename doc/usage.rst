@@ -422,8 +422,8 @@ More about High Availability status information provided by Kea can
 be found in the `Kea ARM
 <https://kea.readthedocs.io/en/latest/arm/hooks.html#the-status-get-command>`_.
 
-Viewing Kea Logs
-~~~~~~~~~~~~~~~~
+Viewing Kea Log
+~~~~~~~~~~~~~~~
 
 Stork offers a simple logs viewing mechanism to diagnose issues with
 monitored applications.
