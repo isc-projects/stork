@@ -21,6 +21,7 @@ import { DropdownModule } from 'primeng/dropdown'
 import { MessageService } from 'primeng/api'
 import { ToastModule } from 'primeng/toast'
 import { MessageModule } from 'primeng/message'
+import { MessagesModule } from 'primeng/messages'
 import { TabMenuModule } from 'primeng/tabmenu'
 import { MenuModule } from 'primeng/menu'
 import { InplaceModule } from 'primeng/inplace'
@@ -132,6 +133,7 @@ export function cfgFactory() {
         DropdownModule,
         ToastModule,
         MessageModule,
+        MessagesModule,
         TabMenuModule,
         MenuModule,
         InplaceModule,

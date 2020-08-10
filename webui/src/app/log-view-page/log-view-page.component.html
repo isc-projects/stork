@@ -5,6 +5,15 @@
     </a>
 </div>
 
+<div *ngIf="loaded && loadingError" style="margin-top: 5px; width: 500px;">
+    <p-messages
+        [value]="[
+            { severity: 'error', summary: 'Error while trying to fetch log file contents.', detail: loadingError }
+        ]"
+        [closable]="false"
+    ></p-messages>
+</div>
+
 <p-panel styleClass="log-tail-panel" [style]="{ 'margin-top': '10px' }">
     <p-header>
         <div style="display: flex; justify-content: space-between;">
@@ -22,32 +31,25 @@
                         entity="machine"
                         [attrs]="{ id: data.machine.id, address: data.machine.address }"
                     ></app-entity-link>
-
-                    <ng-container *ngIf="loadingError">
-                        - loading failed: {{ loadingError }}
-                        <i
-                            class="pi pi-exclamation-circle"
-                            style="font-size: 1.75em; vertical-align: bottom; color: red;"
-                        ></i>
-                    </ng-container>
                 </ng-container>
             </span>
             <span>
                 <p-button
-                    style="margin-left: 5px;"
+                    class="log-control-button"
                     icon="pi pi-plus"
                     pTooltip="Fetch and present more logs."
+                    [disabled]="loadingError"
                     (click)="fetchMoreLog()"
                 ></p-button>
                 <p-button
-                    style="margin-left: 5px;"
+                    class="log-control-button"
                     icon="pi pi-minus"
                     pTooltip="Fetch and present fewer logs."
-                    [disabled]="maxLength <= maxLengthChunk"
+                    [disabled]="loadingError || maxLength <= maxLengthChunk"
                     (click)="fetchLessLog()"
                 ></p-button>
                 <p-button
-                    style="margin-left: 5px;"
+                    class="log-control-button"
                     icon="pi pi-refresh"
                     pTooltip="Refresh logs without changing the length of the presented data."
                     (click)="refreshLog()"
@@ -74,7 +76,7 @@
     <p-footer>
         <div style="display: flex; justify-content: flex-end;">
             <p-button
-                style="margin-left: 5px;"
+                class="log-control-button"
                 icon="pi pi-refresh"
                 pTooltip="Refresh logs without changing the length of the presented data."
                 (click)="refreshLog()"

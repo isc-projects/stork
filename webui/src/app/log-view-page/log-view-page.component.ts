@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
-import { MessageService } from 'primeng/api'
+import { Message } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
 
 /**
@@ -43,9 +43,8 @@ export class LogViewPageComponent implements OnInit {
      *
      * @param route object used to get the requested log id
      * @param servicesApi object used in communication with the server
-     * @param msgSrv object used to display data fetching errors
      */
-    constructor(private route: ActivatedRoute, private servicesApi: ServicesService, private msgSrv: MessageService) {}
+    constructor(private route: ActivatedRoute, private servicesApi: ServicesService) {}
 
     /**
      * Sends initial request for log tail
@@ -90,12 +89,6 @@ export class LogViewPageComponent implements OnInit {
 
                 // handle error case
                 if (data.error) {
-                    this.msgSrv.add({
-                        severity: 'error',
-                        summary: 'Unable to get log file',
-                        detail: 'Getting log with ID ' + this._logId + ' erred: ' + data.error,
-                        life: 10000,
-                    })
                     this.loadingError = data.error
                 } else {
                     this.loadingError = null
@@ -108,13 +101,6 @@ export class LogViewPageComponent implements OnInit {
                 if (err.error && err.error.message) {
                     msg = err.error.message
                 }
-                this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Unable to get log file',
-                    detail: 'Getting log with ID ' + this._logId + ' erred: ' + msg,
-                    life: 10000,
-                })
-
                 this.loadingError = msg
             }
         )
