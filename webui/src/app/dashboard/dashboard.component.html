@@ -281,7 +281,7 @@
                         <th>Uptime</th>
                     </tr>
 
-                    <tr *ngFor="let d of overview.dhcpDaemons">
+                    <tr *ngFor="let d of overview.dhcpDaemons" class="alternate-list">
                         <td>
                             <a routerLink="/machines/{{ d.machineId }}">{{ d.machine }}</a>
                         </td>
