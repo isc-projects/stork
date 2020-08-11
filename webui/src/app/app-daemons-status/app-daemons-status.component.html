@@ -1,0 +1,18 @@
+<div *ngFor="let d of sortDaemonsByImportance(app)" style="display: inline-block;">
+    <a
+        pTooltip="{{ daemonStatusIconTooltip(d) }}"
+        [ngStyle]="{ color: daemonStatusIconColor(d) }"
+        style="white-space: nowrap;"
+        routerLink="/apps/{{ app.type }}/{{ app.id }}"
+        [queryParams]="{ daemon: d.name }"
+    >
+        <i
+            class="pi {{ daemonStatusIconName(d) }}"
+            [ngStyle]="{
+                'font-size': '1.5em',
+                'vertical-align': d.active ? 'text-bottom' : 'text-top'
+            }"
+        ></i
+        >{{ d.niceName }}
+    </a>
+</div>

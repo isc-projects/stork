@@ -176,7 +176,7 @@
                 <th style="width: 7rem;">Memory Usage [%]</th>
                 <th style="width: 6rem;">Uptime</th>
                 <th style="width: 10rem;">
-                    Last Visited
+                    Last Refreshed
                     <app-help-tip title="Last visited"
                         ><p>
                             When the machine status was last retrieved. You can refresh it by clicking Refresh in the
@@ -196,20 +196,11 @@
                 <td>{{ m.address }}:{{ m.agentPort }}</td>
                 <td>{{ m.agentVersion }}</td>
                 <td>
-                    <a
-                        *ngFor="let s of m.apps"
-                        [ngStyle]="{ color: s.active ? '#00a800' : '#f11' }"
-                        routerLink="/apps/{{ s.type }}/{{ s.id }}"
-                    >
-                        <i
-                            class="pi pi-{{ s.active ? 'check' : 'exclamation-circle' }}"
-                            [ngStyle]="{
-                                'font-size': '1.5em',
-                                'vertical-align': s.active ? 'text-bottom' : 'text-top'
-                            }"
-                        ></i
-                        >{{ s.type }}<br />
-                    </a>
+                    <div *ngFor="let a of m.apps">
+                        <a routerLink="/apps/{{ a.type }}/{{ a.id }}">{{ a.type }}</a>
+                        <br />
+                        <app-app-daemons-status [app]="m.apps[0]"></app-app-daemons-status>
+                    </div>
                 </td>
                 <td>{{ m.cpus }}</td>
                 <td>{{ m.cpusLoad }}</td>
@@ -392,21 +383,9 @@
             <div *ngFor="let app of machineTab.machine.apps">
                 <div *ngIf="app.type == 'kea'">
                     <h4>Kea App</h4>
-                    Active:
-                    <span [ngStyle]="{ color: app.active ? '#00a800' : '#f11' }">
-                        <i
-                            class="pi pi-{{ app.active ? 'check' : 'exclamation-circle' }}"
-                            [ngStyle]="{
-                                'font-size': '1.5em',
-                                'vertical-align': app.active ? 'text-bottom' : 'text-top'
-                            }"
-                        ></i>
-                        {{ app.active ? 'yes' : 'no' }}
-                    </span>
+                    <a routerLink="/apps/{{ app.type }}/{{ app.id }}">Version {{ app.version }}</a>
                     <br />
-                    Version: {{ app.version }}
-                    <br />
-                    <a routerLink="/apps/{{ app.type }}/{{ app.id }}">link to details</a>
+                    <app-app-daemons-status [app]="app"></app-app-daemons-status>
                 </div>
                 <div *ngIf="app.type == 'bind9'">
                     <h4>BIND 9 App</h4>

@@ -234,6 +234,9 @@ export function daemonStatusIconColor(daemon) {
  *          hint whether the communication is with the agent or daemon.
  */
 export function daemonStatusIconTooltip(daemon) {
+    if (!daemon.monitored) {
+        return 'Monitoring of this daemon has been disabled. To enable monitoring visit daemon page.'
+    }
     if (daemon.agentCommErrors && daemon.agentCommErrors > 0) {
         return (
             'Communication with the Stork Agent on this machine ' +

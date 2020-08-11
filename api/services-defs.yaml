@@ -109,19 +109,7 @@
       apps:
         type: array
         items:
-          $ref: '#/definitions/MachineApp'
-
-  MachineApp:
-    type: object
-    properties:
-      id:
-        type: integer
-      type:
-        type: string
-      version:
-        type: string
-      active:
-        type: boolean
+          $ref: '#/definitions/App'
 
   Machines:
     type: object
@@ -157,8 +145,6 @@
         type: array
         items:
           $ref: '#/definitions/AppAccessPoint'
-      active:
-        type: boolean
       version:
         type: string
       machine:

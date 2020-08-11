@@ -70,6 +70,7 @@ import { EntityLinkComponent } from './entity-link/entity-link.component'
 import { EventsPanelComponent } from './events-panel/events-panel.component'
 import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.component'
 import { LogViewPageComponent } from './log-view-page/log-view-page.component'
+import { AppDaemonsStatusComponent } from './app-daemons-status/app-daemons-status.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -109,6 +110,7 @@ export function cfgFactory() {
         EventsPanelComponent,
         ForbiddenPageComponent,
         LogViewPageComponent,
+        AppDaemonsStatusComponent,
     ],
     imports: [
         BrowserModule,

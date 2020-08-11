@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
-import { daemonStatusErred, daemonStatusIconName, daemonStatusIconColor, daemonStatusIconTooltip } from '../utils'
+import { daemonStatusErred } from '../utils'
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
 
@@ -295,83 +295,5 @@ export class AppsPageComponent implements OnInit {
 
     refreshAppsList(appsTable) {
         appsTable.onLazyLoad.emit(appsTable.createLazyLoadMetadata())
-    }
-
-    sortDaemonsByImportance(app) {
-        const daemonMap = []
-        const daemons = []
-
-        if (app.details.daemons) {
-            for (const d of app.details.daemons) {
-                daemonMap[d.name] = d
-            }
-            const DMAP = [
-                ['dhcp4', 'DHCPv4'],
-                ['dhcp6', 'DHCPv6'],
-                ['d2', 'DDNS'],
-                ['ca', 'CA'],
-                ['netconf', 'NETCONF'],
-            ]
-            for (const dm of DMAP) {
-                if (daemonMap[dm[0]] !== undefined) {
-                    daemonMap[dm[0]].niceName = dm[1]
-                    daemons.push(daemonMap[dm[0]])
-                }
-            }
-        } else if (app.details.daemon) {
-            daemonMap[app.details.daemon.name] = app.details.daemon
-            const DMAP = [['named', 'named']]
-            for (const dm of DMAP) {
-                if (daemonMap[dm[0]] !== undefined) {
-                    daemonMap[dm[0]].niceName = dm[1]
-                    daemons.push(daemonMap[dm[0]])
-                }
-            }
-        }
-
-        return daemons
-    }
-
-    /**
-     * Returns the name of the icon used in presenting daemon status
-     *
-     * The icon selected depends on whether the daemon is active or not
-     * active and whether there is a communication with the daemon or
-     * not.
-     *
-     * @param daemon data structure holding the information about the daemon.
-     *
-     * @returns ban icon if the daemon is not active, times icon if the daemon
-     *          should be active but the communication with it is borken and
-     *          check icon if the communication with the active daemon is ok.
-     */
-    daemonStatusIconName(daemon) {
-        return daemonStatusIconName(daemon)
-    }
-
-    /**
-     * Returns the color of the icon used in presenting daemon status
-     *
-     * @param daemon data structure holding the information about the daemon.
-     *
-     * @returns grey color if the daemon is not active, red if the daemon is
-     *          active but there are communication issues, green if the
-     *          communication with the active daemon is ok.
-     */
-    daemonStatusIconColor(daemon) {
-        return daemonStatusIconColor(daemon)
-    }
-
-    /**
-     * Returns tooltip for the icon in presenting daemon status
-     *
-     * @param daemon data structure holding the information about the daemon.
-     *
-     * @returns Tooltip as text. It includes hints about the communication
-     *          problems when such problems occur, e.g. it includes the
-     *          hint whether the communication is with the agent or daemon.
-     */
-    daemonStatusIconTooltip(daemon) {
-        return daemonStatusIconTooltip(daemon)
     }
 }

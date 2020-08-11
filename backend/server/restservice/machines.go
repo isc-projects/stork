@@ -38,29 +38,11 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 	return general.NewGetVersionOK().WithPayload(&ver)
 }
 
-func machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
-	var apps []*models.MachineApp
+func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
+	var apps []*models.App
 	for _, app := range dbMachine.Apps {
-		active := true
-		if app.Type == dbmodel.AppTypeKea {
-			if app.Active {
-				for _, d := range app.Daemons {
-					if !d.Active {
-						active = false
-						break
-					}
-				}
-			} else {
-				active = false
-			}
-		}
-		s := models.MachineApp{
-			ID:      app.ID,
-			Type:    app.Type,
-			Version: app.Meta.Version,
-			Active:  active,
-		}
-		apps = append(apps, &s)
+		a := r.appToRestAPI(app)
+		apps = append(apps, a)
 	}
 
 	m := models.Machine{
@@ -260,7 +242,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
-	m := machineToRestAPI(*dbMachine)
+	m := r.machineToRestAPI(*dbMachine)
 	rsp := services.NewGetMachineStateOK().WithPayload(m)
 
 	return rsp
@@ -276,7 +258,7 @@ func (r *RestAPI) getMachines(offset, limit int64, filterText *string, sortField
 	}
 
 	for _, dbM := range dbMachines {
-		m := machineToRestAPI(dbM)
+		m := r.machineToRestAPI(dbM)
 		machines.Items = append(machines.Items, m)
 	}
 
@@ -343,7 +325,7 @@ func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachinePara
 		})
 		return rsp
 	}
-	m := machineToRestAPI(*dbMachine)
+	m := r.machineToRestAPI(*dbMachine)
 	rsp := services.NewGetMachineOK().WithPayload(m)
 	return rsp
 }
@@ -408,8 +390,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
-	m := machineToRestAPI(*dbMachine)
-	log.Printf("machineToRestAPI  %+v", m)
+	m := r.machineToRestAPI(*dbMachine)
 	rsp := services.NewCreateMachineOK().WithPayload(m)
 
 	return rsp
@@ -485,7 +466,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		})
 		return rsp
 	}
-	m := machineToRestAPI(*dbMachine)
+	m := r.machineToRestAPI(*dbMachine)
 	rsp := services.NewUpdateMachineOK().WithPayload(m)
 	return rsp
 }
@@ -553,13 +534,14 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	app := models.App{
 		ID:      dbApp.ID,
 		Type:    dbApp.Type,
-		Active:  dbApp.Active,
 		Version: dbApp.Meta.Version,
 		Machine: &models.AppMachine{
-			ID:       dbApp.MachineID,
-			Address:  dbApp.Machine.Address,
-			Hostname: dbApp.Machine.State.Hostname,
+			ID: dbApp.MachineID,
 		},
+	}
+	if dbApp.Machine != nil {
+		app.Machine.Address = dbApp.Machine.Address
+		app.Machine.Hostname = dbApp.Machine.State.Hostname
 	}
 
 	var accessPoints []*models.AppAccessPoint
@@ -577,11 +559,14 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	isBind9App := dbApp.Type == dbmodel.AppTypeBind9
 
 	agentErrors := int64(0)
-	agentStats := r.Agents.GetConnectedAgentStats(dbApp.Machine.Address, dbApp.Machine.AgentPort)
+	var agentStats *agentcomm.AgentStats
 	var accessPoint *dbmodel.AccessPoint
-	if agentStats != nil {
-		agentErrors = agentStats.CurrentErrors
-		accessPoint, _ = dbApp.GetAccessPoint(dbmodel.AccessPointControl)
+	if dbApp.Machine != nil {
+		agentStats = r.Agents.GetConnectedAgentStats(dbApp.Machine.Address, dbApp.Machine.AgentPort)
+		if agentStats != nil {
+			agentErrors = agentStats.CurrentErrors
+			accessPoint, _ = dbApp.GetAccessPoint(dbmodel.AccessPointControl)
+		}
 	}
 
 	if isKeaApp {

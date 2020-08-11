@@ -1,3 +1,10 @@
+* 92 [func] godfryd
+
+    Improved presenting application status on machines page. Now,
+    instead of summary app status, there are presented statuses for
+    each daemon of given application.
+    (Gitlab #297, #282)
+
 * 91 [doc] tomek
 
     Update man pages and installation instructions.

@@ -108,6 +108,7 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 	// prepare query
 	q := db.Model(&machines)
 	q = q.Relation("Apps.AccessPoints")
+	q = q.Relation("Apps.Daemons")
 	if filterText != nil {
 		text := "%" + *filterText + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
