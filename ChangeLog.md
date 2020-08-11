@@ -1,3 +1,9 @@
+* 90 [ui] tomek
+
+    Clarified machines page, added tooltips. Updated color scheme
+    to improve readability of wide tables.
+    (Gitlab #112, #293)
+
 * 90 [bug] marcin
 
     Fixed an issue with refreshing log displayed within the log viewer.
