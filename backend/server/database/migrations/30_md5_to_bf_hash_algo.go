@@ -26,22 +26,6 @@ func init() {
              $function$;`)
 		return err
 	}, func(db migrations.DB) error {
-		_, err := db.Exec(
-			`
-             -- Get back to md5.
-             CREATE OR REPLACE FUNCTION system_user_hash_password()
-               RETURNS trigger
-               LANGUAGE plpgsql
-               AS $function$
-             BEGIN
-               IF NEW.password_hash IS NOT NULL THEN
-                 NEW.password_hash := crypt(NEW.password_hash, gen_salt('md5'));
-               ELSIF OLD.password_hash IS NOT NULL THEN
-                 NEW.password_hash := OLD.password_hash;
-               END IF;
-               RETURN NEW;
-             END;
-             $function$;`)
-		return err
+		return nil
 	})
 }
