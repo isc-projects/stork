@@ -148,7 +148,8 @@
                     Location
                     <app-help-tip title="Location">
                         <p>
-                            Specifies where the server can reach the agent as a hostname:tcp-port pair (e.g. localhost:8888).
+                            Specifies where the server can reach the agent as a hostname:tcp-port pair (e.g.
+                            localhost:8888).
                         </p></app-help-tip
                     >
                 </th>
@@ -304,20 +305,21 @@
                     <td>{{ machineTab.machine.cpus }}</td>
                 </tr>
                 <tr>
-                    <td>CPUs Load
+                    <td>
+                        CPUs Load
                         <app-help-tip title="CPU Load">
                             <p>
-                                These three numbers are CPU load averages for last 1 minute, 5 minutes and 15 minutes. This
-                                is the usual syntax used by <b>top</b> command.
+                                These three numbers are CPU load averages for last 1 minute, 5 minutes and 15 minutes.
+                                This is the usual syntax used by <b>top</b> command.
                             </p>
-    
+
                             <p>
-                                High load averages imply that a system is overloaded. A value of 1.00 means one CPU core is
-                                fully utilized. For example, if your system has load of 1.22 and you have only 1 CPU core,
-                                the system is overloaded. However, if there are 4 cores, you system is working at a bit over
-                                30% of its capacity.
+                                High load averages imply that a system is overloaded. A value of 1.00 means one CPU core
+                                is fully utilized. For example, if your system has load of 1.22 and you have only 1 CPU
+                                core, the system is overloaded. However, if there are 4 cores, you system is working at
+                                a bit over 30% of its capacity.
                             </p>
-                        </app-help-tip>    
+                        </app-help-tip>
                     </td>
                     <td>{{ machineTab.machine.cpusLoad }}</td>
                 </tr>
