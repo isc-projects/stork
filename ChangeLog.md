@@ -1,3 +1,12 @@
+* 90 [bug] marcin
+
+    Fixed an issue with refreshing log displayed within the log viewer.
+    The issue was triggered by the periodic updates of the information
+    about monitored apps. As a result of the  updates the log file
+    identifiers were changing which resulted in an error message
+    informing that the viewed file no longer exists.
+    (Gitlab #364)
+
 * 89 [func] godfryd
 
     Changed md5 to blowfish as algorithm in hash function used to store
@@ -16,7 +25,7 @@
     Described Kea log viewer in the ARM.
     (Gitlab #349)
 
-* 86 [func] tmark 
+* 86 [func] tmark
 
     Added tool tip to RPS columns on DHCP dashboard.
     (Gitlab #363)
