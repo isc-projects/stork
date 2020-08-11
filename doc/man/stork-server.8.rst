@@ -89,6 +89,8 @@ The Stork Server takes the following arguments:
 ``--rest-static-files-dir``
    Directory with static files for UI [$STORK_REST_STATIC_FILES_DIR]
 
+Note there is no argument for database password, as the command line arguments can sometimes be seen
+by other users. You can pass it using STORK_DATABASE_PASSWORD variable.
 
 Mailing List and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
