@@ -62,6 +62,26 @@ func mockGetConfigFromCAResponse(daemons int, cmdResponses []interface{}) {
 						"socket-type": "unix",
 					},
 				},
+				"loggers": []interface{}{
+					map[string]interface{}{
+						"name":     "kea-ca",
+						"severity": "DEBUG",
+						"output_options": []interface{}{
+							map[string]interface{}{
+								"output": "stdout",
+							},
+						},
+					},
+					map[string]interface{}{
+						"name":     "kea-ca.sockets",
+						"severity": "DEBUG",
+						"output_options": []interface{}{
+							map[string]interface{}{
+								"output": "/tmp/kea-ca-sockets.log",
+							},
+						},
+					},
+				},
 			},
 		}
 	}
@@ -258,6 +278,19 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 				Active:    false,
 				KeaDaemon: &dbmodel.KeaDaemon{},
 			},
+			{
+				Name:      "ca",
+				Active:    true,
+				KeaDaemon: &dbmodel.KeaDaemon{},
+				LogTargets: []*dbmodel.LogTarget{
+					{
+						ID:       1,
+						Name:     "kea-ca",
+						Severity: "debug",
+						Output:   "stdout",
+					},
+				},
+			},
 		},
 	}
 
@@ -266,6 +299,33 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
 	require.Equal(t, "version-get", fa.RecordedCommands[0].Command)
 	require.Equal(t, "config-get", fa.RecordedCommands[1].Command)
+
+	require.Len(t, dbApp.Daemons, 2)
+
+	var caDaemon *dbmodel.Daemon
+	for i := range dbApp.Daemons {
+		if dbApp.Daemons[i].Name == "ca" {
+			caDaemon = dbApp.Daemons[i]
+		}
+	}
+
+	// Make sure that logging information is populated correctly.
+	require.NotNil(t, caDaemon)
+	require.Len(t, caDaemon.LogTargets, 2)
+	for _, target := range caDaemon.LogTargets {
+		if target.Name == "kea-ca" {
+			// The CA daemon should have an updated log target information, but the
+			// ID should not change as a result of the update.
+			require.EqualValues(t, 1, target.ID)
+			require.Equal(t, "debug", target.Severity)
+			require.Equal(t, "stdout", target.Output)
+		} else {
+			// This is new logging target. Its ID should be 0.
+			require.Zero(t, target.ID)
+			require.Equal(t, "debug", target.Severity)
+			require.Equal(t, "/tmp/kea-ca-sockets.log", target.Output)
+		}
+	}
 }
 
 // Check if GetDaemonHooks returns hooks for given daemon.

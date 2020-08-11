@@ -145,7 +145,13 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 	allDaemons := make(agentcomm.KeaDaemons)
 	dhcpDaemons := make(agentcomm.KeaDaemons)
 
-	dmn.KeaDaemon.Config = dbmodel.NewKeaConfig(caConfigGetResp[0].Arguments)
+	// Set the configuration for the daemon and populate selected configuration
+	// information to the respective structures, e.g. logging information.
+	err = dmn.SetConfig(dbmodel.NewKeaConfig(caConfigGetResp[0].Arguments))
+	if err != nil {
+		return nil, nil, err
+	}
+
 	sockets := dmn.KeaDaemon.Config.GetControlSockets()
 	if sockets.Dhcp4 != nil {
 		allDaemons[dhcp4] = true
@@ -157,15 +163,6 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 	}
 	if sockets.D2 != nil {
 		allDaemons[d2] = true
-	}
-
-	// Setup CA loggers.
-	dmn.LogTargets = []*dbmodel.LogTarget{}
-	// Extract loggers' configuration and store it in the dedicated SQL tables.
-	loggers := dmn.KeaDaemon.Config.GetLoggers()
-	for _, logger := range loggers {
-		targets := dbmodel.NewLogTargetsFromKea(logger)
-		dmn.LogTargets = append(dmn.LogTargets, targets...)
 	}
 
 	return allDaemons, dhcpDaemons, nil
@@ -302,16 +299,11 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 			continue
 		}
 
-		dmn.KeaDaemon.Config = dbmodel.NewKeaConfig(cRsp.Arguments)
-		// We are going to have the entire new set of loggers. Some of them may overlap
-		// with exiting ones but there is no easy way to identify them. The new loggers
-		// will get inserted into the database.
-		dmn.LogTargets = []*dbmodel.LogTarget{}
-		// Extract loggers' configuration and store it in the dedicated SQL tables.
-		loggers := dmn.KeaDaemon.Config.GetLoggers()
-		for _, logger := range loggers {
-			targets := dbmodel.NewLogTargetsFromKea(logger)
-			dmn.LogTargets = append(dmn.LogTargets, targets...)
+		// Set the configuration for the daemon and populate selected configuration
+		// information to the respective structures, e.g. logging information.
+		err = dmn.SetConfig(dbmodel.NewKeaConfig(cRsp.Arguments))
+		if err != nil {
+			continue
 		}
 	}
 

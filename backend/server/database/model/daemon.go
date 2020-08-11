@@ -339,3 +339,53 @@ func (d *Daemon) GetHAOverview() (overviews []DaemonServiceOverview) {
 	}
 	return overviews
 }
+
+// Sets new configuration of the daemon. This function should be used to set
+// new daemon configuration instead of simple configuration assignment because
+// this function extracts some configuration information and populates to the
+// daemon structures, e.g. logging configuration. The config should be a pointer
+// to the KeaConfig structure.
+func (d *Daemon) SetConfig(config interface{}) error {
+	if d.KeaDaemon != nil {
+		parsedConfig, ok := config.(*KeaConfig)
+		if !ok {
+			return errors.Errorf("error while setting the non Kea config for Kea daemon")
+		}
+
+		existingLogTargets := d.LogTargets
+		d.LogTargets = []*LogTarget{}
+		loggers := parsedConfig.GetLoggers()
+		for _, logger := range loggers {
+			targets := NewLogTargetsFromKea(logger)
+			for i := range targets {
+				// For each target check if it already exists and inherit its
+				// ID and creation time.
+				for _, existingTarget := range existingLogTargets {
+					if targets[i].Name == existingTarget.Name &&
+						targets[i].Output == existingTarget.Output &&
+						existingTarget.DaemonID == d.ID {
+						targets[i].ID = existingTarget.ID
+						targets[i].DaemonID = d.ID
+						targets[i].CreatedAt = existingTarget.CreatedAt
+					}
+				}
+				d.LogTargets = append(d.LogTargets, targets[i])
+			}
+		}
+		d.KeaDaemon.Config = parsedConfig
+	}
+	return nil
+}
+
+// Sets new configuration specified as JSON string. Internally, it calls
+// SetConfig after parsing the JSON configuration.
+func (d *Daemon) SetConfigFromJSON(config string) error {
+	if d.KeaDaemon != nil {
+		parsedConfig, err := NewKeaConfigFromJSON(config)
+		if err != nil {
+			return err
+		}
+		return d.SetConfig(parsedConfig)
+	}
+	return nil
+}

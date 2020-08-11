@@ -252,3 +252,133 @@ func TestGetDaemonByID(t *testing.T) {
 	require.EqualValues(t, daemon.ID, dmn.ID)
 	require.EqualValues(t, daemon.Active, dmn.Active)
 }
+
+// Tests that Kea loggin configuration information is correctly populated within
+// the daemon structures.
+func TestSetKeaLoggingConfig(t *testing.T) {
+	daemon := NewKeaDaemon("kea-dhcp4", true)
+
+	// Set initial configuration with one logger.
+	err := daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "loggers": [
+                {
+                    "name": "kea-dhcp4",
+                    "severity": "debug",
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4.log"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	require.Len(t, daemon.LogTargets, 1)
+	require.Equal(t, "kea-dhcp4", daemon.LogTargets[0].Name)
+	require.Equal(t, "debug", daemon.LogTargets[0].Severity)
+	require.Equal(t, "/tmp/kea-dhcp4.log", daemon.LogTargets[0].Output)
+
+	// Simulate adding this to the database and set some identifiers.
+	daemon.ID = 1
+	daemon.LogTargets[0].ID = 2
+	daemon.LogTargets[0].DaemonID = 1
+
+	// Set new configuration with one new logger and one logger with modified
+	// data.
+	err = daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "loggers": [
+                {
+                    "name": "kea-dhcp4",
+                    "severity": "error",
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4.log"
+                        }
+                    ]
+                },
+                {
+                    "name": "kea-dhcp4.packets",
+                    "severity": "debug",
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4-packets.log"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	require.Len(t, daemon.LogTargets, 2)
+	require.Equal(t, "kea-dhcp4", daemon.LogTargets[0].Name)
+	require.Equal(t, "error", daemon.LogTargets[0].Severity)
+	require.Equal(t, "/tmp/kea-dhcp4.log", daemon.LogTargets[0].Output)
+	// The first logger should inherit old ids.
+	require.EqualValues(t, 2, daemon.LogTargets[0].ID)
+	require.EqualValues(t, 1, daemon.LogTargets[0].DaemonID)
+
+	require.Equal(t, "kea-dhcp4.packets", daemon.LogTargets[1].Name)
+	require.Equal(t, "debug", daemon.LogTargets[1].Severity)
+	require.Equal(t, "/tmp/kea-dhcp4-packets.log", daemon.LogTargets[1].Output)
+	// The new logger has no id set until added to the db.
+	require.Zero(t, daemon.LogTargets[1].ID)
+	require.Zero(t, daemon.LogTargets[1].DaemonID)
+
+	// Set the second logger's ids.
+	daemon.LogTargets[1].ID = 3
+	daemon.LogTargets[1].DaemonID = 1
+
+	// CHeck that the same data can be refreshed.
+	err = daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "loggers": [
+                {
+                    "name": "kea-dhcp4",
+                    "severity": "error",
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4.log"
+                        }
+                    ]
+                },
+                {
+                    "name": "kea-dhcp4.packets",
+                    "severity": "debug",
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4-packets.log"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	require.Len(t, daemon.LogTargets, 2)
+
+	// Check that the number of loggers can be reduced.
+	err = daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "loggers": [
+                {
+                    "name": "kea-dhcp4.packets",
+                    "severity": "debug",
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4-packets.log"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	require.Len(t, daemon.LogTargets, 1)
+}
