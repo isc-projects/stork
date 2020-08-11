@@ -148,8 +148,7 @@
                     Location
                     <app-help-tip title="Location">
                         <p>
-                            This specifies how the server can reach the agent. This is a pair of a hostname:tcp-port,
-                            e.g. localhost:8888.
+                            Specifies where the server can reach the agent as a hostname:tcp-port pair (e.g. localhost:8888).
                         </p></app-help-tip
                     >
                 </th>
@@ -160,8 +159,8 @@
                     CPU Load
                     <app-help-tip title="CPU Load">
                         <p>
-                            Those three number are CPU load averages for last 1 minute, 5 minutes and 15 minutes. This
-                            is the usual syntax used by <b>top></b> command.
+                            These three numbers are CPU load averages for last 1 minute, 5 minutes and 15 minutes. This
+                            is the usual syntax used by <b>top</b> command.
                         </p>
 
                         <p>
@@ -179,7 +178,7 @@
                     Last Visited
                     <app-help-tip title="Last visited"
                         ><p>
-                            When was the machine status last retrieved. You can refresh it by clicking Refresh in the
+                            When the machine status was last retrieved. You can refresh it by clicking Refresh in the
                             Action menu.
                         </p></app-help-tip
                     >
@@ -305,7 +304,21 @@
                     <td>{{ machineTab.machine.cpus }}</td>
                 </tr>
                 <tr>
-                    <td>CPUs Load</td>
+                    <td>CPUs Load
+                        <app-help-tip title="CPU Load">
+                            <p>
+                                These three numbers are CPU load averages for last 1 minute, 5 minutes and 15 minutes. This
+                                is the usual syntax used by <b>top</b> command.
+                            </p>
+    
+                            <p>
+                                High load averages imply that a system is overloaded. A value of 1.00 means one CPU core is
+                                fully utilized. For example, if your system has load of 1.22 and you have only 1 CPU core,
+                                the system is overloaded. However, if there are 4 cores, you system is working at a bit over
+                                30% of its capacity.
+                            </p>
+                        </app-help-tip>    
+                    </td>
                     <td>{{ machineTab.machine.cpusLoad }}</td>
                 </tr>
                 <tr>

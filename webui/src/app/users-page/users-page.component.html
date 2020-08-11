@@ -52,7 +52,7 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-u>
-            <tr>
+            <tr class="alternate-list">
                 <td align="center">
                     <a routerLink="/users/{{ u.id }}">{{ u.login }}</a>
                     <sup *ngIf="auth.currentUserValue.id === u.id"><span id="youtag">It's you</span></sup>
