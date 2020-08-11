@@ -177,7 +177,7 @@
                 <th style="width: 6rem;">Uptime</th>
                 <th style="width: 10rem;">
                     Last Refreshed
-                    <app-help-tip title="Last visited"
+                    <app-help-tip title="Last refreshed"
                         ><p>
                             When the machine status was last retrieved. You can refresh it by clicking Refresh in the
                             Action menu.
@@ -197,8 +197,6 @@
                 <td>{{ m.agentVersion }}</td>
                 <td>
                     <div *ngFor="let a of m.apps">
-                        <a routerLink="/apps/{{ a.type }}/{{ a.id }}">{{ a.type }}</a>
-                        <br />
                         <app-app-daemons-status [app]="m.apps[0]"></app-app-daemons-status>
                     </div>
                 </td>
