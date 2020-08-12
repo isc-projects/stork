@@ -20,8 +20,8 @@ Synopsis
 Description
 ~~~~~~~~~~~
 
-The ``stork-server`` provides the main Stork server capabilities. In
-every stork deployment, there should be exactly one stork-server.
+The ``stork-server`` provides the main Stork Server capabilities. In
+every Stork deployment, there should be exactly one stork-server.
 
 Arguments
 ~~~~~~~~~
@@ -32,7 +32,7 @@ The Stork Server takes the following arguments:
    Displays list of available parameters.
 
 ``-v`` or ``--version``
-   Returns stork-agent version.
+   Returns stork-server version.
 
 ``-d`` or ``--db-name=``
    The name of the database to connect to (default: stork) [$STORK_DATABASE_NAME]
@@ -60,10 +60,10 @@ The Stork Server takes the following arguments:
    values, including the request line. It does not limit the size of the request body. (default: 1MiB)
 
 ``--rest-host``
-   the IP to listen on [$STORK_REST_HOST]
+   the IP to listen on for connections over ReST API [$STORK_REST_HOST]
 
 ``--rest-port``
-   the port to listen on for connections (default: 8080) [$STORK_REST_PORT]
+   the port to listen on for connections over ReST API (default: 8080) [$STORK_REST_PORT]
 
 ``--rest-listen-limit``
    limit the number of outstanding requests
