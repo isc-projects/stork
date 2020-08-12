@@ -29,7 +29,7 @@ stored locally in the Kea configuration without any additional hook libraries.
 
 
 For the ``Stork Server``, a PostgreSQL database
-(https://www.postgresql.org/) using at least version 11
+(https://www.postgresql.org/) version 11 or later
 is required. The general installation procedure for PostgreSQL is
 OS-specific and is not included here. However, please keep in mind that Stork
 uses pgcrypto extensions, which are often coming in a separate package. For
