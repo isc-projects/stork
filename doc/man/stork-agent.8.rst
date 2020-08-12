@@ -82,12 +82,13 @@ Prometheus BIND 9 Exporter flags:
    displays list of available parameters.
 
 
-Mailing List and Support
+Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There is a public mailing list available for the Stork project. **stork-dev**
-(stork-dev at lists.isc.org) is intended for BIND 9 and Kea developers,
-prospective contributors, and other advanced users. The list is available at
+There are public mailing lists available for the Stork project. **stork-users**
+(stork-users at lists.isc.org) is intended for Stork users. **stork-dev**
+(stork-dev at lists.isc.org) is intended for Stork developers, prospective
+contributors, and other advanced users. The lists are available at
 https://lists.isc.org. The community provides best-effort support
 on both of those lists.
 
