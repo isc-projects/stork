@@ -229,7 +229,7 @@ PGPASSWORD variable accordingly. This can be done the following way:
           $ rake unittest_backend PGPASSWORD=secret123
 
 Note there's no need to create the storktest database itself. It is created
-and destroyed by the Rakefile target.
+and destroyed by the Rakefile task.
 
 Unit Tests Coverage
 -------------------
