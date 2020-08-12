@@ -39,7 +39,7 @@ Available commands:
 
   ``set_version``  Set database version without running migrations
 
-  ``up``           Run all available migrations or up to a selected version
+  ``up``           Run all available migrations
 
   ``version``      Print current migration version
 

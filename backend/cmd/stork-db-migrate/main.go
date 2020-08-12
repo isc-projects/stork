@@ -23,7 +23,7 @@ type upOpts struct {
 type Opts struct {
 	dbops.DatabaseSettings
 	Init       cmdOpts `command:"init" description:"Create schema versioning table in the database"`
-	Up         upOpts  `command:"up" description:"Run all available migrations or up to a selected version"`
+	Up         upOpts  `command:"up" description:"Run all available migrations"`
 	Down       cmdOpts `command:"down" description:"Revert last migration"`
 	Reset      cmdOpts `command:"reset" description:"Revert all migrations"`
 	Version    cmdOpts `command:"version" description:"Print current migration version"`
