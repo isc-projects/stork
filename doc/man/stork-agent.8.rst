@@ -45,10 +45,10 @@ Equivalent environment variables are listed in square brackets, where applicable
 Stork Server flags:
 
 ``--host=``
-   Specifies the IP or hostname to listen on. [$STORK_AGENT_ADDRESS]
+   the IP or hostname to listen on for incoming Stork server connection. [$STORK_AGENT_ADDRESS]
 
 ``--port=``
-   Specifies the TCP port to listen on for connections. (default: 8080) [$STORK_AGENT_PORT]
+   the TCP port to listen on for incoming Stork server connection. (default: 8080) [$STORK_AGENT_PORT]
 
 Prometheus Kea Exporter flags:
 

@@ -25,8 +25,8 @@ import (
 
 // Stork Agent settings.
 type Settings struct {
-	Host string `long:"host" description:"Specifies the IP or hostname to listen on." env:"STORK_AGENT_ADDRESS"`
-	Port int    `long:"port" description:"Specifies the TCP port to listen on for connections." default:"8080" env:"STORK_AGENT_PORT"`
+	Host string `long:"host" description:"the IP or hostname to listen on for incoming Stork server connection." env:"STORK_AGENT_ADDRESS"`
+	Port int    `long:"port" description:"the TCP port to listen on for incoming Stork server connection." default:"8080" env:"STORK_AGENT_PORT"`
 }
 
 // Global Stork Agent state
