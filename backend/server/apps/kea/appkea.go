@@ -303,6 +303,9 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 		// information to the respective structures, e.g. logging information.
 		err = dmn.SetConfig(dbmodel.NewKeaConfig(cRsp.Arguments))
 		if err != nil {
+			errStr := fmt.Sprintf("%s", err)
+			log.Warn(errStr)
+			daemonsErrors[dmn.Name] = errStr
 			continue
 		}
 	}

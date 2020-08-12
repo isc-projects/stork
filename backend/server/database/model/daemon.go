@@ -349,7 +349,7 @@ func (d *Daemon) SetConfig(config interface{}) error {
 	if d.KeaDaemon != nil {
 		parsedConfig, ok := config.(*KeaConfig)
 		if !ok {
-			return errors.Errorf("error while setting the non Kea config for Kea daemon")
+			return errors.Errorf("error setting non Kea config for Kea daemon %s", d.Name)
 		}
 
 		existingLogTargets := d.LogTargets
