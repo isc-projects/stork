@@ -45,6 +45,7 @@ TAGS
 # generated docs
 /doc/man/stork-agent.8
 /doc/man/stork-server.8
+/doc/man/stork-db-migrate.8
 /doc/_build/
 /webui/src/assets/arm/
 
