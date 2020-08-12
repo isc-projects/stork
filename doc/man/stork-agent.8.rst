@@ -79,7 +79,7 @@ Prometheus BIND 9 Exporter flags:
    [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL]
 
 ``-h`` or ``--help``
-   Displays list of available parameters.
+   displays list of available parameters.
 
 
 Mailing List and Support

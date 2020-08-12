@@ -29,22 +29,22 @@ Arguments
 The Stork Server takes the following arguments:
 
 ``-h`` or ``--help``
-   Displays list of available parameters.
+   displays list of available parameters.
 
 ``-v`` or ``--version``
-   Returns stork-server version.
+   returns stork-server version.
 
 ``-d`` or ``--db-name=``
-   The name of the database to connect to (default: stork) [$STORK_DATABASE_NAME]
+   the name of the database to connect to (default: stork) [$STORK_DATABASE_NAME]
 
 ``-u`` or ``--db-user``
-   The user name to be used for database connections (default: stork) [$STORK_DATABASE_USER_NAME]
+   the user name to be used for database connections (default: stork) [$STORK_DATABASE_USER_NAME]
 
 ``--db-host``
-   The name of the host where database is available (default: localhost) [$STORK_DATABASE_HOST]
+   the name of the host where database is available (default: localhost) [$STORK_DATABASE_HOST]
 
 ``-p`` or ``--db-port``
-   The port on which the database is available (default: 5432) [$STORK_DATABASE_PORT]
+   the port on which the database is available (default: 5432) [$STORK_DATABASE_PORT]
 
 ``--db-trace-queries``
    Enable tracing SQL queries [$STORK_DATABASE_TRACE]
@@ -87,7 +87,7 @@ The Stork Server takes the following arguments:
    the certificate authority file to be used with mutual tls auth [$STORK_REST_TLS_CA_CERTIFICATE]
 
 ``--rest-static-files-dir``
-   Directory with static files for UI [$STORK_REST_STATIC_FILES_DIR]
+   directory with static files for UI [$STORK_REST_STATIC_FILES_DIR]
 
 Note there is no argument for database password, as the command line arguments can sometimes be seen
 by other users. You can pass it using STORK_DATABASE_PASSWORD variable.
