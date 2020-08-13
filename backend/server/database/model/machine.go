@@ -68,7 +68,8 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64)
 func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	machine := Machine{}
 	q := db.Model(&machine).Where("machine.id = ?", id)
-	q = q.Relation("Apps.Daemons")
+	q = q.Relation("Apps.Daemons.KeaDaemon.KeaDHCPDaemon")
+	q = q.Relation("Apps.Daemons.Bind9Daemon")
 	q = q.Relation("Apps.AccessPoints")
 	err := q.Select()
 	if err == pg.ErrNoRows {
@@ -108,7 +109,8 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 	// prepare query
 	q := db.Model(&machines)
 	q = q.Relation("Apps.AccessPoints")
-	q = q.Relation("Apps.Daemons")
+	q = q.Relation("Apps.Daemons.KeaDaemon.KeaDHCPDaemon")
+	q = q.Relation("Apps.Daemons.Bind9Daemon")
 	if filterText != nil {
 		text := "%" + *filterText + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
