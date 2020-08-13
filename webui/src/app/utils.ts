@@ -235,7 +235,7 @@ export function daemonStatusIconColor(daemon) {
  */
 export function daemonStatusIconTooltip(daemon) {
     if (!daemon.monitored) {
-        return 'Monitoring of this daemon has been disabled. To enable monitoring visit daemon page.'
+        return 'Monitoring of this daemon has been disabled. You can enable it on the daemon\'s tab on the Kea app page.'
     }
     if (daemon.agentCommErrors && daemon.agentCommErrors > 0) {
         return (
