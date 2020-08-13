@@ -1,3 +1,5 @@
+Stork 0.10.0 released on 2020-08-13.
+
 * 92 [func] godfryd
 
     Improved presenting application status on machines page. Now,
