@@ -8,6 +8,14 @@ import { MessageService } from 'primeng/api'
 
 import { UsersService } from './backend/api/users.service'
 
+/**
+ * Represents credentials of the user who is logging in to the system.
+ */
+class Credentials {
+    useremail: string
+    userpassword: string
+}
+
 export class User {
     id: number
     username: string
@@ -60,7 +68,8 @@ export class AuthService {
      */
     login(username: string, password: string, returnUrl: string) {
         let user: User
-        this.api.createSession(username, password).subscribe(
+        const credentials: Credentials = { useremail: username, userpassword: password }
+        this.api.createSession(credentials).subscribe(
             (data) => {
                 if (data.id != null) {
                     user = new User()

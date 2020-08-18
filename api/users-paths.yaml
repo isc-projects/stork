@@ -6,16 +6,22 @@
       tags:
         - Users
       parameters:
-        - in: query
-          name: useremail
-          type: string
-          description: E-mail of the user logging to the system
+        - in: body
+          name: credentials
+          description: Credentials provided by the user upon logging in to the system
           required: true
-        - in: query
-          name: userpassword
-          type: string
-          description: User password to log in to the system
-          required: true
+          schema:
+            type: object
+            required:
+              - useremail
+              - userpassword
+            properties:
+              useremail:
+                description: E-mail of the user logging to the system
+                type: string
+              userpassword:
+                description: User password to log in to the system
+                type: string
       responses:
         200:
           description: Login successful

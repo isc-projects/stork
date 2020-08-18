@@ -53,13 +53,19 @@ func newRestGroup(g dbmodel.SystemGroup) *models.Group {
 // Attempts to login the user to the system.
 func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionParams) middleware.Responder {
 	user := &dbmodel.SystemUser{}
-	login := params.Useremail
+
+	var login string
+	if params.Credentials.Useremail != nil {
+		login = *params.Credentials.Useremail
+	}
 	if strings.Contains(login, "@") {
 		user.Email = login
 	} else {
 		user.Login = login
 	}
-	user.Password = params.Userpassword
+	if params.Credentials.Userpassword != nil {
+		user.Password = *params.Credentials.Userpassword
+	}
 
 	ok, err := dbmodel.Authenticate(r.Db, user)
 	if ok {
