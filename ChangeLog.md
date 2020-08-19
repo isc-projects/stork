@@ -1,3 +1,11 @@
+* 93 [func] marcin
+
+    Login credentials are passed in the message body rather than as
+    query parameters. In addition, the user information is obfuscated
+    when db tracing is enabled.
+    (Gitlab #375)
+
+
 Stork 0.10.0 released on 2020-08-13.
 
 * 92 [func] godfryd
