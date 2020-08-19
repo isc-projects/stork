@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -13,6 +14,19 @@ type DbLogger struct{}
 
 // Hook run before SQL query execution.
 func (d DbLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
+	// When making queries on the system_user table we want to make sure that
+	// we don't expose actual data in the logs, especially password.
+	if model, ok := q.Model.(orm.TableModel); ok {
+		if model != nil {
+			table := model.Table()
+			if table != nil && table.Name == "system_user" {
+				// Query on the system_user table. Don't print the actual data.
+				log.Println(q.UnformattedQuery())
+				return c, nil
+			}
+		}
+	}
+	// It is fine to print data for other tables.
 	log.Println(q.FormattedQuery())
 	return c, nil
 }
