@@ -332,8 +332,11 @@ def main(srv_pkg_path_deb, agn_pkg_path_deb, srv_pkg_path_rpm, agn_pkg_path_rpm)
 
     time.sleep(3)
 
-
-    r = s.api_post('/sessions', params=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    credentials = dict(
+        useremail='admin',
+        userpassword='admin'
+    )
+    r = s.api_post('/sessions', json=credentials, expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
     # TODO: these are crashing

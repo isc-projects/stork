@@ -45,7 +45,11 @@ def _refresh_servers():
         app.servers = dict(items=[], total=0)
 
         s = requests.Session()
-        s.post('http://server:8080/api/sessions?useremail=admin&userpassword=admin')
+        credentials = dict(
+            useremail='admin',
+            userpassword='admin'
+        )
+        s.post('http://server:8080/api/sessions', json=credentials)
 
         url = 'http://server:8080/api/apps/'
         r = s.get(url)
