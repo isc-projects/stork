@@ -3,6 +3,8 @@ package kea
 import (
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+
+	keaconfig "isc.org/stork/appcfg/kea"
 )
 
 // Checks if the specified Kea daemon belongs to a given HA service.
@@ -39,7 +41,7 @@ func daemonBelongsToHAService(daemon *dbmodel.Daemon, service *dbmodel.Service) 
 		}
 
 		// Get the HA configuration of the daemon belonging to the service.
-		var serviceDaemonConfigHA dbmodel.KeaConfigHA
+		var serviceDaemonConfigHA keaconfig.HA
 		_, serviceDaemonConfigHA, ok = sd.KeaDaemon.Config.GetHAHooksLibrary()
 		if !ok || !serviceDaemonConfigHA.IsSet() || (*daemonConfigHA.Mode != *serviceDaemonConfigHA.Mode) {
 			// There is something wrong with the service or the mode is not matching.

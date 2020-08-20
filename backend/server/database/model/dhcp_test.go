@@ -51,49 +51,6 @@ func getTestConfigWithIPv4Subnets(t *testing.T) *KeaConfig {
 	return cfg
 }
 
-// Returns test Kea configuration including multiple IPv6 subnets.
-func getTestConfigWithIPv6Subnets(t *testing.T) *KeaConfig {
-	configStr := `{
-        "Dhcp6": {
-            "shared-networks": [
-                {
-                    "name": "foo",
-                    "subnet6": [
-                        {
-                            "id": 567,
-                            "subnet": "3000:1::/32"
-                        },
-                        {
-                            "id": 678,
-                            "subnet": "3000:2::/32"
-                        }
-                    ]
-                }
-            ],
-            "subnet6": [
-                {
-                    "id": 123,
-                    "subnet": "2001:db8:1::/64"
-                },
-                {
-                    "id": 234,
-                    "subnet": "2001:db8:2::/64"
-                },
-                {
-                    "id": 345,
-                    "subnet": "2001:db8:3::/64"
-                }
-            ]
-        }
-    }`
-
-	cfg, err := NewKeaConfigFromJSON(configStr)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	return cfg
-}
-
 // Adds apps to be used with subnet tests.
 func addTestSubnetApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 	// Add two apps.

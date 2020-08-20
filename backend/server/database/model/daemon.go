@@ -8,6 +8,7 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
 
+	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -381,7 +382,7 @@ func (d *Daemon) SetConfig(config interface{}) error {
 // SetConfig after parsing the JSON configuration.
 func (d *Daemon) SetConfigFromJSON(config string) error {
 	if d.KeaDaemon != nil {
-		parsedConfig, err := NewKeaConfigFromJSON(config)
+		parsedConfig, err := keaconfig.NewFromJSON(config)
 		if err != nil {
 			return err
 		}
