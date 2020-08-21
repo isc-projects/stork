@@ -1,3 +1,10 @@
+* 94 [bug] marcin
+
+    Fixed an issue whereby the user was unable to login to Stork
+    when database password conatined upper case letters. In addition,
+    passwords with spaces and quotes are now also supported.
+    (Gitlab #361)
+
 * 93 [func] marcin
 
     Login credentials are passed in the message body rather than as
