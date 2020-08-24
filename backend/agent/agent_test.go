@@ -58,9 +58,10 @@ func setupAgentTest(rndc CommandExecutor) (*StorkAgent, context.Context) {
 
 	fam := FakeAppMonitor{}
 	sa := &StorkAgent{
-		AppMonitor: &fam,
-		HTTPClient: httpClient,
-		RndcClient: rndcClient,
+		AppMonitor:     &fam,
+		HTTPClient:     httpClient,
+		RndcClient:     rndcClient,
+		keaInterceptor: newKeaInterceptor(),
 	}
 	ctx := context.Background()
 	return sa, ctx

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	//log "github.com/sirupsen/logrus"
 
-	"isc.org/stork/server/agentcomm"
+	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -20,7 +20,7 @@ func mockGetConfigFromCAResponse(daemons int, cmdResponses []interface{}) {
 	list1 := cmdResponses[0].(*[]VersionGetResponse)
 	*list1 = []VersionGetResponse{
 		{
-			KeaResponseHeader: agentcomm.KeaResponseHeader{
+			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
 				Daemon: "ca",
 			},
@@ -29,10 +29,10 @@ func mockGetConfigFromCAResponse(daemons int, cmdResponses []interface{}) {
 			},
 		},
 	}
-	list2 := cmdResponses[1].(*[]agentcomm.KeaResponse)
-	*list2 = []agentcomm.KeaResponse{
+	list2 := cmdResponses[1].(*[]keactrl.Response)
+	*list2 = []keactrl.Response{
 		{
-			KeaResponseHeader: agentcomm.KeaResponseHeader{
+			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
 				Daemon: "ca",
 			},
@@ -94,7 +94,7 @@ func mockGetConfigFromOtherDaemonsResponse(daemons int, cmdResponses []interface
 	list1 := cmdResponses[0].(*[]VersionGetResponse)
 	*list1 = []VersionGetResponse{
 		{
-			KeaResponseHeader: agentcomm.KeaResponseHeader{
+			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
 				Daemon: "dhcp4",
 			},
@@ -105,7 +105,7 @@ func mockGetConfigFromOtherDaemonsResponse(daemons int, cmdResponses []interface
 	}
 	if daemons > 1 {
 		*list1 = append(*list1, VersionGetResponse{
-			KeaResponseHeader: agentcomm.KeaResponseHeader{
+			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
 				Daemon: "dhcp6",
 			},
@@ -118,7 +118,7 @@ func mockGetConfigFromOtherDaemonsResponse(daemons int, cmdResponses []interface
 	list2 := cmdResponses[1].(*[]StatusGetResponse)
 	*list2 = []StatusGetResponse{
 		{
-			KeaResponseHeader: agentcomm.KeaResponseHeader{
+			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
 				Daemon: "dhcp4",
 			},
@@ -129,7 +129,7 @@ func mockGetConfigFromOtherDaemonsResponse(daemons int, cmdResponses []interface
 	}
 	if daemons > 1 {
 		*list2 = append(*list2, StatusGetResponse{
-			KeaResponseHeader: agentcomm.KeaResponseHeader{
+			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
 				Daemon: "dhcp6",
 			},
@@ -139,10 +139,10 @@ func mockGetConfigFromOtherDaemonsResponse(daemons int, cmdResponses []interface
 		})
 	}
 	// config-get response
-	list3 := cmdResponses[2].(*[]agentcomm.KeaResponse)
-	*list3 = []agentcomm.KeaResponse{
+	list3 := cmdResponses[2].(*[]keactrl.Response)
+	*list3 = []keactrl.Response{
 		{
-			KeaResponseHeader: agentcomm.KeaResponseHeader{
+			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
 				Daemon: "dhcp4",
 			},
@@ -161,8 +161,8 @@ func mockGetConfigFromOtherDaemonsResponse(daemons int, cmdResponses []interface
 		},
 	}
 	if daemons > 1 {
-		*list3 = append(*list3, agentcomm.KeaResponse{
-			KeaResponseHeader: agentcomm.KeaResponseHeader{
+		*list3 = append(*list3, keactrl.Response{
+			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
 				Daemon: "dhcp6",
 			},

@@ -34,9 +34,10 @@ type StorkAgent struct {
 	Settings   Settings
 	AppMonitor AppMonitor
 
-	HTTPClient *HTTPClient // to communicate with Kea Control Agent and named statistics-channel
-	RndcClient *RndcClient // to communicate with BIND 9 via rndc
-	server     *grpc.Server
+	HTTPClient     *HTTPClient // to communicate with Kea Control Agent and named statistics-channel
+	RndcClient     *RndcClient // to communicate with BIND 9 via rndc
+	server         *grpc.Server
+	keaInterceptor *keaInterceptor
 }
 
 // API exposed to Stork Server
@@ -54,10 +55,11 @@ func NewStorkAgent(appMonitor AppMonitor) *StorkAgent {
 	server := grpc.NewServer()
 
 	sa := &StorkAgent{
-		AppMonitor: appMonitor,
-		HTTPClient: httpClient,
-		RndcClient: rndcClient,
-		server:     server,
+		AppMonitor:     appMonitor,
+		HTTPClient:     httpClient,
+		RndcClient:     rndcClient,
+		server:         server,
+		keaInterceptor: newKeaInterceptor(),
 	}
 
 	return sa
@@ -240,6 +242,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			rsp.Status.Code = agentapi.Status_ERROR
 			rsp.Status.Message = fmt.Sprintf("Failed to forward commands to Kea: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
+			go sa.keaInterceptor.asyncHandle(req, rsp)
 			continue
 		}
 
@@ -253,6 +256,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			rsp.Status.Code = agentapi.Status_ERROR
 			rsp.Status.Message = fmt.Sprintf("Failed to read the body of the Kea response: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
+			go sa.keaInterceptor.asyncHandle(req, rsp)
 			continue
 		}
 
@@ -260,6 +264,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 		rsp.Response = string(body)
 		rsp.Status.Code = agentapi.Status_OK
 		response.KeaResponses = append(response.KeaResponses, rsp)
+		go sa.keaInterceptor.asyncHandle(req, rsp)
 	}
 
 	return response, nil

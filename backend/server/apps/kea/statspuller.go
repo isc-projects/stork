@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 )
@@ -232,7 +233,7 @@ type StatLeaseGetArgs struct {
 
 // Represents unmarshaled response from Kea daemon to stat-lease4-get and stat-lease6-get commands.
 type StatLeaseGetResponse struct {
-	agentcomm.KeaResponseHeader
+	keactrl.ResponseHeader
 	Arguments *StatLeaseGetArgs `json:"arguments,omitempty"`
 }
 
@@ -295,7 +296,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 
 func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	// get active dhcp daemons
-	dhcpDaemons := make(agentcomm.KeaDaemons)
+	dhcpDaemons := make(keactrl.Daemons)
 	found := false
 	for _, d := range dbApp.Daemons {
 		if d.KeaDaemon != nil && d.Active && (d.Name == "dhcp4" || d.Name == "dhcp6") {
@@ -314,7 +315,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	}
 
 	// Slices for tracking commands, the daemons they're sent to, and the responses
-	cmds := []*agentcomm.KeaCommand{}
+	cmds := []*keactrl.Command{}
 	cmdDaemons := []*dbmodel.Daemon{}
 	responses := []interface{}{}
 
@@ -326,8 +327,8 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 			case dhcp4:
 				// Add daemon, cmd, and response for DHCP4 lease stats
 				cmdDaemons = append(cmdDaemons, d)
-				dhcp4Daemons, _ := agentcomm.NewKeaDaemons(dhcp4)
-				cmds = append(cmds, &agentcomm.KeaCommand{
+				dhcp4Daemons, _ := keactrl.NewDaemons(dhcp4)
+				cmds = append(cmds, &keactrl.Command{
 					Command: "stat-lease4-get",
 					Daemons: dhcp4Daemons,
 				})
@@ -343,8 +344,8 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 				// Add daemon, cmd and response for DHCP6 lease stats
 				cmdDaemons = append(cmdDaemons, d)
-				dhcp6Daemons, _ := agentcomm.NewKeaDaemons(dhcp6)
-				cmds = append(cmds, &agentcomm.KeaCommand{
+				dhcp6Daemons, _ := keactrl.NewDaemons(dhcp6)
+				cmds = append(cmds, &keactrl.Command{
 					Command: "stat-lease6-get",
 					Daemons: dhcp6Daemons,
 				})
@@ -384,7 +385,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 // Iterates through the commands for each daemon and processes the command responses
 // Was part of getStatsFromApp() until lint_go complained about cognitive complexity.
-func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*agentcomm.KeaCommand, cmdDaemons []*dbmodel.Daemon, responses []interface{}) error {
+func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*keactrl.Command, cmdDaemons []*dbmodel.Daemon, responses []interface{}) error {
 	// Lease statistic processing needs app's local subnets
 	subnets, err := dbmodel.GetAppLocalSubnets(statsPuller.Db, dbApp.ID)
 	if err != nil {

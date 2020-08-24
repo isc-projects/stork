@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"isc.org/stork/server/agentcomm"
+	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -45,15 +45,15 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	// prepare fake agents
 	keaMock := func(callNo int, cmdResponses []interface{}) {
 		// DHCPv4
-		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-		command, _ := agentcomm.NewKeaCommand("stat-lease4-get", daemons, nil)
+		daemons, _ := keactrl.NewDaemons("dhcp4")
+		command, _ := keactrl.NewCommand("stat-lease4-get", daemons, nil)
 		// simulate empty response
 		json := `[{
                             "result": 0,
                             "text": "Everything is fine",
                             "arguments": {}
                          }]`
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+		keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 
 		// DHCPv4 RSP response
 		json = `[{ "result": 0, "text": "Everything is fine",
@@ -61,19 +61,19 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
                                 "pkt4-ack-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
                 }}]`
 
-		rpsCmd := []*agentcomm.KeaCommand{}
+		rpsCmd := []*keactrl.Command{}
 		_ = RpsAddCmd4(&rpsCmd, daemons)
-		agentcomm.UnmarshalKeaResponseList(rpsCmd[0], json, cmdResponses[1])
+		keactrl.UnmarshalResponseList(rpsCmd[0], json, cmdResponses[1])
 
 		// DHCPv6
-		daemons, _ = agentcomm.NewKeaDaemons("dhcp6")
-		command, _ = agentcomm.NewKeaCommand("stat-lease6-get", daemons, nil)
+		daemons, _ = keactrl.NewDaemons("dhcp6")
+		command, _ = keactrl.NewCommand("stat-lease6-get", daemons, nil)
 		// simulate not loaded stat plugin in kea
 		json = `[{
                            "result": 2,
                            "text": "'stat-lease6-get' command not supported."
                         }]`
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[2])
+		keactrl.UnmarshalResponseList(command, json, cmdResponses[2])
 
 		// DHCPv6 RSP response
 		json = `[{ "result": 0, "text": "Everything is fine",
@@ -81,9 +81,9 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
                                 "pkt6-reply-sent": [ [ 0, "2019-07-30 10:13:00.000000" ] ]
                 }}]`
 
-		rpsCmd = []*agentcomm.KeaCommand{}
+		rpsCmd = []*keactrl.Command{}
 		_ = RpsAddCmd6(&rpsCmd, daemons)
-		agentcomm.UnmarshalKeaResponseList(rpsCmd[0], json, cmdResponses[3])
+		keactrl.UnmarshalResponseList(rpsCmd[0], json, cmdResponses[3])
 	}
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
@@ -159,8 +159,8 @@ func TestStatsPullerPullStats(t *testing.T) {
 	// prepare fake agents
 	keaMock := func(callNo int, cmdResponses []interface{}) {
 		// DHCPv4
-		daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-		command, _ := agentcomm.NewKeaCommand("stat-lease4-get", daemons, nil)
+		daemons, _ := keactrl.NewDaemons("dhcp4")
+		command, _ := keactrl.NewCommand("stat-lease4-get", daemons, nil)
 		json := `[{
                             "result": 0,
                             "text": "Everything is fine",
@@ -175,10 +175,10 @@ func TestStatsPullerPullStats(t *testing.T) {
                                 }
                             }
                          }]`
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+		keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 
 		// Command and response for DHCP4 RPS statistic pull
-		rpsCmd := []*agentcomm.KeaCommand{}
+		rpsCmd := []*keactrl.Command{}
 		_ = RpsAddCmd4(&rpsCmd, daemons)
 		json = `[{
                     "result": 0,
@@ -187,11 +187,11 @@ func TestStatsPullerPullStats(t *testing.T) {
                         "pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
                     }
                 }]`
-		agentcomm.UnmarshalKeaResponseList(rpsCmd[0], json, cmdResponses[1])
+		keactrl.UnmarshalResponseList(rpsCmd[0], json, cmdResponses[1])
 
 		// DHCPv6
-		daemons, _ = agentcomm.NewKeaDaemons("dhcp6")
-		command, _ = agentcomm.NewKeaCommand("stat-lease6-get", daemons, nil)
+		daemons, _ = keactrl.NewDaemons("dhcp6")
+		command, _ = keactrl.NewCommand("stat-lease6-get", daemons, nil)
 		json = `[{
                            "result": 0,
                            "text": "Everything is fine",
@@ -207,10 +207,10 @@ func TestStatsPullerPullStats(t *testing.T) {
                                }
                            }
                         }]`
-		agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[2])
+		keactrl.UnmarshalResponseList(command, json, cmdResponses[2])
 
 		// Command and response for DHCP6 RPS statistic pull
-		rpsCmd = []*agentcomm.KeaCommand{}
+		rpsCmd = []*keactrl.Command{}
 		_ = RpsAddCmd4(&rpsCmd, daemons)
 		json = `[{
                     "result": 0,
@@ -219,7 +219,7 @@ func TestStatsPullerPullStats(t *testing.T) {
                         "pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
                     }
                 }]`
-		agentcomm.UnmarshalKeaResponseList(rpsCmd[0], json, cmdResponses[3])
+		keactrl.UnmarshalResponseList(rpsCmd[0], json, cmdResponses[3])
 	}
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 

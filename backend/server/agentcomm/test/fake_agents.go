@@ -3,6 +3,7 @@ package agentcommtest
 import (
 	"context"
 
+	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -11,7 +12,7 @@ import (
 // Helper struct to mock Agents behavior.
 type FakeAgents struct {
 	RecordedURL      string
-	RecordedCommands []agentcomm.KeaCommand
+	RecordedCommands []keactrl.Command
 	mockKeaFunc      func(int, []interface{})
 	CallNo           int
 
@@ -99,7 +100,7 @@ func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort in
 
 // Returns last received command by FakeAgents or nil if no command
 // has been received yet.
-func (fa *FakeAgents) GetLastCommand() *agentcomm.KeaCommand {
+func (fa *FakeAgents) GetLastCommand() *keactrl.Command {
 	if len(fa.RecordedCommands) == 0 {
 		return nil
 	}
@@ -111,7 +112,7 @@ func (fa *FakeAgents) GetLastCommand() *agentcomm.KeaCommand {
 // function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents.
-func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.App, commands []*agentcomm.KeaCommand, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
+func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.App, commands []*keactrl.Command, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
 	ctrlPoint, _ := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
 	caAddress := ctrlPoint.Address
 	caPort := ctrlPoint.Port

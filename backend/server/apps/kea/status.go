@@ -7,6 +7,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -76,7 +77,7 @@ type StatusGetRespArgs struct {
 // Represents a response from the single Kea server to the status-get
 // command.
 type StatusGetResponse struct {
-	agentcomm.KeaResponseHeader
+	keactrl.ResponseHeader
 	Arguments *StatusGetRespArgs `json:"arguments,omitempty"`
 }
 
@@ -337,10 +338,10 @@ func (puller *HAStatusPuller) pullData() (int, error) {
 // Sends the status-get command to Kea DHCP servers and returns this status to the caller.
 func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) (appStatus, error) {
 	// This command is only sent to the DHCP deamons.
-	daemons, _ := agentcomm.NewKeaDaemons(dbApp.GetActiveDHCPDaemonNames()...)
+	daemons, _ := keactrl.NewDaemons(dbApp.GetActiveDHCPDaemonNames()...)
 
 	// It takes no arguments, thus the last parameter is nil.
-	cmd, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	cmd, _ := keactrl.NewCommand("status-get", daemons, nil)
 
 	// todo: hardcoding 2s timeout is a temporary solution. We need better
 	// control over the timeouts.
@@ -351,7 +352,7 @@ func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	response := []StatusGetResponse{}
 
 	// Send the command and receive the response.
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*agentcomm.KeaCommand{cmd}, &response)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*keactrl.Command{cmd}, &response)
 	if err != nil {
 		return nil, err
 	}

@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc"
 
 	agentapi "isc.org/stork/api"
+	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
 )
@@ -84,7 +85,7 @@ type ConnectedAgents interface {
 	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
 	ForwardRndcCommand(ctx context.Context, dbApp *dbmodel.App, command string) (*RndcOutput, error)
 	ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
-	ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.App, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error)
+	ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.App, commands []*keactrl.Command, cmdResponses ...interface{}) (*KeaCmdsResult, error)
 	TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset int64) ([]string, error)
 }
 

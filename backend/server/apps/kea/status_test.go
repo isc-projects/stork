@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"isc.org/stork/server/agentcomm"
+	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -16,8 +16,8 @@ import (
 // Generates a response to the status-get command including two status
 // structures, one for DHCPv4 and one for DHCPv6.
 func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
-	daemons, _ := agentcomm.NewKeaDaemons("dhcp4", "dhcp6")
-	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	daemons, _ := keactrl.NewDaemons("dhcp4", "dhcp6")
+	command, _ := keactrl.NewCommand("status-get", daemons, nil)
 	var json string
 	switch callNo {
 	case 0:
@@ -99,15 +99,15 @@ func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
              "text": "Unable to communicate"
           }]`
 	}
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 }
 
 // Generates a response to the status-get command including two status
 // structures, one for DHCPv4 and one for DHCPv6. Format supported by
 // Kea 1.7.8 onwards.
 func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
-	daemons, _ := agentcomm.NewKeaDaemons("dhcp4", "dhcp6")
-	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	daemons, _ := keactrl.NewDaemons("dhcp4", "dhcp6")
+	command, _ := keactrl.NewCommand("status-get", daemons, nil)
 	var json string
 	switch callNo {
 	case 0:
@@ -216,14 +216,14 @@ func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
              "text": "Unable to communicate"
          }]`
 	}
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 }
 
 // Generate test response to status-get command including status of the
 // HA pair doing load balancing.
 func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
-	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	daemons, _ := keactrl.NewDaemons("dhcp4")
+	command, _ := keactrl.NewCommand("status-get", daemons, nil)
 	json := `[
         {
             "result": 0,
@@ -250,14 +250,14 @@ func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
                 }
             }
     ]`
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 }
 
 // Generate test response to status-get command including status of the
 // HA pair doing load balancing. Format supported by Kea 1.7.8 onwards.
 func mockGetStatusLoadBalancing178(callNo int, cmdResponses []interface{}) {
-	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	daemons, _ := keactrl.NewDaemons("dhcp4")
+	command, _ := keactrl.NewCommand("status-get", daemons, nil)
 	json := `[
         {
             "result": 0,
@@ -294,14 +294,14 @@ func mockGetStatusLoadBalancing178(callNo int, cmdResponses []interface{}) {
             }
         }
     ]`
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 }
 
 // Generates test response to status-get command lacking a status of the
 // HA pair.
 func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
-	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	daemons, _ := keactrl.NewDaemons("dhcp4")
+	command, _ := keactrl.NewCommand("status-get", daemons, nil)
 	json := `[
         {
             "result": 0,
@@ -313,21 +313,21 @@ func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
             }
         }
     ]`
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 }
 
 // Generates test response to status-get command indicating an error and
 // lacking argument.s
 func mockGetStatusError(callNo int, cmdResponses []interface{}) {
-	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-	command, _ := agentcomm.NewKeaCommand("status-get", daemons, nil)
+	daemons, _ := keactrl.NewDaemons("dhcp4")
+	command, _ := keactrl.NewCommand("status-get", daemons, nil)
 	json := `[
         {
             "result": 1,
             "text": "unable to communicate with the deamon"
         }
     ]`
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 }
 
 // Test status-get command when HA status is returned.

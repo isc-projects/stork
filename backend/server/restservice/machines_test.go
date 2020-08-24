@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/apps/kea"
@@ -99,7 +100,7 @@ func mockGetAppsState(callNo int, cmdResponses []interface{}) {
 		list1 := cmdResponses[0].(*[]kea.VersionGetResponse)
 		*list1 = []kea.VersionGetResponse{
 			{
-				KeaResponseHeader: agentcomm.KeaResponseHeader{
+				ResponseHeader: keactrl.ResponseHeader{
 					Result: 0,
 					Daemon: "ca",
 				},
@@ -108,10 +109,10 @@ func mockGetAppsState(callNo int, cmdResponses []interface{}) {
 				},
 			},
 		}
-		list2 := cmdResponses[1].(*[]agentcomm.KeaResponse)
-		*list2 = []agentcomm.KeaResponse{
+		list2 := cmdResponses[1].(*[]keactrl.Response)
+		*list2 = []keactrl.Response{
 			{
-				KeaResponseHeader: agentcomm.KeaResponseHeader{
+				ResponseHeader: keactrl.ResponseHeader{
 					Result: 0,
 					Daemon: "ca",
 				},
@@ -132,7 +133,7 @@ func mockGetAppsState(callNo int, cmdResponses []interface{}) {
 		list1 := cmdResponses[0].(*[]kea.VersionGetResponse)
 		*list1 = []kea.VersionGetResponse{
 			{
-				KeaResponseHeader: agentcomm.KeaResponseHeader{
+				ResponseHeader: keactrl.ResponseHeader{
 					Result: 0,
 					Daemon: "dhcp4",
 				},
@@ -145,7 +146,7 @@ func mockGetAppsState(callNo int, cmdResponses []interface{}) {
 		list2 := cmdResponses[1].(*[]kea.StatusGetResponse)
 		*list2 = []kea.StatusGetResponse{
 			{
-				KeaResponseHeader: agentcomm.KeaResponseHeader{
+				ResponseHeader: keactrl.ResponseHeader{
 					Result: 0,
 					Daemon: "dhcp4",
 				},
@@ -155,10 +156,10 @@ func mockGetAppsState(callNo int, cmdResponses []interface{}) {
 			},
 		}
 		// config-get response
-		list3 := cmdResponses[2].(*[]agentcomm.KeaResponse)
-		*list3 = []agentcomm.KeaResponse{
+		list3 := cmdResponses[2].(*[]keactrl.Response)
+		*list3 = []keactrl.Response{
 			{
-				KeaResponseHeader: agentcomm.KeaResponseHeader{
+				ResponseHeader: keactrl.ResponseHeader{
 					Result: 0,
 					Daemon: "dhcp4",
 				},

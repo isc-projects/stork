@@ -9,7 +9,7 @@ import (
 
 	require "github.com/stretchr/testify/require"
 
-	"isc.org/stork/server/agentcomm"
+	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -238,10 +238,10 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
         }
     ]`, len(hosts), string(hostsAsJSON), fromValue, sourceIndex)
 
-	daemons, _ := agentcomm.NewKeaDaemons(fmt.Sprintf("dhcp%d", family))
-	command, _ := agentcomm.NewKeaCommand("reservation-get-page", daemons, nil)
+	daemons, _ := keactrl.NewDaemons(fmt.Sprintf("dhcp%d", family))
+	command, _ := keactrl.NewCommand("reservation-get-page", daemons, nil)
 
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 }
 
 // This function mocks the response of the Kea servers to the reservation-get-page
@@ -311,10 +311,10 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
         ]`
 	}
 
-	daemons, _ := agentcomm.NewKeaDaemons("dhcp4")
-	command, _ := agentcomm.NewKeaCommand("reservation-get-page", daemons, nil)
+	daemons, _ := keactrl.NewDaemons("dhcp4")
+	command, _ := keactrl.NewCommand("reservation-get-page", daemons, nil)
 
-	_ = agentcomm.UnmarshalKeaResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
 }
 

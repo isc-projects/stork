@@ -7,6 +7,7 @@ import (
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -34,7 +35,7 @@ type ReservationGetPageArgs struct {
 // Structure reflecting a Kea response to the reservation-get-page
 // command.
 type ReservationGetPageResponse struct {
-	agentcomm.KeaResponseHeader
+	keactrl.ResponseHeader
 	Arguments *ReservationGetPageArgs `json:"arguments,omitempty"`
 }
 
@@ -188,9 +189,9 @@ func (iterator *HostDetectionIterator) convertAndAssignHosts(fetchedHosts []dbmo
 func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel.KeaConfigReservation, result int, canRetry bool, err error) {
 	// Depending on the family we should set the service parameter to
 	// dhcp4 or dhcp6.
-	daemons, err := agentcomm.NewKeaDaemons(fmt.Sprintf("dhcp%d", iterator.family))
+	daemons, err := keactrl.NewDaemons(fmt.Sprintf("dhcp%d", iterator.family))
 	if err != nil {
-		return hosts, agentcomm.KeaResponseError, false, err
+		return hosts, keactrl.ResponseError, false, err
 	}
 	// We need to set subnet-id. This required extracting the local subnet-id
 	// for the given app.
@@ -219,43 +220,43 @@ func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel
 		arguments["source-index"] = iterator.sourceIndex
 	}
 	// Prepare the command.
-	command, err := agentcomm.NewKeaCommand("reservation-get-page", daemons, &arguments)
+	command, err := keactrl.NewCommand("reservation-get-page", daemons, &arguments)
 	if err != nil {
-		return hosts, agentcomm.KeaResponseError, false, err
+		return hosts, keactrl.ResponseError, false, err
 	}
 
-	commands := []*agentcomm.KeaCommand{command}
+	commands := []*keactrl.Command{command}
 	response := make([]ReservationGetPageResponse, 1)
 	ctx := context.Background()
 	respResult, err := iterator.agents.ForwardToKeaOverHTTP(ctx, iterator.app, commands, &response)
 	if err != nil {
 		// Can retry because the error may go away upon the next attempt.
-		return hosts, agentcomm.KeaResponseError, true, err
+		return hosts, keactrl.ResponseError, true, err
 	}
 
 	if respResult.Error != nil {
 		// Can retry beause the error may go away.
-		return hosts, agentcomm.KeaResponseError, true, respResult.Error
+		return hosts, keactrl.ResponseError, true, respResult.Error
 	}
 
 	if len(respResult.CmdsErrors) > 0 && respResult.CmdsErrors[0] != nil {
 		// Can retry beause the error may go away.
-		return hosts, agentcomm.KeaResponseError, true, respResult.CmdsErrors[0]
+		return hosts, keactrl.ResponseError, true, respResult.CmdsErrors[0]
 	}
 
 	// The following two would rather be fatal errors and retrying wouldn't help.
 	if len(response) == 0 {
-		return hosts, agentcomm.KeaResponseError, false, errors.Errorf("invalid response to reservation-get-page command received")
+		return hosts, keactrl.ResponseError, false, errors.Errorf("invalid response to reservation-get-page command received")
 	}
 
 	// An error is likely to be a communication problem between Kea Control
 	// Agent and some other daemon.
-	if response[0].Result == agentcomm.KeaResponseError {
+	if response[0].Result == keactrl.ResponseError {
 		return hosts, response[0].Result, false, errors.Errorf("error returned by Kea in response to reservation-get-page command")
 	}
 
 	// If the command is not supported by this Kea server, simply stop.
-	if response[0].Result == agentcomm.KeaResponseCommandUnsupported {
+	if response[0].Result == keactrl.ResponseCommandUnsupported {
 		return hosts, response[0].Result, false, nil
 	}
 
@@ -360,7 +361,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 			}
 
 			// If the command is not supported for this app there is nothing more to do.
-			if result == agentcomm.KeaResponseCommandUnsupported {
+			if result == keactrl.ResponseCommandUnsupported {
 				return hosts, true, nil
 			}
 

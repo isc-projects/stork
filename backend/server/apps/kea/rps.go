@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"isc.org/stork/server/agentcomm"
+	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -40,7 +40,7 @@ type StatSample struct {
 //    "result": 0
 //}
 type StatGetResponse4 struct {
-	agentcomm.KeaResponseHeader
+	keactrl.ResponseHeader
 	Arguments *ResponseArguments4 `json:"arguments,omitempty"`
 }
 
@@ -63,7 +63,7 @@ type ResponseArguments4 struct {
 //    "result": 0
 //}
 type StatGetResponse6 struct {
-	agentcomm.KeaResponseHeader
+	keactrl.ResponseHeader
 	Arguments *ResponseArguments6 `json:"arguments,omitempty"`
 }
 
@@ -98,9 +98,9 @@ func (rpsWorker *RpsWorker) AgeOffRpsIntervals() error {
 
 // Appends the statistic-get command for DHCP4 to the given commond list. It returns
 // an instance of the expected response type.
-func RpsAddCmd4(cmds *[]*agentcomm.KeaCommand, dhcp4Daemons *agentcomm.KeaDaemons) interface{} {
+func RpsAddCmd4(cmds *[]*keactrl.Command, dhcp4Daemons *keactrl.Daemons) interface{} {
 	dhcp4Arguments := RpsGetDhcp4Arguments()
-	*cmds = append(*cmds, &agentcomm.KeaCommand{
+	*cmds = append(*cmds, &keactrl.Command{
 		Command:   "statistic-get",
 		Daemons:   dhcp4Daemons,
 		Arguments: &dhcp4Arguments})
@@ -109,9 +109,9 @@ func RpsAddCmd4(cmds *[]*agentcomm.KeaCommand, dhcp4Daemons *agentcomm.KeaDaemon
 
 // Appends the statistic-get command for DHCP4 to the given commond list. It returns
 // an instance of the expected response type.
-func RpsAddCmd6(cmds *[]*agentcomm.KeaCommand, dhcp6Daemons *agentcomm.KeaDaemons) interface{} {
+func RpsAddCmd6(cmds *[]*keactrl.Command, dhcp6Daemons *keactrl.Daemons) interface{} {
 	dhcp6Arguments := RpsGetDhcp6Arguments()
-	*cmds = append(*cmds, &agentcomm.KeaCommand{
+	*cmds = append(*cmds, &keactrl.Command{
 		Command:   "statistic-get",
 		Daemons:   dhcp6Daemons,
 		Arguments: &dhcp6Arguments})

@@ -13,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	agentapi "isc.org/stork/api"
+	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -340,7 +341,7 @@ type KeaCmdsResult struct {
 // Forwards a Kea command via the Stork Agent and Kea Control Agent and then
 // parses the response. caAddress and caPort are used to construct the URL
 // of the Kea Control Agent to which the command should be sent.
-func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.App, commands []*KeaCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error) {
+func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.App, commands []*keactrl.Command, cmdResponses ...interface{}) (*KeaCmdsResult, error) {
 	agentAddress := dbApp.Machine.Address
 	agentPort := dbApp.Machine.AgentPort
 
@@ -448,7 +449,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbA
 		}
 
 		// Try to parse the response from the on-wire format.
-		err = UnmarshalKeaResponseList(commands[idx], rsp.Response, cmdResp)
+		err = keactrl.UnmarshalResponseList(commands[idx], rsp.Response, cmdResp)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
 			result.CmdsErrors = append(result.CmdsErrors, err)
@@ -490,7 +491,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbA
 			}
 			// If error was returned, let's bump up the number of errors
 			// for this daemon. Otherwise, let's reset the counter.
-			if resultField.Int() == KeaResponseError {
+			if resultField.Int() == keactrl.ResponseError {
 				daemonErrorsCount[daemonName]++
 			} else {
 				daemonErrorsCount[daemonName] = 0

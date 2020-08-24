@@ -8,6 +8,7 @@ import (
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -49,7 +50,7 @@ type VersionGetRespArgs struct {
 }
 
 type VersionGetResponse struct {
-	agentcomm.KeaResponseHeader
+	keactrl.ResponseHeader
 	Arguments *VersionGetRespArgs `json:"arguments,omitempty"`
 }
 
@@ -80,9 +81,9 @@ func findDaemonEnsureKeaDaemonIsNotNilAndSetActiveFlag(dbApp *dbmodel.App, daemo
 // It also returns:
 // - list of all Kea daemons
 // - list of DHCP daemons (dhcpv4 and/or dhcpv6)
-func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, daemonsErrors map[string]string) (agentcomm.KeaDaemons, agentcomm.KeaDaemons, error) {
+func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, daemonsErrors map[string]string) (keactrl.Daemons, keactrl.Daemons, error) {
 	// prepare the command to get config and version from CA
-	cmds := []*agentcomm.KeaCommand{
+	cmds := []*keactrl.Command{
 		{
 			Command: "version-get",
 		},
@@ -93,7 +94,7 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 
 	// get version and config from CA
 	versionGetResp := []VersionGetResponse{}
-	caConfigGetResp := []agentcomm.KeaResponse{}
+	caConfigGetResp := []keactrl.Response{}
 
 	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, cmds, &versionGetResp, &caConfigGetResp)
 	if err != nil {
@@ -145,8 +146,8 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 	}
 
 	// prepare a set of available daemons
-	allDaemons := make(agentcomm.KeaDaemons)
-	dhcpDaemons := make(agentcomm.KeaDaemons)
+	allDaemons := make(keactrl.Daemons)
+	dhcpDaemons := make(keactrl.Daemons)
 
 	// Set the configuration for the daemon and populate selected configuration
 	// information to the respective structures, e.g. logging information.
@@ -173,11 +174,11 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 
 // Get state of Kea application daemons (beside Control Agent) using ForwardToKeaOverHTTP function.
 // The state, that is stored into dbApp, includes: version, config and runtime state of indicated Kea daemons.
-func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, allDaemons agentcomm.KeaDaemons, dhcpDaemons agentcomm.KeaDaemons, daemonsErrors map[string]string) error {
+func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, allDaemons keactrl.Daemons, dhcpDaemons keactrl.Daemons, daemonsErrors map[string]string) error {
 	now := storkutil.UTCNow()
 
 	// issue 3 commands to Kea daemons at once to get their state
-	cmds := []*agentcomm.KeaCommand{
+	cmds := []*keactrl.Command{
 		{
 			Command: "version-get",
 			Daemons: &allDaemons,
@@ -194,7 +195,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 
 	versionGetResp := []VersionGetResponse{}
 	statusGetResp := []StatusGetResponse{}
-	configGetResp := []agentcomm.KeaResponse{}
+	configGetResp := []keactrl.Response{}
 
 	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, cmds, &versionGetResp, &statusGetResp, &configGetResp)
 	if err != nil {
