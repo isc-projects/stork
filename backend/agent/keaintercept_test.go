@@ -30,14 +30,14 @@ func TestKeaInterceptorHandle(t *testing.T) {
 	var capturedResponses []*keactrl.Response
 
 	// Register callback to be invoked for config-get commands.
-	interceptor.register(func(resp *keactrl.Response) error {
+	interceptor.register(func(agent *StorkAgent, resp *keactrl.Response) error {
 		commandInvoked = "config-get"
 		capturedResponses = append(capturedResponses, resp)
 		return nil
 	}, "config-get")
 
 	// Register callback to be invoked for the subnet4-get.
-	interceptor.register(func(resp *keactrl.Response) error {
+	interceptor.register(func(agent *StorkAgent, resp *keactrl.Response) error {
 		commandInvoked = "subnet4-get"
 		capturedResponses = append(capturedResponses, resp)
 		return nil
@@ -65,7 +65,7 @@ func TestKeaInterceptorHandle(t *testing.T) {
         ]`,
 	}
 	// Invoke the registered callbacks for config-get.
-	interceptor.asyncHandle(request, response)
+	interceptor.asyncHandle(nil, request, response)
 	require.Equal(t, "config-get", commandInvoked)
 	// There should be two responses recorded, one for the DHCPv4 and
 	// one for DHCPv6.
@@ -85,7 +85,7 @@ func TestKeaInterceptorHandle(t *testing.T) {
 	request = &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
-	interceptor.asyncHandle(request, response)
+	interceptor.asyncHandle(nil, request, response)
 	require.Equal(t, "subnet4-get", commandInvoked)
 }
 
@@ -95,7 +95,7 @@ func TestKeaInterceptorHandleControlAgent(t *testing.T) {
 	require.NotNil(t, interceptor)
 
 	var capturedResponses []*keactrl.Response
-	interceptor.register(func(resp *keactrl.Response) error {
+	interceptor.register(func(agent *StorkAgent, resp *keactrl.Response) error {
 		capturedResponses = append(capturedResponses, resp)
 		return nil
 	}, "config-get")
@@ -116,7 +116,7 @@ func TestKeaInterceptorHandleControlAgent(t *testing.T) {
 	}
 	// Invoke the callbacks and validate the data recorded by this
 	// callback.
-	interceptor.asyncHandle(request, response)
+	interceptor.asyncHandle(nil, request, response)
 	require.Len(t, capturedResponses, 1)
 	require.EqualValues(t, 1, capturedResponses[0].Result)
 	require.Equal(t, "invocation error", capturedResponses[0].Text)
@@ -131,14 +131,14 @@ func TestKeaInterceptorMultipleHandlers(t *testing.T) {
 
 	// Register first handler
 	func1Invoked := false
-	interceptor.register(func(resp *keactrl.Response) error {
+	interceptor.register(func(agent *StorkAgent, resp *keactrl.Response) error {
 		func1Invoked = true
 		return nil
 	}, "config-get")
 
 	// Register second handler.
 	func2Invoked := false
-	interceptor.register(func(resp *keactrl.Response) error {
+	interceptor.register(func(agent *StorkAgent, resp *keactrl.Response) error {
 		func2Invoked = true
 		return nil
 	}, "config-get")
@@ -158,7 +158,7 @@ func TestKeaInterceptorMultipleHandlers(t *testing.T) {
         ]`,
 	}
 	// Make sure that both handlers have been invoked.
-	interceptor.asyncHandle(request, response)
+	interceptor.asyncHandle(nil, request, response)
 	require.True(t, func1Invoked)
 	require.True(t, func2Invoked)
 }

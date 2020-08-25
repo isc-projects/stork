@@ -14,7 +14,7 @@ import (
 // The callback is invoked when the given command is received by the
 // agent and after it is forwarded to Kea.
 type keaInterceptorHandler struct {
-	callback func(*keactrl.Response) error
+	callback func(*StorkAgent, *keactrl.Response) error
 }
 
 // Structure holding a collection of handlers/callabacks to be invoked
@@ -44,7 +44,7 @@ func newKeaInterceptor() *keaInterceptor {
 
 // Registers a callback function and associates it with a given command.
 // It is possible to register multiple callbacks for the same command.
-func (i *keaInterceptor) register(callback func(*keactrl.Response) error, commandName string) {
+func (i *keaInterceptor) register(callback func(*StorkAgent, *keactrl.Response) error, commandName string) {
 	var (
 		target *keaInterceptorTarget
 		ok     bool
@@ -76,7 +76,7 @@ func (i *keaInterceptor) register(callback func(*keactrl.Response) error, comman
 // which can be ran independently from the agent. The agent may send back the
 // response to the server while these callbacks are invoked. The result of the
 // callbacks do not affect the response forwarded to the Stork server.
-func (i *keaInterceptor) asyncHandle(request *agentapi.KeaRequest, response *agentapi.KeaResponse) {
+func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaRequest, response *agentapi.KeaResponse) {
 	// Parse the request to get the command name and service.
 	command, err := keactrl.NewCommandFromJSON(request.Request)
 	if err != nil {
@@ -127,7 +127,7 @@ func (i *keaInterceptor) asyncHandle(request *agentapi.KeaRequest, response *age
 			if j < len(parsedResponse) {
 				callback := target.handlers[i].callback
 				if callback != nil {
-					err = callback(&parsedResponse[j])
+					err = callback(agent, &parsedResponse[j])
 					if err != nil {
 						log.Warnf("asynchronous callback returned an error for command %s: %+v",
 							command.Command, err)

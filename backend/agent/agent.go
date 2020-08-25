@@ -62,6 +62,8 @@ func NewStorkAgent(appMonitor AppMonitor) *StorkAgent {
 		keaInterceptor: newKeaInterceptor(),
 	}
 
+	registerKeaInterceptFns(sa)
+
 	return sa
 }
 
@@ -242,7 +244,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			rsp.Status.Code = agentapi.Status_ERROR
 			rsp.Status.Message = fmt.Sprintf("Failed to forward commands to Kea: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
-			go sa.keaInterceptor.asyncHandle(req, rsp)
+			go sa.keaInterceptor.asyncHandle(sa, req, rsp)
 			continue
 		}
 
@@ -256,7 +258,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			rsp.Status.Code = agentapi.Status_ERROR
 			rsp.Status.Message = fmt.Sprintf("Failed to read the body of the Kea response: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
-			go sa.keaInterceptor.asyncHandle(req, rsp)
+			go sa.keaInterceptor.asyncHandle(sa, req, rsp)
 			continue
 		}
 
@@ -264,7 +266,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 		rsp.Response = string(body)
 		rsp.Status.Code = agentapi.Status_OK
 		response.KeaResponses = append(response.KeaResponses, rsp)
-		go sa.keaInterceptor.asyncHandle(req, rsp)
+		go sa.keaInterceptor.asyncHandle(sa, req, rsp)
 	}
 
 	return response, nil
