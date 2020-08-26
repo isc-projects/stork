@@ -11,7 +11,7 @@ import (
 // Test that connection string is created when all parameters are specified and
 // none of the values include a space character. Also, make sure that the password
 // with upper case letters is handled correctly.
-func TestConnectionParamsNoQuotes(t *testing.T) {
+func TestConnectionParamsNoSpaces(t *testing.T) {
 	settings := dbops.BaseDatabaseSettings{
 		DbName:   "stork",
 		User:     "admin",
@@ -21,11 +21,11 @@ func TestConnectionParamsNoQuotes(t *testing.T) {
 	}
 
 	params := settings.ConnectionParams()
-	require.Equal(t, "dbname=stork user=admin password=StOrK123 host=localhost port=123 sslmode=disable", params)
+	require.Equal(t, "dbname='stork' user='admin' password='StOrK123' host='localhost' port=123 sslmode='disable'", params)
 }
 
-// Test that the password including space character is surrounded by quotes.
-func TestConnectionParamsWithQuotes(t *testing.T) {
+// Test that the password including space character is enclosed in quotes.
+func TestConnectionParamsWithSpaces(t *testing.T) {
 	settings := dbops.BaseDatabaseSettings{
 		DbName:   "stork",
 		User:     "admin",
@@ -35,7 +35,21 @@ func TestConnectionParamsWithQuotes(t *testing.T) {
 	}
 
 	params := settings.ConnectionParams()
-	require.Equal(t, "dbname=stork user=admin password='StOrK123 567' host=localhost port=123 sslmode=disable", params)
+	require.Equal(t, "dbname='stork' user='admin' password='StOrK123 567' host='localhost' port=123 sslmode='disable'", params)
+}
+
+// Test that quotes and double quotes are escaped.
+func TestConnectionParamsWithEscapes(t *testing.T) {
+	settings := dbops.BaseDatabaseSettings{
+		DbName:   "stork",
+		User:     "admin",
+		Password: `StOrK123'56"7`,
+		Host:     "localhost",
+		Port:     123,
+	}
+
+	params := settings.ConnectionParams()
+	require.Equal(t, `dbname='stork' user='admin' password='StOrK123\'56\"7' host='localhost' port=123 sslmode='disable'`, params)
 }
 
 // Test that when the host is not specified it is not included in the connection
@@ -49,7 +63,7 @@ func TestConnectionParamsWithOptionalHost(t *testing.T) {
 	}
 
 	params := settings.ConnectionParams()
-	require.Equal(t, "dbname=stork user=admin password='StOrK123 567' port=123 sslmode=disable", params)
+	require.Equal(t, "dbname='stork' user='admin' password='StOrK123 567' port=123 sslmode='disable'", params)
 }
 
 // Test that when the port is 0, it is not included in the connection string.
@@ -62,5 +76,5 @@ func TestConnectionParamsWithOptionalPort(t *testing.T) {
 	}
 
 	params := settings.ConnectionParams()
-	require.Equal(t, "dbname=stork user=admin password=stork host=localhost sslmode=disable", params)
+	require.Equal(t, "dbname='stork' user='admin' password='stork' host='localhost' sslmode='disable'", params)
 }

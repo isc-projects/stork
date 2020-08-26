@@ -49,8 +49,9 @@ func NewDatabaseSettings() *DatabaseSettings {
 }
 
 // Returns generic connection parameters as a list of space separated name/value pairs.
-// If any of the string values contains spaces, the value is surrounded by quotes.
-// Empty or zero values are not included in the returned connection string.
+// All string values are enclosed in quotes. The quotes and double quotes within the
+// string values are escaped. Empty or zero values are not included in the returned
+// connection string.
 func (c *BaseDatabaseSettings) ConnectionParams() string {
 	// Copy the structure as we don't want to modify the original.
 	settingsCopy := *c
@@ -72,11 +73,12 @@ func (c *BaseDatabaseSettings) ConnectionParams() string {
 			if len(fieldValue) == 0 {
 				continue
 			}
-			// Strings including spaces must be quoted.
-			if strings.Contains(fieldValue, " ") {
-				fieldValue = fmt.Sprintf("'%s'", fieldValue)
-				v.Field(i).SetString(fieldValue)
-			}
+			// Escape quotes and double quotes.
+			fieldValue = strings.Replace(fieldValue, "'", `\'`, -1)
+			fieldValue = strings.Replace(fieldValue, `"`, `\"`, -1)
+			// Enclose all strings in quotes in case they contain spaces.
+			fieldValue = fmt.Sprintf("'%s'", fieldValue)
+			v.Field(i).SetString(fieldValue)
 		case reflect.Int:
 			// If the int value is zero, do not include it.
 			fieldValue := v.Field(i).Int()
@@ -91,7 +93,7 @@ func (c *BaseDatabaseSettings) ConnectionParams() string {
 		// Append the parameter in the name=value format.
 		s += fmt.Sprintf("%s=%v", strings.ToLower(vType.Field(i).Name), v.Field(i).Interface())
 	}
-	s += " sslmode=disable"
+	s += " sslmode='disable'"
 	return s
 }
 
