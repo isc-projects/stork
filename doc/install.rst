@@ -70,7 +70,11 @@ Then, prepare the database:
 .. note::
 
    Make sure the actual password is stronger than 'stork' which is trivial to guess.
-   Using default passwords is a security risk.
+   Using default passwords is a security risk. Stork puts no restrictions on the
+   characters used in the database passwords nor on their length. In particular,
+   it accepts passwords containing spaces, quotes, double quotes and other
+   special characters.
+
 
 Installing from Packages
 ========================
