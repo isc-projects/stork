@@ -391,6 +391,7 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64
 		}).
 		Relation("LocalHosts").
 		Relation("LocalHosts.App").
+		Relation("LocalHosts.App.Machine").
 		Relation("LocalHosts.App.AccessPoints")
 
 	// Only join the subnet if querying all hosts or hosts belonging to a

@@ -22,14 +22,14 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 	for i := 0; i < 2; i++ {
 		m := &dbmodel.Machine{
 			ID:        0,
-			Address:   "localhost",
+			Address:   "cool.example.org",
 			AgentPort: int64(8080 + i),
 		}
 		err := dbmodel.AddMachine(db, m)
 		require.NoError(t, err)
 
 		accessPoints := []*dbmodel.AccessPoint{}
-		accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "cool.example.org", "", int64(1234+i))
+		accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", int64(1234+i))
 
 		a := dbmodel.App{
 			ID:           0,
@@ -248,11 +248,11 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	require.NotNil(t, items[0].LocalHosts[0])
 	require.EqualValues(t, apps[0].ID, items[0].LocalHosts[0].AppID)
 	require.Equal(t, "config", items[0].LocalHosts[0].DataSource)
-	require.Equal(t, "cool.example.org:1234", items[0].LocalHosts[0].MachineAddress)
+	require.Equal(t, "cool.example.org", items[0].LocalHosts[0].MachineAddress)
 	require.NotNil(t, items[0].LocalHosts[1])
 	require.EqualValues(t, apps[1].ID, items[0].LocalHosts[1].AppID)
 	require.Equal(t, "config", items[0].LocalHosts[1].DataSource)
-	require.Equal(t, "cool.example.org:1235", items[0].LocalHosts[1].MachineAddress)
+	require.Equal(t, "cool.example.org", items[0].LocalHosts[1].MachineAddress)
 }
 
 // Test that hosts can be filtered by subnet ID.

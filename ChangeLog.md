@@ -1,3 +1,10 @@
+* 97 [bug] godfryd
+
+    Improved laytout of various table that they are displayed correctly
+    on smaller screens. Fixed address of the machine that is displayed
+    in the tables (previous it was always showing 127.0.0.1).
+    (Gitlab #295)
+
 * 96 [doc] matthijs
 
     Add documentation on monitoring the BIND 9 application.

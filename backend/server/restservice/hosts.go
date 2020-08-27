@@ -2,7 +2,6 @@ package restservice
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -62,15 +61,9 @@ func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, filterTe
 		// Append local hosts containing associations of the host with
 		// apps.
 		for _, dbLocalHost := range dbHost.LocalHosts {
-			ctrl, err := dbLocalHost.App.GetAccessPoint(dbmodel.AccessPointControl)
-			if err != nil {
-				log.Warnf("problem with getting access point for app: %d: %s", dbLocalHost.AppID, err)
-				continue
-			}
-
 			localHost := models.LocalHost{
 				AppID:          dbLocalHost.AppID,
-				MachineAddress: fmt.Sprintf("%s:%d", ctrl.Address, ctrl.Port),
+				MachineAddress: dbLocalHost.App.Machine.Address,
 				DataSource:     dbLocalHost.DataSource,
 			}
 			host.LocalHosts = append(host.LocalHosts, &localHost)

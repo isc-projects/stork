@@ -83,15 +83,12 @@
         >
             <ng-template pTemplate="header">
                 <tr>
-                    <th rowspan="2" style="width: 22rem">DHCP Identifiers</th>
-                    <th colspan="2" style="width: 35rem">IP Reservations</th>
-                    <th rowspan="2" style="width: 15rem">Hostname</th>
-                    <th rowspan="2" style="width: 12rem">Global/Subnet</th>
-                    <th rowspan="2" style="width: 20rem">AppID @ Machine</th>
-                </tr>
-                <tr>
-                    <th>IP Addresses</th>
-                    <th>IPv6 Prefixes</th>
+                    <th style="width: 28%;">DHCP Identifiers</th>
+                    <th style="width: 18%;">IP Addresses</th>
+                    <th style="width: 14%;">IPv6 Prefixes</th>
+                    <th style="width: 14%;">Hostname</th>
+                    <th style="width: 12%;">Global/Subnet</th>
+                    <th style="width: 14%;">AppID @ Machine</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-h>
@@ -138,13 +135,13 @@
                             {{ r.address }}
                         </div>
                     </td>
-                    <td align="center">
+                    <td>
                         {{ h.hostname ? h.hostname : '' }}
                     </td>
-                    <td align="center">
+                    <td>
                         {{ h.subnetId && h.subnetId > 0 ? h.subnetPrefix : 'global' }}
                     </td>
-                    <td align="center">
+                    <td>
                         <a *ngFor="let lh of h.localHosts" routerLink="/apps/kea/{{ lh.appId }}" style="display: block"
                             >{{ lh.appId }} @ {{ lh.machineAddress }}
                             <sup pTooltip="{{ hostDataSourceTooltip(lh.dataSource) }}">

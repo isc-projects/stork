@@ -2,7 +2,6 @@ package restservice
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -32,16 +31,10 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	}
 
 	for _, lsn := range sn.LocalSubnets {
-		ctrl, err := lsn.App.GetAccessPoint(dbmodel.AccessPointControl)
-		if err != nil {
-			log.Warnf("problem with getting access point for app: %d: %s", lsn.AppID, err)
-			continue
-		}
-
 		localSubnet := &models.LocalSubnet{
 			AppID:            lsn.App.ID,
 			ID:               lsn.LocalSubnetID,
-			MachineAddress:   fmt.Sprintf("%s:%d", ctrl.Address, ctrl.Port),
+			MachineAddress:   lsn.App.Machine.Address,
 			MachineHostname:  lsn.App.Machine.State.Hostname,
 			Stats:            lsn.Stats,
 			StatsCollectedAt: strfmt.DateTime(lsn.StatsCollectedAt),

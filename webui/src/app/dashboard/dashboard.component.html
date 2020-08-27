@@ -269,16 +269,16 @@
             <div style="display: flex; flex-wrap: wrap; justify-content: space-between">
                 <table style="width: 100%" class="dhcp-services-table">
                     <tr>
-                        <th>Host</th>
-                        <th>[ID] App Version</th>
-                        <th>Daemon</th>
-                        <th>Status</th>
-                        <th>RPS (15min)</th>
-                        <th>RPS (24h)</th>
+                        <th style="vertical-align: top;">Host</th>
+                        <th style="vertical-align: top;">[ID] App Version</th>
+                        <th style="vertical-align: top;">Daemon</th>
+                        <th style="vertical-align: top;">Status</th>
+                        <th style="vertical-align: top;">RPS (15min)</th>
+                        <th style="vertical-align: top;">RPS (24h)</th>
                         <!-- <th>Pool Used</th> -->
-                        <th>HA State</th>
-                        <th>Detected Failure w/HA</th>
-                        <th>Uptime</th>
+                        <th style="vertical-align: top;">HA State</th>
+                        <th style="vertical-align: top;">Detected Failure w/HA</th>
+                        <th style="vertical-align: top;">Uptime</th>
                     </tr>
 
                     <tr *ngFor="let d of overview.dhcpDaemons" class="alternate-list">
