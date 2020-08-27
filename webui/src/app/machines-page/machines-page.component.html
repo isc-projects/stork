@@ -379,30 +379,11 @@
         <div class="p-col-4">
             <h3>Applications</h3>
             <div *ngFor="let app of machineTab.machine.apps">
-                <div *ngIf="app.type == 'kea'">
-                    <h4>Kea App</h4>
-                    <a routerLink="/apps/{{ app.type }}/{{ app.id }}">Version {{ app.version }}</a>
-                    <br />
-                    <app-app-daemons-status [app]="app"></app-app-daemons-status>
-                </div>
-                <div *ngIf="app.type == 'bind9'">
-                    <h4>BIND 9 App</h4>
-                    Active:
-                    <span [ngStyle]="{ color: app.active ? '#00a800' : '#f11' }">
-                        <i
-                            class="pi pi-{{ app.active ? 'check' : 'exclamation-circle' }}"
-                            [ngStyle]="{
-                                'font-size': '1.5em',
-                                'vertical-align': app.active ? 'text-bottom' : 'text-top'
-                            }"
-                        ></i>
-                        {{ app.active ? 'yes' : 'no' }}
-                    </span>
-                    <br />
-                    Version: {{ app.version }}
-                    <br />
-                    <a routerLink="/apps/{{ app.type }}/{{ app.id }}">link to details</a>
-                </div>
+                <h4 *ngIf="app.type == 'kea'">Kea App</h4>
+                <h4 *ngIf="app.type == 'bind9'">BIND 9 App</h4>
+                <a routerLink="/apps/{{ app.type }}/{{ app.id }}">Version {{ app.version }}</a>
+                <br />
+                <app-app-daemons-status [app]="app"></app-app-daemons-status>
             </div>
         </div>
         <div class="p-col-4">

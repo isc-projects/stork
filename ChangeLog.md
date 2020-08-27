@@ -1,3 +1,11 @@
+* 95 [func] marcin
+
+    Fixed presenting an application status on a machine tab
+    with BIND 9 application. Previously it was always red/inactive.
+    Now it is presented the same way as it is for Kea app: status
+    per each daemon of an app.
+    (Gitlab #379)
+
 * 94 [bug] marcin
 
     Fixed an issue whereby the user was unable to login to Stork
@@ -11,7 +19,6 @@
     query parameters. In addition, the user information is obfuscated
     when db tracing is enabled.
     (Gitlab #375)
-
 
 Stork 0.10.0 released on 2020-08-13.
 
