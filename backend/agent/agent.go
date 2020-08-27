@@ -1,14 +1,11 @@
 package agent
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
-	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -37,6 +34,7 @@ type StorkAgent struct {
 	HTTPClient     *HTTPClient // to communicate with Kea Control Agent and named statistics-channel
 	RndcClient     *RndcClient // to communicate with BIND 9 via rndc
 	server         *grpc.Server
+	logTailer      *logTailer
 	keaInterceptor *keaInterceptor
 }
 
@@ -54,11 +52,14 @@ func NewStorkAgent(appMonitor AppMonitor) *StorkAgent {
 
 	server := grpc.NewServer()
 
+	logTailer := newLogTailer()
+
 	sa := &StorkAgent{
 		AppMonitor:     appMonitor,
 		HTTPClient:     httpClient,
 		RndcClient:     rndcClient,
 		server:         server,
+		logTailer:      logTailer,
 		keaInterceptor: newKeaInterceptor(),
 	}
 
@@ -280,39 +281,14 @@ func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFil
 		},
 	}
 
-	f, err := os.Open(in.Path)
+	lines, err := sa.logTailer.tail(in.Path, in.Offset)
 	if err != nil {
 		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = fmt.Sprintf("Failed to open file for tailing: %s", err.Error())
+		response.Status.Message = fmt.Sprintf("%s", err)
 		return response, nil
 	}
-	defer func() {
-		_ = f.Close()
-	}()
+	response.Lines = lines
 
-	stat, err := f.Stat()
-	if err != nil {
-		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = fmt.Sprintf("Failed to stat the file opened for tailing: %s", err.Error())
-		return response, nil
-	}
-
-	offset := in.Offset
-	// Can't go beyond the file size.
-	if offset > stat.Size() {
-		offset = stat.Size()
-	}
-
-	_, err = f.Seek(-offset, io.SeekEnd)
-	if err != nil {
-		response.Status.Code = agentapi.Status_ERROR
-		response.Status.Message = fmt.Sprintf("Failed to seek in the file opened for tailing: %s", err.Error())
-		return response, nil
-	}
-	s := bufio.NewScanner(f)
-	for s.Scan() {
-		response.Lines = append(response.Lines, s.Text())
-	}
 	return response, nil
 }
 

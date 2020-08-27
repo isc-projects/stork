@@ -61,6 +61,7 @@ func setupAgentTest(rndc CommandExecutor) (*StorkAgent, context.Context) {
 		AppMonitor:     &fam,
 		HTTPClient:     httpClient,
 		RndcClient:     rndcClient,
+		logTailer:      newLogTailer(),
 		keaInterceptor: newKeaInterceptor(),
 	}
 	ctx := context.Background()
@@ -456,6 +457,8 @@ func TestTailTextFile(t *testing.T) {
 	fmt.Fprintln(f, "This is a file")
 	fmt.Fprintln(f, "which is used")
 	fmt.Fprintln(f, "in testing TailTextFile")
+
+	sa.logTailer.allow(filename)
 
 	// Forward the request with the expected body.
 	req := &agentapi.TailTextFileReq{
