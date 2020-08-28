@@ -14,13 +14,13 @@
         tooltipStyleClass="stork-version-tooltip"
         [escape]="false"
     >
-        <img src="/assets/stork-logo-small.png" style="padding-left: 6px; vertical-align: text-bottom;" />
-        <span style="font-family: 'Mansalva', cursive; font-size: 2.3rem; color: white; margin: 4px 20px 4px 4px;">
+        <img src="/assets/stork-logo-small.png" style="padding-left: 6px; vertical-align: text-bottom" />
+        <span style="font-family: 'Mansalva', cursive; font-size: 2.3rem; color: white; margin: 4px 20px 4px 4px">
             Stork
         </span>
     </a>
 
-    <div style="flex-grow: 1;">
+    <div style="flex-grow: 1">
         <p-menubar [model]="menuItems" styleClass="stork-menubar">
             <p-progressSpinner
                 *ngIf="(loadingInProgress | async)['state']"

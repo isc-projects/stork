@@ -1,25 +1,25 @@
-<div style="margin: 4px -4px;" class="p-grid p-align-stretch" *ngIf="loaded">
+<div style="margin: 4px -4px" class="p-grid p-align-stretch" *ngIf="loaded">
     <div class="p-col-4" *ngIf="appsStats.keaAppsTotal === 0 && appsStats.bind9AppsTotal === 0">
         <p-panel>
             <p-header>
-                <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px;"
+                <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
                     >Welcome to Stork!</span
                 >
             </p-header>
 
-            <p style="padding-bottom: 1em;">
+            <p style="padding-bottom: 1em">
                 Stork is a monitoring solution for <em>ISC Kea DHCP</em> and <em>ISC BIND 9</em>.
             </p>
 
-            <p style="padding-bottom: 1em;">
+            <p style="padding-bottom: 1em">
                 The
                 <a target="blank" href="/assets/arm/index.html"
-                    >Stork documentation<i class="pi pi-external-link" style="font-size: 1em;"></i
+                    >Stork documentation<i class="pi pi-external-link" style="font-size: 1em"></i
                 ></a>
                 describes how to configure and use Stork.
             </p>
 
-            <p style="padding-bottom: 1em;">
+            <p style="padding-bottom: 1em">
                 Currently, there are no machines to monitor defined in Stork. To add a new machine visit the
                 <a routerLink="/machines/all">machines page</a>.
             </p>
@@ -38,8 +38,8 @@
     <div class="p-col-9" *ngIf="appsStats.keaAppsTotal > 0">
         <p-panel>
             <p-header>
-                <div style="display: flex; justify-content: space-between;">
-                    <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px;"
+                <div style="display: flex; justify-content: space-between">
+                    <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
                         >DHCP Dashboard</span
                     >
                     <p-button icon="pi pi-refresh" (click)="refreshDhcpOverview()"></p-button>
@@ -47,7 +47,7 @@
             </p-header>
 
             <h1 class="section-heading">DHCPv4</h1>
-            <div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between">
                 <div>
                     <h2 class="section-heading">
                         Subnets: {{ overview.subnets4.total ? overview.subnets4.total : '0' }}
@@ -62,17 +62,17 @@
                         <tr *ngFor="let sn of overview.subnets4.items">
                             <td>[{{ sn.id }}]</td>
                             <td><app-subnet-bar [subnet]="sn"></app-subnet-bar></td>
-                            <td style="padding-left: 1em;">
+                            <td style="padding-left: 1em">
                                 {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
                                 <i
                                     *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
                                     class="pi pi-exclamation-triangle"
-                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange;"
+                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange"
                                 ></i>
                                 <i
                                     *ngIf="sn.addrUtilization > 90"
                                     class="pi pi-exclamation-circle"
-                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: red;"
+                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
                                 ></i>
                             </td>
                             <td *ngIf="grafanaUrl">
@@ -88,7 +88,7 @@
                                 >
                                     <i
                                         class="pi pi-chart-line"
-                                        style="font-size: 1.6em; vertical-align: bottom; padding-left: 6px;"
+                                        style="font-size: 1.6em; vertical-align: bottom; padding-left: 6px"
                                     ></i>
                                 </a>
                             </td>
@@ -116,7 +116,7 @@
                         <tr *ngFor="let net of overview.sharedNetworks4.items">
                             <td>{{ net.name }}</td>
                             <td>{{ net.subnets.length }} subnets</td>
-                            <td style="padding-left: 1em;">
+                            <td style="padding-left: 1em">
                                 {{ net.addrUtilization ? net.addrUtilization : '0' }}% used
                             </td>
                         </tr>
@@ -164,7 +164,7 @@
             </div>
 
             <h1 class="section-heading">DHCPv6</h1>
-            <div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between">
                 <div>
                     <h2 class="section-heading">
                         Subnets: {{ overview.subnets6.total ? overview.subnets6.total : '0' }}
@@ -179,17 +179,17 @@
                         <tr *ngFor="let sn of overview.subnets6.items">
                             <td>[{{ sn.id }}]</td>
                             <td><app-subnet-bar [subnet]="sn"></app-subnet-bar></td>
-                            <td style="padding-left: 1em;">
+                            <td style="padding-left: 1em">
                                 {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
                                 <i
                                     *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
                                     class="pi pi-exclamation-triangle"
-                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange;"
+                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange"
                                 ></i>
                                 <i
                                     *ngIf="sn.addrUtilization > 90"
                                     class="pi pi-exclamation-circle"
-                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: red;"
+                                    style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
                                 ></i>
                             </td>
                         </tr>
@@ -216,7 +216,7 @@
                         <tr *ngFor="let net of overview.sharedNetworks6.items">
                             <td>{{ net.name }}</td>
                             <td>{{ net.subnets.length }} subnets</td>
-                            <td style="padding-left: 1em;">
+                            <td style="padding-left: 1em">
                                 {{ net.addrUtilization ? net.addrUtilization : '0' }}% used
                             </td>
                         </tr>
@@ -266,8 +266,8 @@
             </div>
 
             <h1 class="section-heading">Services Status</h1>
-            <div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
-                <table style="width: 100%;" class="dhcp-services-table">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between">
+                <table style="width: 100%" class="dhcp-services-table">
                     <tr>
                         <th>Host</th>
                         <th>[ID] App Version</th>
@@ -315,7 +315,7 @@
                                     {{ showHAState(d.haState) }}
                                 </a>
                             </span>
-                            <span *ngIf="!d.haState" style="color: 'grey';">
+                            <span *ngIf="!d.haState" style="color: 'grey'">
                                 {{ showHAState(d.haState) }}
                             </span>
                         </td>
@@ -334,14 +334,14 @@
     <div class="p-col-3">
         <p-panel>
             <p-header>
-                <div style="display: flex; justify-content: space-between;">
-                    <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px;"
+                <div style="display: flex; justify-content: space-between">
+                    <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
                         >Events</span
                     >
                     <p-button icon="pi pi-refresh" (click)="eventsTable.refreshEvents()"></p-button>
                 </div>
             </p-header>
-            <div style="max-height: calc(100vh - 10rem); overflow-y: auto; margin: 0 -0.8em 0 0;">
+            <div style="max-height: calc(100vh - 10rem); overflow-y: auto; margin: 0 -0.8em 0 0">
                 <app-events-panel #eventsTable></app-events-panel>
             </div>
         </p-panel>

@@ -9,9 +9,7 @@
                 <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#host-cmds-host-commands">host_cmds hook</a>
                 loaded to retrieve host reservations stored in a database (MySQL, PostgreSQL, or Cassandra).
             </p>
-            <p>
-                Kea supports multiple host reservations identifier types:
-            </p>
+            <p>Kea supports multiple host reservations identifier types:</p>
             <ul>
                 <li><b>hw-address</b> -- MAC address,</li>
                 <li><b>client-id</b> -- usable in IPv4 only,</li>
@@ -21,9 +19,9 @@
             </ul>
         </app-help-tip>
     </h2>
-    <div style="margin: 0 0 10px 5px;">
+    <div style="margin: 0 0 10px 5px">
         <span>
-            <i class="fa fa-search" style="margin: 4px 4px 0 0;"></i>
+            <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
             Filter hosts:
             <input
                 type="text"
@@ -70,7 +68,7 @@
             </app-help-tip>
         </span>
     </div>
-    <div style="margin: 0 0 10px, 5x;">
+    <div style="margin: 0 0 10px, 5x">
         <p-table
             #hostsTable
             [value]="hosts"
@@ -85,11 +83,11 @@
         >
             <ng-template pTemplate="header">
                 <tr>
-                    <th rowspan="2" style="width: 22rem;">DHCP Identifiers</th>
-                    <th colspan="2" style="width: 35rem;">IP Reservations</th>
-                    <th rowspan="2" style="width: 15rem;">Hostname</th>
-                    <th rowspan="2" style="width: 12rem;">Global/Subnet</th>
-                    <th rowspan="2" style="width: 20rem;">AppID @ Machine</th>
+                    <th rowspan="2" style="width: 22rem">DHCP Identifiers</th>
+                    <th colspan="2" style="width: 35rem">IP Reservations</th>
+                    <th rowspan="2" style="width: 15rem">Hostname</th>
+                    <th rowspan="2" style="width: 12rem">Global/Subnet</th>
+                    <th rowspan="2" style="width: 20rem">AppID @ Machine</th>
                 </tr>
                 <tr>
                     <th>IP Addresses</th>
@@ -147,7 +145,7 @@
                         {{ h.subnetId && h.subnetId > 0 ? h.subnetPrefix : 'global' }}
                     </td>
                     <td align="center">
-                        <a *ngFor="let lh of h.localHosts" routerLink="/apps/kea/{{ lh.appId }}" style="display: block;"
+                        <a *ngFor="let lh of h.localHosts" routerLink="/apps/kea/{{ lh.appId }}" style="display: block"
                             >{{ lh.appId }} @ {{ lh.machineAddress }}
                             <sup pTooltip="{{ hostDataSourceTooltip(lh.dataSource) }}">
                                 <span *ngIf="lh.dataSource === 'config'" id="cfg_srctag">config </span>

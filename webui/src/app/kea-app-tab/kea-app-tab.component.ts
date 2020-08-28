@@ -30,7 +30,7 @@ export class KeaAppTabComponent implements OnInit {
 
     activeTabIndex = 0
 
-    constructor(private route: ActivatedRoute, private servicesApi: ServicesService) { }
+    constructor(private route: ActivatedRoute, private servicesApi: ServicesService) {}
 
     /**
      * Subscribes to the updates of the information about daemons

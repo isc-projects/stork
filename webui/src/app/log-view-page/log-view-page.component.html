@@ -1,11 +1,11 @@
-<div style="margin-top: 20px;">
+<div style="margin-top: 20px">
     <a *ngIf="appId" routerLink="/apps/{{ appType }}/{{ appId }}">
         <span class="fa fa-arrow-left"></span>
-        <span style="margin-left: 5px;">Back to {{ appTypeCapitalized }} view</span>
+        <span style="margin-left: 5px">Back to {{ appTypeCapitalized }} view</span>
     </a>
 </div>
 
-<div *ngIf="loaded && loadingError" style="margin-top: 5px; width: 500px;">
+<div *ngIf="loaded && loadingError" style="margin-top: 5px; width: 500px">
     <p-messages
         [value]="[
             { severity: 'error', summary: 'Error while trying to fetch log file contents.', detail: loadingError }
@@ -16,11 +16,9 @@
 
 <p-panel styleClass="log-tail-panel" [style]="{ 'margin-top': '10px' }">
     <p-header>
-        <div style="display: flex; justify-content: space-between;">
-            <span class="ui-panel-title" style="margin-top: 5px; display: inline-block;">
-                <ng-container *ngIf="!loaded">
-                    Loading...
-                </ng-container>
+        <div style="display: flex; justify-content: space-between">
+            <span class="ui-panel-title" style="margin-top: 5px; display: inline-block">
+                <ng-container *ngIf="!loaded"> Loading... </ng-container>
 
                 <ng-container *ngIf="loaded">
                     Log {{ data.logTargetOutput }}
@@ -74,7 +72,7 @@
     ></p-progressSpinner>
 
     <p-footer>
-        <div style="display: flex; justify-content: flex-end;">
+        <div style="display: flex; justify-content: flex-end">
             <p-button
                 class="log-control-button"
                 icon="pi pi-refresh"

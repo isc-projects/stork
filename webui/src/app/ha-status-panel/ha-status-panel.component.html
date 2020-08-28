@@ -6,17 +6,17 @@
                 'Kea@' + serverStatus.controlAddress
             }}</a>
         </span>
-        <span *ngIf="serverWarnLevel() == 'ok'" class="pi pi-check" style="color: #00a800;"> </span>
-        <span *ngIf="serverWarnLevel() == 'warn'" class="pi pi-exclamation-triangle" style="color: orange;"> </span>
-        <span *ngIf="serverWarnLevel() == 'error'" class="pi pi-exclamation-circle" style="color: #f11;"> </span>
+        <span *ngIf="serverWarnLevel() == 'ok'" class="pi pi-check" style="color: #00a800"> </span>
+        <span *ngIf="serverWarnLevel() == 'warn'" class="pi pi-exclamation-triangle" style="color: orange"> </span>
+        <span *ngIf="serverWarnLevel() == 'error'" class="pi pi-exclamation-circle" style="color: #f11"> </span>
     </p-header>
     <table>
         <tr>
-            <td style="width: 45%;">Status time:</td>
-            <td style="width: 50%;">
+            <td style="width: 45%">Status time:</td>
+            <td style="width: 50%">
                 <i>{{ formattedTime(serverStatus.statusTime) }}</i>
             </td>
-            <td style="width: 5%;">
+            <td style="width: 5%">
                 <app-help-tip title="status time">
                     <p>{{ statusTimeHelptip() }}</p>
                 </app-help-tip>
@@ -43,8 +43,8 @@
         <tr>
             <td>Control status:</td>
             <td>
-                <i *ngIf="serverStatus.inTouch" class="pi pi-check" style="color: #00a800;"> </i>
-                <i *ngIf="!serverStatus.inTouch" class="pi pi-times" style="color: #f11;"> </i>
+                <i *ngIf="serverStatus.inTouch" class="pi pi-check" style="color: #00a800"> </i>
+                <i *ngIf="!serverStatus.inTouch" class="pi pi-times" style="color: #f11"> </i>
                 <i>{{ formattedControlStatus() }}</i>
             </td>
             <td>
@@ -56,8 +56,8 @@
         <tr *ngIf="extendedFormatSupported()">
             <td>Heartbeat status:</td>
             <td>
-                <i *ngIf="!serverStatus.commInterrupted" class="pi pi-check" style="color: #00a800;"> </i>
-                <i *ngIf="serverStatus.commInterrupted > 0" class="pi pi-times" style="color: #f11;"> </i>
+                <i *ngIf="!serverStatus.commInterrupted" class="pi pi-check" style="color: #00a800"> </i>
+                <i *ngIf="serverStatus.commInterrupted > 0" class="pi pi-times" style="color: #f11"> </i>
                 <i>{{ formattedHeartbeatStatus() }}</i>
             </td>
             <td>
@@ -69,8 +69,8 @@
         <tr>
             <td>State:</td>
             <td>
-                <i *ngIf="stateOk()" class="pi pi-check" style="color: #00a800;"> </i>
-                <i *ngIf="!stateOk()" class="pi pi-times" style="color: #f11;"> </i>
+                <i *ngIf="stateOk()" class="pi pi-check" style="color: #00a800"> </i>
+                <i *ngIf="!stateOk()" class="pi pi-times" style="color: #f11"> </i>
                 <i>{{ serverStatus.state }}</i>
             </td>
             <td>

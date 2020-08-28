@@ -13,21 +13,21 @@
         left: 0;
     "
 >
-    <div style="display: flex; flex-direction: column; align-items: center;">
-        <div style="font-family: 'Mansalva', cursive; font-size: 14rem; margin-top: 5vh;">
+    <div style="display: flex; flex-direction: column; align-items: center">
+        <div style="font-family: 'Mansalva', cursive; font-size: 14rem; margin-top: 5vh">
             <img src="/assets/stork-logo-big.png" />
-            <a href="https://stork.isc.org" target="blank" style="color: white;">Stork</a>
+            <a href="https://stork.isc.org" target="blank" style="color: white">Stork</a>
         </div>
-        <div style="font-style: italic;">version: {{ version }}</div>
+        <div style="font-style: italic">version: {{ version }}</div>
 
-        <div style="font-size: 2rem;">
+        <div style="font-size: 2rem">
             Dashboard for
-            <a href="https://kea.isc.org" target="blank" style="color: white; text-decoration: underline;">ISC Kea</a>
+            <a href="https://kea.isc.org" target="blank" style="color: white; text-decoration: underline">ISC Kea</a>
             and
-            <a href="https://bind.isc.org" target="blank" style="color: white; text-decoration: underline;">ISC BIND</a>
+            <a href="https://bind.isc.org" target="blank" style="color: white; text-decoration: underline">ISC BIND</a>
         </div>
 
-        <div style="margin-top: 10vh;">
+        <div style="margin-top: 10vh">
             <form [formGroup]="loginForm">
                 <div>
                     <input
@@ -35,28 +35,28 @@
                         name="username"
                         formControlName="username"
                         placeholder="User name"
-                        style="width: 100%;"
+                        style="width: 100%"
                     />
                 </div>
 
-                <div style="margin-top: 8px;">
+                <div style="margin-top: 8px">
                     <input
                         type="password"
                         name="password"
                         formControlName="password"
                         placeholder="Password"
-                        style="width: 100%;"
+                        style="width: 100%"
                         (keyup)="keyUp($event)"
                     />
                 </div>
-                <div style="margin-top: 18px;">
-                    <button pButton type="button" label="Sign In" style="width: 100%;" (click)="signIn()"></button>
+                <div style="margin-top: 18px">
+                    <button pButton type="button" label="Sign In" style="width: 100%" (click)="signIn()"></button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div style="font-size: 0.7rem; margin: auto 0 5px 0; padding-top: 8px;">
+    <div style="font-size: 0.7rem; margin: auto 0 5px 0; padding-top: 8px">
         Copyright 2019-2020 by ISC. All Rights Reserved.
     </div>
 </div>

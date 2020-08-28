@@ -1,8 +1,8 @@
 <div>
     <h2>DHCP Shared Networks</h2>
-    <div style="margin: 0 0 10px 5px;">
+    <div style="margin: 0 0 10px 5px">
         <span>
-            <i class="fa fa-search" style="margin: 4px 4px 0 0;"></i>
+            <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
             Filter networks:
             <input
                 type="text"
@@ -33,7 +33,7 @@
                 <li class="monospace">appId</li>
             </ul>
         </app-help-tip>
-        <span style="margin-left: 40px;">
+        <span style="margin-left: 40px">
             Protocol:
             <p-dropdown
                 [options]="dhcpVersions"
@@ -58,10 +58,10 @@
         >
             <ng-template pTemplate="header">
                 <tr>
-                    <th rowspan="2" style="width: 7rem;">Name</th>
-                    <th colspan="3" style="width: 16rem;">Addresses</th>
+                    <th rowspan="2" style="width: 7rem">Name</th>
+                    <th colspan="3" style="width: 16rem">Addresses</th>
                     <th rowspan="2">Subnets</th>
-                    <th rowspan="2" style="width: 14rem;">AppID @ Machine</th>
+                    <th rowspan="2" style="width: 14rem">AppID @ Machine</th>
                 </tr>
                 <tr>
                     <th>Total</th>
@@ -89,12 +89,12 @@
                         <i
                             *ngIf="net.addrUtilization > 80 && net.addrUtilization <= 90"
                             class="pi pi-exclamation-triangle"
-                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange;"
+                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: orange"
                         ></i>
                         <i
                             *ngIf="net.addrUtilization > 90"
                             class="pi pi-exclamation-circle"
-                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: red;"
+                            style="font-size: 1.5em; vertical-align: text-top; float: right; color: red"
                         ></i>
                     </td>
                     <td>

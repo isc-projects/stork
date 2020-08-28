@@ -24,7 +24,7 @@ export class Bind9AppTabComponent implements OnInit {
 
     daemons: any[] = []
 
-    constructor() { }
+    constructor() {}
 
     /**
      * Subscribes to the updates of the information about daemons

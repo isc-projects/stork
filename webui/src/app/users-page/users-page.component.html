@@ -1,13 +1,13 @@
 <p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
     <ng-template pTemplate="item" let-item let-i="index">
-        <div style="display: flex; justify-content: space-between;">
-            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em;"></div>
+        <div style="display: flex; justify-content: space-between">
+            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em"></div>
             <div class="ui-menuitem-text">
                 <b>{{ item.label }}</b>
             </div>
             <div
                 class="ui-menuitem-icon pi pi-times"
-                style="font-size: 1.3rem;"
+                style="font-size: 1.3rem"
                 (click)="closeTab($event, i)"
                 *ngIf="i !== 0"
             ></div>
@@ -16,14 +16,14 @@
 </p-tabMenu>
 
 <div *ngIf="activeTabIdx == 0">
-    <div style="display: flex; justify-content: space-between; margin: 10px;">
-        <div style="display: flex;">
+    <div style="display: flex; justify-content: space-between; margin: 10px">
+        <div style="display: flex">
             <button
                 type="button"
                 pButton
                 label="Create User Account"
                 icon="pi pi-plus"
-                style="margin-right: 20px;"
+                style="margin-right: 20px"
                 (click)="showNewUserTab()"
             ></button>
         </div>
@@ -73,14 +73,12 @@
 </div>
 
 <div *ngIf="existingUserTab" class="ui-widget">
-    <div style="display: flex; margin: 10px;">
-        <div style="min-width: 600px;">
-            <div class="p-grid p-align-center" style="margin: 10px 0px;">
+    <div style="display: flex; margin: 10px">
+        <div style="min-width: 600px">
+            <div class="p-grid p-align-center" style="margin: 10px 0px">
                 <div class="p-col-12">
                     <div class="p-grid">
-                        <div class="p-col-2">
-                            Login:
-                        </div>
+                        <div class="p-col-2">Login:</div>
                         <div class="p-col-10">
                             {{ userTab.user.login }}
                         </div>
@@ -88,9 +86,7 @@
                 </div>
                 <div class="p-col-12">
                     <div class="p-grid">
-                        <div class="p-col-2">
-                            Email:
-                        </div>
+                        <div class="p-col-2">Email:</div>
                         <div class="p-col-10">
                             {{ userTab.user.email }}
                         </div>
@@ -98,9 +94,7 @@
                 </div>
                 <div class="p-col-12">
                     <div class="p-grid">
-                        <div class="p-col-2">
-                            Lastname:
-                        </div>
+                        <div class="p-col-2">Lastname:</div>
                         <div class="p-col-10">
                             {{ userTab.user.lastname }}
                         </div>
@@ -108,9 +102,7 @@
                 </div>
                 <div class="p-col-12">
                     <div class="p-grid">
-                        <div class="p-col-2">
-                            First name:
-                        </div>
+                        <div class="p-col-2">First name:</div>
                         <div class="p-col-10">
                             {{ userTab.user.name }}
                         </div>
@@ -118,9 +110,7 @@
                 </div>
                 <div class="p-col-12">
                     <div class="p-grid">
-                        <div class="p-col-2">
-                            Group:
-                        </div>
+                        <div class="p-col-2">Group:</div>
                         <div class="p-col-10">
                             {{ userTab.user.groups.length > 0 ? getGroupName(userTab.user.groups[0]) : 0 }}
                         </div>
@@ -146,7 +136,7 @@
 </div>
 
 <div *ngIf="newUserTab || editedUserTab" class="ui-widget">
-    <div style="display: flex; margin: 10px;">
+    <div style="display: flex; margin: 10px">
         <div class="p-grid">
             <div class="p-col-3">
                 <p-panel header="Creating new account" *ngIf="newUserTab">
@@ -171,18 +161,14 @@
                         group that the user is associated with.
                     </p>
                     <br />
-                    <p>
-                        The user password remains unchanged if it is left blank while saving the form.
-                    </p>
+                    <p>The user password remains unchanged if it is left blank while saving the form.</p>
                 </p-panel>
             </div>
             <div class="p-col-7">
                 <form [formGroup]="userform">
                     <p-panel header="User account">
                         <div class="p-grid">
-                            <div class="p-col-2">
-                                Login*:
-                            </div>
+                            <div class="p-col-2">Login*:</div>
                             <div class="p-col-7">
                                 <div class="p-grid">
                                     <div class="p-col-12">
@@ -190,7 +176,7 @@
                                             pInputText
                                             type="text"
                                             formControlName="userlogin"
-                                            style="width: 80%;"
+                                            style="width: 80%"
                                             pattern="[a-zA-Z0-9_]*"
                                         />
                                     </div>
@@ -207,13 +193,11 @@
                                 </div>
                             </div>
                             <div class="p-col-3"></div>
-                            <div class="p-col-2">
-                                Email:
-                            </div>
+                            <div class="p-col-2">Email:</div>
                             <div class="p-col-7">
                                 <div class="p-grid">
                                     <div class="p-col-12">
-                                        <input pInputText type="text" style="width: 80%;" formControlName="useremail" />
+                                        <input pInputText type="text" style="width: 80%" formControlName="useremail" />
                                     </div>
                                     <div class="p-col-12">
                                         <p-message
@@ -229,9 +213,7 @@
                                 </div>
                             </div>
                             <div class="p-col-3"></div>
-                            <div class="p-col-2">
-                                First name*:
-                            </div>
+                            <div class="p-col-2">First name*:</div>
                             <div class="p-col-7">
                                 <div class="p-grid">
                                     <div class="p-col-12">
@@ -239,7 +221,7 @@
                                             pInputText
                                             type="text"
                                             formControlName="userfirst"
-                                            style="width: 80%;"
+                                            style="width: 80%"
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
                                     </div>
@@ -257,9 +239,7 @@
                                 </div>
                             </div>
                             <div class="p-col-3"></div>
-                            <div class="p-col-2">
-                                Last name*:
-                            </div>
+                            <div class="p-col-2">Last name*:</div>
                             <div class="p-col-7">
                                 <div class="p-grid">
                                     <div class="p-col-12">
@@ -267,7 +247,7 @@
                                             pInputText
                                             type="text"
                                             formControlName="userlast"
-                                            style="width: 80%;"
+                                            style="width: 80%"
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
                                     </div>
@@ -285,9 +265,7 @@
                                 </div>
                             </div>
                             <div class="p-col-3"></div>
-                            <div class="p-col-2">
-                                Group*:
-                            </div>
+                            <div class="p-col-2">Group*:</div>
                             <div class="p-col-7">
                                 <div class="p-grid">
                                     <div class="p-col-12">
@@ -307,9 +285,7 @@
                                 </div>
                             </div>
                             <div class="p-col-3"></div>
-                            <div class="p-col-2">
-                                Password*:
-                            </div>
+                            <div class="p-col-2">Password*:</div>
                             <div class="p-col-7">
                                 <div class="p-grid">
                                     <div class="p-col-12">
@@ -317,7 +293,7 @@
                                             pPassword
                                             type="password"
                                             formControlName="userpassword"
-                                            style="width: 80%;"
+                                            style="width: 80%"
                                             pattern="[a-zA-Z0-9@.!\+\-]*"
                                         />
                                     </div>
@@ -335,9 +311,7 @@
                                 </div>
                             </div>
                             <div class="p-col-3"></div>
-                            <div class="p-col-2">
-                                Repeat password*:
-                            </div>
+                            <div class="p-col-2">Repeat password*:</div>
                             <div class="p-col-7">
                                 <div class="p-grid">
                                     <div class="p-col-12">
@@ -346,7 +320,7 @@
                                             [feedback]="false"
                                             type="password"
                                             formControlName="userpassword2"
-                                            style="width: 80%;"
+                                            style="width: 80%"
                                             pattern="{{ userform.controls['userpassword'].value }}"
                                         />
                                     </div>

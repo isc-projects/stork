@@ -1,13 +1,13 @@
 <p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
     <ng-template pTemplate="item" let-item let-i="index">
-        <div style="display: flex; justify-content: space-between;">
-            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em;"></div>
+        <div style="display: flex; justify-content: space-between">
+            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em"></div>
             <div class="ui-menuitem-text">
                 <b>{{ item.label }}</b>
             </div>
             <div
                 class="ui-menuitem-icon pi pi-times"
-                style="font-size: 1.3rem;"
+                style="font-size: 1.3rem"
                 (click)="closeTab($event, i)"
                 *ngIf="i !== 0"
             ></div>
@@ -17,10 +17,10 @@
 
 <!-- Apps tab -->
 <div *ngIf="activeTabIdx == 0">
-    <div style="display: flex; justify-content: space-between; margin: 10px;">
+    <div style="display: flex; justify-content: space-between; margin: 10px">
         <div>
             <span>
-                <i class="fa fa-search" style="margin: 4px 4px 0 0;"></i>
+                <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
                 Filter apps:
                 <input
                     type="text"
@@ -37,7 +37,7 @@
             <!-- </span> -->
         </div>
 
-        <div style="display: flex;">
+        <div style="display: flex">
             <button
                 type="button"
                 pButton
@@ -63,12 +63,12 @@
     >
         <ng-template pTemplate="header">
             <tr>
-                <th style="width: 5em;">ID</th>
+                <th style="width: 5em">ID</th>
                 <th>Version</th>
                 <th>Status</th>
                 <th>Machine Address</th>
                 <th>Machine Hostname</th>
-                <th style="width: 4rem;">Action</th>
+                <th style="width: 4rem">Action</th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-a>
