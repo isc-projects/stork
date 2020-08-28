@@ -1,6 +1,4 @@
-# The main purpose of this container is to generate DHCP traffic.
-# for the time being it's being simple (just send DHCPv4 traffic to
-# admin-kea), but in the future it may possible generate a lot more.
+# The main purpose of this container is to generate DHCP and DNS traffic.
 FROM ubuntu:18.04
 WORKDIR /sim
 # Install essentials.

@@ -1,3 +1,13 @@
+* 101 [func] godfryd
+
+    Extended Stork Simulator by adding capabilities for adding all
+    present machines in demo setup and ability to stop and start
+    Stork Agents, Kea and BIND 9 daemons. This allows
+    simulate with communication issues with these entities from
+    Stork Server perspective. Combined DNS traffic simulator with
+    DHCP traffic simulator into on web application.
+    (Gitlab #380)
+
 * 101 [func] marcin
 
     Restrict log viewer's access to the remote files. The log viewer

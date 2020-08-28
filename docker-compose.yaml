@@ -43,7 +43,9 @@ services:
       - "9100"  # node_exporter for prometheus
       - "9547"  # kea_exporter for prometheus
     ports:
-      - "8888:8080"  # publish ports for development purposes
+      # publish ports for development purposes
+      - "8888:8080"  # port to agent
+      - "9001:9001"  # port to supervisor xml-rpc
 
   agent-kea6:
     restart: always
@@ -171,12 +173,12 @@ services:
     depends_on:
       - prometheus
 
-  traffic-dhcp:
+  simulator:
     build:
       context: .
-      dockerfile: docker/docker-traffic-dhcp.txt
+      dockerfile: docker/docker-simulator.txt
     image: registry.gitlab.isc.org/isc-projects/stork/dhcp-traffic:latest
-    hostname: traffic-dhcp
+    hostname: simulator
     networks:
       storknet:
         ipv4_address: 172.20.0.200
@@ -188,18 +190,6 @@ services:
         ipv4_address: 172.102.0.200
     ports:
       - "5000:5000"
-
-  traffic-dns:
-    build:
-      context: .
-      dockerfile: docker/docker-traffic-dns.txt
-    image: registry.gitlab.isc.org/isc-projects/stork/dns-traffic:latest
-    hostname: traffic-dns
-    networks:
-      storknet:
-        ipv4_address: 172.20.0.201
-    ports:
-      - "5001:5000"
 
 volumes:
   db-data:

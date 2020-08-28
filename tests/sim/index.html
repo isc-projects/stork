@@ -1,17 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Stork DHCP Traffic Simulator</title>
+  <title>Stork Simulator</title>
   <script src="https://unpkg.com/vue"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
   <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <script src="https://unpkg.com/element-ui/lib/umd/locale/en.js"></script>
 </head>
 <body>
-    <h1>Stork DHCP Traffic Simulator</h1>
     <div id="app">
 
-        <el-table :data="subnets">
+        <el-menu :default-active="menuIndex" class="el-menu-demo" mode="horizontal" @select="menuSelect">
+            <el-menu-item index="dhcp">DHCP Traffic</el-menu-item>
+            <el-menu-item index="dns">DNS Traffic</el-menu-item>
+            <el-menu-item index="killer">Service Killer</el-menu-item>
+        </el-menu>
+
+        <div style="height: 30px;">
+        </div>
+
+        <el-table :data="subnets" v-if="menuIndex == 'dhcp'">
             <el-table-column label="Shared Network" min-width="4em">
                 <template slot-scope="scope">
                     {{ scope.row.sharedNetwork }}
@@ -39,22 +48,110 @@
                 </template>
             </el-table-column>
         </el-table>
+
+        <el-table :data="servers" v-if="menuIndex == 'dns'">
+            <el-table-column label="DNS server" min-width="4em">
+                <template slot-scope="scope">
+                    {{ scope.row.address }}
+                </template>
+            </el-table-column>
+            <el-table-column label="Query Name" min-width="10em">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.qname"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column label="Query Type" min-width="3em">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.qtype"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column label="Query Transport" min-width="3em">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.transport"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column label="Clients" min-width="8em">
+                <template slot-scope="scope">
+                    <el-input-number v-model="scope.row.clients" :max="50"></el-input-number>
+                </template>
+            </el-table-column>
+            <el-table-column label="Rate" min-width="8em">
+                <template slot-scope="scope">
+                    <el-input-number v-model="scope.row.rate"></el-input-number>
+                </template>
+            </el-table-column>
+            <el-table-column label="Query" min-width="4em">
+                <template slot-scope="scope">
+                    <el-button type="success" v-on:click="queryServer(scope.$index)">Dig</el-button>
+                </template>
+            </el-table-column>
+            <el-table-column label="Stream" min-width="4em">
+                <template slot-scope="scope">
+                    <el-button type="success" v-if="scope.row.state == 'stop'" v-on:click="perfServer(scope.$index, 'start')">Start</el-button>
+                    <el-button type="danger" v-if="scope.row.state == 'start'" v-on:click="perfServer(scope.$index, 'stop')">Stop</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+
+        <div v-if="menuIndex == 'killer'">
+             <el-button type="primary" v-if="services.length == 0" v-on:click="addServices()">Add Services</el-button>
+
+            <el-table :data="services">
+                <el-table-column label="Machine" min-width="4em">
+                    <template slot-scope="scope">
+                        {{ scope.row.machine }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="Service" min-width="4em">
+                    <template slot-scope="scope">
+                        {{ scope.row.name }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="Status" min-width="4em">
+                    <template slot-scope="scope">
+                        {{ scope.row.statename }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="Action" min-width="8em">
+                    <template slot-scope="scope">
+                        <el-button type="success" v-if="scope.row.statename != 'RUNNING'" v-on:click="updateService(scope.$index, 'start')">Start</el-button>
+                        <el-button type="danger" v-if="scope.row.statename == 'RUNNING'" v-on:click="updateService(scope.$index, 'stop')">Stop</el-button>
+                    </template>
+            </el-table-column>
+            </el-table>
+        </div>
+
     </div>
 
     <script>
+        ELEMENT.locale(ELEMENT.lang.en)
+
         var subnets = []
+        var servers = []
+        var services = []
         var app = new Vue({
             el: '#app',
             data: {
+                menuIndex: 'dhcp',
                 subnets: subnets,
-                count: 0
+                servers: servers,
+                services: services
             },
             created: function () {
                 axios.get('/subnets').then(function (response) {
                     this.subnets.push(...response.data.items)
                 })
+                axios.get('/servers').then(function (response) {
+                    this.servers.push(...response.data.items)
+                })
+                axios.get('/services').then(function (response) {
+                    this.services.push(...response.data.items)
+                })
             },
             methods: {
+                menuSelect: function(key, keyPath) {
+                    this.menuIndex = key;
+                },
                 updateSubnet: function (idx, state) {
                     var sn = this.subnets[idx]
                     var data = {state: state,
@@ -63,6 +160,43 @@
                     axios.put('/subnets/' + idx, data).then(function (response) {
                         this.subnets.length = 0;
                         this.subnets.push(...response.data.items);
+                    })
+                },
+                queryServer: function (idx) {
+                    var srv = this.servers[idx]
+                    var data = {attempts: srv.attempts,
+                                qname: srv.qname,
+                                qtype: srv.qtype,
+                                transport: srv.transport}
+                    axios.put('/query/' + idx, data).then(function (response) {
+                        this.servers.length = 0;
+                        this.servers.push(...response.data.items);
+                    })
+                },
+                perfServer: function (idx, state) {
+                    var srv = this.servers[idx]
+                    var data = {state: state,
+                                attempts: srv.attempts,
+                                qname: srv.qname,
+                                qtype: srv.qtype,
+                                transport: srv.transport}
+                    axios.put('/perf/' + idx, data).then(function (response) {
+                        this.servers.length = 0;
+                        this.servers.push(...response.data.items);
+                    })
+                },
+                updateService: function (idx, operation) {
+                    var sn = this.subnets[idx]
+                    var data = {operation: operation}
+                    axios.put('/services/' + idx, data).then(function (response) {
+                        this.services.length = 0;
+                        this.services.push(...response.data.items);
+                    })
+                },
+                addServices: function () {
+                    axios.post('/services').then(function (response) {
+                        this.services.length = 0;
+                        this.services.push(...response.data.items);
                     })
                 }
             }

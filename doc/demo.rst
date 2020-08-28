@@ -15,8 +15,7 @@ The demo installation uses `Docker` and `Docker Compose` to set up all
 - Stork Agent with Kea HA-1 (high availability server 1)
 - Stork Agent with Kea HA-2 (high availability server 2)
 - Stork Agent with BIND 9
-- Stork DHCP Traffic Simulator
-- Stork DNS Traffic Simulator
+- Stork Simulator
 - PostgreSQL database
 - Prometheus & Grafana
 
@@ -111,21 +110,29 @@ Initialization
    #. agent-bind9
    #. agent-bind9-2
 
-DHCP Traffic Simulator
+Simulator
 ----------------------
 
-The traffic simulator allows DHCP traffic to be sent to selected
+Simulator allows:
+
+- sending DHCP traffic to Kea applications
+- sending DNS requests to BIND 9 applications
+- stopping and starting Stork Agents, Kea and BIND 9 daemons
+
+Simulator allows DHCP traffic to be sent to selected
 subnets pre-configured in Kea instances, with a limitation: it is
 possible to send traffic to only one subnet from a given shared
 network.
 
-The traffic simulator can be found at: http://localhost:5000/
+Simulator also allows sending DNS traffic to selected DNS servers.
 
-DNS Traffic Simulator
-----------------------
-Traffic simulator allows sending DNS traffic to selected DNS servers.
+Simulator can add all machines in demo setup. Then it can stop
+and start selected Stork Agents and Kea and BIND applications.
+This is usefull to simulate communication problems with these
+entities from Stork Server perspective.
 
-Traffic simulator can be found at: http://localhost:5001/
+Simulator can be found at: http://localhost:5000/
+
 
 Prometheus
 ----------

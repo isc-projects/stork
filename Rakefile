@@ -654,6 +654,25 @@ task :run_bind9_container do
   sh 'docker run --rm -ti -p 9999:8080 --name agent-bind9 -h agent-bind9 -v `pwd`/backend/cmd/stork-agent:/agent agent-bind9'
 end
 
+file 'tests/sim/venv/bin/activate' do
+  Dir.chdir('tests/sim') do
+    sh 'python3 -m venv venv'
+    sh './venv/bin/pip install -U pip'
+  end
+end
+
+file 'tests/sim/venv/bin/flask' => 'tests/sim/venv/bin/activate' do
+  Dir.chdir('tests/sim') do
+    sh './venv/bin/pip install -r requirements.txt'
+  end
+end
+
+desc 'Run simulator for experimenting with Stork'
+task :run_sim => 'tests/sim/venv/bin/flask' do
+  Dir.chdir('tests/sim') do
+    sh 'STORK_SERVER_URL=http://localhost:8080 FLASK_ENV=development FLASK_APP=sim.py LC_ALL=C.UTF-8 LANG=C.UTF-8 ./venv/bin/flask run --host 0.0.0.0 --port 5005'
+  end
+end
 
 ### Documentation Tasks #########################
 
