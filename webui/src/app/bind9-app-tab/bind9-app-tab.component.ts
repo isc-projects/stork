@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
 
-import moment from 'moment-timezone'
+import * as moment from 'moment-timezone'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
@@ -24,7 +24,7 @@ export class Bind9AppTabComponent implements OnInit {
 
     daemons: any[] = []
 
-    constructor() {}
+    constructor() { }
 
     /**
      * Subscribes to the updates of the information about daemons

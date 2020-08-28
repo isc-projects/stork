@@ -2,7 +2,7 @@ import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import { BehaviorSubject } from 'rxjs'
 
-import moment from 'moment-timezone'
+import * as moment from 'moment-timezone'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
@@ -30,7 +30,7 @@ export class KeaAppTabComponent implements OnInit {
 
     activeTabIndex = 0
 
-    constructor(private route: ActivatedRoute, private servicesApi: ServicesService) {}
+    constructor(private route: ActivatedRoute, private servicesApi: ServicesService) { }
 
     /**
      * Subscribes to the updates of the information about daemons
