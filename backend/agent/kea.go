@@ -1,14 +1,48 @@
 package agent
 
 import (
+	"bytes"
 	"io/ioutil"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	keactrl "isc.org/stork/appctrl/kea"
+	storkutil "isc.org/stork/util"
 )
+
+// Sends a command to Kea and returns a response.
+func sendToKeaOverHTTP(storkAgent *StorkAgent, caAddress string, caPort int64, command *keactrl.Command, responses interface{}) error {
+	caURL := storkutil.HostWithPortURL(caAddress, caPort)
+
+	// Get the textual representation of the command.
+	request := command.Marshal()
+
+	// Send the command to the Kea server.
+	response, err := storkAgent.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
+	if err != nil {
+		return errors.WithMessagef(err, "failed to send command to Kea: %s", caURL)
+	}
+
+	// Read the response.
+	body, err := ioutil.ReadAll(response.Body)
+	response.Body.Close()
+	if err != nil {
+		return errors.WithMessagef(err, "failed to read Kea response body received from %s", caURL)
+	}
+
+	// Parse the response.
+	err = keactrl.UnmarshalResponseList(command, string(body), responses)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to parse Kea response body received from %s", caURL)
+	}
+
+	return nil
+}
 
 func getCtrlAddressFromKeaConfig(path string) (string, int64) {
 	text, err := ioutil.ReadFile(path)
