@@ -161,7 +161,7 @@ system_testing:
   tags:
     - libvirt
     - amd64
-  dependencies:
+  needs:
     - rpms
     - debs
   before_script:
@@ -226,7 +226,7 @@ deploy_pkgs:
     - docker
     - amd64
     - ssd
-  dependencies:
+  needs:
     - rpms
     - debs
   before_script:
