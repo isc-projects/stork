@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net"
+	"reflect"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -301,4 +302,16 @@ func (c *Map) GetControlSockets() (parsedSockets ControlSockets) {
 		_ = mapstructure.Decode(socketsMap, &parsedSockets)
 	}
 	return parsedSockets
+}
+
+// Returns a list of daemons for which sockets have been configured.
+func (sockets ControlSockets) ConfiguredDaemonNames() (names []string) {
+	s := reflect.ValueOf(&sockets).Elem()
+	t := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		if !s.Field(i).IsNil() {
+			names = append(names, strings.ToLower(t.Field(i).Name))
+		}
+	}
+	return names
 }

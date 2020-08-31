@@ -501,6 +501,77 @@ func TestGetControlSockets(t *testing.T) {
 	require.Nil(t, sockets.NetConf)
 }
 
+// Verifies that the list of daemons for which control sockets are specified
+// is returned correctly.
+func TestConfiguredDaemonNames(t *testing.T) {
+	// Initialize all 4 supported sockets.
+	configStr := `{
+        "Control-agent": {
+            "control-sockets": {
+                "dhcp4": {
+                    "socket-type": "unix",
+                    "socket-name": "/path/to/the/unix/socket-v4"
+                },
+                "dhcp6": {
+                    "socket-type": "unix",
+                    "socket-name": "/path/to/the/unix/socket-v6"
+                },
+                "d2": {
+                    "socket-type": "unix",
+                    "socket-name": "/path/to/the/unix/socket-d2"
+                },
+                "netconf": {
+                    "socket-type": "unix",
+                    "socket-name": "/path/to/the/unix/socket-netconf"
+                }
+            }
+        }
+    }`
+
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	sockets := cfg.GetControlSockets()
+
+	names := sockets.ConfiguredDaemonNames()
+	require.Len(t, names, 4)
+
+	require.Contains(t, names, "dhcp4")
+	require.Contains(t, names, "dhcp6")
+	require.Contains(t, names, "d2")
+	require.Contains(t, names, "netconf")
+
+	// Reduce the number of configured sockets.
+	configStr = `{
+        "Control-agent": {
+            "control-sockets": {
+                "dhcp4": {
+                    "socket-type": "unix",
+                    "socket-name": "/path/to/the/unix/socket-v4"
+                },
+                "d2": {
+                    "socket-type": "unix",
+                    "socket-name": "/path/to/the/unix/socket-d2"
+                }
+            }
+        }
+    }`
+
+	cfg, err = NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	sockets = cfg.GetControlSockets()
+
+	// This time only two sockets have been configured.
+	names = sockets.ConfiguredDaemonNames()
+	require.Len(t, names, 2)
+
+	require.Contains(t, names, "dhcp4")
+	require.Contains(t, names, "d2")
+}
+
 // Test that the subnet ID can be extracted from the Kea configuration for
 // an IPv4 subnet having specified prefix.
 func TestGetLocalIPv4SubnetID(t *testing.T) {
