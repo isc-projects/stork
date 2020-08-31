@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import re
 import sys
 import time
@@ -30,14 +31,26 @@ STYLES = [dict(fg='red', style=''),
 random.shuffle(STYLES)
 
 
+DEFAULT_STORK_DEB_VERSION = None
+DEFAULT_STORK_RPM_VERSION = None
+
 
 class Container:
     def __init__(self, name, version, port, alias=DEFAULT_SYSTEM_IMAGE):
         self.name = name
         self.version = version
         self.alias = alias
+
+        if 'centos' in self.alias:
+            self.pkg_format = 'rpm'
+        else:
+            self.pkg_format = 'deb'
+
+        # prepare styling for traces
         self.style = STYLES.pop()
         print(colors.color('%s: %s' % (name, str(self.style)), **self.style))
+
+        # open separate connection to LXD
         self.lxd = Client()
 
         self.config = {
@@ -106,7 +119,7 @@ class Container:
         for line in log.splitlines():
             line = line.rstrip()
             # remove ANSI escape sequences
-            line = re.sub('\x1b\[[0-9;]*[a-zA-Z]', '', line)
+            line = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', line)
             # remove control characters
             line = "".join(ch for ch in line if unicodedata.category(ch)[0] != "C")
             if not line:
@@ -120,6 +133,12 @@ class Container:
 
     def run(self, cmd, env=None, ignore_error=False, attempts=1, sleep_time_after_attempt=None):
         cmd2 = shlex.split(cmd)
+
+        if env is None:
+            env = {}
+        env['LANG'] = "en_US.UTF-8"
+        env['LANGUAGE'] = "en_US:UTF-8"
+        env['LC_ALL'] = "en_US.UTF-8"
 
         for attempt in range(attempts):
             result = self.cntr.execute(cmd2, env)
@@ -158,6 +177,7 @@ class Container:
             self.bg_exc = e
 
     def dump_image(self):
+        print('dumping %s, alias: %s...' % (self.name, self.name))
         self.cntr.stop(wait=True)
         image = self.cntr.publish(True, True)
         os_name, release = self.alias.split('/')
@@ -178,53 +198,139 @@ class Container:
         print('dumped %s, fingerprint: %s, alias: %s' % (self.name, image.fingerprint, self.name))
         time.sleep(5)
 
+    def setup_cloudsmith_repo(self, name):
+        if self.pkg_format == 'deb':
+            self.run("curl -1sLf -o cloudsmith.sh 'https://dl.cloudsmith.io/public/isc/%s/cfg/setup/bash.deb.sh'" % name)
+        else:
+            self.run("curl -1sLf -o cloudsmith.sh 'https://dl.cloudsmith.io/public/isc/%s/cfg/setup/bash.rpm.sh'" % name)
+        self.run("chmod a+x cloudsmith.sh")
+        self.run("./cloudsmith.sh")
+
+        if self.pkg_format == 'deb':
+            self.run("apt-get update")
+
+    def install_pkgs(self, names):
+        if self.pkg_format == 'deb':
+            cmd = "apt-get install -y --no-install-recommends"
+            env = {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'}
+        else:
+            cmd = "yum install -y"
+            env = None
+        cmd += " " + names
+        self.run(cmd, env=env, attempts=3, sleep_time_after_attempt=3)
+
+    def set_locale(self):
+        if self.pkg_format == 'deb':
+            self.run('locale-gen --purge en_US.UTF-8')
+            cmd = "echo -e 'LANG=\"en_US.UTF-8\"\nLANGUAGE=\"en_US:UTF-8\"\n' > /etc/default/locale"
+            self.run('bash -c "%s"' % cmd)
+            self.run('dpkg-reconfigure -f noninteractive locales')
+        else:
+            #self.run('yum install -y langpacks-en')
+            cmd = "echo -e 'LANG=\"en_US.UTF-8\"\nLANGUAGE=\"en_US:UTF-8\"\nLC_ALL=\"en_US.UTF-8\"\n' > /etc/profile.d/locale.sh"
+            self.run('bash -c "%s"' % cmd)
+            self.run('localectl set-locale LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8')
+
 
 class StorkServerContainer(Container):
-    def __init__(self, name, port=8932, alias=DEFAULT_SYSTEM_IMAGE):
+    def __init__(self, port=None, alias=DEFAULT_SYSTEM_IMAGE):
+        if port is None:
+            port = random.randrange(6000, 50000)
+        name = 'stork-server-%s' % alias.replace('/', '-').replace('.', '-')
         super().__init__(name, 1, port, alias)
         self.port = port
         self.session = requests.Session()
 
     def prepare_system(self):
-        self.run('apt-get update')
-        self.run('apt-get install -y --no-install-recommends postgresql-client postgresql-all', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
-        self.run('systemctl enable postgresql.service')
-        self.run('systemctl start postgresql.service')
-        self.run('systemctl status postgresql.service')
+        if self.pkg_format == 'deb':
+            self.run('apt-get update')
+            self.set_locale()
+            self.install_pkgs("postgresql-client postgresql-all curl")
+
+            self.run('systemctl enable postgresql.service')
+            self.run('systemctl start postgresql.service')
+            self.run('systemctl status postgresql.service')
+        else:
+            self.set_locale()
+            self.install_pkgs('sudo perl curl')
+            #self.run('yum install -y postgresql-server postgresql-contrib sudo perl', attempts=3, sleep_time_after_attempt=3)
+            #self.run('postgresql-setup initdb')
+            self.run('rpm -Uvh https://yum.postgresql.org/11/redhat/rhel-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm')
+            self.install_pkgs('postgresql11-server postgresql11 postgresql11-contrib')
+            self.run('/usr/pgsql-11/bin/postgresql-11-setup initdb')
+            self.run("perl -pi -e 's/(host.*)ident/\\1md5/g'  /var/lib/pgsql/11/data/pg_hba.conf")
+
+            self.run('systemctl enable postgresql-11.service')
+            self.run('systemctl start postgresql-11.service')
+            self.run('systemctl status postgresql-11.service')
 
     def prepare_stork_db(self):
         self.run('systemctl stop isc-stork-server', ignore_error=True)
+
         cmd = "bash -c \"cd /tmp && cat <<EOF | sudo -u postgres psql postgres\n"
         cmd += "DROP DATABASE IF EXISTS stork;\n"
         cmd += "DROP USER IF EXISTS stork;\n"
         cmd += "CREATE USER stork WITH PASSWORD 'stork';\n"
         cmd += "CREATE DATABASE stork;\n"
         cmd += "GRANT ALL PRIVILEGES ON DATABASE stork TO stork;\n"
-        cmd += "\c stork;\n"
+        cmd += "\\c stork;\n"
         cmd += "create extension pgcrypto;\n"
         cmd += "EOF\n\""
         self.run(cmd)
 
-    def prepare_stork_server(self, pkg_path):
-        self.upload(pkg_path, '/root/isc-stork-server.deb')
+    def install_stork_from_local_file(self, pkg_ver):
+        if pkg_ver is None:
+            if self.pkg_format == 'rpm':
+                pkg_ver = DEFAULT_STORK_RPM_VERSION
+            else:
+                pkg_ver = DEFAULT_STORK_DEB_VERSION
 
-        self.run('apt install /root/isc-stork-server.deb', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
+        if self.pkg_format == 'rpm':
+            pkg_name = 'isc-stork-server-%s-1.x86_64.rpm' % pkg_ver
+        else:
+            pkg_name = 'isc-stork-server_%s_amd64.deb' % pkg_ver
+        pkg_path = os.path.abspath(os.path.join('../..', pkg_name))
+
+        self.upload(pkg_path, '/root/isc-stork-server.%s' % self.pkg_format)
+
+        if self.pkg_format == 'deb':
+            self.run('apt install -y --allow-downgrades /root/isc-stork-server.deb', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
+        else:
+            self.run('yum install -y /root/isc-stork-server.rpm')
+
+
+    def prepare_stork_server(self, pkg_ver=None):
+        if pkg_ver == 'cloudsmith':
+            self.setup_cloudsmith_repo('stork')
+            pkgs = ''
+            if self.pkg_format == 'rpm':
+                pkgs = 'epel-release perl'
+            pkgs += ' isc-stork-server'
+            self.install_pkgs(pkgs)
+        else:
+            self.install_stork_from_local_file(pkg_ver)
+
+        if self.pkg_format == 'deb':
+            self.run('dpkg -l "isc-stork*"')
+        else:
+            self.run('rpm -qa "isc-stork*"')
+
         self.run("perl -pi -e 's/.*STORK_DATABASE_PASSWORD.*/STORK_DATABASE_PASSWORD=stork/g' /etc/stork/server.env")
         self.run("perl -pi -e 's/.*STORK_REST_HOST.*/STORK_REST_HOST=localhost/g' /etc/stork/server.env")
-        self.run('dpkg -l "isc-stork*"')
+
         self.run('systemctl enable isc-stork-server')
         self.run('systemctl start isc-stork-server')
-        self.run('systemctl status isc-stork-server')
+        #self.run('systemctl status isc-stork-server')
         self.run('bash -c "ps axu|grep isc"')
 
-    def _setup(self, pkg_path):
+    def _setup(self, pkg_ver=None):
         reused = self.start()
         time.sleep(5)
         if not reused:
             self.prepare_system()
             self.prepare_stork_db()
             self.dump_image()
-        self.prepare_stork_server(pkg_path)
+        self.prepare_stork_server(pkg_ver)
 
     def api_get(self, endpoint, params=None, expected_status=200):
         url = 'http://localhost:%d/api' % self.port
@@ -247,41 +353,34 @@ class StorkServerContainer(Container):
 
 
 class StorkAgentContainer(Container):
-    def __init__(self, name, port=8933, alias=DEFAULT_SYSTEM_IMAGE):
+    def __init__(self, port=None, alias=DEFAULT_SYSTEM_IMAGE):
+        if port is None:
+            port = random.randrange(6000, 50000)
+        name = 'stork-agent-%s' % alias.replace('/', '-').replace('.', '-')
         super().__init__(name, 1, port, alias)
-        if 'centos' in self.alias:
-            self.pkg_format = 'rpm'
-        else:
-            self.pkg_format = 'deb'
 
     def prepare_system(self):
         if self.pkg_format == 'deb':
             self.run('apt-get update')
-            self.run('apt-get install --no-install-recommends -y curl', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
-        else:
-            self.run('yum install -y curl', attempts=3, sleep_time_after_attempt=3)
+        self.set_locale()
+        self.install_pkgs('curl')
 
     def install_kea(self):
-        if self.pkg_format == 'deb':
-            self.run("curl -1sLf -o cloudsmith.sh 'https://dl.cloudsmith.io/public/isc/kea-1-7/cfg/setup/bash.deb.sh'")
-        else:
-            self.run("curl -1sLf -o cloudsmith.sh 'https://dl.cloudsmith.io/public/isc/kea-1-7/cfg/setup/bash.rpm.sh'")
-        self.run("chmod a+x cloudsmith.sh")
-        self.run("./cloudsmith.sh")
+        self.setup_cloudsmith_repo('kea-1-7')
         kea_version = '1.7.3-isc0009420191217090201'
         if self.pkg_format == 'deb':
             self.run("apt-get update")
-            cmd = "apt-get install -y --no-install-recommends"
-            cmd += " isc-kea-dhcp4-server={kea_version} isc-kea-ctrl-agent={kea_version} isc-kea-common={kea_version}"
+            pkgs = " isc-kea-dhcp4-server={kea_version} isc-kea-ctrl-agent={kea_version} isc-kea-common={kea_version}"
         else:
-            self.run('yum install -y epel-release perl')
-            cmd = "yum install -y"
-            cmd += " isc-kea-{kea_version}.el7 isc-kea-hooks-{kea_version}.el7 isc-kea-libs-{kea_version}.el7"
+            self.install_pkgs('epel-release')
+            pkgs = 'perl'
+            pkgs += " isc-kea-{kea_version}.el7 isc-kea-hooks-{kea_version}.el7 isc-kea-libs-{kea_version}.el7"
 
-        cmd = cmd.format(kea_version=kea_version)
-        self.run(cmd, attempts=3, sleep_time_after_attempt=3)
+        pkgs = pkgs.format(kea_version=kea_version)
+        self.install_pkgs(pkgs)
+
         self.run("mkdir -p /var/run/kea/")
-        self.run("perl -pi -e 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/kea/kea-ctrl-agent.conf")
+        self.run("perl -pi -e 's/127\\.0\\.0\\.1/0\\.0\\.0\\.0/g' /etc/kea/kea-ctrl-agent.conf")
         if self.pkg_format == 'deb':
             self.run('systemctl enable isc-kea-ctrl-agent')
             self.run('systemctl start isc-kea-ctrl-agent')
@@ -291,21 +390,44 @@ class StorkAgentContainer(Container):
                 self.run('systemctl %s kea-dhcp4' % cmd)
                 self.run('systemctl %s kea-ctrl-agent' % cmd)
 
-    def prepare_stork_agent(self, pkg_path):
+    def install_stork_from_local_file(self, pkg_ver=None):
+        if pkg_ver is None:
+            if self.pkg_format == 'rpm':
+                pkg_ver = DEFAULT_STORK_RPM_VERSION
+            else:
+                pkg_ver = DEFAULT_STORK_DEB_VERSION
+
+        if self.pkg_format == 'rpm':
+            pkg_name = 'isc-stork-agent-%s-1.x86_64.rpm' % pkg_ver
+        else:
+            pkg_name = 'isc-stork-agent_%s_amd64.deb' % pkg_ver
+        pkg_path = os.path.abspath(os.path.join('../..', pkg_name))
+
+        self.upload(pkg_path, '/root/isc-stork-agent.%s' % self.pkg_format)
+
         if self.pkg_format == 'deb':
-            self.upload(pkg_path, '/root/isc-stork-agent.deb')
-            self.run('apt install /root/isc-stork-agent.deb', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
+            self.run('apt install -y --allow-downgrades /root/isc-stork-agent.deb', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
+        else:
+            self.run('yum install -y /root/isc-stork-agent.rpm')
+
+    def prepare_stork_agent(self, pkg_ver=None):
+        if pkg_ver == 'cloudsmith':
+            self.setup_cloudsmith_repo('stork')
+            self.install_pkgs('isc-stork-agent')
+        else:
+            self.install_stork_from_local_file(pkg_ver)
+
+        if self.pkg_format == 'deb':
             self.run('dpkg -l "isc-stork*"')
         else:
-            self.upload(pkg_path, '/root/isc-stork-agent.rpm')
-            self.run('yum install -y /root/isc-stork-agent.rpm')
             self.run('rpm -qa "isc-stork*"')
+
         self.run('systemctl enable isc-stork-agent')
         self.run('systemctl start isc-stork-agent')
         self.run('systemctl status isc-stork-agent')
         self.run('bash -c "ps axu|grep isc"')
 
-    def _setup(self, pkg_path):
+    def _setup(self, pkg_ver=None):
         reused = self.start()
         time.sleep(5)
         if not reused:
@@ -315,73 +437,4 @@ class StorkAgentContainer(Container):
         if self.pkg_format == 'deb':
             # workaround for not starting autonomously CA service
             self.run('systemctl start isc-kea-ctrl-agent')
-        self.prepare_stork_agent(pkg_path)
-
-
-def main(srv_pkg_path_deb, agn_pkg_path_deb, srv_pkg_path_rpm, agn_pkg_path_rpm):
-    s = StorkServerContainer('stork-server')
-    a = StorkAgentContainer('stork-agent')
-    a_c7 = StorkAgentContainer('stork-agent-c7', port=8934, alias='centos/7')
-
-    s.setup_bg(srv_pkg_path_deb)
-    a.setup_bg(agn_pkg_path_deb)
-    a_c7.setup_bg(agn_pkg_path_rpm)
-    s.setup_wait()
-    a.setup_wait()
-    a_c7.setup_wait()
-
-    time.sleep(3)
-
-    credentials = dict(
-        useremail='admin',
-        userpassword='admin'
-    )
-    r = s.api_post('/sessions', json=credentials, expected_status=200)  # TODO: POST should return 201
-    assert r.json()['login'] == 'admin'
-
-    # TODO: these are crashing
-    # r = s.api_get('/users')
-    # r = s.api_post('/users')
-
-    r = s.api_get('/users', params=dict(start=0, limit=10))
-    #assert r.json() == {"items":[{"email":"","groups":[1],"id":1,"lastname":"admin","login":"admin","name":"admin"}],"total":1}
-
-    r = s.api_get('/groups', params=dict(start=0, limit=10))
-    groups = r.json()
-    assert groups['total'] == 2
-    assert len(groups['items']) == 2
-    assert groups['items'][0]['name'] in ['super-admin', 'admin']
-    assert groups['items'][1]['name'] in ['super-admin', 'admin']
-
-    user = dict(
-        user=dict(id=0,
-                  login='user',
-                  email='a@example.org',
-                  name='John',
-                  lastname='Smith',
-                  groups=[]),
-        password='password')
-    r = s.api_post('/users', json=user, expected_status=200)  # TODO: POST should return 201
-
-    for m in [a, a_c7]:
-        machine = dict(
-            address=m.mgmt_ip,
-            agentPort=8080)
-        r = s.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
-        assert r.json()['address'] == m.mgmt_ip
-
-    #time.sleep(10)
-
-    r = s.api_get('/machines')
-    data = r.json()
-    for m in data['items']:
-        print(m)
-
-        assert m['apps'] is not None
-        assert len(m['apps']) == 1
-        assert m['apps'][0]['version'] == '1.7.3'
-
-
-
-if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+        self.prepare_stork_agent(pkg_ver)

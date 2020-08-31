@@ -1,2 +1,3 @@
 pylxd==2.2.10
 ansicolors==1.1.8
+pytest==6.0.1

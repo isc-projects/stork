@@ -688,6 +688,8 @@ task :build_rpms_in_docker do
   sh "docker run -v $PWD:/repo --rm -ti registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest rake build_pkgs STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
 end
 
+task :build_pkgs_in_docker => [:build_debs_in_docker, :build_rpms_in_docker]
+
 # Internal task that copies sources and builds packages on a side. It is used by build_debs_in_docker and build_rpms_in_docker.
 task :build_pkgs do
   sh 'rm -rf /build && mkdir /build'
@@ -776,6 +778,24 @@ task :build_fpm_containers do
 #  sh 'docker build -f docker/pkgs/centos-8.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest docker/pkgs/'
   sh 'docker build -f docker/pkgs/cloudsmith.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:latest docker/pkgs/'
 end
+
+
+### System testing ######################
+
+file 'tests/system/venv/bin/activate' do
+  Dir.chdir('tests/system') do
+    sh 'python3 -m venv venv'
+    sh './venv/bin/pip install -U pip'
+  end
+end
+
+task :system_tests => 'tests/system/venv/bin/activate' do
+  Dir.chdir('tests/system') do
+    sh './venv/bin/pip install -r requirements.txt'
+    sh './venv/bin/pytest -r ap -s tests.py'
+  end
+end
+
 
 ### Other Tasks #########################
 
