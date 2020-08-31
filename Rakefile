@@ -730,6 +730,7 @@ task :install_server => [:build_server, :build_migrations, :build_ui, :doc, BIN_
   sh "cp -a etc/nginx-stork.conf #{EXAMPLES_DIR}"
   sh "cp -a webui/dist/stork/* #{WWW_DIR}"
   sh "cp -a doc/man/stork-server.8 #{MAN_DIR}"
+  sh "cp -a doc/man/stork-db-migrate.8 #{MAN_DIR}"
 end
 
 # invoke fpm for building RPM or deb package
