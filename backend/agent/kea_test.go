@@ -65,3 +65,96 @@ func TestSendToKeaOverHTTPNoKea(t *testing.T) {
 	err = sendToKeaOverHTTP(sa, "localhost", 45634, command, &responses)
 	require.Error(t, err)
 }
+
+// Test the function which extracts the list of log files from the Kea
+// application by sending the request to the Kea Control Agent and the
+// daemons behind it.
+func TestKeaAllowedLogs(t *testing.T) {
+	sa, _ := setupAgentTest(nil)
+
+	// The first config-get command should go to the Kea Control Agent.
+	// The logs should be extracted from there and the subsequent config-get
+	// commands should be sent to the daemons with which the CA is configured
+	// to communicate.
+	defer gock.Off()
+	gock.New("http://localhost:45634").
+		MatchHeader("Content-Type", "application/json").
+		JSON(map[string]string{"command": "config-get"}).
+		Post("/").
+		Reply(200).
+		JSON([]interface{}{
+			map[string]interface{}{
+				"result": 0,
+				"arguments": map[string]interface{}{
+					"CtrlAgent": map[string]interface{}{
+						"control-sockets": map[string]interface{}{
+							"dhcp4": map[string]interface{}{
+								"socket-name": "/tmp/dhcp4.sock",
+							},
+							"dhcp6": map[string]interface{}{
+								"socket-name": "/tmp/dhcp6.sock",
+							},
+						},
+						"loggers": []interface{}{
+							map[string]interface{}{
+								"output_options": []interface{}{
+									map[string]interface{}{
+										"output": "/tmp/kea-ctrl-agent.log",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+
+	// The config-get command sent to the daemons behind CA should return
+	// configurations of the DHCPv4 and DHCPv6 daemons.
+	gock.New("http://localhost:45634").
+		MatchHeader("Content-Type", "application/json").
+		JSON(map[string]interface{}{"command": "config-get", "service": []string{"dhcp4", "dhcp6"}}).
+		Post("/").
+		Reply(200).
+		JSON([]interface{}{
+			map[string]interface{}{
+				"result": 0,
+				"arguments": map[string]interface{}{
+					"Dhcp4": map[string]interface{}{
+						"loggers": []interface{}{
+							map[string]interface{}{
+								"output_options": []interface{}{
+									map[string]interface{}{
+										"output": "/tmp/kea-dhcp4.log",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			map[string]interface{}{
+				"result": 0,
+				"arguments": map[string]interface{}{
+					"Dhcp6": map[string]interface{}{
+						"loggers": []interface{}{
+							map[string]interface{}{
+								"output_options": []interface{}{
+									map[string]interface{}{
+										"output": "/tmp/kea-dhcp6.log",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+
+	err := detectKeaAllowedLogs(sa, "localhost", 45634)
+	require.NoError(t, err)
+
+	// We should have three log files recorded from the returned configurations.
+	// One from CA, one from DHCPv4 and one from DHCPv6.
+	require.Len(t, sa.logTailer.allowedPaths, 3)
+}
