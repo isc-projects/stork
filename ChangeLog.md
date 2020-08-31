@@ -1,3 +1,9 @@
+* 101 [func] marcin
+
+    Restrict log viewer's access to the remote files. The log viewer
+    can only access log files belonging to the monitored application.
+    (Gitlab #348)
+
 * 100 [func] godfryd
 
     Improved user experience of updating machine address/port.
