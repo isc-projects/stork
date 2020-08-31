@@ -1,4 +1,4 @@
-* 95 [func] marcin
+* 95 [func] godfryd
 
     Fixed presenting an application status on a machine tab
     with BIND 9 application. Previously it was always red/inactive.
