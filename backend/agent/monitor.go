@@ -39,7 +39,7 @@ const AppTypeBind9 = "bind9"
 
 type AppMonitor interface {
 	GetApps() []*App
-	Start()
+	Start(agent *StorkAgent)
 	Shutdown()
 }
 
@@ -71,12 +71,12 @@ func NewAppMonitor() AppMonitor {
 
 // This function starts the actual monitor. This start is delayed in case we want to only
 // do command line parameters parsing, e.g. to print version or help and quit.
-func (sm *appMonitor) Start() {
+func (sm *appMonitor) Start(storkAgent *StorkAgent) {
 	sm.wg.Add(1)
-	go sm.run()
+	go sm.run(storkAgent)
 }
 
-func (sm *appMonitor) run() {
+func (sm *appMonitor) run(storkAgent *StorkAgent) {
 	log.Printf("Started app monitor")
 
 	sm.running = true
@@ -84,6 +84,10 @@ func (sm *appMonitor) run() {
 
 	// run app detection one time immediately at startup
 	sm.detectApps()
+
+	// For each detected Kea app, let's gather the logs which can be viewed
+	// from the UI.
+	sm.detectAllowedLogs(storkAgent)
 
 	// prepare ticker
 	const detectionInterval = 10 * time.Second
@@ -217,6 +221,36 @@ func (sm *appMonitor) detectApps() {
 
 	// remember detected apps
 	sm.apps = apps
+}
+
+// Gathers the configured log files for detected apps and enables them
+// for viewing from the UI.
+func (sm *appMonitor) detectAllowedLogs(storkAgent *StorkAgent) {
+	// Nothing to do if the agent is not set. It may be nil when running some
+	// tests.
+	if storkAgent == nil {
+		return
+	}
+	for _, app := range sm.apps {
+		// Only Kea apps are currently supported.
+		if app.Type == AppTypeKea {
+			for _, ac := range app.AccessPoints {
+				if ac.Type == AccessPointControl {
+					err := detectKeaAllowedLogs(storkAgent, ac.Address, ac.Port)
+					if err != nil {
+						err = errors.WithMessagef(err, "failed to detect log files for Kea")
+						log.WithFields(
+							log.Fields{
+								"address": ac.Address,
+								"port":    ac.Port,
+							},
+						).Warn(err)
+					}
+					break
+				}
+			}
+		}
+	}
 }
 
 func (sm *appMonitor) GetApps() []*App {

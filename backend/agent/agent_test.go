@@ -75,7 +75,7 @@ func (fam *FakeAppMonitor) GetApps() []*App {
 func (fam *FakeAppMonitor) Shutdown() {
 }
 
-func (fam *FakeAppMonitor) Start() {
+func (fam *FakeAppMonitor) Start(storkAgent *StorkAgent) {
 }
 
 // makeAccessPoint is an utility to make single element app access point slice.

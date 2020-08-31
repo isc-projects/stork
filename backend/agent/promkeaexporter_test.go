@@ -27,7 +27,7 @@ func (fam *PromFakeAppMonitor) GetApps() []*App {
 func (fam *PromFakeAppMonitor) Shutdown() {
 }
 
-func (fam *PromFakeAppMonitor) Start() {
+func (fam *PromFakeAppMonitor) Start(storkAgent *StorkAgent) {
 }
 
 // Check creating PromKeaExporter, check if prometheus stats are set up.

@@ -75,7 +75,7 @@ func main() {
 	log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
 
 	// Let's start the app monitor.
-	appMonitor.Start()
+	appMonitor.Start(storkAgent)
 
 	// Only start the exporters if they're enabled.
 	if !agentSettings.StorkOnly {

@@ -12,7 +12,7 @@ import (
 
 func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
-	am.Start()
+	am.Start(nil)
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
 	am.Shutdown()
@@ -122,6 +122,25 @@ func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
 func TestDetectApps(t *testing.T) {
 	am := &appMonitor{}
 	am.detectApps()
+}
+
+// Test that detectAllowedLogs does not panic when Kea server is unreachable.
+func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
+	am := &appMonitor{}
+	am.apps = append(am.apps, &App{
+		Type: AppTypeKea,
+		AccessPoints: []AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "localhost",
+				Port:    45678,
+			},
+		},
+	})
+
+	sa := NewStorkAgent(am)
+
+	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }
 
 type TestCommander struct{}

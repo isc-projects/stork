@@ -33,7 +33,7 @@ func (fam *PromFakeBind9AppMonitor) GetApps() []*App {
 func (fam *PromFakeBind9AppMonitor) Shutdown() {
 }
 
-func (fam *PromFakeBind9AppMonitor) Start() {
+func (fam *PromFakeBind9AppMonitor) Start(storkAgent *StorkAgent) {
 }
 
 // Check creating PromBind9Exporter, check if prometheus stats are set up.
