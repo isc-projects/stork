@@ -1,3 +1,8 @@
+* 96 [doc] matthijs
+
+    Add documentation on monitoring the BIND 9 application.
+    (Gitlab #382)
+
 * 95 [func] godfryd
 
     Fixed presenting an application status on a machine tab

@@ -190,7 +190,27 @@ The application status displays a list of daemons belonging to the
 application. For BIND 9, it is always only one daemon, ``named``. In
 the case of Kea, several daemons may be presented in the application
 status column, typically: DHCPv4, DHCPv6, DDNS, and CA (Kea Control
-Agent). The listed daemons are those that Stork finds in the CA
+Agent).
+
+For BIND 9, the Stork Agent is looking for the ``named`` in the
+process list and parses the configuration file that is given with
+``-c`` argument. If the ``named`` process is started without a
+specific configuration file, the Stork Agent will default to
+``/etc/bind/named.conf``.
+
+Stork uses ``rndc`` to retrieve the application status. It looks for
+the ``controls`` statement in the configuration file, and uses the
+first listed control point for monitoring the application.
+
+Furthermore, the Stork Agent can be used as a Prometheus exporter.
+Stork is able to do so if ``named`` is built with ``json-c`` because
+it will gather statistics via the JSON statistics API. The
+``named.conf`` file must have a ``statistics-channel`` configured and
+the exporter will query the first listed channel. Stork is able to export the
+most metrics if ``zone-statistics`` is set to ``full`` in the
+``named.conf`` configuration.
+
+For Kea, the listed daemons are those that Stork finds in the CA
 configuration file. A warning sign is displayed for any daemons from
 the CA configuration file that are not running.  In cases when the Kea
 installation is simply using the default CA configuration file, which
