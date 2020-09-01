@@ -181,8 +181,6 @@
         type: string
       active:
         type: boolean
-      monitored:
-        type: boolean
       rps1:
         type: integer
       rps2:

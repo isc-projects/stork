@@ -1046,6 +1046,10 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 			if !strings.HasPrefix(dbDaemon.Name, "dhcp") {
 				continue
 			}
+			if !dbDaemon.Monitored {
+				// do not show not monitored daemons (ie. show only monitored services)
+				continue
+			}
 			// todo: Currently Kea supports only one HA relationship per daemon.
 			// Until we extend Kea to support multiple relationships per daemon
 			// or integrate ISC DHCP with Stork, the number of HA states returned
@@ -1085,7 +1089,6 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 				AppID:            dbApp.ID,
 				Name:             dbDaemon.Name,
 				Active:           dbDaemon.Active,
-				Monitored:        dbDaemon.Monitored,
 				Rps1:             int64(dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1),
 				Rps2:             int64(dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2),
 				AddrUtilization:  0,

@@ -1,3 +1,10 @@
+* 99 [func] godfryd
+
+    The DHCP dashboard now is presenting only monitored daemons.
+    The daemons that have monitoring switched off are not visible
+    in the dashboard.
+    (Gitlab #365)
+
 * 98 [bug] marcin
 
     Corrected an issue causing false errors about broken communication

@@ -1206,8 +1206,11 @@ func TestGetDhcpOverview(t *testing.T) {
 		AccessPoints: keaPoints,
 		Daemons: []*dbmodel.Daemon{
 			dbmodel.NewKeaDaemon("dhcp4", true),
+			dbmodel.NewKeaDaemon("dhcp6", true),
 		},
 	}
+	// dhcp6 is not monitored, only dhcp4 should be visible
+	app.Daemons[1].Monitored = false
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
@@ -1222,6 +1225,8 @@ func TestGetDhcpOverview(t *testing.T) {
 	require.Len(t, okRsp.Payload.SharedNetworks6.Items, 0)
 	require.Len(t, okRsp.Payload.DhcpDaemons, 1)
 
+	// only dhcp4 is present
+	require.EqualValues(t, "dhcp4", okRsp.Payload.DhcpDaemons[0].Name)
 	require.EqualValues(t, 1, okRsp.Payload.DhcpDaemons[0].AgentCommErrors)
 	require.EqualValues(t, 2, okRsp.Payload.DhcpDaemons[0].CaCommErrors)
 	require.EqualValues(t, 5, okRsp.Payload.DhcpDaemons[0].DaemonCommErrors)
