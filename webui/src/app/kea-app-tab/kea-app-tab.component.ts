@@ -114,13 +114,6 @@ export class KeaAppTabComponent implements OnInit {
     }
 
     /**
-     * An action triggered when refresh button is pressed.
-     */
-    refreshAppState() {
-        this.refreshApp.emit(this._appTab.app.id)
-    }
-
-    /**
      * Converts duration to pretty string.
      *
      * @param duration duration value to be converted.

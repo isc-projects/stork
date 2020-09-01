@@ -228,62 +228,67 @@
 
 <!-- Single machine tab -->
 <div *ngIf="activeTabIdx != 0" class="ui-widget">
-    <div style="margin: 10px" class="p-grid">
-        <div class="p-col-12">
-            <button
-                type="button"
-                pButton
-                label="Refresh State"
-                icon="pi pi-refresh"
-                (click)="refreshMachineState(machineTab)"
-            ></button>
+    <div class="p-grid" style="width: 100%">
+        <div class="p-col-12" style="display: flex">
+            <div>
+                <p-inplace
+                    [(active)]="machineTab.activeInplace"
+                    [closable]="true"
+                    (onActivate)="editAddress(machineTab)"
+                >
+                    <span pInplaceDisplay style="font-size: 1.8em; font-weight: bold">
+                        Kea: {{ machineTab.machine.address
+                        }}<span style="color: #ccc">:{{ machineTab.machine.agentPort }}</span>
+                        <i class="pi pi-pencil" style="vertical-align: text-top; margin-left: 15px; color: #aaa"></i>
+                    </span>
+                    <span pInplaceContent>
+                        <span style="font-size: 1.8em; font-weight: bold; padding-right: 10px">Kea:</span>
+                        <div class="ui-inputgroup" style="display: inline-block">
+                            <input
+                                type="text"
+                                [(ngModel)]="machineTab.address"
+                                pInputText
+                                (keyup)="machineAddressKeyUp($event, machineTab)"
+                                style="width: 20em"
+                            />
+                            <input
+                                type="text"
+                                [(ngModel)]="machineTab.agentPort"
+                                pInputText
+                                (keyup)="machineAddressKeyUp($event, machineTab)"
+                                style="width: 7em"
+                            />
+                            <button
+                                pButton
+                                type="button"
+                                icon="pi pi-check"
+                                class="ui-button-success"
+                                (click)="saveMachine(machineTab)"
+                            ></button>
+                        </div>
+                    </span>
+                </p-inplace>
+            </div>
+
+            <div style="margin-left: 10em">
+                <p-message
+                    *ngIf="machineTab.machine.error"
+                    severity="error"
+                    text="{{ machineTab.machine.error }}"
+                ></p-message>
+            </div>
         </div>
 
         <div class="p-col-4">
             <h3>System Information</h3>
-            <table>
+            <table [ngStyle]="{ color: machineTab.machine.error ? '#999' : '' }">
+                <tr>
+                    <td>Address</td>
+                    <td>{{ machineTab.machine.address }}:{{ machineTab.machine.agentPort }}</td>
+                </tr>
                 <tr>
                     <td>Hostame</td>
                     <td>{{ machineTab.machine.hostname }}</td>
-                </tr>
-                <tr>
-                    <td style="vertical-align: top">Address</td>
-                    <td>
-                        <p-inplace
-                            [(active)]="machineTab.activeInplace"
-                            [closable]="true"
-                            (onActivate)="editAddress(machineTab)"
-                        >
-                            <span pInplaceDisplay>
-                                {{ machineTab.machine.address }}:{{ machineTab.machine.agentPort }}
-                                <i
-                                    class="pi pi-pencil"
-                                    style="font-size: 1.5em; vertical-align: middle; margin-left: 5px"
-                                ></i>
-                            </span>
-                            <span pInplaceContent>
-                                <input
-                                    type="text"
-                                    [(ngModel)]="machineTab.address"
-                                    pInputText
-                                    (keyup)="machineAddressKeyUp($event, machineTab)"
-                                /><br />
-                                <input
-                                    type="text"
-                                    [(ngModel)]="machineTab.agentPort"
-                                    pInputText
-                                    (keyup)="machineAddressKeyUp($event, machineTab)"
-                                />
-                                <button
-                                    pButton
-                                    type="button"
-                                    icon="pi pi-check"
-                                    class="ui-button-success"
-                                    (click)="saveMachine(machineTab)"
-                                ></button>
-                            </span>
-                        </p-inplace>
-                    </td>
                 </tr>
                 <tr>
                     <td>Agent Version</td>
@@ -364,17 +369,16 @@
                     <td>Last Visited</td>
                     <td>{{ machineTab.machine.lastVisitedAt | localtime }}</td>
                 </tr>
-                <tr>
-                    <td>Error</td>
-                    <td>
-                        <p-message
-                            *ngIf="machineTab.machine.error"
-                            severity="error"
-                            text="{{ machineTab.machine.error }}"
-                        ></p-message>
-                    </td>
-                </tr>
             </table>
+
+            <button
+                type="button"
+                pButton
+                label="Refresh State from Machine"
+                icon="pi pi-refresh"
+                style="margin-top: 20px"
+                (click)="refreshMachineState(machineTab)"
+            ></button>
         </div>
         <div class="p-col-4">
             <h3>Applications</h3>

@@ -68,7 +68,7 @@ export class MachinesPageComponent implements OnInit {
             activeInplace: false,
         })
         this.tabs.push({
-            label: machine.hostname || machine.address,
+            label: machine.address,
             routerLink: '/machines/' + machine.id,
         })
     }
@@ -361,7 +361,6 @@ export class MachinesPageComponent implements OnInit {
     }
 
     saveMachine(machineTab) {
-        console.info(machineTab)
         if (
             machineTab.address === machineTab.machine.address &&
             machineTab.agentPort === machineTab.machine.agentPort
@@ -372,14 +371,17 @@ export class MachinesPageComponent implements OnInit {
         const m = { address: machineTab.address, agentPort: parseInt(machineTab.agentPort, 10) }
         this.servicesApi.updateMachine(machineTab.machine.id, m).subscribe(
             (data) => {
-                console.info('updated', data)
-                machineTab.machine.address = data.address
+                machineTab.machine = data
+                machineTab.address = data.address
+                machineTab.agentPort = data.agentPort
                 machineTab.activeInplace = false
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'Machine address updated',
                     detail: 'Machine address update succeeded.',
                 })
+
+                this._refreshMachineState(machineTab.machine)
             },
             (err) => {
                 let msg = err.statusText

@@ -1,13 +1,5 @@
 <div style="margin: 0" class="p-grid">
     <div class="p-col-12">
-        <button
-            type="button"
-            pButton
-            label="Refresh App"
-            icon="pi pi-refresh"
-            (click)="refreshAppState()"
-            style="float: right"
-        ></button>
         <h2>Kea App {{ appTab.app.id }}.</h2>
         Machine:
         <a routerLink="/machines/{{ appTab.app.machine.id }}">{{ appTab.app.machine.address }}</a>
@@ -108,7 +100,7 @@
                         <div class="p-col-7">
                             <!-- Overview -->
                             <div style="margin-bottom: 14px" [ngClass]="{ disabled: !daemon.active }">
-                                <h3 style="margin-top: 2px">Overview</h3>
+                                <h3>Overview</h3>
                                 <table style="width: 100%">
                                     <tr>
                                         <td style="width: 10rem">Version</td>
@@ -149,7 +141,7 @@
 
                             <!-- Loggers -->
                             <div class="" [ngClass]="{ disabled: !daemon.active }">
-                                <h3 style="margin-top: 2px">Loggers</h3>
+                                <h3>Loggers</h3>
                                 <p-table [value]="daemon.logTargets">
                                     <ng-template pTemplate="header">
                                         <tr>
@@ -185,7 +177,7 @@
 
                         <!-- Events -->
                         <div class="p-col-5">
-                            <h3 style="margin-top: 2px">Events</h3>
+                            <h3>Events</h3>
                             <app-events-panel #eventsTable [filter]="{ daemon: daemon.id }"></app-events-panel>
                         </div>
                     </div>
