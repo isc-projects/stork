@@ -210,16 +210,14 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 		for _, dmn := range dbApp.Daemons {
 			if dmn.Name == name {
 				dmnCopy := *dmn
-
 				// Since this is Kea daemon, make sure that the KeaDaemon structure is
 				// initialized to avoid nil pointer dereference.
 				if dmnCopy.KeaDaemon == nil {
 					dmnCopy.KeaDaemon = &dbmodel.KeaDaemon{}
 				}
-
-				// at first all daemons are marked as active; active state will be updated below
+				// Let's assume the daemon is initially active. It may be overridden below
+				// depending on the results of the commands sent to it.
 				dmnCopy.Active = true
-
 				daemonsMap[name] = &dmnCopy
 				found = true
 			}
