@@ -280,7 +280,7 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 			},
 			{
 				Name:      "ca",
-				Active:    true,
+				Active:    false,
 				KeaDaemon: &dbmodel.KeaDaemon{},
 				LogTargets: []*dbmodel.LogTarget{
 					{
@@ -304,6 +304,9 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 
 	var caDaemon *dbmodel.Daemon
 	for i := range dbApp.Daemons {
+		// We successfully communicated with the daemons so they should
+		// be in active state.
+		require.True(t, dbApp.Daemons[i].Active)
 		if dbApp.Daemons[i].Name == "ca" {
 			caDaemon = dbApp.Daemons[i]
 		}

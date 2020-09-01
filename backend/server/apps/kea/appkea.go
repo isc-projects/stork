@@ -93,6 +93,9 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 			if dmnCopy.KeaDaemon == nil {
 				dmnCopy.KeaDaemon = &dbmodel.KeaDaemon{}
 			}
+			// Let's assume the daemon is initially active. It may be overridden below
+			// depending on the results of the commands sent to it.
+			dmnCopy.Active = true
 			daemonsMap["ca"] = &dmnCopy
 			found = true
 		}
