@@ -1,3 +1,10 @@
+* 98 [bug] marcin
+
+    Corrected an issue causing false errors about broken communication
+    with the monitored Kea application after the application was
+    brought back online.
+    (Gitlab #384)
+
 * 97 [bug] godfryd
 
     Improved layout of various tables that they are displayed correctly
