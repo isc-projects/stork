@@ -38,7 +38,12 @@
 </p-dialog>
 
 <p-dialog header="Change Machine Address" [(visible)]="changeMachineAddressDlgVisible" [style]="{ width: '30vw' }">
-    <p style="padding-bottom: 1em">Do you want to change the address of the machine?</p>
+    <p style="padding-bottom: 1em">
+        Stork server will be using the new address and/or port to
+        communicate with this machine. Please ensure that the agent
+        running on the machine is using this new address and/or port
+        to avoid communication problems.
+    </p>
     <div>
         Address:
         <input
@@ -380,7 +385,7 @@
             <button
                 type="button"
                 pButton
-                label="Refresh State from Machine"
+                label="Get Latest State"
                 icon="pi pi-refresh"
                 style="margin-top: 20px"
                 (click)="refreshMachineState(machineTab)"
