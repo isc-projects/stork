@@ -73,7 +73,7 @@ func (i *keaInterceptor) register(callback func(*StorkAgent, *keactrl.Response) 
 // Triggers invocation of all callbacks registered for the given command. the
 // callback is invoked separately for each daemon which responded to the command.
 // This function should be invoked in the goroutine as it invokes the handlers
-// which can be ran independently from the agent. The agent may send back the
+// which can be run independently from the agent. The agent may send back the
 // response to the server while these callbacks are invoked. The result of the
 // callbacks do not affect the response forwarded to the Stork server.
 func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaRequest, response *agentapi.KeaResponse) {
