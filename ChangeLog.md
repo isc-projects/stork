@@ -1,6 +1,6 @@
 * 100 [func] godfryd
 
-    Improved user experience of changing an address of a machine.
+    Improved user experience of updating machine address/port.
     Improved visual aspects. Added refreshing state from the machine
     after changing the address.
     (Gitlab #283)
