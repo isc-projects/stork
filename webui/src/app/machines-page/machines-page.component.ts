@@ -28,8 +28,9 @@ export class MachinesPageComponent implements OnInit {
     appTypes: AppType[]
     selectedAppType: AppType
 
-    // new machine
+    // new machine, edit machine address
     newMachineDlgVisible = false
+    changeMachineAddressDlgVisible = false
     machineAddress = 'localhost'
     agentPort = ''
 
@@ -63,9 +64,6 @@ export class MachinesPageComponent implements OnInit {
     addMachineTab(machine) {
         this.openedMachines.push({
             machine,
-            address: machine.address,
-            agentPort: machine.agentPort,
-            activeInplace: false,
         })
         this.tabs.push({
             label: machine.address,
@@ -226,13 +224,18 @@ export class MachinesPageComponent implements OnInit {
         )
     }
 
-    cancelNewMachine() {
+    cancelMachineDialog() {
         this.newMachineDlgVisible = false
+        this.changeMachineAddressDlgVisible = false
     }
 
-    keyUpNewMachine(event) {
+    keyUpMachineDlg(event, machineTab) {
         if (event.key === 'Enter') {
-            this.addNewMachine()
+            if (this.newMachineDlgVisible) {
+                this.addNewMachine()
+            } else if (this.changeMachineAddressDlgVisible) {
+                this.saveMachine(machineTab)
+            }
         }
     }
 
@@ -357,24 +360,21 @@ export class MachinesPageComponent implements OnInit {
     }
 
     editAddress(machineTab) {
-        machineTab.activeInplace = true
+        this.machineAddress = machineTab.machine.address
+        this.agentPort = machineTab.machine.agentPort
+        this.changeMachineAddressDlgVisible = true
     }
 
     saveMachine(machineTab) {
-        if (
-            machineTab.address === machineTab.machine.address &&
-            machineTab.agentPort === machineTab.machine.agentPort
-        ) {
-            machineTab.activeInplace = false
+        if (this.machineAddress === machineTab.machine.address && this.agentPort === machineTab.machine.agentPort) {
+            machineTab.changeMachineAddressDlgVisible = false
             return
         }
-        const m = { address: machineTab.address, agentPort: parseInt(machineTab.agentPort, 10) }
+        const m = { address: this.machineAddress, agentPort: parseInt(this.agentPort, 10) }
         this.servicesApi.updateMachine(machineTab.machine.id, m).subscribe(
             (data) => {
                 machineTab.machine = data
-                machineTab.address = data.address
-                machineTab.agentPort = data.agentPort
-                machineTab.activeInplace = false
+                this.changeMachineAddressDlgVisible = false
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'Machine address updated',
@@ -396,14 +396,6 @@ export class MachinesPageComponent implements OnInit {
                 })
             }
         )
-    }
-
-    machineAddressKeyUp(event, machineTab) {
-        if (event.key === 'Enter') {
-            this.saveMachine(machineTab)
-        } else if (event.key === 'Escape') {
-            machineTab.activeInplace = false
-        }
     }
 
     refreshMachineState(machinesTab) {

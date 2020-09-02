@@ -17,7 +17,7 @@
             style="width: 100%"
             pInputText
             [(ngModel)]="machineAddress"
-            (keyup)="keyUpNewMachine($event)"
+            (keyup)="keyUpMachineDlg($event, null)"
         />
     </div>
     <div style="margin-top: 10px">
@@ -28,12 +28,48 @@
             placeholder="8080"
             pInputText
             [(ngModel)]="agentPort"
-            (keyup)="keyUpNewMachine($event)"
+            (keyup)="keyUpMachineDlg($event, null)"
         />
     </div>
     <p-footer>
-        <button type="button" (click)="cancelNewMachine()" pButton icon="pi pi-times" label="Cancel"></button>
+        <button type="button" (click)="cancelMachineDialog()" pButton icon="pi pi-times" label="Cancel"></button>
         <button type="button" (click)="addNewMachine()" pButton icon="pi pi-check" label="Add"></button>
+    </p-footer>
+</p-dialog>
+
+<p-dialog header="Change Machine Address" [(visible)]="changeMachineAddressDlgVisible" [style]="{ width: '30vw' }">
+    <p style="padding-bottom: 1em">Do you want to change the address of the machine?</p>
+    <div>
+        Address:
+        <input
+            type="text"
+            style="width: 100%"
+            pInputText
+            [(ngModel)]="machineAddress"
+            (keyup)="keyUpMachineDlg($event, machineTab)"
+        />
+    </div>
+    <div style="margin-top: 10px">
+        Port:
+        <input
+            type="text"
+            style="width: 100%"
+            placeholder="8080"
+            pInputText
+            [(ngModel)]="agentPort"
+            (keyup)="keyUpMachineDlg($event, machineTab)"
+        />
+    </div>
+    <p-footer>
+        <button type="button" (click)="cancelMachineDialog()" pButton icon="pi pi-times" label="Cancel"></button>
+        <button
+            type="button"
+            (click)="saveMachine(machineTab)"
+            pButton
+            icon="pi pi-check"
+            label="Change"
+            class="ui-button-warning"
+        ></button>
     </p-footer>
 </p-dialog>
 
@@ -230,44 +266,14 @@
 <div *ngIf="activeTabIdx != 0" class="ui-widget">
     <div class="p-grid" style="width: 100%">
         <div class="p-col-12" style="display: flex">
-            <div>
-                <p-inplace
-                    [(active)]="machineTab.activeInplace"
-                    [closable]="true"
-                    (onActivate)="editAddress(machineTab)"
-                >
-                    <span pInplaceDisplay style="font-size: 1.8em; font-weight: bold">
-                        Kea: {{ machineTab.machine.address
-                        }}<span style="color: #ccc">:{{ machineTab.machine.agentPort }}</span>
-                        <i class="pi pi-pencil" style="vertical-align: text-top; margin-left: 15px; color: #aaa"></i>
-                    </span>
-                    <span pInplaceContent>
-                        <span style="font-size: 1.8em; font-weight: bold; padding-right: 10px">Kea:</span>
-                        <div class="ui-inputgroup" style="display: inline-block">
-                            <input
-                                type="text"
-                                [(ngModel)]="machineTab.address"
-                                pInputText
-                                (keyup)="machineAddressKeyUp($event, machineTab)"
-                                style="width: 20em"
-                            />
-                            <input
-                                type="text"
-                                [(ngModel)]="machineTab.agentPort"
-                                pInputText
-                                (keyup)="machineAddressKeyUp($event, machineTab)"
-                                style="width: 7em"
-                            />
-                            <button
-                                pButton
-                                type="button"
-                                icon="pi pi-check"
-                                class="ui-button-success"
-                                (click)="saveMachine(machineTab)"
-                            ></button>
-                        </div>
-                    </span>
-                </p-inplace>
+            <div style="font-size: 1.8em; font-weight: bold; margin-left: 10px; color: #007ad9">
+                <i class="fa fa-server" style="padding-right: 10px"></i> {{ machineTab.machine.address
+                }}<span style="color: #007ad930">:{{ machineTab.machine.agentPort }}</span>
+                <i
+                    class="pi pi-pencil"
+                    style="vertical-align: text-top; margin-left: 15px; color: #aaa; cursor: pointer"
+                    (click)="editAddress(machineTab)"
+                ></i>
             </div>
 
             <div style="margin-left: 10em">

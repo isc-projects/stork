@@ -15,7 +15,6 @@ export class AppDaemonsStatusComponent implements OnInit {
     ngOnInit(): void {}
 
     sortDaemonsByImportance(app) {
-        console.info('app', app)
         const daemonMap = []
         const daemons = []
 

@@ -1,3 +1,10 @@
+* 100 [func] godfryd
+
+    Improved user experience of changing an address of a machine.
+    Improved visual aspects. Added refreshing state from the machine
+    after changing the address.
+    (Gitlab #283)
+
 * 99 [func] godfryd
 
     The DHCP dashboard now is presenting only monitored daemons.

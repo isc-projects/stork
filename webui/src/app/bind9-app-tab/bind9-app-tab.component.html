@@ -1,5 +1,13 @@
 <div style="margin: 0" class="p-grid">
     <div class="p-col-12">
+        <button
+            type="button"
+            pButton
+            label="Reload Tab"
+            icon="pi pi-refresh"
+            (click)="refreshAppState()"
+            style="float: right"
+        ></button>
         <h3>BIND 9 App {{ appTab.app.id }}.</h3>
         Machine:
         <a routerLink="/machines/{{ appTab.app.machine.id }}">{{ appTab.app.machine.address }}</a>
