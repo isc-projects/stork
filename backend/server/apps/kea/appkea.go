@@ -53,6 +53,28 @@ type VersionGetResponse struct {
 	Arguments *VersionGetRespArgs `json:"arguments,omitempty"`
 }
 
+// Convenience function called from getStateFromCA and getStateFromDaemons which searches
+// for the existing daemon within the app. If the daemon does not exist a new instance is
+// created. Otherwise, the function ensures that the KeaDaemon structure is initialized
+// and that the active flag is set to true. It returns a pointer to the copy of the
+// daemon.
+func findDaemonEnsureKeaDaemonIsNotNilAndSetActiveFlag(dbApp *dbmodel.App, daemonName string) *dbmodel.Daemon {
+	for _, dmn := range dbApp.Daemons {
+		if dmn.Name == daemonName {
+			dmnCopy := *dmn
+			// Since this is Kea daemon, make sure that the KeaDaemon structure is
+			// initialized to avoid nil pointer dereference.
+			if dmnCopy.KeaDaemon == nil {
+				dmnCopy.KeaDaemon = &dbmodel.KeaDaemon{}
+			}
+			// Let's assume the daemon is initially active.
+			dmnCopy.Active = true
+			return &dmnCopy
+		}
+	}
+	return dbmodel.NewKeaDaemon(daemonName, true)
+}
+
 // Get state of Kea application Control Agent using ForwardToKeaOverHTTP function.
 // The state, that is stored into dbApp, includes: version and config of CA.
 // It also returns:
@@ -81,29 +103,7 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 		return nil, nil, cmdsResult.Error
 	}
 
-	// process the response from CA
-
-	// first find old record of CA daemon in old daemons assigned to the app
-	found := false
-	for _, dmn := range dbApp.Daemons {
-		if dmn.Name == "ca" {
-			dmnCopy := *dmn
-			// Since this is Kea daemon, make sure that the KeaDaemon structure is
-			// initialized to avoid nil pointer dereference.
-			if dmnCopy.KeaDaemon == nil {
-				dmnCopy.KeaDaemon = &dbmodel.KeaDaemon{}
-			}
-			// Let's assume the daemon is initially active. It may be overridden below
-			// depending on the results of the commands sent to it.
-			dmnCopy.Active = true
-			daemonsMap["ca"] = &dmnCopy
-			found = true
-		}
-	}
-	// if not found then prepare new record
-	if !found {
-		daemonsMap["ca"] = dbmodel.NewKeaDaemon("ca", true)
-	}
+	daemonsMap["ca"] = findDaemonEnsureKeaDaemonIsNotNilAndSetActiveFlag(dbApp, "ca")
 
 	// if no error in the version-get response then copy retrieved info about CA to its record
 	dmn := daemonsMap["ca"]
@@ -206,26 +206,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 
 	// first find old records of daemons in old daemons assigned to the app
 	for name := range allDaemons {
-		found := false
-		for _, dmn := range dbApp.Daemons {
-			if dmn.Name == name {
-				dmnCopy := *dmn
-				// Since this is Kea daemon, make sure that the KeaDaemon structure is
-				// initialized to avoid nil pointer dereference.
-				if dmnCopy.KeaDaemon == nil {
-					dmnCopy.KeaDaemon = &dbmodel.KeaDaemon{}
-				}
-				// Let's assume the daemon is initially active. It may be overridden below
-				// depending on the results of the commands sent to it.
-				dmnCopy.Active = true
-				daemonsMap[name] = &dmnCopy
-				found = true
-			}
-		}
-		// if not found then prepare new record
-		if !found {
-			daemonsMap[name] = dbmodel.NewKeaDaemon(name, true)
-		}
+		daemonsMap[name] = findDaemonEnsureKeaDaemonIsNotNilAndSetActiveFlag(dbApp, name)
 	}
 
 	// process version-get responses
