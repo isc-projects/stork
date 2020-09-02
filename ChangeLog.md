@@ -1,3 +1,5 @@
+Stork 0.11.0 released on 2020-09-04.
+
 * 101 [func] godfryd
 
     Merged Stork DHCP Traffic Simulator and Stork DNS Traffic
