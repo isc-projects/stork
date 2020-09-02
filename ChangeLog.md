@@ -1,6 +1,6 @@
 * 97 [bug] godfryd
 
-    Improved laytout of various tables that they are displayed correctly
+    Improved layout of various tables that they are displayed correctly
     on smaller screens. Fixed address of the machine that is displayed
     in the tables (previous it was always showing 127.0.0.1).
     (Gitlab #295)
