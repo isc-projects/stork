@@ -165,6 +165,10 @@ func TestKeaAllowedLogs(t *testing.T) {
 	// We should have three log files recorded from the returned configurations.
 	// One from CA, one from DHCPv4 and one from DHCPv6.
 	require.Len(t, sa.logTailer.allowedPaths, 3)
+
+	require.True(t, sa.logTailer.allowed("/tmp/kea-ctrl-agent.log"))
+	require.True(t, sa.logTailer.allowed("/tmp/kea-dhcp4.log"))
+	require.True(t, sa.logTailer.allowed("/tmp/kea-dhcp6.log"))
 }
 
 // This test verifies that an error is returned when the number of responses
