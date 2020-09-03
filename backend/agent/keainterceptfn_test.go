@@ -35,6 +35,13 @@ func TestIcptConfigGetLoggers(t *testing.T) {
 					map[string]interface{}{
 						"output_options": []interface{}{
 							map[string]interface{}{
+								"output": "/tmp/kea-dhcp4.log",
+							},
+						},
+					},
+					map[string]interface{}{
+						"output_options": []interface{}{
+							map[string]interface{}{
 								"output": "stdout",
 							},
 						},
