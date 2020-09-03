@@ -10,7 +10,7 @@ import (
 )
 
 // Log tailer provides means for viewing log files. It maintains the list of
-// files which can be viewed. If the file is not on the list of the allowed
+// unique files which can be viewed. If the file is not on the list of the allowed
 // files, an error is returned upon an attempt to view it.
 type logTailer struct {
 	allowedPaths map[string]bool
