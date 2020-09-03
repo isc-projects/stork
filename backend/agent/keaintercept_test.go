@@ -59,8 +59,8 @@ func TestKeaInterceptorHandle(t *testing.T) {
                 "text": "invoked successfully"
             },
             {
-                "result": 0,
-                "text": "invoked successfully"
+                "result": 1,
+                "text": "invoked unsuccessfully"
             }
         ]`,
 	}
@@ -74,8 +74,8 @@ func TestKeaInterceptorHandle(t *testing.T) {
 	require.EqualValues(t, 0, capturedResponses[0].Result)
 	require.Equal(t, "invoked successfully", capturedResponses[0].Text)
 	require.Equal(t, "dhcp4", capturedResponses[0].Daemon)
-	require.EqualValues(t, 0, capturedResponses[1].Result)
-	require.Equal(t, "invoked successfully", capturedResponses[1].Text)
+	require.EqualValues(t, 1, capturedResponses[1].Result)
+	require.Equal(t, "invoked unsuccessfully", capturedResponses[1].Text)
 	require.Equal(t, "dhcp6", capturedResponses[1].Daemon)
 
 	// Make sure that we can invoke different callback when using different
