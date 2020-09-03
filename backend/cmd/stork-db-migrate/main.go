@@ -14,8 +14,8 @@ import (
 type cmdOpts struct {
 }
 
-// Structure defining options for "up" command.
-type upOpts struct {
+// Structure defining options for "up" and "down" commands.
+type verOpts struct {
 	Target string `short:"t" long:"target" description:"Target database schema version"`
 }
 
@@ -23,8 +23,8 @@ type upOpts struct {
 type Opts struct {
 	dbops.DatabaseSettings
 	Init       cmdOpts `command:"init" description:"Create schema versioning table in the database"`
-	Up         upOpts  `command:"up" description:"Run all available migrations"`
-	Down       cmdOpts `command:"down" description:"Revert last migration"`
+	Up         verOpts `command:"up" description:"Run all available migrations or use -t to specify version"`
+	Down       verOpts `command:"down" description:"Revert last migration or use -t to specify version to downgrade to"`
 	Reset      cmdOpts `command:"reset" description:"Revert all migrations"`
 	Version    cmdOpts `command:"version" description:"Print current migration version"`
 	SetVersion cmdOpts `command:"set_version" description:"Set database version without running migrations"`
@@ -54,6 +54,11 @@ func main() {
 	args = append(args, parser.Active.Name)
 	if parser.Active.Name == "up" && len(opts.Up.Target) > 0 {
 		args = append(args, opts.Up.Target)
+		log.Infof("Requested migrating up to version %s", opts.Up.Target)
+	}
+	if parser.Active.Name == "down" && len(opts.Down.Target) > 0 {
+		args = append(args, opts.Down.Target)
+		log.Infof("Requested migrating down to version %s", opts.Down.Target)
 	}
 
 	// Use the provided credentials to connect to the database.
