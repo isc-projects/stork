@@ -24,6 +24,10 @@ func TestAllow(t *testing.T) {
 	lt.allow("/tmp/kea-dhcp4.log")
 	require.True(t, lt.allowed("/tmp/kea-dhcp4.log"))
 	require.False(t, lt.allowed("/tmp/kea-dhcp6.log"))
+
+	// Make sure that it is ok to allow the same file twice.
+	require.NotPanics(t, func() { lt.allow("/tmp/kea-dhcp4.log") })
+	require.True(t, lt.allowed("/tmp/kea-dhcp4.log"))
 }
 
 // Test that if the file is not allowed an attempt to tail this file
