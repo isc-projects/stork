@@ -55,7 +55,7 @@ func (lt *logTailer) tail(path string, offset int64) (lines []string, err error)
 
 	f, err := os.Open(path)
 	if err != nil {
-		err = errors.WithMessage(err, "Failed to open file for tailing")
+		err = errors.WithMessagef(err, "Failed to open file for tailing: %s", path)
 		return lines, err
 	}
 	defer func() {
@@ -64,7 +64,7 @@ func (lt *logTailer) tail(path string, offset int64) (lines []string, err error)
 
 	stat, err := f.Stat()
 	if err != nil {
-		err = errors.WithMessage(err, "Failed to stat the file opened for tailing")
+		err = errors.WithMessagef(err, "Failed to stat the file opened for tailing: %s", path)
 		return lines, err
 	}
 
@@ -75,12 +75,15 @@ func (lt *logTailer) tail(path string, offset int64) (lines []string, err error)
 
 	_, err = f.Seek(-offset, io.SeekEnd)
 	if err != nil {
-		err = errors.WithMessage(err, "Failed to seek in the file opened for tailing: %s")
+		err = errors.WithMessagef(err, "Failed to seek in the file opened for tailing: %s", path)
 		return lines, err
 	}
 	s := bufio.NewScanner(f)
 	for s.Scan() {
 		lines = append(lines, s.Text())
+	}
+	if err = s.Err(); err != nil {
+		err = errors.WithMessagef(err, "Failed to read the tailed file: %s", path)
 	}
 	return lines, err
 }
