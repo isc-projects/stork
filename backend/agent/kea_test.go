@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -77,37 +78,77 @@ func TestKeaAllowedLogs(t *testing.T) {
 	// commands should be sent to the daemons with which the CA is configured
 	// to communicate.
 	defer gock.Off()
+	caResponseJSON := `[{
+        "result": 0,
+        "arguments": {
+            "CtrlAgent": {
+                "control-sockets": {
+                    "dhcp4": {
+                        "socket-name": "/tmp/dhcp4.sock"
+                    },
+                    "dhcp6": {
+                        "socket-name": "/tmp/dhcp6.sock"
+                    }
+                },
+                "loggers": [
+                    {
+                        "output_options": [
+                            {
+                                "output": "/tmp/kea-ctrl-agent.log"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }]`
+	caResponse := make([]map[string]interface{}, 1)
+	err := json.Unmarshal([]byte(caResponseJSON), &caResponse)
+	require.NoError(t, err)
 	gock.New("http://localhost:45634").
 		MatchHeader("Content-Type", "application/json").
 		JSON(map[string]string{"command": "config-get"}).
 		Post("/").
 		Reply(200).
-		JSON([]interface{}{
-			map[string]interface{}{
-				"result": 0,
-				"arguments": map[string]interface{}{
-					"CtrlAgent": map[string]interface{}{
-						"control-sockets": map[string]interface{}{
-							"dhcp4": map[string]interface{}{
-								"socket-name": "/tmp/dhcp4.sock",
-							},
-							"dhcp6": map[string]interface{}{
-								"socket-name": "/tmp/dhcp6.sock",
-							},
-						},
-						"loggers": []interface{}{
-							map[string]interface{}{
-								"output_options": []interface{}{
-									map[string]interface{}{
-										"output": "/tmp/kea-ctrl-agent.log",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		})
+		JSON(caResponse)
+
+	dhcpResponsesJSON := `[
+        {
+            "result": 0,
+            "arguments": {
+                "Dhcp4": {
+                    "loggers": [
+                        {
+                            "output_options": [
+                                {
+                                    "output": "/tmp/kea-dhcp4.log"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "result": 0,
+            "arguments": {
+                "Dhcp6": {
+                    "loggers": [
+                        {
+                            "output_options": [
+                                {
+                                    "output": "/tmp/kea-dhcp6.log"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    ]`
+	dhcpResponses := make([]map[string]interface{}, 2)
+	err = json.Unmarshal([]byte(dhcpResponsesJSON), &dhcpResponses)
+	require.NoError(t, err)
 
 	// The config-get command sent to the daemons behind CA should return
 	// configurations of the DHCPv4 and DHCPv6 daemons.
@@ -116,42 +157,9 @@ func TestKeaAllowedLogs(t *testing.T) {
 		JSON(map[string]interface{}{"command": "config-get", "service": []string{"dhcp4", "dhcp6"}}).
 		Post("/").
 		Reply(200).
-		JSON([]interface{}{
-			map[string]interface{}{
-				"result": 0,
-				"arguments": map[string]interface{}{
-					"Dhcp4": map[string]interface{}{
-						"loggers": []interface{}{
-							map[string]interface{}{
-								"output_options": []interface{}{
-									map[string]interface{}{
-										"output": "/tmp/kea-dhcp4.log",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			map[string]interface{}{
-				"result": 0,
-				"arguments": map[string]interface{}{
-					"Dhcp6": map[string]interface{}{
-						"loggers": []interface{}{
-							map[string]interface{}{
-								"output_options": []interface{}{
-									map[string]interface{}{
-										"output": "/tmp/kea-dhcp6.log",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		})
+		JSON(dhcpResponses)
 
-	err := detectKeaAllowedLogs(sa, "localhost", 45634)
+	err = detectKeaAllowedLogs(sa, "localhost", 45634)
 	require.NoError(t, err)
 
 	// We should have three log files recorded from the returned configurations.
