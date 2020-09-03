@@ -8,6 +8,7 @@
    See the COPYRIGHT file distributed with this work for additional
    information regarding copyright ownership.
 
+.. _man-stork-db-migrate:
 
 stork-db-migrate - The Stork database migration tool
 ----------------------------------------------------
@@ -31,7 +32,7 @@ The Stork DB migration tools takes the following commands:
 
 Available commands:
 
-  ``down``         Revert last migration
+  ``down``         Revert last migration (or use -t to migrate to specific version)
 
   ``init``         Create schema versioning table in the database
 
@@ -39,7 +40,7 @@ Available commands:
 
   ``set_version``  Set database version without running migrations
 
-  ``up``           Run all available migrations
+  ``up``           Run all available migrations (or use -t to migrate to specific version)
 
   ``version``      Print current migration version
 

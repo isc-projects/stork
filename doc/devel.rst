@@ -43,18 +43,6 @@ i.e. on the host machine, rather than using Docker images.
 First, PostgreSQL must be installed. This is OS-specific, so please
 follow the instructions from the :ref:`installation` chapter.
 
-Optional step: to initialize the database directly, the migrations
-tool must be built and used to initialize and upgrade the database to the
-latest schema. However, this is completely optional, as the database
-migration is triggered automatically upon server startup.  This is
-only useful if for some reason it is desirable to set up the database
-but not yet run the server. In most cases this step can be skipped.
-
-.. code-block:: console
-
-    $ rake build_migrations
-    $ backend/cmd/stork-db-migrate/stork-db-migrate init
-    $ backend/cmd/stork-db-migrate/stork-db-migrate up
 
 Once the database environment is set up, the next step is to build all
 the tools. Note the first command below downloads some missing dependencies

@@ -17,13 +17,13 @@ the Ubuntu 18.04 system.  They have been tested and run on the Fedora
 The ``Stork Agent`` does not require any specific dependencies to
 run. It can be run immediately after installation.
 
-Stork uses the `status-get` command to communicate with Kea, and 
-therefore will only work with a version of Kea that supports `status'get`. 
-The `status-get` command was introduced in Kea 1.7.3.  At this time, Stork 
-works with Kea version 1.7.3 and later versions only, although we intend to 
+Stork uses the `status-get` command to communicate with Kea, and
+therefore will only work with a version of Kea that supports `status'get`.
+The `status-get` command was introduced in Kea 1.7.3.  At this time, Stork
+works with Kea version 1.7.3 and later versions only, although we intend to
 backport the `status-get` command to Kea 1.6.3.
 
-Stork requires the premium Host Commands hook library to retrieve host 
+Stork requires the premium Host Commands hook library to retrieve host
 reservations stored in an external database. Stork can retrieve host reservations
 stored locally in the Kea configuration without any additional hook libraries.
 
@@ -75,6 +75,38 @@ Then, prepare the database:
    it accepts passwords containing spaces, quotes, double quotes and other
    special characters.
 
+Database Migration Tool (optional)
+==================================
+
+Optional step: to initialize the database directly, the migrations
+tool must be built and used to initialize and upgrade the database to the
+latest schema. However, this is completely optional, as the database
+migration is triggered automatically upon server startup.  This is
+only useful if for some reason it is desirable to set up the database
+but not yet run the server. In most cases this step can be skipped.
+
+.. code-block:: console
+
+    $ rake build_migrations
+    $ backend/cmd/stork-db-migrate/stork-db-migrate init
+    $ backend/cmd/stork-db-migrate/stork-db-migrate up
+
+The up and down command has an optional -t parameter that specifies desired
+schema version. This is only useful when debugging database migrations.
+
+.. code-block:: console
+
+    $ # migrate up version 25
+    $ backend/cmd/stork-db-migrate/stork-db-migrate up -t 25
+    $ # migrate down back to version 17
+    $ backend/cmd/stork-db-migrate/stork-db-migrate down -t 17
+
+Note the server requires the latest database version to run, will always
+run the migration on its own and will refuse to start if migration fails
+for whatever reason. The migration tool is mostly useful for debugging
+problems with migration or migrating the database without actually running
+the service. For complete reference, see manual page here:
+:ref:`man-stork-db-migrate`.
 
 Installing from Packages
 ========================
