@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,54 +14,59 @@ import (
 func TestIcptConfigGetLoggers(t *testing.T) {
 	sa, _ := setupAgentTest(nil)
 
+	responseArgsJSON := `{
+        "Dhcp4": {
+            "loggers": [
+                {
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4.log"
+                        },
+                        {
+                            "output": "stderr"
+                        }
+                    ]
+                },
+                {
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4.log"
+                        }
+                    ]
+                },
+                {
+                    "output_options": [
+                        {
+                            "output": "stdout"
+                        }
+                    ]
+                },
+                {
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4-allocations.log"
+                        },
+                        {
+                            "output": "syslog:1"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`
+	responseArgs := make(map[string]interface{})
+	err := json.Unmarshal([]byte(responseArgsJSON), &responseArgs)
+	require.NoError(t, err)
+
 	response := &keactrl.Response{
 		ResponseHeader: keactrl.ResponseHeader{
 			Result: 0,
 			Text:   "Everything is fine",
 			Daemon: "dhcp4",
 		},
-		Arguments: &map[string]interface{}{
-			"Dhcp4": map[string]interface{}{
-				"loggers": []interface{}{
-					map[string]interface{}{
-						"output_options": []interface{}{
-							map[string]interface{}{
-								"output": "/tmp/kea-dhcp4.log",
-							},
-							map[string]interface{}{
-								"output": "stderr",
-							},
-						},
-					},
-					map[string]interface{}{
-						"output_options": []interface{}{
-							map[string]interface{}{
-								"output": "/tmp/kea-dhcp4.log",
-							},
-						},
-					},
-					map[string]interface{}{
-						"output_options": []interface{}{
-							map[string]interface{}{
-								"output": "stdout",
-							},
-						},
-					},
-					map[string]interface{}{
-						"output_options": []interface{}{
-							map[string]interface{}{
-								"output": "/tmp/kea-dhcp4-allocations.log",
-							},
-							map[string]interface{}{
-								"output": "syslog:1",
-							},
-						},
-					},
-				},
-			},
-		},
+		Arguments: &responseArgs,
 	}
-	err := icptConfigGetLoggers(sa, response)
+	err = icptConfigGetLoggers(sa, response)
 	require.NoError(t, err)
 	require.NotNil(t, sa.logTailer)
 	require.True(t, sa.logTailer.allowed("/tmp/kea-dhcp4.log"))
