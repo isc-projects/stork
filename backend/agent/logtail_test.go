@@ -54,3 +54,11 @@ func TestTailForbidden(t *testing.T) {
 	_, err = lt.tail(filename, 100)
 	require.NoError(t, err)
 }
+
+// Test that if the tailed file doesn't exist an error is returned.
+func TestTailNotExistingFile(t *testing.T) {
+	lt := newLogTailer()
+	require.NotNil(t, lt)
+	_, err := lt.tail("non-existing-file", 100)
+	require.Error(t, err)
+}
