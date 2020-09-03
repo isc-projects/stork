@@ -166,3 +166,36 @@ func TestKeaAllowedLogs(t *testing.T) {
 	// One from CA, one from DHCPv4 and one from DHCPv6.
 	require.Len(t, sa.logTailer.allowedPaths, 3)
 }
+
+// This test verifies that an error is returned when the number of responses
+// from the Kea daemons is lower than the number of services specified in the
+// command.
+func TestKeaAllowedLogsFewerResponses(t *testing.T) {
+	sa, _ := setupAgentTest(nil)
+
+	defer gock.Off()
+
+	// Return only one response while the number of daemons is two.
+	dhcpResponsesJSON := `[
+        {
+            "result": 0,
+            "arguments": {
+                "Dhcp4": {
+                }
+            }
+        }
+    ]`
+	dhcpResponses := make([]map[string]interface{}, 1)
+	err := json.Unmarshal([]byte(dhcpResponsesJSON), &dhcpResponses)
+	require.NoError(t, err)
+
+	gock.New("http://localhost:45634").
+		MatchHeader("Content-Type", "application/json").
+		JSON(map[string]interface{}{"command": "config-get", "service": []string{"dhcp4", "dhcp6"}}).
+		Post("/").
+		Reply(200).
+		JSON(dhcpResponses)
+
+	err = detectKeaAllowedLogs(sa, "localhost", 45634)
+	require.Error(t, err)
+}

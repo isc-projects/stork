@@ -158,6 +158,11 @@ func detectKeaAllowedLogs(storkAgent *StorkAgent, caAddress string, caPort int64
 		return err
 	}
 
+	// Check that we got responses for all daemons.
+	if len(responses) != len(daemonNames) {
+		return errors.Errorf("invalid number of responses received from daemons to config-get command sent via %s:%d", caAddress, caPort)
+	}
+
 	// For each daemon try to extract its logging configuration and allow view
 	// the log files it contains.
 	for i := range responses {
