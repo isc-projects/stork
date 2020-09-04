@@ -1,11 +1,11 @@
 * 101 [func] godfryd
 
-    Extended Stork Simulator by adding capabilities for adding all
-    present machines in demo setup and ability to stop and start
-    Stork Agents, Kea and BIND 9 daemons. This allows
-    simulate with communication issues with these entities from
-    Stork Server perspective. Combined DNS traffic simulator with
-    DHCP traffic simulator into on web application.
+    Merged Stork DHCP Traffic Simulator and Stork DNS Traffic
+    Simulator into one web application called Stork Environment
+    Simulator. Added there capabilities for adding all present
+    machines in demo setup and ability to stop and start Stork Agents,
+    Kea and BIND 9 daemons. This allows simulation of communication
+    issues between applications, Stork Agents and Stork Server.
     (Gitlab #380)
 
 * 101 [func] marcin
