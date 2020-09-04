@@ -1,4 +1,4 @@
-# The main purpose of this container is to run Stork Environemnt Simulator.
+# The main purpose of this container is to run Stork Environment Simulator.
 FROM ubuntu:18.04
 WORKDIR /sim
 
