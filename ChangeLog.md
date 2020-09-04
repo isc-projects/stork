@@ -1,3 +1,10 @@
+* 102 [func] tomek
+
+    The stork-db-migrate tool can now migrate up and down to specific
+    schema versions. The SQL tracing now works and can be used to
+    export SQL schema to external file.
+    (Gitlab #366)
+
 Stork 0.11.0 released on 2020-09-04.
 
 * 101 [func] godfryd
