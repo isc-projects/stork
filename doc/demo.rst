@@ -127,12 +127,18 @@ network.
 Stork Environment Simulator also allows sending DNS traffic to
 selected DNS servers.
 
-Stork Environment Simulator can add all machines in demo setup. Then
-it can stop and start selected Stork Agents and Kea and BIND
-applications. This is useful to simulate communication problems
+Stork Environment Simulator can add all the machines available in the
+demo setup. It can stop and start selected Stork Agents, and Kea and
+BIND 9 applications. This is useful to simulate communication problems
 between applications, Stork Agents and the Stork Server.
 
-Environment Simulator can be found at: http://localhost:5000/
+Stork Environment Simulator can be found at: http://localhost:5000/
+
+For development purposes simulator can be started directly by command:
+
+.. code-block:: console
+
+   $ rake run_sim
 
 
 Prometheus
