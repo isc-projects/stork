@@ -110,7 +110,8 @@ the service. For complete reference, see manual page here:
 
 To debug migrations, another useful feature is SQL tracing using the `--db-trace-queries` parameter.
 With it enabled, `stork-db-migrate` will print out all its SQL queries on stdout. For example, you can use
-these commands to generate an SQL script that will generate the full schema:
+these commands to generate an SQL script that will update your schema. Note that for some migrations,
+the steps are dependent on the contents of your database, so this will not be an universal Stork schema.
 
 .. code-block:: console
 
