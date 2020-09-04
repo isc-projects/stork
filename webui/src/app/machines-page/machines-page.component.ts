@@ -361,7 +361,7 @@ export class MachinesPageComponent implements OnInit {
 
     editAddress(machineTab) {
         this.machineAddress = machineTab.machine.address
-        this.agentPort = machineTab.machine.agentPort
+        this.agentPort = machineTab.machine.agentPort.toString() // later string is expected in this.agentPort
         this.changeMachineAddressDlgVisible = true
     }
 
