@@ -10,7 +10,7 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
-// Structure defining options for all commands except "up".
+// Structure defining options for all commands except "up" and "down".
 type cmdOpts struct {
 }
 
@@ -48,7 +48,7 @@ func main() {
 	// Password from the environment variable takes precedence.
 	dbops.Password(&opts.DatabaseSettings)
 
-	// The up command requires special treatment. If the target version is specified
+	// The up and down commands require special treatment. If the target version is specified
 	// it must be appended to the arguments we pass to the go-pg migrations.
 	var args []string
 	args = append(args, parser.Active.Name)
@@ -67,7 +67,7 @@ func main() {
 		Password: opts.Password,
 		Database: opts.DbName,
 		Addr:     fmt.Sprintf("%s:%d", opts.Host, opts.Port),
-	})
+	}, opts.DatabaseSettings.TraceSQL)
 	if err != nil {
 		log.Fatalf("unexpected error: %+v", err)
 	}

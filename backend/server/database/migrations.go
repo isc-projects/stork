@@ -2,11 +2,12 @@ package dbops
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/go-pg/migrations/v7"
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
 	_ "isc.org/stork/server/database/migrations" // TODO: document why it is blank imported
-	"strconv"
 )
 
 // Checks if the migrations table exists, i.e. the 'init' command was called.

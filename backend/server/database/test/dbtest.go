@@ -52,7 +52,7 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 
 	// Connect to base `postgres` database to be able to create test database.
 	pgConnOptions.Database = "postgres"
-	db, err := dbops.NewPgDbConn(&pgConnOptions)
+	db, err := dbops.NewPgDbConn(&pgConnOptions, false)
 	if db == nil {
 		log.Fatalf("unable to create database instance: %+v", err)
 	}
@@ -77,7 +77,7 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 	pgConnOptions.Database = dbName
 	genericConnOptions.BaseDatabaseSettings.DbName = dbName
 
-	db, err = dbops.NewPgDbConn(&pgConnOptions)
+	db, err = dbops.NewPgDbConn(&pgConnOptions, false)
 	if db == nil {
 		log.Fatalf("unable to create database instance: %+v", err)
 	}

@@ -37,8 +37,13 @@ func (d DbLogger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
 }
 
 // Create only new PgDB instance.
-func NewPgDbConn(pgParams *pg.Options) (*PgDB, error) {
+func NewPgDbConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 	db := pg.Connect(pgParams)
+
+	// Add tracing hooks if requested.
+	if tracing {
+		db.AddQueryHook(DbLogger{})
+	}
 
 	log.Printf("checking connection to database")
 	// Test connection to database.
@@ -67,7 +72,7 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 	Password(settings)
 
 	// Make a connection to DB
-	db, err := NewPgDbConn(settings.PgParams())
+	db, err := NewPgDbConn(settings.PgParams(), settings.TraceSQL)
 	if err != nil {
 		return nil, err
 	}
@@ -81,11 +86,6 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 			"old-version": oldVer,
 			"new-version": newVer,
 		}).Info("successfully migrated database schema")
-	}
-
-	// Add tracing hooks if requested.
-	if settings.TraceSQL {
-		db.AddQueryHook(DbLogger{})
 	}
 
 	log.Infof("connected to database %s:%d, schema version: %d", settings.Host, settings.Port, newVer)
