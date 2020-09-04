@@ -91,7 +91,7 @@ but not yet run the server. In most cases this step can be skipped.
     $ backend/cmd/stork-db-migrate/stork-db-migrate init
     $ backend/cmd/stork-db-migrate/stork-db-migrate up
 
-The up and down command has an optional -t parameter that specifies desired
+The up and down command has an optional `-t` parameter that specifies desired
 schema version. This is only useful when debugging database migrations.
 
 .. code-block:: console
@@ -107,6 +107,15 @@ for whatever reason. The migration tool is mostly useful for debugging
 problems with migration or migrating the database without actually running
 the service. For complete reference, see manual page here:
 :ref:`man-stork-db-migrate`.
+
+To debug migrations, another useful feature is SQL tracing using the `--db-trace-queries` parameter.
+With it enabled, `stork-db-migrate` will print out all its SQL queries on stdout. For example, you can use
+these commands to generate an SQL script that will generate the full schema:
+
+.. code-block:: console
+
+   $ backend/cmd/stork-db-migrate/stork-db-migrate down -t 0
+   $ backend/cmd/stork-db-migrate/stork-db-migrate up --db-trace-queries > stork-schema.txt
 
 Installing from Packages
 ========================
