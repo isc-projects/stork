@@ -111,7 +111,7 @@ Initialization
    #. agent-bind9-2
 
 Stork Environment Simulator
-----------------------
+---------------------------
 
 Stork Environment Simulator allows:
 
