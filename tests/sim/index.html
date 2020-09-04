@@ -12,12 +12,40 @@
     <div id="app">
 
         <el-menu :default-active="menuIndex" class="el-menu-demo" mode="horizontal" @select="menuSelect">
+            <el-menu-item index="manager">Services Manager</el-menu-item>
             <el-menu-item index="dhcp">DHCP Traffic</el-menu-item>
             <el-menu-item index="dns">DNS Traffic</el-menu-item>
-            <el-menu-item index="killer">Service Killer</el-menu-item>
         </el-menu>
 
         <div style="height: 30px;">
+        </div>
+
+        <div v-if="menuIndex == 'manager'">
+             <el-button type="primary" v-if="services.length == 0" v-on:click="addServices()">Add Services</el-button>
+
+            <el-table :data="services">
+                <el-table-column label="Machine" min-width="4em">
+                    <template slot-scope="scope">
+                        {{ scope.row.machine }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="Service" min-width="4em">
+                    <template slot-scope="scope">
+                        {{ scope.row.name }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="Status" min-width="4em">
+                    <template slot-scope="scope">
+                        {{ scope.row.statename }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="Action" min-width="8em">
+                    <template slot-scope="scope">
+                        <el-button type="success" v-if="scope.row.statename != 'RUNNING'" v-on:click="updateService(scope.$index, 'start')">Start</el-button>
+                        <el-button type="danger" v-if="scope.row.statename == 'RUNNING'" v-on:click="updateService(scope.$index, 'stop')">Stop</el-button>
+                    </template>
+            </el-table-column>
+            </el-table>
         </div>
 
         <el-table :data="subnets" v-if="menuIndex == 'dhcp'">
@@ -93,34 +121,6 @@
             </el-table-column>
         </el-table>
 
-        <div v-if="menuIndex == 'killer'">
-             <el-button type="primary" v-if="services.length == 0" v-on:click="addServices()">Add Services</el-button>
-
-            <el-table :data="services">
-                <el-table-column label="Machine" min-width="4em">
-                    <template slot-scope="scope">
-                        {{ scope.row.machine }}
-                    </template>
-                </el-table-column>
-                <el-table-column label="Service" min-width="4em">
-                    <template slot-scope="scope">
-                        {{ scope.row.name }}
-                    </template>
-                </el-table-column>
-                <el-table-column label="Status" min-width="4em">
-                    <template slot-scope="scope">
-                        {{ scope.row.statename }}
-                    </template>
-                </el-table-column>
-                <el-table-column label="Action" min-width="8em">
-                    <template slot-scope="scope">
-                        <el-button type="success" v-if="scope.row.statename != 'RUNNING'" v-on:click="updateService(scope.$index, 'start')">Start</el-button>
-                        <el-button type="danger" v-if="scope.row.statename == 'RUNNING'" v-on:click="updateService(scope.$index, 'stop')">Stop</el-button>
-                    </template>
-            </el-table-column>
-            </el-table>
-        </div>
-
     </div>
 
     <script>
@@ -132,7 +132,7 @@
         var app = new Vue({
             el: '#app',
             data: {
-                menuIndex: 'dhcp',
+                menuIndex: 'manager',
                 subnets: subnets,
                 servers: servers,
                 services: services
@@ -197,6 +197,13 @@
                     axios.post('/services').then(function (response) {
                         this.services.length = 0;
                         this.services.push(...response.data.items);
+
+                        axios.get('/subnets').then(function (response2) {
+                            this.subnets.push(...response2.data.items)
+                        })
+                        axios.get('/servers').then(function (response3) {
+                            this.servers.push(...response3.data.items)
+                        })
                     })
                 }
             }

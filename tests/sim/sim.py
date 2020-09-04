@@ -346,4 +346,8 @@ def post_services():
         r = s.post(url, json=m)
 
     data = _get_services()
+
+    _refresh_subnets()
+    _refresh_servers()
+
     return json.dumps(data)

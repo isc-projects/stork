@@ -126,10 +126,10 @@ network.
 
 Simulator also allows sending DNS traffic to selected DNS servers.
 
-Simulator can add all machines in demo setup. Then it can stop
-and start selected Stork Agents and Kea and BIND applications.
-This is usefull to simulate communication problems with these
-entities from Stork Server perspective.
+Simulator can add all machines in demo setup. Then it can stop and
+start selected Stork Agents and Kea and BIND applications. This is
+useful to simulate communication problems between applications,
+Stork Agents and the Stork Server.
 
 Simulator can be found at: http://localhost:5000/
 
