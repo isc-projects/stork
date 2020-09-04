@@ -2,6 +2,7 @@ package dbops
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -21,13 +22,20 @@ func (d DbLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Cont
 			table := model.Table()
 			if table != nil && table.Name == "system_user" {
 				// Query on the system_user table. Don't print the actual data.
-				log.Println(q.UnformattedQuery())
+				fmt.Println(q.UnformattedQuery())
 				return c, nil
 			}
 		}
 	}
-	// It is fine to print data for other tables.
-	log.Println(q.FormattedQuery())
+	var query, err = q.FormattedQuery()
+	// FormattedQuery returns a tuple of query and error. The error in most cases is nil, and
+	// we don't want to print it. On the other hand, all logging is printed on stderr. We want
+	// to print here to stdout (hence fmt), so it's possible to redirect it to a file.
+	if err != nil {
+		fmt.Println(query, err)
+	} else {
+		fmt.Println(query)
+	}
 	return c, nil
 }
 
