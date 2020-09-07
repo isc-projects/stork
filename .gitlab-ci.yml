@@ -173,6 +173,52 @@ system_testing:
     - rake system_tests
 
 
+### upload release notes and tarball to repo.isc.org ###
+
+deploy_to_repo:
+  stage: deploy
+  when: manual
+  tags:
+    - linux
+    - amd64
+    - ssd
+    - stork-repo
+  needs:
+    - tarball
+  before_script:
+    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+  script:
+    - export LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
+    - ls -al
+    # prepare release notes file
+    - git clone https://gitlab.isc.org/isc-projects/stork.wiki
+    - stork_version=`perl -lne 'print $1 if /(\d+\.\d+\.\d+)/' < backend/version.go`
+    - stork_version_minor=`perl -lne 'print $1 if /"(\d+\.\d+)\.\d+/' < backend/version.go`
+    - output=Stork-${stork_version}-ReleaseNotes.txt
+    - fold -sw 73 < stork.wiki/*eleases/*${stork_version_minor}.md > $output
+    # upload release notes and tarball to repo.isc.org
+    - eval $(ssh-agent -s)
+    - echo "$REPO_SSH_PRIVATE_KEY" | base64 -d | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 0700 ~/.ssh
+    - touch ~/.ssh/known_hosts
+    - ssh-keyscan repo.isc.org >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - destdir=/data/shared/sweng/stork/releases/${stork_version}
+    - ssh -4 storkpush@repo.isc.org mkdir -p $destdir
+    - scp -4 stork-${stork_version}.tar.gz $output storkpush@repo.isc.org:$destdir/
+    - ssh -4 storkpush@repo.isc.org chmod -R g+w $destdir
+    - ssh -4 storkpush@repo.isc.org ls -al $destdir
+    - ssh -4 storkpush@repo.isc.org sha256 $destdir/stork-*.tar.gz
+    # TODO:
+    # - automate pasting ChangeLog.md to release notes
+  artifacts:
+    name: "release-notes"
+    expire_in: 1 week
+    paths:
+      - Stork-*-ReleaseNotes.txt
+
 ### demo deploy jobs ###
 
 deploy_demo:
