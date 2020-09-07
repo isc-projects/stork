@@ -32,7 +32,6 @@ type Opts struct {
 }
 
 func main() {
-
 	// Setup logging
 	storkutil.SetupLogging()
 
