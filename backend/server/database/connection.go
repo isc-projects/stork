@@ -3,6 +3,7 @@ package dbops
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -29,12 +30,13 @@ func (d DbLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Cont
 	}
 	var query, err = q.FormattedQuery()
 	// FormattedQuery returns a tuple of query and error. The error in most cases is nil, and
-	// we don't want to print it. On the other hand, all logging is printed on stderr. We want
-	// to print here to stdout (hence fmt), so it's possible to redirect it to a file.
+	// we don't want to print it. On the other hand, all logging is printed on stdout. We want
+	// to print here to stder, so it's possible to redirect just the queries to a file.
 	if err != nil {
-		fmt.Println(query, err)
+		// Let's print errors as SQL comments. This will allow trying to run the export as a script.
+		fmt.Fprintf(os.Stderr, "%s -- error:%s\n", query, err)
 	} else {
-		fmt.Println(query)
+		fmt.Fprintln(os.Stderr, query)
 	}
 	return c, nil
 }
