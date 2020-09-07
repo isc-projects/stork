@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"isc.org/stork"
 	dbops "isc.org/stork/server/database"
+	storkutil "isc.org/stork/util"
 )
 
 // Structure defining options for all commands except "up" and "down".
@@ -31,6 +32,10 @@ type Opts struct {
 }
 
 func main() {
+
+	// Setup logging
+	storkutil.SetupLogging()
+
 	log.Printf("Starting Stork Database Migration Tool, version %s, build date %s", stork.Version, stork.BuildDate)
 
 	// Parse command line options and commands.
