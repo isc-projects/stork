@@ -33,6 +33,7 @@ import { SplitButtonModule } from 'primeng/splitbutton'
 import { FieldsetModule } from 'primeng/fieldset'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { InputSwitchModule } from 'primeng/inputswitch'
+import { BreadcrumbModule } from 'primeng/breadcrumb'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -71,6 +72,7 @@ import { EventsPanelComponent } from './events-panel/events-panel.component'
 import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.component'
 import { LogViewPageComponent } from './log-view-page/log-view-page.component'
 import { AppDaemonsStatusComponent } from './app-daemons-status/app-daemons-status.component'
+import { BreadcrumbsComponent } from './breadcrumbs/breadcrumbs.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -111,6 +113,7 @@ export function cfgFactory() {
         ForbiddenPageComponent,
         LogViewPageComponent,
         AppDaemonsStatusComponent,
+        BreadcrumbsComponent,
     ],
     imports: [
         BrowserModule,
@@ -147,6 +150,7 @@ export function cfgFactory() {
         FieldsetModule,
         OverlayPanelModule,
         InputSwitchModule,
+        BreadcrumbModule,
     ],
     providers: [
         {

@@ -1,3 +1,9 @@
+<app-breadcrumbs [items]="breadcrumbs">
+    <div page-help>
+        <p>This page displays a list of machines.</p>
+    </div>
+</app-breadcrumbs>
+
 <p-dialog header="New Machine" [(visible)]="newMachineDlgVisible" [style]="{ width: '40vw' }">
     <p style="padding-bottom: 1em">
         First, install Stork Agent on the machine with Kea or BIND 9. This is described in

@@ -11,6 +11,8 @@ import { SettingsService } from '../backend/api/api'
     styleUrls: ['./settings-page.component.sass'],
 })
 export class SettingsPageComponent implements OnInit {
+    breadcrumbs = [{ label: 'Configuration' }, { label: 'Settings' }]
+
     public settingsForm: FormGroup
 
     constructor(private fb: FormBuilder, private settingsApi: SettingsService, private msgSrv: MessageService) {

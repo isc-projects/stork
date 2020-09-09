@@ -1,3 +1,11 @@
+* 103 [func] godfryd
+
+    Introduced breadcrumb that shows current location in Stork
+    web application. Renamed 'Services' menu to 'Machines & Apps'.
+    Moved 'Grafana' menu item from 'Services' to top level,
+    between 'DHCP' and 'Machines & Apps'.
+    (Gitlab #337)
+
 * 102 [func] tomek
 
     The stork-db-migrate tool can now migrate up and down to specific

@@ -17,6 +17,8 @@ import { AuthService } from '../auth.service'
     styleUrls: ['./password-change-page.component.sass'],
 })
 export class PasswordChangePageComponent implements OnInit {
+    breadcrumbs = [{ label: 'User Profile' }, { label: 'Password Change' }]
+
     passwordChangeForm: FormGroup
 
     constructor(

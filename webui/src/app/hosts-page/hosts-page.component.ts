@@ -22,6 +22,8 @@ import { extractKeyValsAndPrepareQueryParams } from '../utils'
 export class HostsPageComponent implements OnInit {
     @ViewChild('hostsTable') hostsTable: Table
 
+    breadcrumbs = [{ label: 'DHCP' }, { label: 'Host Reservations' }]
+
     // hosts
     hosts: any[]
     totalHosts = 0

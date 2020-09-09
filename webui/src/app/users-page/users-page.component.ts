@@ -93,6 +93,8 @@ function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
     styleUrls: ['./users-page.component.sass'],
 })
 export class UsersPageComponent implements OnInit {
+    breadcrumbs = [{ label: 'Configuration' }, { label: 'Users' }]
+
     private groups: any[]
     // users table
     users: any[]

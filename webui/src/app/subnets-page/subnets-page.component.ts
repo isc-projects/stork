@@ -17,6 +17,8 @@ import { SettingService } from '../setting.service'
     styleUrls: ['./subnets-page.component.sass'],
 })
 export class SubnetsPageComponent implements OnInit {
+    breadcrumbs = [{ label: 'DHCP' }, { label: 'Subnets' }]
+
     @ViewChild('subnetsTable') subnetsTable: Table
 
     // subnets

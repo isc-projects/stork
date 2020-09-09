@@ -16,6 +16,8 @@ import { getTotalAddresses, getAssignedAddresses } from '../subnets'
     styleUrls: ['./shared-networks-page.component.sass'],
 })
 export class SharedNetworksPageComponent implements OnInit {
+    breadcrumbs = [{ label: 'DHCP' }, { label: 'Shared Networks' }]
+
     @ViewChild('networksTable') networksTable: Table
 
     // networks

@@ -27,6 +27,11 @@ export class HelpTipComponent implements OnInit {
      */
     @Input() width = '20vw'
 
+    /**
+     * A class for icon with question mark.
+     */
+    @Input() variant = ''
+
     constructor() {}
 
     ngOnInit() {}

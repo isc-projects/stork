@@ -40,16 +40,14 @@ function setDaemonStatusErred(app) {
     }
 }
 
-function capitalize(txt) {
-    return txt.charAt(0).toUpperCase() + txt.slice(1)
-}
-
 @Component({
     selector: 'app-apps-page',
     templateUrl: './apps-page.component.html',
     styleUrls: ['./apps-page.component.sass'],
 })
 export class AppsPageComponent implements OnInit {
+    breadcrumbs = [{ label: 'Machines & Apps' }, { label: 'Apps' }]
+
     appType = ''
     // apps table
     apps: any[]
@@ -76,12 +74,21 @@ export class AppsPageComponent implements OnInit {
         private loadingService: LoadingService
     ) {}
 
+    getAppsLabel() {
+        if (this.appType === 'bind9') {
+            return 'BIND 9 Apps'
+        } else {
+            return ' Kea Apps'
+        }
+    }
+
     switchToTab(index) {
         if (this.activeTabIdx === index) {
             return
         }
         this.activeTabIdx = index
         this.activeItem = this.tabs[index]
+
         if (index > 0) {
             this.appTab = this.openedApps[index - 1]
         }
@@ -91,9 +98,8 @@ export class AppsPageComponent implements OnInit {
         this.openedApps.push({
             app,
         })
-        const capAppType = capitalize(app.type)
         this.tabs.push({
-            label: `${app.id}. ${capAppType}@${app.machine.address}`,
+            label: `[${app.id}]@${app.machine.address}`,
             routerLink: '/apps/' + this.appType + '/' + app.id,
         })
     }
@@ -101,12 +107,12 @@ export class AppsPageComponent implements OnInit {
     ngOnInit() {
         this.route.paramMap.subscribe((params) => {
             const newAppType = params.get('appType')
+
             if (newAppType !== this.appType) {
                 this.appType = newAppType
+                this.breadcrumbs[1]['label'] = this.getAppsLabel()
 
-                this.tabs = [
-                    { label: capitalize(this.appType) + ' Apps', routerLink: '/apps/' + this.appType + '/all' },
-                ]
+                this.tabs = [{ label: 'All', routerLink: '/apps/' + this.appType + '/all' }]
 
                 this.apps = []
                 this.appMenuItems = [

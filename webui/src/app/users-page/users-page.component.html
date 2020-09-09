@@ -1,3 +1,9 @@
+<app-breadcrumbs [items]="breadcrumbs">
+    <div page-help>
+        <p>This page displays a list of users.</p>
+    </div>
+</app-breadcrumbs>
+
 <p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
     <ng-template pTemplate="item" let-item let-i="index">
         <div style="display: flex; justify-content: space-between">

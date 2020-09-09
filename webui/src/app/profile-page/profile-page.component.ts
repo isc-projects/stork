@@ -11,6 +11,8 @@ import { ServerDataService } from '../server-data.service'
     styleUrls: ['./profile-page.component.sass'],
 })
 export class ProfilePageComponent implements OnInit {
+    breadcrumbs = [{ label: 'User Profile' }]
+
     currentUser = null
     private groups: any[]
     public groupName: string

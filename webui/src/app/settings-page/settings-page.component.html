@@ -1,5 +1,10 @@
+<app-breadcrumbs [items]="breadcrumbs">
+    <div page-help>
+        <p>This page displays Stork settings.</p>
+    </div>
+</app-breadcrumbs>
+
 <div class="p-col-6">
-    <h2>Settings</h2>
     <form [formGroup]="settingsForm">
         <p-fieldset legend="Intervals">
             <label style="display: block">
@@ -37,7 +42,7 @@
                 <input type="url" formControlName="grafana_url" style="width: 100%" />
             </label>
 
-            <label style="display: block margin-top: 1em;">
+            <label style="display: block; margin-top: 1em">
                 URL to Prometheus:<br />
                 <input type="url" formControlName="prometheus_url" style="width: 100%" />
             </label>
