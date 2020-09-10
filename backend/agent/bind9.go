@@ -37,7 +37,7 @@ const namedCheckconf = "named-checkconf"
 // Example key clause:
 //
 //    key "name" {
-//        algorithm "hmac-md5";
+//        algorithm "hmac-sha256";
 //        secret "OmItW1lOyLVUEuvv+Fme+Q==";
 //    };
 //

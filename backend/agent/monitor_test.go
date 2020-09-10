@@ -147,7 +147,7 @@ type TestCommander struct{}
 
 func (c TestCommander) Output(command string, args ...string) ([]byte, error) {
 	text := `keys "foo" {
-                      algorithm "hmac-md5";
+                      algorithm "hmac-sha256";
                       secret "abcd";
                  };
 	         controls {
@@ -173,7 +173,7 @@ func TestDetectBind9App(t *testing.T) {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
 	require.EqualValues(t, 5353, point.Port)
-	require.Equal(t, "hmac-md5:abcd", point.Key)
+	require.Equal(t, "hmac-sha256:abcd", point.Key)
 	point = app.AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "127.0.0.80", point.Address)
@@ -239,7 +239,7 @@ func TestGetAccessPoint(t *testing.T) {
 				Type:    AccessPointControl,
 				Address: "127.0.0.53",
 				Port:    int64(5353),
-				Key:     "hmac-md5:abcd",
+				Key:     "hmac-sha256:abcd",
 			},
 			{
 				Type:    AccessPointStatistics,
@@ -269,7 +269,7 @@ func TestGetAccessPoint(t *testing.T) {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
 	require.EqualValues(t, 5353, point.Port)
-	require.Equal(t, "hmac-md5:abcd", point.Key)
+	require.Equal(t, "hmac-sha256:abcd", point.Key)
 
 	point, err = getAccessPoint(bind9App, AccessPointStatistics)
 	require.NotNil(t, point)
@@ -301,7 +301,7 @@ func TestPrintNewOrUpdatedApps(t *testing.T) {
 				Type:    AccessPointControl,
 				Address: "127.0.0.53",
 				Port:    int64(5353),
-				Key:     "hmac-md5:abcd",
+				Key:     "hmac-sha256:abcd",
 			},
 			{
 				Type:    AccessPointStatistics,

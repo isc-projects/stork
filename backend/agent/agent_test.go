@@ -368,7 +368,7 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 	req := &agentapi.ForwardRndcCommandReq{
 		Address:     "127.0.0.1",
 		Port:        1234,
-		Key:         "hmac-md5:abcd",
+		Key:         "hmac-sha256:abcd",
 		RndcRequest: cmd,
 	}
 
@@ -410,7 +410,7 @@ func TestForwardRndcCommandError(t *testing.T) {
 	req := &agentapi.ForwardRndcCommandReq{
 		Address:     "127.0.0.1",
 		Port:        1234,
-		Key:         "hmac-md5:abcd",
+		Key:         "hmac-sha256:abcd",
 		RndcRequest: cmd,
 	}
 
@@ -430,7 +430,7 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 	req := &agentapi.ForwardRndcCommandReq{
 		Address:     "127.0.0.1",
 		Port:        1234,
-		Key:         "hmac-md5:abcd",
+		Key:         "hmac-sha256:abcd",
 		RndcRequest: cmd,
 	}
 
