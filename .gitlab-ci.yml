@@ -223,7 +223,17 @@ deploy_to_repo:
 
 deploy_demo:
   stage: build
-  when: manual
+  rules:
+# #    - if: $CI_COMMIT_TAG
+# #      when: never                                             # Do not run this job when a tag is created manually
+# #    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+#     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH             # Run this job when commits are pushed or merged to the default branch
+#       when: on_success
+#     - when: manual
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      when: on_success
   image: docker:latest
   tags:
     - linux
@@ -245,6 +255,7 @@ deploy_demo:
     - rake build_all_in_container
     - docker-compose -f docker-compose.yaml -f docker-compose-premium.yaml build --build-arg CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN
     - docker-compose push
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml down -v --remove-orphans
     - scp -o StrictHostKeyChecking=no docker-compose.yaml jenkins@stork.lab.isc.org:~/deploy
     - scp -o StrictHostKeyChecking=no docker-compose-premium.yaml jenkins@stork.lab.isc.org:~/deploy
     - scp -o StrictHostKeyChecking=no docker/prometheus.yml jenkins@stork.lab.isc.org:~/deploy/docker/prometheus.yml
@@ -252,7 +263,6 @@ deploy_demo:
     - scp -o StrictHostKeyChecking=no docker/grafana/dashboards.yaml jenkins@stork.lab.isc.org:~/deploy/docker/grafana/dashboards.yaml
     - scp -o StrictHostKeyChecking=no docker/grafana/datasource.yaml jenkins@stork.lab.isc.org:~/deploy/docker/grafana/datasource.yaml
     - scp -o StrictHostKeyChecking=no docker/grafana/grafana.ini jenkins@stork.lab.isc.org:~/deploy/docker/grafana/grafana.ini
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml down
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml pull
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml up -d --no-build
 
