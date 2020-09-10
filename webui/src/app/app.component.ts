@@ -87,13 +87,13 @@ export class AppComponent implements OnInit {
                 label: 'Machines & Apps',
                 items: [
                     {
-                        label: 'DHCP Kea Apps',
+                        label: 'Kea Apps',
                         visible: false,
                         icon: 'fa fa-server',
                         routerLink: '/apps/kea/all',
                     },
                     {
-                        label: 'DNS BIND 9 Apps',
+                        label: 'BIND 9 Apps',
                         visible: false,
                         icon: 'fa fa-server',
                         routerLink: '/apps/bind9/all',
