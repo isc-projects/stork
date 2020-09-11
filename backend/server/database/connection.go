@@ -81,8 +81,8 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 	// Fetch password from the env variable or prompt for password.
 	Password(settings)
 
-	// Make a connection to DB
-	db, err := NewPgDbConn(settings.PgParams(), settings.TraceSQL)
+	// Make a connection to DB (tracing is enabled at this stage if set to all (migrations and run-time))
+	db, err := NewPgDbConn(settings.PgParams(), settings.TraceSQL == "all")
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +96,11 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 			"old-version": oldVer,
 			"new-version": newVer,
 		}).Info("successfully migrated database schema")
+	}
+
+	// Enable tracing here, if we were told to enable only at run-time
+	if settings.TraceSQL == "run" {
+		db.AddQueryHook(DbLogger{})
 	}
 
 	log.Infof("connected to database %s:%d, schema version: %d", settings.Host, settings.Port, newVer)

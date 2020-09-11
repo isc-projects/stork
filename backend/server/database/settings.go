@@ -22,7 +22,7 @@ type BaseDatabaseSettings struct {
 
 type DatabaseSettings struct {
 	BaseDatabaseSettings
-	TraceSQL bool `long:"db-trace-queries" description:"enable tracing SQL queries" env:"STORK_DATABASE_TRACE"`
+	TraceSQL string `long:"db-trace-queries" description:"enable tracing SQL queries: run (only runtime, without migrations), all (migrations and run-time), all is the default and covers both migrations and run-time." env:"STORK_DATABASE_TRACE" optional:"true" optional-value:"all"`
 }
 
 // Alias to pg.DB

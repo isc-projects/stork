@@ -45,6 +45,8 @@ func main() {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
 		} else {
+			// We should print out what exactly went wrong.
+			log.Fatalf("Error during parsing options: %+v", err)
 			os.Exit(1)
 		}
 	}
@@ -65,13 +67,17 @@ func main() {
 		log.Infof("Requested migrating down to version %s", opts.Down.Target)
 	}
 
+	if opts.DatabaseSettings.TraceSQL != "" {
+		log.Infof("SQL queries tracing set to %s", opts.DatabaseSettings.TraceSQL)
+	}
+
 	// Use the provided credentials to connect to the database.
 	db, err := dbops.NewPgDbConn(&dbops.PgOptions{
 		User:     opts.User,
 		Password: opts.Password,
 		Database: opts.DbName,
 		Addr:     fmt.Sprintf("%s:%d", opts.Host, opts.Port),
-	}, opts.DatabaseSettings.TraceSQL)
+	}, opts.DatabaseSettings.TraceSQL != "")
 	if err != nil {
 		log.Fatalf("unexpected error: %+v", err)
 	}

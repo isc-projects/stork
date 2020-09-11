@@ -59,8 +59,9 @@ Application Options:
 ``-p``, ``--db-port=``
    the port on which the database is available (default: 5432) [$STORK_DATABASE_PORT]
 
-``--db-trace-queries``
-   enable tracing SQL queries [$STORK_DATABASE_TRACE]
+``--db-trace-queries=``
+   enable tracing SQL queries: run (only runtime, without migrations), all (migrations and run-time)),
+   all is the default and covers both migrations and run-time.enable tracing SQL queries [$STORK_DATABASE_TRACE]
 
 ``-h``, ``--help``
    show help message
