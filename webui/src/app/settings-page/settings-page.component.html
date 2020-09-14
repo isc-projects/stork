@@ -4,53 +4,78 @@
     </div>
 </app-breadcrumbs>
 
-<div class="p-col-6">
-    <form [formGroup]="settingsForm">
-        <p-fieldset legend="Intervals">
-            <label style="display: block">
-                BIND 9 Statistics Puller Interval (in seconds):<br />
-                <input type="number" formControlName="bind9_stats_puller_interval" style="width: 100%" />
-            </label>
-            <div *ngIf="hasError('bind9_stats_puller_interval', 'required')" style="color: red">This is required.</div>
-            <div *ngIf="hasError('bind9_stats_puller_interval', 'min')" style="color: red">It must be > 0.</div>
+<div class="p-grid">
+    <!-- left panel with settings -->
+    <div class="p-col-6">
+        <form [formGroup]="settingsForm">
+            <p-fieldset legend="Intervals">
+                <label style="display: block">
+                    BIND 9 Statistics Puller Interval (in seconds):<br />
+                    <input type="number" formControlName="bind9_stats_puller_interval" style="width: 100%" />
+                </label>
+                <div *ngIf="hasError('bind9_stats_puller_interval', 'required')" style="color: red">
+                    This is required.
+                </div>
+                <div *ngIf="hasError('bind9_stats_puller_interval', 'min')" style="color: red">It must be > 0.</div>
 
-            <label style="display: block; margin-top: 1em">
-                Kea Statistics Puller Interval (in seconds):<br />
-                <input type="number" formControlName="kea_stats_puller_interval" style="width: 100%" />
-            </label>
-            <div *ngIf="hasError('kea_stats_puller_interval', 'required')" style="color: red">This is required.</div>
-            <div *ngIf="hasError('kea_stats_puller_interval', 'min')" style="color: red">It must be > 0.</div>
+                <label style="display: block; margin-top: 1em">
+                    Kea Statistics Puller Interval (in seconds):<br />
+                    <input type="number" formControlName="kea_stats_puller_interval" style="width: 100%" />
+                </label>
+                <div *ngIf="hasError('kea_stats_puller_interval', 'required')" style="color: red">
+                    This is required.
+                </div>
+                <div *ngIf="hasError('kea_stats_puller_interval', 'min')" style="color: red">It must be > 0.</div>
 
-            <label style="display: block; margin-top: 1em">
-                Kea Hosts Puller Interval (in seconds):<br />
-                <input type="number" formControlName="kea_hosts_puller_interval" style="width: 100%" />
-            </label>
-            <div *ngIf="hasError('kea_hosts_puller_interval', 'required')" style="color: red">This is required.</div>
-            <div *ngIf="hasError('kea_hosts_puller_interval', 'min')" style="color: red">It must be > 0.</div>
+                <label style="display: block; margin-top: 1em">
+                    Kea Hosts Puller Interval (in seconds):<br />
+                    <input type="number" formControlName="kea_hosts_puller_interval" style="width: 100%" />
+                </label>
+                <div *ngIf="hasError('kea_hosts_puller_interval', 'required')" style="color: red">
+                    This is required.
+                </div>
+                <div *ngIf="hasError('kea_hosts_puller_interval', 'min')" style="color: red">It must be > 0.</div>
 
-            <label style="display: block; margin-top: 1em">
-                Kea Status Puller Interval (in seconds):<br />
-                <input type="number" formControlName="kea_status_puller_interval" style="width: 100%" />
-            </label>
-            <div *ngIf="hasError('kea_status_puller_interval', 'required')" style="color: red">This is required.</div>
-            <div *ngIf="hasError('kea_status_puller_interval', 'min')" style="color: red">It must be > 0.</div>
-        </p-fieldset>
+                <label style="display: block; margin-top: 1em">
+                    Kea Status Puller Interval (in seconds):<br />
+                    <input type="number" formControlName="kea_status_puller_interval" style="width: 100%" />
+                </label>
+                <div *ngIf="hasError('kea_status_puller_interval', 'required')" style="color: red">
+                    This is required.
+                </div>
+                <div *ngIf="hasError('kea_status_puller_interval', 'min')" style="color: red">It must be > 0.</div>
+            </p-fieldset>
 
-        <p-fieldset legend="Grafana & Prometheus">
-            <label style="display: block">
-                URL to Grafana:<br />
-                <input type="url" formControlName="grafana_url" style="width: 100%" />
-            </label>
+            <p-fieldset legend="Grafana & Prometheus">
+                <label style="display: block">
+                    URL to Grafana:<br />
+                    <input type="url" formControlName="grafana_url" style="width: 100%" />
+                </label>
 
-            <label style="display: block; margin-top: 1em">
-                URL to Prometheus:<br />
-                <input type="url" formControlName="prometheus_url" style="width: 100%" />
-            </label>
-        </p-fieldset>
-    </form>
+                <label style="display: block; margin-top: 1em">
+                    URL to Prometheus:<br />
+                    <input type="url" formControlName="prometheus_url" style="width: 100%" />
+                </label>
+            </p-fieldset>
+        </form>
 
-    <button pButton type="button" label="Save Settings" (click)="saveSettings()" style="margin: 10px 0 0 4px"></button>
-    <span *ngIf="settingsForm.invalid" style="color: red; margin-left: 20px">
-        There are some issues in the form values.
-    </span>
+        <button
+            pButton
+            type="button"
+            label="Save Settings"
+            (click)="saveSettings()"
+            style="margin: 10px 0 0 4px"
+        ></button>
+        <span *ngIf="settingsForm.invalid" style="color: red; margin-left: 20px">
+            There are some issues in the form values.
+        </span>
+    </div>
+
+    <!-- right panel with link to machines page -->
+    <div class="p-col-6" style="padding: 30px 0 0 20px">
+        <div class="ui-message ui-widget ui-corner-all ui-message-info" style="background-color: #dae7f2">
+            <span class="ui-message-icon pi pi-info-circle"></span>
+            To add or remove machines go to <a routerLink="/machines/all">machines page</a>.
+        </div>
+    </div>
 </div>
