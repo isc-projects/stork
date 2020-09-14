@@ -281,7 +281,7 @@ task :run_server => [:build_server, GO] do |t, args|
   else
     cmd = 'backend/cmd/stork-server/stork-server'
     if ENV['dbtrace'] == 'true'
-      cmd = "#{cmd} --db-trace-queries"
+      cmd = "#{cmd} --db-trace-queries=run"
     end
     sh cmd
   end
