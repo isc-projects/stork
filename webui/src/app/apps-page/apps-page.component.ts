@@ -46,7 +46,7 @@ function setDaemonStatusErred(app) {
     styleUrls: ['./apps-page.component.sass'],
 })
 export class AppsPageComponent implements OnInit {
-    breadcrumbs = [{ label: 'Machines & Apps' }, { label: 'Apps' }]
+    breadcrumbs = [{ label: 'Services' }, { label: 'Apps' }]
 
     appType = ''
     // apps table

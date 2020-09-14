@@ -1,9 +1,7 @@
 * 103 [func] godfryd
 
     Introduced breadcrumb that shows current location in Stork
-    web application. Renamed 'Services' menu to 'Machines & Apps'.
-    Moved 'Grafana' menu item from 'Services' to top level,
-    between 'DHCP' and 'Machines & Apps'.
+    web application.
     (Gitlab #337)
 
 * 102 [func] tomek

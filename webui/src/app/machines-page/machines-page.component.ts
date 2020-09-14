@@ -18,7 +18,7 @@ interface AppType {
     styleUrls: ['./machines-page.component.sass'],
 })
 export class MachinesPageComponent implements OnInit {
-    breadcrumbs = [{ label: 'Machines' }]
+    breadcrumbs = [{ label: 'Services' }, { label: 'Machines' }]
 
     // machines table
     machines: any[]

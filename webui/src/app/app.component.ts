@@ -78,13 +78,7 @@ export class AppComponent implements OnInit {
                 ],
             },
             {
-                label: 'Grafana',
-                icon: 'pi pi-chart-line',
-                url: '',
-                visible: false,
-            },
-            {
-                label: 'Machines & Apps',
+                label: 'Services',
                 items: [
                     {
                         label: 'Kea Apps',
@@ -102,6 +96,12 @@ export class AppComponent implements OnInit {
                         label: 'Machines',
                         icon: 'fa fa-server',
                         routerLink: '/machines/all',
+                    },
+                    {
+                        label: 'Grafana',
+                        icon: 'pi pi-chart-line',
+                        url: '',
+                        visible: false,
                     },
                 ],
             },
@@ -168,9 +168,9 @@ export class AppComponent implements OnInit {
             this.currentUser = x
             if (this.auth.superAdmin()) {
                 // super admin can see Configuration/Users menu
-                this.menuItems[3].items[0]['visible'] = true
+                this.menuItems[2].items[0]['visible'] = true
             } else {
-                this.menuItems[3].items[0]['visible'] = false
+                this.menuItems[2].items[0]['visible'] = false
             }
 
             // Only get the stats and settings when the user is logged in.
@@ -180,17 +180,17 @@ export class AppComponent implements OnInit {
                     // otherwise hide them
                     if (data.keaAppsTotal && data.keaAppsTotal > 0) {
                         this.menuItems[0].visible = true
-                        this.menuItems[2].items[0]['visible'] = true
+                        this.menuItems[1].items[0]['visible'] = true
                     } else {
                         this.menuItems[0].visible = false
-                        this.menuItems[2].items[0]['visible'] = false
+                        this.menuItems[1].items[0]['visible'] = false
                     }
                     // if there are BIND 9 apps then show BIND 9 related menu items
                     // otherwise hide them
                     if (data.bind9AppsTotal && data.bind9AppsTotal > 0) {
-                        this.menuItems[2].items[1]['visible'] = true
+                        this.menuItems[1].items[1]['visible'] = true
                     } else {
-                        this.menuItems[2].items[1]['visible'] = false
+                        this.menuItems[1].items[1]['visible'] = false
                     }
                 })
 
@@ -200,11 +200,19 @@ export class AppComponent implements OnInit {
                 this.settingSvc.getSettings().subscribe((data) => {
                     const grafanaUrl = data['grafana_url']
 
-                    if (grafanaUrl && grafanaUrl !== '') {
-                        this.menuItems[1]['visible'] = true
-                        this.menuItems[1]['url'] = grafanaUrl
-                    } else {
-                        this.menuItems[1]['visible'] = false
+                    for (const menuItem of this.menuItems) {
+                        if (menuItem['label'] === 'Services') {
+                            for (const subMenu of menuItem.items) {
+                                if (subMenu['label'] === 'Grafana') {
+                                    if (grafanaUrl && grafanaUrl !== '') {
+                                        subMenu['visible'] = true
+                                        subMenu['url'] = grafanaUrl
+                                    } else {
+                                        subMenu['visible'] = false
+                                    }
+                                }
+                            }
+                        }
                     }
                 })
             }
