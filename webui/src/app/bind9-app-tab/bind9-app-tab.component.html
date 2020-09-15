@@ -1,7 +1,7 @@
 <div style="margin: 0" class="p-grid">
     <div class="p-col-12" style="display: flex; justify-content: space-between">
         <div style="font-size: 1.1em; display: flex; align-items: center">
-            App is located on machine:&nbsp;
+            The application is hosted on the machine:&nbsp;
             <a routerLink="/machines/{{ appTab.app.machine.id }}">{{ appTab.app.machine.address }}</a>
         </div>
         <button type="button" pButton label="Refresh App" icon="pi pi-refresh" (click)="refreshAppState()"></button>
