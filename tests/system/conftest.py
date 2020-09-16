@@ -3,7 +3,6 @@ import re
 import glob
 import pytest
 
-
 def pytest_addoption(parser):
     parser.addoption("--stork-rpm-ver", action="store", help="Stork RPM packages version")
     parser.addoption("--stork-deb-ver", action="store", help="Stork deb packages version")

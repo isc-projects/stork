@@ -811,7 +811,7 @@ end
 task :system_tests => 'tests/system/venv/bin/activate' do
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
-    sh './venv/bin/pytest -r ap -s tests.py'
+    sh './venv/bin/pytest --full-trace -r ap -s tests.py'
   end
 end
 

@@ -177,9 +177,19 @@ class Container:
             self.bg_exc = e
 
     def dump_image(self):
-        print('dumping %s, alias: %s...' % (self.name, self.name))
+        print('dumping %s ...' % self.name)
         self.cntr.stop(wait=True)
+
+        # there is an issue with publishing container: https://github.com/lxc/pylxd/issues/404
+        # the workaround is to set type to 'container'
+        old_type = self.cntr.type
+        self.cntr.type = 'container'
+
         image = self.cntr.publish(True, True)
+
+        # restore container type
+        self.cntr.type = old_type
+
         os_name, release = self.alias.split('/')
         image.properties = {
             'version': str(self.version),
