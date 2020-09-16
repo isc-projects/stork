@@ -32,10 +32,15 @@ func TestCreatEvent(t *testing.T) {
 	machine := &dbmodel.Machine{
 		ID: 456,
 	}
+	user := &dbmodel.SystemUser{
+		ID:    567,
+		Login: "login",
+		Email: "email",
+	}
 
 	// warning event with ref to app
-	ev := CreateEvent(dbmodel.EvWarning, "some text {app}", app)
-	require.EqualValues(t, "some text <app id=\"123\" type=\"kea\" version=\"1.2.3\">", ev.Text)
+	ev := CreateEvent(dbmodel.EvWarning, "some text {app} and {user}", app, user)
+	require.EqualValues(t, ev.Text, "some text <app id=\"123\" type=\"kea\" version=\"1.2.3\"> and <user id=\"567\" login=\"login\" email=\"email\">")
 	require.EqualValues(t, dbmodel.EvWarning, ev.Level)
 	require.NotNil(t, ev.Relations)
 	require.EqualValues(t, 123, ev.Relations.AppID)
@@ -96,7 +101,7 @@ func TestAddEvent(t *testing.T) {
 	var err error
 	for i := 1; i <= 10; i++ {
 		time.Sleep(10 * time.Millisecond)
-		events, total, err = dbmodel.GetEventsByPage(db, 0, 10, nil, nil, "", dbmodel.SortDirAny)
+		events, total, err = dbmodel.GetEventsByPage(db, 0, 10, 0, nil, nil, nil, nil, "", dbmodel.SortDirAny)
 		if total == 3 {
 			break
 		}

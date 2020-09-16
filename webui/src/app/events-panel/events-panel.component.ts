@@ -2,7 +2,7 @@ import { Component, OnInit, Input } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
-import { EventsService } from '../backend/api/api'
+import { EventsService, UsersService, ServicesService } from '../backend/api/api'
 
 /**
  * A component that presents events list. Each event has its own row.
@@ -14,25 +14,62 @@ import { EventsService } from '../backend/api/api'
     styleUrls: ['./events-panel.component.sass'],
 })
 export class EventsPanelComponent implements OnInit {
-    events: any = []
+    events: any = { items: [], total: 0 }
     errorCnt = 0
+    start = 0
+    limit = 10
 
-    @Input() filter: any = { daemon: null, machine: null }
+    @Input() ui = 'bare'
 
-    constructor(private eventsApi: EventsService, private msgSrv: MessageService) {}
-
-    ngOnInit(): void {
-        this.refreshEvents()
-        this.registerServerSentEvents()
+    @Input() filter = {
+        level: 0,
+        machine: null,
+        app: null,
+        daemon: null,
+        user: null,
     }
 
-    /**
-     * Load the most recent events from Stork server
-     */
-    refreshEvents() {
-        this.eventsApi.getEvents(this.filter.daemon, this.filter.machine).subscribe(
+    levels = [
+        {
+            label: 'All',
+            value: 0,
+            icon: 'pi pi-info-circle',
+        },
+        {
+            label: 'Warnings',
+            value: 1,
+            icon: 'pi pi-exclamation-triangle',
+        },
+        {
+            label: 'Errors',
+            value: 2,
+            icon: 'pi pi-exclamation-circle',
+        },
+    ]
+
+    users: any
+    machines: any
+    apps: any
+    daemons: any
+    selectedUser: any
+    selectedMachine: any
+    selectedApp: any
+    selectedDaemon: any
+
+    constructor(
+        private eventsApi: EventsService,
+        private usersApi: UsersService,
+        private servicesApi: ServicesService,
+        private msgSrv: MessageService
+    ) {}
+
+    ngOnInit(): void {
+        this.refreshEvents(null)
+        this.registerServerSentEvents()
+
+        this.usersApi.getUsers(0, 1000, null).subscribe(
             (data) => {
-                this.events = data
+                this.users = data.items
             },
             (err) => {
                 let msg = err.statusText
@@ -41,12 +78,92 @@ export class EventsPanelComponent implements OnInit {
                 }
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: 'Cannot get events',
-                    detail: 'Getting events erred: ' + msg,
+                    summary: 'Loading user accounts failed',
+                    detail: 'Loading user accounts from the database failed: ' + msg,
                     life: 10000,
                 })
             }
         )
+        this.servicesApi.getMachines(0, 1000, null, null).subscribe(
+            (data) => {
+                this.machines = data.items
+
+                if (this.filter.machine) {
+                    for (const m of this.machines) {
+                        if (m.id === this.filter.machine) {
+                            this.selectedMachine = m
+                            this.apps = m.apps
+
+                            if (this.filter.app) {
+                                for (const a of m.apps) {
+                                    if (a.id === this.filter.app) {
+                                        this.selectedApp = a
+                                        this.daemons = a.details.daemons
+
+                                        if (this.filter.daemon) {
+                                            for (const d of a.details.daemons) {
+                                                if (d.id === this.filter.daemon) {
+                                                    this.selectedDaemon = d
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            (err) => {
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Cannot get machines',
+                    detail: 'Getting machines failed: ' + msg,
+                    life: 10000,
+                })
+            }
+        )
+    }
+
+    /**
+     * Load the most recent events from Stork server
+     */
+    refreshEvents(event) {
+        if (event) {
+            this.start = event.first
+            this.limit = event.rows
+        }
+
+        this.eventsApi
+            .getEvents(
+                this.start,
+                this.limit,
+                this.filter.level,
+                this.filter.daemon,
+                this.filter.machine,
+                this.filter.user
+            )
+            .subscribe(
+                (data) => {
+                    this.events = data
+                },
+                (err) => {
+                    let msg = err.statusText
+                    if (err.error && err.error.message) {
+                        msg = err.error.message
+                    }
+                    this.msgSrv.add({
+                        severity: 'error',
+                        summary: 'Cannot get events',
+                        detail: 'Getting events erred: ' + msg,
+                        life: 10000,
+                    })
+                }
+            )
     }
 
     /**
@@ -97,6 +214,11 @@ export class EventsPanelComponent implements OnInit {
      * so it is presented in events panel.
      */
     eventHandler(event) {
+        // if currently presented page of events is not the first one
+        // then do not add new events to the list
+        if (this.start !== 0) {
+            return
+        }
         // decapitalize fields
         const ev = {
             text: event.Text,
@@ -109,7 +231,7 @@ export class EventsPanelComponent implements OnInit {
         this.events.items.unshift(ev)
 
         // remove last event if there is too many events
-        if (this.events.items.length > 30) {
+        if (this.events.items.length > this.limit) {
             this.events.items.pop()
         }
         this.events.total += 1
@@ -124,5 +246,48 @@ export class EventsPanelComponent implements OnInit {
         } else {
             ev.showDetails = true
         }
+    }
+
+    paginate(event) {
+        this.start = event.first
+        this.limit = event.rows
+        this.refreshEvents(null)
+    }
+
+    onMachineSelect(event) {
+        if (event.value === null) {
+            this.apps = []
+            this.filter.machine = null
+        } else {
+            this.apps = event.value.apps
+            this.filter.machine = event.value.id
+        }
+        this.daemons = []
+        this.filter.app = null
+        this.filter.daemon = null
+        this.refreshEvents(null)
+    }
+
+    onAppSelect(event) {
+        console.info(event)
+        if (event.value === null) {
+            this.daemons = []
+            this.filter.app = null
+        } else {
+            this.daemons = event.value.details.daemons
+            this.filter.app = event.value.id
+        }
+        this.filter.daemon = null
+        this.refreshEvents(null)
+    }
+
+    onDaemonSelect(event) {
+        console.info(event)
+        if (event.value) {
+            this.filter.daemon = event.value.id
+        } else {
+            this.filter.daemon = null
+        }
+        this.refreshEvents(null)
     }
 }

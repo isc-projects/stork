@@ -1,3 +1,10 @@
+* 105 [func] godfryd
+
+    Added a new page with events table that allows filtering
+    and paging events. Improved event tables on dashboard,
+    machines and applications pages.
+    (Gitlab #380)
+
 * 104 [bug] matthijs
 
     Stork was unable to parse inet_spec if there were multiple addresses in

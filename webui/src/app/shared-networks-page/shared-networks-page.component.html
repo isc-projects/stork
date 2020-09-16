@@ -5,8 +5,8 @@
 </app-breadcrumbs>
 
 <div>
-    <div style="margin: 0 0 10px 5px">
-        <span>
+    <div style="margin: 0 0 10px 5px; display: flex">
+        <div>
             <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
             Filter networks:
             <input
@@ -16,36 +16,36 @@
                 placeholder="network or any other field"
                 (keyup)="keyupFilterText($event)"
             />
-        </span>
-        <app-help-tip title="filtering">
-            <p>
-                Shared networks in the table below can be filtered by entering a text in the search box; the table shows
-                all shared networks matching the filter text. Currently supported field for such filtering is:
-            </p>
-            <ul>
-                <li>Name</li>
-            </ul>
-            <p>
-                The table presents shared networks that meet certain criteria, e.g. <b>alpha</b> shows all shared
-                networks that contain "alpha" in their names.
-            </p>
-            <p>
-                In addition, shared networks can be filtered by an explicitly selected field using the expression:
-                <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported field for explicit
-                filtering is:
-            </p>
-            <ul>
-                <li class="monospace">appId</li>
-            </ul>
-        </app-help-tip>
-        <span style="margin-left: 40px">
-            Protocol:
+            <app-help-tip title="filtering">
+                <p>
+                    Shared networks in the table below can be filtered by entering a text in the search box; the table
+                    shows all shared networks matching the filter text. Currently supported field for such filtering is:
+                </p>
+                <ul>
+                    <li>Name</li>
+                </ul>
+                <p>
+                    The table presents shared networks that meet certain criteria, e.g. <b>alpha</b> shows all shared
+                    networks that contain "alpha" in their names.
+                </p>
+                <p>
+                    In addition, shared networks can be filtered by an explicitly selected field using the expression:
+                    <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported field for explicit
+                    filtering is:
+                </p>
+                <ul>
+                    <li class="monospace">appId</li>
+                </ul>
+            </app-help-tip>
+        </div>
+        <div style="margin: 0 10px 0 40px; padding-top: 5px">Protocol:</div>
+        <div>
             <p-dropdown
                 [options]="dhcpVersions"
                 [(ngModel)]="queryParams.dhcpVersion"
                 (onChange)="filterByDhcpVersion()"
             ></p-dropdown>
-        </span>
+        </div>
     </div>
 
     <div>

@@ -86,6 +86,9 @@ func CreateEvent(level int, text string, objects ...interface{}) *dbmodel.Event 
 		} else if s, ok := obj.(*dbmodel.Subnet); ok {
 			text = strings.Replace(text, "{subnet}", subnetTag(s), -1)
 			relations.SubnetID = s.ID
+		} else if u, ok := obj.(*dbmodel.SystemUser); ok {
+			text = strings.Replace(text, "{user}", userTag(u), -1)
+			relations.UserID = int64(u.ID)
 		} else if s, ok := obj.(string); ok {
 			if len(s) > 0 {
 				details = s
@@ -174,5 +177,12 @@ func machineTag(machine *dbmodel.Machine) string {
 func subnetTag(subnet *dbmodel.Subnet) string {
 	tag := fmt.Sprintf("<subnet id=\"%d\" prefix=\"%s\">",
 		subnet.ID, subnet.Prefix)
+	return tag
+}
+
+// Prepare a user describing a subnet.
+func userTag(user *dbmodel.SystemUser) string {
+	tag := fmt.Sprintf("<user id=\"%d\" login=\"%s\" email=\"%s\">",
+		user.ID, user.Login, user.Email)
 	return tag
 }

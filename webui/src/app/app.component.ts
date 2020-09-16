@@ -106,6 +106,16 @@ export class AppComponent implements OnInit {
                 ],
             },
             {
+                label: 'Alerts',
+                items: [
+                    {
+                        label: 'Events',
+                        icon: 'fa fa-calendar-times',
+                        routerLink: '/events',
+                    },
+                ],
+            },
+            {
                 label: 'Configuration',
                 items: [
                     {

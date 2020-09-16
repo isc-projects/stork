@@ -1,0 +1,7 @@
+<div style="margin-top: 20px">
+    <app-events-panel
+        #eventsTable
+        ui="table"
+        [filter]="{ level: 0, machine: machineId, app: appId, daemon: daemonId, user: userId }"
+    ></app-events-panel>
+</div>

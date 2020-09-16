@@ -180,7 +180,10 @@
                         <!-- Events -->
                         <div class="p-col-5">
                             <h3>Events</h3>
-                            <app-events-panel #eventsTable [filter]="{ daemon: daemon.id }"></app-events-panel>
+                            <app-events-panel
+                                #eventsTable
+                                [filter]="{ machine: appTab.app.machine.id, app: appTab.app.id, daemon: daemon.id }"
+                            ></app-events-panel>
                         </div>
                     </div>
                 </ng-template>

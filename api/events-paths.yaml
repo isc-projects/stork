@@ -8,16 +8,28 @@
       tags:
         - Events
       parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - name: level
+          in: query
+          description: Show all levels (0), warning and errors (1), errors only (2).
+          type: integer
         - name: daemon
           in: query
           description: Daemon ID.
+          type: integer
+        - name: app
+          in: query
+          description: App ID.
           type: integer
         - name: machine
           in: query
           description: Machine ID.
           type: integer
-        - $ref: '#/parameters/paginationStartParam'
-        - $ref: '#/parameters/paginationLimitParam'
+        - name: user
+          in: query
+          description: User ID.
+          type: integer
       responses:
         200:
           description: List of events.

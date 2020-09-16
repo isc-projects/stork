@@ -1138,6 +1138,8 @@ func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemon
 		return rsp
 	}
 
+	oldMonitored := dbDaemon.Monitored
+
 	dbDaemon.Monitored = params.Daemon.Monitored
 
 	err = dbmodel.UpdateDaemon(r.Db, dbDaemon)
@@ -1147,6 +1149,16 @@ func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemon
 			Message: &msg,
 		})
 		return rsp
+	}
+
+	_, dbUser := r.SessionManager.Logged(ctx)
+
+	if oldMonitored != params.Daemon.Monitored {
+		if params.Daemon.Monitored {
+			r.EventCenter.AddInfoEvent("{user} enabled monitoring {daemon}", dbUser, dbDaemon, dbDaemon.App, dbDaemon.App.Machine)
+		} else {
+			r.EventCenter.AddWarningEvent("{user} disabled monitoring {daemon}", dbUser, dbDaemon, dbDaemon.App, dbDaemon.App.Machine)
+		}
 	}
 
 	rsp := services.NewUpdateDaemonOK()

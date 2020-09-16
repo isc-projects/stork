@@ -240,6 +240,7 @@ func GetDaemonByID(db *pg.DB, id int64) (*Daemon, error) {
 	app := Daemon{}
 	q := db.Model(&app)
 	q = q.Relation("App")
+	q = q.Relation("App.Machine")
 	q = q.Where("daemon.id = ?", id)
 	err := q.Select()
 	if err == pg.ErrNoRows {

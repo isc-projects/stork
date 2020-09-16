@@ -1283,6 +1283,14 @@ func TestUpdateDaemon(t *testing.T) {
 	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
 	require.True(t, okRsp.Payload.Details.AppKea.Daemons[0].Monitored) // now it is true
 
+	// setup a user session (UpdateDaemon needs user db object)
+	user, err := dbmodel.GetUserByID(rapi.Db, 1)
+	require.NoError(t, err)
+	ctx2, err := rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx2, user)
+	require.NoError(t, err)
+
 	// update daemon: change monitored to false
 	params := services.UpdateDaemonParams{
 		ID: keaApp.Daemons[0].ID,
@@ -1290,11 +1298,11 @@ func TestUpdateDaemon(t *testing.T) {
 			Monitored: false,
 		},
 	}
-	rsp = rapi.UpdateDaemon(ctx, params)
+	rsp = rapi.UpdateDaemon(ctx2, params)
 	require.IsType(t, &services.UpdateDaemonOK{}, rsp)
 
 	// get app with modified daemon
-	rsp = rapi.GetApp(ctx, getAppParams)
+	rsp = rapi.GetApp(ctx2, getAppParams)
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp = rsp.(*services.GetAppOK)
 	require.Equal(t, keaApp.ID, okRsp.Payload.ID)

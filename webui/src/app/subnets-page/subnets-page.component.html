@@ -13,8 +13,8 @@
 </app-breadcrumbs>
 
 <div>
-    <div style="margin: 0 0 10px 5px">
-        <span>
+    <div style="margin: 0 0 10px 5px; display: flex">
+        <div>
             <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
             Filter subnets:
             <input
@@ -47,15 +47,15 @@
                     <li class="monospace">appId</li>
                 </ul>
             </app-help-tip>
-        </span>
-        <span style="margin-left: 40px">
-            Protocol:
+        </div>
+        <div style="margin: 0 10px 0 40px; padding-top: 5px">Protocol:</div>
+        <div>
             <p-dropdown
                 [options]="dhcpVersions"
                 [(ngModel)]="queryParams.dhcpVersion"
                 (onChange)="filterByDhcpVersion()"
             ></p-dropdown>
-        </span>
+        </div>
     </div>
 
     <div>

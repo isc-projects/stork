@@ -13,9 +13,9 @@ import (
 	"isc.org/stork/server/gen/restapi/operations/events"
 )
 
-func (r *RestAPI) getEvents(offset, limit int64, daemonID *int64, machineID *int64, sortField string, sortDir dbmodel.SortDirEnum) (*models.Events, error) {
+func (r *RestAPI) getEvents(offset, limit int64, level int64, daemonID *int64, appID *int64, machineID *int64, userID *int64, sortField string, sortDir dbmodel.SortDirEnum) (*models.Events, error) {
 	// Get the events from the database.
-	dbEvents, total, err := dbmodel.GetEventsByPage(r.Db, offset, limit, daemonID, machineID, sortField, sortDir)
+	dbEvents, total, err := dbmodel.GetEventsByPage(r.Db, offset, limit, level, daemonID, appID, machineID, userID, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +51,13 @@ func (r *RestAPI) GetEvents(ctx context.Context, params events.GetEventsParams) 
 		limit = *params.Limit
 	}
 
+	var level int64 = 0
+	if params.Level != nil {
+		level = *params.Level
+	}
+
 	// get events from db
-	eventRecs, err := r.getEvents(start, limit, params.Daemon, params.Machine, "created_at", dbmodel.SortDirDesc)
+	eventRecs, err := r.getEvents(start, limit, level, params.Daemon, params.App, params.Machine, params.User, "created_at", dbmodel.SortDirDesc)
 	if err != nil {
 		msg := "problem with fetching events from the database"
 		log.Error(err)

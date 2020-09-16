@@ -1,27 +1,178 @@
-<table class="events-table">
-    <ng-container *ngFor="let ev of events.items; index as i">
-        <tr [class.odd-row]="i % 2 === 0">
-            <td *ngIf="ev.level === undefined || ev.level === 0" style="font-size: 1.5em; color: #9db2d3; width: 1em">
-                <i class="pi pi-info-circle"></i>
-            </td>
-            <td *ngIf="ev.level === 1" style="font-size: 1.5em; color: orange; width: 1em">
-                <i class="pi pi-exclamation-triangle"></i>
-            </td>
-            <td *ngIf="ev.level === 2" style="font-size: 1.5em; color: red; width: 1em">
-                <i class="pi pi-exclamation-circle"></i>
-            </td>
-            <td style="width: 6em">{{ ev.createdAt | localtime }}</td>
-            <td>
-                <app-event-text [text]="ev.text"></app-event-text>
-                <a *ngIf="ev.details" (click)="expandEvent(ev)" style="cursor: pointer">
-                    <i *ngIf="!ev.showDetails" class="pi pi-angle-double-down" style="vertical-align: text-bottom"></i>
-                    <i *ngIf="ev.showDetails" class="pi pi-angle-double-up" style="vertical-align: text-bottom"></i>
-                </a>
-            </td>
-        </tr>
-        <tr *ngIf="ev.showDetails" [class.odd-row]="i % 2 === 0">
-            <td></td>
-            <td colspan="2" [innerHTML]="ev.details"></td>
-        </tr>
-    </ng-container>
-</table>
+<div *ngIf="ui === 'bare'">
+    <table class="events-table">
+        <ng-container *ngFor="let ev of events.items; index as i">
+            <tr [class.odd-row]="i % 2 === 0">
+                <td
+                    *ngIf="ev.level === undefined || ev.level === 0"
+                    style="font-size: 1.5em; color: #9db2d3; width: 1em"
+                >
+                    <i class="pi pi-info-circle"></i>
+                </td>
+                <td *ngIf="ev.level === 1" style="font-size: 1.5em; color: orange; width: 1em">
+                    <i class="pi pi-exclamation-triangle"></i>
+                </td>
+                <td *ngIf="ev.level === 2" style="font-size: 1.5em; color: red; width: 1em">
+                    <i class="pi pi-exclamation-circle"></i>
+                </td>
+                <td style="width: 6em">{{ ev.createdAt | localtime }}</td>
+                <td>
+                    <app-event-text [text]="ev.text"></app-event-text>
+                    <a *ngIf="ev.details" (click)="expandEvent(ev)" style="cursor: pointer">
+                        <i
+                            *ngIf="!ev.showDetails"
+                            class="pi pi-angle-double-down"
+                            style="vertical-align: text-bottom"
+                        ></i>
+                        <i *ngIf="ev.showDetails" class="pi pi-angle-double-up" style="vertical-align: text-bottom"></i>
+                    </a>
+                </td>
+            </tr>
+            <tr *ngIf="ev.showDetails" [class.odd-row]="i % 2 === 0">
+                <td></td>
+                <td colspan="2" [innerHTML]="ev.details"></td>
+            </tr>
+        </ng-container>
+    </table>
+    <ng-template #paginatorText>
+        <a routerLink="/events" [queryParams]="{ machine: filter.machine, app: filter.app, daemon: filter.daemon }"
+            >more events</a
+        >
+    </ng-template>
+    <p-paginator
+        class="ev-pager"
+        [rows]="limit"
+        [totalRecords]="events.total"
+        pageLinkSize="3"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="{first} - {last} of {totalRecords}"
+        (onPageChange)="paginate($event)"
+        [templateRight]="paginatorText"
+    >
+    </p-paginator>
+</div>
+
+<div *ngIf="ui === 'table'">
+    <!-- filter bar -->
+    <div style="margin: 10px 0; display: flex; flex-wrap: wrap">
+        <div style="width: 18em">
+            <p-selectButton [options]="levels" [(ngModel)]="filter.level" (onChange)="refreshEvents(null)">
+                <ng-template let-item>
+                    <div style="padding: 0.5em 1em">
+                        <i
+                            [ngClass]="item.icon"
+                            style="vertical-align: text-top; margin-right: 6px; font-size: 1.4em"
+                        ></i>
+                        <span>{{ item.label }}</span>
+                    </div>
+                </ng-template>
+            </p-selectButton>
+        </div>
+
+        <div style="display: flex">
+            <div style="margin: 0 10px 0 30px; padding-top: 5px">User:</div>
+            <div>
+                <p-dropdown
+                    [options]="users"
+                    [(ngModel)]="selectedUser"
+                    optionLabel="login"
+                    placeholder="any"
+                    showClear="true"
+                    tooltip="Show events related to selected user"
+                    (onChange)="refreshEvents(null)"
+                ></p-dropdown>
+            </div>
+        </div>
+
+        <div style="display: flex">
+            <div style="margin: 0 10px 0 30px; padding-top: 5px">Machine:</div>
+            <div>
+                <p-dropdown
+                    [options]="machines"
+                    [(ngModel)]="selectedMachine"
+                    optionLabel="address"
+                    placeholder="any"
+                    showClear="true"
+                    tooltip="Show events related to selected machine"
+                    (onChange)="onMachineSelect($event)"
+                ></p-dropdown>
+            </div>
+        </div>
+
+        <div style="display: flex">
+            <div style="margin: 0 10px 0 30px; padding-top: 5px">App:</div>
+            <div>
+                <p-dropdown
+                    [options]="apps"
+                    [(ngModel)]="selectedApp"
+                    optionLabel="type"
+                    placeholder="any"
+                    showClear="true"
+                    tooltip="Show events related to selected app"
+                    (onChange)="onAppSelect($event)"
+                ></p-dropdown>
+            </div>
+        </div>
+
+        <div style="display: flex">
+            <div style="margin: 0 10px 0 30px; padding-top: 5px">Daemon:</div>
+            <div>
+                <p-dropdown
+                    [options]="daemons"
+                    [(ngModel)]="selectedDaemon"
+                    optionLabel="name"
+                    placeholder="any"
+                    showClear="true"
+                    tooltip="Show events related to selected daemon"
+                    (onChange)="onDaemonSelect($event)"
+                ></p-dropdown>
+            </div>
+        </div>
+    </div>
+
+    <!-- events table -->
+    <p-table
+        [value]="events.items"
+        class="ev-table"
+        [paginator]="true"
+        [rows]="10"
+        [lazy]="true"
+        (onLazyLoad)="refreshEvents($event)"
+        [totalRecords]="events.total"
+        [rowsPerPageOptions]="[10, 30, 100]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="{currentPage} of {totalPages} pages"
+    >
+        <ng-template pTemplate="header">
+            <tr>
+                <th style="width: 3em">Lvl</th>
+                <th style="width: 11em">Created At</th>
+                <th style="width: 30%">Event Text</th>
+                <th>Details</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-ev>
+            <tr>
+                <td
+                    *ngIf="ev.level === undefined || ev.level === 0"
+                    style="font-size: 1.5em; color: #9db2d3; width: 2em"
+                >
+                    <i class="pi pi-info-circle"></i>
+                </td>
+                <td *ngIf="ev.level === 1" style="font-size: 1.5em; color: orange; width: 2em">
+                    <i class="pi pi-exclamation-triangle"></i>
+                </td>
+                <td *ngIf="ev.level === 2" style="font-size: 1.5em; color: red; width: 2em">
+                    <i class="pi pi-exclamation-circle"></i>
+                </td>
+
+                <td style="width: 11em">{{ ev.createdAt | localtime }}</td>
+
+                <td><app-event-text [text]="ev.text"></app-event-text></td>
+                <td [innerHTML]="ev.details"></td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <div style="margin: 10px; font-size: 1.2em">No events found</div>
+        </ng-template>
+    </p-table>
+</div>

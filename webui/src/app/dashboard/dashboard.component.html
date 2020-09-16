@@ -338,7 +338,14 @@
                     <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
                         >Events</span
                     >
-                    <p-button icon="pi pi-refresh" (click)="eventsTable.refreshEvents()"></p-button>
+                    <div>
+                        <p-button icon="pi pi-table" routerLink="/events"></p-button>
+                        <p-button
+                            icon="pi pi-refresh"
+                            (click)="eventsTable.refreshEvents(null)"
+                            [style]="{ 'margin-left': '10px' }"
+                        ></p-button>
+                    </div>
                 </div>
             </p-header>
             <div style="max-height: calc(100vh - 10rem); overflow-y: auto; margin: 0 -0.8em 0 0">

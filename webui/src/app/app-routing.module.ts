@@ -14,6 +14,7 @@ import { HostsPageComponent } from './hosts-page/hosts-page.component'
 import { SubnetsPageComponent } from './subnets-page/subnets-page.component'
 import { SharedNetworksPageComponent } from './shared-networks-page/shared-networks-page.component'
 import { SettingsPageComponent } from './settings-page/settings-page.component'
+import { EventsPageComponent } from './events-page/events-page.component'
 import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.component'
 import { LogViewPageComponent } from './log-view-page/log-view-page.component'
 
@@ -110,6 +111,11 @@ const routes: Routes = [
     {
         path: 'settings',
         component: SettingsPageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'events',
+        component: EventsPageComponent,
         canActivate: [AuthGuard],
     },
     {

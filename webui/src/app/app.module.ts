@@ -1,7 +1,7 @@
 // Angular modules
 import { BrowserModule } from '@angular/platform-browser'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
-import { APP_INITIALIZER, Injector, NgModule } from '@angular/core'
+import { NgModule } from '@angular/core'
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 
@@ -34,6 +34,8 @@ import { FieldsetModule } from 'primeng/fieldset'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { InputSwitchModule } from 'primeng/inputswitch'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
+import { PaginatorModule } from 'primeng/paginator'
+import { SelectButtonModule } from 'primeng/selectbutton'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -73,6 +75,7 @@ import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.componen
 import { LogViewPageComponent } from './log-view-page/log-view-page.component'
 import { AppDaemonsStatusComponent } from './app-daemons-status/app-daemons-status.component'
 import { BreadcrumbsComponent } from './breadcrumbs/breadcrumbs.component'
+import { EventsPageComponent } from './events-page/events-page.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -114,6 +117,7 @@ export function cfgFactory() {
         LogViewPageComponent,
         AppDaemonsStatusComponent,
         BreadcrumbsComponent,
+        EventsPageComponent,
     ],
     imports: [
         BrowserModule,
@@ -151,6 +155,8 @@ export function cfgFactory() {
         OverlayPanelModule,
         InputSwitchModule,
         BreadcrumbModule,
+        PaginatorModule,
+        SelectButtonModule,
     ],
     providers: [
         {

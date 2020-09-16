@@ -23,6 +23,11 @@
     <!-- subnet -->
     <ng-container *ngSwitchCase="'subnet'"> subnet [{{ attrs.id }}] {{ attrs.prefix }} </ng-container>
 
+    <!-- user -->
+    <ng-container *ngSwitchCase="'user'">
+        user <a routerLink="/users/{{ attrs.id }}"> [{{ attrs.id }}] {{ attrs.login ? attrs.login : attrs.email }} </a>
+    </ng-container>
+
     <!-- unsupported -->
     <ng-container *ngSwitchDefault>{{ entity }}</ng-container>
 </span>
