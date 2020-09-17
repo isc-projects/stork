@@ -1,5 +1,11 @@
 image: registry.gitlab.isc.org/isc-projects/stork/ci-base:latest
 
+# Only create pipelines for merge requests and pushes/merges to the main branch
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+
 variables:
   POSTGRES_ADDR: postgres:5432
   POSTGRES_DB: storktest
@@ -30,6 +36,8 @@ cache:
 # common parts used in build jobs
 .base_build:
   stage: build
+  rules:
+    - when: always
   tags:
     - linux
     - amd64
@@ -86,6 +94,8 @@ build_backend:
 
 danger:
   stage: build
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   tags:
     - linux
     - amd64
@@ -104,6 +114,8 @@ danger:
 
 tarball:
   stage: build
+  rules:
+    - when: always
   tags:
     - linux
     - amd64
@@ -120,6 +132,8 @@ tarball:
 
 debs:
   stage: build
+  rules:
+    - when: always
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-ubuntu-18-04:latest
   tags:
     - linux
@@ -137,6 +151,8 @@ debs:
 
 rpms:
   stage: build
+  rules:
+    - when: always
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest
   tags:
     - linux
@@ -157,6 +173,8 @@ rpms:
 
 system_testing:
   stage: test
+  rules:
+    - when: on_success
   image: stork-tests-ubuntu-18.04-x86_64
   tags:
     - libvirt
@@ -178,6 +196,7 @@ system_testing:
 deploy_to_repo:
   stage: deploy
   when: manual
+  allow_failure: true
   tags:
     - linux
     - amd64
@@ -222,18 +241,13 @@ deploy_to_repo:
 ### demo deploy jobs ###
 
 deploy_demo:
-  stage: build
+  stage: deploy
   rules:
-# #    - if: $CI_COMMIT_TAG
-# #      when: never                                             # Do not run this job when a tag is created manually
-# #    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-#     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH             # Run this job when commits are pushed or merged to the default branch
-#       when: on_success
-#     - when: manual
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: manual
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-      when: on_success
+      when: always
+  allow_failure: true
   image: docker:latest
   tags:
     - linux
@@ -271,7 +285,9 @@ deploy_demo:
 
 deploy_pkgs:
   stage: deploy
-  when: manual
+  rules:
+    - when: manual
+  allow_failure: true
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:latest
   tags:
     - linux
