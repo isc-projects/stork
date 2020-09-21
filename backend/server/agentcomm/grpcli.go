@@ -1,8 +1,11 @@
 package agentcomm
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"reflect"
 	"strconv"
@@ -448,8 +451,36 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbA
 			continue
 		}
 
-		// Try to parse the response from the on-wire format.
-		err = keactrl.UnmarshalResponseList(commands[idx], rsp.Response, cmdResp)
+		// First unpack response
+		zr, err := gzip.NewReader(bytes.NewReader(rsp.Response))
+		if err != nil {
+			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
+			result.CmdsErrors = append(result.CmdsErrors, err)
+			// Issues with parsing the response count as issues with communication.
+			caErrorsCount++
+			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
+			continue
+		}
+		unpackedResp, err := ioutil.ReadAll(zr)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
+			result.CmdsErrors = append(result.CmdsErrors, err)
+			// Issues with parsing the response count as issues with communication.
+			caErrorsCount++
+			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
+			continue
+		}
+		if err := zr.Close(); err != nil {
+			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
+			result.CmdsErrors = append(result.CmdsErrors, err)
+			// Issues with parsing the response count as issues with communication.
+			caErrorsCount++
+			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
+			continue
+		}
+
+		// Try to parse the json response from the on-wire format.
+		err = keactrl.UnmarshalResponseList(commands[idx], unpackedResp, cmdResp)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
 			result.CmdsErrors = append(result.CmdsErrors, err)
@@ -543,16 +574,24 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 				"agent": addrPort,
 				"kea":   caURL,
 			}).Warnf("communication failed: %+v", fdReq.KeaRequests)
-			dmn := daemonsMap["ca"]
-			agents.EventCenter.AddErrorEvent("communication with {daemon} failed", strings.TrimSpace(caErrorStr), &dmn)
+			dmn, ok := daemonsMap["ca"]
+			if ok {
+				agents.EventCenter.AddErrorEvent("communication with {daemon} failed", strings.TrimSpace(caErrorStr), &dmn)
+			} else {
+				agents.EventCenter.AddErrorEvent("communication with CA daemon of {app} failed", strings.TrimSpace(caErrorStr), dbApp)
+			}
 		}
 	} else {
 		keaCommStats.CurrentErrorsCA = 0
 		// Now it seems all is ok but there were problems earlier so raise an event
 		// that communication resumed.
 		if prevErrorsCA > 0 {
-			dmn := daemonsMap["ca"]
-			agents.EventCenter.AddWarningEvent("communication with {daemon} resumed", &dmn)
+			dmn, ok := daemonsMap["ca"]
+			if ok {
+				agents.EventCenter.AddWarningEvent("communication with {daemon} resumed", &dmn)
+			} else {
+				agents.EventCenter.AddWarningEvent("communication with CA daemon of {app} resumed", dbApp)
+			}
 		}
 	}
 	//log.Printf("errors CA: prev: %d, curr: %d", prevErrorsCA, keaCommStats.CurrentErrorsCA)

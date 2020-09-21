@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -245,7 +246,6 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			rsp.Status.Code = agentapi.Status_ERROR
 			rsp.Status.Message = fmt.Sprintf("Failed to forward commands to Kea: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
-			go sa.keaInterceptor.asyncHandle(sa, req, rsp)
 			continue
 		}
 
@@ -259,15 +259,42 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			rsp.Status.Code = agentapi.Status_ERROR
 			rsp.Status.Message = fmt.Sprintf("Failed to read the body of the Kea response: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
-			go sa.keaInterceptor.asyncHandle(sa, req, rsp)
 			continue
 		}
 
-		// Everything looks good, so include the body in the response.
-		rsp.Response = string(body)
+		// push kea response for async processing ie. getting log files
+		go sa.keaInterceptor.asyncHandle(sa, req, body)
+
+		// gzip json response received from Kea
+		var gzippedBuf bytes.Buffer
+		zw := gzip.NewWriter(&gzippedBuf)
+		_, err = zw.Write(body)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"URL": reqURL,
+			}).Errorf("Failed to compress the Kea response: %+v", err)
+			rsp.Status.Code = agentapi.Status_ERROR
+			rsp.Status.Message = fmt.Sprintf("Failed to compress the Kea response: %s", err.Error())
+			response.KeaResponses = append(response.KeaResponses, rsp)
+			continue
+		}
+		if err := zw.Close(); err != nil {
+			log.WithFields(log.Fields{
+				"URL": reqURL,
+			}).Errorf("Failed to finish compressing the Kea response: %+v", err)
+			rsp.Status.Code = agentapi.Status_ERROR
+			rsp.Status.Message = fmt.Sprintf("Failed to finish compressing the Kea response: %s", err.Error())
+			response.KeaResponses = append(response.KeaResponses, rsp)
+			continue
+		}
+		if len(body) > 0 {
+			log.Printf("compressing response from %d B to %d B, ratio %d%%", len(body), gzippedBuf.Len(), 100*gzippedBuf.Len()/len(body))
+		}
+
+		// Everything looks good, so include the gzipped body in the response.
+		rsp.Response = gzippedBuf.Bytes()
 		rsp.Status.Code = agentapi.Status_OK
 		response.KeaResponses = append(response.KeaResponses, rsp)
-		go sa.keaInterceptor.asyncHandle(sa, req, rsp)
 	}
 
 	return response, nil

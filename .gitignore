@@ -51,3 +51,6 @@ TAGS
 
 # build stuff when performing build all in a container
 /build-root
+
+# generated files for docker containers
+/docker/kea-dhcp4-many-subnets.conf

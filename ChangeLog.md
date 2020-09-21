@@ -1,3 +1,11 @@
+* 107 [bug] godfryd
+
+    Fixed problem of adding Kea with 4500 subnets. Now messages
+    with Kea configuration sent from Stork Agent to Stork Server
+    are compressed so it is possible to sent huge configurations.
+    Added new Kea instance to Stork demo with 7000 subnets.
+    (Gitlab #398)
+
 * 106 [doc] godfryd
 
     Added documentation for Stork system tests. The documentation

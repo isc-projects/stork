@@ -87,7 +87,7 @@ func ParseIP(address string) (string, bool, bool) {
 }
 
 func SetupLogging() {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	log.SetOutput(os.Stdout)
 	log.SetReportCaller(true)
 	log.SetFormatter(&log.TextFormatter{

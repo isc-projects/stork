@@ -53,7 +53,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
                             "text": "Everything is fine",
                             "arguments": {}
                          }]`
-		keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+		keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 
 		// DHCPv4 RSP response
 		json = `[{ "result": 0, "text": "Everything is fine",
@@ -63,7 +63,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 
 		rpsCmd := []*keactrl.Command{}
 		_ = RpsAddCmd4(&rpsCmd, daemons)
-		keactrl.UnmarshalResponseList(rpsCmd[0], json, cmdResponses[1])
+		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(json), cmdResponses[1])
 
 		// DHCPv6
 		daemons, _ = keactrl.NewDaemons("dhcp6")
@@ -73,7 +73,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
                            "result": 2,
                            "text": "'stat-lease6-get' command not supported."
                         }]`
-		keactrl.UnmarshalResponseList(command, json, cmdResponses[2])
+		keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[2])
 
 		// DHCPv6 RSP response
 		json = `[{ "result": 0, "text": "Everything is fine",
@@ -83,7 +83,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 
 		rpsCmd = []*keactrl.Command{}
 		_ = RpsAddCmd6(&rpsCmd, daemons)
-		keactrl.UnmarshalResponseList(rpsCmd[0], json, cmdResponses[3])
+		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(json), cmdResponses[3])
 	}
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
@@ -175,7 +175,7 @@ func TestStatsPullerPullStats(t *testing.T) {
                                 }
                             }
                          }]`
-		keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+		keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 
 		// Command and response for DHCP4 RPS statistic pull
 		rpsCmd := []*keactrl.Command{}
@@ -187,7 +187,7 @@ func TestStatsPullerPullStats(t *testing.T) {
                         "pkt4-ack-sent": [ [ 44, "2019-07-30 10:13:00.000000" ] ]
                     }
                 }]`
-		keactrl.UnmarshalResponseList(rpsCmd[0], json, cmdResponses[1])
+		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(json), cmdResponses[1])
 
 		// DHCPv6
 		daemons, _ = keactrl.NewDaemons("dhcp6")
@@ -207,7 +207,7 @@ func TestStatsPullerPullStats(t *testing.T) {
                                }
                            }
                         }]`
-		keactrl.UnmarshalResponseList(command, json, cmdResponses[2])
+		keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[2])
 
 		// Command and response for DHCP6 RPS statistic pull
 		rpsCmd = []*keactrl.Command{}
@@ -219,7 +219,7 @@ func TestStatsPullerPullStats(t *testing.T) {
                         "pkt6-reply-sent": [ [ 66, "2019-07-30 10:13:00.000000" ] ]
                     }
                 }]`
-		keactrl.UnmarshalResponseList(rpsCmd[0], json, cmdResponses[3])
+		keactrl.UnmarshalResponseList(rpsCmd[0], []byte(json), cmdResponses[3])
 	}
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 

@@ -28,7 +28,6 @@ STYLES = [dict(fg='red', style=''),
           dict(fg='blue', style='bold'),
           dict(fg='magenta', style='bold'),
           dict(fg='cyan', style='bold')]
-random.shuffle(STYLES)
 
 
 DEFAULT_STORK_DEB_VERSION = None
@@ -47,7 +46,7 @@ class Container:
             self.pkg_format = 'deb'
 
         # prepare styling for traces
-        self.style = STYLES.pop()
+        self.style = random.choice(STYLES)
         print(colors.color('%s: %s' % (name, str(self.style)), **self.style))
 
         # open separate connection to LXD
@@ -110,10 +109,22 @@ class Container:
 
         return reused_img
 
+    def stop(self):
+        if self.cntr.status == 'Running':
+            self.cntr.stop(wait=True)
+
     def upload(self, local_path, remote_path):
         with open(local_path, 'rb') as f:
             data = f.read()
         self.cntr.files.put(remote_path, data)
+
+    def download(self, remote_path, local_path):
+        data = self.cntr.files.get(remote_path)
+        if os.path.isdir(local_path):
+            fname = os.path.basename(remote_path)
+            local_path = os.path.join(local_path, fname)
+        with open(local_path, 'wb') as f:
+            f.write(data)
 
     def _trace_logs(self, log, output):
         for line in log.splitlines():
@@ -156,6 +167,8 @@ class Container:
         if result[0] != 0 and not ignore_error:
             raise Exception('problem with cmd: %s' % cmd)
 
+        return result
+
     def setup_bg(self, *args):
         if self.thread is not None:
             raise Exception('there is already running bg thread for %s' % self.name)
@@ -171,8 +184,10 @@ class Container:
             raise e
 
     def setup(self, *args):
+        reused = self.start()
+        time.sleep(5)
         try:
-            self._setup(*args)
+            self._setup(reused, *args)
         except Exception as e:
             self.bg_exc = e
 
@@ -251,6 +266,15 @@ class Container:
             self.run('bash -c "%s"' % cmd)
             self.run('localectl set-locale LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8')
 
+    def prepare_system_common(self):
+        if self.pkg_format == 'deb':
+            self.run('apt-get update')
+            self.set_locale()
+            self.install_pkgs("curl supervisor less net-tools")
+        else:
+            self.set_locale()
+            self.install_pkgs('sudo perl curl supervisor less net-tools')
+
 
 class StorkServerContainer(Container):
     def __init__(self, port=None, alias=DEFAULT_SYSTEM_IMAGE):
@@ -262,17 +286,14 @@ class StorkServerContainer(Container):
         self.session = requests.Session()
 
     def prepare_system(self):
+        self.prepare_system_common()
         if self.pkg_format == 'deb':
-            self.run('apt-get update')
-            self.set_locale()
-            self.install_pkgs("postgresql-client postgresql-all curl")
+            self.install_pkgs("postgresql-client postgresql-all")
 
             self.run('systemctl enable postgresql.service')
             self.run('systemctl start postgresql.service')
             self.run('systemctl status postgresql.service')
         else:
-            self.set_locale()
-            self.install_pkgs('sudo perl curl')
             #self.run('yum install -y postgresql-server postgresql-contrib sudo perl', attempts=3, sleep_time_after_attempt=3)
             #self.run('postgresql-setup initdb')
             self.run('rpm -Uvh https://yum.postgresql.org/11/redhat/rhel-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm')
@@ -339,34 +360,36 @@ class StorkServerContainer(Container):
         self.run("perl -pi -e 's/.*STORK_REST_HOST.*/STORK_REST_HOST=localhost/g' /etc/stork/server.env")
 
         self.run('systemctl enable isc-stork-server')
-        self.run('systemctl start isc-stork-server')
-        #self.run('systemctl status isc-stork-server')
-        self.run('bash -c "ps axu|grep isc"')
+        self.run('systemctl restart isc-stork-server')
+        self.run('systemctl status isc-stork-server')
+        # self.run('bash -c "ps axu|grep -v grep|grep isc"')  # TODO: it does not work - make it working
 
-    def _setup(self, pkg_ver=None):
-        reused = self.start()
-        time.sleep(5)
+    def _setup(self, reused, pkg_ver=None):
         if not reused:
             self.prepare_system()
             self.prepare_stork_db()
             self.dump_image()
         self.prepare_stork_server(pkg_ver)
 
-    def api_get(self, endpoint, params=None, expected_status=200):
+    def api_get(self, endpoint, params=None, expected_status=200, trace_resp=True):
         url = 'http://localhost:%d/api' % self.port
         url += endpoint
+        print('r.get', url, params)
         r = self.session.get(url, params=params)
         print('r.status_code', r.status_code)
-        print('r.text', r.text)
+        if trace_resp:
+            print('r.text', r.text)
         assert r.status_code == expected_status
         return r
 
-    def api_post(self, endpoint, params=None, json=None, expected_status=201):
+    def api_post(self, endpoint, params=None, json=None, expected_status=201, trace_resp=True):
         url = 'http://localhost:%d/api' % self.port
         url += endpoint
+        print('r.post', url, params, json)
         r = self.session.post(url, params=params, json=json)
         print('r.status_code', r.status_code)
-        print('r.text', r.text)
+        if trace_resp:
+            print('r.text', r.text)
         assert r.status_code == expected_status
         return r
 
@@ -379,10 +402,7 @@ class StorkAgentContainer(Container):
         super().__init__(name, 1, port, alias)
 
     def prepare_system(self):
-        if self.pkg_format == 'deb':
-            self.run('apt-get update')
-        self.set_locale()
-        self.install_pkgs('curl')
+        self.prepare_system_common()
 
     def install_kea(self, service_name='default'):
         self.setup_cloudsmith_repo('kea-1-7')
@@ -490,13 +510,11 @@ class StorkAgentContainer(Container):
             self.run('rpm -qa "isc-stork*"')
 
         self.run('systemctl enable isc-stork-agent')
-        self.run('systemctl start isc-stork-agent')
+        self.run('systemctl restart isc-stork-agent')
         self.run('systemctl status isc-stork-agent')
-        self.run('bash -c "ps axu|grep isc"')
+        # self.run('bash -c "ps axu|grep -v grep|grep isc"')  # TODO: it does not work - make it working
 
-    def _setup(self, pkg_ver=None):
-        reused = self.start()
-        time.sleep(5)
+    def _setup(self, reused, pkg_ver=None):
         if not reused:
             self.prepare_system()
             self.install_kea()

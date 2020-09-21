@@ -76,7 +76,7 @@ func (i *keaInterceptor) register(callback func(*StorkAgent, *keactrl.Response) 
 // which can be run independently from the agent. The agent may send back the
 // response to the server while these callbacks are invoked. The result of the
 // callbacks do not affect the response forwarded to the Stork server.
-func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaRequest, response *agentapi.KeaResponse) {
+func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaRequest, response []byte) {
 	// Parse the request to get the command name and service.
 	command, err := keactrl.NewCommandFromJSON(request.Request)
 	if err != nil {
@@ -104,7 +104,7 @@ func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaReq
 	// Parse the response. It will be passed to the callback so as the callback
 	// can "do something" with it.
 	var parsedResponse keactrl.ResponseList
-	err = keactrl.UnmarshalResponseList(command, response.Response, &parsedResponse)
+	err = keactrl.UnmarshalResponseList(command, response, &parsedResponse)
 	if err != nil {
 		log.Errorf("failed to parse Kea responses while invoking asynchronous handlers for command %s: %+v",
 			command.Command, err)

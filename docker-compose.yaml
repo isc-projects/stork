@@ -87,6 +87,21 @@ services:
     hostname: agent-kea-ha2
     networks:
       storknet:
+        ipv4_address: 172.20.0.110
+    expose:
+      - "8080"
+    ports:
+      - "8110:8080"  # publish ports for development purposes
+
+  agent-kea-many-subnets:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/docker-agent-kea-many-subnets.txt
+    image: registry.gitlab.isc.org/isc-projects/stork/agent-kea-many-subnets:latest
+    hostname: agent-kea-many-subnets
+    networks:
+      storknet:
         ipv4_address: 172.20.0.102
     expose:
       - "8002"

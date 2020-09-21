@@ -1,6 +1,8 @@
 package agentcomm
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"testing"
 
@@ -74,21 +76,28 @@ func TestGetState(t *testing.T) {
 	require.Equal(t, AppTypeKea, state.Apps[0].Type)
 }
 
+// Helper function for gzipping json text to bytes array.
+func doGzip(jsonTxt string) []byte {
+	var gzippedBuf bytes.Buffer
+	zw := gzip.NewWriter(&gzippedBuf)
+	_, err := zw.Write([]byte(jsonTxt))
+	if err != nil {
+		panic("gzip problem")
+	}
+	err = zw.Close()
+	if err != nil {
+		panic("gzip problem")
+	}
+	return gzippedBuf.Bytes()
+}
+
 // Test that a command can be successfully forwarded to Kea and the response
 // can be parsed.
 func TestForwardToKeaOverHTTP(t *testing.T) {
 	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
 	defer teardown()
 
-	rsp := agentapi.ForwardToKeaOverHTTPRsp{
-		Status: &agentapi.Status{
-			Code: 0,
-		},
-		KeaResponses: []*agentapi.KeaResponse{{
-			Status: &agentapi.Status{
-				Code: 0,
-			},
-			Response: `[
+	jsonGzip := doGzip(`[
             {
                 "result": 1,
                 "text": "operation failed"
@@ -100,7 +109,18 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
                     "success": true
                 }
             }
-        ]`}},
+        ]`)
+
+	rsp := agentapi.ForwardToKeaOverHTTPRsp{
+		Status: &agentapi.Status{
+			Code: 0,
+		},
+		KeaResponses: []*agentapi.KeaResponse{{
+			Status: &agentapi.Status{
+				Code: 0,
+			},
+			Response: jsonGzip,
+		}},
 	}
 
 	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
@@ -172,7 +192,7 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 			Status: &agentapi.Status{
 				Code: 0,
 			},
-			Response: `[
+			Response: doGzip(`[
             {
                 "result": 1,
                 "text": "operation failed"
@@ -184,16 +204,16 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
                     "success": true
                 }
             }
-        ]`}, {
+        ]`)}, {
 			Status: &agentapi.Status{
 				Code: 0,
 			},
-			Response: `[
+			Response: doGzip(`[
             {
                 "result": 1,
                 "text": "operation failed"
             }
-        ]`}},
+        ]`)}},
 	}
 
 	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
@@ -276,11 +296,11 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 			Status: &agentapi.Status{
 				Code: 0,
 			},
-			Response: `[
+			Response: doGzip(`[
             {
                 "result": "a string"
             }
-        ]`}},
+        ]`)}},
 	}
 	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)

@@ -52,8 +52,7 @@ func TestKeaInterceptorHandle(t *testing.T) {
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
-	response := &agentapi.KeaResponse{
-		Response: `[
+	response := []byte(`[
             {
                 "result": 0,
                 "text": "invoked successfully"
@@ -62,8 +61,8 @@ func TestKeaInterceptorHandle(t *testing.T) {
                 "result": 1,
                 "text": "invoked unsuccessfully"
             }
-        ]`,
-	}
+        ]`)
+
 	// Invoke the registered callbacks for config-get.
 	interceptor.asyncHandle(nil, request, response)
 	require.Equal(t, "config-get", commandInvoked)
@@ -106,14 +105,13 @@ func TestKeaInterceptorHandleControlAgent(t *testing.T) {
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
-	response := &agentapi.KeaResponse{
-		Response: `[
+	response := []byte(`[
             {
                 "result": 1,
                 "text": "invocation error"
             }
-        ]`,
-	}
+        ]`)
+
 	// Invoke the callbacks and validate the data recorded by this
 	// callback.
 	interceptor.asyncHandle(nil, request, response)
@@ -149,14 +147,13 @@ func TestKeaInterceptorMultipleHandlers(t *testing.T) {
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
-	response := &agentapi.KeaResponse{
-		Response: `[
+	response := []byte(`[
             {
                 "result": 0,
                 "text": "fine"
             }
-        ]`,
-	}
+        ]`)
+
 	// Make sure that both handlers have been invoked.
 	interceptor.asyncHandle(nil, request, response)
 	require.True(t, func1Invoked)

@@ -561,6 +561,7 @@ task :docker_up => :build_all_in_container do
   if ENV['cache'] == 'false'
     cache_opt = '--no-cache'
   end
+  sh 'docker/gen-kea-config.py 7000 > docker/kea-dhcp4-many-subnets.conf'
   sh "docker-compose #{DOCKER_COMPOSE_FILES} build #{DOCKER_COMPOSE_PREMIUM_OPTS} #{cache_opt}"
   sh "docker-compose #{DOCKER_COMPOSE_FILES} up"
 end
@@ -712,7 +713,7 @@ task :build_pkgs_in_docker => [:build_debs_in_docker, :build_rpms_in_docker]
 # Internal task that copies sources and builds packages on a side. It is used by build_debs_in_docker and build_rpms_in_docker.
 task :build_pkgs do
   sh 'rm -rf /build && mkdir /build'
-  sh 'git archive -o /stork.tar.gz HEAD'
+  sh 'git ls-files | tar -czf /stork.tar.gz -T -'
   sh 'tar -C /build -zxvf /stork.tar.gz'
   cwd = Dir.pwd
   if Dir.exist?("#{cwd}/tools")
@@ -824,7 +825,7 @@ end
 task :system_tests => 'tests/system/venv/bin/activate' do
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
-    sh './venv/bin/pytest --full-trace -r ap -s tests.py'
+    sh './venv/bin/pytest --tb=long -l -r ap -s tests.py'
   end
 end
 

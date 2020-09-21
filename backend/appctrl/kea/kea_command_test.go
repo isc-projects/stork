@@ -180,7 +180,7 @@ func TestUnmarshalResponseList(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4", "dhcp6")
 	request, _ := NewCommand("list-subnets", daemons, nil)
 
-	response := `[
+	response := []byte(`[
         {
             "result": 0,
             "text": "command successful",
@@ -193,7 +193,7 @@ func TestUnmarshalResponseList(t *testing.T) {
             "result": 1,
             "text": "command unsuccessful"
         }
-    ]`
+    ]`)
 
 	list := ResponseList{}
 	err := UnmarshalResponseList(request, response, &list)
@@ -232,7 +232,7 @@ func TestUnmarshalCustomResponse(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
 	request, _ := NewCommand("list-subnets", daemons, nil)
 
-	response := `[
+	response := []byte(`[
         {
             "result": 0,
             "text": "command successful",
@@ -243,7 +243,7 @@ func TestUnmarshalCustomResponse(t *testing.T) {
                 }
             }
         }
-    ]`
+    ]`)
 
 	type CustomResponse struct {
 		ResponseHeader
@@ -272,7 +272,7 @@ func TestUnmarshalCustomResponseNoArgs(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
 	request, _ := NewCommand("list-subnets", daemons, nil)
 
-	response := `[
+	response := []byte(`[
         {
             "result": 0,
             "text": "command successful",
@@ -280,7 +280,7 @@ func TestUnmarshalCustomResponseNoArgs(t *testing.T) {
                 "param": "value"
             }
         }
-    ]`
+    ]`)
 
 	type CustomResponse struct {
 		ResponseHeader
@@ -301,11 +301,11 @@ func TestUnmarshalResponseListMalformedResult(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
 	request, _ := NewCommand("list-commands", daemons, nil)
 
-	response := `[
+	response := []byte(`[
         {
             "result": "1"
         }
-    ]`
+    ]`)
 	list := ResponseList{}
 	err := UnmarshalResponseList(request, response, &list)
 	require.Error(t, err)
@@ -316,12 +316,12 @@ func TestUnmarshalResponseListMalformedText(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
 	request, _ := NewCommand("list-commands", daemons, nil)
 
-	response := `[
+	response := []byte(`[
         {
             "result": 1,
             "text": 123
         }
-    ]`
+    ]`)
 	list := ResponseList{}
 	err := UnmarshalResponseList(request, response, &list)
 	require.Error(t, err)
@@ -333,12 +333,12 @@ func TestUnmarshalResponseListMalformedArguments(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
 	request, _ := NewCommand("list-commands", daemons, nil)
 
-	response := `[
+	response := []byte(`[
         {
             "result": 0,
             "arguments": [ 1, 2, 3 ]
         }
-    ]`
+    ]`)
 	list := ResponseList{}
 	err := UnmarshalResponseList(request, response, &list)
 	require.Error(t, err)
@@ -349,11 +349,11 @@ func TestUnmarshalResponseNotList(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
 	request, _ := NewCommand("list-commands", daemons, nil)
 
-	response := `
+	response := []byte(`
         {
             "result": 0
         }
-    `
+    `)
 	list := ResponseList{}
 	err := UnmarshalResponseList(request, response, &list)
 	require.Error(t, err)

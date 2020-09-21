@@ -193,22 +193,21 @@ func (c *Map) GetHAHooksLibrary() (path string, params HA, ok bool) {
 // found the local subnet id of that subnet is returned. Otherwise, the value
 // of 0 is returned.
 func getMatchingSubnetLocalID(subnet interface{}, ipNet *net.IPNet) int64 {
-	var parsedSubnet struct {
-		ID     int64
-		Subnet string
-	}
-	// Get the subnet's ID and prefix.
-	_ = mapstructure.Decode(subnet, &parsedSubnet)
+	sn := subnet.(map[string]interface{})
 
 	// Parse the prefix into a common form that can be used for comparison.
-	_, localNetwork, err := net.ParseCIDR(parsedSubnet.Subnet)
+	_, localNetwork, err := net.ParseCIDR(sn["subnet"].(string))
 	if err != nil {
 		return 0
 	}
 	// Compare the prefix of the subnet we have found and the specified prefix.
 	if (localNetwork != nil) && net.IP.Equal(ipNet.IP, localNetwork.IP) &&
 		bytes.Equal(ipNet.Mask, localNetwork.Mask) {
-		return parsedSubnet.ID
+		snID, ok := sn["id"]
+		if ok {
+			return int64(snID.(float64))
+		}
+		return int64(0)
 	}
 	// No match.
 	return 0

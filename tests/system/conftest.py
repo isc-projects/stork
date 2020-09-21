@@ -1,7 +1,11 @@
 import os
 import re
 import sys
+import time
 import glob
+import shutil
+from pathlib import Path
+
 import pytest
 
 
@@ -28,6 +32,7 @@ def firefox_options(firefox_options, pytestconfig):
 
 
 def _get_pkg_version(pkg_pattern):
+    """Get package version from package filename using provided pattern."""
     cwd = os.getcwd()
     if 'tests/system' in cwd:
         cwd = os.path.abspath(os.path.join(cwd, '../..'))
@@ -51,6 +56,7 @@ def _get_pkg_version(pkg_pattern):
 def pytest_configure(config):
     import containers
 
+    # prepare packages versions: take them from option and if missing then detect them from package files
     containers.DEFAULT_STORK_RPM_VERSION = config.option.stork_rpm_ver
     if containers.DEFAULT_STORK_RPM_VERSION is None:
         ver = _get_pkg_version('isc-stork*rpm')
@@ -60,3 +66,72 @@ def pytest_configure(config):
     if containers.DEFAULT_STORK_DEB_VERSION is None:
         ver = _get_pkg_version('isc-stork*deb')
         containers.DEFAULT_STORK_DEB_VERSION = ver
+
+    # at the beginning clean up tests directory
+    tests_dir = Path('test-results')
+    if tests_dir.exists():
+        shutil.rmtree(tests_dir)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_pyfunc_call(pyfuncitem):
+    """The purpose of this hook is:
+    1. replacing test case system name arguments with container instances
+    2. run the test case
+    3. after testing collect logs from these containers
+       and store them in `test-results` folder
+    """
+    import containers
+
+    # change test case arguments from container system names
+    # to actual started container instances
+    srv_cntrs = []
+    agn_cntrs = []
+    for name, val in pyfuncitem.funcargs.items():
+        if name.startswith('agent'):
+            a = containers.StorkAgentContainer(alias=val)
+            agn_cntrs.append(a)
+            pyfuncitem.funcargs[name] = a
+        elif name.startswith('server'):
+            s = containers.StorkServerContainer(alias=val)
+            srv_cntrs.append(s)
+            pyfuncitem.funcargs[name] = s
+    all_cntrs = srv_cntrs + agn_cntrs
+
+    # start all containers in background so they can run in parallel and be ready quickly
+    for c in all_cntrs:
+        c.setup_bg()
+
+    # wait for all containers
+    for c in all_cntrs:
+        c.setup_wait()
+    time.sleep(3)
+
+    # DO RUN TEST CASE
+    outcome = yield
+
+    # prepare test directory for logs, etc
+    tests_dir = Path('test-results')
+    tests_dir.mkdir(exist_ok=True)
+    test_name = pyfuncitem.name
+    test_name = test_name.replace('[', '__')
+    test_name = test_name.replace('/', '_')
+    test_name = test_name.replace(']', '')
+    test_dir = tests_dir / test_name
+    if test_dir.exists():
+        shutil.rmtree(test_dir)
+    test_dir.mkdir()
+
+    # download stork server and agent logs to test dir
+    for idx, s in enumerate(srv_cntrs):
+        _, out, _ = s.run('journalctl -u isc-stork-server')
+        fname = test_dir / ('stork-server-%d.log' % idx)
+        with open(fname, 'w') as f:
+            f.write(out)
+        s.stop()
+    for idx, a in enumerate(agn_cntrs):
+        _, out, _ = a.run('journalctl -u isc-stork-agent')
+        fname = test_dir / ('stork-agent-%d.log' % idx)
+        with open(fname, 'w') as f:
+            f.write(out)
+        a.stop()

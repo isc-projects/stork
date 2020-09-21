@@ -146,8 +146,8 @@ func (c *Command) Marshal() string {
 }
 
 // Parses response received from the Kea Control Agent.
-func UnmarshalResponseList(request *Command, response string, parsed interface{}) error {
-	err := json.Unmarshal([]byte(response), parsed)
+func UnmarshalResponseList(request *Command, response []byte, parsed interface{}) error {
+	err := json.Unmarshal(response, parsed)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to parse responses from Kea: %s", response)
 		return err

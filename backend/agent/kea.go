@@ -37,7 +37,7 @@ func sendToKeaOverHTTP(storkAgent *StorkAgent, caAddress string, caPort int64, c
 	}
 
 	// Parse the response.
-	err = keactrl.UnmarshalResponseList(command, string(body), responses)
+	err = keactrl.UnmarshalResponseList(command, body, responses)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to parse Kea response body received from %s", caURL)
 	}

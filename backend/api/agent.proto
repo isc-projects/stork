@@ -92,8 +92,8 @@ message ForwardToKeaOverHTTPReq {
 
 // Response from Kea CA.
 message KeaResponse {
-  // Response from CA, JSON encoded as string.
-  string response = 1;
+  // Response from CA, gzipped JSON.
+  bytes response = 1;
 
   // Status of request execution.
   Status status = 2;

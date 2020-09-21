@@ -99,7 +99,7 @@ func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
              "text": "Unable to communicate"
           }]`
 	}
-	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 }
 
 // Generates a response to the status-get command including two status
@@ -216,7 +216,7 @@ func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
              "text": "Unable to communicate"
          }]`
 	}
-	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 }
 
 // Generate test response to status-get command including status of the
@@ -250,7 +250,7 @@ func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
                 }
             }
     ]`
-	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 }
 
 // Generate test response to status-get command including status of the
@@ -294,7 +294,7 @@ func mockGetStatusLoadBalancing178(callNo int, cmdResponses []interface{}) {
             }
         }
     ]`
-	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 }
 
 // Generates test response to status-get command lacking a status of the
@@ -313,7 +313,7 @@ func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
             }
         }
     ]`
-	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 }
 
 // Generates test response to status-get command indicating an error and
@@ -327,7 +327,7 @@ func mockGetStatusError(callNo int, cmdResponses []interface{}) {
             "text": "unable to communicate with the deamon"
         }
     ]`
-	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 }
 
 // Test status-get command when HA status is returned.

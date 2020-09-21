@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -155,6 +157,23 @@ func TestGetState(t *testing.T) {
 	require.Empty(t, point.Key)
 }
 
+// Helper function for unzipping buffers. It does not return
+// any error, it expects that everything will go fine.
+func doGunzip(data []byte) string {
+	zr, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		panic("problem with gunzip")
+	}
+	unpackedResp, err := ioutil.ReadAll(zr)
+	if err != nil {
+		panic("problem with gunzip")
+	}
+	if err := zr.Close(); err != nil {
+		panic("problem with gunzip")
+	}
+	return string(unpackedResp)
+}
+
 // Test forwarding command to Kea when HTTP 200 status code
 // is returned.
 func TestForwardToKeaOverHTTPSuccess(t *testing.T) {
@@ -183,7 +202,7 @@ func TestForwardToKeaOverHTTPSuccess(t *testing.T) {
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.Len(t, rsp.KeaResponses, 1)
-	require.JSONEq(t, "[{\"result\":0}]", rsp.KeaResponses[0].Response)
+	require.JSONEq(t, "[{\"result\":0}]", doGunzip(rsp.KeaResponses[0].Response))
 }
 
 // Test forwarding command to Kea when HTTP 400 (Bad Request) status
@@ -210,7 +229,7 @@ func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.Len(t, rsp.KeaResponses, 1)
-	require.JSONEq(t, "[{\"HttpCode\":\"Bad Request\"}]", rsp.KeaResponses[0].Response)
+	require.JSONEq(t, "[{\"HttpCode\":\"Bad Request\"}]", doGunzip(rsp.KeaResponses[0].Response))
 }
 
 // Test forwarding command to Kea when no body is returned.
@@ -236,7 +255,7 @@ func TestForwardToKeaOverHTTPEmptyBody(t *testing.T) {
 	require.NotNil(t, rsp)
 	require.NoError(t, err)
 	require.Len(t, rsp.KeaResponses, 1)
-	require.Len(t, rsp.KeaResponses[0].Response, 0)
+	require.Len(t, doGunzip(rsp.KeaResponses[0].Response), 0)
 }
 
 // Test forwarding command when Kea is unavailable.

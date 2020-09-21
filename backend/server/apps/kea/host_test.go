@@ -223,7 +223,7 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
 	}
 
 	// Generate the response with filling in the values as appropriate.
-	json := fmt.Sprintf(`[
+	json := []byte(fmt.Sprintf(`[
         {
             "result": 0,
             "text": "Hosts found",
@@ -236,7 +236,7 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
                 }
             }
         }
-    ]`, len(hosts), string(hostsAsJSON), fromValue, sourceIndex)
+    ]`, len(hosts), string(hostsAsJSON), fromValue, sourceIndex))
 
 	daemons, _ := keactrl.NewDaemons(fmt.Sprintf("dhcp%d", family))
 	command, _ := keactrl.NewCommand("reservation-get-page", daemons, nil)
@@ -314,7 +314,7 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
 	daemons, _ := keactrl.NewDaemons("dhcp4")
 	command, _ := keactrl.NewCommand("reservation-get-page", daemons, nil)
 
-	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
 }
 

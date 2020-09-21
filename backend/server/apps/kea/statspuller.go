@@ -54,6 +54,11 @@ func getStatsFromLocalSubnets(localSubnets []*dbmodel.LocalSubnet, family int, a
 	snTotalPds := int64(0)
 	snAssignedPds := int64(0)
 	for _, lsn := range localSubnets {
+		if len(lsn.Stats) == 0 {
+			log.Debugf("no stats in LocalSubnet %d", lsn.LocalSubnetID)
+			continue
+		}
+
 		totalIf := lsn.Stats[totalKey]
 		if totalIf == nil {
 			log.Warnf("missing key %s in LocalSubnet %d stats", totalKey, lsn.LocalSubnetID)
