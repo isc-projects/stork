@@ -151,10 +151,12 @@ func (c TestCommander) Output(command string, args ...string) ([]byte, error) {
                       secret "abcd";
                  };
 	         controls {
-                      inet 127.0.0.53 port 5353 allow { localhost; } keys { "foo";};
+                      inet 127.0.0.53 port 5353 allow { localhost; } keys { "foo"; "bar"; };
+                      inet * port 5454 allow { localhost; 1.2.3.4; };
                  };
                  statistics-channels {
-                      inet 127.0.0.80 port 80 allow { localhost; };
+                      inet 127.0.0.80 port 80 allow { localhost; 1.2.3.4; };
+                      inet 127.0.0.88 port 88 allow { localhost; 1.2.3.4; };
                  };`
 
 	return []byte(text), nil

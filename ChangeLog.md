@@ -1,3 +1,9 @@
+* 104 [bug] matthijs
+
+    Stork was unable to parse inet_spec if there were multiple addresses in
+    the 'allow' clause.  Also fix the same bug for 'keys'.
+    (Gitlab #411)
+
 * 103 [func] godfryd
 
     Introduced breadcrumb that shows current location in Stork

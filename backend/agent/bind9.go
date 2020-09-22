@@ -85,7 +85,13 @@ func getRndcKey(contents, name string) (controlKey string) {
 // referenced in the key_list.  If instead of an ip_addr, the asterisk (*) is
 // specified, this function will return 'localhost' as an address.
 func parseInetSpec(config, excerpt string) (address string, port int64, key string) {
-	ptrn := regexp.MustCompile(`(?s)inet\s+(\S+\s*\S*\s*\d*)\s+allow\s*\{\s*\S+\s*;\s*\}(.*);`)
+	// This pattern is build up like this:
+	// - inet\s+                 - inet
+	// - (\S+\s*\S*\s*\d*)\s+    - ( ip_addr | * ) [ port ip_port ]
+	// - allow\s*                - allow
+	// - \{(?:\s*\S+\s*;\s*)+)\} - address_match_list
+	// - (.*);                   - keys { key_list }; (pattern matched below)
+	ptrn := regexp.MustCompile(`(?s)inet\s+(\S+\s*\S*\s*\d*)\s+allow\s*\{(?:\s*\S+\s*;\s*)+\}(.*);`)
 	match := ptrn.FindStringSubmatch(excerpt)
 	if len(match) == 0 {
 		log.Warnf("cannot parse BIND 9 inet configuration: no match (%+v)", config)
@@ -116,8 +122,13 @@ func parseInetSpec(config, excerpt string) (address string, port int64, key stri
 	}
 
 	if len(match) == 3 {
-		// Find a key clause
-		ptrn = regexp.MustCompile(`(?s)keys\s*\{\s*\"(\S+)\"\s*;\s*\}\s*`)
+		// Find a key clause. This pattern is build up like this:
+		// keys\s*                - keys
+		// \{\s*                  - {
+		// \"(\S+)\"\s*;          - key_list (first)
+		// (?:\s*\"\S+\"\s*;\s*)* - key_list (remainder)
+		// \s}\s*                 - }
+		ptrn = regexp.MustCompile(`(?s)keys\s*\{\s*\"(\S+)\"\s*;(?:\s*\"\S+\"\s*;\s*)*\}\s*`)
 		keyName := ptrn.FindStringSubmatch(match[2])
 		if len(keyName) > 1 {
 			key = getRndcKey(config, keyName[1])
