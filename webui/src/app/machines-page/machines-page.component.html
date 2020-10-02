@@ -26,6 +26,7 @@
             style="width: 100%"
             pInputText
             [(ngModel)]="machineAddress"
+            id="machineAddress"
             (keyup)="keyUpMachineDlg($event, null)"
         />
     </div>
@@ -37,12 +38,13 @@
             placeholder="8080"
             pInputText
             [(ngModel)]="agentPort"
+            id="agentPort"
             (keyup)="keyUpMachineDlg($event, null)"
         />
     </div>
     <p-footer>
-        <button type="button" (click)="cancelMachineDialog()" pButton icon="pi pi-times" label="Cancel"></button>
-        <button type="button" (click)="addNewMachine()" pButton icon="pi pi-check" label="Add"></button>
+        <button type="button" id="cancelMachineDialog" (click)="cancelMachineDialog()" pButton icon="pi pi-times" label="Cancel"></button>
+        <button type="button" id="addNewMachine" (click)="addNewMachine()" pButton icon="pi pi-check" label="Add"></button>
     </p-footer>
 </p-dialog>
 

@@ -35,6 +35,7 @@
                     <input
                         type="text"
                         name="username"
+                        id="UsernameInput"
                         formControlName="username"
                         placeholder="User name"
                         style="width: 100%"
@@ -45,6 +46,7 @@
                     <input
                         type="password"
                         name="password"
+                        id="PasswdInput"
                         formControlName="password"
                         placeholder="Password"
                         style="width: 100%"
@@ -52,7 +54,7 @@
                     />
                 </div>
                 <div style="margin-top: 18px">
-                    <button pButton type="button" label="Sign In" style="width: 100%" (click)="signIn()"></button>
+                    <button pButton id="SignInButton" type="button" label="Sign In" style="width: 100%" (click)="signIn()"></button>
                 </div>
             </form>
         </div>

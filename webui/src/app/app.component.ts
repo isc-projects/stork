@@ -45,6 +45,7 @@ export class AppComponent implements OnInit {
         this.userMenuItems = [
             {
                 label: 'Profile',
+                id: 'Profile',
                 icon: 'fa fa-cog',
                 routerLink: '/profile',
             },
@@ -53,25 +54,30 @@ export class AppComponent implements OnInit {
         this.menuItems = [
             {
                 label: 'DHCP',
+                id: 'DHCP',
                 visible: false,
                 items: [
                     {
                         label: 'Dashboard',
+                        id: 'Dashboard',
                         icon: 'fa fa-tachometer-alt',
                         routerLink: '/dashboard',
                     },
                     {
                         label: 'Host Reservations',
+                        id: 'HostReservations',
                         icon: 'fa fa-laptop',
                         routerLink: '/dhcp/hosts',
                     },
                     {
                         label: 'Subnets',
+                        id: 'Subnets',
                         icon: 'fa fa-project-diagram',
                         routerLink: '/dhcp/subnets',
                     },
                     {
                         label: 'Shared Networks',
+                        id: 'SharedNetworks',
                         icon: 'fa fa-network-wired',
                         routerLink: '/dhcp/shared-networks',
                     },
@@ -79,26 +85,31 @@ export class AppComponent implements OnInit {
             },
             {
                 label: 'Services',
+                id: 'Services',
                 items: [
                     {
                         label: 'Kea Apps',
+                        id: 'KeaApps',
                         visible: false,
                         icon: 'fa fa-server',
                         routerLink: '/apps/kea/all',
                     },
                     {
                         label: 'BIND 9 Apps',
+                        id: 'BIND9Apps',
                         visible: false,
                         icon: 'fa fa-server',
                         routerLink: '/apps/bind9/all',
                     },
                     {
                         label: 'Machines',
+                        id: 'Machines',
                         icon: 'fa fa-server',
                         routerLink: '/machines/all',
                     },
                     {
                         label: 'Grafana',
+                        id: 'Grafana',
                         icon: 'pi pi-chart-line',
                         url: '',
                         visible: false,
@@ -117,15 +128,18 @@ export class AppComponent implements OnInit {
             },
             {
                 label: 'Configuration',
+                id: 'Configuration',
                 items: [
                     {
                         label: 'Users',
+                        id: 'Users',
                         visible: false,
                         icon: 'fa fa-user',
                         routerLink: '/users',
                     },
                     {
                         label: 'Settings',
+                        id: 'Settings',
                         icon: 'fa fa-cog',
                         routerLink: '/settings',
                     },
@@ -133,32 +147,38 @@ export class AppComponent implements OnInit {
             },
             {
                 label: 'Help',
+                id: 'Help',
                 items: [
                     {
                         label: 'Stork Manual',
+                        id: 'StorkManual',
                         icon: 'fa fa-book',
                         url: '/assets/arm/index.html',
                         target: 'blank',
                     },
                     {
                         label: 'Stork API Docs (SwaggerUI)',
+                        id: 'StorkAPIDocsSwagger',
                         icon: 'fa fa-code',
                         routerLink: '/swagger-ui',
                     },
                     {
                         label: 'Stork API Docs (Redoc)',
+                        id: 'StorkAPIDocsRedoc',
                         icon: 'fa fa-code',
                         url: '/api/docs',
                         target: 'blank',
                     },
                     {
                         label: 'BIND 9 Manual',
+                        id: 'BIND9Manual',
                         icon: 'fa fa-book',
                         url: 'https://downloads.isc.org/isc/bind9/cur/9.16/doc/arm/Bv9ARM.html',
                         target: 'blank',
                     },
                     {
                         label: 'Kea Manual',
+                        id: 'KeaManual',
                         icon: 'fa fa-book',
                         url: 'https://kea.readthedocs.io/',
                         target: 'blank',
