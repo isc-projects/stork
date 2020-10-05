@@ -384,3 +384,34 @@ func TestRefreshMachineFromDb(t *testing.T) {
 	require.EqualValues(t, 4, m.State.Cpus)
 	require.Equal(t, "some error", m.Error)
 }
+
+func TestGetAllMachines(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add 20 machines
+	for i := 1; i <= 20; i++ {
+		m := &Machine{
+			Address:   "localhost",
+			AgentPort: 8080 + int64(i),
+			Error:     "some error",
+			State: MachineState{
+				Hostname: "aaaa",
+				Cpus:     4,
+			},
+		}
+		err := AddMachine(db, m)
+		require.NoError(t, err)
+	}
+
+	// get all machines should return 20 machines
+	machines, err := GetAllMachines(db)
+	require.NoError(t, err)
+	require.Len(t, machines, 20)
+
+	// paged get should return indicated limit, not all
+	machines, total, err := GetMachinesByPage(db, 0, 10, nil, "", SortDirAny)
+	require.NoError(t, err)
+	require.Len(t, machines, 10)
+	require.EqualValues(t, 20, total)
+}

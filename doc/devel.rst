@@ -410,6 +410,14 @@ To get a list of tests without actually running them, the following command can 
 
 The test names of available tests will be printed as `<Function name_of_the_test>`.
 
+Given test case can be also invoked indirectly via ``rake`` task.
+In that case the test case needs to be passed to test variable, e.g.:
+
+.. code-block:: console
+
+                $ rake system_tests test=tests.py::test_users_management[centos/7-ubuntu/18.04]
+
+
 Developing System Tests
 -----------------------
 

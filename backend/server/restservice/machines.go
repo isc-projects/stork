@@ -15,11 +15,9 @@ import (
 
 	"isc.org/stork"
 	"isc.org/stork/server/agentcomm"
-	"isc.org/stork/server/apps/bind9"
+	"isc.org/stork/server/apps"
 	"isc.org/stork/server/apps/kea"
-	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
-	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	"isc.org/stork/server/gen/restapi/operations/general"
@@ -72,149 +70,6 @@ func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	return &m
 }
 
-// appCompare compares two apps on equality.  Two apps are considered equal if
-// their type matches and if they have the same control port.  Return true if
-// equal, false otherwise.
-func appCompare(dbApp *dbmodel.App, app *agentcomm.App) bool {
-	if dbApp.Type != app.Type {
-		return false
-	}
-
-	var controlPortEqual bool
-	for _, pt1 := range dbApp.AccessPoints {
-		if pt1.Type != dbmodel.AccessPointControl {
-			continue
-		}
-		for _, pt2 := range app.AccessPoints {
-			if pt2.Type != dbmodel.AccessPointControl {
-				continue
-			}
-
-			if pt1.Port == pt2.Port {
-				controlPortEqual = true
-				break
-			}
-		}
-
-		// If a match is found, we can break.
-		if controlPortEqual {
-			break
-		}
-	}
-
-	return controlPortEqual
-}
-
-func getMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter) string {
-	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	// get state of machine from agent
-	state, err := agents.GetState(ctx2, dbMachine.Address, dbMachine.AgentPort)
-	if err != nil {
-		log.Warn(err)
-		dbMachine.Error = "cannot get state of machine"
-		err = db.Update(dbMachine)
-		if err != nil {
-			log.Error(err)
-			return "problem with updating record in database"
-		}
-		return ""
-	}
-
-	// store machine's state in db
-	err = updateMachineFields(db, dbMachine, state)
-	if err != nil {
-		log.Error(err)
-		return "cannot update machine in db"
-	}
-
-	// If there are any new apps then get their state and add to db.
-	// Old ones are just updated. Use GetAppsByMachine to retrieve
-	// machine's apps with their daemons.
-	oldAppsList, err := dbmodel.GetAppsByMachine(db, dbMachine.ID)
-	if err != nil {
-		log.Error(err)
-		return "cannot get machine's apps from db"
-	}
-	dbMachine.Apps = []*dbmodel.App{}
-	for _, app := range state.Apps {
-		// look for old app
-		var dbApp *dbmodel.App = nil
-		for _, dbApp2 := range oldAppsList {
-			if appCompare(dbApp2, app) {
-				dbApp = dbApp2
-				break
-			}
-		}
-		// if no old app in db then prepare new record
-		if dbApp == nil {
-			var accessPoints []*dbmodel.AccessPoint
-
-			for _, point := range app.AccessPoints {
-				accessPoints = append(accessPoints, &dbmodel.AccessPoint{
-					Type:    point.Type,
-					Address: point.Address,
-					Port:    point.Port,
-					Key:     point.Key,
-				})
-			}
-
-			dbApp = &dbmodel.App{
-				ID:           0,
-				MachineID:    dbMachine.ID,
-				Machine:      dbMachine,
-				Type:         app.Type,
-				AccessPoints: accessPoints,
-			}
-		} else {
-			dbApp.Machine = dbMachine
-		}
-
-		switch app.Type {
-		case dbmodel.AppTypeKea:
-			events := kea.GetAppState(ctx2, agents, dbApp, eventCenter)
-			err = kea.CommitAppIntoDB(db, dbApp, eventCenter, events)
-		case dbmodel.AppTypeBind9:
-			bind9.GetAppState(ctx2, agents, dbApp, eventCenter)
-			err = bind9.CommitAppIntoDB(db, dbApp, eventCenter)
-		default:
-			err = nil
-		}
-
-		if err != nil {
-			log.Errorf("cannot store application state: %+v", err)
-			return "problem with storing application state in the database"
-		}
-
-		log.Printf("committed information about %s app running on %s to database",
-			dbApp.Type, dbMachine.Address)
-
-		// add app to machine's apps list
-		dbMachine.Apps = append(dbMachine.Apps, dbApp)
-	}
-
-	// delete missing apps
-	for _, dbApp := range oldAppsList {
-		found := false
-		for _, app := range state.Apps {
-			if appCompare(dbApp, app) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			err = dbmodel.DeleteApp(db, dbApp)
-			if err != nil {
-				log.Error(err)
-			}
-			log.Printf("deleted %s app on %s", dbApp.Type, dbMachine.Address)
-		}
-	}
-
-	return ""
-}
-
 // Get runtime state of indicated machine.
 func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachineStateParams) middleware.Responder {
 	dbMachine, err := dbmodel.GetMachineByID(r.Db, params.ID)
@@ -234,7 +89,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
-	errStr := getMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents, r.EventCenter)
+	errStr := apps.GetMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents, r.EventCenter)
 	if errStr != "" {
 		rsp := services.NewGetMachineStateDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
@@ -382,7 +237,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		r.EventCenter.AddInfoEvent("added {machine}", dbMachine)
 	}
 
-	errStr := getMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents, r.EventCenter)
+	errStr := apps.GetMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents, r.EventCenter)
 	if errStr != "" {
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
@@ -469,33 +324,6 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	m := r.machineToRestAPI(*dbMachine)
 	rsp := services.NewUpdateMachineOK().WithPayload(m)
 	return rsp
-}
-
-func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcomm.State) error {
-	// update state fields in machine
-	dbMachine.State.AgentVersion = m.AgentVersion
-	dbMachine.State.Cpus = m.Cpus
-	dbMachine.State.CpusLoad = m.CpusLoad
-	dbMachine.State.Memory = m.Memory
-	dbMachine.State.Hostname = m.Hostname
-	dbMachine.State.Uptime = m.Uptime
-	dbMachine.State.UsedMemory = m.UsedMemory
-	dbMachine.State.Os = m.Os
-	dbMachine.State.Platform = m.Platform
-	dbMachine.State.PlatformFamily = m.PlatformFamily
-	dbMachine.State.PlatformVersion = m.PlatformVersion
-	dbMachine.State.KernelVersion = m.KernelVersion
-	dbMachine.State.KernelArch = m.KernelArch
-	dbMachine.State.VirtualizationSystem = m.VirtualizationSystem
-	dbMachine.State.VirtualizationRole = m.VirtualizationRole
-	dbMachine.State.HostID = m.HostID
-	dbMachine.LastVisitedAt = m.LastVisitedAt
-	dbMachine.Error = m.Error
-	err := db.Update(dbMachine)
-	if err != nil {
-		return errors.Wrapf(err, "problem with updating machine %+v", dbMachine)
-	}
-	return nil
 }
 
 // Add a machine where Stork Agent is running.

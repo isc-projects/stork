@@ -335,6 +335,7 @@ func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) 
 		Relation("HAService").
 		Relation("Daemons.KeaDaemon.KeaDHCPDaemon").
 		Relation("Daemons.App").
+		Relation("Daemons.App.AccessPoints").
 		Where("app_id = ?", appID).
 		OrderExpr("service.id ASC").
 		Select()
@@ -342,14 +343,6 @@ func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) 
 	if err != nil && err != pg.ErrNoRows {
 		err = errors.Wrapf(err, "problem with getting services for app id %d", appID)
 		return services, err
-	}
-
-	// Retrieve the access points. This should be incorporated in the
-	// above query, ideally.
-	for _, service := range services {
-		for _, daemon := range service.Daemons {
-			daemon.App.AccessPoints, _ = GetAllAccessPointsByAppID(db, daemon.App.ID)
-		}
 	}
 
 	return services, nil

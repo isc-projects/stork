@@ -54,3 +54,8 @@ TAGS
 
 # generated files for docker containers
 /docker/kea-dhcp4-many-subnets.conf
+
+# tests venv and pycache
+/tests/system/venv/
+/tests/system/__pycache__/
+/tests/system/test-results/

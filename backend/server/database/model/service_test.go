@@ -385,6 +385,7 @@ func TestGetServicesByAppID(t *testing.T) {
 	appServices, err := GetDetailedServicesByAppID(db, services[0].Daemons[3].AppID)
 	require.NoError(t, err)
 	require.Len(t, appServices, 1)
+	require.Len(t, appServices[0].Daemons[0].App.AccessPoints, 1)
 
 	// Validate that the service returned is the service1.
 	service := appServices[0]

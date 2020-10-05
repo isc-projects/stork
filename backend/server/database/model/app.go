@@ -39,6 +39,7 @@ type App struct {
 // updateAppAccessPoints updates the associated application access points into
 // the database.
 func updateAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
+	var oldAccessPoints []*AccessPoint
 	if update {
 		// First delete any access points previously associated with the app.
 		types := []string{}
@@ -52,6 +53,8 @@ func updateAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
 		if err != nil {
 			return errors.Wrapf(err, "problem with removing access points from app %d", app.ID)
 		}
+
+		oldAccessPoints, err = GetAllAccessPointsByAppID(tx, app.ID)
 	}
 
 	// If there are any access points associated with the app,
@@ -60,7 +63,19 @@ func updateAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
 		point.AppID = app.ID
 		point.MachineID = app.MachineID
 		if update {
-			_, err = tx.Model(point).OnConflict("(app_id, type) DO UPDATE").Insert()
+			// if new access point matches to old one then update it
+			oldPresent := false
+			for _, oldAP := range oldAccessPoints {
+				if point.Type == oldAP.Type {
+					_, err = tx.Model(point).WherePK().Update()
+					oldPresent = true
+					break
+				}
+			}
+			// otherwise create new one
+			if !oldPresent {
+				_, err = tx.Model(point).Insert()
+			}
 		} else {
 			_, err = tx.Model(point).Insert()
 		}
@@ -265,7 +280,7 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 	// Update access points.
 	err = updateAppAccessPoints(tx, app, true)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "problem with updating access points to app: %+v", app)
+		return nil, nil, errors.WithMessagef(err, "problem with updating access points to app: %+v", app)
 	}
 
 	// Commit the changes if necessary.

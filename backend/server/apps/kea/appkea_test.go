@@ -427,6 +427,7 @@ func TestCommitAppIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, machine.ID)
 
+	// add app with particular access point
 	var accessPoints []*dbmodel.AccessPoint
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
 	app := &dbmodel.App{
@@ -440,6 +441,7 @@ func TestCommitAppIntoDB(t *testing.T) {
 	err = CommitAppIntoDB(db, app, fec, nil)
 	require.NoError(t, err)
 
+	// now change access point (different port) and trigger updating app in database
 	accessPoints = []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 2345)
 	app.AccessPoints = accessPoints

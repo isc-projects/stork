@@ -6,7 +6,6 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 // Part of machine table in database that describes state of machine. In DB it is stored as JSONB.
@@ -42,7 +41,6 @@ type Machine struct {
 }
 
 func AddMachine(db *pg.DB, machine *Machine) error {
-	log.Infof("inserting machine %+v", machine)
 	err := db.Insert(machine)
 	if err != nil {
 		err = errors.Wrapf(err, "problem with inserting machine %+v", machine)
@@ -145,6 +143,27 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 	}
 
 	return machines, int64(total), nil
+}
+
+// Get all machines from database.
+func GetAllMachines(db *pg.DB) ([]Machine, error) {
+	var machines []Machine
+
+	// prepare query
+	q := db.Model(&machines)
+	q = q.Relation("Apps.AccessPoints")
+	q = q.Relation("Apps.Daemons.KeaDaemon.KeaDHCPDaemon")
+	q = q.Relation("Apps.Daemons.Bind9Daemon")
+
+	err := q.Select()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return []Machine{}, nil
+		}
+		return nil, errors.Wrapf(err, "problem with getting machines")
+	}
+
+	return machines, nil
 }
 
 func DeleteMachine(db *pg.DB, machine *Machine) error {

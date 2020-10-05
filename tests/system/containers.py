@@ -517,9 +517,5 @@ class StorkAgentContainer(Container):
     def _setup(self, reused, pkg_ver=None):
         if not reused:
             self.prepare_system()
-            self.install_kea()
             self.dump_image()
-        if self.pkg_format == 'deb':
-            # workaround for not starting autonomously CA service
-            self.run('systemctl start isc-kea-ctrl-agent')
         self.prepare_stork_agent(pkg_ver)

@@ -869,9 +869,14 @@ end
 
 desc 'Run system tests exercising REST API and communication with agents'
 task :system_tests => 'tests/system/venv/bin/activate' do
+  if ENV['test']
+    test = ENV['test']
+  else
+    test = 'tests.py'
+  end
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
-    sh './venv/bin/pytest --tb=long -l -r ap -s tests.py'
+    sh "./venv/bin/pytest --tb=long -l -r ap -s #{test}"
   end
 end
 

@@ -3,8 +3,6 @@ package dbmodel
 import (
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
-
-	dbops "isc.org/stork/server/database"
 )
 
 // A structure reflecting the access_point SQL table.
@@ -21,10 +19,10 @@ const AccessPointControl = "control"
 const AccessPointStatistics = "statistics"
 
 // GetAllAccessPointsByAppID returns all access points for an app with given ID.
-func GetAllAccessPointsByAppID(db *dbops.PgDB, appID int64) ([]*AccessPoint, error) {
+func GetAllAccessPointsByAppID(tx *pg.Tx, appID int64) ([]*AccessPoint, error) {
 	var accessPoints []*AccessPoint
 
-	err := db.Model(&accessPoints).
+	err := tx.Model(&accessPoints).
 		Where("app_id = ?", appID).
 		OrderExpr("access_point.type ASC").
 		Select()

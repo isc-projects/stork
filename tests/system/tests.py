@@ -50,29 +50,6 @@ def test_users_management(agent, server):
     r = server.api_post('/users', json=user, expected_status=200)  # TODO: POST should return 201
 
 
-@pytest.mark.parametrize("agent, server", SUPPORTED_DISTROS)
-def test_machines(agent, server):
-    """Check if machines can be fetched and added."""
-    # login
-    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
-    assert r.json()['login'] == 'admin'
-
-    machine = dict(
-        address=agent.mgmt_ip,
-        agentPort=8080)
-    r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
-    assert r.json()['address'] == agent.mgmt_ip
-
-    time.sleep(10)
-
-    r = server.api_get('/machines')
-    data = r.json()
-    for m in data['items']:
-        assert m['apps'] is not None
-        assert len(m['apps']) == 1
-        assert m['apps'][0]['version'] == '1.7.3'
-
-
 @pytest.mark.parametrize("distro_agent, distro_server", SUPPORTED_DISTROS)
 def test_pkg_upgrade(distro_agent, distro_server):
     """Check if Stork agent and server can be upgraded from latest release
@@ -86,12 +63,13 @@ def test_pkg_upgrade(distro_agent, distro_server):
     server.setup_wait()
     agent.setup_wait()
 
-    time.sleep(3)
-
     # install local packages
     banner('UPGRADING STORK')
     agent.prepare_stork_agent()
     server.prepare_stork_server()
+
+    # install kea on the agent machine
+    agent.install_kea()
 
     # login
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
@@ -107,7 +85,7 @@ def test_pkg_upgrade(distro_agent, distro_server):
     for i in range(100):
         r = server.api_get('/machines')
         data = r.json()
-        if len(data['items']) == 1 and len(data['items'][0]['apps'][0]['details']['daemons']) > 1:
+        if len(data['items']) == 1 and data['items'][0]['apps'] and len(data['items'][0]['apps'][0]['details']['daemons']) > 1:
             break
         time.sleep(2)
 
@@ -120,6 +98,9 @@ def test_pkg_upgrade(distro_agent, distro_server):
 @pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/7')])
 def test_add_kea_with_many_subnets(agent, server):
     """Check if Stork agent and server will handle Kea instance with huge amount of subnets."""
+    # install kea on the agent machine
+    agent.install_kea()
+
     # prepare kea config with many subnets and upload it to the agent
     banner("UPLOAD KEA CONFIG WITH MANY SUBNETS")
     subprocess.run('../../docker/gen-kea-config.py 7000 > kea-dhcp4-many-subnets.conf', shell=True, check=True)
@@ -139,10 +120,10 @@ def test_add_kea_with_many_subnets(agent, server):
     r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
     assert r.json()['address'] == agent.mgmt_ip
 
-    for i in range(20):
+    for i in range(100):
         r = server.api_get('/machines')
         data = r.json()
-        if len(data['items']) == 1:
+        if len(data['items']) == 1 and data['items'][0]['apps']:
             break
         time.sleep(2)
     assert len(data['items']) == 1
@@ -163,3 +144,81 @@ def test_add_kea_with_many_subnets(agent, server):
             break
         time.sleep(2)
     assert data['total'] == 6912
+
+
+@pytest.mark.parametrize("agent, server", [('centos/7', 'ubuntu/18.04')])
+def test_change_kea_ca_access_point(agent, server):
+    """Check if Stork server notices that Kea CA has changed its listening address."""
+    # install kea on the agent machine
+    agent.install_kea()
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # add machine
+    banner("ADD MACHINE")
+    machine = dict(
+        address=agent.mgmt_ip,
+        agentPort=8080)
+    r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
+    assert r.json()['address'] == agent.mgmt_ip
+
+    for i in range(40):
+        r = server.api_get('/machines')
+        data = r.json()
+        if len(data['items']) == 1 and data['items'][0]['apps']:
+            break
+        time.sleep(2)
+    assert len(data['items']) == 1
+    m = data['items'][0]
+    assert m['apps'] is not None
+    assert len(m['apps']) == 1
+    assert m['apps'][0]['version'] == '1.7.3'
+    assert len(m['apps'][0]['accessPoints']) == 1
+    assert m['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'
+
+    # stop and reconfigure CA to serve from different IP address
+    banner("STOP CA and reconfigure listen IP address")
+    agent.run('sed -i -e s/"0.0.0.0"/"%s"/g /etc/kea/kea-ctrl-agent.conf' % agent.mgmt_ip)
+    ca_svc_name = 'kea-ctrl-agent' if 'centos' in agent.name else 'isc-kea-ctrl-agent'
+    agent.run('systemctl stop ' + ca_svc_name)
+
+    # wait for unreachable event
+    banner("WAIT FOR UNREACHABLE EVENT")
+    event_occured = False
+    for i in range(20):
+        r = server.api_get('/events')
+        data = r.json()
+        if 'is unreachable' in data['items'][0]['text']:
+            event_occured = True
+            break
+        time.sleep(2)
+    assert event_occured, 'no event about unreachable kea'
+
+    # start CA
+    banner("START CA")
+    agent.run('systemctl start ' + ca_svc_name)
+
+    # wait for reachable event
+    banner("WAIT FOR REACHABLE EVENT")
+    event_occured = False
+    for i in range(20):
+        r = server.api_get('/events')
+        data = r.json()
+        if 'is reachable now' in data['items'][0]['text']:
+            event_occured = True
+            break
+        time.sleep(2)
+    assert event_occured, 'no event about reachable kea'
+
+    # check for sure if app has new access point address
+    banner("CHECK IF RECONFIGURED")
+    r = server.api_get('/machines')
+    data = r.json()
+    assert len(data['items']) == 1
+    m = data['items'][0]
+    assert m['apps'] is not None
+    assert len(m['apps']) == 1
+    assert len(m['apps'][0]['accessPoints']) == 1
+    assert m['apps'][0]['accessPoints'][0]['address'] == agent.mgmt_ip
