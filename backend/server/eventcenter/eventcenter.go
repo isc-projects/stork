@@ -180,7 +180,7 @@ func subnetTag(subnet *dbmodel.Subnet) string {
 	return tag
 }
 
-// Prepare a user describing a subnet.
+// Prepare a tag describing a user.
 func userTag(user *dbmodel.SystemUser) string {
 	tag := fmt.Sprintf("<user id=\"%d\" login=\"%s\" email=\"%s\">",
 		user.ID, user.Login, user.Email)

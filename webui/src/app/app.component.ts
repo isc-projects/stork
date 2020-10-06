@@ -106,7 +106,7 @@ export class AppComponent implements OnInit {
                 ],
             },
             {
-                label: 'Alerts',
+                label: 'Monitoring',
                 items: [
                     {
                         label: 'Events',

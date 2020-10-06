@@ -27,12 +27,30 @@ func TestEvent(t *testing.T) {
 	require.NotZero(t, mEv.ID)
 
 	// add app error event
+	machine := &Machine{
+		Address:   "1.2.3.4",
+		AgentPort: 321,
+	}
+	err = AddMachine(db, machine)
+	require.NoError(t, err)
+	app := &App{
+		MachineID: machine.ID,
+		Type:      "kea",
+		Daemons: []*Daemon{{
+			Name: "dhcp4",
+		}},
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err)
+	require.NotZero(t, app.ID)
+	require.NotZero(t, app.Daemons[0].ID)
+
 	aEv := &Event{
 		Text:    "some error event",
 		Details: "more details about error event",
 		Level:   EvError,
 		Relations: &Relations{
-			AppID: 2,
+			AppID: app.ID,
 		},
 	}
 
@@ -46,7 +64,7 @@ func TestEvent(t *testing.T) {
 		Details: "more details about warning event",
 		Level:   EvWarning,
 		Relations: &Relations{
-			DaemonID: 3,
+			DaemonID: app.Daemons[0].ID,
 		},
 	}
 
@@ -102,23 +120,23 @@ func TestEvent(t *testing.T) {
 	require.EqualValues(t, "some error event", events[0].Text)
 
 	// get daemon events
-	d := dEv.Relations.DaemonID
+	d := "dhcp4"
 	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, &d, nil, nil, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, events, 1)
 	require.EqualValues(t, EvWarning, events[0].Level)
-	require.EqualValues(t, d, events[0].Relations.DaemonID)
+	require.EqualValues(t, dEv.Relations.DaemonID, events[0].Relations.DaemonID)
 	require.EqualValues(t, "some warning event", events[0].Text)
 
 	// get app events
-	a := aEv.Relations.AppID
+	a := "kea"
 	events, total, err = GetEventsByPage(db, 0, 10, EvInfo, nil, &a, nil, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, events, 1)
 	require.EqualValues(t, EvError, events[0].Level)
-	require.EqualValues(t, a, events[0].Relations.AppID)
+	require.EqualValues(t, aEv.Relations.AppID, events[0].Relations.AppID)
 	require.EqualValues(t, "some error event", events[0].Text)
 
 	// get machine events

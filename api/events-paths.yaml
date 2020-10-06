@@ -14,18 +14,18 @@
           in: query
           description: Show all levels (0), warning and errors (1), errors only (2).
           type: integer
-        - name: daemon
-          in: query
-          description: Daemon ID.
-          type: integer
-        - name: app
-          in: query
-          description: App ID.
-          type: integer
         - name: machine
           in: query
           description: Machine ID.
           type: integer
+        - name: appType
+          in: query
+          description: App type, e.g. 'kea' or 'bind9'.
+          type: string
+        - name: daemonType
+          in: query
+          description: Daemon types, e.g. 'named', 'dhcp4', 'dhcp6', 'ca'.
+          type: string
         - name: user
           in: query
           description: User ID.

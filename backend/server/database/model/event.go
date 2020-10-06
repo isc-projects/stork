@@ -44,12 +44,17 @@ func AddEvent(db *pg.DB, event *Event) error {
 
 // Fetches a collection of events from the database. The offset and
 // limit specify the beginning of the page and the maximum size of the
-// page. Limit has to be greater then 0, otherwise error is
-// returned. sortField allows indicating sort column in database and
+// page. Limit has to be greater then 0, otherwise error is returned.
+// The level idicates the lowest level of events that should be
+// returned (0 - info, 1 - warning, 2 - error). daemonType and appType
+// allows selecting events only from given type of app ('kea',
+// 'bind9') or daemon (e.g. 'named' or 'dhcp4'. machineID and userID
+// allows selecting events connected with indicated machine or
+// user. sortField allows indicating sort column in database and
 // sortDir allows selection the order of sorting. If sortField is
 // empty then id is used for sorting. If SortDirAny is used then ASC
 // order is used.
-func GetEventsByPage(db *pg.DB, offset int64, limit int64, level int64, daemonID *int64, appID *int64, machineID *int64, userID *int64, sortField string, sortDir SortDirEnum) ([]Event, int64, error) {
+func GetEventsByPage(db *pg.DB, offset int64, limit int64, level int64, daemonType *string, appType *string, machineID *int64, userID *int64, sortField string, sortDir SortDirEnum) ([]Event, int64, error) {
 	if limit == 0 {
 		return nil, 0, errors.New("limit should be greater than 0")
 	}
@@ -60,11 +65,13 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, level int64, daemonID
 	if level > 0 {
 		q = q.Where("level >= ?", level)
 	}
-	if daemonID != nil {
-		q = q.Where("CAST (relations->'DaemonID' AS INTEGER) = ?", *daemonID)
+	if daemonType != nil {
+		q = q.Join("JOIN daemon ON daemon.id = CAST (relations->'DaemonID' AS INTEGER)")
+		q = q.Where("daemon.name = ?", daemonType)
 	}
-	if appID != nil {
-		q = q.Where("CAST (relations->'AppID' AS INTEGER) = ?", *appID)
+	if appType != nil {
+		q = q.Join("JOIN app ON app.id = CAST (relations->'AppID' AS INTEGER)")
+		q = q.Where("app.type = ?", appType)
 	}
 	if machineID != nil {
 		q = q.Where("CAST (relations->'MachineID' AS INTEGER) = ?", *machineID)

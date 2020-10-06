@@ -1,6 +1,10 @@
 import { Component, OnInit } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 
+/**
+ * Component responsible for showing a full page list of events,
+ * with filtering and pagination capabilities.
+ */
 @Component({
     selector: 'app-events-page',
     templateUrl: './events-page.component.html',
@@ -8,8 +12,8 @@ import { ActivatedRoute } from '@angular/router'
 })
 export class EventsPageComponent implements OnInit {
     machineId = null
-    appId = null
-    daemonId = null
+    appType = null
+    daemonType = null
     userId = null
 
     constructor(private route: ActivatedRoute) {}
@@ -20,14 +24,14 @@ export class EventsPageComponent implements OnInit {
             this.machineId = parseInt(machineId, 10)
         }
 
-        const appId = this.route.snapshot.queryParams.app
-        if (appId) {
-            this.appId = parseInt(appId, 10)
+        const appType = this.route.snapshot.queryParams.appType
+        if (appType) {
+            this.appType = appType
         }
 
-        const daemonId = this.route.snapshot.queryParams.daemon
-        if (daemonId) {
-            this.daemonId = parseInt(daemonId, 10)
+        const daemonType = this.route.snapshot.queryParams.daemonType
+        if (daemonType) {
+            this.daemonType = daemonType
         }
 
         const userId = this.route.snapshot.queryParams.user

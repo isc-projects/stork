@@ -182,7 +182,11 @@
                             <h3>Events</h3>
                             <app-events-panel
                                 #eventsTable
-                                [filter]="{ machine: appTab.app.machine.id, app: appTab.app.id, daemon: daemon.id }"
+                                [filter]="{
+                                    machine: appTab.app.machine.id,
+                                    appType: appTab.app.type,
+                                    daemonType: daemon.name
+                                }"
                             ></app-events-panel>
                         </div>
                     </div>

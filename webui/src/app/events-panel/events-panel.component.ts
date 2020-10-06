@@ -24,8 +24,8 @@ export class EventsPanelComponent implements OnInit {
     @Input() filter = {
         level: 0,
         machine: null,
-        app: null,
-        daemon: null,
+        appType: null,
+        daemonType: null,
         user: null,
     }
 
@@ -49,12 +49,22 @@ export class EventsPanelComponent implements OnInit {
 
     users: any
     machines: any
-    apps: any
-    daemons: any
-    selectedUser: any
+    appTypes = [
+        { value: 'kea', name: 'Kea' },
+        { value: 'bind9', name: 'BIND 9' },
+    ]
+    daemonTypes = [
+        { value: 'dhcp4', name: 'DHCPv4' },
+        { value: 'dhcp6', name: 'DHCPv6' },
+        { value: 'named', name: 'named' },
+        { value: 'd2', name: 'DDNS' },
+        { value: 'ca', name: 'CA' },
+        { value: 'netconf', name: 'NETCONF' },
+    ]
     selectedMachine: any
-    selectedApp: any
-    selectedDaemon: any
+    selectedAppType: any
+    selectedDaemonType: any
+    selectedUser: any
 
     constructor(
         private eventsApi: EventsService,
@@ -67,9 +77,34 @@ export class EventsPanelComponent implements OnInit {
         this.refreshEvents(null)
         this.registerServerSentEvents()
 
+        if (this.filter.appType) {
+            for (const at of this.appTypes) {
+                if (at.value === this.filter.appType) {
+                    this.selectedAppType = at
+                    break
+                }
+            }
+        }
+        if (this.filter.daemonType) {
+            for (const dt of this.daemonTypes) {
+                if (dt.value === this.filter.daemonType) {
+                    this.selectedDaemonType = dt
+                    break
+                }
+            }
+        }
+
         this.usersApi.getUsers(0, 1000, null).subscribe(
             (data) => {
                 this.users = data.items
+
+                if (this.filter.user) {
+                    for (const u of this.users) {
+                        if (u.id === this.filter.user) {
+                            this.selectedUser = u
+                        }
+                    }
+                }
             },
             (err) => {
                 let msg = err.statusText
@@ -92,24 +127,6 @@ export class EventsPanelComponent implements OnInit {
                     for (const m of this.machines) {
                         if (m.id === this.filter.machine) {
                             this.selectedMachine = m
-                            this.apps = m.apps
-
-                            if (this.filter.app) {
-                                for (const a of m.apps) {
-                                    if (a.id === this.filter.app) {
-                                        this.selectedApp = a
-                                        this.daemons = a.details.daemons
-
-                                        if (this.filter.daemon) {
-                                            for (const d of a.details.daemons) {
-                                                if (d.id === this.filter.daemon) {
-                                                    this.selectedDaemon = d
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -143,8 +160,9 @@ export class EventsPanelComponent implements OnInit {
                 this.start,
                 this.limit,
                 this.filter.level,
-                this.filter.daemon,
                 this.filter.machine,
+                this.filter.appType,
+                this.filter.daemonType,
                 this.filter.user
             )
             .subscribe(
@@ -256,37 +274,36 @@ export class EventsPanelComponent implements OnInit {
 
     onMachineSelect(event) {
         if (event.value === null) {
-            this.apps = []
             this.filter.machine = null
         } else {
-            this.apps = event.value.apps
             this.filter.machine = event.value.id
         }
-        this.daemons = []
-        this.filter.app = null
-        this.filter.daemon = null
         this.refreshEvents(null)
     }
 
-    onAppSelect(event) {
-        console.info(event)
+    onAppTypeSelect(event) {
         if (event.value === null) {
-            this.daemons = []
-            this.filter.app = null
+            this.filter.appType = null
         } else {
-            this.daemons = event.value.details.daemons
-            this.filter.app = event.value.id
+            this.filter.appType = event.value.value
         }
-        this.filter.daemon = null
         this.refreshEvents(null)
     }
 
-    onDaemonSelect(event) {
-        console.info(event)
-        if (event.value) {
-            this.filter.daemon = event.value.id
+    onDaemonTypeSelect(event) {
+        if (event.value === null) {
+            this.filter.daemonType = null
         } else {
-            this.filter.daemon = null
+            this.filter.daemonType = event.value.value
+        }
+        this.refreshEvents(null)
+    }
+
+    onUserSelect(event) {
+        if (event.value === null) {
+            this.filter.user = null
+        } else {
+            this.filter.user = event.value.id
         }
         this.refreshEvents(null)
     }

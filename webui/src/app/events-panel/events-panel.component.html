@@ -1,4 +1,4 @@
-<div *ngIf="ui === 'bare'">
+<div *ngIf="ui === 'bare'" class="events-panel">
     <table class="events-table">
         <ng-container *ngFor="let ev of events.items; index as i">
             <tr [class.odd-row]="i % 2 === 0">
@@ -34,7 +34,9 @@
         </ng-container>
     </table>
     <ng-template #paginatorText>
-        <a routerLink="/events" [queryParams]="{ machine: filter.machine, app: filter.app, daemon: filter.daemon }"
+        <a
+            routerLink="/events"
+            [queryParams]="{ machine: filter.machine, appType: filter.appType, daemonType: filter.daemonType }"
             >more events</a
         >
     </ng-template>
@@ -69,21 +71,6 @@
         </div>
 
         <div style="display: flex">
-            <div style="margin: 0 10px 0 30px; padding-top: 5px">User:</div>
-            <div>
-                <p-dropdown
-                    [options]="users"
-                    [(ngModel)]="selectedUser"
-                    optionLabel="login"
-                    placeholder="any"
-                    showClear="true"
-                    tooltip="Show events related to selected user"
-                    (onChange)="refreshEvents(null)"
-                ></p-dropdown>
-            </div>
-        </div>
-
-        <div style="display: flex">
             <div style="margin: 0 10px 0 30px; padding-top: 5px">Machine:</div>
             <div>
                 <p-dropdown
@@ -99,16 +86,16 @@
         </div>
 
         <div style="display: flex">
-            <div style="margin: 0 10px 0 30px; padding-top: 5px">App:</div>
+            <div style="margin: 0 10px 0 30px; padding-top: 5px">App Type:</div>
             <div>
                 <p-dropdown
-                    [options]="apps"
-                    [(ngModel)]="selectedApp"
-                    optionLabel="type"
+                    [options]="appTypes"
+                    [(ngModel)]="selectedAppType"
+                    optionLabel="name"
                     placeholder="any"
                     showClear="true"
-                    tooltip="Show events related to selected app"
-                    (onChange)="onAppSelect($event)"
+                    tooltip="Show events related to selected app type"
+                    (onChange)="onAppTypeSelect($event)"
                 ></p-dropdown>
             </div>
         </div>
@@ -117,13 +104,28 @@
             <div style="margin: 0 10px 0 30px; padding-top: 5px">Daemon:</div>
             <div>
                 <p-dropdown
-                    [options]="daemons"
-                    [(ngModel)]="selectedDaemon"
+                    [options]="daemonTypes"
+                    [(ngModel)]="selectedDaemonType"
                     optionLabel="name"
                     placeholder="any"
                     showClear="true"
-                    tooltip="Show events related to selected daemon"
-                    (onChange)="onDaemonSelect($event)"
+                    tooltip="Show events related to selected daemon type"
+                    (onChange)="onDaemonTypeSelect($event)"
+                ></p-dropdown>
+            </div>
+        </div>
+
+        <div style="display: flex">
+            <div style="margin: 0 10px 0 30px; padding-top: 5px">User:</div>
+            <div>
+                <p-dropdown
+                    [options]="users"
+                    [(ngModel)]="selectedUser"
+                    optionLabel="login"
+                    placeholder="any"
+                    showClear="true"
+                    tooltip="Show events related to selected user"
+                    (onChange)="onUserSelect($event)"
                 ></p-dropdown>
             </div>
         </div>
