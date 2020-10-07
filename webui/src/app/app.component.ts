@@ -169,7 +169,11 @@ export class AppComponent implements OnInit {
     }
 
     /**
-     * Get menu item or subitem based on its name.
+     * Get menu item or subitem from Stork menu based on provided name.
+     *
+     * @param name A menu item name that must exist in Stork menu tree
+     *             that is defined in this.menuItems.
+     * @returns A reference to found menu item or null if not found.
      */
     getMenuItem(name) {
         for (const menuItem of this.menuItems) {
