@@ -526,4 +526,4 @@ by:
 - machine,
 - application type (Kea, BIND 9)
 - daemon type (DHCPv4, DHCPv6, named, etc)
-- user who caused given event (this is available to ``super-admins`` only)
+- user who caused given event (this is available to ``super-admin`` group only)
