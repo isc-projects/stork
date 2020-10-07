@@ -512,7 +512,18 @@ Events Panel
 ~~~~~~~~~~~~
 
 Events panel presents the list of the most recent events captured by
-the Stork server. There are 3 severity levels of the events: info, warning
+the Stork server. There are 3 urgency levels of the events: info, warning
 and error. Events pertaining to the particular entities, e.g. machines
 or applications, provide a link to a web page containing the information
 about the given object.
+
+Events Page
+===========
+Events page presents a list of all events. It allows filtering events
+by:
+
+- urgency level,
+- machine,
+- application type (Kea, BIND 9)
+- daemon type (DHCPv4, DHCPv6, named, etc)
+- user who caused given event (this is available to ``super-admins`` only)

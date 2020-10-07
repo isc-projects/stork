@@ -168,18 +168,22 @@ export class AppComponent implements OnInit {
         ]
     }
 
+    /**
+     * Get menu item or subitem based on its name.
+     */
     getMenuItem(name) {
         for (const menuItem of this.menuItems) {
             if (menuItem['label'] === name) {
                 return menuItem
-            } else {
-                for (const subMenu of menuItem.items) {
-                    if (subMenu['label'] === name) {
-                        return subMenu
-                    }
+            }
+            for (const subMenu of menuItem.items) {
+                if (subMenu['label'] === name) {
+                    return subMenu
                 }
             }
         }
+        console.error('menu item not found', name)
+        return null
     }
 
     ngOnInit() {
