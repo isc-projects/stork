@@ -168,6 +168,20 @@ export class AppComponent implements OnInit {
         ]
     }
 
+    getMenuItem(name) {
+        for (const menuItem of this.menuItems) {
+            if (menuItem['label'] === name) {
+                return menuItem
+            } else {
+                for (const subMenu of menuItem.items) {
+                    if (subMenu['label'] === name) {
+                        return subMenu
+                    }
+                }
+            }
+        }
+    }
+
     ngOnInit() {
         this.generalApi.getVersion().subscribe((data) => {
             this.storkVersion = data.version
@@ -176,11 +190,12 @@ export class AppComponent implements OnInit {
 
         this.auth.currentUser.subscribe((x) => {
             this.currentUser = x
+            const menuItem = this.getMenuItem('Users')
             if (this.auth.superAdmin()) {
                 // super admin can see Configuration/Users menu
-                this.menuItems[2].items[0]['visible'] = true
+                menuItem['visible'] = true
             } else {
-                this.menuItems[2].items[0]['visible'] = false
+                menuItem['visible'] = false
             }
 
             // Only get the stats and settings when the user is logged in.
@@ -188,19 +203,22 @@ export class AppComponent implements OnInit {
                 this.serverData.getAppsStats().subscribe((data) => {
                     // if there are Kea apps then show Kea related menu items
                     // otherwise hide them
+                    const dhcpMenuItem = this.getMenuItem('DHCP')
+                    const keaAppsMenuItem = this.getMenuItem('Kea Apps')
                     if (data.keaAppsTotal && data.keaAppsTotal > 0) {
-                        this.menuItems[0].visible = true
-                        this.menuItems[1].items[0]['visible'] = true
+                        dhcpMenuItem.visible = true
+                        keaAppsMenuItem['visible'] = true
                     } else {
-                        this.menuItems[0].visible = false
-                        this.menuItems[1].items[0]['visible'] = false
+                        dhcpMenuItem.visible = false
+                        keaAppsMenuItem['visible'] = false
                     }
                     // if there are BIND 9 apps then show BIND 9 related menu items
                     // otherwise hide them
+                    const bind9AppsMenuItem = this.getMenuItem('BIND 9 Apps')
                     if (data.bind9AppsTotal && data.bind9AppsTotal > 0) {
-                        this.menuItems[1].items[1]['visible'] = true
+                        bind9AppsMenuItem['visible'] = true
                     } else {
-                        this.menuItems[1].items[1]['visible'] = false
+                        bind9AppsMenuItem['visible'] = false
                     }
                 })
 
@@ -210,19 +228,13 @@ export class AppComponent implements OnInit {
                 this.settingSvc.getSettings().subscribe((data) => {
                     const grafanaUrl = data['grafana_url']
 
-                    for (const menuItem of this.menuItems) {
-                        if (menuItem['label'] === 'Services') {
-                            for (const subMenu of menuItem.items) {
-                                if (subMenu['label'] === 'Grafana') {
-                                    if (grafanaUrl && grafanaUrl !== '') {
-                                        subMenu['visible'] = true
-                                        subMenu['url'] = grafanaUrl
-                                    } else {
-                                        subMenu['visible'] = false
-                                    }
-                                }
-                            }
-                        }
+                    const grafanaMenuItem = this.getMenuItem('Grafana')
+
+                    if (grafanaUrl && grafanaUrl !== '') {
+                        grafanaMenuItem['visible'] = true
+                        grafanaMenuItem['url'] = grafanaUrl
+                    } else {
+                        grafanaMenuItem['visible'] = false
                     }
                 })
             }

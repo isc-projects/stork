@@ -3,6 +3,7 @@ import { Component, OnInit, Input } from '@angular/core'
 import { MessageService } from 'primeng/api'
 
 import { EventsService, UsersService, ServicesService } from '../backend/api/api'
+import { AuthService } from '../auth.service'
 
 /**
  * A component that presents events list. Each event has its own row.
@@ -70,7 +71,8 @@ export class EventsPanelComponent implements OnInit {
         private eventsApi: EventsService,
         private usersApi: UsersService,
         private servicesApi: ServicesService,
-        private msgSrv: MessageService
+        private msgSrv: MessageService,
+        public auth: AuthService
     ) {}
 
     ngOnInit(): void {
@@ -94,31 +96,33 @@ export class EventsPanelComponent implements OnInit {
             }
         }
 
-        this.usersApi.getUsers(0, 1000, null).subscribe(
-            (data) => {
-                this.users = data.items
+        if (this.auth.superAdmin()) {
+            this.usersApi.getUsers(0, 1000, null).subscribe(
+                (data) => {
+                    this.users = data.items
 
-                if (this.filter.user) {
-                    for (const u of this.users) {
-                        if (u.id === this.filter.user) {
-                            this.selectedUser = u
+                    if (this.filter.user) {
+                        for (const u of this.users) {
+                            if (u.id === this.filter.user) {
+                                this.selectedUser = u
+                            }
                         }
                     }
+                },
+                (err) => {
+                    let msg = err.statusText
+                    if (err.error && err.error.message) {
+                        msg = err.error.message
+                    }
+                    this.msgSrv.add({
+                        severity: 'error',
+                        summary: 'Loading user accounts failed',
+                        detail: 'Loading user accounts from the database failed: ' + msg,
+                        life: 10000,
+                    })
                 }
-            },
-            (err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
-                this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Loading user accounts failed',
-                    detail: 'Loading user accounts from the database failed: ' + msg,
-                    life: 10000,
-                })
-            }
-        )
+            )
+        }
         this.servicesApi.getMachines(0, 1000, null, null).subscribe(
             (data) => {
                 this.machines = data.items

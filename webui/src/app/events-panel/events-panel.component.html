@@ -115,7 +115,7 @@
             </div>
         </div>
 
-        <div style="display: flex">
+        <div style="display: flex" *ngIf="auth.superAdmin()">
             <div style="margin: 0 10px 0 30px; padding-top: 5px">User:</div>
             <div>
                 <p-dropdown
