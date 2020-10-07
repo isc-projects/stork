@@ -1,3 +1,5 @@
+Stork 0.12.0 released on 2020-10-07.
+
 * 105 [func] godfryd
 
     Added a new page with events table that allows filtering and
