@@ -519,7 +519,7 @@ about the given object.
 
 Events Page
 ===========
-Events page presents a list of all events. It allows filtering events
+Events page presents a list of all events. It allows for filtering events
 by:
 
 - urgency level,
