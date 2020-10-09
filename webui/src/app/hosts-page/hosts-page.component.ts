@@ -95,9 +95,8 @@ export class HostsPageComponent implements OnInit {
     loadHosts(event) {
         const params = this.queryParams
 
-        this.dhcpApi
-            .getHosts(event.first, event.rows, params.appId, null, params.text, params.global)
-            .subscribe((data) => {
+        this.dhcpApi.getHosts(event.first, event.rows, params.appId, null, params.text, params.global).subscribe(
+            (data) => {
                 this.hosts = data.items
                 this.totalHosts = data.total
             },
