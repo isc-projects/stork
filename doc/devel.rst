@@ -222,6 +222,33 @@ At the end of tests execution there is coverage report presented. If
 coverage of any module is below a threshold of 35% then an error is
 raised.
 
+WebUI Unit Tests
+================
+
+We do have the WebUI tests. We take advantage of the unit-tests generated automatically
+by AngularJS. You can run the tests this way:
+
+.. code:: console
+
+    rake build_ui
+    export CHROME_BIN=chromium
+    cd webui
+    npx ng test
+
+Make sure you have chromium installed on the system. As of today, we don't know any way to run
+those tests with Firefox. Here's couple comments regarding running those tests:
+
+* When adding new component or service with `ng generate component|service ...`, the Angular framework
+  will add .spec.ts file for you with a boilerplate code there. In most cases, the first step in
+  running those tests is to add necessary Stork imports. If in doubt, take a look at commits on
+  https://gitlab.isc.org/isc-projects/stork/-/merge_requests/97. There are many examples how to fix
+  failing tests.
+
+* The tests are being run in random order by default, which is confusing. One convenient way to run them
+  is to click Debug, click Options and unset the "run tests in random order". This will run the tests
+  always in the same order.
+
+
 System Tests
 ============
 
