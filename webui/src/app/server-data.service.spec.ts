@@ -10,11 +10,17 @@ describe('ServerDataService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [HttpClient, HttpHandler, UsersService, MessageService, ServicesService,
+            providers: [
+                HttpClient,
+                HttpHandler,
+                UsersService,
+                MessageService,
+                ServicesService,
                 {
                     provide: Router,
-                    useValue: {}
-                }]
+                    useValue: {},
+                },
+            ],
         })
         service = TestBed.inject(ServerDataService)
     })

@@ -9,11 +9,17 @@ import { MessageService } from 'primeng/api'
 describe('SettingService', () => {
     beforeEach(() =>
         TestBed.configureTestingModule({
-            providers: [SettingsService, UsersService, MessageService, HttpClient, HttpHandler,
+            providers: [
+                SettingsService,
+                UsersService,
+                MessageService,
+                HttpClient,
+                HttpHandler,
                 {
                     provide: Router,
-                    useValue: {}
-                }],
+                    useValue: {},
+                },
+            ],
         })
     )
 

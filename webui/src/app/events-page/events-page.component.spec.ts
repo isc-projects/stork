@@ -10,13 +10,15 @@ describe('EventsPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [ EventsService, {
-                provide: ActivatedRoute,
-                useValue: {
-                    snapshot: { queryParams: {} },
+            providers: [
+                EventsService,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: { queryParams: {} },
+                    },
                 },
-            }
-        ],
+            ],
             declarations: [EventsPageComponent],
         }).compileComponents()
     }))

@@ -11,11 +11,13 @@ describe('LogViewPageComponent', () => {
     beforeEach(async(() => {
         TestBed.configureTestingModule({
             providers: [
-                ServicesService, HttpClient, HttpHandler,
+                ServicesService,
+                HttpClient,
+                HttpHandler,
                 {
                     provide: ActivatedRoute,
                     useValue: {},
-                }
+                },
             ],
             declarations: [LogViewPageComponent],
         }).compileComponents()

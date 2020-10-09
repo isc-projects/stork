@@ -12,14 +12,22 @@ describe('EventsPanelComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [EventsService, HttpClient, HttpHandler, UsersService, ServicesService, MessageService,
-            {
-                provide: Router,
-                useValue: {}
-            }, {
-                provide: ActivatedRoute,
-                useValue: {}
-            }],
+            providers: [
+                EventsService,
+                HttpClient,
+                HttpHandler,
+                UsersService,
+                ServicesService,
+                MessageService,
+                {
+                    provide: Router,
+                    useValue: {},
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                },
+            ],
             declarations: [EventsPanelComponent],
         }).compileComponents()
     }))

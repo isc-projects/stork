@@ -22,7 +22,15 @@ describe('AppComponent', () => {
                 ToastModule,
             ],
             declarations: [AppComponent],
-            providers: [GeneralService, HttpClient, HttpHandler, UsersService, MessageService, ServicesService, SettingsService],
+            providers: [
+                GeneralService,
+                HttpClient,
+                HttpHandler,
+                UsersService,
+                MessageService,
+                ServicesService,
+                SettingsService,
+            ],
         }).compileComponents()
     }))
 
