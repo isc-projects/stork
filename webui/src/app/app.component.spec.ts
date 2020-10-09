@@ -52,6 +52,6 @@ describe('AppComponent', () => {
         const compiled = fixture.debugElement.nativeElement
         expect(compiled).toBeTruthy()
         // This works in a browser, but not here.
-        //expect(document.querySelector('app-login-screen').textContent).toContain('Dashboard for')
+        // expect(document.querySelector('app-login-screen').textContent).toContain('Dashboard for')
     })
 })
