@@ -4,7 +4,7 @@ import { DashboardComponent } from './dashboard.component'
 import { PanelModule } from 'primeng/panel'
 import { ButtonModule } from 'primeng/button'
 import { Router, RouterModule, ActivatedRoute } from '@angular/router'
-import { ServicesService, DHCPService, SettingsService } from '../backend'
+import { ServicesService, DHCPService, SettingsService, UsersService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { LocationStrategy } from '@angular/common'
@@ -24,6 +24,7 @@ describe('DashboardComponent', () => {
                 LocationStrategy,
                 DHCPService,
                 MessageService,
+                UsersService,
                 SettingsService,
                 {
                     provide: Router,

@@ -2,7 +2,7 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { MachinesPageComponent } from './machines-page.component'
 import { ActivatedRoute, Router } from '@angular/router'
-import { ServicesService } from '../backend'
+import { ServicesService, UsersService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { of } from 'rxjs'

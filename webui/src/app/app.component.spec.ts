@@ -6,7 +6,7 @@ import { MenubarModule } from 'primeng/menubar'
 import { SplitButtonModule } from 'primeng/splitbutton'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ToastModule } from 'primeng/toast'
-import { GeneralService, UsersService, SettingsService } from './backend'
+import { GeneralService, UsersService, SettingsService, ServicesService } from './backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 
@@ -22,7 +22,7 @@ describe('AppComponent', () => {
                 ToastModule,
             ],
             declarations: [AppComponent],
-            providers: [GeneralService, HttpClient, HttpHandler, UsersService, MessageService, SettingsService],
+            providers: [GeneralService, HttpClient, HttpHandler, UsersService, MessageService, ServicesService, SettingsService],
         }).compileComponents()
     }))
 
