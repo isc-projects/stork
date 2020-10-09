@@ -12,8 +12,11 @@ describe('EventsPageComponent', () => {
         TestBed.configureTestingModule({
             providers: [ EventsService, {
                 provide: ActivatedRoute,
-                useValue: {}
-            }],
+                useValue: {
+                    snapshot: { queryParams: {} },
+                },
+            }
+        ],
             declarations: [EventsPageComponent],
         }).compileComponents()
     }))
