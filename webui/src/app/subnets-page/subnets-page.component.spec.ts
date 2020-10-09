@@ -7,9 +7,10 @@ import { TableModule } from 'primeng/table'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
 import { RouterModule, ActivatedRoute, Router, convertToParamMap } from '@angular/router'
-import { DHCPService, SettingsService } from '../backend'
+import { DHCPService, SettingsService, UsersService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 import { of } from 'rxjs'
+import { MessageService } from 'primeng/api'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -27,6 +28,8 @@ describe('SubnetsPageComponent', () => {
                 DHCPService,
                 HttpClient,
                 HttpHandler,
+                UsersService,
+                MessageService,
                 SettingsService,
                 {
                     provide: ActivatedRoute,

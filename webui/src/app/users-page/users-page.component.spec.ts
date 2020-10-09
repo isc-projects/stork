@@ -3,7 +3,7 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 import { UsersPageComponent } from './users-page.component'
 import { ActivatedRoute, Router } from '@angular/router'
 import { FormBuilder } from '@angular/forms'
-import { UsersService } from '../backend'
+import { ServicesService, UsersService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
 import { of } from 'rxjs'
@@ -27,6 +27,7 @@ describe('UsersPageComponent', () => {
                 UsersService,
                 HttpClient,
                 HttpHandler,
+                ServicesService,
                 MessageService,
                 {
                     provide: ActivatedRoute,

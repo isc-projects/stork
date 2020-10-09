@@ -28,6 +28,7 @@ describe('MachinesPageComponent', () => {
                 ServicesService,
                 HttpClient,
                 HttpHandler,
+                UsersService,
             ],
             declarations: [MachinesPageComponent],
         }).compileComponents()

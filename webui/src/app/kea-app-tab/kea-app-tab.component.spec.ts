@@ -6,7 +6,7 @@ import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { TableModule } from 'primeng/table'
 import { TabViewModule } from 'primeng/tabview'
 import { LocaltimePipe } from '../localtime.pipe'
-import { DHCPService } from '../backend'
+import { DHCPService, ServicesService } from '../backend'
 import { HttpClient, HttpHandler } from '@angular/common/http'
 import { PanelModule } from 'primeng/panel'
 import { TooltipModule } from 'primeng/tooltip'
@@ -23,6 +23,7 @@ describe('KeaAppTabComponent', () => {
                 DHCPService,
                 HttpClient,
                 HttpHandler,
+                ServicesService,
                 LocationStrategy,
                 {
                     provide: ActivatedRoute,

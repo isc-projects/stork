@@ -1,5 +1,7 @@
+import { HttpClient, HttpHandler } from '@angular/common/http'
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
-
+import { ActivatedRoute } from '@angular/router'
+import { ServicesService } from '../backend'
 import { LogViewPageComponent } from './log-view-page.component'
 
 describe('LogViewPageComponent', () => {
@@ -8,6 +10,13 @@ describe('LogViewPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
+            providers: [
+                ServicesService, HttpClient, HttpHandler,
+                {
+                    provide: ActivatedRoute,
+                    useValue: {},
+                }
+            ],
             declarations: [LogViewPageComponent],
         }).compileComponents()
     }))
