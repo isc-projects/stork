@@ -268,11 +268,11 @@ Prerequisites
 -------------
 
 Usually it more convenient to install Stork using native packages. However, you can build
-the sources on your own. ``Stork`` is being tested on Ubuntu 18.04, 20.04, CentOS 7 and Fedora 31.
+the sources on your own. ``Stork`` is being tested on Ubuntu 18.04, 20.04, CentOS 7 and Fedora 31,32.
 It is likely the software can be built on many other modern systems, but for the time being our
 testing capabilities are modest.
 
-There dependencies need to be installed to build ``Stork`` sources:
+The dependencies need to be installed to build ``Stork`` sources are:
 
  - Rake
  - Java Runtime Environment (only if building natively, not using Docker)
