@@ -3,6 +3,7 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 import { ActivatedRoute } from '@angular/router'
 import { ServicesService } from '../backend'
 import { LogViewPageComponent } from './log-view-page.component'
+import { of } from 'rxjs'
 
 describe('LogViewPageComponent', () => {
     let component: LogViewPageComponent
@@ -16,7 +17,9 @@ describe('LogViewPageComponent', () => {
                 HttpHandler,
                 {
                     provide: ActivatedRoute,
-                    useValue: {},
+                    useValue: {
+                        paramMap: of({}),
+                    },
                 },
             ],
             declarations: [LogViewPageComponent],
