@@ -83,7 +83,18 @@ MOCKERY = "#{GOBIN}/mockery"
 MOCKGEN = "#{GOBIN}/mockgen"
 RICHGO = "#{GOBIN}/richgo"
 
-WGET = 'wget --tries=inf --waitretry=3 --retry-on-http-error=429,500,503,504 '
+# wget
+if system("wget --version").nil?
+  abort("wget is not installed on this system")
+end
+# extract wget version
+WGET_VERSION = `wget --version | head -n 1 | sed -E 's/[^0-9]*([0-9]*\.[0-9]*)[^0-9]+.*/\1/g'`
+# versions prior to 1.19 lack support for --retry-on-http-error
+if !WGET_VERSION.empty? and WGET_VERSION < "1.19"
+  WGET = 'wget --tries=inf --waitretry=3'
+else
+  WGET = 'wget --tries=inf --waitretry=3 --retry-on-http-error=429,500,503,504 '
+end
 
 # Patch PATH env
 ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin:#{ENV['PATH']}"
