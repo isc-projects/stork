@@ -272,7 +272,7 @@ the sources on your own. ``Stork`` is being tested on Ubuntu 18.04, 20.04, CentO
 It is likely the software can be built on many other modern systems, but for the time being our
 testing capabilities are modest.
 
-The dependencies need to be installed to build ``Stork`` sources are:
+The dependencies needed to be installed to build ``Stork`` sources are:
 
  - Rake
  - Java Runtime Environment (only if building natively, not using Docker)
