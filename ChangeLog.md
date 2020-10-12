@@ -1,4 +1,4 @@
-Stork 0.12.0 released on 2020-10-07.
+Stork 0.12.0 released on 2020-10-14.
 
 * 105 [func] godfryd
 
