@@ -47,16 +47,33 @@ describe('AppComponent', () => {
         const app = fixture.debugElement.componentInstance
 
         // This is the list of menu elements that are expected to be there.
-        var expMenuItems = [ "DHCP", "Dashboard", "Host Reservations", "Subnets", "Shared Networks", "Services",
-                             "Kea Apps", "BIND 9 Apps", "Machines", "Grafana",
-                             "Monitoring", "Events",
-                             "Configuration", "Users", "Settings",
-                             "Help", "Stork Manual", "Stork API Docs (SwaggerUI)", "Stork API Docs (Redoc)", "BIND 9 Manual", "Kea Manual" ]
+        var expMenuItems = [
+            'DHCP',
+            'Dashboard',
+            'Host Reservations',
+            'Subnets',
+            'Shared Networks',
+            'Services',
+            'Kea Apps',
+            'BIND 9 Apps',
+            'Machines',
+            'Grafana',
+            'Monitoring',
+            'Events',
+            'Configuration',
+            'Users',
+            'Settings',
+            'Help',
+            'Stork Manual',
+            'Stork API Docs (SwaggerUI)',
+            'Stork API Docs (Redoc)',
+            'BIND 9 Manual',
+            'Kea Manual',
+        ]
         for (var i = 0; i < expMenuItems.length; i++) {
             expect(app.getMenuItem(expMenuItems[i])).toBeTruthy()
-            console.log("Checked existence of " + expMenuItems[i] + " menu item.")
+            console.log('Checked existence of ' + expMenuItems[i] + ' menu item.')
         }
-
     })
 
     it('should render title', () => {
