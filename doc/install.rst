@@ -242,14 +242,14 @@ enabled and started:
 
 .. code-block:: console
 
-   $ sudo systemctl enable isc-stork-server
-   $ sudo systemctl start isc-stork-server
+   $ sudo systemctl enable isc-stork-agent
+   $ sudo systemctl start isc-stork-agent
 
 To check the status:
 
 .. code-block:: console
 
-   $ sudo systemctl status isc-stork-server
+   $ sudo systemctl status isc-stork-agent
 
 After starting, the agent periodically tries to detect installed
 Kea DHCP or BIND 9 services on the system.  If it finds them, they are
