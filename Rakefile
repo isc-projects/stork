@@ -501,7 +501,7 @@ end
 
 file NG => NPX do
   Dir.chdir('webui') do
-    sh 'NG_CLI_ANALYTICS=false npm install'
+    sh 'NG_CLI_ANALYTICS=false env -u DESTDIR npm install'
   end
 end
 
