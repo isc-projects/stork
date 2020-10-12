@@ -70,9 +70,27 @@ describe('AppComponent', () => {
             'BIND 9 Manual',
             'Kea Manual',
         ]
+
+        // List of menu items that are expected to be hidden. Unless listed here, the test expects
+        // the menu item to be visible.
+        var expHiddenItems = ['DHCP', 'Kea Apps', 'BIND 9 Apps', 'Grafana', 'Users']
+
         for (var i = 0; i < expMenuItems.length; i++) {
-            expect(app.getMenuItem(expMenuItems[i])).toBeTruthy()
-            console.log('Checked existence of ' + expMenuItems[i] + ' menu item.')
+            // Check if the menu item is there
+            var m = app.getMenuItem(expMenuItems[i])
+            expect(m).toBeTruthy()
+
+            // Check if the menu is hidden or visible. See the expHiddenItems list above.
+            if (expHiddenItems.includes(expMenuItems[i])) {
+                console.log('Checking existence of ' + expMenuItems[i] + ' hidden menu item:' + m.visible)
+                expect(m.visible == true).toBeFalsy()
+            } else {
+                console.log('Checking existence of ' + expMenuItems[i] + ' visible menu item:' + m.visible)
+                // If defined, it must be visible. If not defined, the default is it's visible.
+                if ('visible' in m) {
+                    expect(m.visible == true).toBeTruthy()
+                }
+            }
         }
     })
 
