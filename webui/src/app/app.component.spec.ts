@@ -47,7 +47,7 @@ describe('AppComponent', () => {
         const app = fixture.debugElement.componentInstance
 
         // This is the list of menu elements that are expected to be there.
-        var expMenuItems = [
+        const expMenuItems = [
             'DHCP',
             'Dashboard',
             'Host Reservations',
@@ -73,22 +73,22 @@ describe('AppComponent', () => {
 
         // List of menu items that are expected to be hidden. Unless listed here, the test expects
         // the menu item to be visible.
-        var expHiddenItems = ['DHCP', 'Kea Apps', 'BIND 9 Apps', 'Grafana', 'Users']
+        const expHiddenItems = ['DHCP', 'Kea Apps', 'BIND 9 Apps', 'Grafana', 'Users']
 
-        for (var i = 0; i < expMenuItems.length; i++) {
+        for (const name of expMenuItems) {
             // Check if the menu item is there
-            var m = app.getMenuItem(expMenuItems[i])
+            const m = app.getMenuItem(name)
             expect(m).toBeTruthy()
 
             // Check if the menu is hidden or visible. See the expHiddenItems list above.
-            if (expHiddenItems.includes(expMenuItems[i])) {
-                console.log('Checking existence of ' + expMenuItems[i] + ' hidden menu item:' + m.visible)
-                expect(m.visible == true).toBeFalsy()
+            if (expHiddenItems.includes(name)) {
+                console.log('Checking existence of ' + name + ' hidden menu item:' + m.visible)
+                expect(m.visible === true).toBeFalsy()
             } else {
-                console.log('Checking existence of ' + expMenuItems[i] + ' visible menu item:' + m.visible)
+                console.log('Checking existence of ' + name + ' visible menu item:' + m.visible)
                 // If defined, it must be visible. If not defined, the default is it's visible.
                 if ('visible' in m) {
-                    expect(m.visible == true).toBeTruthy()
+                    expect(m.visible === true).toBeTruthy()
                 }
             }
         }
