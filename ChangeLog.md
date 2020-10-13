@@ -1,3 +1,11 @@
+* 114 [bug] godfryd
+
+    The links on the dashboard to subnets and shared networks have been
+    adjuste so they take into account DHCP version. This way subnets and
+    shared network pages automatically set filtering by protocol version
+    based on parameters provided in URL.
+    (Gitlab #389)
+
 * 113 [bug] godfryd
 
     Fixed handling renamed statistics from Kea. In Kea 1.8 some
