@@ -1,3 +1,10 @@
+* 106 [doc] godfryd
+
+    Added documentation for Stork system tests. The documentation
+    describes how to setup environment for running test tests,
+    how to run them and how to develope them.
+    (Gitlab #427)
+
 Stork 0.12.0 released on 2020-10-14.
 
 * 105 [func] godfryd

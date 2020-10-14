@@ -35,8 +35,8 @@ Besides the standard dependencies, the ``Stork Demo`` requires:
 For details, please see the Stork wiki
 https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment.
 
-Installation Steps
-------------------
+Setup Steps
+-----------
 
 The following command retrieves all required software (go, goswagger,
 nodejs, Angular dependencies, etc.) to the local directory. No root
@@ -49,35 +49,6 @@ up.
 
 Once the build process finishes, the Stork UI is available at
 http://localhost:8080/. Use any browser to connect.
-
-The installation procedure creates several Docker images:
-
-- `stork_webui`: a web UI interface,
-- `stork_server`: a server backend,
-- `postgres`: a PostgreSQL database used by the server,
-- `stork_agent-bind9`: an agent with BIND 9,
-- `stork_agent-bind9-2`: a second agent with BIND 9,
-- `stork_agent-kea`: an agent with a Kea DHCPv4 server,
-- `stork_agent-kea6`: an agent with a Kea DHCPv6 server,
-- `stork_agent-kea-ha1`: the primary Kea DHCPv4 server in High Availability mode,
-- `stork_agent-kea-ha2`: the secondary Kea DHCPv4 server in High Availability mode,
-- `traffic-dhcp`: a web application that can run DHCP traffic using perfdhcp,
-- `traffic-dns`: a web application that can run DNS traffic using dig and flamethrower,
-- `prometheus`: Prometheus, a monitoring solution (https://prometheus.io/),
-- `grafana`: Grafana, a dashboard for Prometheus (https://grafana.com/)
-
-.. note::
-
-   The containers running the Kea and BIND 9 applications are for demo
-   purposes only. They allow users to quickly start experimenting with
-   Stork without having to manually deploy Kea and/or BIND 9
-   instances.
-
-The PostgreSQL database schema is automatically migrated to the latest
-version required by the Stork server process.
-
-The installation procedure assumes those images are fully under Stork
-control. If there are existing images, they will be overwritten.
 
 Premium Features
 ~~~~~~~~~~~~~~~~
@@ -93,6 +64,83 @@ This web page and the token are available only to ISC employees and paid custome
 .. code-block:: console
 
    $ rake docker_up cs_repo_access_token=<access token>
+
+Demo Containers
+---------------
+
+The setup procedure creates several Docker containers. Their definition
+is stored in docker-compose.yaml file in Stork source code repository.
+
+These containers have Stork production services and components:
+
+server
+   This container is essential. It runs the Stork server,
+   which interacts with all the agents and the database and exposes the
+   API. Without it, Stork will not be able to function.
+webui
+   This container is essential in most circumstances. It
+   provides the front-end web interface. It is potentially unnecessary with
+   the custom development of a Stork API client.,
+agent-bind9
+   This container runs a BIND 9 server. With this container, the agent
+   can be added as a machine and Stork will begin monitoring its BIND
+   9 service.
+agent-bind9-2
+   This container also runs a BIND 9 server, for the purpose of
+   experimenting with two different DNS servers.
+agent-kea
+   This container runs a Kea DHCPv4 server. With this container, the
+   agent can be added as a machine and Stork will begin monitoring its
+   Kea DHCPv4 service.
+agent-kea6
+   An agent with a Kea DHCPv6 server.
+agent-kea-ha1 and agent-kea-ha2
+   These two containers should, in general, be run together. They each
+   have a Kea DHCPv4 server instance configured in a HA pair. With
+   both running and registered as machines in Stork, users can observe
+   certain HA mechanisms, such as one taking over the traffic if the
+   partner becomes unavailable.
+agent-kea-many-subnets
+   An agent ith a Kew DHCPv4 server that has many subnets defined in
+   its config (about 7000)
+
+These are containers with 3rd party services that are required by Stork:
+
+postgres
+   This container is essential. It runs the PostgreSQL database that
+   is used by the Stork server. Without it, the Stork server will
+   produce error messages about an unavailable database.
+prometheus
+   Prometheus, a monitoring solution (https://prometheus.io/). This
+   container is used for monitoring applications.  It is preconfigured
+   to monitor Kea and BIND 9 containers.
+grafana
+   This is a container with Grafana (https://grafana.com/), a
+   dashboard for Prometheus. It is preconfigured to pull data from a
+   Prometheus container and show Stork dashboards.
+
+These are supporting containers:
+
+simulator
+   Stork Environment Simulator, a web application that can run DHCP
+   traffic using perfdhcp (useful to observe non-zero statistics
+   coming from Kea), run DNS traffic using dig and flamethrower
+   (useful to observe non-zero statistics coming from BIND 9), and
+   start and stop any service in any other container (useful to
+   simulate e.g. crash of Kea by stopping it).
+
+.. note::
+
+   The containers running the Kea and BIND 9 applications are for demo
+   purposes only. They allow users to quickly start experimenting with
+   Stork without having to manually deploy Kea and/or BIND 9
+   instances.
+
+The PostgreSQL database schema is automatically migrated to the latest
+version required by the Stork server process.
+
+The setup procedure assumes those images are fully under Stork
+control. If there are existing images, they will be overwritten.
 
 
 Initialization

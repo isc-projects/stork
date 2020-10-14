@@ -81,15 +81,9 @@ There are other Rake tasks for running preconfigured agents in Docker
 containers. They are exposed to the host on specific ports.
 
 When these agents are added as machines in the ``Stork Server`` UI,
-both a localhost address and a port specific to a given container
-must be specified. This is a list of ports for particular Rake tasks
-and containers:
-
-- `rake run_kea_container`: Kea with DHCPv4, port 8888
-- `rake run_kea6_container`: Kea with DHCPv6, port 8886
-- `rake run_kea_ha_containers` (2 containers): Kea 1 and 2 with
-  preconfigured HA, ports 8881 and 8882
-- `rake run_bind9_container`: port 9999
+both a localhost address and a port specific to a given container must
+be specified. This is a list of containers can be found in
+:ref:`docker_containers_for_development` section.
 
 Installing Git Hooks
 --------------------
@@ -228,64 +222,310 @@ At the end of tests execution there is coverage report presented. If
 coverage of any module is below a threshold of 35% then an error is
 raised.
 
+System Tests
+============
 
-Docker Containers
-=================
+System tests for `Stork` are designed to test `Stork` in distributted environment.
+They allow for testing several `Stork` servers and agents running at the same time
+in one test case. They are run inside ``LXD`` containers. It is possible to set up
+`Kea` or `BIND 9` services along `Stork` agents. The framework enables tinkering
+in containers so custom `Kea` configs can be deployed or specific `Kea` daemons
+can be stopped.
 
-To ease testing, there are several Docker containers available.
+The tests can use:
 
-* ``server`` - This container is essential. It runs the Stork server,
-  which interacts with all the agents and the database and exposes the
-  API. Without it, Stork will not be able to function.
-* ``postgres`` - This container is essential. It runs the PostgreSQL
-  database that is used by the Stork server. Without it, the Stork
-  server will produce error messages about an unavailable database.
-* ``webui`` - This container is essential in most circumstances. It
-  provides the front-end web interface. It is potentially unnecessary with
-  the custom development of a Stork API client.
+- Stork server ReST API directly or
+- Stork web UI via Selenium.
 
-There are also several containers provided that are used to samples and
-they are not strictly necessary. The following containers will not be needed
-in a production network, however they're very useful to demonstrate
-existing Stork capabilities. They simulate certain services that Stork is able
-to handle:
+Dependencies
+------------
+System tests require:
 
-* ``agent-bind9`` - This container runs a BIND 9 server. With this
-  container, the agent can be added as a machine and Stork will begin
-  monitoring its BIND 9 service.
+- Linux operating system (prefered Ubuntu or Fedora)
+- Python 3
+- ``LXD`` containers (https://linuxcontainers.org/lxd/introduction)
 
-* ``agent-bind9-2`` - This container also runs a BIND 9 server, for
-  the purpose of experimenting with two different DNS servers.
+LXD Installation
+----------------
 
-* ``agent-kea`` - This container runs a Kea DHCPv4 server. With this
-  container, the agent can be added as a machine and Stork will begin
-  monitoring its Kea DHCPv4 service.
+The easiest way to install ``LXD`` is to use ``snap``. So first let's install ``snap``.
 
-* ``agent-kea-ha1`` and ``agent-kea-ha2`` - These two containers
-  should, in general, be run together. They each have a Kea DHCPv4
-  server instance configured in a HA pair. With both running and
-  registered as machines in Stork, users can observe certain HA
-  mechanisms, such as one taking over the traffic if the partner
-  becomes unavailable.
+On Fedora:
 
-* ``traffic-dhcp`` - This container is optional. If started, it can be used
-  to transmit DHCP packets to ``agent-kea``. It may be useful to observe
-  non-zero statistics coming from Kea. When running Stork in Docker,
-  ``rake start_traffic_dhcp`` can be used to conveniently control
-  traffic.
+.. code-block:: console
 
-* ``traffic-dns`` - This container is optional. If stated, it can be used to
-  transmit DNS packets towards agent-bind9. It may be useful to observe
-  non-zero statistics coming from BIND 9. If you're running Stork in docker,
-  you can conveniently control that using ``rake start_traffic_dns``.
+                $ sudo dnf install snapd
 
-* ``prometheus`` - This is a container with Prometheus for monitoring
-  applications.  It is preconfigured to monitor Kea and BIND 9
-  containers.
+On Ubuntu:
 
-* ``grafana`` - This is a container with Grafana, a dashboard for
-  Prometheus. It is preconfigured to pull data from a Prometheus
-  container and show Stork dashboards.
+.. code-block:: console
+
+                $ sudo apt install snapd
+
+
+Then install ``LXD``:
+
+.. code-block:: console
+
+                $ sudo snap install lxd
+
+And then add your user to ``lxd`` group:
+
+.. code-block:: console
+
+                $ sudo usermod -a -G lxd $USER
+
+Now you need to relogin to make your presence in ``lxd`` group visible in the shell session.
+
+After installing ``LXD`` it requires initialization. Run:
+
+.. code-block:: console
+
+                $ lxd init
+
+and then for each question press **Enter** i.e. use default values::
+
+   Would you like to use LXD clustering? (yes/no) [default=no]: **Enter**
+   Do you want to configure a new storage pool? (yes/no) [default=yes]: **Enter**
+   Name of the new storage pool [default=default]: **Enter**
+   Name of the storage backend to use (dir, btrfs) [default=btrfs]: **Enter**
+   Would you like to create a new btrfs subvolume under /var/snap/lxd/common/lxd? (yes/no) [default=yes]: **Enter**
+   Would you like to connect to a MAAS server? (yes/no) [default=no]:  **Enter**
+   Would you like to create a new local network bridge? (yes/no) [default=yes]:  **Enter**
+   What should the new bridge be called? [default=lxdbr0]:  **Enter**
+   What IPv4 address should be used? (CIDR subnet notation, "auto" or "none") [default=auto]:  **Enter**
+   What IPv6 address should be used? (CIDR subnet notation, "auto" or "none") [default=auto]:  **Enter**
+   Would you like LXD to be available over the network? (yes/no) [default=no]:  **Enter**
+   Would you like stale cached images to be updated automatically? (yes/no) [default=yes]  **Enter**
+   Would you like a YAML "lxd init" preseed to be printed? (yes/no) [default=no]:  **Enter**
+
+More details can be found on: https://linuxcontainers.org/lxd/getting-started-cli/
+
+One of the questions was about a subvolume. It is stored in /var/snap/lxd/common/lxd.
+This subvolume is used to store images and containers. If the space is exhausted then
+it is not possible to create new containers. This is not connected with you total disk
+space but the space in this subvolume. To free space you may remove some stale images
+or stopped containers. Basic usage of ``LXD`` is presented on:
+https://linuxcontainers.org/lxd/getting-started-cli/#lxd-client
+
+Running System Tests
+--------------------
+
+After preparing all dependencies now it is possible to start tests.
+They can be invoked by Rake task:
+
+.. code-block:: console
+
+                $ rake system_tests
+
+This command beside running the tests first prepares Python virtual environment (``venv``)
+were ``pytest`` and other Python dependencies are installed. ``pytest`` is a Python testing
+framework that is used in Stork system tests.
+
+At the bottom of logs there are listed test cases with their result status.
+
+The tests can be invoked directly using ``pytest`` but first we need to change directory
+to ``tests/system``:
+
+.. code-block:: console
+
+                $ cd tests/system
+                $ ./venv/bin/pytest --tb=long -l -r ap -s tests.py
+
+The switches passed to ``pytest`` are:
+
+- ``--tb=long`` in case of failures present long format of traceback
+- ``-l`` show values of local variables in tracebacks
+- ``-r ap`` at the end of execution print report that includes (p)assed and (a)ll except passed (p)
+
+To run particular test case add it just after ``test.py``:
+
+.. code-block:: console
+
+                $ ./venv/bin/pytest --tb=long -l -r ap -s tests.py::test_users_management[centos/7-ubuntu/18.04]
+
+Developing System Tests
+-----------------------
+
+System tests are defined in tests.py and other files that start from `test_`.
+There are two other files that are defining framework for Stork system tests:
+
+- conftest.py - it defines hooks for ``pytests``
+- containers.py - it handles LXD containers: starting/stopping, communication like
+  invoking commands, uploading/downloading files, installing and preparing Stork
+  Agent and Server, and Kea, and other dependencies that they requires.
+
+Most of tests are constructed as follow:
+
+.. code-block:: python
+
+    @pytest.mark.parametrize("agent, server", SUPPORTED_DISTROS)
+    def test_machines(agent, server):
+        # login to stork server
+        r = server.api_post('/sessions',
+                            json=dict(useremail='admin', userpassword='admin'),
+                            expected_status=200)
+        assert r.json()['login'] == 'admin'
+
+        # add machine
+        machine = dict(
+            address=agent.mgmt_ip,
+            agentPort=8080)
+        r = server.api_post('/machines', json=machine, expected_status=200)
+        assert r.json()['address'] == agent.mgmt_ip
+
+        # wait for application discovery by Stork Agent
+        for i in range(20):
+            r = server.api_get('/machines')
+            data = r.json()
+            if len(data['items']) == 1 and \
+               len(data['items'][0]['apps'][0]['details']['daemons']) > 1:
+                break
+            time.sleep(2)
+
+        # check discovered application by Stork Agent
+        m = data['items'][0]
+        assert m['apps'][0]['version'] == '1.7.3'
+
+Let's dissect this code and explain each part.
+
+
+.. code-block:: python
+
+    @pytest.mark.parametrize("agent, server", SUPPORTED_DISTROS)
+
+This indicates that we are parametrizing the test and there will be one or more
+instances of this test in execution for each set of parameters.
+
+The constant ``SUPPORTED_DISTROS`` defines two sets of operating systems
+for testing:
+
+.. code-block:: python
+
+    SUPPORTED_DISTROS = [
+        ('ubuntu/18.04', 'centos/7'),
+        ('centos/7', 'ubuntu/18.04')
+    ]
+
+The first set indicates that for Stork agent a ``Ubuntu 18.04`` should be used
+in LXD container and for Stork server ``Centos 7``. The second sets is the opposite
+of the first one.
+
+The next line:
+
+.. code-block:: python
+
+    def test_machines(agent, server):
+
+defines the test function. Normally agent and server argument would get text values
+``'ubuntu/18.04'`` and ``'centos/7'`` but there is prepared a hook in ``conftest.py``,
+in ``pytest_pyfunc_call()`` function that intercepts these arguments and based
+on them it spins up LXD containers with indicated operating systems. This hook
+also at the end of the test collects Stork logs from these containers and stores
+them in ``test-results`` folder for later user analysis if needed.
+
+So instead text values the hook replaces the arguments with references
+to actual LXC container objects. Then the test may interact directly with them.
+Beside substituting ``agent`` and ``server`` arguments the hook intercepts
+any argument that starts with ``agent`` and ``server``. This way we may have
+several agents in the test, e.g. ``agent1`` or ``agent_kea``, ``agent_bind9``.
+
+Then we are logging into the Stork server using its ReST API:
+
+.. code-block:: python
+
+        # login to stork server
+        r = server.api_post('/sessions',
+                            json=dict(useremail='admin', userpassword='admin'),
+                            expected_status=200)
+        assert r.json()['login'] == 'admin'
+
+And then we are adding a machine with Stork agent to Stork server:
+
+.. code-block:: python
+
+        # add machine
+        machine = dict(
+            address=agent.mgmt_ip,
+            agentPort=8080)
+        r = server.api_post('/machines', json=machine, expected_status=200)
+        assert r.json()['address'] == agent.mgmt_ip
+
+Here we have a check that verifies returned address of the machine.
+
+Then we need to wait until Stork agent detects Kea application and reports it
+to Stork server. We are pulling periodically the server if it received
+information about Kea app.
+
+.. code-block:: python
+
+        # wait for application discovery by Stork Agent
+        for i in range(20):
+            r = server.api_get('/machines')
+            data = r.json()
+            if len(data['items']) == 1 and \
+               len(data['items'][0]['apps'][0]['details']['daemons']) > 1:
+                break
+            time.sleep(2)
+
+At the end we are verifying returned data about Kea application:
+
+.. code-block:: python
+
+        # check discovered application by Stork Agent
+        m = data['items'][0]
+        assert m['apps'][0]['version'] == '1.7.3'
+
+
+.. _docker_containers_for_development:
+
+Docker Containers for Development
+=================================
+
+To ease developemnt, there are several Docker containers available.
+These containers and several more are used in Stork Demo that is
+described in :ref:`Demo` chapter. The full description of each
+container can found in that chapter.
+
+The following ``Rake`` tasks are starting these containers.
+
+.. table:: Rake tasks for managing development containers.
+   :class: longtable
+   :widths: 25 75
+
+   +------------------------------------+------------------------------------------------------------+
+   | Rake task                          | Description                                                |
+   +====================================+============================================================+
+   | ``rake build_kea_container``       | Build a container `agent-kea` with Stork Agent             |
+   |                                    | and Kea with DHCPv4.                                       |
+   +------------------------------------+------------------------------------------------------------+
+   | ``rake run_kea_container``         | Start `agent-kea` container. Published port is 8888.       |
+   +------------------------------------+------------------------------------------------------------+
+   | ``rake build_kea6_container``      | Build a `agent-kea6` container with Stork Agent            |
+   |                                    | and Kea with DHCPv6.                                       |
+   +------------------------------------+------------------------------------------------------------+
+   | ``rake run_kea6_container``        | Start `agent-kea6` container. Published port is 8886.      |
+   +------------------------------------+------------------------------------------------------------+
+   | ``rake build_kea_ha_containers``   | Build two containers, `agent-kea-ha1` and `agent-kea-ha2`, |
+   |                                    | with Stork Agent and Kea with DHCPv4 that are configured   |
+   |                                    | to work together in `High Availability` mode.              |
+   +------------------------------------+------------------------------------------------------------+
+   | ``rake run_kea_ha_containers``     | Start `agent-kea-ha1` and `agent-kea-ha2` containers.      |
+   |                                    | Published ports are 8881 and 8882.                         |
+   +------------------------------------+------------------------------------------------------------+
+   | ``rake build_kea_hosts_container`` | Build a `agent-kea-hosts` container with Stork Agent       |
+   |                                    | and Kea with DHCPv4 with host reservations stored in       |
+   |                                    | a database. It requires **premium** features.              |
+   +------------------------------------+------------------------------------------------------------+
+   | ``rake run_kea_hosts_container``   | Start `agent-kea-hosts` container. It requires **premium** |
+   |                                    | features.                                                  |
+   +------------------------------------+------------------------------------------------------------+
+   | ``rake build_bind9_container``     | Build a `agent-bind9` container with Stork Agent           |
+   |                                    | and BIND 9.                                                |
+   +------------------------------------+------------------------------------------------------------+
+   | ``rake run_bind9_container``       | Start `agent-bind9` container. Published port is 9999.     |
+   +------------------------------------+------------------------------------------------------------+
+
 
 Packaging
 =========
