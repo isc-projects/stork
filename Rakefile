@@ -806,9 +806,9 @@ file 'tests/system/venv/bin/activate' do
     sh 'python3 -m venv venv'
     sh './venv/bin/pip install -U pip'
     sh "#{WGET} https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux32.tar.gz -O geckodriver.tar.gz"
-    sh "#{WGET} https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip -O chromedriver_linux64.zip"
+#   sh "#{WGET} https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip -O chromedriver_linux64.zip"
     sh 'tar -xf geckodriver.tar.gz'
-    sh 'unzip chromedriver_linux64.zip'
+#   sh 'unzip chromedriver_linux64.zip'
   end
 end
 
