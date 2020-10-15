@@ -229,6 +229,16 @@ class Container:
         cmd += " " + names
         self.run(cmd, env=env, attempts=3, sleep_time_after_attempt=3)
 
+    def uninstall_pkgs(self, names):
+        if self.pkg_format == 'deb':
+            cmd = "apt-get purge -y"
+            env = {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'}
+        else:
+            cmd = "yum erase -y"
+            env = None
+        cmd += " " + names
+        self.run(cmd, env=env, attempts=3, sleep_time_after_attempt=3)
+
     def set_locale(self):
         if self.pkg_format == 'deb':
             self.run('locale-gen --purge en_US.UTF-8')
@@ -361,7 +371,6 @@ class StorkServerContainer(Container):
         return r
 
 
-
 class StorkAgentContainer(Container):
     def __init__(self, port=None, alias=DEFAULT_SYSTEM_IMAGE):
         if port is None:
@@ -375,12 +384,19 @@ class StorkAgentContainer(Container):
         self.set_locale()
         self.install_pkgs('curl')
 
-    def install_kea(self):
-        self.setup_cloudsmith_repo('kea-1-7')
-        kea_version = '1.7.3-isc0009420191217090201'
+    def install_kea(self, service_name='default'):
+        self.setup_cloudsmith_repo('kea-1-8')
+        kea_version = '1.8.0-isc0000420200825110759'
         if self.pkg_format == 'deb':
             self.run("apt-get update")
-            pkgs = " isc-kea-dhcp4-server={kea_version} isc-kea-ctrl-agent={kea_version} isc-kea-common={kea_version}"
+            if service_name == 'default':
+                pkgs = " isc-kea-dhcp4-server={kea_version} isc-kea-ctrl-agent={kea_version} isc-kea-common={kea_version}"
+            elif 'dhcp6' in service_name:
+                pkgs = " isc-kea-dhcp6-server={kea_version}"
+            elif 'ddns' in service_name:
+                pkgs = " isc-kea-dhcp-ddns-server={kea_version}"
+            else:
+                assert False, "incorrect kea service name: %s" % service_name
         else:
             self.install_pkgs('epel-release')
             pkgs = 'perl'
@@ -399,6 +415,45 @@ class StorkAgentContainer(Container):
             for cmd in ['enable', 'start', 'status']:
                 self.run('systemctl %s kea-dhcp4' % cmd)
                 self.run('systemctl %s kea-ctrl-agent' % cmd)
+
+    def install_bind(self, conf_file=None):
+        # this should install specific version of bind but let's keep it
+        # that way for now
+        if self.pkg_format == 'deb':
+            self.run('apt-get install -y software-properties-common')
+            self.run('add-apt-repository ppa:isc/bind -y')
+            self.run('apt-get install -y bind9')
+        else:
+            self.run('yum -y install bind bind-utils')
+
+        if conf_file is not None:
+            self.upload(conf_file, '/etc/bind/named.conf')
+
+        self.run('systemctl enable named')
+        self.run('systemctl start named')
+        self.run('systemctl status named')
+
+    def uninstall_kea(self, pkgs_name='all'):
+        if self.pkg_format == 'deb':
+            if pkgs_name == 'all':
+                pkgs = "isc-kea-dhcp-ddns-server isc-kea-dhcp6-server isc-kea-dhcp4-server isc-kea-ctrl-agent isc-kea-common"
+            else:
+                pkgs = pkgs_name
+        else:
+            pkgs = " isc-kea isc-kea-hooks isc-kea-libs"
+        self.uninstall_pkgs(pkgs)
+
+    def start_kea(self, process):
+        if self.pkg_format == 'deb':
+            process = 'isc-%s-server' % process
+        for cmd in ['start', 'status']:
+            self.run('systemctl %s %s' % (cmd, process))
+
+    def stop_kea(self, process):
+        if self.pkg_format == 'deb':
+            process = 'isc-%s-server' % process
+        self.run('systemctl stop %s' % process)
+        time.sleep(1)
 
     def install_stork_from_local_file(self, pkg_ver=None):
         if pkg_ver is None:

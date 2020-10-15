@@ -85,7 +85,7 @@ WGET = 'wget --tries=inf --waitretry=3 --retry-on-http-error=429,500,503,504 '
 
 # Patch PATH env
 ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin:#{ENV['PATH']}"
-ENV['PATH'] = "#{GO_DIR}/go/bin:#{ENV['PATH']}"
+ENV['PATH'] = "#{GO_DIR}/go/bin:#{GO_DIR}/tests/system:#{ENV['PATH']}"
 ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
 
 # premium support
@@ -805,13 +805,32 @@ file 'tests/system/venv/bin/activate' do
   Dir.chdir('tests/system') do
     sh 'python3 -m venv venv'
     sh './venv/bin/pip install -U pip'
+    sh "#{WGET} https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux32.tar.gz -O geckodriver.tar.gz"
+    sh "#{WGET} https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip -O chromedriver_linux64.zip"
+    sh 'tar -xf geckodriver.tar.gz'
+    sh 'unzip chromedriver_linux64.zip'
   end
 end
 
 task :system_tests => 'tests/system/venv/bin/activate' do
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
-    sh './venv/bin/pytest --full-trace -r ap -s tests.py'
+    sh './venv/bin/pytest -vv --full-trace -r ap -s tests/api/tests.py'
+  end
+end
+
+task :system_tests_ui_firefox => 'tests/system/venv/bin/activate' do
+  Dir.chdir('tests/system') do
+    sh './venv/bin/pip install -r requirements.txt'
+    sh './venv/bin/pytest --driver Firefox --driver-path ./geckodriver -vv --full-trace -r ap -s tests/ui/tests_ui_basic.py --headless'
+  end
+end
+
+task :system_tests_ui_chrome => 'tests/system/venv/bin/activate' do
+  Dir.chdir('tests/system') do
+  # chrome driver version has to be equal to version of chrome that is used for testing
+    sh './venv/bin/pip install -r requirements.txt'
+    sh './venv/bin/pytest --driver Chrome --driver-path ./chromedriver -vv --full-trace -r ap -s tests/ui/tests_ui_basic.py --headless'
   end
 end
 

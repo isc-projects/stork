@@ -4,9 +4,27 @@ import sys
 import glob
 import pytest
 
+
 def pytest_addoption(parser):
     parser.addoption("--stork-rpm-ver", action="store", help="Stork RPM packages version")
     parser.addoption("--stork-deb-ver", action="store", help="Stork deb packages version")
+    parser.addoption("--local-stork", action="store", help="Run tests against locally running stork")
+    group = parser.getgroup('selenium', 'selenium')
+    group._addoption('--headless', action='store_true', help='Headless mode')
+
+
+@pytest.fixture
+def chrome_options(chrome_options, pytestconfig):
+    if pytestconfig.getoption('headless'):
+        chrome_options.add_argument('headless')
+    return chrome_options
+
+
+@pytest.fixture
+def firefox_options(firefox_options, pytestconfig):
+    if pytestconfig.getoption('headless'):
+        firefox_options.set_headless(True)
+    return firefox_options
 
 
 def _get_pkg_version(pkg_pattern):
