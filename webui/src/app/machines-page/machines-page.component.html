@@ -26,7 +26,7 @@
             style="width: 100%"
             pInputText
             [(ngModel)]="machineAddress"
-            id="machineAddress"
+            id="machine-address-id"
             (keyup)="keyUpMachineDlg($event, null)"
         />
     </div>
@@ -38,14 +38,14 @@
             placeholder="8080"
             pInputText
             [(ngModel)]="agentPort"
-            id="agentPort"
+            id="agent-port-id"
             (keyup)="keyUpMachineDlg($event, null)"
         />
     </div>
     <p-footer>
         <button
             type="button"
-            id="cancelMachineDialog"
+            id="cancel-machine-dialog-id"
             (click)="cancelMachineDialog()"
             pButton
             icon="pi pi-times"
@@ -53,7 +53,7 @@
         ></button>
         <button
             type="button"
-            id="addNewMachine"
+            id="add-new-machine-page-id"
             (click)="addNewMachine()"
             pButton
             icon="pi pi-check"
@@ -127,7 +127,7 @@
                 Filter machines:
                 <input
                     type="text"
-                    id="filterMachinesTextField"
+                    id="filter-machines-text-field-id"
                     pInputText
                     [(ngModel)]="filterText"
                     placeholder="name or any other field"
@@ -169,6 +169,7 @@
                 type="button"
                 pButton
                 label="Add New Machine"
+                id="add-new-machine-id"
                 icon="pi pi-plus"
                 style="margin-right: 20px"
                 (click)="showNewMachineDlg()"
@@ -177,7 +178,7 @@
                 type="button"
                 pButton
                 label="Refresh"
-                id="Refresh"
+                id="refresh-id"
                 icon="pi pi-refresh"
                 (click)="refreshMachinesList(machinesTable)"
             ></button>

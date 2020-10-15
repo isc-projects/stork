@@ -19,7 +19,7 @@
             Filter subnets:
             <input
                 type="text"
-                id="filterSubnetsTextField"
+                id="filter-subnets-text-field-id"
                 pInputText
                 [(ngModel)]="filterText"
                 placeholder="subnet or any other field"
@@ -53,7 +53,7 @@
         <div>
             <p-dropdown
                 [options]="dhcpVersions"
-                id="protocolDropdownMenu"
+                id="protocol-dropdown-menu-id"
                 [(ngModel)]="queryParams.dhcpVersion"
                 (onChange)="filterByDhcpVersion()"
             ></p-dropdown>

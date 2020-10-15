@@ -35,7 +35,7 @@
                 type="button"
                 pButton
                 label="Create User Account"
-                id="CreateUserAccount"
+                id="create-user-account-id"
                 icon="pi pi-plus"
                 style="margin-right: 20px"
                 (click)="showNewUserTab()"
@@ -190,7 +190,7 @@
                                             pInputText
                                             type="text"
                                             formControlName="userlogin"
-                                            id="userlogin"
+                                            id="user-login-id"
                                             style="width: 80%"
                                             pattern="[a-zA-Z0-9_]*"
                                         />
@@ -217,7 +217,7 @@
                                             type="text"
                                             style="width: 80%"
                                             formControlName="useremail"
-                                            id="usermail"
+                                            id="usermail-id"
                                         />
                                     </div>
                                     <div class="p-col-12">
@@ -242,7 +242,7 @@
                                             pInputText
                                             type="text"
                                             formControlName="userfirst"
-                                            id="userfirst"
+                                            id="userfirst-id"
                                             style="width: 80%"
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
@@ -269,7 +269,7 @@
                                             pInputText
                                             type="text"
                                             formControlName="userlast"
-                                            id="userlast"
+                                            id="userlast-id"
                                             style="width: 80%"
                                             pattern="^[\S][\w|\s]*[\S]$"
                                         />
@@ -295,7 +295,7 @@
                                         <p-dropdown
                                             [options]="userGroups"
                                             formControlName="usergroup"
-                                            id="usergroup"
+                                            id="usergroup-id"
                                         ></p-dropdown>
                                     </div>
                                     <div class="p-col-12">
@@ -320,7 +320,7 @@
                                             pPassword
                                             type="password"
                                             formControlName="userpassword"
-                                            id="userpassword"
+                                            id="userpassword-id"
                                             style="width: 80%"
                                             pattern="[a-zA-Z0-9@.!\+\-]*"
                                         />
@@ -348,7 +348,7 @@
                                             [feedback]="false"
                                             type="password"
                                             formControlName="userpassword2"
-                                            id="userpassword2"
+                                            id="userpassword2-id"
                                             style="width: 80%"
                                             pattern="{{ userform.controls['userpassword'].value }}"
                                         />
@@ -374,7 +374,7 @@
                                     class="btn btn-success"
                                     icon="pi pi-pencil"
                                     label="Save"
-                                    id="Save"
+                                    id="save-id"
                                     (click)="userFormSave()"
                                 ></button>
                             </div>
@@ -386,7 +386,7 @@
                                     class="btn btn-basic"
                                     icon="pi pi-times"
                                     label="Cancel"
-                                    id="Cancel"
+                                    id="cancel-id"
                                     (click)="userFormCancel()"
                                 ></button>
                             </div>
