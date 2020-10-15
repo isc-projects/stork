@@ -11,6 +11,7 @@
             Filter networks:
             <input
                 type="text"
+                id="filterNetworksTextField"
                 pInputText
                 [(ngModel)]="filterText"
                 placeholder="network or any other field"
@@ -42,6 +43,7 @@
         <div>
             <p-dropdown
                 [options]="dhcpVersions"
+                id="protocolDropdownMenu"
                 [(ngModel)]="queryParams.dhcpVersion"
                 (onChange)="filterByDhcpVersion()"
             ></p-dropdown>
