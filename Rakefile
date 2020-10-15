@@ -548,6 +548,7 @@ task :ci_ui => [:gen_client] do
 #   end
 end
 
+desc 'Run unit tests for Angular'
 task :ng_test => [NG, :gen_client] do
    Dir.chdir('webui') do
     sh 'CHROME_BIN=/usr/bin/chromium-browser npx ng test'
