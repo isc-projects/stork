@@ -74,7 +74,7 @@ export class MachinesPageComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.tabs = [{ label: 'Machines', id: 'MachinesTab', routerLink: '/machines/all' }]
+        this.tabs = [{ label: 'Machines', id: 'machines-tab-id', routerLink: '/machines/all' }]
 
         this.machines = []
         this.appTypes = [
