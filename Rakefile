@@ -21,6 +21,7 @@ case UNAME.rstrip
     PROTOC_ZIP_SUFFIX="osx-x86_64"
     NODE_SUFFIX="darwin-x64"
     GOLANGCILINT_SUFFIX="darwin-amd64"
+    CHROME_BIN="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
     puts "WARNING: MacOS is not officially supported, the provisions for building on MacOS are made"
     puts "WARNING: for the developers' convenience only."
   when "Linux"
@@ -30,6 +31,7 @@ case UNAME.rstrip
     PROTOC_ZIP_SUFFIX="linux-x86_64"
     NODE_SUFFIX="linux-x64"
     GOLANGCILINT_SUFFIX="linux-amd64"
+    CHROME_BIN="/usr/bin/chromium-browser"
   when "FreeBSD"
     OS="FreeBSD"
     # TODO: there are no swagger built packages for FreeBSD
@@ -167,6 +169,13 @@ text.each_line do |line|
   end
 end
 STORK_VERSION = stork_version
+
+# CHROME_BIN is required for UI tests. If it is not set by the
+# user, set the default value. It points to the location of the
+# Chrome browser binary.
+if !ENV['CHROME_BIN']
+  ENV['CHROME_BIN'] = CHROME_BIN
+end
 
 ### Backend Tasks #########################
 
@@ -541,22 +550,23 @@ task :ci_ui => [:gen_client] do
   end
 
   Rake::Task["lint_ui"].invoke()
-
-#   Dir.chdir('webui') do
-#    sh 'CHROME_BIN=/usr/bin/chromium-browser npx ng test --progress false --watch false'
-#    sh 'npx ng e2e --progress false --watch false'
-#   end
+  Rake::Task["ng_test"].invoke()
 end
 
 desc 'Run unit tests for Angular'
-task :ng_test => [NG, :gen_client] do
+task :ng_test => [NG] do
+  if not File.file?(ENV['CHROME_BIN'])
+    puts("Chrome binary not found in %s" % [ENV['CHROME_BIN']])
+    puts("It is possible to override default Chrome location with CHROME_BIN")
+    puts("environment variable. If this variable is set already it seems to")
+    puts("point to a wrong location.")
+    abort('Aborting tests because Chrome binary was not found.')
+  end
    Dir.chdir('webui') do
-    sh 'CHROME_BIN=/usr/bin/chromium-browser npx ng test'
-#    sh 'CHROME_BIN=/usr/bin/chromium-browser npx ng test --progress false --watch false'
-#    sh 'npx ng e2e --progress false --watch false'
+     sh 'npx ng test --progress false --watch false'
+#     sh 'npx ng e2e --progress false --watch false'
    end
 end
-
 
 ### Docker Tasks #########################
 
