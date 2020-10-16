@@ -7,7 +7,7 @@ import { MessageModule } from 'primeng/message'
 import { LocaltimePipe } from '../localtime.pipe'
 import { RouterModule } from '@angular/router'
 import { ServicesService } from '../backend'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 
 describe('HaStatusComponent', () => {
     let component: HaStatusComponent
@@ -15,15 +15,16 @@ describe('HaStatusComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            imports: [PanelModule, TooltipModule, MessageModule, RouterModule],
+            imports: [PanelModule, TooltipModule, MessageModule, RouterModule, HttpClientTestingModule],
             declarations: [HaStatusComponent, LocaltimePipe],
-            providers: [ServicesService, HttpClient, HttpHandler],
+            providers: [ServicesService],
         }).compileComponents()
     }))
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HaStatusComponent)
         component = fixture.componentInstance
+        component.appId = 4
         fixture.detectChanges()
     })
 

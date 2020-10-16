@@ -5,7 +5,7 @@ import { PanelModule } from 'primeng/panel'
 import { ButtonModule } from 'primeng/button'
 import { Router, RouterModule, ActivatedRoute } from '@angular/router'
 import { ServicesService, DHCPService, SettingsService, UsersService } from '../backend'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { LocationStrategy } from '@angular/common'
 
@@ -15,12 +15,10 @@ describe('DashboardComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            imports: [PanelModule, ButtonModule, RouterModule],
+            imports: [PanelModule, ButtonModule, RouterModule, HttpClientTestingModule],
             declarations: [DashboardComponent],
             providers: [
                 ServicesService,
-                HttpClient,
-                HttpHandler,
                 LocationStrategy,
                 DHCPService,
                 MessageService,

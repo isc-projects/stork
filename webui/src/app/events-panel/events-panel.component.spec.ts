@@ -1,4 +1,4 @@
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 import { ActivatedRoute, Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
@@ -14,8 +14,6 @@ describe('EventsPanelComponent', () => {
         TestBed.configureTestingModule({
             providers: [
                 EventsService,
-                HttpClient,
-                HttpHandler,
                 UsersService,
                 ServicesService,
                 MessageService,
@@ -28,6 +26,7 @@ describe('EventsPanelComponent', () => {
                     useValue: {},
                 },
             ],
+            imports: [HttpClientTestingModule],
             declarations: [EventsPanelComponent],
         }).compileComponents()
     }))

@@ -7,30 +7,23 @@ import { SplitButtonModule } from 'primeng/splitbutton'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ToastModule } from 'primeng/toast'
 import { GeneralService, UsersService, SettingsService, ServicesService } from './backend'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 
 describe('AppComponent', () => {
     beforeEach(async(() => {
         TestBed.configureTestingModule({
             imports: [
-                RouterTestingModule,
+                RouterTestingModule.withRoutes([{ path: 'apps/bind9/all', component: AppComponent }]),
                 TooltipModule,
                 MenubarModule,
                 SplitButtonModule,
                 ProgressSpinnerModule,
                 ToastModule,
+                HttpClientTestingModule,
             ],
             declarations: [AppComponent],
-            providers: [
-                GeneralService,
-                HttpClient,
-                HttpHandler,
-                UsersService,
-                MessageService,
-                ServicesService,
-                SettingsService,
-            ],
+            providers: [GeneralService, UsersService, MessageService, ServicesService, SettingsService],
         }).compileComponents()
     }))
 

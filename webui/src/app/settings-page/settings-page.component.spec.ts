@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { FieldsetModule } from 'primeng/fieldset'
 import { MessageService } from 'primeng/api'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 
 import { SettingsPageComponent } from './settings-page.component'
 import { SettingsService } from '../backend/api/api'
@@ -15,9 +15,15 @@ describe('SettingsPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            imports: [FormsModule, ReactiveFormsModule, BrowserAnimationsModule, FieldsetModule],
+            imports: [
+                FormsModule,
+                ReactiveFormsModule,
+                BrowserAnimationsModule,
+                FieldsetModule,
+                HttpClientTestingModule,
+            ],
             declarations: [SettingsPageComponent],
-            providers: [SettingsService, MessageService, HttpClient, HttpHandler],
+            providers: [SettingsService, MessageService],
         }).compileComponents()
     }))
 

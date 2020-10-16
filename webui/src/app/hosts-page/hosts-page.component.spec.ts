@@ -4,8 +4,8 @@ import { HostsPageComponent } from './hosts-page.component'
 import { FormsModule } from '@angular/forms'
 import { TableModule } from 'primeng/table'
 import { DHCPService } from '../backend'
-import { HttpClient, HttpHandler } from '@angular/common/http'
-import { ActivatedRoute, Router } from '@angular/router'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { of } from 'rxjs'
 
 class MockParamMap {
@@ -22,13 +22,12 @@ describe('HostsPageComponent', () => {
         TestBed.configureTestingModule({
             providers: [
                 DHCPService,
-                HttpClient,
-                HttpHandler,
                 {
                     provide: ActivatedRoute,
                     useValue: {
                         snapshot: { queryParamMap: new MockParamMap() },
                         queryParamMap: of(new MockParamMap()),
+                        paramMap: of(convertToParamMap({ id: 1 })),
                     },
                 },
                 {
@@ -36,7 +35,7 @@ describe('HostsPageComponent', () => {
                     useValue: {},
                 },
             ],
-            imports: [FormsModule, TableModule],
+            imports: [FormsModule, TableModule, HttpClientTestingModule],
             declarations: [HostsPageComponent],
         }).compileComponents()
     }))

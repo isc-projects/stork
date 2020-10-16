@@ -1,7 +1,7 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { ProfilePageComponent } from './profile-page.component'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ServicesService, UsersService } from '../backend'
 import { Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
@@ -18,8 +18,6 @@ describe('ProfilePageComponent', () => {
                 MessageService,
                 UsersService,
                 ServicesService,
-                HttpClient,
-                HttpHandler,
                 { provide: Router, useValue: {} },
                 {
                     provide: AuthService,
@@ -29,6 +27,7 @@ describe('ProfilePageComponent', () => {
                 },
             ],
             declarations: [ProfilePageComponent],
+            imports: [HttpClientTestingModule],
         }).compileComponents()
     }))
 

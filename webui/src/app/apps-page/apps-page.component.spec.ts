@@ -13,10 +13,11 @@ import { TabPanel, TabViewModule } from 'primeng/tabview'
 import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { PanelModule } from 'primeng/panel'
 import { MessageModule } from 'primeng/message'
-import { ActivatedRoute, Router, RouterModule } from '@angular/router'
+import { ActivatedRoute, Router, RouterModule, convertToParamMap } from '@angular/router'
 import { ServicesService } from '../backend'
-import { HttpClient, HttpHandler } from '@angular/common/http'
 import { MessageService } from 'primeng/api'
+import { RouterTestingModule } from '@angular/router/testing'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
 
 describe('AppsPageComponent', () => {
@@ -25,23 +26,9 @@ describe('AppsPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [
-                ServicesService,
-                HttpClient,
-                HttpHandler,
-                MessageService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        paramMap: of({}),
-                    },
-                },
-                {
-                    provide: Router,
-                    useValue: {},
-                },
-            ],
+            providers: [ServicesService, MessageService],
             imports: [
+                HttpClientTestingModule,
                 TabMenuModule,
                 MenuModule,
                 FormsModule,
@@ -51,6 +38,7 @@ describe('AppsPageComponent', () => {
                 PanelModule,
                 MessageModule,
                 RouterModule,
+                RouterTestingModule.withRoutes([{ path: 'apps/:appType/all', component: AppsPageComponent }]),
             ],
             declarations: [
                 AppsPageComponent,
@@ -65,6 +53,7 @@ describe('AppsPageComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(AppsPageComponent)
         component = fixture.componentInstance
+        component.appType = 'bind9'
         fixture.detectChanges()
     })
 

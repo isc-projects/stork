@@ -2,7 +2,7 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { GlobalSearchComponent } from './global-search.component'
 import { SearchService } from '../backend/api/api'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 
 describe('GlobalSearchComponent', () => {
     let component: GlobalSearchComponent
@@ -11,7 +11,8 @@ describe('GlobalSearchComponent', () => {
     beforeEach(async(() => {
         TestBed.configureTestingModule({
             declarations: [GlobalSearchComponent],
-            providers: [SearchService, HttpClient, HttpHandler],
+            providers: [SearchService],
+            imports: [HttpClientTestingModule],
         }).compileComponents()
     }))
 

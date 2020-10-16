@@ -8,7 +8,7 @@ import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
 import { RouterModule, ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { DHCPService, SettingsService, UsersService } from '../backend'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
 import { MessageService } from 'primeng/api'
 
@@ -26,8 +26,6 @@ describe('SubnetsPageComponent', () => {
         TestBed.configureTestingModule({
             providers: [
                 DHCPService,
-                HttpClient,
-                HttpHandler,
                 UsersService,
                 MessageService,
                 SettingsService,
@@ -43,7 +41,7 @@ describe('SubnetsPageComponent', () => {
                     useValue: {},
                 },
             ],
-            imports: [FormsModule, DropdownModule, TableModule, TooltipModule, RouterModule],
+            imports: [FormsModule, DropdownModule, TableModule, TooltipModule, RouterModule, HttpClientTestingModule],
             declarations: [SubnetsPageComponent, SubnetBarComponent],
         }).compileComponents()
     }))

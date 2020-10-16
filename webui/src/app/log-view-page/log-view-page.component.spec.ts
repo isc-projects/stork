@@ -1,6 +1,6 @@
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, convertToParamMap } from '@angular/router'
 import { ServicesService } from '../backend'
 import { LogViewPageComponent } from './log-view-page.component'
 import { of } from 'rxjs'
@@ -13,15 +13,14 @@ describe('LogViewPageComponent', () => {
         TestBed.configureTestingModule({
             providers: [
                 ServicesService,
-                HttpClient,
-                HttpHandler,
                 {
                     provide: ActivatedRoute,
                     useValue: {
-                        paramMap: of({}),
+                        paramMap: of(convertToParamMap({})),
                     },
                 },
             ],
+            imports: [HttpClientTestingModule],
             declarations: [LogViewPageComponent],
         }).compileComponents()
     }))

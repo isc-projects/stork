@@ -8,7 +8,7 @@ import { TooltipModule } from 'primeng/tooltip'
 import { SubnetBarComponent } from '../subnet-bar/subnet-bar.component'
 import { Router, ActivatedRoute } from '@angular/router'
 import { DHCPService } from '../backend'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
 
 class MockParamMap {
@@ -23,7 +23,7 @@ describe('SharedNetworksPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            imports: [FormsModule, DropdownModule, TableModule, TooltipModule],
+            imports: [FormsModule, DropdownModule, TableModule, TooltipModule, HttpClientTestingModule],
             declarations: [SharedNetworksPageComponent, SubnetBarComponent],
             providers: [
                 {
@@ -38,8 +38,6 @@ describe('SharedNetworksPageComponent', () => {
                     },
                 },
                 DHCPService,
-                HttpClient,
-                HttpHandler,
             ],
         }).compileComponents()
     }))

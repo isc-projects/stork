@@ -3,7 +3,7 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 import { LoginScreenComponent } from './login-screen.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { GeneralService, UsersService } from '../backend'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { RouterModule, Router, ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
 
@@ -13,12 +13,10 @@ describe('LoginScreenComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            imports: [ReactiveFormsModule, FormsModule, RouterModule],
+            imports: [ReactiveFormsModule, FormsModule, RouterModule, HttpClientTestingModule],
             declarations: [LoginScreenComponent],
             providers: [
                 GeneralService,
-                HttpClient,
-                HttpHandler,
                 UsersService,
                 MessageService,
                 {

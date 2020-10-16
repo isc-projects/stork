@@ -1,7 +1,7 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { PasswordChangePageComponent } from './password-change-page.component'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { Router } from '@angular/router'
 import { FormBuilder } from '@angular/forms'
 import { UsersService } from '../backend'
@@ -16,14 +16,13 @@ describe('PasswordChangePageComponent', () => {
             providers: [
                 FormBuilder,
                 UsersService,
-                HttpClient,
-                HttpHandler,
                 MessageService,
                 {
                     provide: Router,
                     useValue: {},
                 },
             ],
+            imports: [HttpClientTestingModule],
             declarations: [PasswordChangePageComponent],
         }).compileComponents()
     }))

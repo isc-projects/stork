@@ -1,9 +1,10 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { MachinesPageComponent } from './machines-page.component'
-import { ActivatedRoute, Router } from '@angular/router'
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
+import { RouterTestingModule } from '@angular/router/testing'
 import { ServicesService, UsersService } from '../backend'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { of } from 'rxjs'
 
@@ -13,22 +14,10 @@ describe('MachinesPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [
-                MessageService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        paramMap: of({}),
-                    },
-                },
-                {
-                    provide: Router,
-                    useValue: {},
-                },
-                ServicesService,
-                HttpClient,
-                HttpHandler,
-                UsersService,
+            providers: [MessageService, ServicesService, UsersService],
+            imports: [
+                HttpClientTestingModule,
+                RouterTestingModule.withRoutes([{ path: 'machines/all', component: MachinesPageComponent }]),
             ],
             declarations: [MachinesPageComponent],
         }).compileComponents()

@@ -4,7 +4,7 @@ import { UsersPageComponent } from './users-page.component'
 import { ActivatedRoute, Router } from '@angular/router'
 import { FormBuilder } from '@angular/forms'
 import { ServicesService, UsersService } from '../backend'
-import { HttpClient, HttpHandler } from '@angular/common/http'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 import { of } from 'rxjs'
 
@@ -20,13 +20,11 @@ describe('UsersPageComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            imports: [],
+            imports: [HttpClientTestingModule],
             declarations: [UsersPageComponent],
             providers: [
                 FormBuilder,
                 UsersService,
-                HttpClient,
-                HttpHandler,
                 ServicesService,
                 MessageService,
                 {

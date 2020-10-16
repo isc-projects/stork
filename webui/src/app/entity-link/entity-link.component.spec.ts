@@ -1,6 +1,6 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
-
 import { EntityLinkComponent } from './entity-link.component'
+import { RouterTestingModule } from '@angular/router/testing'
 
 describe('EntityLinkComponent', () => {
     let component: EntityLinkComponent
@@ -8,6 +8,7 @@ describe('EntityLinkComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
+            imports: [RouterTestingModule],
             declarations: [EntityLinkComponent],
         }).compileComponents()
     }))
