@@ -85,7 +85,7 @@ WGET = 'wget --tries=inf --waitretry=3 --retry-on-http-error=429,500,503,504 '
 
 # Patch PATH env
 ENV['PATH'] = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin:#{ENV['PATH']}"
-ENV['PATH'] = "#{GO_DIR}/go/bin:#{GO_DIR}/tests/system:#{ENV['PATH']}"
+ENV['PATH'] = "#{GO_DIR}/go/bin:#{ENV['PATH']}"
 ENV['PATH'] = "#{GOBIN}:#{ENV['PATH']}"
 
 # premium support
