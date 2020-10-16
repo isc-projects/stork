@@ -17,7 +17,7 @@
                 <i>{{ formattedTime(serverStatus.statusTime) }}</i>
             </td>
             <td style="width: 5%">
-                <app-help-tip title="status time">
+                <app-help-tip title="status time" id="help-button-status-time">
                     <p>{{ statusTimeHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -28,7 +28,7 @@
                 <i>{{ formattedAge(serverStatus.age) }}</i>
             </td>
             <td>
-                <app-help-tip title="status checked">
+                <app-help-tip title="status checked" id="help-button-status-checked">
                     <p>{{ collectedHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -48,7 +48,7 @@
                 <i>{{ formattedControlStatus() }}</i>
             </td>
             <td>
-                <app-help-tip title="control status">
+                <app-help-tip title="control status" id="help-button-control-status">
                     <p>{{ controlStatusHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -61,7 +61,7 @@
                 <i>{{ formattedHeartbeatStatus() }}</i>
             </td>
             <td>
-                <app-help-tip title="heartbeat status">
+                <app-help-tip title="heartbeat status" id="help-button-heartbeat-status">
                     <p>{{ heartbeatStatusHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -74,7 +74,7 @@
                 <i>{{ serverStatus.state }}</i>
             </td>
             <td>
-                <app-help-tip title="state">
+                <app-help-tip title="state" id="help-button-state">
                     <p>{{ haStateHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -92,7 +92,7 @@
                 <i>{{ formattedTime(serverStatus.failoverTime) }}</i>
             </td>
             <td>
-                <app-help-tip title="last in partner-down">
+                <app-help-tip title="last in partner-down" id="help-button-partner-down">
                     <p>{{ failoverHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -103,7 +103,7 @@
                 <i>{{ formattedUnackedClients() }}</i>
             </td>
             <td>
-                <app-help-tip title="unacked clients">
+                <app-help-tip title="unacked clients" id="help-button-unacked-clients">
                     <p>{{ unackedClientsHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -114,7 +114,7 @@
                 <i>{{ formattedFailoverNumber(serverStatus.connectingClients) }}</i>
             </td>
             <td>
-                <app-help-tip title="connecting clients">
+                <app-help-tip title="connecting clients" id="help-button-connecting-clients">
                     <p>{{ connectingClientsHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -125,7 +125,7 @@
                 <i>{{ formattedFailoverNumber(serverStatus.analyzedPackets) }}</i>
             </td>
             <td>
-                <app-help-tip title="analyzed packets">
+                <app-help-tip title="analyzed packets" id="help-button-analyzed-packets">
                     <p>{{ analyzedPacketsHelptip() }}</p>
                 </app-help-tip>
             </td>

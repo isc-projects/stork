@@ -42,7 +42,7 @@
                     <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
                         >DHCP Dashboard</span
                     >
-                    <p-button icon="pi pi-refresh" (click)="refreshDhcpOverview()"></p-button>
+                    <p-button id="refresh-dhcp" icon="pi pi-refresh" (click)="refreshDhcpOverview()"></p-button>
                 </div>
             </p-header>
 
@@ -51,7 +51,7 @@
                 <div>
                     <h2 class="section-heading">
                         Subnets: {{ overview.subnets4.total ? overview.subnets4.total : '0' }}
-                        <app-help-tip title="subnets listed">
+                        <app-help-tip title="subnets listed" id="help-button-subnets">
                             <p>
                                 This list shows the 5 DHCPv4 subnets with the highest utilization. The total number of
                                 subnets is {{ overview.subnets4.total ? overview.subnets4.total : '0' }}.
@@ -104,7 +104,7 @@
                 <div>
                     <h2 class="section-heading">
                         Shared Networks: {{ overview.sharedNetworks4.total ? overview.sharedNetworks4.total : '0' }}
-                        <app-help-tip title="networks listed">
+                        <app-help-tip title="networks listed" id="help-button-networks">
                             <p>
                                 This list shows the 5 shared networks with the highest utilization. The total number of
                                 networks is
@@ -168,7 +168,7 @@
                 <div>
                     <h2 class="section-heading">
                         Subnets: {{ overview.subnets6.total ? overview.subnets6.total : '0' }}
-                        <app-help-tip title="subnets listed">
+                        <app-help-tip title="subnets listed" id="help-button-subnets-2">
                             <p>
                                 This list shows the 5 DHCPv6 subnets with the highest utilization. The total number of
                                 subnets is {{ overview.subnets6.total ? overview.subnets6.total : '0' }}.
@@ -204,7 +204,7 @@
                 <div>
                     <h2 class="section-heading">
                         Shared Networks: {{ overview.sharedNetworks6.total ? overview.sharedNetworks6.total : '0' }}
-                        <app-help-tip title="networks listed">
+                        <app-help-tip title="networks listed" id="help-button-networks-2">
                             <p>
                                 This list shows the 5 shared networks with the highest utilization. The total number of
                                 networks is
@@ -341,6 +341,7 @@
                     <div>
                         <p-button
                             icon="pi pi-refresh"
+                            id="refresh-events"
                             (click)="eventsTable.refreshEvents(null)"
                             [style]="{ 'margin-left': '10px' }"
                         ></p-button>

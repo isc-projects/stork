@@ -46,9 +46,9 @@ export class SubnetsPageComponent implements OnInit {
     ngOnInit() {
         // prepare list of DHCP versions, this is used in subnets filtering
         this.dhcpVersions = [
-            { label: 'any', value: null },
-            { label: 'DHCPv4', value: '4' },
-            { label: 'DHCPv6', value: '6' },
+            { label: 'any', value: null, id: 'any-menu' },
+            { label: 'DHCPv4', value: '4', id: 'dhcpv4-menu' },
+            { label: 'DHCPv6', value: '6', id: 'dhcpv6-menu' },
         ]
 
         this.settingSvc.getSettings().subscribe((data) => {

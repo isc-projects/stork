@@ -4,7 +4,14 @@
             The application is hosted on the machine:&nbsp;
             <a routerLink="/machines/{{ appTab.app.machine.id }}">{{ appTab.app.machine.address }}</a>
         </div>
-        <button type="button" pButton label="Refresh App" icon="pi pi-refresh" (click)="refreshAppState()"></button>
+        <button
+            type="button"
+            pButton
+            label="Refresh App"
+            id="refresh-app"
+            icon="pi pi-refresh"
+            (click)="refreshAppState()"
+        ></button>
     </div>
 
     <div class="p-col-12" style="padding: 0">

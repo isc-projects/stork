@@ -30,7 +30,7 @@
                 Filter apps:
                 <input
                     type="text"
-                    id="filter-apps-text-field-id"
+                    id="filter-apps-text-field"
                     pInputText
                     [(ngModel)]="filterText"
                     placeholder="version or any other field"
@@ -48,7 +48,7 @@
             <button
                 type="button"
                 pButton
-                id="apps-refresh-id"
+                id="apps-refresh"
                 label="Refresh"
                 icon="pi pi-refresh"
                 (click)="refreshAppsList(appsTable)"
@@ -97,7 +97,13 @@
                     <a routerLink="/machines/{{ a.machine.id }}">{{ a.machine.hostname }}</a>
                 </td>
                 <td>
-                    <button type="button" pButton icon="pi pi-bars" (click)="showAppMenu($event, appMenu, a)"></button>
+                    <button
+                        id="{{ 'menu-of-' + a.machine.id }}"
+                        type="button"
+                        pButton
+                        icon="pi pi-bars"
+                        (click)="showAppMenu($event, appMenu, a)"
+                    ></button>
                 </td>
             </tr>
         </ng-template>

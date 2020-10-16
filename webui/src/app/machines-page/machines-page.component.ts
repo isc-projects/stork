@@ -10,6 +10,7 @@ import { ServerDataService } from '../server-data.service'
 interface AppType {
     name: string
     value: string
+    id: string
 }
 
 @Component({
@@ -69,26 +70,29 @@ export class MachinesPageComponent implements OnInit {
         })
         this.tabs.push({
             label: machine.address,
+            id: 'machine-tab' + machine.id,
             routerLink: '/machines/' + machine.id,
         })
     }
 
     ngOnInit() {
-        this.tabs = [{ label: 'Machines', id: 'machines-tab-id', routerLink: '/machines/all' }]
+        this.tabs = [{ label: 'Machines', id: 'all-machines-tab', routerLink: '/machines/all' }]
 
         this.machines = []
         this.appTypes = [
-            { name: 'any', value: '' },
-            { name: 'Bind9', value: 'bind9' },
-            { name: 'Kea', value: 'kea' },
+            { name: 'any', value: '', id: 'none-app' },
+            { name: 'Bind9', value: 'bind9', id: 'bind-app' },
+            { name: 'Kea', value: 'kea', id: 'kea-app' },
         ]
         this.machineMenuItems = [
             {
                 label: 'Refresh',
+                id: 'refresh-single-machine',
                 icon: 'pi pi-refresh',
             },
             {
                 label: 'Remove',
+                id: 'remove-single-machine',
                 icon: 'pi pi-times',
                 title: 'Remove machine from Stork Server',
             },

@@ -74,7 +74,7 @@ export class HaStatusComponent implements OnInit {
     }
 
     /**
-     * Sets the name of the Kea deamon for which the HA status is displayed.
+     * Sets the name of the Kea daemon for which the HA status is displayed.
      *
      * @param daemonName One of: dhcp4 or dhcp6.
      */

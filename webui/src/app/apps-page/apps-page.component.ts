@@ -118,6 +118,7 @@ export class AppsPageComponent implements OnInit {
                 this.appMenuItems = [
                     {
                         label: 'Refresh',
+                        id: 'refresh-single-app',
                         icon: 'pi pi-refresh',
                     },
                 ]

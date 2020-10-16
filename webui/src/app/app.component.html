@@ -14,7 +14,11 @@
         tooltipStyleClass="stork-version-tooltip"
         [escape]="false"
     >
-        <img src="/assets/stork-logo-small.png" id="stork-logo-small-id" style="padding-left: 6px; vertical-align: text-bottom" />
+        <img
+            src="/assets/stork-logo-small.png"
+            id="stork-logo-small"
+            style="padding-left: 6px; vertical-align: text-bottom"
+        />
         <span style="font-family: 'Mansalva', cursive; font-size: 2.3rem; color: white; margin: 4px 20px 4px 4px">
             Stork
         </span>
@@ -37,7 +41,7 @@
     <p-splitButton
         label="Logout ({{ this.currentUser.username || this.currentUser.email }})"
         icon="pi pi-sign-out"
-        id="logout-button-id"
+        id="logout-button"
         [style]="{ margin: '0 0.4em 0 0.25em' }"
         (onClick)="signOut()"
         [model]="userMenuItems"

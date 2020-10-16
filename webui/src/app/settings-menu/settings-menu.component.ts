@@ -27,11 +27,13 @@ export class SettingsMenuComponent implements OnInit {
                 items: [
                     {
                         label: 'Settings',
+                        id: 'user-settings',
                         icon: 'pi pi-user',
                         routerLink: '/profile/settings',
                     },
                     {
                         label: 'Change password',
+                        id: 'change-password',
                         icon: 'pi pi-lock',
                         routerLink: '/profile/password',
                     },

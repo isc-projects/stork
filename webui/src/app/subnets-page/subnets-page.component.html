@@ -19,13 +19,13 @@
             Filter subnets:
             <input
                 type="text"
-                id="filter-subnets-text-field-id"
+                id="filter-subnets-text-field"
                 pInputText
                 [(ngModel)]="filterText"
                 placeholder="subnet or any other field"
                 (keyup)="keyupFilterText($event)"
             />
-            <app-help-tip title="filtering">
+            <app-help-tip title="filtering" id="help-button-filtering">
                 <p>
                     Subnets in the table below can be filtered by entering a text in the search box; the table shows all
                     subnets matching the filter text. Currently supported fields for such filtering are:
@@ -53,7 +53,7 @@
         <div>
             <p-dropdown
                 [options]="dhcpVersions"
-                id="protocol-dropdown-menu-id"
+                id="protocol-dropdown-menu"
                 [(ngModel)]="queryParams.dhcpVersion"
                 (onChange)="filterByDhcpVersion()"
             ></p-dropdown>

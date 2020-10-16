@@ -45,7 +45,7 @@ export class AppComponent implements OnInit {
         this.userMenuItems = [
             {
                 label: 'Profile',
-                id: 'profile-id',
+                id: 'profile',
                 icon: 'fa fa-cog',
                 routerLink: '/profile',
             },
@@ -54,30 +54,30 @@ export class AppComponent implements OnInit {
         this.menuItems = [
             {
                 label: 'DHCP',
-                id: 'dhcp-id',
+                id: 'dhcp',
                 visible: false,
                 items: [
                     {
                         label: 'Dashboard',
-                        id: 'dashboard-id',
+                        id: 'dashboard',
                         icon: 'fa fa-tachometer-alt',
                         routerLink: '/dashboard',
                     },
                     {
                         label: 'Host Reservations',
-                        id: 'host-reservations-id',
+                        id: 'host-reservations',
                         icon: 'fa fa-laptop',
                         routerLink: '/dhcp/hosts',
                     },
                     {
                         label: 'Subnets',
-                        id: 'subnets-id',
+                        id: 'subnets',
                         icon: 'fa fa-project-diagram',
                         routerLink: '/dhcp/subnets',
                     },
                     {
                         label: 'Shared Networks',
-                        id: 'shared-networks-id',
+                        id: 'shared-networks',
                         icon: 'fa fa-network-wired',
                         routerLink: '/dhcp/shared-networks',
                     },
@@ -85,31 +85,31 @@ export class AppComponent implements OnInit {
             },
             {
                 label: 'Services',
-                id: 'services-id',
+                id: 'services',
                 items: [
                     {
                         label: 'Kea Apps',
-                        id: 'kea-apps-id',
+                        id: 'kea-apps',
                         visible: false,
                         icon: 'fa fa-server',
                         routerLink: '/apps/kea/all',
                     },
                     {
                         label: 'BIND 9 Apps',
-                        id: 'bind9-apps-id',
+                        id: 'bind9-apps',
                         visible: false,
                         icon: 'fa fa-server',
                         routerLink: '/apps/bind9/all',
                     },
                     {
                         label: 'Machines',
-                        id: 'machines-id',
+                        id: 'machines',
                         icon: 'fa fa-server',
                         routerLink: '/machines/all',
                     },
                     {
                         label: 'Grafana',
-                        id: 'grafana-id',
+                        id: 'grafana',
                         icon: 'pi pi-chart-line',
                         url: '',
                         visible: false,
@@ -118,11 +118,11 @@ export class AppComponent implements OnInit {
             },
             {
                 label: 'Monitoring',
-                id: 'monitoring-id',
+                id: 'monitoring',
                 items: [
                     {
                         label: 'Events',
-                        id: 'events-id',
+                        id: 'events',
                         icon: 'fa fa-calendar-times',
                         routerLink: '/events',
                     },
@@ -130,18 +130,18 @@ export class AppComponent implements OnInit {
             },
             {
                 label: 'Configuration',
-                id: 'configuration-id',
+                id: 'configuration',
                 items: [
                     {
                         label: 'Users',
-                        id: 'users-id',
+                        id: 'users',
                         visible: false,
                         icon: 'fa fa-user',
                         routerLink: '/users',
                     },
                     {
                         label: 'Settings',
-                        id: 'settings-id',
+                        id: 'settings',
                         icon: 'fa fa-cog',
                         routerLink: '/settings',
                     },
@@ -149,38 +149,38 @@ export class AppComponent implements OnInit {
             },
             {
                 label: 'Help',
-                id: 'help-id',
+                id: 'help',
                 items: [
                     {
                         label: 'Stork Manual',
-                        id: 'stork-manual-id',
+                        id: 'stork-manual',
                         icon: 'fa fa-book',
                         url: '/assets/arm/index.html',
                         target: 'blank',
                     },
                     {
                         label: 'Stork API Docs (SwaggerUI)',
-                        id: 'stork-API-docs-swagger-id',
+                        id: 'stork-API-docs-swagger',
                         icon: 'fa fa-code',
                         routerLink: '/swagger-ui',
                     },
                     {
                         label: 'Stork API Docs (Redoc)',
-                        id: 'stork-API-docs-redoc-id',
+                        id: 'stork-API-docs-redoc',
                         icon: 'fa fa-code',
                         url: '/api/docs',
                         target: 'blank',
                     },
                     {
                         label: 'BIND 9 Manual',
-                        id: 'bind9-manual-id',
+                        id: 'bind9-manual',
                         icon: 'fa fa-book',
                         url: 'https://downloads.isc.org/isc/bind9/cur/9.16/doc/arm/Bv9ARM.html',
                         target: 'blank',
                     },
                     {
                         label: 'Kea Manual',
-                        id: 'kea-manual-id',
+                        id: 'kea-manual',
                         icon: 'fa fa-book',
                         url: 'https://kea.readthedocs.io/',
                         target: 'blank',

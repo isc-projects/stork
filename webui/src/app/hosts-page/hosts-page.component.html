@@ -25,13 +25,13 @@
             Filter hosts:
             <input
                 type="text"
-                id="filter-hosts-text-field-id"
+                id="filter-hosts-text-field"
                 pInputText
                 [(ngModel)]="filterText"
                 placeholder="IP or identifier"
                 (keyup)="keyUpFilterText($event)"
             />
-            <app-help-tip title="filtering">
+            <app-help-tip title="filtering" id="help-button-filtering">
                 <p>
                     Hosts in the table below can be filtered by entering a text in the search box; the table shows all
                     hosts matching the filter text. Currently supported fields for such filtering are:

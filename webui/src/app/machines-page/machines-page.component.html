@@ -26,7 +26,7 @@
             style="width: 100%"
             pInputText
             [(ngModel)]="machineAddress"
-            id="machine-address-id"
+            id="machine-address"
             (keyup)="keyUpMachineDlg($event, null)"
         />
     </div>
@@ -38,14 +38,14 @@
             placeholder="8080"
             pInputText
             [(ngModel)]="agentPort"
-            id="agent-port-id"
+            id="agent-port"
             (keyup)="keyUpMachineDlg($event, null)"
         />
     </div>
     <p-footer>
         <button
             type="button"
-            id="cancel-machine-dialog-id"
+            id="cancel-machine-dialog"
             (click)="cancelMachineDialog()"
             pButton
             icon="pi pi-times"
@@ -53,7 +53,7 @@
         ></button>
         <button
             type="button"
-            id="add-new-machine-page-id"
+            id="add-new-machine-page"
             (click)="addNewMachine()"
             pButton
             icon="pi pi-check"
@@ -74,6 +74,7 @@
             style="width: 100%"
             pInputText
             [(ngModel)]="machineAddress"
+            id="change-machine-address"
             (keyup)="keyUpMachineDlg($event, machineTab)"
         />
     </div>
@@ -85,17 +86,26 @@
             placeholder="8080"
             pInputText
             [(ngModel)]="agentPort"
+            id="change-machine-port"
             (keyup)="keyUpMachineDlg($event, machineTab)"
         />
     </div>
     <p-footer>
-        <button type="button" (click)="cancelMachineDialog()" pButton icon="pi pi-times" label="Cancel"></button>
+        <button
+            type="button"
+            (click)="cancelMachineDialog()"
+            pButton
+            icon="pi pi-times"
+            label="Cancel"
+            id="cancel-machine-edit"
+        ></button>
         <button
             type="button"
             (click)="saveMachine(machineTab)"
             pButton
             icon="pi pi-check"
             label="Change"
+            id="change-machine"
             class="ui-button-warning"
         ></button>
     </p-footer>
@@ -112,6 +122,7 @@
                 class="ui-menuitem-icon pi pi-times"
                 style="font-size: 1.3rem"
                 (click)="closeTab($event, i)"
+                id="{{ 'close-machine-tab-' + item.label }}"
                 *ngIf="i !== 0"
             ></div>
         </div>
@@ -127,13 +138,13 @@
                 Filter machines:
                 <input
                     type="text"
-                    id="filter-machines-text-field-id"
+                    id="filter-machines-text-field"
                     pInputText
                     [(ngModel)]="filterText"
                     placeholder="name or any other field"
                     (keyup)="keyUpFilterText(machinesTable, $event)"
                 />
-                <app-help-tip title="filtering">
+                <app-help-tip title="filtering" id="help-button-filtering">
                     <p>
                         Machines in the table below can be filtered by entering a text in the search box; the table
                         shows all machines matching the filter text. Currently supported fields for such filtering are:
@@ -169,7 +180,7 @@
                 type="button"
                 pButton
                 label="Add New Machine"
-                id="add-new-machine-id"
+                id="add-new-machine"
                 icon="pi pi-plus"
                 style="margin-right: 20px"
                 (click)="showNewMachineDlg()"
@@ -178,7 +189,7 @@
                 type="button"
                 pButton
                 label="Refresh"
-                id="refresh-id"
+                id="refresh-all"
                 icon="pi pi-refresh"
                 (click)="refreshMachinesList(machinesTable)"
             ></button>
@@ -213,7 +224,7 @@
                 <th style="width: 8rem">Hostname</th>
                 <th style="width: 10rem">
                     Location
-                    <app-help-tip title="Location">
+                    <app-help-tip title="Location" id="help-button-location">
                         <p>
                             Specifies where the server can reach the agent as a hostname:tcp-port pair (e.g.
                             localhost:8888).
@@ -225,7 +236,7 @@
                 <th style="width: 4rem">CPUs</th>
                 <th style="width: 8rem">
                     CPU Load
-                    <app-help-tip title="CPU Load">
+                    <app-help-tip title="CPU Load" id="help-button-cpu-load">
                         <p>
                             These three numbers are CPU load averages for last 1 minute, 5 minutes and 15 minutes. This
                             is the usual syntax used by <b>top</b> command.
@@ -244,7 +255,7 @@
                 <th class="hiding-column" style="width: 6rem">Uptime</th>
                 <th class="hiding-column" style="width: 6rem">
                     Last Refreshed
-                    <app-help-tip title="Last refreshed"
+                    <app-help-tip title="Last refreshed" id="help-button-last-refreshed"
                         ><p>
                             When the machine status was last retrieved. You can refresh it by clicking Refresh in the
                             Action menu.
@@ -281,6 +292,7 @@
                         type="button"
                         pButton
                         icon="pi pi-bars"
+                        id="show-machines-menu"
                         (click)="showMachineMenu($event, machineMenu, m)"
                     ></button>
                 </td>
@@ -302,6 +314,7 @@
                 }}<span style="color: #007ad930">:{{ machineTab.machine.agentPort }}</span>
                 <i
                     class="pi pi-pencil"
+                    id="pencil-edit-machine"
                     style="vertical-align: text-top; margin-left: 15px; color: #aaa; cursor: pointer"
                     (click)="editAddress(machineTab)"
                 ></i>
@@ -338,7 +351,7 @@
                 <tr>
                     <td>
                         CPUs Load
-                        <app-help-tip title="CPU Load">
+                        <app-help-tip title="CPU Load" id="help-button-cpu-load-2">
                             <p>
                                 These three numbers are CPU load averages for last 1 minute, 5 minutes and 15 minutes.
                                 This is the usual syntax used by <b>top</b> command.
@@ -412,6 +425,7 @@
                 type="button"
                 pButton
                 label="Get Latest State"
+                id="get-latest-state"
                 icon="pi pi-refresh"
                 style="margin-top: 20px"
                 (click)="refreshMachineState(machineTab)"

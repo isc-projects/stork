@@ -33,16 +33,19 @@ export class EventsPanelComponent implements OnInit {
     levels = [
         {
             label: 'All',
+            id: 'all-events',
             value: 0,
             icon: 'pi pi-info-circle',
         },
         {
             label: 'Warnings',
+            id: 'warning-events',
             value: 1,
             icon: 'pi pi-exclamation-triangle',
         },
         {
             label: 'Errors',
+            id: 'error-events',
             value: 2,
             icon: 'pi pi-exclamation-circle',
         },
@@ -51,16 +54,16 @@ export class EventsPanelComponent implements OnInit {
     users: any
     machines: any
     appTypes = [
-        { value: 'kea', name: 'Kea' },
-        { value: 'bind9', name: 'BIND 9' },
+        { value: 'kea', name: 'Kea', id: 'kea-events' },
+        { value: 'bind9', name: 'BIND 9', id: 'bind-events' },
     ]
     daemonTypes = [
-        { value: 'dhcp4', name: 'DHCPv4' },
-        { value: 'dhcp6', name: 'DHCPv6' },
-        { value: 'named', name: 'named' },
-        { value: 'd2', name: 'DDNS' },
-        { value: 'ca', name: 'CA' },
-        { value: 'netconf', name: 'NETCONF' },
+        { value: 'dhcp4', name: 'DHCPv4', id: 'kea4-events' },
+        { value: 'dhcp6', name: 'DHCPv6', id: 'kea6-events' },
+        { value: 'named', name: 'named', id: 'named-events' },
+        { value: 'd2', name: 'DDNS', id: 'ddns-events' },
+        { value: 'ca', name: 'CA', id: 'ca-events' },
+        { value: 'netconf', name: 'NETCONF', id: 'netconf-events' },
     ]
     selectedMachine: any
     selectedAppType: any
