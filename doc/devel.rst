@@ -235,8 +235,10 @@ by AngularJS. You can run the tests this way:
     cd webui
     npx ng test
 
-Make sure you have chromium installed on the system. As of today, we don't know any way to run
-those tests with Firefox. Here's couple comments regarding running those tests:
+There is a convenient `rake ng_test` shortcut for this.
+
+Make sure you have chromium (Linux) or chrome (Mac) installed on the system. As of today, we don't know any
+way to run those tests with Firefox. Here's couple comments regarding running those tests:
 
 * When adding new component or service with `ng generate component|service ...`, the Angular framework
   will add .spec.ts file for you with a boilerplate code there. In most cases, the first step in
@@ -248,6 +250,12 @@ those tests with Firefox. Here's couple comments regarding running those tests:
   is to click Debug, click Options and unset the "run tests in random order". This will run the tests
   always in the same order.
 
+* You can run specific test by clicking on its name. For example, you can run one specific test by opening
+  this link http://localhost:9876/debug.html?spec=ProfilePageComponent
+
+* Make sure the CHROME_BIN points to a script that launches chrome. It's possible to run those tests
+  on Mac. You just need to create a script that will point to chrome. You don't need to set CHROME_BIN
+  if chrome command is available in your path.
 
 System Tests
 ============
