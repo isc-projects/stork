@@ -563,7 +563,7 @@ task :ng_test => [NG] do
     abort('Aborting tests because Chrome binary was not found.')
   end
    Dir.chdir('webui') do
-     sh 'npx ng test --progress false --watch false --browsers=ChromeHeadless'
+     sh 'npx ng test --progress false --watch false --browsers=ChromeNoSandboxHeadless'
 #     sh 'npx ng e2e --progress false --watch false'
    end
 end
