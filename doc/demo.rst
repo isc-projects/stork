@@ -80,7 +80,7 @@ server
 webui
    This container is essential in most circumstances. It
    provides the front-end web interface. It is potentially unnecessary with
-   the custom development of a Stork API client.,
+   the custom development of a Stork API client.
 agent-bind9
    This container runs a BIND 9 server. With this container, the agent
    can be added as a machine and Stork will begin monitoring its BIND
