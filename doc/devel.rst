@@ -319,7 +319,7 @@ They can be invoked by Rake task:
                 $ rake system_tests
 
 This command beside running the tests first prepares Python virtual environment (``venv``)
-were ``pytest`` and other Python dependencies are installed. ``pytest`` is a Python testing
+where ``pytest`` and other Python dependencies are installed. ``pytest`` is a Python testing
 framework that is used in Stork system tests.
 
 At the bottom of logs there are listed test cases with their result status.
