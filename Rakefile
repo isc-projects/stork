@@ -569,14 +569,13 @@ def run_ng_test(progress, watch, browsers)
    end
 end
 
-desc 'Run unit tests for Angular with headless Chrome browser.'
+desc 'Run unit tests for Angular with Chrome browser.'
 task :ng_test => [NG] do
-  run_ng_test("false", "false", "ChromeNoSandboxHeadless")
-end
-
-desc 'Run unit tests for Angular with Chrome browser allowing to debug tests.'
-task :ng_test_debug => [NG] do
-  run_ng_test("true", "true", "Chrome")
+  if ENV['debug'] == "true"
+    run_ng_test("true", "true", "Chrome")
+  else
+    run_ng_test("false", "false", "ChromeNoSandboxHeadless")
+  end
 end
 
 ### Docker Tasks #########################
