@@ -254,12 +254,14 @@ deploy_demo:
     - docker
     - amd64
     - ssd
+  needs:
+    - danger
   services:
     - docker:dind
   before_script:
     - ip -6 route del default
     - docker info
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+    - docker login -u stork-ci -p "$STORK_CI_TOKEN_FOR_REGISTRY" "$CI_REGISTRY"
     - apk update
     - apk upgrade
     - apk add docker-compose ruby-rake
@@ -268,7 +270,7 @@ deploy_demo:
   script:
     - rake build_all_in_container
     - docker-compose -f docker-compose.yaml -f docker-compose-premium.yaml build --build-arg CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN
-    - docker-compose push
+    - docker-compose -f docker-compose.yaml -f docker-compose-premium.yaml push
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml down -v --remove-orphans
     - scp -o StrictHostKeyChecking=no docker-compose.yaml jenkins@stork.lab.isc.org:~/deploy
     - scp -o StrictHostKeyChecking=no docker-compose-premium.yaml jenkins@stork.lab.isc.org:~/deploy
