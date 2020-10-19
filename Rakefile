@@ -553,8 +553,9 @@ task :ci_ui => [:gen_client] do
   Rake::Task["ng_test"].invoke()
 end
 
-desc 'Run unit tests for Angular'
-task :ng_test => [NG] do
+# Common function for running ng test different progress, watch and browsers
+# options.
+def run_ng_test(progress, watch, browsers)
   if not File.file?(ENV['CHROME_BIN'])
     puts("Chrome binary not found in %s" % [ENV['CHROME_BIN']])
     puts("It is possible to override default Chrome location with CHROME_BIN")
@@ -563,9 +564,19 @@ task :ng_test => [NG] do
     abort('Aborting tests because Chrome binary was not found.')
   end
    Dir.chdir('webui') do
-     sh 'npx ng test --progress false --watch false --browsers=ChromeNoSandboxHeadless'
+     sh "npx ng test --progress #{progress} --watch #{watch} --browsers=#{browsers}"
 #     sh 'npx ng e2e --progress false --watch false'
    end
+end
+
+desc 'Run unit tests for Angular with headless Chrome browser.'
+task :ng_test => [NG] do
+  run_ng_test("false", "false", "ChromeNoSandboxHeadless")
+end
+
+desc 'Run unit tests for Angular with Chrome browser allowing to debug tests.'
+task :ng_test_debug => [NG] do
+  run_ng_test("true", "true", "Chrome")
 end
 
 ### Docker Tasks #########################
