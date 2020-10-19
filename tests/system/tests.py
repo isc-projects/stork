@@ -79,7 +79,8 @@ def test_machines(agent_distro, server_distro):
 
         assert m['apps'] is not None
         assert len(m['apps']) == 1
-        assert m['apps'][0]['version'] == '1.8.0'
+        assert m['apps'][0]['version'] == '1.7.3'
+        # assert m['apps'][0]['version'] == '1.8.0'
 
 
 @pytest.mark.parametrize("agent_distro,server_distro", SUPPORTED_DISTROS)
@@ -117,4 +118,5 @@ def test_pkg_upgrade(agent_distro, server_distro):
 
         assert m['apps'] is not None
         assert len(m['apps']) == 1
-        assert m['apps'][0]['version'] == '1.8.0'
+        assert m['apps'][0]['version'] == '1.7.3'
+        # assert m['apps'][0]['version'] == '1.8.0'

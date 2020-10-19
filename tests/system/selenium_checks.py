@@ -28,7 +28,9 @@ def check_help_text(sel, id_of_help_button, id_of_help_test, help_text):
     close_all_popup_notifications(sel)
     help_button = sel.find_element_by_id(id_of_help_button)
     help_button.click()
+    print("Checking help content:\n\t%s" % help_text, end='')
     assert help_text in sel.find_element_by_id(id_of_help_test).text
+    print(" - OK!")
     help_button.click()
     display_sleep(sel)
 
@@ -137,12 +139,13 @@ def check_phrases(selenium, phrase_lst, expect=True):
         phrase_lst = [phrase_lst]
     print("Checking phrase: ")
     for phrase in phrase_lst:
-        print('\t', phrase, end='')
         if expect:
+            print('\t', phrase, end='')
             assert (re.search(phrase, current_page)), "Phrase \"%s\" not found on displayed page" % phrase
-            print(" - OK! ")
         else:
+            print('\tCAN\'T INCLUDE : ', phrase, end='')
             assert not (re.search(phrase, current_page)), "Phrase \"%s\" FOUND on displayed page against expectation" % phrase
+        print(" - OK! ")
 
 
 def find_and_check_tooltip(selenium, tooltip_text, element_text=None, xpath=None, element_id=None,

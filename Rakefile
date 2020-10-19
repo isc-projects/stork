@@ -819,20 +819,20 @@ task :system_tests => 'tests/system/venv/bin/activate' do
   end
 end
 
-task :system_tests_ui_firefox => 'tests/system/venv/bin/activate' do
+task :system_tests_ui => 'tests/system/venv/bin/activate' do
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
-    sh './venv/bin/pytest --driver Firefox --driver-path ./geckodriver -vv --full-trace -r ap -s tests/ui/tests_ui_basic.py --headless'
+    if ENV['BROWSER'] == 'Firefox'
+        ENV['DRIVER'] = 'geckodriver'
+    elsif ENV['BROWSER'] == 'Chrome'
+        ENV['DRIVER'] = 'chromedriver'
+    end
+# rake system_tests_ui BROWSER=Firefox
+# rake system_tests_ui BROWSER=Chrome
+    sh "./venv/bin/pytest --driver #{ENV['BROWSER']} --driver-path ./#{ENV['DRIVER']} -vv --full-trace -r ap -s tests/ui/tests_ui_basic.py --headless"
   end
 end
 
-task :system_tests_ui_chrome => 'tests/system/venv/bin/activate' do
-  Dir.chdir('tests/system') do
-  # chrome driver version has to be equal to version of chrome that is used for testing
-    sh './venv/bin/pip install -r requirements.txt'
-    sh './venv/bin/pytest --driver Chrome --driver-path ./chromedriver -vv --full-trace -r ap -s tests/ui/tests_ui_basic.py --headless'
-  end
-end
 
 
 ### Other Tasks #########################

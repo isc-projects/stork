@@ -385,8 +385,10 @@ class StorkAgentContainer(Container):
         self.install_pkgs('curl')
 
     def install_kea(self, service_name='default'):
-        self.setup_cloudsmith_repo('kea-1-8')
-        kea_version = '1.8.0-isc0000420200825110759'
+        self.setup_cloudsmith_repo('kea-1-7')
+        kea_version = '1.7.3-isc0009420191217090201'
+        #self.setup_cloudsmith_repo('kea-1-8')
+        #kea_version = '1.8.0-isc0000420200825110759'
         if self.pkg_format == 'deb':
             self.run("apt-get update")
             if service_name == 'default':
