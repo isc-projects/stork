@@ -13,20 +13,6 @@ def pytest_addoption(parser):
     group._addoption('--headless', action='store_true', help='Headless mode')
 
 
-@pytest.fixture
-def chrome_options(chrome_options, pytestconfig):
-    if pytestconfig.getoption('headless'):
-        chrome_options.add_argument('headless')
-    return chrome_options
-
-
-@pytest.fixture
-def firefox_options(firefox_options, pytestconfig):
-    if pytestconfig.getoption('headless'):
-        firefox_options.set_headless(True)
-    return firefox_options
-
-
 def _get_pkg_version(pkg_pattern):
     cwd = os.getcwd()
     if 'tests/system' in cwd:

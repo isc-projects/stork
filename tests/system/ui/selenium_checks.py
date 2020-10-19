@@ -143,7 +143,7 @@ def check_phrases(selenium, phrase_lst, expect=True):
             print('\t', phrase, end='')
             assert (re.search(phrase, current_page)), "Phrase \"%s\" not found on displayed page" % phrase
         else:
-            print('\tCAN\'T INCLUDE : ', phrase, end='')
+            print('\tCAN\'T INCLUDE: ', phrase, end='')
             assert not (re.search(phrase, current_page)), "Phrase \"%s\" FOUND on displayed page against expectation" % phrase
         print(" - OK! ")
 
