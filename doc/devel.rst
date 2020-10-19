@@ -312,7 +312,14 @@ Running System Tests
 --------------------
 
 After preparing all dependencies now it is possible to start tests.
-They can be invoked by Rake task:
+But first RPM and deb Stork packages need to be prepared. This can
+be done with this Rake task:
+
+.. code-block:: console
+
+                $ rake build_pkgs_in_docker
+
+When we have packages then the tests can be invoked by the following Rake task:
 
 .. code-block:: console
 
@@ -343,6 +350,14 @@ To run particular test case add it just after ``test.py``:
 .. code-block:: console
 
                 $ ./venv/bin/pytest --tb=long -l -r ap -s tests.py::test_users_management[centos/7-ubuntu/18.04]
+
+To get a list of tests without actually running them, the following command can be used:
+
+.. code-block:: console
+
+    $ ./venv/bin/pytest --collect-only tests.py
+
+The test names of available tests will be printed as `<Function name_of_the_test>`.
 
 Developing System Tests
 -----------------------

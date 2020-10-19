@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import glob
 import pytest
 
@@ -26,8 +27,8 @@ def _get_pkg_version(pkg_pattern):
         if vers[0] != vers[1]:
             raise Exception('versions do not match %s' % str(vers))
         return vers[0]
-    return None
-
+    print('\n\nCannot find deb or rpm Stork packages.\nTo prepare them run `rake build_pkgs_in_docker`.\n')
+    os._exit(1)
 
 def pytest_configure(config):
     import containers
