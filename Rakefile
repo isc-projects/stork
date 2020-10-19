@@ -801,14 +801,23 @@ end
 
 ### System testing ######################
 
+SELENIUM_DIR = "#{TOOLS_DIR}/selenium"
+GECKO_DRV = "#{SELENIUM_DIR}/geckodriver"
+CHROME_DRV = "#{SELENIUM_DIR}/chromedriver"
+directory SELENIUM_DIR
+
+if ENV['BROWSER'] == 'Chrome'
+  selenium_driver_path = CHROME_DRV
+else
+  ENV['BROWSER'] = 'Firefox'
+  selenium_driver_path = GECKO_DRV
+end
+
+
 file 'tests/system/venv/bin/activate' do
   Dir.chdir('tests/system') do
     sh 'python3 -m venv venv'
     sh './venv/bin/pip install -U pip'
-    sh "#{WGET} https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux32.tar.gz -O geckodriver.tar.gz"
-    sh "#{WGET} https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip -O chromedriver_linux64.zip"
-    sh 'tar -xf geckodriver.tar.gz'
-    sh 'unzip chromedriver_linux64.zip'
   end
 end
 
@@ -819,17 +828,30 @@ task :system_tests => 'tests/system/venv/bin/activate' do
   end
 end
 
-task :system_tests_ui => 'tests/system/venv/bin/activate' do
+file GECKO_DRV => SELENIUM_DIR do
+  Dir.chdir(SELENIUM_DIR) do
+    sh "#{WGET} https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux32.tar.gz -O geckodriver.tar.gz"
+    sh 'tar -xf geckodriver.tar.gz'
+    sh 'rm geckodriver.tar.gz'
+  end
+end
+
+file CHROME_DRV => SELENIUM_DIR do
+  Dir.chdir(SELENIUM_DIR) do
+  sh "#{WGET} https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip -O chromedriver_linux64.zip"
+    sh "unzip chromedriver_linux64.zip"
+    sh "rm chromedriver_linux64.zip"
+  end
+end
+
+desc 'Run web UI system tests. By default Firefox is used.
+It can be directly selected by BROWSER variable:
+  rake system_tests_ui BROWSER=Firefox
+  rake system_tests_ui BROWSER=Chrome'
+task :system_tests_ui => ['tests/system/venv/bin/activate', selenium_driver_path] do
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
-    if ENV['BROWSER'] == 'Firefox'
-        ENV['DRIVER'] = 'geckodriver'
-    elsif ENV['BROWSER'] == 'Chrome'
-        ENV['DRIVER'] = 'chromedriver'
-    end
-# rake system_tests_ui BROWSER=Firefox
-# rake system_tests_ui BROWSER=Chrome
-    sh "./venv/bin/pytest --driver #{ENV['BROWSER']} --driver-path ./#{ENV['DRIVER']} -vv --full-trace -r ap -s tests/ui/tests_ui_basic.py --headless"
+    sh "./venv/bin/pytest --driver #{ENV['BROWSER']} --driver-path #{selenium_driver_path} -vv --full-trace -r ap -s tests/ui/tests_ui_basic.py --headless"
   end
 end
 
