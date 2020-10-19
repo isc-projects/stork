@@ -44,9 +44,9 @@ export class SubnetBarComponent {
             const lines = []
             if (this._subnet.subnet.includes('.')) {
                 // DHCPv4 stats
-                lines.push('Total: ' + stats['total-addreses'].toLocaleString('en-US'))
-                lines.push('Assigned: ' + stats['assigned-addreses'].toLocaleString('en-US'))
-                lines.push('Declined: ' + stats['declined-addreses'].toLocaleString('en-US'))
+                lines.push('Total: ' + stats['total-addresses'].toLocaleString('en-US'))
+                lines.push('Assigned: ' + stats['assigned-addresses'].toLocaleString('en-US'))
+                lines.push('Declined: ' + stats['declined-addresses'].toLocaleString('en-US'))
             } else {
                 // DHCPv6 stats
                 // NAs

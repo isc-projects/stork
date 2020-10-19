@@ -6,7 +6,7 @@
 export function getTotalAddresses(subnet) {
     if (subnet.subnet.includes('.')) {
         // DHCPv4 stats
-        return subnet.localSubnets[0].stats['total-addreses']
+        return subnet.localSubnets[0].stats['total-addresses']
     } else {
         // DHCPv6 stats
         let total = subnet.localSubnets[0].stats['total-nas']
@@ -24,7 +24,7 @@ export function getTotalAddresses(subnet) {
 export function getAssignedAddresses(subnet) {
     if (subnet.subnet.includes('.')) {
         // DHCPv4 stats
-        return subnet.localSubnets[0].stats['assigned-addreses']
+        return subnet.localSubnets[0].stats['assigned-addresses']
     } else {
         // DHCPv6 stats
         return subnet.localSubnets[0].stats['assigned-nas']

@@ -30,6 +30,12 @@ STYLES = [dict(fg='red', style=''),
           dict(fg='cyan', style='bold')]
 
 
+KEA_1_6 = '1.6.3-isc0044120200730112858'
+KEA_1_7 = '1.7.3-isc0009420191217090201'
+KEA_1_8 = '1.8.0-isc0000420200825110759'
+KEA_LATEST = KEA_1_8
+
+
 DEFAULT_STORK_DEB_VERSION = None
 DEFAULT_STORK_RPM_VERSION = None
 
@@ -105,7 +111,21 @@ class Container:
         # wait for network address
         time.sleep(5)
 
-        self.mgmt_ip = self.cntr.state().network['eth0']['addresses'][0]['address']
+        # find IP address of the container
+        nets = self.cntr.state().network
+        # print('NETS: %s' % str(nets))
+        self.mgmt_ip = None
+        for ifname, net in nets.items():
+            if ifname == 'lo':
+                continue
+            for addr in net['addresses']:
+                # pick only IPv4 address, TODO: commented out for now as it doesn not work in GitLab CI
+                #if '.' in addr['address']:
+                if True:
+                    self.mgmt_ip = addr['address']
+                    break
+        if self.mgmt_ip is None:
+            raise Exception('cannot find IPv4 management address of the container %s' % self.name)
 
         return reused_img
 
@@ -357,7 +377,8 @@ class StorkServerContainer(Container):
             self.run('rpm -qa "isc-stork*"')
 
         self.run("perl -pi -e 's/.*STORK_DATABASE_PASSWORD.*/STORK_DATABASE_PASSWORD=stork/g' /etc/stork/server.env")
-        self.run("perl -pi -e 's/.*STORK_REST_HOST.*/STORK_REST_HOST=localhost/g' /etc/stork/server.env")
+        # Stork server should be widely available
+        self.run("perl -pi -e 's/.*STORK_REST_HOST.*/STORK_REST_HOST=0\.0\.0\.0/g' /etc/stork/server.env")
 
         self.run('systemctl enable isc-stork-server')
         self.run('systemctl restart isc-stork-server')
@@ -404,15 +425,14 @@ class StorkAgentContainer(Container):
     def prepare_system(self):
         self.prepare_system_common()
 
-    def install_kea(self, service_name='default'):
-        self.setup_cloudsmith_repo('kea-1-7')
-        kea_version = '1.7.3-isc0009420191217090201'
-        #self.setup_cloudsmith_repo('kea-1-8')
-        #kea_version = '1.8.0-isc0000420200825110759'
+    def install_kea(self, service_name='default', kea_version=KEA_LATEST):
+        print('INSTALL KEA')
+        repo = 'kea-' + kea_version[:3].replace('.', '-')
+        self.setup_cloudsmith_repo(repo)
         if self.pkg_format == 'deb':
             self.run("apt-get update")
             if service_name == 'default':
-                pkgs = " isc-kea-dhcp4-server={kea_version} isc-kea-ctrl-agent={kea_version} isc-kea-common={kea_version}"
+                pkgs = " isc-kea-dhcp4-server={kea_version} isc-kea-ctrl-agent={kea_version} isc-kea-common={kea_version} isc-kea-admin={kea_version}"
             elif 'dhcp6' in service_name:
                 pkgs = " isc-kea-dhcp6-server={kea_version}"
             elif 'ddns' in service_name:
@@ -428,7 +448,12 @@ class StorkAgentContainer(Container):
         self.install_pkgs(pkgs)
 
         self.run("mkdir -p /var/run/kea/")
+        # CA should be widely accessible
         self.run("perl -pi -e 's/127\\.0\\.0\\.1/0\\.0\\.0\\.0/g' /etc/kea/kea-ctrl-agent.conf")
+        # in old Kea CA socket didn't match with Kea dhcp4 server
+        self.run("perl -pi -e 's#/tmp/kea-dhcp4-ctrl.sock#/tmp/kea4-ctrl-socket#g' /etc/kea/kea-ctrl-agent.conf")
+        # avoid collision with Stork Agent which also listens on 8080
+        self.run("perl -pi -e 's/8080/8000/g' /etc/kea/kea-ctrl-agent.conf")
         if self.pkg_format == 'deb':
             self.run('systemctl enable isc-kea-ctrl-agent')
             self.run('systemctl start isc-kea-ctrl-agent')

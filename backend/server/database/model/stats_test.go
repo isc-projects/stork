@@ -20,11 +20,11 @@ func TestStats(t *testing.T) {
 	stats, err := GetAllStats(db)
 	require.NoError(t, err)
 	require.Len(t, stats, 8)
-	require.Contains(t, stats, "assigned-addreses")
-	require.EqualValues(t, 0, stats["assigned-addreses"])
+	require.Contains(t, stats, "assigned-addresses")
+	require.EqualValues(t, 0, stats["assigned-addresses"])
 
 	// modify one stats and store it in db
-	stats["assigned-addreses"] = 10
+	stats["assigned-addresses"] = 10
 	err = SetStats(db, stats)
 	require.NoError(t, err)
 
@@ -32,6 +32,6 @@ func TestStats(t *testing.T) {
 	stats, err = GetAllStats(db)
 	require.NoError(t, err)
 	require.Len(t, stats, 8)
-	require.Contains(t, stats, "assigned-addreses")
-	require.EqualValues(t, 10, stats["assigned-addreses"])
+	require.Contains(t, stats, "assigned-addresses")
+	require.EqualValues(t, 10, stats["assigned-addresses"])
 }

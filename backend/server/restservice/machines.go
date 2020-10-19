@@ -845,9 +845,9 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	}
 
 	dhcp4Stats := &models.Dhcp4Stats{
-		AssignedAddresses: stats["assigned-addreses"],
-		TotalAddresses:    stats["total-addreses"],
-		DeclinedAddresses: stats["declined-addreses"],
+		AssignedAddresses: stats["assigned-addresses"],
+		TotalAddresses:    stats["total-addresses"],
+		DeclinedAddresses: stats["declined-addresses"],
 	}
 	dhcp6Stats := &models.Dhcp6Stats{
 		AssignedNAs: stats["assigned-nas"],

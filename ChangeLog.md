@@ -1,3 +1,10 @@
+* 113 [bug] godfryd
+
+    Fixed handling renamed statistics from Kea. In Kea 1.8 some
+    of the statistics have been renamed, eg. total-addreses
+    to total-addresses. Now Stork supports both of the cases.
+    (Gitlab #413)
+
 * 112 [bug] godfryd
 
     Fixed handling situation when IP address of Kea Control Agent has changed.

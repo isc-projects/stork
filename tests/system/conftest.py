@@ -105,10 +105,13 @@ def pytest_pyfunc_call(pyfuncitem):
     # wait for all containers
     for c in all_cntrs:
         c.setup_wait()
+        print('CONTAINER %s READY @ %s' % (c.name, c.mgmt_ip))
     time.sleep(3)
 
     # DO RUN TEST CASE
     outcome = yield
+
+    print('TEST %s FINISHED: %s, COLLECTING LOGS' % (pyfuncitem.name, outcome.get_result()))
 
     # prepare test directory for logs, etc
     tests_dir = Path('test-results')

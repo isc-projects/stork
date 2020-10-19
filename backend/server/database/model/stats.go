@@ -17,9 +17,9 @@ type Statistic struct {
 func InitializeStats(db *pg.DB) error {
 	// list of all stork global statistics
 	statsList := []Statistic{
-		{Name: "assigned-addreses"},
-		{Name: "total-addreses"},
-		{Name: "declined-addreses"},
+		{Name: "assigned-addresses"},
+		{Name: "total-addresses"},
+		{Name: "declined-addresses"},
 		{Name: "assigned-nas"},
 		{Name: "total-nas"},
 		{Name: "assigned-pds"},

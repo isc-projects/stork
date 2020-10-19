@@ -44,8 +44,19 @@ func (statsPuller *StatsPuller) Shutdown() {
 	statsPuller.PeriodicPuller.Shutdown()
 }
 
+// Helper function for getting float value for indicated doubled keys.
+func getStatValForKeys(stats map[string]interface{}, keys []string) (float64, bool) {
+	for _, key := range keys {
+		val, ok := stats[key]
+		if ok {
+			return val.(float64), true
+		}
+	}
+	return 0, false
+}
+
 // Go through LocalSubnets and get max stats about assigned, total and declined addresses and PDs.
-func getStatsFromLocalSubnets(localSubnets []*dbmodel.LocalSubnet, family int, assignedKey, totalKey, declinedKey string) (int64, int64, int64, int64, int64, int16, int16) {
+func getStatsFromLocalSubnets(localSubnets []*dbmodel.LocalSubnet, family int, assignedKeys, totalKeys, declinedKeys []string) (int64, int64, int64, int64, int64, int16, int16) {
 	var snMaxUsed int16 = -1
 	var snMaxUsedPds int16 = -1
 	snTotal := int64(0)
@@ -59,27 +70,43 @@ func getStatsFromLocalSubnets(localSubnets []*dbmodel.LocalSubnet, family int, a
 			continue
 		}
 
-		totalIf := lsn.Stats[totalKey]
-		if totalIf == nil {
-			log.Warnf("missing key %s in LocalSubnet %d stats", totalKey, lsn.LocalSubnetID)
+		total, ok := getStatValForKeys(lsn.Stats, totalKeys)
+		if !ok {
+			log.Warnf("missing any of total keys in LocalSubnet %d stats", lsn.LocalSubnetID)
 			continue
 		}
-		total := totalIf.(float64)
 		if total > 0 {
-			assigned := lsn.Stats[assignedKey].(float64)
+			assigned, ok := getStatValForKeys(lsn.Stats, assignedKeys)
+			if !ok {
+				log.Warnf("missing any of assigned keys in LocalSubnet %d stats", lsn.LocalSubnetID)
+				continue
+			}
 			used := int16(1000 * assigned / total)
 			if snMaxUsed < used {
 				snMaxUsed = used
 				snTotal = int64(total)
 				snAssigned = int64(assigned)
-				snDeclined = int64(lsn.Stats[declinedKey].(float64))
+				declined, ok := getStatValForKeys(lsn.Stats, declinedKeys)
+				if !ok {
+					log.Warnf("missing any of declined keys in LocalSubnet %d stats", lsn.LocalSubnetID)
+					continue
+				}
+				snDeclined = int64(declined)
 			}
 		}
 
 		if family == 6 {
-			total := lsn.Stats["total-pds"].(float64)
+			total, ok := getStatValForKeys(lsn.Stats, []string{"total-pds"})
+			if !ok {
+				log.Warnf("missing total-pds key in LocalSubnet %d stats", lsn.LocalSubnetID)
+				continue
+			}
 			if total > 0 {
-				assigned := lsn.Stats["assigned-pds"].(float64)
+				assigned, ok := getStatValForKeys(lsn.Stats, []string{"assigned-pds"})
+				if !ok {
+					log.Warnf("missing assigned-pds key in LocalSubnet %d stats", lsn.LocalSubnetID)
+					continue
+				}
 				used := int16(1000 * assigned / total)
 				if snMaxUsedPds < used {
 					snMaxUsedPds = used
@@ -128,14 +155,14 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 
 	// global stats to collect
 	statsMap := map[string]int64{
-		"assigned-addreses": 0,
-		"total-addreses":    0,
-		"declined-addreses": 0,
-		"assigned-nas":      0,
-		"total-nas":         0,
-		"assigned-pds":      0,
-		"total-pds":         0,
-		"declined-nas":      0,
+		"assigned-addresses": 0,
+		"total-addresses":    0,
+		"declined-addresses": 0,
+		"assigned-nas":       0,
+		"total-nas":          0,
+		"assigned-pds":       0,
+		"total-pds":          0,
+		"declined-nas":       0,
 	}
 
 	// go through all Subnets and:
@@ -174,24 +201,24 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 
 		// prepare stats keys depending on IP version
 		family := sn.GetFamily()
-		totalKey := "total-addreses"
-		assignedKey := "assigned-addreses"
-		declinedKey := "declined-addreses"
+		totalKeys := []string{"total-addresses", "total-addreses"}
+		assignedKeys := []string{"assigned-addresses", "assigned-addreses"}
+		declinedKeys := []string{"declined-addresses", "declined-addreses"}
 		if family == 6 {
-			totalKey = "total-nas"
-			assignedKey = "assigned-nas"
-			declinedKey = "declined-nas"
+			totalKeys = []string{"total-nas"}
+			assignedKeys = []string{"assigned-nas"}
+			declinedKeys = []string{"declined-nas"}
 		}
 
 		// go through LocalSubnets and get max stats about assigned, total and declined addresses and pds
-		snAssigned, snTotal, snDeclined, snAssignedPds, snTotalPds, snMaxUsed, snMaxUsedPds := getStatsFromLocalSubnets(sn.LocalSubnets, family, assignedKey, totalKey, declinedKey)
+		snAssigned, snTotal, snDeclined, snAssignedPds, snTotalPds, snMaxUsed, snMaxUsedPds := getStatsFromLocalSubnets(sn.LocalSubnets, family, assignedKeys, totalKeys, declinedKeys)
 
 		// add subnet counts to shared network ones and global stats
 		netTotal += snTotal
 		netAssigned += snAssigned
-		statsMap[assignedKey] += snAssigned
-		statsMap[totalKey] += snTotal
-		statsMap[declinedKey] += snDeclined
+		statsMap[assignedKeys[0]] += snAssigned
+		statsMap[totalKeys[0]] += snTotal
+		statsMap[declinedKeys[0]] += snDeclined
 		if family == 6 {
 			netTotalPds += snTotalPds
 			netAssignedPds += snAssignedPds
@@ -282,6 +309,16 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 				lsnID = int64(val)
 				sn = subnetsMap[localSubnetKey{lsnID, family}]
 			} else {
+				// handle inconsistency in stats naming in different kea versions
+				switch name {
+				case "total-addreses":
+					name = "total-addresses"
+				case "assigned-addreses":
+					name = "assigned-addresses"
+				case "declined-addreses":
+					name = "declined-addresses"
+				default:
+				}
 				stats[name] = val
 			}
 		}
