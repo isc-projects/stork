@@ -851,7 +851,7 @@ It can be directly selected by BROWSER variable:
 task :system_tests_ui => ['tests/system/venv/bin/activate', selenium_driver_path] do
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
-    sh "./venv/bin/pytest --driver #{ENV['BROWSER']} --driver-path #{selenium_driver_path} -vv --full-trace -r ap -s tests/ui/tests_ui_basic.py --headless"
+    sh "./venv/bin/pytest --driver #{ENV['BROWSER']} --driver-path #{selenium_driver_path} -vv --full-trace -r ap -s ui/tests_ui_basic.py --headless"
   end
 end
 
