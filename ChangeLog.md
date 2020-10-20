@@ -1,3 +1,8 @@
+* 108 [test] tomek, marcin
+
+    Corrected and extended existing boilerplate WebUI unit tests.
+    (Gitlab #164)
+
 * 107 [bug] godfryd
 
     Fixed problem of adding Kea with 4500 subnets. Now messages
