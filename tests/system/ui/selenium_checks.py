@@ -11,9 +11,12 @@ def display_sleep(sel, sec=1):
     :param sel: driver
     :param sec: number of seconds int
     """
-    if not sel.__dict__["capabilities"]['moz:headless']:
+    if sel.__dict__["capabilities"]['browserName'] == "firefox" and not sel.__dict__["capabilities"]['moz:headless']:
         print('>>>> Test not in headless mode - sleep %d seconds' % sec)
         time.sleep(sec)
+    else:
+        # I can't run chrome tests, I don't know how to check it for headless mode TODO fix it :)
+        time.sleep(1)
 
 
 def check_help_text(sel, id_of_help_button, id_of_help_test, help_text):
