@@ -226,36 +226,52 @@ WebUI Unit Tests
 ================
 
 We do have the WebUI tests. We take advantage of the unit-tests generated automatically
-by AngularJS. You can run the tests this way:
+by Angular. The simplest way to run these tests is by using rake tasks:
 
 .. code:: console
 
-    rake build_ui
-    export CHROME_BIN=chromium
-    cd webui
-    npx ng test
+   rake build_ui
+   rake ng_test
 
-There is a convenient `rake ng_test` shortcut for this.
 
-Make sure you have chromium (Linux) or chrome (Mac) installed on the system. As of today, we don't know any
-way to run those tests with Firefox. Here's couple comments regarding running those tests:
+The tests require Chromium (on Linux) or Chrome (on Mac) browser. The `rake ng_test`
+task will attempt to locate the browser binary and launch it automatically. If the
+browser binary is not found in the default locations the rake task will return an
+error. It is possible to set the location manually by setting the `CHROME_BIN`
+environment variable. For example:
 
-* When adding new component or service with `ng generate component|service ...`, the Angular framework
-  will add .spec.ts file for you with a boilerplate code there. In most cases, the first step in
-  running those tests is to add necessary Stork imports. If in doubt, take a look at commits on
-  https://gitlab.isc.org/isc-projects/stork/-/merge_requests/97. There are many examples how to fix
-  failing tests.
+.. code:: console
 
-* The tests are being run in random order by default, which is confusing. One convenient way to run them
-  is to click Debug, click Options and unset the "run tests in random order". This will run the tests
-  always in the same order.
+   export CHROME_BIN=/usr/local/bin/chromium-browser
+   rake ng_test
 
-* You can run specific test by clicking on its name. For example, you can run one specific test by opening
-  this link http://localhost:9876/debug.html?spec=ProfilePageComponent
 
-* Make sure the CHROME_BIN points to a script that launches chrome. It's possible to run those tests
-  on Mac. You just need to create a script that will point to chrome. You don't need to set CHROME_BIN
-  if chrome command is available in your path.
+By default, the tests launch the browser in the headless mode in which test results
+and any possible errors are printed in the console. Though, in some situations it
+is useful to run the browser in non headless mode because it provides debugging features
+in Chrome's graphical interface. It also allows for selectively running the tests.
+Run the tests in non headless mode using the `debug` variable appended to the rake
+command:
+
+.. code:: console
+
+   rake ng_test debug=true
+
+
+The tests are being run in random order by default which makes it sometimes difficult
+to chase the individual errors. One convenient way to run them is to click Debug, click
+Options and unset the "run tests in random order". This will run the tests always in
+the same order.
+
+You can run specific test by clicking on its name. For example, you can run one specific
+test by opening this link http://localhost:9876/debug.html?spec=ProfilePageComponent
+
+When adding new component or service with `ng generate component|service ...`, the Angular framework
+will add .spec.ts file for you with a boilerplate code there. In most cases, the first step in
+running those tests is to add necessary Stork imports. If in doubt, take a look at commits on
+https://gitlab.isc.org/isc-projects/stork/-/merge_requests/97. There are many examples how to fix
+failing tests.
+
 
 System Tests
 ============
