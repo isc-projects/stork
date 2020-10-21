@@ -263,8 +263,10 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 		}
 
 		// Push Kea response for async processing. One of the use cases is to
-                // extract log files used by Kea and to allow the log viewer to access
-                // them.
+		// extract log files used by Kea and to allow the log viewer to access
+		// them.
+		go sa.keaInterceptor.asyncHandle(sa, req, body)
+
 		// gzip json response received from Kea
 		var gzippedBuf bytes.Buffer
 		zw := gzip.NewWriter(&gzippedBuf)
@@ -288,7 +290,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			continue
 		}
 		if len(body) > 0 {
-			log.Printf("compressing response from %d B to %d B, ratio %d%%", len(body), gzippedBuf.Len(), 100*gzippedBuf.Len()/len(body))
+			log.Printf("Compressing response from %d B to %d B, ratio %d%%", len(body), gzippedBuf.Len(), 100*gzippedBuf.Len()/len(body))
 		}
 
 		// Everything looks good, so include the gzipped body in the response.
