@@ -262,9 +262,9 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			continue
 		}
 
-		// push kea response for async processing ie. getting log files
-		go sa.keaInterceptor.asyncHandle(sa, req, body)
-
+		// Push Kea response for async processing. One of the use cases is to
+                // extract log files used by Kea and to allow the log viewer to access
+                // them.
 		// gzip json response received from Kea
 		var gzippedBuf bytes.Buffer
 		zw := gzip.NewWriter(&gzippedBuf)
