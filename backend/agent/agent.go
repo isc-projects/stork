@@ -278,6 +278,9 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 			rsp.Status.Code = agentapi.Status_ERROR
 			rsp.Status.Message = fmt.Sprintf("Failed to compress the Kea response: %s", err.Error())
 			response.KeaResponses = append(response.KeaResponses, rsp)
+			if err2 := zw.Close(); err2 != nil {
+				log.Errorf("error while closing gzip writer: %s", err2)
+			}
 			continue
 		}
 		if err := zw.Close(); err != nil {

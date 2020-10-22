@@ -162,14 +162,14 @@ func TestGetState(t *testing.T) {
 func doGunzip(data []byte) string {
 	zr, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
-		panic("problem with gunzip")
+		panic("problem with gunzip: NewReader")
 	}
 	unpackedResp, err := ioutil.ReadAll(zr)
 	if err != nil {
-		panic("problem with gunzip")
+		panic("problem with gunzip: ReadAll")
 	}
 	if err := zr.Close(); err != nil {
-		panic("problem with gunzip")
+		panic("problem with gunzip: Close")
 	}
 	return string(unpackedResp)
 }

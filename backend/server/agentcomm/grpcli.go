@@ -468,6 +468,9 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbA
 			// Issues with parsing the response count as issues with communication.
 			caErrorsCount++
 			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
+			if err2 := zr.Close(); err2 != nil {
+				log.Errorf("error while closing gzip reader: %s", err2)
+			}
 			continue
 		}
 		if err := zr.Close(); err != nil {
@@ -576,7 +579,7 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 			}).Warnf("communication failed: %+v", fdReq.KeaRequests)
 			dmn, ok := daemonsMap["ca"]
 			if ok {
-				agents.EventCenter.AddErrorEvent("communication with {daemon} failed", strings.TrimSpace(caErrorStr), &dmn)
+				agents.EventCenter.AddErrorEvent("communication with {daemon} of {app} failed", strings.TrimSpace(caErrorStr), &dmn)
 			} else {
 				agents.EventCenter.AddErrorEvent("communication with CA daemon of {app} failed", strings.TrimSpace(caErrorStr), dbApp)
 			}

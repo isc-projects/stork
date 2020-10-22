@@ -82,11 +82,11 @@ func doGzip(jsonTxt string) []byte {
 	zw := gzip.NewWriter(&gzippedBuf)
 	_, err := zw.Write([]byte(jsonTxt))
 	if err != nil {
-		panic("gzip problem")
+		panic("problem with gzip: Write")
 	}
 	err = zw.Close()
 	if err != nil {
-		panic("gzip problem")
+		panic("problem with gzip: Close")
 	}
 	return gzippedBuf.Bytes()
 }
