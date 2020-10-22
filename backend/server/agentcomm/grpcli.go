@@ -579,7 +579,7 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 			}).Warnf("communication failed: %+v", fdReq.KeaRequests)
 			dmn, ok := daemonsMap["ca"]
 			if ok {
-				agents.EventCenter.AddErrorEvent("communication with {daemon} of {app} failed", strings.TrimSpace(caErrorStr), &dmn)
+				agents.EventCenter.AddErrorEvent("communication with {daemon} of {app} failed", strings.TrimSpace(caErrorStr), &dmn, dbApp)
 			} else {
 				agents.EventCenter.AddErrorEvent("communication with CA daemon of {app} failed", strings.TrimSpace(caErrorStr), dbApp)
 			}
@@ -591,7 +591,7 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 		if prevErrorsCA > 0 {
 			dmn, ok := daemonsMap["ca"]
 			if ok {
-				agents.EventCenter.AddWarningEvent("communication with {daemon} resumed", &dmn)
+				agents.EventCenter.AddWarningEvent("communication with {daemon} of {app} resumed", &dmn, dbApp)
 			} else {
 				agents.EventCenter.AddWarningEvent("communication with CA daemon of {app} resumed", dbApp)
 			}
@@ -616,9 +616,9 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 				if dmn.Name == dmnName {
 					dmn.App = dbApp
 					if currentErrors == 0 {
-						agents.EventCenter.AddWarningEvent("communication with {daemon} resumed", dmn)
+						agents.EventCenter.AddWarningEvent("communication with {daemon} of {app} resumed", dmn, dbApp)
 					} else {
-						agents.EventCenter.AddErrorEvent("communication with {daemon} failed", dmn)
+						agents.EventCenter.AddErrorEvent("communication with {daemon} of {app} failed", dmn, dbApp)
 					}
 					break
 				}
