@@ -20,6 +20,8 @@ def banner(txt):
 
 @pytest.mark.parametrize("agent, server", SUPPORTED_DISTROS)
 def test_users_management(agent, server):
+    """Check if users can be fetched and added."""
+    # login
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
@@ -50,6 +52,8 @@ def test_users_management(agent, server):
 
 @pytest.mark.parametrize("agent, server", SUPPORTED_DISTROS)
 def test_machines(agent, server):
+    """Check if machines can be fetched and added."""
+    # login
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
@@ -67,11 +71,12 @@ def test_machines(agent, server):
         assert m['apps'] is not None
         assert len(m['apps']) == 1
         assert m['apps'][0]['version'] == '1.7.3'
-        # assert m['apps'][0]['version'] == '1.8.0'
 
 
 @pytest.mark.parametrize("distro_agent, distro_server", SUPPORTED_DISTROS)
 def test_pkg_upgrade(distro_agent, distro_server):
+    """Check if Stork agent and server can be upgraded from latest release
+    to localy built packages."""
     server = containers.StorkServerContainer(alias=distro_server)
     agent = containers.StorkAgentContainer(alias=distro_agent)
 
@@ -88,9 +93,11 @@ def test_pkg_upgrade(distro_agent, distro_server):
     agent.prepare_stork_agent()
     server.prepare_stork_server()
 
+    # login
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
+    # add machine and check if it can be retrieved
     machine = dict(
         address=agent.mgmt_ip,
         agentPort=8080)
@@ -105,8 +112,6 @@ def test_pkg_upgrade(distro_agent, distro_server):
         time.sleep(2)
 
     m = data['items'][0]
-    for d in m['apps'][0]['details']['daemons']:
-        print('daemon: %s' % str(d))
     assert m['apps'] is not None
     assert len(m['apps']) == 1
     assert m['apps'][0]['version'] == '1.7.3'
@@ -114,6 +119,7 @@ def test_pkg_upgrade(distro_agent, distro_server):
 
 @pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/7')])
 def test_add_kea_with_many_subnets(agent, server):
+    """Check if Stork agent and server will handle Kea instance with huge amount of subnets."""
     # prepare kea config with many subnets and upload it to the agent
     banner("UPLOAD KEA CONFIG WITH MANY SUBNETS")
     subprocess.run('../../docker/gen-kea-config.py 7000 > kea-dhcp4-many-subnets.conf', shell=True, check=True)
@@ -121,6 +127,7 @@ def test_add_kea_with_many_subnets(agent, server):
     subprocess.run('rm -f kea-dhcp4-many-subnets.conf', shell=True)
     agent.run('systemctl restart isc-kea-dhcp4-server')
 
+    # login
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
@@ -146,13 +153,13 @@ def test_add_kea_with_many_subnets(agent, server):
     assert len(m['apps'][0]['accessPoints']) == 1
     assert m['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'
 
+    # get subnets (wait until the whole kea config is loaded to stork server)
+    # and check if total is huge enough
     banner("GET SUBNETS")
     for i in range(30):
         r = server.api_get('/subnets?start=0&limit=10')
         data = r.json()
-        print(data)
         if 'total' in data and data['total'] == 6912:
             break
         time.sleep(2)
     assert data['total'] == 6912
-        # assert m['apps'][0]['version'] == '1.8.0'
