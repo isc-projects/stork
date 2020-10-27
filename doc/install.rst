@@ -4,29 +4,40 @@
 Installation
 ************
 
-Stork can be installed from pre-built packages or from sources. The
-following sections describe both methods.
+Stork can be installed from pre-built packages or from sources. The following sections describe both methods. Unless there's a
+good reason to compile from sources, installing from native DEB or RPM packages is easier and faster.
 
-Prerequisites
-=============
+.. _supported_systems:
 
-``Stork Server`` and ``Stork Agent`` have been tested thoroughly on
-the Ubuntu 18.04 system.  They have been tested and run on the Fedora
-31 system as well.
+Supported Systems
+=================
 
-The ``Stork Agent`` does not require any specific dependencies to
-run. It can be run immediately after installation.
+Currently Stork is being tested on the following systems:
 
-Stork uses the `status-get` command to communicate with Kea, and
-therefore will only work with a version of Kea that supports `status'get`.
-The `status-get` command was introduced in Kea 1.7.3.  At this time, Stork
-works with Kea version 1.7.3 and later versions only, although we intend to
-backport the `status-get` command to Kea 1.6.3.
+- Ubuntu 18.04 and 20.04
+- Fedora 31 and 32
+- CentOS 7
+- MacOS 10.15*
 
-Stork requires the premium Host Commands hook library to retrieve host
-reservations stored in an external database. Stork can retrieve host reservations
+Note that MacOS is not and will not be officially supported. Many developers in our team use macs, so we're trying to keep Stork
+buildable on this platform.
+
+Stork server and agents are written in go language. The server uses Postgres database. In principle, the software could be run
+on any Posix system that has go compiler and Postgres. It is likely the software can be built on many other modern systems, but
+for the time being our testing capabilities are modest. If your favourite OS is not on this list, please do try running Stork
+and report your findings.
+
+Installation Prerequisites
+==========================
+
+The ``Stork Agent`` does not require any specific dependencies to run. It can be run immediately after installation.
+
+Stork uses the `status-get` command to communicate with Kea, and therefore will only work with a version of Kea that supports
+`status-get`, which was introduced in Kea 1.7.3 and backported to 1.6.3.
+
+Stork requires the premium Host Commands hook library to retrieve host reservations stored in an external database. Stork will
+work without the Host Commands hook, but will not be able to display host reservations. Stork can retrieve host reservations
 stored locally in the Kea configuration without any additional hook libraries.
-
 
 For the ``Stork Server``, a PostgreSQL database
 (https://www.postgresql.org/) version 11 or later
@@ -121,6 +132,9 @@ is also supported by the Stork server.
    $ backend/cmd/stork-db-migrate/stork-db-migrate down -t 0
    $ backend/cmd/stork-db-migrate/stork-db-migrate up --db-trace-queries 2> stork-schema.txt
 
+
+.. _install-pkgs:
+
 Installing from Packages
 ========================
 
@@ -178,8 +192,8 @@ Then, install ``Stork Agent``:
 
    $ sudo dnf install isc-stork-agent
 
-It is possible to install both agent and server on the same machine.
-
+It is possible to install both agent and server on the same machine. If ``dnf`` is not available, ``yum`` can be used in similar
+fashion.
 
 Initial Setup of the Stork Server
 ---------------------------------
@@ -264,13 +278,11 @@ Further configuration and usage of the ``Stork Server`` and the
 Installing from Sources
 =======================
 
-Prerequisites
--------------
+Compilation Prerequisites
+-------------------------
 
-Usually it more convenient to install Stork using native packages. However, you can build
-the sources on your own. ``Stork`` is being tested on Ubuntu 18.04, 20.04, CentOS 7 and Fedora 31,32.
-It is likely the software can be built on many other modern systems, but for the time being our
-testing capabilities are modest.
+Usually it's more convenient to install Stork using native packages. See :ref:`supported_systems` and :ref:`install-pkgs` for
+details regarding supported systems. However, you can build the sources on your own.
 
 The dependencies needed to be installed to build ``Stork`` sources are:
 
