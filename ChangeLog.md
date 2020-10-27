@@ -1,3 +1,10 @@
+* 110 [bug] marcin
+
+    The rake build_agent task now supports building the agent
+    using wget versions older than 1.19. Prior to this change,
+    the agent build was failing on Debian 9.
+    (Gitlab #423)
+    
 * 109 [doc] tomek
 
     Updated Prerequisites section. We now have a single list of
