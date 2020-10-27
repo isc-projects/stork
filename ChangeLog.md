@@ -1,3 +1,9 @@
+* 109 [doc] tomek
+
+    Updated Prerequisites section. We now have a single list of
+    supported systems.
+    (Gitlab #431)
+
 * 108 [test] tomek, marcin
 
     Corrected and extended existing boilerplate WebUI unit tests.
