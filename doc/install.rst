@@ -22,8 +22,8 @@ Currently Stork is being tested on the following systems:
 Note that MacOS is not and will not be officially supported. Many developers in our team use macs, so we're trying to keep Stork
 buildable on this platform.
 
-Stork server and agents are written in go language. The server uses Postgres database. In principle, the software could be run
-on any Posix system that has go compiler and Postgres. It is likely the software can be built on many other modern systems, but
+Stork server and agents are written in Go language. The server uses PostgreSQL database. In principle, the software could be run
+on any POSIX system that has Go compiler and PostgreSQL. It is likely the software can be built on many other modern systems, but
 for the time being our testing capabilities are modest. If your favourite OS is not on this list, please do try running Stork
 and report your findings.
 
