@@ -42,7 +42,7 @@
         </tr>
         <tr>
             <td>Control status:</td>
-            <td>
+            <td id="ha-control-status">
                 <i *ngIf="serverStatus.inTouch" class="pi pi-check" style="color: #00a800"> </i>
                 <i *ngIf="!serverStatus.inTouch" class="pi pi-times" style="color: #f11"> </i>
                 <i>{{ formattedControlStatus() }}</i>
@@ -68,10 +68,11 @@
         </tr>
         <tr>
             <td>State:</td>
-            <td>
-                <i *ngIf="stateOk()" class="pi pi-check" style="color: #00a800"> </i>
-                <i *ngIf="!stateOk()" class="pi pi-times" style="color: #f11"> </i>
-                <i>{{ serverStatus.state }}</i>
+            <td id="ha-server-state">
+                <i *ngIf="stateKind() === StateKind.Ok" class="pi pi-check" style="color: #00a800"> </i>
+                <i *ngIf="stateKind() === StateKind.NotOk" class="pi pi-times" style="color: #f11"> </i>
+                <i *ngIf="stateKind() === StateKind.Pending" class="pi pi-spin pi-spinner" style="color: gray"> </i>
+                <i>{{ formattedState() }}</i>
             </td>
             <td>
                 <app-help-tip title="state" id="help-button-state">
@@ -82,7 +83,7 @@
         <tr>
             <td>Scopes served:</td>
             <td>
-                <i>{{ formattedLocalScopes() }}</i>
+                <i id="ha-local-scopes">{{ formattedLocalScopes() }}</i>
             </td>
             <td></td>
         </tr>

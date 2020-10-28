@@ -2,6 +2,20 @@ import { Component, Input, OnInit } from '@angular/core'
 import { datetimeToLocal } from '../utils'
 
 /**
+ * Enumeration indicating a kind of a server's HA state.
+ *
+ * It is used to distinguish between the situations when the server is
+ * performing normal operation (ok), when the server is in a state which
+ * it may require administrator's attention (not ok) or the state hasn't
+ * been fetched yet (pending).
+ */
+enum HAStateKind {
+    Ok,
+    NotOk,
+    Pending,
+}
+
+/**
  * Component presenting live status of High Availability in Kea for
  * a single server.
  *
@@ -14,6 +28,8 @@ import { datetimeToLocal } from '../utils'
     styleUrls: ['./ha-status-panel.component.sass'],
 })
 export class HaStatusPanelComponent implements OnInit {
+    public StateKind = HAStateKind
+
     /**
      * Holds status fetched for this server from the backend.
      */
@@ -321,7 +337,7 @@ export class HaStatusPanelComponent implements OnInit {
      * exclamation mark on orange triangle is shown.
      */
     serverWarnLevel(): string {
-        if (this.stateOk()) {
+        if (this.stateKind() === HAStateKind.Ok) {
             return 'ok'
         }
         if (this.serverStatus.state === 'unavailable' || this.serverStatus.inTouch === false) {
@@ -331,23 +347,28 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
-     * Checks if the state of the server is good.
+     * Checks kind of a state based on server status information.
      *
-     * The desired state is either load-balancing, hot-standby or passive-backup.
-     * In other cases it means that the servers are booting up or there is some
-     * issue with the partner causing the server to go to partner-down.
+     * Depending on the value returned by this function different icons are
+     * displayed next to the server state.
      *
-     * @returns true if the server is in the load-balancing, hot-standby or
-     *          passive-backup state. This is used in the UI to highlight a
-     *          potential problem.
+     * @returns ok when server status has been fetched and indicates normal
+     *          operation, e.g. load balancing; not ok when server status
+     *          has been fetched and indicates other state; pending if the
+     *          server status hasn't been determined yet.
      */
-    stateOk(): boolean {
-        return (
-            this.hasStatus() &&
-            (this.serverStatus.state === 'load-balancing' ||
-                this.serverStatus.state === 'hot-standby' ||
-                this.serverStatus.state === 'passive-backup')
-        )
+    stateKind(): HAStateKind {
+        if (!this.hasStatus || !this.serverStatus.state || this.serverStatus.state === '') {
+            return HAStateKind.Pending
+        }
+        if (
+            this.serverStatus.state === 'load-balancing' ||
+            this.serverStatus.state === 'hot-standby' ||
+            this.serverStatus.state === 'passive-backup'
+        ) {
+            return HAStateKind.Ok
+        }
+        return HAStateKind.NotOk
     }
 
     /**
@@ -409,6 +430,24 @@ export class HaStatusPanelComponent implements OnInit {
             return 'online'
         }
         return 'offline'
+    }
+
+    /**
+     * Returns formatted HA state of the server.
+     *
+     * This function checks if the HA status of the server is initialized
+     * and returns this status if it is initialized. Otherwise it returns
+     * the "not fetched yet" to indicate that the status will appear once
+     * it is fetched (pending).
+     *
+     * @returns a server status or the text "fetching..." if it is not
+     * available yet.
+     */
+    formattedState(): string {
+        if (!this.hasStatus() || !this.serverStatus.state || this.serverStatus.state === '') {
+            return 'fetching...'
+        }
+        return this.serverStatus.state
     }
 
     /**
