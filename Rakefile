@@ -84,7 +84,7 @@ MOCKGEN = "#{GOBIN}/mockgen"
 RICHGO = "#{GOBIN}/richgo"
 
 # wget
-if system("wget --version").nil?
+if system("wget --version > /dev/null").nil?
   abort("wget is not installed on this system")
 end
 # extract wget version
