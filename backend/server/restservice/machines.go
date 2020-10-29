@@ -1056,10 +1056,12 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 			// will be 0 or 1. Therefore, we take the first HA state if it exists
 			// and return it over the REST API.
 			var (
+				haEnabled   bool
 				haState     string
 				haFailureAt strfmt.DateTime
 			)
 			if haOverview := dbDaemon.GetHAOverview(); len(haOverview) > 0 {
+				haEnabled = true
 				haState = haOverview[0].State
 				if !haOverview[0].LastFailureAt.IsZero() {
 					haFailureAt = strfmt.DateTime(haOverview[0].LastFailureAt)
@@ -1093,6 +1095,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 				Rps1:             int64(dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS1),
 				Rps2:             int64(dbDaemon.KeaDaemon.KeaDHCPDaemon.Stats.RPS2),
 				AddrUtilization:  0,
+				HaEnabled:        haEnabled,
 				HaState:          haState,
 				HaFailureAt:      haFailureAt,
 				Uptime:           dbDaemon.Uptime,

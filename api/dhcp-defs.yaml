@@ -189,6 +189,8 @@
         type: integer
       addrUtilization:
         type: number
+      haEnabled:
+        type: boolean
       haState:
         type: string
       haFailureAt:

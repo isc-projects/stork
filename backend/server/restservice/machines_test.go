@@ -1231,6 +1231,84 @@ func TestGetDhcpOverview(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.DhcpDaemons[0].AgentCommErrors)
 	require.EqualValues(t, 2, okRsp.Payload.DhcpDaemons[0].CaCommErrors)
 	require.EqualValues(t, 5, okRsp.Payload.DhcpDaemons[0].DaemonCommErrors)
+
+	// HA is not enabled.
+	require.False(t, okRsp.Payload.DhcpDaemons[0].HaEnabled)
+	require.Empty(t, okRsp.Payload.DhcpDaemons[0].HaState)
+}
+
+// This test verifies that the overview response includes HA state.
+func TestHAInDhcpOverview(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	// Configure the fake control agents to mimic returning a status of
+	// two HA services for Kea.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add a machine.
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add Kea application to the machine
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234)
+	keaApp := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
+	}
+	_, err = dbmodel.AddApp(db, keaApp)
+	require.NoError(t, err)
+	require.NotZero(t, keaApp.ID)
+
+	// Create an HA service.
+	exampleTime := storkutil.UTCNow().Add(-5 * time.Second)
+	keaService := dbmodel.Service{
+		BaseService: dbmodel.BaseService{
+			ServiceType: "ha_dhcp",
+		},
+		HAService: &dbmodel.BaseHAService{
+			HAType:                   "dhcp4",
+			HAMode:                   "load-balancing",
+			PrimaryID:                keaApp.ID,
+			PrimaryStatusCollectedAt: exampleTime,
+			PrimaryLastState:         "load-balancing",
+			SecondaryLastFailoverAt:  exampleTime,
+		},
+	}
+
+	// Add the service and associate the daemon with that service.
+	err = dbmodel.AddService(db, &keaService)
+	require.NoError(t, err)
+	err = dbmodel.AddDaemonToService(db, keaService.ID, keaApp.Daemons[0])
+	require.NoError(t, err)
+
+	// Get the overview.
+	params := dhcp.GetDhcpOverviewParams{}
+	rsp := rapi.GetDhcpOverview(ctx, params)
+	require.IsType(t, &dhcp.GetDhcpOverviewOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetDhcpOverviewOK)
+	require.Len(t, okRsp.Payload.DhcpDaemons, 1)
+
+	// Test that the HA specific information was returned.
+	require.True(t, okRsp.Payload.DhcpDaemons[0].HaEnabled)
+	require.Equal(t, "load-balancing", okRsp.Payload.DhcpDaemons[0].HaState)
+	require.NotEmpty(t, okRsp.Payload.DhcpDaemons[0].HaFailureAt.String())
 }
 
 // Test updating daemon.
