@@ -756,7 +756,10 @@ task :build_pkgs do
   sh 'git ls-files | tar -czf /stork.tar.gz -T -'
   sh 'tar -C /build -zxvf /stork.tar.gz'
   cwd = Dir.pwd
-  if Dir.exist?("#{cwd}/tools")
+  # If the host is Linux we can copy the tools and they will be compatible with
+  # the container system. On other systems, e.g. macOS the tools will have to
+  # be downloaded and platform specific versions used.
+  if OS != 'linux' and Dir.exist?("#{cwd}/tools")
     sh "cp -a #{cwd}/tools /build"
   end
   if File.exist?('/etc/redhat-release')
@@ -862,6 +865,7 @@ file 'tests/system/venv/bin/activate' do
   end
 end
 
+desc 'Run system tests exercising REST API and communication with agents'
 task :system_tests => 'tests/system/venv/bin/activate' do
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
