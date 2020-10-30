@@ -1,10 +1,19 @@
+* 111 [bug] marcin
+
+    Corrected presentation of the HA state in the dashboard and
+    the HA status panel in cases when HA is enabled for a server
+    but the HA state information was not fetched yet. In such
+    cases a spinner icon and the 'fetching...' text is now
+    presented.
+    (Gitlab #277)
+
 * 110 [bug] marcin
 
     The rake build_agent task now supports building the agent
     using wget versions older than 1.19. Prior to this change,
     the agent build was failing on Debian 9.
     (Gitlab #423)
-    
+
 * 109 [doc] tomek
 
     Updated Prerequisites section. We now have a single list of
