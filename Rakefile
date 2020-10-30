@@ -756,9 +756,11 @@ task :build_pkgs do
   sh 'git ls-files | tar -czf /stork.tar.gz -T -'
   sh 'tar -C /build -zxvf /stork.tar.gz'
   cwd = Dir.pwd
-  # If the host is Linux we can copy the tools and they will be compatible with
-  # the container system. On other systems, e.g. macOS the tools will have to
-  # be downloaded and platform specific versions used.
+  # If the host is using an OS other than Linux, e.g. macOS, the appropriate
+  # versions of tools will have to be downloaded. Thus, we don't copy the
+  # tools from the stork package. If the host OS is Linux, we copy the tools
+  # from the package because the Linux specific tools are compatible with
+  # the containers onto which they are copied.
   if OS != 'linux' and Dir.exist?("#{cwd}/tools")
     sh "cp -a #{cwd}/tools /build"
   end
