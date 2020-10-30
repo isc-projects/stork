@@ -203,13 +203,17 @@ export class DashboardComponent implements OnInit {
     /**
      * Returns the name of the icon to be shown for the given HA state
      *
-     * @returns check, times, exclamation triangle or ban.
+     * @param daemon daemon for which HA state is being displayed.
+     * @returns check, times, exclamation triangle or ban or spinner.
      */
-    haStateIcon(haState) {
-        if (!haState || haState.length === 0) {
+    haStateIcon(daemon) {
+        if (!daemon.haEnabled) {
             return 'ban'
         }
-        switch (haState) {
+        if (!daemon.haState || daemon.haState.length === 0) {
+            return 'spin pi-spinner'
+        }
+        switch (daemon.haState) {
             case 'load-balancing':
             case 'hot-standby':
             case 'backup':
@@ -244,32 +248,35 @@ export class DashboardComponent implements OnInit {
     /**
      * Returns printable HA state value.
      *
+     * @param daemon daemon which state should be returned.
      * @returns state name or 'not configured' if the state name
-     *          is empty.
+     *          is empty or 'fetching' if the state is to be fetched.
      */
-    showHAState(state) {
-        if (!state || state.length === 0) {
+    showHAState(daemon) {
+        if (!daemon.haEnabled) {
             return 'not configured'
         }
-        return state
+        if (!daemon.haState || daemon.haState.length === 0) {
+            return 'fetching...'
+        }
+        return daemon.haState
     }
 
     /**
      * Returns printable time when failover was last triggered for a
      * given daemon.
      *
-     * @param state current HA state of the daemon.
-     * @param t timestamp of the last failure.
+     * @param daemon daemon which last failure time should be returned.
      *
      * @returns empty string of the state is unavailable, timestamp in local
      *          time if it is non-zero or 'never' if the specified timestamp
      *          is zero.
      */
-    showHAFailureTime(state, t) {
-        if (!state || state.length === 0) {
+    showHAFailureTime(daemon) {
+        if (!daemon.haEnabled || !daemon.haState || daemon.haState.length === 0) {
             return ''
         }
-        const localTime = datetimeToLocal(t)
+        const localTime = datetimeToLocal(daemon.haFailureAt)
         if (localTime.length === 0) {
             return 'never'
         }
