@@ -1,6 +1,6 @@
 * 112 [bug] godfryd
 
-    Fixed handling situation when IP address to Kea Control Agent has changed.
+    Fixed handling situation when IP address of Kea Control Agent has changed.
     Till now Stork was not able to detect this and was still communicating to
     the old address. Now it checks if address has changed and updates it
     in the database.
