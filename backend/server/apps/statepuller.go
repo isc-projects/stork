@@ -171,9 +171,13 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 	for _, app := range discoveredApps {
 		// try to match apps on machine with old apps from database
 		var dbApp *dbmodel.App = nil
-		for _, dbApp2 := range oldAppsList {
-			if (app.Type == dbmodel.AppTypeKea && dbApp2.Type == dbmodel.AppTypeKea && oldKeaAppsCnt == 1 && newKeaAppsCnt == 1) || (app.Type == dbmodel.AppTypeBind9 && dbApp2.Type == dbmodel.AppTypeBind9 && oldBind9AppsCnt == 1 && newBind9AppsCnt == 1) || appCompare(dbApp2, app) {
-				dbApp = dbApp2
+		for _, dbAppOld := range oldAppsList {
+			// If there is one app of a given type detected on the machine and one app recorded in the database
+			// we assume that this is the same app. If there are more apps of a given type than used to be,
+			// or there are less apps than it used to be we have to compare their access control information
+			// to identify matching ones.
+			if (app.Type == dbmodel.AppTypeKea && dbAppOld.Type == dbmodel.AppTypeKea && oldKeaAppsCnt == 1 && newKeaAppsCnt == 1) || (app.Type == dbmodel.AppTypeBind9 && dbAppOld.Type == dbmodel.AppTypeBind9 && oldBind9AppsCnt == 1 && newBind9AppsCnt == 1) || appCompare(dbAppOld, app) {
+				dbApp = dbAppOld
 				matchedApps = append(matchedApps, dbApp)
 				break
 			}

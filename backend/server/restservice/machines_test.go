@@ -22,16 +22,6 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// makeAccessPoint is an utility to make an array of one access point.
-func makeAccessPoint(tp, address, key string, port int64) (ap []agentcomm.AccessPoint) {
-	return append(ap, agentcomm.AccessPoint{
-		Type:    tp,
-		Address: address,
-		Port:    port,
-		Key:     key,
-	})
-}
-
 func TestGetVersion(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -229,11 +219,11 @@ func TestGetMachineAndAppsState(t *testing.T) {
 		Apps: []*agentcomm.App{
 			{
 				Type:         dbmodel.AppTypeKea,
-				AccessPoints: makeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "", 123),
+				AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "", 123),
 			},
 			{
 				Type:         dbmodel.AppTypeBind9,
-				AccessPoints: makeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124),
+				AccessPoints: agentcomm.MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124),
 			},
 		},
 	}

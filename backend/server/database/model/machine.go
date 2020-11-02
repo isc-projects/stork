@@ -156,10 +156,7 @@ func GetAllMachines(db *pg.DB) ([]Machine, error) {
 	q = q.Relation("Apps.Daemons.Bind9Daemon")
 
 	err := q.Select()
-	if err != nil {
-		if err == pg.ErrNoRows {
-			return []Machine{}, nil
-		}
+	if err != nil && err != pg.ErrNoRows {
 		return nil, errors.Wrapf(err, "problem with getting machines")
 	}
 

@@ -408,6 +408,13 @@ func TestGetAllMachines(t *testing.T) {
 	machines, err := GetAllMachines(db)
 	require.NoError(t, err)
 	require.Len(t, machines, 20)
+	require.EqualValues(t, "localhost", machines[0].Address)
+	require.EqualValues(t, "localhost", machines[19].Address)
+	require.EqualValues(t, "some error", machines[0].Error)
+	require.EqualValues(t, "some error", machines[19].Error)
+	require.EqualValues(t, 4, machines[0].State.Cpus)
+	require.EqualValues(t, 4, machines[19].State.Cpus)
+	require.NotEqual(t, machines[0].AgentPort, machines[19].AgentPort)
 
 	// paged get should return indicated limit, not all
 	machines, total, err := GetMachinesByPage(db, 0, 10, nil, "", SortDirAny)

@@ -503,3 +503,14 @@ func TestTailTextFile(t *testing.T) {
 	require.Equal(t, "Text returned by", tail[0])
 	require.Equal(t, "mock agent client", tail[1])
 }
+
+// Check MakeAccessPoint.
+func TestMakeAccessPoint(t *testing.T) {
+	aps := MakeAccessPoint(dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124)
+	require.Len(t, aps, 1)
+	ap := aps[0]
+	require.EqualValues(t, dbmodel.AccessPointControl, ap.Type)
+	require.EqualValues(t, "1.2.3.4", ap.Address)
+	require.EqualValues(t, 124, ap.Port)
+	require.EqualValues(t, "abcd", ap.Key)
+}

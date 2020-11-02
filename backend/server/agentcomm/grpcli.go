@@ -68,6 +68,16 @@ type State struct {
 	Apps                 []*App
 }
 
+// MakeAccessPoint is an utility to make an array of one access point.
+func MakeAccessPoint(tp, address, key string, port int64) []AccessPoint {
+	return []AccessPoint{{
+		Type:    tp,
+		Address: address,
+		Port:    port,
+		Key:     key,
+	}}
+}
+
 // Get version from agent.
 func (agents *connectedAgentsData) GetState(ctx context.Context, address string, agentPort int64) (*State, error) {
 	addrPort := net.JoinHostPort(address, strconv.FormatInt(agentPort, 10))
