@@ -1,3 +1,9 @@
+* 115 [func] marcin
+
+    Improved presentation of the HA server scopes. Added a help
+    tip describing expected HA scopes in various cases.
+    (Gitlab #387)
+
 * 114 [bug] godfryd
 
     The links on the dashboard to subnets and shared networks have been
