@@ -130,4 +130,29 @@ describe('HaStatusPanelComponent', () => {
         const scopesList = fixture.debugElement.query(By.css('#ha-local-scopes'))
         expect(scopesList.nativeElement.textContent).toBe('server1, server2')
     })
+
+    it('should include tool tip for served scopes', () => {
+        component.serverStatus = {
+            inTouch: true,
+            scopes: [],
+        }
+        fixture.detectChanges()
+        // Make sure the help tip exists.
+        let scopesHelp = fixture.debugElement.query(By.css('#help-button-scopes-served'))
+        expect(scopesHelp.children.length).toBe(1)
+        // Make sure that the non-empty help tip was included.
+        let scopesHelpPar = scopesHelp.query(By.css('p'))
+        expect(scopesHelpPar.nativeElement.textContent.length).not.toBe(0)
+
+        // It should also be presented even if scopes are null.
+        component.serverStatus = {
+            inTouch: true,
+        }
+        fixture.detectChanges()
+
+        scopesHelp = fixture.debugElement.query(By.css('#help-button-scopes-served'))
+        expect(scopesHelp.children.length).toBe(1)
+        scopesHelpPar = scopesHelp.query(By.css('p'))
+        expect(scopesHelpPar.nativeElement.textContent.length).not.toBe(0)
+    })
 })

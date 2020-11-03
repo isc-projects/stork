@@ -85,7 +85,11 @@
             <td>
                 <i id="ha-local-scopes">{{ formattedLocalScopes() }}</i>
             </td>
-            <td></td>
+            <td>
+                <app-help-tip title="scopes served" id="help-button-scopes-served">
+                    <p>{{ scopesHelptip() }}</p>
+                </app-help-tip>
+            </td>
         </tr>
         <tr *ngIf="!singleActiveServer">
             <td>Last in partner-down:</td>

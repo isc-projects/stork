@@ -188,6 +188,24 @@ export class HaStatusPanelComponent implements OnInit {
     }
 
     /**
+     * Returns help tip for served HA scopes.
+     */
+    scopesHelptip(): string {
+        return (
+            'This is a list of HA scopes being presently served by this ' +
+            'server. If the server is responding to the DHCP queries as a ' +
+            'primary or secondary in the load-balancing mode or as a ' +
+            'primary in the hot-standby mode, it is typically a single scope shown. ' +
+            'There may be two scopes shown if a load balancing server is presently ' +
+            'serving  all DHCP clients when his partner is down. There may be no scopes ' +
+            'shown when it is a standby server in the hot-standby mode, because such ' +
+            'server is not responding to any DHCP queries, but passively receiving ' +
+            'lease updates from the primary. The standby server will start serving ' +
+            'primary server scope in case of primary failure.'
+        )
+    }
+
+    /**
      * Returns help tip for status time.
      */
     statusTimeHelptip(): string {
