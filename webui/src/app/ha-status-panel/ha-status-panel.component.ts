@@ -394,15 +394,21 @@ export class HaStatusPanelComponent implements OnInit {
      *
      * This string is printed in the UI in the local server status box.
      *
-     * @returns string containing comma separated list of scopes or (none).
+     * @returns string containing comma separated list of scopes, the word
+     *          none or none (standby server).
      */
     formattedLocalScopes(): string {
         let scopes: string
-        if (this.hasStatus() && this.serverStatus.scopes) {
-            scopes = this.serverStatus.scopes.join(', ')
+        if (this.hasStatus()) {
+            if (this.serverStatus.scopes) {
+                scopes = this.serverStatus.scopes.join(', ')
+            }
+            if (!scopes && this.serverStatus.state === 'hot-standby' && this.serverStatus.role === 'standby') {
+                scopes = 'none (standby server)'
+            }
         }
 
-        return scopes || '(none)'
+        return scopes || 'none'
     }
 
     /**

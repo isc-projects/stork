@@ -92,7 +92,7 @@ describe('HaStatusPanelComponent', () => {
 
         // Scopes testing.
         const scopesList = fixture.debugElement.query(By.css('#ha-local-scopes'))
-        expect(scopesList.nativeElement.textContent).toBe('(none)')
+        expect(scopesList.nativeElement.textContent).toBe('none')
     })
 
     it('should present offline control status and unavailable server state', () => {
@@ -131,7 +131,45 @@ describe('HaStatusPanelComponent', () => {
         expect(scopesList.nativeElement.textContent).toBe('server1, server2')
     })
 
-    it('should include tool tip for served scopes', () => {
+    it('should present none server scopes', () => {
+        // Simulate the case of the standby server during normal operation.
+        component.serverStatus = {
+            inTouch: true,
+            role: 'standby',
+            state: 'hot-standby',
+            scopes: [],
+        }
+        fixture.detectChanges()
+
+        // none (standby server) is a text to be displayed for a standby server
+        // during normal operation which is not serving any scopes.
+        let scopes = fixture.debugElement.query(By.css('#ha-local-scopes'))
+        expect(scopes.nativeElement.textContent).toBe('none (standby server)')
+
+        // Make sure that the scope is shown if present.
+        component.serverStatus = {
+            inTouch: true,
+            role: 'standby',
+            state: 'hot-standby',
+            scopes: ['server1'],
+        }
+        fixture.detectChanges()
+        scopes = fixture.debugElement.query(By.css('#ha-local-scopes'))
+        expect(scopes.nativeElement.textContent).toBe('server1')
+
+        // The primary server should only contain the word none when no
+        // scopes are served.
+        component.serverStatus = {
+            inTouch: true,
+            role: 'primary',
+            state: 'hot-standby',
+        }
+        fixture.detectChanges()
+        scopes = fixture.debugElement.query(By.css('#ha-local-scopes'))
+        expect(scopes.nativeElement.textContent).toBe('none')
+    })
+
+    it('should provide tool tip for served scopes', () => {
         component.serverStatus = {
             inTouch: true,
             scopes: [],
