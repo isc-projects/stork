@@ -1,3 +1,5 @@
+Stork 0.13.0 released on 2020-11-06.
+
 * 115 [func] marcin
 
     Improved presentation of the HA server scopes. Added a help
