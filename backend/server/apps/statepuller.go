@@ -96,7 +96,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 	return nil
 }
 
-// appCompare compares two apps on equality.  Two apps are considered equal if
+// appCompare compares two apps for equality.  Two apps are considered equal if
 // their type matches and if they have the same control port.  Return true if
 // equal, false otherwise.
 func appCompare(dbApp *dbmodel.App, app *agentcomm.App) bool {
@@ -176,7 +176,9 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 			// we assume that this is the same app. If there are more apps of a given type than used to be,
 			// or there are less apps than it used to be we have to compare their access control information
 			// to identify matching ones.
-			if (app.Type == dbmodel.AppTypeKea && dbAppOld.Type == dbmodel.AppTypeKea && oldKeaAppsCnt == 1 && newKeaAppsCnt == 1) || (app.Type == dbmodel.AppTypeBind9 && dbAppOld.Type == dbmodel.AppTypeBind9 && oldBind9AppsCnt == 1 && newBind9AppsCnt == 1) || appCompare(dbAppOld, app) {
+			if (app.Type == dbmodel.AppTypeKea && dbAppOld.Type == dbmodel.AppTypeKea && oldKeaAppsCnt == 1 && newKeaAppsCnt == 1) ||
+				(app.Type == dbmodel.AppTypeBind9 && dbAppOld.Type == dbmodel.AppTypeBind9 && oldBind9AppsCnt == 1 && newBind9AppsCnt == 1) ||
+				appCompare(dbAppOld, app) {
 				dbApp = dbAppOld
 				matchedApps = append(matchedApps, dbApp)
 				break
