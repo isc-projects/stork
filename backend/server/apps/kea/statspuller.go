@@ -44,7 +44,7 @@ func (statsPuller *StatsPuller) Shutdown() {
 	statsPuller.PeriodicPuller.Shutdown()
 }
 
-// Helper function for getting float value for indicated doubled keys.
+// Helper function for getting a first float value found for the indicated keys.
 func getStatValForKeys(stats map[string]interface{}, keys []string) (float64, bool) {
 	for _, key := range keys {
 		val, ok := stats[key]
