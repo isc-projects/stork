@@ -612,7 +612,6 @@ task :docker_up => :build_all_in_container do
   if ENV['cache'] == 'false'
     cache_opt = '--no-cache'
   end
-  sh 'docker/gen-kea-config.py 7000 > docker/kea-dhcp4-many-subnets.conf'
   sh "docker-compose #{DOCKER_COMPOSE_FILES} build #{DOCKER_COMPOSE_PREMIUM_OPTS} #{cache_opt}"
   sh "docker-compose #{DOCKER_COMPOSE_FILES} up"
 end
@@ -624,6 +623,7 @@ end
 
 desc 'Build all in container'
 task :build_all_in_container do
+  sh 'docker/gen-kea-config.py 7000 > docker/kea-dhcp4-many-subnets.conf'
   # we increase the locked memory limit up to 512kb to work around the problem ocurring on Ubuntu 20.04.
   # for details, see: https://github.com/golang/go/issues/35777 and https://github.com/golang/go/issues/37436
   # The workaround added --ulimit memlock=512 to docker build and --privileged to docker run.
