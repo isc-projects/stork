@@ -175,7 +175,7 @@ def test_change_kea_ca_access_point(agent, server):
     m = data['items'][0]
     assert m['apps'] is not None
     assert len(m['apps']) == 1
-    assert m['apps'][0]['version'] == '1.7.3'
+    assert m['apps'][0]['version'] == '1.8.0'
     assert len(m['apps'][0]['accessPoints']) == 1
     assert m['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'
 

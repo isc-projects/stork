@@ -1,6 +1,7 @@
 package kea
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -152,7 +153,17 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 // we verify only that it has entries in its internal
 // Map of statistics fetched.  This is enough to demonstrate
 // that it is operational.
-func TestStatsPullerPullStats(t *testing.T) {
+func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
+	// 1.6 format
+	totalAddrs := "total-addreses"
+	assignedAddrs := "assigned-addreses"
+	declinedAddrs := "declined-addreses"
+	if statsFormat == "1.8" {
+		totalAddrs = "total-addresses"
+		assignedAddrs = "assigned-addresses"
+		declinedAddrs = "declined-addresses"
+	}
+
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -161,12 +172,12 @@ func TestStatsPullerPullStats(t *testing.T) {
 		// DHCPv4
 		daemons, _ := keactrl.NewDaemons("dhcp4")
 		command, _ := keactrl.NewCommand("stat-lease4-get", daemons, nil)
-		json := `[{
+		json := fmt.Sprintf(`[{
                             "result": 0,
                             "text": "Everything is fine",
                             "arguments": {
                                 "result-set": {
-                                    "columns": [ "subnet-id", "total-addresses", "assigned-addresses", "declined-addresses" ],
+                                    "columns": [ "subnet-id", "%s", "%s", "%s" ],
                                     "rows": [
                                         [ 10, 256, 111, 0 ],
                                         [ 20, 4098, 2034, 4 ]
@@ -174,7 +185,7 @@ func TestStatsPullerPullStats(t *testing.T) {
                                     "timestamp": "2018-05-04 15:03:37.000000"
                                 }
                             }
-                         }]`
+                         }]`, totalAddrs, assignedAddrs, declinedAddrs)
 		keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 
 		// Command and response for DHCP4 RPS statistic pull
@@ -321,4 +332,12 @@ func TestStatsPullerPullStats(t *testing.T) {
 	previous = sp.RpsWorker.PreviousRps[2]
 	require.NotEqual(t, nil, previous)
 	require.EqualValues(t, 66, previous.Value)
+}
+
+func TestStatsPullerPullStatsKea16Format(t *testing.T) {
+	checkStatsPullerPullStats(t, "1.6")
+}
+
+func TestStatsPullerPullStatsKea18Format(t *testing.T) {
+	checkStatsPullerPullStats(t, "1.8")
 }

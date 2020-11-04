@@ -72,13 +72,15 @@ func getStatsFromLocalSubnets(localSubnets []*dbmodel.LocalSubnet, family int, a
 
 		total, ok := getStatValForKeys(lsn.Stats, totalKeys)
 		if !ok {
-			log.Warnf("missing any of total keys in LocalSubnet %d stats", lsn.LocalSubnetID)
+			log.Warnf("missing any of %s and %s keys in LocalSubnet %d stats",
+				totalKeys[0], totalKeys[1], lsn.LocalSubnetID)
 			continue
 		}
 		if total > 0 {
 			assigned, ok := getStatValForKeys(lsn.Stats, assignedKeys)
 			if !ok {
-				log.Warnf("missing any of assigned keys in LocalSubnet %d stats", lsn.LocalSubnetID)
+				log.Warnf("missing any of %s and %s keys in LocalSubnet %d stats",
+					assignedKeys[0], assignedKeys[1], lsn.LocalSubnetID)
 				continue
 			}
 			used := int16(1000 * assigned / total)
@@ -88,7 +90,8 @@ func getStatsFromLocalSubnets(localSubnets []*dbmodel.LocalSubnet, family int, a
 				snAssigned = int64(assigned)
 				declined, ok := getStatValForKeys(lsn.Stats, declinedKeys)
 				if !ok {
-					log.Warnf("missing any of declined keys in LocalSubnet %d stats", lsn.LocalSubnetID)
+					log.Warnf("missing any of %s and %s keys in LocalSubnet %d stats",
+						declinedKeys[0], declinedKeys[1], lsn.LocalSubnetID)
 					continue
 				}
 				snDeclined = int64(declined)
