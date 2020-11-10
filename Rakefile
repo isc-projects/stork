@@ -278,9 +278,9 @@ file AGENT_PB_GO_FILE => [GO, PROTOC, PROTOC_GEN_GO, AGENT_PROTO_FILE] do
 end
 
 # prepare args for dlv debugger
-headless = ''
+ut_dbg_headless = ''
 if ENV['headless'] == 'true'
-  headless = '--headless -l 0.0.0.0:45678'
+  ut_dbg_headless = '--headless -l 0.0.0.0:45678'
 end
 
 desc 'Connect gdlv GUI Go debugger to waiting dlv debugger'
@@ -299,7 +299,7 @@ end
 desc 'Run agent'
 task :run_agent => [:build_agent, GO] do
   if ENV['debug'] == 'true'
-    sh "cd backend/cmd/stork-agent/ && dlv #{headless} debug"
+    sh "cd backend/cmd/stork-agent/ && dlv #{ut_dbg_headless} debug"
   else
     sh "backend/cmd/stork-agent/stork-agent --port 8888"
   end
@@ -308,7 +308,7 @@ end
 desc 'Run server'
 task :run_server => [:build_server, GO] do |t, args|
   if ENV['debug'] == 'true'
-    sh "cd backend/cmd/stork-server/ && dlv #{headless} debug"
+    sh "cd backend/cmd/stork-server/ && dlv #{ut_dbg_headless} debug"
   else
     cmd = 'backend/cmd/stork-server/stork-server'
     if ENV['dbtrace'] == 'true'
@@ -434,7 +434,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
   Dir.chdir('backend') do
     sh "#{GO} generate -v ./..."
     if ENV['debug'] == 'true'
-      sh "dlv #{headless} test #{scope}"
+      sh "dlv #{ut_dbg_headless} test #{scope}"
     else
       gotool = RICHGO
       if ENV['richgo'] == 'false'
@@ -593,7 +593,7 @@ end
 
 desc 'Run unit tests for Angular with Chrome browser.'
 task :ng_test => [NG] do
-  if ENV['debug'] == "true"
+  if ENV['debug'] == "true" or ENV['headless'] == "false"
     run_ng_test("true", "true", "Chrome")
   else
     run_ng_test("false", "false", "ChromeNoSandboxHeadless")
@@ -744,46 +744,79 @@ end
 
 ### Release Tasks #########################
 
+PKGS_BUILD_DIR = "#{Dir.pwd}/.pkgs-build"
+TIMESTAMPED_SRC_TARBALL = "#{PKGS_BUILD_DIR}/stork-#{TIMESTAMP}.tar.gz"
+
+directory PKGS_BUILD_DIR
+
+file TIMESTAMPED_SRC_TARBALL => PKGS_BUILD_DIR do
+  sh "rm -f #{PKGS_BUILD_DIR}/stork*.tar.gz"
+  sh "git ls-files | tar -czf #{TIMESTAMPED_SRC_TARBALL} -T -"
+end
+
 desc 'Prepare release tarball with Stork sources'
 task :tarball do
   sh "git archive --prefix=stork-#{STORK_VERSION}/ -o stork-#{STORK_VERSION}.tar.gz HEAD"
 end
 
+def run_bld_pkgs_in_dkr(dkr_image)
+  cmd = "docker run "
+  cmd += " -v #{PKGS_BUILD_DIR}:/home/$USER "
+  cmd += " -v tools:/tools "
+  cmd += " --user `id -u`:`id -g` "
+  cmd += " --workdir=\"/home/$USER\""
+  cmd += " --volume=\"/etc/group:/etc/group:ro\""
+  cmd += " --volume=\"/etc/passwd:/etc/passwd:ro\""
+  cmd += " --volume=\"/etc/shadow:/etc/shadow:ro\""
+  cmd += " --rm -ti "
+  cmd += " registry.gitlab.isc.org/isc-projects/stork/#{dkr_image}:latest"
+  cmd += " bash -c \""
+  cmd +=      " mkdir -p /tmp/build "
+  cmd +=      " && tar -C /tmp/build -zxvf /home/$USER/stork-#{TIMESTAMP}.tar.gz"
+  cmd +=      " && cd /tmp/build"
+  cmd +=      " && rake build_pkgs STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+  cmd +=      " && mv isc-stork* $HOME/"
+  cmd +=      "\""
+  sh "#{cmd}"
+
+  if dkr_image.include? 'ubuntu'
+    sh "mv #{PKGS_BUILD_DIR}/isc-stork*deb ."
+  else
+    sh "mv #{PKGS_BUILD_DIR}/isc-stork*rpm ."
+  end
+end
+
 desc 'Build debs in Docker. It is used for developer purposes.'
-task :build_debs_in_docker do
-  sh "docker run -v $PWD:/repo --rm -ti registry.gitlab.isc.org/isc-projects/stork/pkgs-ubuntu-18-04:latest rake build_pkgs STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+task :build_debs_in_docker => TIMESTAMPED_SRC_TARBALL do
+  run_bld_pkgs_in_dkr('pkgs-ubuntu-18-04')
 end
 
 desc 'Build RPMs in Docker. It is used for developer purposes.'
-task :build_rpms_in_docker do
-  sh "docker run -v $PWD:/repo --rm -ti registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest rake build_pkgs STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+task :build_rpms_in_docker => TIMESTAMPED_SRC_TARBALL do
+  run_bld_pkgs_in_dkr('pkgs-centos-8')
 end
 
-task :build_pkgs_in_docker => [:build_debs_in_docker, :build_rpms_in_docker]
+task :build_pkgs_in_docker => [TIMESTAMPED_SRC_TARBALL, :build_debs_in_docker, :build_rpms_in_docker]
 
 # Internal task that copies sources and builds packages on a side. It is used by build_debs_in_docker and build_rpms_in_docker.
 task :build_pkgs do
-  sh 'rm -rf /build && mkdir /build'
-  sh 'git ls-files | tar -czf /stork.tar.gz -T -'
-  sh 'tar -C /build -zxvf /stork.tar.gz'
   cwd = Dir.pwd
   # If the host is using an OS other than Linux, e.g. macOS, the appropriate
   # versions of tools will have to be downloaded. Thus, we don't copy the
   # tools from the stork package. If the host OS is Linux, we copy the tools
   # from the package because the Linux specific tools are compatible with
   # the containers onto which they are copied.
-  if OS != 'linux' and Dir.exist?("#{cwd}/tools")
-    sh "cp -a #{cwd}/tools /build"
+  if OS != 'linux' and Dir.exist?("/tools")
+    sh "cp -a /tools /tmp/build"
   end
   if File.exist?('/etc/redhat-release')
     pkg_type = 'rpm'
   else
     pkg_type = 'deb'
   end
-  sh "cd /build && rm -rf /build/root && rake #{pkg_type}_agent STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
-  sh "cd /build && rm -rf /build/root && rake #{pkg_type}_server STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
-  sh "cp /build/isc-stork* #{cwd}"
-  sh "ls -al #{cwd}/isc-stork*"
+  sh "rm -rf root && rake #{pkg_type}_agent STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+  sh "rm -rf root && rake #{pkg_type}_server STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+  sh "ls -al isc-stork*"
 end
 
 desc 'Build all. It builds backend and UI.'
@@ -858,10 +891,18 @@ end
 
 ### System testing ######################
 
+PYTEST = './venv/bin/pytest --tb=long -l -r ap -s'
 SELENIUM_DIR = "#{TOOLS_DIR}/selenium"
-GECKO_DRV = "#{SELENIUM_DIR}/geckodriver"
-CHROME_DRV = "#{SELENIUM_DIR}/chromedriver"
 directory SELENIUM_DIR
+
+GECKO_DRV_VERSION = '0.28.0'
+GECKO_DRV = "#{SELENIUM_DIR}/geckodriver-#{GECKO_DRV_VERSION}"
+GECKO_DRV_URL = "https://github.com/mozilla/geckodriver/releases/download/v#{GECKO_DRV_VERSION}/geckodriver-v#{GECKO_DRV_VERSION}-linux64.tar.gz"
+
+CHROME_DRV_VERSION = '85.0.4183.87'
+CHROME_DRV = "#{SELENIUM_DIR}/chromedriver-#{CHROME_DRV_VERSION}"
+CHROME_DRV_URL = "https://chromedriver.storage.googleapis.com/#{CHROME_DRV_VERSION}/chromedriver_linux64.zip"
+
 
 if ENV['BROWSER'] == 'Chrome'
   selenium_driver_path = CHROME_DRV
@@ -887,23 +928,27 @@ task :system_tests => 'tests/system/venv/bin/activate' do
   end
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
-    sh "./venv/bin/pytest --tb=long -l -r ap -s #{test}"
+    sh "#{PYTEST} #{test}"
   end
 end
 
 file GECKO_DRV => SELENIUM_DIR do
   Dir.chdir(SELENIUM_DIR) do
-    sh "#{WGET} https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux32.tar.gz -O geckodriver.tar.gz"
+    sh "#{WGET} #{GECKO_DRV_URL} -O geckodriver.tar.gz"
     sh 'tar -xf geckodriver.tar.gz'
+    sh "mv geckodriver #{GECKO_DRV}"
     sh 'rm geckodriver.tar.gz'
+    sh "#{GECKO_DRV} -V"
   end
 end
 
 file CHROME_DRV => SELENIUM_DIR do
   Dir.chdir(SELENIUM_DIR) do
-  sh "#{WGET} https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip -O chromedriver_linux64.zip"
-    sh "unzip chromedriver_linux64.zip"
-    sh "rm chromedriver_linux64.zip"
+  sh "#{WGET} #{CHROME_DRV_URL} -O chromedriver.zip"
+    sh "unzip chromedriver.zip"
+    sh "mv chromedriver #{CHROME_DRV}"
+    sh "rm chromedriver.zip"
+    sh "#{CHROME_DRV} --version"
   end
 end
 
@@ -912,9 +957,18 @@ It can be directly selected by BROWSER variable:
   rake system_tests_ui BROWSER=Firefox
   rake system_tests_ui BROWSER=Chrome'
 task :system_tests_ui => ['tests/system/venv/bin/activate', selenium_driver_path] do
+  if ENV['test']
+    test = ENV['test']
+  else
+    test = 'ui/tests_ui_basic.py'
+  end
+  headless_opt = '--headless'
+  if ENV['headless'] == "false"
+    headless_opt = ''
+  end
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
-    sh "./venv/bin/pytest --driver #{ENV['BROWSER']} --driver-path #{selenium_driver_path} -vv --full-trace -r ap -s ui/tests_ui_basic.py --headless"
+    sh "#{PYTEST} #{headless_opt} --driver #{ENV['BROWSER']} --driver-path #{selenium_driver_path} #{test}"
   end
 end
 

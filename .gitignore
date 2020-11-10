@@ -51,6 +51,7 @@ TAGS
 
 # build stuff when performing build all in a container
 /build-root
+/.pkgs-build
 
 # generated files for docker containers
 /docker/kea-dhcp4-many-subnets.conf
@@ -59,3 +60,4 @@ TAGS
 /tests/system/venv/
 /tests/system/__pycache__/
 /tests/system/test-results/
+/tests/system/ui/__pycache__/

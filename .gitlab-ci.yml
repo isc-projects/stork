@@ -188,7 +188,7 @@ system_testing:
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   script:
     - apt-get update
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-venv rake net-tools
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-venv rake net-tools firefox
     # - ifconfig
     # - lxc --version
     # - lxc network list
@@ -200,6 +200,7 @@ system_testing:
     # - lxc profile show default
     # - cat /etc/netplan/*
     # - cat /etc/network/interfaces
+    # - rake system_tests_ui  # TODO: enable when UI tests are stable
     - rake system_tests
 
 

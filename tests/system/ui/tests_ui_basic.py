@@ -11,35 +11,8 @@ from selenium_checks import check_phrases, find_and_check_tooltip, refresh_until
     move_to_different_place, check_help_text, go_to_dashboard, add_stork_agent_machine, check_popup_notification
 
 
-def _get_test_distros(selenium):
-    # this is temporary, making running UI tests on different browsers in parallel possible
-    if selenium.name == 'firefox':
-        # return 'centos/7', 'centos/7'
-        return 'ubuntu/18.04', 'ubuntu/18.04'
-    else:
-        return 'centos/7', 'centos/7'
-
-
-def prepare_one_server_and_agent(agent_distro, server_distro):
-    s = containers.StorkServerContainer(alias=server_distro)
-    a = containers.StorkAgentContainer(alias=agent_distro)
-
-    s.setup_bg()
-    a.setup_bg()
-    s.setup_wait()
-    a.setup_wait()
-
-    time.sleep(3)
-
-    return s, a
-
-
-@pytest.fixture(scope="module")
-def local_or_lxd(request):
-    return request.config.getoption("--local-stork")
-
-
-def test_login_create_user_logout_login_with_new(selenium, local_or_lxd):
+@pytest.mark.parametrize("agent, server", [('centos/7', 'centos/7')])
+def test_login_create_user_logout_login_with_new(selenium, agent, server):
     """
     Login with default credentials
     Create new user with admin rights
@@ -51,12 +24,7 @@ def test_login_create_user_logout_login_with_new(selenium, local_or_lxd):
     Try to login with old credentials - should fail
     Login with new credentials
     """
-    agent_distro, server_distro = _get_test_distros(selenium)
-    if local_or_lxd is None:
-        s, a = prepare_one_server_and_agent(agent_distro, server_distro)
-        selenium.get('http://localhost:%d' % s.port)
-    else:
-        selenium.get(local_or_lxd)
+    selenium.get('http://localhost:%d' % server.port)
 
     selenium.implicitly_wait(10)
     assert "Stork" in selenium.title
@@ -143,7 +111,8 @@ def test_login_create_user_logout_login_with_new(selenium, local_or_lxd):
     selenium.close()
 
 
-def test_add_new_machine(selenium):
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'ubuntu/18.04')])
+def test_add_new_machine(selenium, agent, server):
     """
     Login with default credentials
     Add stork agent with Kea4 and CA running
@@ -171,10 +140,12 @@ def test_add_new_machine(selenium):
     Go to Services > Machines and remove first machine from the list
     Go to Dashboard and check if it's empty
     """
+    # install kea on the agent machine
+    agent.install_kea()
+
     # TODO change xpaths to ids where we can
-    s, a = prepare_one_server_and_agent('ubuntu/18.04', 'ubuntu/18.04')
-    print('http://localhost:%d' % s.port)
-    selenium.get('http://localhost:%d' % s.port)
+    print('http://localhost:%d' % server.port)
+    selenium.get('http://localhost:%d' % server.port)
 
     selenium.implicitly_wait(10)
     assert "Stork" in selenium.title
@@ -199,17 +170,17 @@ def test_add_new_machine(selenium):
 
     selenium.find_element_by_id('add-new-machine').click()
     selenium.find_element_by_id("machine-address").clear()
-    selenium.find_element_by_id("machine-address").send_keys(a.mgmt_ip)
+    selenium.find_element_by_id("machine-address").send_keys(agent.mgmt_ip)
     selenium.find_element_by_id('add-new-machine-page').click()
 
-    check_phrases(selenium, ["%s:8080" % a.mgmt_ip, "Hostame", "Address", "Agent Version", "Memory",
+    check_phrases(selenium, ["%s:8080" % agent.mgmt_ip, "Hostame", "Address", "Agent Version", "Memory",
                              "Used Memory", "Uptime", "Virtualization", "Last Visited"])
     check_phrases(selenium, ["Machines can be added by clicking the", "No machines found.", "Add New Machine"],
                   expect=False)
 
     selenium.find_element_by_id('services').click()
     selenium.find_element_by_id('machines').click()
-    check_phrases(selenium, ["%s:8080" % a.mgmt_ip, "stork-agent-ubuntu-18-04"])
+    check_phrases(selenium, ["%s:8080" % agent.mgmt_ip, "stork-agent-ubuntu-18-04"])
 
     # check help
     check_help_text(selenium, 'help-button-this-page', 'help-for-this page',
@@ -284,8 +255,8 @@ def test_add_new_machine(selenium):
     check_phrases(selenium, ["192.0.2.0/24", "192.0.2.1-192.0.2.200"])
 
     # install kea
-    a.install_kea('kea-dhcp6')
-    a.start_kea('kea-dhcp6')
+    agent.install_kea('kea-dhcp6')
+    agent.start_kea('kea-dhcp6')
 
     selenium.find_element_by_id('services').click()
     selenium.find_element_by_id('kea-apps').click()
@@ -402,8 +373,8 @@ def test_add_new_machine(selenium):
     # selenium.find_element_by_class_name("ui-inputswitch").click()
     # check_phrases(selenium, "There is observed issue in communication with the daemon.")
     #
-    # a.install_kea('kea-dhcp-ddns')
-    # a.start_kea('kea-dhcp-ddns')
+    # agent.install_kea('kea-dhcp-ddns')
+    # agent.start_kea('kea-dhcp-ddns')
     # selenium.find_element_by_id('services').click()
     # selenium.find_element_by_id('kea-apps').click()
     #
