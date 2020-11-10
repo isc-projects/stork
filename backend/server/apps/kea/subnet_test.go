@@ -1,7 +1,10 @@
 package kea
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	require "github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
@@ -614,4 +617,32 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	network, err = dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
 	require.NoError(t, err)
 	require.Len(t, network.Subnets, 3)
+}
+
+// Benchmark measuring performance of the subnetExists function. This function
+// checks if the given subnet belongs to the set of existing subnets. It uses
+// indexing by prefix to lookup an existing subnet.
+func BenchmarkSubnetExists(b *testing.B) {
+	// Create many subnets.
+	subnets := []dbmodel.Subnet{}
+	for i := 0; i < 10000; i++ {
+		subnet := dbmodel.Subnet{
+			Prefix: fmt.Sprintf("%d.%d.%d.%d/24", byte(i>>24), byte(i>>16), byte(i>>8), byte(i)),
+		}
+		subnets = append(subnets, subnet)
+	}
+	// Index the subnets.
+	existingSubnets := dbmodel.NewIndexedSubnets(subnets)
+	existingSubnets.Populate()
+
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	// The actual benchmark starts here.
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Randomize the subnet to be looked up.
+		subnetIndex := rand.Intn(len(subnets))
+		// Find the subnet using indexes.
+		subnetExists(&subnets[subnetIndex], existingSubnets)
+	}
 }

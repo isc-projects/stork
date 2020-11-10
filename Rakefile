@@ -409,6 +409,11 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     test_regex = ''
   end
 
+  bench_params = ''
+  if ENV['benchmark'] == 'true'
+    bench_params = '-bench=.'
+  end
+
   # establish location of postgresql database
   pgsql_host = 'localhost'
   pgsql_port = '5432'
@@ -440,7 +445,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
       if ENV['richgo'] == 'false'
         gotool = GO
       end
-      sh "#{gotool} test -race -v #{cov_params} #{test_regex} #{scope}"  # count=1 disables caching results
+      sh "#{gotool} test #{bench_params} -race -v #{cov_params} #{test_regex} #{scope}"  # count=1 disables caching results
     end
 
     # drop test databases
