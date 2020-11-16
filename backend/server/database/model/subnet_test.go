@@ -1,10 +1,15 @@
 package dbmodel
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
+	keaconfig "isc.org/stork/appcfg/kea"
+	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -755,4 +760,110 @@ func TestUpdateUtilization(t *testing.T) {
 	require.NotNil(t, returnedSubnet2)
 	require.EqualValues(t, 10, returnedSubnet2.AddrUtilization)
 	require.EqualValues(t, 20, returnedSubnet2.PdUtilization)
+}
+
+// Benchmark measuring a time to add a single subnet.
+func BenchmarkAddSubnet(b *testing.B) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
+	defer teardown()
+
+	tx, rollback, commit, _ := dbops.Transaction(db)
+	defer rollback()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		prefix := fmt.Sprintf("%d.%d.%d.", uint8(i>>16), uint8(i>>8), uint8(i))
+		subnet := &Subnet{
+			Prefix: prefix + "0/24",
+			AddressPools: []AddressPool{
+				{
+					LowerBound: prefix + "1",
+					UpperBound: prefix + "10",
+				},
+			},
+		}
+		AddSubnet(tx, subnet)
+	}
+	commit()
+}
+
+// Benchmark measuring a time to associate a subnet with an app. This requires
+// finding local subnet ID within the app configuration by subnet prefix.
+// In order to find a subnet in the app configuration it is possible to use
+// indexed and unindexed subnets. Thus, this bechmark cotain two test cases,
+// one checking performance of the function with indexing and without indexing.
+// The function execution time should be significantly longer without indexing.
+func BenchmarkAddAppToSubnet(b *testing.B) {
+	testCases := []string{"without indexing", "with indexing"}
+
+	// Run sub tests.
+	for _, testCase := range testCases {
+		tc := testCase
+		b.Run(tc, func(b *testing.B) {
+			db, _, teardown := dbtest.SetupDatabaseTestCase(b)
+			defer teardown()
+
+			tx, rollback, commit, _ := dbops.Transaction(db)
+			defer rollback()
+
+			// Add many subnets to the database.
+			subnets := []Subnet{}
+			keaSubnets := []interface{}{}
+			for i := 0; i < 10000; i++ {
+				prefix := fmt.Sprintf("%d.%d.%d.", uint8(i>>16), uint8(i>>8), uint8(i))
+				subnet := Subnet{
+					Prefix: prefix + "0/24",
+				}
+				keaSubnet := map[string]interface{}{
+					"id":     i + 1,
+					"subnet": prefix + "0/24",
+				}
+				AddSubnet(tx, &subnet)
+				subnets = append(subnets, subnet)
+				keaSubnets = append(keaSubnets, keaSubnet)
+			}
+			commit()
+
+			// Also create the configuration including these subnets for the app.
+			rawConfig := &map[string]interface{}{
+				"Dhcp4": map[string]interface{}{
+					"subnet4": keaSubnets,
+				},
+			}
+			daemon := NewKeaDaemon("dhcp4", true)
+			daemon.SetConfig(NewKeaConfig(rawConfig))
+
+			// When measuring time with indexing, we need to build indexes before
+			// running the actual benchmark.
+			if tc == "with indexing" {
+				indexedSubnets := keaconfig.NewIndexedSubnets(daemon.KeaDaemon.Config)
+				daemon.KeaDaemon.KeaDHCPDaemon.IndexedSubnets = indexedSubnets
+			}
+
+			// Add machine/app.
+			machine := &Machine{
+				ID:        0,
+				Address:   "localhost",
+				AgentPort: 8080,
+			}
+			AddMachine(db, machine)
+			app := &App{
+				ID:        0,
+				Type:      AppTypeKea,
+				MachineID: machine.ID,
+				Daemons: []*Daemon{
+					daemon,
+				},
+			}
+			AddApp(db, app)
+
+			// Run the actual benchmark.
+			rand.Seed(time.Now().UTC().UnixNano())
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				subnetIndex := rand.Intn(len(subnets))
+				AddAppToSubnet(db, &subnets[subnetIndex], app)
+			}
+		})
+	}
 }

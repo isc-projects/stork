@@ -8,6 +8,7 @@ import (
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
@@ -484,6 +485,19 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 	}
 	for _, ev := range changeEvents {
 		eventCenter.AddEvent(ev)
+	}
+
+	// Associating an app with subnets is expensive operation. It involves finding
+	// local subnet id for each subnet. In order for this operation to be efficient
+	// we have to index subnets in the Kea configurations so the local subnet id
+	// can be quickly found by subnet prefix.
+	for i := range app.Daemons {
+		if app.Daemons[i].KeaDaemon != nil &&
+			app.Daemons[i].KeaDaemon.Config != nil &&
+			app.Daemons[i].KeaDaemon.KeaDHCPDaemon != nil {
+			indexedSubnets := keaconfig.NewIndexedSubnets(app.Daemons[i].KeaDaemon.Config)
+			app.Daemons[i].KeaDaemon.KeaDHCPDaemon.IndexedSubnets = indexedSubnets
+		}
 	}
 
 	// For the given app, iterate over the networks and subnets and update their

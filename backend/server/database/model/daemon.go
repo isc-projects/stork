@@ -37,6 +37,10 @@ type KeaDHCPDaemon struct {
 	ID          int64
 	KeaDaemonID int64
 	Stats       KeaDHCPDaemonStats
+
+	// Optionally initialized structure holding indexed collection
+	// of subnets. It is created from the KeaDaemon.Config field.
+	IndexedSubnets *keaconfig.IndexedSubnets `pg:"-"`
 }
 
 // A structure holding common information for all Kea daemons. It

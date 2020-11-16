@@ -17,8 +17,9 @@ import (
 
 // go-pg specific database connection options.
 // Prepares unit test setup by re-creating the database schema and
-// returns pointer to the teardown function.
-func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
+// returns pointer to the teardown function. The specified argument
+// must be of a *testing.T or *testing.B type.
+func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
 	// Common set of database connection options which may be converted to a string
 	// of space separated options used by SQL drivers.
 	genericConnOptions := dbops.DatabaseSettings{
@@ -29,6 +30,19 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 			Host:     "localhost",
 			Port:     5432,
 		},
+	}
+
+	var (
+		t  *testing.T
+		b  *testing.B
+		ok bool
+	)
+	t, ok = (testArg).(*testing.T)
+	if !ok {
+		b, ok = (testArg).(*testing.B)
+		if !ok {
+			panic("specified test parameter must have *testing.T or *testing.B type")
+		}
 	}
 
 	// Convert generic options to go-pg options.
@@ -56,7 +70,11 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 	if db == nil {
 		log.Fatalf("unable to create database instance: %+v", err)
 	}
-	require.NoError(t, err)
+	if t != nil {
+		require.NoError(t, err)
+	} else if b != nil && err != nil {
+		b.Fatalf("%s", err)
+	}
 
 	// Create test database from template. Template db is storktest (no tests should use it directly).
 	// Test database name is storktest + big random number e.g.: storktest9817239871871478571.
@@ -65,11 +83,19 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 
 	cmd := fmt.Sprintf(`DROP DATABASE IF EXISTS %s;`, dbName)
 	_, err = db.Exec(cmd)
-	require.NoError(t, err)
+	if t != nil {
+		require.NoError(t, err)
+	} else if b != nil && err != nil {
+		b.Fatalf("%s", err)
+	}
 
 	cmd = fmt.Sprintf(`CREATE DATABASE %s TEMPLATE storktest;`, dbName)
 	_, err = db.Exec(cmd)
-	require.NoError(t, err)
+	if t != nil {
+		require.NoError(t, err)
+	} else if b != nil && err != nil {
+		b.Fatalf("%s", err)
+	}
 
 	db.Close()
 
@@ -81,7 +107,11 @@ func SetupDatabaseTestCase(t *testing.T) (*dbops.PgDB, *dbops.DatabaseSettings, 
 	if db == nil {
 		log.Fatalf("unable to create database instance: %+v", err)
 	}
-	require.NoError(t, err)
+	if t != nil {
+		require.NoError(t, err)
+	} else if b != nil && err != nil {
+		b.Fatalf("%s", err)
+	}
 
 	// enable tracing sql queries if requested
 	if _, ok := os.LookupEnv("STORK_DATABASE_TRACE"); ok {

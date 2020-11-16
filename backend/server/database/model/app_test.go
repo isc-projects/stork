@@ -1,12 +1,12 @@
 package dbmodel
 
 import (
-	"context"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
 	//log "github.com/sirupsen/logrus"
 
+	keaconfig "isc.org/stork/appcfg/kea"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -1021,11 +1021,23 @@ func TestGetAllApps(t *testing.T) {
 
 // Test that local subnet id of the Kea subnet can be extracted.
 func TestGetLocalSubnetID(t *testing.T) {
-	ctx := context.Background()
+	config, err := NewKeaConfigFromJSON(`{
+		"Dhcp4": {
+            "subnet4": [
+				{
+					"id":     1,
+					"subnet": "192.0.2.0/24"
+				}
+            ]
+        }
+    }`)
+	require.NotNil(t, config)
+	require.NoError(t, err)
 
+	// Create an app with the given configuration.
 	accessPoints := []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234)
-	aKea := &App{
+	app := &App{
 		ID:           0,
 		MachineID:    0,
 		Type:         AppTypeKea,
@@ -1034,27 +1046,62 @@ func TestGetLocalSubnetID(t *testing.T) {
 		Daemons: []*Daemon{
 			{
 				KeaDaemon: &KeaDaemon{
-					Config: NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": map[string]interface{}{
-							"subnet4": []map[string]interface{}{
-								{
-									"id":     1,
-									"subnet": "192.0.2.0/24",
-								},
-							},
-						},
-					}),
+					Config: config,
 				},
 			},
 		},
 	}
 
-	err := aKea.Daemons[0].KeaDaemon.AfterScan(ctx)
-	require.Nil(t, err)
-	require.NotNil(t, aKea.Daemons[0].KeaDaemon.Config)
+	// Try to find a non-existing subnet.
+	require.Zero(t, app.GetLocalSubnetID("192.0.3.0/24"))
+	// Next, try to find the existing subnet.
+	require.EqualValues(t, 1, app.GetLocalSubnetID("192.0.2.0/24"))
+}
+
+// Test that local subnet id of a Kea subnet can be extracted from the indexed
+// collection of subnets.
+func TestGetLocalSubnetIDWithIndexing(t *testing.T) {
+	config, err := NewKeaConfigFromJSON(`{
+		"Dhcp4": {
+            "subnet4": [
+				{
+					"id":     1,
+					"subnet": "192.0.2.0/24"
+				}
+            ]
+        }
+    }`)
+	require.NotNil(t, config)
+	require.NoError(t, err)
+
+	// Index subnets stored in the configuration.
+	indexedSubnets := keaconfig.NewIndexedSubnets(config)
+	require.NotNil(t, indexedSubnets)
+	err = indexedSubnets.Populate()
+	require.NoError(t, err)
+
+	// Create an app and assign indexed subnets with it.
+	accessPoints := []*AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234)
+	app := &App{
+		ID:           0,
+		MachineID:    0,
+		Type:         AppTypeKea,
+		Active:       true,
+		AccessPoints: accessPoints,
+		Daemons: []*Daemon{
+			{
+				KeaDaemon: &KeaDaemon{
+					KeaDHCPDaemon: &KeaDHCPDaemon{
+						IndexedSubnets: indexedSubnets,
+					},
+				},
+			},
+		},
+	}
 
 	// Try to find a non-existing subnet.
-	require.Zero(t, aKea.GetLocalSubnetID("192.0.3.0/24"))
+	require.Zero(t, app.GetLocalSubnetID("192.0.3.0/24"))
 	// Next, try to find the existing subnet.
-	require.EqualValues(t, 1, aKea.GetLocalSubnetID("192.0.2.0/24"))
+	require.EqualValues(t, 1, app.GetLocalSubnetID("192.0.2.0/24"))
 }
