@@ -222,6 +222,40 @@ At the end of tests execution there is coverage report presented. If
 coverage of any module is below a threshold of 35% then an error is
 raised.
 
+Backend Benchmarks
+==================
+
+Benchmarks are part of the backend unit tests. They are implemented using the
+golang "testing" library and they test performance sensitive parts of the
+backend. Unlike unit tests, the benchmarks do not return pass/fail status.
+They measure average execution time of functions and print the results to
+the console.
+
+In order to run unit tests with benchmarks the ``benchmark`` environment
+variable must be specified as follows:
+
+.. code:: console
+
+          $ rake unittest_backend benchmark=true
+
+This command will run all unit tests and all benchmarks. Running benchmarks
+without unit tests is possible using the combination of ``benchmark`` and
+``test`` environment variables:
+
+.. code:: console
+
+          $ rake unittest_backend benchmark=true test=Bench
+
+Benchmarks are useful to test performance of complex functions and find
+bottlenecks. When working on improving performance of a function, examining a
+benchmark result before and after the changes is a good practice to ensure
+that the goals of the changes are achieved.
+
+Similarly, adding a new logic to a function will often cause performance
+degradation and careful examination of the benchmark result drop for that
+function may be a driver for improving efficiency of the new code.
+
+
 WebUI Unit Tests
 ================
 
