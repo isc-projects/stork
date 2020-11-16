@@ -1,3 +1,11 @@
+* 116 [perf] marcin
+
+    Improved performance of connecting Stork to large Kea installation
+    with many subnets. Adding subnets to the database is now much more
+    efficient as it avoids extensive subnet lookups. Instead it uses
+    indexing techniques.
+    (Gitlab #421)
+
 Stork 0.13.0 released on 2020-11-06.
 
 * 115 [func] marcin
