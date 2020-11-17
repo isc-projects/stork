@@ -179,9 +179,9 @@ text.each_line do |line|
 end
 STORK_VERSION = stork_version
 
-# CHROME_BIN is required for UI tests. If it is not by a user,
-# try to locate Chrome binary set environment variable to its
-# location.
+# CHROME_BIN is required for UI unit tests and system tests. If it is
+# not provided by a user, try to locate Chrome binary and set
+# environment variable to its location.
 if !ENV['CHROME_BIN']
   chrome_locations = []
   if OS == 'linux'
@@ -899,10 +899,24 @@ GECKO_DRV_VERSION = '0.28.0'
 GECKO_DRV = "#{SELENIUM_DIR}/geckodriver-#{GECKO_DRV_VERSION}"
 GECKO_DRV_URL = "https://github.com/mozilla/geckodriver/releases/download/v#{GECKO_DRV_VERSION}/geckodriver-v#{GECKO_DRV_VERSION}-linux64.tar.gz"
 
-CHROME_DRV_VERSION = '85.0.4183.87'
-CHROME_DRV = "#{SELENIUM_DIR}/chromedriver-#{CHROME_DRV_VERSION}"
-CHROME_DRV_URL = "https://chromedriver.storage.googleapis.com/#{CHROME_DRV_VERSION}/chromedriver_linux64.zip"
-
+if ENV['CHROME_BIN']
+  out = `#{ENV['CHROME_BIN']} --version`
+  if out.include? '85.'
+    CHROME_DRV_VERSION = '85.0.4183.87'
+  elsif out.include? '86.'
+    CHROME_DRV_VERSION = '86.0.4240.22'
+  elsif out.include? '87.'
+    CHROME_DRV_VERSION = '87.0.4280.20'
+  else
+    CHROME_DRV_VERSION = ""
+    puts "Cannot match Chrome browser version and chromedriver version"
+    puts out
+  end
+  if CHROME_DRV_VERSION
+    CHROME_DRV = "#{SELENIUM_DIR}/chromedriver-#{CHROME_DRV_VERSION}"
+    CHROME_DRV_URL = "https://chromedriver.storage.googleapis.com/#{CHROME_DRV_VERSION}/chromedriver_linux64.zip"
+  end
+end
 
 if ENV['BROWSER'] == 'Chrome'
   selenium_driver_path = CHROME_DRV
@@ -942,13 +956,15 @@ file GECKO_DRV => SELENIUM_DIR do
   end
 end
 
-file CHROME_DRV => SELENIUM_DIR do
-  Dir.chdir(SELENIUM_DIR) do
-  sh "#{WGET} #{CHROME_DRV_URL} -O chromedriver.zip"
-    sh "unzip chromedriver.zip"
-    sh "mv chromedriver #{CHROME_DRV}"
-    sh "rm chromedriver.zip"
-    sh "#{CHROME_DRV} --version"
+if ENV['CHROME_BIN']
+  file CHROME_DRV => SELENIUM_DIR do
+    Dir.chdir(SELENIUM_DIR) do
+      sh "#{WGET} #{CHROME_DRV_URL} -O chromedriver.zip"
+      sh "unzip chromedriver.zip"
+      sh "mv chromedriver #{CHROME_DRV}"
+      sh "rm chromedriver.zip"
+      sh "#{CHROME_DRV} --version"
+    end
   end
 end
 

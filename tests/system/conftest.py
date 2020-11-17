@@ -12,7 +12,6 @@ import pytest
 def pytest_addoption(parser):
     parser.addoption("--stork-rpm-ver", action="store", help="Stork RPM packages version")
     parser.addoption("--stork-deb-ver", action="store", help="Stork deb packages version")
-    parser.addoption("--local-stork", action="store", help="Run tests against locally running stork")
     group = parser.getgroup('selenium', 'selenium')
     group._addoption('--headless', action='store_true', help='Headless mode')
 
