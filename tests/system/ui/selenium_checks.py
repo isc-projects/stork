@@ -207,7 +207,12 @@ def find_and_check_tooltip(sel, tooltip_text, element_text=None, xpath=None, ele
         element = find_element(sel, 'id', element_id)
     else:
         assert False, "you have to set element_text or xpath."
-    ActionChains(sel).move_to_element(element).perform()
+    for _ in range(7):
+        try:
+            ActionChains(sel).move_to_element(element).perform()
+            break
+        except:
+            pass
     display_sleep(sel)
     if not use_in_refresh:
         el = find_element(sel, 'class_name', tooltip_class)
