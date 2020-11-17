@@ -4,6 +4,40 @@ from selenium.common.exceptions import ElementNotInteractableException
 from selenium.webdriver.common.action_chains import ActionChains
 
 
+def find_element(sel, element_type, element, number_of_tests=10):
+    for i in range(1, number_of_tests + 1):
+        try:
+            if element_type == 'xpath':
+                el = sel.find_element_by_xpath(element)
+                el.is_displayed()
+                print("Element '%s' found by it's type: %s" % (element, element_type))
+                return el
+            elif element_type == 'id':
+                el = sel.find_element_by_id(element)
+                el.is_displayed()
+                print("Element '%s' found by it's type: %s" % (element, element_type))
+                return el
+            elif element_type == 'name':
+                el = sel.find_element_by_name(element)
+                el.is_displayed()
+                print("Element '%s' found by it's type: %s" % (element, element_type))
+                return el
+            elif element_type == 'class_name':
+                el = sel.find_element_by_class_name(element)
+                el.is_displayed()
+                print("Element '%s' found by it's type: %s" % (element, element_type))
+                return el
+            elif element_type == 'link_text':
+                el = sel.find_element_by_link_text(element)
+                el.is_displayed()
+                print("Element '%s' found by it's type: %s" % (element, element_type))
+                return el
+            else:
+                print("Element %s not defined" % element_type)
+        except:
+            print('!!!! Iteration no. %d: Failed to find element "%s" by type: %s' % (i, element, element_type))
+
+
 def display_sleep(sel, sec=1):
     """
     Add time.sleep if test are NOT running in headless mode.
@@ -16,7 +50,7 @@ def display_sleep(sel, sec=1):
         time.sleep(sec)
     else:
         # I can't run chrome tests, I don't know how to check it for headless mode TODO fix it :)
-        time.sleep(1)
+        time.sleep(sec)
 
 
 def check_help_text(sel, id_of_help_button, id_of_help_test, help_text):
@@ -29,10 +63,10 @@ def check_help_text(sel, id_of_help_button, id_of_help_test, help_text):
     :return:
     """
     close_all_popup_notifications(sel)
-    help_button = sel.find_element_by_id(id_of_help_button)
+    help_button = find_element(sel, 'id', id_of_help_button)
     help_button.click()
     print("Checking help content:\n\t%s" % help_text, end='')
-    assert help_text in sel.find_element_by_id(id_of_help_test).text
+    assert help_text in find_element(sel, 'id', id_of_help_test).text
     print(" - OK!")
     help_button.click()
     display_sleep(sel)
@@ -44,9 +78,9 @@ def check_popup_notification(sel, text_message):
     :param sel:  driver
     :param text_message: string, message that should be included in popup
     """
-    sel.find_element_by_class_name('ui-toast-close-icon')
-    assert text_message in sel.find_element_by_class_name('ui-toast-summary').text
-    sel.find_element_by_class_name('ui-toast-close-icon').click()
+    el = find_element(sel, 'class_name', 'ui-toast-close-icon')
+    assert text_message in find_element(sel, 'class_name', 'ui-toast-summary').text
+    el.click()
     display_sleep(sel)
 
 
@@ -68,7 +102,7 @@ def close_all_popup_notifications(sel, text_message=None, counter_limit=10):
             # if there is no notification - break loop
             break
         if text_message is not None:
-            assert text_message in sel.find_element_by_class_name('ui-toast-message').text
+            assert text_message in find_element(sel, 'class_name', 'ui-toast-message').text
         close_icon.click()
         display_sleep(sel)
 
@@ -80,15 +114,15 @@ def add_stork_agent_machine(sel, address, port=None):
     :param address: address of agent
     :param port: port of an agent
     """
-    sel.find_element_by_id('services').click()
-    sel.find_element_by_id('machines').click()
-    sel.find_element_by_id('add-new-machine').click()
-    sel.find_element_by_id("machine-address").clear()
-    sel.find_element_by_id("machine-address").send_keys(address)
+    find_element(sel, 'id', 'services').click()
+    find_element(sel, 'id', 'machines').click()
+    find_element(sel, 'id', 'add-new-machine').click()
+    find_element(sel, 'id', "machine-address").clear()
+    find_element(sel, 'id', "machine-address").send_keys(address)
     if port is not None:
-        sel.find_element_by_id("agent-port").clear()
-        sel.find_element_by_id("agent-port").send_keys(port)
-    sel.find_element_by_id('add-new-machine-page').click()
+        find_element(sel, 'id', "agent-port").clear()
+        find_element(sel, 'id', "agent-port").send_keys(port)
+    find_element(sel, 'id', 'add-new-machine-page').click()
 
 
 def move_to_different_place(sel, element_id="stork-logo-small"):
@@ -98,7 +132,7 @@ def move_to_different_place(sel, element_id="stork-logo-small"):
     :param sel:
     :param element_id: string
     """
-    ActionChains(sel).move_to_element(sel.find_element_by_id(element_id)).perform()
+    ActionChains(sel).move_to_element(find_element(sel, 'id', element_id)).perform()
 
 
 def go_to_dashboard(sel):
@@ -106,7 +140,7 @@ def go_to_dashboard(sel):
     Go to main page
     :param sel: driver
     """
-    sel.find_element_by_id("stork-logo-small").click()
+    find_element(sel, 'id', "stork-logo-small").click()
 
 
 def stork_login(sel, username, password, expect=True):
@@ -118,26 +152,26 @@ def stork_login(sel, username, password, expect=True):
     :param password: string
     :param expect: bool, check if login was successful
     """
-    sel.find_element_by_id("username").clear()
-    sel.find_element_by_id("username").send_keys(username)
-    sel.find_element_by_id("password").clear()
-    sel.find_element_by_id("password").send_keys(password)
-    sel.find_element_by_id("sign-in-button").click()
+    find_element(sel, 'id', "username").clear()
+    find_element(sel, 'id', "username").send_keys(username)
+    find_element(sel, 'id', "password").clear()
+    find_element(sel, 'id', "password").send_keys(password)
+    find_element(sel, 'id', "sign-in-button").click()
 
     if expect:
         check_phrases(sel, [r'Welcome to Stork!', r'Events', r'Services', r'Configuration',
                             r' Stork is a monitoring solution for '])
 
 
-def check_phrases(selenium, phrase_lst, expect=True):
+def check_phrases(sel, phrase_lst, expect=True):
     """
     Check if list of string are displayed on page
-    :param selenium: driver
+    :param sel: driver
     :param phrase_lst: single string or list of strings
     :param expect: set to False if anything from phrase_lst should NOT be found
     """
-    display_sleep(selenium)
-    current_page = selenium.page_source
+    display_sleep(sel)
+    current_page = sel.page_source
     if not isinstance(phrase_lst, list):
         phrase_lst = [phrase_lst]
     print("Checking phrase: ")
@@ -151,12 +185,12 @@ def check_phrases(selenium, phrase_lst, expect=True):
         print(" - OK! ")
 
 
-def find_and_check_tooltip(selenium, tooltip_text, element_text=None, xpath=None, element_id=None,
+def find_and_check_tooltip(sel, tooltip_text, element_text=None, xpath=None, element_id=None,
                            tooltip_class='ui-tooltip', use_in_refresh=False):
     """
     Find element that should have tooltip displayed when you hover over. Check content of this tooltip.
     Can be used in refresh loop.
-    :param selenium: driver
+    :param sel: driver
     :param tooltip_text: part of a text that should be displayed when hovered over element
     :param element_text: text of a link that we are searching for
     :param xpath: xpath of an element that we are looking for
@@ -166,23 +200,24 @@ def find_and_check_tooltip(selenium, tooltip_text, element_text=None, xpath=None
     :return: located element when use_in_refresh is False, boolen value when use_in_refresh is True
     """
     if element_text is not None:
-        element = selenium.find_element_by_link_text(element_text)
+        element = find_element(sel, 'link_text', element_text)
     elif xpath is not None:
-        element = selenium.find_element_by_xpath(xpath)
+        element = find_element(sel, 'xpath', xpath)
     elif element_id is not None:
-        element = selenium.find_element_by_id(element_id)
+        element = find_element(sel, 'id', element_id)
     else:
         assert False, "you have to set element_text or xpath."
-    ActionChains(selenium).move_to_element(element).perform()
-    display_sleep(selenium)
+    ActionChains(sel).move_to_element(element).perform()
+    display_sleep(sel)
     if not use_in_refresh:
-        assert tooltip_text in selenium.find_element_by_class_name(tooltip_class).text,\
-            "Tooltip text expected: %s; but displayed: %s" % (tooltip_text, selenium.find_element_by_class_name(tooltip_class).text)
+        el = find_element(sel, 'class_name', tooltip_class)
+        assert tooltip_text in el.text,\
+            "Tooltip text expected: %s; but displayed: %s" % (tooltip_text, el.text)
         return element
     else:
-        if tooltip_text in selenium.find_element_by_class_name(tooltip_class).text:
+        if tooltip_text in find_element(sel, 'class_name', tooltip_class).text:
             return True
-        move_to_different_place(selenium)
+        move_to_different_place(sel)
         return False
 
 
