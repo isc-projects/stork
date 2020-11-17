@@ -36,6 +36,7 @@ def find_element(sel, element_type, element, number_of_tests=10):
                 print("Element %s not defined" % element_type)
         except:
             print('!!!! Iteration no. %d: Failed to find element "%s" by type: %s' % (i, element, element_type))
+            time.sleep(1)
 
 
 def display_sleep(sel, sec=1):
@@ -50,7 +51,7 @@ def display_sleep(sel, sec=1):
         time.sleep(sec)
     else:
         # I can't run chrome tests, I don't know how to check it for headless mode TODO fix it :)
-        time.sleep(sec)
+        time.sleep(1)
 
 
 def check_help_text(sel, id_of_help_button, id_of_help_test, help_text):
