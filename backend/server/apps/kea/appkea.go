@@ -496,6 +496,10 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 			app.Daemons[i].KeaDaemon.Config != nil &&
 			app.Daemons[i].KeaDaemon.KeaDHCPDaemon != nil {
 			indexedSubnets := keaconfig.NewIndexedSubnets(app.Daemons[i].KeaDaemon.Config)
+			err = indexedSubnets.Populate()
+			if err != nil {
+				return err
+			}
 			app.Daemons[i].KeaDaemon.KeaDHCPDaemon.IndexedSubnets = indexedSubnets
 		}
 	}
