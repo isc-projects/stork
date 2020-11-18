@@ -268,6 +268,7 @@ def test_add_new_machine(selenium, agent, server):
                                     find_element(selenium, 'id', 'apps-refresh'), selenium)
     # check kea6 data
     find_and_check_tooltip(selenium, "Communication with the daemon is ok.", element_text="DHCPv6").click()
+    time.sleep(5)
     check_phrases(selenium, ["linked with:", "log4cplus", "database:", "MySQL backend", "PostgreSQL backend",
                              "Memfile backend"])
     check_phrases(selenium, "This daemon is currently not monitored by Stork. ", expect=False)
