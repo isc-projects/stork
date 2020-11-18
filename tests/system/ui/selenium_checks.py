@@ -241,5 +241,6 @@ def refresh_until_status_turn_green(function_to_find_an_element, refresh_button,
         refresh_button.click()
         display_sleep(sel)
         if function_to_find_an_element():
+            display_sleep(sel, sec=2)
             break
         counter += 1
