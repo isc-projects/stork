@@ -223,6 +223,14 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
+	// We can't create new machine and pull machines' states at the same time. This may
+	// put heavy workload on the server and it may also result in conflicts. Temporarily
+	// disable the puller while the new machine is being added.
+	if r.Pullers != nil && r.Pullers.AppsStatePuller != nil {
+		r.Pullers.AppsStatePuller.Pause()
+		defer r.Pullers.AppsStatePuller.Unpause()
+	}
+
 	if dbMachine == nil {
 		dbMachine = &dbmodel.Machine{Address: addr, AgentPort: params.Machine.AgentPort}
 		err = dbmodel.AddMachine(r.DB, dbMachine)

@@ -19,6 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/netutil"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/apps"
 	dbops "isc.org/stork/server/database"
 	dbsession "isc.org/stork/server/database/session"
 	"isc.org/stork/server/eventcenter"
@@ -52,6 +53,7 @@ type RestAPI struct {
 	DB             *dbops.PgDB
 	SessionManager *dbsession.SessionMgr
 	EventCenter    eventcenter.EventCenter
+	Pullers        *apps.Pullers
 
 	Agents agentcomm.ConnectedAgents
 
@@ -66,7 +68,7 @@ type RestAPI struct {
 }
 
 // Do API initialization.
-func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, db *pg.DB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter) (*RestAPI, error) {
+func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, db *pg.DB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, pullers *apps.Pullers) (*RestAPI, error) {
 	// Initialize sessions with access to the database.
 	sm, err := dbsession.NewSessionMgr(&dbSettings.BaseDatabaseSettings)
 	if err != nil {
@@ -80,6 +82,7 @@ func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, d
 		SessionManager: sm,
 		Agents:         agents,
 		EventCenter:    eventCenter,
+		Pullers:        pullers,
 	}
 
 	return r, nil

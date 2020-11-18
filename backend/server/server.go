@@ -29,11 +29,7 @@ type StorkServer struct {
 	RestAPISettings restservice.RestAPISettings
 	RestAPI         *restservice.RestAPI
 
-	AppsStatePuller  *apps.StatePuller
-	Bind9StatsPuller *bind9.StatsPuller
-	KeaStatsPuller   *kea.StatsPuller
-	KeaHostsPuller   *kea.HostsPuller
-	HAStatusPuller   *kea.HAStatusPuller
+	Pullers *apps.Pullers
 
 	EventCenter eventcenter.EventCenter
 }
@@ -123,44 +119,46 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		return nil, err
 	}
 
+	ss.Pullers = &apps.Pullers{}
+
 	// setup apps state puller
-	ss.AppsStatePuller, err = apps.NewStatePuller(ss.DB, ss.Agents, ss.EventCenter)
+	ss.Pullers.AppsStatePuller, err = apps.NewStatePuller(ss.DB, ss.Agents, ss.EventCenter)
 	if err != nil {
 		return nil, err
 	}
 
 	// setup bind9 stats puller
-	ss.Bind9StatsPuller, err = bind9.NewStatsPuller(ss.DB, ss.Agents, ss.EventCenter)
+	ss.Pullers.Bind9StatsPuller, err = bind9.NewStatsPuller(ss.DB, ss.Agents, ss.EventCenter)
 	if err != nil {
 		return nil, err
 	}
 
 	// setup kea stats puller
-	ss.KeaStatsPuller, err = kea.NewStatsPuller(ss.DB, ss.Agents)
+	ss.Pullers.KeaStatsPuller, err = kea.NewStatsPuller(ss.DB, ss.Agents)
 	if err != nil {
 		return nil, err
 	}
 
 	// Setup Kea hosts puller.
-	ss.KeaHostsPuller, err = kea.NewHostsPuller(ss.DB, ss.Agents)
+	ss.Pullers.KeaHostsPuller, err = kea.NewHostsPuller(ss.DB, ss.Agents)
 	if err != nil {
 		return nil, err
 	}
 
 	// Setup Kea HA status puller.
-	ss.HAStatusPuller, err = kea.NewHAStatusPuller(ss.DB, ss.Agents)
+	ss.Pullers.HAStatusPuller, err = kea.NewHAStatusPuller(ss.DB, ss.Agents)
 	if err != nil {
 		return nil, err
 	}
 
 	// setup ReST API service
-	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings, ss.DB, ss.Agents, ss.EventCenter)
+	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings, ss.DB, ss.Agents, ss.EventCenter, ss.Pullers)
 	if err != nil {
-		ss.HAStatusPuller.Shutdown()
-		ss.KeaHostsPuller.Shutdown()
-		ss.KeaStatsPuller.Shutdown()
-		ss.Bind9StatsPuller.Shutdown()
-		ss.AppsStatePuller.Shutdown()
+		ss.Pullers.HAStatusPuller.Shutdown()
+		ss.Pullers.KeaHostsPuller.Shutdown()
+		ss.Pullers.KeaStatsPuller.Shutdown()
+		ss.Pullers.Bind9StatsPuller.Shutdown()
+		ss.Pullers.AppsStatePuller.Shutdown()
 		ss.DB.Close()
 		return nil, err
 	}
@@ -185,11 +183,11 @@ func (ss *StorkServer) Shutdown() {
 	ss.EventCenter.AddInfoEvent("shutting down Stork server")
 	log.Println("Shutting down Stork Server")
 	ss.RestAPI.Shutdown()
-	ss.HAStatusPuller.Shutdown()
-	ss.KeaHostsPuller.Shutdown()
-	ss.KeaStatsPuller.Shutdown()
-	ss.Bind9StatsPuller.Shutdown()
-	ss.AppsStatePuller.Shutdown()
+	ss.Pullers.HAStatusPuller.Shutdown()
+	ss.Pullers.KeaHostsPuller.Shutdown()
+	ss.Pullers.KeaStatsPuller.Shutdown()
+	ss.Pullers.Bind9StatsPuller.Shutdown()
+	ss.Pullers.AppsStatePuller.Shutdown()
 	ss.Agents.Shutdown()
 	ss.EventCenter.Shutdown()
 	ss.DB.Close()

@@ -33,7 +33,7 @@ func TestEvents(t *testing.T) {
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 

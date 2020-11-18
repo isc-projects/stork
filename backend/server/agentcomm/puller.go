@@ -22,8 +22,10 @@ type PeriodicPuller struct {
 	Ticker              *time.Ticker
 	Interval            int64
 	Active              bool
+	pauseCount          uint16
 	Done                chan bool
 	Wg                  *sync.WaitGroup
+	mutex               *sync.Mutex
 }
 
 const InactiveInterval int64 = 60
@@ -60,8 +62,10 @@ func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, inter
 		Ticker:              time.NewTicker(time.Duration(interval) * time.Second),
 		Interval:            interval,
 		Active:              active,
+		pauseCount:          0,
 		Done:                make(chan bool),
 		Wg:                  &sync.WaitGroup{},
+		mutex:               &sync.Mutex{},
 	}
 
 	periodicPuller.Wg.Add(1)
@@ -80,6 +84,61 @@ func (puller *PeriodicPuller) Shutdown() {
 	log.Printf("stopped %s Puller", puller.pullerName)
 }
 
+// Temporarily stops the timer triggering the puller action. This function
+// is called internally by the puller while running the puller action to
+// avoid the situation that after long lasting action it is triggered again
+// shortly. It can also be called externally if the puller action would
+// be in conflict with some other operation during which the puller is
+// paused. This function allows for being called multiple times and the
+// timer is resumed after calling Unpause the same number of times. This
+// is useful when the puller can be potentially paused and unpaused from
+// different parts of the code concurrently.
+func (puller *PeriodicPuller) Pause() {
+	puller.mutex.Lock()
+	defer puller.mutex.Unlock()
+	puller.Ticker.Stop()
+	puller.pauseCount++
+}
+
+// Checks if the puller is currently paused.
+func (puller *PeriodicPuller) Paused() bool {
+	puller.mutex.Lock()
+	defer puller.mutex.Unlock()
+	return puller.pauseCount > 0
+}
+
+// Unpauses the puller. The optional interval parameter may contain
+// one interval value which overrides the current interval. If the interval
+// is not specified, the current interval is used.
+func (puller *PeriodicPuller) Unpause(interval ...int64) {
+	intervals := interval
+	if len(intervals) > 1 {
+		// This should not happen.
+		panic("Resume accepts one or zero interval values")
+	}
+	puller.mutex.Lock()
+	defer puller.mutex.Unlock()
+	if puller.pauseCount > 0 {
+		puller.pauseCount--
+	}
+	// Unpause() called for all earlier calls to Pause(), so we can resume
+	// the puller action.
+	if puller.pauseCount == 0 {
+		if len(intervals) > 0 {
+			// Override the interval.
+			puller.Interval = intervals[0]
+		}
+	}
+	// Reschedule the timer.
+	puller.Ticker.Reset(time.Duration(puller.Interval) * time.Second)
+}
+
+// Reschedule the puller timer to a new interval.
+func (puller *PeriodicPuller) Reset(interval int64) {
+	puller.Pause()
+	puller.Unpause(interval)
+}
+
 // This function controls the timing of the function execution and captures the
 // termination signal.
 func (puller *PeriodicPuller) pullerLoop() {
@@ -89,7 +148,11 @@ func (puller *PeriodicPuller) pullerLoop() {
 		// every N seconds execute user defined function
 		case <-puller.Ticker.C:
 			if puller.Active {
+				// Temporarily stop the puller while running the external action.
+				// It will be resumed when the action ends.
+				puller.Pause()
 				_, err := puller.pullFunc()
+				puller.Unpause()
 				if err != nil {
 					log.Errorf("errors were encountered while pulling data from apps: %+v", err)
 				}
@@ -97,7 +160,7 @@ func (puller *PeriodicPuller) pullerLoop() {
 		// wait for done signal from shutdown function
 		case <-puller.Done:
 			// Make sure this function is never called again.
-			puller.Ticker.Stop()
+			puller.Pause()
 			return
 		}
 
@@ -107,19 +170,18 @@ func (puller *PeriodicPuller) pullerLoop() {
 			log.Errorf("problem with getting interval setting %s from db: %+v",
 				puller.intervalSettingName, err)
 		} else {
+			puller.mutex.Lock()
+			pullerInterval := puller.Interval
+			puller.mutex.Unlock()
 			if interval <= 0 && puller.Active {
 				// if puller should be disabled but it is active then
-				if puller.Interval != InactiveInterval {
-					puller.Ticker.Stop()
-					puller.Ticker = time.NewTicker(time.Duration(InactiveInterval) * time.Second)
-					puller.Interval = InactiveInterval
+				if pullerInterval != InactiveInterval {
+					puller.Reset(InactiveInterval)
 				}
 				puller.Active = false
-			} else if interval > 0 && interval != puller.Interval {
+			} else if interval > 0 && interval != pullerInterval {
 				// if puller interval is changed and is not 0 (disabled)
-				puller.Ticker.Stop()
-				puller.Ticker = time.NewTicker(time.Duration(interval) * time.Second)
-				puller.Interval = interval
+				puller.Reset(interval)
 				puller.Active = true
 			}
 		}
