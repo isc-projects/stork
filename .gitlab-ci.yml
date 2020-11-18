@@ -200,7 +200,7 @@ system_testing:
     # - lxc profile show default
     # - cat /etc/netplan/*
     # - cat /etc/network/interfaces
-    - rake system_tests_ui
+    # - rake system_tests_ui
     - rake system_tests
 
 
