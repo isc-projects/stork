@@ -179,7 +179,9 @@ def check_phrases(sel, phrase_lst, expect=True):
     for phrase in phrase_lst:
         if expect:
             print('\t', phrase, end='')
-            assert (re.search(phrase, current_page)), "Phrase \"%s\" not found on displayed page" % phrase
+            if not (re.search(phrase, current_page)):
+                print(current_page)
+                assert False, "Phrase \"%s\" not found on displayed page" % phrase
         else:
             print('\tCAN\'T INCLUDE: ', phrase, end='')
             assert not (re.search(phrase, current_page)), "Phrase \"%s\" FOUND on displayed page against expectation" % phrase
