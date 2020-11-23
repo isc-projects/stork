@@ -85,6 +85,7 @@ func (c *BaseDatabaseSettings) ConnectionParams() string {
 			if fieldValue == 0 {
 				continue
 			}
+		default:
 		}
 		// If we are not on the first field, add a space after previous field.
 		if i > 0 {
