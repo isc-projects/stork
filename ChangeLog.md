@@ -1,7 +1,7 @@
 * 116 [perf] marcin
 
-    Improved performance of connecting Stork to large Kea installation
-    with many subnets. Adding subnets to the database is now much more
+    Improved performance of connecting large Kea installation with many
+    subnets to Stork. Adding subnets to the database is now much more
     efficient as it avoids extensive subnet lookups. Instead it uses
     indexing techniques.
     (Gitlab #421)
