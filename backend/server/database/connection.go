@@ -67,11 +67,11 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		_, err = db.QueryOne(pg.Scan(&n), "SELECT 1")
 		if err == nil {
 			break
-		} else if errors.As(err, &pgError) && pgError.Field('S') == "FATAL" {
-			break
-		} else {
-			log.Printf("problem with connecting to db, trying again in 2 seconds, %d/10: %s", tries+1, err)
 		}
+		if errors.As(err, &pgError) && pgError.Field('S') == "FATAL" {
+			break
+		}
+		log.Printf("problem with connecting to db, trying again in 2 seconds, %d/10: %s", tries+1, err)
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
