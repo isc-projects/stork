@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"io/ioutil"
 	"log"
+	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -29,18 +29,16 @@ func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
 func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 	// prepare kea conf file
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
-	if err != nil {
-		log.Fatal("Cannot create temporary file", err)
-	}
+	require.NoError(t, err)
+
 	defer os.Remove(tmpFile.Name())
 
 	text := []byte("random content")
-	if _, err = tmpFile.Write(text); err != nil {
-		log.Fatal("Failed to write to temporary file", err)
-	}
-	if err := tmpFile.Close(); err != nil {
-		log.Fatal(err)
-	}
+	_, err = tmpFile.Write(text);
+	require.NoError(t, err)
+
+	err = tmpFile.Close()
+	require.NoError(t, err)
 
 	// check reading from prepared file with bad content
 	// so 0 should be returned as port
@@ -52,18 +50,16 @@ func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
 	// prepare kea conf file
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
-	if err != nil {
-		log.Fatal("Cannot create temporary file", err)
-	}
+	require.NoError(t, err)
+
 	defer os.Remove(tmpFile.Name())
 
 	text := []byte(string("\"http-host\": \"host.example.org\", \"http-port\": 1234"))
-	if _, err = tmpFile.Write(text); err != nil {
-		log.Fatal("Failed to write to temporary file", err)
-	}
-	if err := tmpFile.Close(); err != nil {
-		log.Fatal(err)
-	}
+	_, err = tmpFile.Write(text)
+	require.NoError(t, err)
+
+	err = tmpFile.Close()
+	require.NoError(t, err)
 
 	// check reading from proper file
 	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
@@ -74,18 +70,16 @@ func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
 func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
 	// prepare kea conf file
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
-	if err != nil {
-		log.Fatal("Cannot create temporary file", err)
-	}
+	require.NoError(t, err)
+
 	defer os.Remove(tmpFile.Name())
 
 	text := []byte(string("\"http-host\": \"0.0.0.0\", \"http-port\": 1234"))
-	if _, err = tmpFile.Write(text); err != nil {
-		log.Fatal("Failed to write to temporary file", err)
-	}
-	if err := tmpFile.Close(); err != nil {
-		log.Fatal(err)
-	}
+	_, err = tmpFile.Write(text)
+	require.NoError(t, err)
+
+	err = tmpFile.Close()
+	require.NoError(t, err)
 
 	// check reading from proper file;
 	// if CA is listening on 0.0.0.0 then 127.0.0.1 should be returned
@@ -98,18 +92,16 @@ func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
 func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
 	// prepare kea conf file
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
-	if err != nil {
-		log.Fatal("Cannot create temporary file", err)
-	}
+	require.NoError(t, err)
+
 	defer os.Remove(tmpFile.Name())
 
 	text := []byte(string("\"http-host\": \"::\", \"http-port\": 1234"))
-	if _, err = tmpFile.Write(text); err != nil {
-		log.Fatal("Failed to write to temporary file", err)
-	}
-	if err := tmpFile.Close(); err != nil {
-		log.Fatal(err)
-	}
+	_, err = tmpFile.Write(text)
+	require.NoError(t, err)
+
+	err = tmpFile.Close()
+	require.NoError(t, err)
 
 	// check reading from proper file;
 	// if CA is listening on :: then ::1 should be returned

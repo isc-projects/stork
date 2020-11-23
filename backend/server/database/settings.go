@@ -74,8 +74,8 @@ func (c *BaseDatabaseSettings) ConnectionParams() string {
 				continue
 			}
 			// Escape quotes and double quotes.
-			fieldValue = strings.Replace(fieldValue, "'", `\'`, -1)
-			fieldValue = strings.Replace(fieldValue, `"`, `\"`, -1)
+			fieldValue = strings.ReplaceAll(fieldValue, "'", `\'`)
+			fieldValue = strings.ReplaceAll(fieldValue, `"`, `\"`)
 			// Enclose all strings in quotes in case they contain spaces.
 			fieldValue = fmt.Sprintf("'%s'", fieldValue)
 			v.Field(i).SetString(fieldValue)

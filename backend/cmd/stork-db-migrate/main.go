@@ -86,12 +86,14 @@ func main() {
 	if db == nil {
 		log.Fatal("unable to create database instance")
 	}
-	defer db.Close()
 
 	oldVersion, newVersion, err := dbops.Migrate(db, args...)
 	if err != nil {
-		log.Fatal(err.Error())
+		db.Close()
+		log.Fatalf(err.Error())
 	}
+
+	defer db.Close()
 
 	if newVersion != oldVersion {
 		log.Infof("Migrated database from version %d to %d\n", oldVersion, newVersion)

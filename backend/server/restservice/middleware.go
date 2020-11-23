@@ -34,8 +34,8 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		duration := time.Since(start)
 
 		entry = entry.WithFields(log.Fields{
-			//"status":      w.Status(),
-			//"text_status": http.StatusText(w.Status()),
+			// "status":      w.Status(),
+			// "text_status": http.StatusText(w.Status()),
 			"took": duration,
 		})
 		entry.Info("served request")
