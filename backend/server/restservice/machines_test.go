@@ -1351,7 +1351,7 @@ func TestUpdateDaemon(t *testing.T) {
 	require.True(t, okRsp.Payload.Details.AppKea.Daemons[0].Monitored) // now it is true
 
 	// setup a user session (UpdateDaemon needs user db object)
-	user, err := dbmodel.GetUserByID(rapi.Db, 1)
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
 	require.NoError(t, err)
 	ctx2, err := rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)

@@ -41,7 +41,7 @@ func (statsPuller *StatsPuller) Shutdown() {
 // pulled and last encountered error.
 func (statsPuller *StatsPuller) pullStats() (int, error) {
 	// get list of all bind9 apps from database
-	dbApps, err := dbmodel.GetAppsByType(statsPuller.Db, dbmodel.AppTypeBind9)
+	dbApps, err := dbmodel.GetAppsByType(statsPuller.DB, dbmodel.AppTypeBind9)
 	if err != nil {
 		return 0, err
 	}
@@ -111,5 +111,5 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	}
 
 	dbApp.Daemons[0].Bind9Daemon.Stats.NamedStats = namedStats
-	return dbmodel.UpdateDaemon(statsPuller.Db, dbApp.Daemons[0])
+	return dbmodel.UpdateDaemon(statsPuller.DB, dbApp.Daemons[0])
 }

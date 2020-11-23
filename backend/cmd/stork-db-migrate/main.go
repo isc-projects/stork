@@ -74,10 +74,10 @@ func main() {
 	}
 
 	// Use the provided credentials to connect to the database.
-	db, err := dbops.NewPgDbConn(&dbops.PgOptions{
+	db, err := dbops.NewPgDBConn(&dbops.PgOptions{
 		User:     opts.User,
 		Password: opts.Password,
-		Database: opts.DbName,
+		Database: opts.DBName,
 		Addr:     fmt.Sprintf("%s:%d", opts.Host, opts.Port),
 	}, opts.DatabaseSettings.TraceSQL != "")
 	if err != nil {

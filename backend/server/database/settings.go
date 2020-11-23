@@ -13,7 +13,7 @@ import (
 )
 
 type BaseDatabaseSettings struct {
-	DbName   string `short:"d" long:"db-name" description:"the name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
+	DBName   string `short:"d" long:"db-name" description:"the name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
 	User     string `short:"u" long:"db-user" description:"the user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
 	Password string `description:"the database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
 	Host     string `long:"db-host" description:"the name of the host where database is available" env:"STORK_DATABASE_HOST" default:"localhost"`
@@ -99,7 +99,7 @@ func (c *BaseDatabaseSettings) ConnectionParams() string {
 
 // Converts generic connection parameters to go-pg specific parameters.
 func (c *DatabaseSettings) PgParams() *PgOptions {
-	pgopts := &PgOptions{Database: c.DbName, User: c.User, Password: c.Password}
+	pgopts := &PgOptions{Database: c.DBName, User: c.User, Password: c.Password}
 	pgopts.Addr = fmt.Sprintf("%s:%d", c.Host, c.Port)
 	return pgopts
 }

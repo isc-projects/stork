@@ -80,7 +80,7 @@ func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	return &machine, nil
 }
 
-func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
+func RefreshMachineFromDB(db *pg.DB, machine *Machine) error {
 	machine.Apps = []*App{}
 	q := db.Model(machine).Where("id = ?", machine.ID)
 	q = q.Relation("Apps.AccessPoints")

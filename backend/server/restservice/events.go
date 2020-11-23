@@ -14,7 +14,7 @@ import (
 
 func (r *RestAPI) getEvents(offset, limit int64, level int64, daemonType *string, appType *string, machineID *int64, userID *int64, sortField string, sortDir dbmodel.SortDirEnum) (*models.Events, error) {
 	// Get the events from the database.
-	dbEvents, total, err := dbmodel.GetEventsByPage(r.Db, offset, limit, level, daemonType, appType, machineID, userID, sortField, sortDir)
+	dbEvents, total, err := dbmodel.GetEventsByPage(r.DB, offset, limit, level, daemonType, appType, machineID, userID, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}

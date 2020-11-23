@@ -45,7 +45,7 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 
 func (r *RestAPI) getSubnets(offset, limit, appID, family int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Subnets, error) {
 	// get subnets from db
-	dbSubnets, total, err := dbmodel.GetSubnetsByPage(r.Db, offset, limit, appID, family, filterText, sortField, sortDir)
+	dbSubnets, total, err := dbmodel.GetSubnetsByPage(r.DB, offset, limit, appID, family, filterText, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (r *RestAPI) GetSubnets(ctx context.Context, params dhcp.GetSubnetsParams) 
 
 func (r *RestAPI) getSharedNetworks(offset, limit, appID, family int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.SharedNetworks, error) {
 	// get shared networks from db
-	dbSharedNetworks, total, err := dbmodel.GetSharedNetworksByPage(r.Db, offset, limit, appID, family, filterText, sortField, sortDir)
+	dbSharedNetworks, total, err := dbmodel.GetSharedNetworksByPage(r.DB, offset, limit, appID, family, filterText, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}

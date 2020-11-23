@@ -229,7 +229,7 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 // have the HA enabled.
 func (puller *HAStatusPuller) pullData() (int, error) {
 	// Get the list of all Kea apps from the database.
-	apps, err := dbmodel.GetAppsByType(puller.Db, dbmodel.AppTypeKea)
+	apps, err := dbmodel.GetAppsByType(puller.DB, dbmodel.AppTypeKea)
 	if err != nil {
 		return 0, err
 	}
@@ -240,7 +240,7 @@ func (puller *HAStatusPuller) pullData() (int, error) {
 	for i := range apps {
 		// Before contacting the DHCP server, let's check if there is any service
 		// the app belongs to.
-		dbServices, err := dbmodel.GetDetailedServicesByAppID(puller.Db, apps[i].ID)
+		dbServices, err := dbmodel.GetDetailedServicesByAppID(puller.DB, apps[i].ID)
 		if err != nil {
 			log.Errorf("error while getting services for Kea app %d: %+v", apps[i].ID, err)
 			continue
@@ -321,7 +321,7 @@ func (puller *HAStatusPuller) pullData() (int, error) {
 		// with the servers or not.
 		for j := range haServices {
 			// Update the information about the HA service in the database.
-			err = dbmodel.UpdateBaseHAService(puller.Db, haServices[j].HAService)
+			err = dbmodel.UpdateBaseHAService(puller.DB, haServices[j].HAService)
 			if err != nil {
 				log.Errorf("error occurred while updating HA services status for Kea app %d: %+v", apps[i].ID, err)
 				continue

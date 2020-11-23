@@ -124,7 +124,7 @@ func getStatsFromLocalSubnets(localSubnets []*dbmodel.LocalSubnet, family int, a
 // of apps for which the stats were successfully pulled and last encountered error.
 func (statsPuller *StatsPuller) pullStats() (int, error) {
 	// get list of all kea apps from database
-	dbApps, err := dbmodel.GetAppsByType(statsPuller.Db, dbmodel.AppTypeKea)
+	dbApps, err := dbmodel.GetAppsByType(statsPuller.DB, dbmodel.AppTypeKea)
 	if err != nil {
 		return 0, err
 	}
@@ -145,7 +145,7 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 	log.Printf("completed pulling lease stats from Kea apps: %d/%d succeeded", appsOkCnt, len(dbApps))
 
 	// estimate addresses utilization for subnets
-	subnets, err := dbmodel.GetSubnetsWithLocalSubnets(statsPuller.Db)
+	subnets, err := dbmodel.GetSubnetsWithLocalSubnets(statsPuller.DB)
 	if err != nil {
 		return appsOkCnt, err
 	}
@@ -187,7 +187,7 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 			if netTotalPds > 0 {
 				usedPds = int16(1000 * netAssignedPds / netTotalPds)
 			}
-			err := dbmodel.UpdateUtilizationInSharedNetwork(statsPuller.Db, sharedNetworkID, used, usedPds)
+			err := dbmodel.UpdateUtilizationInSharedNetwork(statsPuller.DB, sharedNetworkID, used, usedPds)
 			if err != nil {
 				lastErr = err
 				log.Errorf("cannot update utilization (%d, %d) in shared network %d: %s", used, usedPds, sharedNetworkID, err)
@@ -235,7 +235,7 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 			snMaxUsedPds = 0
 		}
 		// udpate utilization in subnet in db
-		err = sn.UpdateUtilization(statsPuller.Db, snMaxUsed, snMaxUsedPds)
+		err = sn.UpdateUtilization(statsPuller.DB, snMaxUsed, snMaxUsedPds)
 		if err != nil {
 			lastErr = err
 			log.Errorf("cannot update utilization (%d, %d) in subnet %d: %s", snMaxUsed, snMaxUsedPds, sn.ID, err)
@@ -244,7 +244,7 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 	}
 
 	// update global statistics in db
-	err = dbmodel.SetStats(statsPuller.Db, statsMap)
+	err = dbmodel.SetStats(statsPuller.DB, statsMap)
 	if err != nil {
 		lastErr = err
 	}
@@ -328,7 +328,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 			log.Error(lastErr.Error())
 			continue
 		}
-		err := sn.UpdateStats(statsPuller.Db, stats)
+		err := sn.UpdateStats(statsPuller.DB, stats)
 		if err != nil {
 			log.Errorf("problem with updating Kea stats for local subnet id %d, app id %d: %s", sn.LocalSubnetID, dbApp.ID, err.Error())
 			lastErr = err
@@ -429,7 +429,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 // Was part of getStatsFromApp() until lint_go complained about cognitive complexity.
 func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*keactrl.Command, cmdDaemons []*dbmodel.Daemon, responses []interface{}) error {
 	// Lease statistic processing needs app's local subnets
-	subnets, err := dbmodel.GetAppLocalSubnets(statsPuller.Db, dbApp.ID)
+	subnets, err := dbmodel.GetAppLocalSubnets(statsPuller.DB, dbApp.ID)
 	if err != nil {
 		return err
 	}

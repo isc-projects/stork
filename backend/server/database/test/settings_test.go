@@ -12,7 +12,7 @@ import (
 // with upper case letters is handled correctly.
 func TestConnectionParamsNoSpaces(t *testing.T) {
 	settings := dbops.BaseDatabaseSettings{
-		DbName:   "stork",
+		DBName:   "stork",
 		User:     "admin",
 		Password: "StOrK123",
 		Host:     "localhost",
@@ -26,7 +26,7 @@ func TestConnectionParamsNoSpaces(t *testing.T) {
 // Test that the password including space character is enclosed in quotes.
 func TestConnectionParamsWithSpaces(t *testing.T) {
 	settings := dbops.BaseDatabaseSettings{
-		DbName:   "stork",
+		DBName:   "stork",
 		User:     "admin",
 		Password: "StOrK123 567",
 		Host:     "localhost",
@@ -40,7 +40,7 @@ func TestConnectionParamsWithSpaces(t *testing.T) {
 // Test that quotes and double quotes are escaped.
 func TestConnectionParamsWithEscapes(t *testing.T) {
 	settings := dbops.BaseDatabaseSettings{
-		DbName:   "stork",
+		DBName:   "stork",
 		User:     "admin",
 		Password: `StOrK123'56"7`,
 		Host:     "localhost",
@@ -55,7 +55,7 @@ func TestConnectionParamsWithEscapes(t *testing.T) {
 // string.
 func TestConnectionParamsWithOptionalHost(t *testing.T) {
 	settings := dbops.BaseDatabaseSettings{
-		DbName:   "stork",
+		DBName:   "stork",
 		User:     "admin",
 		Password: "StOrK123 567",
 		Port:     123,
@@ -68,7 +68,7 @@ func TestConnectionParamsWithOptionalHost(t *testing.T) {
 // Test that when the port is 0, it is not included in the connection string.
 func TestConnectionParamsWithOptionalPort(t *testing.T) {
 	settings := dbops.BaseDatabaseSettings{
-		DbName:   "stork",
+		DBName:   "stork",
 		User:     "admin",
 		Password: "stork",
 		Host:     "localhost",

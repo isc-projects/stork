@@ -66,7 +66,7 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		user.Password = *params.Credentials.Userpassword
 	}
 
-	ok, err := dbmodel.Authenticate(r.Db, user)
+	ok, err := dbmodel.Authenticate(r.DB, user)
 	if ok {
 		err = r.SessionManager.LoginHandler(ctx, user)
 	}
@@ -93,7 +93,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 }
 
 func (r *RestAPI) getUsers(offset, limit int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Users, error) {
-	dbUsers, total, err := dbmodel.GetUsersByPage(r.Db, offset, limit, filterText, sortField, sortDir)
+	dbUsers, total, err := dbmodel.GetUsersByPage(r.DB, offset, limit, filterText, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (r *RestAPI) GetUsers(ctx context.Context, params users.GetUsersParams) mid
 // Returns user information by user ID.
 func (r *RestAPI) GetUser(ctx context.Context, params users.GetUserParams) middleware.Responder {
 	id := int(params.ID)
-	su, err := dbmodel.GetUserByID(r.Db, id)
+	su, err := dbmodel.GetUserByID(r.DB, id)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"userid": id,
@@ -206,7 +206,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: int(gid)})
 	}
 
-	con, err := dbmodel.CreateUser(r.Db, su)
+	con, err := dbmodel.CreateUser(r.DB, su)
 	if err != nil {
 		if con {
 			log.WithFields(log.Fields{
@@ -270,7 +270,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 		su.Groups = append(su.Groups, &dbmodel.SystemGroup{ID: int(gid)})
 	}
 
-	con, err := dbmodel.UpdateUser(r.Db, su)
+	con, err := dbmodel.UpdateUser(r.DB, su)
 	if con {
 		log.WithFields(log.Fields{
 			"userid": *u.ID,
@@ -319,7 +319,7 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 	// Try to change the password for the given user id. Including old password
 	// for verification and the new password which will only be set if this
 	// verification is successful.
-	auth, err := dbmodel.ChangePassword(r.Db, id, string(passwords.Oldpassword),
+	auth, err := dbmodel.ChangePassword(r.DB, id, string(passwords.Oldpassword),
 		string(passwords.Newpassword))
 
 	// Error is returned when something went wrong with the database communication
@@ -352,7 +352,7 @@ func (r *RestAPI) UpdateUserPassword(ctx context.Context, params users.UpdateUse
 }
 
 func (r *RestAPI) getGroups(offset, limit int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Groups, error) {
-	dbGroups, total, err := dbmodel.GetGroupsByPage(r.Db, offset, limit, filterText, sortField, sortDir)
+	dbGroups, total, err := dbmodel.GetGroupsByPage(r.DB, offset, limit, filterText, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}

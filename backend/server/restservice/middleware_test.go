@@ -53,7 +53,7 @@ func TestInnerMiddleware(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec)
 	require.NoError(t, err)
-	sm, err := dbsession.NewSessionMgr(&rapi.DbSettings.BaseDatabaseSettings)
+	sm, err := dbsession.NewSessionMgr(&rapi.DBSettings.BaseDatabaseSettings)
 	require.NoError(t, err)
 	rapi.SessionManager = sm
 

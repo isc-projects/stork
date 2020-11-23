@@ -48,8 +48,8 @@ type RestAPISettings struct {
 // Runtime information and settings for ReST API service.
 type RestAPI struct {
 	Settings       *RestAPISettings
-	DbSettings     *dbops.DatabaseSettings
-	Db             *dbops.PgDB
+	DBSettings     *dbops.DatabaseSettings
+	DB             *dbops.PgDB
 	SessionManager *dbsession.SessionMgr
 	EventCenter    eventcenter.EventCenter
 
@@ -75,8 +75,8 @@ func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, d
 
 	r := &RestAPI{
 		Settings:       settings,
-		DbSettings:     dbSettings,
-		Db:             db,
+		DBSettings:     dbSettings,
+		DB:             db,
 		SessionManager: sm,
 		Agents:         agents,
 		EventCenter:    eventCenter,

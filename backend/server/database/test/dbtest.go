@@ -23,7 +23,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	// of space separated options used by SQL drivers.
 	genericConnOptions := dbops.DatabaseSettings{
 		BaseDatabaseSettings: dbops.BaseDatabaseSettings{
-			DbName:   "storktest",
+			DBName:   "storktest",
 			User:     "storktest",
 			Password: "storktest",
 			Host:     "localhost",
@@ -65,7 +65,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 
 	// Connect to base `postgres` database to be able to create test database.
 	pgConnOptions.Database = "postgres"
-	db, err := dbops.NewPgDbConn(&pgConnOptions, false)
+	db, err := dbops.NewPgDBConn(&pgConnOptions, false)
 	if db == nil {
 		log.Fatalf("unable to create database instance: %+v", err)
 	}
@@ -100,9 +100,9 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 
 	// Create an instance of the test database.
 	pgConnOptions.Database = dbName
-	genericConnOptions.BaseDatabaseSettings.DbName = dbName
+	genericConnOptions.BaseDatabaseSettings.DBName = dbName
 
-	db, err = dbops.NewPgDbConn(&pgConnOptions, false)
+	db, err = dbops.NewPgDBConn(&pgConnOptions, false)
 	if db == nil {
 		log.Fatalf("unable to create database instance: %+v", err)
 	}
@@ -114,7 +114,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 
 	// enable tracing sql queries if requested
 	if _, ok := os.LookupEnv("STORK_DATABASE_TRACE"); ok {
-		db.AddQueryHook(dbops.DbLogger{})
+		db.AddQueryHook(dbops.DBLogger{})
 	}
 
 	return db, &genericConnOptions, func() {

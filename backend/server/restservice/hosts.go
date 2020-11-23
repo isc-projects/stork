@@ -14,7 +14,7 @@ import (
 
 func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, filterText *string, global *bool, sortField string, sortDir dbmodel.SortDirEnum) (*models.Hosts, error) {
 	// Get the hosts from the database.
-	dbHosts, total, err := dbmodel.GetHostsByPage(r.Db, offset, limit, appID, subnetID, filterText, global, sortField, sortDir)
+	dbHosts, total, err := dbmodel.GetHostsByPage(r.DB, offset, limit, appID, subnetID, filterText, global, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}

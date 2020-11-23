@@ -13,7 +13,7 @@ import (
 
 // Get global settings.
 func (r *RestAPI) GetSettings(ctx context.Context, params settings.GetSettingsParams) middleware.Responder {
-	dbSettingsMap, err := dbmodel.GetAllSettings(r.Db)
+	dbSettingsMap, err := dbmodel.GetAllSettings(r.DB)
 	if err != nil {
 		msg := "cannot get global settings"
 		log.Error(err)
@@ -54,37 +54,37 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 		Message: &msg,
 	})
 
-	err := dbmodel.SetSettingInt(r.Db, "bind9_stats_puller_interval", s.Bind9StatsPullerInterval)
+	err := dbmodel.SetSettingInt(r.DB, "bind9_stats_puller_interval", s.Bind9StatsPullerInterval)
 	if err != nil {
 		log.Error(err)
 		return errRsp
 	}
-	err = dbmodel.SetSettingStr(r.Db, "grafana_url", s.GrafanaURL)
+	err = dbmodel.SetSettingStr(r.DB, "grafana_url", s.GrafanaURL)
 	if err != nil {
 		log.Error(err)
 		return errRsp
 	}
-	err = dbmodel.SetSettingInt(r.Db, "kea_hosts_puller_interval", s.KeaHostsPullerInterval)
+	err = dbmodel.SetSettingInt(r.DB, "kea_hosts_puller_interval", s.KeaHostsPullerInterval)
 	if err != nil {
 		log.Error(err)
 		return errRsp
 	}
-	err = dbmodel.SetSettingInt(r.Db, "kea_stats_puller_interval", s.KeaStatsPullerInterval)
+	err = dbmodel.SetSettingInt(r.DB, "kea_stats_puller_interval", s.KeaStatsPullerInterval)
 	if err != nil {
 		log.Error(err)
 		return errRsp
 	}
-	err = dbmodel.SetSettingInt(r.Db, "kea_status_puller_interval", s.KeaStatusPullerInterval)
+	err = dbmodel.SetSettingInt(r.DB, "kea_status_puller_interval", s.KeaStatusPullerInterval)
 	if err != nil {
 		log.Error(err)
 		return errRsp
 	}
-	err = dbmodel.SetSettingInt(r.Db, "apps_state_puller_interval", s.KeaStatusPullerInterval)
+	err = dbmodel.SetSettingInt(r.DB, "apps_state_puller_interval", s.KeaStatusPullerInterval)
 	if err != nil {
 		log.Error(err)
 		return errRsp
 	}
-	err = dbmodel.SetSettingStr(r.Db, "prometheus_url", s.PrometheusURL)
+	err = dbmodel.SetSettingStr(r.DB, "prometheus_url", s.PrometheusURL)
 	if err != nil {
 		log.Error(err)
 		return errRsp

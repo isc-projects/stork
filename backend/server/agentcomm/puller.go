@@ -17,7 +17,7 @@ type PeriodicPuller struct {
 	pullerName          string
 	intervalSettingName string
 	pullFunc            func() (int, error)
-	Db                  *dbops.PgDB
+	DB                  *dbops.PgDB
 	Agents              ConnectedAgents
 	Ticker              *time.Ticker
 	Interval            int64
@@ -55,7 +55,7 @@ func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, inter
 		pullerName:          pullerName,
 		intervalSettingName: intervalSettingName,
 		pullFunc:            pullFunc,
-		Db:                  db,
+		DB:                  db,
 		Agents:              agents,
 		Ticker:              time.NewTicker(time.Duration(interval) * time.Second),
 		Interval:            interval,
@@ -102,7 +102,7 @@ func (puller *PeriodicPuller) pullerLoop() {
 		}
 
 		// Check if the interval has changed in the database. If so, recreate the ticker.
-		interval, err := dbmodel.GetSettingInt(puller.Db, puller.intervalSettingName)
+		interval, err := dbmodel.GetSettingInt(puller.DB, puller.intervalSettingName)
 		if err != nil {
 			log.Errorf("problem with getting interval setting %s from db: %+v",
 				puller.intervalSettingName, err)

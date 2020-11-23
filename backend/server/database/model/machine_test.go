@@ -343,7 +343,7 @@ func TestDeleteMachineWithApps(t *testing.T) {
 	require.NotEqual(t, 0, appID)
 
 	// reload machine from db to get apps relation loaded
-	err = RefreshMachineFromDb(db, m)
+	err = RefreshMachineFromDB(db, m)
 	require.Nil(t, err)
 
 	// delete machine
@@ -356,7 +356,7 @@ func TestDeleteMachineWithApps(t *testing.T) {
 	require.Nil(t, a)
 }
 
-func TestRefreshMachineFromDb(t *testing.T) {
+func TestRefreshMachineFromDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -377,7 +377,7 @@ func TestRefreshMachineFromDb(t *testing.T) {
 	m.State.Cpus = 2
 	m.Error = ""
 
-	err = RefreshMachineFromDb(db, m)
+	err = RefreshMachineFromDB(db, m)
 	require.Nil(t, err)
 	require.Equal(t, "aaaa", m.State.Hostname)
 	require.EqualValues(t, 4, m.State.Cpus)

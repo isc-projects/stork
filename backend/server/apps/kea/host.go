@@ -65,13 +65,13 @@ func (puller *HostsPuller) Shutdown() {
 // Triggers fetch of the host reservations from the monitored Kea apps.
 func (puller *HostsPuller) pullData() (int, error) {
 	// Get the list of all Kea apps from the database.
-	apps, err := dbmodel.GetAppsByType(puller.Db, dbmodel.AppTypeKea)
+	apps, err := dbmodel.GetAppsByType(puller.DB, dbmodel.AppTypeKea)
 	if err != nil {
 		return 0, err
 	}
 
 	// Get sequence number to be associated with updated and inserted hosts.
-	seq, err := dbmodel.GetNextBulkUpdateSeq(puller.Db)
+	seq, err := dbmodel.GetNextBulkUpdateSeq(puller.DB)
 	if err != nil {
 		err = errors.WithMessagef(err, "problem with getting next bulk update sequence number fetching hosts from Kea apps")
 		return 0, err
@@ -81,7 +81,7 @@ func (puller *HostsPuller) pullData() (int, error) {
 	var lastErr error
 	appsOkCnt := 0
 	for i := range apps {
-		err := updateHostsFromHostCmds(puller.Db, puller.Agents, &apps[i], seq)
+		err := updateHostsFromHostCmds(puller.DB, puller.Agents, &apps[i], seq)
 		if err != nil {
 			lastErr = err
 			log.Errorf("error occurred while fetching hosts from app %d: %+v", apps[i].ID, err)
@@ -92,7 +92,7 @@ func (puller *HostsPuller) pullData() (int, error) {
 
 	// Remove all associations between the hosts and tha apps that are no longer
 	// present.
-	err = dbmodel.DeleteLocalHostsWithOtherSeq(puller.Db, seq, "api")
+	err = dbmodel.DeleteLocalHostsWithOtherSeq(puller.DB, seq, "api")
 	if err != nil {
 		log.Errorf("error occurred while deleting old hosts after update from Kea apps: %+v", err)
 	}

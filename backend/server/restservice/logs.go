@@ -17,7 +17,7 @@ import (
 func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailParams) middleware.Responder {
 	// We have ID of the log file to display. We need to get the details
 	// of the file from the database.
-	dbLogTarget, err := dbmodel.GetLogTargetByID(r.Db, params.ID)
+	dbLogTarget, err := dbmodel.GetLogTargetByID(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get information about the log file with id %d from the database", params.ID)
 		log.Error(msg)

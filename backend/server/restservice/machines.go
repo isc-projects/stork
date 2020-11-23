@@ -71,7 +71,7 @@ func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 
 // Get runtime state of indicated machine.
 func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachineStateParams) middleware.Responder {
-	dbMachine, err := dbmodel.GetMachineByID(r.Db, params.ID)
+	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
@@ -88,7 +88,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
-	errStr := apps.GetMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents, r.EventCenter)
+	errStr := apps.GetMachineAndAppsState(ctx, r.DB, dbMachine, r.Agents, r.EventCenter)
 	if errStr != "" {
 		rsp := services.NewGetMachineStateDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
@@ -103,7 +103,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 }
 
 func (r *RestAPI) getMachines(offset, limit int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Machines, error) {
-	dbMachines, total, err := dbmodel.GetMachinesByPage(r.Db, offset, limit, filterText, sortField, sortDir)
+	dbMachines, total, err := dbmodel.GetMachinesByPage(r.DB, offset, limit, filterText, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 
 // Get one machine by ID where Stork Agent is running.
 func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachineParams) middleware.Responder {
-	dbMachine, err := dbmodel.GetMachineByID(r.Db, params.ID)
+	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
@@ -212,7 +212,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
-	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.Db, addr, params.Machine.AgentPort)
+	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.DB, addr, params.Machine.AgentPort)
 	if err == nil && dbMachine != nil {
 		msg := fmt.Sprintf("machine %s:%d already exists", addr, params.Machine.AgentPort)
 		log.Warnf(msg)
@@ -224,7 +224,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 
 	if dbMachine == nil {
 		dbMachine = &dbmodel.Machine{Address: addr, AgentPort: params.Machine.AgentPort}
-		err = dbmodel.AddMachine(r.Db, dbMachine)
+		err = dbmodel.AddMachine(r.DB, dbMachine)
 		if err != nil {
 			msg := fmt.Sprintf("cannot store machine %s", addr)
 			log.Error(err)
@@ -236,7 +236,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		r.EventCenter.AddInfoEvent("added {machine}", dbMachine)
 	}
 
-	errStr := apps.GetMachineAndAppsState(ctx, r.Db, dbMachine, r.Agents, r.EventCenter)
+	errStr := apps.GetMachineAndAppsState(ctx, r.DB, dbMachine, r.Agents, r.EventCenter)
 	if errStr != "" {
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &errStr,
@@ -278,7 +278,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		return rsp
 	}
 
-	dbMachine, err := dbmodel.GetMachineByID(r.Db, params.ID)
+	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
@@ -297,7 +297,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 
 	// check if there is no duplicate
 	if dbMachine.Address != addr || dbMachine.AgentPort != params.Machine.AgentPort {
-		dbMachine2, err := dbmodel.GetMachineByAddressAndAgentPort(r.Db, addr, params.Machine.AgentPort)
+		dbMachine2, err := dbmodel.GetMachineByAddressAndAgentPort(r.DB, addr, params.Machine.AgentPort)
 		if err == nil && dbMachine2 != nil && dbMachine2.ID != dbMachine.ID {
 			msg := fmt.Sprintf("machine with address %s:%d already exists",
 				*params.Machine.Address, params.Machine.AgentPort)
@@ -311,7 +311,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	// copy fields
 	dbMachine.Address = addr
 	dbMachine.AgentPort = params.Machine.AgentPort
-	err = r.Db.Update(dbMachine)
+	err = r.DB.Update(dbMachine)
 	if err != nil {
 		msg := fmt.Sprintf("cannot update machine with id %d in db", params.ID)
 		log.Error(err)
@@ -327,7 +327,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 
 // Add a machine where Stork Agent is running.
 func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachineParams) middleware.Responder {
-	dbMachine, err := dbmodel.GetMachineByID(r.Db, params.ID)
+	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
 	if err == nil && dbMachine == nil {
 		rsp := services.NewDeleteMachineOK()
 		return rsp
@@ -340,7 +340,7 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 		return rsp
 	}
 
-	err = dbmodel.DeleteMachine(r.Db, dbMachine)
+	err = dbmodel.DeleteMachine(r.DB, dbMachine)
 	if err != nil {
 		msg := fmt.Sprintf("cannot delete machine %d", params.ID)
 		log.Error(err)
@@ -513,7 +513,7 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 }
 
 func (r *RestAPI) getApps(offset, limit int64, filterText *string, appType string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Apps, error) {
-	dbApps, total, err := dbmodel.GetAppsByPage(r.Db, offset, limit, filterText, appType, sortField, sortDir)
+	dbApps, total, err := dbmodel.GetAppsByPage(r.DB, offset, limit, filterText, appType, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}
@@ -565,7 +565,7 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 }
 
 func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) middleware.Responder {
-	dbApp, err := dbmodel.GetAppByID(r.Db, params.ID)
+	dbApp, err := dbmodel.GetAppByID(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get app with id %d from db", params.ID)
 		log.Error(err)
@@ -594,7 +594,7 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 
 // Gets current status of services which the given application is associated with.
 func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetAppServicesStatusParams) middleware.Responder {
-	dbApp, err := dbmodel.GetAppByID(r.Db, params.ID)
+	dbApp, err := dbmodel.GetAppByID(r.DB, params.ID)
 	if err != nil {
 		log.Error(err)
 		msg := fmt.Sprintf("cannot get app with id %d from the database", params.ID)
@@ -618,7 +618,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 	// If this is Kea application, get the Kea DHCP servers status which possibly
 	// includes HA status.
 	if dbApp.Type == dbmodel.AppTypeKea {
-		keaServices, err := dbmodel.GetDetailedServicesByAppID(r.Db, dbApp.ID)
+		keaServices, err := dbmodel.GetDetailedServicesByAppID(r.DB, dbApp.ID)
 		if err != nil {
 			log.Error(err)
 			msg := fmt.Sprintf("cannot get status of the app with id %d", params.ID)
@@ -753,7 +753,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 
 // Get statistics about applications.
 func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStatsParams) middleware.Responder {
-	dbApps, err := dbmodel.GetAllApps(r.Db)
+	dbApps, err := dbmodel.GetAllApps(r.DB)
 	if err != nil {
 		msg := "cannot get all apps from db"
 		log.Error(err)
@@ -833,7 +833,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	}
 
 	// get dhcp statistics
-	stats, err := dbmodel.GetAllStats(r.Db)
+	stats, err := dbmodel.GetAllStats(r.DB)
 	if err != nil {
 		msg := "cannot get statistics from db"
 		log.Error(err)
@@ -857,7 +857,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	}
 
 	// get kea apps and daemons statuses
-	dbApps, err := dbmodel.GetAppsByType(r.Db, dbmodel.AppTypeKea)
+	dbApps, err := dbmodel.GetAppsByType(r.DB, dbmodel.AppTypeKea)
 	if err != nil {
 		msg := "cannot get statistics from db"
 		log.Error(err)
@@ -951,7 +951,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 
 // Update a daemon.
 func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemonParams) middleware.Responder {
-	dbDaemon, err := dbmodel.GetDaemonByID(r.Db, params.ID)
+	dbDaemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get daemon with id %d from db", params.ID)
 		log.Error(err)
@@ -972,7 +972,7 @@ func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemon
 
 	dbDaemon.Monitored = params.Daemon.Monitored
 
-	err = dbmodel.UpdateDaemon(r.Db, dbDaemon)
+	err = dbmodel.UpdateDaemon(r.DB, dbDaemon)
 	if err != nil {
 		msg := fmt.Sprintf("failed updating daemon with id %d", params.ID)
 		rsp := services.NewUpdateDaemonDefault(http.StatusInternalServerError).WithPayload(&models.APIError{

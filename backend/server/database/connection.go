@@ -13,10 +13,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type DbLogger struct{}
+type DBLogger struct{}
 
 // Hook run before SQL query execution.
-func (d DbLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
+func (d DBLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
 	// When making queries on the system_user table we want to make sure that
 	// we don't expose actual data in the logs, especially password.
 	if model, ok := q.Model.(orm.TableModel); ok {
@@ -43,17 +43,17 @@ func (d DbLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Cont
 }
 
 // Hook run after SQL query execution.
-func (d DbLogger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
+func (d DBLogger) AfterQuery(c context.Context, q *pg.QueryEvent) error {
 	return nil
 }
 
 // Create only new PgDB instance.
-func NewPgDbConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
+func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 	db := pg.Connect(pgParams)
 
 	// Add tracing hooks if requested.
 	if tracing {
-		db.AddQueryHook(DbLogger{})
+		db.AddQueryHook(DBLogger{})
 	}
 
 	log.Printf("checking connection to database")
@@ -86,7 +86,7 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 	Password(settings)
 
 	// Make a connection to DB (tracing is enabled at this stage if set to all (migrations and run-time))
-	db, err := NewPgDbConn(settings.PgParams(), settings.TraceSQL == "all")
+	db, err := NewPgDBConn(settings.PgParams(), settings.TraceSQL == "all")
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 
 	// Enable tracing here, if we were told to enable only at run-time
 	if settings.TraceSQL == "run" {
-		db.AddQueryHook(DbLogger{})
+		db.AddQueryHook(DBLogger{})
 	}
 
 	log.Infof("connected to database %s:%d, schema version: %d", settings.Host, settings.Port, newVer)

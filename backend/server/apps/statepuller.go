@@ -44,7 +44,7 @@ func (puller *StatePuller) Shutdown() {
 // Gets the status of machines and their apps and stores useful information in the database.
 func (puller *StatePuller) pullData() (int, error) {
 	// get list of all machines from database
-	dbMachines, err := dbmodel.GetAllMachines(puller.Db)
+	dbMachines, err := dbmodel.GetAllMachines(puller.DB)
 	if err != nil {
 		return 0, err
 	}
@@ -55,7 +55,7 @@ func (puller *StatePuller) pullData() (int, error) {
 	for _, dbM := range dbMachines {
 		dbM2 := dbM
 		ctx := context.Background()
-		errStr := GetMachineAndAppsState(ctx, puller.Db, &dbM2, puller.Agents, puller.EventCenter)
+		errStr := GetMachineAndAppsState(ctx, puller.DB, &dbM2, puller.Agents, puller.EventCenter)
 		if errStr != "" {
 			lastErr = errors.New(errStr)
 			log.Errorf("error occurred while getting info from machine %d: %s", dbM2.ID, errStr)

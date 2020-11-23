@@ -20,8 +20,8 @@ import (
 
 // Global Stork Server state.
 type StorkServer struct {
-	DbSettings dbops.DatabaseSettings
-	Db         *dbops.PgDB
+	DBSettings dbops.DatabaseSettings
+	DB         *dbops.PgDB
 
 	AgentsSettings agentcomm.AgentsSettings
 	Agents         agentcomm.ConnectedAgents
@@ -51,7 +51,7 @@ func (ss *StorkServer) ParseArgs() {
 	parser.LongDescription = "Stork Server is a Kea and BIND 9 Dashboard"
 
 	// Process Database specific args.
-	_, err := parser.AddGroup("Database ConnectionFlags", "", &ss.DbSettings)
+	_, err := parser.AddGroup("Database ConnectionFlags", "", &ss.DBSettings)
 	if err != nil {
 		log.Fatalf("FATAL error: %+v", err)
 	}
@@ -93,19 +93,19 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	ss.ParseArgs()
 
 	// setup database connection
-	ss.Db, err = dbops.NewPgDB(&ss.DbSettings)
+	ss.DB, err = dbops.NewPgDB(&ss.DBSettings)
 	if err != nil {
 		return nil, err
 	}
 
 	// initialize stork settings
-	err = dbmodel.InitializeSettings(ss.Db)
+	err = dbmodel.InitializeSettings(ss.DB)
 	if err != nil {
 		return nil, err
 	}
 
 	// setup event center
-	ss.EventCenter = eventcenter.NewEventCenter(ss.Db)
+	ss.EventCenter = eventcenter.NewEventCenter(ss.DB)
 
 	// setup connected agents
 	ss.Agents = agentcomm.NewConnectedAgents(&ss.AgentsSettings, ss.EventCenter)
@@ -118,50 +118,50 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	// }()
 
 	// initialize stork statistics
-	err = dbmodel.InitializeStats(ss.Db)
+	err = dbmodel.InitializeStats(ss.DB)
 	if err != nil {
 		return nil, err
 	}
 
 	// setup apps state puller
-	ss.AppsStatePuller, err = apps.NewStatePuller(ss.Db, ss.Agents, ss.EventCenter)
+	ss.AppsStatePuller, err = apps.NewStatePuller(ss.DB, ss.Agents, ss.EventCenter)
 	if err != nil {
 		return nil, err
 	}
 
 	// setup bind9 stats puller
-	ss.Bind9StatsPuller, err = bind9.NewStatsPuller(ss.Db, ss.Agents, ss.EventCenter)
+	ss.Bind9StatsPuller, err = bind9.NewStatsPuller(ss.DB, ss.Agents, ss.EventCenter)
 	if err != nil {
 		return nil, err
 	}
 
 	// setup kea stats puller
-	ss.KeaStatsPuller, err = kea.NewStatsPuller(ss.Db, ss.Agents)
+	ss.KeaStatsPuller, err = kea.NewStatsPuller(ss.DB, ss.Agents)
 	if err != nil {
 		return nil, err
 	}
 
 	// Setup Kea hosts puller.
-	ss.KeaHostsPuller, err = kea.NewHostsPuller(ss.Db, ss.Agents)
+	ss.KeaHostsPuller, err = kea.NewHostsPuller(ss.DB, ss.Agents)
 	if err != nil {
 		return nil, err
 	}
 
 	// Setup Kea HA status puller.
-	ss.HAStatusPuller, err = kea.NewHAStatusPuller(ss.Db, ss.Agents)
+	ss.HAStatusPuller, err = kea.NewHAStatusPuller(ss.DB, ss.Agents)
 	if err != nil {
 		return nil, err
 	}
 
 	// setup ReST API service
-	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DbSettings, ss.Db, ss.Agents, ss.EventCenter)
+	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings, ss.DB, ss.Agents, ss.EventCenter)
 	if err != nil {
 		ss.HAStatusPuller.Shutdown()
 		ss.KeaHostsPuller.Shutdown()
 		ss.KeaStatsPuller.Shutdown()
 		ss.Bind9StatsPuller.Shutdown()
 		ss.AppsStatePuller.Shutdown()
-		ss.Db.Close()
+		ss.DB.Close()
 		return nil, err
 	}
 	ss.RestAPI = r
@@ -192,6 +192,6 @@ func (ss *StorkServer) Shutdown() {
 	ss.AppsStatePuller.Shutdown()
 	ss.Agents.Shutdown()
 	ss.EventCenter.Shutdown()
-	ss.Db.Close()
+	ss.DB.Close()
 	log.Println("Stork Server shut down")
 }
