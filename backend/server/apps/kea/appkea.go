@@ -116,7 +116,7 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 		case err != nil:
 			errStr += fmt.Sprintf("%s", err)
 		case len(versionGetResp) == 0:
-			errStr += fmt.Sprintf("empty response")
+			errStr += "empty response"
 		default:
 			errStr += fmt.Sprintf("result == %d, msg: %s", versionGetResp[0].Result, versionGetResp[0].Text)
 		}

@@ -34,7 +34,7 @@ func mockRndc(command []string) ([]byte, error) {
 	}
 
 	// unknown command.
-	output = fmt.Sprintf("unknown command")
+	output = "unknown command"
 	return []byte(output), nil
 }
 

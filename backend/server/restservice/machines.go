@@ -755,7 +755,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStatsParams) middleware.Responder {
 	dbApps, err := dbmodel.GetAllApps(r.Db)
 	if err != nil {
-		msg := fmt.Sprintf("cannot get all apps from db")
+		msg := "cannot get all apps from db"
 		log.Error(err)
 		rsp := services.NewGetAppsStatsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,

@@ -175,7 +175,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	if params.Account == nil {
 		log.Warnf("failed to create new user account: missing data")
 
-		msg := fmt.Sprintf("failed to create new user account: missing data")
+		msg := "failed to create new user account: missing data"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -187,7 +187,7 @@ func (r *RestAPI) CreateUser(ctx context.Context, params users.CreateUserParams)
 	if u == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
 		log.Warnf("failed to create new user account: missing data")
 
-		msg := fmt.Sprintf("failed to create new user account: missing data")
+		msg := "failed to create new user account: missing data"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -238,7 +238,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	if params.Account == nil {
 		log.Warnf("failed to update user account: missing data")
 
-		msg := fmt.Sprintf("failed to update user account: missing data")
+		msg := "failed to update user account: missing data"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
@@ -250,7 +250,7 @@ func (r *RestAPI) UpdateUser(ctx context.Context, params users.UpdateUserParams)
 	if u == nil || u.ID == nil || u.Login == nil || u.Email == nil || u.Lastname == nil || u.Name == nil {
 		log.Warnf("failed to update user account: missing data")
 
-		msg := fmt.Sprintf("failed to update user account: missing data")
+		msg := "failed to update user account: missing data"
 		rspErr := models.APIError{
 			Message: &msg,
 		}
