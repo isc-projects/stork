@@ -905,7 +905,7 @@ GECKO_DRV = "#{SELENIUM_DIR}/geckodriver-#{GECKO_DRV_VERSION}"
 GECKO_DRV_URL = "https://github.com/mozilla/geckodriver/releases/download/v#{GECKO_DRV_VERSION}/geckodriver-v#{GECKO_DRV_VERSION}-linux64.tar.gz"
 
 if ENV['CHROME_BIN']
-  out = `#{ENV['CHROME_BIN']} --version`
+  out = `"#{ENV['CHROME_BIN']}" --version`
   if out.include? '85.'
     CHROME_DRV_VERSION = '85.0.4183.87'
   elsif out.include? '86.'
