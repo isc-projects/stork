@@ -10,8 +10,10 @@ type AccessPoint struct {
 	Key       string
 }
 
-const AccessPointControl = "control"
-const AccessPointStatistics = "statistics"
+const (
+	AccessPointControl    = "control"
+	AccessPointStatistics = "statistics"
+)
 
 // AppendAccessPoint is an utility function that appends an access point to a
 // list.

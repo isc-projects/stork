@@ -7,7 +7,9 @@ import (
 	"github.com/go-pg/migrations/v7"
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
-	_ "isc.org/stork/server/database/migrations" // TODO: document why it is blank imported
+
+	// TODO: document why it is blank imported.
+	_ "isc.org/stork/server/database/migrations"
 )
 
 // Checks if the migrations table exists, i.e. the 'init' command was called.
@@ -31,7 +33,6 @@ func Toss(db *PgDB) error {
 
 	// Migrate the database down to 0.
 	_, _, err := Migrate(db, "reset")
-
 	if err != nil {
 		return err
 	}
@@ -63,7 +64,7 @@ func Migrate(db *PgDB, args ...string) (oldVersion, newVersion int64, err error)
 		if oldVer, _, err = migrations.Run(db, "version"); err != nil {
 			return oldVer, oldVer, errors.Wrapf(err, "problem with checking database version")
 		}
-		var toVer, err = strconv.ParseInt(args[1], 10, 64)
+		toVer, err := strconv.ParseInt(args[1], 10, 64)
 		if err != nil {
 			return oldVer, oldVer, errors.Wrapf(err, "can't parse -t argument %s as database version (expected integer)", args[1])
 		}

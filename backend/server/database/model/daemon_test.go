@@ -5,7 +5,6 @@ import (
 	"time"
 
 	require "github.com/stretchr/testify/require"
-
 	dbtest "isc.org/stork/server/database/test"
 )
 

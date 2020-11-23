@@ -7,7 +7,7 @@ import (
 	errors "github.com/pkg/errors"
 )
 
-// The number of responses a daemon sent during an interval of time
+// The number of responses a daemon sent during an interval of time.
 type RpsInterval struct {
 	KeaDaemonID int64     `pg:",pk"` // ID of Kea daemon
 	StartTime   time.Time `pg:",pk"` // beginning of this interval
@@ -32,7 +32,7 @@ func GetAllRpsIntervals(db *pg.DB) ([]*RpsInterval, error) {
 // One element for the given daemon id where:
 // RpsInterval.StartTime = 0 (unused)
 // RpsInterval.Responses = total of number of responses
-// RpsInterval.Duration = total of the interval durations
+// RpsInterval.Duration = total of the interval durations.
 func GetTotalRpsOverIntervalForDaemon(db *pg.DB, startTime time.Time, endTime time.Time, daemonID int64) ([]*RpsInterval, error) {
 	rpsTotals := []*RpsInterval{}
 
@@ -51,7 +51,7 @@ func GetTotalRpsOverIntervalForDaemon(db *pg.DB, startTime time.Time, endTime ti
 	return rpsTotals, nil
 }
 
-// Add an interval to the database
+// Add an interval to the database.
 func AddRpsInterval(db *pg.DB, rpsInterval *RpsInterval) error {
 	err := db.Insert(rpsInterval)
 	if err != nil {
@@ -60,7 +60,7 @@ func AddRpsInterval(db *pg.DB, rpsInterval *RpsInterval) error {
 	return err
 }
 
-// Delete all records whose start_time is older than a given time
+// Delete all records whose start_time is older than a given time.
 func AgeOffRpsInterval(db *pg.DB, startTime time.Time) error {
 	// Delete records.
 	_, err := db.Model(&RpsInterval{}).Where("start_time < ?", startTime).Delete()

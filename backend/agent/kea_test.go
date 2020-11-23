@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
-
 	keactrl "isc.org/stork/appctrl/kea"
 )
 

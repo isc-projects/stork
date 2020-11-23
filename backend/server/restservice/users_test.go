@@ -381,7 +381,7 @@ func TestGetUser(t *testing.T) {
 	// require.Len(t, okRsp.Payload.Groups, 1)
 }
 
-// Tests that
+// Tests that new session can be created for a logged user.
 func TestCreateSession(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

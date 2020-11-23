@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -30,45 +29,47 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Daemons: []*Daemon{{
-			KeaDaemon: &KeaDaemon{
-				Config: NewKeaConfig(&map[string]interface{}{
-					"Dhcp4": map[string]interface{}{
-						"subnet4": []map[string]interface{}{{
-							"id":     1,
-							"subnet": "192.168.0.0/24",
-							"pools": []map[string]interface{}{{
-								"pool": "192.168.0.1-192.168.0.100",
+		Daemons: []*Daemon{
+			{
+				KeaDaemon: &KeaDaemon{
+					Config: NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{
+							"subnet4": []map[string]interface{}{{
+								"id":     1,
+								"subnet": "192.168.0.0/24",
+								"pools": []map[string]interface{}{{
+									"pool": "192.168.0.1-192.168.0.100",
+								}, {
+									"pool": "192.168.0.150-192.168.0.200",
+								}},
+							}},
+							"shared-networks": []map[string]interface{}{{
+								"name": "frog",
+								"subnet4": []map[string]interface{}{{
+									"id":     11,
+									"subnet": "192.1.0.0/24",
+									"pools": []map[string]interface{}{{
+										"pool": "192.1.0.1-192.1.0.100",
+									}, {
+										"pool": "192.1.0.150-192.1.0.200",
+									}},
+								}},
 							}, {
-								"pool": "192.168.0.150-192.168.0.200",
-							}},
-						}},
-						"shared-networks": []map[string]interface{}{{
-							"name": "frog",
-							"subnet4": []map[string]interface{}{{
-								"id":     11,
-								"subnet": "192.1.0.0/24",
-								"pools": []map[string]interface{}{{
-									"pool": "192.1.0.1-192.1.0.100",
-								}, {
-									"pool": "192.1.0.150-192.1.0.200",
+								"name": "mouse",
+								"subnet4": []map[string]interface{}{{
+									"id":     12,
+									"subnet": "192.2.0.0/24",
+									"pools": []map[string]interface{}{{
+										"pool": "192.2.0.1-192.2.0.100",
+									}, {
+										"pool": "192.2.0.150-192.2.0.200",
+									}},
 								}},
 							}},
-						}, {
-							"name": "mouse",
-							"subnet4": []map[string]interface{}{{
-								"id":     12,
-								"subnet": "192.2.0.0/24",
-								"pools": []map[string]interface{}{{
-									"pool": "192.2.0.1-192.2.0.100",
-								}, {
-									"pool": "192.2.0.150-192.2.0.200",
-								}},
-							}},
-						}},
-					},
-				}),
-			}},
+						},
+					}),
+				},
+			},
 		},
 	}
 
@@ -145,24 +146,26 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		Type:         AppTypeKea,
 		Active:       true,
 		AccessPoints: accessPoints,
-		Daemons: []*Daemon{{
-			KeaDaemon: &KeaDaemon{
-				Config: NewKeaConfig(&map[string]interface{}{
-					"Dhcp6": map[string]interface{}{
-						"subnet6": []map[string]interface{}{{
-							"id":     2,
-							"subnet": "2001:db8:1::/64",
-						}},
-						"shared-networks": []map[string]interface{}{{
-							"name": "fox",
+		Daemons: []*Daemon{
+			{
+				KeaDaemon: &KeaDaemon{
+					Config: NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": map[string]interface{}{
 							"subnet6": []map[string]interface{}{{
-								"id":     21,
-								"subnet": "5001:db8:1::/64",
+								"id":     2,
+								"subnet": "2001:db8:1::/64",
 							}},
-						}},
-					},
-				}),
-			}},
+							"shared-networks": []map[string]interface{}{{
+								"name": "fox",
+								"subnet6": []map[string]interface{}{{
+									"id":     21,
+									"subnet": "5001:db8:1::/64",
+								}},
+							}},
+						},
+					}),
+				},
+			},
 		},
 	}
 	_, err = AddApp(db, a6)
@@ -513,7 +516,8 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 							}},
 						},
 					}),
-				}},
+				},
+			},
 		},
 	}
 	_, err = AddApp(db, a4)

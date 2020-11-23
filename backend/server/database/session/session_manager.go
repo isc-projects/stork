@@ -9,9 +9,10 @@ import (
 
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
-	_ "github.com/lib/pq" // TODO: document why it is blank imported
-	"github.com/pkg/errors"
 
+	// TODO: document why it is blank imported.
+	_ "github.com/lib/pq"
+	"github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 )

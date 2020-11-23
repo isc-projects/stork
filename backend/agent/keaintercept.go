@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
-
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
 )

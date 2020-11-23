@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	dbops "isc.org/stork/server/database"
 )
 

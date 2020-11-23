@@ -3,7 +3,6 @@ package kea
 import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 )

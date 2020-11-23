@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbsession "isc.org/stork/server/database/session"
 	dbtest "isc.org/stork/server/database/test"

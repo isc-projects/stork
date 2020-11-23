@@ -8,7 +8,6 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-
 	keaconfig "isc.org/stork/appcfg/kea"
 )
 

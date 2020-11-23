@@ -25,10 +25,10 @@ type DatabaseSettings struct {
 	TraceSQL string `long:"db-trace-queries" description:"enable tracing SQL queries: run (only runtime, without migrations), all (migrations and run-time), all is the default and covers both migrations and run-time." env:"STORK_DATABASE_TRACE" optional:"true" optional-value:"all"`
 }
 
-// Alias to pg.DB
+// Alias to pg.DB.
 type PgDB = pg.DB
 
-// Alias to pg.Conn
+// Alias to pg.Conn.
 type PgConn = pg.Conn
 
 // Alias to pg.Options.

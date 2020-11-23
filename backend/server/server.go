@@ -6,7 +6,6 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
-
 	"isc.org/stork"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
@@ -18,7 +17,7 @@ import (
 	"isc.org/stork/server/restservice"
 )
 
-// Global Stork Server state
+// Global Stork Server state.
 type StorkServer struct {
 	DbSettings dbops.DatabaseSettings
 	Db         *dbops.PgDB
@@ -86,7 +85,7 @@ func (ss *StorkServer) ParseArgs() {
 	}
 }
 
-// Init for Stork Server state
+// Init for Stork Server state.
 func NewStorkServer() (ss *StorkServer, err error) {
 	ss = &StorkServer{}
 	ss.ParseArgs()
@@ -170,7 +169,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	return ss, nil
 }
 
-// Run Stork Server
+// Run Stork Server.
 func (ss *StorkServer) Serve() {
 	// Start listening for requests from ReST API.
 	err := ss.RestAPI.Serve()
@@ -179,7 +178,7 @@ func (ss *StorkServer) Serve() {
 	}
 }
 
-// Shutdown for Stork Server state
+// Shutdown for Stork Server state.
 func (ss *StorkServer) Shutdown() {
 	ss.EventCenter.AddInfoEvent("shutting down Stork server")
 	log.Println("Shutting down Stork Server")

@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	require "github.com/stretchr/testify/require"
-
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbops "isc.org/stork/server/database"

@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
-
 	dbmodel "isc.org/stork/server/database/model"
 )
 

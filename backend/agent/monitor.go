@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/process"
 	log "github.com/sirupsen/logrus"
-
 	storkutil "isc.org/stork/util"
 )
 
@@ -23,9 +22,11 @@ type AccessPoint struct {
 	Key     string
 }
 
-// Currently supported types are: "control" and "statistics"
-const AccessPointControl = "control"
-const AccessPointStatistics = "statistics"
+// Currently supported types are: "control" and "statistics".
+const (
+	AccessPointControl    = "control"
+	AccessPointStatistics = "statistics"
+)
 
 type App struct {
 	Pid          int32
@@ -33,9 +34,11 @@ type App struct {
 	AccessPoints []AccessPoint
 }
 
-// Currently supported types are: "kea" and "bind9"
-const AppTypeKea = "kea"
-const AppTypeBind9 = "bind9"
+// Currently supported types are: "kea" and "bind9".
+const (
+	AppTypeKea   = "kea"
+	AppTypeBind9 = "bind9"
+)
 
 type AppMonitor interface {
 	GetApps() []*App

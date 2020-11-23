@@ -14,7 +14,6 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
@@ -30,18 +29,22 @@ type AccessPoint struct {
 	Key     string
 }
 
-// Currently supported types are: "control" and "statistics"
-const AccessPointControl = "control"
-const AccessPointStatistics = "statistics"
+// Currently supported types are: "control" and "statistics".
+const (
+	AccessPointControl    = "control"
+	AccessPointStatistics = "statistics"
+)
 
 type App struct {
 	Type         string
 	AccessPoints []AccessPoint
 }
 
-// Currently supported types are: "kea" and "bind9"
-const AppTypeKea = "kea"
-const AppTypeBind9 = "bind9"
+// Currently supported types are: "kea" and "bind9".
+const (
+	AppTypeKea   = "kea"
+	AppTypeBind9 = "bind9"
+)
 
 // State of the machine. It describes multiple properties of the machine like number of CPUs
 // or operating system name and version.
@@ -607,7 +610,7 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 			}
 		}
 	}
-	//log.Printf("errors CA: prev: %d, curr: %d", prevErrorsCA, keaCommStats.CurrentErrorsCA)
+	// log.Printf("errors CA: prev: %d, curr: %d", prevErrorsCA, keaCommStats.CurrentErrorsCA)
 
 	// Set the counters for individual daemons.
 	for dmnName, errCnt := range daemonErrorsCount {
@@ -620,7 +623,7 @@ func (agents *connectedAgentsData) updateErrorStatsAndRaiseEvents(agent *Agent, 
 
 		// if communication with given daemon started or stopped failing then generate an event
 		currentErrors := keaCommStats.CurrentErrorsDaemons[dmnName]
-		//log.Printf("errors %s: prev: %d, curr: %d", dmnName, prevErrors, currentErrors)
+		// log.Printf("errors %s: prev: %d, curr: %d", dmnName, prevErrors, currentErrors)
 		if (prevErrors == 0 && currentErrors > 0) || (prevErrors > 0 && currentErrors == 0) {
 			for _, dmn := range dbApp.Daemons {
 				if dmn.Name == dmnName {

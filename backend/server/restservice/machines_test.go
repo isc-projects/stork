@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
@@ -335,7 +334,7 @@ func TestGetMachines(t *testing.T) {
 	rsp := rapi.GetMachines(ctx, params)
 	ms := rsp.(*services.GetMachinesOK).Payload
 	require.EqualValues(t, ms.Total, 0)
-	//require.Greater(t, ms.Items, )
+	// require.Greater(t, ms.Items, )
 }
 
 func TestGetMachine(t *testing.T) {

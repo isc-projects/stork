@@ -9,11 +9,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	"isc.org/stork"
 )
 
-// Aux function checks if a list of expected strings is present in the string
+// Aux function checks if a list of expected strings is present in the string.
 func checkOutput(output string, exp []string, reason string) bool {
 	for _, x := range exp {
 		fmt.Printf("Checking if %s exists in %s.\n", x, reason)
@@ -27,20 +26,22 @@ func checkOutput(output string, exp []string, reason string) bool {
 
 // This is the list of all parameters we expect to see there.
 func getExpectedSwitches() []string {
-	return []string{"-v", "--version", "-d", "--db-name", "-u", "--db-user", "--db-host",
+	return []string{
+		"-v", "--version", "-d", "--db-name", "-u", "--db-user", "--db-host",
 		"-p", "--db-port", "--db-trace-queries", "--rest-cleanup-timeout", "--rest-graceful-timeout",
 		"--rest-max-header-size", "--rest-host", "--rest-port", "--rest-listen-limit",
 		"--rest-keep-alive", "--rest-read-timeout", "--rest-write-timeout", "--rest-tls-certificate",
-		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir"}
+		"--rest-tls-key", "--rest-tls-ca", "--rest-static-files-dir",
+	}
 }
 
-// Location of the stork-server binary
+// Location of the stork-server binary.
 const ServerBin = "../cmd/stork-server/stork-server"
 
-// Location of the stork-server man page
+// Location of the stork-server man page.
 const AgentMan = "../../doc/man/stork-server.8.rst"
 
-// This test checks if stork-agent -h reports all expected command-line switches
+// This test checks if stork-agent -h reports all expected command-line switches.
 func TestCommandLineSwitches(t *testing.T) {
 	// Run the --help version and get its output.
 	agentCmd := exec.Command(ServerBin, "-h")
@@ -51,7 +52,7 @@ func TestCommandLineSwitches(t *testing.T) {
 	require.True(t, checkOutput(string(output), getExpectedSwitches(), "stork-agent -h output"))
 }
 
-// This test checks if all expected command-line switches are documented
+// This test checks if all expected command-line switches are documented.
 func TestCommandLineSwitchesDoc(t *testing.T) {
 	// Read the contents of the man page
 	file, err := os.Open(AgentMan)

@@ -1,10 +1,9 @@
 package kea
 
 import (
+	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
-
-	keaconfig "isc.org/stork/appcfg/kea"
 )
 
 // Checks if the specified Kea daemon belongs to a given HA service.

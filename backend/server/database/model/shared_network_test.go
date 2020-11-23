@@ -1,10 +1,10 @@
 package dbmodel
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	dbtest "isc.org/stork/server/database/test"
-
-	"testing"
 )
 
 // Tests that the shared network can be added and retrieved.

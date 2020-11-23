@@ -1,12 +1,11 @@
 package dbmodel
 
 import (
+	"time"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
-
 	dbops "isc.org/stork/server/database"
-
-	"time"
 )
 
 // A structure reflecting service SQL table. This table holds
@@ -313,7 +312,6 @@ func GetDetailedService(db *dbops.PgDB, serviceID int64) (*Service, error) {
 		Relation("Daemons.App").
 		Where("service.id = ?", serviceID).
 		Select()
-
 	if err != nil {
 		if err == pg.ErrNoRows {
 			return nil, nil

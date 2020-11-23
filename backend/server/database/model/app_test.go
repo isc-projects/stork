@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	require "github.com/stretchr/testify/require"
-	//log "github.com/sirupsen/logrus"
-
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbtest "isc.org/stork/server/database/test"
 )

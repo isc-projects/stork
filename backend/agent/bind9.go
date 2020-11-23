@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-
 	storkutil "isc.org/stork/util"
 )
 
@@ -25,8 +24,10 @@ type Bind9State struct {
 	Daemon  Bind9Daemon
 }
 
-const RndcDefaultPort = 953
-const StatsChannelDefaultPort = 80
+const (
+	RndcDefaultPort         = 953
+	StatsChannelDefaultPort = 80
+)
 
 const defaultNamedConfFile = "/etc/bind/named.conf"
 

@@ -8,14 +8,13 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
 )
 
-// Settings specific to communication with Agents
+// Settings specific to communication with Agents.
 type AgentsSettings struct {
 }
 

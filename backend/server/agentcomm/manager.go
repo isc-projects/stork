@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
 	agentapi "isc.org/stork/api"
 )
 
@@ -84,7 +83,6 @@ func (agents *connectedAgentsData) handleRequest(req *commLoopReq) {
 	// do call
 	ctx := context.Background()
 	response, err := doCall(ctx, agent, req.ReqData)
-
 	if err != nil {
 		// GetConnectedAgent remembers the grpc connection so it might
 		// return an already existing connection.  This connection may

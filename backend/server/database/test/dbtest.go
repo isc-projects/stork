@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	dbops "isc.org/stork/server/database"
 )
 

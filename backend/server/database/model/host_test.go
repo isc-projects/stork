@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-pg/pg/v9"
 	"github.com/stretchr/testify/require"
-
 	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )

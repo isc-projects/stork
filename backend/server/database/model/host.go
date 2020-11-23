@@ -9,7 +9,6 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	errors "github.com/pkg/errors"
-
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
@@ -51,7 +50,7 @@ type Host struct {
 	LocalHosts []LocalHost
 
 	// This flag is used to indicate that some changes have been applied to
-	//the Host instance locally and that these changes should be applied in
+	// the Host instance locally and that these changes should be applied in
 	// the database too. It also indicates that the new app should be
 	// associated with the host upon the call to the CommitSubnetHostsIntoDB.
 	UpdateOnCommit bool `pg:"-"`
@@ -225,7 +224,6 @@ func GetHost(db *pg.DB, hostID int64) (*Host, error) {
 		Relation("LocalHosts.App").
 		Where("host.id = ?", hostID).
 		Select()
-
 	if err != nil {
 		if err == pg.ErrNoRows {
 			return nil, nil
@@ -261,7 +259,6 @@ func GetAllHosts(db *pg.DB, family int) ([]Host, error) {
 		OrderExpr("id ASC")
 
 	err := q.Select()
-
 	if err != nil {
 		if err == pg.ErrNoRows {
 			return nil, nil
@@ -274,7 +271,7 @@ func GetAllHosts(db *pg.DB, family int) ([]Host, error) {
 
 // Fetches a collection of hosts by subnet ID. This function may be sometimes
 // used within a transaction. In particular, when we're synchronizing hosts
-// fetched from the Kea hosts backend in multiple chunks.`
+// fetched from the Kea hosts backend in multiple chunks.`.
 func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 	hosts := []Host{}
 

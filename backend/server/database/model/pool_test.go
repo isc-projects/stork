@@ -1,10 +1,10 @@
 package dbmodel
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	dbtest "isc.org/stork/server/database/test"
-
-	"testing"
 )
 
 // Test that the pool instance can be created from two addresses

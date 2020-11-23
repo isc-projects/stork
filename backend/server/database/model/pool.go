@@ -1,13 +1,13 @@
 package dbmodel
 
 import (
-	cidr "github.com/apparentlymart/go-cidr/cidr"
-	errors "github.com/pkg/errors"
-	dbops "isc.org/stork/server/database"
-
 	"net"
 	"strings"
 	"time"
+
+	cidr "github.com/apparentlymart/go-cidr/cidr"
+	errors "github.com/pkg/errors"
+	dbops "isc.org/stork/server/database"
 )
 
 // Reflects IPv4 or IPv6 address pool.

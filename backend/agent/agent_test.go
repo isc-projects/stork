@@ -15,7 +15,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
-
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
 )
@@ -507,7 +506,7 @@ func TestTailTextFile(t *testing.T) {
 	require.Equal(t, "in testing TailTextFile", rsp.Lines[2])
 }
 
-// Aux function checks if a list of expected strings is present in the string
+// Aux function checks if a list of expected strings is present in the string.
 func checkOutput(output string, exp []string, reason string) bool {
 	for _, x := range exp {
 		fmt.Printf("Checking if %s exists in %s.\n", x, reason)
@@ -521,19 +520,21 @@ func checkOutput(output string, exp []string, reason string) bool {
 
 // This is the list of all parameters we expect to be supported by stork-agent.
 func getExpectedSwitches() []string {
-	return []string{"-v", "--version", "--listen-prometheus-only", "--listen-stork-only",
+	return []string{
+		"-v", "--version", "--listen-prometheus-only", "--listen-stork-only",
 		"--host", "--port", "--prometheus-kea-exporter-host", "--prometheus-kea-exporter-port",
 		"--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-host",
-		"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval"}
+		"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval",
+	}
 }
 
-// Location of the stork-agent binary
+// Location of the stork-agent binary.
 const AgentBin = "../cmd/stork-agent/stork-agent"
 
-// Location of the stork-agent man page
+// Location of the stork-agent man page.
 const AgentMan = "../../doc/man/stork-agent.8.rst"
 
-// This test checks if stork-agent -h reports all expected command-line switches
+// This test checks if stork-agent -h reports all expected command-line switches.
 func TestCommandLineSwitches(t *testing.T) {
 	// Run the --help version and get its output.
 	agentCmd := exec.Command(AgentBin, "-h")

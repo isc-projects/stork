@@ -16,7 +16,6 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
 )
@@ -27,7 +26,7 @@ type Settings struct {
 	Port int    `long:"port" description:"the TCP port to listen on for incoming Stork server connection." default:"8080" env:"STORK_AGENT_PORT"`
 }
 
-// Global Stork Agent state
+// Global Stork Agent state.
 type StorkAgent struct {
 	Settings   Settings
 	AppMonitor AppMonitor

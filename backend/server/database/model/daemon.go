@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
-
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
 )

@@ -7,7 +7,6 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
 	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
@@ -21,7 +20,7 @@ type RpsWorker struct {
 	Interval2   time.Duration
 }
 
-// Represents a time/value pair
+// Represents a time/value pair.
 type StatSample struct {
 	SampledAt time.Time // time value was recorded
 	Value     int64     // statistic value
@@ -38,14 +37,14 @@ type StatSample struct {
 //          ]
 //    },
 //    "result": 0
-//}
+//}.
 type StatGetResponse4 struct {
 	keactrl.ResponseHeader
 	Arguments *ResponseArguments4 `json:"arguments,omitempty"`
 }
 
 // The list of value/timestamp pairs returned as pkt4-ack-sent
-// as the value for command response "Arguments" element
+// as the value for command response "Arguments" element.
 type ResponseArguments4 struct {
 	Samples []interface{} `json:"pkt4-ack-sent"`
 }
@@ -61,14 +60,14 @@ type ResponseArguments4 struct {
 //          ]
 //    },
 //    "result": 0
-//}
+//}.
 type StatGetResponse6 struct {
 	keactrl.ResponseHeader
 	Arguments *ResponseArguments6 `json:"arguments,omitempty"`
 }
 
 // The list of value/timestamp pairs returned as pkt6-reply-sent
-// as the value for command response "Arguments" element
+// as the value for command response "Arguments" element.
 type ResponseArguments6 struct {
 	Samples []interface{} `json:"pkt6-reply-sent"`
 }
@@ -103,7 +102,8 @@ func RpsAddCmd4(cmds *[]*keactrl.Command, dhcp4Daemons *keactrl.Daemons) interfa
 	*cmds = append(*cmds, &keactrl.Command{
 		Command:   "statistic-get",
 		Daemons:   dhcp4Daemons,
-		Arguments: &dhcp4Arguments})
+		Arguments: &dhcp4Arguments,
+	})
 	return (&[]StatGetResponse4{})
 }
 
@@ -114,7 +114,8 @@ func RpsAddCmd6(cmds *[]*keactrl.Command, dhcp6Daemons *keactrl.Daemons) interfa
 	*cmds = append(*cmds, &keactrl.Command{
 		Command:   "statistic-get",
 		Daemons:   dhcp6Daemons,
-		Arguments: &dhcp6Arguments})
+		Arguments: &dhcp6Arguments,
+	})
 	return (&[]StatGetResponse6{})
 }
 
@@ -296,7 +297,7 @@ func (rpsWorker *RpsWorker) updateKeaDaemonRpsStats(daemon *dbmodel.Daemon) erro
 	return dbmodel.UpdateDaemon(rpsWorker.db, daemon)
 }
 
-// Calculate the RPS for the first row in a set of RpsIntervals
+// Calculate the RPS for the first row in a set of RpsIntervals.
 func calculateRps(totals []*dbmodel.RpsInterval) int {
 	if len(totals) == 0 {
 		return 0
@@ -348,12 +349,12 @@ func getFirstSample(samples []interface{}) (int64, time.Time, error) {
 	return value, sampledAt, nil
 }
 
-// "Static" constant for dhcp4 statistic-get command argument
+// "Static" constant for dhcp4 statistic-get command argument.
 func RpsGetDhcp4Arguments() map[string]interface{} {
 	return map[string]interface{}{"name": "pkt4-ack-sent"}
 }
 
-// "Static" constant for dhcp6 statistic-get command argument
+// "Static" constant for dhcp6 statistic-get command argument.
 func RpsGetDhcp6Arguments() map[string]interface{} {
 	return map[string]interface{}{"name": "pkt6-reply-sent"}
 }

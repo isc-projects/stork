@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	keactrl "isc.org/stork/appctrl/kea"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -48,7 +47,7 @@ func TestRpsWorkerPullRps(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	var makeJSON4 = func(callNo int) string {
+	makeJSON4 := func(callNo int) string {
 		return (fmt.Sprintf(`[{
                             "result": 0,
                             "text": "Everything is fine",
@@ -57,7 +56,7 @@ func TestRpsWorkerPullRps(t *testing.T) {
                             }}]`, (callNo * 5)))
 	}
 
-	var makeJSON6 = func(callNo int) string {
+	makeJSON6 := func(callNo int) string {
 		return (fmt.Sprintf(`[{
                            "result": 0,
                            "text": "Everything is fine",
@@ -175,7 +174,7 @@ func TestRpsWorkerValuePermutations(t *testing.T) {
 	// Array of expected RpsInterval.Responses for each interval row added
 	expectedResponses := []int64{100, 35, 0, 15, 0, 10, 0, 17}
 
-	var makeJSON4 = func(value int64) string {
+	makeJSON4 := func(value int64) string {
 		resp := fmt.Sprintf(`[{
                             "result": 0,
                             "text": "Everything is fine",
@@ -269,7 +268,7 @@ func rpsTestAddMachine(t *testing.T, db *dbops.PgDB, dhcp4Active bool, dhcp6Acti
 	return a.Daemons[0], a.Daemons[1]
 }
 
-// Verifies RPS values for both intervals for a given daemon
+// Verifies RPS values for both intervals for a given daemon.
 func checkDaemonRpsStats(t *testing.T, db *dbops.PgDB, keaDaemonID int64, interval1 int, interval2 int) {
 	daemon := &dbmodel.KeaDHCPDaemon{}
 	err := db.Model(daemon).
@@ -302,7 +301,7 @@ func getExpectedRps(rpsIntervals []*dbmodel.RpsInterval, endIdx int) int {
 	return (int(responses / duration))
 }
 
-// Marshall a given json response to a DHCP4 command and pass that into Response4Handler
+// Marshall a given json response to a DHCP4 command and pass that into Response4Handler.
 func rpsTestInvokeResponse4Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonResponse string) error {
 	cmds := []*keactrl.Command{}
 	responses := []interface{}{}
@@ -315,7 +314,7 @@ func rpsTestInvokeResponse4Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonR
 	return err
 }
 
-// Marshall a given json response to a DHCP6 command and pass that into Response6Handler
+// Marshall a given json response to a DHCP6 command and pass that into Response6Handler.
 func rpsTestInvokeResponse6Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonResponse string) error {
 	cmds := []*keactrl.Command{}
 	responses := []interface{}{}

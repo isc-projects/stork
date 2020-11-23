@@ -8,7 +8,6 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	errors "github.com/pkg/errors"
-
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
@@ -185,7 +184,6 @@ func GetSubnet(db *pg.DB, subnetID int64) (*Subnet, error) {
 		Relation("LocalSubnets.App.AccessPoints").
 		Where("subnet.id = ?", subnetID).
 		Select()
-
 	if err != nil {
 		if err == pg.ErrNoRows {
 			return nil, nil
@@ -276,7 +274,6 @@ func GetSubnetsByPrefix(db *pg.DB, prefix string) ([]Subnet, error) {
 		Relation("LocalSubnets.App.AccessPoints").
 		Where("subnet.prefix = ?", prefix).
 		Select()
-
 	if err != nil {
 		if err == pg.ErrNoRows {
 			return nil, nil
@@ -308,7 +305,6 @@ func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
 		q = q.Where("family(subnet.prefix) = ?", family)
 	}
 	err := q.Select()
-
 	if err != nil {
 		if err == pg.ErrNoRows {
 			return nil, nil
@@ -397,7 +393,7 @@ func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText 
 	return subnets, int64(total), err
 }
 
-// Get list of Subnets with LocalSubnets ordered by SharedNetworkID
+// Get list of Subnets with LocalSubnets ordered by SharedNetworkID.
 func GetSubnetsWithLocalSubnets(db *pg.DB) ([]*Subnet, error) {
 	subnets := []*Subnet{}
 	q := db.Model(&subnets)

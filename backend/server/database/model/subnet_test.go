@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
@@ -700,7 +699,7 @@ func TestGetSubnetFamily(t *testing.T) {
 	require.EqualValues(t, 6, s6.GetFamily())
 }
 
-// Check getting subnets with local subnets
+// Check getting subnets with local subnets.
 func TestGetSubnetsWithLocalSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -731,7 +730,7 @@ func TestGetSubnetsWithLocalSubnets(t *testing.T) {
 	require.EqualValues(t, 123, subnets[0].LocalSubnets[0].LocalSubnetID)
 }
 
-// Check updating utilization in subnet
+// Check updating utilization in subnet.
 func TestUpdateUtilization(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

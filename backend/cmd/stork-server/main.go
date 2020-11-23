@@ -6,7 +6,6 @@ import (
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
-
 	"isc.org/stork"
 	"isc.org/stork/server"
 	storkutil "isc.org/stork/util"

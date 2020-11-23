@@ -7,7 +7,6 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
@@ -415,7 +414,6 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	ctx := context.Background()
 
 	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp, cmds, responses...)
-
 	if err != nil {
 		return err
 	}

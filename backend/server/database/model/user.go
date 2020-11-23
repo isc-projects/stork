@@ -6,7 +6,6 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	"github.com/pkg/errors"
-
 	dbops "isc.org/stork/server/database"
 )
 
@@ -177,7 +176,6 @@ func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, e
 	ok, err := db.Model(&user).
 		Where("password_hash = crypt(?, password_hash) AND (id = ?)",
 			oldPassword, id).Exists()
-
 	if err != nil {
 		err = errors.Wrapf(err, "database operation error while trying to change password of user with id %d", id)
 		return false, err
@@ -198,7 +196,6 @@ func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 	err := db.Model(user).Relation("Groups").
 		Where("password_hash = crypt(?, password_hash) AND (login = ? OR email = ?)",
 			user.Password, user.Login, user.Email).First()
-
 	if err != nil {
 		// Failing to find an entry is not really an error. It merely means that the
 		// authentication failed, so return false in this case.

@@ -17,10 +17,12 @@ import (
 // TODO: add caching to avoid trips to database; candidate caching libs:
 // https://allegro.tech/2016/03/writing-fast-cache-service-in-go.html
 
-const SettingValTypeInt = 1
-const SettingValTypeBool = 2
-const SettingValTypeStr = 3
-const SettingValTypePasswd = 4
+const (
+	SettingValTypeInt    = 1
+	SettingValTypeBool   = 2
+	SettingValTypeStr    = 3
+	SettingValTypePasswd = 4
+)
 
 // Represents a setting held in setting table in the database.
 type Setting struct {

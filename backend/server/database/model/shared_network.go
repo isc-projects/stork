@@ -6,7 +6,6 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	errors "github.com/pkg/errors"
-
 	dbops "isc.org/stork/server/database"
 )
 
@@ -99,7 +98,6 @@ func GetAllSharedNetworks(db *dbops.PgDB, family int) ([]SharedNetwork, error) {
 	q = q.OrderExpr("id ASC")
 
 	err := q.Select()
-
 	if err != nil {
 		if err == pg.ErrNoRows {
 			return []SharedNetwork{}, nil
@@ -116,7 +114,6 @@ func GetSharedNetwork(db *dbops.PgDB, networkID int64) (*SharedNetwork, error) {
 	err := db.Model(network).
 		Where("shared_network.id = ?", networkID).
 		Select()
-
 	if err != nil {
 		if err == pg.ErrNoRows {
 			return nil, nil

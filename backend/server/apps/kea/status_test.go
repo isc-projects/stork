@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
@@ -317,7 +316,7 @@ func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
 }
 
 // Generates test response to status-get command indicating an error and
-// lacking argument.s
+// lacking arguments.
 func mockGetStatusError(callNo int, cmdResponses []interface{}) {
 	daemons, _ := keactrl.NewDaemons("dhcp4")
 	command, _ := keactrl.NewCommand("status-get", daemons, nil)

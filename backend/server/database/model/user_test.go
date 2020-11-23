@@ -6,7 +6,6 @@ import (
 
 	faker "github.com/brianvoe/gofakeit"
 	"github.com/stretchr/testify/require"
-
 	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )

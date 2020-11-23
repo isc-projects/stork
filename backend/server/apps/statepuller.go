@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"

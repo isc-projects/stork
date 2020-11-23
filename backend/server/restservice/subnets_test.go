@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -262,9 +261,11 @@ func TestGetSubnets(t *testing.T) {
 	require.EqualValues(t, 3, okRsp.Payload.Total)
 	// checking if returned subnet-ids have expected values
 	require.ElementsMatch(t, []int64{3, 4, 21},
-		[]int64{okRsp.Payload.Items[0].LocalSubnets[0].ID,
+		[]int64{
+			okRsp.Payload.Items[0].LocalSubnets[0].ID,
 			okRsp.Payload.Items[1].LocalSubnets[0].ID,
-			okRsp.Payload.Items[2].LocalSubnets[0].ID})
+			okRsp.Payload.Items[2].LocalSubnets[0].ID,
+		})
 
 	// get v4 subnets
 	var dhcpVer int64 = 4
@@ -293,9 +294,11 @@ func TestGetSubnets(t *testing.T) {
 	require.EqualValues(t, 3, okRsp.Payload.Total)
 	// checking if returned subnet-ids have expected values
 	require.ElementsMatch(t, []int64{2, 4, 21},
-		[]int64{okRsp.Payload.Items[0].LocalSubnets[0].ID,
+		[]int64{
+			okRsp.Payload.Items[0].LocalSubnets[0].ID,
 			okRsp.Payload.Items[1].LocalSubnets[0].ID,
-			okRsp.Payload.Items[2].LocalSubnets[0].ID})
+			okRsp.Payload.Items[2].LocalSubnets[0].ID,
+		})
 
 	// get subnets by text '118.0.0/2'
 	text := "118.0.0/2"

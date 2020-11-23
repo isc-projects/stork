@@ -17,11 +17,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-
 	storkutil "isc.org/stork/util"
 )
 
-// Settings for Prometheus Kea Exporter
+// Settings for Prometheus Kea Exporter.
 type PromKeaExporterSettings struct {
 	Host     string `long:"prometheus-kea-exporter-host" description:"the IP or hostname to listen on for incoming Prometheus connection" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS"`
 	Port     int    `long:"prometheus-kea-exporter-port" description:"the port to listen on for incoming Prometheus connection" default:"9547" env:"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT"`

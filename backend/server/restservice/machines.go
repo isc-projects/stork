@@ -12,7 +12,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
 	"isc.org/stork"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"

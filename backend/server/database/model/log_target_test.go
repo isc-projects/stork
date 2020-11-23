@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	dbtest "isc.org/stork/server/database/test"
 )
 

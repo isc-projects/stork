@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
-
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
@@ -204,7 +203,8 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
                     "success": true
                 }
             }
-        ]`)}, {
+        ]`),
+		}, {
 			Status: &agentapi.Status{
 				Code: 0,
 			},
@@ -213,7 +213,8 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
                 "result": 1,
                 "text": "operation failed"
             }
-        ]`)}},
+        ]`),
+		}},
 	}
 
 	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
@@ -300,7 +301,8 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
             {
                 "result": "a string"
             }
-        ]`)}},
+        ]`),
+		}},
 	}
 	mockAgentClient.EXPECT().ForwardToKeaOverHTTP(gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
@@ -406,7 +408,8 @@ func TestForwardToNamedStatsInvalidResponse(t *testing.T) {
 			},
 			Response: `{
                           "views": "not the views you are looking for",
-            }`},
+            }`,
+		},
 	}
 	mockAgentClient.EXPECT().ForwardToNamedStats(gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)

@@ -95,7 +95,7 @@ func SetupLogging() {
 		FullTimestamp:   true,
 		TimestampFormat: "2006-01-02 15:04:05",
 		// TODO: do more research and enable if it brings value
-		//PadLevelText: true,
+		// PadLevelText: true,
 		// FieldMap: log.FieldMap{
 		// 	FieldKeyTime:  "@timestamp",
 		// 	FieldKeyLevel: "@level",
@@ -109,7 +109,7 @@ func SetupLogging() {
 	})
 }
 
-// helper code for mocking os/exec stuff... pathetic
+// helper code for mocking os/exec stuff... pathetic.
 type Commander interface {
 	Output(string, ...string) ([]byte, error)
 }

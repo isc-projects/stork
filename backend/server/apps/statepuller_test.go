@@ -4,9 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	//keactrl "isc.org/stork/appctrl/kea"
-	//"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"

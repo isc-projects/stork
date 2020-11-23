@@ -8,12 +8,11 @@ import (
 
 	"github.com/go-pg/pg/v9"
 	log "github.com/sirupsen/logrus"
-
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// An interface to EventCenter
+// An interface to EventCenter.
 type EventCenter interface {
 	AddInfoEvent(text string, objects ...interface{})
 	AddWarningEvent(text string, objects ...interface{})

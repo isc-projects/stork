@@ -17,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/netutil"
-
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbsession "isc.org/stork/server/database/session"
@@ -156,7 +155,7 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 	return nil
 }
 
-// Serve the API
+// Serve the API.
 func (r *RestAPI) Serve() (err error) {
 	// Initiate the http handler, with the objects that are implementing the business logic.
 	h, err := restapi.Handler(restapi.Config{
@@ -247,7 +246,7 @@ func (r *RestAPI) Serve() (err error) {
 	return nil
 }
 
-// Listen creates the listeners for the server
+// Listen creates the listeners for the server.
 func (r *RestAPI) Listen() error {
 	if r.hasListeners { // already done this
 		return nil

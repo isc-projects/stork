@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	//log "github.com/sirupsen/logrus"
-
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
@@ -360,7 +358,7 @@ func TestGetDaemonHooksFrom1Daemon(t *testing.T) {
 	require.Equal(t, "hook_abc.so", hooks[0])
 }
 
-// Check getting hooks of 2 daemons
+// Check getting hooks of 2 daemons.
 func TestGetDaemonHooksFrom2Daemons(t *testing.T) {
 	dbApp := dbmodel.App{
 		Daemons: []*dbmodel.Daemon{

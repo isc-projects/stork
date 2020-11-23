@@ -9,7 +9,6 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-
 	"isc.org/stork/server/auth"
 	"isc.org/stork/server/eventcenter"
 )
@@ -87,7 +86,7 @@ func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir string, 
 }
 
 // Inner middleware function provides a common place to setup middlewares for
-// the server. It is invoked after routing but before authentication, binding and validation
+// the server. It is invoked after routing but before authentication, binding and validation.
 func (r *RestAPI) InnerMiddleware(handler http.Handler) http.Handler {
 	// last handler is executed first for incoming request
 	handler = r.SessionManager.SessionMiddleware(handler)

@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-pg/pg/v9"
 	log "github.com/sirupsen/logrus"
-
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"

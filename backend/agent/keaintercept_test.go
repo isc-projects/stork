@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
 )

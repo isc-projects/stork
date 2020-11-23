@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
@@ -38,7 +37,7 @@ func TestStatsPullerBasic(t *testing.T) {
 
 // Check if Kea response to stat-leaseX-get command is handled correctly when it is
 // empty or when stats hooks library is not loaded.  The RPS responses are valid,
-// they have their own unit tests in rps_test.go
+// they have their own unit tests in rps_test.go.
 func TestStatsPullerEmptyResponse(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

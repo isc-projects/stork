@@ -7,7 +7,6 @@ import (
 
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
@@ -81,7 +80,7 @@ func findDaemonEnsureKeaDaemonIsNotNilAndSetActiveFlag(dbApp *dbmodel.App, daemo
 // The state, that is stored into dbApp, includes: version and config of CA.
 // It also returns:
 // - list of all Kea daemons
-// - list of DHCP daemons (dhcpv4 and/or dhcpv6)
+// - list of DHCP daemons (dhcpv4 and/or dhcpv6).
 func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, daemonsErrors map[string]string) (keactrl.Daemons, keactrl.Daemons, error) {
 	// prepare the command to get config and version from CA
 	cmds := []*keactrl.Command{

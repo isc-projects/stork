@@ -8,7 +8,6 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
-
 	"isc.org/stork"
 	"isc.org/stork/agent"
 	storkutil "isc.org/stork/util"

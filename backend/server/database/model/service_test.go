@@ -39,7 +39,7 @@ func accessPointArraysMatch(pts1, pts2 []*AccessPoint) bool {
 		return true
 	}
 
-	var found = make([]bool, len(pts1))
+	found := make([]bool, len(pts1))
 
 	for i := 0; i < len(pts1); i++ {
 		for j := 0; j < len(pts2); j++ {
@@ -119,7 +119,7 @@ func daemonArraysMatch(daemonArray1, daemonArray2 []*Daemon) bool {
 		return true
 	}
 
-	var found = make([]bool, len(daemonArray1))
+	found := make([]bool, len(daemonArray1))
 
 	for i := 0; i < len(daemonArray1); i++ {
 		for j := 0; j < len(daemonArray2); j++ {

@@ -18,12 +18,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 	log "github.com/sirupsen/logrus"
-
 	"isc.org/stork"
 	storkutil "isc.org/stork/util"
 )
 
-// Settings for Prometheus BIND 9 Exporter
+// Settings for Prometheus BIND 9 Exporter.
 type PromBind9ExporterSettings struct {
 	Host     string `long:"prometheus-bind9-exporter-host" description:"the IP or hostname to listen on for incoming Prometheus connection" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"`
 	Port     int    `long:"prometheus-bind9-exporter-port" description:"the port to listen on for incoming Prometheus connection" default:"9119" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"`

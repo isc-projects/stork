@@ -42,7 +42,7 @@ type Peer struct {
 	AutoFailover *bool `mapstructure:"auto-failover"`
 }
 
-// Structure representing a configuration of the HA hooks library
+// Structure representing a configuration of the HA hooks library.
 type HA struct {
 	ThisServerName    *string `mapstructure:"this-server-name"`
 	Mode              *string
