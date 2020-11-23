@@ -2,12 +2,13 @@ package dbmodel
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
-	errors "github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
@@ -90,7 +91,7 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 	// use the existing transaction or start the new one.
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for adding pools to subnet with id %d",
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for adding pools to subnet with id %d",
 			subnet.ID)
 	}
 	defer rollback()
@@ -101,7 +102,7 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 		pool.SubnetID = subnet.ID
 		_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
 		if err != nil {
-			err = errors.Wrapf(err, "problem with adding an address pool %s-%s for subnet with id %d",
+			err = pkgerrors.Wrapf(err, "problem with adding an address pool %s-%s for subnet with id %d",
 				pool.LowerBound, pool.UpperBound, subnet.ID)
 			return err
 		}
@@ -113,7 +114,7 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 		pool.SubnetID = subnet.ID
 		_, err = tx.Model(&pool).OnConflict("DO NOTHING").Insert()
 		if err != nil {
-			err = errors.Wrapf(err, "problem with adding a prefix pool %s for subnet with id %d",
+			err = pkgerrors.Wrapf(err, "problem with adding a prefix pool %s for subnet with id %d",
 				pool.Prefix, subnet.ID)
 			return err
 		}
@@ -122,7 +123,7 @@ func addSubnetPools(dbIface interface{}, subnet *Subnet) (err error) {
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing pools into a subnet with id %d", subnet.ID)
+		err = pkgerrors.WithMessagef(err, "problem with committing pools into a subnet with id %d", subnet.ID)
 	}
 
 	return err
@@ -133,7 +134,7 @@ func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) error {
 	// Add the subnet first.
 	_, err := tx.Model(subnet).Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with adding new subnet with prefix %s", subnet.Prefix)
+		err = pkgerrors.Wrapf(err, "problem with adding new subnet with prefix %s", subnet.Prefix)
 		return err
 	}
 
@@ -151,7 +152,7 @@ func addSubnetWithPools(tx *pg.Tx, subnet *Subnet) error {
 func AddSubnet(dbIface interface{}, subnet *Subnet) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for adding new subnet with prefix %s",
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for adding new subnet with prefix %s",
 			subnet.Prefix)
 		return err
 	}
@@ -163,7 +164,7 @@ func AddSubnet(dbIface interface{}, subnet *Subnet) error {
 	}
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing new subnet with prefix %s into the database",
+		err = pkgerrors.WithMessagef(err, "problem with committing new subnet with prefix %s into the database",
 			subnet.Prefix)
 	}
 
@@ -185,10 +186,10 @@ func GetSubnet(db *pg.DB, subnetID int64) (*Subnet, error) {
 		Where("subnet.id = ?", subnetID).
 		Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting a subnet with id %d", subnetID)
+		err = pkgerrors.Wrapf(err, "problem with getting a subnet with id %d", subnetID)
 		return nil, err
 	}
 	return subnet, err
@@ -218,10 +219,10 @@ func GetSubnetsByLocalID(db *pg.DB, localSubnetID int64, appID int64, family int
 	}
 	err := q.Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting subnets by local subnet id %d and app id %d", localSubnetID, appID)
+		err = pkgerrors.Wrapf(err, "problem with getting subnets by local subnet id %d and app id %d", localSubnetID, appID)
 		return nil, err
 	}
 	return subnets, err
@@ -251,10 +252,10 @@ func GetSubnetsByAppID(db *pg.DB, appID int64, family int) ([]Subnet, error) {
 	}
 	err := q.Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting subnets by app id %d", appID)
+		err = pkgerrors.Wrapf(err, "problem with getting subnets by app id %d", appID)
 		return nil, err
 	}
 	return subnets, err
@@ -275,10 +276,10 @@ func GetSubnetsByPrefix(db *pg.DB, prefix string) ([]Subnet, error) {
 		Where("subnet.prefix = ?", prefix).
 		Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting subnets with prefix %s", prefix)
+		err = pkgerrors.Wrapf(err, "problem with getting subnets with prefix %s", prefix)
 		return nil, err
 	}
 	return subnets, err
@@ -306,10 +307,10 @@ func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
 	}
 	err := q.Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting all subnets for family %d", family)
+		err = pkgerrors.Wrapf(err, "problem with getting all subnets for family %d", family)
 		return nil, err
 	}
 	return subnets, err
@@ -385,10 +386,10 @@ func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText 
 	// This returns the limited results plus the total number of records.
 	total, err := q.SelectAndCount()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, 0, nil
 		}
-		err = errors.Wrapf(err, "problem with getting subnets by page")
+		err = pkgerrors.Wrapf(err, "problem with getting subnets by page")
 	}
 	return subnets, int64(total), err
 }
@@ -404,10 +405,10 @@ func GetSubnetsWithLocalSubnets(db *pg.DB) ([]*Subnet, error) {
 
 	err := q.Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrap(err, "problem with getting all subnets")
+		err = pkgerrors.Wrap(err, "problem with getting all subnets")
 		return nil, err
 	}
 	return subnets, nil
@@ -420,7 +421,7 @@ func GetSubnetsWithLocalSubnets(db *pg.DB) ([]*Subnet, error) {
 func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for associating an app with id %d with the subnet %s",
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for associating an app with id %d with the subnet %s",
 			app.ID, subnet.Prefix)
 		return err
 	}
@@ -449,14 +450,14 @@ func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App) error {
 		Set("local_subnet_id = EXCLUDED.local_subnet_id").
 		Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with associating the app with id %d with the subnet %s",
+		err = pkgerrors.Wrapf(err, "problem with associating the app with id %d with the subnet %s",
 			app.ID, subnet.Prefix)
 		return err
 	}
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing transaction associating the app with id %d with the subnet %s",
+		err = pkgerrors.WithMessagef(err, "problem with committing transaction associating the app with id %d with the subnet %s",
 			app.ID, subnet.Prefix)
 	}
 	return err
@@ -471,8 +472,8 @@ func DeleteAppFromSubnet(db *pg.DB, subnetID int64, appID int64) (bool, error) {
 		SubnetID: subnetID,
 	}
 	rows, err := db.Model(localSubnet).WherePK().Delete()
-	if err != nil && err != pg.ErrNoRows {
-		err = errors.Wrapf(err, "problem with deleting an app with id %d from the subnet with %d",
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrapf(err, "problem with deleting an app with id %d from the subnet with %d",
 			appID, subnetID)
 		return false, err
 	}
@@ -500,7 +501,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App,
 			subnet.SharedNetworkID = networkID
 			err = AddSubnet(tx, subnet)
 			if err != nil {
-				err = errors.WithMessagef(err, "unable to add detected subnet %s to the database",
+				err = pkgerrors.WithMessagef(err, "unable to add detected subnet %s to the database",
 					subnet.Prefix)
 				return nil, err
 			}
@@ -508,7 +509,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App,
 		}
 		err = AddAppToSubnet(tx, subnet, app)
 		if err != nil {
-			err = errors.WithMessagef(err, "unable to associate detected subnet %s with Kea app having id %d", subnet.Prefix, app.ID)
+			err = pkgerrors.WithMessagef(err, "unable to associate detected subnet %s with Kea app having id %d", subnet.Prefix, app.ID)
 			return nil, err
 		}
 
@@ -540,7 +541,7 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 			// This is new shared network. Add it to the database.
 			err = AddSharedNetwork(tx, network)
 			if err != nil {
-				err = errors.WithMessagef(err, "unable to add detected shared network %s to the database",
+				err = pkgerrors.WithMessagef(err, "unable to add detected shared network %s to the database",
 					network.Name)
 				return nil, err
 			}
@@ -577,10 +578,10 @@ func GetAppLocalSubnets(db *pg.DB, appID int64) ([]*LocalSubnet, error) {
 
 	err := q.Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting all local subnets for app %d", appID)
+		err = pkgerrors.Wrapf(err, "problem with getting all local subnets for app %d", appID)
 		return nil, err
 	}
 	return subnets, nil
@@ -595,7 +596,7 @@ func (lsn *LocalSubnet) UpdateStats(db *pg.DB, stats map[string]interface{}) err
 	q = q.WherePK()
 	_, err := q.Update()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with updating stats in local subnet: [app:%d, subnet:%d, local subnet:%d]",
+		err = pkgerrors.Wrapf(err, "problem with updating stats in local subnet: [app:%d, subnet:%d, local subnet:%d]",
 			lsn.AppID, lsn.SubnetID, lsn.LocalSubnetID)
 	}
 	return err
@@ -610,7 +611,7 @@ func (s *Subnet) UpdateUtilization(db *pg.DB, addrUtilization, pdUtilization int
 	q = q.WherePK()
 	_, err := q.Update()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with updating utilization in the subnet: %d",
+		err = pkgerrors.Wrapf(err, "problem with updating utilization in the subnet: %d",
 			s.ID)
 	}
 	return err

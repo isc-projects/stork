@@ -1,9 +1,11 @@
 package dbmodel
 
 import (
+	"errors"
+
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -51,10 +53,10 @@ func GetGroupsByPage(db *dbops.PgDB, offset, limit int64, filterText *string, so
 
 	total, err := q.SelectAndCount()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return []SystemGroup{}, 0, nil
 		}
-		err = errors.Wrapf(err, "error while fetching a list of groups from the database")
+		err = pkgerrors.Wrapf(err, "error while fetching a list of groups from the database")
 	}
 
 	return groups, int64(total), err

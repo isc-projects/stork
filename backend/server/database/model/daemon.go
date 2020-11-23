@@ -3,10 +3,11 @@ package dbmodel
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/go-pg/pg/v9"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
 )
@@ -246,10 +247,10 @@ func GetDaemonByID(db *pg.DB, id int64) (*Daemon, error) {
 	q = q.Relation("App.Machine")
 	q = q.Where("daemon.id = ?", id)
 	err := q.Select()
-	if err == pg.ErrNoRows {
+	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting daemon %v", id)
+		return nil, pkgerrors.Wrapf(err, "problem with getting daemon %v", id)
 	}
 	return &app, nil
 }
@@ -269,7 +270,7 @@ func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
 	// Update common daemon instance.
 	_, err = tx.Model(daemon).WherePK().Update()
 	if err != nil {
-		return errors.Wrapf(err, "problem with updating daemon %d", daemon.ID)
+		return pkgerrors.Wrapf(err, "problem with updating daemon %d", daemon.ID)
 	}
 
 	// If this is a Kea daemon, we have to update Kea specific tables too.
@@ -278,7 +279,7 @@ func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
 		daemon.KeaDaemon.DaemonID = daemon.ID
 		_, err = tx.Model(daemon.KeaDaemon).WherePK().Update()
 		if err != nil {
-			return errors.Wrapf(err, "problem with updating general Kea specific information for daemon %d",
+			return pkgerrors.Wrapf(err, "problem with updating general Kea specific information for daemon %d",
 				daemon.ID)
 		}
 
@@ -287,7 +288,7 @@ func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
 			daemon.KeaDaemon.KeaDHCPDaemon.KeaDaemonID = daemon.KeaDaemon.ID
 			_, err = tx.Model(daemon.KeaDaemon.KeaDHCPDaemon).WherePK().Update()
 			if err != nil {
-				return errors.Wrapf(err, "problem with updating general Kea DHCP information for daemon %d",
+				return pkgerrors.Wrapf(err, "problem with updating general Kea DHCP information for daemon %d",
 					daemon.ID)
 			}
 		}
@@ -296,14 +297,14 @@ func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
 		daemon.Bind9Daemon.DaemonID = daemon.ID
 		_, err = tx.Model(daemon.Bind9Daemon).WherePK().Update()
 		if err != nil {
-			return errors.Wrapf(err, "problem with updating Bind9 specific information for daemon %d",
+			return pkgerrors.Wrapf(err, "problem with updating Bind9 specific information for daemon %d",
 				daemon.ID)
 		}
 	}
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing daemon %d after update", daemon.ID)
+		err = pkgerrors.WithMessagef(err, "problem with committing daemon %d after update", daemon.ID)
 	}
 
 	return err
@@ -319,12 +320,12 @@ func (d *KeaDaemon) AfterScan(ctx context.Context) error {
 
 	bytes, err := json.Marshal(d.Config)
 	if err != nil {
-		return errors.Wrapf(err, "problem with marshalling Kea config: %+v ", *d.Config)
+		return pkgerrors.Wrapf(err, "problem with marshalling Kea config: %+v ", *d.Config)
 	}
 
 	err = json.Unmarshal(bytes, d.Config)
 	if err != nil {
-		return errors.Wrapf(err, "problem with unmarshalling Kea config")
+		return pkgerrors.Wrapf(err, "problem with unmarshalling Kea config")
 	}
 	return nil
 }
@@ -354,7 +355,7 @@ func (d *Daemon) SetConfig(config interface{}) error {
 	if d.KeaDaemon != nil {
 		parsedConfig, ok := config.(*KeaConfig)
 		if !ok {
-			return errors.Errorf("error setting non Kea config for Kea daemon %s", d.Name)
+			return pkgerrors.Errorf("error setting non Kea config for Kea daemon %s", d.Name)
 		}
 
 		existingLogTargets := d.LogTargets

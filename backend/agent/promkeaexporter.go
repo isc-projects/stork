@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -273,7 +274,7 @@ func (pke *PromKeaExporter) Start() {
 	// start http server for metrics
 	go func() {
 		err := pke.HTTPServer.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Errorf("problem with serving Prometheus Kea Exporter: %s", err.Error())
 		}
 	}()
@@ -348,17 +349,17 @@ func (pke *PromKeaExporter) statsCollectorLoop() {
 func (pke *PromKeaExporter) setDaemonStats(daemonIdx int, rspIfc interface{}, ignoredStats map[string]bool) error {
 	rsp, ok := rspIfc.(map[string]interface{})
 	if !ok {
-		return errors.Errorf("problem with casting rspIfc: %+v", rspIfc)
+		return pkgerrors.Errorf("problem with casting rspIfc: %+v", rspIfc)
 	}
 
 	resultIfc, ok := rsp["result"]
 	if !ok {
-		return errors.Errorf("no 'result' in response: %+v", rsp)
+		return pkgerrors.Errorf("no 'result' in response: %+v", rsp)
 	}
 
 	result, ok := resultIfc.(float64)
 	if !ok {
-		return errors.Errorf("problem with casting resultIfc: %+v", resultIfc)
+		return pkgerrors.Errorf("problem with casting resultIfc: %+v", resultIfc)
 	}
 	if result != 0 {
 		textIfc, ok := rsp["text"]
@@ -369,20 +370,20 @@ func (pke *PromKeaExporter) setDaemonStats(daemonIdx int, rspIfc interface{}, ig
 					log.Warnf("problem with connecting to dhcp daemon: %s", text)
 					return nil
 				}
-				return errors.Errorf("response result from Kea != 0: %d, text: %s", int(result), text)
+				return pkgerrors.Errorf("response result from Kea != 0: %d, text: %s", int(result), text)
 			}
 		}
-		return errors.Errorf("response result from Kea != 0: %d", int(result))
+		return pkgerrors.Errorf("response result from Kea != 0: %d", int(result))
 	}
 
 	argsIfc, ok := rsp["arguments"]
 	if !ok {
-		return errors.Errorf("no 'arguments' in response: %+v", rsp)
+		return pkgerrors.Errorf("no 'arguments' in response: %+v", rsp)
 	}
 
 	args := argsIfc.(map[string]interface{})
 	if !ok {
-		return errors.Errorf("problem with casting argsIfc: %+v", argsIfc)
+		return pkgerrors.Errorf("problem with casting argsIfc: %+v", argsIfc)
 	}
 
 	for statName, statValueList1Ifc := range args {
@@ -511,7 +512,7 @@ func (pke *PromKeaExporter) collectStats() error {
 		}
 		rspList, ok := rspsIfc.([]interface{})
 		if !ok {
-			lastErr = errors.Errorf("problem with casting rspsIfc: %+v", rspsIfc)
+			lastErr = pkgerrors.Errorf("problem with casting rspsIfc: %+v", rspsIfc)
 			log.Errorf("%+v", lastErr)
 			continue
 		}

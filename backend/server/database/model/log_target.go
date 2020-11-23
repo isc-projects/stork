@@ -1,10 +1,11 @@
 package dbmodel
 
 import (
+	"errors"
 	"time"
 
 	"github.com/go-pg/pg/v9"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 )
 
 // A structure reflecting information about a logger used by a daemon.
@@ -26,10 +27,10 @@ func GetLogTargetByID(db *pg.DB, id int64) (*LogTarget, error) {
 		Relation("Daemon.App.Machine").
 		Where("log_target.id = ?", id).
 		Select()
-	if err == pg.ErrNoRows {
+	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting log target with id %d", id)
+		return nil, pkgerrors.Wrapf(err, "problem with getting log target with id %d", id)
 	}
 	return &logTarget, nil
 }

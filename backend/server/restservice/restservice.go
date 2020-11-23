@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/go-pg/pg/v9"
 	flags "github.com/jessevdk/go-flags"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/netutil"
 	"isc.org/stork/server/agentcomm"
@@ -69,7 +70,7 @@ func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, d
 	// Initialize sessions with access to the database.
 	sm, err := dbsession.NewSessionMgr(&dbSettings.BaseDatabaseSettings)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to establish connection to the session database")
+		return nil, pkgerrors.Wrap(err, "unable to establish connection to the session database")
 	}
 
 	r := &RestAPI{
@@ -115,7 +116,7 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 		httpServer.TLSConfig.Certificates = make([]tls.Certificate, 1)
 		httpServer.TLSConfig.Certificates[0], err = tls.LoadX509KeyPair(string(s.TLSCertificate), string(s.TLSCertificateKey))
 		if err != nil {
-			return errors.Wrap(err, "problem with setting up certificates")
+			return pkgerrors.Wrap(err, "problem with setting up certificates")
 		}
 	}
 
@@ -123,12 +124,12 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 		// include specified CA certificate
 		caCert, caCertErr := ioutil.ReadFile(string(s.TLSCACertificate))
 		if caCertErr != nil {
-			return errors.Wrap(caCertErr, "problem with setting up certificates")
+			return pkgerrors.Wrap(caCertErr, "problem with setting up certificates")
 		}
 		caCertPool := x509.NewCertPool()
 		ok := caCertPool.AppendCertsFromPEM(caCert)
 		if !ok {
-			return errors.New("cannot parse CA certificate")
+			return pkgerrors.New("cannot parse CA certificate")
 		}
 		httpServer.TLSConfig.ClientCAs = caCertPool
 		httpServer.TLSConfig.ClientAuth = tls.RequireAndVerifyClientCert
@@ -179,7 +180,7 @@ func (r *RestAPI) Serve() (err error) {
 		},
 	})
 	if err != nil {
-		return errors.Wrap(err, "cannot setup ReST API handler")
+		return pkgerrors.Wrap(err, "cannot setup ReST API handler")
 	}
 	r.handler = h
 
@@ -192,7 +193,7 @@ func (r *RestAPI) Serve() (err error) {
 	// set default handler, if none is set
 	if r.handler == nil {
 		if r.api == nil {
-			return errors.New("can't create the default handler, as no API is set")
+			return pkgerrors.New("can't create the default handler, as no API is set")
 		}
 
 		r.handler = r.api.Serve(nil)
@@ -238,8 +239,8 @@ func (r *RestAPI) Serve() (err error) {
 	log.WithFields(log.Fields{
 		"address": scheme + lstnr.Addr().String(),
 	}).Infof("started serving Stork Server")
-	if err := httpServer.Serve(lstnr); err != nil && err != http.ErrServerClosed {
-		return errors.Wrap(err, "problem with serving")
+	if err := httpServer.Serve(lstnr); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return pkgerrors.Wrap(err, "problem with serving")
 	}
 	log.Info("stopped serving Stork Server")
 
@@ -264,12 +265,12 @@ func (r *RestAPI) Listen() error {
 		// TLS disabled
 		listener, err := net.Listen("tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
 		if err != nil {
-			return errors.Wrap(err, "problem occurred while starting to listen using ReST API")
+			return pkgerrors.Wrap(err, "problem occurred while starting to listen using ReST API")
 		}
 
 		h, p, err := swag.SplitHostPort(listener.Addr().String())
 		if err != nil {
-			return errors.Wrap(err, "problem with address")
+			return pkgerrors.Wrap(err, "problem with address")
 		}
 		r.Host = h
 		r.Port = p
@@ -279,12 +280,12 @@ func (r *RestAPI) Listen() error {
 
 		tlsListener, err := net.Listen("tcp", net.JoinHostPort(s.Host, strconv.Itoa(s.Port)))
 		if err != nil {
-			return errors.Wrap(err, "problem occurred while starting to listen using ReST API")
+			return pkgerrors.Wrap(err, "problem occurred while starting to listen using ReST API")
 		}
 
 		sh, sp, err := swag.SplitHostPort(tlsListener.Addr().String())
 		if err != nil {
-			return errors.Wrap(err, "problem with address")
+			return pkgerrors.Wrap(err, "problem with address")
 		}
 		r.Host = sh
 		r.Port = sp

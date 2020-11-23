@@ -1,10 +1,11 @@
 package dbmodel
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/go-pg/pg/v9"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 )
 
 // This module provides global settings that can be used anywhere in the code.
@@ -76,7 +77,7 @@ func InitializeSettings(db *pg.DB) error {
 	// Check if there are new settings vs existing ones. Add new ones to DB.
 	_, err := db.Model(&defaultSettings).OnConflict("DO NOTHING").Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with inserting default settings")
+		err = pkgerrors.Wrapf(err, "problem with inserting default settings")
 	}
 	return err
 }
@@ -86,10 +87,10 @@ func GetSetting(db *pg.DB, name string) (*Setting, error) {
 	setting := Setting{}
 	q := db.Model(&setting).Where("setting.name = ?", name)
 	err := q.Select()
-	if err == pg.ErrNoRows {
-		return nil, errors.Wrapf(err, "setting %s is missing", name)
+	if errors.Is(err, pg.ErrNoRows) {
+		return nil, pkgerrors.Wrapf(err, "setting %s is missing", name)
 	} else if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting setting %s", name)
+		return nil, pkgerrors.Wrapf(err, "problem with getting setting %s", name)
 	}
 	return &setting, nil
 }
@@ -101,7 +102,7 @@ func getAndCheckSetting(db *pg.DB, name string, expValType int64) (*Setting, err
 		return nil, err
 	}
 	if s.ValType != expValType {
-		return nil, errors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, expValType)
+		return nil, pkgerrors.Errorf("not matching setting type of %s (%d vs %d expected)", name, s.ValType, expValType)
 	}
 	return s, nil
 }
@@ -156,7 +157,7 @@ func GetAllSettings(db *pg.DB) (map[string]interface{}, error) {
 	q := db.Model(&settings)
 	err := q.Select()
 	if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting all settings")
+		return nil, pkgerrors.Wrapf(err, "problem with getting all settings")
 	}
 
 	settingsMap := make(map[string]interface{})
@@ -166,13 +167,13 @@ func GetAllSettings(db *pg.DB) (map[string]interface{}, error) {
 		case SettingValTypeInt:
 			val, err := strconv.ParseInt(s.Value, 10, 64)
 			if err != nil {
-				return nil, errors.Wrapf(err, "problem with getting setting value of %s", s.Name)
+				return nil, pkgerrors.Wrapf(err, "problem with getting setting value of %s", s.Name)
 			}
 			settingsMap[s.Name] = val
 		case SettingValTypeBool:
 			val, err := strconv.ParseBool(s.Value)
 			if err != nil {
-				return nil, errors.Wrapf(err, "problem with getting setting value of %s", s.Name)
+				return nil, pkgerrors.Wrapf(err, "problem with getting setting value of %s", s.Name)
 			}
 			settingsMap[s.Name] = val
 		case SettingValTypeStr:
@@ -194,7 +195,7 @@ func SetSettingInt(db *pg.DB, name string, value int64) error {
 	s.Value = strconv.FormatInt(value, 10)
 	err = db.Update(s)
 	if err != nil {
-		return errors.Wrapf(err, "problem with updating setting %s", name)
+		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
 	}
 	return nil
 }
@@ -208,7 +209,7 @@ func SetSettingBool(db *pg.DB, name string, value bool) error {
 	s.Value = strconv.FormatBool(value)
 	err = db.Update(s)
 	if err != nil {
-		return errors.Wrapf(err, "problem with updating setting %s", name)
+		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
 	}
 	return nil
 }
@@ -222,7 +223,7 @@ func SetSettingStr(db *pg.DB, name string, value string) error {
 	s.Value = value
 	err = db.Update(s)
 	if err != nil {
-		return errors.Wrapf(err, "problem with updating setting %s", name)
+		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
 	}
 	return nil
 }
@@ -236,7 +237,7 @@ func SetSettingPasswd(db *pg.DB, name string, value string) error {
 	s.Value = value
 	err = db.Update(s)
 	if err != nil {
-		return errors.Wrapf(err, "problem with updating setting %s", name)
+		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
 	}
 	return nil
 }

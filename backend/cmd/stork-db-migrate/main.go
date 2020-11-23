@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -42,7 +43,8 @@ func main() {
 	parser := flags.NewParser(&opts, flags.Default)
 	if _, err := parser.Parse(); err != nil {
 		// Printing help is not an error.
-		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+		var flagsError *flags.Error
+		if errors.As(err, &flagsError) && flagsError.Type == flags.ErrHelp {
 			os.Exit(0)
 		} else {
 			// We should print out what exactly went wrong.

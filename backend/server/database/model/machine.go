@@ -1,11 +1,12 @@
 package dbmodel
 
 import (
+	"errors"
 	"time"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 )
 
 // Part of machine table in database that describes state of machine. In DB it is stored as JSONB.
@@ -43,7 +44,7 @@ type Machine struct {
 func AddMachine(db *pg.DB, machine *Machine) error {
 	err := db.Insert(machine)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with inserting machine %+v", machine)
+		err = pkgerrors.Wrapf(err, "problem with inserting machine %+v", machine)
 	}
 	return err
 }
@@ -55,10 +56,10 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64)
 	q = q.Where("agent_port = ?", agentPort)
 	q = q.Relation("Apps.AccessPoints")
 	err := q.Select()
-	if err == pg.ErrNoRows {
+	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting machine %s:%d", address, agentPort)
+		return nil, pkgerrors.Wrapf(err, "problem with getting machine %s:%d", address, agentPort)
 	}
 	return &machine, nil
 }
@@ -70,10 +71,10 @@ func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	q = q.Relation("Apps.Daemons.Bind9Daemon")
 	q = q.Relation("Apps.AccessPoints")
 	err := q.Select()
-	if err == pg.ErrNoRows {
+	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, errors.Wrapf(err, "problem with getting machine %v", id)
+		return nil, pkgerrors.Wrapf(err, "problem with getting machine %v", id)
 	}
 
 	return &machine, nil
@@ -85,7 +86,7 @@ func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
 	q = q.Relation("Apps.AccessPoints")
 	err := q.Select()
 	if err != nil {
-		return errors.Wrapf(err, "problem with getting machine %v", machine.ID)
+		return pkgerrors.Wrapf(err, "problem with getting machine %v", machine.ID)
 	}
 
 	return nil
@@ -100,7 +101,7 @@ func RefreshMachineFromDb(db *pg.DB, machine *Machine) error {
 // order is used.
 func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Machine, int64, error) {
 	if limit == 0 {
-		return nil, 0, errors.New("limit should be greater than 0")
+		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}
 	var machines []Machine
 
@@ -136,10 +137,10 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 
 	total, err := q.SelectAndCount()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return []Machine{}, 0, nil
 		}
-		return nil, 0, errors.Wrapf(err, "problem with getting machines")
+		return nil, 0, pkgerrors.Wrapf(err, "problem with getting machines")
 	}
 
 	return machines, int64(total), nil
@@ -156,8 +157,8 @@ func GetAllMachines(db *pg.DB) ([]Machine, error) {
 	q = q.Relation("Apps.Daemons.Bind9Daemon")
 
 	err := q.Select()
-	if err != nil && err != pg.ErrNoRows {
-		return nil, errors.Wrapf(err, "problem with getting machines")
+	if err != nil && errors.Is(err, pg.ErrNoRows) {
+		return nil, pkgerrors.Wrapf(err, "problem with getting machines")
 	}
 
 	return machines, nil
@@ -166,7 +167,7 @@ func GetAllMachines(db *pg.DB) ([]Machine, error) {
 func DeleteMachine(db *pg.DB, machine *Machine) error {
 	err := db.Delete(machine)
 	if err != nil {
-		return errors.Wrapf(err, "problem with deleting machine %v", machine.ID)
+		return pkgerrors.Wrapf(err, "problem with deleting machine %v", machine.ID)
 	}
 	return nil
 }

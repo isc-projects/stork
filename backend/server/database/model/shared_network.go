@@ -1,11 +1,12 @@
 package dbmodel
 
 import (
+	"errors"
 	"time"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
-	errors "github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -28,7 +29,7 @@ type SharedNetwork struct {
 func AddSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for adding new shared network with name %s",
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for adding new shared network with name %s",
 			network.Name)
 		return err
 	}
@@ -36,7 +37,7 @@ func AddSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 
 	err = tx.Insert(network)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with adding new shared network %s into the database", network.Name)
+		err = pkgerrors.Wrapf(err, "problem with adding new shared network %s into the database", network.Name)
 		return err
 	}
 
@@ -53,7 +54,7 @@ func AddSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing new shared network with name %s into the database",
+		err = pkgerrors.WithMessagef(err, "problem with committing new shared network with name %s into the database",
 			network.Name)
 	}
 
@@ -65,7 +66,7 @@ func AddSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 func UpdateSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for updating shared network with name %s",
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for updating shared network with name %s",
 			network.Name)
 		return err
 	}
@@ -73,13 +74,13 @@ func UpdateSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 
 	err = tx.Update(network)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with updating the shared network with id %d", network.ID)
+		err = pkgerrors.Wrapf(err, "problem with updating the shared network with id %d", network.ID)
 		return err
 	}
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing updates to shared network with name %s into the database",
+		err = pkgerrors.WithMessagef(err, "problem with committing updates to shared network with name %s into the database",
 			network.Name)
 	}
 	return err
@@ -99,10 +100,10 @@ func GetAllSharedNetworks(db *dbops.PgDB, family int) ([]SharedNetwork, error) {
 
 	err := q.Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return []SharedNetwork{}, nil
 		}
-		err = errors.Wrapf(err, "problem with getting all shared networks")
+		err = pkgerrors.Wrapf(err, "problem with getting all shared networks")
 		return nil, err
 	}
 	return networks, err
@@ -115,10 +116,10 @@ func GetSharedNetwork(db *dbops.PgDB, networkID int64) (*SharedNetwork, error) {
 		Where("shared_network.id = ?", networkID).
 		Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting a shared network with id %d", networkID)
+		err = pkgerrors.Wrapf(err, "problem with getting a shared network with id %d", networkID)
 		return nil, err
 	}
 	return network, err
@@ -140,10 +141,10 @@ func GetSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) (network *Shar
 		Select()
 
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting a shared network with id %d and its subnets", networkID)
+		err = pkgerrors.Wrapf(err, "problem with getting a shared network with id %d and its subnets", networkID)
 		return nil, err
 	}
 	return network, err
@@ -156,7 +157,7 @@ func DeleteSharedNetwork(db *dbops.PgDB, networkID int64) error {
 	}
 	_, err := db.Model(network).WherePK().Delete()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with deleting the shared network with id %d", networkID)
+		err = pkgerrors.Wrapf(err, "problem with deleting the shared network with id %d", networkID)
 	}
 	return err
 }
@@ -165,7 +166,7 @@ func DeleteSharedNetwork(db *dbops.PgDB, networkID int64) error {
 func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 	tx, err := db.Begin()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with starting transaction for deleting shared network with id %d and its subnets",
+		err = pkgerrors.Wrapf(err, "problem with starting transaction for deleting shared network with id %d and its subnets",
 			networkID)
 		return err
 	}
@@ -179,7 +180,7 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 		Where("subnet.shared_network_id = ?", networkID).
 		Delete()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with deleting subnets from the shared network with id %d", networkID)
+		err = pkgerrors.Wrapf(err, "problem with deleting subnets from the shared network with id %d", networkID)
 		return err
 	}
 
@@ -190,13 +191,13 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 	}
 	_, err = db.Model(network).WherePK().Delete()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with deleting the shared network with id %d", networkID)
+		err = pkgerrors.Wrapf(err, "problem with deleting the shared network with id %d", networkID)
 		return err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with committing deleted shared network with id %d",
+		err = pkgerrors.Wrapf(err, "problem with committing deleted shared network with id %d",
 			networkID)
 	}
 	return err
@@ -275,10 +276,10 @@ func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filt
 	// This returns the limited results plus the total number of records.
 	total, err := q.SelectAndCount()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, 0, nil
 		}
-		err = errors.Wrapf(err, "problem with getting shared networks by page")
+		err = pkgerrors.Wrapf(err, "problem with getting shared networks by page")
 	}
 	return networks, int64(total), err
 }
@@ -295,7 +296,7 @@ func UpdateUtilizationInSharedNetwork(db *pg.DB, sharedNetworkID int64, addrUtil
 	q = q.WherePK()
 	_, err := q.Update()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with updating utilization in the shared network: %d",
+		err = pkgerrors.Wrapf(err, "problem with updating utilization in the shared network: %d",
 			sharedNetworkID)
 	}
 	return err

@@ -1,10 +1,11 @@
 package dbmodel
 
 import (
+	"errors"
 	"time"
 
 	"github.com/go-pg/pg/v9"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 )
 
 // Event levels.
@@ -37,7 +38,7 @@ type Event struct {
 func AddEvent(db *pg.DB, event *Event) error {
 	err := db.Insert(event)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with inserting event %+v", event)
+		err = pkgerrors.Wrapf(err, "problem with inserting event %+v", event)
 	}
 	return err
 }
@@ -56,7 +57,7 @@ func AddEvent(db *pg.DB, event *Event) error {
 // order is used.
 func GetEventsByPage(db *pg.DB, offset int64, limit int64, level int64, daemonType *string, appType *string, machineID *int64, userID *int64, sortField string, sortDir SortDirEnum) ([]Event, int64, error) {
 	if limit == 0 {
-		return nil, 0, errors.New("limit should be greater than 0")
+		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}
 	var events []Event
 
@@ -88,10 +89,10 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, level int64, daemonTy
 
 	total, err := q.SelectAndCount()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return []Event{}, 0, nil
 		}
-		return nil, 0, errors.Wrapf(err, "problem with getting events")
+		return nil, 0, pkgerrors.Wrapf(err, "problem with getting events")
 	}
 	return events, int64(total), nil
 }

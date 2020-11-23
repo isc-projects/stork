@@ -3,12 +3,13 @@ package dbmodel
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
-	errors "github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
@@ -78,7 +79,7 @@ func addHostIdentifiers(tx *pg.Tx, host *Host) error {
 			Set("value = EXCLUDED.value").
 			Insert()
 		if err != nil {
-			err = errors.Wrapf(err, "problem with adding host identifier with type %s for host with id %d",
+			err = pkgerrors.Wrapf(err, "problem with adding host identifier with type %s for host with id %d",
 				identifier.Type, host.ID)
 			return err
 		}
@@ -96,7 +97,7 @@ func addIPReservations(tx *pg.Tx, host *Host) error {
 			OnConflict("DO NOTHING").
 			Insert()
 		if err != nil {
-			err = errors.Wrapf(err, "problem with adding IP reservation %s for host with id %d",
+			err = pkgerrors.Wrapf(err, "problem with adding IP reservation %s for host with id %d",
 				reservation.Address, host.ID)
 			return err
 		}
@@ -109,7 +110,7 @@ func addIPReservations(tx *pg.Tx, host *Host) error {
 func AddHost(dbIface interface{}, host *Host) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for adding new host")
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for adding new host")
 		return err
 	}
 	defer rollback()
@@ -117,7 +118,7 @@ func AddHost(dbIface interface{}, host *Host) error {
 	// Add the host and fetch its id.
 	_, err = tx.Model(host).Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with adding new host")
+		err = pkgerrors.Wrapf(err, "problem with adding new host")
 		return err
 	}
 
@@ -136,7 +137,7 @@ func AddHost(dbIface interface{}, host *Host) error {
 	// Everything is fine, commit the changes.
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing new host")
+		err = pkgerrors.WithMessagef(err, "problem with committing new host")
 	}
 
 	return err
@@ -146,7 +147,7 @@ func AddHost(dbIface interface{}, host *Host) error {
 func UpdateHost(dbIface interface{}, host *Host) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for updating host with id %d",
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for updating host with id %d",
 			host.ID)
 		return err
 	}
@@ -164,13 +165,13 @@ func UpdateHost(dbIface interface{}, host *Host) error {
 		Where("host_identifier.type NOT IN (?)", pg.In(hostIDTypes)).
 		Delete()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with deleting host identifiers for host %d", host.ID)
+		err = pkgerrors.Wrapf(err, "problem with deleting host identifiers for host %d", host.ID)
 		return err
 	}
 	// Add or update host identifiers.
 	err = addHostIdentifiers(tx, host)
 	if err != nil {
-		return errors.WithMessagef(err, "problem with updating host with id %d", host.ID)
+		return pkgerrors.WithMessagef(err, "problem with updating host with id %d", host.ID)
 	}
 
 	// Delete all existing reservations for the host which are not present in
@@ -186,26 +187,26 @@ func UpdateHost(dbIface interface{}, host *Host) error {
 		Where("ip_reservation.address NOT IN (?)", pg.In(ipAddresses)).
 		Delete()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with deleting IP reservations for host %d", host.ID)
+		err = pkgerrors.Wrapf(err, "problem with deleting IP reservations for host %d", host.ID)
 		return err
 	}
 	// Add or update host reservations.
 	err = addIPReservations(tx, host)
 	if err != nil {
-		return errors.WithMessagef(err, "problem with updating host with id %d", host.ID)
+		return pkgerrors.WithMessagef(err, "problem with updating host with id %d", host.ID)
 	}
 
 	// Update the host information.
 	_, err = tx.Model(host).WherePK().Update()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with updating host with id %d", host.ID)
+		err = pkgerrors.Wrapf(err, "problem with updating host with id %d", host.ID)
 		return err
 	}
 
 	// Everything is fine. Commit the changes.
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing updated host with id %d", host.ID)
+		err = pkgerrors.WithMessagef(err, "problem with committing updated host with id %d", host.ID)
 	}
 
 	return err
@@ -225,10 +226,10 @@ func GetHost(db *pg.DB, hostID int64) (*Host, error) {
 		Where("host.id = ?", hostID).
 		Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting a host with id %d", hostID)
+		err = pkgerrors.Wrapf(err, "problem with getting a host with id %d", hostID)
 		return nil, err
 	}
 	return host, err
@@ -260,10 +261,10 @@ func GetAllHosts(db *pg.DB, family int) ([]Host, error) {
 
 	err := q.Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting all hosts for family %d", family)
+		err = pkgerrors.Wrapf(err, "problem with getting all hosts for family %d", family)
 		return nil, err
 	}
 	return hosts, err
@@ -277,7 +278,7 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 
 	tx, rollback, _, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for getting hosts for subnet with id %d", subnetID)
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for getting hosts for subnet with id %d", subnetID)
 		return hosts, err
 	}
 	defer rollback()
@@ -305,10 +306,10 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 
 	err = q.Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting hosts by subnet ID %d", subnetID)
+		err = pkgerrors.Wrapf(err, "problem with getting hosts by subnet ID %d", subnetID)
 		return nil, err
 	}
 	return hosts, err
@@ -405,10 +406,10 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64
 
 	total, err := q.SelectAndCount()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, 0, nil
 		}
-		err = errors.Wrapf(err, "problem with getting hosts by page")
+		err = pkgerrors.Wrapf(err, "problem with getting hosts by page")
 	}
 	return hosts, int64(total), err
 }
@@ -420,7 +421,7 @@ func DeleteHost(db *pg.DB, hostID int64) error {
 	}
 	_, err := db.Model(host).WherePK().Delete()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with deleting a host with id %d", hostID)
+		err = pkgerrors.Wrapf(err, "problem with deleting a host with id %d", hostID)
 	}
 	return err
 }
@@ -437,7 +438,7 @@ func DeleteLocalHostsWithOtherSeq(db *pg.DB, seq int64, dataSource string) error
 	}
 	_, err := q.Delete()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with deleting associations between apps and hosts for sequence number %d and data source type %s", seq, dataSource)
+		err = pkgerrors.Wrapf(err, "problem with deleting associations between apps and hosts for sequence number %d and data source type %s", seq, dataSource)
 	}
 	return err
 }
@@ -450,7 +451,7 @@ func DeleteLocalHostsWithOtherSeq(db *pg.DB, seq int64, dataSource string) error
 func AddAppToHost(dbIface interface{}, host *Host, app *App, source string, seq int64) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for associating an app %d with the host %d",
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for associating an app %d with the host %d",
 			app.ID, host.ID)
 		return err
 	}
@@ -475,14 +476,14 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string, seq 
 
 	_, err = q.Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with associating the app %d with the host %d",
+		err = pkgerrors.Wrapf(err, "problem with associating the app %d with the host %d",
 			app.ID, host.ID)
 		return err
 	}
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing transaction associating the app %d with the host %d",
+		err = pkgerrors.WithMessagef(err, "problem with committing transaction associating the app %d with the host %d",
 			app.ID, host.ID)
 	}
 	return err
@@ -497,20 +498,20 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, source
 		if newHost {
 			err = AddHost(tx, &hosts[i])
 			if err != nil {
-				err = errors.WithMessagef(err, "unable to add detected host to the database")
+				err = pkgerrors.WithMessagef(err, "unable to add detected host to the database")
 				return err
 			}
 		} else if hosts[i].UpdateOnCommit {
 			err = UpdateHost(tx, &hosts[i])
 			if err != nil {
-				err = errors.WithMessagef(err, "unable to update detected host in the database")
+				err = pkgerrors.WithMessagef(err, "unable to update detected host in the database")
 				return err
 			}
 		}
 		if newHost || hosts[i].UpdateOnCommit {
 			err = AddAppToHost(tx, &hosts[i], app, source, seq)
 			if err != nil {
-				err = errors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
+				err = pkgerrors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
 					app.ID)
 				return err
 			}
@@ -541,7 +542,7 @@ func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string,
 func GetNextBulkUpdateSeq(db *dbops.PgDB) (seq int64, err error) {
 	_, err = db.QueryOne(pg.Scan(&seq), "SELECT nextval('bulk_update_seq')")
 	if err != nil {
-		err = errors.Wrapf(err, "problem with getting next bulk update sequence number")
+		err = pkgerrors.Wrapf(err, "problem with getting next bulk update sequence number")
 	}
 	return seq, err
 }

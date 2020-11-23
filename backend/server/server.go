@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -70,8 +71,9 @@ func (ss *StorkServer) ParseArgs() {
 	// Do args parsing.
 	if _, err := parser.Parse(); err != nil {
 		code := 1
-		if fe, ok := err.(*flags.Error); ok {
-			if fe.Type == flags.ErrHelp {
+		var flagsError *flags.Error
+		if errors.As(err, &flagsError) {
+			if flagsError.Type == flags.ErrHelp {
 				code = 0
 			}
 		}

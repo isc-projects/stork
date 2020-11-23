@@ -1,10 +1,11 @@
 package dbmodel
 
 import (
+	"errors"
 	"time"
 
 	"github.com/go-pg/pg/v9"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -88,7 +89,7 @@ func addServiceDaemons(dbIface interface{}, service *BaseService) (err error) {
 
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessage(err, "problem with starting transaction for adding daemons to a service")
+		err = pkgerrors.WithMessage(err, "problem with starting transaction for adding daemons to a service")
 	}
 	defer rollback()
 
@@ -107,7 +108,7 @@ func addServiceDaemons(dbIface interface{}, service *BaseService) (err error) {
 	// changes.
 	err = commit()
 	if err != nil {
-		err = errors.WithMessage(err, "problem with committing associations of daemon with the service")
+		err = pkgerrors.WithMessage(err, "problem with committing associations of daemon with the service")
 	}
 
 	return err
@@ -117,7 +118,7 @@ func addServiceDaemons(dbIface interface{}, service *BaseService) (err error) {
 func AddDaemonToService(dbIface interface{}, serviceID int64, daemon *Daemon) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for associating a daemon %d with the service %d",
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for associating a daemon %d with the service %d",
 			daemon.ID, serviceID)
 		return err
 	}
@@ -129,14 +130,14 @@ func AddDaemonToService(dbIface interface{}, serviceID int64, daemon *Daemon) er
 	service.Daemons = append(service.Daemons, daemon)
 	err = addServiceDaemons(tx, service)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with associating a daemon having id %d with service %d",
+		err = pkgerrors.Wrapf(err, "problem with associating a daemon having id %d with service %d",
 			daemon.ID, serviceID)
 		return err
 	}
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing transaction associating daemon %d with the service %d",
+		err = pkgerrors.WithMessagef(err, "problem with committing transaction associating daemon %d with the service %d",
 			daemon.ID, service.ID)
 	}
 	return err
@@ -151,8 +152,8 @@ func DeleteDaemonFromService(db *pg.DB, serviceID, daemonID int64) (bool, error)
 		ServiceID: serviceID,
 	}
 	rows, err := db.Model(as).WherePK().Delete()
-	if err != nil && err != pg.ErrNoRows {
-		err = errors.Wrapf(err, "problem with deleting a daemon with id %d from the service %d",
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrapf(err, "problem with deleting a daemon with id %d from the service %d",
 			daemonID, serviceID)
 		return false, err
 	}
@@ -165,7 +166,7 @@ func DeleteDaemonFromService(db *pg.DB, serviceID, daemonID int64) (bool, error)
 func AddService(dbIface interface{}, service *Service) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with starting transaction for adding new service")
+		err = pkgerrors.WithMessagef(err, "problem with starting transaction for adding new service")
 		return err
 	}
 	defer rollback()
@@ -173,14 +174,14 @@ func AddService(dbIface interface{}, service *Service) error {
 	// Insert generic information into the service table.
 	_, err = tx.Model(service).Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with adding new service")
+		err = pkgerrors.Wrapf(err, "problem with adding new service")
 		return err
 	}
 
 	// Add associations of the daemons with the service.
 	err = addServiceDaemons(tx, &service.BaseService)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with associating daemons with a new service")
+		err = pkgerrors.Wrapf(err, "problem with associating daemons with a new service")
 		return err
 	}
 
@@ -196,7 +197,7 @@ func AddService(dbIface interface{}, service *Service) error {
 	// All ok, let's commit the changes.
 	err = commit()
 	if err != nil {
-		err = errors.WithMessage(err, "problem with committing new service into the database")
+		err = pkgerrors.WithMessage(err, "problem with committing new service into the database")
 	}
 
 	return err
@@ -214,13 +215,13 @@ func AddHAService(dbIface interface{}, serviceID int64, haService *BaseHAService
 
 	_, err = tx.Model(haService).Insert()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with adding new HA service to the database")
+		err = pkgerrors.Wrapf(err, "problem with adding new HA service to the database")
 		return err
 	}
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessage(err, "problem with committing new HA service into the database")
+		err = pkgerrors.WithMessage(err, "problem with committing new HA service into the database")
 	}
 	return err
 }
@@ -236,13 +237,13 @@ func UpdateBaseService(dbIface interface{}, service *BaseService) error {
 
 	err = tx.Update(service)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with updating base service with id %d", service.ID)
+		err = pkgerrors.Wrapf(err, "problem with updating base service with id %d", service.ID)
 		return err
 	}
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing base service %d information after update",
+		err = pkgerrors.WithMessagef(err, "problem with committing base service %d information after update",
 			service.ID)
 	}
 	return err
@@ -259,14 +260,14 @@ func UpdateBaseHAService(dbIface interface{}, service *BaseHAService) error {
 
 	err = tx.Update(service)
 	if err != nil {
-		err = errors.Wrapf(err, "problem with updating the HA information for service with id %d",
+		err = pkgerrors.Wrapf(err, "problem with updating the HA information for service with id %d",
 			service.ServiceID)
 		return err
 	}
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing HA information for service with id %d after update",
+		err = pkgerrors.WithMessagef(err, "problem with committing HA information for service with id %d after update",
 			service.ServiceID)
 	}
 	return err
@@ -298,7 +299,7 @@ func UpdateService(dbIface interface{}, service *Service) error {
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessagef(err, "problem with committing service with id %d after update", service.ID)
+		err = pkgerrors.WithMessagef(err, "problem with committing service with id %d after update", service.ID)
 	}
 	return err
 }
@@ -313,10 +314,10 @@ func GetDetailedService(db *dbops.PgDB, serviceID int64) (*Service, error) {
 		Where("service.id = ?", serviceID).
 		Select()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = errors.Wrapf(err, "problem with getting a service with id %d", serviceID)
+		err = pkgerrors.Wrapf(err, "problem with getting a service with id %d", serviceID)
 		return nil, err
 	}
 	return service, err
@@ -338,8 +339,8 @@ func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) 
 		OrderExpr("service.id ASC").
 		Select()
 
-	if err != nil && err != pg.ErrNoRows {
-		err = errors.Wrapf(err, "problem with getting services for app id %d", appID)
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrapf(err, "problem with getting services for app id %d", appID)
 		return services, err
 	}
 
@@ -357,8 +358,8 @@ func GetDetailedAllServices(db *dbops.PgDB) ([]Service, error) {
 		OrderExpr("id ASC").
 		Select()
 
-	if err != nil && err != pg.ErrNoRows {
-		err = errors.Wrapf(err, "problem with getting all services")
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrapf(err, "problem with getting all services")
 		return services, err
 	}
 	return services, nil
@@ -374,7 +375,7 @@ func DeleteService(db *dbops.PgDB, serviceID int64) error {
 	}
 	_, err := db.Model(service).WherePK().Delete()
 	if err != nil {
-		err = errors.Wrapf(err, "problem with deleting the service having id %d", serviceID)
+		err = pkgerrors.Wrapf(err, "problem with deleting the service having id %d", serviceID)
 	}
 	return err
 }
@@ -396,14 +397,14 @@ func CommitServicesIntoDB(dbIface interface{}, services []Service, daemon *Daemo
 			err = UpdateService(tx, &services[i])
 		}
 		if err != nil {
-			err = errors.WithMessagef(err, "problem with committing services into the database")
+			err = pkgerrors.WithMessagef(err, "problem with committing services into the database")
 			return err
 		}
 		// Try to associate the app with the service. If the association already
 		// exists this is no-op.
 		err = AddDaemonToService(tx, services[i].ID, daemon)
 		if err != nil {
-			err = errors.WithMessagef(err, "problem with associating detected service %d with daemon having id %d",
+			err = pkgerrors.WithMessagef(err, "problem with associating detected service %d with daemon having id %d",
 				services[i].ID, daemon.ID)
 			return err
 		}
@@ -411,7 +412,7 @@ func CommitServicesIntoDB(dbIface interface{}, services []Service, daemon *Daemo
 
 	err = commit()
 	if err != nil {
-		err = errors.WithMessage(err, "problem with committing services into the database")
+		err = pkgerrors.WithMessage(err, "problem with committing services into the database")
 	}
 	return err
 }

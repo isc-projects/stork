@@ -2,13 +2,14 @@ package dbops
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -59,11 +60,14 @@ func NewPgDbConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 	// Test connection to database.
 	var err error
 	for tries := 0; tries < 10; tries++ {
-		var n int
+		var (
+			n       int
+			pgError pg.Error
+		)
 		_, err = db.QueryOne(pg.Scan(&n), "SELECT 1")
 		if err == nil {
 			break
-		} else if pgErr, ok := err.(pg.Error); ok && pgErr.Field('S') == "FATAL" {
+		} else if errors.As(err, &pgError) && pgError.Field('S') == "FATAL" {
 			break
 		} else {
 			log.Printf("problem with connecting to db, trying again in 2 seconds, %d/10: %s", tries+1, err)
@@ -71,7 +75,7 @@ func NewPgDbConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to connect to the database using provided credentials")
+		return nil, pkgerrors.Wrapf(err, "unable to connect to the database using provided credentials")
 	}
 	return db, nil
 }
@@ -120,7 +124,7 @@ func Transaction(dbIface interface{}) (tx *pg.Tx, rollback func(), commit func()
 	if ok {
 		tx, err = db.Begin()
 		if err != nil {
-			err = errors.Wrapf(err, "problem with starting database transaction")
+			err = pkgerrors.Wrapf(err, "problem with starting database transaction")
 		}
 		rollback = func() {
 			// We neither capture nor log any error here because it would
@@ -133,14 +137,14 @@ func Transaction(dbIface interface{}) (tx *pg.Tx, rollback func(), commit func()
 		commit = func() (err error) {
 			err = tx.Commit()
 			if err != nil {
-				err = errors.Wrapf(err, "problem with committing the transaction")
+				err = pkgerrors.Wrapf(err, "problem with committing the transaction")
 			}
 			return err
 		}
 	} else {
 		tx, ok = dbIface.(*pg.Tx)
 		if !ok {
-			err = errors.New("unsupported type of the database transaction object provided")
+			err = pkgerrors.New("unsupported type of the database transaction object provided")
 		}
 		rollback = func() {}
 		commit = func() (err error) {

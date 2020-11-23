@@ -1,11 +1,12 @@
 package dbmodel
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -74,7 +75,7 @@ func createUserGroups(db *pg.DB, user *SystemUser) (err error) {
 func CreateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	tx, err := db.Begin()
 	if err != nil {
-		err = errors.Wrapf(err, "unable to begin transaction while trying to create user %s", user.Identity())
+		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to create user %s", user.Identity())
 		return false, err
 	}
 	defer func() {
@@ -89,12 +90,12 @@ func CreateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	}
 
 	if err != nil {
-		pgErr, ok := err.(pg.Error)
-		if ok {
-			conflict = pgErr.IntegrityViolation()
+		var pgError pg.Error
+		if errors.As(err, &pgError) {
+			conflict = pgError.IntegrityViolation()
 		}
 
-		err = errors.Wrapf(err, "database operation error while trying to create user %s", user.Identity())
+		err = pkgerrors.Wrapf(err, "database operation error while trying to create user %s", user.Identity())
 	}
 
 	if err == nil {
@@ -110,7 +111,7 @@ func CreateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	tx, err := db.Begin()
 	if err != nil {
-		err = errors.Wrapf(err, "unable to begin transaction while trying to update user %s", user.Identity())
+		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to update user %s", user.Identity())
 		return false, err
 	}
 	defer func() {
@@ -130,16 +131,16 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	}
 
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			conflict = true
 		} else {
-			pgErr, ok := err.(pg.Error)
-			if ok {
-				conflict = pgErr.IntegrityViolation()
+			var pgError pg.Error
+			if errors.As(err, &pgError) {
+				conflict = pgError.IntegrityViolation()
 			}
 		}
 
-		err = errors.Wrapf(err, "database operation error while trying to update user %s", user.Identity())
+		err = pkgerrors.Wrapf(err, "database operation error while trying to update user %s", user.Identity())
 	}
 
 	if err == nil {
@@ -158,10 +159,10 @@ func SetPassword(db *pg.DB, id int, password string) (err error) {
 
 	result, err := db.Model(&user).Column("password_hash").WherePK().Update()
 	if err != nil {
-		err = errors.Wrapf(err, "database operation error while trying to set new password for the user id %d",
+		err = pkgerrors.Wrapf(err, "database operation error while trying to set new password for the user id %d",
 			id)
 	} else if result.RowsAffected() == 0 {
-		err = errors.Errorf("failed to update password for non existing user with id %d", id)
+		err = pkgerrors.Errorf("failed to update password for non existing user with id %d", id)
 	}
 
 	return err
@@ -177,7 +178,7 @@ func ChangePassword(db *pg.DB, id int, oldPassword, newPassword string) (bool, e
 		Where("password_hash = crypt(?, password_hash) AND (id = ?)",
 			oldPassword, id).Exists()
 	if err != nil {
-		err = errors.Wrapf(err, "database operation error while trying to change password of user with id %d", id)
+		err = pkgerrors.Wrapf(err, "database operation error while trying to change password of user with id %d", id)
 		return false, err
 	}
 
@@ -199,11 +200,11 @@ func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 	if err != nil {
 		// Failing to find an entry is not really an error. It merely means that the
 		// authentication failed, so return false in this case.
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return false, nil
 		}
 		// Other types of errors have to be logged properly.
-		err = errors.Wrapf(err, "database operation error while trying to authenticate user %s", user.Identity())
+		err = pkgerrors.Wrapf(err, "database operation error while trying to authenticate user %s", user.Identity())
 		return false, err
 	}
 
@@ -226,7 +227,7 @@ func Authenticate(db *pg.DB, user *SystemUser) (bool, error) {
 // used for sorting.  in SortDirAny is used then ASC order is used.
 func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SystemUser, int64, error) {
 	if limit == 0 {
-		return nil, 0, errors.New("limit should be greater than 0")
+		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}
 
 	var users []SystemUser
@@ -251,10 +252,10 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sor
 
 	total, err := q.SelectAndCount()
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return []SystemUser{}, 0, nil
 		}
-		err = errors.Wrapf(err, "problem with fetching a list of users from the database")
+		err = pkgerrors.Wrapf(err, "problem with fetching a list of users from the database")
 	}
 
 	return users, int64(total), err
@@ -266,10 +267,10 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sor
 func GetUserByID(db *dbops.PgDB, id int) (*SystemUser, error) {
 	user := &SystemUser{}
 	err := db.Model(user).Relation("Groups").Where("id = ?", id).First()
-	if err == pg.ErrNoRows {
+	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
-		return nil, errors.Wrapf(err, "problem with fetching user %v from the database", id)
+		return nil, pkgerrors.Wrapf(err, "problem with fetching user %v from the database", id)
 	}
 	return user, err
 }
@@ -284,7 +285,7 @@ func (user *SystemUser) AddToGroupByID(db *dbops.PgDB, group *SystemGroup) (adde
 
 		return res.RowsAffected() > 0, err
 	}
-	err = errors.Errorf("unable to add user to the unknown group")
+	err = pkgerrors.Errorf("unable to add user to the unknown group")
 	return false, err
 }
 

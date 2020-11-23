@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -56,8 +57,9 @@ func main() {
 	}
 
 	if _, err := parser.Parse(); err != nil {
-		if fe, ok := err.(*flags.Error); ok {
-			if fe.Type == flags.ErrHelp {
+		var flagsError *flags.Error
+		if errors.As(err, &flagsError) {
+			if flagsError.Type == flags.ErrHelp {
 				os.Exit(0)
 			}
 		}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -13,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
@@ -452,7 +453,7 @@ func (pbe *PromBind9Exporter) qryRTTHistogram(stats map[string]float64) (uint64,
 				rtt := strings.TrimPrefix(statName, qryRTT)
 				bucket, err = strconv.ParseFloat(rtt, 64)
 				if err != nil {
-					return 0, math.NaN(), buckets, errors.Errorf("could not parse RTT: %s", rtt)
+					return 0, math.NaN(), buckets, pkgerrors.Errorf("could not parse RTT: %s", rtt)
 				}
 			}
 			buckets[bucket/1000] = uint64(statValue)
@@ -505,7 +506,7 @@ func (pbe *PromBind9Exporter) trafficSizesHistogram(stats map[string]float64) (c
 			}
 			bucket, err = strconv.ParseFloat(sizes[1], 64)
 			if err != nil {
-				return 0, math.NaN(), buckets, errors.Errorf("could not parse size: %s", sizes[1])
+				return 0, math.NaN(), buckets, pkgerrors.Errorf("could not parse size: %s", sizes[1])
 			}
 		}
 		buckets[bucket] = uint64(statValue)
@@ -826,7 +827,7 @@ func (pbe *PromBind9Exporter) Start() {
 	// start HTTP server for metrics
 	go func() {
 		err := pbe.HTTPServer.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Errorf("problem with serving Prometheus BIND 9 Exporter: %s", err.Error())
 		}
 	}()
@@ -874,7 +875,7 @@ func (pbe *PromBind9Exporter) scrapeServerStat(statMap map[string]interface{}, s
 	if statIfc != nil {
 		stats, ok := statIfc.(map[string]interface{})
 		if !ok {
-			return nil, errors.Errorf("problem with casting '%s' interface", statName)
+			return nil, pkgerrors.Errorf("problem with casting '%s' interface", statName)
 		}
 		for labelName, labelValueIfc := range stats {
 			// get value
@@ -898,21 +899,21 @@ func (pbe *PromBind9Exporter) scrapeTimeStats(statMap map[string]interface{}) (e
 	timeStr = getStat(statMap, "boot-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
-		return errors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
+		return pkgerrors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.BootTime = timeVal
 	// config_time_seconds
 	timeStr = getStat(statMap, "config-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
-		return errors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
+		return pkgerrors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.ConfigTime = timeVal
 	// current_time_seconds
 	timeStr = getStat(statMap, "current-time").(string)
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
-		return errors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
+		return pkgerrors.Errorf("problem with parsing time %+s: %+v", timeStr, err)
 	}
 	pbe.stats.CurrentTime = timeVal
 
@@ -1071,7 +1072,7 @@ func (pbe *PromBind9Exporter) scrapeViewStats(viewName string, viewStatsIfc inte
 func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	rsp, ok := rspIfc.(map[string]interface{})
 	if !ok {
-		return errors.Errorf("problem with casting rspIfc: %+v", rspIfc)
+		return pkgerrors.Errorf("problem with casting rspIfc: %+v", rspIfc)
 	}
 
 	// boot_time_seconds
@@ -1085,12 +1086,12 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	// incoming_queries_total
 	pbe.stats.IncomingQueries, err = pbe.scrapeServerStat(rsp, "qtypes")
 	if err != nil {
-		return errors.Errorf("problem with parsing 'qtypes': %+v", err)
+		return pkgerrors.Errorf("problem with parsing 'qtypes': %+v", err)
 	}
 	// incoming_requests_total
 	pbe.stats.IncomingRequests, err = pbe.scrapeServerStat(rsp, "opcodes")
 	if err != nil {
-		return errors.Errorf("problem with parsing 'opcodes': %+v", err)
+		return pkgerrors.Errorf("problem with parsing 'opcodes': %+v", err)
 	}
 
 	// query_duplicates_total
@@ -1102,31 +1103,31 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	// zone_transfer_success_total
 	pbe.stats.NsStats, err = pbe.scrapeServerStat(rsp, "nsstats")
 	if err != nil {
-		return errors.Errorf("problem with parsing 'nsstats': %+v", err)
+		return pkgerrors.Errorf("problem with parsing 'nsstats': %+v", err)
 	}
 
 	// tasks_running
 	// worker_threads
 	pbe.stats.TaskMgr, err = pbe.scrapeServerStat(rsp, "taskmgr")
 	if err != nil {
-		return errors.Errorf("problem with parsing 'nsstats': %+v", err)
+		return pkgerrors.Errorf("problem with parsing 'nsstats': %+v", err)
 	}
 
 	// Parse traffic stats.
 	trafficIfc, ok := rsp["traffic"]
 	if !ok {
-		return errors.Errorf("no 'traffic' in response: %+v", rsp)
+		return pkgerrors.Errorf("no 'traffic' in response: %+v", rsp)
 	}
 	traffic, ok := trafficIfc.(map[string]interface{})
 	if !ok {
-		return errors.Errorf("problem with casting trafficIfc: %+v", trafficIfc)
+		return pkgerrors.Errorf("problem with casting trafficIfc: %+v", trafficIfc)
 	}
 	trafficMap := make(map[string]PromBind9TrafficStats)
 	for trafficName, trafficStatsIfc := range traffic {
 		sizeCounts := make(map[string]float64)
 		trafficStats, ok := trafficStatsIfc.(map[string]interface{})
 		if !ok {
-			return errors.Errorf("problem with casting '%s' interface", trafficName)
+			return pkgerrors.Errorf("problem with casting '%s' interface", trafficName)
 		}
 		for labelName, labelValueIfc := range trafficStats {
 			// get value
@@ -1146,12 +1147,12 @@ func (pbe *PromBind9Exporter) setDaemonStats(rspIfc interface{}) (ret error) {
 	// Parse views.
 	viewsIfc, ok := rsp["views"]
 	if !ok {
-		return errors.Errorf("no 'views' in response: %+v", rsp)
+		return pkgerrors.Errorf("no 'views' in response: %+v", rsp)
 	}
 
 	views := viewsIfc.(map[string]interface{})
 	if !ok {
-		return errors.Errorf("problem with casting viewsIfc: %+v", viewsIfc)
+		return pkgerrors.Errorf("problem with casting viewsIfc: %+v", viewsIfc)
 	}
 
 	for viewName, viewStatsIfc := range views {
