@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -25,7 +26,7 @@ func authorizeAccept(t *testing.T, groupID int, path string) bool {
 	}
 
 	// Create request with the specified path and authorize.
-	req, _ := http.NewRequest("GET", "http://example.org/api"+path, nil)
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", "http://example.org/api"+path, nil)
 	ok, err := Authorize(user, req)
 	require.NoError(t, err)
 
