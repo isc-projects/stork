@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
@@ -41,7 +42,7 @@ func mockRndc(command []string) ([]byte, error) {
 func mockRndcError(command []string) ([]byte, error) {
 	log.Debugf("mock rndc: error")
 
-	return []byte(""), fmt.Errorf("mocking an error")
+	return []byte(""), errors.Errorf("mocking an error")
 }
 
 // mockRndcEmpty mocks empty output.

@@ -2,7 +2,6 @@ package kea
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
@@ -284,21 +283,21 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 
 	statsResp, ok := response.(*[]StatLeaseGetResponse)
 	if !ok {
-		return fmt.Errorf("response is empty: %+v", sr)
+		return errors.Errorf("response is empty: %+v", sr)
 	}
 
 	sr = *statsResp
 	if len(sr) == 0 {
-		return fmt.Errorf("response is empty: %+v", sr)
+		return errors.Errorf("response is empty: %+v", sr)
 	}
 
 	if sr[0].Arguments == nil {
-		return fmt.Errorf("missing Arguments from Lease Stats response %+v", sr[0])
+		return errors.Errorf("missing Arguments from Lease Stats response %+v", sr[0])
 	}
 
 	resultSet := &sr[0].Arguments.ResultSet
 	if resultSet == nil {
-		return fmt.Errorf("missing ResultSet from Lease Stats response %+v", sr[0])
+		return errors.Errorf("missing ResultSet from Lease Stats response %+v", sr[0])
 	}
 
 	for _, row := range resultSet.Rows {

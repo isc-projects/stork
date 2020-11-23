@@ -178,7 +178,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, dbApp
 				// This is not the first time we can't communicate with the
 				// agent. Let's be brief and say that the communication is
 				// still broken.
-				err = fmt.Errorf("failed to send rndc command via the agent %s, the agent is still not responding",
+				err = errors.Errorf("failed to send rndc command via the agent %s, the agent is still not responding",
 					agent.Address)
 			}
 			// Log the commands that failed.
@@ -240,7 +240,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, dbApp
 			// This is not the first tie the BIND9 RNDC is not responding, so let's
 			// print the brief message.
 			if bind9CommStats.CurrentErrorsRNDC > 1 {
-				result.Error = fmt.Errorf("failed to send rndc command via the agent %s, BIND9 is still not responding",
+				result.Error = errors.Errorf("failed to send rndc command via the agent %s, BIND9 is still not responding",
 					agent.Address)
 				err = result.Error
 				// Log the commands that failed.
@@ -287,7 +287,7 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agen
 				// This is not the first time we can't communicate with the
 				// agent. Let's be brief and say that the communication is
 				// still broken.
-				err = fmt.Errorf("failed to send named statistics command via the agent %s, the agent is still not responding",
+				err = errors.Errorf("failed to send named statistics command via the agent %s, the agent is still not responding",
 					agent.Address)
 			}
 			// Log the commands that failed.
@@ -333,7 +333,7 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agen
 			// This is not the first tie the BIND9 stats is not responding, so let's
 			// print the brief message.
 			if bind9CommStats.CurrentErrorsStats > 1 {
-				err = fmt.Errorf("failed to send named stats command via the agent %s, BIND9 is still not responding",
+				err = errors.Errorf("failed to send named stats command via the agent %s, BIND9 is still not responding",
 					agent.Address)
 				// Log the commands that failed.
 				log.WithFields(log.Fields{
@@ -417,7 +417,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbA
 			// This is not the first time we can't communicate with the
 			// agent. Let's be brief and say that the communication is
 			// still broken.
-			err = fmt.Errorf("failed to send Kea commands via the agent %s, the agent is still not responding",
+			err = errors.Errorf("failed to send Kea commands via the agent %s, the agent is still not responding",
 				agent.Address)
 		}
 		agent.Stats.CurrentErrors++

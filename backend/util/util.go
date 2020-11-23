@@ -1,7 +1,6 @@
 package storkutil
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -54,7 +54,7 @@ func MakeCIDR(address string) (string, error) {
 	if !strings.Contains(address, "/") {
 		ip := net.ParseIP(address)
 		if ip == nil {
-			return address, errors.New("provided string %s is not a valid IP address")
+			return address, errors.Errorf("provided string %s is not a valid IP address", address)
 		}
 		ip4 := ip.To4()
 		if ip4 != nil {

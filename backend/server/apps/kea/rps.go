@@ -1,7 +1,6 @@
 package kea
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -123,7 +122,7 @@ func RpsAddCmd6(cmds *[]*keactrl.Command, dhcp6Daemons *keactrl.Daemons) interfa
 func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response interface{}) error {
 	statsResp4, ok := response.(*[]StatGetResponse4)
 	if !ok {
-		return fmt.Errorf("response type is invalid: %+v", response)
+		return errors.Errorf("response type is invalid: %+v", response)
 	}
 
 	samples, err := rpsWorker.extractSamples4(*statsResp4)
@@ -148,7 +147,7 @@ func (rpsWorker *RpsWorker) Response4Handler(daemon *dbmodel.Daemon, response in
 func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response interface{}) error {
 	statsResp6, ok := response.(*[]StatGetResponse6)
 	if !ok {
-		return fmt.Errorf("response type is invalid: %+v", response)
+		return errors.Errorf("response type is invalid: %+v", response)
 	}
 
 	samples, err := rpsWorker.extractSamples6(*statsResp6)
@@ -172,22 +171,22 @@ func (rpsWorker *RpsWorker) Response6Handler(daemon *dbmodel.Daemon, response in
 // Exract the list of statistic samples from a dhcp4 statistic-get response if the response is valid.
 func (rpsWorker *RpsWorker) extractSamples4(statsResp []StatGetResponse4) ([]interface{}, error) {
 	if len(statsResp) == 0 {
-		err := fmt.Errorf("empty RPS response")
+		err := errors.Errorf("empty RPS response")
 		return nil, err
 	}
 
 	if statsResp[0].Result != 0 {
-		err := fmt.Errorf("error result in RPS response: %+v", statsResp)
+		err := errors.Errorf("error result in RPS response: %+v", statsResp)
 		return nil, err
 	}
 
 	if statsResp[0].Arguments == nil {
-		err := fmt.Errorf("missing Arguments from RPS response %+v", statsResp)
+		err := errors.Errorf("missing Arguments from RPS response %+v", statsResp)
 		return nil, err
 	}
 
 	if statsResp[0].Arguments.Samples == nil {
-		err := fmt.Errorf("missing Samples from RPS response: %+v", statsResp)
+		err := errors.Errorf("missing Samples from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
@@ -197,22 +196,22 @@ func (rpsWorker *RpsWorker) extractSamples4(statsResp []StatGetResponse4) ([]int
 // Exract the list of statistic samples from a dhcp6 statistic-get response if the response is valid.
 func (rpsWorker *RpsWorker) extractSamples6(statsResp []StatGetResponse6) ([]interface{}, error) {
 	if len(statsResp) == 0 {
-		err := fmt.Errorf("empty RPS response")
+		err := errors.Errorf("empty RPS response")
 		return nil, err
 	}
 
 	if statsResp[0].Result != 0 {
-		err := fmt.Errorf("error result in RPS response: %+v", statsResp)
+		err := errors.Errorf("error result in RPS response: %+v", statsResp)
 		return nil, err
 	}
 
 	if statsResp[0].Arguments == nil {
-		err := fmt.Errorf("missing Arguments from RPS response: %+v", statsResp)
+		err := errors.Errorf("missing Arguments from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
 	if statsResp[0].Arguments.Samples == nil {
-		err := fmt.Errorf("missing Samples from RPS response: %+v", statsResp)
+		err := errors.Errorf("missing Samples from RPS response: %+v", statsResp)
 		return nil, err
 	}
 
@@ -331,16 +330,16 @@ func getFirstSample(samples []interface{}) (int64, time.Time, error) {
 
 	if len(samples) == 0 {
 		// Not enough rows
-		return 0, sampledAt, fmt.Errorf("sampleList is empty")
+		return 0, sampledAt, errors.Errorf("sampleList is empty")
 	}
 
 	row, ok := samples[0].([]interface{})
 	if !ok {
-		return 0, sampledAt, fmt.Errorf("problem with casting sample row: %+v", samples[0])
+		return 0, sampledAt, errors.Errorf("problem with casting sample row: %+v", samples[0])
 	}
 
 	if len(row) != 2 {
-		return 0, sampledAt, fmt.Errorf("row has incorrect number of values: %+v", row)
+		return 0, sampledAt, errors.Errorf("row has incorrect number of values: %+v", row)
 	}
 
 	// Not sure why unmarshalling makes it a float64, but we need an int64.

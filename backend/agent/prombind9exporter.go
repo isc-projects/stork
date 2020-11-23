@@ -452,7 +452,7 @@ func (pbe *PromBind9Exporter) qryRTTHistogram(stats map[string]float64) (uint64,
 				rtt := strings.TrimPrefix(statName, qryRTT)
 				bucket, err = strconv.ParseFloat(rtt, 64)
 				if err != nil {
-					return 0, math.NaN(), buckets, fmt.Errorf("could not parse RTT: %s", rtt)
+					return 0, math.NaN(), buckets, errors.Errorf("could not parse RTT: %s", rtt)
 				}
 			}
 			buckets[bucket/1000] = uint64(statValue)
@@ -505,7 +505,7 @@ func (pbe *PromBind9Exporter) trafficSizesHistogram(stats map[string]float64) (c
 			}
 			bucket, err = strconv.ParseFloat(sizes[1], 64)
 			if err != nil {
-				return 0, math.NaN(), buckets, fmt.Errorf("could not parse size: %s", sizes[1])
+				return 0, math.NaN(), buckets, errors.Errorf("could not parse size: %s", sizes[1])
 			}
 		}
 		buckets[bucket] = uint64(statValue)

@@ -1,13 +1,13 @@
 package restservice
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"isc.org/stork/server/auth"
 	"isc.org/stork/server/eventcenter"
@@ -97,12 +97,12 @@ func (r *RestAPI) InnerMiddleware(handler http.Handler) http.Handler {
 func (r *RestAPI) Authorizer(req *http.Request) error {
 	ok, u := r.SessionManager.Logged(req.Context())
 	if !ok {
-		return fmt.Errorf("user unauthorized")
+		return errors.Errorf("user unauthorized")
 	}
 
 	ok, _ = auth.Authorize(u, req)
 	if !ok {
-		return fmt.Errorf("user logged in but not allowed to access the resource")
+		return errors.Errorf("user logged in but not allowed to access the resource")
 	}
 
 	return nil
