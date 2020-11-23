@@ -10,9 +10,8 @@ import (
 // subnets are stored as a slice. New indexes can be added as needed
 // in the future.
 type IndexedSubnets struct {
-	Config       *Map
-	RandomAccess []interface{}
-	ByPrefix     map[string]map[string]interface{}
+	Config   *Map
+	ByPrefix map[string]map[string]interface{}
 }
 
 // Creates new instance of the IndexedSubnets structure. It takes a raw
@@ -27,7 +26,7 @@ func NewIndexedSubnets(rawConfig *Map) *IndexedSubnets {
 	}
 }
 
-// Rebuild indexes using subnets stored in RandomAccess field as input.
+// Rebuild indexes using subnets stored in the Config field as input.
 // It returns an error if duplicates are found or subnets have wrong
 // structure.
 func (is *IndexedSubnets) Populate() error {
@@ -86,7 +85,6 @@ func (is *IndexedSubnets) Populate() error {
 	}
 
 	// Everything went fine, so replace indexes with fresh ones.
-	is.RandomAccess = subnets
 	is.ByPrefix = byPrefix
 	return nil
 }

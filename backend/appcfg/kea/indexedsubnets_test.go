@@ -17,7 +17,6 @@ func TestNewIndexedSubnets(t *testing.T) {
 	require.NoError(t, err)
 	is := NewIndexedSubnets(rawConfig)
 	require.NotNil(t, is)
-	require.Empty(t, is.RandomAccess)
 	require.Nil(t, is.ByPrefix)
 }
 
@@ -66,17 +65,6 @@ func TestIndexedSubnetsPopulate(t *testing.T) {
 	require.NotNil(t, is)
 
 	require.NoError(t, is.Populate())
-
-	// All subnets should be now stored in random access index.
-	require.Len(t, is.RandomAccess, 4)
-	require.Contains(t, is.RandomAccess[0], "subnet")
-	require.EqualValues(t, "192.0.3.0/24", is.RandomAccess[0].(map[string]interface{})["subnet"])
-	require.Contains(t, is.RandomAccess[1], "subnet")
-	require.EqualValues(t, "192.0.4.0/24", is.RandomAccess[1].(map[string]interface{})["subnet"])
-	require.Contains(t, is.RandomAccess[2], "subnet")
-	require.EqualValues(t, "192.0.2.0/24", is.RandomAccess[2].(map[string]interface{})["subnet"])
-	require.Contains(t, is.RandomAccess[3], "subnet")
-	require.EqualValues(t, "10.0.0.0/8", is.RandomAccess[3].(map[string]interface{})["subnet"])
 
 	// All subnets should ne stored in the by-prefix index.
 	require.Len(t, is.ByPrefix, 4)
@@ -155,7 +143,6 @@ func TestIndexedSubnetsPopulateWrongConfigs(t *testing.T) {
 			is := NewIndexedSubnets(config)
 			require.NotNil(t, is)
 			require.Error(t, is.Populate())
-			require.Empty(t, is.RandomAccess)
 			require.Empty(t, is.ByPrefix)
 		})
 	}
