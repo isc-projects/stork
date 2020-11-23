@@ -619,10 +619,10 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	require.Len(t, network.Subnets, 3)
 }
 
-// Benchmark measuring performance of the subnetExists function. This function
-// checks if the given subnet belongs to the set of existing subnets. It uses
-// indexing by prefix to lookup an existing subnet.
-func BenchmarkSubnetExists(b *testing.B) {
+// Benchmark measuring performance of the findMatchingSubnet function. This
+// function checks if the given subnet belongs to the set of existing subnets.
+// It uses indexing by prefix to lookup an existing subnet.
+func BenchmarkFindMatchingSubnet(b *testing.B) {
 	// Create many subnets.
 	subnets := []dbmodel.Subnet{}
 	for i := 0; i < 10000; i++ {
@@ -643,6 +643,6 @@ func BenchmarkSubnetExists(b *testing.B) {
 		// Randomize the subnet to be looked up.
 		subnetIndex := rand.Intn(len(subnets))
 		// Find the subnet using indexes.
-		subnetExists(&subnets[subnetIndex], existingSubnets)
+		findMatchingSubnet(&subnets[subnetIndex], existingSubnets)
 	}
 }

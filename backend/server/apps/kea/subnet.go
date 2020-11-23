@@ -31,15 +31,15 @@ func sharedNetworkExists(db *dbops.PgDB, network *dbmodel.SharedNetwork, existin
 }
 
 // Checks whether the given subnet exists already.
-func subnetExists(subnet *dbmodel.Subnet, existingSubnets *dbmodel.IndexedSubnets) (bool, *dbmodel.Subnet) {
+func findMatchingSubnet(subnet *dbmodel.Subnet, existingSubnets *dbmodel.IndexedSubnets) *dbmodel.Subnet {
 	// todo: this logic should be extended to perform some more sophisticated
 	// matching of the subnet with existing subnets. For now, we only match by
 	// the subnet prefix and we do not resolve any conflicts. This should
 	// change soon.
-	if existing, ok := existingSubnets.ByPrefix[subnet.Prefix]; ok {
-		return true, existing
+	if existingSubnet, ok := existingSubnets.ByPrefix[subnet.Prefix]; ok {
+		return existingSubnet
 	}
-	return false, nil
+	return nil
 }
 
 // For a given Kea configuration it detects the shared networks matching this
@@ -87,19 +87,19 @@ func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int,
 					// shared network already.
 					for _, s := range network.Subnets {
 						subnet := s
-						ok, existing := subnetExists(&subnet, indexedSubnets)
-						if !ok {
+						existingSubnet := findMatchingSubnet(&subnet, indexedSubnets)
+						if existingSubnet == nil {
 							dbNetwork.Subnets = append(dbNetwork.Subnets, subnet)
 						} else {
 							// Subnet already exists and may contain some hosts. Let's
 							// merge the hosts from the new subnet into the existing subnet.
-							hosts, err := mergeSubnetHosts(db, existing, &subnet, app)
+							hosts, err := mergeSubnetHosts(db, existingSubnet, &subnet, app)
 							if err != nil {
 								log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
 									subnet.Prefix, err)
 								continue
 							}
-							existing.Hosts = hosts
+							existingSubnet.Hosts = hosts
 						}
 					}
 					networks = append(networks, *dbNetwork)
@@ -152,12 +152,12 @@ func detectSubnets(db *dbops.PgDB, config *dbmodel.KeaConfig, family int, app *d
 					log.Warnf("skipping invalid subnet: %v", err)
 					continue
 				}
-				exists, existing := subnetExists(subnet, indexedSubnets)
-				if exists {
-					subnets = append(subnets, *existing)
+				existingSubnet := findMatchingSubnet(subnet, indexedSubnets)
+				if existingSubnet != nil {
+					subnets = append(subnets, *existingSubnet)
 					// Subnet already exists and may contain some hosts. Let's
 					// merge the hosts from the new subnet into the existing subnet.
-					hosts, err := mergeSubnetHosts(db, existing, subnet, app)
+					hosts, err := mergeSubnetHosts(db, existingSubnet, subnet, app)
 					if err != nil {
 						log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
 							subnet.Prefix, err)
