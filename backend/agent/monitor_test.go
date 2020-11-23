@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"log"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"testing"
