@@ -1,3 +1,8 @@
+* 117 [build] marcin
+
+    Upgraded Go from 1.13.5 to 1.15.5.
+    (Gitlab #457)
+
 * 116 [perf] marcin
 
     Improved performance of connecting large Kea installation with many
