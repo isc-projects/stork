@@ -34,7 +34,7 @@ func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 	defer os.Remove(tmpFile.Name())
 
 	text := []byte("random content")
-	_, err = tmpFile.Write(text);
+	_, err = tmpFile.Write(text)
 	require.NoError(t, err)
 
 	err = tmpFile.Close()

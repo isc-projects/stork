@@ -224,6 +224,19 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 	}
 }
 
+// Iterates over the slice of HA services and updates them in the database.
+func (puller *HAStatusPuller) commitHAServicesStatus(appID int64, services []dbmodel.Service) {
+	for i := range services {
+		// Update the information about the HA service in the database.
+		err := dbmodel.UpdateBaseHAService(puller.DB, services[i].HAService)
+		if err != nil {
+			log.Errorf("error occurred while updating HA services status for Kea app %d: %+v", appID, err)
+
+			continue
+		}
+	}
+}
+
 // Gets the status of the Kea apps and stores useful information in the database.
 // The High Availability status is stored in the database for those apps which
 // have the HA enabled.
@@ -238,100 +251,107 @@ func (puller *HAStatusPuller) pullData() (int, error) {
 	appsOkCnt := 0
 	appsCnt := 0
 	for i := range apps {
-		// Before contacting the DHCP server, let's check if there is any service
-		// the app belongs to.
-		dbServices, err := dbmodel.GetDetailedServicesByAppID(puller.DB, apps[i].ID)
-		if err != nil {
-			log.Errorf("error while getting services for Kea app %d: %+v", apps[i].ID, err)
-			continue
+		pulled, ok := puller.pullDataForApp(&apps[i])
+		if pulled {
+			appsCnt++
 		}
-		// No services for this app, so nothing to do.
-		if len(dbServices) == 0 {
-			continue
+		if ok {
+			appsOkCnt++
 		}
-
-		// Pick only those services for the app that have the HA type. At the
-		// same time reset the values in case the server doesn't respond to the
-		// command. These values will indicate that we can't say what is happening
-		// with the server we failed to connect to.
-		var haServices []dbmodel.Service
-		for j := range dbServices {
-			if dbServices[j].HAService == nil {
-				continue
-			}
-			for _, d := range apps[i].Daemons {
-				switch d.ID {
-				case dbServices[j].HAService.PrimaryID:
-					dbServices[j].HAService.PrimaryLastState = HAStatusUnavailable
-					dbServices[j].HAService.PrimaryLastScopes = []string{}
-					dbServices[j].HAService.PrimaryReachable = false
-				case dbServices[j].HAService.SecondaryID:
-					dbServices[j].HAService.SecondaryLastState = HAStatusUnavailable
-					dbServices[j].HAService.SecondaryLastScopes = []string{}
-					dbServices[j].HAService.SecondaryReachable = false
-				}
-				haServices = append(haServices, dbServices[j])
-			}
-		}
-
-		appsCnt++
-		ctx := context.Background()
-		// Send the status-get command to both DHCPv4 and DHCPv6 servers.
-		appStatus, err := getDHCPStatus(ctx, puller.Agents, &apps[i])
-		if err != nil {
-			log.Errorf("error occurred while getting Kea app %d status: %+v", apps[i].ID, err)
-		}
-		// Go over the returned status values and match with the daemons.
-		for _, status := range appStatus {
-			// If no HA status, there is nothing to do.
-			if status.HAServers == nil && len(status.HA) == 0 {
-				continue
-			}
-			// Find the matching service for the returned status.
-			index := -1
-
-			for i := range haServices {
-				if haServices[i].HAService.HAType == status.Daemon {
-					index = i
-				}
-			}
-			if index < 0 {
-				continue
-			}
-			service := haServices[index].HAService
-			for _, daemon := range apps[i].Daemons {
-				// Update the HA service status only if the given server is primary
-				// or secondary.
-				if service.PrimaryID == daemon.ID || service.SecondaryID == daemon.ID {
-					// todo: Currently Kea supports only one HA service per daemon. This
-					// will change but for now it is safe to assume that only one status
-					// is returned. Supporting more requires some mechanisms to
-					// distinguish the HA relationships which should be first designed
-					// on the Kea side.
-					if len(status.HA) > 0 {
-						updateHAServiceStatus(&status.HA[0].HAServers, daemon, service)
-					} else if status.HAServers != nil {
-						updateHAServiceStatus(status.HAServers, daemon, service)
-					}
-				}
-			}
-		}
-
-		// Update the services as appropriate regardless if we successfully communicated
-		// with the servers or not.
-		for j := range haServices {
-			// Update the information about the HA service in the database.
-			err = dbmodel.UpdateBaseHAService(puller.DB, haServices[j].HAService)
-			if err != nil {
-				log.Errorf("error occurred while updating HA services status for Kea app %d: %+v", apps[i].ID, err)
-				continue
-			}
-		}
-
-		appsOkCnt++
 	}
 	log.Printf("completed pulling DHCP status from Kea apps: %d/%d succeeded", appsOkCnt, appsCnt)
+
 	return appsOkCnt, lastErr
+}
+
+// Gets the status of a Kea app and stores useful information in the database.
+// The High Availability status is stored in the database for those apps which
+// have the HA enabled.
+func (puller *HAStatusPuller) pullDataForApp(app *dbmodel.App) (bool, bool) {
+	// Before contacting the DHCP server, let's check if there is any service
+	// the app belongs to.
+	dbServices, err := dbmodel.GetDetailedServicesByAppID(puller.DB, app.ID)
+	if err != nil {
+		log.Errorf("error while getting services for Kea app %d: %+v", app.ID, err)
+		return false, false
+	}
+	// No services for this app, so nothing to do.
+	if len(dbServices) == 0 {
+		return false, false
+	}
+
+	// Pick only those services for the app that have the HA type. At the
+	// same time reset the values in case the server doesn't respond to the
+	// command. These values will indicate that we can't say what is happening
+	// with the server we failed to connect to.
+	var haServices []dbmodel.Service
+	for j := range dbServices {
+		if dbServices[j].HAService == nil {
+			continue
+		}
+		for _, d := range app.Daemons {
+			switch d.ID {
+			case dbServices[j].HAService.PrimaryID:
+				dbServices[j].HAService.PrimaryLastState = HAStatusUnavailable
+				dbServices[j].HAService.PrimaryLastScopes = []string{}
+				dbServices[j].HAService.PrimaryReachable = false
+			case dbServices[j].HAService.SecondaryID:
+				dbServices[j].HAService.SecondaryLastState = HAStatusUnavailable
+				dbServices[j].HAService.SecondaryLastScopes = []string{}
+				dbServices[j].HAService.SecondaryReachable = false
+			}
+			haServices = append(haServices, dbServices[j])
+		}
+	}
+
+	ctx := context.Background()
+	// Send the status-get command to both DHCPv4 and DHCPv6 servers.
+	appStatus, err := getDHCPStatus(ctx, puller.Agents, app)
+	if err != nil {
+		log.Errorf("error occurred while getting Kea app %d status: %+v", app.ID, err)
+
+		return true, false
+	}
+	// Go over the returned status values and match with the daemons.
+	for _, status := range appStatus {
+		// If no HA status, there is nothing to do.
+		if status.HAServers == nil && len(status.HA) == 0 {
+			continue
+		}
+		// Find the matching service for the returned status.
+		index := -1
+
+		for i := range haServices {
+			if haServices[i].HAService.HAType == status.Daemon {
+				index = i
+			}
+		}
+		if index < 0 {
+			continue
+		}
+		service := haServices[index].HAService
+		for _, daemon := range app.Daemons {
+			// Update the HA service status only if the given server is primary
+			// or secondary.
+			if service.PrimaryID == daemon.ID || service.SecondaryID == daemon.ID {
+				// todo: Currently Kea supports only one HA service per daemon. This
+				// will change but for now it is safe to assume that only one status
+				// is returned. Supporting more requires some mechanisms to
+				// distinguish the HA relationships which should be first designed
+				// on the Kea side.
+				if len(status.HA) > 0 {
+					updateHAServiceStatus(&status.HA[0].HAServers, daemon, service)
+				} else if status.HAServers != nil {
+					updateHAServiceStatus(status.HAServers, daemon, service)
+				}
+			}
+		}
+	}
+
+	// Update the services as appropriate regardless if we successfully communicated
+	// with the servers or not.
+	puller.commitHAServicesStatus(app.ID, haServices)
+	return true, true
 }
 
 // Sends the status-get command to Kea DHCP servers and returns this status to the caller.
