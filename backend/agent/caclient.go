@@ -37,6 +37,7 @@ func (c *HTTPClient) Call(url string, payload *bytes.Buffer) (*http.Response, er
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, payload)
 	if err != nil {
 		err = errors.Wrapf(err, "problem with creating POST request to %s", url)
+
 		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/json")

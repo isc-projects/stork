@@ -82,13 +82,14 @@ func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int,
 			return []dbmodel.SharedNetwork{}, err
 		}
 		if dbNetwork != nil {
-					// Create indexes for the existing subnets to improve performance of
-					// matching new subnets with them.
-					indexedSubnets := dbmodel.NewIndexedSubnets(dbNetwork.Subnets)
-					if ok := indexedSubnets.Populate(); !ok {
-						log.Warnf("skipping shared network %s because building indexes failed due to duplicates", dbNetwork.Name)
-						continue
-					}
+			// Create indexes for the existing subnets to improve performance of
+			// matching new subnets with them.
+			indexedSubnets := dbmodel.NewIndexedSubnets(dbNetwork.Subnets)
+			if ok := indexedSubnets.Populate(); !ok {
+				log.Warnf("skipping shared network %s because building indexes failed due to duplicates", dbNetwork.Name)
+
+				continue
+			}
 			// Go over the configured subnets and see if they belong to that
 			// shared network already.
 			for _, s := range network.Subnets {
@@ -140,11 +141,12 @@ func detectSubnets(db *dbops.PgDB, config *dbmodel.KeaConfig, family int, app *d
 	if err != nil {
 		return []dbmodel.Subnet{}, err
 	}
-		indexedSubnets := dbmodel.NewIndexedSubnets(dbSubnets)
-		if ok := indexedSubnets.Populate(); !ok {
-			err = errors.Errorf("failed to build indexes for existing subnets because duplicates are present")
-			return []dbmodel.Subnet{}, err
-		}
+	indexedSubnets := dbmodel.NewIndexedSubnets(dbSubnets)
+	if ok := indexedSubnets.Populate(); !ok {
+		err = errors.Errorf("failed to build indexes for existing subnets because duplicates are present")
+
+		return []dbmodel.Subnet{}, err
+	}
 
 	// Iterate over the configured subnets.
 	for _, s := range subnetList {

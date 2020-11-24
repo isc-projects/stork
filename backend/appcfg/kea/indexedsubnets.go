@@ -21,6 +21,7 @@ func NewIndexedSubnets(rawConfig *Map) *IndexedSubnets {
 	if rawConfig == nil {
 		panic("provided DHCP configuration must not be nil when indexing subnets")
 	}
+
 	return &IndexedSubnets{
 		Config: rawConfig,
 	}
@@ -86,5 +87,6 @@ func (is *IndexedSubnets) Populate() error {
 
 	// Everything went fine, so replace indexes with fresh ones.
 	is.ByPrefix = byPrefix
+
 	return nil
 }

@@ -30,5 +30,6 @@ func (is *IndexedSubnets) Populate() bool {
 		byPrefix[is.RandomAccess[i].Prefix] = &is.RandomAccess[i]
 	}
 	is.ByPrefix = byPrefix
+
 	return true
 }
