@@ -2,6 +2,8 @@ package dbmodel
 
 import (
 	"strings"
+
+	"github.com/go-pg/pg/v9"
 )
 
 type SortDirEnum int
@@ -34,4 +36,18 @@ func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) s
 		orderExpr += "ASC NULLS FIRST"
 	}
 	return orderExpr
+}
+
+// Convenience function which inserts new entry into a database or updates an
+// existing entry. It determines whether this is new or existing entry by
+// examining a value of the id parameter. The id is equal to 0 if this is
+// a new entry.
+func upsertInTransaction(tx *pg.Tx, id int64, model interface{}) (err error) {
+	if id == 0 {
+		_, err = tx.Model(model).Insert()
+	} else {
+		_, err = tx.Model(model).WherePK().Update()
+	}
+
+	return err
 }

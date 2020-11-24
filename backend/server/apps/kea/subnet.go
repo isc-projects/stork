@@ -48,33 +48,40 @@ func findMatchingSubnet(subnet *dbmodel.Subnet, existingSubnets *dbmodel.Indexed
 func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int, app *dbmodel.App) (networks []dbmodel.SharedNetwork, err error) {
 	// Get all shared networks and the subnets within those networks from the
 	// application configuration.
-	if networkList, ok := config.GetTopLevelList("shared-networks"); ok {
-		// If there are no shared networks there is nothing to do.
-		if len(networkList) == 0 {
-			return networks, nil
-		}
+	networkList, ok := config.GetTopLevelList("shared-networks")
+	if !ok {
+		return networks, err
+	}
 
-		// We have to match the configured shared networks with the ones we
-		// already have in the database.
-		dbNetworks, err := dbmodel.GetAllSharedNetworks(db, family)
+	// If there are no shared networks there is nothing to do.
+	if len(networkList) == 0 {
+		return networks, nil
+	}
+
+	// We have to match the configured shared networks with the ones we
+	// already have in the database.
+	dbNetworks, err := dbmodel.GetAllSharedNetworks(db, family)
+	if err != nil {
+		return []dbmodel.SharedNetwork{}, err
+	}
+
+	// For each network in the app's configuration we will do such matching.
+	for _, n := range networkList {
+		networkMap, ok := n.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		// Parse the configured network.
+		network, err := dbmodel.NewSharedNetworkFromKea(&networkMap, family)
+		if err != nil {
+			log.Warnf("skipping invalid shared network: %v", err)
+			continue
+		}
+		dbNetwork, err := sharedNetworkExists(db, network, dbNetworks)
 		if err != nil {
 			return []dbmodel.SharedNetwork{}, err
 		}
-
-		// For each network in the app's configuration we will do such matching.
-		for _, n := range networkList {
-			if networkMap, ok := n.(map[string]interface{}); ok {
-				// Parse the configured network.
-				network, err := dbmodel.NewSharedNetworkFromKea(&networkMap, family)
-				if err != nil {
-					log.Warnf("skipping invalid shared network: %v", err)
-					continue
-				}
-				dbNetwork, err := sharedNetworkExists(db, network, dbNetworks)
-				if err != nil {
-					return []dbmodel.SharedNetwork{}, err
-				}
-				if dbNetwork != nil {
+		if dbNetwork != nil {
 					// Create indexes for the existing subnets to improve performance of
 					// matching new subnets with them.
 					indexedSubnets := dbmodel.NewIndexedSubnets(dbNetwork.Subnets)
@@ -82,30 +89,28 @@ func detectSharedNetworks(db *dbops.PgDB, config *dbmodel.KeaConfig, family int,
 						log.Warnf("skipping shared network %s because building indexes failed due to duplicates", dbNetwork.Name)
 						continue
 					}
-					// Go over the configured subnets and see if they belong to that
-					// shared network already.
-					for _, s := range network.Subnets {
-						subnet := s
-						existingSubnet := findMatchingSubnet(&subnet, indexedSubnets)
-						if existingSubnet == nil {
-							dbNetwork.Subnets = append(dbNetwork.Subnets, subnet)
-						} else {
-							// Subnet already exists and may contain some hosts. Let's
-							// merge the hosts from the new subnet into the existing subnet.
-							hosts, err := mergeSubnetHosts(db, existingSubnet, &subnet, app)
-							if err != nil {
-								log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
-									subnet.Prefix, err)
-								continue
-							}
-							existingSubnet.Hosts = hosts
-						}
-					}
-					networks = append(networks, *dbNetwork)
+			// Go over the configured subnets and see if they belong to that
+			// shared network already.
+			for _, s := range network.Subnets {
+				subnet := s
+				existingSubnet := findMatchingSubnet(&subnet, indexedSubnets)
+				if existingSubnet == nil {
+					dbNetwork.Subnets = append(dbNetwork.Subnets, subnet)
 				} else {
-					networks = append(networks, *network)
+					// Subnet already exists and may contain some hosts. Let's
+					// merge the hosts from the new subnet into the existing subnet.
+					hosts, err := mergeSubnetHosts(db, existingSubnet, &subnet, app)
+					if err != nil {
+						log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
+							subnet.Prefix, err)
+						continue
+					}
+					existingSubnet.Hosts = hosts
 				}
 			}
+			networks = append(networks, *dbNetwork)
+		} else {
+			networks = append(networks, *network)
 		}
 	}
 	return networks, nil
@@ -122,51 +127,49 @@ func detectSubnets(db *dbops.PgDB, config *dbmodel.KeaConfig, family int, app *d
 	}
 
 	// Get top level subnets not associated with any shared networks.
-	if subnetList, ok := config.GetTopLevelList(subnetParamName); ok {
-		// Nothing to do if no subnets are configured.
-		if len(subnetList) == 0 {
-			return subnets, nil
-		}
+	subnetList, ok := config.GetTopLevelList(subnetParamName)
+	if !ok || len(subnetList) == 0 {
+		return subnets, err
+	}
 
-		// Fetch all top-level subnets from the database to perform matching. For now
-		// it is better to get all of them because this is just a single query rather
-		// than many but in the future we should probably revise that when the number
-		// of subnets grows.
-		dbSubnets, err := dbmodel.GetAllSubnets(db, family)
-		if err != nil {
-			return []dbmodel.Subnet{}, err
-		}
+	// Fetch all top-level subnets from the database to perform matching. For now
+	// it is better to get all of them because this is just a single query rather
+	// than many but in the future we should probably revise that when the number
+	// of subnets grows.
+	dbSubnets, err := dbmodel.GetAllSubnets(db, family)
+	if err != nil {
+		return []dbmodel.Subnet{}, err
+	}
 		indexedSubnets := dbmodel.NewIndexedSubnets(dbSubnets)
 		if ok := indexedSubnets.Populate(); !ok {
 			err = errors.Errorf("failed to build indexes for existing subnets because duplicates are present")
 			return []dbmodel.Subnet{}, err
 		}
 
-		// Iterate over the configured subnets.
-		for _, s := range subnetList {
-			if subnetMap, ok := s.(map[string]interface{}); ok {
-				// Parse the configured subnet.
-				subnet, err := dbmodel.NewSubnetFromKea(&subnetMap)
+	// Iterate over the configured subnets.
+	for _, s := range subnetList {
+		if subnetMap, ok := s.(map[string]interface{}); ok {
+			// Parse the configured subnet.
+			subnet, err := dbmodel.NewSubnetFromKea(&subnetMap)
+			if err != nil {
+				log.Warnf("skipping invalid subnet: %v", err)
+				continue
+			}
+			existingSubnet := findMatchingSubnet(subnet, indexedSubnets)
+			if existingSubnet != nil {
+				subnets = append(subnets, *existingSubnet)
+				// Subnet already exists and may contain some hosts. Let's
+				// merge the hosts from the new subnet into the existing subnet.
+				hosts, err := mergeSubnetHosts(db, existingSubnet, subnet, app)
 				if err != nil {
-					log.Warnf("skipping invalid subnet: %v", err)
+					log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
+						subnet.Prefix, err)
 					continue
 				}
-				existingSubnet := findMatchingSubnet(subnet, indexedSubnets)
-				if existingSubnet != nil {
-					subnets = append(subnets, *existingSubnet)
-					// Subnet already exists and may contain some hosts. Let's
-					// merge the hosts from the new subnet into the existing subnet.
-					hosts, err := mergeSubnetHosts(db, existingSubnet, subnet, app)
-					if err != nil {
-						log.Warnf("skipping hosts for subnet %s after hosts merge failure: %v",
-							subnet.Prefix, err)
-						continue
-					}
-					// Assign merged hosts to the subnet.
-					subnets[len(subnets)-1].Hosts = hosts
-				} else {
-					subnets = append(subnets, *subnet)
-				}
+				// Assign merged hosts to the subnet.
+				subnets[len(subnets)-1].Hosts = hosts
+			} else {
+				subnets = append(subnets, *subnet)
 			}
 		}
 	}

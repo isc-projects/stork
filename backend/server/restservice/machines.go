@@ -16,6 +16,7 @@ import (
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
 	"isc.org/stork/server/apps/kea"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
@@ -592,6 +593,138 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 	return rsp
 }
 
+// Gets current status of services for a given Kea application.
+func getKeaServicesStatus(db *dbops.PgDB, app *dbmodel.App) *models.ServicesStatus {
+	servicesStatus := &models.ServicesStatus{}
+
+	keaServices, err := dbmodel.GetDetailedServicesByAppID(db, app.ID)
+	if err != nil {
+		log.Error(err)
+
+		return nil
+	}
+
+	for _, s := range keaServices {
+		if s.HAService == nil {
+			continue
+		}
+		ha := s.HAService
+		keaStatus := models.KeaStatus{
+			Daemon: ha.HAType,
+		}
+		secondaryRole := "secondary"
+		if ha.HAMode == "hot-standby" {
+			secondaryRole = "standby"
+		}
+		// Calculate age.
+		age := make([]int64, 2)
+		statusTime := make([]strfmt.DateTime, 2)
+		now := storkutil.UTCNow()
+		for i, t := range []time.Time{ha.PrimaryStatusCollectedAt, ha.SecondaryStatusCollectedAt} {
+			// If status time hasn't been set yet, return a negative age value to
+			// indicate that it cannot be displayed.
+			if t.IsZero() || now.Before(t) {
+				age[i] = -1
+			} else {
+				age[i] = int64(now.Sub(t).Seconds())
+				statusTime[i] = strfmt.DateTime(t)
+			}
+		}
+		// Format failover times into string.
+		failoverTime := make([]strfmt.DateTime, 2)
+		for i, t := range []time.Time{ha.PrimaryLastFailoverAt, ha.SecondaryLastFailoverAt} {
+			// Only display the non-zero failover times and the times that are
+			// before current time.
+			if !t.IsZero() && now.After(t) {
+				failoverTime[i] = strfmt.DateTime(t)
+			}
+		}
+		// Get the control addresses and app ids for daemons taking part in HA.
+		controlAddress := make([]string, 2)
+		appID := make([]int64, 2)
+		for i := range s.Daemons {
+			if s.Daemons[i].ID == ha.PrimaryID {
+				ap, _ := s.Daemons[i].App.GetAccessPoint("control")
+				if ap != nil {
+					controlAddress[0] = ap.Address
+				}
+				appID[0] = s.Daemons[i].App.ID
+			} else if s.Daemons[i].ID == ha.SecondaryID {
+				ap, _ := s.Daemons[i].App.GetAccessPoint("control")
+				if ap != nil {
+					controlAddress[1] = ap.Address
+				}
+				appID[1] = s.Daemons[i].App.ID
+			}
+		}
+		// Get the communication state value.
+		commInterrupted := make([]int64, 2)
+		for i, c := range []*bool{ha.PrimaryCommInterrupted, ha.SecondaryCommInterrupted} {
+			if c == nil {
+				// Negative value indicates that the communication state is unknown.
+				// Quite possibly that we're running earlier Kea version that doesn't
+				// provide this information.
+				commInterrupted[i] = -1
+			} else if *c {
+				// Communication interrupted.
+				commInterrupted[i] = 1
+			}
+		}
+		keaStatus.HaServers = &models.KeaStatusHaServers{
+			PrimaryServer: &models.KeaHAServerStatus{
+				Age:                age[0],
+				AppID:              appID[0],
+				ControlAddress:     controlAddress[0],
+				FailoverTime:       failoverTime[0],
+				ID:                 ha.PrimaryID,
+				InTouch:            ha.PrimaryReachable,
+				Role:               "primary",
+				Scopes:             ha.PrimaryLastScopes,
+				State:              ha.PrimaryLastState,
+				StatusTime:         statusTime[0],
+				CommInterrupted:    commInterrupted[0],
+				ConnectingClients:  ha.PrimaryConnectingClients,
+				UnackedClients:     ha.PrimaryUnackedClients,
+				UnackedClientsLeft: ha.PrimaryUnackedClientsLeft,
+				AnalyzedPackets:    ha.PrimaryAnalyzedPackets,
+			},
+		}
+
+		// Including the information about the secondary server only
+		// makes sense for load-balancing and hot-standby mode.
+		if ha.HAMode != "passive-backup" {
+			keaStatus.HaServers.SecondaryServer = &models.KeaHAServerStatus{
+				Age:                age[1],
+				AppID:              appID[1],
+				ControlAddress:     controlAddress[1],
+				FailoverTime:       failoverTime[1],
+				ID:                 ha.SecondaryID,
+				InTouch:            ha.SecondaryReachable,
+				Role:               secondaryRole,
+				Scopes:             ha.SecondaryLastScopes,
+				State:              ha.SecondaryLastState,
+				StatusTime:         statusTime[1],
+				CommInterrupted:    commInterrupted[1],
+				ConnectingClients:  ha.SecondaryConnectingClients,
+				UnackedClients:     ha.SecondaryUnackedClients,
+				UnackedClientsLeft: ha.SecondaryUnackedClientsLeft,
+				AnalyzedPackets:    ha.SecondaryAnalyzedPackets,
+			}
+		}
+
+		serviceStatus := &models.ServiceStatus{
+			Status: struct {
+				models.KeaStatus
+			}{
+				keaStatus,
+			},
+		}
+		servicesStatus.Items = append(servicesStatus.Items, serviceStatus)
+	}
+
+	return servicesStatus
+}
+
 // Gets current status of services which the given application is associated with.
 func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetAppServicesStatusParams) middleware.Responder {
 	dbApp, err := dbmodel.GetAppByID(r.DB, params.ID)
@@ -613,138 +746,21 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 		return rsp
 	}
 
-	servicesStatus := &models.ServicesStatus{}
+	var servicesStatus *models.ServicesStatus
 
 	// If this is Kea application, get the Kea DHCP servers status which possibly
 	// includes HA status.
 	if dbApp.Type == dbmodel.AppTypeKea {
-		keaServices, err := dbmodel.GetDetailedServicesByAppID(r.DB, dbApp.ID)
-		if err != nil {
-			log.Error(err)
-			msg := fmt.Sprintf("cannot get status of the app with id %d", params.ID)
+		servicesStatus = getKeaServicesStatus(r.DB, dbApp)
+		if servicesStatus == nil {
+			msg := fmt.Sprintf("cannot get status of the app with id %d", dbApp.ID)
 			rsp := services.NewGetAppServicesStatusDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
 		}
-
-		for _, s := range keaServices {
-			if s.HAService == nil {
-				continue
-			}
-			ha := s.HAService
-			keaStatus := models.KeaStatus{
-				Daemon: ha.HAType,
-			}
-			secondaryRole := "secondary"
-			if ha.HAMode == "hot-standby" {
-				secondaryRole = "standby"
-			}
-			// Calculate age.
-			age := make([]int64, 2)
-			statusTime := make([]strfmt.DateTime, 2)
-			now := storkutil.UTCNow()
-			for i, t := range []time.Time{ha.PrimaryStatusCollectedAt, ha.SecondaryStatusCollectedAt} {
-				// If status time hasn't been set yet, return a negative age value to
-				// indicate that it cannot be displayed.
-				if t.IsZero() || now.Before(t) {
-					age[i] = -1
-				} else {
-					age[i] = int64(now.Sub(t).Seconds())
-					statusTime[i] = strfmt.DateTime(t)
-				}
-			}
-			// Format failover times into string.
-			failoverTime := make([]strfmt.DateTime, 2)
-			for i, t := range []time.Time{ha.PrimaryLastFailoverAt, ha.SecondaryLastFailoverAt} {
-				// Only display the non-zero failover times and the times that are
-				// before current time.
-				if !t.IsZero() && now.After(t) {
-					failoverTime[i] = strfmt.DateTime(t)
-				}
-			}
-			// Get the control addresses and app ids for daemons taking part in HA.
-			controlAddress := make([]string, 2)
-			appID := make([]int64, 2)
-			for i := range s.Daemons {
-				if s.Daemons[i].ID == ha.PrimaryID {
-					ap, _ := s.Daemons[i].App.GetAccessPoint("control")
-					if ap != nil {
-						controlAddress[0] = ap.Address
-					}
-					appID[0] = s.Daemons[i].App.ID
-				} else if s.Daemons[i].ID == ha.SecondaryID {
-					ap, _ := s.Daemons[i].App.GetAccessPoint("control")
-					if ap != nil {
-						controlAddress[1] = ap.Address
-					}
-					appID[1] = s.Daemons[i].App.ID
-				}
-			}
-			// Get the communication state value.
-			commInterrupted := make([]int64, 2)
-			for i, c := range []*bool{ha.PrimaryCommInterrupted, ha.SecondaryCommInterrupted} {
-				if c == nil {
-					// Negative value indicates that the communication state is unknown.
-					// Quite possibly that we're running earlier Kea version that doesn't
-					// provide this information.
-					commInterrupted[i] = -1
-				} else if *c {
-					// Communication interrupted.
-					commInterrupted[i] = 1
-				}
-			}
-			keaStatus.HaServers = &models.KeaStatusHaServers{
-				PrimaryServer: &models.KeaHAServerStatus{
-					Age:                age[0],
-					AppID:              appID[0],
-					ControlAddress:     controlAddress[0],
-					FailoverTime:       failoverTime[0],
-					ID:                 ha.PrimaryID,
-					InTouch:            ha.PrimaryReachable,
-					Role:               "primary",
-					Scopes:             ha.PrimaryLastScopes,
-					State:              ha.PrimaryLastState,
-					StatusTime:         statusTime[0],
-					CommInterrupted:    commInterrupted[0],
-					ConnectingClients:  ha.PrimaryConnectingClients,
-					UnackedClients:     ha.PrimaryUnackedClients,
-					UnackedClientsLeft: ha.PrimaryUnackedClientsLeft,
-					AnalyzedPackets:    ha.PrimaryAnalyzedPackets,
-				},
-			}
-
-			// Including the information about the secondary server only
-			// makes sense for load-balancing and hot-standby mode.
-			if ha.HAMode != "passive-backup" {
-				keaStatus.HaServers.SecondaryServer = &models.KeaHAServerStatus{
-					Age:                age[1],
-					AppID:              appID[1],
-					ControlAddress:     controlAddress[1],
-					FailoverTime:       failoverTime[1],
-					ID:                 ha.SecondaryID,
-					InTouch:            ha.SecondaryReachable,
-					Role:               secondaryRole,
-					Scopes:             ha.SecondaryLastScopes,
-					State:              ha.SecondaryLastState,
-					StatusTime:         statusTime[1],
-					CommInterrupted:    commInterrupted[1],
-					ConnectingClients:  ha.SecondaryConnectingClients,
-					UnackedClients:     ha.SecondaryUnackedClients,
-					UnackedClientsLeft: ha.SecondaryUnackedClientsLeft,
-					AnalyzedPackets:    ha.SecondaryAnalyzedPackets,
-				}
-			}
-
-			serviceStatus := &models.ServiceStatus{
-				Status: struct {
-					models.KeaStatus
-				}{
-					keaStatus,
-				},
-			}
-			servicesStatus.Items = append(servicesStatus.Items, serviceStatus)
-		}
+	} else {
+		servicesStatus = &models.ServicesStatus{}
 	}
 
 	rsp := services.NewGetAppServicesStatusOK().WithPayload(servicesStatus)

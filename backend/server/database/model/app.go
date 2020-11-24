@@ -118,11 +118,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 		if daemon.KeaDaemon != nil {
 			// Make sure that the kea_daemon references the daemon.
 			daemon.KeaDaemon.DaemonID = daemon.ID
-			if daemon.KeaDaemon.ID == 0 {
-				_, err = tx.Model(daemon.KeaDaemon).Insert()
-			} else {
-				_, err = tx.Model(daemon.KeaDaemon).WherePK().Update()
-			}
+			err = upsertInTransaction(tx, daemon.KeaDaemon.ID, daemon.KeaDaemon)
 			if err != nil {
 				return nil, nil, pkgerrors.Wrapf(err, "problem with upserting Kea daemon to app %d: %v",
 					app.ID, daemon.KeaDaemon)
@@ -131,11 +127,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 			if daemon.KeaDaemon.KeaDHCPDaemon != nil {
 				// Make sure that the kea_dhcp_daemon references the kea_daemon.
 				daemon.KeaDaemon.KeaDHCPDaemon.KeaDaemonID = daemon.KeaDaemon.ID
-				if daemon.KeaDaemon.KeaDHCPDaemon.ID == 0 {
-					_, err = tx.Model(daemon.KeaDaemon.KeaDHCPDaemon).Insert()
-				} else {
-					_, err = tx.Model(daemon.KeaDaemon.KeaDHCPDaemon).WherePK().Update()
-				}
+				err = upsertInTransaction(tx, daemon.KeaDaemon.KeaDHCPDaemon.ID, daemon.KeaDaemon.KeaDHCPDaemon)
 				if err != nil {
 					return nil, nil, pkgerrors.Wrapf(err, "problem with upserting Kea DHCP daemon to app %d: %v",
 						app.ID, daemon.KeaDaemon.KeaDHCPDaemon)

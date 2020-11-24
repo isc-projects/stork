@@ -332,81 +332,8 @@ func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmode
 	var newDaemons []*dbmodel.Daemon
 	var events []*dbmodel.Event
 
-	// If app already existed then...
-	if dbApp.ID != 0 {
-		newCADmn, ok := daemonsMap["ca"]
-		if !ok || !newCADmn.Active {
-			for _, oldDmn := range dbApp.Daemons {
-				if oldDmn.Active {
-					// add ref to app in daemon so it is available in CreateEvent
-					oldDmn.App = dbApp
-					oldDmn.Active = false
-					errStr, ok := daemonsErrors[oldDmn.Name]
-					if !ok {
-						errStr = ""
-					}
-					ev := eventcenter.CreateEvent(dbmodel.EvError, "{daemon} is unreachable", errStr, dbApp.Machine, dbApp, oldDmn)
-					events = append(events, ev)
-				}
-			}
-			if dbApp.Active {
-				ev := eventcenter.CreateEvent(dbmodel.EvError, "{app} is unreachable", dbApp.Machine, dbApp)
-				events = append(events, ev)
-			}
-			return false, false, nil, events
-		}
-
-		for name := range daemonsMap {
-			dmn := daemonsMap[name]
-			// if all daemons are active then whole app is active
-			newActive = newActive && dmn.Active
-
-			// if this is a new app then just add detected daemon
-			newDaemons = append(newDaemons, dmn)
-
-			// Determine changes in app daemons state and store them as events.
-			// Later this events will be passed to EventCenter when all the changes
-			// are stored in database.
-			for _, oldDmn := range dbApp.Daemons {
-				if dmn.Name == oldDmn.Name {
-					// add ref to app in daemon so it is available in CreateEvent
-					oldDmn.App = dbApp
-					// check if daemon changed Active state
-					if dmn.Active != oldDmn.Active {
-						lvl := dbmodel.EvWarning
-						text := "{daemon} is "
-						if dmn.Active && !oldDmn.Active {
-							text += "reachable now"
-						} else if !dmn.Active && oldDmn.Active {
-							text += "unreachable"
-							lvl = dbmodel.EvError
-						}
-						errStr, ok := daemonsErrors[oldDmn.Name]
-						if !ok {
-							errStr = ""
-						}
-						ev := eventcenter.CreateEvent(lvl, text, errStr, dbApp.Machine, dbApp, oldDmn)
-						events = append(events, ev)
-
-						// check if daemon has been restarted
-					} else if dmn.Uptime < oldDmn.Uptime {
-						text := "{daemon} has been restarted"
-						ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, dbApp.Machine, dbApp, oldDmn)
-						events = append(events, ev)
-					}
-
-					// check if daemon changed Version
-					if dmn.Version != oldDmn.Version {
-						text := fmt.Sprintf("{daemon} version changed from %s to %s",
-							oldDmn.Version, dmn.Version)
-						ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, dbApp.Machine, dbApp, oldDmn)
-						events = append(events, ev)
-					}
-					break
-				}
-			}
-		}
-	} else {
+	// If this is new app
+	if dbApp.ID == 0 {
 		for name := range daemonsMap {
 			dmn := daemonsMap[name]
 			// if all daemons are active then whole app is active
@@ -419,6 +346,82 @@ func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmode
 
 			// if this is a new app then just add detected daemon
 			newDaemons = append(newDaemons, dmn)
+		}
+
+		return newActive, true, newDaemons, events
+	}
+
+	// If app already existed then...
+	newCADmn, ok := daemonsMap["ca"]
+	if !ok || !newCADmn.Active {
+		for _, oldDmn := range dbApp.Daemons {
+			if oldDmn.Active {
+				// add ref to app in daemon so it is available in CreateEvent
+				oldDmn.App = dbApp
+				oldDmn.Active = false
+				errStr, ok := daemonsErrors[oldDmn.Name]
+				if !ok {
+					errStr = ""
+				}
+				ev := eventcenter.CreateEvent(dbmodel.EvError, "{daemon} is unreachable", errStr, dbApp.Machine, dbApp, oldDmn)
+				events = append(events, ev)
+			}
+		}
+		if dbApp.Active {
+			ev := eventcenter.CreateEvent(dbmodel.EvError, "{app} is unreachable", dbApp.Machine, dbApp)
+			events = append(events, ev)
+		}
+		return false, false, nil, events
+	}
+
+	for name := range daemonsMap {
+		dmn := daemonsMap[name]
+		// if all daemons are active then whole app is active
+		newActive = newActive && dmn.Active
+
+		// if this is a new app then just add detected daemon
+		newDaemons = append(newDaemons, dmn)
+
+		// Determine changes in app daemons state and store them as events.
+		// Later this events will be passed to EventCenter when all the changes
+		// are stored in database.
+		for _, oldDmn := range dbApp.Daemons {
+			if dmn.Name == oldDmn.Name {
+				// add ref to app in daemon so it is available in CreateEvent
+				oldDmn.App = dbApp
+				// check if daemon changed Active state
+				if dmn.Active != oldDmn.Active {
+					lvl := dbmodel.EvWarning
+					text := "{daemon} is "
+					if dmn.Active && !oldDmn.Active {
+						text += "reachable now"
+					} else if !dmn.Active && oldDmn.Active {
+						text += "unreachable"
+						lvl = dbmodel.EvError
+					}
+					errStr, ok := daemonsErrors[oldDmn.Name]
+					if !ok {
+						errStr = ""
+					}
+					ev := eventcenter.CreateEvent(lvl, text, errStr, dbApp.Machine, dbApp, oldDmn)
+					events = append(events, ev)
+
+					// check if daemon has been restarted
+				} else if dmn.Uptime < oldDmn.Uptime {
+					text := "{daemon} has been restarted"
+					ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, dbApp.Machine, dbApp, oldDmn)
+					events = append(events, ev)
+				}
+
+				// check if daemon changed Version
+				if dmn.Version != oldDmn.Version {
+					text := fmt.Sprintf("{daemon} version changed from %s to %s",
+						oldDmn.Version, dmn.Version)
+					ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, dbApp.Machine, dbApp, oldDmn)
+					events = append(events, ev)
+				}
+				break
+			}
 		}
 	}
 
