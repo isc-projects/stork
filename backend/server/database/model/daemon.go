@@ -46,9 +46,10 @@ type KeaDHCPDaemon struct {
 // A structure holding common information for all Kea daemons. It
 // reflects the information stored in the kea_daemon table.
 type KeaDaemon struct {
-	ID       int64
-	Config   *KeaConfig `pg:",use_zero"`
-	DaemonID int64
+	ID         int64
+	Config     *KeaConfig `pg:",use_zero"`
+	ConfigHash string
+	DaemonID   int64
 
 	KeaDHCPDaemon *KeaDHCPDaemon
 }
