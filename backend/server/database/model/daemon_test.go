@@ -381,3 +381,29 @@ func TestSetKeaLoggingConfig(t *testing.T) {
 
 	require.Len(t, daemon.LogTargets, 1)
 }
+
+// This test verifies that the config hash is setting configuration as string.
+func TestSetConfigFromJSONWithHash(t *testing.T) {
+	daemon := NewKeaDaemon("kea-dhcp4", true)
+
+	// Set initial configuration with one logger.
+	err := daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "loggers": [
+                {
+                    "name": "kea-dhcp4",
+                    "severity": "debug",
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4.log"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+	require.NotNil(t, daemon.KeaDaemon)
+	require.NotNil(t, daemon.KeaDaemon.Config)
+	require.Equal(t, "f1c994d55b6f4edba9568d89ce2a804a", daemon.KeaDaemon.ConfigHash)
+}

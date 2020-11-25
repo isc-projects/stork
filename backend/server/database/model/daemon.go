@@ -10,6 +10,7 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
+	storkutil "isc.org/stork/util"
 )
 
 const (
@@ -349,10 +350,10 @@ func (d *Daemon) GetHAOverview() (overviews []DaemonServiceOverview) {
 
 // Sets new configuration of the daemon. This function should be used to set
 // new daemon configuration instead of simple configuration assignment because
-// this function extracts some configuration information and populates to the
-// daemon structures, e.g. logging configuration. The config should be a pointer
-// to the KeaConfig structure.
-func (d *Daemon) SetConfig(config interface{}) error {
+// it extracts some configuration information and populates to the daemon structures,
+// e.g. logging configuration. The config should be a pointer to the KeaConfig
+// structure. The config_hash is a hash created from the specified configuration.
+func (d *Daemon) SetConfigWithHash(config interface{}, configHash string) error {
 	if d.KeaDaemon != nil {
 		parsedConfig, ok := config.(*KeaConfig)
 		if !ok {
@@ -380,8 +381,14 @@ func (d *Daemon) SetConfig(config interface{}) error {
 			}
 		}
 		d.KeaDaemon.Config = parsedConfig
+		d.KeaDaemon.ConfigHash = configHash
 	}
 	return nil
+}
+
+// Sets new configuration of the daemon with empty hash.
+func (d *Daemon) SetConfig(config interface{}) error {
+	return d.SetConfigWithHash(config, "")
 }
 
 // Sets new configuration specified as JSON string. Internally, it calls
@@ -392,7 +399,7 @@ func (d *Daemon) SetConfigFromJSON(config string) error {
 		if err != nil {
 			return err
 		}
-		return d.SetConfig(parsedConfig)
+		return d.SetConfigWithHash(parsedConfig, storkutil.Fnv128(config))
 	}
 	return nil
 }
