@@ -227,6 +227,63 @@ func TestUnmarshalResponseList(t *testing.T) {
 	require.Equal(t, "dhcp6", (list[1]).Daemon)
 }
 
+// Test that well formed list of Kea responses can be parsed and that hashes
+// are computed from the arguments.
+func TestUnmarshalHashedResponseList(t *testing.T) {
+	daemons, _ := NewDaemons("dhcp4", "dhcp6")
+	request, _ := NewCommand("list-subnets", daemons, nil)
+
+	response := []byte(`[
+        {
+            "result": 0,
+            "text": "command successful",
+            "arguments": {
+                "subnet-id": 1,
+                "prefix": "192.0.2.0/24"
+            }
+        },
+        {
+            "result": 1,
+            "text": "command unsuccessful"
+        }
+    ]`)
+
+	list := HashedResponseList{}
+	err := UnmarshalResponseList(request, response, &list)
+	require.NoError(t, err)
+	require.NotNil(t, list)
+
+	// There should be two responses encapsulated.
+	require.Len(t, list, 2)
+
+	// The first result value is 0.
+	require.Equal(t, 0, list[0].Result)
+	require.Equal(t, "command successful", list[0].Text)
+
+	// The arguments should be non-nil and contain two parameters.
+	require.NotNil(t, list[0].Arguments)
+	require.Contains(t, *(list[0]).Arguments, "subnet-id")
+	require.Contains(t, *(list[0]).Arguments, "prefix")
+
+	// The daemon should be set based on the command instance provided.
+	require.Equal(t, "dhcp4", (list[0]).Daemon)
+
+	// Validate the arguments.
+	require.EqualValues(t, map[string]interface{}{"subnet-id": float64(1), "prefix": "192.0.2.0/24"},
+		*(list[0]).Arguments)
+
+	// There should be a hash computed from the arguments.
+	require.Equal(t, "198f893a3764258b18bef43f33a33f62", list[0].ArgumentsHash)
+
+	// The second response should contain different result and text. The
+	// arguments are not present, so should be nil.
+	require.Equal(t, 1, list[1].Result)
+	require.Equal(t, "command unsuccessful", list[1].Text)
+	require.Nil(t, list[1].Arguments)
+	require.Equal(t, "dhcp6", (list[1]).Daemon)
+	require.Empty(t, list[1].ArgumentsHash)
+}
+
 // Test that it is possible to parse Kea response to a custom structure.
 func TestUnmarshalCustomResponse(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")

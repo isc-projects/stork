@@ -2,10 +2,13 @@ package keactrl
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"sort"
 
 	"github.com/pkg/errors"
+
+	storkutil "isc.org/stork/util"
 )
 
 const (
@@ -46,6 +49,27 @@ type Response struct {
 
 // A list of responses from multiple Kea daemons by the Kea Control Agent.
 type ResponseList []Response
+
+// Represents unmarshaled response from Kea daemon with hash value computed
+// from the arguments.
+type HashedResponse struct {
+	ResponseHeader
+	Arguments     *map[string]interface{} `json:"arguments,omitempty"`
+	ArgumentsHash string                  `json:"-"`
+}
+
+// A list of responses including hash value computed from the arguments.
+type HashedResponseList []HashedResponse
+
+// In some cases we need to compute a hash from the arguments received
+// in a response. The arguments are passed as a string to a hashing
+// function. Capturing the arguments as string requires hooking up to
+// the JSON unmarshaller with a custom unmarshalling function. The
+// hasherValue and hasher types serve this purpose.
+type hasherValue string
+type hasher struct {
+	Value *hasherValue `json:"arguments,omitempty"`
+}
 
 // Creates a map holding specified daemons names. The daemons names
 // must be unique and non-empty.
@@ -114,6 +138,12 @@ func (s *Daemons) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Custom unmarshaller hashing arguments string with FNV128 hashing function.
+func (v *hasherValue) UnmarshalJSON(b []byte) error {
+	*v = hasherValue(storkutil.Fnv128(fmt.Sprintf("%s", b)))
+	return nil
+}
+
 // Creates new Kea command from specified command name, damons list and arguments.
 func NewCommand(command string, daemons *Daemons, arguments *map[string]interface{}) (*Command, error) {
 	if len(command) == 0 {
@@ -145,7 +175,8 @@ func (c *Command) Marshal() string {
 	return string(bytes)
 }
 
-// Parses response received from the Kea Control Agent.
+// Parses response received from the Kea Control Agent. The "parsed" argument
+// should be a slice of Response, HashedResponse or similar structures.
 func UnmarshalResponseList(request *Command, response []byte, parsed interface{}) error {
 	err := json.Unmarshal(response, parsed)
 	if err != nil {
@@ -168,6 +199,41 @@ func UnmarshalResponseList(request *Command, response []byte, parsed interface{}
 			if field.IsValid() {
 				field.SetString(daemon)
 			}
+		}
+	}
+
+	// Start computing hashes from the arguments received in the response.
+	hashers := []hasher{}
+	for i := 0; i < parsedList.Len(); i++ {
+		// First, we have to check if the response contains ArgumentsHash field.
+		// Existence of this field is an indication that a caller wants us to
+		// compute a hash.
+		parsedElem := parsedList.Index(i)
+		field := parsedElem.FieldByName("ArgumentsHash")
+		if !field.IsValid() {
+			// Response struct does not contain the ArgumentsHash, so there is
+			// nothing to do.
+			break
+		}
+		// If we haven't yet computed the hashes, let's do it now. We use
+		// custom unmarshaller which will read the arguments parameter from
+		// the response and compute hashes for each daemon from which a
+		// response has been received.
+		if len(hashers) == 0 {
+			err = json.Unmarshal(response, &hashers)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to compute hashes for Kea responses: %s", response)
+				return err
+			}
+		}
+		// This should not happen but let's be safe.
+		if i > len(hashers) {
+			break
+		}
+		// Let's copy the hash value to the response if the hash exists. It may
+		// be nil when no arguments were received in the response.
+		if hashers[i].Value != nil {
+			field.SetString(string(*hashers[i].Value))
 		}
 	}
 
