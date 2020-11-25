@@ -31,10 +31,10 @@ Stork 0.13.0 released on 2020-11-06.
 
 * 112 [bug] godfryd
 
-    Fixed handling situation when IP address of Kea Control Agent has changed.
-    Till now Stork was not able to detect this and was still communicating to
-    the old address. Now it checks if address has changed and updates it
-    in the database.
+    Fixed handling situation when IP address of Kea Control Agent has
+    changed. Till now Stork was not able to detect this and was still
+    communicating to the old address. Now it checks if address has
+    changed and updates it in the database.
     (Gitlab #409)
 
 * 111 [bug] marcin
@@ -91,8 +91,8 @@ Stork 0.12.0 released on 2020-10-14.
 
 * 104 [bug] matthijs
 
-    Stork was unable to parse inet_spec if there were multiple addresses in
-    the 'allow' clause.  Also fix the same bug for 'keys'.
+    Stork was unable to parse inet_spec if there were multiple addresses
+    in the 'allow' clause.  Also fix the same bug for 'keys'.
     (Gitlab #411)
 
 * 103 [func] godfryd
@@ -353,7 +353,8 @@ Stork 0.8.0 released on 2020-06-10.
 * 67 [func] marcin
 
     Hostname reservations are now fetched from Kea servers and displayed
-    in the UI. It is also possible to filter hosts by hostname reservations.
+    in the UI. It is also possible to filter hosts by hostname
+    reservations.
     (Gitlab #303)
 
 * 66 [bug] marcin
@@ -585,8 +586,8 @@ Stork 0.5.0 released on 2020-03-06.
 * 34 [func] godfryd
 
     Added support for Prometheus & Grafana in the demo installation.
-    Added preconfigured Prometheus & Grafana containers to docker-compose.
-    Added Kea and BIND 9 Prometheus exporters.
+    Added preconfigured Prometheus & Grafana containers to
+    docker-compose. Added Kea and BIND 9 Prometheus exporters.
 
     Implementated Kea exporter in Go and embedded it in Stork Agent.
     It is based on kea_exporter in python:
@@ -681,8 +682,8 @@ Stork 0.3.0 released on 2020-01-10.
 * 22 [doc] marcin
 
     Updated Stork ARM. Added documentation of the High Availability
-    status monitoring with Kea. Added new sections describing applications
-    management.
+    status monitoring with Kea. Added new sections describing
+    applications management.
     (Gitlab #122)
 
 * 21 [func] godfryd
@@ -700,7 +701,8 @@ Stork 0.3.0 released on 2020-01-10.
 
 * 19 [func] marcin
 
-    Kea High Availability status is presented on the Kea application page.
+    Kea High Availability status is presented on the Kea application
+    page.
     (Gitlab #110)
 
 * 18 [func] marcin
@@ -738,7 +740,8 @@ Stork 0.2.0 released on 2019-12-04.
 * 13 [build] tomek
 
     Extended the build system to be able to run on MacOS. Also updated
-    installation instructions regarding how to build and run Stork natively.
+    installation instructions regarding how to build and run Stork
+    natively.
     (Gitlab #87)
 
 * 12 [func] marcin
@@ -767,23 +770,24 @@ Stork 0.1.0 released on 2019-11-06.
 
 * 8 [func] marcin
 
-    Enabled sign-in/sign-out mechanism with HTTP sessions based on cookies.
-    The default admin account has been created with default credentials.
+    Enabled sign-in/sign-out mechanism with HTTP sessions based on
+    cookies. The default admin account has been created with default
+    credentials.
     (Gitlab #22)
 
 * 7 [func] godfryd
 
-    Added initial implementation of the page which allows for adding new machines
-    and listing them. The missing part of this implementation is the actual storage
-    of the machines in the database. In addition, the agent has been extended to
-    return a state of the machine.
+    Added initial implementation of the page which allows for adding new
+    machines and listing them. The missing part of this implementation is
+    the actual storage of the machines in the database. In addition, the
+    agent has been extended to return a state of the machine.
     (Gitlab #23)
 
 * 6 [func] godfryd
 
-    Added initial implementation of Stork Agent. Implemented basic communication
-    between Stork Agent and Stork Server using gRPC (Server initiates connection
-    to Agent).
+    Added initial implementation of Stork Agent. Implemented basic
+    communication between Stork Agent and Stork Server using gRPC
+    (Server initiates connection to Agent).
     (Gitlab #26)
 
 * 5 [func] marcin
@@ -796,9 +800,10 @@ Stork 0.1.0 released on 2019-11-06.
 
 * 4 [doc] tomek
 
-    Added several text files: AUTHORS (lists project authors and contributors), ChangeLog.md
-    (contains all new user visible changes) and CONTRIBUTING.md (Contributor's guide, explains how
-    to get your patches accepted in Stork project in a seamless and easy way.
+    Added several text files: AUTHORS (lists project authors and
+    contributors), ChangeLog.md (contains all new user visible changes)
+    and CONTRIBUTING.md (Contributor's guide, explains how to get your
+    patches accepted in Stork project in a seamless and easy way.
     (Gitlab #17)
 
 * 3 [func] godfryd
