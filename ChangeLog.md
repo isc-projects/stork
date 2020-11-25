@@ -17,7 +17,7 @@ Stork 0.13.0 released on 2020-11-06.
 * 114 [bug] godfryd
 
     The links on the dashboard to subnets and shared networks have been
-    adjuste so they take into account DHCP version. This way subnets and
+    adjusted so they take into account DHCP version. This way subnets and
     shared network pages automatically set filtering by protocol version
     based on parameters provided in URL.
     (Gitlab #389)
@@ -25,7 +25,7 @@ Stork 0.13.0 released on 2020-11-06.
 * 113 [bug] godfryd
 
     Fixed handling renamed statistics from Kea. In Kea 1.8 some
-    of the statistics have been renamed, eg. total-addreses
+    of the statistics have been renamed, e.g. total-addreses
     to total-addresses. Now Stork supports both of the cases.
     (Gitlab #413)
 
@@ -76,7 +76,7 @@ Stork 0.13.0 released on 2020-11-06.
 
     Added documentation for Stork system tests. The documentation
     describes how to setup environment for running test tests,
-    how to run them and how to develope them.
+    how to run them and how to develop them.
     (Gitlab #427)
 
 Stork 0.12.0 released on 2020-10-14.
