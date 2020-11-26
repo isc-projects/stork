@@ -1,6 +1,7 @@
 * 117 [build] marcin
 
-    Upgraded Go from 1.13.5 to 1.15.5.
+    Upgraded Go from 1.13.5 to 1.15.5 and golangcilint from 1.21.0 to
+    1.33.0.
     (Gitlab #457)
 
 * 116 [perf] marcin
