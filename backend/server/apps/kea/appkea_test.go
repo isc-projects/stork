@@ -27,8 +27,8 @@ func mockGetConfigFromCAResponse(daemons int, cmdResponses []interface{}) {
 			},
 		},
 	}
-	list2 := cmdResponses[1].(*[]keactrl.Response)
-	*list2 = []keactrl.Response{
+	list2 := cmdResponses[1].(*[]keactrl.HashedResponse)
+	*list2 = []keactrl.HashedResponse{
 		{
 			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
@@ -51,6 +51,7 @@ func mockGetConfigFromCAResponse(daemons int, cmdResponses []interface{}) {
 				},
 			},
 		}
+		(*list2)[0].ArgumentsHash = "hash1"
 	} else {
 		(*list2)[0].Arguments = &map[string]interface{}{
 			"Control-agent": map[string]interface{}{
@@ -82,6 +83,7 @@ func mockGetConfigFromCAResponse(daemons int, cmdResponses []interface{}) {
 				},
 			},
 		}
+		(*list2)[0].ArgumentsHash = "hash2"
 	}
 }
 
@@ -137,8 +139,8 @@ func mockGetConfigFromOtherDaemonsResponse(daemons int, cmdResponses []interface
 		})
 	}
 	// config-get response
-	list3 := cmdResponses[2].(*[]keactrl.Response)
-	*list3 = []keactrl.Response{
+	list3 := cmdResponses[2].(*[]keactrl.HashedResponse)
+	*list3 = []keactrl.HashedResponse{
 		{
 			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
@@ -158,8 +160,9 @@ func mockGetConfigFromOtherDaemonsResponse(daemons int, cmdResponses []interface
 			},
 		},
 	}
+	(*list3)[0].ArgumentsHash = "hash1"
 	if daemons > 1 {
-		*list3 = append(*list3, keactrl.Response{
+		*list3 = append(*list3, keactrl.HashedResponse{
 			ResponseHeader: keactrl.ResponseHeader{
 				Result: 0,
 				Daemon: "dhcp6",
@@ -177,6 +180,7 @@ func mockGetConfigFromOtherDaemonsResponse(daemons int, cmdResponses []interface
 				},
 			},
 		})
+		(*list3)[1].ArgumentsHash = "hash2"
 	}
 }
 
@@ -251,9 +255,9 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 
 	// check getting config of 1 daemon
 	keaMock := func(callNo int, cmdResponses []interface{}) {
-		if callNo == 0 {
+		if callNo%2 == 0 {
 			mockGetConfigFromCAResponse(1, cmdResponses)
-		} else if callNo == 1 {
+		} else if callNo%2 == 1 {
 			mockGetConfigFromOtherDaemonsResponse(1, cmdResponses)
 		}
 	}
@@ -280,17 +284,33 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 				Name:      "ca",
 				Active:    false,
 				KeaDaemon: &dbmodel.KeaDaemon{},
-				LogTargets: []*dbmodel.LogTarget{
-					{
-						ID:       1,
-						Name:     "kea-ca",
-						Severity: "debug",
-						Output:   "stdout",
-					},
-				},
 			},
 		},
 	}
+
+	err := dbApp.Daemons[0].SetConfigFromJSON(`{"Dhcp4": {}}`)
+	require.NoError(t, err)
+	err = dbApp.Daemons[1].SetConfigFromJSON(`{
+        "CtrlAgent": {
+            "loggers": [
+                {
+                    "name": "kea-ca",
+                    "severity": "debug",
+                    "output_options": [
+                        {
+                            "output": "stdout"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+	dbApp.Daemons[1].LogTargets[0].ID = 1
+
+	// Remember current config hash for daemons.
+	dhcp4Hash := dbApp.Daemons[0].KeaDaemon.ConfigHash
+	caHash := dbApp.Daemons[1].KeaDaemon.ConfigHash
 
 	GetAppState(ctx, fa, &dbApp, fec)
 
@@ -300,13 +320,18 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 
 	require.Len(t, dbApp.Daemons, 2)
 
-	var caDaemon *dbmodel.Daemon
+	var (
+		dhcp4Daemon *dbmodel.Daemon
+		caDaemon    *dbmodel.Daemon
+	)
 	for i := range dbApp.Daemons {
 		// We successfully communicated with the daemons so they should
 		// be in active state.
 		require.True(t, dbApp.Daemons[i].Active)
 		if dbApp.Daemons[i].Name == "ca" {
 			caDaemon = dbApp.Daemons[i]
+		} else if dbApp.Daemons[i].Name == "dhcp4" {
+			dhcp4Daemon = dbApp.Daemons[i]
 		}
 	}
 
@@ -327,6 +352,22 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 			require.Equal(t, "/tmp/kea-ca-sockets.log", target.Output)
 		}
 	}
+
+	// Make sure that the config hashes have changed.
+	require.NotEmpty(t, dhcp4Daemon.KeaDaemon.ConfigHash)
+	require.NotEqual(t, dhcp4Daemon.KeaDaemon.ConfigHash, dhcp4Hash)
+	require.NotEmpty(t, caDaemon.KeaDaemon.ConfigHash)
+	require.NotEqual(t, caDaemon.KeaDaemon.ConfigHash, caHash)
+
+	dhcp4Config := dhcp4Daemon.KeaDaemon.Config
+	caConfig := caDaemon.KeaDaemon.Config
+
+	GetAppState(ctx, fa, &dbApp, fec)
+
+	require.NotNil(t, dhcp4Daemon.KeaDaemon.Config)
+	require.Same(t, dhcp4Config, dhcp4Daemon.KeaDaemon.Config)
+	require.NotNil(t, caDaemon.KeaDaemon.Config)
+	require.Same(t, caConfig, caDaemon.KeaDaemon.Config)
 }
 
 // Check if GetDaemonHooks returns hooks for given daemon.

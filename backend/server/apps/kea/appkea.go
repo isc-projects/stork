@@ -94,7 +94,7 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 
 	// get version and config from CA
 	versionGetResp := []VersionGetResponse{}
-	caConfigGetResp := []keactrl.Response{}
+	caConfigGetResp := []keactrl.HashedResponse{}
 
 	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, cmds, &versionGetResp, &caConfigGetResp)
 	if err != nil {
@@ -149,11 +149,16 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 	allDaemons := make(keactrl.Daemons)
 	dhcpDaemons := make(keactrl.Daemons)
 
-	// Set the configuration for the daemon and populate selected configuration
-	// information to the respective structures, e.g. logging information.
-	err = dmn.SetConfig(dbmodel.NewKeaConfig(caConfigGetResp[0].Arguments))
-	if err != nil {
-		return nil, nil, err
+	// Only set the new configuration if the configuration is added for the first
+	// time or the hash values aren't matching.
+	if (dmn.KeaDaemon.Config == nil) || (dmn.KeaDaemon.ConfigHash != caConfigGetResp[0].ArgumentsHash) {
+		// Set the configuration for the daemon and populate selected configuration
+		// information to the respective structures, e.g. logging information.
+		err = dmn.SetConfigWithHash(dbmodel.NewKeaConfig(caConfigGetResp[0].Arguments),
+			caConfigGetResp[0].ArgumentsHash)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	sockets := dmn.KeaDaemon.Config.GetControlSockets()
@@ -195,7 +200,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 
 	versionGetResp := []VersionGetResponse{}
 	statusGetResp := []StatusGetResponse{}
-	configGetResp := []keactrl.Response{}
+	configGetResp := []keactrl.HashedResponse{}
 
 	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, cmds, &versionGetResp, &statusGetResp, &configGetResp)
 	if err != nil {
@@ -282,14 +287,16 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 			continue
 		}
 
-		// Set the configuration for the daemon and populate selected configuration
-		// information to the respective structures, e.g. logging information.
-		err = dmn.SetConfig(dbmodel.NewKeaConfig(cRsp.Arguments))
-		if err != nil {
-			errStr := fmt.Sprintf("%s", err)
-			log.Warn(errStr)
-			daemonsErrors[dmn.Name] = errStr
-			continue
+		if (dmn.KeaDaemon.Config == nil) || (dmn.KeaDaemon.ConfigHash != cRsp.ArgumentsHash) {
+			// Set the configuration for the daemon and populate selected configuration
+			// information to the respective structures, e.g. logging information.
+			err = dmn.SetConfigWithHash(dbmodel.NewKeaConfig(cRsp.Arguments), cRsp.ArgumentsHash)
+			if err != nil {
+				errStr := fmt.Sprintf("%s", err)
+				log.Warn(errStr)
+				daemonsErrors[dmn.Name] = errStr
+				continue
+			}
 		}
 	}
 
