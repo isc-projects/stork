@@ -1,6 +1,7 @@
 package keactrl
 
 import (
+	"encoding/json"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
@@ -414,4 +415,53 @@ func TestUnmarshalResponseNotList(t *testing.T) {
 	list := ResponseList{}
 	err := UnmarshalResponseList(request, response, &list)
 	require.Error(t, err)
+}
+
+// Runs two benchmarks checking performance of Kea response unmarshalling
+// with and without hashing the response arguments.
+func BenchmarkUnmarshalHashedResponseList(b *testing.B) {
+	daemons, _ := NewDaemons("dhcp4")
+	request, _ := NewCommand("list-subnets", daemons, nil)
+
+	// Create a large response with 10000 subnet items.
+	argumentsMap := map[string]interface{}{
+		"subnet4": []map[string]interface{}{},
+	}
+	for i := 0; i < 10000; i++ {
+		argumentsMap["subnet4"] = append(argumentsMap["subnet4"].([]map[string]interface{}),
+			map[string]interface{}{
+				"id": i,
+			})
+	}
+	// Create the actual response.
+	responseMap := []map[string]interface{}{
+		{
+			"result": 0,
+			"text": "success",
+			"arguments": argumentsMap,
+		},
+	}
+
+	// Output the response into json format.
+	response, err := json.Marshal(responseMap)
+	if err != nil {
+		b.Fatalf("unable to marshal responseMap: %+v", err)
+	}
+
+	// Run the benchmark with hashing. This should be slower the other case without
+	// hashing (more or less 2x).
+	b.Run("HashConfig", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			list := HashedResponseList{}
+			UnmarshalResponseList(request, response, &list)
+		}
+	})
+
+	// Run it without hashing. This should be 2x faster.
+	b.Run("NoHashConfig",  func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			list := ResponseList{}
+			err = UnmarshalResponseList(request, response, &list)
+		}
+	})
 }
