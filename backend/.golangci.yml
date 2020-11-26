@@ -69,6 +69,8 @@ linters-settings:
   nestif:
     min-complexity: 10
   exhaustive:
+    # Treats switch statements with default case as taking into account all possible cases.
+    # Without this setting the switch statements must enumerate all possible cases.
     default-signifies-exhaustive: true
 
 issues:
