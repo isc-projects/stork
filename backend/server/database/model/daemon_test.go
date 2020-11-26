@@ -5,6 +5,7 @@ import (
 	"time"
 
 	require "github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -406,4 +407,22 @@ func TestSetConfigFromJSONWithHash(t *testing.T) {
 	require.NotNil(t, daemon.KeaDaemon)
 	require.NotNil(t, daemon.KeaDaemon.Config)
 	require.Equal(t, "f1c994d55b6f4edba9568d89ce2a804a", daemon.KeaDaemon.ConfigHash)
+}
+
+// Test that SetConfig does not set hash for the config.
+func TestSetConfig(t *testing.T) {
+	daemon := NewKeaDaemon("kea-dhcp4", true)
+
+	config := `{
+        "Dhcp4": {}
+    }`
+	parsedConfig, err := keaconfig.NewFromJSON(config)
+	require.NoError(t, err)
+
+	err = daemon.SetConfig(parsedConfig)
+	require.NoError(t, err)
+
+	require.NotNil(t, daemon.KeaDaemon)
+	require.NotNil(t, daemon.KeaDaemon.Config)
+	require.Empty(t, daemon.KeaDaemon.ConfigHash)
 }

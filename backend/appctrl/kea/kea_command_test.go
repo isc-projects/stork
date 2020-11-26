@@ -436,8 +436,8 @@ func BenchmarkUnmarshalHashedResponseList(b *testing.B) {
 	// Create the actual response.
 	responseMap := []map[string]interface{}{
 		{
-			"result": 0,
-			"text": "success",
+			"result":    0,
+			"text":      "success",
 			"arguments": argumentsMap,
 		},
 	}
@@ -458,7 +458,7 @@ func BenchmarkUnmarshalHashedResponseList(b *testing.B) {
 	})
 
 	// Run it without hashing. This should be 2x faster.
-	b.Run("NoHashConfig",  func(b *testing.B) {
+	b.Run("NoHashConfig", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			list := ResponseList{}
 			err = UnmarshalResponseList(request, response, &list)
