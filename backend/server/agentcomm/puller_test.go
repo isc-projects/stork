@@ -122,8 +122,11 @@ func TestPauseAndUnapuseOrReset(t *testing.T) {
 			require.NotNil(t, puller)
 			defer puller.Shutdown()
 
-			// Pause the puller.
+			// Pause the puller twice and unpause it once. The puller should remain
+			// paused because there were more calls to Pause() than Unpause().
 			puller.Pause()
+			puller.Pause()
+			puller.Unpause()
 
 			// The handler function should not be invoked within next 3 seconds when
 			// the puller is paused.

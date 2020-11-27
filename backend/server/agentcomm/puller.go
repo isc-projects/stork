@@ -107,17 +107,20 @@ func (puller *PeriodicPuller) Paused() bool {
 	return puller.pauseCount > 0
 }
 
-// Unpauses the puller. The optional interval parameter may contain
-// one interval value which overrides the current interval. If the interval
-// is not specified, the current interval is used.
-func (puller *PeriodicPuller) Unpause(interval ...int64) {
+// Unpause implementation which optionally locks the puller's mutex.
+// This function is internally called by Unpause() and Reset(). Note
+// that Reset() locks the mutex on its own so the lock argument is
+// set to false in this case.
+func (puller *PeriodicPuller) unpause(lock bool, interval ...int64) {
 	intervals := interval
 	if len(intervals) > 1 {
 		// This should not happen.
 		panic("Resume accepts one or zero interval values")
 	}
-	puller.mutex.Lock()
-	defer puller.mutex.Unlock()
+	if lock {
+		puller.mutex.Lock()
+		defer puller.mutex.Unlock()
+	}
 	if puller.pauseCount > 0 {
 		puller.pauseCount--
 	}
@@ -128,15 +131,26 @@ func (puller *PeriodicPuller) Unpause(interval ...int64) {
 			// Override the interval.
 			puller.Interval = intervals[0]
 		}
+		// Reschedule the timer.
+		puller.Ticker.Reset(time.Duration(puller.Interval) * time.Second)
 	}
-	// Reschedule the timer.
-	puller.Ticker.Reset(time.Duration(puller.Interval) * time.Second)
 }
 
-// Reschedule the puller timer to a new interval.
+// Unpauses the puller. The optional interval parameter may contain
+// one interval value which overrides the current interval. If the interval
+// is not specified, the current interval is used.
+func (puller *PeriodicPuller) Unpause(interval ...int64) {
+	puller.unpause(true, interval...)
+}
+
+// Reschedule the puller timer to a new interval. It forcibly stops
+// the puller and reschedules to the new interval.
 func (puller *PeriodicPuller) Reset(interval int64) {
-	puller.Pause()
-	puller.Unpause(interval)
+	puller.mutex.Lock()
+	defer puller.mutex.Unlock()
+	puller.Ticker.Stop()
+	puller.pauseCount = 0
+	puller.unpause(false, interval)
 }
 
 // This function controls the timing of the function execution and captures the
