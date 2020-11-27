@@ -1,3 +1,11 @@
+* 118 [bug] marcin
+
+    Prevent an issue whereby Stork server would attempt to fetch updated
+    machine state while the request to add this machine is still being
+    processed. This used to cause data conflict errors in the logs and
+    network congestion.
+    (Gitlab #446)
+
 * 117 [build] marcin
 
     Upgraded Go from 1.13.5 to 1.15.5 and golangcilint from 1.21.0 to
