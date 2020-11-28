@@ -1,4 +1,5 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { By } from '@angular/platform-browser'
 
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
@@ -35,5 +36,10 @@ describe('SettingsPageComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
+    })
+
+    it('has help information about intervals configuration', () => {
+        const intervalsConfigMsg = fixture.debugElement.query(By.css('#intervals-config-msg'))
+        expect(intervalsConfigMsg).toBeTruthy()
     })
 })
