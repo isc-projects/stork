@@ -444,10 +444,18 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 	// and match them with the existing entires in the database. If some of
 	// the shared networks or subnets do not exist they are instantiated and
 	// returned here.
-	networks, subnets, err := DetectNetworks(db, app)
-	if err != nil {
-		err = errors.Wrapf(err, "unable to detect subnets and shared networks for Kea app with id %d", app.ID)
-		return err
+	var (
+		networks []dbmodel.SharedNetwork
+		subnets  []dbmodel.Subnet
+	)
+	for _, daemon := range app.Daemons {
+		detectedNetworks, detectedSubnets, err := detectDaemonNetworks(db, daemon, app)
+		if err != nil {
+			err = errors.Wrapf(err, "unable to detect subnets and shared networks for Kea daemon %s belonging to app with id %d", daemon.Name, app.ID)
+			return err
+		}
+		networks = append(networks, detectedNetworks...)
+		subnets = append(subnets, detectedSubnets...)
 	}
 
 	// Go over the global reservations stored in the Kea configuration and

@@ -189,33 +189,55 @@ func DetectNetworks(db *dbops.PgDB, app *dbmodel.App) (networks []dbmodel.Shared
 	}
 
 	for _, d := range app.Daemons {
-		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil {
-			continue
-		}
-
-		var family int
-		switch d.Name {
-		case dhcp4:
-			family = 4
-		case dhcp6:
-			family = 6
-		default:
-			continue
-		}
-
-		// Detect shared networks and the subnets.
-		detectedNetworks, err := detectSharedNetworks(db, d.KeaDaemon.Config, family, app)
+		daemonNetworks, daemonSubnets, err := detectDaemonNetworks(db, d, app)
 		if err != nil {
-			return networks, subnets, err
+			return []dbmodel.SharedNetwork{}, []dbmodel.Subnet{}, err
 		}
-		networks = append(networks, detectedNetworks...)
 
-		// Detect top level subnets.
-		detectedSubnets, err := detectSubnets(db, d.KeaDaemon.Config, family, app)
-		if err != nil {
-			return []dbmodel.SharedNetwork{}, subnets, err
+		if len(daemonNetworks) > 0 {
+			networks = append(networks, daemonNetworks...)
 		}
-		subnets = append(subnets, detectedSubnets...)
+
+		if len(daemonSubnets) > 0 {
+			subnets = append(subnets, daemonSubnets...)
+		}
 	}
+	return networks, subnets, nil
+}
+
+// For a given Kea daemon it detects the shared networks and subnets this Kea
+// daemon has configured. The returned shared networks contain the subnets
+// belonging to the shared networks.
+func detectDaemonNetworks(db *dbops.PgDB, daemon *dbmodel.Daemon, app *dbmodel.App) (networks []dbmodel.SharedNetwork, subnets []dbmodel.Subnet, err error) {
+	// If this is not a Kea daemon or the configuration is unknown
+	// there is nothing to do.
+	if daemon.KeaDaemon == nil || daemon.KeaDaemon.Config == nil {
+		return networks, subnets, nil
+	}
+
+	var family int
+	switch daemon.Name {
+	case dhcp4:
+		family = 4
+	case dhcp6:
+		family = 6
+	default:
+		return networks, subnets, nil
+	}
+
+	// Detect shared networks and the subnets.
+	detectedNetworks, err := detectSharedNetworks(db, daemon.KeaDaemon.Config, family, app)
+	if err != nil {
+		return networks, subnets, err
+	}
+	networks = append(networks, detectedNetworks...)
+
+	// Detect top level subnets.
+	detectedSubnets, err := detectSubnets(db, daemon.KeaDaemon.Config, family, app)
+	if err != nil {
+		return []dbmodel.SharedNetwork{}, subnets, err
+	}
+	subnets = append(subnets, detectedSubnets...)
+
 	return networks, subnets, nil
 }
