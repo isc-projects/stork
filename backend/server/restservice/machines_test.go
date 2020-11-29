@@ -98,8 +98,8 @@ func mockGetAppsState(callNo int, cmdResponses []interface{}) {
 				},
 			},
 		}
-		list2 := cmdResponses[1].(*[]keactrl.Response)
-		*list2 = []keactrl.Response{
+		list2 := cmdResponses[1].(*[]keactrl.HashedResponse)
+		*list2 = []keactrl.HashedResponse{
 			{
 				ResponseHeader: keactrl.ResponseHeader{
 					Result: 0,
@@ -145,8 +145,8 @@ func mockGetAppsState(callNo int, cmdResponses []interface{}) {
 			},
 		}
 		// config-get response
-		list3 := cmdResponses[2].(*[]keactrl.Response)
-		*list3 = []keactrl.Response{
+		list3 := cmdResponses[2].(*[]keactrl.HashedResponse)
+		*list3 = []keactrl.HashedResponse{
 			{
 				ResponseHeader: keactrl.ResponseHeader{
 					Result: 0,
