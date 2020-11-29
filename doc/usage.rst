@@ -56,6 +56,31 @@ boxes, and must meet the password requirements specified in the
 previous section. When all entered data is valid, the ``Save`` button
 is activated for changing the password.
 
+Configuration Settings
+======================
+
+It is possible to control some of the Stork configuration settings from
+the web UI. Click on the ``Configuration`` menu and choose ``Settings``.
+There are two classes of settings available: Intervals and Grafana & Prometheus.
+
+Intervals settings specify configuration of "pullers". A puller is a
+mechanism in Stork which triggers specific action according to the
+specified interval. Each puller has its own specific action and
+interval. Puller interval is specified in seconds and designates
+a time period between the completion of the previously invoked action
+and the beginning of the next invocation of this action.
+
+For example, if the Kea Hosts Puller Interval is set to 10 seconds and it
+takes 5 seconds to pull the hosts information, the time period between the
+beginnings of the two consecutive attempts to pull the hosts information will
+be equal to 15 seconds. The pull time varies between deployments and depends
+on the amount of information pulled, network congestion and other factors.
+The interval setting guarantees that there is a constant idle time between
+any consecutive attempts.
+
+The Grafana & Prometheus settings currently allow for specifying URLs
+of the Prometheus and Grafana instances used with Stork.
+
 .. This agent-deploy link is used in webui for pointing users to the instruction about deploying
    agent. So change it always together with the link in webui to have them in sync.
 .. _agent-deploy:
