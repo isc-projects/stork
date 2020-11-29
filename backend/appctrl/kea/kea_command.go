@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
-
 	storkutil "isc.org/stork/util"
 )
 
@@ -67,6 +66,7 @@ type HashedResponseList []HashedResponse
 // the JSON unmarshaller with a custom unmarshalling function. The
 // hasherValue and hasher types serve this purpose.
 type hasherValue string
+
 type hasher struct {
 	Value *hasherValue `json:"arguments,omitempty"`
 }
