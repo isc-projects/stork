@@ -346,3 +346,79 @@ variable, e.g.:
 .. code-block:: console
 
    $ sudo rake install_server DESTDIR=/usr
+
+Integration with Prometheus and Grafana
+=======================================
+
+Stork can optionally be integrated with `Prometheus <https://prometheus.io/>`_, an open source monitoring and alerting toolkit and
+`Grafana <https://grafana.com/>`_, a nice looking querying, visualization and altering solution. Grafana requires external data
+storage. Prometheus is currently the only environment supported in Stork. It is possible to use Prometheus only without Grafana,
+but using Grafana requires Prometheus.
+
+Prometheus Integration
+----------------------
+
+Stork agent by default makes the
+BIND 9 and Kea statistics available in a format understandable by Prometheus (works a Prometheus exporter using in Prometheus
+nomenclature). If Prometheus server is available, it can be configured to monitor Stork Agents. To enable Stork Agent
+monitoring, you need to edit ``prometheus.yml`` (typically stored in /etc/prometheus/, but this may vary depending on your
+installation) and add the following entries there:
+
+.. code-block:: yaml
+
+  # statistics from Kea
+  - job_name: 'kea'
+    static_configs:
+      - targets: ['agent-kea.example.org:9547', 'agent-kea6.example.org:9547', ... ]
+
+  # statistics from bind9
+  - job_name: 'bind9'
+    static_configs:
+      - targets: ['agent-bind9.example.org:9119', 'another-bind9.example.org:9119', ... ]
+
+By default, Stork agent exports BIND 9 data on TCP port 9119 and Kea data on TCP port 9547. This can be configured using command
+line parameters (or the Prometheus export can be disabled altogether). For details, see stork-agent manual page.
+
+After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly. BIND 9
+statistics use ``bind_`` prefix (e.g. bind_incoming_queries_tcp), while Kea statistics use ``kea_`` prefix (e.g.
+kea_dhcp4_addresses_assigned_total).
+
+Grafana Integration
+-------------------
+
+Stork provides several Grafana templates that can easily be imported. Those are available in the ``grafana/`` directory of the
+Stork source codes. Currently the available templates are `bind9-resolver.json` and `kea-dhcp4.json`. More are expected in the
+future. Grafana integration requires two steps.
+
+1. Prometheus has to be added as a data source. This can be done in several ways, including UI interface and editing Grafana
+configuration files. For details, see Grafana documentation about Prometheus integration. Here we just briefly point the easiest
+method. Using the Grafana UI interface, select Configuration, select Data Sources, click "Add data source", and choose
+Prometheus, then specify necessary parameters to connect to your Prometheus instance. In test environments, the only really
+necessary parameter is URL, but most production deployments also want authentication.
+
+2. Import existing dashboard. In the Grafana UI click Dashboards, then Manage, then Import and select one of the templates, e.g.
+`kea-dhcp4.json`. Make sure to select your Prometheus data source that you added in the previous step. Once imported, the
+dashboard can be tweaked as needed.
+
+3. Once Grafana is configured, go to Stork UI interface, log in as super-admin, click Settings in the Configuration menu and
+then fill URLs to Grafana and Prometheus that point to your installations. Once this is done, Stork will be able to show links
+for subnets leading to specific subnets. More integrations like this are expected in the future.
+
+Alternatively, adding Prometheus data source can be achieved by editing `datasource.yaml` (typically stored in `/etc/grafana`,
+but this may vary depending on your installation) and adding entries similar to this one:
+
+.. code-block:: yaml
+
+   datasources:
+   - name: Stork-Prometheus instance
+     type: prometheus
+     access: proxy
+     url: http://prometheus.example.org:9090
+     isDefault: true
+     editable: false
+
+Also, the Grafana dashboard files can be copied to `/var/lib/grafana/dashboards/` (again, this may very depending on your
+installation).
+
+An example dashboards with some live data can be seen in the `Stork screenshots gallery
+<https://gitlab.isc.org/isc-projects/stork/-/wikis/Screenshots#grafana>`_ .
