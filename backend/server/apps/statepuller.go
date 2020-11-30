@@ -264,8 +264,8 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 		// get app state from the machine
 		switch dbApp.Type {
 		case dbmodel.AppTypeKea:
-			events := kea.GetAppState(ctx2, agents, dbApp, eventCenter)
-			err = kea.CommitAppIntoDB(db, dbApp, eventCenter, events)
+			state := kea.GetAppState(ctx2, agents, dbApp, eventCenter)
+			err = kea.CommitAppIntoDB(db, dbApp, eventCenter, state)
 		case dbmodel.AppTypeBind9:
 			bind9.GetAppState(ctx2, agents, dbApp, eventCenter)
 			err = bind9.CommitAppIntoDB(db, dbApp, eventCenter)

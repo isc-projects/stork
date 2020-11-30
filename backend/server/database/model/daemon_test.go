@@ -426,3 +426,22 @@ func TestSetConfig(t *testing.T) {
 	require.NotNil(t, daemon.KeaDaemon.Config)
 	require.Empty(t, daemon.KeaDaemon.ConfigHash)
 }
+
+// Test that shallow copy of a Kea daemon can be created.
+func TestShallowCopyKeaDaemon(t *testing.T) {
+	// Create Daemon instance with not nil KeaDaemon.
+	daemon := NewKeaDaemon("kea-dhcp4", true)
+	copy := ShallowCopyKeaDaemon(daemon)
+	require.NotNil(t, copy)
+	require.NotNil(t, copy.KeaDaemon)
+	require.NotSame(t, daemon, copy)
+	require.NotSame(t, daemon.KeaDaemon, copy.KeaDaemon)
+
+	// Repeat the same test but this time the KeaDaemon is nil.
+	daemon = &Daemon{}
+	require.NotPanics(t, func() {
+		copy = ShallowCopyKeaDaemon(daemon)
+	})
+	require.NotNil(t, copy)
+	require.NotSame(t, daemon, copy)
+}

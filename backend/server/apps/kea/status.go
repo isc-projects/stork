@@ -357,7 +357,7 @@ func (puller *HAStatusPuller) pullDataForApp(app *dbmodel.App) (bool, bool) {
 // Sends the status-get command to Kea DHCP servers and returns this status to the caller.
 func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App) (appStatus, error) {
 	// This command is only sent to the DHCP deamons.
-	daemons, _ := keactrl.NewDaemons(dbApp.GetActiveDHCPDaemonNames()...)
+	daemons, _ := keactrl.NewDaemons(dbApp.ActiveDHCPDaemonNames()...)
 
 	// It takes no arguments, thus the last parameter is nil.
 	cmd, _ := keactrl.NewCommand("status-get", daemons, nil)

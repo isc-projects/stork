@@ -198,3 +198,20 @@ func NewLogTargetsFromKea(logger keaconfig.Logger) (targets []*LogTarget) {
 	}
 	return targets
 }
+
+// Convenience function which populates subnet indexes for each Kea daemon.
+func PopulateIndexedSubnets(app *App) error {
+	for i := range app.Daemons {
+		if app.Daemons[i].KeaDaemon != nil &&
+			app.Daemons[i].KeaDaemon.Config != nil &&
+			app.Daemons[i].KeaDaemon.KeaDHCPDaemon != nil {
+			indexedSubnets := keaconfig.NewIndexedSubnets(app.Daemons[i].KeaDaemon.Config)
+			err := indexedSubnets.Populate()
+			if err != nil {
+				return err
+			}
+			app.Daemons[i].KeaDaemon.KeaDHCPDaemon.IndexedSubnets = indexedSubnets
+		}
+	}
+	return nil
+}

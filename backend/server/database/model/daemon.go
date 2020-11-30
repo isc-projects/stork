@@ -403,3 +403,16 @@ func (d *Daemon) SetConfigFromJSON(config string) error {
 	}
 	return nil
 }
+
+// Creates shallow copy of KeaDaemon, i.e. copies Daemon structure and
+// nested KeaDaemon structure. The new instance of KeaDaemon is created
+// but the pointers under KeaDaemon are inherited from the source.
+func ShallowCopyKeaDaemon(daemon *Daemon) *Daemon {
+	copied := &Daemon{}
+	*copied = *daemon
+	if daemon.KeaDaemon != nil {
+		copied.KeaDaemon = &KeaDaemon{}
+		*copied.KeaDaemon = *daemon.KeaDaemon
+	}
+	return copied
+}

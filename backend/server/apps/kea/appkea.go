@@ -7,7 +7,6 @@ import (
 
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
@@ -43,7 +42,7 @@ func GetDaemonHooks(dbApp *dbmodel.App) map[string][]string {
 	return hooksByDaemon
 }
 
-// === version-get response structs ===============================================
+// version-get response structs
 
 type VersionGetRespArgs struct {
 	Extended string
@@ -54,24 +53,22 @@ type VersionGetResponse struct {
 	Arguments *VersionGetRespArgs `json:"arguments,omitempty"`
 }
 
+// Struct returned by GetAppState() function.
+type AppStateMeta struct {
+	Events            []*dbmodel.Event
+	SameConfigDaemons map[string]bool
+}
+
 // Convenience function called from getStateFromCA and getStateFromDaemons which searches
-// for the existing daemon within the app. If the daemon does not exist a new instance is
-// created. Otherwise, the function ensures that the KeaDaemon structure is initialized
-// and that the active flag is set to true. It returns a pointer to the copy of the
-// daemon.
-func findDaemonEnsureKeaDaemonIsNotNilAndSetActiveFlag(dbApp *dbmodel.App, daemonName string) *dbmodel.Daemon {
-	for _, dmn := range dbApp.Daemons {
-		if dmn.Name == daemonName {
-			dmnCopy := *dmn
-			// Since this is Kea daemon, make sure that the KeaDaemon structure is
-			// initialized to avoid nil pointer dereference.
-			if dmnCopy.KeaDaemon == nil {
-				dmnCopy.KeaDaemon = &dbmodel.KeaDaemon{}
-			}
-			// Let's assume the daemon is initially active.
-			dmnCopy.Active = true
-			return &dmnCopy
-		}
+// for the existing daemon within an app. If the daemon does not exist a new instance is
+// created. Otherwise, the function returns a shallow copy of the Daemon and KeaDaemon
+// and sets the active flag to true.
+func copyOrCreateActiveKeaDaemon(dbApp *dbmodel.App, daemonName string) *dbmodel.Daemon {
+	daemon := dbApp.DaemonByName(daemonName)
+	if daemon != nil {
+		daemonCopy := dbmodel.ShallowCopyKeaDaemon(daemon)
+		daemonCopy.Active = true
+		return daemonCopy
 	}
 	return dbmodel.NewKeaDaemon(daemonName, true)
 }
@@ -104,7 +101,7 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 		return nil, nil, cmdsResult.Error
 	}
 
-	daemonsMap["ca"] = findDaemonEnsureKeaDaemonIsNotNilAndSetActiveFlag(dbApp, "ca")
+	daemonsMap["ca"] = copyOrCreateActiveKeaDaemon(dbApp, "ca")
 
 	// if no error in the version-get response then copy retrieved info about CA to its record
 	dmn := daemonsMap["ca"]
@@ -212,7 +209,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 
 	// first find old records of daemons in old daemons assigned to the app
 	for name := range allDaemons {
-		daemonsMap[name] = findDaemonEnsureKeaDaemonIsNotNilAndSetActiveFlag(dbApp, name)
+		daemonsMap[name] = copyOrCreateActiveKeaDaemon(dbApp, name)
 	}
 
 	// process version-get responses
@@ -305,7 +302,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 
 // Get state of Kea application daemons using ForwardToKeaOverHTTP function.
 // The state that is stored into dbApp includes: version, config and runtime state of indicated Kea daemons.
-func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, eventCenter eventcenter.EventCenter) []*dbmodel.Event {
+func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, eventCenter eventcenter.EventCenter) *AppStateMeta {
 	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
@@ -323,7 +320,16 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 		log.Warnf("problem with getting state from Kea daemons: %s", err)
 	}
 
-	newActive, overrideDaemons, newDaemons, events := findChangesAndRaiseEvents(dbApp, daemonsMap, daemonsErrors)
+	// If this is new app let's set its active/inactive state based on the
+	// active/inactive state of its daemons. Also, convert the map to the
+	// list of daemons.
+	if dbApp.ID == 0 {
+		dbApp.Active, dbApp.Daemons = createNewAppState(daemonsMap)
+		return nil
+	}
+
+	newActive, overrideDaemons, newDaemons, events, sameConfigDaemons :=
+		findChangesAndRaiseEvents(dbApp, daemonsMap, daemonsErrors)
 
 	// update app state
 	dbApp.Active = newActive
@@ -331,115 +337,166 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 		dbApp.Daemons = newDaemons
 	}
 
-	return events
-}
-
-func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, daemonsErrors map[string]string) (bool, bool, []*dbmodel.Daemon, []*dbmodel.Event) {
-	newActive := true
-	var newDaemons []*dbmodel.Daemon
-	var events []*dbmodel.Event
-
-	// If this is new app
-	if dbApp.ID == 0 {
-		for name := range daemonsMap {
-			dmn := daemonsMap[name]
-			// if all daemons are active then whole app is active
-			newActive = newActive && dmn.Active
-
-			// if this is new daemon and it is not active then disable its monitoring
-			if !dmn.Active {
-				dmn.Monitored = false
-			}
-
-			// if this is a new app then just add detected daemon
-			newDaemons = append(newDaemons, dmn)
-		}
-
-		return newActive, true, newDaemons, events
+	// Return supplementary information about the state returned.
+	state := &AppStateMeta{
+		Events:            events,
+		SameConfigDaemons: sameConfigDaemons,
 	}
 
-	// If app already existed then...
-	newCADmn, ok := daemonsMap["ca"]
-	if !ok || !newCADmn.Active {
-		for _, oldDmn := range dbApp.Daemons {
-			if oldDmn.Active {
-				// add ref to app in daemon so it is available in CreateEvent
-				oldDmn.App = dbApp
-				oldDmn.Active = false
-				errStr, ok := daemonsErrors[oldDmn.Name]
-				if !ok {
-					errStr = ""
-				}
-				ev := eventcenter.CreateEvent(dbmodel.EvError, "{daemon} is unreachable", errStr, dbApp.Machine, dbApp, oldDmn)
+	return state
+}
+
+// Determines whether the new app is active or inactive based on the
+// active/inactive satte of its daemons. It returns a boolean flag
+// indicating whether the app is active or not and the list of
+// daemons to be assigned to the app. This function is called by the
+// GetAppState function when adding a new app.
+func createNewAppState(daemonsMap map[string]*dbmodel.Daemon) (active bool, daemons []*dbmodel.Daemon) {
+	for name := range daemonsMap {
+		daemon := daemonsMap[name]
+		// If all daemons are active then whole app is active.
+		active = active && daemon.Active
+
+		// If this is new daemon and it is not active then disable its monitoring.
+		if !daemon.Active {
+			daemon.Monitored = false
+		}
+		daemons = append(daemons, daemon)
+	}
+
+	return active, daemons
+}
+
+func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, daemonsErrors map[string]string) (bool, bool, []*dbmodel.Daemon, []*dbmodel.Event, map[string]bool) {
+	var (
+		newDaemons []*dbmodel.Daemon
+		events     []*dbmodel.Event
+	)
+
+	newCADaemon, ok := daemonsMap["ca"]
+	if !ok || !newCADaemon.Active {
+		// Kea Control Agent was not found in the response or it is inactive.
+		for _, oldDaemon := range dbApp.Daemons {
+			// For all active daemons we need to mark them as inactive and raise events
+			// about the daemons being unreachable.
+			if oldDaemon.Active {
+				oldDaemon.Active = false
+
+				// Add a pointer to the app in the daemon because it will be needed
+				// when creating the event below.
+				oldDaemon.App = dbApp
+				errStr := daemonsErrors[oldDaemon.Name]
+				ev := eventcenter.CreateEvent(dbmodel.EvError, "{daemon} is unreachable", errStr, dbApp.Machine, dbApp, oldDaemon)
 				events = append(events, ev)
 			}
 		}
+		// In addition, raise an event indicating that the whole app is unreachable.
 		if dbApp.Active {
 			ev := eventcenter.CreateEvent(dbmodel.EvError, "{app} is unreachable", dbApp.Machine, dbApp)
 			events = append(events, ev)
 		}
-		return false, false, nil, events
+		// First three values indicate that there is nothing to do in the database.
+		// The events variable carries the list of generated events. The last value
+		// indicates that we have detected no daemons with no configuration change.
+		// In fact, we didn't go that far to check that.
+		return false, false, nil, events, nil
 	}
 
-	for name := range daemonsMap {
-		dmn := daemonsMap[name]
-		// if all daemons are active then whole app is active
-		newActive = newActive && dmn.Active
+	newActive := true
+	sameConfigDaemons := make(map[string]bool)
 
-		// if this is a new app then just add detected daemon
-		newDaemons = append(newDaemons, dmn)
+	// Let's make sure that all daemons have a back pointer to the app because
+	// it will be needed by event center to generate events.
+	for name := range daemonsMap {
+		daemonsMap[name].App = dbApp
+	}
+
+	// Go over the new daemons (received from config-get) and detect any changes
+	// to the currently known state of these daemons.
+	for name := range daemonsMap {
+		daemon := daemonsMap[name]
+		// If all daemons are active then whole app is active.
+		newActive = newActive && daemon.Active
+
+		// Add this daemon to the list of detected daemons.
+		newDaemons = append(newDaemons, daemon)
 
 		// Determine changes in app daemons state and store them as events.
 		// Later this events will be passed to EventCenter when all the changes
 		// are stored in database.
-		for _, oldDmn := range dbApp.Daemons {
-			if dmn.Name == oldDmn.Name {
-				// add ref to app in daemon so it is available in CreateEvent
-				oldDmn.App = dbApp
-				// check if daemon changed Active state
-				if dmn.Active != oldDmn.Active {
-					lvl := dbmodel.EvWarning
-					text := "{daemon} is "
-					if dmn.Active && !oldDmn.Active {
-						text += "reachable now"
-					} else if !dmn.Active && oldDmn.Active {
-						text += "unreachable"
-						lvl = dbmodel.EvError
-					}
-					errStr, ok := daemonsErrors[oldDmn.Name]
-					if !ok {
-						errStr = ""
-					}
-					ev := eventcenter.CreateEvent(lvl, text, errStr, dbApp.Machine, dbApp, oldDmn)
-					events = append(events, ev)
+		oldDaemon := dbApp.DaemonByName(daemon.Name)
+		if oldDaemon == nil {
+			continue
+		}
 
-					// check if daemon has been restarted
-				} else if dmn.Uptime < oldDmn.Uptime {
-					text := "{daemon} has been restarted"
-					ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, dbApp.Machine, dbApp, oldDmn)
-					events = append(events, ev)
-				}
+		// Add a pointer to the app in the daemon because it will be used by the
+		// event center when new events are created.
+		oldDaemon.App = dbApp
 
-				// check if daemon changed Version
-				if dmn.Version != oldDmn.Version {
-					text := fmt.Sprintf("{daemon} version changed from %s to %s",
-						oldDmn.Version, dmn.Version)
-					ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, dbApp.Machine, dbApp, oldDmn)
-					events = append(events, ev)
-				}
-				break
+		// Check whether the daemon has transitioned between active and inactive states.
+		if daemon.Active != oldDaemon.Active {
+			lvl := dbmodel.EvWarning
+			text := "{daemon} is "
+			if daemon.Active && !oldDaemon.Active {
+				// Daemon was inactive and now it is active again.
+				text += "reachable now"
+			} else if !daemon.Active && oldDaemon.Active {
+				// Daemon was active and now it is inactive. This has higher
+				// severity.
+				text += "unreachable"
+				lvl = dbmodel.EvError
 			}
+			errStr := daemonsErrors[oldDaemon.Name]
+			ev := eventcenter.CreateEvent(lvl, text, errStr, dbApp.Machine, dbApp, oldDaemon)
+			events = append(events, ev)
+
+			// Check if daemon has been restarted.
+		} else if daemon.Uptime < oldDaemon.Uptime {
+			text := "{daemon} has been restarted"
+			ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, dbApp.Machine, dbApp, oldDaemon)
+			events = append(events, ev)
+		}
+
+		// Check if daemon version has changed.
+		if daemon.Version != oldDaemon.Version {
+			text := fmt.Sprintf("{daemon} version changed from %s to %s",
+				oldDaemon.Version, daemon.Version)
+			ev := eventcenter.CreateEvent(dbmodel.EvWarning, text, dbApp.Machine, dbApp, oldDaemon)
+			events = append(events, ev)
+		}
+
+		// Check if the daemon's configuration remains the same.
+		if same := handleConfigEvent(daemon, oldDaemon, &events); same {
+			// Daemons configuration seems to be the same since previous update. Let's
+			// make a note of it so we don't unnecessarily process its configuration.
+			sameConfigDaemons[daemon.Name] = true
 		}
 	}
 
-	return newActive, true, newDaemons, events
+	return newActive, true, newDaemons, events, sameConfigDaemons
+}
+
+// Detects a situation that the daemon configuration remains the same after update
+// and raises events about config change otherwise.
+func handleConfigEvent(daemon, oldDaemon *dbmodel.Daemon, events *[]*dbmodel.Event) bool {
+	if daemon.KeaDaemon != nil && oldDaemon.KeaDaemon != nil {
+		if daemon.KeaDaemon.ConfigHash == oldDaemon.KeaDaemon.ConfigHash {
+			return true
+		}
+		// Raise this event only if we're certain that the configuration has
+		// changed based on the comparison of the hash values.
+		text := "configuration change detected for {daemon}"
+		ev := eventcenter.CreateEvent(dbmodel.EvInfo, text, daemon)
+		*events = append(*events, ev)
+	}
+	return false
 }
 
 // Inserts or updates information about Kea app in the database. Next, it extracts
 // Kea's configurations and uses to either update or create new shared networks,
 // subnets and pools. Finally, the relations between the subnets and the Kea app
 // are created. Note that multiple apps can be associated with the same subnet.
-func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter, changeEvents []*dbmodel.Event) error {
+func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter, state *AppStateMeta) (err error) {
 	// Go over the shared networks and subnets stored in the Kea configuration
 	// and match them with the existing entires in the database. If some of
 	// the shared networks or subnets do not exist they are instantiated and
@@ -449,6 +506,15 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		subnets  []dbmodel.Subnet
 	)
 	for _, daemon := range app.Daemons {
+		if state != nil && state.SameConfigDaemons != nil {
+			// There are quite frequent cases when the daemons' configurations haven't
+			// changed since last update. If that's the case, this map contains the
+			// names of these daemons. For such daemons we should safely skip processing
+			// subnets and shared networks. This saves many CPU cycles.
+			if ok := state.SameConfigDaemons[daemon.Name]; ok {
+				continue
+			}
+		}
 		detectedNetworks, detectedSubnets, err := detectDaemonNetworks(db, daemon, app)
 		if err != nil {
 			err = errors.Wrapf(err, "unable to detect subnets and shared networks for Kea daemon %s belonging to app with id %d", daemon.Name, app.ID)
@@ -458,12 +524,34 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		subnets = append(subnets, detectedSubnets...)
 	}
 
-	// Go over the global reservations stored in the Kea configuration and
-	// match them with the existing global hosts.
-	globalHosts, err := detectGlobalHostsFromConfig(db, app)
-	if err != nil {
-		err = errors.Wrapf(err, "unable to detect global host reservations for Kea app with id %d", app.ID)
-		return err
+	activeDHCPDaemonCount := len(app.ActiveDHCPDaemonNames())
+	updateGlobalHosts := activeDHCPDaemonCount > 0
+
+	// If we have any daemons with a configuration that hasn't changed let's see if we
+	// can potentially skip updating global hosts.
+	if updateGlobalHosts && state != nil && state.SameConfigDaemons != nil {
+		// Count the number of DHCP daemons for which configuration hasn't changed.
+		var sameConfigCount int
+		for _, name := range []string{dbmodel.DaemonNameDHCPv4, dbmodel.DaemonNameDHCPv6} {
+			if state.SameConfigDaemons[name] {
+				sameConfigCount++
+			}
+		}
+		// If the number of daemons for which configuration hasn't changed is equal
+		// to the number of DHCP daemons we can skip the update. If there is at
+		// least one daemon for which configuration has changed we do the update.
+		updateGlobalHosts = len(app.ActiveDHCPDaemonNames()) > sameConfigCount
+	}
+
+	var globalHosts []dbmodel.Host
+	if updateGlobalHosts {
+		// Go over the global reservations stored in the Kea configuration and
+		// match them with the existing global hosts.
+		globalHosts, err = detectGlobalHostsFromConfig(db, app)
+		if err != nil {
+			err = errors.Wrapf(err, "unable to detect global host reservations for Kea app with id %d", app.ID)
+			return err
+		}
 	}
 
 	// Begin transaction.
@@ -492,33 +580,26 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		eventCenter.AddInfoEvent("added {app} on {machine}", app.Machine, app)
 	}
 
-	for _, dmn := range deletedDaemons {
-		dmn.App = app
-		eventCenter.AddInfoEvent("removed {daemon} from {app}", app.Machine, app, dmn)
+	for _, daemon := range deletedDaemons {
+		daemon.App = app
+		eventCenter.AddInfoEvent("removed {daemon} from {app}", app.Machine, app, daemon)
 	}
-	for _, dmn := range addedDaemons {
-		dmn.App = app
-		eventCenter.AddInfoEvent("added {daemon} to {app}", app.Machine, app, dmn)
+	for _, daemon := range addedDaemons {
+		daemon.App = app
+		eventCenter.AddInfoEvent("added {daemon} to {app}", app.Machine, app, daemon)
 	}
-	for _, ev := range changeEvents {
-		eventCenter.AddEvent(ev)
+	if state != nil {
+		for _, ev := range state.Events {
+			eventCenter.AddEvent(ev)
+		}
 	}
 
 	// Associating an app with subnets is expensive operation. It involves finding
 	// local subnet id for each subnet. In order for this operation to be efficient
 	// we have to index subnets in the Kea configurations so the local subnet id
 	// can be quickly found by subnet prefix.
-	for i := range app.Daemons {
-		if app.Daemons[i].KeaDaemon != nil &&
-			app.Daemons[i].KeaDaemon.Config != nil &&
-			app.Daemons[i].KeaDaemon.KeaDHCPDaemon != nil {
-			indexedSubnets := keaconfig.NewIndexedSubnets(app.Daemons[i].KeaDaemon.Config)
-			err = indexedSubnets.Populate()
-			if err != nil {
-				return err
-			}
-			app.Daemons[i].KeaDaemon.KeaDHCPDaemon.IndexedSubnets = indexedSubnets
-		}
+	if err = dbmodel.PopulateIndexedSubnets(app); err != nil {
+		return err
 	}
 
 	// For the given app, iterate over the networks and subnets and update their

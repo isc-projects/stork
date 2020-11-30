@@ -410,7 +410,7 @@ func DeleteApp(db *pg.DB, app *App) error {
 
 // Returns a list of names of active DHCP deamons. This is useful for
 // creating commands to be send to active DHCP servers.
-func (app *App) GetActiveDHCPDaemonNames() (daemons []string) {
+func (app *App) ActiveDHCPDaemonNames() (daemons []string) {
 	if app.Type != AppTypeKea {
 		return daemons
 	}
@@ -420,6 +420,17 @@ func (app *App) GetActiveDHCPDaemonNames() (daemons []string) {
 		}
 	}
 	return daemons
+}
+
+// Finds daemon by name. If a daemon with this name doesn't exist,
+// a nil pointer is returned.
+func (app *App) DaemonByName(name string) *Daemon {
+	for _, daemon := range app.Daemons {
+		if daemon.Name == name {
+			return daemon
+		}
+	}
+	return nil
 }
 
 // Returns local subnet ID for a given subnet prefix. If subnets have been indexed,

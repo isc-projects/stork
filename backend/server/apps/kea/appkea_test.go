@@ -312,7 +312,9 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 	dhcp4Hash := dbApp.Daemons[0].KeaDaemon.ConfigHash
 	caHash := dbApp.Daemons[1].KeaDaemon.ConfigHash
 
-	GetAppState(ctx, fa, &dbApp, fec)
+	state := GetAppState(ctx, fa, &dbApp, fec)
+	require.NotNil(t, state)
+	require.Empty(t, state.SameConfigDaemons)
 
 	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
 	require.Equal(t, "version-get", fa.RecordedCommands[0].Command)
@@ -362,7 +364,10 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 	dhcp4Config := dhcp4Daemon.KeaDaemon.Config
 	caConfig := caDaemon.KeaDaemon.Config
 
-	GetAppState(ctx, fa, &dbApp, fec)
+	state = GetAppState(ctx, fa, &dbApp, fec)
+	require.NotNil(t, state)
+	require.Contains(t, state.SameConfigDaemons, "ca")
+	require.Contains(t, state.SameConfigDaemons, "dhcp4")
 
 	require.NotNil(t, dhcp4Daemon.KeaDaemon.Config)
 	require.Same(t, dhcp4Config, dhcp4Daemon.KeaDaemon.Config)

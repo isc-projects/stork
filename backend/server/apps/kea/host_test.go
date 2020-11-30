@@ -100,7 +100,7 @@ func getTestConfigWithIPv6Subnets(t *testing.T) *dbmodel.KeaConfig {
 	return cfg
 }
 
-// Returns test Kea configuration includin global host reservations.
+// Returns test Kea configuration including global host reservations.
 func getTestConfigWithIPv4GlobalHosts(t *testing.T) *dbmodel.KeaConfig {
 	configStr := `{
         "Dhcp4": {
@@ -445,6 +445,85 @@ func TestDetectHostsFromConfig(t *testing.T) {
 		require.Len(t, h.LocalHosts, 1)
 		require.Equal(t, app.ID, h.LocalHosts[0].AppID)
 	}
+}
+
+// Test that global hosts are not committed to the database when all of
+// the DHCP daemons have been marked as having the same config since last
+// update.
+func TestDetectHostsSameConfig(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fec := &storktest.FakeEventCenter{}
+
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Creates new app with provided configurations.
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	app := dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:   "dhcp4",
+				Active: true,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: getTestConfigWithIPv4GlobalHosts(t),
+				},
+			},
+			{
+				Name:   "dhcp6",
+				Active: true,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: getTestConfigWithIPv6GlobalHosts(t),
+				},
+			},
+		},
+	}
+	// Add the app to the database.
+	_, err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+	app.Machine = m
+
+	// Indicate that the DHCP configurations haven't changed.
+	state := &AppStateMeta{
+		SameConfigDaemons: map[string]bool{
+			dbmodel.DaemonNameDHCPv4: true,
+			dbmodel.DaemonNameDHCPv6: true,
+		},
+	}
+
+	// Both configuratios are indicated to be the same so the hosts should not
+	// be committed to the database.
+	err = CommitAppIntoDB(db, &app, fec, state)
+	require.NoError(t, err)
+
+	// Make sure that no hosts have been added.
+	hosts, err := dbmodel.GetAllHosts(db, 0)
+	require.NoError(t, err)
+	require.Empty(t, hosts)
+
+	// Indicate that configuration is the same for DHCPv4 but not for DHCPv6.
+	state = &AppStateMeta{
+		SameConfigDaemons: map[string]bool{
+			dbmodel.DaemonNameDHCPv4: true,
+		},
+	}
+	err = CommitAppIntoDB(db, &app, fec, state)
+	require.NoError(t, err)
+
+	// The hosts should have been added.
+	hosts, err = dbmodel.GetAllHosts(db, 0)
+	require.NoError(t, err)
+	require.Len(t, hosts, 4)
 }
 
 // Tests that host reservations can be retrieved in chunks from the Kea

@@ -186,3 +186,40 @@ func TestNewLogTargetsFromKea(t *testing.T) {
 	require.Equal(t, "/tmp/log", targets[1].Output)
 	require.Equal(t, "debug", targets[1].Severity)
 }
+
+// Test convenience function which populates indexed subnets for an app.
+func TestPopulateIndexedSubnetsForApp(t *testing.T) {
+	daemon := NewKeaDaemon(DaemonNameDHCPv4, true)
+	require.NotNil(t, daemon)
+	require.NotNil(t, daemon.KeaDaemon)
+	require.NotNil(t, daemon.KeaDaemon.KeaDHCPDaemon)
+
+	err := daemon.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "subnet": "192.0.2.0/24"
+                },
+                {
+                    "subnet": "10.0.0.0/8"
+                }
+            ]
+        }
+	}`)
+	require.NoError(t, err)
+
+	app := &App{
+		Daemons: []*Daemon{
+			daemon,
+		},
+	}
+
+	err = PopulateIndexedSubnets(app)
+	require.NoError(t, err)
+
+	indexedSubnets := app.Daemons[0].KeaDaemon.KeaDHCPDaemon.IndexedSubnets
+	require.NotNil(t, indexedSubnets)
+	require.Len(t, indexedSubnets.ByPrefix, 2)
+	require.Contains(t, indexedSubnets.ByPrefix, "192.0.2.0/24")
+	require.Contains(t, indexedSubnets.ByPrefix, "10.0.0.0/8")
+}

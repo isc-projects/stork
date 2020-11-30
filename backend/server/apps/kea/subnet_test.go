@@ -619,6 +619,64 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	require.Len(t, network.Subnets, 3)
 }
 
+// Test that subnets are not committed to the database for a daemon which
+// have been marked as having the same config since last update.
+func TestCommitAppSameConfigs(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fec := &storktest.FakeEventCenter{}
+
+	// Create the Kea app supporting DHCPv4 and DHCPv6.
+	v4Config := `
+        {
+            "Dhcp4": {
+                "subnet4": [
+                    {
+                        "subnet": "192.0.2.0/24"
+                    },
+                    {
+                        "subnet": "192.0.3.0/24"
+                    }
+                ]
+            }
+        }`
+
+	v6Config := `
+        {
+            "Dhcp6": {
+                "subnet6": [
+                    {
+                        "subnet": "2001:db8:1::/64"
+                    },
+                    {
+                        "subnet": "2001:db8:2::/64"
+                    }
+                ]
+            }
+        }`
+
+	// Indicate that the configuration for a DHCPv4 daemon hasn't changed.
+	state := &AppStateMeta{
+		SameConfigDaemons: map[string]bool{
+			dbmodel.DaemonNameDHCPv4: true,
+		},
+	}
+	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
+	err := CommitAppIntoDB(db, app, fec, state)
+	require.NoError(t, err)
+
+	// There should be no IPv4 subnets because they should have been skipped.
+	subnets, err := dbmodel.GetAllSubnets(db, 4)
+	require.NoError(t, err)
+	require.Empty(t, subnets)
+
+	// There should be 2 IPv6 subnets created.
+	subnets, err = dbmodel.GetAllSubnets(db, 6)
+	require.NoError(t, err)
+	require.Len(t, subnets, 2)
+}
+
 // Benchmark measuring performance of the findMatchingSubnet function. This
 // function checks if the given subnet belongs to the set of existing subnets.
 // It uses indexing by prefix to lookup an existing subnet.
