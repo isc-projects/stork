@@ -35,17 +35,18 @@ The ``Stork Agent`` does not require any specific dependencies to run. It can be
 Stork uses the `status-get` command to communicate with Kea, and therefore will only work with a version of Kea that supports
 `status-get`, which was introduced in Kea 1.7.3 and backported to 1.6.3.
 
-Stork requires the premium ``Host Commands (host_cmds)`` hook library to be loaded by Kea instance to retrieve host reservations
-stored in an external database. Stork will work without the Host Commands hook, but will not be able to display host
-reservations. Stork can retrieve host reservations stored locally in the Kea configuration without any additional hook
+Stork requires the premium ``Host Commands (host_cmds)`` hook library to be loaded by the Kea instance to retrieve host
+reservations stored in an external database. Stork does work without the Host Commands hook library, but is not able to display
+host reservations. Stork can retrieve host reservations stored locally in the Kea configuration without any additional hook
 libraries.
 
-Stork requires the open source ``Stat Commands (stat_cmds)`` hook library to be loaded by Kea instance to retrieve lease
-statistics. Stork will work without the hook, but will not be able to show pool utilization and other statistics.
+Stork requires the open source ``Stat Commands (stat_cmds)`` hook library to be loaded by the Kea instance to retrieve lease
+statistics. Stork does work without the Stat Commands hook library, but will not be able to show pool utilization and other
+statistics.
 
 For the ``Stork Server``, a PostgreSQL database (https://www.postgresql.org/) version 11 or later is required. It may work with
 PostgreSQL 10, but this was not tested. The general installation procedure for PostgreSQL is OS-specific and is not included
-here. However, please keep in mind that Stork uses pgcrypto extensions, which are often coming in a separate package. For
+here. However, please keep in mind that Stork uses pgcrypto extensions, which are often come in a separate package. For
 example, you need postgresql-crypto package on Fedora and postgresql12-contrib on RHEL and CentOS.
 
 These instructions prepare a database for use with the ``Stork
@@ -350,16 +351,16 @@ variable, e.g.:
 Integration with Prometheus and Grafana
 =======================================
 
-Stork can optionally be integrated with `Prometheus <https://prometheus.io/>`_, an open source monitoring and alerting toolkit and
-`Grafana <https://grafana.com/>`_, a nice looking querying, visualization and altering solution. Grafana requires external data
-storage. Prometheus is currently the only environment supported in Stork. It is possible to use Prometheus only without Grafana,
-but using Grafana requires Prometheus.
+Stork can optionally be integrated with `Prometheus <https://prometheus.io/>`_, an open source monitoring and alerting toolkit
+and `Grafana <https://grafana.com/>`_, an easy-to-view analytics platform for querying, visualization and altering. Grafana
+requires external data storage. Prometheus is currently the only environment supported by both Stork and Grafana. It is possible
+to use Prometheus only without Grafana, but using Grafana requires Prometheus.
 
 Prometheus Integration
 ----------------------
 
 Stork agent by default makes the
-BIND 9 and Kea statistics available in a format understandable by Prometheus (works a Prometheus exporter using in Prometheus
+BIND 9 and Kea statistics available in a format understandable by Prometheus (works as a Prometheus exporter, in Prometheus
 nomenclature). If Prometheus server is available, it can be configured to monitor Stork Agents. To enable Stork Agent
 monitoring, you need to edit ``prometheus.yml`` (typically stored in /etc/prometheus/, but this may vary depending on your
 installation) and add the following entries there:
@@ -377,7 +378,7 @@ installation) and add the following entries there:
       - targets: ['agent-bind9.example.org:9119', 'another-bind9.example.org:9119', ... ]
 
 By default, Stork agent exports BIND 9 data on TCP port 9119 and Kea data on TCP port 9547. This can be configured using command
-line parameters (or the Prometheus export can be disabled altogether). For details, see stork-agent manual page.
+line parameters (or the Prometheus export can be disabled altogether). For details, see the stork-agent manual page.
 
 After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly. BIND 9
 statistics use ``bind_`` prefix (e.g. bind_incoming_queries_tcp), while Kea statistics use ``kea_`` prefix (e.g.
@@ -388,10 +389,10 @@ Grafana Integration
 
 Stork provides several Grafana templates that can easily be imported. Those are available in the ``grafana/`` directory of the
 Stork source codes. Currently the available templates are `bind9-resolver.json` and `kea-dhcp4.json`. More are expected in the
-future. Grafana integration requires two steps.
+future. Grafana integration requires three steps.
 
 1. Prometheus has to be added as a data source. This can be done in several ways, including UI interface and editing Grafana
-configuration files. For details, see Grafana documentation about Prometheus integration. Here we just briefly point the easiest
+configuration files. For details, see Grafana documentation about Prometheus integration; here we simply indicate the easiest
 method. Using the Grafana UI interface, select Configuration, select Data Sources, click "Add data source", and choose
 Prometheus, then specify necessary parameters to connect to your Prometheus instance. In test environments, the only really
 necessary parameter is URL, but most production deployments also want authentication.
@@ -404,7 +405,7 @@ dashboard can be tweaked as needed.
 then fill URLs to Grafana and Prometheus that point to your installations. Once this is done, Stork will be able to show links
 for subnets leading to specific subnets. More integrations like this are expected in the future.
 
-Alternatively, adding Prometheus data source can be achieved by editing `datasource.yaml` (typically stored in `/etc/grafana`,
+Alternatively, a Prometheus data source can be added by editing `datasource.yaml` (typically stored in `/etc/grafana`,
 but this may vary depending on your installation) and adding entries similar to this one:
 
 .. code-block:: yaml
@@ -417,8 +418,8 @@ but this may vary depending on your installation) and adding entries similar to 
      isDefault: true
      editable: false
 
-Also, the Grafana dashboard files can be copied to `/var/lib/grafana/dashboards/` (again, this may very depending on your
+Also, the Grafana dashboard files can be copied to `/var/lib/grafana/dashboards/` (again, this may vary depending on your
 installation).
 
-An example dashboards with some live data can be seen in the `Stork screenshots gallery
+Example dashboards with some live data can be seen in the `Stork screenshots gallery
 <https://gitlab.isc.org/isc-projects/stork/-/wikis/Screenshots#grafana>`_ .
