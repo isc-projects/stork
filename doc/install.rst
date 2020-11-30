@@ -19,7 +19,7 @@ Currently Stork is being tested on the following systems:
 - CentOS 7
 - MacOS 10.15*
 
-Note that MacOS is not and will not be officially supported. Many developers in our team use macs, so we're trying to keep Stork
+Note that MacOS is not and will not be officially supported. Many developers in our team use Macs, so we're trying to keep Stork
 buildable on this platform.
 
 Stork server and agents are written in Go language. The server uses PostgreSQL database. In principle, the software could be run
@@ -35,17 +35,18 @@ The ``Stork Agent`` does not require any specific dependencies to run. It can be
 Stork uses the `status-get` command to communicate with Kea, and therefore will only work with a version of Kea that supports
 `status-get`, which was introduced in Kea 1.7.3 and backported to 1.6.3.
 
-Stork requires the premium Host Commands hook library to retrieve host reservations stored in an external database. Stork will
-work without the Host Commands hook, but will not be able to display host reservations. Stork can retrieve host reservations
-stored locally in the Kea configuration without any additional hook libraries.
+Stork requires the premium ``Host Commands (host_cmds)`` hook library to be loaded by Kea instance to retrieve host reservations
+stored in an external database. Stork will work without the Host Commands hook, but will not be able to display host
+reservations. Stork can retrieve host reservations stored locally in the Kea configuration without any additional hook
+libraries.
 
-For the ``Stork Server``, a PostgreSQL database
-(https://www.postgresql.org/) version 11 or later
-is required. The general installation procedure for PostgreSQL is
-OS-specific and is not included here. However, please keep in mind that Stork
-uses pgcrypto extensions, which are often coming in a separate package. For
-example, you need postgresql-crypto package on Fedora and postgresql12-contrib
-on RHEL and CentOS.
+Stork requires the open source ``Stat Commands (stat_cmds)`` hook library to be loaded by Kea instance to retrieve lease
+statistics. Stork will work without the hook, but will not be able to show pool utilization and other statistics.
+
+For the ``Stork Server``, a PostgreSQL database (https://www.postgresql.org/) version 11 or later is required. It may work with
+PostgreSQL 10, but this was not tested. The general installation procedure for PostgreSQL is OS-specific and is not included
+here. However, please keep in mind that Stork uses pgcrypto extensions, which are often coming in a separate package. For
+example, you need postgresql-crypto package on Fedora and postgresql12-contrib on RHEL and CentOS.
 
 These instructions prepare a database for use with the ``Stork
 Server``, with the `stork` database user and `stork` password.  Next,
