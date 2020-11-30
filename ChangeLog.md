@@ -1,3 +1,10 @@
+* 119 [doc] tomek
+
+    Prometheus and Grafana integration is now documented. Also, updated
+    requirements section pointing out that stat_cmds hook is needed for
+    Stork to show Kea statistics correctly.
+    (Gitlab #433, #451)
+
 * 118 [bug] marcin
 
     Prevent an issue whereby Stork server would attempt to fetch updated
