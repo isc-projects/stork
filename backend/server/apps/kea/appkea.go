@@ -367,6 +367,15 @@ func createNewAppState(daemonsMap map[string]*dbmodel.Daemon) (active bool, daem
 	return active, daemons
 }
 
+// Detects changes in the returned app state comparing to the state recorded in the
+// database. It raises events when a daemon changes its state between active and
+// inactive state. It also raises events about detected daemon restarts and when
+// configuration change was detected. This function should only be called from
+// the GetAppState function. The following values are returned: boolean value
+// indicating whether the app is considered active or inactive after update;
+// a boolean flag indicating whether daemons in the app should be replaced with
+// daemons returned in 3rd argument; list of events to be passed to the event
+// center; map of names of daemons for which configuration remains the same.
 func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, daemonsErrors map[string]string) (bool, bool, []*dbmodel.Daemon, []*dbmodel.Event, map[string]bool) {
 	var (
 		newDaemons []*dbmodel.Daemon
@@ -477,7 +486,7 @@ func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmode
 }
 
 // Detects a situation that the daemon configuration remains the same after update
-// and raises events about config change otherwise.
+// or raises events about config change otherwise.
 func handleConfigEvent(daemon, oldDaemon *dbmodel.Daemon, events *[]*dbmodel.Event) bool {
 	if daemon.KeaDaemon != nil && oldDaemon.KeaDaemon != nil {
 		if daemon.KeaDaemon.ConfigHash == oldDaemon.KeaDaemon.ConfigHash {
