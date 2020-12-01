@@ -479,6 +479,7 @@ func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmode
 			// Daemons configuration seems to be the same since previous update. Let's
 			// make a note of it so we don't unnecessarily process its configuration.
 			sameConfigDaemons[daemon.Name] = true
+			log.Infof("configuration of Kea: id %d, daemon: %s has not changed since last fetch; skipping database update for that daemon", dbApp.ID, daemon.Name)
 		}
 	}
 
