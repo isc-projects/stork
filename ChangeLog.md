@@ -1,3 +1,14 @@
+* 120 [func] marcin
+
+    When Stork server pulls updated Kea configurations it detects those
+    configurations that did not change since last update using a fast
+    hashing algorithm. In case when there was no configuration change
+    for a daemon, Stork skips processing subnets and/or hosts within
+    this configuration. This improves efficiency of the configuration
+    pull and update. In addition, when configuration change is detected,
+    an event is displayed informing about such change in the web UI.
+    (Gitlab #460)
+
 * 119 [doc] tomek
 
     Prometheus and Grafana integration is now documented. Also, updated
