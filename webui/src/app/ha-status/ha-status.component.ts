@@ -123,8 +123,8 @@ export class HaStatusComponent implements OnInit {
                 if (data.items) {
                     this._receivedStatus = new Map()
                     for (const s of data.items) {
-                        if (s.status.haServers && s.status.daemon) {
-                            this._receivedStatus[s.status.daemon] = s.status.haServers
+                        if ((s.status as any).haServers && (s.status as any).daemon) {
+                            this._receivedStatus[(s.status as any).daemon] = (s.status as any).haServers
                         }
                     }
                 }

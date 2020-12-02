@@ -62,7 +62,7 @@ export class AppsPageComponent implements OnInit {
     tabs: MenuItem[]
     activeItem: MenuItem
     openedApps: any
-    appTab: any
+    appTab: any = null
 
     refreshedAppTab = new BehaviorSubject(this.appTab)
 
