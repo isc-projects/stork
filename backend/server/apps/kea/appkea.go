@@ -64,7 +64,7 @@ type AppStateMeta struct {
 // created. Otherwise, the function returns a shallow copy of the Daemon and KeaDaemon
 // and sets the active flag to true.
 func copyOrCreateActiveKeaDaemon(dbApp *dbmodel.App, daemonName string) *dbmodel.Daemon {
-	daemon := dbApp.DaemonByName(daemonName)
+	daemon := dbApp.GetDaemonByName(daemonName)
 	if daemon != nil {
 		daemonCopy := dbmodel.ShallowCopyKeaDaemon(daemon)
 		daemonCopy.Active = true
@@ -433,7 +433,7 @@ func findChangesAndRaiseEvents(dbApp *dbmodel.App, daemonsMap map[string]*dbmode
 		// Determine changes in app daemons state and store them as events.
 		// Later this events will be passed to EventCenter when all the changes
 		// are stored in database.
-		oldDaemon := dbApp.DaemonByName(daemon.Name)
+		oldDaemon := dbApp.GetDaemonByName(daemon.Name)
 		if oldDaemon == nil {
 			continue
 		}
@@ -534,7 +534,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		subnets = append(subnets, detectedSubnets...)
 	}
 
-	activeDHCPDaemonCount := len(app.ActiveDHCPDaemonNames())
+	activeDHCPDaemonCount := len(app.GetActiveDHCPDaemonNames())
 	updateGlobalHosts := activeDHCPDaemonCount > 0
 
 	// If we have any daemons with a configuration that hasn't changed let's see if we
@@ -550,7 +550,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		// If the number of daemons for which configuration hasn't changed is equal
 		// to the number of DHCP daemons we can skip the update. If there is at
 		// least one daemon for which configuration has changed we do the update.
-		updateGlobalHosts = len(app.ActiveDHCPDaemonNames()) > sameConfigCount
+		updateGlobalHosts = activeDHCPDaemonCount > sameConfigCount
 	}
 
 	var globalHosts []dbmodel.Host

@@ -897,7 +897,7 @@ func TestGetActiveDHCPMultiple(t *testing.T) {
 		},
 	}
 
-	daemons := a.ActiveDHCPDaemonNames()
+	daemons := a.GetActiveDHCPDaemonNames()
 	require.Len(t, daemons, 2)
 	require.Contains(t, daemons, "dhcp4")
 	require.Contains(t, daemons, "dhcp6")
@@ -920,7 +920,7 @@ func TestGetActiveDHCPSingle(t *testing.T) {
 			},
 		},
 	}
-	daemons := a.ActiveDHCPDaemonNames()
+	daemons := a.GetActiveDHCPDaemonNames()
 	require.Len(t, daemons, 1)
 	require.NotContains(t, daemons, "dhcp4")
 	require.Contains(t, daemons, "dhcp6")
@@ -937,7 +937,7 @@ func TestGetActiveDHCPAppMismatch(t *testing.T) {
 			},
 		},
 	}
-	daemons := a.ActiveDHCPDaemonNames()
+	daemons := a.GetActiveDHCPDaemonNames()
 	require.Empty(t, daemons)
 }
 
@@ -1105,7 +1105,7 @@ func TestGetLocalSubnetIDWithIndexing(t *testing.T) {
 }
 
 // Tests that daemon can be found by name for an app.
-func TestDaemonByName(t *testing.T) {
+func TestGetDaemonByName(t *testing.T) {
 	app := &App{
 		Daemons: []*Daemon{
 			{
@@ -1116,13 +1116,13 @@ func TestDaemonByName(t *testing.T) {
 			},
 		},
 	}
-	daemon := app.DaemonByName("kea-dhcp4")
+	daemon := app.GetDaemonByName("kea-dhcp4")
 	require.NotNil(t, daemon)
 	require.Same(t, daemon, app.Daemons[0])
 
-	daemon = app.DaemonByName("kea-dhcp6")
+	daemon = app.GetDaemonByName("kea-dhcp6")
 	require.NotNil(t, daemon)
 	require.Same(t, daemon, app.Daemons[1])
 
-	require.Nil(t, app.DaemonByName("kea-ca"))
+	require.Nil(t, app.GetDaemonByName("kea-ca"))
 }
