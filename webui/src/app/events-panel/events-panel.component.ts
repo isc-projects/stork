@@ -195,7 +195,26 @@ export class EventsPanelComponent implements OnInit {
      * Register for SSE for all events.
      */
     registerServerSentEvents() {
-        const source = new EventSource('/sse')
+        console.info(this.filter)
+
+        // Build event source URL from filters.
+        const searchParams = new URLSearchParams()
+        if (this.filter.machine) {
+            searchParams.append('machine', String(this.filter.machine))
+        }
+        if (this.filter.appType) {
+            searchParams.append('appType', this.filter.appType)
+        }
+        if (this.filter.daemonType) {
+            searchParams.append('daemonName', this.filter.daemonType)
+        }
+        if (this.filter.user) {
+            searchParams.append('user', String(this.filter.user))
+        }
+        if (this.filter.level) {
+            searchParams.append('level', String(this.filter.level))
+        }
+        const source = new EventSource('/sse?' + searchParams.toString())
 
         source.addEventListener(
             'error',

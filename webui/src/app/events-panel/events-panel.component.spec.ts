@@ -40,4 +40,28 @@ describe('EventsPanelComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy()
     })
+
+    it('should create event source with correct URL', () => {
+        component.filter.level = 1
+        component.filter.machine = 2
+        component.filter.appType = 'kea'
+        component.filter.daemonType = 'dhcp4'
+        component.filter.user = 3
+
+        // Event source should be created.
+        const source = component.registerServerSentEvents()
+        expect(source).toBeTruthy()
+
+        // Capture source's URL.
+        const url = new URL(source.url)
+        expect(url.pathname).toBe('/sse')
+
+        // Validate parameters.
+        const params = url.searchParams
+        expect(params.get('level')).toBe('1')
+        expect(params.get('machine')).toBe('2')
+        expect(params.get('appType')).toBe('kea')
+        expect(params.get('daemonName')).toBe('dhcp4')
+        expect(params.get('user')).toBe('3')
+    })
 })
