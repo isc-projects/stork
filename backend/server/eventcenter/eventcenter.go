@@ -40,7 +40,7 @@ func NewEventCenter(db *pg.DB) EventCenter {
 		done:      make(chan bool),
 		wg:        &sync.WaitGroup{},
 		events:    make(chan *dbmodel.Event),
-		sseBroker: NewSSEBroker(),
+		sseBroker: NewSSEBroker(db),
 	}
 	ec.wg.Add(1)
 	go ec.mainLoop()

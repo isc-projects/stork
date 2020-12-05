@@ -7,23 +7,21 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Subcriber. For now empty so subscriber gets all events. It will
-// store rules for events that subscriber is interested in.
-type Subscriber struct {
-}
-
 // SSE Broker. It stores subscribers in a map which is protected by mutex.
 type SSEBroker struct {
+	db               *dbops.PgDB
 	subscribers      map[chan []byte]*Subscriber
 	subscribersMutex *sync.Mutex
 }
 
 // Create a new SSE Broker.
-func NewSSEBroker() *SSEBroker {
+func NewSSEBroker(db *dbops.PgDB) *SSEBroker {
 	sb := &SSEBroker{
+		db:               db,
 		subscribers:      map[chan []byte]*Subscriber{},
 		subscribersMutex: &sync.Mutex{},
 	}
@@ -32,6 +30,14 @@ func NewSSEBroker() *SSEBroker {
 
 // Server SSE request for new session.
 func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	s := newSubscriber(req.URL)
+
+	if err := s.applyFiltersFromQuery(sb.db); err != nil {
+		log.Errorf("failed to accept new SSE connection because query parameters are invalid: %+v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	log.Printf("new SSE subscriber from %s", req.RemoteAddr)
 
 	// prepare proper HTTP headers for SSE response
@@ -44,7 +50,6 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// create a subscriber and a channel which is used
 	// to dispatch an event to this subscriber
-	s := &Subscriber{}
 	ch := make(chan []byte)
 
 	// store subscriber and its channel in a map, protect the map with mutex
@@ -72,7 +77,7 @@ func (sb *SSEBroker) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// Dispatch event to all subscribers.
+// Dispatch event to subscribers using filtering.
 func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
 	sb.subscribersMutex.Lock()
 	defer sb.subscribersMutex.Unlock()
@@ -84,7 +89,9 @@ func (sb *SSEBroker) dispatchEvent(event *dbmodel.Event) {
 	}
 
 	for ch := range sb.subscribers {
-		ch <- evJSON
+		if sb.subscribers[ch].AcceptsEvent(event) {
+			ch <- evJSON
+		}
 	}
 }
 
