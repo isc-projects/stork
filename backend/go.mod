@@ -30,7 +30,7 @@ require (
 	github.com/prometheus/common v0.10.0
 	github.com/shirou/gopsutil v2.19.9+incompatible
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4 // indirect
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.6.1
 	github.com/vektra/mockery v1.0.0 // indirect
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
