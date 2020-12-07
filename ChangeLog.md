@@ -1,3 +1,10 @@
+* 121 [func] marcin
+
+    Events received over SSE and presented on various Stork pages are
+    now filtered and only the events appropriate for the current view
+    are shown. Prior to this change all events were always shown.
+    (Gitlab #429)
+
 * 120 [func] marcin
 
     When Stork server pulls updated Kea configurations it detects those
