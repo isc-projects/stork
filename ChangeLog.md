@@ -1,3 +1,5 @@
+Stork 0.14.0 released on 2020-12-09.
+
 * 121 [func] marcin
 
     Events received over SSE and presented on various Stork pages are
