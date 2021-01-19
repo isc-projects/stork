@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli/v2"
 	"gopkg.in/h2non/gock.v1"
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
@@ -92,7 +93,8 @@ func makeAccessPoint(tp, address, key string, port int64) (ap []AccessPoint) {
 
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
-	sa := NewStorkAgent(fam)
+	var cfg cli.Context
+	sa := NewStorkAgent(&cfg, fam)
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.HTTPClient)
 	require.NotNil(t, sa.RndcClient)

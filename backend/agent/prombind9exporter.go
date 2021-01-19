@@ -19,16 +19,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 	log "github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
 	"isc.org/stork"
 	storkutil "isc.org/stork/util"
 )
-
-// Settings for Prometheus BIND 9 Exporter.
-type PromBind9ExporterSettings struct {
-	Host     string `long:"prometheus-bind9-exporter-host" description:"the IP or hostname to listen on for incoming Prometheus connection" default:"0.0.0.0" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"`
-	Port     int    `long:"prometheus-bind9-exporter-port" description:"the port to listen on for incoming Prometheus connection" default:"9119" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT"`
-	Interval int    `long:"prometheus-bind9-exporter-interval" description:"specifies how often the agent collects stats from BIND 9, in seconds" default:"10" env:"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"`
-}
 
 const (
 	namespace = "bind"
@@ -59,11 +53,11 @@ type PromBind9ExporterStats struct {
 	Views            map[string]PromBind9ViewStats
 }
 
-// Main structure for Prometheus BIND 9 Exporter. It holds its settings,
+// Main structure for Prometheus BIND 9 Exporter. It holds its config,
 // references to app monitor, HTTP client, HTTP server, and mappings
 // between BIND 9 stats names to prometheus stats.
 type PromBind9Exporter struct {
-	Settings PromBind9ExporterSettings
+	Cfg *cli.Context
 
 	AppMonitor AppMonitor
 	HTTPClient *HTTPClient
@@ -81,8 +75,9 @@ type PromBind9Exporter struct {
 }
 
 // Create new Prometheus BIND 9 Exporter.
-func NewPromBind9Exporter(appMonitor AppMonitor) *PromBind9Exporter {
+func NewPromBind9Exporter(cfg *cli.Context, appMonitor AppMonitor) *PromBind9Exporter {
 	pbe := &PromBind9Exporter{
+		Cfg:        cfg,
 		AppMonitor: appMonitor,
 		HTTPClient: NewHTTPClient(),
 		Registry:   prometheus.NewRegistry(),
@@ -818,11 +813,11 @@ func (pbe *PromBind9Exporter) Start() {
 		})
 	pbe.Registry.MustRegister(pbe.procExporter)
 
-	// set address for listening from settings
-	addrPort := fmt.Sprintf("%s:%d", pbe.Settings.Host, pbe.Settings.Port)
+	// set address for listening from config
+	addrPort := fmt.Sprintf("%s:%d", pbe.Cfg.String("prometheus-bind9-exporter-address"), pbe.Cfg.Int("prometheus-bind9-exporter-port"))
 	pbe.HTTPServer.Addr = addrPort
 
-	log.Printf("Prometheus BIND 9 Exporter listening on %s, stats pulling interval: %d seconds", addrPort, pbe.Settings.Interval)
+	log.Printf("Prometheus BIND 9 Exporter listening on %s, stats pulling interval: %d seconds", addrPort, pbe.Cfg.Int("prometheus-bind9-exporter-interval"))
 
 	// start HTTP server for metrics
 	go func() {

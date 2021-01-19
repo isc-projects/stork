@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"flag"
 	"testing"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli/v2"
 	"gopkg.in/h2non/gock.v1"
 )
 
@@ -33,7 +35,8 @@ func (fam *PromFakeAppMonitor) Start(storkAgent *StorkAgent) {
 // Check creating PromKeaExporter, check if prometheus stats are set up.
 func TestNewPromKeaExporterBasic(t *testing.T) {
 	fam := &PromFakeAppMonitor{}
-	pke := NewPromKeaExporter(fam)
+	var cfg cli.Context
+	pke := NewPromKeaExporter(&cfg, fam)
 	defer pke.Shutdown()
 
 	require.NotNil(t, pke.HTTPClient)
@@ -57,14 +60,16 @@ func TestPromKeaExporterStart(t *testing.T) {
                 }}]`)
 
 	fam := &PromFakeAppMonitor{}
-	pke := NewPromKeaExporter(fam)
+	flags := flag.NewFlagSet("test", 0)
+	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
+	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
+	cfg := cli.NewContext(nil, flags, nil)
+	cfg.Set("prometheus-kea-exporter-port", "1234")
+	cfg.Set("prometheus-kea-exporter-interval", "1")
+	pke := NewPromKeaExporter(cfg, fam)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)
-
-	// prepare sane settings
-	pke.Settings.Port = 1234
-	pke.Settings.Interval = 1 // 1 second
 
 	// start exporter
 	pke.Start()

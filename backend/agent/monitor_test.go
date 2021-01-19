@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli/v2"
 )
 
 func TestGetApps(t *testing.T) {
@@ -130,7 +131,8 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 		},
 	})
 
-	sa := NewStorkAgent(am)
+	var cfg cli.Context
+	sa := NewStorkAgent(&cfg, am)
 
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }

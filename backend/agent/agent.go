@@ -15,6 +15,7 @@ import (
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
 	log "github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
@@ -28,7 +29,7 @@ type Settings struct {
 
 // Global Stork Agent state.
 type StorkAgent struct {
-	Settings   Settings
+	Cfg        *cli.Context
 	AppMonitor AppMonitor
 
 	HTTPClient     *HTTPClient // to communicate with Kea Control Agent and named statistics-channel
@@ -38,9 +39,8 @@ type StorkAgent struct {
 	keaInterceptor *keaInterceptor
 }
 
-// API exposed to Stork Server
-
-func NewStorkAgent(appMonitor AppMonitor) *StorkAgent {
+// API exposed to Stork Server.
+func NewStorkAgent(cfg *cli.Context, appMonitor AppMonitor) *StorkAgent {
 	// rndc is the command to interface with BIND 9.
 	rndc := func(command []string) ([]byte, error) {
 		cmd := exec.Command(command[0], command[1:]...) //nolint:gosec
@@ -55,6 +55,7 @@ func NewStorkAgent(appMonitor AppMonitor) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
+		Cfg:            cfg,
 		AppMonitor:     appMonitor,
 		HTTPClient:     httpClient,
 		RndcClient:     rndcClient,
@@ -328,7 +329,7 @@ func (sa *StorkAgent) Serve() {
 	agentapi.RegisterAgentServer(sa.server, sa)
 
 	// Prepare listener on configured address.
-	addr := fmt.Sprintf("%s:%d", sa.Settings.Host, sa.Settings.Port)
+	addr := fmt.Sprintf("%s:%d", sa.Cfg.String("address"), sa.Cfg.Int("port"))
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatalf("Failed to listen on port: %+v", err)

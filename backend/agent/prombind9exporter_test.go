@@ -1,12 +1,14 @@
 package agent
 
 import (
+	"flag"
 	"math"
 	"testing"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli/v2"
 	"gopkg.in/h2non/gock.v1"
 )
 
@@ -39,7 +41,8 @@ func (fam *PromFakeBind9AppMonitor) Start(storkAgent *StorkAgent) {
 // Check creating PromBind9Exporter, check if prometheus stats are set up.
 func TestNewPromBind9ExporterBasic(t *testing.T) {
 	fam := &PromFakeBind9AppMonitor{}
-	pbe := NewPromBind9Exporter(fam)
+	var cfg cli.Context
+	pbe := NewPromBind9Exporter(&cfg, fam)
 	defer pbe.Shutdown()
 
 	require.NotNil(t, pbe.HTTPClient)
@@ -164,14 +167,16 @@ func TestPromBind9ExporterStart(t *testing.T) {
                               }
                             }`)
 	fam := &PromFakeBind9AppMonitor{}
-	pbe := NewPromBind9Exporter(fam)
+	flags := flag.NewFlagSet("test", 0)
+	flags.Int("prometheus-bind9-exporter-port", 9119, "usage")
+	flags.Int("prometheus-bind9-exporter-interval", 10, "usage")
+	cfg := cli.NewContext(nil, flags, nil)
+	cfg.Set("prometheus-bind9-exporter-port", "1234")
+	cfg.Set("prometheus-bind9-exporter-interval", "1")
+	pbe := NewPromBind9Exporter(cfg, fam)
 	defer pbe.Shutdown()
 
 	gock.InterceptClient(pbe.HTTPClient.client)
-
-	// prepare sane settings
-	pbe.Settings.Port = 1234
-	pbe.Settings.Interval = 1 // 1 second
 
 	// start exporter
 	pbe.Start()
