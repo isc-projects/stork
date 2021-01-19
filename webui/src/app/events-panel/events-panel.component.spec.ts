@@ -64,4 +64,13 @@ describe('EventsPanelComponent', () => {
         expect(params.get('daemonName')).toBe('dhcp4')
         expect(params.get('user')).toBe('3')
     })
+
+    it('should refresh events when changes are detected', () => {
+        // Capture calls to refreshEvents.
+        spyOn(component, 'refreshEvents')
+        component.ngOnChanges()
+        // ngOnChanges should call refreshEvents function to update the
+        // list of events according to new filters.
+        expect(component.refreshEvents).toHaveBeenCalled()
+    })
 })

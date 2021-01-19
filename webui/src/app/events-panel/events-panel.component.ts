@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core'
+import { Component, OnInit, OnChanges, Input } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
@@ -14,7 +14,7 @@ import { AuthService } from '../auth.service'
     templateUrl: './events-panel.component.html',
     styleUrls: ['./events-panel.component.sass'],
 })
-export class EventsPanelComponent implements OnInit {
+export class EventsPanelComponent implements OnInit, OnChanges {
     events: any = { items: [], total: 0 }
     errorCnt = 0
     start = 0
@@ -70,6 +70,19 @@ export class EventsPanelComponent implements OnInit {
     selectedDaemonType: any
     selectedUser: any
 
+    /**
+     * Indicates if the component was initialized.
+     *
+     * It is used by ngOnChanges to determine if the events should
+     * be refreshed. The ngOnChanges is called before ngOnInit and
+     * we should avoid refreshing the events in both calls. If this
+     * is the first call to ngOnChanges the events are not refreshed
+     * and we let ngOnInit load them. The ngOnInit sets this flag to
+     * true. Later, ngOnChanges refreshes the events when the filter
+     * changes are detected.
+     */
+    private _initialized = false
+
     constructor(
         private eventsApi: EventsService,
         private usersApi: UsersService,
@@ -78,7 +91,14 @@ export class EventsPanelComponent implements OnInit {
         public auth: AuthService
     ) {}
 
+    /**
+     * Component lifecycle hook called to initialize the data.
+     */
     ngOnInit(): void {
+        // Indicate that the component was intialized and future calls
+        // to ngOnChanges can refresh the events.
+        this._initialized = true
+
         this.refreshEvents(null)
         this.registerServerSentEvents()
 
@@ -151,6 +171,21 @@ export class EventsPanelComponent implements OnInit {
                 })
             }
         )
+    }
+
+    /**
+     * Component lifecycle hook called when data bound to the component change.
+     *
+     * If this function is called after ngOnInit, it refreshes the events using
+     * new filtering rules.
+     */
+    ngOnChanges(): void {
+        // Refresh the events only after the component was initialized
+        // and the events were loaded by the ngOnInit. If this is the
+        // first call to ngOnChanges, don't refresh the events.
+        if (this._initialized) {
+            this.refreshEvents(null)
+        }
     }
 
     /**
