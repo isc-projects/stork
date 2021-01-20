@@ -4,9 +4,9 @@
     to urfave/cli/v2. Thanks to this it is possible to define commands
     in command line. Previously only switches were possible in command
     line. This is a preparation for new agent command: register.
+    (Gitlab #468)
 
 Stork 0.14.0 released on 2020-12-09.
-    (Gitlab #468)
 
 * 121 [func] marcin
 

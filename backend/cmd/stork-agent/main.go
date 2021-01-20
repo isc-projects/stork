@@ -13,6 +13,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Helper function that starts agent, apps monitor and prometheus exports
+// if they are enabled.
 func runAgent(config *cli.Context) {
 	// We need to print this statement only after we check if the only purpose is to print a version.
 	log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
@@ -51,16 +53,15 @@ func runAgent(config *cli.Context) {
 	<-c
 }
 
+// Prepare urfave cli app with all flags and commands defined.
 func setupApp() *cli.App {
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Println(c.App.Version)
 	}
 	app := &cli.App{
-		Name:    "Stork Agent",
-		Version: stork.Version,
-		// Compiled: stork.BuildDate,
-		Copyright: "(c) 2019-2021 ISC",
-		HelpName:  "stork-agent",
+		Name:     "Stork Agent",
+		Version:  stork.Version,
+		HelpName: "stork-agent",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "host",
