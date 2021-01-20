@@ -70,6 +70,8 @@ export class EventsPanelComponent implements OnInit, OnChanges {
     selectedDaemonType: any
     selectedUser: any
 
+    eventSource: EventSource
+
     /**
      * Indicates if the component was initialized.
      *
@@ -92,13 +94,14 @@ export class EventsPanelComponent implements OnInit, OnChanges {
     ) {}
 
     /**
-     * Component lifecycle hook called to initialize the data.
+     * Applies new filtering rules.
+     *
+     * This function is called from ngOnInit or ngOnChanges to apply
+     * new filtering rules. It fetches events from the server and
+     * re-establishes the SSE connection to receive new events from
+     * the server.
      */
-    ngOnInit(): void {
-        // Indicate that the component was intialized and future calls
-        // to ngOnChanges can refresh the events.
-        this._initialized = true
-
+    private applyFilter(): void {
         this.refreshEvents(null)
         this.registerServerSentEvents()
 
@@ -118,6 +121,24 @@ export class EventsPanelComponent implements OnInit, OnChanges {
                 }
             }
         }
+    }
+
+    /**
+     * Component lifecycle hook called to initialize the data.
+     *
+     * This function fetches the events and establishes the SSE connection
+     * to the server using the specified filter. It also fetches the machines
+     * and users from the server. The users and machines are used to initialize
+     * drop down controls which can be used to modify the filtering rules,
+     * e.g. select events pertaining to the particular machine. The list of
+     * users is only fetched when the logged in user is a super admin.
+     */
+    ngOnInit(): void {
+        // Indicate that the component was intialized and future calls
+        // to ngOnChanges can refresh the events.
+        this._initialized = true
+
+        this.applyFilter()
 
         if (this.auth.superAdmin()) {
             this.usersApi.getUsers(0, 1000, null).subscribe(
@@ -177,14 +198,14 @@ export class EventsPanelComponent implements OnInit, OnChanges {
      * Component lifecycle hook called when data bound to the component change.
      *
      * If this function is called after ngOnInit, it refreshes the events using
-     * new filtering rules.
+     * new filtering rules and re-establishes SSE connection to the server.
      */
     ngOnChanges(): void {
         // Refresh the events only after the component was initialized
         // and the events were loaded by the ngOnInit. If this is the
         // first call to ngOnChanges, don't refresh the events.
         if (this._initialized) {
-            this.refreshEvents(null)
+            this.applyFilter()
         }
     }
 
@@ -227,10 +248,16 @@ export class EventsPanelComponent implements OnInit, OnChanges {
     }
 
     /**
-     * Register for SSE for all events.
+     * Establishes the SSE connection to the server.
+     *
+     * If the connection already exists, it is closed and a new connection
+     * is established.
      */
     registerServerSentEvents() {
-        console.info(this.filter)
+        // Close existing connection.
+        if (this.eventSource) {
+            this.eventSource.close()
+        }
 
         // Build event source URL from filters.
         const searchParams = new URLSearchParams()
@@ -249,14 +276,14 @@ export class EventsPanelComponent implements OnInit, OnChanges {
         if (this.filter.level) {
             searchParams.append('level', String(this.filter.level))
         }
-        const source = new EventSource('/sse?' + searchParams.toString())
+        this.eventSource = new EventSource('/sse?' + searchParams.toString())
 
-        source.addEventListener(
+        this.eventSource.addEventListener(
             'error',
             (ev) => {
                 // some error appeared - close session and start again but after 10s or 5mins
                 console.info('sse error', ev)
-                source.close()
+                this.eventSource.close()
                 this.errorCnt += 1
                 if (this.errorCnt < 10) {
                     // try to re-register every 10s but only 10 times
@@ -273,7 +300,7 @@ export class EventsPanelComponent implements OnInit, OnChanges {
             false
         )
 
-        source.addEventListener(
+        this.eventSource.addEventListener(
             'message',
             (ev) => {
                 const data = JSON.parse(ev.data)
@@ -284,8 +311,6 @@ export class EventsPanelComponent implements OnInit, OnChanges {
             },
             false
         )
-
-        return source
     }
 
     /**
@@ -339,7 +364,7 @@ export class EventsPanelComponent implements OnInit, OnChanges {
         } else {
             this.filter.machine = event.value.id
         }
-        this.refreshEvents(null)
+        this.applyFilter()
     }
 
     onAppTypeSelect(event) {
@@ -348,7 +373,7 @@ export class EventsPanelComponent implements OnInit, OnChanges {
         } else {
             this.filter.appType = event.value.value
         }
-        this.refreshEvents(null)
+        this.applyFilter()
     }
 
     onDaemonTypeSelect(event) {
@@ -357,7 +382,7 @@ export class EventsPanelComponent implements OnInit, OnChanges {
         } else {
             this.filter.daemonType = event.value.value
         }
-        this.refreshEvents(null)
+        this.applyFilter()
     }
 
     onUserSelect(event) {
@@ -366,6 +391,6 @@ export class EventsPanelComponent implements OnInit, OnChanges {
         } else {
             this.filter.user = event.value.id
         }
-        this.refreshEvents(null)
+        this.applyFilter()
     }
 }
