@@ -1,3 +1,10 @@
+* 123 [bug] godfryd
+
+    Corrected an issue with refreshing the events list on the page
+    displaying the machine information. Previously, when switched
+    to a different tab, the events list could remain stale.
+    (Gitlab #463)
+
 * 122 [func] godfryd
 
     Migrated command line processing in agent from jessevdk/go-flags
