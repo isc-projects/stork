@@ -93,8 +93,8 @@ func makeAccessPoint(tp, address, key string, port int64) (ap []AccessPoint) {
 
 func TestNewStorkAgent(t *testing.T) {
 	fam := &FakeAppMonitor{}
-	var cfg cli.Context
-	sa := NewStorkAgent(&cfg, fam)
+	var settings cli.Context
+	sa := NewStorkAgent(&settings, fam)
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.HTTPClient)
 	require.NotNil(t, sa.RndcClient)

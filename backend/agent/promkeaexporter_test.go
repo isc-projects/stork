@@ -35,8 +35,8 @@ func (fam *PromFakeAppMonitor) Start(storkAgent *StorkAgent) {
 // Check creating PromKeaExporter, check if prometheus stats are set up.
 func TestNewPromKeaExporterBasic(t *testing.T) {
 	fam := &PromFakeAppMonitor{}
-	var cfg cli.Context
-	pke := NewPromKeaExporter(&cfg, fam)
+	var settings cli.Context
+	pke := NewPromKeaExporter(&settings, fam)
 	defer pke.Shutdown()
 
 	require.NotNil(t, pke.HTTPClient)
@@ -63,10 +63,10 @@ func TestPromKeaExporterStart(t *testing.T) {
 	flags := flag.NewFlagSet("test", 0)
 	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
 	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
-	cfg := cli.NewContext(nil, flags, nil)
-	cfg.Set("prometheus-kea-exporter-port", "1234")
-	cfg.Set("prometheus-kea-exporter-interval", "1")
-	pke := NewPromKeaExporter(cfg, fam)
+	settings := cli.NewContext(nil, flags, nil)
+	settings.Set("prometheus-kea-exporter-port", "1234")
+	settings.Set("prometheus-kea-exporter-interval", "1")
+	pke := NewPromKeaExporter(settings, fam)
 	defer pke.Shutdown()
 
 	gock.InterceptClient(pke.HTTPClient.client)

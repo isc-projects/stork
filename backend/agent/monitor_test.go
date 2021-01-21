@@ -131,8 +131,8 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 		},
 	})
 
-	var cfg cli.Context
-	sa := NewStorkAgent(&cfg, am)
+	var settings cli.Context
+	sa := NewStorkAgent(&settings, am)
 
 	require.NotPanics(t, func() { am.detectAllowedLogs(sa) })
 }

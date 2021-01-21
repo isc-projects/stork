@@ -41,8 +41,8 @@ func (fam *PromFakeBind9AppMonitor) Start(storkAgent *StorkAgent) {
 // Check creating PromBind9Exporter, check if prometheus stats are set up.
 func TestNewPromBind9ExporterBasic(t *testing.T) {
 	fam := &PromFakeBind9AppMonitor{}
-	var cfg cli.Context
-	pbe := NewPromBind9Exporter(&cfg, fam)
+	var settings cli.Context
+	pbe := NewPromBind9Exporter(&settings, fam)
 	defer pbe.Shutdown()
 
 	require.NotNil(t, pbe.HTTPClient)
@@ -170,10 +170,10 @@ func TestPromBind9ExporterStart(t *testing.T) {
 	flags := flag.NewFlagSet("test", 0)
 	flags.Int("prometheus-bind9-exporter-port", 9119, "usage")
 	flags.Int("prometheus-bind9-exporter-interval", 10, "usage")
-	cfg := cli.NewContext(nil, flags, nil)
-	cfg.Set("prometheus-bind9-exporter-port", "1234")
-	cfg.Set("prometheus-bind9-exporter-interval", "1")
-	pbe := NewPromBind9Exporter(cfg, fam)
+	settings := cli.NewContext(nil, flags, nil)
+	settings.Set("prometheus-bind9-exporter-port", "1234")
+	settings.Set("prometheus-bind9-exporter-interval", "1")
+	pbe := NewPromBind9Exporter(settings, fam)
 	defer pbe.Shutdown()
 
 	gock.InterceptClient(pbe.HTTPClient.client)
