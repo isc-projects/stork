@@ -29,7 +29,7 @@ type Settings struct {
 
 // Global Stork Agent state.
 type StorkAgent struct {
-	Cfg        *cli.Context
+	Settings   *cli.Context
 	AppMonitor AppMonitor
 
 	HTTPClient     *HTTPClient // to communicate with Kea Control Agent and named statistics-channel
@@ -40,7 +40,7 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(cfg *cli.Context, appMonitor AppMonitor) *StorkAgent {
+func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor) *StorkAgent {
 	// rndc is the command to interface with BIND 9.
 	rndc := func(command []string) ([]byte, error) {
 		cmd := exec.Command(command[0], command[1:]...) //nolint:gosec
@@ -55,7 +55,7 @@ func NewStorkAgent(cfg *cli.Context, appMonitor AppMonitor) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
-		Cfg:            cfg,
+		Settings:       settings,
 		AppMonitor:     appMonitor,
 		HTTPClient:     httpClient,
 		RndcClient:     rndcClient,
@@ -329,7 +329,7 @@ func (sa *StorkAgent) Serve() {
 	agentapi.RegisterAgentServer(sa.server, sa)
 
 	// Prepare listener on configured address.
-	addr := fmt.Sprintf("%s:%d", sa.Cfg.String("address"), sa.Cfg.Int("port"))
+	addr := fmt.Sprintf("%s:%d", sa.Settings.String("address"), sa.Settings.Int("port"))
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatalf("Failed to listen on port: %+v", err)

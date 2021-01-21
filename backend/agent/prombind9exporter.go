@@ -57,7 +57,7 @@ type PromBind9ExporterStats struct {
 // references to app monitor, HTTP client, HTTP server, and mappings
 // between BIND 9 stats names to prometheus stats.
 type PromBind9Exporter struct {
-	Cfg *cli.Context
+	Settings *cli.Context
 
 	AppMonitor AppMonitor
 	HTTPClient *HTTPClient
@@ -75,9 +75,9 @@ type PromBind9Exporter struct {
 }
 
 // Create new Prometheus BIND 9 Exporter.
-func NewPromBind9Exporter(cfg *cli.Context, appMonitor AppMonitor) *PromBind9Exporter {
+func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor) *PromBind9Exporter {
 	pbe := &PromBind9Exporter{
-		Cfg:        cfg,
+		Settings:   settings,
 		AppMonitor: appMonitor,
 		HTTPClient: NewHTTPClient(),
 		Registry:   prometheus.NewRegistry(),
@@ -814,10 +814,10 @@ func (pbe *PromBind9Exporter) Start() {
 	pbe.Registry.MustRegister(pbe.procExporter)
 
 	// set address for listening from config
-	addrPort := fmt.Sprintf("%s:%d", pbe.Cfg.String("prometheus-bind9-exporter-address"), pbe.Cfg.Int("prometheus-bind9-exporter-port"))
+	addrPort := fmt.Sprintf("%s:%d", pbe.Settings.String("prometheus-bind9-exporter-address"), pbe.Settings.Int("prometheus-bind9-exporter-port"))
 	pbe.HTTPServer.Addr = addrPort
 
-	log.Printf("Prometheus BIND 9 Exporter listening on %s, stats pulling interval: %d seconds", addrPort, pbe.Cfg.Int("prometheus-bind9-exporter-interval"))
+	log.Printf("Prometheus BIND 9 Exporter listening on %s, stats pulling interval: %d seconds", addrPort, pbe.Settings.Int("prometheus-bind9-exporter-interval"))
 
 	// start HTTP server for metrics
 	go func() {

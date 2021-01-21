@@ -15,7 +15,7 @@ import (
 
 // Helper function that starts agent, apps monitor and prometheus exports
 // if they are enabled.
-func runAgent(config *cli.Context) {
+func runAgent(settings *cli.Context) {
 	// We need to print this statement only after we check if the only purpose is to print a version.
 	log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
 
@@ -23,17 +23,17 @@ func runAgent(config *cli.Context) {
 	appMonitor := agent.NewAppMonitor()
 
 	// Prepare agent gRPC handler
-	storkAgent := agent.NewStorkAgent(config, appMonitor)
+	storkAgent := agent.NewStorkAgent(settings, appMonitor)
 
 	// Prepare Prometheus exporters
-	promKeaExporter := agent.NewPromKeaExporter(config, appMonitor)
-	promBind9Exporter := agent.NewPromBind9Exporter(config, appMonitor)
+	promKeaExporter := agent.NewPromKeaExporter(settings, appMonitor)
+	promBind9Exporter := agent.NewPromBind9Exporter(settings, appMonitor)
 
 	// Let's start the app monitor.
 	appMonitor.Start(storkAgent)
 
 	// Only start the exporters if they're enabled.
-	if !config.Bool("stork-only") {
+	if !settings.Bool("stork-only") {
 		promKeaExporter.Start()
 		defer promKeaExporter.Shutdown()
 
@@ -42,7 +42,7 @@ func runAgent(config *cli.Context) {
 	}
 
 	// Only start the agent service if it's enabled.
-	if !config.Bool("prometheus-only") {
+	if !settings.Bool("prometheus-only") {
 		go storkAgent.Serve()
 		defer storkAgent.Shutdown()
 	}

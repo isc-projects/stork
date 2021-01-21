@@ -34,7 +34,7 @@ type statDescr struct {
 // controlling elements like ticker, and mappings between kea stats
 // names to prometheus stats.
 type PromKeaExporter struct {
-	Cfg *cli.Context
+	Settings *cli.Context
 
 	AppMonitor AppMonitor
 	HTTPClient *HTTPClient
@@ -51,9 +51,9 @@ type PromKeaExporter struct {
 }
 
 // Create new Prometheus Kea Exporter.
-func NewPromKeaExporter(cfg *cli.Context, appMonitor AppMonitor) *PromKeaExporter {
+func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaExporter {
 	pke := &PromKeaExporter{
-		Cfg:           cfg,
+		Settings:      settings,
 		AppMonitor:    appMonitor,
 		HTTPClient:    NewHTTPClient(),
 		DoneCollector: make(chan bool),
@@ -261,11 +261,11 @@ func NewPromKeaExporter(cfg *cli.Context, appMonitor AppMonitor) *PromKeaExporte
 // and http server for exposing them to Prometheus.
 func (pke *PromKeaExporter) Start() {
 	// set address for listening from config
-	addrPort := fmt.Sprintf("%s:%d", pke.Cfg.String("prometheus-kea-exporter-address"), pke.Cfg.Int("prometheus-kea-exporter-port"))
+	addrPort := fmt.Sprintf("%s:%d", pke.Settings.String("prometheus-kea-exporter-address"), pke.Settings.Int("prometheus-kea-exporter-port"))
 	pke.HTTPServer.Addr = addrPort
 
 	log.Printf("Prometheus Kea Exporter listening on %s, stats pulling interval: %d seconds",
-		addrPort, pke.Cfg.Int("prometheus-kea-exporter-interval"))
+		addrPort, pke.Settings.Int("prometheus-kea-exporter-interval"))
 
 	// start http server for metrics
 	go func() {
@@ -276,7 +276,7 @@ func (pke *PromKeaExporter) Start() {
 	}()
 
 	// set ticker time for collecting loop from config
-	pke.Ticker = time.NewTicker(time.Duration(pke.Cfg.Int("prometheus-kea-exporter-interval")) * time.Second)
+	pke.Ticker = time.NewTicker(time.Duration(pke.Settings.Int("prometheus-kea-exporter-interval")) * time.Second)
 
 	// start collecting loop as goroutine and increment WaitGroup (which is used later
 	// for stopping this goroutine)
