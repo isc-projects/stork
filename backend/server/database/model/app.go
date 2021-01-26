@@ -30,6 +30,7 @@ type App struct {
 	Type      string // currently supported types are: "kea" and "bind9"
 	Active    bool
 	Meta      AppMeta
+	Name      string
 
 	AccessPoints []*AccessPoint
 
