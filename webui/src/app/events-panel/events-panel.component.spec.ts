@@ -2,9 +2,8 @@ import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 import { ActivatedRoute, Router } from '@angular/router'
 import { MessageService } from 'primeng/api'
-import { of } from 'rxjs'
-import { EventsService, ServicesService, UsersService } from '../backend'
 
+import { EventsService, ServicesService, UsersService } from '../backend'
 import { EventsPanelComponent } from './events-panel.component'
 
 /**
