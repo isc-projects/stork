@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"fmt"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
@@ -497,6 +498,212 @@ func TestDeleteApp(t *testing.T) {
 	// delete added app
 	err = DeleteApp(db, s)
 	require.NoError(t, err)
+}
+
+// This test verifies that apps' names are set to the default values and that
+// they are modified when the machine's address changes.
+func TestAutoAppName(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// An app is always associated with a machine.
+	machine := &Machine{
+		ID:        0,
+		Address:   "machine-floor1",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+	require.NotZero(t, machine.ID)
+
+	// Add a first app for this machine.
+	app1 := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Active:    true,
+	}
+	_, err = AddApp(db, app1)
+	require.NoError(t, err)
+	require.NotZero(t, app1.ID)
+
+	// Make sure the name was auto generated.
+	require.Equal(t, "kea@machine-floor1", app1.Name)
+
+	// Add a second app of the same type.
+	app2 := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Active:    true,
+	}
+	_, err = AddApp(db, app2)
+	require.NoError(t, err)
+	require.NotZero(t, app2.ID)
+
+	// The name should be auto generated and the id should be appended to the
+	// name to ensure that the apps' names are unique.
+	require.Equal(t, fmt.Sprintf("kea@machine-floor1/%d", app2.ID), app2.Name)
+
+	// Add the third app of different type.
+	app3 := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeBind9,
+		Active:    true,
+	}
+	_, err = AddApp(db, app3)
+	require.NoError(t, err)
+	require.NotZero(t, app3.ID)
+
+	// Its name should have no postfix, because there is only one BIND9 app
+	// on this machine.
+	require.Equal(t, "bind9@machine-floor1", app3.Name)
+
+	// Modify the machine address. We expect that this will affect the apps'
+	// names.
+	machine.Address = "machine-floor2"
+	err = db.Update(machine)
+	require.NoError(t, err)
+
+	// The first apps' name should be changed to reflect that it now runs
+	// on the machine-floor2.
+	app1, err = GetAppByID(db, app1.ID)
+	require.NoError(t, err)
+	require.NotNil(t, app1)
+	require.Equal(t, "kea@machine-floor2", app1.Name)
+
+	// The name of the second app should be modified too.
+	app2, err = GetAppByID(db, app2.ID)
+	require.NoError(t, err)
+	require.NotNil(t, app2)
+	require.Equal(t, fmt.Sprintf("kea@machine-floor2/%d", app2.ID), app2.Name)
+
+	// Finally, let's verify the same for the third app.
+	app3, err = GetAppByID(db, app3.ID)
+	require.NoError(t, err)
+	require.NotNil(t, app3)
+	require.Equal(t, "bind9@machine-floor2", app3.Name)
+}
+
+// Test that app name can be modified and that it is not checked against the
+// machine's address if it doesn't follow the [app-type]@[machine-address]
+// pattern.
+func TestEditAppName(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// An app is always associated with a machine.
+	machine := &Machine{
+		ID:        0,
+		Address:   "machine-floor1",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+	require.NotZero(t, machine.ID)
+
+	// Add a first app for this machine.
+	app1 := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Active:    true,
+	}
+	_, err = AddApp(db, app1)
+	require.NoError(t, err)
+	require.NotZero(t, app1.ID)
+
+	// Make sure the name was auto generated.
+	require.Equal(t, "kea@machine-floor1", app1.Name)
+
+	// Add a second app of the same type.
+	app2 := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Active:    true,
+	}
+	_, err = AddApp(db, app2)
+	require.NoError(t, err)
+	require.NotZero(t, app2.ID)
+
+	// The name should be auto generated and the id should be appended to the
+	// name to ensure that the apps' names are unique.
+	require.Equal(t, fmt.Sprintf("kea@machine-floor1/%d", app2.ID), app2.Name)
+
+	// Let's try to modify first app's name. It should fail, because the
+	// machine-floor2 does not exist.
+	app1.Name = "fish@machine-floor2"
+	_, _, err = UpdateApp(db, app1)
+	require.Error(t, err)
+
+	// Try to append app id. This should fail too.
+	app1.Name = fmt.Sprintf("fish@machine-floor2/%d", app1.ID)
+	_, _, err = UpdateApp(db, app1)
+	require.Error(t, err)
+
+	// But, if we specify a name with a different pattern, it should succeed
+	// because we don't specify the machine's name.
+	app1.Name = "fish.on.the.floor"
+	_, _, err = UpdateApp(db, app1)
+	require.NoError(t, err)
+
+	// Update machine address. It should only affect the second app.
+	machine.Address = "machine-floor2"
+	err = db.Update(machine)
+	require.NoError(t, err)
+
+	// The first app's name should remain the same.
+	app1, err = GetAppByID(db, app1.ID)
+	require.NoError(t, err)
+	require.NotNil(t, app1)
+	require.Equal(t, "fish.on.the.floor", app1.Name)
+
+	// The second app's name should change.
+	app2, err = GetAppByID(db, app2.ID)
+	require.NoError(t, err)
+	require.NotNil(t, app2)
+	require.Equal(t, fmt.Sprintf("kea@machine-floor2/%d", app2.ID), app2.Name)
+}
+
+// Test that the app name is auto generated when empty name was specified during
+// the app update.
+func TestSetEmptyAppName(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// An app is always associated with a machine.
+	machine := &Machine{
+		ID:        0,
+		Address:   "machine-floor1",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+	require.NotZero(t, machine.ID)
+
+	// Add an app for this machine.
+	app1 := &App{
+		ID:        0,
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Active:    true,
+		Name:      "fish",
+	}
+	_, err = AddApp(db, app1)
+	require.NoError(t, err)
+	require.NotZero(t, app1.ID)
+
+	// Set empty app name. It should result in auto generating the name.
+	app1.Name = ""
+	_, _, err = UpdateApp(db, app1)
+	require.NoError(t, err)
+
+	// Make sure the name was auto generated.
+	app1, err = GetAppByID(db, app1.ID)
+	require.NoError(t, err)
+	require.Equal(t, "kea@machine-floor1", app1.Name)
 }
 
 func TestGetAppsByMachine(t *testing.T) {

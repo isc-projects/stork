@@ -46,12 +46,14 @@ func updateAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
 		for _, point := range app.AccessPoints {
 			types = append(types, point.Type)
 		}
-		q := tx.Model((*AccessPoint)(nil))
-		q = q.Where("app_id = ?", app.ID)
-		q = q.Where("type NOT IN (?)", pg.In(types))
-		_, err = q.Delete()
-		if err != nil {
-			return pkgerrors.Wrapf(err, "problem with removing access points from app %d", app.ID)
+		if len(types) > 0 {
+			q := tx.Model((*AccessPoint)(nil))
+			q = q.Where("app_id = ?", app.ID)
+			q = q.Where("type NOT IN (?)", pg.In(types))
+			_, err = q.Delete()
+			if err != nil {
+				return pkgerrors.Wrapf(err, "problem with removing access points from app %d", app.ID)
+			}
 		}
 	}
 
