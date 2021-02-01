@@ -99,7 +99,7 @@ export class AppsPageComponent implements OnInit {
             app,
         })
         this.tabs.push({
-            label: `[${app.id}]@${app.machine.address}`,
+            label: `${app.name}`,
             routerLink: '/apps/' + this.appType + '/' + app.id,
         })
     }

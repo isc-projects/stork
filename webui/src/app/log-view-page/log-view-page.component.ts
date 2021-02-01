@@ -24,6 +24,7 @@ export class LogViewPageComponent implements OnInit {
     maxLength = this.maxLengthChunk
 
     appId: number
+    appName: string
     appType: string
     appTypeCapitalized: string
     private _logId: number
@@ -77,6 +78,7 @@ export class LogViewPageComponent implements OnInit {
 
                 // Set other data.
                 this.appId = data.appId
+                this.appName = data.appName
                 this.appType = data.appType
                 if (this.appType.length > 1) {
                     this.appTypeCapitalized = this.appType.charAt(0).toUpperCase() + this.appType.slice(1)

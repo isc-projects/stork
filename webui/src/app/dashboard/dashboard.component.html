@@ -270,7 +270,8 @@
                 <table style="width: 100%" class="dhcp-services-table">
                     <tr>
                         <th style="vertical-align: top">Host</th>
-                        <th style="vertical-align: top">[ID] App Version</th>
+                        <th style="vertical-align: top">App Version</th>
+                        <th style="vertical-align: top">App Name</th>
                         <th style="vertical-align: top">Daemon</th>
                         <th style="vertical-align: top">Status</th>
                         <th style="vertical-align: top">RPS (15min)</th>
@@ -286,7 +287,10 @@
                             <a routerLink="/machines/{{ d.machineId }}">{{ d.machine }}</a>
                         </td>
                         <td>
-                            <a routerLink="/apps/kea/{{ d.appId }}">[{{ d.appId }}] Kea {{ d.appVersion }}</a>
+                            <a routerLink="/apps/kea/{{ d.appId }}">Kea {{ d.appVersion }}</a>
+                        </td>
+                        <td>
+                            <a routerLink="/apps/kea/{{ d.appId }}">{{ d.appName }}</a>
                         </td>
                         <td>{{ d.name }}</td>
                         <td>

@@ -133,7 +133,7 @@ export class DashboardComponent implements OnInit {
      * Make duration human readable.
      */
     showDuration(duration) {
-        return durationToString(duration)
+        return durationToString(duration, true)
     }
 
     /**

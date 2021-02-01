@@ -71,7 +71,7 @@
     >
         <ng-template pTemplate="header">
             <tr>
-                <th style="width: 5em">ID</th>
+                <th style="width: 14em">Name</th>
                 <th>Version</th>
                 <th>Status</th>
                 <th>Machine Address</th>
@@ -82,7 +82,7 @@
         <ng-template pTemplate="body" let-a>
             <tr class="alternate-list">
                 <td>
-                    <a routerLink="/apps/{{ appType }}/{{ a.id }}">{{ a.id }}</a>
+                    <a routerLink="/apps/{{ appType }}/{{ a.id }}">{{ a.name }}</a>
                 </td>
                 <td>
                     <a routerLink="/apps/{{ appType }}/{{ a.id }}">{{ a.version }}</a>

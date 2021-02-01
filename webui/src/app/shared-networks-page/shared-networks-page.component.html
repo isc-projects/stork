@@ -68,7 +68,7 @@
                     <th rowspan="2" style="width: 7rem">Name</th>
                     <th colspan="3" style="width: 16rem">Addresses</th>
                     <th rowspan="2">Subnets</th>
-                    <th rowspan="2" style="width: 14rem">AppID @ Machine</th>
+                    <th rowspan="2" style="width: 14rem">App Name</th>
                 </tr>
                 <tr>
                     <th>Total</th>
@@ -108,9 +108,7 @@
                         <app-subnet-bar *ngFor="let sn of net.subnets" [subnet]="sn"></app-subnet-bar>
                     </td>
                     <td>
-                        <a *ngFor="let app of getApps(net)" routerLink="/apps/kea/{{ app.id }}"
-                            >{{ app.id }} @ {{ app.machineAddress }}</a
-                        >
+                        <a *ngFor="let app of getApps(net)" routerLink="/apps/kea/{{ app.id }}">{{ app.name }}</a>
                     </td>
                 </tr>
             </ng-template>

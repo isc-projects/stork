@@ -178,7 +178,7 @@ export class SharedNetworksPageComponent implements OnInit {
         for (const sn of net.subnets) {
             for (const lsn of sn.localSubnets) {
                 if (!appIds.hasOwnProperty(lsn.appId)) {
-                    apps.push({ id: lsn.appId, machineAddress: lsn.machineAddress })
+                    apps.push({ id: lsn.appId, name: lsn.appName })
                     appIds[lsn.appId] = true
                 }
             }

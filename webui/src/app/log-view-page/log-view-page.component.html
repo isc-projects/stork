@@ -23,7 +23,11 @@
                 <ng-container *ngIf="loaded">
                     Log {{ data.logTargetOutput }}
                     from the
-                    <app-entity-link entity="app" [attrs]="{ id: appId, type: appType, version: '' }"></app-entity-link>
+                    <app-entity-link
+                        id="app-link"
+                        entity="app"
+                        [attrs]="{ id: appId, type: appType, label: appName, version: '' }"
+                    ></app-entity-link>
                     on the
                     <app-entity-link
                         entity="machine"

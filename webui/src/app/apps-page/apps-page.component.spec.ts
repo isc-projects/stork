@@ -20,6 +20,11 @@ import { RouterTestingModule } from '@angular/router/testing'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
 
+class App {
+    id: number
+    name: string
+}
+
 describe('AppsPageComponent', () => {
     let component: AppsPageComponent
     let fixture: ComponentFixture<AppsPageComponent>
@@ -59,5 +64,21 @@ describe('AppsPageComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
+    })
+
+    it('should render good app tab title and link', () => {
+        const app = new App()
+        app.id = 1
+        app.name = 'test-app'
+
+        component.appType = 'bind9'
+
+        component.addAppTab(app)
+        expect(component.tabs.length).toEqual(2)
+        expect(component.tabs[1].hasOwnProperty('label')).toBeTrue()
+        expect(component.tabs[1].hasOwnProperty('routerLink')).toBeTrue()
+
+        expect(component.tabs[1].label).toBe('test-app')
+        expect(component.tabs[1].routerLink).toBe('/apps/bind9/1')
     })
 })

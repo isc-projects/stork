@@ -2,7 +2,11 @@
     <!-- daemon -->
     <ng-container *ngSwitchCase="'daemon'">
         daemon
-        <a routerLink="/apps/{{ attrs.appType }}/{{ attrs.appId }}" [queryParams]="{ daemon: attrs.name }">
+        <a
+            id="daemon-link"
+            routerLink="/apps/{{ attrs.appType }}/{{ attrs.appId }}"
+            [queryParams]="{ daemon: attrs.name }"
+        >
             [{{ attrs.id }}] {{ attrs.name }}
         </a>
     </ng-container>
@@ -10,14 +14,12 @@
     <!-- app -->
     <ng-container *ngSwitchCase="'app'">
         app
-        <a routerLink="/apps/{{ attrs.type }}/{{ attrs.id }}">
-            [{{ attrs.id }}] {{ attrs.type }} {{ attrs.version }}
-        </a>
+        <a id="app-link" routerLink="/apps/{{ attrs.type }}/{{ attrs.id }}">{{ attrs.label }}</a>
     </ng-container>
 
     <!-- machine -->
     <ng-container *ngSwitchCase="'machine'">
-        machine <a routerLink="/machines/{{ attrs.id }}"> [{{ attrs.id }}] {{ attrs.address }} </a>
+        machine <a id="machine-link" routerLink="/machines/{{ attrs.id }}"> [{{ attrs.id }}] {{ attrs.address }} </a>
     </ng-container>
 
     <!-- subnet -->
@@ -25,7 +27,10 @@
 
     <!-- user -->
     <ng-container *ngSwitchCase="'user'">
-        user <a routerLink="/users/{{ attrs.id }}"> [{{ attrs.id }}] {{ attrs.login ? attrs.login : attrs.email }} </a>
+        user
+        <a id="user-link" routerLink="/users/{{ attrs.id }}">
+            [{{ attrs.id }}] {{ attrs.login ? attrs.login : attrs.email }}
+        </a>
     </ng-container>
 
     <!-- unsupported -->
