@@ -25,21 +25,30 @@ export function datetimeToLocal(d) {
     }
 }
 
-export function durationToString(duration) {
+/**
+ * Return formatted time duration.
+ *
+ * @param duration input duration.
+ * @param short boolean flag indicating if the duration should be output
+ *              using short (if true) or long format (if false).
+ * @returns Duration in the format of "D days H hours M minutes S seconds"
+ *          or "D d H h M min S sec".
+ */
+export function durationToString(duration, short = false) {
     if (duration > 0) {
         const d = moment.duration(duration, 'seconds')
         let txt = ''
         if (d.days() > 0) {
-            txt += ' ' + d.days() + ' days'
+            txt += ' ' + d.days() + (short ? ' d' : ' days')
         }
         if (d.hours() > 0) {
-            txt += ' ' + d.hours() + ' hours'
+            txt += ' ' + d.hours() + (short ? ' h' : ' hours')
         }
         if (d.minutes() > 0) {
-            txt += ' ' + d.minutes() + ' minutes'
+            txt += ' ' + d.minutes() + (short ? ' min' : ' minutes')
         }
         if (d.seconds() > 0) {
-            txt += ' ' + d.seconds() + ' seconds'
+            txt += ' ' + d.seconds() + (short ? ' s' : ' seconds')
         }
 
         return txt.trim()
