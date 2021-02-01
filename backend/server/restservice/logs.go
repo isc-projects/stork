@@ -71,6 +71,7 @@ func (r *RestAPI) GetLogTail(ctx context.Context, params services.GetLogTailPara
 			Hostname: dbLogTarget.Daemon.App.Machine.State.Hostname,
 		},
 		AppID:           dbLogTarget.Daemon.App.ID,
+		AppName:         dbLogTarget.Daemon.App.Name,
 		AppType:         dbLogTarget.Daemon.App.Type,
 		LogTargetOutput: dbLogTarget.Output,
 		Contents:        contents,

@@ -369,6 +369,7 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	app := models.App{
 		ID:      dbApp.ID,
+		Name:    dbApp.Name,
 		Type:    dbApp.Type,
 		Version: dbApp.Meta.Version,
 		Machine: &models.AppMachine{
@@ -940,6 +941,7 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 				Machine:          dbApp.Machine.State.Hostname,
 				AppVersion:       dbApp.Meta.Version,
 				AppID:            dbApp.ID,
+				AppName:          dbApp.Name,
 				Name:             dbDaemon.Name,
 				Active:           dbDaemon.Active,
 				Monitored:        dbDaemon.Monitored,

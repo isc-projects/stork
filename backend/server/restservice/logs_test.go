@@ -33,6 +33,7 @@ func TestGetLogTail(t *testing.T) {
 		ID:        0,
 		MachineID: m.ID,
 		Type:      dbmodel.AppTypeKea,
+		Name:      "test-app",
 		Active:    true,
 		Daemons: []*dbmodel.Daemon{
 			{
@@ -74,6 +75,7 @@ func TestGetLogTail(t *testing.T) {
 	require.EqualValues(t, m.ID, okRsp.Machine.ID)
 	require.EqualValues(t, a.ID, okRsp.AppID)
 	require.Equal(t, a.Type, okRsp.AppType)
+	require.Equal(t, a.Name, okRsp.AppName)
 	require.Equal(t, "/tmp/filename.log", okRsp.LogTargetOutput)
 	require.Len(t, okRsp.Contents, 1)
 	require.Equal(t, "lorem ipsum", okRsp.Contents[0])

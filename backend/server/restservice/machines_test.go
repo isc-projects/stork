@@ -318,6 +318,20 @@ func TestGetMachines(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	machine1 := &dbmodel.Machine{
+		Address:   "machine1.example.org",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine1)
+	require.NoError(t, err)
+
+	machine2 := &dbmodel.Machine{
+		Address:   "machine2.example.org",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, machine2)
+	require.NoError(t, err)
+
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
@@ -333,8 +347,7 @@ func TestGetMachines(t *testing.T) {
 
 	rsp := rapi.GetMachines(ctx, params)
 	ms := rsp.(*services.GetMachinesOK).Payload
-	require.EqualValues(t, ms.Total, 0)
-	// require.Greater(t, ms.Items, )
+	require.EqualValues(t, ms.Total, 2)
 }
 
 func TestGetMachine(t *testing.T) {
@@ -655,6 +668,7 @@ func TestRestGetApp(t *testing.T) {
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
+		Name:         "fancy-app",
 		AccessPoints: keaPoints,
 		Daemons:      []*dbmodel.Daemon{},
 	}
@@ -669,6 +683,7 @@ func TestRestGetApp(t *testing.T) {
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp := rsp.(*services.GetAppOK)
 	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
+	require.Equal(t, keaApp.Name, okRsp.Payload.Name)
 
 	// add BIND 9 app to machine
 	var bind9Points []*dbmodel.AccessPoint
@@ -678,6 +693,7 @@ func TestRestGetApp(t *testing.T) {
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeBind9,
 		Active:       true,
+		Name:         "another-fancy-app",
 		AccessPoints: bind9Points,
 		Daemons: []*dbmodel.Daemon{
 			{
@@ -696,6 +712,7 @@ func TestRestGetApp(t *testing.T) {
 	require.IsType(t, &services.GetAppOK{}, rsp)
 	okRsp = rsp.(*services.GetAppOK)
 	require.Equal(t, bind9App.ID, okRsp.Payload.ID)
+	require.Equal(t, bind9App.Name, okRsp.Payload.Name)
 }
 
 func TestRestGetApps(t *testing.T) {
@@ -732,6 +749,7 @@ func TestRestGetApps(t *testing.T) {
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
+		Name:         "fancy-app",
 		AccessPoints: keaPoints,
 		Daemons: []*dbmodel.Daemon{
 			{
@@ -758,6 +776,7 @@ func TestRestGetApps(t *testing.T) {
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeBind9,
 		Active:       true,
+		Name:         "another-fancy-app",
 		AccessPoints: bind9Points,
 		Daemons: []*dbmodel.Daemon{
 			{
@@ -780,6 +799,7 @@ func TestRestGetApps(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 2)
 	for _, app := range okRsp.Payload.Items {
 		if app.Type == dbmodel.AppTypeKea {
+			require.Equal(t, "fancy-app", app.Name)
 			appKea := app.Details.AppKea
 			require.Len(t, appKea.Daemons, 1)
 			daemon := appKea.Daemons[0]
@@ -791,6 +811,7 @@ func TestRestGetApps(t *testing.T) {
 			require.Equal(t, "debug", daemon.LogTargets[0].Severity)
 			require.Equal(t, "/tmp/log", daemon.LogTargets[0].Output)
 		} else if app.Type == dbmodel.AppTypeBind9 {
+			require.Equal(t, "another-fancy-app", app.Name)
 			appBind9 := app.Details.AppBind9
 			daemon := appBind9.Daemon
 			require.EqualValues(t, 1, daemon.AgentCommErrors)
@@ -1192,6 +1213,7 @@ func TestGetDhcpOverview(t *testing.T) {
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
+		Name:         "test-app",
 		Active:       true,
 		AccessPoints: keaPoints,
 		Daemons: []*dbmodel.Daemon{
@@ -1217,6 +1239,7 @@ func TestGetDhcpOverview(t *testing.T) {
 
 	// only dhcp4 is present
 	require.EqualValues(t, "dhcp4", okRsp.Payload.DhcpDaemons[0].Name)
+	require.EqualValues(t, "test-app", okRsp.Payload.DhcpDaemons[0].AppName)
 	require.EqualValues(t, 1, okRsp.Payload.DhcpDaemons[0].AgentCommErrors)
 	require.EqualValues(t, 2, okRsp.Payload.DhcpDaemons[0].CaCommErrors)
 	require.EqualValues(t, 5, okRsp.Payload.DhcpDaemons[0].DaemonCommErrors)

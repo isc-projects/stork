@@ -48,6 +48,7 @@ func TestGetSubnets(t *testing.T) {
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
+		Name:         "test-app4",
 		Active:       true,
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
@@ -100,6 +101,7 @@ func TestGetSubnets(t *testing.T) {
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
+		Name:         "test-app6",
 		Active:       true,
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
@@ -137,6 +139,7 @@ func TestGetSubnets(t *testing.T) {
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
+		Name:         "test-app46",
 		Active:       true,
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
@@ -248,6 +251,7 @@ func TestGetSubnets(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
+	require.Equal(t, a4.Name, okRsp.Payload.Items[0].LocalSubnets[0].AppName)
 	require.EqualValues(t, 1, okRsp.Payload.Items[0].ID)
 
 	// get subnets from app a46
@@ -367,6 +371,7 @@ func TestGetSharedNetworks(t *testing.T) {
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
+		Name:         "test-app4",
 		Active:       true,
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
@@ -434,6 +439,7 @@ func TestGetSharedNetworks(t *testing.T) {
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
+		Name:         "test-app6",
 		Active:       true,
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
@@ -506,6 +512,8 @@ func TestGetSharedNetworks(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[0].Subnets[0].LocalSubnets[0].AppID)
+	require.Equal(t, a4.Name, okRsp.Payload.Items[0].Subnets[0].LocalSubnets[0].AppName)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].AppID)
+	require.Equal(t, a4.Name, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].AppName)
 	require.ElementsMatch(t, []string{"mouse", "frog"}, []string{okRsp.Payload.Items[0].Name, okRsp.Payload.Items[1].Name})
 }

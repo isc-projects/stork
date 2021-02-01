@@ -17,6 +17,7 @@
       - logTargetOutput
       - appId
       - appType
+      - appName
       - contents
     properties:
       logTargetOutput:
@@ -28,6 +29,9 @@
         readOnly: true
         type: integer
       appType:
+        readOnly: true
+        type: string
+      appName:
         readOnly: true
         type: string
       contents:
@@ -139,6 +143,8 @@
       id:
         type: integer
         readOnly: true
+      name:
+        type: string
       type:
         type: string
       accessPoints:

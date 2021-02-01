@@ -71,6 +71,8 @@
         type: integer
       appId:
         type: integer
+      appName:
+        type: string
       machineAddress:
         type: string
       machineHostname:
@@ -175,6 +177,8 @@
         type: string
       appId:
         type: integer
+      appName:
+        type: string
       appVersion:
         type: string
       name:
