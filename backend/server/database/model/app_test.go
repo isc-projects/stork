@@ -960,6 +960,7 @@ func TestGetAppsByPage(t *testing.T) {
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeKea,
+		Name:         "unique-kea",
 		Active:       true,
 		AccessPoints: keaPoints,
 		Meta: AppMeta{
@@ -985,6 +986,7 @@ func TestGetAppsByPage(t *testing.T) {
 		ID:           0,
 		MachineID:    m.ID,
 		Type:         AppTypeBind9,
+		Name:         "unique-bind9",
 		Active:       true,
 		AccessPoints: bind9Points,
 		Meta: AppMeta{
@@ -1080,6 +1082,31 @@ func TestGetAppsByPage(t *testing.T) {
 	// get apps by filter text, case 2
 	text = "1.2.4"
 	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAny)
+	require.NoError(t, err)
+	require.Len(t, apps, 1)
+	require.EqualValues(t, 1, total)
+	require.Equal(t, AppTypeBind9, apps[0].Type)
+
+	// get apps by filter text, case 3
+	text = "unique"
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
+	require.NoError(t, err)
+	require.Len(t, apps, 2)
+	require.EqualValues(t, 2, total)
+	require.Equal(t, AppTypeKea, apps[0].Type)
+	require.Equal(t, AppTypeBind9, apps[1].Type)
+
+	// get apps by filter text, case 4
+	text = "unique-k"
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
+	require.NoError(t, err)
+	require.Len(t, apps, 1)
+	require.EqualValues(t, 1, total)
+	require.Equal(t, AppTypeKea, apps[0].Type)
+
+	// get apps by filter text, case 5
+	text = "unique-b"
+	apps, total, err = GetAppsByPage(db, 0, 10, &text, "", "", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 	require.EqualValues(t, 1, total)
