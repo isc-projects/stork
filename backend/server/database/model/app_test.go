@@ -665,6 +665,12 @@ func TestEditAppName(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, app2)
 	require.Equal(t, fmt.Sprintf("kea@machine-floor2/%d", app2.ID), app2.Name)
+
+	// When using double at character, the machine name check should not be
+	// triggered.
+	app1.Name = "kea@@machine-floor3"
+	_, _, err = UpdateApp(db, app1)
+	require.NoError(t, err)
 }
 
 // Test that the app name is auto generated when empty name was specified during

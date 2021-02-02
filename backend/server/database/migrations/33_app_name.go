@@ -74,7 +74,7 @@ func init() {
 
             -- Trigger function verifying that an app name is valid. If the app name has the following
             -- pattern [text]@[machine-address][/id], it checks that the machine with the given name
-            -- exists.
+            -- exists. The special format [text]@@[machine-address] can be used to avoid such check.
             CREATE OR REPLACE FUNCTION validate_app_name()
                 RETURNS trigger
                 LANGUAGE 'plpgsql'
@@ -83,7 +83,7 @@ func init() {
                 machine_name TEXT;
             BEGIN
                 machine_name = SUBSTRING(NEW.name, CONCAT('@', '([^/]+)'));
-                IF machine_name IS NOT NULL THEN
+                IF machine_name IS NOT NULL AND STRPOS(machine_name, '@') = 0 THEN
                     IF ((SELECT COUNT(*) FROM machine WHERE address = machine_name) = 0) THEN
                          RAISE EXCEPTION 'machine % does not exist', machine_name;
                     END IF;
