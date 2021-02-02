@@ -35,7 +35,7 @@ describe('EntityLinkComponent', () => {
 
     it('should construct app link', () => {
         component.entity = 'app'
-        component.attrs = { type: 'kea', id: 1, label: 'test-app' }
+        component.attrs = { type: 'kea', id: 1, name: 'test-app' }
         fixture.detectChanges()
         const link = fixture.debugElement.query(By.css('#app-link'))
         expect(link.attributes.href).toEqual('/apps/kea/1')
