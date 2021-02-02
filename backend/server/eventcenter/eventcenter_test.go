@@ -10,10 +10,11 @@ import (
 )
 
 // Check creating event.
-func TestCreatEvent(t *testing.T) {
+func TestCreateEvent(t *testing.T) {
 	app := &dbmodel.App{
 		ID:   123,
 		Type: dbmodel.AppTypeKea,
+		Name: "dhcp-server",
 		Meta: dbmodel.AppMeta{
 			Version: "1.2.3",
 		},
@@ -39,7 +40,7 @@ func TestCreatEvent(t *testing.T) {
 
 	// warning event with ref to app
 	ev := CreateEvent(dbmodel.EvWarning, "some text {app} and {user}", app, user)
-	require.EqualValues(t, ev.Text, "some text <app id=\"123\" type=\"kea\" version=\"1.2.3\"> and <user id=\"567\" login=\"login\" email=\"email\">")
+	require.EqualValues(t, ev.Text, "some text <app id=\"123\" name=\"dhcp-server\" type=\"kea\" version=\"1.2.3\"> and <user id=\"567\" login=\"login\" email=\"email\">")
 	require.EqualValues(t, dbmodel.EvWarning, ev.Level)
 	require.NotNil(t, ev.Relations)
 	require.EqualValues(t, 123, ev.Relations.AppID)

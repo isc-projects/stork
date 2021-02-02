@@ -160,8 +160,8 @@ func daemonTag(daemon *dbmodel.Daemon) string {
 
 // Prepare a tag describing an app.
 func appTag(app *dbmodel.App) string {
-	tag := fmt.Sprintf("<app id=\"%d\" type=\"%s\" version=\"%s\">",
-		app.ID, app.Type, app.Meta.Version)
+	tag := fmt.Sprintf("<app id=\"%d\" name=\"%s\" type=\"%s\" version=\"%s\">",
+		app.ID, app.Name, app.Type, app.Meta.Version)
 	return tag
 }
 
