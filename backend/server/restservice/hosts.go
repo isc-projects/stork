@@ -61,9 +61,9 @@ func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, filterTe
 		// apps.
 		for _, dbLocalHost := range dbHost.LocalHosts {
 			localHost := models.LocalHost{
-				AppID:          dbLocalHost.AppID,
-				MachineAddress: dbLocalHost.App.Machine.Address,
-				DataSource:     dbLocalHost.DataSource,
+				AppID:      dbLocalHost.AppID,
+				AppName:    dbLocalHost.App.Name,
+				DataSource: dbLocalHost.DataSource,
 			}
 			host.LocalHosts = append(host.LocalHosts, &localHost)
 		}

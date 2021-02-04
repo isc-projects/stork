@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/go-pg/pg/v9"
@@ -34,6 +35,7 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 			ID:           0,
 			MachineID:    m.ID,
 			Type:         dbmodel.AppTypeKea,
+			Name:         fmt.Sprintf("dhcp-server%d", i),
 			Active:       true,
 			AccessPoints: accessPoints,
 		}
@@ -247,11 +249,11 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	require.NotNil(t, items[0].LocalHosts[0])
 	require.EqualValues(t, apps[0].ID, items[0].LocalHosts[0].AppID)
 	require.Equal(t, "config", items[0].LocalHosts[0].DataSource)
-	require.Equal(t, "cool.example.org", items[0].LocalHosts[0].MachineAddress)
+	require.Equal(t, "dhcp-server0", items[0].LocalHosts[0].AppName)
 	require.NotNil(t, items[0].LocalHosts[1])
 	require.EqualValues(t, apps[1].ID, items[0].LocalHosts[1].AppID)
 	require.Equal(t, "config", items[0].LocalHosts[1].DataSource)
-	require.Equal(t, "cool.example.org", items[0].LocalHosts[1].MachineAddress)
+	require.Equal(t, "dhcp-server1", items[0].LocalHosts[1].AppName)
 }
 
 // Test that hosts can be filtered by subnet ID.

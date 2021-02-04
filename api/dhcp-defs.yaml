@@ -19,7 +19,7 @@
     properties:
       appId:
         type: integer
-      machineAddress:
+      appName:
         type: string
       dataSource:
         type: string
