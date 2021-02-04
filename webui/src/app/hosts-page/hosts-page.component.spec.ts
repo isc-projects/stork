@@ -6,6 +6,7 @@ import { TableModule } from 'primeng/table'
 import { DHCPService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
+import { By } from '@angular/platform-browser'
 import { of } from 'rxjs'
 
 class MockParamMap {
@@ -48,5 +49,24 @@ describe('HostsPageComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
+    })
+
+    it('host table should have valid app name and app link', () => {
+        component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
+        fixture.detectChanges()
+        // Table rows have ids created by appanding host id to the host-row- string.
+        const row = fixture.debugElement.query(By.css('#host-row-1'))
+        // There should be 6 table cells in the row.
+        expect(row.children.length).toBe(6)
+        // The last one includes the app name.
+        const appNameTd = row.children[5]
+        // The cell includes a link to the app.
+        expect(appNameTd.children.length).toBe(1)
+        const appLink = appNameTd.children[0]
+        expect(appLink.nativeElement.innerText).toBe('frog config')
+        console.info(appLink.nativeElement)
+        // Verify that the link to the app is correct.
+        expect(appLink.properties.hasOwnProperty('routerLink')).toBeTrue()
+        expect(appLink.properties.routerLink).toBe('/apps/kea/1')
     })
 })

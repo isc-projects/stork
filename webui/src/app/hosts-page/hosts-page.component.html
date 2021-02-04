@@ -71,6 +71,7 @@
     </div>
     <div style="margin: 0 0 10px, 5x">
         <p-table
+            id="hosts-table"
             #hostsTable
             [value]="hosts"
             [paginator]="true"
@@ -89,11 +90,11 @@
                     <th style="width: 14%">IPv6 Prefixes</th>
                     <th style="width: 14%">Hostname</th>
                     <th style="width: 12%">Global/Subnet</th>
-                    <th style="width: 14%">AppID @ Machine</th>
+                    <th style="width: 14%">App Name</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-h>
-                <tr class="alternate-list">
+                <tr id="host-row-{{ h.id }}" class="alternate-list">
                     <td>
                         <div
                             *ngFor="let i of h.hostIdentifiers"
@@ -144,7 +145,7 @@
                     </td>
                     <td>
                         <a *ngFor="let lh of h.localHosts" routerLink="/apps/kea/{{ lh.appId }}" style="display: block"
-                            >{{ lh.appId }} @ {{ lh.machineAddress }}
+                            >{{ lh.appName }}
                             <sup pTooltip="{{ hostDataSourceTooltip(lh.dataSource) }}">
                                 <span *ngIf="lh.dataSource === 'config'" id="cfg_srctag">config </span>
                                 <span *ngIf="lh.dataSource === 'api'" id="hostcmds_srctag">host_cmds </span>
