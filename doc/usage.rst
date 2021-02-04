@@ -295,13 +295,6 @@ usage. There are two thresholds: 80% (warning; the pool utilization
 bar becomes orange) and 90% (critical; the pool utilization bar
 becomes red).
 
-.. note::
-
-   As of Stork 0.5.0, if two or more servers are handling the same
-   subnet (e.g. a HA pair), the same subnet is listed multiple
-   times. This limitation will be addressed in future releases.
-
-
 IPv4 and IPv6 Networks
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -357,15 +350,15 @@ IP addresses and prefixes belong. If the reservation is global, i.e. is valid
 for all configured subnets of the given server, the word "global" is shown
 instead of the subnet prefix.
 
-Finally, the ``AppID @ Machine`` column includes one or more links to
+Finally, the ``App Name`` column includes one or more links to
 Kea applications configured to assign each reservation to the
 client. The number of applications will typically be greater than one
 when Kea servers operate in the High Availability setup. In this case,
 each of the HA peers uses the same configuration and may allocate IP
 addresses and delegated prefixes to the same set of clients, including
 static assignments via host reservations. If HA peers are configured
-correctly, the reservations they share will have two links in ``AppID
-@ Machine`` column. Next to each link there is a little label indicating
+correctly, the reservations they share will have two links in the
+``App Name`` column. Next to each link there is a little label indicating
 whether the host reservation for the given server has been specified
 in its configuration file or a host database (via host_cmds premium
 hooks library).
@@ -400,9 +393,8 @@ up to 60 seconds after it was applied. This interval is currently not configurab
 
 .. note::
 
-   As of the Stork 0.7.0 release, the list of host reservations must be manually
-   refreshed by reloading the browser page to observe the most recent updates
-   fetched from the Kea servers.
+   The list of host reservations must be manually refreshed by reloading the
+   browser page to observe the most recent updates fetched from the Kea servers.
 
 Kea High Availability Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
