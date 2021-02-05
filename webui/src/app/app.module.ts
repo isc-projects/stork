@@ -76,6 +76,7 @@ import { LogViewPageComponent } from './log-view-page/log-view-page.component'
 import { AppDaemonsStatusComponent } from './app-daemons-status/app-daemons-status.component'
 import { BreadcrumbsComponent } from './breadcrumbs/breadcrumbs.component'
 import { EventsPageComponent } from './events-page/events-page.component'
+import { RenameAppDialogComponent } from './rename-app-dialog/rename-app-dialog.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -118,6 +119,7 @@ export function cfgFactory() {
         AppDaemonsStatusComponent,
         BreadcrumbsComponent,
         EventsPageComponent,
+        RenameAppDialogComponent,
     ],
     imports: [
         BrowserModule,

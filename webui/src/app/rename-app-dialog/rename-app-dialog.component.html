@@ -1,0 +1,36 @@
+<p-dialog header="Rename App" [(visible)]="visible" [style]="{ width: '30vw' }">
+    <p style="padding-bottom: 1em">
+        Assign a friendly name to the app. The name may include whitespace and does not have to use the default
+        [app-type]@[machine-address] notation. However, when using this notation, the [machine-address] must be an
+        address or FQDN of a machine monitored in Stork. Otherwise, an error will be returned. To suppress the error,
+        use a special notation with double @ character, e.g., dhcp@@machineX. In that case, the machineX does not have
+        to exist in the system.
+    </p>
+    <div class="p-field">
+        <label for="app-name-input">App Name</label>
+        <input
+            id="app-name-input"
+            type="text"
+            aria-describedby="app-name-input-help"
+            class="{{ invalid ? 'ng-invalid' : 'ng-valid' }}"
+            style="width: 100%"
+            pInputText
+            [(ngModel)]="appName"
+            (keyup)="handleKeyUp($event)"
+        />
+        <p id="app-name-input-help" style="color: #a00000" *ngIf="invalid">{{ errorText }}</p>
+    </div>
+    <p-footer>
+        <button type="button" pButton icon="pi pi-times" label="Cancel" (click)="cancel()"></button>
+        <button
+            id="rename-button"
+            type="button"
+            pButton
+            icon="pi pi-check"
+            label="Rename"
+            class="ui-button-warning"
+            [disabled]="invalid"
+            (click)="save()"
+        ></button>
+    </p-footer>
+</p-dialog>
