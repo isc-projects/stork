@@ -1,4 +1,11 @@
-* 123 [bug] godfryd
+* 124 [func] godfryd
+
+    The first part of secured agent-server channel implementation.
+    Added generating root CA and server keys and certs,
+    and generation of server token during server startup.
+    (Gitlab #479)
+
+* 123 [bug] marcin
 
     Corrected an issue with refreshing the events list on the page
     displaying the machine information. Previously, when switched

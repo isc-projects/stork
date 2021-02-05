@@ -17,7 +17,6 @@ linters:
     - errorlint
     - exhaustive
     - exportloopref
-    - gci
     - gochecknoglobals
     - gochecknoinits
     - gocognit
@@ -62,12 +61,13 @@ linters:
     - gomnd            # This may be useful but in many cases creating artificial constants, e.g. in tests is counter productive.
     - paralleltest     # This enforces t.Parallel() usage but some of our tests seem to work incorrectly. Need to fix it first.
     - nlreturn         # This seems to be overkill and sometimes new lines before continue or break is useless.
+    - gci              # More less the same as goimports but it breaks imports grouping so it is not nice.
 
 linters-settings:
   gocognit:
     min-complexity: 50
   nestif:
-    min-complexity: 10
+    min-complexity: 13
   exhaustive:
     # Treats switch statements with default case as taking into account all possible cases.
     # Without this setting the switch statements must enumerate all possible cases.

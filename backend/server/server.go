@@ -7,11 +7,13 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
+
 	"isc.org/stork"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
 	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"
+	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
@@ -96,6 +98,13 @@ func NewStorkServer() (ss *StorkServer, err error) {
 
 	// initialize stork settings
 	err = dbmodel.InitializeSettings(ss.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	// prepare certificates for establish secure connections
+	// between server and agents
+	_, _, _, err = certs.SetupServerCerts(ss.DB) // nolint:dogsled // TODO: returned certs will be used in the future
 	if err != nil {
 		return nil, err
 	}

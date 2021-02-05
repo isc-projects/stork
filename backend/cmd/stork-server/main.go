@@ -1,17 +1,23 @@
 package main
 
 import (
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
+
 	"isc.org/stork"
 	"isc.org/stork/server"
 	storkutil "isc.org/stork/util"
 )
 
 func main() {
+	// Initialize random numbers generator.
+	rand.Seed(time.Now().UnixNano())
+
 	// Setup logging
 	storkutil.SetupLogging()
 
