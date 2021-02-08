@@ -483,6 +483,10 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
                        # However, due to how it's executed (calling external binary), it's not detected
                        # by coverage.
                        'ParseArgs', 'NewStorkServer']
+        if ENV['short'] == 'true'
+          ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts'])
+        end
+
         if cov < 35 and not ignore_list.include? func
           puts "FAIL: %-80s %5s%% < 35%%" % ["#{file} #{func}", "#{cov}"]
           problem = true
