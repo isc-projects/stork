@@ -44,7 +44,8 @@ func TestGenCAKeyCert(t *testing.T) {
 	require.EqualValues(t, rootCert.Raw, rootCert2.Raw)
 }
 
-// Check if GenKeyCert works.
+// Test if GenKeyCert checks arguments passed to it and if returned
+// key and cert looks reasonably.
 func TestGenKeyCert(t *testing.T) {
 	// prepare arguments
 	name := "name"
@@ -102,7 +103,8 @@ func TestGenKeyCert(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Check if GenCSRUsingKey works.
+// Test if GenCSRUsingKey checks arguments passed to it and if
+// returned CSR looks reasonably.
 func TestGenCSRUsingKey(t *testing.T) {
 	// prepare arguments
 	name := "name"
@@ -137,7 +139,8 @@ func TestGenCSRUsingKey(t *testing.T) {
 	require.True(t, ipAddresses[0].Equal(csr.IPAddresses[0]))
 }
 
-// Check if GenKeyAndCSR works.
+// Test if GenKeyAndCSR checks arguments passed to it and if returned
+// key and CSR looks reasonably.
 func TestGenKeyAndCSR(t *testing.T) {
 	// prepare arguments
 	name := "name"
@@ -172,7 +175,8 @@ func TestGenKeyAndCSR(t *testing.T) {
 	require.NotNil(t, privKey)
 }
 
-// Check if ParseCert works.
+// Test if ParseCert checks arguments passed to it and if returned
+// cert looks reasonably.
 func TestParseCert(t *testing.T) {
 	var certPEM []byte
 
@@ -223,7 +227,8 @@ RXkm1+W4cMzZS14MLfmacBHnI7Z4mRKvc+zEdco/l4omlszafmUXxnCOmqZlhqbm
 	require.EqualValues(t, "ISC Stork", cert.Subject.Organization[0])
 }
 
-// Check if SignCert works.
+// Test if SignCert checks arguments passed to it and if returned
+// signed cert looks reasonably.
 func TestSignCert(t *testing.T) {
 	// prepare arguments
 	serialNumber := int64(2)

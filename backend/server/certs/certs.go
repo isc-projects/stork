@@ -158,7 +158,10 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 	return serverKeyPEM, serverCertPEM, nil
 }
 
-// Prepare root CA and server keys and certs, and server token.
+// Check if there are root CA and server keys and certs, and server
+// token in the database.  If they are missing then create them and
+// store in the database. In the end return root CA cert, server key
+// and cert, all in PEM format.
 func SetupServerCerts(db *pg.DB) ([]byte, []byte, []byte, error) {
 	log.Printf("preparing certs, it may take up to several minutes")
 
