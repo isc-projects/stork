@@ -25,6 +25,10 @@ func TestGenerateServerToken(t *testing.T) {
 
 // Check if SetupServerCerts works.
 func TestSetupServerCerts(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 

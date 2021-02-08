@@ -16,24 +16,40 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Convert binary data to PEM format using provided block type.
+const (
+	CertValidityYears = 30
+	CertCountry       = "US"
+	CertOrganization  = "ISC Stork"
+)
+
+// Convert binary data to PEM format using provided block type.  This
+// function is local and is called by genECDSAKey, createCert and
+// GenCSRUsingKey.  They use it to convert binary form of different
+// crypto entities like keys or certs to PEM format that is easy to
+// transport or store.
 func toPEM(blockType string, bytes []byte) []byte {
 	b := pem.Block{Type: blockType, Bytes: bytes}
 	certPEM := pem.EncodeToMemory(&b)
 	return certPEM
 }
 
-// Generate an ECDSA key and convert it to PEM format.
+// Generate an ECDSA key and convert it to PEM format. This function
+// is local and is called by GenCAKeyCert, GenKeyCert, GenKeyAndCSR.
+// They use it to generate ECDSA key in *ecdsa.PrivateKey and PEM
+// formats.
 func genECDSAKey() (*ecdsa.PrivateKey, []byte, error) {
+	// Generate ECDSA key using P256 curve. ECDSA is used because
+	// it is modern and much faster than RSA keys. P256 is used
+	// because it is the most popular currently.
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		log.Fatalf("cannot generate RSA key: %v", err)
+		log.Fatalf("cannot generate ECDSA key: %v", err)
 		return nil, nil, err
 	}
 
 	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
 	if err != nil {
-		log.Fatalf("Unable to marshal private key: %v", err)
+		log.Fatalf("unable to marshal private key: %v", err)
 		return nil, nil, err
 	}
 
@@ -42,12 +58,18 @@ func genECDSAKey() (*ecdsa.PrivateKey, []byte, error) {
 	return priv, pem, nil
 }
 
-// Create a certificate based on a template using a parent cert, a public key of signee
-// and a private parent key. Convert it to PEM format.
+// Create a certificate based on a template using a parent cert, a
+// public key of signee and a private parent key. Convert it to PEM
+// format. This can be used generate server traffic certificate
+// (typically done once during the first startup) and agent certs
+// (typically done once for each agent, during its registration).
+// This function is local and is called by GenCAKeyCert, GenKeyCert
+// and SignCert. They are using them to generate a certificate in
+// *x509.Certificate and PEM formats.
 func createCert(templateCert, parentCert *x509.Certificate, publicKey *ecdsa.PublicKey, parentPrvKey *ecdsa.PrivateKey) (*x509.Certificate, []byte, error) {
 	certBytes, err := x509.CreateCertificate(rand.Reader, templateCert, parentCert, publicKey, parentPrvKey)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to parse certificate")
+		return nil, nil, errors.Wrapf(err, "failed to create certificate")
 	}
 
 	cert, err := x509.ParseCertificate(certBytes)
@@ -60,17 +82,24 @@ func createCert(templateCert, parentCert *x509.Certificate, publicKey *ecdsa.Pub
 	return cert, certPEM, nil
 }
 
-// Generate a root CA key and a CA certifacte. Return them in PEM format.
-func GenCACert(serialNumber int64) (*ecdsa.PrivateKey, []byte, *x509.Certificate, []byte, error) {
+// Generate a root CA key and a CA certifacte. serialNumber is a
+// unique number per generated certificate. The function returns
+// generated private key as a pointer to ecdsa.Private and as slice of
+// bytes in PEM format. Generated certificate is returned as a pointer
+// to x509.Certificate and as a slice of bytes in PEM format. It also
+// returns an eror in case anything goes wrong. This function is
+// public and is used in server by certs module by setupRootKeyAndCert
+// to prepare CA key and cert.
+func GenCAKeyCert(serialNumber int64) (*ecdsa.PrivateKey, []byte, *x509.Certificate, []byte, error) {
 	rootTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(serialNumber),
 		Subject: pkix.Name{
-			Country:      []string{"US"},
-			Organization: []string{"ISC Stork"},
+			Country:      []string{CertCountry},
+			Organization: []string{CertOrganization},
 			CommonName:   "Root CA",
 		},
 		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(30, 0, 0), // 30 years of cert validity
+		NotAfter:              time.Now().AddDate(CertValidityYears, 0, 0), // 30 years of cert validity
 		BasicConstraintsValid: true,
 		IsCA:                  true,
 		MaxPathLen:            1,
@@ -87,8 +116,11 @@ func GenCACert(serialNumber int64) (*ecdsa.PrivateKey, []byte, *x509.Certificate
 	return privKey, privKeyPEM, rootCert, rootPEM, nil
 }
 
-// Generate a key and a cerficate for provided DNS names and IP addresses, using provided serial number and a CA key and a CA cert.
-// Return them in PEM format.
+// Generate a key and a cerficate for provided DNS names and IP
+// addresses, using provided serial number and a CA key and a CA cert.
+// Return them in PEM format. This function is public and is used in
+// server by certs module in setupServerKeyAndCert to generate server
+// key and cert using CA key and cert.
 func GenKeyCert(name string, dnsNames []string, ipAddresses []net.IP, serialNumber int64, parentCert *x509.Certificate, parentKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
 	// check args
 	if len(dnsNames) == 0 {
@@ -111,13 +143,13 @@ func GenKeyCert(name string, dnsNames []string, ipAddresses []net.IP, serialNumb
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(serialNumber),
 		Subject: pkix.Name{
-			Country:            []string{"US"},
-			Organization:       []string{"ISC Stork"},
+			Country:            []string{CertCountry},
+			Organization:       []string{CertOrganization},
 			OrganizationalUnit: []string{name},
 			CommonName:         dnsNames[0],
 		},
 		NotBefore:      time.Now(),
-		NotAfter:       time.Now().AddDate(30, 0, 0), // 30 years of cert validity
+		NotAfter:       time.Now().AddDate(CertValidityYears, 0, 0), // 30 years of cert validity
 		IsCA:           false,
 		MaxPathLenZero: true,
 		IPAddresses:    ipAddresses,
@@ -132,9 +164,14 @@ func GenKeyCert(name string, dnsNames []string, ipAddresses []net.IP, serialNumb
 	return certPEM, privKeyPEM, nil
 }
 
-// Generate a CSR (Certificate Signing Request) for provided private key, DNS names and IP addresses.
-func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKeyPEM []byte) ([]byte, [32]byte, error) {
-	var fingerprint [32]byte
+// Generate a CSR (Certificate Signing Request) for provided private
+// key, DNS names and IP addresses.  An agent generates CSR with its
+// own parameter that will be sent for the server to sign. This
+// function is public and is used locally by GenKeyAndCSR function and
+// in the future by an agent to generate CSR (using existing agent
+// key) that is sent to server for signing.
+func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKeyPEM []byte) ([]byte, [sha256.Size]byte, error) {
+	var fingerprint [sha256.Size]byte
 
 	if privKeyPEM == nil {
 		return nil, fingerprint, errors.New("private key cannot be empty")
@@ -160,8 +197,8 @@ func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKe
 	// generate a CSR template
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{
-			Country:            []string{"US"},
-			Organization:       []string{"ISC Stork"},
+			Country:            []string{CertCountry},
+			Organization:       []string{CertOrganization},
 			OrganizationalUnit: []string{name},
 			CommonName:         commonName,
 		},
@@ -180,9 +217,17 @@ func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKe
 	return csrPEM, fingerprint, nil
 }
 
-// Generate an ECDSA key and a CSR for it. Return them in PEM format with fingerprint.
-func GenKeyAndCSR(name string, dnsNames []string, ipAddresses []net.IP) ([]byte, []byte, [32]byte, error) {
-	var fingerprint [32]byte
+// Generate an ECDSA key and a CSR for it. Return them in PEM format
+// with a fingerprint. DNS names and IP addresses are assigned to an
+// agent. They are put to CSR and later passed to agent certificate by
+// server. This certificate is used during TLS connection setup to
+// validate if an agent is using defined here names or addresses. It
+// is enough to provide at least one DNS name or one IP address. This
+// function is public and will be used in the future by an agent for
+// generating both agent key and CSR that is sent to server for
+// signing.
+func GenKeyAndCSR(name string, dnsNames []string, ipAddresses []net.IP) ([]byte, []byte, [sha256.Size]byte, error) {
+	var fingerprint [sha256.Size]byte
 
 	// generate a key pair
 	_, privKeyPEM, err := genECDSAKey()
@@ -199,7 +244,9 @@ func GenKeyAndCSR(name string, dnsNames []string, ipAddresses []net.IP) ([]byte,
 	return privKeyPEM, csrPEM, fingerprint, nil
 }
 
-// Parse a certificate in PEM format.
+// Parse a certificate in PEM format. Return it in *x509.Certificate
+// form.  This function is used locally by SignCert and in the future
+// in agent to verify received signed cert.
 func ParseCert(certPEM []byte) (*x509.Certificate, error) {
 	if certPEM == nil {
 		return nil, errors.New("cannot parse empty cert PEM")
@@ -215,10 +262,13 @@ func ParseCert(certPEM []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
-// Sign a cerificate for a given CSR in PEM format using provided serial number, a CA key and a CA cert.
-// It returns PEM of signed CSR, fingerprint of signed CSR, parameters error and inner execution error.
-func SignCert(csrPEM []byte, serialNumber int64, parentCertPEM []byte, parentKeyPEM []byte) ([]byte, [32]byte, error, error) {
-	var fingerprint [32]byte
+// Sign a cerificate for a given CSR in PEM format using provided
+// serial number, a CA key and a CA cert.  It returns PEM of signed
+// CSR, fingerprint of signed CSR, parameters error and inner
+// execution error. This is public function that will be used in the
+// future in server to sign a CSR received from an agent.
+func SignCert(csrPEM []byte, serialNumber int64, parentCertPEM []byte, parentKeyPEM []byte) ([]byte, [sha256.Size]byte, error, error) {
+	var fingerprint [sha256.Size]byte
 	// check args
 	if parentKeyPEM == nil {
 		return nil, fingerprint, errors.New("parent key PEM cannot be empty"), nil
@@ -266,7 +316,7 @@ func SignCert(csrPEM []byte, serialNumber int64, parentCertPEM []byte, parentKey
 		Issuer:       parentCert.Subject,
 		Subject:      csr.Subject,
 		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(30, 0, 0), // 30 years of cert validity
+		NotAfter:     time.Now().AddDate(CertValidityYears, 0, 0), // 30 years of cert validity
 		IPAddresses:  csr.IPAddresses,
 		DNSNames:     csr.DNSNames,
 	}

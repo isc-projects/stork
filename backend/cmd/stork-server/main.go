@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	// Initialize random numbers generator.
+	// Initialize random numbers generator. It is used by pki and certs modules.
 	rand.Seed(time.Now().UnixNano())
 
 	// Setup logging

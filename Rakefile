@@ -426,6 +426,12 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     end
   end
 
+  # exclude long running tests if requested
+  short_param = ''
+  if ENV['short'] == 'true'
+    short_param = '-short'
+  end
+
   # prepare database for unit tests: clear any remainings from previous runs, prepare up-to-date template db
   if ENV['POSTGRES_IN_DOCKER'] != 'yes'
     remove_remaining_databases(pgsql_host, pgsql_port)
@@ -445,7 +451,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
       if ENV['richgo'] == 'false'
         gotool = GO
       end
-      sh "#{gotool} test #{bench_params} -race -v #{cov_params} #{test_regex} #{scope}"  # count=1 disables caching results
+      sh "#{gotool} test #{bench_params} #{short_param} -race -v #{cov_params} #{test_regex} #{scope}"  # count=1 disables caching results
     end
 
     # drop test databases

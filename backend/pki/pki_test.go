@@ -15,12 +15,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Check if GenCACert works.
-func TestGenCACert(t *testing.T) {
+// Check if GetnCACert function works properly, i.e. returns non-empty
+// cert that has its fields set up to reasonable values.
+func TestGenCAKeyCert(t *testing.T) {
 	now := time.Now()
 
 	// generate root key and cert
-	privKey, privKeyPEM, rootCert, rootPEM, err := GenCACert(1)
+	privKey, privKeyPEM, rootCert, rootPEM, err := GenCAKeyCert(1)
 	require.NoError(t, err)
 	require.NotEmpty(t, privKey)
 	require.NotEmpty(t, privKeyPEM)
@@ -33,7 +34,7 @@ func TestGenCACert(t *testing.T) {
 	require.EqualValues(t, *big.NewInt(1), *rootCert.SerialNumber)
 	// check validity dates
 	require.WithinDuration(t, now, rootCert.NotBefore, time.Second*10)
-	require.WithinDuration(t, now.AddDate(30, 0, 0), rootCert.NotAfter, time.Second*10)
+	require.WithinDuration(t, now.AddDate(CertValidityYears, 0, 0), rootCert.NotAfter, time.Second*10)
 	require.True(t, rootCert.IsCA)
 
 	// check cert PEM
@@ -56,13 +57,13 @@ func TestGenKeyCert(t *testing.T) {
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(serialNumber),
 		Subject: pkix.Name{
-			Country:            []string{"US"},
-			Organization:       []string{"ISC Stork"},
+			Country:            []string{CertCountry},
+			Organization:       []string{CertOrganization},
 			OrganizationalUnit: []string{name},
 			CommonName:         "root ca",
 		},
 		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(30, 0, 0), // 30 years of cert validity
+		NotAfter:              time.Now().AddDate(CertValidityYears, 0, 0), // 30 years of cert validity
 		BasicConstraintsValid: true,
 		IsCA:                  true,
 		MaxPathLen:            1,
@@ -144,7 +145,9 @@ func TestGenKeyAndCSR(t *testing.T) {
 	ipAddresses := []net.IP{net.ParseIP("192.0.2.1")}
 
 	// empty DNS names and IP addresses
-	_, _, _, err := GenKeyAndCSR(name, nil, nil) // nolint:dogsled // it does not matter in tests, we just ignore not checked results
+	privKeyPEM, csrPEM, _, err := GenKeyAndCSR(name, nil, nil)
+	require.Nil(t, privKeyPEM)
+	require.Nil(t, csrPEM)
 	require.EqualError(t, err, "DNS names and IP addresses both cannot be empty")
 
 	// it should be ok
@@ -181,6 +184,43 @@ func TestParseCert(t *testing.T) {
 	certPEM = []byte("123")
 	_, err = ParseCert(certPEM)
 	require.EqualError(t, err, "decoding PEM with cert failed")
+
+	// should all be ok
+	certPEM = []byte(`-----BEGIN CERTIFICATE-----
+MIIFFjCCAv6gAwIBAgIBATANBgkqhkiG9w0BAQsFADAzMQswCQYDVQQGEwJVUzES
+MBAGA1UEChMJSVNDIFN0b3JrMRAwDgYDVQQDEwdSb290IENBMB4XDTIwMTIwODA4
+MDc1M1oXDTMwMTIwODA4MDgwM1owMzELMAkGA1UEBhMCVVMxEjAQBgNVBAoTCUlT
+QyBTdG9yazEQMA4GA1UEAxMHUm9vdCBDQTCCAiIwDQYJKoZIhvcNAQEBBQADggIP
+ADCCAgoCggIBALgcYkndHQGFmLk8yi8+yetaCBI1cLG/nm+hwjh5C2rh3lqqDziG
+qRmcITxkEbCFujbxJzlaXop1MeXwg2YJMky3WM1GWomVKv3jOVR+GkQG70pp0qpt
+JmU2CuXoNhwMFA0H22CG8pPRiilUGPI7RLXaLWpA8D+AslfPHR9TG00HbJ86Bi3g
+m4/uPiGdcHS6Q+wmKQRsKs6wAKSmlCrvmaKfmVOkxpuKyuKgjmIKoCwY3gYL1T8L
+idvVePvbP/Z2SRQOVbSV8eMaYuk+uFwGKq8thLHs8bIEKhrIGlzDss6ZlPotTi2V
+I6e6lb06oFuCSfhBaiHPw2sldwYvE/I8MkWUAuWtBgNvVE/e64FgJb1lGIzJpYMj
+5jUp9Z13INsXy9zA8nKyZAK4fI6vlQGRg3bERn+S4Q6HXQor9Ma8QWxsqbdiC9dt
+pxpzyx11tWg0jEgzCEBfk9IZjlGqyCdX5Z9pshHkQZ9VeK+DG0s6tYEm7BO1ssQD
++qbJS2PJq4Cwe82a6gO+lDz8A+xiXk8dJeTb8hf/c1NY192rqSLewI8oaHOLKEQg
+XNSPEEkQqtIqn92Y5oKhLYKmYkwfOgldpj0XQQ3YwUnsOCfy2wRVNRg6VYnbjca8
+rSy58t2MfovKWz9UcKhpnXefSdMgR7VhGv0ekDddGIfONn153uyjN/LpAgMBAAGj
+NTAzMBIGA1UdEwEB/wQIMAYBAf8CAQEwHQYDVR0OBBYEFILkrDPZAlboeF+nav7C
+Rf7nN1W+MA0GCSqGSIb3DQEBCwUAA4ICAQCDfvIgo70Y0Mi+Rs0mF6114z2gGQ7a
+7/VnxV9w9uIjuaARq42E2DemFs5e72tPIfT9UWncgs5ZfyO5w2tjRpUOaVCSS5VY
+93qzXBfTsqgkrkVRwec4qqZxpNqpsL9u2ZIfsSJ3BJWFV3Zq/3cOrDulfR5bk0G4
+hYo/GDyLHjNalBFpetJSIk7l0VOkr2CBUvxKBOP0U1IQGXd+NL/8zW6UB6OitqNL
+/tO+JztOpjo6ZYKJGZvxyL/3FUsiHmd8UwqAjnFjQRd3w0gseyqWDgILXQaDXQ5D
+vs2oK+HheJv4h6CdrcIdWlWRKoZP3odZyWB0l31kpMbgYC/tMPYebG6mjPx+/S4m
+7L+K27zmm2wItUaWI12ky2FPgeW78ALoKDYWmQ+CnpBNE1iFUf4qRzmypu77DmmM
+bLgLFj8Bb50j0/zciPO7+D1h6hCPxwXdfQk0tnWBqjImmK3enbkEsw77kF8MkNjr
+Hka0EeTt0hyEFKGgJ7jVdbjLFnRzre63q1GuQbLkOibyjf9WS/1ljv1Ps82aWeE+
+rh78iXtpm8c/2IqrI37sLbAIs08iPj8ULV57RbcZI7iTYFIjKwPlWL8O2U1mopYP
+RXkm1+W4cMzZS14MLfmacBHnI7Z4mRKvc+zEdco/l4omlszafmUXxnCOmqZlhqbm
+/p0vFt1oteWWSQ==
+-----END CERTIFICATE-----`)
+	cert, err := ParseCert(certPEM)
+	require.NoError(t, err)
+	require.NotNil(t, cert)
+	require.NotEmpty(t, *cert.SerialNumber)
+	require.EqualValues(t, "ISC Stork", cert.Subject.Organization[0])
 }
 
 // Check if SignCert works.
@@ -189,7 +229,7 @@ func TestSignCert(t *testing.T) {
 	serialNumber := int64(2)
 
 	// prepare CA key and cert
-	_, parentKeyPEM, _, parentCertPEM, err := GenCACert(1)
+	_, parentKeyPEM, _, parentCertPEM, err := GenCAKeyCert(1)
 	require.NoError(t, err)
 
 	// prepare CSR

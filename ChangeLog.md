@@ -2,7 +2,7 @@
 
     The first part of secured agent-server channel implementation.
     Added generating root CA and server keys and certs,
-    and generation of server token during server startup.
+    and server token generation during server startup.
     (Gitlab #479)
 
 * 123 [bug] marcin

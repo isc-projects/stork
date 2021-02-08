@@ -16,7 +16,7 @@ const (
 	SecretServerToken = "srvtkn"
 )
 
-// Represents an.
+// Structure holding named secret.
 type Secret struct {
 	Name    string
 	Content string
@@ -31,8 +31,8 @@ func GetNewCertSerialNumber(db *pg.DB) (int64, error) {
 
 // Get named secret from database.
 func GetSecret(db *pg.DB, name string) ([]byte, error) {
-	scrt := Secret{}
-	q := db.Model(&scrt)
+	secret := Secret{}
+	q := db.Model(&secret)
 	q = q.Where("secret.name = ?", name)
 	err := q.Select()
 	if errors.Is(err, pg.ErrNoRows) {
@@ -40,16 +40,16 @@ func GetSecret(db *pg.DB, name string) ([]byte, error) {
 	} else if err != nil {
 		return nil, pkgerrors.Wrapf(err, "problem with getting secret by name: %s", name)
 	}
-	return []byte(scrt.Content), nil
+	return []byte(secret.Content), nil
 }
 
 // Set secret in database under given name.
 func SetSecret(db *pg.DB, name string, content []byte) error {
-	scrt := &Secret{
+	secret := &Secret{
 		Name:    name,
 		Content: string(content),
 	}
-	q := db.Model(scrt)
+	q := db.Model(secret)
 	q = q.OnConflict("(name) DO UPDATE")
 	q = q.Set("content = EXCLUDED.content")
 	_, err := q.Insert()

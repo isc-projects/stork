@@ -14,8 +14,9 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Generate server token and store it in database.
-// It is used during manual agent registration.
+// Generate server token and store it in database.  It is used during
+// manual agent registration.  This function uses random numbers
+// generator so it is expected that it is seeded prior its use.
 func GenerateServerToken(db *pg.DB) ([]byte, error) {
 	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 	serverToken := make([]byte, 32)
@@ -45,13 +46,13 @@ func setupRootKeyAndCert(db *pg.DB) (*ecdsa.PrivateKey, *x509.Certificate, []byt
 	var rootKey *ecdsa.PrivateKey
 	var rootCert *x509.Certificate
 
-	// no root key or no root cert so generate
+	// no root key or no root cert so generate them
 	if rootKeyPEM == nil || rootCertPEM == nil {
 		certSerialNumber, err := dbmodel.GetNewCertSerialNumber(db)
 		if err != nil {
 			return nil, nil, nil, errors.Wrapf(err, "cannot get new cert S/N")
 		}
-		rootKey, rootKeyPEM, rootCert, rootCertPEM, err = pki.GenCACert(certSerialNumber)
+		rootKey, rootKeyPEM, rootCert, rootCertPEM, err = pki.GenCAKeyCert(certSerialNumber)
 		if err != nil {
 			return nil, nil, nil, errors.Wrapf(err, "cannot generate root CA cert")
 		}
@@ -65,6 +66,7 @@ func setupRootKeyAndCert(db *pg.DB) (*ecdsa.PrivateKey, *x509.Certificate, []byt
 		}
 		log.Printf("generated root CA key and cert")
 	} else {
+		// key and cert present in db so just check them
 		rootKeyPEMBlock, _ := pem.Decode(rootKeyPEM)
 		rootKeyIf, err := x509.ParsePKCS8PrivateKey(rootKeyPEMBlock.Bytes)
 		if err != nil {
@@ -96,6 +98,7 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 		return nil, nil, errors.Wrapf(err, "cannot get server cert from database")
 	}
 
+	// no server key or no server cert so generate
 	if serverKeyPEM == nil || serverCertPEM == nil {
 		// get list of all host IP addresses that will be put to server cert
 		addrs, err := net.InterfaceAddrs()
@@ -137,7 +140,7 @@ func setupServerKeyAndCert(db *pg.DB, rootKey *ecdsa.PrivateKey, rootCert *x509.
 		}
 		log.Printf("generated server key and cert")
 	} else {
-		// check server key
+		// key and cert present in db so just check them
 		serverKeyPEMBlock, _ := pem.Decode(serverKeyPEM)
 		_, err := x509.ParsePKCS8PrivateKey(serverKeyPEMBlock.Bytes)
 		if err != nil {

@@ -222,8 +222,8 @@ At the end of tests execution there is coverage report presented. If
 coverage of any module is below a threshold of 35% then an error is
 raised.
 
-Backend Benchmarks
-==================
+Benchmarks
+----------
 
 Benchmarks are part of the backend unit tests. They are implemented using the
 golang "testing" library and they test performance sensitive parts of the
@@ -254,6 +254,16 @@ that the goals of the changes are achieved.
 Similarly, adding a new logic to a function will often cause performance
 degradation and careful examination of the benchmark result drop for that
 function may be a driver for improving efficiency of the new code.
+
+Short Testing Mode
+------------------
+
+It is possible to filter out long running unit tests. Set ``short``
+variable to `true` in command line:
+
+.. code:: console
+
+          $ rake unittest_backend short=true
 
 
 WebUI Unit Tests

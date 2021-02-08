@@ -27,7 +27,7 @@ func init() {
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
-             DROP INDEX machine_authorized_idx;
+             DROP INDEX IF EXISTS machine_authorized_idx;
              ALTER TABLE machine DROP COLUMN IF EXISTS authorized;
              ALTER TABLE machine DROP COLUMN IF EXISTS cert_fingerprint;
              ALTER TABLE machine DROP COLUMN IF EXISTS agent_token;
