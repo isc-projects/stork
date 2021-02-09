@@ -30,6 +30,8 @@ export class KeaAppTabComponent implements OnInit {
 
     activeTabIndex = 0
 
+    appRenameDialogVisible = false
+
     constructor(private route: ActivatedRoute, private servicesApi: ServicesService) {}
 
     /**
@@ -214,5 +216,13 @@ export class KeaAppTabComponent implements OnInit {
      */
     logTargetViewable(target): boolean {
         return target !== 'stdout' && target !== 'stderr' && !target.startsWith('syslog')
+    }
+
+    renameDialogSubmittedHandler() {
+        this.appRenameDialogVisible = false
+    }
+
+    renameApp() {
+        this.appRenameDialogVisible = true
     }
 }
