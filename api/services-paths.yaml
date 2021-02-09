@@ -324,6 +324,41 @@
           schema:
             $ref: '#/definitions/ApiError'
 
+  /apps/{id}/name:
+    put:
+      summary: Rename the specified app.
+      description: >-
+        Sets new name for the app identified by specified identifier.
+        This operation may fail if the new name is invalid or if the
+        given app does not exist.
+      operationId: renameApp
+      tags:
+        - Services
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          required: true
+          description: App ID.
+        - name: newAppName
+          in: body
+          required: true
+          description: New app name.
+          schema:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+      responses:
+        200:
+          description: App successfully renamed.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /logs/{id}:
     get:
       summary: Gets the tail of the given log file.

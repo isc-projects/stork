@@ -1304,3 +1304,33 @@ func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemon
 	rsp := services.NewUpdateDaemonOK()
 	return rsp
 }
+
+// Rename an app. The request must contain two parameters: app ID and new app name. The app
+// is renamed in the database. If the name is invalid or the given app does not exist,
+// an error is returned.
+func (r *RestAPI) RenameApp(ctx context.Context, params services.RenameAppParams) middleware.Responder {
+	// Sanity check if the caller provided a nil or empty string.
+	appName := ""
+	if params.NewAppName.Name != nil {
+		appName = strings.TrimSpace(*params.NewAppName.Name)
+	}
+	if len(appName) == 0 {
+		msg := fmt.Sprintf("unable to rename app with id %d to an empty string", params.ID)
+		rsp := services.NewRenameAppDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Try to rename the app.
+	err := dbmodel.RenameApp(r.DB, params.ID, appName)
+	if err != nil {
+		msg := fmt.Sprintf("unable to rename app with id %d to %s", params.ID, appName)
+		rsp := services.NewRenameAppDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Rename was ok.
+	rsp := services.NewRenameAppOK()
+	return rsp
+}

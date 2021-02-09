@@ -1598,3 +1598,75 @@ func TestServerToken(t *testing.T) {
 	okRegenRsp := rsp.(*services.RegenerateMachinesServerTokenOK)
 	require.NotEmpty(t, okRegenRsp.Payload.Token)
 }
+
+// Test that a PUT request to rename an app will cause the app to be successfully renamed.
+// Also, test that invalid app name will cause an error.
+func TestRenameApp(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add Kea application to the machine
+	app := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeKea,
+		Name:      "dhcp-server1",
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+	require.NotZero(t, app.ID)
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Use correct parameters.
+	newName := "dhcp-server2"
+	params := services.RenameAppParams{
+		ID: app.ID,
+		NewAppName: services.RenameAppBody{
+			Name: &newName,
+		},
+	}
+	rsp := rapi.RenameApp(ctx, params)
+	require.IsType(t, &services.RenameAppOK{}, rsp)
+
+	// Make sure the app has been successfully renamed.
+	returnedApp, err := dbmodel.GetAppByID(db, app.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returnedApp)
+	require.Equal(t, "dhcp-server2", returnedApp.Name)
+
+	// Use an incorrect app name.
+	newName = "dhcp-server2@machine3"
+	rsp = rapi.RenameApp(ctx, params)
+	require.IsType(t, &services.RenameAppDefault{}, rsp)
+	defaultRsp := rsp.(*services.RenameAppDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+
+	// Empty name (with only whitespace) should cause an error too.
+	newName = "   "
+	rsp = rapi.RenameApp(ctx, params)
+	require.IsType(t, &services.RenameAppDefault{}, rsp)
+	defaultRsp = rsp.(*services.RenameAppDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+
+	// Finally, let's try supplying a nil value.
+	params.NewAppName = services.RenameAppBody{
+		Name: nil,
+	}
+	rsp = rapi.RenameApp(ctx, params)
+	require.IsType(t, &services.RenameAppDefault{}, rsp)
+	defaultRsp = rsp.(*services.RenameAppDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+}
