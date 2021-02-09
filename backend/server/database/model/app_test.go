@@ -459,6 +459,44 @@ func TestUpdateApp(t *testing.T) {
 	require.Equal(t, "abcd", pt.Key)
 }
 
+// Test that an app can be renamed without affecting other app
+// specific information.
+func TestRenameApp(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+	require.NotZero(t, machine.ID)
+
+	app := &App{
+		Type:      AppTypeKea,
+		Name:      "dhcp-server1",
+		MachineID: machine.ID,
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err, "found error %+v", err)
+
+	err = RenameApp(db, app.ID, "dhcp-server2")
+	require.NoError(t, err)
+
+	// Make sure the app has been renamed in the database.
+	appReturned, err := GetAppByID(db, app.ID)
+	require.NoError(t, err)
+	require.NotNil(t, appReturned)
+	require.Equal(t, "dhcp-server2", appReturned.Name)
+	require.Equal(t, AppTypeKea, appReturned.Type)
+
+	// Trying to set invalid name should cause an error.
+	err = RenameApp(db, app.ID, "dhcp-server2@machine3")
+	require.Error(t, err)
+}
+
 func TestDeleteApp(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

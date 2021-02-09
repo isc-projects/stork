@@ -272,6 +272,23 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 	return addedDaemons, deletedDaemons, nil
 }
 
+// Updates specified app's name.
+func RenameApp(db *pg.DB, id int64, newName string) error {
+	app := &App{
+		ID:   id,
+		Name: newName,
+	}
+	_, err := db.Model(app).
+		Column("name").
+		WherePK().
+		Update()
+	if err != nil {
+		return pkgerrors.Wrapf(err, "problem with renaming an app %d to %s", app.ID, newName)
+	}
+
+	return nil
+}
+
 func GetAppByID(db *pg.DB, id int64) (*App, error) {
 	app := App{}
 	q := db.Model(&app)
