@@ -3,7 +3,8 @@
         [appId]="appTab.app.id"
         [appName]="appTab.app.name"
         [visible]="appRenameDialogVisible"
-        (submitted)="renameDialogSubmittedHandler()"
+        (submitted)="handleRenameDialogSubmitted()"
+        (cancelled)="handleRenameDialogCancelled()"
     >
     </app-rename-app-dialog>
     <div class="p-col-12" style="display: flex; justify-content: space-between">

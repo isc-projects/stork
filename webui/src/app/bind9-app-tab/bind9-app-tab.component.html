@@ -1,8 +1,21 @@
 <div style="margin: 0" class="p-grid">
+    <app-rename-app-dialog
+        [appId]="appTab.app.id"
+        [appName]="appTab.app.name"
+        [visible]="appRenameDialogVisible"
+        (submitted)="handleRenameDialogSubmitted()"
+        (cancelled)="handleRenameDialogCancelled()"
+    >
+    </app-rename-app-dialog>
     <div class="p-col-12" style="display: flex; justify-content: space-between">
-        <div style="font-size: 1.1em; display: flex; align-items: center">
-            The application is hosted on the machine:&nbsp;
-            <a routerLink="/machines/{{ appTab.app.machine.id }}">{{ appTab.app.machine.address }}</a>
+        <div style="font-size: 1.8em; font-weight: bold; margin-left: 10px; color: #007ad9">
+            <i class="fa fa-server" style="padding-right: 10px"></i> {{ appTab.app.name }}
+            <i
+                class="pi pi-pencil"
+                id="pencil-rename-app"
+                style="vertical-align: text-top; margin-left: 15px; color: #aaa; cursor: pointer"
+                (click)="renameApp()"
+            ></i>
         </div>
         <button
             type="button"
@@ -13,7 +26,10 @@
             (click)="refreshAppState()"
         ></button>
     </div>
-
+    <div class="p-col-12" style="font-size: 1.1em; display: flex; align-items: center">
+        The application is hosted on the machine:&nbsp;
+        <a routerLink="/machines/{{ appTab.app.machine.id }}">{{ appTab.app.machine.address }}</a>
+    </div>
     <div class="p-col-12">
         <p-tabView>
             <p-tabPanel *ngFor="let daemon of daemons">

@@ -218,10 +218,30 @@ export class KeaAppTabComponent implements OnInit {
         return target !== 'stdout' && target !== 'stderr' && !target.startsWith('syslog')
     }
 
-    renameDialogSubmittedHandler() {
+    /**
+     * Reacts to submitting a new app name from the dialog.
+     *
+     * This function is called when a user presses the rename button in
+     * the app-rename-app-dialog component. It attempts to submit the new
+     * name to the server.
+     */
+    handleRenameDialogSubmitted() {
         this.appRenameDialogVisible = false
     }
 
+    /**
+     * Reacts to cancelling renaming an app.
+     *
+     * This function is called when a user presses the cancel button in
+     * the app-rename-app-dialog component. It marks the dialog hidden.
+     */
+    handleRenameDialogCancelled() {
+        this.appRenameDialogVisible = false
+    }
+
+    /**
+     * Shows a dialog for renaming an app.
+     */
     renameApp() {
         this.appRenameDialogVisible = true
     }
