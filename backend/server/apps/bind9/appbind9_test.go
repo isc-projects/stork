@@ -107,6 +107,7 @@ func TestCommitAppIntoDB(t *testing.T) {
 	app := &dbmodel.App{
 		ID:           0,
 		MachineID:    machine.ID,
+		Machine:      machine,
 		Type:         dbmodel.AppTypeBind9,
 		Active:       true,
 		AccessPoints: accessPoints,

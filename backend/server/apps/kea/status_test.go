@@ -535,6 +535,7 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 	keaApp := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
+		Machine:      m,
 		Type:         dbmodel.AppTypeKea,
 		Active:       true,
 		AccessPoints: keaPoints,

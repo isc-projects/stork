@@ -97,6 +97,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		AccessPoints: accessPoints,
 		MachineID:    machine1.ID,
+		Machine:      machine1,
 		Daemons: []*dbmodel.Daemon{
 			daemon,
 		},
@@ -118,6 +119,7 @@ func TestStatsPullerPullStats(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		AccessPoints: accessPoints,
 		MachineID:    machine2.ID,
+		Machine:      machine2,
 		Daemons: []*dbmodel.Daemon{
 			daemon,
 		},
@@ -209,6 +211,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 		Type:         dbmodel.AppTypeBind9,
 		AccessPoints: accessPoints,
 		MachineID:    machine.ID,
+		Machine:      machine,
 		Daemons: []*dbmodel.Daemon{
 			daemon,
 		},
