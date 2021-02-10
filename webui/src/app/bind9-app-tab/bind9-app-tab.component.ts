@@ -4,6 +4,8 @@ import * as moment from 'moment-timezone'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
+import { ServicesService } from '../backend/api/api'
+
 import {
     durationToString,
     daemonStatusErred,
@@ -26,7 +28,7 @@ export class Bind9AppTabComponent implements OnInit {
 
     appRenameDialogVisible = false
 
-    constructor() {}
+    constructor(public servicesApi: ServicesService, private msgService: MessageService) {}
 
     /**
      * Subscribes to the updates of the information about daemons
@@ -188,9 +190,40 @@ export class Bind9AppTabComponent implements OnInit {
      * This function is called when a user presses the rename button in
      * the app-rename-app-dialog component. It attempts to submit the new
      * name to the server.
+     *
+     * If the app is successfully renamed, the app name is refreshed in
+     * the app tab view. Additionally, the success message is displayed
+     * in the message service.
+     *
+     * @param event holds new app name.
      */
-    handleRenameDialogSubmitted() {
+    handleRenameDialogSubmitted(event) {
         this.appRenameDialogVisible = false
+        this.servicesApi.renameApp(this.appTab.app.id, { name: event }).subscribe(
+            (data) => {
+                // Renaming the app was successful.
+                this.msgService.add({
+                    severity: 'success',
+                    summary: 'App renamed',
+                    detail: 'App successfully renamed to ' + event,
+                })
+                // Let's update the app name in the current tab.
+                this.appTab.app.name = event
+            },
+            (err) => {
+                // Renaming the app failed.
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                this.msgService.add({
+                    severity: 'error',
+                    summary: 'App renaming erred',
+                    detail: 'App renaming to ' + event + ' erred: ' + msg,
+                    life: 10000,
+                })
+            }
+        )
     }
 
     /**

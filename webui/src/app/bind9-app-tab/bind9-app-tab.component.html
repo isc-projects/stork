@@ -3,7 +3,7 @@
         [appId]="appTab.app.id"
         [appName]="appTab.app.name"
         [visible]="appRenameDialogVisible"
-        (submitted)="handleRenameDialogSubmitted()"
+        (submitted)="handleRenameDialogSubmitted($event)"
         (cancelled)="handleRenameDialogCancelled()"
     >
     </app-rename-app-dialog>
