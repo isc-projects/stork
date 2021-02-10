@@ -115,7 +115,7 @@ func TestStatePullerPullData(t *testing.T) {
 	require.Equal(t, 1, appsOkCnt)
 
 	// check if apps have been updated correctly
-	apps, err := dbmodel.GetAllApps(db)
+	apps, err := dbmodel.GetAllApps(db, true)
 	require.NoError(t, err)
 	require.Len(t, apps, 2)
 	var keaApp dbmodel.App

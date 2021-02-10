@@ -1062,7 +1062,9 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 
 // Get statistics about applications.
 func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStatsParams) middleware.Responder {
-	dbApps, err := dbmodel.GetAllApps(r.DB)
+	// The second argument indicates that only basic information about the apps
+	// should be returned, i.e. the information stored in the app table.
+	dbApps, err := dbmodel.GetAllApps(r.DB, false)
 	if err != nil {
 		log.Error(err)
 		msg := "cannot get all apps from db"

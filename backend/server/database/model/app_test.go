@@ -1281,7 +1281,7 @@ func TestGetAllApps(t *testing.T) {
 	require.NotZero(t, aBind.ID)
 
 	// get all apps
-	apps, err := GetAllApps(db)
+	apps, err := GetAllApps(db, true)
 	require.NoError(t, err)
 	require.Len(t, apps, 2)
 	require.True(t, apps[0].Type == AppTypeKea || apps[1].Type == AppTypeKea)

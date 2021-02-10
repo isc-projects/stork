@@ -417,16 +417,23 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, filterText *string, app
 	return apps, int64(total), nil
 }
 
-func GetAllApps(db *pg.DB) ([]App, error) {
+// Retrieves all apps from the database. The second argument specifies if
+// the app information must be returned with relations, i.e. with daemons,
+// access points and machines information. If it is set to false, only
+// the data belonging to the app table are returned.
+func GetAllApps(db *pg.DB, withRelations bool) ([]App, error) {
 	var apps []App
 
 	// prepare query
 	q := db.Model(&apps)
-	q = q.Relation("AccessPoints")
-	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
-	q = q.Relation("Daemons.Bind9Daemon")
-	q = q.Relation("Daemons.LogTargets")
-	q = q.Relation("Machine")
+
+	if withRelations {
+		q = q.Relation("AccessPoints")
+		q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
+		q = q.Relation("Daemons.Bind9Daemon")
+		q = q.Relation("Daemons.LogTargets")
+		q = q.Relation("Machine")
+	}
 	q = q.OrderExpr("id ASC")
 
 	// retrieve apps from db
