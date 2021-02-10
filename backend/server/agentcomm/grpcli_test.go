@@ -30,7 +30,7 @@ func makeAccessPoint(tp, address, key string, port int64) (ap []*agentapi.Access
 func setupGrpcliTestCase(t *testing.T) (*MockAgentClient, ConnectedAgents, func()) {
 	settings := AgentsSettings{}
 	fec := &storktest.FakeEventCenter{}
-	agents := NewConnectedAgents(&settings, fec)
+	agents := NewConnectedAgents(&settings, fec, CACertPEM, ServerCertPEM, ServerKeyPEM)
 
 	// pre-add an agent
 	addr := "127.0.0.1:8080"
@@ -49,11 +49,28 @@ func setupGrpcliTestCase(t *testing.T) (*MockAgentClient, ConnectedAgents, func(
 
 //go:generate mockgen -package=agentcomm -destination=api_mock.go isc.org/stork/api AgentClient
 
+// Check if Ping works.
+func TestPing(t *testing.T) {
+	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
+	defer teardown()
+
+	// prepare expectations
+	rsp := agentapi.PingRsp{}
+	mockAgentClient.EXPECT().Ping(gomock.Any(), gomock.Any()).
+		Return(&rsp, nil)
+
+	// call ping
+	ctx := context.Background()
+	err := agents.Ping(ctx, "127.0.0.1", 8080)
+	require.NoError(t, err)
+}
+
+// Check if GetState works.
 func TestGetState(t *testing.T) {
 	mockAgentClient, agents, teardown := setupGrpcliTestCase(t)
 	defer teardown()
 
-	// Call GetState
+	// prepare expectations
 	expVer := "123"
 	rsp := agentapi.GetStateRsp{
 		AgentVersion: expVer,
@@ -67,7 +84,7 @@ func TestGetState(t *testing.T) {
 	mockAgentClient.EXPECT().GetState(gomock.Any(), gomock.Any()).
 		Return(&rsp, nil)
 
-	// Check response
+	// call get state
 	ctx := context.Background()
 	state, err := agents.GetState(ctx, "127.0.0.1", 8080)
 	require.NoError(t, err)

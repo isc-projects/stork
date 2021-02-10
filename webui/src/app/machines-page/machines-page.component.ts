@@ -194,7 +194,11 @@ export class MachinesPageComponent implements OnInit {
         if (agentPort === '') {
             agentPort = '8080'
         }
-        const m = { address: this.machineAddress, agentPort: parseInt(agentPort, 10) }
+        const m = {
+            address: this.machineAddress,
+            agentPort: parseInt(agentPort, 10),
+            agentCSR: 'TODO',
+        }
 
         this.loadingService.start('adding new machine')
         this.servicesApi.createMachine(m).subscribe(

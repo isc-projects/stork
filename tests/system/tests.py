@@ -78,10 +78,10 @@ def test_pkg_upgrade(distro_agent, distro_server):
     # add machine and check if it can be retrieved
     machine = dict(
         address=agent.mgmt_ip,
-        agentPort=8080)
+        agentPort=8080,
+        agentCSR='TODO')
     r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
     data = r.json()
-    assert data['address'] == agent.mgmt_ip
     m_id = data['id']
 
     for i in range(100):
@@ -117,10 +117,10 @@ def test_add_kea_with_many_subnets(agent, server):
     banner("ADD MACHINE")
     machine = dict(
         address=agent.mgmt_ip,
-        agentPort=8080)
+        agentPort=8080,
+        agentCSR='TODO')
     r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
     data = r.json()
-    assert data['address'] == agent.mgmt_ip
     m_id = data['id']
 
     for i in range(100):
@@ -161,9 +161,9 @@ def test_change_kea_ca_access_point(agent, server):
     banner("ADD MACHINE")
     machine = dict(
         address=agent.mgmt_ip,
-        agentPort=8080)
+        agentPort=8080,
+        agentCSR='TODO')
     r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
-    assert r.json()['address'] == agent.mgmt_ip
 
     for i in range(40):
         r = server.api_get('/machines')
@@ -257,7 +257,8 @@ def atest_get_kea_stats(agent_kea, agent_old_kea, server):
     for addr in [agent_kea.mgmt_ip, agent_old_kea.mgmt_ip]:
         machine = dict(
             address=addr,
-            agentPort=8080)
+            agentPort=8080,
+            agentCSR='TODO')
         r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
         m = r.json()
         assert m['address'] == addr

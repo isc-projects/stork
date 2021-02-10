@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-openapi/runtime/middleware"
 	log "github.com/sirupsen/logrus"
+
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/search"
@@ -59,7 +60,8 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 	}
 
 	// get list of machines
-	machines, err := r.getMachines(0, 5, &text, "", dbmodel.SortDirAny)
+	authorized := true
+	machines, err := r.getMachines(0, 5, &text, &authorized, "", dbmodel.SortDirAny)
 	if err != nil {
 		return handleSearchError(err, "cannot get machines from the db")
 	}

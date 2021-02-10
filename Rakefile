@@ -482,7 +482,11 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
                        # Those two are tested in backend/server/server_test.go, in TestCommandLineSwitches*
                        # However, due to how it's executed (calling external binary), it's not detected
                        # by coverage.
-                       'ParseArgs', 'NewStorkServer']
+                       'ParseArgs', 'NewStorkServer',
+
+                       # TODO: DISABLED FOR NOW
+                       'getAgentAddrAndPortFromUser',
+                      ]
         if ENV['short'] == 'true'
           ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts'])
         end

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
 	agentapi "isc.org/stork/api"
 )
 
@@ -53,6 +54,8 @@ func doCall(ctx context.Context, agent *Agent, in interface{}) (interface{}, err
 	var response interface{}
 	var err error
 	switch inData := in.(type) {
+	case *agentapi.PingReq:
+		response, err = agent.Client.Ping(ctx, inData)
 	case *agentapi.GetStateReq:
 		response, err = agent.Client.GetState(ctx, inData)
 	case *agentapi.ForwardRndcCommandReq:
@@ -87,7 +90,7 @@ func (agents *connectedAgentsData) handleRequest(req *commLoopReq) {
 		// GetConnectedAgent remembers the grpc connection so it might
 		// return an already existing connection.  This connection may
 		// be broken so we should retry at least once.
-		err2 := agent.MakeGrpcConnection()
+		err2 := agent.MakeGrpcConnection(agents.caCertPEM, agents.serverCertPEM, agents.serverKeyPEM)
 		if err2 != nil {
 			log.WithFields(log.Fields{
 				"agent": agent.Address,

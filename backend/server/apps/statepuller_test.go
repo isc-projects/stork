@@ -63,9 +63,10 @@ func TestStatePullerPullData(t *testing.T) {
 
 	// add one machine with one kea app
 	m := &dbmodel.Machine{
-		ID:        0,
-		Address:   "localhost",
-		AgentPort: 8080,
+		ID:         0,
+		Address:    "localhost",
+		AgentPort:  8080,
+		Authorized: true,
 	}
 	err := dbmodel.AddMachine(db, m)
 	require.NoError(t, err)

@@ -47,8 +47,9 @@ func TestSearchRecords(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 8080,
+		Address:    "localhost",
+		AgentPort:  8080,
+		Authorized: true,
 	}
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)

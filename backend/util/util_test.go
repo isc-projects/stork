@@ -68,3 +68,10 @@ func TestParseIP(t *testing.T) {
 	require.False(t, prefix)
 	require.True(t, ok)
 }
+
+// Check if BytesToHex works.
+func TestBytesToHex(t *testing.T) {
+	bytesArray := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32}
+	str := BytesToHex(bytesArray)
+	require.Equal(t, "0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20", str)
+}

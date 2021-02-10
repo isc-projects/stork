@@ -8,6 +8,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
+// Check if adding machine to database works.
 func TestAddMachine(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -31,6 +32,36 @@ func TestAddMachine(t *testing.T) {
 	require.Contains(t, err.Error(), "duplicate")
 }
 
+// Check if updating machine in database works.
+func TestUpdateMachine(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add first machine, should be no error
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, m.ID)
+
+	// change authorization
+	m1, err := GetMachineByID(db, m.ID)
+	require.NoError(t, err)
+	require.False(t, m1.Authorized)
+
+	m.Authorized = true
+	err = UpdateMachine(db, m)
+	require.NoError(t, err)
+
+	m2, err := GetMachineByID(db, m.ID)
+	require.NoError(t, err)
+	require.True(t, m2.Authorized)
+}
+
+// Check if getting machine by address.
 func TestGetMachineByAddress(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -87,6 +118,7 @@ func TestGetMachineByAddress(t *testing.T) {
 	require.Nil(t, m)
 }
 
+// Check if getting machine by its ID.
 func TestGetMachineByID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -151,12 +183,13 @@ func TestGetMachineByID(t *testing.T) {
 	require.Nil(t, m)
 }
 
+// Basic check if getting machines by pages works.
 func TestGetMachinesByPageBasic(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// no machines yet but try to get some
-	ms, total, err := GetMachinesByPage(db, 0, 10, nil, "", SortDirAny)
+	ms, total, err := GetMachinesByPage(db, 0, 10, nil, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 0, total)
 	require.Len(t, ms, 0)
@@ -190,26 +223,26 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	}
 
 	// get 10 machines from 0
-	ms, total, err = GetMachinesByPage(db, 0, 10, nil, "", SortDirAny)
+	ms, total, err = GetMachinesByPage(db, 0, 10, nil, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 10)
 
 	// get 2 machines out of 10, from 0
-	ms, total, err = GetMachinesByPage(db, 0, 2, nil, "", SortDirAny)
+	ms, total, err = GetMachinesByPage(db, 0, 2, nil, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 2)
 
 	// get 3 machines out of 10, from 2
-	ms, total, err = GetMachinesByPage(db, 2, 3, nil, "", SortDirAny)
+	ms, total, err = GetMachinesByPage(db, 2, 3, nil, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 3)
 
 	// get 10 machines out of 10, from 0, but with '2' in contents; should return 1: 20 and 12
 	text := "2"
-	ms, total, err = GetMachinesByPage(db, 0, 10, &text, "", SortDirAny)
+	ms, total, err = GetMachinesByPage(db, 0, 10, &text, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, ms, 2)
@@ -230,7 +263,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	require.Empty(t, ms[1].Apps[0].AccessPoints[0].Key)
 
 	// check sorting by id asc
-	ms, total, err = GetMachinesByPage(db, 0, 100, nil, "", SortDirAsc)
+	ms, total, err = GetMachinesByPage(db, 0, 100, nil, nil, "", SortDirAsc)
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 10)
@@ -238,7 +271,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	require.EqualValues(t, 6, ms[5].ID)
 
 	// check sorting by id desc
-	ms, total, err = GetMachinesByPage(db, 0, 100, nil, "", SortDirDesc)
+	ms, total, err = GetMachinesByPage(db, 0, 100, nil, nil, "", SortDirDesc)
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 10)
@@ -246,7 +279,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	require.EqualValues(t, 5, ms[5].ID)
 
 	// check sorting by address asc
-	ms, total, err = GetMachinesByPage(db, 0, 100, nil, "address", SortDirAsc)
+	ms, total, err = GetMachinesByPage(db, 0, 100, nil, nil, "address", SortDirAsc)
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 10)
@@ -254,7 +287,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	require.EqualValues(t, 5, ms[5].ID)
 
 	// check sorting by address desc
-	ms, total, err = GetMachinesByPage(db, 0, 100, nil, "address", SortDirDesc)
+	ms, total, err = GetMachinesByPage(db, 0, 100, nil, nil, "address", SortDirDesc)
 	require.Nil(t, err)
 	require.EqualValues(t, 10, total)
 	require.Len(t, ms, 10)
@@ -262,6 +295,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	require.EqualValues(t, 6, ms[5].ID)
 }
 
+// Check if getting machines with filtering by pages works.
 func TestGetMachinesByPageWithFiltering(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -280,19 +314,65 @@ func TestGetMachinesByPageWithFiltering(t *testing.T) {
 
 	// filter machines by json fields: redhat
 	text := "redhat"
-	ms, total, err := GetMachinesByPage(db, 0, 10, &text, "", SortDirAny)
+	ms, total, err := GetMachinesByPage(db, 0, 10, &text, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, ms, 1)
 
 	// filter machines by json fields: my
 	text = "my"
-	ms, total, err = GetMachinesByPage(db, 0, 10, &text, "", SortDirAny)
+	ms, total, err = GetMachinesByPage(db, 0, 10, &text, nil, "", SortDirAny)
 	require.Nil(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, ms, 1)
 }
 
+// Check if getting authorized machines with filtering by pages works.
+func TestGetMachinesByPageFilteredByAuthorized(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add machine2
+	m := &Machine{
+		Address:   "unauthorized",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	m = &Machine{
+		Address:    "authorized",
+		AgentPort:  8080,
+		Authorized: true,
+	}
+	err = AddMachine(db, m)
+	require.NoError(t, err)
+
+	// get unauthorized machines
+	authorized := false
+	ms, total, err := GetMachinesByPage(db, 0, 10, nil, &authorized, "", SortDirAny)
+	require.Nil(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, ms, 1)
+	require.EqualValues(t, "unauthorized", ms[0].Address)
+	require.EqualValues(t, false, ms[0].Authorized)
+
+	// get authorized machines
+	authorized = true
+	ms, total, err = GetMachinesByPage(db, 0, 10, nil, &authorized, "", SortDirAny)
+	require.Nil(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, ms, 1)
+	require.EqualValues(t, "authorized", ms[0].Address)
+	require.EqualValues(t, true, ms[0].Authorized)
+
+	// get all machines
+	ms, total, err = GetMachinesByPage(db, 0, 10, nil, nil, "", SortDirAny)
+	require.Nil(t, err)
+	require.EqualValues(t, 2, total)
+	require.Len(t, ms, 2)
+}
+
+// Check if deleting only machine works.
 func TestDeleteMachineOnly(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -319,6 +399,7 @@ func TestDeleteMachineOnly(t *testing.T) {
 	require.Contains(t, err.Error(), "no rows in result")
 }
 
+// Check if deleting machine and its apps works.
 func TestDeleteMachineWithApps(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -356,6 +437,7 @@ func TestDeleteMachineWithApps(t *testing.T) {
 	require.Nil(t, a)
 }
 
+// Check if refreshing machine works.
 func TestRefreshMachineFromDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -384,6 +466,7 @@ func TestRefreshMachineFromDB(t *testing.T) {
 	require.Equal(t, "some error", m.Error)
 }
 
+// Check if getting all machines works.
 func TestGetAllMachines(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -398,13 +481,14 @@ func TestGetAllMachines(t *testing.T) {
 				Hostname: "aaaa",
 				Cpus:     4,
 			},
+			Authorized: i%2 == 0,
 		}
 		err := AddMachine(db, m)
 		require.NoError(t, err)
 	}
 
 	// get all machines should return 20 machines
-	machines, err := GetAllMachines(db)
+	machines, err := GetAllMachines(db, nil)
 	require.NoError(t, err)
 	require.Len(t, machines, 20)
 	require.EqualValues(t, "localhost", machines[0].Address)
@@ -415,8 +499,20 @@ func TestGetAllMachines(t *testing.T) {
 	require.EqualValues(t, 4, machines[19].State.Cpus)
 	require.NotEqual(t, machines[0].AgentPort, machines[19].AgentPort)
 
+	// get only unauthorized machines
+	authorized := false
+	machines, err = GetAllMachines(db, &authorized)
+	require.NoError(t, err)
+	require.Len(t, machines, 10)
+
+	// and now only authorized machines
+	authorized = true
+	machines, err = GetAllMachines(db, &authorized)
+	require.NoError(t, err)
+	require.Len(t, machines, 10)
+
 	// paged get should return indicated limit, not all
-	machines, total, err := GetMachinesByPage(db, 0, 10, nil, "", SortDirAny)
+	machines, total, err := GetMachinesByPage(db, 0, 10, nil, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, machines, 10)
 	require.EqualValues(t, 20, total)

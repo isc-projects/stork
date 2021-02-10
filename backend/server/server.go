@@ -104,7 +104,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 
 	// prepare certificates for establish secure connections
 	// between server and agents
-	_, _, _, err = certs.SetupServerCerts(ss.DB) // nolint:dogsled // TODO: returned certs will be used in the future
+	caCertPEM, serverCertPEM, serverKeyPEM, err := certs.SetupServerCerts(ss.DB)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	ss.EventCenter = eventcenter.NewEventCenter(ss.DB)
 
 	// setup connected agents
-	ss.Agents = agentcomm.NewConnectedAgents(&ss.AgentsSettings, ss.EventCenter)
+	ss.Agents = agentcomm.NewConnectedAgents(&ss.AgentsSettings, ss.EventCenter, caCertPEM, serverCertPEM, serverKeyPEM)
 	// TODO: if any operation below fails then this Shutdown here causes segfault.
 	// I do not know why and do not how to fix this. Commenting out for now.
 	// defer func() {

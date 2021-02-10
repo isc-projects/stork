@@ -60,6 +60,9 @@ func NewFakeAgents(fnKea func(int, []interface{}), fnNamed func(int, interface{}
 	return fa
 }
 
+func (fa *FakeAgents) Ping(ctx context.Context, address string, agentPort int64) error {
+	return nil
+}
 func (fa *FakeAgents) Shutdown() {}
 func (fa *FakeAgents) GetConnectedAgent(address string) (*agentcomm.Agent, error) {
 	return nil, nil

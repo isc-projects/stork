@@ -2,12 +2,17 @@ package agentcomm
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"sync"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/security/advancedtls"
+
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
@@ -54,12 +59,71 @@ type Agent struct {
 	Stats    AgentStats
 }
 
+// Prepare TLS credentials with configured certs and verification options.
+// nolint:unused // TODO: it is not used yet
+func prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM []byte) (credentials.TransportCredentials, error) {
+	// Load the certificates from disk
+	certificate, err := tls.X509KeyPair(serverCertPEM, serverKeyPEM)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not load client key pair")
+	}
+
+	// Create a certificate pool from the certificate authority
+	certPool := x509.NewCertPool()
+
+	// Append the client certificates from the CA
+	if ok := certPool.AppendCertsFromPEM(caCertPEM); !ok {
+		return nil, errors.New("failed to append ca certs")
+	}
+
+	// Prepare structure for advanced TLS with custom agent verification.
+	// It sets root CA cert and stork server cert. It also defines hook function
+	// that checks if stork agent cert is still valid.
+	options := &advancedtls.ClientOptions{
+		// set root CA cert to validate agent's certificate
+		RootOptions: advancedtls.RootCertificateOptions{
+			RootCACerts: certPool,
+		},
+		// set TLS client (stork server) cert to present its identity to server (stork agent)
+		IdentityOptions: advancedtls.IdentityCertificateOptions{
+			Certificates: []tls.Certificate{certificate},
+		},
+		// check cert and if it matches host IP
+		VType: advancedtls.CertAndHostVerification,
+		// additional verification hook function that checks if stork agent is not using old cert
+		// VerifyPeer: func(params *advancedtls.VerificationFuncParams) (*advancedtls.VerificationResults, error) {
+		// 	// TODO: add here check if agent cert is not old (compare it with
+		// 	// CertFingerprint from Machine db record)
+		// 	return &advancedtls.VerificationResults{}, nil
+		// },
+	}
+	creds, err := advancedtls.NewClientCreds(options)
+	if err != nil {
+		log.Fatalf("advancedtls.NewClientCreds(%v) failed: %v", options, err)
+	}
+
+	return creds, nil
+}
+
 // Prepare gRPC connection to agent.
-func (agent *Agent) MakeGrpcConnection() error {
+func (agent *Agent) MakeGrpcConnection(caCertPEM, serverCertPEM, serverKeyPEM []byte) error {
 	// If there is any old connection then clean it up
 	if agent.GrpcConn != nil {
 		agent.GrpcConn.Close()
 	}
+
+	// TODO: DISABLED FOR NOW
+	// // Prepare TLS credentials
+	// creds, err := prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM)
+	// if err != nil {
+	// 	return errors.WithMessagef(err, "problem with preparing TLS credentials")
+	// }
+
+	// // Setup new connection
+	// grpcConn, err := grpc.Dial(agent.Address, grpc.WithTransportCredentials(creds))
+	// if err != nil {
+	// 	return errors.Wrapf(err, "problem with dial to agent %s", agent.Address)
+	// }
 
 	// Setup new connection
 	var opts []grpc.DialOption
@@ -81,6 +145,7 @@ type ConnectedAgents interface {
 	Shutdown()
 	GetConnectedAgent(address string) (*Agent, error)
 	GetConnectedAgentStats(adddress string, port int64) *AgentStats
+	Ping(ctx context.Context, address string, agentPort int64) error
 	GetState(ctx context.Context, address string, agentPort int64) (*State, error)
 	ForwardRndcCommand(ctx context.Context, dbApp *dbmodel.App, command string) (*RndcOutput, error)
 	ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, path string, statsOutput interface{}) error
@@ -90,23 +155,29 @@ type ConnectedAgents interface {
 
 // Agents management map. It tracks Agents currently connected to the Server.
 type connectedAgentsData struct {
-	Settings     *AgentsSettings
-	EventCenter  eventcenter.EventCenter
-	AgentsMap    map[string]*Agent
-	CommLoopReqs chan *commLoopReq
-	DoneCommLoop chan bool
-	Wg           *sync.WaitGroup
+	Settings      *AgentsSettings
+	EventCenter   eventcenter.EventCenter
+	AgentsMap     map[string]*Agent
+	CommLoopReqs  chan *commLoopReq
+	DoneCommLoop  chan bool
+	Wg            *sync.WaitGroup
+	serverCertPEM []byte
+	serverKeyPEM  []byte
+	caCertPEM     []byte
 }
 
 // Create new ConnectedAgents objects.
-func NewConnectedAgents(settings *AgentsSettings, eventCenter eventcenter.EventCenter) ConnectedAgents {
+func NewConnectedAgents(settings *AgentsSettings, eventCenter eventcenter.EventCenter, caCertPEM, serverCertPEM, serverKeyPEM []byte) ConnectedAgents {
 	agents := connectedAgentsData{
-		Settings:     settings,
-		EventCenter:  eventCenter,
-		AgentsMap:    make(map[string]*Agent),
-		CommLoopReqs: make(chan *commLoopReq),
-		DoneCommLoop: make(chan bool),
-		Wg:           &sync.WaitGroup{},
+		Settings:      settings,
+		EventCenter:   eventCenter,
+		AgentsMap:     make(map[string]*Agent),
+		CommLoopReqs:  make(chan *commLoopReq),
+		DoneCommLoop:  make(chan bool),
+		Wg:            &sync.WaitGroup{},
+		caCertPEM:     caCertPEM,
+		serverCertPEM: serverCertPEM,
+		serverKeyPEM:  serverKeyPEM,
 	}
 
 	agents.Wg.Add(1)
@@ -144,7 +215,7 @@ func (agents *connectedAgentsData) GetConnectedAgent(address string) (*Agent, er
 	agent.Address = address
 	agent.Stats.AppCommStats = make(map[AppCommStatsKey]interface{})
 	agent.Stats.mutex = new(sync.Mutex)
-	err := agent.MakeGrpcConnection()
+	err := agent.MakeGrpcConnection(agents.caCertPEM, agents.serverCertPEM, agents.serverKeyPEM)
 	if err != nil {
 		return nil, err
 	}

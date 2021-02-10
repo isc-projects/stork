@@ -1,3 +1,14 @@
+* 126 [func] godfryd
+
+    This is the second part of secured agent-server channel
+    implementation. Added code for registering a machine in the server
+    and performing key and certs exchange but it is not used fully
+    yet. Added server-token and agent-token based agent
+    authorizations. Added REST API for presenting and regenerating
+    server token, but it is not used in UI yet. Updated content of
+    reference agent.env agent config file.
+    (Gitlab #481)
+
 * 125 [func] marcin
 
     Assign friendly names to the apps monitored in Stork. The apps'

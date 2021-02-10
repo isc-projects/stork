@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,10 +13,13 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
 	"isc.org/stork"
+	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
 	"isc.org/stork/server/apps/kea"
+	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
@@ -36,6 +40,7 @@ func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParam
 	return general.NewGetVersionOK().WithPayload(&ver)
 }
 
+// Convert db machine to rest structure.
 func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 	var apps []*models.App
 	for _, app := range dbMachine.Apps {
@@ -47,6 +52,8 @@ func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
 		ID:                   dbMachine.ID,
 		Address:              &dbMachine.Address,
 		AgentPort:            dbMachine.AgentPort,
+		Authorized:           dbMachine.Authorized,
+		AgentToken:           dbMachine.AgentToken,
 		AgentVersion:         dbMachine.State.AgentVersion,
 		Cpus:                 dbMachine.State.Cpus,
 		CpusLoad:             dbMachine.State.CpusLoad,
@@ -103,8 +110,9 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 	return rsp
 }
 
-func (r *RestAPI) getMachines(offset, limit int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Machines, error) {
-	dbMachines, total, err := dbmodel.GetMachinesByPage(r.DB, offset, limit, filterText, sortField, sortDir)
+// Get machines from database based on params and convert them to rest structures.
+func (r *RestAPI) getMachines(offset, limit int64, filterText *string, authorized *bool, sortField string, sortDir dbmodel.SortDirEnum) (*models.Machines, error) {
+	dbMachines, total, err := dbmodel.GetMachinesByPage(r.DB, offset, limit, filterText, authorized, sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +157,7 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 		"app":   app,
 	}).Info("query machines")
 
-	machines, err := r.getMachines(start, limit, params.Text, "", dbmodel.SortDirAny)
+	machines, err := r.getMachines(start, limit, params.Text, params.Authorized, "", dbmodel.SortDirAny)
 	if err != nil {
 		log.Error(err)
 		msg := "cannot get machines from db"
@@ -162,12 +170,47 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 	return rsp
 }
 
+// Check server token provided by user in agent registration
+// procedure. If it is empty and it is allowed to be empty then it is
+// accepted (true is returned). Otherwise provided token is compared
+// with the one from server's database. If they do not match then
+// false is returned. The second returned thing is HTTP error code,
+// the last is error message.
+func (r *RestAPI) checkServerToken(serverToken string, allowEmpty bool) (bool, int, string) {
+	// if token can be empty and it is empty then return that machine is not authorized
+	// and no error
+	if allowEmpty && serverToken == "" {
+		return false, 0, ""
+	}
+	dbServerToken, err := dbmodel.GetSecret(r.DB, dbmodel.SecretServerToken)
+	if err != nil {
+		log.Error(err)
+		msg := "cannot retrieve server token from database"
+		return false, http.StatusInternalServerError, msg
+	}
+	if dbServerToken == nil {
+		msg := "server internal problem - server token is empty"
+		log.Error(msg)
+		return false, http.StatusInternalServerError, msg
+	}
+	dbServerTokenStr := string(dbServerToken)
+
+	// if provided token does not match then machine is not authorized and return error
+	if serverToken != dbServerTokenStr {
+		msg := "provided server token is wrong"
+		log.Error(msg)
+		return false, http.StatusBadRequest, msg
+	}
+	// tokens match so machine is authorized
+	return true, 0, ""
+}
+
 // Get one machine by ID where Stork Agent is running.
 func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachineParams) middleware.Responder {
 	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
 	if err != nil {
-		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
+		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		rsp := services.NewGetMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -212,15 +255,87 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		})
 		return rsp
 	}
-
-	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.DB, addr, params.Machine.AgentPort)
-	if err == nil && dbMachine != nil {
-		msg := fmt.Sprintf("machine %s:%d already exists", addr, params.Machine.AgentPort)
+	if params.Machine.AgentCSR == nil {
+		msg := "agent CSR cannot be empty"
 		log.Warnf(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
+	}
+
+	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.DB, addr, params.Machine.AgentPort)
+	if err != nil {
+		msg := fmt.Sprintf("problem with finding machine %s:%d in database", addr, params.Machine.AgentPort)
+		log.Warnf(msg)
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// check server token
+	machineAuthorized, httpRspCode, rspMsg := r.checkServerToken(params.Machine.ServerToken, true)
+	if httpRspCode != 0 {
+		rsp := services.NewCreateMachineDefault(httpRspCode).WithPayload(&models.APIError{
+			Message: &rspMsg,
+		})
+		return rsp
+	}
+
+	// sign agent cert - DISABLED FOR NOW
+	var agentCertFingerprint [sha256.Size]byte
+	var rootCertPEM []byte
+	var agentCertPEM []byte
+	if false {
+		agentCSR := []byte(*params.Machine.AgentCSR)
+		// log.Printf("received agent CSR: %s", agentCSR)
+		certSerialNumber, err := dbmodel.GetNewCertSerialNumber(r.DB)
+		if err != nil {
+			log.Error(err)
+			msg := "problem with generating serial number for cert"
+			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		rootKeyPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCAKey)
+		if err != nil {
+			log.Error(err)
+			msg := "problem with loading server CA private key"
+			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		rootCertPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCACert)
+		if err != nil {
+			log.Error(err)
+			msg := "problem with loading server CA cert"
+			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		_, _, paramsErr, innerErr := pki.SignCert(agentCSR, certSerialNumber, rootCertPEM, rootKeyPEM)
+		if paramsErr != nil {
+			log.Error(paramsErr)
+			msg := "problem with agent CSR"
+			rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		if innerErr != nil {
+			log.Error(innerErr)
+			msg := "problem with signing agent CSR"
+			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+	} else {
+		machineAuthorized = true
 	}
 
 	// We can't create new machine and pull machines' states at the same time. This may
@@ -232,29 +347,112 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	}
 
 	if dbMachine == nil {
-		dbMachine = &dbmodel.Machine{Address: addr, AgentPort: params.Machine.AgentPort}
+		dbMachine = &dbmodel.Machine{
+			Address:         addr,
+			AgentPort:       params.Machine.AgentPort,
+			AgentToken:      params.Machine.AgentToken,
+			CertFingerprint: agentCertFingerprint,
+			Authorized:      machineAuthorized,
+		}
 		err = dbmodel.AddMachine(r.DB, dbMachine)
 		if err != nil {
-			msg := fmt.Sprintf("cannot store machine %s", addr)
 			log.Error(err)
+			msg := fmt.Sprintf("cannot store machine %s", addr)
 			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
 			})
 			return rsp
 		}
 		r.EventCenter.AddInfoEvent("added {machine}", dbMachine)
+	} else {
+		dbMachine.AgentToken = params.Machine.AgentToken
+		dbMachine.CertFingerprint = agentCertFingerprint
+		dbMachine.Authorized = machineAuthorized
+		err = dbmodel.UpdateMachine(r.DB, dbMachine)
+		if err != nil {
+			log.Error(err)
+			msg := fmt.Sprintf("cannot update machine %s in database", addr)
+			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+		r.EventCenter.AddInfoEvent("re-registered {machine}", dbMachine)
 	}
 
-	errStr := apps.GetMachineAndAppsState(ctx, r.DB, dbMachine, r.Agents, r.EventCenter)
-	if errStr != "" {
-		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &errStr,
+	if machineAuthorized {
+		errStr := apps.GetMachineAndAppsState(ctx, r.DB, dbMachine, r.Agents, r.EventCenter)
+		if errStr != "" {
+			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &errStr,
+			})
+			return rsp
+		}
+	}
+
+	m := &models.NewMachineResp{
+		ID:           dbMachine.ID,
+		ServerCACert: string(rootCertPEM),
+		AgentCert:    string(agentCertPEM),
+	}
+	rsp := services.NewCreateMachineOK().WithPayload(m)
+
+	return rsp
+}
+
+// Ping given machine, i.e. check connectivity.
+func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachineParams) middleware.Responder {
+	// find machine in db
+	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
+	if err != nil {
+		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
+		log.Error(err)
+		rsp := services.NewPingMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbMachine == nil {
+		msg := fmt.Sprintf("cannot find machine with id %d", params.ID)
+		rsp := services.NewPingMachineDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
 		})
 		return rsp
 	}
 
-	m := r.machineToRestAPI(*dbMachine)
-	rsp := services.NewCreateMachineOK().WithPayload(m)
+	// check server token
+	_, httpRspCode, rspMsg := r.checkServerToken(params.Ping.ServerToken, false)
+	if httpRspCode != 0 {
+		rsp := services.NewPingMachineDefault(httpRspCode).WithPayload(&models.APIError{
+			Message: &rspMsg,
+		})
+		return rsp
+	}
+
+	// check agent token
+	if params.Ping.AgentToken != dbMachine.AgentToken {
+		msg := fmt.Sprintf("provided agent token is wrong (%s vs %s)", params.Ping.AgentToken, dbMachine.AgentToken)
+		log.Error(msg)
+		rsp := services.NewPingMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// ping machine
+	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	err = r.Agents.Ping(ctx2, dbMachine.Address, dbMachine.AgentPort)
+	if err != nil {
+		msg := "cannot ping machine"
+		log.Error(err)
+		rsp := services.NewPingMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	rsp := services.NewPingMachineOK()
 
 	return rsp
 }
@@ -289,8 +487,8 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 
 	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
 	if err != nil {
-		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
+		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		rsp := services.NewUpdateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -317,13 +515,26 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		}
 	}
 
+	// if machine authorization is changed then this action requires super-admin group
+	if dbMachine.Authorized != params.Machine.Authorized {
+		_, dbUser := r.SessionManager.Logged(ctx)
+		if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+			msg := "user is forbidden to change machine authorization"
+			rsp := services.NewUpdateMachineDefault(http.StatusForbidden).WithPayload(&models.APIError{
+				Message: &msg,
+			})
+			return rsp
+		}
+	}
+
 	// copy fields
 	dbMachine.Address = addr
 	dbMachine.AgentPort = params.Machine.AgentPort
+	dbMachine.Authorized = params.Machine.Authorized
 	err = r.DB.Update(dbMachine)
 	if err != nil {
+		log.Errorf("cannot update machine: %s", err)
 		msg := fmt.Sprintf("cannot update machine with id %d in db", params.ID)
-		log.Error(err)
 		rsp := services.NewUpdateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -334,6 +545,72 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	return rsp
 }
 
+// Get machines server token. It is used by user during manual agent registration.
+func (r *RestAPI) GetMachinesServerToken(ctx context.Context, params services.GetMachinesServerTokenParams) middleware.Responder {
+	// only super-admin can get server token
+	_, dbUser := r.SessionManager.Logged(ctx)
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+		msg := "user is forbidden to get server token"
+		rsp := services.NewGetMachinesServerTokenDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// get server token from database
+	dbServerToken, err := dbmodel.GetSecret(r.DB, dbmodel.SecretServerToken)
+	if err != nil {
+		log.Error(err)
+		msg := "cannot retrieve server token from database"
+		rsp := services.NewGetMachinesServerTokenDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbServerToken == nil {
+		msg := "server internal problem - server token is empty"
+		log.Error(msg)
+		rsp := services.NewGetMachinesServerTokenDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	tokenRsp := &services.GetMachinesServerTokenOKBody{
+		Token: string(dbServerToken),
+	}
+	rsp := services.NewGetMachinesServerTokenOK().WithPayload(tokenRsp)
+	return rsp
+}
+
+// Regenerate machines server token.
+func (r *RestAPI) RegenerateMachinesServerToken(ctx context.Context, params services.RegenerateMachinesServerTokenParams) middleware.Responder {
+	// only super-admin can get server token
+	_, dbUser := r.SessionManager.Logged(ctx)
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+		msg := "user is forbidden to generate new server token"
+		rsp := services.NewGetMachinesServerTokenDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	// generate new server token
+	dbServerToken, err := certs.GenerateServerToken(r.DB)
+	if err != nil {
+		log.Error(err)
+		msg := "cannot regenerate server token"
+		rsp := services.NewRegenerateMachinesServerTokenDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	tokenRsp := &services.RegenerateMachinesServerTokenOKBody{
+		Token: string(dbServerToken),
+	}
+	rsp := services.NewRegenerateMachinesServerTokenOK().WithPayload(tokenRsp)
+	return rsp
+}
+
 // Add a machine where Stork Agent is running.
 func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachineParams) middleware.Responder {
 	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
@@ -341,8 +618,8 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 		rsp := services.NewDeleteMachineOK()
 		return rsp
 	} else if err != nil {
-		msg := fmt.Sprintf("cannot delete machine %d", params.ID)
 		log.Error(err)
+		msg := fmt.Sprintf("cannot delete machine %d", params.ID)
 		rsp := services.NewDeleteMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -351,8 +628,8 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 
 	err = dbmodel.DeleteMachine(r.DB, dbMachine)
 	if err != nil {
-		msg := fmt.Sprintf("cannot delete machine %d", params.ID)
 		log.Error(err)
+		msg := fmt.Sprintf("cannot delete machine %d", params.ID)
 		rsp := services.NewDeleteMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -780,8 +1057,8 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 func (r *RestAPI) GetAppsStats(ctx context.Context, params services.GetAppsStatsParams) middleware.Responder {
 	dbApps, err := dbmodel.GetAllApps(r.DB)
 	if err != nil {
-		msg := "cannot get all apps from db"
 		log.Error(err)
+		msg := "cannot get all apps from db"
 		rsp := services.NewGetAppsStatsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -818,8 +1095,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	// get list of mostly utilized subnets
 	subnets4, err := r.getSubnets(0, 5, 0, 4, nil, "addr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		msg := "cannot get IPv4 subnets from the db"
 		log.Error(err)
+		msg := "cannot get IPv4 subnets from the db"
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -828,8 +1105,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 
 	subnets6, err := r.getSubnets(0, 5, 0, 6, nil, "addr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		msg := "cannot get IPv6 subnets from the db"
 		log.Error(err)
+		msg := "cannot get IPv6 subnets from the db"
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -839,8 +1116,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	// get list of mostly utilized shared networks
 	sharedNetworks4, err := r.getSharedNetworks(0, 5, 0, 4, nil, "addr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		msg := "cannot get IPv4 shared networks from the db"
 		log.Error(err)
+		msg := "cannot get IPv4 shared networks from the db"
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -849,8 +1126,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 
 	sharedNetworks6, err := r.getSharedNetworks(0, 5, 0, 6, nil, "addr_utilization", dbmodel.SortDirDesc)
 	if err != nil {
-		msg := "cannot get IPv6 shared networks from the db"
 		log.Error(err)
+		msg := "cannot get IPv6 shared networks from the db"
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -860,8 +1137,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	// get dhcp statistics
 	stats, err := dbmodel.GetAllStats(r.DB)
 	if err != nil {
-		msg := "cannot get statistics from db"
 		log.Error(err)
+		msg := "cannot get statistics from db"
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -884,8 +1161,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	// get kea apps and daemons statuses
 	dbApps, err := dbmodel.GetAppsByType(r.DB, dbmodel.AppTypeKea)
 	if err != nil {
-		msg := "cannot get statistics from db"
 		log.Error(err)
+		msg := "cannot get statistics from db"
 		rsp := dhcp.NewGetDhcpOverviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
@@ -979,8 +1256,8 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemonParams) middleware.Responder {
 	dbDaemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
 	if err != nil {
-		msg := fmt.Sprintf("cannot get daemon with id %d from db", params.ID)
 		log.Error(err)
+		msg := fmt.Sprintf("cannot get daemon with id %d from db", params.ID)
 		rsp := services.NewUpdateDaemonDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})

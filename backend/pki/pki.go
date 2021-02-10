@@ -168,8 +168,9 @@ func GenKeyCert(name string, dnsNames []string, ipAddresses []net.IP, serialNumb
 // key, DNS names and IP addresses.  An agent generates CSR with its
 // own parameter that will be sent for the server to sign. This
 // function is public and is used locally by GenKeyAndCSR function and
-// in the future by an agent to generate CSR (using existing agent
-// key) that is sent to server for signing.
+// by an agent in register module by generateCerts function to
+// generate CSR (using existing agent key) that is sent to server for
+// signing.
 func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKeyPEM []byte) ([]byte, [sha256.Size]byte, error) {
 	var fingerprint [sha256.Size]byte
 
@@ -223,9 +224,9 @@ func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKe
 // server. This certificate is used during TLS connection setup to
 // validate if an agent is using defined here names or addresses. It
 // is enough to provide at least one DNS name or one IP address. This
-// function is public and will be used in the future by an agent for
-// generating both agent key and CSR that is sent to server for
-// signing.
+// function is public and will be used by an agent in register module
+// by generateCerts function for generating both agent key and CSR
+// that is sent to server for signing.
 func GenKeyAndCSR(name string, dnsNames []string, ipAddresses []net.IP) ([]byte, []byte, [sha256.Size]byte, error) {
 	var fingerprint [sha256.Size]byte
 
@@ -245,8 +246,9 @@ func GenKeyAndCSR(name string, dnsNames []string, ipAddresses []net.IP) ([]byte,
 }
 
 // Parse a certificate in PEM format. Return it in *x509.Certificate
-// form.  This function is used locally by SignCert and in the future
-// in agent to verify received signed cert.
+// form.  This function is used locally by SignCert and by an agent in
+// register module by checkAndStoreCerts function to verify received
+// signed cert.
 func ParseCert(certPEM []byte) (*x509.Certificate, error) {
 	if certPEM == nil {
 		return nil, errors.New("cannot parse empty cert PEM")
@@ -265,8 +267,9 @@ func ParseCert(certPEM []byte) (*x509.Certificate, error) {
 // Sign a cerificate for a given CSR in PEM format using provided
 // serial number, a CA key and a CA cert.  It returns PEM of signed
 // CSR, fingerprint of signed CSR, parameters error and inner
-// execution error. This is public function that will be used in the
-// future in server to sign a CSR received from an agent.
+// execution error. This is public function that will be used by the
+// server in restservices module by CreateMachine function to sign a
+// CSR received from an agent.
 func SignCert(csrPEM []byte, serialNumber int64, parentCertPEM []byte, parentKeyPEM []byte) ([]byte, [sha256.Size]byte, error, error) {
 	var fingerprint [sha256.Size]byte
 	// check args

@@ -1,6 +1,7 @@
 package storkutil
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"os"
@@ -109,7 +110,7 @@ func SetupLogging() {
 	})
 }
 
-// helper code for mocking os/exec stuff... pathetic.
+// Helper code for mocking os/exec stuff... pathetic.
 type Commander interface {
 	Output(string, ...string) ([]byte, error)
 }
@@ -118,4 +119,13 @@ type RealCommander struct{}
 
 func (c RealCommander) Output(command string, args ...string) ([]byte, error) {
 	return exec.Command(command, args...).Output()
+}
+
+// Convert bytes to hex string.
+func BytesToHex(bytesArray []byte) string {
+	var buf bytes.Buffer
+	for _, f := range bytesArray {
+		fmt.Fprintf(&buf, "%02X", f)
+	}
+	return buf.String()
 }

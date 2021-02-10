@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
@@ -79,6 +80,21 @@ func MakeAccessPoint(tp, address, key string, port int64) []AccessPoint {
 		Port:    port,
 		Key:     key,
 	}}
+}
+
+// Check connectivity with machine.
+func (agents *connectedAgentsData) Ping(ctx context.Context, address string, agentPort int64) error {
+	addrPort := net.JoinHostPort(address, strconv.FormatInt(agentPort, 10))
+
+	// Call agent for version.
+	resp, err := agents.sendAndRecvViaQueue(addrPort, &agentapi.PingReq{})
+	if err != nil {
+		return errors.Wrapf(err, "failed to ping agent %s", addrPort)
+	}
+	if resp.(*agentapi.PingRsp) != nil {
+		return errors.Wrapf(err, "wrong response for ping agent %s", addrPort)
+	}
+	return nil
 }
 
 // Get version from agent.

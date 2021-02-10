@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
+	"os/user"
+	"strconv"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
@@ -19,6 +22,14 @@ func runAgent(settings *cli.Context) {
 	// We need to print this statement only after we check if the only purpose is to print a version.
 	log.Printf("Starting Stork Agent, version %s, build date %s", stork.Version, stork.BuildDate)
 
+	// try register agent in the server using agent token
+	if settings.String("server-url") != "" {
+		portStr := strconv.FormatInt(settings.Int64("port"), 10)
+		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, false, true) {
+			log.Fatalf("problem with agent registration in Stork server, exiting")
+		}
+	}
+
 	// Start app monitor
 	appMonitor := agent.NewAppMonitor()
 
@@ -28,6 +39,11 @@ func runAgent(settings *cli.Context) {
 	// Prepare Prometheus exporters
 	promKeaExporter := agent.NewPromKeaExporter(settings, appMonitor)
 	promBind9Exporter := agent.NewPromBind9Exporter(settings, appMonitor)
+
+	err := storkAgent.Setup()
+	if err != nil {
+		log.Fatalf("FATAL error: %+v", err)
+	}
 
 	// Let's start the app monitor.
 	appMonitor.Start(storkAgent)
@@ -51,6 +67,35 @@ func runAgent(settings *cli.Context) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGINT)
 	<-c
+}
+
+// Helper function that checks command line options and runs registration.
+func runRegister(cfg *cli.Context) {
+	agentAddr := ""
+	agentPort := ""
+	var err error
+	if cfg.String("agent-address") != "" {
+		agentAddr, agentPort, err = net.SplitHostPort(cfg.String("agent-address"))
+		if err != nil {
+			log.Fatalf("problem with parsing agent address: %s\n", err)
+		}
+	}
+
+	// check current user - it should be root or stork-agent
+	user, err := user.Current()
+	if err != nil {
+		log.Fatalf("cannot get info about current user: %s", err)
+	}
+	if user.Username != "root" && user.Username != "stork-agent" {
+		log.Fatalf("agent registration should be run by `root` or `stork-agent` user")
+	}
+
+	// run Register
+	if agent.Register(cfg.String("server-url"), cfg.String("token"), agentAddr, agentPort, true, false) {
+		log.Fatalf("registration completed successfully")
+	} else {
+		log.Fatalf("registration failed")
+	}
 }
 
 // Prepare urfave cli app with all flags and commands defined.
@@ -120,25 +165,60 @@ func setupApp() *cli.App {
 			&cli.IntFlag{
 				Name:    "prometheus-bind9-exporter-interval",
 				Value:   10,
-				Usage:   "specifies how often the agent collects stats from Kea, in seconds",
+				Usage:   "specifies how often the agent collects stats from BIND 9, in seconds",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"},
 			},
 			// Registration related settings
 			&cli.StringFlag{
 				Name:    "server-url",
-				Usage:   "URL of Stork server, used in agent-token based registration (optional, alternative to server-token based registration)",
+				Usage:   "URL of Stork server, used in agent token based registration (optional, alternative to server token based registration)",
 				EnvVars: []string{"STORK_AGENT_SERVER_URL"},
 			},
 		},
 		Action: func(c *cli.Context) error {
 			if c.String("server-url") != "" && c.String("host") == "0.0.0.0" {
 				log.Errorf("registration in Stork server cannot be made because agent host address is not provided")
-				log.Errorf("use --host option or STORK_AGENT_HOST environment variable")
-				os.Exit(1)
+				log.Fatalf("use --host option or STORK_AGENT_ADDRESS environment variable")
 			}
 
 			runAgent(c)
 			return nil
+		},
+		Commands: []*cli.Command{
+			{
+				Name:      "register",
+				Usage:     "register this machine in Stork server indicated by <server-url>",
+				UsageText: "stork-agent register [options]",
+				Description: `Register current agent in Stork server using provided server URL.
+
+If server access token is provided using --server-token then the agent is automatically
+authorized (server token based registration). Otherwise, the agent requires explicit
+authorization in the server using either UI or ReST API (agent token based registration).`,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "server-url",
+						Usage:   "URL of Stork server",
+						Aliases: []string{"u"},
+						EnvVars: []string{"STORK_AGENT_SERVER_URL"},
+					},
+					&cli.StringFlag{
+						Name:    "token",
+						Usage:   "access token from Stork server",
+						Aliases: []string{"t"},
+						EnvVars: []string{"STORK_AGENT_SERVER_TOKEN"},
+					},
+					&cli.StringFlag{
+						Name:    "agent-address",
+						Usage:   "IP address or DNS name with port of current agent host, eg: 10.11.12.13:8080",
+						Aliases: []string{"a"},
+						EnvVars: []string{"STORK_AGENT_ADDRESS"},
+					},
+				},
+				Action: func(c *cli.Context) error {
+					runRegister(c)
+					return nil
+				},
+			},
 		},
 	}
 

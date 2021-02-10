@@ -5,6 +5,9 @@ package agentapi;
 // This package defines API exposed by Stork Agent to Stork Server.
 
 service Agent {
+  // Check connectivity with machine.
+  rpc Ping(PingReq) returns (PingRsp) {}
+
   // Get state of machine where agent is running. It gathers information about operations system,
   // its version, CPU and available memory and runtime information like memory usage.
   rpc GetState(GetStateReq) returns (GetStateRsp) {}
@@ -36,6 +39,12 @@ message Status {
   string message = 2;
 }
 
+
+message PingReq {
+}
+
+message PingRsp {
+}
 
 message GetStateReq {
 }

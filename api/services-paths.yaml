@@ -18,6 +18,10 @@
           in: query
           description: Limit returned list of machines to these which provide given app, possible values 'bind' or 'kea'.
           type: string
+        - name: authorized
+          in: query
+          description: Indicate if authorized or unauthorized machines should be returned.
+          type: boolean
       responses:
         200:
           description: List of machines
@@ -30,22 +34,27 @@
     post:
       summary: Add new machine.
       description: >-
-        To create new machine at least one parameter is needed: address.
-        There are optional parameters as well.
+        Register new machine in the server. It requires two
+        parameters: address and agentCSR. It also requires one of two
+        other parameters: serverToken or agentToken depending or the
+        registration method selected.
       operationId: createMachine
+      # security disabled because anyone can add machine but it still requires
+      # either server token or manual authorization in web ui
+      security: []
       tags:
         - Services
       parameters:
         - name: machine
           in: body
-          description: Machine
+          description: New machine basic information including CSR.
           schema:
-            $ref: '#/definitions/Machine'
+            $ref: '#/definitions/NewMachineReq'
       responses:
         200:
-          description: Machine information
+          description: Registration information
           schema:
-            $ref: "#/definitions/Machine"
+            $ref: '#/definitions/NewMachineResp'
         default:
           description: generic error response
           schema:
@@ -118,6 +127,42 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /machines/{id}/ping:
+    post:
+      summary: Check connectivity with machine.
+      operationId: pingMachine
+      security: []
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Machine ID.
+        - in: body
+          name: ping
+          description: >-
+            Body should contain proper server or agent token. If none
+            of them match the values stored by the server, the ping is
+            rejected.
+          schema:
+            type: object
+            properties:
+              serverToken:
+                type: string
+                description: Server access token.
+              agentToken:
+                type: string
+                description: Agent token.
+      responses:
+        200:
+          description: The response is empty.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /machines/{id}/state:
     get:
       summary: Get machine's runtime state.
@@ -135,6 +180,49 @@
           description: Machine
           schema:
             $ref: "#/definitions/Machine"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
+  /machines-server-token:
+    get:
+      summary: Get server token for registering machines.
+      description: >-
+        The server token is used in server token machine registration.
+      operationId: getMachinesServerToken
+      tags:
+        - Services
+      responses:
+        200:
+          description: Current server token.
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+                description: Current server token.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+    put:
+      summary: Regenerate server token.
+      description: >-
+        When there is probability that current server token
+        leaked then it should be regenerated.
+      operationId: regenerateMachinesServerToken
+      tags:
+        - Services
+      responses:
+        200:
+          description: Regenerated server token.
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+                description: Regenerated server token.
         default:
           description: generic error response
           schema:

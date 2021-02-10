@@ -2,15 +2,18 @@ package restservice
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	keactrl "isc.org/stork/appctrl/kea"
+	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/apps/kea"
+	"isc.org/stork/server/certs"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
@@ -260,7 +263,7 @@ func TestCreateMachine(t *testing.T) {
 
 	// empty request, variant 2 - should raise an error
 	params = services.CreateMachineParams{
-		Machine: &models.Machine{},
+		Machine: &models.NewMachineReq{},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
@@ -268,12 +271,24 @@ func TestCreateMachine(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "missing parameters", *defaultRsp.Payload.Message)
 
+	// prepare request arguments
+	addr := "1.2.3.4"
+	port := int64(8080)
+	serverToken := "serverToken" // it will be corrected later when server cert is generated
+	agentToken := "agentToken"
+	_, csrPEM, _, err := pki.GenKeyAndCSR("agent", []string{"name"}, []net.IP{net.ParseIP("192.0.2.1")})
+	require.NoError(t, err)
+	agentCSR := string(csrPEM)
+
 	// bad host
-	addr := "//a/"
+	badAddr := "//a/"
 	params = services.CreateMachineParams{
-		Machine: &models.Machine{
-			Address:   &addr,
-			AgentPort: 8080,
+		Machine: &models.NewMachineReq{
+			Address:     &badAddr,
+			AgentPort:   port,
+			AgentCSR:    &agentCSR,
+			ServerToken: serverToken,
+			AgentToken:  agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
@@ -283,11 +298,13 @@ func TestCreateMachine(t *testing.T) {
 	require.Equal(t, "cannot parse address", *defaultRsp.Payload.Message)
 
 	// bad port
-	addr = "1.2.3.4"
 	params = services.CreateMachineParams{
-		Machine: &models.Machine{
-			Address:   &addr,
-			AgentPort: 0,
+		Machine: &models.NewMachineReq{
+			Address:     &addr,
+			AgentPort:   0,
+			AgentCSR:    &agentCSR,
+			ServerToken: serverToken,
+			AgentToken:  agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
@@ -296,22 +313,159 @@ func TestCreateMachine(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "bad port", *defaultRsp.Payload.Message)
 
-	// all ok
-	addr = "1.2.3.4"
+	// missing server cert in db so there will be server internal error
 	params = services.CreateMachineParams{
-		Machine: &models.Machine{
-			Address:   &addr,
-			AgentPort: 8080,
+		Machine: &models.NewMachineReq{
+			Address:     &addr,
+			AgentPort:   port,
+			AgentCSR:    &agentCSR,
+			ServerToken: serverToken,
+			AgentToken:  agentToken,
+		},
+	}
+	rsp = rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineDefault{}, rsp)
+	defaultRsp = rsp.(*services.CreateMachineDefault)
+	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	require.Equal(t, "server internal problem - server token is empty", *defaultRsp.Payload.Message)
+
+	// add server cert to db
+	caCertPEM1, serverCertPEM1, serverKeyPEM1, err := certs.SetupServerCerts(db)
+	require.NoError(t, err)
+
+	// check if rerun of setup server certs works as well
+	caCertPEM2, serverCertPEM2, serverKeyPEM2, err := certs.SetupServerCerts(db)
+	require.NoError(t, err)
+	require.Equal(t, caCertPEM1, caCertPEM2)
+	require.Equal(t, serverCertPEM1, serverCertPEM2)
+	require.Equal(t, serverKeyPEM1, serverKeyPEM2)
+
+	// get server token to use it in requests below
+	dbServerToken, err := dbmodel.GetSecret(db, dbmodel.SecretServerToken)
+	require.NoError(t, err)
+	serverToken = string(dbServerToken) // set correct value for server token
+
+	// bad server token
+	badServerToken := "abc"
+	params = services.CreateMachineParams{
+		Machine: &models.NewMachineReq{
+			Address:     &addr,
+			AgentPort:   port,
+			AgentCSR:    &agentCSR,
+			ServerToken: badServerToken,
+			AgentToken:  agentToken,
+		},
+	}
+	rsp = rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineDefault{}, rsp)
+	defaultRsp = rsp.(*services.CreateMachineDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "provided server token is wrong", *defaultRsp.Payload.Message)
+
+	// TODO: DISABLED FOR NOW
+	// // bad agent CSR
+	// badAgentCSR := "abc"
+	// params = services.CreateMachineParams{
+	// 	Machine: &models.NewMachineReq{
+	// 		Address:     &addr,
+	// 		AgentPort:   port,
+	// 		AgentCSR:    &badAgentCSR,
+	// 		ServerToken: serverToken,
+	// 		AgentToken:  agentToken,
+	// 	},
+	// }
+	// rsp = rapi.CreateMachine(ctx, params)
+	// require.IsType(t, &services.CreateMachineDefault{}, rsp)
+	// defaultRsp = rsp.(*services.CreateMachineDefault)
+	// require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	// require.Equal(t, "problem with agent CSR", *defaultRsp.Payload.Message)
+
+	// all ok
+	params = services.CreateMachineParams{
+		Machine: &models.NewMachineReq{
+			Address:     &addr,
+			AgentPort:   8080,
+			AgentCSR:    &agentCSR,
+			ServerToken: serverToken,
+			AgentToken:  agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
 	require.IsType(t, &services.CreateMachineOK{}, rsp)
 	okRsp := rsp.(*services.CreateMachineOK)
-	require.Equal(t, addr, *okRsp.Payload.Address)
-	require.EqualValues(t, 8080, okRsp.Payload.AgentPort)
-	require.Less(t, int64(0), okRsp.Payload.Memory)
-	require.Less(t, int64(0), okRsp.Payload.Cpus)
-	require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
+	require.NotEmpty(t, okRsp.Payload.ID)
+	// require.NotEmpty(t, okRsp.Payload.ServerCACert) // TODO: DISABLED FOR NOW
+	// require.NotEmpty(t, okRsp.Payload.AgentCert) // TODO: DISABLED FOR NOW
+	machines, err := dbmodel.GetAllMachines(db, nil)
+	require.NoError(t, err)
+	require.Len(t, machines, 1)
+	m1 := machines[0]
+	require.True(t, m1.Authorized)
+	// certFingerprint1 := m1.CertFingerprint // TODO: DISABLED FOR NOW
+
+	// ok, now lets ping the machine if it is alive
+	pingParams := services.PingMachineParams{
+		ID: m1.ID,
+		Ping: services.PingMachineBody{
+			ServerToken: serverToken,
+			AgentToken:  agentToken,
+		},
+	}
+	pingRsp := rapi.PingMachine(ctx, pingParams)
+	require.IsType(t, &services.PingMachineOK{}, pingRsp)
+	_, ok := pingRsp.(*services.PingMachineOK)
+	require.True(t, ok)
+
+	// re-register (the same) machine
+	params = services.CreateMachineParams{
+		Machine: &models.NewMachineReq{
+			Address:     &addr,
+			AgentPort:   8080,
+			AgentCSR:    &agentCSR,
+			ServerToken: serverToken,
+			AgentToken:  agentToken,
+		},
+	}
+	rsp = rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineOK{}, rsp)
+	okRsp = rsp.(*services.CreateMachineOK)
+	require.NotEmpty(t, okRsp.Payload.ID)
+	// require.NotEmpty(t, okRsp.Payload.ServerCACert) // TODO: DISABLED FOR NOW
+	// require.NotEmpty(t, okRsp.Payload.AgentCert) // TODO: DISABLED FOR NOW
+	machines, err = dbmodel.GetAllMachines(db, nil)
+	require.NoError(t, err)
+	require.Len(t, machines, 1)
+	m1 = machines[0]
+	require.True(t, m1.Authorized)
+	// agent cert is re-signed so fingerprint should be different
+	// require.NotEqual(t, certFingerprint1, m1.CertFingerprint) // TODO: DISABLED FOR NOW
+
+	// add another machine but with no server token (agent token is used for authorization)
+	addr = "5.6.7.8"
+	serverToken = ""
+	params = services.CreateMachineParams{
+		Machine: &models.NewMachineReq{
+			Address:     &addr,
+			AgentPort:   8080,
+			AgentCSR:    &agentCSR,
+			ServerToken: serverToken,
+			AgentToken:  agentToken,
+		},
+	}
+	rsp = rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineOK{}, rsp)
+	okRsp = rsp.(*services.CreateMachineOK)
+	require.NotEmpty(t, okRsp.Payload.ID)
+	// require.NotEmpty(t, okRsp.Payload.ServerCACert) // TODO: DISABLED FOR NOW
+	// require.NotEmpty(t, okRsp.Payload.AgentCert) // TODO: DISABLED FOR NOW
+	machines, err = dbmodel.GetAllMachines(db, nil)
+	require.NoError(t, err)
+	require.Len(t, machines, 2)
+	m2 := machines[0]
+	if m2.ID == m1.ID {
+		m2 = machines[1]
+	}
+	// require.False(t, m2.Authorized) // TODO: DISABLED FOR NOW
 }
 
 func TestGetMachines(t *testing.T) {
@@ -1397,4 +1551,51 @@ func TestUpdateDaemon(t *testing.T) {
 	okRsp = rsp.(*services.GetAppOK)
 	require.Equal(t, keaApp.ID, okRsp.Payload.ID)
 	require.False(t, okRsp.Payload.Details.AppKea.Daemons[0].Monitored) // now it is false
+}
+
+// Check if generating and getting server token works.
+func TestServerToken(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	settings := RestAPISettings{}
+
+	// Configure the fake control and preare rest API.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// setup a user session, it is required to check user role in GetMachinesServerToken
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx2, err := rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx2, user)
+	require.NoError(t, err)
+
+	// get server token but it was not created yet, so error is expected
+	params := services.GetMachinesServerTokenParams{}
+	rsp := rapi.GetMachinesServerToken(ctx2, params)
+	require.IsType(t, &services.GetMachinesServerTokenDefault{}, rsp)
+	errRsp := rsp.(*services.GetMachinesServerTokenDefault)
+	require.EqualValues(t, "server internal problem - server token is empty", *errRsp.Payload.Message)
+
+	// generate server token
+	serverToken, err := certs.GenerateServerToken(db)
+	require.NoError(t, err)
+	require.NotEmpty(t, serverToken)
+
+	// get server token
+	rsp = rapi.GetMachinesServerToken(ctx2, params)
+	require.IsType(t, &services.GetMachinesServerTokenOK{}, rsp)
+	okRsp := rsp.(*services.GetMachinesServerTokenOK)
+	require.EqualValues(t, serverToken, okRsp.Payload.Token)
+
+	// regenerate server token
+	regenParams := services.RegenerateMachinesServerTokenParams{}
+	rsp = rapi.RegenerateMachinesServerToken(ctx2, regenParams)
+	require.IsType(t, &services.RegenerateMachinesServerTokenOK{}, rsp)
+	okRegenRsp := rsp.(*services.RegenerateMachinesServerTokenOK)
+	require.NotEmpty(t, okRegenRsp.Payload.Token)
 }

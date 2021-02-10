@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-ce
 RUN mkdir -p /tmp/libuv && cd /tmp/libuv && git clone https://github.com/libuv/libuv.git && cd libuv && sh autogen.sh && ./configure && make && make install
 
 # Install flamethrower for DNS testing.
-RUN mkdir -p /tmp/flamethrower && cd /tmp/flamethrower && git clone https://github.com/DNS-OARC/flamethrower && cd flamethrower && mkdir build && cd build && cmake .. && make && make install
+RUN mkdir -p /tmp/flamethrower && cd /tmp/flamethrower && git clone https://github.com/DNS-OARC/flamethrower && cd flamethrower && git checkout v0.10.2 && mkdir build && cd build && cmake .. && make && make install
 
 # Install perfdhcp
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/isc/kea-1-7/cfg/setup/bash.deb.sh' | bash

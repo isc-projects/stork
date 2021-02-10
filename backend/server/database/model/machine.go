@@ -31,16 +31,20 @@ type MachineState struct {
 
 // Represents a machine held in machine table in the database.
 type Machine struct {
-	ID            int64
-	CreatedAt     time.Time
-	Address       string
-	AgentPort     int64
-	LastVisitedAt time.Time
-	Error         string
-	State         MachineState
-	Apps          []*App
+	ID              int64
+	CreatedAt       time.Time
+	Address         string
+	AgentPort       int64
+	LastVisitedAt   time.Time
+	Error           string
+	State           MachineState
+	Apps            []*App
+	AgentToken      string
+	CertFingerprint [32]byte
+	Authorized      bool `pg:",use_zero"`
 }
 
+// Add new machine to database.
 func AddMachine(db *pg.DB, machine *Machine) error {
 	err := db.Insert(machine)
 	if err != nil {
@@ -49,6 +53,16 @@ func AddMachine(db *pg.DB, machine *Machine) error {
 	return err
 }
 
+// Update a machine in database.
+func UpdateMachine(db *pg.DB, machine *Machine) error {
+	err := db.Update(machine)
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "problem with updating machine %+v", machine)
+	}
+	return err
+}
+
+// Get a machine by address and agent port.
 func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64) (*Machine, error) {
 	machine := Machine{}
 	q := db.Model(&machine)
@@ -64,6 +78,7 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64)
 	return &machine, nil
 }
 
+// Get a machine by its ID.
 func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	machine := Machine{}
 	q := db.Model(&machine).Where("machine.id = ?", id)
@@ -80,6 +95,7 @@ func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 	return &machine, nil
 }
 
+// Refresh machine from database.
 func RefreshMachineFromDB(db *pg.DB, machine *Machine) error {
 	machine.Apps = []*App{}
 	q := db.Model(machine).Where("id = ?", machine.ID)
@@ -92,14 +108,26 @@ func RefreshMachineFromDB(db *pg.DB, machine *Machine) error {
 	return nil
 }
 
-// Fetches a collection of machines from the database. The offset and
-// limit specify the beginning of the page and the maximum size of the
-// page. Limit has to be greater then 0, otherwise error is
-// returned. sortField allows indicating sort column in database and
-// sortDir allows selection the order of sorting. If sortField is
-// empty then id is used for sorting.  in SortDirAny is used then ASC
-// order is used.
-func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string, sortField string, sortDir SortDirEnum) ([]Machine, int64, error) {
+// Fetches a collection of machines from the database.
+//
+// The offset and limit specify the beginning of the page and the
+// maximum size of the page. Limit has to be greater then 0, otherwise
+// error is returned.
+//
+// filterText allows filtering machines by provided text. It is check
+// against several different fields in Machine record. If not provided
+// then no filtering by text happens.
+//
+// authorized allows filtering machines by authorized field in Machine
+// record. It can be true or false then authorized or unauthorized
+// machines are returned. If it is nil then no filtering by authorized
+// happens (ie. all machines are returned).
+//
+// sortField allows indicating sort column in database and sortDir
+// allows selection the order of sorting. If sortField is empty then
+// id is used for sorting.  in SortDirAny is used then ASC order is
+// used.
+func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string, authorized *bool, sortField string, sortDir SortDirEnum) ([]Machine, int64, error) {
 	if limit == 0 {
 		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}
@@ -110,6 +138,8 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 	q = q.Relation("Apps.AccessPoints")
 	q = q.Relation("Apps.Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Apps.Daemons.Bind9Daemon")
+
+	// prepare filtering by text
 	if filterText != nil {
 		text := "%" + *filterText + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
@@ -129,7 +159,12 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 		})
 	}
 
-	// prepare sorting expression, offser and limit
+	// prepare filtering by authorized
+	if authorized != nil {
+		q = q.Where("authorized = ?", *authorized)
+	}
+
+	// prepare sorting expression, offset and limit
 	ordExpr := prepareOrderExpr("machine", sortField, sortDir)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))
@@ -146,12 +181,15 @@ func GetMachinesByPage(db *pg.DB, offset int64, limit int64, filterText *string,
 	return machines, int64(total), nil
 }
 
-// Get all machines from database.
-func GetAllMachines(db *pg.DB) ([]Machine, error) {
+// Get all machines from database. It can be filtered by authorized field.
+func GetAllMachines(db *pg.DB, authorized *bool) ([]Machine, error) {
 	var machines []Machine
 
 	// prepare query
 	q := db.Model(&machines)
+	if authorized != nil {
+		q = q.Where("authorized = ?", *authorized)
+	}
 	q = q.Relation("Apps.AccessPoints")
 	q = q.Relation("Apps.Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Apps.Daemons.Bind9Daemon")
@@ -164,6 +202,7 @@ func GetAllMachines(db *pg.DB) ([]Machine, error) {
 	return machines, nil
 }
 
+// Delete a machine from database.
 func DeleteMachine(db *pg.DB, machine *Machine) error {
 	err := db.Delete(machine)
 	if err != nil {
