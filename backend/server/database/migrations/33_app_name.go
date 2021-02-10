@@ -52,6 +52,10 @@ func init() {
                 LANGUAGE 'plpgsql'
                 AS $function$
             BEGIN
+                -- Trim whitespace before and after the actual name.
+                SELECT REGEXP_REPLACE(NEW.name, '\s+$', '') INTO NEW.name;
+                SELECT REGEXP_REPLACE(NEW.name, '^\s+', '') INTO NEW.name;
+
                 IF NEW.name IS NULL OR NEW.name = '' THEN
                     -- Create base name without a postfix.
                     NEW.name = CONCAT(NEW.type, '@', (SELECT address FROM machine WHERE id = NEW.machine_id));

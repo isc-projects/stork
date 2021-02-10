@@ -702,7 +702,7 @@ func TestSetEmptyAppName(t *testing.T) {
 	require.NotZero(t, app1.ID)
 
 	// Set empty app name. It should result in auto generating the name.
-	app1.Name = ""
+	app1.Name = " "
 	_, _, err = UpdateApp(db, app1)
 	require.NoError(t, err)
 
