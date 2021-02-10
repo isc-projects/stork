@@ -272,21 +272,37 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 	return addedDaemons, deletedDaemons, nil
 }
 
-// Updates specified app's name.
-func RenameApp(db *pg.DB, id int64, newName string) error {
+// Updates specified app's name. It returns app instance with old name and possibly
+// an error. If an error occurs, a nil app is returned.
+func RenameApp(db *pg.DB, id int64, newName string) (*App, error) {
 	app := &App{
 		ID:   id,
 		Name: newName,
 	}
-	_, err := db.Model(app).
+	// We're going to use the following query:
+	// WITH rename AS (
+	//     UPDATE app SET name = ?
+	//     RETURNING name
+	// )
+	// SELECT * FROM app;
+
+	// This query selects app name before doing and update and performs
+	// the update. The idea for this query was taken from the PostgreSQL
+	// documentation: https://www.postgresql.org/docs/9.1/queries-with.html
+
+	updateQuery := db.Model(app).
 		Column("name").
 		WherePK().
-		Update()
+		Returning("name")
+
+	err := db.Model(app).
+		WithUpdate("rename", updateQuery).
+		Select()
 	if err != nil {
-		return pkgerrors.Wrapf(err, "problem with renaming an app %d to %s", app.ID, newName)
+		return nil, pkgerrors.Wrapf(err, "problem with renaming an app %d to %s", app.ID, newName)
 	}
 
-	return nil
+	return app, nil
 }
 
 func GetAppByID(db *pg.DB, id int64) (*App, error) {

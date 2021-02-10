@@ -482,8 +482,12 @@ func TestRenameApp(t *testing.T) {
 	_, err = AddApp(db, app)
 	require.NoError(t, err, "found error %+v", err)
 
-	err = RenameApp(db, app.ID, "dhcp-server2")
+	oldApp, err := RenameApp(db, app.ID, "dhcp-server2")
 	require.NoError(t, err)
+	require.NotNil(t, oldApp)
+	require.Equal(t, "dhcp-server1", oldApp.Name)
+	require.Equal(t, AppTypeKea, oldApp.Type)
+	require.Equal(t, machine.ID, oldApp.MachineID)
 
 	// Make sure the app has been renamed in the database.
 	appReturned, err := GetAppByID(db, app.ID)
@@ -493,8 +497,9 @@ func TestRenameApp(t *testing.T) {
 	require.Equal(t, AppTypeKea, appReturned.Type)
 
 	// Trying to set invalid name should cause an error.
-	err = RenameApp(db, app.ID, "dhcp-server2@machine3")
+	oldApp, err = RenameApp(db, app.ID, "dhcp-server2@machine3")
 	require.Error(t, err)
+	require.Nil(t, oldApp)
 }
 
 func TestDeleteApp(t *testing.T) {

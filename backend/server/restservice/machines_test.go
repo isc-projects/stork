@@ -1654,6 +1654,13 @@ func TestRenameApp(t *testing.T) {
 	defaultRsp := rsp.(*services.RenameAppDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 
+	// Ensure that the event informaing about renaming the app was emitted.
+	require.Len(t, fec.Events, 1)
+	require.Contains(t, fec.Events[0].Text, "renamed from dhcp-server1")
+	require.NotNil(t, fec.Events[0].Relations)
+	require.Equal(t, machine.ID, fec.Events[0].Relations.MachineID)
+	require.Equal(t, app.ID, fec.Events[0].Relations.AppID)
+
 	// Empty name (with only whitespace) should cause an error too.
 	newName = "   "
 	rsp = rapi.RenameApp(ctx, params)

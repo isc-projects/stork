@@ -1316,20 +1316,37 @@ func (r *RestAPI) RenameApp(ctx context.Context, params services.RenameAppParams
 	}
 	if len(appName) == 0 {
 		msg := fmt.Sprintf("unable to rename app with id %d to an empty string", params.ID)
+		log.Warn(msg)
 		rsp := services.NewRenameAppDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
 	// Try to rename the app.
-	err := dbmodel.RenameApp(r.DB, params.ID, appName)
+	oldApp, err := dbmodel.RenameApp(r.DB, params.ID, appName)
 	if err != nil {
 		msg := fmt.Sprintf("unable to rename app with id %d to %s", params.ID, appName)
+		log.Warnf("%s: %s", msg, err)
 		rsp := services.NewRenameAppDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
+
+	// Create an event. It will contain an old and new app name.
+	newApp := &dbmodel.App{
+		ID:        params.ID,
+		Name:      appName,
+		Type:      oldApp.Type,
+		MachineID: oldApp.MachineID,
+	}
+	machine := &dbmodel.Machine{
+		ID: oldApp.MachineID,
+	}
+	r.EventCenter.AddInfoEvent(fmt.Sprintf("{app} renamed from %s", oldApp.Name), newApp, machine)
+
+	log.Infof("app %s successfully renamed to %s", oldApp.Name, newApp.Name)
+
 	// Rename was ok.
 	rsp := services.NewRenameAppOK()
 	return rsp
