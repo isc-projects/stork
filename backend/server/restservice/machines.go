@@ -169,6 +169,36 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 	return rsp
 }
 
+// Returns a list of all authorized  machines' ids and addresses/names. A client calls this
+// function to create a drop down list with available machines or to validate user's input
+// against machines' names available in the system.
+func (r *RestAPI) GetMachinesDirectory(ctx context.Context, params services.GetMachinesDirectoryParams) middleware.Responder {
+	authorized := true
+	dbMachines, err := dbmodel.GetAllMachines(r.DB, &authorized)
+	if err != nil {
+		log.Error(err)
+		msg := "cannot get machines directory from the database"
+		rsp := services.NewGetMachinesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	machines := &models.Machines{
+		Total: int64(len(dbMachines)),
+	}
+	for i := range dbMachines {
+		machine := models.Machine{
+			ID:      dbMachines[i].ID,
+			Address: &dbMachines[i].Address,
+		}
+		machines.Items = append(machines.Items, &machine)
+	}
+
+	rsp := services.NewGetMachinesDirectoryOK().WithPayload(machines)
+	return rsp
+}
+
 // Check server token provided by user in agent registration
 // procedure. If it is empty and it is allowed to be empty then it is
 // accepted (true is returned). Otherwise provided token is compared
@@ -855,6 +885,35 @@ func (r *RestAPI) GetApps(ctx context.Context, params services.GetAppsParams) mi
 		return rsp
 	}
 	rsp := services.NewGetAppsOK().WithPayload(apps)
+	return rsp
+}
+
+// Returns a list of all apps' ids and names. A client calls this function to create a
+// drop down list with available apps or to validate user's input against apps' names
+// available in the system.
+func (r *RestAPI) GetAppsDirectory(ctx context.Context, params services.GetAppsDirectoryParams) middleware.Responder {
+	dbApps, err := dbmodel.GetAllApps(r.DB, false)
+	if err != nil {
+		log.Error(err)
+		msg := "cannot get apps directory from the database"
+		rsp := services.NewGetAppsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	apps := &models.Apps{
+		Total: int64(len(dbApps)),
+	}
+	for i := range dbApps {
+		app := models.App{
+			ID:   dbApps[i].ID,
+			Name: dbApps[i].Name,
+		}
+		apps.Items = append(apps.Items, &app)
+	}
+
+	rsp := services.NewGetAppsDirectoryOK().WithPayload(apps)
 	return rsp
 }
 

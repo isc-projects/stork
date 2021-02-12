@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"sort"
 	"testing"
 	"time"
 
@@ -503,6 +504,56 @@ func TestGetMachines(t *testing.T) {
 	require.EqualValues(t, ms.Total, 2)
 }
 
+// Test that a list of machines' ids and addresses/names is returned
+// via the API.
+func TestGetMachinesDirectory(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add machines.
+	machine1 := &dbmodel.Machine{
+		Address:    "machine1.example.org",
+		AgentPort:  8080,
+		Authorized: true,
+	}
+	err := dbmodel.AddMachine(db, machine1)
+	require.NoError(t, err)
+
+	machine2 := &dbmodel.Machine{
+		Address:    "machine2.example.org",
+		AgentPort:  8080,
+		Authorized: true,
+	}
+	err = dbmodel.AddMachine(db, machine2)
+	require.NoError(t, err)
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	params := services.GetMachinesDirectoryParams{}
+
+	rsp := rapi.GetMachinesDirectory(ctx, params)
+	machines := rsp.(*services.GetMachinesDirectoryOK).Payload
+	require.EqualValues(t, machines.Total, 2)
+
+	// Ensure that the returned machines are in a coherent order.
+	sort.Slice(machines.Items, func(i, j int) bool {
+		return machines.Items[i].ID < machines.Items[j].ID
+	})
+
+	// Validate the returned data.
+	require.Equal(t, machine1.ID, machines.Items[0].ID)
+	require.NotNil(t, machines.Items[0].Address)
+	require.Equal(t, machine1.Address, *machines.Items[0].Address)
+	require.Equal(t, machine2.ID, machines.Items[1].ID)
+	require.NotNil(t, machines.Items[1].Address)
+	require.Equal(t, machine2.Address, *machines.Items[1].Address)
+}
+
 func TestGetMachine(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -972,6 +1023,72 @@ func TestRestGetApps(t *testing.T) {
 			require.EqualValues(t, 3, daemon.StatsCommErrors)
 		}
 	}
+}
+
+// Test that a list of apps' ids and names is returned via the API.
+func TestGetAppsDirectory(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add a machine,
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add Kea app to the machine.
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234)
+	keaApp := &dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		Name:         "kea-app",
+		AccessPoints: keaPoints,
+	}
+	_, err = dbmodel.AddApp(db, keaApp)
+	require.NoError(t, err)
+
+	// Add BIND 9 app to the machine.
+	var bind9Points []*dbmodel.AccessPoint
+	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321)
+	bind9App := &dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeBind9,
+		Active:       true,
+		Name:         "bind9-app",
+		AccessPoints: bind9Points,
+	}
+	_, err = dbmodel.AddApp(db, bind9App)
+	require.NoError(t, err)
+
+	params := services.GetAppsDirectoryParams{}
+	rsp := rapi.GetAppsDirectory(ctx, params)
+	require.IsType(t, &services.GetAppsDirectoryOK{}, rsp)
+	apps := rsp.(*services.GetAppsDirectoryOK).Payload
+	require.EqualValues(t, 2, apps.Total)
+
+	// Ensure that the returned apps are in a coherent order.
+	sort.Slice(apps.Items, func(i, j int) bool {
+		return apps.Items[i].ID < apps.Items[j].ID
+	})
+
+	// Validate the returned data.
+	require.Equal(t, keaApp.ID, apps.Items[0].ID)
+	require.NotNil(t, apps.Items[0].Name)
+	require.Equal(t, keaApp.Name, apps.Items[0].Name)
+	require.Equal(t, bind9App.ID, apps.Items[1].ID)
+	require.NotNil(t, apps.Items[1].Name)
+	require.Equal(t, bind9App.Name, apps.Items[1].Name)
 }
 
 // Test that status of two HA services for a Kea application is parsed

@@ -60,6 +60,29 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /machines/directory:
+    get:
+      summary: Get a list of all machines' ids, addresses and/or names.
+      description: >-
+        Returns a list of all machines' ids, addresses and/or names. It excludes detailed
+        information about the machines to return reasonably compact information. Having
+        the machines' names and/or addresses is useful in the forms which require
+        validating user's input against the list of machines present in the system. It
+        may be also useful to create drop down lists holding the machines' addresses
+        or names. Each returned machine address or name is accompanied by its id.
+      operationId: getMachinesDirectory
+      tags:
+        - Services
+      responses:
+        200:
+          description: List of machine ids and names/addresses.
+          schema:
+            $ref: '#/definitions/Machines'
+        default:
+          description: 'generic error response'
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /machines/{id}:
     get:
       summary: Get machine by ID.
@@ -257,6 +280,29 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /apps/directory:
+    get:
+      summary: Get a list of all apps' ids and names.
+      description: >-
+        Returns a list of all apps' ids and names. It excludes detailed information
+        about the apps to return reasonably compact information. Having the apps'
+        names is useful in the forms which require validating user's input against
+        the list of apps present in the system. It may be also useful to create
+        drop down lists holding the apps' names. Each returned name is accompanied
+        by its id.
+      operationId: getAppsDirectory
+      tags:
+        - Services
+      responses:
+        200:
+          description: List of app ids and names.
+          schema:
+            $ref: '#/definitions/Apps'
+        default:
+          description: 'generic error response'
+          schema:
+            $ref: '#/definitions/ApiError'
 
   /apps/{id}:
     get:
