@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core'
 import { Observable, Subject, merge, timer, EMPTY } from 'rxjs'
-import { switchMap, shareReplay, catchError, filter } from 'rxjs/operators'
+import { switchMap, shareReplay, catchError, filter, map } from 'rxjs/operators'
 
 import { AuthService } from './auth.service'
 import { ServicesService, UsersService } from './backend/api/api'
 import { AppsStats } from './backend/model/appsStats'
 import { Groups } from './backend/model/groups'
+import { Machines } from './backend/model/machines'
 
 /**
  * Service for providing and caching data from the server.
@@ -18,7 +19,10 @@ export class ServerDataService {
     private groups: Observable<Groups>
     private reloadAppStats = new Subject<void>()
 
-    constructor(private auth: AuthService, private servicesApi: ServicesService, private usersApi: UsersService) {}
+    private _machinesAddresses: Observable<any>
+    private _appsNames: Observable<any>
+
+    constructor(private auth: AuthService, public servicesApi: ServicesService, private usersApi: UsersService) {}
 
     /**
      * Get apps stats from the server and cache it for other subscribers.
@@ -98,5 +102,48 @@ export class ServerDataService {
             }
         }
         return 'unknown'
+    }
+
+    /**
+     * Returns a set of machines' addresses.
+     *
+     * This function fetches a list of all machines' ids and addresses and
+     * transforms returned data to a set of machines' addresses.
+     *
+     * @returns Observable holding a list of machines' addresses.
+     */
+    public getMachinesAddresses() {
+        this._machinesAddresses = this.servicesApi.getMachinesDirectory().pipe(
+            map((data) => {
+                const addresses = new Set()
+                for (const m of data.items) {
+                    addresses.add(m.address)
+                }
+                return addresses
+            })
+        )
+        return this._machinesAddresses
+    }
+
+    /**
+     * Returns a set of apps' names.
+     *
+     * This function fetches a list of all apps' ids and names and
+     * transforms returned data to a map with an app name as a key
+     * and id as a value.
+     *
+     * @returns Observable holding a list of apps' names.
+     */
+    public getAppsNames() {
+        this._appsNames = this.servicesApi.getAppsDirectory().pipe(
+            map((data) => {
+                const names = new Map()
+                for (const a of data.items) {
+                    names.set(a.name, a.id)
+                }
+                return names
+            })
+        )
+        return this._appsNames
     }
 }
