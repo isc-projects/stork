@@ -377,7 +377,7 @@ func GetSubnetsByPage(db *pg.DB, offset, limit, appID, family int64, filterText 
 		})
 	}
 
-	// prepare sorting expression, offser and limit
+	// prepare sorting expression, offset and limit
 	ordExpr := prepareOrderExpr("subnet", sortField, sortDir)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))

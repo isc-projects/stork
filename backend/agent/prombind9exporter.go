@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/common/version"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
+
 	"isc.org/stork"
 	storkutil "isc.org/stork/util"
 )

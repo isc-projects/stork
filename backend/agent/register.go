@@ -214,7 +214,7 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 	var result map[string]interface{}
 	err = json.Unmarshal(data, &result)
 	if err != nil {
-		return 0, "", "", errors.Wrapf(err, "problem with parsing server's response while registering the machine")
+		return 0, "", "", errors.Wrapf(err, "problem with parsing server's response while registering the machine: %v", result)
 	}
 	errTxt := result["error"]
 	if errTxt != nil {
@@ -323,29 +323,31 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 	}
 	var result map[string]interface{}
 	err = json.Unmarshal(data, &result)
-	if err != nil {
-		return errors.Wrapf(err, "problem with parsing server's response while pinging machine")
-	}
-	errTxt := result["error"]
-	if errTxt != nil {
-		msg := "problem with pinging machine"
-		errTxtStr, ok := errTxt.(string)
-		if ok {
-			msg = fmt.Sprintf("problem with pinging machine: %s", errTxtStr)
-		}
-		return errors.New(msg)
-	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		errTxt = result["message"]
-		var msg string
+	// normally the response is empty so unmarshaling is failing, if it didn't fail it means
+	// that there could be some error information
+	if err == nil {
+		errTxt := result["error"]
 		if errTxt != nil {
+			msg := "problem with pinging machine"
 			errTxtStr, ok := errTxt.(string)
 			if ok {
 				msg = fmt.Sprintf("problem with pinging machine: %s", errTxtStr)
-			} else {
-				msg = "problem with pinging machine"
 			}
-		} else {
+			return errors.New(msg)
+		}
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		var msg string
+		if result != nil {
+			errTxt := result["message"]
+			if errTxt != nil {
+				errTxtStr, ok := errTxt.(string)
+				if ok {
+					msg = fmt.Sprintf("problem with pinging machine: %s", errTxtStr)
+				}
+			}
+		}
+		if msg == "" {
 			msg = fmt.Sprintf("problem with pinging machine: http status code %d", resp.StatusCode)
 		}
 		return errors.New(msg)
@@ -365,7 +367,7 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 // registration is automatic during agent service startup. Server
 // token can be provided in manual registration via command line
 // switch. This way the agent will be immediately authorized in the
-// server.  If server token is empty (in automatic registration or
+// server. If server token is empty (in automatic registration or
 // when it is not provided in manual registration) then agent is added
 // to server but requires manual authorization in web UI.
 func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bool, retry bool) bool {
@@ -445,7 +447,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		// invoke getting machine state via server
 		for i := 1; i < 4; i++ {
 			err = pingAgentViaServer(client, baseSrvURL, machineID, serverToken2, agentToken)
-			if err != nil {
+			if err == nil {
 				break
 			}
 			if i < 3 {

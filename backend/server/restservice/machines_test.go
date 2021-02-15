@@ -362,23 +362,22 @@ func TestCreateMachine(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "provided server token is wrong", *defaultRsp.Payload.Message)
 
-	// TODO: DISABLED FOR NOW
-	// // bad agent CSR
-	// badAgentCSR := "abc"
-	// params = services.CreateMachineParams{
-	// 	Machine: &models.NewMachineReq{
-	// 		Address:     &addr,
-	// 		AgentPort:   port,
-	// 		AgentCSR:    &badAgentCSR,
-	// 		ServerToken: serverToken,
-	// 		AgentToken:  agentToken,
-	// 	},
-	// }
-	// rsp = rapi.CreateMachine(ctx, params)
-	// require.IsType(t, &services.CreateMachineDefault{}, rsp)
-	// defaultRsp = rsp.(*services.CreateMachineDefault)
-	// require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	// require.Equal(t, "problem with agent CSR", *defaultRsp.Payload.Message)
+	// bad agent CSR
+	badAgentCSR := "abc"
+	params = services.CreateMachineParams{
+		Machine: &models.NewMachineReq{
+			Address:     &addr,
+			AgentPort:   port,
+			AgentCSR:    &badAgentCSR,
+			ServerToken: serverToken,
+			AgentToken:  agentToken,
+		},
+	}
+	rsp = rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineDefault{}, rsp)
+	defaultRsp = rsp.(*services.CreateMachineDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "problem with agent CSR", *defaultRsp.Payload.Message)
 
 	// all ok
 	params = services.CreateMachineParams{
@@ -394,14 +393,14 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineOK{}, rsp)
 	okRsp := rsp.(*services.CreateMachineOK)
 	require.NotEmpty(t, okRsp.Payload.ID)
-	// require.NotEmpty(t, okRsp.Payload.ServerCACert) // TODO: DISABLED FOR NOW
-	// require.NotEmpty(t, okRsp.Payload.AgentCert) // TODO: DISABLED FOR NOW
+	require.NotEmpty(t, okRsp.Payload.ServerCACert)
+	require.NotEmpty(t, okRsp.Payload.AgentCert)
 	machines, err := dbmodel.GetAllMachines(db, nil)
 	require.NoError(t, err)
 	require.Len(t, machines, 1)
 	m1 := machines[0]
 	require.True(t, m1.Authorized)
-	// certFingerprint1 := m1.CertFingerprint // TODO: DISABLED FOR NOW
+	certFingerprint1 := m1.CertFingerprint
 
 	// ok, now lets ping the machine if it is alive
 	pingParams := services.PingMachineParams{
@@ -430,15 +429,15 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineOK{}, rsp)
 	okRsp = rsp.(*services.CreateMachineOK)
 	require.NotEmpty(t, okRsp.Payload.ID)
-	// require.NotEmpty(t, okRsp.Payload.ServerCACert) // TODO: DISABLED FOR NOW
-	// require.NotEmpty(t, okRsp.Payload.AgentCert) // TODO: DISABLED FOR NOW
+	require.NotEmpty(t, okRsp.Payload.ServerCACert)
+	require.NotEmpty(t, okRsp.Payload.AgentCert)
 	machines, err = dbmodel.GetAllMachines(db, nil)
 	require.NoError(t, err)
 	require.Len(t, machines, 1)
 	m1 = machines[0]
 	require.True(t, m1.Authorized)
 	// agent cert is re-signed so fingerprint should be different
-	// require.NotEqual(t, certFingerprint1, m1.CertFingerprint) // TODO: DISABLED FOR NOW
+	require.NotEqual(t, certFingerprint1, m1.CertFingerprint)
 
 	// add another machine but with no server token (agent token is used for authorization)
 	addr = "5.6.7.8"
@@ -456,8 +455,8 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineOK{}, rsp)
 	okRsp = rsp.(*services.CreateMachineOK)
 	require.NotEmpty(t, okRsp.Payload.ID)
-	// require.NotEmpty(t, okRsp.Payload.ServerCACert) // TODO: DISABLED FOR NOW
-	// require.NotEmpty(t, okRsp.Payload.AgentCert) // TODO: DISABLED FOR NOW
+	require.NotEmpty(t, okRsp.Payload.ServerCACert)
+	require.NotEmpty(t, okRsp.Payload.AgentCert)
 	machines, err = dbmodel.GetAllMachines(db, nil)
 	require.NoError(t, err)
 	require.Len(t, machines, 2)
@@ -465,7 +464,7 @@ func TestCreateMachine(t *testing.T) {
 	if m2.ID == m1.ID {
 		m2 = machines[1]
 	}
-	// require.False(t, m2.Authorized) // TODO: DISABLED FOR NOW
+	require.False(t, m2.Authorized)
 }
 
 func TestGetMachines(t *testing.T) {

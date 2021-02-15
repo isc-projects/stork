@@ -398,7 +398,7 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64
 		q = q.Relation("Subnet")
 	}
 
-	// prepare sorting expression, offser and limit
+	// prepare sorting expression, offset and limit
 	ordExpr := prepareOrderExpr("host", sortField, sortDir)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))

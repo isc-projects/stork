@@ -18,6 +18,7 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/netutil"
+
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
 	dbops "isc.org/stork/server/database"

@@ -12,5 +12,9 @@
     "/swagger.json": {
         "target": "http://localhost:8080",
         "secure": false
+    },
+    "/stork-install-agent.sh": {
+        "target": "http://localhost:8080",
+        "secure": false
     }
 }

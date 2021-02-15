@@ -2,7 +2,6 @@ package restservice
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"strings"
@@ -283,59 +282,51 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
-	// sign agent cert - DISABLED FOR NOW
-	var agentCertFingerprint [sha256.Size]byte
-	var rootCertPEM []byte
-	var agentCertPEM []byte
-	if false {
-		agentCSR := []byte(*params.Machine.AgentCSR)
-		// log.Printf("received agent CSR: %s", agentCSR)
-		certSerialNumber, err := dbmodel.GetNewCertSerialNumber(r.DB)
-		if err != nil {
-			log.Error(err)
-			msg := "problem with generating serial number for cert"
-			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
-		rootKeyPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCAKey)
-		if err != nil {
-			log.Error(err)
-			msg := "problem with loading server CA private key"
-			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
-		rootCertPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCACert)
-		if err != nil {
-			log.Error(err)
-			msg := "problem with loading server CA cert"
-			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
-		_, _, paramsErr, innerErr := pki.SignCert(agentCSR, certSerialNumber, rootCertPEM, rootKeyPEM)
-		if paramsErr != nil {
-			log.Error(paramsErr)
-			msg := "problem with agent CSR"
-			rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
-		if innerErr != nil {
-			log.Error(innerErr)
-			msg := "problem with signing agent CSR"
-			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &msg,
-			})
-			return rsp
-		}
-	} else {
-		machineAuthorized = true
+	// sign agent cert
+	agentCSR := []byte(*params.Machine.AgentCSR)
+	certSerialNumber, err := dbmodel.GetNewCertSerialNumber(r.DB)
+	if err != nil {
+		log.Error(err)
+		msg := "problem with generating serial number for cert"
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	rootKeyPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCAKey)
+	if err != nil {
+		log.Error(err)
+		msg := "problem with loading server CA private key"
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	rootCertPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCACert)
+	if err != nil {
+		log.Error(err)
+		msg := "problem with loading server CA cert"
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	agentCertPEM, agentCertFingerprint, paramsErr, innerErr := pki.SignCert(agentCSR, certSerialNumber, rootCertPEM, rootKeyPEM)
+	if paramsErr != nil {
+		log.Error(paramsErr)
+		msg := "problem with agent CSR"
+		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if innerErr != nil {
+		log.Error(innerErr)
+		msg := "problem with signing agent CSR"
+		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
 	}
 
 	// We can't create new machine and pull machines' states at the same time. This may
@@ -378,16 +369,6 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 			return rsp
 		}
 		r.EventCenter.AddInfoEvent("re-registered {machine}", dbMachine)
-	}
-
-	if machineAuthorized {
-		errStr := apps.GetMachineAndAppsState(ctx, r.DB, dbMachine, r.Agents, r.EventCenter)
-		if errStr != "" {
-			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-				Message: &errStr,
-			})
-			return rsp
-		}
 	}
 
 	m := &models.NewMachineResp{
@@ -448,6 +429,15 @@ func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachinePa
 		log.Error(err)
 		rsp := services.NewPingMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
+		})
+		return rsp
+	}
+
+	// so as all is ok then get state from the machine
+	errStr := apps.GetMachineAndAppsState(ctx2, r.DB, dbMachine, r.Agents, r.EventCenter)
+	if errStr != "" {
+		rsp := services.NewPingMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &errStr,
 		})
 		return rsp
 	}
@@ -530,6 +520,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	// copy fields
 	dbMachine.Address = addr
 	dbMachine.AgentPort = params.Machine.AgentPort
+	prevAuthorized := dbMachine.Authorized
 	dbMachine.Authorized = params.Machine.Authorized
 	err = r.DB.Update(dbMachine)
 	if err != nil {
@@ -540,6 +531,20 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		})
 		return rsp
 	}
+
+	// as we just authorized machine so get its state now
+	if !prevAuthorized && dbMachine.Authorized {
+		ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		errStr := apps.GetMachineAndAppsState(ctx2, r.DB, dbMachine, r.Agents, r.EventCenter)
+		if errStr != "" {
+			rsp := services.NewUpdateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+				Message: &errStr,
+			})
+			return rsp
+		}
+	}
+
 	m := r.machineToRestAPI(*dbMachine)
 	rsp := services.NewUpdateMachineOK().WithPayload(m)
 	return rsp

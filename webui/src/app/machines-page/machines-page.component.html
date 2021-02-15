@@ -4,63 +4,13 @@
             This page displays a list of all machines that have been configured in Stork. It allows adding new machines
             as well as removing them.
         </p>
+        <p>
+            By default the list shows all authorized machines. If a toggle <em>Show Unauthorized</em> is switched to on
+            then the list will show machines that are unauthorized. They were registered using agent token based way. To
+            authorize the machine click action menu button and then <em>Authorize</em>.
+        </p>
     </div>
 </app-breadcrumbs>
-
-<p-dialog header="New Machine" [(visible)]="newMachineDlgVisible" [style]="{ width: '40vw' }">
-    <p style="padding-bottom: 1em">
-        First, install Stork Agent on the machine with Kea or BIND 9. This is described in
-        <a target="blank" href="/assets/arm/index.html#agent-deploy"
-            >the Stork Agent instructions<i class="pi pi-external-link" style="font-size: 1em"></i></a
-        >.
-    </p>
-
-    <p style="padding-bottom: 1em">
-        Machine is located by address and port where 'address' is the IP address or FQDN of machine, and port is the
-        Stork Agent listening port. Port can be omitted; default value is 8080.
-    </p>
-    <div>
-        Address:
-        <input
-            type="text"
-            style="width: 100%"
-            pInputText
-            [(ngModel)]="machineAddress"
-            id="machine-address"
-            (keyup)="keyUpMachineDlg($event, null)"
-        />
-    </div>
-    <div style="margin-top: 10px">
-        Port:
-        <input
-            type="text"
-            style="width: 100%"
-            placeholder="8080"
-            pInputText
-            [(ngModel)]="agentPort"
-            id="agent-port"
-            (keyup)="keyUpMachineDlg($event, null)"
-        />
-    </div>
-    <p-footer>
-        <button
-            type="button"
-            id="cancel-machine-dialog"
-            (click)="cancelMachineDialog()"
-            pButton
-            icon="pi pi-times"
-            label="Cancel"
-        ></button>
-        <button
-            type="button"
-            id="add-new-machine-page"
-            (click)="addNewMachine()"
-            pButton
-            icon="pi pi-check"
-            label="Add"
-        ></button>
-    </p-footer>
-</p-dialog>
 
 <p-dialog header="Change Machine Address" [(visible)]="changeMachineAddressDlgVisible" [style]="{ width: '30vw' }">
     <p style="padding-bottom: 1em">
@@ -109,6 +59,82 @@
             class="ui-button-warning"
         ></button>
     </p-footer>
+</p-dialog>
+
+<p-dialog header="Agent Installation Instruction" [(visible)]="displayAgentInstallationInstruction">
+    <p style="margin: 10px 10px 10px 0; width: 38em">
+        Copy this commands and paste into terminal of a machine where Stork Agent is going to be installed.
+        <br />
+        For more details check
+        <a target="blank" href="/assets/arm/install.html#installing-from-packages"
+            >the Stork Agent Installation instructions<i class="pi pi-external-link" style="font-size: 1em"></i></a
+        >.
+    </p>
+    <div style="display: flex; align-items: flex-start; margin-bottom: 10px">
+        <textarea
+            class="monospace"
+            style="
+                padding: 10px;
+                background-color: #f7f7f7;
+                border: 1px solid #dfdfdf;
+                width: 40em;
+                margin-right: 10px;
+                overflow: hidden;
+                resize: none;
+            "
+            readonly=""
+            rows="3"
+            #agentInstallationText
+        >
+wget {{ getBaseUrl() }}/stork-install-agent.sh
+chmod a+x stork-install-agent.sh
+sudo ./stork-install-agent.sh</textarea
+        >
+        <button
+            type="button"
+            (click)="copyCmdToClipboard(agentInstallationText)"
+            pButton
+            icon="pi pi-copy"
+            pTooltip="Copy command to clipboard"
+        ></button>
+    </div>
+    <p style="margin: 10px 10px 10px 0; width: 38em">During agent installation there is a question for server token.</p>
+    <p style="margin: 10px 10px 10px 0; width: 40em">
+        <b>Server token</b> value is
+        <input
+            [value]="serverToken"
+            class="monospace"
+            size="32"
+            readonly=""
+            style="background-color: #f7f7f7; padding: 4px 6px; border: 1px solid #dfdfdf; margin: 4px 20px 4px 4px"
+        />
+
+        <button
+            type="button"
+            pButton
+            icon="pi pi-refresh"
+            label="Regenerate"
+            pTooltip="If the server token has been compromised then regenerate it."
+            class="ui-button-secondary"
+            (click)="regenerateServerToken()"
+        ></button>
+    </p>
+    <p style="margin: 0 10px 10px 0; width: 38em">
+        Providing the token will automatically add this new machine to Stork server and it will be operational.
+    </p>
+    <p style="margin: 0 10px 10px 0; width: 38em">
+        If no token value is provided (just Enter is hit) then this new machine will be waiting for authorization. To
+        see unauthorized machines check "Show&nbsp;Unauthorized" switch at the top right.
+    </p>
+
+    <button
+        type="button"
+        pButton
+        icon="pi pi-refresh"
+        label="Close"
+        (click)="closeAgentInstallationInstruction()"
+        style="float: right"
+    ></button>
 </p-dialog>
 
 <p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
@@ -175,16 +201,7 @@
             <!-- </span> -->
         </div>
 
-        <div style="display: flex">
-            <button
-                type="button"
-                pButton
-                label="Add New Machine"
-                id="add-new-machine"
-                icon="pi pi-plus"
-                style="margin-right: 20px"
-                (click)="showNewMachineDlg()"
-            ></button>
+        <div style="display: flex; align-items: center">
             <button
                 type="button"
                 pButton
@@ -193,6 +210,21 @@
                 icon="pi pi-refresh"
                 (click)="refreshMachinesList(machinesTable)"
             ></button>
+            <button
+                type="button"
+                pButton
+                label="How to Install Agent to New Machine"
+                icon="pi pi-download"
+                style="margin: 0 20px"
+                (click)="showAgentInstallationInstruction()"
+            ></button>
+            <div>
+                <p-inputSwitch
+                    [(ngModel)]="showUnauthorized"
+                    (onChange)="refreshMachinesList(machinesTable)"
+                ></p-inputSwitch>
+            </div>
+            <div style="margin: 0 0 6px 10px">Show Unauthorized</div>
         </div>
     </div>
 
@@ -211,16 +243,27 @@
     >
         <ng-template pTemplate="emptymessage" let-columns>
             <tr>
-                <td colspan="12">
-                    No machines found.
-                    <br />
-                    <br />
-                    Machines can be added by clicking the <b>Add New Machine</b> button at the top.
+                <td [attr.colspan]="showUnauthorized ? 4 : 12" style="padding: 20px 20px 20px 20px; font-size: 1.1em">
+                    <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #fff"></i>
+                    No {{ showUnauthorized ? 'unauthorized' : 'authorized' }} machines found.
+                    <div style="margin-top: 15px">
+                        <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
+                        Information about adding new machines to Stork server can be seen after clicking
+                        <b>How to Install Agent to New Machine</b> button at the top.
+                    </div>
+                    <div *ngIf="!showUnauthorized && unauthorizedMachinesCount > 0">
+                        <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
+                        There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
+                        <b style="font-size: 1.2em; color: red">{{ unauthorizedMachinesCount }}</b>
+                        unauthorized machine{{ unauthorizedMachinesCount > 1 ? 's' : '' }}. Check
+                        {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }} by switching
+                        <b>Show Unauthorized</b> toggle above.
+                    </div>
                 </td>
             </tr>
         </ng-template>
         <ng-template pTemplate="header">
-            <tr>
+            <tr *ngIf="!showUnauthorized">
                 <th style="width: 8rem">Hostname</th>
                 <th style="width: 10rem">
                     Location
@@ -265,9 +308,32 @@
                 <th style="width: 13rem">Error</th>
                 <th style="width: 4rem">Action</th>
             </tr>
+            <tr *ngIf="showUnauthorized">
+                <th style="width: 8rem">Hostname</th>
+                <th style="width: 10rem">
+                    Location
+                    <app-help-tip title="Location" id="help-button-location">
+                        <p>
+                            Specifies where the server can reach the agent as a hostname:tcp-port pair (e.g.
+                            localhost:8888).
+                        </p></app-help-tip
+                    >
+                </th>
+                <th>
+                    Agent Token
+                    <app-help-tip title="Agent Token" id="help-button-agent-token">
+                        <p>
+                            This is a token generated by an agent during its first start up. Verify if value visible
+                            here is the same as agent token present in its logs or in
+                            <span style="font-family: monospace">/var/lib/stork-agent/tokens/agent-token.txt</span>.
+                        </p>
+                    </app-help-tip>
+                </th>
+                <th style="width: 4rem">Action</th>
+            </tr>
         </ng-template>
         <ng-template pTemplate="body" let-m>
-            <tr class="alternate-list">
+            <tr class="alternate-list" *ngIf="!showUnauthorized">
                 <td>
                     <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
                 </td>
@@ -293,7 +359,23 @@
                         pButton
                         icon="pi pi-bars"
                         id="show-machines-menu"
-                        (click)="showMachineMenu($event, machineMenu, m)"
+                        (click)="showMachineMenu($event, machineMenu, m, machinesTable)"
+                    ></button>
+                </td>
+            </tr>
+            <tr class="alternate-list" *ngIf="showUnauthorized">
+                <td>
+                    <a routerLink="/machines/{{ m.id }}">{{ m.hostname || m.address }}</a>
+                </td>
+                <td>{{ m.address }}:{{ m.agentPort }}</td>
+                <td>{{ m.agentToken }}</td>
+                <td>
+                    <button
+                        type="button"
+                        pButton
+                        icon="pi pi-bars"
+                        id="show-machines-menu"
+                        (click)="showMachineMenu($event, machineMenu, m, machinesTable)"
                     ></button>
                 </td>
             </tr>

@@ -92,7 +92,7 @@ func runRegister(cfg *cli.Context) {
 
 	// run Register
 	if agent.Register(cfg.String("server-url"), cfg.String("token"), agentAddr, agentPort, true, false) {
-		log.Fatalf("registration completed successfully")
+		log.Println("registration completed successfully")
 	} else {
 		log.Fatalf("registration failed")
 	}

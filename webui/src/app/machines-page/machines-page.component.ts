@@ -25,14 +25,21 @@ export class MachinesPageComponent implements OnInit {
     machines: any[]
     totalMachines: number
     machineMenuItems: MenuItem[]
+    machineMenuItemsAuth: MenuItem[]
+    machineMenuItemsUnauth: MenuItem[]
+    showUnauthorized = false
+    serverToken = ''
+
+    // This counter is used to indicate in UI that there are some
+    // unauthorized machines that may require authorization.
+    unauthorizedMachinesCount = 0
 
     // action panel
     filterText = ''
     appTypes: AppType[]
     selectedAppType: AppType
 
-    // new machine, edit machine address
-    newMachineDlgVisible = false
+    // edit machine address
     changeMachineAddressDlgVisible = false
     machineAddress = 'localhost'
     agentPort = ''
@@ -43,6 +50,8 @@ export class MachinesPageComponent implements OnInit {
     activeItem: MenuItem
     openedMachines: any
     machineTab: any
+
+    displayAgentInstallationInstruction = false
 
     constructor(
         private route: ActivatedRoute,
@@ -84,11 +93,16 @@ export class MachinesPageComponent implements OnInit {
             { name: 'Bind9', value: 'bind9', id: 'bind-app' },
             { name: 'Kea', value: 'kea', id: 'kea-app' },
         ]
-        this.machineMenuItems = [
+        this.machineMenuItemsAuth = [
             {
                 label: 'Refresh',
                 id: 'refresh-single-machine',
                 icon: 'pi pi-refresh',
+            },
+            {
+                label: 'Unauthorize',
+                id: 'unauthorize-single-machine',
+                icon: 'pi pi-minus-circle',
             },
             {
                 label: 'Remove',
@@ -97,6 +111,20 @@ export class MachinesPageComponent implements OnInit {
                 title: 'Remove machine from Stork Server',
             },
         ]
+        this.machineMenuItemsUnauth = [
+            {
+                label: 'Authorize',
+                id: 'authorize-single-machine',
+                icon: 'pi pi-check',
+            },
+            {
+                label: 'Remove',
+                id: 'remove-single-machine',
+                icon: 'pi pi-times',
+                title: 'Remove machine from Stork Server',
+            },
+        ]
+        this.machineMenuItems = this.machineMenuItemsAuth
 
         this.openedMachines = []
 
@@ -154,6 +182,24 @@ export class MachinesPageComponent implements OnInit {
                 }
             }
         })
+
+        // check current number of unauthorized machines
+        this.refreshUnauthorizedMachinesCount()
+    }
+
+    /**
+     * Refresh count of unauthorized machines.
+     *
+     * This counter is used to indicate in UI that there are some
+     * unauthorized machines that may require authorization.
+     */
+    refreshUnauthorizedMachinesCount() {
+        if (this.showUnauthorized) {
+            return
+        }
+        this.servicesApi.getMachines(0, 1, null, null, false).subscribe((data) => {
+            this.unauthorizedMachinesCount = data.total
+        })
     }
 
     loadMachines(event) {
@@ -167,83 +213,20 @@ export class MachinesPageComponent implements OnInit {
             app = event.filters.app.value
         }
 
-        this.servicesApi.getMachines(event.first, event.rows, text, app).subscribe((data) => {
+        this.servicesApi.getMachines(event.first, event.rows, text, app, !this.showUnauthorized).subscribe((data) => {
             this.machines = data.items
             this.totalMachines = data.total
         })
-    }
-
-    showNewMachineDlg() {
-        this.newMachineDlgVisible = true
-    }
-
-    addNewMachine() {
-        if (this.machineAddress.trim() === '') {
-            this.msgSrv.add({
-                severity: 'error',
-                summary: 'Adding new machine erred',
-                detail: 'Machine address cannot be empty.',
-                life: 10000,
-            })
-            return
-        }
-
-        this.newMachineDlgVisible = false
-
-        let agentPort = this.agentPort.trim()
-        if (agentPort === '') {
-            agentPort = '8080'
-        }
-        const m = {
-            address: this.machineAddress,
-            agentPort: parseInt(agentPort, 10),
-            agentCSR: 'TODO',
-        }
-
-        this.loadingService.start('adding new machine')
-        this.servicesApi.createMachine(m).subscribe(
-            (data) => {
-                this.loadingService.stop('adding new machine')
-                this.msgSrv.add({
-                    severity: 'success',
-                    summary: 'New machine added',
-                    detail: 'Adding new machine succeeded.',
-                })
-                this.newMachineDlgVisible = false
-                this.addMachineTab(data)
-
-                this.serverData.forceReloadAppsStats()
-
-                this.router.navigate(['/machines/' + data.id])
-            },
-            (err) => {
-                this.loadingService.stop('adding new machine')
-                console.info(err)
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
-                this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Adding new machine erred',
-                    detail: 'Adding new machine operation erred: ' + msg,
-                    life: 10000,
-                })
-                this.newMachineDlgVisible = false
-            }
-        )
+        this.refreshUnauthorizedMachinesCount()
     }
 
     cancelMachineDialog() {
-        this.newMachineDlgVisible = false
         this.changeMachineAddressDlgVisible = false
     }
 
     keyUpMachineDlg(event, machineTab) {
         if (event.key === 'Enter') {
-            if (this.newMachineDlgVisible) {
-                this.addNewMachine()
-            } else if (this.changeMachineAddressDlgVisible) {
+            if (this.changeMachineAddressDlgVisible) {
                 this.saveMachine(machineTab)
             }
         }
@@ -336,37 +319,106 @@ export class MachinesPageComponent implements OnInit {
         )
     }
 
-    showMachineMenu(event, machineMenu, machine) {
+    /**
+     * Authorize or unauthorize machine.
+     *
+     * @param machine machine object
+     * @param authorized bool, true or false
+     */
+    _changeMachineAuthorization(machine, authorized, machinesTable) {
+        machine.authorized = authorized
+        this.servicesApi.updateMachine(machine.id, machine).subscribe(
+            (data) => {
+                this.msgSrv.add({
+                    severity: 'success',
+                    summary: 'Machine authorized',
+                    detail: 'Machine authorization succeeded.',
+                })
+                this.refreshMachinesList(machinesTable)
+            },
+            (err) => {
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Machine authorization failed',
+                    detail: 'Authorizating machine erred: ' + msg,
+                    life: 10000,
+                })
+            }
+        )
+    }
+
+    showMachineMenu(event, machineMenu, machine, machinesTable) {
+        if (this.showUnauthorized) {
+            this.machineMenuItems = this.machineMenuItemsUnauth
+        } else {
+            this.machineMenuItems = this.machineMenuItemsAuth
+        }
+
         machineMenu.toggle(event)
 
-        // connect method to refresh machine state
-        this.machineMenuItems[0].command = () => {
-            this._refreshMachineState(machine)
-        }
+        if (this.showUnauthorized) {
+            // connect method to authorize machine
+            this.machineMenuItems[0].command = () => {
+                this._changeMachineAuthorization(machine, true, machinesTable)
+            }
 
-        // connect method to delete machine
-        this.machineMenuItems[1].command = () => {
-            this.servicesApi.deleteMachine(machine.id).subscribe((data) => {
-                this.serverData.forceReloadAppsStats()
+            // connect method to delete machine
+            this.machineMenuItems[1].command = () => {
+                this.deleteMachine(machine.id)
+            }
+        } else {
+            // connect method to refresh machine state
+            this.machineMenuItems[0].command = () => {
+                this._refreshMachineState(machine)
+            }
 
-                // remove from list of machines
-                for (let idx = 0; idx < this.machines.length; idx++) {
-                    const m = this.machines[idx]
-                    if (m.id === machine.id) {
-                        this.machines.splice(idx, 1) // TODO: does not work
-                        break
-                    }
-                }
-                // remove from opened tabs if present
-                for (let idx = 0; idx < this.openedMachines.length; idx++) {
-                    const m = this.openedMachines[idx].machine
-                    if (m.id === machine.id) {
-                        this.closeTab(null, idx + 1)
-                        break
-                    }
-                }
-            })
+            // connect method to authorize machine
+            this.machineMenuItems[1].command = () => {
+                this._changeMachineAuthorization(machine, false, machinesTable)
+            }
+
+            // connect method to delete machine
+            this.machineMenuItems[2].command = () => {
+                this.deleteMachine(machine.id)
+            }
         }
+    }
+
+    /**
+     * Delete indicated machine.
+     *
+     * Additionally app stats will be reloaded and if after deletion
+     * there is no more DHCP or DNS apps then the item in the top menu
+     * is adjusted.
+     *
+     * @param machineId ID of machine
+     */
+    deleteMachine(machineId) {
+        this.servicesApi.deleteMachine(machineId).subscribe((data) => {
+            // reload apps stats to reflect new state (adjust menu content)
+            this.serverData.forceReloadAppsStats()
+
+            // remove from list of machines
+            for (let idx = 0; idx < this.machines.length; idx++) {
+                const m = this.machines[idx]
+                if (m.id === machineId) {
+                    this.machines.splice(idx, 1) // TODO: does not work
+                    break
+                }
+            }
+            // remove from opened tabs if present
+            for (let idx = 0; idx < this.openedMachines.length; idx++) {
+                const m = this.openedMachines[idx].machine
+                if (m.id === machineId) {
+                    this.closeTab(null, idx + 1)
+                    break
+                }
+            }
+        })
     }
 
     editAddress(machineTab) {
@@ -410,5 +462,78 @@ export class MachinesPageComponent implements OnInit {
 
     refreshMachineState(machinesTab) {
         this._refreshMachineState(machinesTab.machine)
+    }
+
+    /**
+     * Display a dialog with instructions about installing
+     * stork agent.
+     */
+    showAgentInstallationInstruction() {
+        this.servicesApi.getMachinesServerToken().subscribe(
+            (data) => {
+                this.serverToken = data.token
+            },
+            (err) => {
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Cannot get server token',
+                    detail: 'Getting server token for registering machines erred: ' + msg,
+                    life: 10000,
+                })
+            }
+        )
+        this.displayAgentInstallationInstruction = true
+    }
+
+    /**
+     * Close the dialog with instructions about installing
+     * stork agent.
+     */
+    closeAgentInstallationInstruction() {
+        this.displayAgentInstallationInstruction = false
+    }
+
+    /**
+     * Send request to stork server to regenerate machines server token.
+     */
+    regenerateServerToken() {
+        this.servicesApi.regenerateMachinesServerToken().subscribe(
+            (data) => {
+                this.serverToken = data.token
+            },
+            (err) => {
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Cannot regenerate server token',
+                    detail: 'Regenerating server token for registering machines erred: ' + msg,
+                    life: 10000,
+                })
+            }
+        )
+    }
+
+    /**
+     * Copy commands for agent installation to clipboard.
+     */
+    copyCmdToClipboard(textEl) {
+        textEl.select()
+        document.execCommand('copy')
+        textEl.setSelectionRange(0, 0)
+    }
+
+    /**
+     * Return base URL of stork server website.
+     * It is then put into agent installation instructions.
+     */
+    getBaseUrl() {
+        return window.location.origin
     }
 }

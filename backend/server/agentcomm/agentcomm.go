@@ -60,7 +60,6 @@ type Agent struct {
 }
 
 // Prepare TLS credentials with configured certs and verification options.
-// nolint:unused // TODO: it is not used yet
 func prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM []byte) (credentials.TransportCredentials, error) {
 	// Load the certificates from disk
 	certificate, err := tls.X509KeyPair(serverCertPEM, serverKeyPEM)
@@ -112,24 +111,14 @@ func (agent *Agent) MakeGrpcConnection(caCertPEM, serverCertPEM, serverKeyPEM []
 		agent.GrpcConn.Close()
 	}
 
-	// TODO: DISABLED FOR NOW
-	// // Prepare TLS credentials
-	// creds, err := prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM)
-	// if err != nil {
-	// 	return errors.WithMessagef(err, "problem with preparing TLS credentials")
-	// }
-
-	// // Setup new connection
-	// grpcConn, err := grpc.Dial(agent.Address, grpc.WithTransportCredentials(creds))
-	// if err != nil {
-	// 	return errors.Wrapf(err, "problem with dial to agent %s", agent.Address)
-	// }
+	// Prepare TLS credentials
+	creds, err := prepareTLSCreds(caCertPEM, serverCertPEM, serverKeyPEM)
+	if err != nil {
+		return errors.WithMessagef(err, "problem with preparing TLS credentials")
+	}
 
 	// Setup new connection
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure())
-
-	grpcConn, err := grpc.Dial(agent.Address, opts...)
+	grpcConn, err := grpc.Dial(agent.Address, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return errors.Wrapf(err, "problem with dial to agent %s", agent.Address)
 	}

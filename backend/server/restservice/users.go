@@ -9,6 +9,7 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/users"

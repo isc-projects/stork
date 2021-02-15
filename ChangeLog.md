@@ -1,3 +1,15 @@
+* 127 [func] godfryd
+
+    Secured agent-server channel part 3. Implemented agent deployment
+    using script downloaded from the server. The script installs
+    deb/rpm packages with stork agent. Then the script registers
+    current machine in the server performing key and certs
+    exchange. Enabled TLS to gRPC traffic between agent and server
+    using certs that are set up during agent registration. Added
+    instruction on machines page how to install an agent. Added UI for
+    presenting and regenerating server token.
+    (Gitlab #483)
+
 * 126 [func] godfryd
 
     This is the second part of secured agent-server channel

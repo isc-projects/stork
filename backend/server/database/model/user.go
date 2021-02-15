@@ -244,7 +244,7 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sor
 		})
 	}
 
-	// prepare sorting expression, offser and limit
+	// prepare sorting expression, offset and limit
 	ordExpr := prepareOrderExpr("system_user", sortField, sortDir)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))

@@ -12,3 +12,4 @@ src/app/backend/*
 *.png
 dist
 src/assets/arm
+src/assets/pkgs

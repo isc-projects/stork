@@ -1,8 +1,11 @@
 package restservice
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -86,4 +89,80 @@ func TestSSEMiddleware(t *testing.T) {
 	w = httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	require.True(t, requestReceived)
+}
+
+// Check if agentInstallerMiddleware works and handles requests correctly.
+func TestAgentInstallerMiddleware(t *testing.T) {
+	requestReceived := false
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestReceived = true
+	})
+
+	tmpDir, err := ioutil.TempDir("", "mdlw")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+	handler := agentInstallerMiddleware(nextHandler, tmpDir)
+
+	// let do some request but when there is no folder with static content
+	req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.EqualValues(t, 500, resp.StatusCode)
+	require.False(t, requestReceived)
+
+	// prepare folders
+	os.Mkdir(path.Join(tmpDir, "assets"), 0755)
+	os.Mkdir(path.Join(tmpDir, "assets/pkgs"), 0755)
+
+	// let do some request
+	req = httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp = w.Result()
+	resp.Body.Close()
+	require.EqualValues(t, 500, resp.StatusCode)
+	require.False(t, requestReceived)
+
+	// let request something else, it should be forwarded to nextHandler
+	req = httptest.NewRequest("GET", "http://localhost/api/users", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	require.True(t, requestReceived)
+}
+
+// Dumb response writer struct with functions to enable testing
+// loggingResponseWriter.
+type dumbRespWritter struct{}
+
+func (r *dumbRespWritter) Write(b []byte) (int, error) {
+	return len(b), nil
+}
+
+func (r *dumbRespWritter) WriteHeader(statusCode int) {
+}
+
+func (r *dumbRespWritter) Header() http.Header {
+	return map[string][]string{}
+}
+
+// Check if helpers to logging middleware works.
+func TestLoggingMiddlewareHelpers(t *testing.T) {
+	lrw := &loggingResponseWriter{
+		rw:           &dumbRespWritter{},
+		responseData: &responseData{},
+	}
+
+	// check write
+	size, err := lrw.Write([]byte("abc"))
+	require.NoError(t, err)
+	require.EqualValues(t, 3, size)
+
+	// check WriteHeader
+	lrw.WriteHeader(400)
+
+	// check Header
+	hdr := lrw.Header()
+	require.Empty(t, hdr)
 }

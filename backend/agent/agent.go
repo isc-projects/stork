@@ -143,11 +143,10 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 
 // Setup the agent as gRPC server endpoint.
 func (sa *StorkAgent) Setup() error {
-	// server, err := newGRPCServerWithTLS() // TODO: NOT USED FOR NOW
-	// if err != nil {
-	// 	return err
-	// }
-	server := grpc.NewServer()
+	server, err := newGRPCServerWithTLS()
+	if err != nil {
+		return err
+	}
 	sa.server = server
 	return nil
 }

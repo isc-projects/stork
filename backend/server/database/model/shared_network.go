@@ -267,7 +267,7 @@ func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filt
 		})
 	}
 
-	// prepare sorting expression, offser and limit
+	// prepare sorting expression, offset and limit
 	ordExpr := prepareOrderExpr("shared_network", sortField, sortDir)
 	q = q.OrderExpr(ordExpr)
 	q = q.Offset(int(offset))

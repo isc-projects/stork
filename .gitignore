@@ -48,6 +48,7 @@ TAGS
 /doc/man/stork-db-migrate.8
 /doc/_build/
 /webui/src/assets/arm/
+/webui/src/assets/pkgs/
 
 # build stuff when performing build all in a container
 /build-root

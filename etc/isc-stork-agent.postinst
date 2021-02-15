@@ -2,10 +2,16 @@
 
 set -e
 
+# create folders for storing certs and agent token,
+# they should be available to owner ie. stork-agent user
+home_dir=/var/lib/stork-agent
+mkdir -p -m 700 $home_dir/certs
+mkdir -p -m 700 $home_dir/tokens
+
 if [ -e /etc/redhat-release ]; then
     # add stork-agent user if does not exists
     if [ ! $(getent passwd stork-agent) ]; then
-        useradd --system --home-dir /var/lib/ stork-agent
+        useradd --system --home-dir $home_dir stork-agent
     fi
 
     # add stork-agent user to named so it can read its config files
@@ -14,7 +20,7 @@ if [ -e /etc/redhat-release ]; then
     fi
 else
     # add stork-agent user
-    adduser --quiet --system --group --home /var/lib/ \
+    adduser --quiet --system --group --home $home_dir \
             --no-create-home --disabled-password --disabled-login \
             --gecos "Stork Agent User" stork-agent >/dev/null
 
@@ -23,3 +29,6 @@ else
         usermod -aG bind stork-agent
     fi
 fi
+
+# change all folders and files in home dir to stork-agent user
+chown -R stork-agent $home_dir
