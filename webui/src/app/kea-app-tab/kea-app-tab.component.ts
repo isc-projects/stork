@@ -1,12 +1,13 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, forkJoin } from 'rxjs'
 
 import * as moment from 'moment-timezone'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
 import { ServicesService } from '../backend/api/api'
+import { ServerDataService } from '../server-data.service'
 
 import {
     durationToString,
@@ -30,11 +31,14 @@ export class KeaAppTabComponent implements OnInit {
 
     activeTabIndex = 0
 
+    existingApps: any = []
+    existingMachines: any = []
     appRenameDialogVisible = false
 
     constructor(
         private route: ActivatedRoute,
-        public servicesApi: ServicesService,
+        private servicesApi: ServicesService,
+        private serverData: ServerDataService,
         private msgService: MessageService
     ) {}
 
@@ -276,8 +280,28 @@ export class KeaAppTabComponent implements OnInit {
 
     /**
      * Shows a dialog for renaming an app.
+     *
+     * The dialog box component requires a set of machines' addresses
+     * and a map of existing apps' names to validate the new app name.
+     * Therefore, this function attempts to load the machines' addresses
+     * and apps' names prior to displaying the dialog. If it fails, the
+     * dialog box is not displayed.
      */
     renameApp() {
-        this.appRenameDialogVisible = true
+        forkJoin([this.serverData.getAppsNames(), this.serverData.getMachinesAddresses()]).subscribe(
+            (data) => {
+                this.existingApps = data[0]
+                this.existingMachines = data[1]
+                this.appRenameDialogVisible = true
+            },
+            (err) => {
+                this.msgService.add({
+                    severity: 'error',
+                    summary: 'Fetching apps and machines failed',
+                    detail: 'Fetching apps and machines list from the server failed',
+                    life: 10000,
+                })
+            }
+        )
     }
 }

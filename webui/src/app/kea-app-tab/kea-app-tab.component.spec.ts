@@ -7,14 +7,16 @@ import { HaStatusComponent } from '../ha-status/ha-status.component'
 import { TableModule } from 'primeng/table'
 import { TabViewModule } from 'primeng/tabview'
 import { LocaltimePipe } from '../localtime.pipe'
-import { DHCPService, ServicesService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { PanelModule } from 'primeng/panel'
 import { TooltipModule } from 'primeng/tooltip'
 import { MessageModule } from 'primeng/message'
 import { MessageService } from 'primeng/api'
 import { MockLocationStrategy } from '@angular/common/testing'
-import { of } from 'rxjs'
+import { of, throwError } from 'rxjs'
+
+import { DHCPService, ServicesService, UsersService } from '../backend'
+import { ServerDataService } from '../server-data.service'
 
 class Details {
     daemons: any = []
@@ -38,10 +40,12 @@ class AppTab {
 describe('KeaAppTabComponent', () => {
     let component: KeaAppTabComponent
     let fixture: ComponentFixture<KeaAppTabComponent>
+    let servicesApi: ServicesService
+    let serverData: ServerDataService
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService, ServicesService, MessageService, MockLocationStrategy],
+            providers: [DHCPService, ServicesService, MessageService, MockLocationStrategy, UsersService],
             imports: [
                 RouterModule,
                 RouterTestingModule,
@@ -59,6 +63,8 @@ describe('KeaAppTabComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(KeaAppTabComponent)
         component = fixture.componentInstance
+        servicesApi = fixture.debugElement.injector.get(ServicesService)
+        serverData = fixture.debugElement.injector.get(ServerDataService)
         const appTab = new AppTab()
         component.refreshedAppTab = of(appTab)
         component.appTab = appTab
@@ -69,15 +75,68 @@ describe('KeaAppTabComponent', () => {
         expect(component).toBeTruthy()
     })
 
+    it('should display rename dialog', () => {
+        const fakeAppsNames = new Map()
+        spyOn(serverData, 'getAppsNames').and.returnValue(of(fakeAppsNames))
+        const fakeMachinesAddresses = new Set()
+        spyOn(serverData, 'getMachinesAddresses').and.returnValue(of(fakeMachinesAddresses))
+        expect(component.appRenameDialogVisible).toBeFalse()
+        component.renameApp()
+        expect(serverData.getAppsNames).toHaveBeenCalled()
+        expect(serverData.getMachinesAddresses).toHaveBeenCalled()
+        // The dialog should be visible after fetching apps names and machines
+        // addresses successfully.
+        expect(component.appRenameDialogVisible).toBeTrue()
+    })
+
+    it('should not display rename dialog when fetching machines fails', () => {
+        const fakeAppsNames = new Map()
+        spyOn(serverData, 'getAppsNames').and.returnValue(of(fakeAppsNames))
+        // Simulate an error while getting machines addresses.
+        spyOn(serverData, 'getMachinesAddresses').and.returnValue(throwError({ status: 404 }))
+        expect(component.appRenameDialogVisible).toBeFalse()
+        component.renameApp()
+        expect(serverData.getAppsNames).toHaveBeenCalled()
+        expect(serverData.getMachinesAddresses).toHaveBeenCalled()
+        // The dialog should not be visible because there was an error.
+        expect(component.appRenameDialogVisible).toBeFalse()
+    })
+
+    it('should not display rename dialog when fetching apps fails', () => {
+        // Simulate an error while getting apps names.
+        spyOn(serverData, 'getAppsNames').and.returnValue(throwError({ status: 404 }))
+        const fakeMachinesAddresses = new Set()
+        spyOn(serverData, 'getMachinesAddresses').and.returnValue(of(fakeMachinesAddresses))
+        expect(component.appRenameDialogVisible).toBeFalse()
+        component.renameApp()
+        expect(serverData.getAppsNames).toHaveBeenCalled()
+        expect(serverData.getMachinesAddresses).toHaveBeenCalled()
+        // The dialog should not be visible because there was an error.
+        expect(component.appRenameDialogVisible).toBeFalse()
+    })
+
     it('should send app rename request', () => {
         // Prepare fake success response to renameApp call.
         const fakeResponse: any = { data: {} }
-        spyOn(component.servicesApi, 'renameApp').and.returnValue(of(fakeResponse))
+        spyOn(servicesApi, 'renameApp').and.returnValue(of(fakeResponse))
         // Simulate submitting the app rename request.
         component.handleRenameDialogSubmitted('keax@machine3')
         // Make sure that the request to rename the app was submitted.
-        expect(component.servicesApi.renameApp).toHaveBeenCalled()
+        expect(servicesApi.renameApp).toHaveBeenCalled()
         // As a result, the app name in the tab should have been updated.
         expect(component.appTab.app.name).toBe('keax@machine3')
+    })
+
+    it('should cancel app rename dialog', () => {
+        // Show the dialog box.
+        component.appRenameDialogVisible = true
+        fixture.detectChanges()
+        spyOn(servicesApi, 'renameApp')
+        // Cancel the dialog box.
+        component.handleRenameDialogCancelled()
+        // Ensure that the dialog box is no longer visible.
+        expect(component.appRenameDialogVisible).toBeFalse()
+        // A request to rename the app should not be sent.
+        expect(servicesApi.renameApp).not.toHaveBeenCalled()
     })
 })
