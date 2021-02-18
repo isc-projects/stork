@@ -1,5 +1,5 @@
 ..
-   Copyright (C) 2019-2020 Internet Systems Consortium, Inc. ("ISC")
+   Copyright (C) 2019-2021 Internet Systems Consortium, Inc. ("ISC")
 
    This Source Code Form is subject to the terms of the Mozilla Public
    License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,6 +8,7 @@
    See the COPYRIGHT file distributed with this work for additional
    information regarding copyright ownership.
 
+.. _man-stork-agent:
 
 stork-agent - Stork agent that monitors BIND 9 and Kea services
 ---------------------------------------------------------------

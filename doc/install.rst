@@ -5,38 +5,38 @@ Installation
 ************
 
 Stork can be installed from pre-built packages or from sources. The following sections describe both methods. Unless there's a
-good reason to compile from sources, installing from native DEB or RPM packages is easier and faster.
+good reason to compile from sources, installing from native deb or RPM packages is easier and faster.
 
 .. _supported_systems:
 
 Supported Systems
 =================
 
-Currently Stork is being tested on the following systems:
+Stork is tested on the following systems:
 
 - Ubuntu 18.04 and 20.04
 - Fedora 31 and 32
 - CentOS 7
 - MacOS 10.15*
 
-Note that MacOS is not and will not be officially supported. Many developers in our team use Macs, so we're trying to keep Stork
+Note that MacOS is not and will not be officially supported. Many developers on ISC's team use Macs, so the goal is to keep Stork
 buildable on this platform.
 
-Stork server and agents are written in Go language. The server uses PostgreSQL database. In principle, the software could be run
-on any POSIX system that has Go compiler and PostgreSQL. It is likely the software can be built on many other modern systems, but
-for the time being our testing capabilities are modest. If your favourite OS is not on this list, please do try running Stork
-and report your findings.
+The Stork server and agents are written in the Go language; the server uses a PostgreSQL database. In principle, the software can be run
+on any POSIX system that has a Go compiler and PostgreSQL. It is likely the software can also be built on other modern systems, but
+for the time being ISC's testing capabilities are modest. We encourage users to try running Stork on other OSes not on this list
+and report their findings to ISC.
 
 Installation Prerequisites
 ==========================
 
 The ``Stork Agent`` does not require any specific dependencies to run. It can be run immediately after installation.
 
-Stork uses the `status-get` command to communicate with Kea, and therefore will only work with a version of Kea that supports
+Stork uses the `status-get` command to communicate with Kea, and therefore only works with a version of Kea that supports
 `status-get`, which was introduced in Kea 1.7.3 and backported to 1.6.3.
 
 Stork requires the premium ``Host Commands (host_cmds)`` hook library to be loaded by the Kea instance to retrieve host
-reservations stored in an external database. Stork does work without the Host Commands hook library, but is not able to display
+reservations stored in an external database. Stork does work without the Host Commands hook library, but will not be able to display
 host reservations. Stork can retrieve host reservations stored locally in the Kea configuration without any additional hook
 libraries.
 
@@ -45,9 +45,9 @@ statistics. Stork does work without the Stat Commands hook library, but will not
 statistics.
 
 For the ``Stork Server``, a PostgreSQL database (https://www.postgresql.org/) version 11 or later is required. It may work with
-PostgreSQL 10, but this was not tested. The general installation procedure for PostgreSQL is OS-specific and is not included
-here. However, please keep in mind that Stork uses pgcrypto extensions, which are often come in a separate package. For
-example, you need postgresql-crypto package on Fedora and postgresql12-contrib on RHEL and CentOS.
+PostgreSQL 10, but this has not been tested. The general installation procedure for PostgreSQL is OS-specific and is not included
+here. However, please note that Stork uses pgcrypto extensions, which often come in a separate package. For
+example, a postgresql-crypto package is required on Fedora and postgresql12-contrib is needed on RHEL and CentOS.
 
 These instructions prepare a database for use with the ``Stork
 Server``, with the `stork` database user and `stork` password.  Next,
@@ -55,8 +55,8 @@ a database called `stork` is created and the `pgcrypto` extension is
 enabled in the database.
 
 First, connect to PostgreSQL using `psql` and the `postgres`
-administration user. Depending on your system configuration, this may require
-switching to `postgres` user, using `su postgres` command first.
+administration user. Depending on the system's configuration, this may require
+switching to the user `postgres` first, using the `su postgres` command.
 
 .. code-block:: console
 
@@ -82,10 +82,10 @@ Then, prepare the database:
 
 .. note::
 
-   Make sure the actual password is stronger than 'stork' which is trivial to guess.
+   Make sure the actual password is stronger than 'stork', which is trivial to guess.
    Using default passwords is a security risk. Stork puts no restrictions on the
    characters used in the database passwords nor on their length. In particular,
-   it accepts passwords containing spaces, quotes, double quotes and other
+   it accepts passwords containing spaces, quotes, double quotes, and other
    special characters.
 
 .. _install-pkgs:
@@ -131,8 +131,8 @@ Next, install the ``Stork Server`` package:
 
 .. _install-server-rpm:
 
-CentOS/RHEL/Fedora
-~~~~~~~~~~~~~~~~~~
+Installing on CentOS/RHEL/Fedora
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The first step for RPM-based distributions is:
 
@@ -602,23 +602,23 @@ deb/RPM package will perform the required database and other migrations.
 
 .. _installation_sources:
 
-Installing from Sources
+Installing From Sources
 =======================
 
 Compilation Prerequisites
 -------------------------
 
-Usually it's more convenient to install Stork using native packages. See :ref:`supported_systems` and :ref:`install-pkgs` for
-details regarding supported systems. However, you can build the sources on your own.
+Usually, it is more convenient to install Stork using native packages. See :ref:`supported_systems` and :ref:`install-pkgs` for
+details regarding supported systems. However, the sources can also be built separately.
 
-The dependencies needed to be installed to build ``Stork`` sources are:
+The dependencies that need to be installed to build ``Stork`` sources are:
 
  - Rake
  - Java Runtime Environment (only if building natively, not using Docker)
- - Docker (only if running in containers, this is needed to build the demo)
+ - Docker (only if running in containers; this is needed to build the demo)
 
 Other dependencies are installed automatically in a local directory by Rake tasks. This does not
-require root priviledges. If you intend to run the demo environment, you need Docker and don't need
+require root privileges. If the demo environment will be run, Docker is needed but not
 Java (Docker will install Java within a container).
 
 For details about the environment, please see the Stork wiki at
@@ -673,14 +673,13 @@ variable, e.g.:
 
    $ sudo rake install_server DESTDIR=/usr
 
-
 Database Migration Tool (optional)
 ==================================
 
 Optional step: to initialize the database directly, the migrations
 tool must be built and used to initialize and upgrade the database to the
 latest schema. However, this is completely optional, as the database
-migration is triggered automatically upon server startup.  This is
+migration is triggered automatically upon server startup. This is
 only useful if for some reason it is desirable to set up the database
 but not yet run the server. In most cases this step can be skipped.
 
@@ -690,7 +689,7 @@ but not yet run the server. In most cases this step can be skipped.
     $ backend/cmd/stork-db-migrate/stork-db-migrate init
     $ backend/cmd/stork-db-migrate/stork-db-migrate up
 
-The up and down command has an optional `-t` parameter that specifies desired
+The up and down commands have an optional `-t` parameter that specifies the desired
 schema version. This is only useful when debugging database migrations.
 
 .. code-block:: console
@@ -700,20 +699,20 @@ schema version. This is only useful when debugging database migrations.
     $ # migrate down back to version 17
     $ backend/cmd/stork-db-migrate/stork-db-migrate down -t 17
 
-Note the server requires the latest database version to run, will always
-run the migration on its own and will refuse to start if migration fails
-for whatever reason. The migration tool is mostly useful for debugging
+Note that the server requires the latest database version to run, always
+runs the migration on its own, and will refuse to start if the migration fails
+for any reason. The migration tool is mostly useful for debugging
 problems with migration or migrating the database without actually running
-the service. For complete reference, see manual page here:
+the service. For complete reference, see the manual page here:
 :ref:`man-stork-db-migrate`.
 
 To debug migrations, another useful feature is SQL tracing using the `--db-trace-queries` parameter.
 It takes either "all" (trace all SQL operations, including migrations and run-time) or "run" (just
-run-time operations, skip migrations). If specified without paraemter, "all" is assumed. With it enabled,
-`stork-db-migrate` will print out all its SQL queries on stderr. For example, you can use these commands
-to generate an SQL script that will update your schema. Note that for some migrations, the steps are
-dependent on the contents of your database, so this will not be an universal Stork schema. This parameter
-is also supported by the Stork server.
+trace run-time operations, skip migrations). If specified without any parameters, "all" is assumed. With it enabled,
+`stork-db-migrate` prints out all its SQL queries on stderr. For example, these commands can be used
+to generate an SQL script that updates the schema. Note that for some migrations, the steps are
+dependent on the contents of the database, so this is not a universal Stork schema. This parameter
+is also supported by the ``Stork Server``.
 
 .. code-block:: console
 
@@ -721,22 +720,22 @@ is also supported by the Stork server.
    $ backend/cmd/stork-db-migrate/stork-db-migrate up --db-trace-queries 2> stork-schema.txt
 
 
-Integration with Prometheus and Grafana
+Integration With Prometheus and Grafana
 =======================================
 
-Stork can optionally be integrated with `Prometheus <https://prometheus.io/>`_, an open source monitoring and alerting toolkit
-and `Grafana <https://grafana.com/>`_, an easy-to-view analytics platform for querying, visualization and altering. Grafana
+Stork can optionally be integrated with `Prometheus <https://prometheus.io/>`_, an open source monitoring and alerting toolkit,
+and `Grafana <https://grafana.com/>`_, an easy-to-view analytics platform for querying, visualization, and alerting. Grafana
 requires external data storage. Prometheus is currently the only environment supported by both Stork and Grafana. It is possible
-to use Prometheus only without Grafana, but using Grafana requires Prometheus.
+to use Prometheus without Grafana, but using Grafana requires Prometheus.
 
 Prometheus Integration
 ----------------------
 
-Stork agent by default makes the
-BIND 9 and Kea statistics available in a format understandable by Prometheus (works as a Prometheus exporter, in Prometheus
-nomenclature). If Prometheus server is available, it can be configured to monitor Stork Agents. To enable Stork Agent
-monitoring, you need to edit ``prometheus.yml`` (typically stored in /etc/prometheus/, but this may vary depending on your
-installation) and add the following entries there:
+The Stork agent, by default, makes the
+Kea (and eventually, BIND 9) statistics available in a format understandable by Prometheus (it works as a Prometheus exporter, in Prometheus
+nomenclature). If Prometheus server is available, it can be configured to monitor Stork agents. To enable Stork agent
+monitoring, the ``prometheus.yml`` (which is typically stored in /etc/prometheus/, but this may vary depending on the
+installation) must be edited to add the following entries there:
 
 .. code-block:: yaml
 
@@ -750,36 +749,35 @@ installation) and add the following entries there:
     static_configs:
       - targets: ['agent-bind9.example.org:9119', 'another-bind9.example.org:9119', ... ]
 
-By default, Stork agent exports BIND 9 data on TCP port 9119 and Kea data on TCP port 9547. This can be configured using command
-line parameters (or the Prometheus export can be disabled altogether). For details, see the stork-agent manual page.
+By default, the Stork agent exports Kea data on TCP port 9547 (and BIND 9 data on TCP port 9119). This can be configured using
+command-line parameters, or the Prometheus export can be disabled altogether. For details, see the stork-agent manual page
+at :ref:`man-stork-agent`.
 
-After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly. BIND 9
-statistics use ``bind_`` prefix (e.g. bind_incoming_queries_tcp), while Kea statistics use ``kea_`` prefix (e.g.
-kea_dhcp4_addresses_assigned_total).
+After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly. Kea statistics use the ``kea_`` prefix (e.g. kea_dhcp4_addresses_assigned_total); BIND 9
+statistics will eventually use the ``bind_`` prefix (e.g. bind_incoming_queries_tcp).
 
 Grafana Integration
 -------------------
 
 Stork provides several Grafana templates that can easily be imported. Those are available in the ``grafana/`` directory of the
-Stork source codes. Currently the available templates are `bind9-resolver.json` and `kea-dhcp4.json`. More are expected in the
-future. Grafana integration requires three steps.
+Stork source code. The currently available templates are `bind9-resolver.json` and `kea-dhcp4.json`. Grafana integration requires three steps:
 
-1. Prometheus has to be added as a data source. This can be done in several ways, including UI interface and editing Grafana
-configuration files. For details, see Grafana documentation about Prometheus integration; here we simply indicate the easiest
-method. Using the Grafana UI interface, select Configuration, select Data Sources, click "Add data source", and choose
-Prometheus, then specify necessary parameters to connect to your Prometheus instance. In test environments, the only really
-necessary parameter is URL, but most production deployments also want authentication.
+1. Prometheus must be added as a data source. This can be done in several ways, including via the user interface to edit the Grafana
+configuration files. This is the easiest method; for details, see the Grafana documentation about Prometheus integration.
+Using the Grafana user interface, select Configuration, select Data Sources, click "Add data source," and choose
+Prometheus, and then specify the necessary parameters to connect to the Prometheus instance. In test environments, the only really
+necessary parameter is the URL, but authentication is also desirable in most production deployments.
 
-2. Import existing dashboard. In the Grafana UI click Dashboards, then Manage, then Import and select one of the templates, e.g.
-`kea-dhcp4.json`. Make sure to select your Prometheus data source that you added in the previous step. Once imported, the
+2. Import the existing dashboard. In the Grafana UI, click Dashboards, then Manage, then Import, and select one of the templates, e.g.
+`kea-dhcp4.json`. Make sure to select the Prometheus data source added in the previous step. Once imported, the
 dashboard can be tweaked as needed.
 
-3. Once Grafana is configured, go to Stork UI interface, log in as super-admin, click Settings in the Configuration menu and
-then fill URLs to Grafana and Prometheus that point to your installations. Once this is done, Stork will be able to show links
-for subnets leading to specific subnets. More integrations like this are expected in the future.
+3. Once Grafana is configured, go to the Stork user interface, log in as super-admin, click Settings in the Configuration menu, and
+then add the URLs to Grafana and Prometheus that point to the installations. Once this is done, Stork will be able to show links
+for subnets leading to specific subnets.
 
 Alternatively, a Prometheus data source can be added by editing `datasource.yaml` (typically stored in `/etc/grafana`,
-but this may vary depending on your installation) and adding entries similar to this one:
+but this may vary depending on the installation) and adding entries similar to this one:
 
 .. code-block:: yaml
 
@@ -791,7 +789,7 @@ but this may vary depending on your installation) and adding entries similar to 
      isDefault: true
      editable: false
 
-Also, the Grafana dashboard files can be copied to `/var/lib/grafana/dashboards/` (again, this may vary depending on your
+Also, the Grafana dashboard files can be copied to `/var/lib/grafana/dashboards/` (again, this may vary depending on the
 installation).
 
 Example dashboards with some live data can be seen in the `Stork screenshots gallery

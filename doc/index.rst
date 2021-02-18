@@ -5,15 +5,15 @@
 Stork Administrator Reference Manual
 ####################################
 
-``Stork`` is a new project led by ISC with the aim of delivering an
-`ISC BIND 9` and `ISC Kea DHCP` use and monitoring dashboard.  It is
-intended to be a spiritual successor of the earlier attempts
-`Kittiwake` and `Anterius`.
+``Stork`` is an ISC project with the aim of delivering a
+use and monitoring dashboard for `ISC Kea DHCP`, and eventually for
+`ISC BIND 9`. It is the spiritual successor of the earlier
+projects `Kittiwake` and `Anterius`.
 
-This is the reference guide for Stork version |release|.  Links to the
+This is the reference guide for Stork version |release|. Links to the
 most up-to-date version of this document, along with other documents
 for Stork, can be found on ISC's `Stork project homepage
-<https://gitlab.isc.org/isc-projects/stork>`_ or at `readthedocs
+<https://gitlab.isc.org/isc-projects/stork>`_ or at `Read the Docs
 <https://stork.readthedocs.io>`_ .
 
 .. toctree::
