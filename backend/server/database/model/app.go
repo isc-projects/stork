@@ -282,9 +282,10 @@ func RenameApp(db *pg.DB, id int64, newName string) (*App, error) {
 	// We're going to use the following query:
 	// WITH rename AS (
 	//     UPDATE app SET name = ?
+	//     WHERE id = ?
 	//     RETURNING name
 	// )
-	// SELECT * FROM app;
+	// SELECT * FROM app WHERE id = ?;
 
 	// This query selects app name before doing and update and performs
 	// the update. The idea for this query was taken from the PostgreSQL
@@ -297,6 +298,7 @@ func RenameApp(db *pg.DB, id int64, newName string) (*App, error) {
 
 	err := db.Model(app).
 		WithUpdate("rename", updateQuery).
+		WherePK().
 		Select()
 	if err != nil {
 		return nil, pkgerrors.Wrapf(err, "problem with renaming an app %d to %s", app.ID, newName)

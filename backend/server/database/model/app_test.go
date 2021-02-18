@@ -465,9 +465,12 @@ func TestRenameApp(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	// Add first app. We won't be renaming it but we want to
+	// have more than one machine and more than one machine
+	// in the database because it is a real life case.
 	machine := &Machine{
 		ID:        0,
-		Address:   "localhost",
+		Address:   "dns.example.org",
 		AgentPort: 8080,
 	}
 	err := AddMachine(db, machine)
@@ -475,6 +478,23 @@ func TestRenameApp(t *testing.T) {
 	require.NotZero(t, machine.ID)
 
 	app := &App{
+		Type:      AppTypeBind9,
+		Name:      "dns-server1",
+		MachineID: machine.ID,
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err, "found error %+v", err)
+
+	machine = &Machine{
+		ID:        0,
+		Address:   "dhcp.example.org",
+		AgentPort: 8080,
+	}
+	err = AddMachine(db, machine)
+	require.NoError(t, err)
+	require.NotZero(t, machine.ID)
+
+	app = &App{
 		Type:      AppTypeKea,
 		Name:      "dhcp-server1",
 		MachineID: machine.ID,
