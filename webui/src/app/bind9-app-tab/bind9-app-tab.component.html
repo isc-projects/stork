@@ -2,6 +2,8 @@
     <app-rename-app-dialog
         [appId]="appTab.app.id"
         [appName]="appTab.app.name"
+        [existingApps]="existingApps"
+        [existingMachines]="existingMachines"
         [visible]="appRenameDialogVisible"
         (submitted)="handleRenameDialogSubmitted($event)"
         (cancelled)="handleRenameDialogCancelled()"

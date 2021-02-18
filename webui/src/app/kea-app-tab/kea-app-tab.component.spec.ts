@@ -45,7 +45,7 @@ describe('KeaAppTabComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService, ServicesService, MessageService, MockLocationStrategy, UsersService],
+            providers: [UsersService, DHCPService, ServicesService, MessageService, MockLocationStrategy],
             imports: [
                 RouterModule,
                 RouterTestingModule,

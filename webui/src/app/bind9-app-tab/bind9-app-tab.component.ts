@@ -2,9 +2,12 @@ import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
 
 import * as moment from 'moment-timezone'
 
+import { forkJoin } from 'rxjs'
+
 import { MessageService, MenuItem } from 'primeng/api'
 
 import { ServicesService } from '../backend/api/api'
+import { ServerDataService } from '../server-data.service'
 
 import {
     durationToString,
@@ -26,9 +29,32 @@ export class Bind9AppTabComponent implements OnInit {
 
     daemons: any[] = []
 
+    /**
+     * Holds a map of existing apps' names and ids.
+     *
+     * The apps' names are used in rename-app-dialog component to validate
+     * the user input.
+     */
+    existingApps: any = []
+
+    /**
+     * Holds a set of existing machines' addresses.
+     *
+     * The machines' addresses are used in rename-app-dialog component to
+     * validate the user input.
+     */
+    existingMachines: any = []
+
+    /**
+     * Controls whether the rename-app-dialog is visible or not.
+     */
     appRenameDialogVisible = false
 
-    constructor(public servicesApi: ServicesService, private msgService: MessageService) {}
+    constructor(
+        private servicesApi: ServicesService,
+        private serverData: ServerDataService,
+        private msgService: MessageService
+    ) {}
 
     /**
      * Subscribes to the updates of the information about daemons
@@ -238,8 +264,28 @@ export class Bind9AppTabComponent implements OnInit {
 
     /**
      * Shows a dialog for renaming an app.
+     *
+     * The dialog box component requires a set of machines' addresses
+     * and a map of existing apps' names to validate the new app name.
+     * Therefore, this function attempts to load the machines' addresses
+     * and apps' names prior to displaying the dialog. If it fails, the
+     * dialog box is not displayed.
      */
     renameApp() {
-        this.appRenameDialogVisible = true
+        forkJoin([this.serverData.getAppsNames(), this.serverData.getMachinesAddresses()]).subscribe(
+            (data) => {
+                this.existingApps = data[0]
+                this.existingMachines = data[1]
+                this.appRenameDialogVisible = true
+            },
+            (err) => {
+                this.msgService.add({
+                    severity: 'error',
+                    summary: 'Fetching apps and machines failed',
+                    detail: 'Fetching apps and machines list from the server failed',
+                    life: 10000,
+                })
+            }
+        )
     }
 }

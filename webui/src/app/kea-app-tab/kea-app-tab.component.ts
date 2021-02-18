@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
-import { BehaviorSubject, forkJoin } from 'rxjs'
+import { forkJoin } from 'rxjs'
 
 import * as moment from 'moment-timezone'
 
@@ -31,8 +31,25 @@ export class KeaAppTabComponent implements OnInit {
 
     activeTabIndex = 0
 
+    /**
+     * Holds a map of existing apps' names and ids.
+     *
+     * The apps' names are used in rename-app-dialog component to validate
+     * the user input.
+     */
     existingApps: any = []
+
+    /**
+     * Holds a set of existing machines' addresses.
+     *
+     * The machines' addresses are used in rename-app-dialog component to
+     * validate the user input.
+     */
     existingMachines: any = []
+
+    /**
+     * Controls whether the rename-app-dialog is visible or not.
+     */
     appRenameDialogVisible = false
 
     constructor(
