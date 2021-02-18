@@ -35,13 +35,13 @@ The ``Stork Agent`` does not require any specific dependencies to run. It can be
 Stork uses the `status-get` command to communicate with Kea, and therefore only works with a version of Kea that supports
 `status-get`, which was introduced in Kea 1.7.3 and backported to 1.6.3.
 
-Stork requires the premium ``Host Commands (host_cmds)`` hook library to be loaded by the Kea instance to retrieve host
-reservations stored in an external database. Stork does work without the Host Commands hook library, but will not be able to display
-host reservations. Stork can retrieve host reservations stored locally in the Kea configuration without any additional hook
+Stork requires the premium ``Host Commands (host_cmds)`` hooks library to be loaded by the Kea instance to retrieve host
+reservations stored in an external database. Stork does work without the Host Commands hooks library, but will not be able to display
+host reservations. Stork can retrieve host reservations stored locally in the Kea configuration without any additional hooks
 libraries.
 
-Stork requires the open source ``Stat Commands (stat_cmds)`` hook library to be loaded by the Kea instance to retrieve lease
-statistics. Stork does work without the Stat Commands hook library, but will not be able to show pool utilization and other
+Stork requires the open source ``Stat Commands (stat_cmds)`` hooks library to be loaded by the Kea instance to retrieve lease
+statistics. Stork does work without the Stat Commands hooks library, but will not be able to show pool utilization and other
 statistics.
 
 For the ``Stork Server``, a PostgreSQL database (https://www.postgresql.org/) version 11 or later is required. It may work with
