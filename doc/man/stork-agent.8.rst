@@ -21,66 +21,66 @@ Synopsis
 Description
 ~~~~~~~~~~~
 
-The ``stork-agent`` is a small tool that is being run on the systems
-that are running BIND 9 and Kea services. Stork server connects to
-the Stork Agent and uses it to monitor services remotely.
+The ``stork-agent`` is a small tool that operates on systems
+that are running BIND 9 and Kea services. The Stork server connects to
+the Stork agent and uses it to monitor services remotely.
 
 Arguments
 ~~~~~~~~~
 
-Stork does not use explicit configuration file. Instead, its behavior can be controlled with
-command line switches and/or variables. The Stork Agent takes the following command line switches.
+Stork does not use an explicit configuration file. Instead, its behavior can be controlled with
+command-line switches and/or variables. The Stork agent takes the following command-line switches.
 Equivalent environment variables are listed in square brackets, where applicable.
 
 ``--listen-stork-only``
-   listen for commands from the Stork Server only, but not for Prometheus requests.
+   listen for commands from the Stork server only, but not for Prometheus requests.
    [$STORK_AGENT_LISTEN_STORK_ONLY]
 
 ``--listen-prometheus-only``
-   listen for Prometheus requests only, but not for commands from the Stork Server.
+   listen for Prometheus requests only, but not for commands from the Stork server.
    [$STORK_AGENT_LISTEN_PROMETHEUS_ONLY]
 
 ``-v`` or ``--version``
    show software version.
 
-Stork Server flags:
+``Stork Server`` flags:
 
 ``--host=``
-   the IP or hostname to listen on for incoming Stork server connection. [$STORK_AGENT_ADDRESS]
+   the IP or hostname to listen on for incoming Stork server connections. [$STORK_AGENT_ADDRESS]
 
 ``--port=``
-   the TCP port to listen on for incoming Stork server connection. (default: 8080) [$STORK_AGENT_PORT]
+   the TCP port to listen on for incoming Stork server connections. (default: 8080) [$STORK_AGENT_PORT]
 
-Prometheus Kea Exporter flags:
+``Prometheus Kea Exporter`` flags:
 
 ``--prometheus-kea-exporter-host=``
-   the IP or hostname to listen on for incoming Prometheus connection (default: 0.0.0.0)
+   the IP or hostname to listen on for incoming Prometheus connections. (default: 0.0.0.0)
    [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS]
 
 ``--prometheus-kea-exporter-port=``
-   the port to listen on for incoming Prometheus connection (default: 9547)
+   the port to listen on for incoming Prometheus connections. (default: 9547)
    [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT]
 
 ``--prometheus-kea-exporter-interval=``
-   specifies how often the agent collects stats from Kea, in seconds (default: 10)
+   how often the agent collects stats from Kea, in seconds. (default: 10)
    [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL]
 
-Prometheus BIND 9 Exporter flags:
+``Prometheus BIND 9 Exporter`` flags:
 
 ``--prometheus-bind9-exporter-host=``
-   the IP or hostname to listen on for incoming Prometheus connection (default: 0.0.0.0)
+   the IP or hostname to listen on for incoming Prometheus connections. (default: 0.0.0.0)
    [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS]
 
 ``--prometheus-bind9-exporter-port=``
-   the port to listen on for incoming Prometheus connection (default: 9119)
+   the port to listen on for incoming Prometheus connections. (default: 9119)
    [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT]
 
 ``--prometheus-bind9-exporter-interval=``
-   specifies how often the agent collects stats from BIND 9, in seconds (default: 10)
+   how often the agent collects stats from BIND 9, in seconds. (default: 10)
    [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL]
 
 ``-h`` or ``--help``
-   displays list of available parameters.
+   the list of available parameters.
 
 
 Mailing Lists and Support
@@ -93,7 +93,7 @@ contributors, and other advanced users. The lists are available at
 https://lists.isc.org. The community provides best-effort support
 on both of those lists.
 
-Once stork will become more mature, ISC will be providing professional support
+Once Stork becomes more mature, ISC will provide professional support
 for Stork services.
 
 History
