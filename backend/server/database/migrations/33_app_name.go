@@ -136,16 +136,14 @@ func init() {
 		_, err := db.Exec(`
             ALTER TABLE app DROP CONSTRAINT app_name_unique;
 
-            DROP TRIGGER IF EXISTS trigger_replace_machine_name on machine;
-            DROP FUNCTION IF EXISTS replace_machine_name;
+            DROP TRIGGER IF EXISTS trigger_replace_app_name ON machine;
+            DROP FUNCTION IF EXISTS replace_app_name;
 
             DROP TRIGGER IF EXISTS trigger_validate_app_name on app;
             DROP FUNCTION IF EXISTS validate_app_name;
 
             DROP TRIGGER IF EXISTS trigger_create_default_app_name ON app;
             DROP FUNCTION IF EXISTS create_default_app_name;
-
-            DROP FUNCTION IF EXISTS gen_app_name_suffix;
 
             ALTER TABLE app DROP COLUMN name;
         `)
