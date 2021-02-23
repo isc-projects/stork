@@ -45,8 +45,7 @@ describe('RenameAppDialogComponent', () => {
         // Make sure the new name was propagated and that the new value was
         // properly validated.
         expect(component.appName).toBe('dhcp-server-floor1')
-        expect(appNameInput.classes.hasOwnProperty('ng-valid')).toBeTrue()
-        expect(appNameInput.classes['ng-valid']).toBeTrue()
+        expect(component.invalid).toBeFalse()
 
         spyOn(component.submitted, 'emit')
         spyOn(component.cancelled, 'emit')
@@ -82,8 +81,7 @@ describe('RenameAppDialogComponent', () => {
         // Make sure the new name was propagated and that the new value was
         // properly validated.
         expect(component.appName).toBe('fix@@machine3')
-        expect(appNameInput.classes.hasOwnProperty('ng-valid')).toBeTrue()
-        expect(appNameInput.classes['ng-valid']).toBeTrue()
+        expect(component.invalid).toBeFalse()
     })
 
     it('should cancel rename', () => {
@@ -109,8 +107,7 @@ describe('RenameAppDialogComponent', () => {
         // Make sure it is set to an empty string and that it is treated
         // as an invalid name.
         expect(component.appName.length).toBe(0)
-        expect(appNameInput.classes.hasOwnProperty('ng-invalid')).toBeTrue()
-        expect(appNameInput.classes['ng-invalid']).toBeTrue()
+        expect(component.invalid).toBeTrue()
 
         spyOn(component.submitted, 'emit')
         spyOn(component.cancelled, 'emit')
@@ -151,8 +148,7 @@ describe('RenameAppDialogComponent', () => {
         // Make sure the change was propagated to the component level and that
         // this name is treated as invalid one.
         expect(component.appName).toBe('dhcp-server-floor1')
-        expect(appNameInput.classes.hasOwnProperty('ng-invalid')).toBeTrue()
-        expect(appNameInput.classes['ng-invalid']).toBeTrue()
+        expect(component.invalid).toBeTrue()
 
         // Ensure that the appropriate error message is displayed.
         const appNameInputHelp = fixture.debugElement.query(By.css('#app-name-input-help'))
@@ -184,12 +180,63 @@ describe('RenameAppDialogComponent', () => {
         expect(component.appName).toBe('lion@machine3')
         // Make sure this name doesn't validate because the given machine
         // does not exist.
-        expect(appNameInput.classes.hasOwnProperty('ng-invalid')).toBeTrue()
-        expect(appNameInput.classes['ng-invalid']).toBeTrue()
+        expect(component.invalid).toBeTrue()
 
         // Make sure that the error message is displayed.
         const appNameInputHelp = fixture.debugElement.query(By.css('#app-name-input-help'))
         expect(appNameInputHelp.nativeElement.innerText).toBe('Machine machine3 does not exist.')
+    })
+
+    it('should reject a name with empty machine name', () => {
+        component.appId = 2
+        component.visible = true
+        // Simulate the case that there are two machines in the system.
+        component.existingMachines = new Set(['machine1', 'machine2'])
+        fixture.detectChanges()
+
+        const appNameInput = fixture.debugElement.query(By.css('#app-name-input'))
+        const appNameInputElement = appNameInput.nativeElement
+
+        // The new app name includes @ character but the machine name is missing.
+        appNameInputElement.value = 'lion@ '
+        appNameInputElement.dispatchEvent(new Event('input'))
+        appNameInputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'n' }))
+        fixture.detectChanges()
+
+        // Make sure the name has been propagated to the component level.
+        expect(component.appName).toBe('lion@ ')
+        // Make sure this name doesn't validate because the machine name is blank.
+        expect(component.invalid).toBeTrue()
+
+        // Make sure that the error message is displayed.
+        const appNameInputHelp = fixture.debugElement.query(By.css('#app-name-input-help'))
+        expect(appNameInputHelp.nativeElement.innerText).toBe(
+            'The @ character must be followed by a machine address or name.'
+        )
+    })
+
+    it('should reject an empty name before the @ character', () => {
+        component.appId = 2
+        component.visible = true
+        fixture.detectChanges()
+
+        const appNameInput = fixture.debugElement.query(By.css('#app-name-input'))
+        const appNameInputElement = appNameInput.nativeElement
+
+        // The actual app name consists of whitespace only.
+        appNameInputElement.value = '  @@machine3'
+        appNameInputElement.dispatchEvent(new Event('input'))
+        appNameInputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'n' }))
+        fixture.detectChanges()
+
+        // Make sure the name has been propagated to the component level.
+        expect(component.appName).toBe('  @@machine3')
+        // Make sure this name doesn't validate.
+        expect(component.invalid).toBeTrue()
+
+        // Make sure that the error message is displayed.
+        const appNameInputHelp = fixture.debugElement.query(By.css('#app-name-input-help'))
+        expect(appNameInputHelp.nativeElement.innerText).toBe('App name preceding the @ character must not be empty.')
     })
 
     it('should reject an empty name', () => {
@@ -206,8 +253,7 @@ describe('RenameAppDialogComponent', () => {
         appNameInputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'n' }))
         fixture.detectChanges()
 
-        expect(appNameInput.classes.hasOwnProperty('ng-invalid')).toBeTrue()
-        expect(appNameInput.classes['ng-invalid']).toBeTrue()
+        expect(component.invalid).toBeTrue()
 
         const appNameInputHelp = fixture.debugElement.query(By.css('#app-name-input-help'))
         expect(appNameInputHelp.nativeElement.innerText).toBe('App name must not be empty.')

@@ -129,7 +129,7 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
      */
     save() {
         this.visible = false
-        this.submitted.emit(this.appName)
+        this.submitted.emit(this.appName.trim())
     }
 
     /**
@@ -152,22 +152,27 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
                 return
             }
         }
-        // Setting existing machines is optional. if they are not set,
-        // skip the checks.
-        if (this.existingMachines.length !== 0) {
-            // Check if the app name references a machine.
-            const appNameSplit = this.appName.split('@', 2)
-            if (appNameSplit.length === 2) {
-                // Using a double "at" character can be used to overcome the
-                // machine name check. If the first character of the second
-                // string is an "at" character it means that this trick was
-                // used.
-                if (appNameSplit[1] !== '@' && !this.existingMachines.has(appNameSplit[1])) {
-                    // There was a single "at" character in the name and the referenced
-                    // machine does not exist. Raise an error.
-                    this.signalError('Machine ' + appNameSplit[1] + ' does not exist.')
+        const regexpMatch = this.appName.match(/^\s*([^@]*)(@+)([^@]*)\s*$/)
+        if (regexpMatch) {
+            // If there is the @ character, the machine name becomes mandatory.
+            if (regexpMatch[3].trim().length === 0) {
+                this.signalError('The @ character must be followed by a machine address or name.')
+                return
+            }
+            // Setting existing machines is optional. if they are not set,
+            // skip the checks.
+            if (this.existingMachines.length !== 0 && regexpMatch[2].length === 1 && regexpMatch[3].length > 0) {
+                // Check if the name references an exsiting machine.
+                if (!this.existingMachines.has(regexpMatch[3])) {
+                    // The referenced machine does not exist. Raise an error.
+                    this.signalError('Machine ' + regexpMatch[3] + ' does not exist.')
                     return
                 }
+            }
+            // The app name before @ character(s) must not be empty.
+            if (regexpMatch[1].length === 0) {
+                this.signalError('App name preceding the @ character must not be empty.')
+                return
             }
         }
         // Ensure that the app name does not consist of whitespaces only.
