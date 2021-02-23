@@ -121,11 +121,13 @@
         [appTab]="appTab"
         [refreshedAppTab]="refreshedAppTab"
         (refreshApp)="onRefreshApp($event)"
+        (renameApp)="onRenameApp($event)"
     ></app-bind9-app-tab>
     <app-kea-app-tab
         *ngIf="appTab.app.type === 'kea'"
         [appTab]="appTab"
         [refreshedAppTab]="refreshedAppTab"
         (refreshApp)="onRefreshApp($event)"
+        (renameApp)="onRenameApp($event)"
     ></app-kea-app-tab>
 </div>

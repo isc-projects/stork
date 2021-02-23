@@ -72,7 +72,7 @@ describe('Bind9AppTabComponent', () => {
         const fakeMachinesAddresses = new Set()
         spyOn(serverData, 'getMachinesAddresses').and.returnValue(of(fakeMachinesAddresses))
         expect(component.appRenameDialogVisible).toBeFalse()
-        component.renameApp()
+        component.showRenameAppDialog()
         expect(serverData.getAppsNames).toHaveBeenCalled()
         expect(serverData.getMachinesAddresses).toHaveBeenCalled()
         // The dialog should be visible after fetching apps names and machines
@@ -86,7 +86,7 @@ describe('Bind9AppTabComponent', () => {
         // Simulate an error while getting machines addresses.
         spyOn(serverData, 'getMachinesAddresses').and.returnValue(throwError({ status: 404 }))
         expect(component.appRenameDialogVisible).toBeFalse()
-        component.renameApp()
+        component.showRenameAppDialog()
         expect(serverData.getAppsNames).toHaveBeenCalled()
         expect(serverData.getMachinesAddresses).toHaveBeenCalled()
         // The dialog should not be visible because there was an error.
@@ -99,7 +99,7 @@ describe('Bind9AppTabComponent', () => {
         const fakeMachinesAddresses = new Set()
         spyOn(serverData, 'getMachinesAddresses').and.returnValue(of(fakeMachinesAddresses))
         expect(component.appRenameDialogVisible).toBeFalse()
-        component.renameApp()
+        component.showRenameAppDialog()
         expect(serverData.getAppsNames).toHaveBeenCalled()
         expect(serverData.getMachinesAddresses).toHaveBeenCalled()
         // The dialog should not be visible because there was an error.

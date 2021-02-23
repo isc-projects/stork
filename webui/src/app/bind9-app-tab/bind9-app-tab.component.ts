@@ -50,6 +50,12 @@ export class Bind9AppTabComponent implements OnInit {
      */
     appRenameDialogVisible = false
 
+    /**
+     * Event emitter sending an event to the parent component when an app is
+     * renamed.
+     */
+    @Output() renameApp = new EventEmitter<string>()
+
     constructor(
         private servicesApi: ServicesService,
         private serverData: ServerDataService,
@@ -235,6 +241,8 @@ export class Bind9AppTabComponent implements OnInit {
                 })
                 // Let's update the app name in the current tab.
                 this.appTab.app.name = event
+                // Notify the parent component about successfully renaming the app.
+                this.renameApp.emit(event)
             },
             (err) => {
                 // Renaming the app failed.
@@ -271,7 +279,7 @@ export class Bind9AppTabComponent implements OnInit {
      * and apps' names prior to displaying the dialog. If it fails, the
      * dialog box is not displayed.
      */
-    renameApp() {
+    showRenameAppDialog() {
         forkJoin([this.serverData.getAppsNames(), this.serverData.getMachinesAddresses()]).subscribe(
             (data) => {
                 this.existingApps = data[0]

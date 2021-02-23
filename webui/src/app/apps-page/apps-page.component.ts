@@ -57,7 +57,7 @@ export class AppsPageComponent implements OnInit {
     // action panel
     filterText = ''
 
-    // machine tabs
+    // app tabs
     activeTabIdx = 0
     tabs: MenuItem[]
     activeItem: MenuItem
@@ -302,5 +302,21 @@ export class AppsPageComponent implements OnInit {
 
     refreshAppsList(appsTable) {
         appsTable.onLazyLoad.emit(appsTable.createLazyLoadMetadata())
+    }
+
+    /**
+     * Modifies an active tab's label after renaming an app.
+     *
+     * This function is invoked when an app is renamed in a child
+     * component, i.e. kea-app-tab or bind9-app-tab. As a result,
+     * the label of the currently selected tab is changed to the
+     * new app name.
+     *
+     * @param event holds new app name.
+     */
+    onRenameApp(event) {
+        if (this.activeTabIdx > 0) {
+            this.tabs[this.activeTabIdx].label = event
+        }
     }
 }

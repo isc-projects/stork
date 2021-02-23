@@ -81,4 +81,29 @@ describe('AppsPageComponent', () => {
         expect(component.tabs[1].label).toBe('test-app')
         expect(component.tabs[1].routerLink).toBe('/apps/bind9/1')
     })
+
+    it('should change app tab label after rename', () => {
+        const app = new App()
+        app.id = 1
+        app.name = 'kea@@machine1'
+
+        component.appType = 'kea'
+
+        // Open a tab presenting our test app.
+        component.addAppTab(app)
+        component.switchToTab(1)
+        expect(component.tabs.length).toEqual(2)
+        expect(component.tabs[1].hasOwnProperty('label')).toBeTrue()
+        expect(component.tabs[1].label).toBe('kea@@machine1')
+
+        // Generate notification that the app was renamed.
+        const event = 'kea@@machine2'
+        component.onRenameApp(event)
+
+        // The notification should cause the app tab label to
+        // be changed to the new name.
+        expect(component.tabs.length).toEqual(2)
+        expect(component.tabs[1].hasOwnProperty('label')).toBeTrue()
+        expect(component.tabs[1].label).toBe('kea@@machine2')
+    })
 })
