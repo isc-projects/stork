@@ -180,7 +180,7 @@ func agentInstallerMiddleware(next http.Handler, staticFilesDir string) http.Han
 			if debFile == "" || rpmFile == "" {
 				var msg string
 				if debFile == "" {
-					msg = fmt.Sprintf("cannot file agent deb file in '%s' directory\n", pkgsDir)
+					msg = fmt.Sprintf("cannot find agent deb file in '%s' directory\n", pkgsDir)
 				} else {
 					msg = fmt.Sprintf("cannot file agent rpm file in '%s' directory\n", pkgsDir)
 				}
