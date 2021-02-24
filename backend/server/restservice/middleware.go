@@ -127,7 +127,6 @@ func sseMiddleware(next http.Handler, eventCenter eventcenter.EventCenter) http.
 
 // Agent installer as Bash script.
 const agentInstallerScript = `#!/bin/bash
-#!/bin/bash
 set -e -x
 
 rm -f /tmp/isc-stork-agent.{deb,rpm}
