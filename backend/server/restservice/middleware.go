@@ -182,7 +182,7 @@ func agentInstallerMiddleware(next http.Handler, staticFilesDir string) http.Han
 				if debFile == "" {
 					msg = fmt.Sprintf("cannot find agent deb file in '%s' directory\n", pkgsDir)
 				} else {
-					msg = fmt.Sprintf("cannot file agent rpm file in '%s' directory\n", pkgsDir)
+					msg = fmt.Sprintf("cannot find agent rpm file in '%s' directory\n", pkgsDir)
 				}
 				log.Errorf(msg)
 				w.WriteHeader(http.StatusInternalServerError)
