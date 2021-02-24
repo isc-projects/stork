@@ -1,3 +1,10 @@
+* 128 [func] godfryd, marcin
+
+    Updated Stork demo setup to use new machines registration methods.
+    Machines automatically request registration using the agent token
+    method. Their registration can be approved in the machines view.
+    (Gitlab #485)
+
 * 127 [func] godfryd, tomek, marcin
 
     Secured agent-server channel part 3. Implemented agent deployment
