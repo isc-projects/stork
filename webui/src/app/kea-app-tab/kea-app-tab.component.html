@@ -13,11 +13,19 @@
         <div style="font-size: 1.8em; font-weight: bold; margin-left: 10px; color: #007ad9">
             <i class="fa fa-server" style="padding-right: 10px"></i> {{ appTab.app.name }}
             <i
+                *ngIf="!showRenameDialogClicked"
                 class="pi pi-pencil"
                 id="pencil-rename-app"
                 style="vertical-align: text-top; margin-left: 15px; color: #aaa; cursor: pointer"
                 (click)="showRenameAppDialog()"
             ></i>
+            <p-progressSpinner
+                *ngIf="showRenameDialogClicked"
+                [style]="{ width: '25px', height: '25px' }"
+                styleClass="app-rename-spinner"
+                fill="#FFFFFF"
+                strokeWidth="6"
+            ></p-progressSpinner>
         </div>
         <button
             type="button"

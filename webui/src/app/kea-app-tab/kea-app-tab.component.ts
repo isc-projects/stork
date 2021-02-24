@@ -53,6 +53,17 @@ export class KeaAppTabComponent implements OnInit {
     appRenameDialogVisible = false
 
     /**
+     * Indicates if a pencil icon was clicked.
+     *
+     * As a result of clicking this icon a dialog box is shown to
+     * rename an app. Loading the dialog box may take a while before
+     * the information about available apps and machines is loaded.
+     * In the meantime, a spinner is shown, indicating that the dialog
+     * box is loading.
+     */
+    showRenameDialogClicked = false
+
+    /**
      * Event emitter sending an event to the parent component when an app is
      * renamed.
      */
@@ -313,11 +324,13 @@ export class KeaAppTabComponent implements OnInit {
      * dialog box is not displayed.
      */
     showRenameAppDialog() {
+        this.showRenameDialogClicked = true
         forkJoin([this.serverData.getAppsNames(), this.serverData.getMachinesAddresses()]).subscribe(
             (data) => {
                 this.existingApps = data[0]
                 this.existingMachines = data[1]
                 this.appRenameDialogVisible = true
+                this.showRenameDialogClicked = false
             },
             (err) => {
                 this.msgService.add({
@@ -326,6 +339,7 @@ export class KeaAppTabComponent implements OnInit {
                     detail: 'Fetching apps and machines list from the server failed',
                     life: 10000,
                 })
+                this.showRenameDialogClicked = false
             }
         )
     }
