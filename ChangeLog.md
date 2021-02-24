@@ -1,3 +1,8 @@
+* 130 [func] marcin
+
+    Added a dialog box in the UI to rename apps.
+    (Gitlab #477)
+
 * 129 [doc] godfryd, marcin
 
     Documented secure communication channel between the Stork Server
