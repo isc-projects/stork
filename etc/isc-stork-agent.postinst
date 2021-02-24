@@ -30,5 +30,5 @@ else
     fi
 fi
 
-# change all folders and files in home dir to stork-agent user
+# change ownership of all folders and files in home dir to stork-agent user
 chown -R stork-agent $home_dir
