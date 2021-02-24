@@ -328,7 +328,7 @@ export class MachinesPageComponent implements OnInit {
      */
     _changeMachineAuthorization(machine, authorized, machinesTable) {
         machine.authorized = authorized
-        let txt = 'Machine ' + (authorized ? "de":"" ) + 'authorized'
+        let txt = 'Machine ' + (authorized ? 'de' : '') + 'authorized'
         this.servicesApi.updateMachine(machine.id, machine).subscribe(
             (data) => {
                 this.msgSrv.add({
