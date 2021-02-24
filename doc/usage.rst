@@ -81,57 +81,6 @@ any consecutive attempts.
 The Grafana & Prometheus settings currently allow for specifying URLs
 of the Prometheus and Grafana instances used with Stork.
 
-.. This agent-deploy link is used in webui for pointing users to the instruction about deploying
-   agent. So change it always together with the link in webui to have them in sync.
-.. _agent-deploy:
-
-Deploying Stork Agent
-=====================
-
-The Stork system uses agents to monitor services. ``Stork Agent`` is a
-daemon that must be deployed and run on each machine to be
-monitored. Currently, there are no automated deployment routines and
-``Stork Agent`` must be installed manually.  This can be done in one
-of two ways: from RPM or deb packages (described in the
-:ref:`installation` chapter), or by simply copying the ``Stork Agent``
-binary to the destination machine manually. The packages are usually far
-more convenient.
-
-Assuming you choose to not use the packages, the Stork Agent binary can
-be copied manually. Assuming services will be monitored on a machine with the IP
-192.0.2.1, enter the following on the Stork server command line:
-
-.. code:: console
-
-    $ cd <stork-dir>
-    $ scp backend/cmd/stork-agent login@192.0.2.1:/path
-
-On the machine to be monitored, start the agent by running:
-
-.. code:: console
-
-    $ ./stork-agent
-
-It is possible to set the ``--host=`` or ``STORK_AGENT_ADDRESS``
-environment variables to specify which address the agent listens
-on. The ``--port`` or ``STORK_AGENT_PORT`` environment variables
-specify which TCP port the agent listens on.
-
-Normally, the agent will create a TCP socket on which to listen
-for commmands from a stork-server and create exporters which
-export data to Prometheus.  There are two command line flags
-which may be used to alter this behavior.  The ``--listen-stork-only``
-flag instructs the agent to listen for commands from the Stork Server
-but not for Prometheus requests.  Conversely, the
-``--listen-prometheus-only`` flag instructs the agent to listen for
-Prometheus requests but not for commands from the Stork Server.
-
-.. note::
-
-   Unless explicitly specified, the agent listens on all addresses on
-   port 8080. There are no authentication mechanisms implemented in
-   the agent yet. Use with care!
-
 Connecting and Monitoring Machines
 ==================================
 

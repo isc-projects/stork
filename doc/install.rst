@@ -88,53 +88,6 @@ Then, prepare the database:
    it accepts passwords containing spaces, quotes, double quotes and other
    special characters.
 
-Database Migration Tool (optional)
-==================================
-
-Optional step: to initialize the database directly, the migrations
-tool must be built and used to initialize and upgrade the database to the
-latest schema. However, this is completely optional, as the database
-migration is triggered automatically upon server startup.  This is
-only useful if for some reason it is desirable to set up the database
-but not yet run the server. In most cases this step can be skipped.
-
-.. code-block:: console
-
-    $ rake build_migrations
-    $ backend/cmd/stork-db-migrate/stork-db-migrate init
-    $ backend/cmd/stork-db-migrate/stork-db-migrate up
-
-The up and down command has an optional `-t` parameter that specifies desired
-schema version. This is only useful when debugging database migrations.
-
-.. code-block:: console
-
-    $ # migrate up version 25
-    $ backend/cmd/stork-db-migrate/stork-db-migrate up -t 25
-    $ # migrate down back to version 17
-    $ backend/cmd/stork-db-migrate/stork-db-migrate down -t 17
-
-Note the server requires the latest database version to run, will always
-run the migration on its own and will refuse to start if migration fails
-for whatever reason. The migration tool is mostly useful for debugging
-problems with migration or migrating the database without actually running
-the service. For complete reference, see manual page here:
-:ref:`man-stork-db-migrate`.
-
-To debug migrations, another useful feature is SQL tracing using the `--db-trace-queries` parameter.
-It takes either "all" (trace all SQL operations, including migrations and run-time) or "run" (just
-run-time operations, skip migrations). If specified without paraemter, "all" is assumed. With it enabled,
-`stork-db-migrate` will print out all its SQL queries on stderr. For example, you can use these commands
-to generate an SQL script that will update your schema. Note that for some migrations, the steps are
-dependent on the contents of your database, so this will not be an universal Stork schema. This parameter
-is also supported by the Stork server.
-
-.. code-block:: console
-
-   $ backend/cmd/stork-db-migrate/stork-db-migrate down -t 0
-   $ backend/cmd/stork-db-migrate/stork-db-migrate up --db-trace-queries 2> stork-schema.txt
-
-
 .. _install-pkgs:
 
 Installing from Packages
@@ -148,9 +101,19 @@ Detailed instructions for setting up the operating system to use this
 repository are available under the `Set Me Up` button on the
 Cloudsmith repository page.
 
+It is possible to install both ``Stork Agent`` and ``Stork Server`` on
+the same machine. It is useful in small deployments with a single
+monitored machine to avoid setting up a dedicated system for the Stork
+Server. In those cases, however, an operator must consider the possible
+impact of the Stork Server service on other services running on the same
+machine.
 
-Installing on Debian/Ubuntu
+
+Installing the Stork Server
 ---------------------------
+
+Debian/Ubuntu
+~~~~~~~~~~~~~
 
 The first step for both Debian and Ubuntu is:
 
@@ -164,17 +127,9 @@ Next, install the package with ``Stork Server``:
 
    $ sudo apt install isc-stork-server
 
-Then, install ``Stork Agent``:
 
-.. code-block:: console
-
-   $ sudo apt install isc-stork-agent
-
-It is possible to install both agent and server on the same machine.
-
-
-Installing on CentOS/RHEL/Fedora
---------------------------------
+CentOS/RHEL/Fedora
+~~~~~~~~~~~~~~~~~~
 
 The first step for RPM-based distributions is:
 
@@ -188,17 +143,10 @@ Next, install the package with ``Stork Server``:
 
    $ sudo dnf install isc-stork-server
 
-Then, install ``Stork Agent``:
+If ``dnf`` is not available, ``yum`` can be used in similar fashion.
 
-.. code-block:: console
-
-   $ sudo dnf install isc-stork-agent
-
-It is possible to install both agent and server on the same machine. If ``dnf`` is not available, ``yum`` can be used in similar
-fashion.
-
-Initial Setup of the Stork Server
----------------------------------
+Setup
+~~~~~
 
 These steps are the same for both Debian-based and RPM-based
 distributions that use `SystemD`.
@@ -236,25 +184,83 @@ using `Nginx` or `Apache`. In the ``Stork Server`` package an example
 configuration file is provided for `Nginx`, in
 `/usr/share/stork/examples/nginx-stork.conf`.
 
+Securing Connections Between Stork Server and Stork Agents
+----------------------------------------------------------
 
-Initial Setup of the Stork Agent
---------------------------------
+Connections between the server and agents are always secured using
+standard cryptography solutions, i.e., PKI and TLS.
+
+The keys and certificates are automatically generated during the
+server startup to:
+
+* register new agents (prepare agents keys and certificates) and,
+* establish safe, encrypted connections where both ends are authenticated.
+
+During agent installation, a registration procedure is conveyed where
+an agent generates its private key and CSR certificate, and then it is
+signed by the server and returned to the agent. The agent is using
+this signed certificate later for authentication and connection
+encryption.
+
+There are two ways of registering an agent:
+
+#. using agent's token,
+#. using server's token.
+
+They are described in the following chapters.
+
+Installing the Stork Agent
+--------------------------
 
 These steps are the same for both Debian-based and RPM-based
 distributions that use `SystemD`.
 
-After installing ``Stork Agent`` from the package, the basic settings
-must be configured. They are stored in ``/etc/stork/agent.env``.
+After installing ``Stork Agent`` from the package, a user needs to
+specify the necessary settings in ``/etc/stork/agent.env``.
 
-These are the required settings to connect with the database:
+General settings:
 
 * STORK_AGENT_ADDRESS - the IP address of the network interface which ``Stork Agent``
   should use for listening for ``Stork Server`` incoming connections;
   default is `0.0.0.0` (i.e. listen on all interfaces)
 * STORK_AGENT_PORT - the port that should be used for listening; default is `8080`
+* STORK_AGENT_LISTEN_STORK_ONLY - enable Stork functionality only,
+  i.e. disable Prometheus exporters; default is false
+* STORK_AGENT_LISTEN_PROMETHEUS_ONLY - enable Prometheus exporters
+  only, i.e. disable Stork functionality; default is false
 
-With those settings in place, the ``Stork Agent`` service can be
-enabled and started:
+Settings specific to Prometheus exporters:
+
+* STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS - the IP or hostname to
+  listen on for incoming Prometheus connection; default is `0.0.0.0`
+* STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT - the port to listen on for
+  incoming Prometheus connection; default is `9547`
+* STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL - specifies how often
+  the agent collects stats from Kea, in seconds; default is `10`
+* STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS - the IP or hostname
+  to listen on for incoming Prometheus connection; default is `0.0.0.0`
+* STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT - the port to listen on
+  for incoming Prometheus connection; default is `9119`
+* STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL - specifies how often
+  the agent collects stats from BIND 9, in seconds; default is `10`
+
+The next setting must be used only if an agent is automatically registered in
+Stork server using agent token:
+
+* STORK_AGENT_SERVER_URL - URL of Stork server
+
+Registration using Agent Token
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This method requires that after installing ``Stork Agent`` from
+packages, a user will set two parameters:
+``STORK_AGENT_SERVER_URL`` and ``STORK_AGENT_ADDRESS``.
+``STORK_AGENT_SERVER_URL`` should point to URL of ``Stork Server``,
+e.g.: ``http://stork-server.example.com:8080``. The other one,
+``STORK_AGENT_ADDRESS``, should indicate an address and a port of an
+agent, e.g.: ``stork-agent.example.com:8080``.
+
+At that moment, a user should start the agent service:
 
 .. code-block:: console
 
@@ -267,13 +273,130 @@ To check the status:
 
    $ sudo systemctl status isc-stork-agent
 
-After starting, the agent periodically tries to detect installed
-Kea DHCP or BIND 9 services on the system.  If it finds them, they are
+When the agent starts, it first generates its private key, a CSR
+certificate (using the address specified with the
+``STORK_AGENT_ADDRESS``), and an agent token. Then, it tries to
+connect to the Stork Server using its URL specified with the
+``STORK_SERVER_URL``. Finally, it starts the registration
+procedure. It sends the CSR and the token to the server.  The server
+stores the token, signs the CSR, and returns the CSR to the agent. The
+agent will use this certificate to authenticate itself to the
+server. The registration procedure finishes on the agent's side.
+
+
+Still, the agent is not authorized and is not fully functional from
+the server perspective. Now a user needs to visit a machines page in
+``Stork Server`` web UI (menu ``Services -> Machines``). After
+switching to unauthorized machines in UI, the just started agent
+should be visible. The user needs to invoke an authorize function to
+make the agent fully working and visible in ``Stork
+Server``. Switching back to authorized machines should show the full
+state of the machine.
+
+The agent is not yet authorized from the server's perspective. To
+authorize the agent, a user must visit a machines page in Stork
+Server's web UI (menu ``Services -> Machines``) and switch to the list
+of unauthorized agents. The newly registered agent should be on that
+list. Compare if agent token stored in
+``/var/lib/stork-agent/tokens/agent-token.txt`` is the same as the one
+displayed in web UI. If they match then click on the ``Action`` button
+and select ``Authorize`` menu item. Switching back to authorized
+machines should show the full state of the machine.
+
+
+Registration using Server Token
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+At first, the user needs to visit the machines page on the ``Stork
+Server`` web UI (menu ``Services -> Machines``). Clicking ``How to
+Install Agent to New Machine`` button will reveal a dialog box. It
+presents several things:
+
+#. a list of commands for installing an agent package,
+#. a ``server token``,
+#. a button for regenerating the ``server token``.
+
+The presented commands should be executed on the agent's
+machine. Invoked ``stork-install-agent.sh`` will prompt for several
+things:
+
+1. for ``server token``:
+
+.. code-block:: text
+
+   >>>> Please, provide server access token (optional):
+
+If server token is skipped with Enter the registration using agent
+token will be performed, otherwise it will still be server token
+based one.
+
+The ``server token`` should be copied from web UI and pasted to the
+terminal.
+
+2. The next question will be for `agent address`:
+
+.. code-block:: text
+
+   >>>> Please, provide address (IP or name/FQDN) of current host with Stork Agent (it will be used to connect from Stork Server) [...]:
+
+3. The following step is to specify the `agent port`:
+
+.. code-block:: text
+
+   >>>> Please, provide port that Stork Agent will use to listen on [8080]:
+
+And that's it. The script execution should end with a message:
+
+.. code-block:: text
+
+   machine ping over TLS: OK
+   registration completed successfully
+
+Now the agent should be authorized in the server and should be visible on
+the machines page in the web UI.
+
+Registration Methods Summary
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The server token way requires manual installation of the agent
+and providing server token. In effect the agent is immediatelly
+registered in the Stork server. If server token leaks then
+it should be regenerated on the machines page in ``How to
+Install Agent to New Machine`` dialog box. In does not break
+earlier registered agents. It only impacts new registrations that
+should use new server token.
+
+The agent token way requires preconfiguring only server URL
+on agent side, no server token is needed. This allows e.g. to prepare
+a container image with an agent offline and deploy it later.
+Then it required manual agent authorization in Stork web UI.
+The identity of agent should be confirmed by comparing agent token
+stored in ``/var/lib/stork-agent/tokens/agent-token.txt`` with
+the agent token presented in web UI.
+
+
+Agent Setup Summary
+~~~~~~~~~~~~~~~~~~~
+
+After successful agent setup, the agent periodically tries to detect installed
+Kea DHCP or BIND 9 services on the system. If it finds them, they are
 reported to the ``Stork Server`` when it connects to the agent.
 
 Further configuration and usage of the ``Stork Server`` and the
 ``Stork Agent`` are described in the :ref:`usage` chapter.
 
+
+Upgrading
+---------
+
+An upgrade procedure looks the same as installation procedure.
+
+At first, install new packages on the server. Installation scripts in
+Deb/RPM package will perform the required database and other migrations.
+
+The next step is agent upgrade. The steps are the same: download the
+agent installation script to the agent machine and invoke it. This time
+registration will be skipped as the machine is already registered.
 
 .. _installation_sources:
 
@@ -347,6 +470,54 @@ variable, e.g.:
 .. code-block:: console
 
    $ sudo rake install_server DESTDIR=/usr
+
+
+Database Migration Tool (optional)
+==================================
+
+Optional step: to initialize the database directly, the migrations
+tool must be built and used to initialize and upgrade the database to the
+latest schema. However, this is completely optional, as the database
+migration is triggered automatically upon server startup.  This is
+only useful if for some reason it is desirable to set up the database
+but not yet run the server. In most cases this step can be skipped.
+
+.. code-block:: console
+
+    $ rake build_migrations
+    $ backend/cmd/stork-db-migrate/stork-db-migrate init
+    $ backend/cmd/stork-db-migrate/stork-db-migrate up
+
+The up and down command has an optional `-t` parameter that specifies desired
+schema version. This is only useful when debugging database migrations.
+
+.. code-block:: console
+
+    $ # migrate up version 25
+    $ backend/cmd/stork-db-migrate/stork-db-migrate up -t 25
+    $ # migrate down back to version 17
+    $ backend/cmd/stork-db-migrate/stork-db-migrate down -t 17
+
+Note the server requires the latest database version to run, will always
+run the migration on its own and will refuse to start if migration fails
+for whatever reason. The migration tool is mostly useful for debugging
+problems with migration or migrating the database without actually running
+the service. For complete reference, see manual page here:
+:ref:`man-stork-db-migrate`.
+
+To debug migrations, another useful feature is SQL tracing using the `--db-trace-queries` parameter.
+It takes either "all" (trace all SQL operations, including migrations and run-time) or "run" (just
+run-time operations, skip migrations). If specified without paraemter, "all" is assumed. With it enabled,
+`stork-db-migrate` will print out all its SQL queries on stderr. For example, you can use these commands
+to generate an SQL script that will update your schema. Note that for some migrations, the steps are
+dependent on the contents of your database, so this will not be an universal Stork schema. This parameter
+is also supported by the Stork server.
+
+.. code-block:: console
+
+   $ backend/cmd/stork-db-migrate/stork-db-migrate down -t 0
+   $ backend/cmd/stork-db-migrate/stork-db-migrate up --db-trace-queries 2> stork-schema.txt
+
 
 Integration with Prometheus and Grafana
 =======================================
