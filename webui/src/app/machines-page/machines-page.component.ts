@@ -6,6 +6,7 @@ import { MessageService, MenuItem } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
 import { ServerDataService } from '../server-data.service'
+import { CopyToClipboard } from '../utils'
 
 interface AppType {
     name: string
@@ -521,19 +522,17 @@ export class MachinesPageComponent implements OnInit {
     }
 
     /**
-     * Copy commands for agent installation to clipboard.
-     */
-    copyCmdToClipboard(textEl) {
-        textEl.select()
-        document.execCommand('copy')
-        textEl.setSelectionRange(0, 0)
-    }
-
-    /**
      * Return base URL of stork server website.
      * It is then put into agent installation instructions.
      */
     getBaseUrl() {
         return window.location.origin
+    }
+
+    /**
+     * Copies selected text to clipboard. See @ref CopyToClipboard for details.
+     */
+    copyToClipboard(textEl) {
+        return CopyToClipboard(textEl)
     }
 }

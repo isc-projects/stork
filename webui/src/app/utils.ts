@@ -302,3 +302,14 @@ export function daemonStatusIconTooltip(daemon) {
     }
     return 'Communication with the daemon is ok.'
 }
+
+/**
+ * Copy text to clipboard.
+ *
+ * @param textEl instance of the DOM entity the text will be copied from.
+ */
+export function CopyToClipboard(textEl) {
+    textEl.select()
+    document.execCommand('copy')
+    textEl.setSelectionRange(0, 0)
+}
