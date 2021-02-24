@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN perl -pi -e 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/kea/kea-ctrl-agent.conf
 # Install Stork agent.
 COPY build-root/root/usr/bin/stork-agent /agent/
+RUN mkdir -p /var/lib/stork-agent/certs /var/lib/stork-agent/tokens
 # Copy configuration files.
 COPY docker/supervisor-agent-kea6.conf /etc/supervisor.conf
 COPY docker/kea-dhcp6.conf /etc/kea/

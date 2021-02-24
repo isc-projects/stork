@@ -21,8 +21,6 @@
         </div>
 
         <div v-if="menuIndex == 'manager'">
-             <el-button type="primary" v-if="services.length == 0" v-on:click="addServices()">Add Services</el-button>
-
             <el-table :data="services">
                 <el-table-column label="Machine" min-width="4em">
                     <template slot-scope="scope">
@@ -191,19 +189,6 @@
                     axios.put('/services/' + idx, data).then(function (response) {
                         this.services.length = 0;
                         this.services.push(...response.data.items);
-                    })
-                },
-                addServices: function () {
-                    axios.post('/services').then(function (response) {
-                        this.services.length = 0;
-                        this.services.push(...response.data.items);
-
-                        axios.get('/subnets').then(function (response2) {
-                            this.subnets.push(...response2.data.items)
-                        })
-                        axios.get('/servers').then(function (response3) {
-                            this.servers.push(...response3.data.items)
-                        })
                     })
                 }
             }

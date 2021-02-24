@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-ce
 COPY build-root/root/usr/bin/stork-agent /agent/
 RUN mkdir -p /var/lib/stork-agent/certs /var/lib/stork-agent/tokens
 # Copy configuration files.
-COPY docker/supervisor-agent-bind9.conf /etc/supervisor.conf
+COPY docker/supervisor-agent-bind9-2.conf /etc/supervisor.conf
 COPY docker/named.conf /etc/bind/
 COPY docker/db.test /etc/bind/
 RUN chown root:bind /etc/bind/rndc.key

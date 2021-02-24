@@ -324,30 +324,3 @@ def put_service(index):
 
     data = _get_services()
     return json.dumps(data)
-
-
-@app.route('/services', methods=['POST'])
-def post_services():
-    s = _login_session()
-
-    url = '%s/api/machines' % STORK_SERVER_URL
-
-    machines = [
-        'agent-kea',
-        'agent-kea6',
-        'agent-kea-ha1',
-        'agent-kea-ha2',
-        'agent-bind9',
-        'agent-bind9-2',
-    ]
-
-    for adr in machines:
-        m = dict(address=adr, agentPort=8080)
-        r = s.post(url, json=m)
-
-    data = _get_services()
-
-    _refresh_subnets()
-    _refresh_servers()
-
-    return json.dumps(data)

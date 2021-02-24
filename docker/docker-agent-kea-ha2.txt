@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         && mkdir -p /var/run/kea/
 # Install Stork agent.
 COPY build-root/root/usr/bin/stork-agent /agent/
+RUN mkdir -p /var/lib/stork-agent/certs /var/lib/stork-agent/tokens
 # Copy configuration files.
-COPY docker/supervisor-agent-kea.conf /etc/supervisor.conf
+COPY docker/supervisor-agent-kea-ha2.conf /etc/supervisor.conf
 COPY docker/kea-dhcp4-ha2.conf /etc/kea/kea-dhcp4.conf
 COPY docker/agent-kea-ctrl-agent.conf /etc/kea/kea-ctrl-agent.conf
 # Correct port for HA-2.

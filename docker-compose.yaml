@@ -128,8 +128,8 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: docker/docker-agent-bind9.txt
-    image: registry.gitlab.isc.org/isc-projects/stork/agent-bind9:latest
+      dockerfile: docker/docker-agent-bind9-2.txt
+    image: registry.gitlab.isc.org/isc-projects/stork/agent-bind9-2:latest
     hostname: agent-bind9-2
     networks:
       storknet:
