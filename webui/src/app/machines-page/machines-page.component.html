@@ -5,9 +5,9 @@
             as well as removing them.
         </p>
         <p>
-            If <em>Show Unauthorized</em> is toggled on, the list will show unauthorized machines.
-            They were registered using the agent token-based registration method. To authorize a
-            machine, click action menu button and then <em>Authorize</em>.
+            If <em>Show Unauthorized</em> is toggled on, the list will show unauthorized machines. They were registered
+            using the agent token-based registration method. To authorize a machine, click action menu button and then
+            <em>Authorize</em>.
         </p>
     </div>
 </app-breadcrumbs>
@@ -98,7 +98,9 @@ sudo ./stork-install-agent.sh</textarea
             pTooltip="Copy commands to clipboard"
         ></button>
     </div>
-    <p style="margin: 10px 10px 10px 0; width: 38em">During agent installation you will be prompted for a server token.</p>
+    <p style="margin: 10px 10px 10px 0; width: 38em">
+        During agent installation you will be prompted for a server token.
+    </p>
     <p style="margin: 10px 10px 10px 0; width: 40em">
         <b>Server token</b> value is
         <input
@@ -248,8 +250,8 @@ sudo ./stork-install-agent.sh</textarea
                     No {{ showUnauthorized ? 'unauthorized' : 'authorized' }} machines found.
                     <div style="margin-top: 15px">
                         <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
-                        Information about adding new machines to Stork server is available after clicking on the <b>How to Install
-                        Agent to New Machine</b> button at the top.
+                        Information about adding new machines to Stork server is available after clicking on the
+                        <b>How to Install Agent to New Machine</b> button at the top.
                     </div>
                     <div *ngIf="!showUnauthorized && unauthorizedMachinesCount > 0">
                         <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
