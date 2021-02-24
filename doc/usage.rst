@@ -164,6 +164,46 @@ launched, it is recommended to remove (or comment out) those
 configurations to eliminate unwanted warnings from Stork about
 inactive daemons.
 
+Friendly App Names
+~~~~~~~~~~~~~~~~~~
+
+Every app connected to Stork is assigned a default name. For example,
+if a Kea app runs on the machine ``abc.example.org``, this app's default name
+will be ``kea@abc.example.org``. Similarly, if a BIND9 app runs on the machine
+with address ``192.0.2.3``, the resulting app name will be ``bind9@192.0.2.3``.
+If multiple apps of a given type run on the same machine, a postfix with a
+unique identifier is appended to the duplicated names, e.g. ``bind9@192.0.2.3/56``.
+
+The default app names are unique so that the user can distinguish them in the
+dashboard, apps list, events panel, and other views. However, the default names
+may become lengthy when machines names consist of fully qualified domain names.
+When machines' IP addresses are used instead of FQDNs, the app names are less
+meaningful for someone not familiar with addressing in the managed network.
+In these cases, users may prefer replacing the default app names with more
+descriptive ones.
+
+Suppose there are two DHCP servers in the network, one on the first floor,
+second on the second floor of the building. A user may assign ``Floor 1 DHCP``
+and ``Floor 2 DHCP`` names to the respective DHCP servers in this case.
+The new names need not have the same pattern as the default names and may
+contain whitespace. The @ character is not required, but if it is present,
+the part of the name following this character must be an address or name of
+the machine monitored in Stork. The following name ``dhcp-server@floor1``
+is invalid unless ``floor1`` is a monitored machine's name. The special
+notation using two consecutive @ characters can be used to suppress this
+check. The ``dhcp-server@@floor1`` is a valid name even if ``floor1`` is
+not a machine's name. In this case, ``floor1`` can be a physical location
+of the DHCP server in a building.
+
+To modify an app's name, navigate to the selected app's view. For example,
+select ``Services`` from the top menu bar and then click ``Kea Apps``.
+Select an app from the presented apps list. Locate and click the pencil
+icon next to the app name in the app view. In the displayed dialog box,
+type the new app name. If the specified name is valid, the ``Rename``
+button is enabled. Click this button to submit the new name. The ``Rename``
+button is disabled if the name is invalid. In this case, a hint is displayed
+informing about issues with the new name.
+
 IPv4 and IPv6 Subnets per Kea Application
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
