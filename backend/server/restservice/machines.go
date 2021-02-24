@@ -433,7 +433,7 @@ func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachinePa
 		return rsp
 	}
 
-	// so as all is ok then get state from the machine
+	// Communication with an agent established, so get machine's state.
 	errStr := apps.GetMachineAndAppsState(ctx2, r.DB, dbMachine, r.Agents, r.EventCenter)
 	if errStr != "" {
 		rsp := services.NewPingMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
