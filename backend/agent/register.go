@@ -36,7 +36,7 @@ var (
 // Prompt user for server token. If user hits enter key then empty
 // string is returned.
 func promptUserForServerToken() (string, error) {
-	fmt.Printf(">>>> Please, provide server access token (optional): ")
+	fmt.Printf(">>>> Server access token (optional): ")
 	serverToken, err := terminal.ReadPassword(0)
 	fmt.Print("\n")
 	if err != nil {
@@ -49,14 +49,14 @@ func promptUserForServerToken() (string, error) {
 func getAgentAddrAndPortFromUser(agentAddr, agentPort string) (string, int, error) {
 	if agentAddr == "" {
 		agentAddrTip, err := fqdn.FqdnHostname()
-		msg := ">>>> Please, provide an IP address or FQDN of the host with Stork Agent (the Stork Server will use it to connect to the Stork Agent)"
+		msg := ">>>> IP address or FQDN of the host with Stork Agent (the Stork Server will use it to connect to the Stork Agent)"
 		if err != nil {
 			agentAddrTip = ""
 			msg += ": "
 		} else {
 			msg += fmt.Sprintf(" [%s]: ", agentAddrTip)
 		}
-		fmt.Println(msg)
+		fmt.Print(msg)
 		fmt.Scanln(&agentAddr)
 		agentAddr = strings.TrimSpace(agentAddr)
 		if agentAddr == "" {
@@ -65,7 +65,7 @@ func getAgentAddrAndPortFromUser(agentAddr, agentPort string) (string, int, erro
 	}
 
 	if agentPort == "" {
-		fmt.Printf(">>>> Please, provide a port number that Stork Agent will use to listen on [8080]: ")
+		fmt.Printf(">>>> Port number that Stork Agent will use to listen on [8080]: ")
 		fmt.Scanln(&agentPort)
 		agentPort = strings.TrimSpace(agentPort)
 		if agentPort == "" {
