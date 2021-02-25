@@ -131,8 +131,6 @@ set -e -x
 
 rm -f /tmp/isc-stork-agent.{deb,rpm}
 
-curl -o isc-stork-agent.deb "http://{{.ServerAddress}}{{.DebPath}}"
-
 if [ -e /etc/debian_version ]; then
     curl -o /tmp/isc-stork-agent.deb "{{.ServerAddress}}{{.DebPath}}"
     DEBIAN_FRONTEND=noninteractive dpkg -i --force-confold /tmp/isc-stork-agent.deb
