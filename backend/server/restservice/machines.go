@@ -293,6 +293,8 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		})
 		return rsp
 	}
+	// TODO: consider providing a database query which returns multiple
+	// secrets to avoid multiple database roundtrips.
 	rootKeyPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCAKey)
 	if err != nil {
 		log.Error(err)
