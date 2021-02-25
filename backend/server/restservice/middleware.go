@@ -49,7 +49,7 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 }
 
 // http.ResponseWriter Header implementation wrapper
-// that captures status code of the response.
+// that returns the header.
 func (r *loggingResponseWriter) Header() http.Header {
 	return r.rw.Header()
 }
