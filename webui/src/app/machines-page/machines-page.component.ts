@@ -360,10 +360,11 @@ export class MachinesPageComponent implements OnInit {
 
     /**
      * Shows menu with actions possible on a given machine. Currently this is
-     * authorize/deauthorize or delete. It is called every time the user switches
+     * authorize/unauthorize or delete. It is called every time the user switches
      * between authorized/unauthorized view.
      *
-     * @param event tbd
+     * @param event browser event generated when the button is clicked causing
+     *        the menu to be toggled
      * @param machineMenu reference to the DOM object that represents the machine menu
      * @param machine reference to a machine
      * @param machinesTable reference to the table with machines
