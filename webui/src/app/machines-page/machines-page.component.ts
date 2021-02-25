@@ -6,7 +6,7 @@ import { MessageService, MenuItem } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
 import { ServerDataService } from '../server-data.service'
-import { CopyToClipboard } from '../utils'
+import { copyToClipboard } from '../utils'
 
 interface AppType {
     name: string
@@ -541,9 +541,9 @@ export class MachinesPageComponent implements OnInit {
     }
 
     /**
-     * Copies selected text to clipboard. See @ref CopyToClipboard for details.
+     * Copies selected text to clipboard. See @ref copyToClipboard for details.
      */
     copyToClipboard(textEl) {
-        return CopyToClipboard(textEl)
+        return copyToClipboard(textEl)
     }
 }

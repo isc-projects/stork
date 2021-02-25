@@ -308,7 +308,7 @@ export function daemonStatusIconTooltip(daemon) {
  *
  * @param textEl instance of the DOM entity the text will be copied from.
  */
-export function CopyToClipboard(textEl) {
+export function copyToClipboard(textEl) {
     textEl.select()
     document.execCommand('copy')
     textEl.setSelectionRange(0, 0)
