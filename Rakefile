@@ -783,18 +783,18 @@ task :build_pkgs_in_docker => [TIMESTAMPED_SRC_TARBALL, :build_server_pkgs_in_do
 
 desc 'Build RPM and deb packages of Stork Server using Docker'
 task :build_server_pkgs_in_docker => [TIMESTAMPED_SRC_TARBALL, :build_agent_pkgs_in_docker] do
-  run_bld_pkg_in_dkr('pkgs-ubuntu-18-04', 'deb', 'server')
-  run_bld_pkg_in_dkr('pkgs-centos-8', 'rpm', 'server')
+  run_build_pkg_in_docker('pkgs-ubuntu-18-04', 'deb', 'server')
+  run_build_pkg_in_docker('pkgs-centos-8', 'rpm', 'server')
 end
 
 desc 'Build RPM and deb packages of Stork Agent using Docker'
 task :build_agent_pkgs_in_docker => TIMESTAMPED_SRC_TARBALL do
-  run_bld_pkg_in_dkr('pkgs-ubuntu-18-04', 'deb', 'agent')
-  run_bld_pkg_in_dkr('pkgs-centos-8', 'rpm', 'agent')
+  run_build_pkg_in_docker('pkgs-ubuntu-18-04', 'deb', 'agent')
+  run_build_pkg_in_docker('pkgs-centos-8', 'rpm', 'agent')
 end
 
 # Invoke building a package (rpm or deb) of agent or server in given docker image
-def run_bld_pkg_in_dkr(dkr_image, pkg_type, side)
+def run_build_pkg_in_docker(dkr_image, pkg_type, side)
   cmd = "docker run "
   cmd += " -v #{PKGS_BUILD_DIR}:/home/$USER "
   cmd += " -v tools:/tools "
@@ -825,7 +825,7 @@ def run_bld_pkg_in_dkr(dkr_image, pkg_type, side)
   sh 'cp isc-stork*deb webui/src/assets/pkgs/'
 end
 
-# Internal task that copies sources and builds packages on a side. It is used by build_debs_in_docker and build_rpms_in_docker.
+# Internal task that copies sources and builds packages on a side. It is used by run_build_pkg_in_docker.
 task :build_pkg do
   cwd = Dir.pwd
   # If the host is using an OS other than Linux, e.g. macOS, the appropriate
