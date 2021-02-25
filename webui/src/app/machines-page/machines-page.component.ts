@@ -328,7 +328,7 @@ export class MachinesPageComponent implements OnInit {
      */
     _changeMachineAuthorization(machine, authorized, machinesTable) {
         machine.authorized = authorized
-        let txt = 'Machine ' + (authorized ? 'de' : '') + 'authorized'
+        const txt = 'Machine ' + (authorized ? 'de' : '') + 'authorized'
         this.servicesApi.updateMachine(machine.id, machine).subscribe(
             (data) => {
                 this.msgSrv.add({
@@ -343,10 +343,9 @@ export class MachinesPageComponent implements OnInit {
                 if (err.error && err.error.message) {
                     msg = err.error.message
                 }
-                let err_txt = txt + ' attempt failed'
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: err_txt,
+                    summary: txt + ' attempt failed',
                     detail: 'Update of the machine authorization status failed: ' + msg,
                     life: 10000,
                 })
