@@ -125,8 +125,10 @@ func sseMiddleware(next http.Handler, eventCenter eventcenter.EventCenter) http.
 	})
 }
 
-// Agent installer as Bash script.
-const agentInstallerScript = `#!/bin/bash
+// Install a middleware that is serving Agent installer.
+func agentInstallerMiddleware(next http.Handler, staticFilesDir string) http.Handler {
+	// Agent installer as Bash script.
+	const agentInstallerScript = `#!/bin/bash
 set -e -x
 
 rm -f /tmp/isc-stork-agent.{deb,rpm}
@@ -148,8 +150,6 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 
 `
 
-// Install a middleware that is serving Agent installer.
-func agentInstallerMiddleware(next http.Handler, staticFilesDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/stork-install-agent.sh") {
 			pkgsDir := path.Join(staticFilesDir, "assets/pkgs")
