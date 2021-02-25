@@ -333,13 +333,13 @@ export class MachinesPageComponent implements OnInit {
      */
     _changeMachineAuthorization(machine, authorized, machinesTable) {
         machine.authorized = authorized
-        const txt = 'Machine ' + (authorized ? 'de' : '') + 'authorized'
+        const txt = 'Machine ' + (authorized ? '' : 'un')
         this.servicesApi.updateMachine(machine.id, machine).subscribe(
             (data) => {
                 this.msgSrv.add({
                     severity: 'success',
-                    summary: txt,
-                    detail: 'Update of the machine authorization status succeeded.',
+                    summary: txt + 'authorized',
+                    detail: txt + 'authorization succeeded.',
                 })
                 this.refreshMachinesList(machinesTable)
             },
@@ -350,8 +350,8 @@ export class MachinesPageComponent implements OnInit {
                 }
                 this.msgSrv.add({
                     severity: 'error',
-                    summary: txt + ' attempt failed',
-                    detail: 'Update of the machine authorization status failed: ' + msg,
+                    summary: txt + 'authorization failed',
+                    detail: txt + 'authorization attempt failed: ' + msg,
                     life: 10000,
                 })
             }
