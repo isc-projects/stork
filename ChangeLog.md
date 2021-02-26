@@ -1,3 +1,8 @@
+* 131 [ui] tomek
+    Added tooltips for the Grafana links explaining what the
+    icon is for.
+    (Gitlab #470)
+
 * 130 [func] marcin
 
     Added a dialog box in the UI to rename apps.

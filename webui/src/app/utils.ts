@@ -102,6 +102,15 @@ export function getGrafanaUrl(grafanaBaseUrl, name, subnet, instance) {
 }
 
 /**
+ * Builds a tooltip explaining what the link is for.
+ * @param subnet an identifier of the subnet
+ * @param machine an identifier of the machine the subnet is configured on
+ */
+export function getGrafanaSubnetTooltip(subnet, machine) {
+    return 'See statistics for subnet ' + subnet + ' on machine ' + machine + ' in Grafana.'
+}
+
+/**
  * Extract key:val pairs, is:<flag> and not:<flag> from search text
  * and prepare query params dict. Expected keys are passed as keys
  * and expected flags are passed as flags.

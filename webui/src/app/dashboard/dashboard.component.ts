@@ -12,6 +12,7 @@ import {
     daemonStatusIconName,
     daemonStatusIconColor,
     daemonStatusIconTooltip,
+    getGrafanaSubnetTooltip,
 } from '../utils'
 import { SettingService } from '../setting.service'
 import { ServerDataService } from '../server-data.service'
@@ -141,6 +142,15 @@ export class DashboardComponent implements OnInit {
      */
     getGrafanaUrl(name, subnet, instance) {
         return getGrafanaUrl(this.grafanaUrl, name, subnet, instance)
+    }
+
+    /**
+     * Build a tooltip explaining what the subnet link is for
+     * @param subnet id of the subnet
+     * @param machine id of the machine
+     */
+    getGrafanaTooltip(subnet, machine) {
+        return getGrafanaSubnetTooltip(subnet, machine)
     }
 
     /**

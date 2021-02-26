@@ -4,7 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router'
 import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
-import { humanCount, getGrafanaUrl, extractKeyValsAndPrepareQueryParams } from '../utils'
+import { humanCount, getGrafanaUrl, extractKeyValsAndPrepareQueryParams, getGrafanaSubnetTooltip } from '../utils'
 import { getTotalAddresses, getAssignedAddresses } from '../subnets'
 import { SettingService } from '../setting.service'
 
@@ -162,6 +162,15 @@ export class SubnetsPageComponent implements OnInit {
             return 'not data collected yet'
         }
         return count.toLocaleString('en-US')
+    }
+
+    /**
+     * Builds a tooltip explaining what the link is for.
+     * @param subnet an identifier of the subnet
+     * @param machine an identifier of the machine the subnet is configured on
+     */
+    getGrafanaTooltip(subnet, machine) {
+        return getGrafanaSubnetTooltip(subnet, machine)
     }
 
     /**
