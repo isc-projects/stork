@@ -1,4 +1,4 @@
-* 127 [func] godfryd
+* 127 [func] godfryd, tomek, marcin
 
     Secured agent-server channel part 3. Implemented agent deployment
     using script downloaded from the server. The script installs
