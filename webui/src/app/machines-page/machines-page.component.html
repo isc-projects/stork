@@ -61,7 +61,7 @@
     </p-footer>
 </p-dialog>
 
-<p-dialog header="Agent Installation Instruction" [(visible)]="displayAgentInstallationInstruction">
+<p-dialog header="Agent Installation Instructions" [(visible)]="displayAgentInstallationInstruction">
     <p style="margin: 10px 10px 10px 0; width: 38em">
         Copy these commands and paste them into a terminal on a machine where Stork Agent is going to be installed.
         <br />
@@ -126,7 +126,7 @@ sudo ./stork-install-agent.sh</textarea
     </p>
     <p style="margin: 0 10px 10px 0; width: 38em">
         If no token value is provided (just Enter is hit) then this new machine will be waiting for authorization. To
-        see unauthorized machines check "Show&nbsp;Unauthorized" switch at the top right.
+        see unauthorized machines select the <b>Unauthorized</b> button at the top right.
     </p>
 
     <button
@@ -221,12 +221,12 @@ sudo ./stork-install-agent.sh</textarea
                 (click)="showAgentInstallationInstruction()"
             ></button>
             <div>
-                <p-inputSwitch
+                <p-selectButton
+                    [options]="viewSelectionOptions"
                     [(ngModel)]="showUnauthorized"
                     (onChange)="refreshMachinesList(machinesTable)"
-                ></p-inputSwitch>
+                ></p-selectButton>
             </div>
-            <div style="margin: 0 0 6px 10px">Show Unauthorized</div>
         </div>
     </div>
 
@@ -258,8 +258,13 @@ sudo ./stork-install-agent.sh</textarea
                         There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
                         <b style="font-size: 1.2em; color: red">{{ unauthorizedMachinesCount }}</b>
                         unauthorized machine{{ unauthorizedMachinesCount > 1 ? 's' : '' }}. Check
-                        {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }} by switching
-                        <b>Show Unauthorized</b> toggle above.
+                        {{ unauthorizedMachinesCount === 1 ? 'it' : 'them' }} by selecting <b>Unauthorized</b> button
+                        above.
+                    </div>
+                    <div *ngIf="showUnauthorized">
+                        <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
+                        There are no machines waiting for the authorization. You can now select the <b>Authorized</b>
+                        button above to see all authorized machines.
                     </div>
                 </td>
             </tr>

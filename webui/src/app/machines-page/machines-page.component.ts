@@ -28,6 +28,7 @@ export class MachinesPageComponent implements OnInit {
     machineMenuItems: MenuItem[]
     machineMenuItemsAuth: MenuItem[]
     machineMenuItemsUnauth: MenuItem[]
+    viewSelectionOptions: any[]
     showUnauthorized = false
     serverToken = ''
 
@@ -131,6 +132,19 @@ export class MachinesPageComponent implements OnInit {
             },
         ]
         this.machineMenuItems = this.machineMenuItemsAuth
+
+        // Add a select button to switch between authorized and
+        // unauthorized machines.
+        this.viewSelectionOptions = [
+            {
+                label: 'Authorized',
+                value: false,
+            },
+            {
+                label: 'Unauthorized',
+                value: true,
+            },
+        ]
 
         this.openedMachines = []
 
@@ -395,12 +409,12 @@ export class MachinesPageComponent implements OnInit {
             }
 
             // connect method to authorize machine
-            this.machineMenuItems[1].command = () => {
+            /*this.machineMenuItems[1].command = () => {
                 this._changeMachineAuthorization(machine, false, machinesTable)
-            }
+            }*/
 
             // connect method to delete machine
-            this.machineMenuItems[2].command = () => {
+            this.machineMenuItems[1].command = () => {
                 this.deleteMachine(machine.id)
             }
         }
