@@ -108,8 +108,18 @@ sudo ./stork-install-agent.sh</textarea
             class="monospace"
             size="32"
             readonly=""
-            style="background-color: #f7f7f7; padding: 4px 6px; border: 1px solid #dfdfdf; margin: 4px 20px 4px 4px"
+            style="background-color: #f7f7f7; padding: 4px 6px; border: 1px solid #dfdfdf; margin: 4px 4px 4px 4px"
+            #serverTokenInput
         />
+
+        <button
+            type="button"
+            (click)="copyToClipboard(serverTokenInput)"
+            pButton
+            icon="pi pi-copy"
+            pTooltip="Copy server token to clipboard"
+            style="margin-right: 6px"
+        ></button>
 
         <button
             type="button"
