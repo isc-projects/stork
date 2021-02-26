@@ -521,6 +521,7 @@ sudo ./stork-install-agent.sh</textarea
             </table>
 
             <button
+                *ngIf="machineTab.machine.authorized"
                 type="button"
                 pButton
                 label="Get Latest State"
