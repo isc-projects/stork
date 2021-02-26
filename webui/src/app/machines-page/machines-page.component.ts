@@ -356,6 +356,9 @@ export class MachinesPageComponent implements OnInit {
                     detail: txt + 'authorization succeeded.',
                 })
                 this.refreshMachinesList(machinesTable)
+                // Force menu adjustments to take into account that there
+                // is new machine and apps available.
+                this.serverData.forceReloadAppsStats()
             },
             (err) => {
                 let msg = err.statusText
