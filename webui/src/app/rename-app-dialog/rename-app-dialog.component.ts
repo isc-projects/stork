@@ -177,7 +177,7 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
                 return
             }
         }
-        const regexpMatch = this.appName.match(/^\s*([^@]*)(@+)([^@]*)\s*$/)
+        const regexpMatch = this.appName.match(/^\s*([^@]*)(@+)([^@%]*)(%\S+)*\s*$/)
         if (regexpMatch) {
             // If there is the @ character, the machine name becomes mandatory.
             if (regexpMatch[3].trim().length === 0) {

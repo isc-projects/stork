@@ -61,6 +61,27 @@ describe('RenameAppDialogComponent', () => {
         expect(component.hidden.emit).not.toHaveBeenCalled()
     })
 
+    it('should validate app name with a percent sign', () => {
+        component.appId = 2
+        component.visible = true
+        component.existingMachines = new Set(['machine1'])
+        fixture.detectChanges()
+
+        const appNameInput = fixture.debugElement.query(By.css('#app-name-input'))
+        const appNameInputElement = appNameInput.nativeElement
+
+        // Set app name with a machine name and a percent sign at the end.
+        appNameInputElement.value = 'fix@machine1%5'
+        appNameInputElement.dispatchEvent(new Event('input'))
+        appNameInputElement.dispatchEvent(new KeyboardEvent('keyup'))
+        fixture.detectChanges()
+
+        // Make sure the new name was propagated and that the new value was
+        // properly validated.
+        expect(component.appName).toBe('fix@machine1%5')
+        expect(component.invalid).toBeFalse()
+    })
+
     it('should validate app name with double at character', () => {
         component.appId = 2
         component.visible = true

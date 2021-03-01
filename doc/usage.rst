@@ -172,7 +172,7 @@ if a Kea app runs on the machine ``abc.example.org``, this app's default name
 will be ``kea@abc.example.org``. Similarly, if a BIND9 app runs on the machine
 with address ``192.0.2.3``, the resulting app name will be ``bind9@192.0.2.3``.
 If multiple apps of a given type run on the same machine, a postfix with a
-unique identifier is appended to the duplicated names, e.g. ``bind9@192.0.2.3/56``.
+unique identifier is appended to the duplicated names, e.g. ``bind9@192.0.2.3%56``.
 
 The default app names are unique so that the user can distinguish them in the
 dashboard, apps list, events panel, and other views. However, the default names
@@ -187,9 +187,10 @@ second on the second floor of the building. A user may assign ``Floor 1 DHCP``
 and ``Floor 2 DHCP`` names to the respective DHCP servers in this case.
 The new names need not have the same pattern as the default names and may
 contain whitespace. The @ character is not required, but if it is present,
-the part of the name following this character must be an address or name of
-the machine monitored in Stork. The following name ``dhcp-server@floor1``
-is invalid unless ``floor1`` is a monitored machine's name. The special
+the part of the name following this character (and before an optional %
+character) must be an address or name of the machine monitored in Stork.
+The following names: ``dhcp-server@floor1%123`` and ``dhcp-server@floor1``,
+are invalid unless ``floor1`` is a monitored machine's name. The special
 notation using two consecutive @ characters can be used to suppress this
 check. The ``dhcp-server@@floor1`` is a valid name even if ``floor1`` is
 not a machine's name. In this case, ``floor1`` can be a physical location
