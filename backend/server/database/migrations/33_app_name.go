@@ -21,7 +21,7 @@ func init() {
              -- to add a postfixes to some apps' names to make them unique. One of
              -- the apps can be left without a postfix. The other apps running on the
             -- same machine will have the following format:
-            -- [app-type]@[machine-address]/[app-id].
+            -- [app-type]@[machine-address]%[app-id].
             DO $$
             DECLARE
                  r record;
@@ -38,7 +38,7 @@ func init() {
                 LOOP
                     -- Append postfix only if this is next occurrence of the same name.
                     IF (last_name = name) THEN
-                         UPDATE app SET name = CONCAT(name, '/', id::TEXT) WHERE id = r.id;
+                         UPDATE app SET name = CONCAT(name, '%', id::TEXT) WHERE id = r.id;
                     ELSE
                         last_name = name;
                     END IF;
@@ -62,7 +62,7 @@ func init() {
                     -- Check if the postfix is needed. It is the case when the name without the postfix
                     -- already exists.
                     IF ((SELECT COUNT(*) FROM app WHERE name = NEW.name) > 0) THEN
-                        NEW.name = CONCAT(NEW.name, '/', NEW.id::TEXT);
+                        NEW.name = CONCAT(NEW.name, '%', NEW.id::TEXT);
                     END IF;
                 END IF;
             RETURN NEW;
@@ -77,7 +77,7 @@ func init() {
             END $$;
 
             -- Trigger function verifying that an app name is valid. If the app name has the following
-            -- pattern [text]@[machine-address][/id], it checks that the machine with the given name
+            -- pattern [text]@[machine-address][%id], it checks that the machine with the given name
             -- exists. The special format [text]@@[machine-address] can be used to avoid such check.
             CREATE OR REPLACE FUNCTION validate_app_name()
                 RETURNS trigger
@@ -86,7 +86,7 @@ func init() {
             DECLARE
                 machine_name TEXT;
             BEGIN
-                machine_name = SUBSTRING(NEW.name, CONCAT('@', '([^/]+)'));
+                machine_name = SUBSTRING(NEW.name, CONCAT('@', '([^\%]+)'));
                 IF machine_name IS NOT NULL AND STRPOS(machine_name, '@') = 0 THEN
                     IF ((SELECT COUNT(*) FROM machine WHERE address = machine_name) = 0) THEN
                          RAISE EXCEPTION 'machine % does not exist', machine_name;
@@ -115,7 +115,7 @@ func init() {
                     -- For each app following the pattern [text]@[machine-address], update the
                     -- app name.
                     UPDATE app
-                         SET name = REGEXP_REPLACE(name, CONCAT('@', OLD.address, '((/\d+){0,1})$'), CONCAT('@', NEW.address, '\2'))
+                         SET name = REGEXP_REPLACE(name, CONCAT('@', OLD.address, '((\%\d+){0,1})$'), CONCAT('@', NEW.address, '\2'))
                     WHERE app.machine_id = NEW.id;
                 END IF;
                 RETURN NEW;

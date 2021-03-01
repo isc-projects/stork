@@ -543,7 +543,7 @@ func TestAutoAppName(t *testing.T) {
 
 	// The name should be auto generated and the id should be appended to the
 	// name to ensure that the apps' names are unique.
-	require.Equal(t, fmt.Sprintf("kea@machine-floor1/%d", app2.ID), app2.Name)
+	require.Equal(t, fmt.Sprintf("kea@machine-floor1%%%d", app2.ID), app2.Name)
 
 	// Add the third app of different type.
 	app3 := &App{
@@ -577,7 +577,7 @@ func TestAutoAppName(t *testing.T) {
 	app2, err = GetAppByID(db, app2.ID)
 	require.NoError(t, err)
 	require.NotNil(t, app2)
-	require.Equal(t, fmt.Sprintf("kea@machine-floor2/%d", app2.ID), app2.Name)
+	require.Equal(t, fmt.Sprintf("kea@machine-floor2%%%d", app2.ID), app2.Name)
 
 	// Finally, let's verify the same for the third app.
 	app3, err = GetAppByID(db, app3.ID)
@@ -630,7 +630,7 @@ func TestEditAppName(t *testing.T) {
 
 	// The name should be auto generated and the id should be appended to the
 	// name to ensure that the apps' names are unique.
-	require.Equal(t, fmt.Sprintf("kea@machine-floor1/%d", app2.ID), app2.Name)
+	require.Equal(t, fmt.Sprintf("kea@machine-floor1%%%d", app2.ID), app2.Name)
 
 	// Let's try to modify first app's name. It should fail, because the
 	// machine-floor2 does not exist.
@@ -639,7 +639,7 @@ func TestEditAppName(t *testing.T) {
 	require.Error(t, err)
 
 	// Try to append app id. This should fail too.
-	app1.Name = fmt.Sprintf("fish@machine-floor2/%d", app1.ID)
+	app1.Name = fmt.Sprintf("fish@machine-floor2%%%d", app1.ID)
 	_, _, err = UpdateApp(db, app1)
 	require.Error(t, err)
 
@@ -664,7 +664,7 @@ func TestEditAppName(t *testing.T) {
 	app2, err = GetAppByID(db, app2.ID)
 	require.NoError(t, err)
 	require.NotNil(t, app2)
-	require.Equal(t, fmt.Sprintf("kea@machine-floor2/%d", app2.ID), app2.Name)
+	require.Equal(t, fmt.Sprintf("kea@machine-floor2%%%d", app2.ID), app2.Name)
 
 	// When using double at character, the machine name check should not be
 	// triggered.
