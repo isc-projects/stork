@@ -1,3 +1,10 @@
+* 129 [doc] godfryd, marcin
+
+    Documented secure communication channel between the Stork Server
+    and the agents in the ARM. The new agent installation and
+    registration methods were described.
+    (Gitlab #486)
+
 * 128 [func] godfryd, marcin
 
     Updated Stork demo setup to use new machines registration methods.
