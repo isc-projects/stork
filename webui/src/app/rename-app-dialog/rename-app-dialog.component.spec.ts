@@ -48,7 +48,7 @@ describe('RenameAppDialogComponent', () => {
         expect(component.invalid).toBeFalse()
 
         spyOn(component.submitted, 'emit')
-        spyOn(component.cancelled, 'emit')
+        spyOn(component.hidden, 'emit')
 
         // Submit the new name.
         component.save()
@@ -58,7 +58,7 @@ describe('RenameAppDialogComponent', () => {
         // not.
         expect(component.submitted.emit).toHaveBeenCalled()
         expect(component.submitted.emit).toHaveBeenCalledWith('dhcp-server-floor1')
-        expect(component.cancelled.emit).not.toHaveBeenCalled()
+        expect(component.hidden.emit).not.toHaveBeenCalled()
     })
 
     it('should validate app name with double at character', () => {
@@ -110,18 +110,21 @@ describe('RenameAppDialogComponent', () => {
         expect(component.invalid).toBeTrue()
 
         spyOn(component.submitted, 'emit')
-        spyOn(component.cancelled, 'emit')
+        spyOn(component.hidden, 'emit')
 
-        // Cancel the rename. Appropriate emitter should be triggered.
+        // Cancel the rename and simulate emitting the onHide event from the
+        // component. Appropriate emitter should be triggered.
         component.cancel()
+        component.handleOnHide(new Event('onHide'))
         expect(component.submitted.emit).not.toHaveBeenCalled()
-        expect(component.cancelled.emit).toHaveBeenCalled()
+        expect(component.hidden.emit).toHaveBeenCalled()
 
         // The original name should be restored and the error messages should
         // be cleared.
         expect(component.appName).toBe('first')
         expect(component.invalid).toBeFalse()
         expect(component.errorText.length).toBe(0)
+        expect(component.visible).toBe(false)
     })
 
     it('should reject a name belonging to another app', () => {

@@ -127,13 +127,13 @@ describe('KeaAppTabComponent', () => {
         expect(component.appTab.app.name).toBe('keax@machine3')
     })
 
-    it('should cancel app rename dialog', () => {
+    it('should hide app rename dialog', () => {
         // Show the dialog box.
         component.appRenameDialogVisible = true
         fixture.detectChanges()
         spyOn(servicesApi, 'renameApp')
         // Cancel the dialog box.
-        component.handleRenameDialogCancelled()
+        component.handleRenameDialogHidden()
         // Ensure that the dialog box is no longer visible.
         expect(component.appRenameDialogVisible).toBeFalse()
         // A request to rename the app should not be sent.

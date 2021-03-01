@@ -274,7 +274,6 @@ export class KeaAppTabComponent implements OnInit {
      * @param event holds new app name.
      */
     handleRenameDialogSubmitted(event) {
-        this.appRenameDialogVisible = false
         this.servicesApi.renameApp(this.appTab.app.id, { name: event }).subscribe(
             (data) => {
                 // Renaming the app was successful.
@@ -305,12 +304,13 @@ export class KeaAppTabComponent implements OnInit {
     }
 
     /**
-     * Reacts to cancelling renaming an app.
+     * Reacts to hiding a dialog box for renaming an app.
      *
-     * This function is called when a user presses the cancel button in
-     * the app-rename-app-dialog component. It marks the dialog hidden.
+     * This function is called when a dialog box for renaming an app is
+     * closed. It is triggered both in the case when the form is submitted
+     * or cancelled.
      */
-    handleRenameDialogCancelled() {
+    handleRenameDialogHidden() {
         this.appRenameDialogVisible = false
     }
 

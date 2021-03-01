@@ -50,9 +50,9 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
     @Output() submitted: EventEmitter<string> = new EventEmitter()
 
     /**
-     * Events emitter triggered when cancel button is pressed.
+     * Events emitter triggered when dialog box is hidden.
      */
-    @Output() cancelled = new EventEmitter()
+    @Output() hidden = new EventEmitter()
 
     /**
      * Holds app name as it was before editing.
@@ -101,24 +101,49 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
     /**
      * Event handler triggered during editing the app name.
      *
+     * Special cases of pressing an Enter or Escape buttons are handled
+     * by this function. The former causes the form submission. The
+     * latter cancels the dialog box.
+     *
      * @param event triggered key-up event holding pressed key name.
      */
     handleKeyUp(event) {
-        this.validateName()
+        switch (event.key) {
+            case 'Enter': {
+                this.save()
+                break
+            }
+            case 'Escape': {
+                this.cancel()
+                break
+            }
+            default: {
+                this.validateName()
+            }
+        }
+    }
+
+    /**
+     * Event handler triggered when dialog box gets hidden.
+     *
+     * @param event triggered event.
+     */
+    handleOnHide(event) {
+        this.hidden.emit()
     }
 
     /**
      * Cancel the dialog box.
      *
      * The dialog box is closed, original app name is restored and the
-     * errors are cleared. Finally, an event indicating that the dialog
-     * box was cancelled is triggered.
+     * errors are cleared. This function does not emit any events. An
+     * event informing about closing the dialog box is emitted when the
+     * onHide event is triggered.
      */
     cancel() {
         this.visible = false
         this.appName = this._originalAppName
         this.clearError()
-        this.cancelled.emit(this.appName)
     }
 
     /**
