@@ -39,8 +39,8 @@
 
     Assign friendly names to the apps monitored in Stork. The apps'
     names are auto-generated using the following scheme:
-    [app-type]@[machine-address]/[app-unique-id], e.g.,
-    kea@machine1.example.org/123. The [app-unique-id] is not appended
+    [app-type]@[machine-address]%[app-unique-id], e.g.,
+    kea@machine1.example.org%123. The [app-unique-id] is not appended
     to the name of the first first app of the given type on the
     particular machine. Thus, the name can be kea@machine1.example.org.
     The auto-generated apps' names are presented in the Web UI instead
