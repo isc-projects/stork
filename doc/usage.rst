@@ -84,35 +84,6 @@ of the Prometheus and Grafana instances used with Stork.
 Connecting and Monitoring Machines
 ==================================
 
-Registering a New Machine
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Once the agent is deployed and running on the machine to be monitored,
-the ``Stork Server`` must be instructed to start monitoring it. This
-can be done via the ``Services`` menu, under ``Machines``, to
-see a list of currently registered machines.
-
-To add a new machine, click ``Add New Machine`` and specify the
-machine address (IP address, hostname, or FQDN) and a port.
-
-After the ``Add`` button is clicked, the server attempts to establish
-a connection to the agent.  Make sure that any active firewalls will
-allow incoming connections to the TCP port specified.
-
-Once a machine is added, a number of parameters are displayed,
-including hostname, address, agent version, number of CPU cores, CPU
-load, available total memory, current memory utilization, uptime, OS,
-platform family, platform name, OS version, kernel, virtualization
-details (if any), and host ID.
-
-If any applications, i.e. `Kea DHCP` and/or `BIND 9`, are detected on
-this machine, the status of those applications is displayed and the
-link allows navigation to the application details.
-
-Navigation to the discovered applications is also possible through the
-``Services`` menu.
-
-
 Monitoring a Machine
 ~~~~~~~~~~~~~~~~~~~~
 

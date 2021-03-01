@@ -300,6 +300,9 @@ completes. The ``Stork Agent`` is typically installed using a script that
 downloads the agent packages embedded in the server when this registration
 method is used.
 
+The applicability of the two methods is described in
+:ref:`registration-methods-summary`.
+
 The installation and registration process using both methods are described
 in the subsequent sections.
 
@@ -542,6 +545,8 @@ where the last parameter should be the appropriate Stork server's URL.
 
 Follow the same registration steps as described in the :ref:`register-server-token-script`.
 
+.. _registration-methods-summary:
+
 Registration Methods Summary
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -586,14 +591,14 @@ Further configuration and usage of the ``Stork Server`` and the
 Upgrading
 ---------
 
-An upgrade procedure looks the same as installation procedure.
+Due to the new security model introduced with TLS in Stork 0.15.0
+release, upgrades from versions 0.14.0 and earlier require registering
+the agents from scratch.
+
+Server upgrade procedure looks the same as the installation procedure.
 
 First, install the new packages on the server. Installation scripts in
 deb/RPM package will perform the required database and other migrations.
-
-The next step is agent upgrade. The steps are the same: download the
-agent installation script to the agent machine and invoke it. This time
-registration will be skipped as the machine is already registered.
 
 .. _installation_sources:
 
