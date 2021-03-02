@@ -449,7 +449,7 @@ func TestAddToGroupByID(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, user.ID, 0)
 
-	// Associate the user with two prefefined groups.
+	// Associate the user with two predefined groups.
 	added, err := user.AddToGroupByID(db, &SystemGroup{ID: 1})
 	require.NoError(t, err)
 	require.True(t, added)

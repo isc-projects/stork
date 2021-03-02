@@ -323,7 +323,7 @@ func mockGetStatusError(callNo int, cmdResponses []interface{}) {
 	json := `[
         {
             "result": 1,
-            "text": "unable to communicate with the deamon"
+            "text": "unable to communicate with the daemon"
         }
     ]`
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
@@ -472,7 +472,7 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 }
 
 // Test the case when the Kea CA is unable to communicate with the
-// Kea deamon.
+// Kea daemon.
 func TestGetDHCPStatusError(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockGetStatusError, nil)
 
@@ -603,7 +603,7 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 	require.False(t, service.HAService.PrimaryStatusCollectedAt.IsZero())
 	require.False(t, service.HAService.SecondaryStatusCollectedAt.IsZero())
 	// The "age" value indicates how long ago the secondary status have
-	// been fetched. Therefore, the timestamp of the seconary status should
+	// been fetched. Therefore, the timestamp of the secondary status should
 	// be earlier than the status of the primary.
 	require.True(t, service.HAService.PrimaryStatusCollectedAt.After(service.HAService.SecondaryStatusCollectedAt))
 	// Both servers should be in load balancing state.

@@ -17,9 +17,9 @@ const (
 	ResponseEmpty              = 3
 )
 
-// Map holding names of deamons to which the command is sent. This is
+// Map holding names of daemons to which the command is sent. This is
 // stored in the map rather than a list to guarantee uniqueness of the
-// deamons' names. Not that deamons are called services in the Kea terms,
+// daemons' names. Not that daemons are called services in the Kea terms,
 // however we use Stork specific terminology here. A service means
 // something different in Stork, i.e. it is an aggregation of multiple
 // cooperating applications.
@@ -144,7 +144,7 @@ func (v *hasherValue) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Creates new Kea command from specified command name, damons list and arguments.
+// Creates new Kea command from specified command name, daemons list and arguments.
 func NewCommand(command string, daemons *Daemons, arguments *map[string]interface{}) (*Command, error) {
 	if len(command) == 0 {
 		return nil, errors.Errorf("command name must not be empty")

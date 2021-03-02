@@ -443,7 +443,7 @@ func DeleteLocalHostsWithOtherSeq(db *pg.DB, seq int64, dataSource string) error
 	return err
 }
 
-// Associates an applicatiopn with the host having a specified ID. Internally,
+// Associates an application with the host having a specified ID. Internally,
 // the association is made via the local_host table which holds information
 // about the host from the given app perspective. The source argument
 // indicates whether the host information was fetched from the app's configuration

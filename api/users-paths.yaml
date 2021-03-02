@@ -92,7 +92,7 @@
     put:
       summary: Updates existing user account.
       description: >-
-        Updates exsiting user account in the system.
+        Updates existing user account in the system.
       operationId: updateUser
       tags:
         - Users

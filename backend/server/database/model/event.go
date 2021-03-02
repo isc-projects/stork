@@ -46,7 +46,7 @@ func AddEvent(db *pg.DB, event *Event) error {
 // Fetches a collection of events from the database. The offset and
 // limit specify the beginning of the page and the maximum size of the
 // page. Limit has to be greater then 0, otherwise error is returned.
-// The level idicates the lowest level of events that should be
+// The level indicates the lowest level of events that should be
 // returned (0 - info, 1 - warning, 2 - error). daemonType and appType
 // allows selecting events only from given type of app ('kea',
 // 'bind9') or daemon (e.g. 'named' or 'dhcp4'. machineID and userID

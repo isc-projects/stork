@@ -4,7 +4,7 @@ global:
 
 
 scrape_configs:
-  # basic node exportes exposing machine health
+  # basic node exports exposing machine health
   - job_name: 'node'
     static_configs:
       - targets: ['agent-kea:9100', 'agent-bind9:9100', 'agent-bind9-2:9100']

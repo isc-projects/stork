@@ -55,7 +55,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// get state of non-exisiting machine
+	// get state of non-existing machine
 	params := services.GetMachineStateParams{
 		ID: 123,
 	}
@@ -700,7 +700,7 @@ func TestUpdateMachine(t *testing.T) {
 	err = dbmodel.AddMachine(db, m2)
 	require.NoError(t, err)
 
-	// update second machine to have the same address - should raise error due to duplicatation
+	// update second machine to have the same address - should raise error due to duplication
 	params = services.UpdateMachineParams{
 		ID: m2.ID,
 		Machine: &models.Machine{
@@ -1771,7 +1771,7 @@ func TestRenameApp(t *testing.T) {
 	defaultRsp := rsp.(*services.RenameAppDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 
-	// Ensure that the event informaing about renaming the app was emitted.
+	// Ensure that the event informing about renaming the app was emitted.
 	require.Len(t, fec.Events, 1)
 	require.Contains(t, fec.Events[0].Text, "renamed from dhcp-server1")
 	require.NotNil(t, fec.Events[0].Relations)

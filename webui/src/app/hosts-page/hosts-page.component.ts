@@ -7,7 +7,7 @@ import { DHCPService } from '../backend/api/api'
 import { extractKeyValsAndPrepareQueryParams } from '../utils'
 
 /**
- * This component implemnents a page which displays hosts along with
+ * This component implements a page which displays hosts along with
  * their DHCP identifiers and IP reservations. The list of hosts is
  * paged and can be filtered by a reserved IP address. The list
  * contains host reservations for all subnets and in the future it

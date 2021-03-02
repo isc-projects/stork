@@ -82,7 +82,7 @@ func createCert(templateCert, parentCert *x509.Certificate, publicKey *ecdsa.Pub
 	return cert, certPEM, nil
 }
 
-// Generate a root CA key and a CA certifacte. serialNumber is a
+// Generate a root CA key and a CA certificate. serialNumber is a
 // unique number per generated certificate. The function returns
 // generated private key as a pointer to ecdsa.Private and as slice of
 // bytes in PEM format. Generated certificate is returned as a pointer
@@ -116,7 +116,7 @@ func GenCAKeyCert(serialNumber int64) (*ecdsa.PrivateKey, []byte, *x509.Certific
 	return privKey, privKeyPEM, rootCert, rootPEM, nil
 }
 
-// Generate a key and a cerficate for provided DNS names and IP
+// Generate a key and a certificate for provided DNS names and IP
 // addresses, using provided serial number and a CA key and a CA cert.
 // Return them in PEM format. This function is public and is used in
 // server by certs module in setupServerKeyAndCert to generate server
@@ -264,7 +264,7 @@ func ParseCert(certPEM []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
-// Sign a cerificate for a given CSR in PEM format using provided
+// Sign a certificate for a given CSR in PEM format using provided
 // serial number, a CA key and a CA cert.  It returns PEM of signed
 // CSR, fingerprint of signed CSR, parameters error and inner
 // execution error. This is public function that will be used by the

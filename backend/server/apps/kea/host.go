@@ -234,12 +234,12 @@ func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel
 	}
 
 	if respResult.Error != nil {
-		// Can retry beause the error may go away.
+		// Can retry because the error may go away.
 		return hosts, keactrl.ResponseError, true, respResult.Error
 	}
 
 	if len(respResult.CmdsErrors) > 0 && respResult.CmdsErrors[0] != nil {
-		// Can retry beause the error may go away.
+		// Can retry because the error may go away.
 		return hosts, keactrl.ResponseError, true, respResult.CmdsErrors[0]
 	}
 
@@ -335,7 +335,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 		}
 
 		// Remember the current server's family because it will be required to
-		// set a service value for the commnd being sent.
+		// set a service value for the command being sent.
 		iterator.family = family
 
 		// If this is the first time we're getting hosts for this server we should

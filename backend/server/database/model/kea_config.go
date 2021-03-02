@@ -186,7 +186,7 @@ func NewHostFromKea(rawHost *map[string]interface{}) (*Host, error) {
 
 // Creates log targets from Kea logger configuration. The Kea logger configuration
 // can comprise multiple output options. Therefore, this function may return multiple
-// targets, each correposnding to a single output option.
+// targets, each corresponding to a single output option.
 func NewLogTargetsFromKea(logger keaconfig.Logger) (targets []*LogTarget) {
 	for _, opt := range logger.OutputOptions {
 		target := &LogTarget{

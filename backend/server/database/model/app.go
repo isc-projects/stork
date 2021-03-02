@@ -454,7 +454,7 @@ func DeleteApp(db *pg.DB, app *App) error {
 	return nil
 }
 
-// Returns a list of names of active DHCP deamons. This is useful for
+// Returns a list of names of active DHCP daemons. This is useful for
 // creating commands to be send to active DHCP servers.
 func (app *App) GetActiveDHCPDaemonNames() (daemons []string) {
 	if app.Type != AppTypeKea {

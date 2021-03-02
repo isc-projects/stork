@@ -432,7 +432,7 @@ func TestGetSubnetsByAppID(t *testing.T) {
 	require.Empty(t, returnedSubnets)
 }
 
-// This test verifies that subnets can be filitered by search text.
+// This test verifies that subnets can be filtered by search text.
 // In particular, it verifies that matching with address pools works
 // as expected and that duplicates are eliminated from the result
 // set when the text matches multiple pools in the same subnet.
@@ -789,7 +789,7 @@ func BenchmarkAddSubnet(b *testing.B) {
 // Benchmark measuring a time to associate a subnet with an app. This requires
 // finding local subnet ID within the app configuration by subnet prefix.
 // In order to find a subnet in the app configuration it is possible to use
-// indexed and unindexed subnets. Thus, this bechmark cotain two test cases,
+// indexed and unindexed subnets. Thus, this benchmark contains two test cases,
 // one checking performance of the function with indexing and without indexing.
 // The function execution time should be significantly longer without indexing.
 func BenchmarkAddAppToSubnet(b *testing.B) {

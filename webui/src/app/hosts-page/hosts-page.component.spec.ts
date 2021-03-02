@@ -54,7 +54,7 @@ describe('HostsPageComponent', () => {
     it('host table should have valid app name and app link', () => {
         component.hosts = [{ id: 1, localHosts: [{ appId: 1, appName: 'frog', dataSource: 'config' }] }]
         fixture.detectChanges()
-        // Table rows have ids created by appanding host id to the host-row- string.
+        // Table rows have ids created by appending host id to the host-row- string.
         const row = fixture.debugElement.query(By.css('#host-row-1'))
         // There should be 6 table cells in the row.
         expect(row.children.length).toBe(6)

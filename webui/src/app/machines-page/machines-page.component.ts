@@ -104,7 +104,7 @@ export class MachinesPageComponent implements OnInit {
             /* Temporarily disable unauthorization until we find an
                actual use case for it. Also, if we allow unauthorization
                we will have to fix several things, e.g. apps belonging
-               to an unathorized machine will have to disappear.
+               to an unauthorized machine will have to disappear.
                For now, a user can simply remove a machine.
             {
                 label: 'Unauthorize',

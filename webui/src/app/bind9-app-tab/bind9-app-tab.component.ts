@@ -80,7 +80,7 @@ export class Bind9AppTabComponent implements OnInit {
      * pressing the refresh button in the app tab. In such case, this
      * component emits an event to which the parent component reacts
      * and updates the daemons. When the daemons are updated, it
-     * notifies this compoment via the subscription mechanism.
+     * notifies this component via the subscription mechanism.
      */
     ngOnInit() {
         this.refreshedAppTab.subscribe((data) => {

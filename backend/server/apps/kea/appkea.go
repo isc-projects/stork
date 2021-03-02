@@ -347,7 +347,7 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 }
 
 // Determines whether the new app is active or inactive based on the
-// active/inactive satte of its daemons. It returns a boolean flag
+// active/inactive state of its daemons. It returns a boolean flag
 // indicating whether the app is active or not and the list of
 // daemons to be assigned to the app. This function is called by the
 // GetAppState function when adding a new app.
@@ -508,7 +508,7 @@ func handleConfigEvent(daemon, oldDaemon *dbmodel.Daemon, events *[]*dbmodel.Eve
 // are created. Note that multiple apps can be associated with the same subnet.
 func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter, state *AppStateMeta) (err error) {
 	// Go over the shared networks and subnets stored in the Kea configuration
-	// and match them with the existing entires in the database. If some of
+	// and match them with the existing entries in the database. If some of
 	// the shared networks or subnets do not exist they are instantiated and
 	// returned here.
 	var (

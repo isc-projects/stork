@@ -459,7 +459,7 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 	_, err = AddApp(db, a4)
 	require.NoError(t, err)
 
-	// Get all subnets -> empty list should be retruned
+	// Get all subnets -> empty list should be returned
 	subnets, total, err := GetSubnetsByPage(db, 0, 10, 0, 0, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Zero(t, total)

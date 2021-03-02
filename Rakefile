@@ -621,7 +621,7 @@ end
 
 ### Docker Tasks #########################
 
-desc 'Build containers with everything and statup all services using docker-compose
+desc 'Build containers with everything and start all services using docker-compose
 arguments: cache=false - forces rebuilding whole container'
 task :docker_up => :build_all_in_container do
   at_exit {

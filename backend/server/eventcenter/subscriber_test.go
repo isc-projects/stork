@@ -112,7 +112,7 @@ func TestAcceptEventsMultipleFilters(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create a filtering rule by machine ID, app ID and warnining event level.
+	// Create a filtering rule by machine ID, app ID and warning event level.
 	url, err := url.Parse("http://example.org/sse?machine=1&app=2&level=1")
 	require.NoError(t, err)
 

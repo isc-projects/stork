@@ -9,7 +9,7 @@ import (
 )
 
 // This module provides global settings that can be used anywhere in the code.
-// All settings with their defaul values are defined in defaultSettings table,
+// All settings with their default values are defined in defaultSettings table,
 // in InitializeSettings function. There is a few functions for getting and
 // setting these settings. Generally setters are used in API function
 // so users can set these settings. Getters are used around the code

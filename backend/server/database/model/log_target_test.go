@@ -62,7 +62,7 @@ func TestGetLogTargetByID(t *testing.T) {
 	require.NotNil(t, logTarget.Daemon.App)
 	require.NotNil(t, logTarget.Daemon.App.Machine)
 
-	// Get the second log traget by id.
+	// Get the second log target by id.
 	logTarget, err = GetLogTargetByID(db, a.Daemons[0].LogTargets[1].ID)
 	require.NoError(t, err)
 	require.NotNil(t, logTarget)

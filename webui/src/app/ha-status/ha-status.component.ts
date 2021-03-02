@@ -230,7 +230,7 @@ export class HaStatusComponent implements OnInit {
             return 'The remote server responds to the entire DHCP traffic.'
         }
 
-        // The remote server serves no cliebts, so the local serves all of them.
+        // The remote server serves no clients, so the local serves all of them.
         // It may be a hot-standby case or partner-down case.
         if (this.remoteServerScopes().length === 0 && this.localServerScopes().length > 0) {
             return 'The local server responds to the entire DHCP traffic.'

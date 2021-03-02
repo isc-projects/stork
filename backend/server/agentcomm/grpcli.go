@@ -423,7 +423,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbA
 
 	// now check error from agents.sendAndRecvViaQueue
 	if err != nil {
-		// agent.Stats.CurrentErrors is incremeneted in manager.go during agents.sendAndRecvViaQueue
+		// agent.Stats.CurrentErrors is incremented in manager.go during agents.sendAndRecvViaQueue
 		if agent.Stats.CurrentErrors == 0 {
 			// If this is the first time we failed to communicate with the
 			// agent, let's print the stack trace for debugging purposes.

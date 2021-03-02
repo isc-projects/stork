@@ -21,7 +21,7 @@ func TestGetApps(t *testing.T) {
 
 func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
 	// check reading from non existing file
-	path := "/tmp/non-exisiting-path"
+	path := "/tmp/non-existing-path"
 	address, port := getCtrlAddressFromKeaConfig(path)
 	require.EqualValues(t, 0, port)
 	require.Empty(t, address)

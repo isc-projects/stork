@@ -299,7 +299,7 @@ Stork 0.11.0 released on 2020-09-04.
 * 94 [bug] marcin
 
     Fixed an issue whereby the user was unable to login to Stork
-    when database password conatined upper case letters. In addition,
+    when database password contained upper case letters. In addition,
     passwords with spaces and quotes are now also supported.
     (Gitlab #361)
 

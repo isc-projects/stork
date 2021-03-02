@@ -1206,7 +1206,7 @@ func TestGetActiveDHCPMultiple(t *testing.T) {
 	require.Contains(t, daemons, "dhcp6")
 }
 
-// Test that a single name of the active DHCP deamon is returned.
+// Test that a single name of the active DHCP daemon is returned.
 func TestGetActiveDHCPSingle(t *testing.T) {
 	a := &App{
 		Type: AppTypeKea,
@@ -1229,7 +1229,7 @@ func TestGetActiveDHCPSingle(t *testing.T) {
 	require.Contains(t, daemons, "dhcp6")
 }
 
-// Test that empty list of deamons is returned if the daemon type
+// Test that empty list of daemons is returned if the daemon type
 // is not Kea.
 func TestGetActiveDHCPAppMismatch(t *testing.T) {
 	a := &App{

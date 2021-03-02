@@ -124,7 +124,7 @@ export class UsersPageComponent implements OnInit {
     /**
      * Returns user form from the current tab.
      *
-     * @returns instance of the form or null if the curren tab includes no form.
+     * @returns instance of the form or null if the current tab includes no form.
      */
     get userform(): FormGroup {
         return this.userTab ? this.userTab.userform : null
@@ -443,7 +443,7 @@ export class UsersPageComponent implements OnInit {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'New user account created',
-                    detail: 'Adding new user account succeeeded',
+                    detail: 'Adding new user account succeeded',
                 })
                 this.closeActiveTab()
             },
@@ -484,7 +484,7 @@ export class UsersPageComponent implements OnInit {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'User account updated',
-                    detail: 'Updating user account succeeeded',
+                    detail: 'Updating user account succeeded',
                 })
                 this.closeActiveTab()
             },

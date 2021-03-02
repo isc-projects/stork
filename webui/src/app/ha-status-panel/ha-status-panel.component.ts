@@ -417,7 +417,7 @@ export class HaStatusPanelComponent implements OnInit {
      * The age indicates how long ago the status of one of the servers has
      * been fetched. It is expressed in seconds. This function displays the
      * age in seconds for the age below 1 minute. It displays the age in
-     * minutes otherwise. The nagative age value means that the age is not
+     * minutes otherwise. The negative age value means that the age is not
      * yet determined in which case 'n/a' is displayed.
      *
      * @param age in seconds.

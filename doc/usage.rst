@@ -273,7 +273,7 @@ PXE boot parameters, client classes, DHCP options, and other parameters. The mec
 a given set of resources and/or parameters is associated with a given DHCP client
 is called "host reservations."
 
-A host reservation consists of one or more DHCP identifers used to associate the
+A host reservation consists of one or more DHCP identifiers used to associate the
 reservation with a client, e.g. MAC address, DUID, or client identifier;
 and a collection of resources and/or parameters to be returned to the
 client if the client's DHCP message is associated with the host reservation by one

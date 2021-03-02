@@ -54,7 +54,7 @@ linters:
     - prealloc
     - wsl              # TODO: reenable later
     - interfacer       # A tool that suggests interfaces is prone to bad suggestions, so its usefulness in real code is limited.
-    - dupl             # there are some false positives (identical code but operating on different types so no posibility to unify)
+    - dupl             # there are some false positives (identical code but operating on different types so no possibility to unify)
     - testpackage      # Requires rewriting a lot of unit tests and blocks the ability to test unexported functions.
     - wrapcheck        # We currently use pkg/errors tool that deals with the issue on its own.
     - exhaustivestruct # Most of the time you don't want to initialize all fields.

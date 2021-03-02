@@ -67,7 +67,7 @@ func (r *RestAPI) GetEvents(ctx context.Context, params events.GetEventsParams) 
 		return rsp
 	}
 
-	// Evernything fine.
+	// Everything fine.
 	rsp := events.NewGetEventsOK().WithPayload(eventRecs)
 	return rsp
 }

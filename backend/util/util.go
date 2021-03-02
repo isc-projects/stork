@@ -69,7 +69,7 @@ func MakeCIDR(address string) (string, error) {
 
 // Recognizes if the specified value is an IP address or prefix and
 // converts it if necessary. An IP address specified as 192.0.2.2/32
-// will be converted to 192.0.2.2. Simiarly, an IP address of
+// will be converted to 192.0.2.2. Similarly, an IP address of
 // 2001:db8:1::/128 will be converted to 2001:db8:1::. If the specified
 // value is a prefix, e.g. 2001:db8:1::/48 it will be returned as is.
 // The second returned value indicates if this is a prefix or address.

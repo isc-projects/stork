@@ -134,7 +134,7 @@ export class EventsPanelComponent implements OnInit, OnChanges {
      * users is only fetched when the logged in user is a super admin.
      */
     ngOnInit(): void {
-        // Indicate that the component was intialized and future calls
+        // Indicate that the component was initialized and future calls
         // to ngOnChanges can refresh the events.
         this._initialized = true
 

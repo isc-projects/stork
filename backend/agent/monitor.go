@@ -162,7 +162,7 @@ func printNewOrUpdatedApps(newApps []*App, oldApps []*App) {
 }
 
 func (sm *appMonitor) detectApps() {
-	// Kea app is being detected by browsing list of processes in the systam
+	// Kea app is being detected by browsing list of processes in the system
 	// where cmdline of the process contains given pattern with kea-ctrl-agent
 	// substring. Such found processes are being processed further and all other
 	// Kea daemons are discovered and queried for their versions, etc.

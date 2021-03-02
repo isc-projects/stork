@@ -10,7 +10,7 @@ func init() {
              -- Sequence returning serial numbers used in PKI certificates.
              CREATE SEQUENCE IF NOT EXISTS certs_serial_number_seq;
 
-             -- Table for storing PKI certifcates and keys
+             -- Table for storing PKI certificates and keys
              CREATE TABLE IF NOT EXISTS secret (
                  name TEXT NOT NULL,
                  content TEXT NOT NULL,

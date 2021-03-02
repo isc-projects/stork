@@ -352,7 +352,7 @@ func TestForwardToNamedStatsBadRequest(t *testing.T) {
 	require.NotEqual(t, 0, rsp.NamedStatsResponse.Status.Code)
 }
 
-// Test forwarding command to named statistics-cahnnel when no body is returned.
+// Test forwarding command to named statistics-channel when no body is returned.
 func TestForwardToNamedStatsHTTPEmptyBody(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndc)
 

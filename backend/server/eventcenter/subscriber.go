@@ -70,7 +70,7 @@ func (s *Subscriber) applyFiltersFromQuery(db *dbops.PgDB) (err error) {
 	queryValues := s.serverURL.Query()
 
 	// Check if direct event relations are specified in the URL. All of them
-	// are IDs pointining to some specific objects in the database.
+	// are IDs pointing to some specific objects in the database.
 	if f.MachineID, err = getQueryValueAsInt64("machine", queryValues); err != nil {
 		return err
 	}

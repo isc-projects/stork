@@ -103,7 +103,7 @@ func (r *RestAPI) GetHosts(ctx context.Context, params dhcp.GetHostsParams) midd
 		return rsp
 	}
 
-	// Evernything fine.
+	// Everything fine.
 	rsp := dhcp.NewGetHostsOK().WithPayload(hosts)
 	return rsp
 }

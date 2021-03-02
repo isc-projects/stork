@@ -204,7 +204,7 @@ func TestDetectHAServices(t *testing.T) {
 	require.Equal(t, app.Daemons[1].ID, services[1].HAService.SecondaryID)
 	require.Empty(t, services[1].HAService.BackupID)
 
-	// The daemonss should be already associated with the services.
+	// The daemons should be already associated with the services.
 	require.Len(t, services[0].Daemons, 1)
 	require.Len(t, services[1].Daemons, 1)
 
@@ -271,7 +271,7 @@ func TestDetectHAServices(t *testing.T) {
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 
-	// The primary server includes both DHCPv4 and DHCPv6 confgurations.
+	// The primary server includes both DHCPv4 and DHCPv6 configurations.
 	accessPoints = []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.33", "", 8000)
 	app = dbmodel.App{

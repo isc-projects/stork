@@ -54,7 +54,7 @@ def test_login_create_user_logout_login_with_new(selenium, agent, server):
     find_element(selenium, 'id', 'save').click()
 
     # check popup message
-    assert find_element(selenium, 'class_name', 'ui-toast-message').text == 'New user account created\nAdding new user account succeeeded'
+    assert find_element(selenium, 'class_name', 'ui-toast-message').text == 'New user account created\nAdding new user account succeeded'
     find_element(selenium, 'class_name', 'ui-toast-close-icon').click()
     time.sleep(1)
     # logout
@@ -80,7 +80,7 @@ def test_login_create_user_logout_login_with_new(selenium, agent, server):
     # logout
     find_element(selenium, 'id', 'logout-button').click()
 
-    # login with default acc
+    # login with default credentials
     stork_login(selenium, "admin", "admin")
 
     # go to settings
@@ -174,7 +174,7 @@ def test_add_new_machine(selenium, agent, server):
     find_element(selenium, 'id', "machine-address").send_keys(agent.mgmt_ip)
     find_element(selenium, 'id', 'add-new-machine-page').click()
 
-    check_phrases(selenium, ["%s:8080" % agent.mgmt_ip, "Hostame", "Address", "Agent Version", "Memory",
+    check_phrases(selenium, ["%s:8080" % agent.mgmt_ip, "Hostname", "Address", "Agent Version", "Memory",
                              "Used Memory", "Uptime", "Virtualization", "Last Visited"])
     check_phrases(selenium, ["Machines can be added by clicking the", "No machines found.", "Add New Machine"],
                   expect=False)
@@ -435,7 +435,7 @@ def test_add_new_machine(selenium, agent, server):
 #
 #     add_stork_agent_machine(selenium, agent_bind_9.mgmt_ip)
 #
-#     check_phrases(selenium, ["%s:8080" % agent_bind_9.mgmt_ip, "Hostame", "Address", "Agent Version", "Memory",
+#     check_phrases(selenium, ["%s:8080" % agent_bind_9.mgmt_ip, "Hostname", "Address", "Agent Version", "Memory",
 #                              "Used Memory", "Uptime", "Virtualization", "Last Visited", "BIND 9 App"])
 #     check_phrases(selenium, ["Machines can be added by clicking the", "No machines found.", "Add New Machine"],
 #                   expect=False)

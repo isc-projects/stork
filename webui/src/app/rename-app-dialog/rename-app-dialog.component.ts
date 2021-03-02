@@ -187,7 +187,7 @@ export class RenameAppDialogComponent implements OnInit, OnChanges {
             // Setting existing machines is optional. if they are not set,
             // skip the checks.
             if (this.existingMachines.length !== 0 && regexpMatch[2].length === 1 && regexpMatch[3].length > 0) {
-                // Check if the name references an exsiting machine.
+                // Check if the name references an existing machine.
                 if (!this.existingMachines.has(regexpMatch[3])) {
                     // The referenced machine does not exist. Raise an error.
                     this.signalError('Machine ' + regexpMatch[3] + ' does not exist.')

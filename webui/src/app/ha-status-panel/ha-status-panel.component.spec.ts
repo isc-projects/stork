@@ -36,7 +36,7 @@ describe('HaStatusPanelComponent', () => {
     }
 
     function itHasStateIconAndText(icon, color, text) {
-        // The table cell holding server state has an id. Let's acces this
+        // The table cell holding server state has an id. Let's access this
         // cell by id to verify that it contains both the icon and the
         // state text.
         const serverStateTd = fixture.debugElement.query(By.css('#ha-server-state'))

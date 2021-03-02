@@ -327,7 +327,7 @@ Dependencies
 ------------
 System tests require:
 
-- Linux operating system (prefered Ubuntu or Fedora)
+- Linux operating system (preferably Ubuntu or Fedora)
 - Python 3
 - ``LXD`` containers (https://linuxcontainers.org/lxd/introduction)
 
@@ -500,7 +500,7 @@ It may be useful to explain each part of this code.
 
     @pytest.mark.parametrize("agent, server", SUPPORTED_DISTROS)
 
-This indicates that the test is parametrized: there will be one or more
+This indicates that the test is parameterized: there will be one or more
 instances of this test in execution for each set of parameters.
 
 The constant ``SUPPORTED_DISTROS`` defines two sets of operating systems
@@ -514,7 +514,7 @@ for testing:
     ]
 
 The first set indicates that for the Stork agent ``Ubuntu 18.04`` should be used
-in the LXD container, and for the Stork server ``Centos 7``. The second set is the opposite
+in the LXD container, and for the Stork server ``CentOS 7``. The second set is the opposite
 of the first one.
 
 The next line:
