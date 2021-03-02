@@ -263,7 +263,7 @@ variable to `true` on the command line:
 
 
 Web UI Unit Tests
-================
+=================
 
 Stork offers web UI tests, to take advantage of the unit-tests generated automatically
 by Angular. The simplest way to run these tests is by using Rake tasks:

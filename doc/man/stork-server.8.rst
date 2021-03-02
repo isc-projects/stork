@@ -27,7 +27,7 @@ every Stork deployment, there should be exactly one Stork server.
 Arguments
 ~~~~~~~~~
 
-``stork-server ``takes the following arguments:
+``stork-server`` takes the following arguments:
 
 ``-h`` or ``--help``
    the list of available parameters.
