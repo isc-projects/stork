@@ -1,6 +1,6 @@
 * 131 [ui] tomek
-    Added tooltips for the Grafana links explaining what the
-    icon is for.
+    Added tooltips for the Grafana links on the dashboard and
+    subnets view.
     (Gitlab #470)
 
 * 130 [func] marcin
