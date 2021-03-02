@@ -428,7 +428,7 @@ monitored applications.
 
 .. note::
 
-   As of the Kea 0.10 release, this mechanism only supports viewing Kea log
+   As of the Stork 0.10 release, this mechanism only supports viewing Kea log
    files; viewing BIND 9 logs is not yet supported. Monitoring other
    logging locations such as: stdout, stderr or syslog is also not
    supported.
