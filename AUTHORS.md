@@ -10,6 +10,7 @@ Primary developers:
 - Matthijs Mekking (BIND 9, prometheus)
 - Włodek Wencel (qa, release engineering)
 - Thomas Markwalder (kea)
+- Andrei Pavel (release engineering)
 
 Primary area of work mentioned in parentheses. The list is in a
 roughly chronological order.
