@@ -1,5 +1,9 @@
 Stork 0.15.0 released on 2021-03-03.
 
+* 132 [doc] sgoldlust
+    Updates to the Stork ARM.
+    (Gitlab #476)
+
 * 131 [ui] tomek
     Added tooltips for the Grafana links on the dashboard and
     subnets view.
