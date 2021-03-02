@@ -1,3 +1,5 @@
+Stork 0.15.0 released on 2021-03-03.
+
 * 131 [ui] tomek
     Added tooltips for the Grafana links on the dashboard and
     subnets view.
