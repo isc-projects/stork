@@ -18,6 +18,52 @@ def banner(txt):
     print(txt)
 
 
+def _get_machines(server, agent, authorized=None, expected_items=None):
+    # get machine that automaticaly registered in the server and authorize it
+    url = '/machines'
+    if authorized is not None:
+        url += '?authorized=%s' % ('true' if authorized else 'false')
+    for i in range(100):
+        r = server.api_get(url)
+        data = r.json()
+        if expected_items is None:
+            break
+        if 'items' in data and data['items'] and len(data['items']) > 0:
+            break
+        time.sleep(2)
+    if expected_items is not None:
+        assert 'items' in data
+        assert data['items'] is not None
+        assert len(data['items']) == expected_items
+    return data['items']
+
+
+def _get_machine_and_authorize_it(server, agent):
+    # get machine that automaticaly registered in the server and authorize it
+    machines = _get_machines(server, agent, authorized=None, expected_items=1)
+    m = machines[0]
+    machine = dict(
+        address=m['address'],
+        agentPort=m['agentPort'],
+        authorized=True)
+    r = server.api_put('/machines/%d' % m['id'], json=machine, expected_status=200)
+    data = r.json()
+    assert agent.mgmt_ip is not None
+    assert data['address'] == agent.mgmt_ip
+    assert data['authorized']
+    return data
+
+
+def _get_machine_state(server, m_id):
+    for i in range(100):
+        r = server.api_get('/machines/%d/state' % m_id)
+        data = r.json()
+        if data['apps'] and len(data['apps'][0]['details']['daemons']) > 1:
+            break
+        time.sleep(2)
+    return data
+
+
 @pytest.mark.parametrize("agent, server", SUPPORTED_DISTROS)
 def test_users_management(agent, server):
     """Check if users can be fetched and added."""
@@ -51,7 +97,7 @@ def test_users_management(agent, server):
 
 
 @pytest.mark.parametrize("distro_agent, distro_server", SUPPORTED_DISTROS)
-def test_pkg_upgrade(distro_agent, distro_server):
+def test_pkg_upgrade_agent_token(distro_agent, distro_server):
     """Check if Stork agent and server can be upgraded from latest release
     to localy built packages."""
     server = containers.StorkServerContainer(alias=distro_server)
@@ -59,14 +105,16 @@ def test_pkg_upgrade(distro_agent, distro_server):
 
     # install the latest version of stork from cloudsmith
     server.setup_bg('cloudsmith')
-    agent.setup_bg('cloudsmith')
+    while server.mgmt_ip is None:
+        time.sleep(0.1)
+    agent.setup_bg('cloudsmith', server.mgmt_ip)
     server.setup_wait()
     agent.setup_wait()
 
     # install local packages
     banner('UPGRADING STORK')
-    agent.prepare_stork_agent()
     server.prepare_stork_server()
+    agent.prepare_stork_agent()
 
     # install kea on the agent machine
     agent.install_kea()
@@ -75,25 +123,72 @@ def test_pkg_upgrade(distro_agent, distro_server):
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
-    # add machine and check if it can be retrieved
-    machine = dict(
-        address=agent.mgmt_ip,
-        agentPort=8080,
-        agentCSR='TODO')
-    r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
-    data = r.json()
-    m_id = data['id']
+    # get machine that automaticaly registered in the server and authorize it
+    m = _get_machine_and_authorize_it(server, agent)
 
+    # retrieve state of machines
+    m = _get_machine_state(server, m['id'])
+    assert m['apps'] is not None
+    assert len(m['apps']) == 1
+    assert m['apps'][0]['version'] == KEA_LATEST.split('-')[0]
+
+
+@pytest.mark.parametrize("distro_agent, distro_server", SUPPORTED_DISTROS)
+def test_pkg_upgrade_server_token(distro_agent, distro_server):
+    """Check if Stork agent and server can be upgraded from latest release
+    to localy built packages."""
+    server = containers.StorkServerContainer(alias=distro_server)
+    agent = containers.StorkAgentContainer(alias=distro_agent)
+
+    # install the latest version of stork from cloudsmith
+    server.setup_bg('cloudsmith')
+    while server.mgmt_ip is None:
+        time.sleep(0.1)
+    agent.setup_bg('cloudsmith', server.mgmt_ip)
+    server.setup_wait()
+    agent.setup_wait()
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # install local packages
+    banner('UPGRADING STORK SERVER')
+    server.prepare_stork_server()
+
+    # get server token from server
     for i in range(100):
-        r = server.api_get('/machines/%d/state' % m_id)
-        data = r.json()
-        if data['apps'] and len(data['apps'][0]['details']['daemons']) > 1:
+        try:
+            r = server.api_get('/machines-server-token')
             break
-        time.sleep(2)
+        except:
+            if i == 99:
+                raise
+        time.sleep(1)
+    data = r.json()
+    server_token = data['token']
 
-    assert data['apps'] is not None
-    assert len(data['apps']) == 1
-    assert data['apps'][0]['version'] == KEA_LATEST.split('-')[0]
+    # install kea on the agent machine
+    agent.install_kea()
+
+    # install local packages using server token based way
+    banner('UPGRADING STORK AGENT')
+    server_url = 'http://%s:8080' % server.mgmt_ip
+    agent.run('curl -o stork-install-agent.sh %s/stork-install-agent.sh' % server_url)
+    agent.run('chmod a+x stork-install-agent.sh')
+    env = {'STORK_AGENT_ADDRESS': '%s:8080' % agent.mgmt_ip,
+           'STORK_AGENT_SERVER_URL': server_url,
+           'STORK_AGENT_SERVER_TOKEN': server_token}
+    agent.run('./stork-install-agent.sh', env=env)
+
+    # check current machines, there should be one authorized
+    machines = _get_machines(server, agent, authorized=True, expected_items=1)
+
+    # retrieve state of machines
+    m = _get_machine_state(server, machines[0]['id'])
+    assert m['apps'] is not None
+    assert len(m['apps']) == 1
+    assert m['apps'][0]['version'] == KEA_LATEST.split('-')[0]
 
 
 @pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/7')])
@@ -113,22 +208,11 @@ def test_add_kea_with_many_subnets(agent, server):
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
-    # add machine
-    banner("ADD MACHINE")
-    machine = dict(
-        address=agent.mgmt_ip,
-        agentPort=8080,
-        agentCSR='TODO')
-    r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
-    data = r.json()
-    m_id = data['id']
+    # get machine that automaticaly registered in the server and authorize it
+    m = _get_machine_and_authorize_it(server, agent)
 
-    for i in range(100):
-        r = server.api_get('/machines/%d/state' % m_id)
-        m = r.json()
-        if m['apps'] and len(m['apps'][0]['details']['daemons']) > 1:
-            break
-        time.sleep(2)
+    # check machine state
+    m = _get_machine_state(server, m['id'])
     assert m['apps'] is not None
     assert len(m['apps']) == 1
     assert m['apps'][0]['version'] == KEA_LATEST.split('-')[0]
@@ -147,6 +231,26 @@ def test_add_kea_with_many_subnets(agent, server):
     assert data['total'] == 6912
 
 
+def _wait_for_event(server, text):
+    last_ts = None
+    event_occured = False
+    for i in range(20):
+        r = server.api_get('/events')
+        data = r.json()
+        for ev in reversed(data['items']):
+            if last_ts and ev['createdAt'] < last_ts:
+                # skip older events
+                continue
+            if text in ev['text']:
+                event_occured = True
+                break
+        if event_occured:
+            break
+        last_ts = data['items'][0]['createdAt']
+        time.sleep(2)
+    assert event_occured, 'no event about `%s`' % text
+
+
 @pytest.mark.parametrize("agent, server", [('centos/7', 'ubuntu/18.04')])
 def test_change_kea_ca_access_point(agent, server):
     """Check if Stork server notices that Kea CA has changed its listening address."""
@@ -157,22 +261,11 @@ def test_change_kea_ca_access_point(agent, server):
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
-    # add machine
-    banner("ADD MACHINE")
-    machine = dict(
-        address=agent.mgmt_ip,
-        agentPort=8080,
-        agentCSR='TODO')
-    r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
+    # get machine that automaticaly registered in the server and authorize it
+    m = _get_machine_and_authorize_it(server, agent)
 
-    for i in range(40):
-        r = server.api_get('/machines')
-        data = r.json()
-        if len(data['items']) == 1 and data['items'][0]['apps']:
-            break
-        time.sleep(2)
-    assert len(data['items']) == 1
-    m = data['items'][0]
+    # check machine state
+    m = _get_machine_state(server, m['id'])
     assert m['apps'] is not None
     assert len(m['apps']) == 1
     assert m['apps'][0]['version'] == '1.8.0'
@@ -187,15 +280,7 @@ def test_change_kea_ca_access_point(agent, server):
 
     # wait for unreachable event
     banner("WAIT FOR UNREACHABLE EVENT")
-    event_occured = False
-    for i in range(20):
-        r = server.api_get('/events')
-        data = r.json()
-        if 'is unreachable' in data['items'][0]['text']:
-            event_occured = True
-            break
-        time.sleep(2)
-    assert event_occured, 'no event about unreachable kea'
+    _wait_for_event(server, 'is unreachable')
 
     # start CA
     banner("START CA")
@@ -203,22 +288,12 @@ def test_change_kea_ca_access_point(agent, server):
 
     # wait for reachable event
     banner("WAIT FOR REACHABLE EVENT")
-    event_occured = False
-    for i in range(20):
-        r = server.api_get('/events')
-        data = r.json()
-        if 'is reachable now' in data['items'][0]['text']:
-            event_occured = True
-            break
-        time.sleep(2)
-    assert event_occured, 'no event about reachable kea'
+    _wait_for_event(server, 'is reachable now')
 
     # check for sure if app has new access point address
     banner("CHECK IF RECONFIGURED")
-    r = server.api_get('/machines')
-    data = r.json()
-    assert len(data['items']) == 1
-    m = data['items'][0]
+    machines = _get_machines(server, agent, authorized=True, expected_items=1)
+    m = machines[0]
     assert m['apps'] is not None
     assert len(m['apps']) == 1
     assert len(m['apps'][0]['accessPoints']) == 1

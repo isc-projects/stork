@@ -187,8 +187,7 @@ system_testing:
     # - cat /etc/netplan/*
     # - cat /etc/network/interfaces
     # - rake system_tests_ui
-    # TODO: DISABLED FOR NOW
-    # - rake system_tests
+    - rake system_tests
 
 
 ### upload release notes and tarball to repo.isc.org ###

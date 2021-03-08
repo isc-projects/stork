@@ -95,11 +95,17 @@ def pytest_pyfunc_call(pyfuncitem):
             s = containers.StorkServerContainer(alias=val)
             srv_cntrs.append(s)
             pyfuncitem.funcargs[name] = s
+    assert len(srv_cntrs) <= 1
     all_cntrs = srv_cntrs + agn_cntrs
 
-    # start all containers in background so they can run in parallel and be ready quickly
-    for c in all_cntrs:
-        c.setup_bg()
+    # start all agent containers in background so they can run in parallel and be ready quickly
+    if srv_cntrs:
+        srv_cntrs[0].setup_bg()
+        while srv_cntrs[0].mgmt_ip is None:
+            time.sleep(0.1)
+
+    for c in agn_cntrs:
+        c.setup_bg(None, srv_cntrs[0].mgmt_ip)
 
     # wait for all containers
     for c in all_cntrs:

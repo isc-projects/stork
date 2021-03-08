@@ -79,6 +79,7 @@ class Container:
         self.cntr = None
         self.thread = None
         self.bg_exc = None
+        self.mgmt_ip = None
 
     def start(self):
         try:
@@ -355,7 +356,7 @@ class StorkServerContainer(Container):
         self.upload(pkg_path, '/root/isc-stork-server.%s' % self.pkg_format)
 
         if self.pkg_format == 'deb':
-            self.run('apt install -y --allow-downgrades /root/isc-stork-server.deb', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
+            self.run('apt install -y -o Dpkg::Options::=--force-confold --allow-downgrades /root/isc-stork-server.deb', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
         else:
             self.run('yum install -y /root/isc-stork-server.rpm')
 
@@ -380,6 +381,7 @@ class StorkServerContainer(Container):
         # Stork server should be widely available
         self.run("perl -pi -e 's/.*STORK_REST_HOST.*/STORK_REST_HOST=0\.0\.0\.0/g' /etc/stork/server.env")
 
+        self.run('systemctl daemon-reload')
         self.run('systemctl enable isc-stork-server')
         self.run('systemctl restart isc-stork-server')
         self.run('systemctl status isc-stork-server')
@@ -408,6 +410,17 @@ class StorkServerContainer(Container):
         url += endpoint
         print('r.post', url, params, json)
         r = self.session.post(url, params=params, json=json)
+        print('r.status_code', r.status_code)
+        if trace_resp:
+            print('r.text', r.text)
+        assert r.status_code == expected_status
+        return r
+
+    def api_put(self, endpoint, params=None, json=None, expected_status=201, trace_resp=True):
+        url = 'http://localhost:%d/api' % self.port
+        url += endpoint
+        print('r.put', url, params, json)
+        r = self.session.put(url, params=params, json=json)
         print('r.status_code', r.status_code)
         if trace_resp:
             print('r.text', r.text)
@@ -518,11 +531,11 @@ class StorkAgentContainer(Container):
         self.upload(pkg_path, '/root/isc-stork-agent.%s' % self.pkg_format)
 
         if self.pkg_format == 'deb':
-            self.run('apt install -y --allow-downgrades /root/isc-stork-agent.deb', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
+            self.run('apt install -y -o Dpkg::Options::=--force-confold --allow-downgrades /root/isc-stork-agent.deb', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
         else:
             self.run('yum install -y /root/isc-stork-agent.rpm')
 
-    def prepare_stork_agent(self, pkg_ver=None):
+    def prepare_stork_agent(self, pkg_ver=None, server_ip=None, server_token=None):
         if pkg_ver == 'cloudsmith':
             self.setup_cloudsmith_repo('stork')
             self.install_pkgs('isc-stork-agent')
@@ -534,13 +547,24 @@ class StorkAgentContainer(Container):
         else:
             self.run('rpm -qa "isc-stork*"')
 
+        # setup params for agent token based authorization
+        if server_ip:
+            cmd = "echo -e '\nSTORK_AGENT_ADDRESS=%s' >> /etc/stork/agent.env" % self.mgmt_ip
+            self.run('bash -c "%s"' % cmd)
+            cmd = "echo -e '\nSTORK_AGENT_SERVER_URL=http://%s:8080' >> /etc/stork/agent.env" % server_ip
+            self.run('bash -c "%s"' % cmd)
+            if server_token:
+                cmd = "echo -e '\nSTORK_AGENT_SERVER_TOKEN=%s' >> /etc/stork/agent.env" % server_token
+                self.run('bash -c "%s"' % cmd)
+
+        self.run('systemctl daemon-reload')
         self.run('systemctl enable isc-stork-agent')
         self.run('systemctl restart isc-stork-agent')
         self.run('systemctl status isc-stork-agent')
         # self.run('bash -c "ps axu|grep -v grep|grep isc"')  # TODO: it does not work - make it working
 
-    def _setup(self, reused, pkg_ver=None):
+    def _setup(self, reused, pkg_ver=None, server_ip=None):
         if not reused:
             self.prepare_system()
             self.dump_image()
-        self.prepare_stork_agent(pkg_ver)
+        self.prepare_stork_agent(pkg_ver, server_ip)

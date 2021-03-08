@@ -1,6 +1,11 @@
+* 137 [func] godfryd
+
+    Added system tests for new agent registration.
+    (Gitlab #507)
+
 Stork 0.16.0 released on 2021-04-07.
 
-* 136 [doc] marcin
+* 136 [func] marcin
 
     Implemented Leases Search.
     (Gitlab #509)
