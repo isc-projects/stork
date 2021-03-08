@@ -1,14 +1,22 @@
+* 134 [bug] godfryd
+
+    Fixed getting host address for listening in agent.
+    (Gitlab #504)
+
 Stork 0.15.0 released on 2021-03-03.
 
 * 133 [doc] andrei
+
     Spell checks
     (Gitlab #497)
 
 * 132 [doc] sgoldlust
+
     Updates to the Stork ARM.
     (Gitlab #476)
 
 * 131 [ui] tomek
+
     Added tooltips for the Grafana links on the dashboard and
     subnets view.
     (Gitlab #470)
