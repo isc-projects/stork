@@ -40,6 +40,22 @@ DEFAULT_STORK_DEB_VERSION = None
 DEFAULT_STORK_RPM_VERSION = None
 
 
+
+def get_distro(content):
+    name = None
+    ver = None
+    for l in content.splitlines():
+        if l.startswith('ID='):
+            name = l[3:].strip()
+        elif l.startswith('VERSION_ID='):
+            ver = l[11:].strip()
+    if name is None or ver is None:
+        raise Exception('cannot determine distro name or version')
+    name = name.replace('"', '')
+    ver = ver.replace('"', '')
+    return name, ver
+
+
 class Container:
     def __init__(self, name, version, port, alias=DEFAULT_SYSTEM_IMAGE):
         self.name = name
@@ -83,7 +99,8 @@ class Container:
 
     def start(self):
         try:
-            reused_img = self.lxd.images.get_by_alias(self.name)
+            name = self.name.rsplit('-', 1)[0] + '-gw0'
+            reused_img = self.lxd.images.get_by_alias(name)
             if int(reused_img.properties['version']) < self.version:
                 reused_img.delete()
                 reused_img = None
@@ -127,6 +144,10 @@ class Container:
                     break
         if self.mgmt_ip is None:
             raise Exception('cannot find IPv4 management address of the container %s' % self.name)
+
+
+        res = self.run('cat /etc/os-release')
+        self.distro_name, self.distro_ver = get_distro(res[1])
 
         return reused_img
 
@@ -205,14 +226,16 @@ class Container:
             raise e
 
     def setup(self, *args):
-        reused = self.start()
-        time.sleep(5)
         try:
+            reused = self.start()
+            time.sleep(5)
             self._setup(reused, *args)
         except Exception as e:
             self.bg_exc = e
 
     def dump_image(self):
+        if not self.name.endswith('-gw0'):
+            return
         print('dumping %s ...' % self.name)
         self.cntr.stop(wait=True)
 
@@ -291,17 +314,18 @@ class Container:
         if self.pkg_format == 'deb':
             self.run('apt-get update')
             self.set_locale()
-            self.install_pkgs("curl supervisor less net-tools")
+            self.install_pkgs("curl less net-tools")
         else:
             self.set_locale()
-            self.install_pkgs('sudo perl curl supervisor less net-tools')
+            self.install_pkgs('sudo perl curl less net-tools')
 
 
 class StorkServerContainer(Container):
     def __init__(self, port=None, alias=DEFAULT_SYSTEM_IMAGE):
         if port is None:
             port = random.randrange(6000, 50000)
-        name = 'stork-server-%s' % alias.replace('/', '-').replace('.', '-')
+        worker_id = os.environ.get('PYTEST_XDIST_WORKER', 'gw0')
+        name = 'stork-server-%s-%s' % (alias.replace('/', '-').replace('.', '-'), worker_id)
         super().__init__(name, 1, port, alias)
         self.port = port
         self.session = requests.Session()
@@ -432,11 +456,16 @@ class StorkAgentContainer(Container):
     def __init__(self, port=None, alias=DEFAULT_SYSTEM_IMAGE):
         if port is None:
             port = random.randrange(6000, 50000)
-        name = 'stork-agent-%s' % alias.replace('/', '-').replace('.', '-')
+        worker_id = os.environ.get('PYTEST_XDIST_WORKER', 'gw0')
+        name = 'stork-agent-%s-%s' % (alias.replace('/', '-').replace('.', '-'), worker_id)
         super().__init__(name, 1, port, alias)
 
     def prepare_system(self):
         self.prepare_system_common()
+        if self.pkg_format == 'deb':
+            self.install_pkgs('software-properties-common')
+        else:
+            self.install_pkgs('yum-utils epel-release')
 
     def install_kea(self, service_name='default', kea_version=KEA_LATEST):
         print('INSTALL KEA')
@@ -476,22 +505,87 @@ class StorkAgentContainer(Container):
                 self.run('systemctl %s kea-dhcp4' % cmd)
                 self.run('systemctl %s kea-ctrl-agent' % cmd)
 
-    def install_bind(self, conf_file=None):
-        # this should install specific version of bind but let's keep it
-        # that way for now
+    def install_bind(self, conf_file=None, bind_version=None):
+        # install named
         if self.pkg_format == 'deb':
-            self.run('apt-get install -y software-properties-common')
-            self.run('add-apt-repository ppa:isc/bind -y')
-            self.run('apt-get install -y bind9')
+            # install named on deb distro
+            if bind_version:
+                srv_name = 'named'
+                if bind_version == '9.17':
+                    repo = 'ppa:isc/bind-dev'
+                elif bind_version == '9.16':
+                    repo = 'ppa:isc/bind'
+                elif bind_version == '9.11':
+                    repo = 'ppa:isc/bind-esv'
+                    srv_name = 'bind9'
+                else:
+                    raise NotImplementedError
+
+                self.install_pkgs('software-properties-common')
+                self.run('add-apt-repository %s -y' % repo)
+                res = self.run("bash -c \"apt-cache show bind9 | grep -i version | grep %s | cut -d ' ' -f 2- | head -1\"" % bind_version)
+                ver = res[1].strip()
+                self.install_pkgs('bind9=%s' % ver)
+            else:
+                self.run('apt update')
+                self.install_pkgs('bind9')
+                if self.distro_ver == '18.04':
+                    srv_name = 'bind9'
+                else:
+                    srv_name = 'named'
+            named_conf_path = '/etc/bind/named.conf'
         else:
-            self.run('yum -y install bind bind-utils')
+            # install named on rpm distro
+            if bind_version:
+                self.install_pkgs('yum-utils epel-release')
 
+                if bind_version == '9.17':
+                    repo = 'https://copr.fedorainfracloud.org/coprs/isc/bind-dev/repo/epel-7/isc-bind-dev-epel-7.repo'
+                elif bind_version == '9.16':
+                    repo = 'https://copr.fedorainfracloud.org/coprs/isc/bind/repo/epel-7/isc-bind-epel-7.repo'
+                elif bind_version == '9.11':
+                    repo = 'https://copr.fedorainfracloud.org/coprs/isc/bind-esv/repo/epel-7/isc-bind-esv-epel-7.repo'
+                else:
+                    raise NotImplementedError
+
+                self.run('yum-config-manager --add-repo  %s' % repo)
+                self.install_pkgs('isc-bind')
+                self.run("bash -c 'rpm -qa | grep isc-bind | grep %s'" % bind_version)
+                srv_name = 'isc-bind-named'
+                named_conf_path = '/etc/opt/isc/isc-bind/named.conf'
+
+            else:
+                self.install_pkgs('bind bind-utils')
+                srv_name = 'named'
+                named_conf_path = '/etc/named.conf'
+
+        # update named.conf
         if conf_file is not None:
-            self.upload(conf_file, '/etc/bind/named.conf')
+            # if provided upload custom named.conf
+            self.upload(conf_file, named_conf_path)
+        else:
+            # add control points to named.conf
+            cmd = "bash -c \"cat <<EOF >> %s\n" % named_conf_path
+            cmd += "controls {\n"
+            cmd += "	inet 127.0.0.1 allow { localhost; };\n"
+            cmd += "};\n"
+            cmd += "statistics-channels {\n"
+            cmd += "        inet 127.0.0.1 port 8053 allow { 127.0.0.1; };\n"
+            cmd += "};\n"
+            cmd += "EOF\n\""
+            self.run(cmd)
 
-        self.run('systemctl enable named')
-        self.run('systemctl start named')
-        self.run('systemctl status named')
+        # enable and start named service
+        self.run('systemctl enable %s' % srv_name)
+        self.run('systemctl start %s' % srv_name)
+        self.run('systemctl status %s' % srv_name)
+
+        # add stork-agent to bind/named group to have access to named config files
+        if self.pkg_format == 'deb':
+            self.run('usermod -aG bind stork-agent')
+        else:
+            self.run('usermod -aG named stork-agent')
+        self.run('systemctl restart isc-stork-agent')
 
     def uninstall_kea(self, pkgs_name='all'):
         if self.pkg_format == 'deb':

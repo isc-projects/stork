@@ -2,7 +2,9 @@ package agent
 
 import (
 	"fmt"
+	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -47,7 +49,10 @@ const (
 	StatsChannelDefaultPort = 80
 )
 
-const defaultNamedConfFile = "/etc/bind/named.conf"
+const (
+	defaultNamedConfFile1 = "/etc/bind/named.conf"
+	defaultNamedConfFile2 = "/etc/opt/isc/isc-bind/named.conf"
+)
 
 const namedCheckconf = "named-checkconf"
 
@@ -266,18 +271,34 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) App {
 		}
 	} else {
 		// config path not found in cmdline params so try to guess its location
-		bind9ConfPath = defaultNamedConfFile
+		for _, f := range []string{defaultNamedConfFile1, defaultNamedConfFile2} {
+			if _, err := os.Stat(f); err == nil {
+				bind9ConfPath = f
+				break
+			}
+		}
 	}
 
 	// no config file so nothing to do
 	if bind9ConfPath == "" {
+		log.Warnf("cannot find config file for BIND 9")
 		return nil
 	}
 
 	// run named-checkconf on main config file and get preprocessed content of whole config
 	prog := namedCheckconf
 	if namedDir != "" {
-		prog = path.Join(namedDir, prog)
+		// remove sbin or bin at the end
+		baseNamedDir, _ := filepath.Split(strings.TrimRight(namedDir, "/"))
+
+		// and now determine where named-checkconf actually is located
+		for _, binDir := range []string{"sbin", "bin"} {
+			prog2 := path.Join(baseNamedDir, binDir, prog)
+			if _, err := os.Stat(prog2); err == nil {
+				prog = prog2
+				break
+			}
+		}
 	}
 	out, err := cmdr.Output(prog, "-p", bind9ConfPath)
 	if err != nil {

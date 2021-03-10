@@ -58,7 +58,7 @@ def _get_machine_state(server, m_id):
     for i in range(100):
         r = server.api_get('/machines/%d/state' % m_id)
         data = r.json()
-        if data['apps'] and len(data['apps'][0]['details']['daemons']) > 1:
+        if data['apps'] and data['apps'][0]['details']:
             break
         time.sleep(2)
     return data
@@ -506,3 +506,35 @@ def atest_get_kea_stats(agent_kea, agent_old_kea, server):
             if 'assigned-addresses' in stats and stats['assigned-addresses'] > 70:
                 sn_with_addrs += 1
     assert sn_with_addrs == 2
+
+
+@pytest.mark.parametrize("agent, server, bind_version", [('centos/7', 'ubuntu/18.04', None),
+                                                         ('centos/7', 'ubuntu/18.04', '9.11'),
+                                                         ('centos/7', 'ubuntu/18.04', '9.16'),
+                                                         ('centos/7', 'ubuntu/18.04', '9.17'),
+                                                         ('centos/8', 'ubuntu/18.04', None),
+                                                         ('ubuntu/18.04', 'centos/7', None),
+                                                         ('ubuntu/18.04', 'centos/7', '9.11'),
+                                                         ('ubuntu/18.04', 'centos/7', '9.16'),
+                                                         ('ubuntu/18.04', 'centos/7', '9.17'),
+                                                         ('ubuntu/20.04', 'centos/7', None)])
+def test_bind9_versions(agent, server, bind_version):
+    """Check if Stork agent detects different BIND 9 versions."""
+    # install kea on the agent machine
+    agent.install_bind(bind_version=bind_version)
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # get machine that automaticaly registered in the server and authorize it
+    m = _get_machine_and_authorize_it(server, agent)
+
+    # check machine state
+    m = _get_machine_state(server, m['id'])
+    assert m['apps'] is not None
+    assert len(m['apps']) == 1
+    if bind_version:
+        assert bind_version in m['apps'][0]['version']
+    assert len(m['apps'][0]['accessPoints']) == 2
+    assert m['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'

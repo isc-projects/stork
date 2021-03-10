@@ -17,7 +17,15 @@ type RndcClient struct {
 	execute CommandExecutor
 }
 
-const RndcKeyFile = "/etc/bind/rndc.key"
+const (
+	RndcKeyFile1 = "/etc/bind/rndc.key"
+	RndcKeyFile2 = "/etc/opt/isc/isc-bind/rndc.key"
+)
+
+const (
+	RndcPath1 = "/usr/sbin/rndc"
+	RndcPath2 = "/opt/isc/isc-bind/root/usr/sbin/rndc"
+)
 
 // Create an rndc client to communicate with BIND 9 named daemon.
 func NewRndcClient(ce CommandExecutor) *RndcClient {
@@ -33,13 +41,25 @@ func (c *RndcClient) Call(app App, command []string) (output []byte, err error) 
 		return nil, err
 	}
 
-	rndcCommand := []string{"rndc", "-s", ctrl.Address, "-p", fmt.Sprintf("%d", ctrl.Port)}
+	rndcPath := ""
+	if _, err := os.Stat(RndcPath1); err == nil {
+		rndcPath = RndcPath1
+	} else if _, err := os.Stat(RndcPath2); err == nil {
+		rndcPath = RndcPath2
+	} else {
+		rndcPath = "rndc"
+	}
+
+	rndcCommand := []string{rndcPath, "-s", ctrl.Address, "-p", fmt.Sprintf("%d", ctrl.Port)}
 	if len(ctrl.Key) > 0 {
 		rndcCommand = append(rndcCommand, "-y")
 		rndcCommand = append(rndcCommand, ctrl.Key)
-	} else if _, err := os.Stat(RndcKeyFile); err == nil {
+	} else if _, err := os.Stat(RndcKeyFile1); err == nil {
 		rndcCommand = append(rndcCommand, "-k")
-		rndcCommand = append(rndcCommand, RndcKeyFile)
+		rndcCommand = append(rndcCommand, RndcKeyFile1)
+	} else if _, err := os.Stat(RndcKeyFile2); err == nil {
+		rndcCommand = append(rndcCommand, "-k")
+		rndcCommand = append(rndcCommand, RndcKeyFile2)
 	}
 	rndcCommand = append(rndcCommand, command...)
 	log.Debugf("rndc: %+v", rndcCommand)

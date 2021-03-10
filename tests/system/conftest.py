@@ -8,6 +8,10 @@ from pathlib import Path
 
 import pytest
 
+# in case of xdist force output to screen
+if os.environ.get('PYTEST_XDIST_WORKER', False):
+    sys.stdout = sys.stderr
+
 
 def pytest_addoption(parser):
     parser.addoption("--stork-rpm-ver", action="store", help="Stork RPM packages version")

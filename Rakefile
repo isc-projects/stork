@@ -970,14 +970,24 @@ end
 
 desc 'Run system tests exercising REST API and communication with agents'
 task :system_tests => 'tests/system/venv/bin/activate' do
+  # if provided run particular test
   if ENV['test']
     test = ENV['test']
   else
     test = 'tests.py'
   end
+
+  # use xdist to parallelize tests if requested
+  if ENV['xdist']
+    xdist_param = "-n #{ENV['xdist']}"
+  else
+    xdist_param = ''
+  end
+
+  # run tests
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
-    sh "#{PYTEST} #{test}"
+    sh "#{PYTEST} #{xdist_param} #{test}"
   end
 end
 
