@@ -13,6 +13,7 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -593,6 +594,32 @@ func TestCommandLineVersion(t *testing.T) {
 		// Check if it equals expected version.
 		require.Equal(t, ver, stork.Version)
 	}
+}
+
+// Check if stork-agent uses --host parameter.
+func TestHostParam(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Run agent with '--host 127.1.2.3'
+	agentCmd := exec.CommandContext(ctx, AgentBin, "--host", "127.1.2.3")
+	out, _ := agentCmd.Output()
+
+	// Check if in the output there is 127.1.2.3.
+	require.Contains(t, string(out), "127.1.2.3")
+}
+
+// Check if stork-agent uses --port parameter.
+func TestPortParam(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Run agent with '--port 9876'
+	agentCmd := exec.CommandContext(ctx, AgentBin, "--port", "9876")
+	out, _ := agentCmd.Output()
+
+	// Check if in the output there is 9876.
+	require.Contains(t, string(out), "9876")
 }
 
 // Checks if getRootCertificates:
