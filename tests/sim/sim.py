@@ -25,12 +25,19 @@ def _login_session():
 
 
 def start_perfdhcp(subnet):
+    app.logger.info("SUBNET %s", subnet)
     rate, clients = subnet['rate'], subnet['clients']
     client_class = subnet['clientClass']
     mac_prefix = client_class[6:].replace('-', ':')
     mac_prefix_bytes = mac_prefix.split(':')
-    kea_addr = '172.1%s.0.100' % mac_prefix_bytes[0]
-    cmd = '/usr/sbin/perfdhcp -4 -r %d -R %d -b mac=%s:00:00:00:00 %s' % (rate, clients, mac_prefix, kea_addr)
+
+    if '.' in subnet['subnet']:
+        # ip4
+        kea_addr = '172.1%s.0.100' % mac_prefix_bytes[0]
+        cmd = '/usr/sbin/perfdhcp -4 -r %d -R %d -b mac=%s:00:00:00:00 %s' % (rate, clients, mac_prefix, kea_addr)
+    else:
+        # ip6
+        cmd = '/usr/sbin/perfdhcp -6 -r %d -R %d -l eth1 -b duid=000000000000 -b mac=%s:00:00:00:00' % (rate, clients, mac_prefix)
     args = shlex.split(cmd)
     print('exec: %s' % cmd, file=sys.stderr)
     return subprocess.Popen(args)

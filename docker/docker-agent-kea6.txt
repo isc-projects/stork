@@ -1,7 +1,7 @@
 FROM ubuntu:18.04
 WORKDIR /agent
 # Install essentials.
-RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-certificates gnupg apt-transport-https supervisor
+RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-certificates gnupg apt-transport-https supervisor net-tools iputils-ping
 # Install Kea.
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/isc/kea-1-7/cfg/setup/bash.deb.sh' | bash
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -1,4 +1,4 @@
-version: '3'
+version: '2.1'
 
 services:
   server:
@@ -55,7 +55,13 @@ services:
     image: registry.gitlab.isc.org/isc-projects/stork/agent-kea6:latest
     hostname: agent-kea6
     networks:
-      - storknet
+      storknet:
+        ipv4_address: 172.20.0.106
+        ipv6_address: 3009:db8:1::106
+      subnet6-00:
+        ipv6_address: 3000:db8:1::100
+      subnet6-01:
+        ipv6_address: 3001:db8:1::100
     expose:
       - "8080"  # stork server to agent
       - "9547"  # kea_exporter for prometheus
@@ -203,6 +209,10 @@ services:
         ipv4_address: 172.101.0.200
       subnet-02:
         ipv4_address: 172.102.0.200
+      subnet6-00:
+        ipv6_address: 3000:db8:1::200
+      subnet6-01:
+        ipv6_address: 3001:db8:1::200
     ports:
       - "5000:5000"
 
@@ -212,18 +222,33 @@ volumes:
 
 networks:
   storknet:
+    enable_ipv6: true
+    driver: bridge
     ipam:
-     config:
-       - subnet: 172.20.0.0/24
+      config:
+        - subnet: 172.20.0.0/24
+        - subnet: 3009:db8:1::/64
   subnet-00:
     ipam:
-     config:
-       - subnet: 172.100.0.0/24
+      config:
+        - subnet: 172.100.0.0/24
   subnet-01:
     ipam:
-     config:
-       - subnet: 172.101.0.0/24
+      config:
+        - subnet: 172.101.0.0/24
   subnet-02:
     ipam:
-     config:
-       - subnet: 172.102.0.0/24
+      config:
+        - subnet: 172.102.0.0/24
+  subnet6-00:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 3000:db8:1::/64
+  subnet6-01:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 3001:db8:1::/64

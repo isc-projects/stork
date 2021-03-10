@@ -1,3 +1,10 @@
+* 135 [func] godfryd
+
+    Added Grafana dashboard for DHCPv6. Enabled generating
+    DHCPv6 traffic in Stork Simulator. Adjusted Stork demo
+    to handle DHCPv6 traffic.
+    (Gitlab #176)
+
 * 134 [bug] godfryd
 
     Fixed getting host address for listening in agent.
