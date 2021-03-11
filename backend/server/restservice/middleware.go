@@ -94,7 +94,8 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// Install a middleware that is serving static files for UI.
+// Install a middleware that is serving static files for UI
+// and assets/pkgs content ie. stork rpm and deb packages.
 func fileServerMiddleware(next http.Handler, staticFilesDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api") || r.URL.Path == "/swagger.json" {
