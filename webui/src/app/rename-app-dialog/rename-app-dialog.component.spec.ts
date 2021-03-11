@@ -175,8 +175,8 @@ describe('RenameAppDialogComponent', () => {
         expect(component.invalid).toBeTrue()
 
         // Ensure that the appropriate error message is displayed.
-        const appNameInputHelp = fixture.debugElement.query(By.css('#app-name-input-help'))
-        expect(appNameInputHelp.nativeElement.innerText).toBe('App with this name already exists.')
+        const appNameInputError = fixture.debugElement.query(By.css('#app-name-input-error'))
+        expect(appNameInputError.nativeElement.innerText).toBe('App with this name already exists.')
 
         // Ensure that the submit button is disabled.
         const renameButton = fixture.debugElement.query(By.css('#rename-button'))
@@ -207,8 +207,8 @@ describe('RenameAppDialogComponent', () => {
         expect(component.invalid).toBeTrue()
 
         // Make sure that the error message is displayed.
-        const appNameInputHelp = fixture.debugElement.query(By.css('#app-name-input-help'))
-        expect(appNameInputHelp.nativeElement.innerText).toBe('Machine machine3 does not exist.')
+        const appNameInputError = fixture.debugElement.query(By.css('#app-name-input-error'))
+        expect(appNameInputError.nativeElement.innerText).toBe('Machine machine3 does not exist.')
     })
 
     it('should reject a name with empty machine name', () => {
@@ -233,8 +233,8 @@ describe('RenameAppDialogComponent', () => {
         expect(component.invalid).toBeTrue()
 
         // Make sure that the error message is displayed.
-        const appNameInputHelp = fixture.debugElement.query(By.css('#app-name-input-help'))
-        expect(appNameInputHelp.nativeElement.innerText).toBe(
+        const appNameInputError = fixture.debugElement.query(By.css('#app-name-input-error'))
+        expect(appNameInputError.nativeElement.innerText).toBe(
             'The @ character must be followed by a machine address or name.'
         )
     })
@@ -259,8 +259,8 @@ describe('RenameAppDialogComponent', () => {
         expect(component.invalid).toBeTrue()
 
         // Make sure that the error message is displayed.
-        const appNameInputHelp = fixture.debugElement.query(By.css('#app-name-input-help'))
-        expect(appNameInputHelp.nativeElement.innerText).toBe('App name preceding the @ character must not be empty.')
+        const appNameInputError = fixture.debugElement.query(By.css('#app-name-input-error'))
+        expect(appNameInputError.nativeElement.innerText).toBe('App name preceding the @ character must not be empty.')
     })
 
     it('should reject an empty name', () => {
@@ -279,7 +279,7 @@ describe('RenameAppDialogComponent', () => {
 
         expect(component.invalid).toBeTrue()
 
-        const appNameInputHelp = fixture.debugElement.query(By.css('#app-name-input-help'))
-        expect(appNameInputHelp.nativeElement.innerText).toBe('App name must not be empty.')
+        const appNameInputError = fixture.debugElement.query(By.css('#app-name-input-error'))
+        expect(appNameInputError.nativeElement.innerText).toBe('App name must not be empty.')
     })
 })

@@ -11,14 +11,14 @@
         <input
             id="app-name-input"
             type="text"
-            aria-describedby="app-name-input-help"
+            aria-describedby="app-name-input-error"
             class="{{ invalid ? 'ng-invalid' : 'ng-valid' }}"
             style="width: 100%"
             pInputText
             [(ngModel)]="appName"
             (keyup)="handleKeyUp($event)"
         />
-        <p id="app-name-input-help" style="color: #a00000" *ngIf="invalid">{{ errorText }}</p>
+        <p id="app-name-input-error" style="color: #a00000" *ngIf="invalid">{{ errorText }}</p>
     </div>
     <p-footer>
         <button type="button" pButton icon="pi pi-times" label="Cancel" (click)="cancel()"></button>

@@ -17,7 +17,7 @@
                 <i>{{ formattedTime(serverStatus.statusTime) }}</i>
             </td>
             <td style="width: 5%">
-                <app-help-tip title="status time" id="help-button-status-time">
+                <app-help-tip title="status time" id="status-time-help-button">
                     <p>{{ statusTimeHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -28,7 +28,7 @@
                 <i>{{ formattedAge(serverStatus.age) }}</i>
             </td>
             <td>
-                <app-help-tip title="status checked" id="help-button-status-checked">
+                <app-help-tip title="status checked" id="status-checked-help-button">
                     <p>{{ collectedHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -48,7 +48,7 @@
                 <i>{{ formattedControlStatus() }}</i>
             </td>
             <td>
-                <app-help-tip title="control status" id="help-button-control-status">
+                <app-help-tip title="control status" id="control-status-help-button">
                     <p>{{ controlStatusHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -61,7 +61,7 @@
                 <i>{{ formattedHeartbeatStatus() }}</i>
             </td>
             <td>
-                <app-help-tip title="heartbeat status" id="help-button-heartbeat-status">
+                <app-help-tip title="heartbeat status" id="heartbeat-status-help-button">
                     <p>{{ heartbeatStatusHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -86,7 +86,7 @@
                 <i id="ha-local-scopes">{{ formattedLocalScopes() }}</i>
             </td>
             <td>
-                <app-help-tip title="scopes served" id="help-button-scopes-served">
+                <app-help-tip title="scopes served" id="scopes-served-help-button">
                     <p>{{ scopesHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -97,7 +97,7 @@
                 <i>{{ formattedTime(serverStatus.failoverTime) }}</i>
             </td>
             <td>
-                <app-help-tip title="last in partner-down" id="help-button-partner-down">
+                <app-help-tip title="last in partner-down" id="partner-down-help-button">
                     <p>{{ failoverHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -108,7 +108,7 @@
                 <i>{{ formattedUnackedClients() }}</i>
             </td>
             <td>
-                <app-help-tip title="unacked clients" id="help-button-unacked-clients">
+                <app-help-tip title="unacked clients" id="unacked-clients-help-button">
                     <p>{{ unackedClientsHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -119,7 +119,7 @@
                 <i>{{ formattedFailoverNumber(serverStatus.connectingClients) }}</i>
             </td>
             <td>
-                <app-help-tip title="connecting clients" id="help-button-connecting-clients">
+                <app-help-tip title="connecting clients" id="connecting-clients-help-button">
                     <p>{{ connectingClientsHelptip() }}</p>
                 </app-help-tip>
             </td>
@@ -130,7 +130,7 @@
                 <i>{{ formattedFailoverNumber(serverStatus.analyzedPackets) }}</i>
             </td>
             <td>
-                <app-help-tip title="analyzed packets" id="help-button-analyzed-packets">
+                <app-help-tip title="analyzed packets" id="analyzed-packets-help-button">
                     <p>{{ analyzedPacketsHelptip() }}</p>
                 </app-help-tip>
             </td>

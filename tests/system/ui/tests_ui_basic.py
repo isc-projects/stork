@@ -38,7 +38,7 @@ def test_login_create_user_logout_login_with_new(selenium, agent, server):
     # go to user page
     find_element(selenium, 'id', 'configuration').click()
     find_element(selenium, 'id', 'users').click()
-    find_element(selenium, 'id', 'create-user-account').click()
+    find_element(selenium, 'id', 'create-user-account-button').click()
 
     # create user
     login = 'admin2' + "".join(random.sample(string.ascii_lowercase, 3)) + '1'
@@ -51,7 +51,7 @@ def test_login_create_user_logout_login_with_new(selenium, agent, server):
     find_element(selenium, 'id', "usergroup").click()
     find_element(selenium, 'xpath', '/html/body/app-root/app-users-page/div/div/div/div[2]/form/p-panel/div/div[2]/div/div/div[14]/div/div[1]/p-dropdown/div/div[4]/div/ul/p-dropdownitem[3]/li').click()  # TODO extend stork to add ids there
     display_sleep(selenium)
-    find_element(selenium, 'id', 'save').click()
+    find_element(selenium, 'id', 'save-button').click()
 
     # check popup message
     assert find_element(selenium, 'class_name', 'ui-toast-message').text == 'New user account created\nAdding new user account succeeded'
@@ -94,7 +94,7 @@ def test_login_create_user_logout_login_with_new(selenium, agent, server):
     find_element(selenium, 'id', 'new-password').send_keys("adminadmin123")
     find_element(selenium, 'id', 'confirm-password').send_keys("adminadmin123")
     find_element(selenium, 'class_name', 'ui-password-panel').click()  # hide panel that shows password strength level
-    find_element(selenium, 'id', 'save-new-password').click()
+    find_element(selenium, 'id', 'save-new-password-button').click()
     find_element(selenium, 'class_name', 'ui-toast-close-icon').click()  # turn of popup about successful password change
     time.sleep(1)
 
@@ -184,13 +184,13 @@ def test_add_new_machine(selenium, agent, server):
     check_phrases(selenium, ["%s:8080" % agent.mgmt_ip, "stork-agent-ubuntu-18-04"])
 
     # check help
-    check_help_text(selenium, 'help-button-this-page', 'help-for-this page',
+    check_help_text(selenium, 'this-page-help-button', 'help-for-this page',
                     "This page displays a list of all machines that have been configured in Stork. It allows adding new machines as well as removing them.")
 
     find_element(selenium, 'id', 'services').click()
     find_element(selenium, 'id', 'kea-apps').click()
 
-    check_help_text(selenium, 'help-button-this-page', 'help-for-this page', "This page displays a list of Kea Apps.")
+    check_help_text(selenium, 'this-page-help-button', 'help-for-this page', "This page displays a list of Kea Apps.")
 
     # check tooltip text and dhcpv4 page
     find_and_check_tooltip(selenium, "Communication with the daemon is ok.", element_text="DHCPv4").click()
@@ -229,7 +229,7 @@ def test_add_new_machine(selenium, agent, server):
     find_element(selenium, 'id', 'dhcp').click()
     find_element(selenium, 'id', 'host-reservations').click()
 
-    check_help_text(selenium, 'help-button-this-page', 'help-for-this page',
+    check_help_text(selenium, 'this-page-help-button', 'help-for-this page',
                     "This page displays a list of host reservations in the network. Kea can store host reservations in either a configuration file or a database. Reservations stored in a configuration file are retrieved continuously. Kea must have a ")
 
     check_phrases(selenium, ["duid=01:02:03:04:05", "192.0.2.203", "192.0.2.0/24", "client-id=01:0a:0b:0c:0d:0e:0f",
@@ -244,14 +244,14 @@ def test_add_new_machine(selenium, agent, server):
     find_element(selenium, 'id', 'dhcp').click()
     find_element(selenium, 'id', 'shared-networks').click()
 
-    check_help_text(selenium, 'help-button-this-page', 'help-for-this page',
+    check_help_text(selenium, 'this-page-help-button', 'help-for-this page',
                     "This page displays a list of shared networks.")
 
     # check subnet should include just kea4 data
     find_element(selenium, 'id', 'dhcp').click()
     find_element(selenium, 'id', 'subnets').click()
 
-    check_help_text(selenium, 'help-button-this-page', 'help-for-this page', "This page displays a list of subnets.")
+    check_help_text(selenium, 'this-page-help-button', 'help-for-this page', "This page displays a list of subnets.")
 
     check_phrases(selenium, ["192.0.2.0/24", "192.0.2.1-192.0.2.200"])
 
@@ -265,7 +265,7 @@ def test_add_new_machine(selenium, agent, server):
     # refresh page until stork will notice that kea6 is up
     refresh_until_status_turn_green(lambda: find_and_check_tooltip(selenium, "Communication with the daemon is ok.",
                                                                    element_text="DHCPv6", use_in_refresh=True),
-                                    find_element(selenium, 'id', 'apps-refresh'), selenium)
+                                    find_element(selenium, 'id', 'apps-refresh-button'), selenium)
     # check kea6 data
     find_and_check_tooltip(selenium, "Communication with the daemon is ok.", element_text="DHCPv6").click()
     time.sleep(5)
@@ -384,7 +384,7 @@ def test_add_new_machine(selenium, agent, server):
     # # refresh page until stork will notice that ddns is up
     # refresh_until_status_turn_green(lambda: find_and_check_tooltip(selenium, "Communication with the daemon is ok.",
     #                                                                element_text="DDNS", use_in_refresh=True),
-    #                                 find_element(selenium, 'id', 'apps-refresh'), selenium)
+    #                                 find_element(selenium, 'id', 'apps-refresh-button'), selenium)
 
     find_element(selenium, 'id', 'dhcp').click()
     find_element(selenium, 'id', 'host-reservations').click()
@@ -445,4 +445,4 @@ def test_add_new_machine(selenium, agent, server):
 #
 #     refresh_until_status_turn_green(lambda: find_and_check_tooltip(selenium, "Communication with the daemon is ok.",
 #                                                                    element_text="named", use_in_refresh=True),
-#                                     find_element(selenium, 'id', 'apps-refresh'), selenium)
+#                                     find_element(selenium, 'id', 'apps-refresh-button'), selenium)

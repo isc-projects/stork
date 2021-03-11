@@ -40,7 +40,7 @@
                     class="log-control-button"
                     icon="pi pi-plus"
                     pTooltip="Fetch and present more logs."
-                    id="fetch-more-logs"
+                    id="fetch-more-logs-button"
                     [disabled]="loadingError"
                     (click)="fetchMoreLog()"
                 ></p-button>
@@ -48,7 +48,7 @@
                     class="log-control-button"
                     icon="pi pi-minus"
                     pTooltip="Fetch and present fewer logs."
-                    id="fetch-fewer-logs"
+                    id="fetch-fewer-logs-button"
                     [disabled]="loadingError || maxLength <= maxLengthChunk"
                     (click)="fetchLessLog()"
                 ></p-button>
@@ -56,7 +56,7 @@
                     class="log-control-button"
                     icon="pi pi-refresh"
                     pTooltip="Refresh logs without changing the length of the presented data."
-                    id="refresh-logs"
+                    id="refresh-logs-button"
                     (click)="refreshLog()"
                 ></p-button>
             </span>
@@ -84,7 +84,7 @@
                 class="log-control-button"
                 icon="pi pi-refresh"
                 pTooltip="Refresh logs without changing the length of the presented data."
-                id="refresh-logs-2"
+                id="refresh-logs-2-button"
                 (click)="refreshLog()"
             ></p-button>
         </div>

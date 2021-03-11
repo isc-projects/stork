@@ -126,7 +126,7 @@ def add_stork_agent_machine(sel, address, port=None):
     find_element(sel, 'id', 'add-new-machine-page').click()
 
 
-def move_to_different_place(sel, element_id="stork-logo-small"):
+def move_to_different_place(sel, element_id="small-stork-logo-img"):
     """
     Sometimes you just need to move away and back to the same place e.g. to display tooltip again
     This is easy function to move, by default it moves to Stork logo
@@ -141,7 +141,7 @@ def go_to_dashboard(sel):
     Go to main page
     :param sel: driver
     """
-    find_element(sel, 'id', "stork-logo-small").click()
+    find_element(sel, 'id', "small-stork-logo-img").click()
 
 
 def stork_login(sel, username, password, expect=True):

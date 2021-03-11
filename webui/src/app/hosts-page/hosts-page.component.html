@@ -31,7 +31,7 @@
                 placeholder="IP or identifier"
                 (keyup)="keyUpFilterText($event)"
             />
-            <app-help-tip title="filtering" id="help-button-filtering">
+            <app-help-tip title="filtering" id="filtering-help-button">
                 <p>
                     Hosts in the table below can be filtered by entering a text in the search box; the table shows all
                     hosts matching the filter text. Currently supported fields for such filtering are:
@@ -147,8 +147,8 @@
                         <a *ngFor="let lh of h.localHosts" routerLink="/apps/kea/{{ lh.appId }}" style="display: block"
                             >{{ lh.appName }}
                             <sup pTooltip="{{ hostDataSourceTooltip(lh.dataSource) }}">
-                                <span *ngIf="lh.dataSource === 'config'" id="cfg_srctag">config </span>
-                                <span *ngIf="lh.dataSource === 'api'" id="hostcmds_srctag">host_cmds </span>
+                                <span *ngIf="lh.dataSource === 'config'" id="cfg-srctag">config </span>
+                                <span *ngIf="lh.dataSource === 'api'" id="hostcmds-srctag">host_cmds </span>
                             </sup>
                         </a>
                     </td>

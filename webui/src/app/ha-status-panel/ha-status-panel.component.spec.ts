@@ -176,7 +176,7 @@ describe('HaStatusPanelComponent', () => {
         }
         fixture.detectChanges()
         // Make sure the help tip exists.
-        let scopesHelp = fixture.debugElement.query(By.css('#help-button-scopes-served'))
+        let scopesHelp = fixture.debugElement.query(By.css('#scopes-served-help-button'))
         expect(scopesHelp.children.length).toBe(1)
         // Make sure that the non-empty help tip was included.
         let scopesHelpPar = scopesHelp.query(By.css('p'))
@@ -188,7 +188,7 @@ describe('HaStatusPanelComponent', () => {
         }
         fixture.detectChanges()
 
-        scopesHelp = fixture.debugElement.query(By.css('#help-button-scopes-served'))
+        scopesHelp = fixture.debugElement.query(By.css('#scopes-served-help-button'))
         expect(scopesHelp.children.length).toBe(1)
         scopesHelpPar = scopesHelp.query(By.css('p'))
         expect(scopesHelpPar.nativeElement.textContent.length).not.toBe(0)
