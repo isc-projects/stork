@@ -25,7 +25,8 @@ type FakeAgents struct {
 	RecordedStatsURL string
 	mockNamedFunc    func(int, interface{})
 
-	MachineState *agentcomm.State
+	MachineState   *agentcomm.State
+	GetStateCalled bool
 }
 
 // mockRndcOutput returns some mocked named response.
@@ -56,6 +57,7 @@ func NewFakeAgents(fnKea func(int, []interface{}), fnNamed func(int, interface{}
 		mockKeaFunc:    fnKea,
 		mockNamedFunc:  fnNamed,
 		mockRndcOutput: mockRndcOutput(),
+		GetStateCalled: false,
 	}
 	return fa
 }
@@ -90,6 +92,8 @@ func (fa *FakeAgents) GetConnectedAgentStats(address string, port int64) *agentc
 
 // FakeAgents specific implementation of the GetState.
 func (fa *FakeAgents) GetState(ctx context.Context, address string, agentPort int64) (*agentcomm.State, error) {
+	fa.GetStateCalled = true
+
 	if fa.MachineState != nil {
 		return fa.MachineState, nil
 	}

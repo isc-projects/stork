@@ -411,10 +411,13 @@ func TestCreateMachine(t *testing.T) {
 			AgentToken:  agentToken,
 		},
 	}
+	require.False(t, fa.GetStateCalled)
 	pingRsp := rapi.PingMachine(ctx, pingParams)
 	require.IsType(t, &services.PingMachineOK{}, pingRsp)
 	_, ok := pingRsp.(*services.PingMachineOK)
 	require.True(t, ok)
+	// check if GetMachineAndAppsState was called
+	require.True(t, fa.GetStateCalled)
 
 	// re-register (the same) machine
 	params = services.CreateMachineParams{
