@@ -694,6 +694,34 @@ func TestUpdateMachine(t *testing.T) {
 	okRsp := rsp.(*services.UpdateMachineOK)
 	require.Equal(t, m.ID, okRsp.Payload.ID)
 	require.Equal(t, addr, *okRsp.Payload.Address)
+	require.False(t, okRsp.Payload.Authorized) // machine is not yet authorized
+
+	// setup a user session, it is required to check user role in UpdateMachine
+	// in case of authorization change
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx2, err := rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx2, user)
+	require.NoError(t, err)
+
+	// authorize the machine
+	require.False(t, fa.GetStateCalled)
+	params = services.UpdateMachineParams{
+		ID: m.ID,
+		Machine: &models.Machine{
+			Address:    &addr,
+			AgentPort:  8080,
+			Authorized: true,
+		},
+	}
+	rsp = rapi.UpdateMachine(ctx2, params)
+	okRsp = rsp.(*services.UpdateMachineOK)
+	require.Equal(t, m.ID, okRsp.Payload.ID)
+	require.Equal(t, addr, *okRsp.Payload.Address)
+	require.True(t, okRsp.Payload.Authorized) // machine is authorized now
+	// check if GetMachineAndAppsState was called because it was just authorized
+	require.True(t, fa.GetStateCalled)
 
 	// add another machine
 	m2 := &dbmodel.Machine{
