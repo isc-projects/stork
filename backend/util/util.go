@@ -87,6 +87,16 @@ func ParseIP(address string) (string, bool, bool) {
 	return ipNet.String(), true, true
 }
 
+// Detects if the provided string is an identifier consisting of
+// hexadecimal digits and optionally whitespace or colons between
+// the groups of digits. For example: 010203, 01:02:03, 01::02::03,
+// 01 02 03 etc. It is useful in detecting if the string comprises
+// a DHCP client identifier or MAC address.
+func IsHexIdentifier(text string) bool {
+	pattern := regexp.MustCompile(`^[0-9A-Fa-f]{2}((\s*|:{0,2})[0-9A-Fa-f]{2})*$`)
+	return pattern.MatchString(strings.TrimSpace(text))
+}
+
 func SetupLogging() {
 	log.SetLevel(log.InfoLevel)
 	log.SetOutput(os.Stdout)

@@ -69,6 +69,23 @@ func TestParseIP(t *testing.T) {
 	require.True(t, ok)
 }
 
+// Test detection whether the text comprises an identifier
+// consisting of hexadecimal digits and optionally a whitespace
+// or colons.
+func TestIsHexIdentifier(t *testing.T) {
+	require.True(t, IsHexIdentifier("01:02:03"))
+	require.True(t, IsHexIdentifier("01 e2 03"))
+	require.True(t, IsHexIdentifier("abcdef "))
+	require.True(t, IsHexIdentifier("12"))
+	require.True(t, IsHexIdentifier(" abcd:ef"))
+	require.False(t, IsHexIdentifier(" "))
+	require.False(t, IsHexIdentifier("1234gh"))
+	require.False(t, IsHexIdentifier("12:56:"))
+	require.False(t, IsHexIdentifier("12:56:9"))
+	require.False(t, IsHexIdentifier("ab,cd"))
+	require.False(t, IsHexIdentifier("ab: cd"))
+}
+
 // Check if BytesToHex works.
 func TestBytesToHex(t *testing.T) {
 	bytesArray := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32}
