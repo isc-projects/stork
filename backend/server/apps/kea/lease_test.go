@@ -6,7 +6,6 @@ import (
 	require "github.com/stretchr/testify/require"
 
 	keactrl "isc.org/stork/appctrl/kea"
-	keadata "isc.org/stork/appdata/kea"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
@@ -208,6 +207,7 @@ func TestGetLease4ByIPAddress(t *testing.T) {
 	accessPoints := []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
 	app := &dbmodel.App{
+		ID:           1,
 		AccessPoints: accessPoints,
 	}
 
@@ -215,6 +215,7 @@ func TestGetLease4ByIPAddress(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, lease)
 
+	require.EqualValues(t, app.ID, lease.AppID)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
 	require.EqualValues(t, 12345678, lease.Cltt)
 	require.False(t, lease.FqdnFwd)
@@ -235,6 +236,7 @@ func TestGetLease6ByIPAddress(t *testing.T) {
 	accessPoints := []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
 	app := &dbmodel.App{
+		ID:           2,
 		AccessPoints: accessPoints,
 	}
 
@@ -242,6 +244,7 @@ func TestGetLease6ByIPAddress(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, lease)
 
+	require.EqualValues(t, app.ID, lease.AppID)
 	require.EqualValues(t, 12345678, lease.Cltt)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 	require.False(t, lease.FqdnFwd)
@@ -265,6 +268,7 @@ func TestGetLease6ByPrefix(t *testing.T) {
 	accessPoints := []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
 	app := &dbmodel.App{
+		ID:           3,
 		AccessPoints: accessPoints,
 	}
 
@@ -272,6 +276,7 @@ func TestGetLease6ByPrefix(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, lease)
 
+	require.EqualValues(t, app.ID, lease.AppID)
 	require.EqualValues(t, 12345678, lease.Cltt)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 	require.False(t, lease.FqdnFwd)
@@ -328,12 +333,13 @@ func TestGetLeases4(t *testing.T) {
 	accessPoints := []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
 	app := &dbmodel.App{
+		ID:           4,
 		AccessPoints: accessPoints,
 	}
 
 	tests := []struct {
 		name          string
-		function      func(agentcomm.ConnectedAgents, *dbmodel.App, string) ([]keadata.Lease, error)
+		function      func(agentcomm.ConnectedAgents, *dbmodel.App, string) ([]dbmodel.Lease, error)
 		propertyValue string
 	}{
 		{
@@ -362,6 +368,7 @@ func TestGetLeases4(t *testing.T) {
 			require.Len(t, leases, 1)
 
 			lease := leases[0]
+			require.EqualValues(t, app.ID, lease.AppID)
 			require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
 			require.EqualValues(t, 12345678, lease.Cltt)
 			require.False(t, lease.FqdnFwd)
@@ -384,12 +391,13 @@ func TestGetLeases6(t *testing.T) {
 	accessPoints := []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
 	app := &dbmodel.App{
+		ID:           5,
 		AccessPoints: accessPoints,
 	}
 
 	tests := []struct {
 		name          string
-		function      func(agentcomm.ConnectedAgents, *dbmodel.App, string) ([]keadata.Lease, error)
+		function      func(agentcomm.ConnectedAgents, *dbmodel.App, string) ([]dbmodel.Lease, error)
 		propertyValue string
 	}{
 		{
@@ -413,6 +421,7 @@ func TestGetLeases6(t *testing.T) {
 			require.Len(t, leases, 2)
 
 			lease := leases[0]
+			require.EqualValues(t, app.ID, lease.AppID)
 			require.EqualValues(t, 12345678, lease.Cltt)
 			require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 			require.False(t, lease.FqdnFwd)
@@ -428,6 +437,7 @@ func TestGetLeases6(t *testing.T) {
 			require.EqualValues(t, 3600, lease.ValidLifetime)
 
 			lease = leases[1]
+			require.EqualValues(t, app.ID, lease.AppID)
 			require.EqualValues(t, 12345678, lease.Cltt)
 			require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 			require.False(t, lease.FqdnFwd)

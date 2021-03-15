@@ -9,7 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	keactrl "isc.org/stork/appctrl/kea"
-	keadata "isc.org/stork/appdata/kea"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -20,20 +19,20 @@ import (
 // single DHCPv4 lease from the Kea server.
 type Lease4GetResponse struct {
 	keactrl.ResponseHeader
-	Arguments *keadata.Lease `json:"arguments,omitempty"`
+	Arguments *dbmodel.Lease `json:"arguments,omitempty"`
 }
 
 // Structure representing a response to a command fetching a
 // single DHCPv6 lease from the Kea server.
 type Lease6GetResponse struct {
 	keactrl.ResponseHeader
-	Arguments *keadata.Lease `json:"arguments,omitempty"`
+	Arguments *dbmodel.Lease `json:"arguments,omitempty"`
 }
 
 // Structure representing arguments of a response to a command
 // fetching multiple DHCPv4 leases from the Kea server.
 type Lease4GetMultipleResponseArgs struct {
-	Leases []keadata.Lease
+	Leases []dbmodel.Lease
 }
 
 // Structure representing a response to a command fetching multiple
@@ -46,7 +45,7 @@ type Lease4GetMultipleResponse struct {
 // Structure representing arguments of a response to a command
 // fetching multiple DHCPv6 leases from the Kea server.
 type Lease6GetMultipleResponseArgs struct {
-	Leases []keadata.Lease
+	Leases []dbmodel.Lease
 }
 
 // Structure representing a response to a command fetching multiple
@@ -78,7 +77,7 @@ func validateGetLeasesResponse(commandName string, result int, arguments interfa
 // Sends a lease4-get command with ip-address argument specifying a searched lease.
 // If the lease is found, the pointer to it is returned. If the lease does not
 // exist, a nil pointer and nil error are returned.
-func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, ipaddress string) (lease *keadata.Lease, err error) {
+func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, ipaddress string) (lease *dbmodel.Lease, err error) {
 	daemons, err := keactrl.NewDaemons("dhcp4")
 	if err != nil {
 		return lease, err
@@ -109,6 +108,7 @@ func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 		return lease, err
 	}
 	lease = response[0].Arguments
+	lease.AppID = dbApp.ID
 	return lease, nil
 }
 
@@ -116,7 +116,7 @@ func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 // searched lease type and IP address. If the lease is found, the pointer to
 // it is returned. If the lease does not exist, a nil pointer and nil error
 // are returned.
-func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, leaseType, ipaddress string) (lease *keadata.Lease, err error) {
+func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, leaseType, ipaddress string) (lease *dbmodel.Lease, err error) {
 	daemons, err := keactrl.NewDaemons("dhcp6")
 	if err != nil {
 		return lease, err
@@ -148,6 +148,7 @@ func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 		return lease, err
 	}
 	lease = response[0].Arguments
+	lease.AppID = dbApp.ID
 	return lease, nil
 }
 
@@ -156,7 +157,7 @@ func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 // to the agents monitored by Stork. The dbApp is a pointer to the app identifying to
 // which agent the server sends this command. The propertyName is one of the following
 // hw-address, client-id or hostname.
-func getLeases4ByProperty(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, commandName, propertyName, propertyValue string) (leases []keadata.Lease, err error) {
+func getLeases4ByProperty(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, commandName, propertyName, propertyValue string) (leases []dbmodel.Lease, err error) {
 	daemons, err := keactrl.NewDaemons("dhcp4")
 	if err != nil {
 		return leases, err
@@ -187,6 +188,9 @@ func getLeases4ByProperty(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 		return leases, err
 	}
 	leases = response[0].Arguments.Leases
+	for i := range leases {
+		leases[i].AppID = dbApp.ID
+	}
 	return leases, nil
 }
 
@@ -194,7 +198,7 @@ func getLeases4ByProperty(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 // properties: duid or hostname. The agents argument contains a pointer to the agents
 // monitored by Stork. The dbApp is a pointer to the app identifying to which agent the
 // server sends this command. The propertyName is one of the following duid or hostname.
-func getLeases6ByProperty(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, commandName, propertyName, propertyValue string) (leases []keadata.Lease, err error) {
+func getLeases6ByProperty(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, commandName, propertyName, propertyValue string) (leases []dbmodel.Lease, err error) {
 	daemons, err := keactrl.NewDaemons("dhcp6")
 	if err != nil {
 		return leases, err
@@ -225,31 +229,34 @@ func getLeases6ByProperty(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 		return leases, err
 	}
 	leases = response[0].Arguments.Leases
+	for i := range leases {
+		leases[i].AppID = dbApp.ID
+	}
 	return leases, nil
 }
 
 // Sends lease4-get-by-hw-address command to Kea.
-func GetLeases4ByHWAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, hwaddress string) (leases []keadata.Lease, err error) {
+func GetLeases4ByHWAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, hwaddress string) (leases []dbmodel.Lease, err error) {
 	return getLeases4ByProperty(agents, dbApp, "lease4-get-by-hw-address", "hw-address", hwaddress)
 }
 
 // Sends lease4-get-by-client-id command to Kea.
-func GetLeases4ByClientID(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, clientID string) (leases []keadata.Lease, err error) {
+func GetLeases4ByClientID(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, clientID string) (leases []dbmodel.Lease, err error) {
 	return getLeases4ByProperty(agents, dbApp, "lease4-get-by-client-id", "client-id", clientID)
 }
 
 // Sends lease4-get-by-hostname command to Kea.
-func GetLeases4ByHostname(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, hostname string) (leases []keadata.Lease, err error) {
+func GetLeases4ByHostname(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, hostname string) (leases []dbmodel.Lease, err error) {
 	return getLeases4ByProperty(agents, dbApp, "lease4-get-by-hostname", "hostname", hostname)
 }
 
 // Sends lease6-get-by-duid command to Kea.
-func GetLeases6ByDUID(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, duid string) (leases []keadata.Lease, err error) {
+func GetLeases6ByDUID(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, duid string) (leases []dbmodel.Lease, err error) {
 	return getLeases6ByProperty(agents, dbApp, "lease6-get-by-duid", "duid", duid)
 }
 
 // Sends lease6-get-by-hostname command to Kea.
-func GetLeases6ByHostname(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, hostname string) (leases []keadata.Lease, err error) {
+func GetLeases6ByHostname(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, hostname string) (leases []dbmodel.Lease, err error) {
 	return getLeases6ByProperty(agents, dbApp, "lease6-get-by-hostname", "hostname", hostname)
 }
 
@@ -280,7 +287,7 @@ func hasLeaseCmdsHook(app *dbmodel.App, daemonName string) bool {
 // functions. Splitting it into multiple functions would rather make it
 // less readable.
 // nolint:gocognit
-func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (leases []keadata.Lease, err error) {
+func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (leases []dbmodel.Lease, err error) {
 	// Recognize if the text comprises an IP address or some identifier,
 	// e.g. MAC address or client identifier.
 	const (
