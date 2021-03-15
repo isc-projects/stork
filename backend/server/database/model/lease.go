@@ -7,5 +7,7 @@ import (
 // Extends basic Lease information with database specific information.
 type Lease struct {
 	keadata.Lease
+
 	AppID int64
+	App   *App
 }

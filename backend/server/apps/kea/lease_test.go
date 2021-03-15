@@ -216,6 +216,7 @@ func TestGetLease4ByIPAddress(t *testing.T) {
 	require.NotNil(t, lease)
 
 	require.EqualValues(t, app.ID, lease.AppID)
+	require.NotNil(t, lease.App)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
 	require.EqualValues(t, 12345678, lease.Cltt)
 	require.False(t, lease.FqdnFwd)
@@ -245,6 +246,7 @@ func TestGetLease6ByIPAddress(t *testing.T) {
 	require.NotNil(t, lease)
 
 	require.EqualValues(t, app.ID, lease.AppID)
+	require.NotNil(t, lease.App)
 	require.EqualValues(t, 12345678, lease.Cltt)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 	require.False(t, lease.FqdnFwd)
@@ -277,6 +279,7 @@ func TestGetLease6ByPrefix(t *testing.T) {
 	require.NotNil(t, lease)
 
 	require.EqualValues(t, app.ID, lease.AppID)
+	require.NotNil(t, lease.App)
 	require.EqualValues(t, 12345678, lease.Cltt)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 	require.False(t, lease.FqdnFwd)
@@ -369,6 +372,7 @@ func TestGetLeases4(t *testing.T) {
 
 			lease := leases[0]
 			require.EqualValues(t, app.ID, lease.AppID)
+			require.NotNil(t, lease.App)
 			require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
 			require.EqualValues(t, 12345678, lease.Cltt)
 			require.False(t, lease.FqdnFwd)
@@ -422,6 +426,7 @@ func TestGetLeases6(t *testing.T) {
 
 			lease := leases[0]
 			require.EqualValues(t, app.ID, lease.AppID)
+			require.NotNil(t, lease.App)
 			require.EqualValues(t, 12345678, lease.Cltt)
 			require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 			require.False(t, lease.FqdnFwd)
@@ -438,6 +443,7 @@ func TestGetLeases6(t *testing.T) {
 
 			lease = leases[1]
 			require.EqualValues(t, app.ID, lease.AppID)
+			require.NotNil(t, lease.App)
 			require.EqualValues(t, 12345678, lease.Cltt)
 			require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 			require.False(t, lease.FqdnFwd)

@@ -5,6 +5,8 @@
     properties:
       appId:
         type: integer
+      appName:
+        type: string
       clientId:
         type: string
       cltt:
