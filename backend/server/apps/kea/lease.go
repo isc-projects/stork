@@ -2,14 +2,18 @@ package kea
 
 import (
 	"context"
+	"net"
 	"reflect"
 
 	errors "github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	keactrl "isc.org/stork/appctrl/kea"
 	keadata "isc.org/stork/appdata/kea"
 	"isc.org/stork/server/agentcomm"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
 
 // Structure representing a response to a command fetching a
@@ -249,6 +253,133 @@ func GetLeases6ByHostname(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 	return getLeases6ByProperty(agents, dbApp, "lease6-get-by-hostname", "hostname", hostname)
 }
 
-func FindLeases(agents agentcomm.ConnectedAgents, text string) (leases4 []keadata.Lease4, leases6 []keadata.Lease6, err error) {
-	return leases4, leases6, err
+func hasLeaseCmdsHook(app *dbmodel.App, daemonName string) bool {
+	daemon := app.GetDaemonByName(daemonName)
+	if daemon != nil && daemon.KeaDaemon != nil && daemon.KeaDaemon.Config != nil {
+		if _, _, ok := daemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_lease_cmds"); ok {
+			return true
+		}
+	}
+	return false
+}
+
+// Attempts to find a lease on the Kea servers by specified text.
+// It expects that the text is an IP address, MAC address, client
+// identifier, or hostname matching a lease. The server contacts
+// all Kea servers, which may potentially have the lease. If
+// multiple servers have the same lease (e.g. in HA configuration),
+// it returns all that lease instances. The function returns a slice
+// of found DHCPv4 leases, a slice of DHCPv6 leases, and an error. It
+// returns only errors precluding any attempt to find a lease,
+// e.g. issues with Stork database communication. It does not return
+// an error upon a failure to communicate with one of the machines.
+// In such cases, it logs a warning message.
+//
+// The cognitive complexity check is disabled for this function because
+// it is hard to further simplify it without splitting it into multiple
+// functions. Splitting it into multiple functions would rather make it
+// less readable.
+// nolint:gocognit
+func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (leases4 []keadata.Lease4, leases6 []keadata.Lease6, err error) {
+	// Recognize if the text comprises an IP address or some identifier,
+	// e.g. MAC address or client identifier.
+	const (
+		ipv4 = iota
+		ipv6
+		identifier
+		hostname
+	)
+	// By default query by hostname.
+	queryType := hostname
+	if ip := net.ParseIP(text); ip != nil {
+		// It is an IP address. If it converts to 4 bytes, it is
+		// an IPv4 address. Otherwise, it is an IPv6 address.
+		if ip.To4() != nil {
+			queryType = ipv4
+		} else {
+			queryType = ipv6
+		}
+	} else if storkutil.IsHexIdentifier(text) {
+		// It is a string of hexadecimal digits, so it must be one
+		// of the identifiers.
+		queryType = identifier
+	}
+
+	// Get Kea apps from the database. We will send commands to these
+	// apps to find leases.
+	apps, err := dbmodel.GetAppsByType(db, dbmodel.AppTypeKea)
+	if err != nil {
+		err = errors.WithMessagef(err, "failed to fetch Kea apps while searching for leases by %s", text)
+		return leases4, leases6, err
+	}
+
+	for i := range apps {
+		// Send DHCPv4 specific queries if the lease_cmds hook is installed.
+		if queryType != ipv6 && hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv4) {
+			switch queryType {
+			case ipv4:
+				// This is an IPv4 address, so send the command to the DHCPv4 server.
+				lease, err := GetLease4ByIPAddress(agents, &apps[i], text)
+				if err != nil {
+					log.Warn(err)
+				}
+				if lease != nil {
+					leases4 = append(leases4, *lease)
+				}
+			case identifier:
+				// It is an identifier, so let's query the server using known identifier types.
+				leases4ByID, err := GetLeases4ByHWAddress(agents, &apps[i], text)
+				if err != nil {
+					log.Warn(err)
+				}
+				leases4 = append(leases4, leases4ByID...)
+				leases4ByID, err = GetLeases4ByClientID(agents, &apps[i], text)
+				if err != nil {
+					log.Warn(err)
+				}
+				leases4 = append(leases4, leases4ByID...)
+			default:
+				// It is neither an IP address nor an identifier. Let's try to query by hostname.
+				leases4ByHostname, err := GetLeases4ByHostname(agents, &apps[i], text)
+				if err != nil {
+					log.Warn(err)
+				}
+				leases4 = append(leases4, leases4ByHostname...)
+			}
+		}
+		// Send DHCPv6 specific queries if the lease_cmds hook is installed.
+		if queryType != ipv4 && hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv6) {
+			switch queryType {
+			case ipv6:
+				// This is an IPv6 address (or prefix), so send the command to the
+				// DHCPv6 server instead.
+				for _, leaseType := range []string{"IA_NA", "IA_PD"} {
+					lease, err := GetLease6ByIPAddress(agents, &apps[i], leaseType, text)
+					if err != nil {
+						log.Warn(err)
+					}
+					if lease != nil {
+						leases6 = append(leases6, *lease)
+						// If we found a lease by IP address there is no reason to
+						// query by delegated prefix because the IP address/prefix
+						// must be unique in the database.
+						break
+					}
+				}
+			case identifier:
+				leases6ByID, err := GetLeases6ByDUID(agents, &apps[i], text)
+				if err != nil {
+					log.Warn(err)
+				}
+				leases6 = append(leases6, leases6ByID...)
+			default:
+				leases6ByHostname, err := GetLeases6ByHostname(agents, &apps[i], text)
+				if err != nil {
+					log.Warn(err)
+				}
+				leases6 = append(leases6, leases6ByHostname...)
+			}
+		}
+	}
+	return leases4, leases6, nil
 }
