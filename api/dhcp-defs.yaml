@@ -1,3 +1,47 @@
+# Lease
+
+  Lease:
+    type: object
+    properties:
+      appId:
+        type: integer
+      clientId:
+        type: string
+      cltt:
+        type: integer
+      duid:
+        type: string
+      hostname:
+        type: string
+      hwAddress:
+        type: string
+      iaid:
+        type: integer
+      ipAddress:
+        type: string
+      preferredLifetime:
+        type: integer
+      prefixLength:
+        type: integer
+      state:
+        type: integer
+      subnetId:
+        type: integer
+      leaseType:
+        type: string
+      validLifetime:
+        type: integer
+
+  Leases:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Lease'
+      total:
+        type: integer
+
 # Host
 
   HostIdentifier:

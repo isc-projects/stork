@@ -1,3 +1,30 @@
+  /leases:
+    get:
+      summary: Get leases allocated by DHCP servers.
+      description: >-
+        This call searches for leases allocated by monitored DHCP servers.
+        The text parameter may contain an IP address, delegated prefix,
+        MAC address, client identifier, or hostname. The Stork server
+        tries to identify the specified value type and sends queries to
+        the Kea servers to find a lease or multiple leases.
+      operationId: getLeases
+      tags:
+        - DHCP
+      parameters:
+        - name: text
+          in: query
+          description: Should contain an IP address, MAC addres, client id or hostname.
+          type: string
+      responses:
+        200:
+          description: Success result. It may contain 0, 1 or more leases.
+          schema:
+            $ref: '#/definitions/Leases'
+        default:
+          description: Generic error message.
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /hosts:
     get:
       summary: Get list of DHCP host reservations.
