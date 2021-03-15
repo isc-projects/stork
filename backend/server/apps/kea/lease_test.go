@@ -333,7 +333,7 @@ func TestGetLeases4(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		function      func(agentcomm.ConnectedAgents, *dbmodel.App, string) ([]keadata.Lease4, error)
+		function      func(agentcomm.ConnectedAgents, *dbmodel.App, string) ([]keadata.Lease, error)
 		propertyValue string
 	}{
 		{
@@ -389,7 +389,7 @@ func TestGetLeases6(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		function      func(agentcomm.ConnectedAgents, *dbmodel.App, string) ([]keadata.Lease6, error)
+		function      func(agentcomm.ConnectedAgents, *dbmodel.App, string) ([]keadata.Lease, error)
 		propertyValue string
 	}{
 		{
@@ -621,7 +621,7 @@ func TestFindLeases(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	//  Find lease by IPv4 address.
-	_, _, err = FindLeases(db, agents, "192.0.2.3")
+	_, err = FindLeases(db, agents, "192.0.2.3")
 	require.NoError(t, err)
 
 	// It should have sent lease4-get command to first and second Kea.
@@ -632,7 +632,7 @@ func TestFindLeases(t *testing.T) {
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	// Find lease by IPv6 address.
-	_, _, err = FindLeases(db, agents, "2001:db8:1::")
+	_, err = FindLeases(db, agents, "2001:db8:1::")
 	require.NoError(t, err)
 
 	// It should have sent lease6-get command to first and third Kea.
@@ -647,7 +647,7 @@ func TestFindLeases(t *testing.T) {
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	// Find lease by identifier.
-	_, _, err = FindLeases(db, agents, "01:02:03:04:05:06")
+	_, err = FindLeases(db, agents, "01:02:03:04:05:06")
 	require.NoError(t, err)
 
 	// It should have sent commands to fetch a lease by HW address or client
@@ -664,7 +664,7 @@ func TestFindLeases(t *testing.T) {
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	// Find lease by hostname.
-	_, _, err = FindLeases(db, agents, "myhost")
+	_, err = FindLeases(db, agents, "myhost")
 	require.NoError(t, err)
 
 	// It should have sent a command to fetch a lease by hostname to both DHCPv4

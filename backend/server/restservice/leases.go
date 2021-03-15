@@ -27,11 +27,13 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		text = strings.TrimSpace(*params.Text)
 	}
 	if len(text) == 0 {
+		// There is nothing to do if search text is empty.
 		rsp := dhcp.NewGetLeasesOK().WithPayload(leases)
 		return rsp
 	}
 
-	leases4, leases6, err := kea.FindLeases(r.DB, r.Agents, text)
+	// Try to find the leases from monitored Kea servers.
+	keaLeases, err := kea.FindLeases(r.DB, r.Agents, text)
 	if err != nil {
 		msg := "problem with fetching leases from the database"
 		log.Error(err)
@@ -41,23 +43,8 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		return rsp
 	}
 
-	for _, l := range leases4 {
-		lease := models.Lease{
-			AppID:         0,
-			ClientID:      l.ClientID,
-			Cltt:          int64(l.Cltt),
-			Hostname:      l.Hostname,
-			HwAddress:     l.HWAddress,
-			IPAddress:     l.IPAddress,
-			LeaseType:     "V4",
-			State:         int64(l.State),
-			SubnetID:      int64(l.SubnetID),
-			ValidLifetime: int64(l.ValidLifetime),
-		}
-		leases.Items = append(leases.Items, &lease)
-	}
-
-	for _, l := range leases6 {
+	// Return leases over the REST API.
+	for _, l := range keaLeases {
 		lease := models.Lease{
 			AppID:             0,
 			Cltt:              int64(l.Cltt),
