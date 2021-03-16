@@ -64,6 +64,12 @@ export class AppComponent implements OnInit {
                         routerLink: '/dashboard',
                     },
                     {
+                        label: 'Leases Search',
+                        id: 'leases-search',
+                        icon: 'fa fa-search',
+                        routerLink: '/dhcp/leases',
+                    },
+                    {
                         label: 'Host Reservations',
                         id: 'host-reservations',
                         icon: 'fa fa-laptop',

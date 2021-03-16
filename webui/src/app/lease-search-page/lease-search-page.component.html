@@ -1,0 +1,195 @@
+<app-breadcrumbs [items]="breadcrumbs">
+    <div page-help>
+        <p>
+            This page offers a simple DHCP leases search engine. It utilizes Kea control channel to find leases by an IP
+            address, delegated prefix, client identifier, DHCPv6 DUID, or hostname. Type one of these parameters in the
+            search box and click the Search button. The engine will find all matching leases on the monitored Kea
+            servers running
+            <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#lease-cmds-lease-commands"
+                >lease_cmds hooks library</a
+            >. The Kea servers not running this hooks library are excluded from the search.
+        </p>
+    </div>
+</app-breadcrumbs>
+
+<div>
+    <div style="margin: 0 0 10px 5px; padding-top: 30px; padding-bottom: 30px">
+        <span>
+            <input
+                type="text"
+                id="search-leases-text-field"
+                pInputText
+                [(ngModel)]="searchText"
+                placeholder="IP address, MAC, client-id, DUID or hostname"
+                size="36"
+                (keyup)="handleKeyUp($event)"
+            />
+            <button
+                pButton
+                class="ui-button-warning"
+                type="button"
+                icon="pi pi-search"
+                iconPos="left"
+                (click)="searchLeases()"
+            ></button>
+            <app-help-tip title="leases search" id="leases-search-help-button">
+                <p>
+                    Use the input box to specify a searched lease. You can search the lease by one of the following
+                    lease properties:
+                </p>
+                <ul>
+                    <li>IP address</li>
+                    <li>delegated prefix (excluding prefix length)</li>
+                    <li>MAC address</li>
+                    <li>DHCPv4 client identifier</li>
+                    <li>DHCPv6 DUID</li>
+                    <li>hostname</li>
+                </ul>
+                <p>A client identifier and DUID can be specified in the following formats:</p>
+                <ul>
+                    <li>01:02:03:04:05</li>
+                    <li>01 02 03 04 05</li>
+                    <li>0102030405</li>
+                </ul>
+                <p>The MAC address must use the notation with colons, e.g. 01:02:03:04:05:06.</p>
+                <p>
+                    The specified text must match exactly one of the lease properties. Searching for leases using
+                    partial text, e.g. 192.0., is currently not supported.
+                </p>
+                <p>
+                    The search engine will look for the specified lease on all monitored Kea servers having the
+                    lease_cmds hooks library loaded. It may return multiple leases for the same IP address or delegated
+                    prefix when Kea servers are configured to share the lease information via High Availability hooks
+                    library or shared lease database.
+                </p>
+            </app-help-tip>
+        </span>
+    </div>
+
+    <div style="margin: 0 0 10px, 5x">
+        <p-table [value]="leases" dataKey="id">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="width: 3rem"></th>
+                    <th>Lease</th>
+                    <th>Type</th>
+                    <th>State</th>
+                    <th>App Name</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-lease let-expanded="expanded">
+                <tr>
+                    <td>
+                        <a [pRowToggler]="lease">
+                            <i [ngClass]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"></i>
+                        </a>
+                    </td>
+                    <td>
+                        {{ lease.ipAddress }}
+                    </td>
+                    <td>
+                        {{ !lease.leaseType ? 'IPv4 address' : lease.leaseType }}
+                    </td>
+                    <td style="{{ lease.state > 0 ? 'color: red' : 'color: green' }}">
+                        {{ leaseStateAsText(lease.state) }}
+                    </td>
+                    <td>
+                        <a routerLink="/apps/kea/{{ lease.appId }}" style="display: block">
+                            {{ lease.appName }}
+                        </a>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="rowexpansion" let-lease>
+                <tr>
+                    <td colspan="5">
+                        <table>
+                            <tr *ngIf="lease.hwAddress">
+                                <td style="width: 10rem">MAC address:</td>
+                                <td>
+                                    <i>{{ lease.hwAddress }}</i>
+                                </td>
+                            </tr>
+                            <tr *ngIf="lease.clientId">
+                                <td style="width: 10rem">Client Identifier:</td>
+                                <td>
+                                    <i>{{ lease.clientId }}</i>
+                                </td>
+                            </tr>
+                            <tr *ngIf="lease.hostname">
+                                <td style="width: 10rem">Hostname:</td>
+                                <td>
+                                    <i>{{ lease.hostname }}</i>
+                                </td>
+                            </tr>
+                            <tr *ngIf="lease.fqdnFwd">
+                                <td style="width: 10rem">Forward DDNS:</td>
+                                <td>
+                                    <i>{{ lease.fwdFqdn ? 'yes' : 'no' }}</i>
+                                </td>
+                            </tr>
+                            <tr *ngIf="lease.fqdnRev">
+                                <td style="width: 10rem">Reverse DDNS:</td>
+                                <td>
+                                    <i>{{ lease.revFqdn ? 'yes' : 'no' }}</i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 10rem">Subnet Identifier:</td>
+                                <td>
+                                    <i>{{ lease.subnetId }}</i>
+                                </td>
+                            </tr>
+                            <tr *ngIf="lease.iaid">
+                                <td style="width: 10rem">IAID:</td>
+                                <td>
+                                    <i>{{ lease.iaid }}</i>
+                                </td>
+                            </tr>
+                            <tr *ngIf="lease.preferredLifetime">
+                                <td style="width: 10rem">Preferred Lifetime:</td>
+                                <td>
+                                    <i>{{ lease.preferredLifetime }} seconds</i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 10rem">Valid Lifetime:</td>
+                                <td>
+                                    <i>{{ lease.validLifetime }} seconds</i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 10rem">Allocated at:</td>
+                                <td>
+                                    <i>{{ leaseTime(lease.cltt) }}</i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 10rem">Expires at:</td>
+                                <td>
+                                    <i>{{ leaseTime(lease.cltt + lease.validLifetime) }}</i>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td *ngIf="searched" colspan="5">No leases found matching {{ lastSearchText }}.</td>
+                    <td *ngIf="!searched" colspan="5">
+                        <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
+                        Search for DHCP leases on the Kea servers by IP address, delegated prefix, client identifier,
+                        DHCPv6 DUID or hostname. Click help button for details.
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="summary">
+                <span *ngIf="leases && leases.length > 0">
+                    Found {{ leases.length }} lease {{ leases.length > 1 ? 's' : '' }} matching
+                    {{ lastSearchText.trim() }}.
+                </span>
+            </ng-template>
+        </p-table>
+    </div>
+</div>

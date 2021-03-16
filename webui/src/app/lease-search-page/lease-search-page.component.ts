@@ -1,0 +1,91 @@
+import { Component, OnInit } from '@angular/core'
+import { map } from 'rxjs/operators'
+import { DHCPService } from '../backend/api/api'
+import { datetimeToLocal } from '../utils'
+
+@Component({
+    selector: 'app-lease-search-page',
+    templateUrl: './lease-search-page.component.html',
+    styleUrls: ['./lease-search-page.component.sass'],
+})
+export class LeaseSearchPageComponent implements OnInit {
+    breadcrumbs = [{ label: 'DHCP' }, { label: 'Leases Search' }]
+
+    searched = false
+    searchText = ''
+    lastSearchText = ''
+    leases: any[]
+
+    constructor(private dhcpApi: DHCPService) {}
+
+    ngOnInit(): void {}
+
+    searchLeases() {
+        const searchText = this.searchText.trim()
+        if (searchText.length === 0) {
+            return
+        }
+        this.lastSearchText = searchText
+        this.dhcpApi
+            .getLeases(searchText)
+            .pipe(
+                map((data) => {
+                    let id = 1
+                    for (const lease of data.items) {
+                        lease.id = id
+                        id++
+                    }
+                    return data
+                })
+            )
+            .subscribe(
+                (data) => {
+                    this.leases = data.items
+                    this.searched = true
+                },
+                (error) => {
+                    console.log(error)
+                    this.leases = []
+                    this.searched = true
+                }
+            )
+    }
+
+    handleKeyUp(event) {
+        switch (event.key) {
+            case 'Enter': {
+                this.searchLeases()
+                break
+            }
+            default: {
+                break
+            }
+        }
+    }
+
+    leaseStateAsText(state) {
+        if (!state) {
+            return 'Valid'
+        }
+        switch (state) {
+            case 0: {
+                return 'Valid'
+            }
+            case 1: {
+                return 'Declined'
+            }
+            case 2: {
+                return 'Expired/Reclaimed'
+            }
+            default: {
+                break
+            }
+        }
+        return 'Unknown'
+    }
+
+    leaseTime(epochTime) {
+        const d = new Date(epochTime * 1000)
+        return datetimeToLocal(d)
+    }
+}

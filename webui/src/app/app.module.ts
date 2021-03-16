@@ -77,6 +77,7 @@ import { AppDaemonsStatusComponent } from './app-daemons-status/app-daemons-stat
 import { BreadcrumbsComponent } from './breadcrumbs/breadcrumbs.component'
 import { EventsPageComponent } from './events-page/events-page.component'
 import { RenameAppDialogComponent } from './rename-app-dialog/rename-app-dialog.component'
+import { LeaseSearchPageComponent } from './lease-search-page/lease-search-page.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -120,6 +121,7 @@ export function cfgFactory() {
         BreadcrumbsComponent,
         EventsPageComponent,
         RenameAppDialogComponent,
+        LeaseSearchPageComponent,
     ],
     imports: [
         BrowserModule,
