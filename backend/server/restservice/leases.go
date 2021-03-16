@@ -52,6 +52,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		lease := models.Lease{
 			AppID:             l.AppID,
 			AppName:           appName,
+			ClientID:          l.ClientID,
 			Cltt:              int64(l.Cltt),
 			Duid:              l.DUID,
 			Hostname:          l.Hostname,

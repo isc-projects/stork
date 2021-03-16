@@ -106,6 +106,7 @@ func TestFindLeases4(t *testing.T) {
 	accessPoints := []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
 	app := &dbmodel.App{
+		Name:         "fxz",
 		MachineID:    machine.ID,
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
@@ -147,6 +148,18 @@ func TestFindLeases4(t *testing.T) {
 	okRsp := rsp.(*dhcp.GetLeasesOK)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
+
+	lease := okRsp.Payload.Items[0]
+	require.EqualValues(t, app.ID, lease.AppID)
+	require.Equal(t, app.Name, lease.AppName)
+	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
+	require.EqualValues(t, 12345678, lease.Cltt)
+	require.Equal(t, "myhost.example.com.", lease.Hostname)
+	require.Equal(t, "08:08:08:08:08:08", lease.HwAddress)
+	require.Equal(t, "192.0.2.1", lease.IPAddress)
+	require.EqualValues(t, 0, lease.State)
+	require.EqualValues(t, 44, lease.SubnetID)
+	require.EqualValues(t, 3600, lease.ValidLifetime)
 }
 
 // This test verifies that it is possible to search DHCPv6 leases by text
@@ -168,6 +181,7 @@ func TestFindLeases6(t *testing.T) {
 	accessPoints := []*dbmodel.AccessPoint{}
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
 	app := &dbmodel.App{
+		Name:         "fyz",
 		MachineID:    machine.ID,
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
@@ -209,6 +223,37 @@ func TestFindLeases6(t *testing.T) {
 	okRsp := rsp.(*dhcp.GetLeasesOK)
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
+
+	lease := okRsp.Payload.Items[0]
+	require.EqualValues(t, app.ID, lease.AppID)
+	require.Equal(t, app.Name, lease.AppName)
+	require.EqualValues(t, 12345678, lease.Cltt)
+	require.Equal(t, "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42", lease.Duid)
+	require.Equal(t, "myhost.example.com.", lease.Hostname)
+	require.Equal(t, "08:08:08:08:08:08", lease.HwAddress)
+	require.EqualValues(t, 1, lease.Iaid)
+	require.Equal(t, "2001:db8:2::1", lease.IPAddress)
+	require.EqualValues(t, 500, lease.PreferredLifetime)
+	require.EqualValues(t, 0, lease.State)
+	require.EqualValues(t, 44, lease.SubnetID)
+	require.Equal(t, "IA_NA", lease.LeaseType)
+	require.EqualValues(t, 3600, lease.ValidLifetime)
+
+	lease = okRsp.Payload.Items[1]
+	require.EqualValues(t, app.ID, lease.AppID)
+	require.Equal(t, app.Name, lease.AppName)
+	require.EqualValues(t, 12345678, lease.Cltt)
+	require.Equal(t, "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42", lease.Duid)
+	require.Empty(t, lease.Hostname)
+	require.Empty(t, lease.HwAddress)
+	require.EqualValues(t, 1, lease.Iaid)
+	require.Equal(t, "2001:db8:0:0:2::", lease.IPAddress)
+	require.EqualValues(t, 500, lease.PreferredLifetime)
+	require.EqualValues(t, 80, lease.PrefixLength)
+	require.EqualValues(t, 0, lease.State)
+	require.EqualValues(t, 44, lease.SubnetID)
+	require.Equal(t, "IA_PD", lease.LeaseType)
+	require.EqualValues(t, 3600, lease.ValidLifetime)
 }
 
 // Test that when blank search text is specified no leases are returned.
