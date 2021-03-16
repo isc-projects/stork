@@ -142,10 +142,11 @@ sudo ./stork-install-agent.sh</textarea
     <button
         type="button"
         pButton
-        icon="pi pi-refresh"
+        icon="pi pi-times"
         label="Close"
         (click)="closeAgentInstallationInstruction()"
         style="float: right"
+        id="close-agent-installation-instruction-button"
     ></button>
 </p-dialog>
 
@@ -229,12 +230,14 @@ sudo ./stork-install-agent.sh</textarea
                 icon="pi pi-download"
                 style="margin: 0 20px"
                 (click)="showAgentInstallationInstruction()"
+                id="show-agent-installation-instruction-button"
             ></button>
             <div>
                 <p-selectButton
                     [options]="viewSelectionOptions"
                     [(ngModel)]="showUnauthorized"
                     (onChange)="refreshMachinesList(machinesTable)"
+                    id="unauthorized-select-button"
                 ></p-selectButton>
             </div>
         </div>
