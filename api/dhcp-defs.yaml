@@ -21,6 +21,10 @@
         type: integer
       duid:
         type: string
+      fqdnFwd:
+        type: boolean
+      fqdnRev:
+        type: boolean
       hostname:
         type: string
       hwAddress:
@@ -28,6 +32,8 @@
       iaid:
         type: integer
       ipAddress:
+        type: string
+      leaseType:
         type: string
       preferredLifetime:
         type: integer
@@ -37,7 +43,7 @@
         type: integer
       subnetId:
         type: integer
-      leaseType:
+      userContext:
         type: string
       validLifetime:
         type: integer

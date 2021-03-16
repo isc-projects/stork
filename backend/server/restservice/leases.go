@@ -44,7 +44,8 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 	}
 
 	// Return leases over the REST API.
-	for _, l := range keaLeases {
+	for i := range keaLeases {
+		l := keaLeases[i]
 		var appName string
 		if l.App != nil {
 			appName = l.App.Name
@@ -59,6 +60,8 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 			ClientID:          l.ClientID,
 			Cltt:              &cltt,
 			Duid:              l.DUID,
+			FqdnFwd:           l.FqdnFwd,
+			FqdnRev:           l.FqdnRev,
 			Hostname:          l.Hostname,
 			HwAddress:         l.HWAddress,
 			Iaid:              int64(l.IAID),

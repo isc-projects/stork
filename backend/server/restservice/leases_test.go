@@ -23,7 +23,7 @@ func mockLease4Get(callNo int, responses []interface{}) {
             "arguments": {
                 "client-id": "42:42:42:42:42:42:42:42",
                 "cltt": 12345678,
-                "fqdn-fwd": false,
+                "fqdn-fwd": true,
                 "fqdn-rev": true,
                 "hostname": "myhost.example.com.",
                 "hw-address": "08:08:08:08:08:08",
@@ -51,7 +51,7 @@ func mockLeases6Get(callNo int, responses []interface{}) {
                     {
                         "cltt": 12345678,
                         "duid": "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42",
-                        "fqdn-fwd": false,
+                        "fqdn-fwd": true,
                         "fqdn-rev": true,
                         "hostname": "myhost.example.com.",
                         "hw-address": "08:08:08:08:08:08",
@@ -67,7 +67,7 @@ func mockLeases6Get(callNo int, responses []interface{}) {
                         "cltt": 12345678,
                         "duid": "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42",
                         "fqdn-fwd": false,
-                        "fqdn-rev": true,
+                        "fqdn-rev": false,
                         "hostname": "",
                         "iaid": 1,
                         "ip-address": "2001:db8:0:0:2::",
@@ -150,16 +150,24 @@ func TestFindLeases4(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 
 	lease := okRsp.Payload.Items[0]
-	require.EqualValues(t, app.ID, lease.AppID)
-	require.Equal(t, app.Name, lease.AppName)
+	require.NotNil(t, lease.AppID)
+	require.EqualValues(t, app.ID, *lease.AppID)
+	require.NotNil(t, lease.AppName)
+	require.Equal(t, app.Name, *lease.AppName)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
-	require.EqualValues(t, 12345678, lease.Cltt)
+	require.NotNil(t, lease.Cltt)
+	require.EqualValues(t, 12345678, *lease.Cltt)
+	require.True(t, lease.FqdnFwd)
+	require.True(t, lease.FqdnRev)
 	require.Equal(t, "myhost.example.com.", lease.Hostname)
 	require.Equal(t, "08:08:08:08:08:08", lease.HwAddress)
-	require.Equal(t, "192.0.2.1", lease.IPAddress)
-	require.EqualValues(t, 0, lease.State)
-	require.EqualValues(t, 44, lease.SubnetID)
-	require.EqualValues(t, 3600, lease.ValidLifetime)
+	require.EqualValues(t, "192.0.2.1", *lease.IPAddress)
+	require.NotNil(t, lease.State)
+	require.EqualValues(t, 0, *lease.State)
+	require.NotNil(t, lease.SubnetID)
+	require.EqualValues(t, 44, *lease.SubnetID)
+	require.NotNil(t, lease.ValidLifetime)
+	require.EqualValues(t, 3600, *lease.ValidLifetime)
 }
 
 // This test verifies that it is possible to search DHCPv6 leases by text
@@ -225,35 +233,53 @@ func TestFindLeases6(t *testing.T) {
 	require.EqualValues(t, 2, okRsp.Payload.Total)
 
 	lease := okRsp.Payload.Items[0]
-	require.EqualValues(t, app.ID, lease.AppID)
-	require.Equal(t, app.Name, lease.AppName)
-	require.EqualValues(t, 12345678, lease.Cltt)
+	require.NotNil(t, lease.AppID)
+	require.EqualValues(t, app.ID, *lease.AppID)
+	require.NotNil(t, lease.AppName)
+	require.Equal(t, app.Name, *lease.AppName)
+	require.NotNil(t, lease.Cltt)
+	require.EqualValues(t, 12345678, *lease.Cltt)
 	require.Equal(t, "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42", lease.Duid)
+	require.True(t, lease.FqdnFwd)
+	require.True(t, lease.FqdnRev)
 	require.Equal(t, "myhost.example.com.", lease.Hostname)
 	require.Equal(t, "08:08:08:08:08:08", lease.HwAddress)
 	require.EqualValues(t, 1, lease.Iaid)
-	require.Equal(t, "2001:db8:2::1", lease.IPAddress)
+	require.NotNil(t, lease.IPAddress)
+	require.Equal(t, "2001:db8:2::1", *lease.IPAddress)
 	require.EqualValues(t, 500, lease.PreferredLifetime)
-	require.EqualValues(t, 0, lease.State)
-	require.EqualValues(t, 44, lease.SubnetID)
+	require.NotNil(t, lease.State)
+	require.EqualValues(t, 0, *lease.State)
+	require.NotNil(t, lease.SubnetID)
+	require.EqualValues(t, 44, *lease.SubnetID)
 	require.Equal(t, "IA_NA", lease.LeaseType)
-	require.EqualValues(t, 3600, lease.ValidLifetime)
+	require.NotNil(t, lease.ValidLifetime)
+	require.EqualValues(t, 3600, *lease.ValidLifetime)
 
 	lease = okRsp.Payload.Items[1]
-	require.EqualValues(t, app.ID, lease.AppID)
-	require.Equal(t, app.Name, lease.AppName)
-	require.EqualValues(t, 12345678, lease.Cltt)
+	require.NotNil(t, lease.AppID)
+	require.EqualValues(t, app.ID, *lease.AppID)
+	require.Equal(t, app.Name, *lease.AppName)
+	require.Equal(t, app.Name, *lease.AppName)
+	require.NotNil(t, lease.Cltt)
+	require.EqualValues(t, 12345678, *lease.Cltt)
 	require.Equal(t, "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42", lease.Duid)
+	require.False(t, lease.FqdnFwd)
+	require.False(t, lease.FqdnRev)
 	require.Empty(t, lease.Hostname)
 	require.Empty(t, lease.HwAddress)
 	require.EqualValues(t, 1, lease.Iaid)
-	require.Equal(t, "2001:db8:0:0:2::", lease.IPAddress)
+	require.NotNil(t, lease.IPAddress)
+	require.Equal(t, "2001:db8:0:0:2::", *lease.IPAddress)
 	require.EqualValues(t, 500, lease.PreferredLifetime)
 	require.EqualValues(t, 80, lease.PrefixLength)
-	require.EqualValues(t, 0, lease.State)
-	require.EqualValues(t, 44, lease.SubnetID)
+	require.NotNil(t, lease.State)
+	require.EqualValues(t, 0, *lease.State)
+	require.NotNil(t, lease.SubnetID)
+	require.EqualValues(t, 44, *lease.SubnetID)
 	require.Equal(t, "IA_PD", lease.LeaseType)
-	require.EqualValues(t, 3600, lease.ValidLifetime)
+	require.NotNil(t, lease.ValidLifetime)
+	require.EqualValues(t, 3600, *lease.ValidLifetime)
 }
 
 // Test that when blank search text is specified no leases are returned.
