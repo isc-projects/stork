@@ -2,6 +2,14 @@
 
   Lease:
     type: object
+    required:
+      - appId
+      - appName
+      - cltt
+      - ipAddress
+      - state
+      - subnetId
+      - validLifetime
     properties:
       appId:
         type: integer

@@ -49,22 +49,26 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		if l.App != nil {
 			appName = l.App.Name
 		}
+		cltt := int64(l.Cltt)
+		state := int64(l.State)
+		subnetID := int64(l.SubnetID)
+		validLifetime := int64(l.ValidLifetime)
 		lease := models.Lease{
-			AppID:             l.AppID,
-			AppName:           appName,
+			AppID:             &l.AppID,
+			AppName:           &appName,
 			ClientID:          l.ClientID,
-			Cltt:              int64(l.Cltt),
+			Cltt:              &cltt,
 			Duid:              l.DUID,
 			Hostname:          l.Hostname,
 			HwAddress:         l.HWAddress,
 			Iaid:              int64(l.IAID),
-			IPAddress:         l.IPAddress,
+			IPAddress:         &l.IPAddress,
 			LeaseType:         l.Type,
 			PreferredLifetime: int64(l.PreferredLifetime),
 			PrefixLength:      int64(l.PrefixLength),
-			State:             int64(l.State),
-			SubnetID:          int64(l.SubnetID),
-			ValidLifetime:     int64(l.ValidLifetime),
+			State:             &state,
+			SubnetID:          &subnetID,
+			ValidLifetime:     &validLifetime,
 		}
 		leases.Items = append(leases.Items, &lease)
 	}
