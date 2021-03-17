@@ -3,6 +3,7 @@
   Lease:
     type: object
     required:
+      - id
       - appId
       - appName
       - cltt
@@ -11,6 +12,8 @@
       - subnetId
       - validLifetime
     properties:
+      id:
+        type: integer
       appId:
         type: integer
       appName:
