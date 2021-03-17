@@ -87,6 +87,19 @@ func mockLeases6Get(callNo int, responses []interface{}) {
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
+// Generates an error response to lease4-get command.
+func mockLease4GetError(callNo int, responses []interface{}) {
+	json := []byte(`[
+        {
+            "result": 1,
+            "text": "Lease erred"
+        }
+    ]`)
+	daemons, _ := keactrl.NewDaemons("dhcp4")
+	command, _ := keactrl.NewCommand("lease4-get", daemons, nil)
+	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+}
+
 // This test verifies that it is possible to search DHCPv4 leases by text
 // over the REST API.
 func TestFindLeases4(t *testing.T) {
@@ -148,6 +161,7 @@ func TestFindLeases4(t *testing.T) {
 	okRsp := rsp.(*dhcp.GetLeasesOK)
 	require.Len(t, okRsp.Payload.Items, 1)
 	require.EqualValues(t, 1, okRsp.Payload.Total)
+	require.Empty(t, okRsp.Payload.ErredApps)
 
 	lease := okRsp.Payload.Items[0]
 	require.NotNil(t, lease.AppID)
@@ -168,6 +182,24 @@ func TestFindLeases4(t *testing.T) {
 	require.EqualValues(t, 44, *lease.SubnetID)
 	require.NotNil(t, lease.ValidLifetime)
 	require.EqualValues(t, 3600, *lease.ValidLifetime)
+
+	// Test the case when the Kea server returns an error.
+	agents = agentcommtest.NewFakeAgents(mockLease4GetError, nil)
+	rapi, err = NewRestAPI(&settings, dbSettings, db, agents, fec, nil)
+	require.NoError(t, err)
+
+	rsp = rapi.GetLeases(ctx, params)
+	require.IsType(t, &dhcp.GetLeasesOK{}, rsp)
+	okRsp = rsp.(*dhcp.GetLeasesOK)
+	require.Empty(t, okRsp.Payload.Items)
+	require.Zero(t, okRsp.Payload.Total)
+
+	// Erred apps should contain our app.
+	require.Len(t, okRsp.Payload.ErredApps, 1)
+	require.NotNil(t, okRsp.Payload.ErredApps[0].ID)
+	require.EqualValues(t, app.ID, *okRsp.Payload.ErredApps[0].ID)
+	require.NotNil(t, okRsp.Payload.ErredApps[0].Name)
+	require.Equal(t, app.Name, *okRsp.Payload.ErredApps[0].Name)
 }
 
 // This test verifies that it is possible to search DHCPv6 leases by text
@@ -231,6 +263,7 @@ func TestFindLeases6(t *testing.T) {
 	okRsp := rsp.(*dhcp.GetLeasesOK)
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.Empty(t, okRsp.Payload.ErredApps)
 
 	lease := okRsp.Payload.Items[0]
 	require.NotNil(t, lease.AppID)
@@ -341,5 +374,6 @@ func TestFindLeasesEmptyText(t *testing.T) {
 	okRsp := rsp.(*dhcp.GetLeasesOK)
 	// Expect no leases to be returned.
 	require.Empty(t, okRsp.Payload.Items)
+	require.Empty(t, okRsp.Payload.ErredApps)
 	require.Zero(t, okRsp.Payload.Total)
 }

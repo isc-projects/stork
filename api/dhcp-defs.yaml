@@ -51,6 +51,17 @@
       validLifetime:
         type: integer
 
+  LeasesSearchErredApp:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+
   Leases:
     type: object
     properties:
@@ -58,6 +69,10 @@
         type: array
         items:
           $ref: '#/definitions/Lease'
+      erredApps:
+        type: array
+        items:
+          $ref: '#/definitions/LeasesSearchErredApp'
       total:
         type: integer
 

@@ -33,7 +33,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 	}
 
 	// Try to find the leases from monitored Kea servers.
-	keaLeases, _, err := kea.FindLeases(r.DB, r.Agents, text)
+	keaLeases, erredApps, err := kea.FindLeases(r.DB, r.Agents, text)
 	if err != nil {
 		msg := "problem with fetching leases from the database"
 		log.Error(err)
@@ -79,6 +79,14 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 	}
 
 	leases.Total = int64(len(leases.Items))
+
+	// Record apps for which there was an error communicating with the Kea servers.
+	for i := range erredApps {
+		leases.ErredApps = append(leases.ErredApps, &models.LeasesSearchErredApp{
+			ID:   &erredApps[i].ID,
+			Name: &erredApps[i].Name,
+		})
+	}
 
 	rsp := dhcp.NewGetLeasesOK().WithPayload(leases)
 	return rsp
