@@ -38,6 +38,49 @@ func mockLease4Get(callNo int, responses []interface{}) {
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
+// Generates a response to lease4-get command. The first time it is
+// called it returns an error response. The second time it returns
+// a lease. It is useful to simulate tracking erred communication
+// with selected servers.
+func mockLease4GetFirstCallError(callNo int, responses []interface{}) {
+	var json []byte
+	if callNo == 0 {
+		json = []byte(`[
+            {
+                "result": 1,
+                "text": "Lease erred",
+                "arguments": { }
+            }
+        ]`)
+		daemons, _ := keactrl.NewDaemons("dhcp4")
+		command, _ := keactrl.NewCommand("lease4-get", daemons, nil)
+		_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+		return
+	}
+
+	json = []byte(`[
+        {
+            "result": 0,
+            "text": "Lease found",
+            "arguments": {
+                "client-id": "42:42:42:42:42:42:42:42",
+                "cltt": 12345678,
+                "fqdn-fwd": false,
+                "fqdn-rev": true,
+                "hostname": "myhost.example.com.",
+                "hw-address": "08:08:08:08:08:08",
+                "ip-address": "192.0.2.1",
+                "state": 0,
+                "subnet-id": 44,
+                "valid-lft": 3600
+            }
+        }
+    ]`)
+	daemons, _ := keactrl.NewDaemons("dhcp4")
+	command, _ := keactrl.NewCommand("lease4-get", daemons, nil)
+	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+}
+
 // Generates a success mock response to commands fetching a single
 // DHCPv6 lease by IPv6 address.
 func mockLease6GetByIPAddress(callNo int, responses []interface{}) {
@@ -228,7 +271,10 @@ func mockLeases4GetEmpty(callNo int, responses []interface{}) {
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
 	command, _ := keactrl.NewCommand("lease4-get", daemons, nil)
-	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+
+	for i := range responses {
+		_ = keactrl.UnmarshalResponseList(command, json, responses[i])
+	}
 }
 
 // Generates a mock empty response to commands fetching DHCPv6 leases.
@@ -310,7 +356,7 @@ func TestGetLease4ByIPAddress(t *testing.T) {
 	require.EqualValues(t, app.ID, lease.AppID)
 	require.NotNil(t, lease.App)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
-	require.EqualValues(t, 12345678, lease.Cltt)
+	require.EqualValues(t, 12345678, lease.CLTT)
 	require.False(t, lease.FqdnFwd)
 	require.True(t, lease.FqdnRev)
 	require.Equal(t, "myhost.example.com.", lease.Hostname)
@@ -339,7 +385,7 @@ func TestGetLease6ByIPAddress(t *testing.T) {
 
 	require.EqualValues(t, app.ID, lease.AppID)
 	require.NotNil(t, lease.App)
-	require.EqualValues(t, 12345678, lease.Cltt)
+	require.EqualValues(t, 12345678, lease.CLTT)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 	require.False(t, lease.FqdnFwd)
 	require.True(t, lease.FqdnRev)
@@ -372,7 +418,7 @@ func TestGetLease6ByPrefix(t *testing.T) {
 
 	require.EqualValues(t, app.ID, lease.AppID)
 	require.NotNil(t, lease.App)
-	require.EqualValues(t, 12345678, lease.Cltt)
+	require.EqualValues(t, 12345678, lease.CLTT)
 	require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 	require.False(t, lease.FqdnFwd)
 	require.True(t, lease.FqdnRev)
@@ -442,7 +488,7 @@ func TestGetLeases4ByIdentifier(t *testing.T) {
 		require.EqualValues(t, app.ID, lease.AppID)
 		require.NotNil(t, lease.App)
 		require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
-		require.EqualValues(t, 12345678, lease.Cltt)
+		require.EqualValues(t, 12345678, lease.CLTT)
 		require.False(t, lease.FqdnFwd)
 		require.True(t, lease.FqdnRev)
 		require.Equal(t, "myhost.example.com.", lease.Hostname)
@@ -534,7 +580,7 @@ func TestGetLeases4(t *testing.T) {
 			require.EqualValues(t, app.ID, lease.AppID)
 			require.NotNil(t, lease.App)
 			require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
-			require.EqualValues(t, 12345678, lease.Cltt)
+			require.EqualValues(t, 12345678, lease.CLTT)
 			require.False(t, lease.FqdnFwd)
 			require.True(t, lease.FqdnRev)
 			require.Equal(t, "myhost.example.com.", lease.Hostname)
@@ -587,7 +633,7 @@ func TestGetLeases6(t *testing.T) {
 			lease := leases[0]
 			require.EqualValues(t, app.ID, lease.AppID)
 			require.NotNil(t, lease.App)
-			require.EqualValues(t, 12345678, lease.Cltt)
+			require.EqualValues(t, 12345678, lease.CLTT)
 			require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 			require.False(t, lease.FqdnFwd)
 			require.True(t, lease.FqdnRev)
@@ -604,7 +650,7 @@ func TestGetLeases6(t *testing.T) {
 			lease = leases[1]
 			require.EqualValues(t, app.ID, lease.AppID)
 			require.NotNil(t, lease.App)
-			require.EqualValues(t, 12345678, lease.Cltt)
+			require.EqualValues(t, 12345678, lease.CLTT)
 			require.Equal(t, "42:42:42:42:42:42:42:42", lease.DUID)
 			require.False(t, lease.FqdnFwd)
 			require.True(t, lease.FqdnRev)
@@ -797,8 +843,23 @@ func TestFindLeases(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	//  Find lease by IPv4 address.
-	_, err = FindLeases(db, agents, "192.0.2.3")
+	_, erredApps, err := FindLeases(db, agents, "192.0.2.3")
 	require.NoError(t, err)
+	require.Empty(t, erredApps)
+
+	// It should have sent lease4-get command to first and second Kea.
+	require.Len(t, agents.RecordedCommands, 2)
+	require.Equal(t, "lease4-get", agents.RecordedCommands[0].Command)
+	require.Equal(t, "lease4-get", agents.RecordedCommands[1].Command)
+
+	agents = agentcommtest.NewFakeAgents(mockLease4GetFirstCallError, nil)
+
+	// Test the case when one of the servers returns an error.
+	_, erredApps, err = FindLeases(db, agents, "192.0.2.3")
+	require.NoError(t, err)
+	require.Len(t, erredApps, 1)
+	require.NotNil(t, erredApps[0])
+	require.EqualValues(t, app1.ID, erredApps[0].ID)
 
 	// It should have sent lease4-get command to first and second Kea.
 	require.Len(t, agents.RecordedCommands, 2)
@@ -808,8 +869,9 @@ func TestFindLeases(t *testing.T) {
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	// Find lease by IPv6 address.
-	_, err = FindLeases(db, agents, "2001:db8:1::")
+	_, erredApps, err = FindLeases(db, agents, "2001:db8:1::")
 	require.NoError(t, err)
+	require.Empty(t, erredApps)
 
 	// It should have sent lease6-get command to first and third Kea.
 	// The commands are duplicated because we need to send one for
@@ -823,8 +885,9 @@ func TestFindLeases(t *testing.T) {
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	// Find lease by identifier.
-	_, err = FindLeases(db, agents, "01:02:03:04:05:06")
+	_, erredApps, err = FindLeases(db, agents, "01:02:03:04:05:06")
 	require.NoError(t, err)
+	require.Empty(t, erredApps)
 
 	// It should have sent commands to fetch a lease by HW address or client
 	// id to first two servers, and a command to fetch a lease by DUID to two
@@ -840,8 +903,9 @@ func TestFindLeases(t *testing.T) {
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	// Find lease by hostname.
-	_, err = FindLeases(db, agents, "myhost")
+	_, erredApps, err = FindLeases(db, agents, "myhost")
 	require.NoError(t, err)
+	require.Empty(t, erredApps)
 
 	// It should have sent a command to fetch a lease by hostname to both DHCPv4
 	// and DHCPv6 servers.

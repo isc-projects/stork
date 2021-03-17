@@ -3,7 +3,7 @@ package keadata
 // Represents a DHCP lease fetched from Kea.
 type Lease struct {
 	ClientID          string `mapstructure:"client-id" json:"client-id,omitempty"`
-	Cltt              uint64 `mapstructure:"cltt" json:"cltt,omitempty"`
+	CLTT              uint64 `mapstructure:"cltt" json:"cltt,omitempty"`
 	DUID              string `mapstructure:"duid" json:"duid,omitempty"`
 	FqdnFwd           bool   `mapstructure:"fqdn-fwd" json:"fqdn-fwd,omitempty"`
 	FqdnRev           bool   `mapstructure:"fqdn-rev" json:"fqdn-rev,omitempty"`

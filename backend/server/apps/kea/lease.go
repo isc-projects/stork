@@ -332,18 +332,15 @@ func hasLeaseCmdsHook(app *dbmodel.App, daemonName string) bool {
 // identifier, or hostname matching a lease. The server contacts
 // all Kea servers, which may potentially have the lease. If
 // multiple servers have the same lease (e.g. in HA configuration),
-// it returns all that lease instances. The function returns a slice
-// of found DHCPv4 and DHCPv6 leases and an error. It returns only
-// errors precluding any attempt to find a lease, e.g. issues with
-// Stork database communication. It does not return an error upon a
-// failure to communicate with one of the machines. In such cases,
-// it logs a warning message.
-//
-// The cognitive complexity check is disabled for this function because
-// it is hard to further simplify it without splitting it into multiple
-// functions. Splitting it into multiple functions would rather make it
-// less readable.
-func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (leases []dbmodel.Lease, err error) {
+// it returns all that lease instances. The  Kea servers which
+// returned an error response are returned as a second parameter.
+// Such failures do not preclude the function from returning
+// leases found on other servers, but the caller becomes aware
+// that some leases may not be included due to the communication
+// errors with some servers. The third returned parameter
+// indicates a general error, e.g. issues with Stork database
+// communication.
+func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (leases []dbmodel.Lease, erredApps []*dbmodel.App, err error) {
 	// Recognize if the text comprises an IP address or some identifier,
 	// e.g. MAC address or client identifier.
 	const (
@@ -373,10 +370,11 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 	apps, err := dbmodel.GetAppsByType(db, dbmodel.AppTypeKea)
 	if err != nil {
 		err = errors.WithMessagef(err, "failed to fetch Kea apps while searching for leases by %s", text)
-		return leases, err
+		return leases, erredApps, err
 	}
 
 	for i := range apps {
+		appError := false
 		// Send DHCPv4 specific queries if the lease_cmds hook is installed.
 		if queryType != ipv6 && hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv4) {
 			switch queryType {
@@ -384,6 +382,7 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 				// This is an IPv4 address, so send the command to the DHCPv4 server.
 				lease, err := GetLease4ByIPAddress(agents, &apps[i], text)
 				if err != nil {
+					appError = true
 					log.Warn(err)
 				}
 				if lease != nil {
@@ -393,6 +392,7 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 				// It is an identifier, so let's query the server using known identifier types.
 				leases4ByID, err := GetLeases4ByIdentifier(agents, &apps[i], text)
 				if err != nil {
+					appError = true
 					log.Warn(err)
 				}
 				leases = append(leases, leases4ByID...)
@@ -400,6 +400,7 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 				// It is neither an IP address nor an identifier. Let's try to query by hostname.
 				leases4ByHostname, err := GetLeases4ByHostname(agents, &apps[i], text)
 				if err != nil {
+					appError = true
 					log.Warn(err)
 				}
 				leases = append(leases, leases4ByHostname...)
@@ -414,6 +415,7 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 				for _, leaseType := range []string{"IA_NA", "IA_PD"} {
 					lease, err := GetLease6ByIPAddress(agents, &apps[i], leaseType, text)
 					if err != nil {
+						appError = true
 						log.Warn(err)
 					}
 					if lease != nil {
@@ -427,17 +429,22 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 			case identifier:
 				leases6ByID, err := GetLeases6ByDUID(agents, &apps[i], text)
 				if err != nil {
+					appError = true
 					log.Warn(err)
 				}
 				leases = append(leases, leases6ByID...)
 			default:
 				leases6ByHostname, err := GetLeases6ByHostname(agents, &apps[i], text)
 				if err != nil {
+					appError = true
 					log.Warn(err)
 				}
 				leases = append(leases, leases6ByHostname...)
 			}
 		}
+		if appError {
+			erredApps = append(erredApps, &apps[i])
+		}
 	}
-	return leases, nil
+	return leases, erredApps, nil
 }
