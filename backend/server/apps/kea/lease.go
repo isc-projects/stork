@@ -2,6 +2,7 @@ package kea
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"reflect"
 
@@ -239,6 +240,58 @@ func getLeases6ByProperty(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 	return leases, nil
 }
 
+// Sends lease4-get-by-hw-address and lease4-get-by-client-id to Kea combined
+// in a single gRPC command. An error response returned to first command
+// yelds a function error to avoid sending second command that is unlikely to
+// succeed. If the first command succeeds but the second one fails, an error
+// is returned and empty leases slice.
+func GetLeases4ByIdentifier(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, identifier string) (leases []dbmodel.Lease, err error) {
+	daemons, err := keactrl.NewDaemons("dhcp4")
+	if err != nil {
+		return leases, err
+	}
+	// Prepare lease4-get-by-hw-address and lease4-by-client-id commands.
+	var commands []*keactrl.Command
+	for _, arg := range []string{"hw-address", "client-id"} {
+		arguments := map[string]interface{}{
+			arg: identifier,
+		}
+		command, err := keactrl.NewCommand(fmt.Sprintf("lease4-get-by-%s", arg), daemons, &arguments)
+		if err != nil {
+			return leases, err
+		}
+		commands = append(commands, command)
+	}
+	// Prepare containers for responses.
+	responseHWAddress := make([]Lease4GetMultipleResponse, 1)
+	responseClientID := make([]Lease4GetMultipleResponse, 1)
+	ctx := context.Background()
+	respResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, commands, &responseHWAddress, &responseClientID)
+	if err != nil {
+		return leases, err
+	}
+	if respResult.Error != nil {
+		return leases, respResult.Error
+	}
+	// Validate responses to both commands.
+	for i, response := range [][]Lease4GetMultipleResponse{responseHWAddress, responseClientID} {
+		if len(response) == 0 {
+			return []dbmodel.Lease{}, errors.Errorf("invalid response received from Kea to %s command", commands[i].Command)
+		}
+		if response[0].Result != keactrl.ResponseEmpty {
+			if err = validateGetLeasesResponse(commands[i].Command, response[0].Result, response[0].Arguments); err != nil {
+				return []dbmodel.Lease{}, err
+			}
+			leases = append(leases, response[0].Arguments.Leases...)
+		}
+	}
+	for i := range leases {
+		leases[i].AppID = dbApp.ID
+		leases[i].App = dbApp
+	}
+	return leases, nil
+}
+
 // Sends lease4-get-by-hw-address command to Kea.
 func GetLeases4ByHWAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, hwaddress string) (leases []dbmodel.Lease, err error) {
 	return getLeases4ByProperty(agents, dbApp, "lease4-get-by-hw-address", "hw-address", hwaddress)
@@ -290,7 +343,6 @@ func hasLeaseCmdsHook(app *dbmodel.App, daemonName string) bool {
 // it is hard to further simplify it without splitting it into multiple
 // functions. Splitting it into multiple functions would rather make it
 // less readable.
-// nolint:gocognit
 func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (leases []dbmodel.Lease, err error) {
 	// Recognize if the text comprises an IP address or some identifier,
 	// e.g. MAC address or client identifier.
@@ -339,12 +391,7 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 				}
 			case identifier:
 				// It is an identifier, so let's query the server using known identifier types.
-				leases4ByID, err := GetLeases4ByHWAddress(agents, &apps[i], text)
-				if err != nil {
-					log.Warn(err)
-				}
-				leases = append(leases, leases4ByID...)
-				leases4ByID, err = GetLeases4ByClientID(agents, &apps[i], text)
+				leases4ByID, err := GetLeases4ByIdentifier(agents, &apps[i], text)
 				if err != nil {
 					log.Warn(err)
 				}

@@ -65,7 +65,7 @@ linters:
 
 linters-settings:
   gocognit:
-    min-complexity: 50
+    min-complexity: 60
   nestif:
     min-complexity: 13
   exhaustive:
