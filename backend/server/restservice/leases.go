@@ -35,7 +35,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 	// Try to find the leases from monitored Kea servers.
 	keaLeases, erredApps, err := kea.FindLeases(r.DB, r.Agents, text)
 	if err != nil {
-		msg := "problem with fetching leases from the database"
+		msg := "problem with searching leases on the Kea servers due to Stork database errors"
 		log.Error(err)
 		rsp := dhcp.NewGetLeasesDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
