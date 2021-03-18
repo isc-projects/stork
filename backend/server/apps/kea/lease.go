@@ -252,11 +252,25 @@ func GetLeases4ByIdentifier(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App
 	}
 	// Prepare lease4-get-by-hw-address and lease4-by-client-id commands.
 	var commands []*keactrl.Command
-	for _, arg := range []string{"hw-address", "client-id"} {
-		arguments := map[string]interface{}{
-			arg: identifier,
+	for i, argName := range []string{"hw-address", "client-id"} {
+		var arguments map[string]interface{}
+		if i == 0 {
+			// When searching by MAC address we must ensure that it has the format
+			// expected by Kea, i.e. 01:02:03:04:05:06.
+			if argValue, ok := storkutil.FormatMACAddress(identifier); ok {
+				arguments = map[string]interface{}{
+					argName: argValue,
+				}
+			} else {
+				return leases, errors.Errorf("invalid format of the identifier %s used to get leases by MAC address from Kea", identifier)
+			}
+		} else {
+			// Client identifier does not need colons.
+			arguments = map[string]interface{}{
+				argName: identifier,
+			}
 		}
-		command, err := keactrl.NewCommand(fmt.Sprintf("lease4-get-by-%s", arg), daemons, &arguments)
+		command, err := keactrl.NewCommand(fmt.Sprintf("lease4-get-by-%s", argName), daemons, &arguments)
 		if err != nil {
 			return leases, err
 		}
@@ -294,6 +308,12 @@ func GetLeases4ByIdentifier(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App
 
 // Sends lease4-get-by-hw-address command to Kea.
 func GetLeases4ByHWAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, hwaddress string) (leases []dbmodel.Lease, err error) {
+	// Ensure the HW address has the format expected by Kea.
+	var ok bool
+	hwaddress, ok = storkutil.FormatMACAddress(hwaddress)
+	if !ok {
+		return leases, errors.Errorf("invalid format of the MAC address %s used to get leases from Kea", hwaddress)
+	}
 	return getLeases4ByProperty(agents, dbApp, "lease4-get-by-hw-address", "hw-address", hwaddress)
 }
 

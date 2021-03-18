@@ -87,6 +87,34 @@ func ParseIP(address string) (string, bool, bool) {
 	return ipNet.String(), true, true
 }
 
+// Formats provided string of hexadecimal digits to MAC address format
+// using colon as separator. It returns formatted string and a boolean
+// value indicating if the conversion was successful.
+func FormatMACAddress(identifier string) (formatted string, ok bool) {
+	// Check if the identifier is already in the desired format.
+	identifier = strings.TrimSpace(identifier)
+	pattern := regexp.MustCompile(`^[0-9A-Fa-f]{2}((:{1})[0-9A-Fa-f]{2})*$`)
+	if pattern.MatchString(identifier) {
+		// No conversion required. Return the input.
+		return identifier, true
+	}
+	// We will have to convert it, but let's first check if this is a valid identifier.
+	if !IsHexIdentifier(identifier) {
+		return "", false
+	}
+	// Remove any colons and whitespaces.
+	replacer := strings.NewReplacer(" ", "", ":", "")
+	numericOnly := replacer.Replace(identifier)
+	for i, character := range numericOnly {
+		formatted += string(character)
+		// Divide the string into groups with two digits.
+		if i > 0 && i%2 != 0 && i < len(numericOnly)-1 {
+			formatted += ":"
+		}
+	}
+	return formatted, true
+}
+
 // Detects if the provided string is an identifier consisting of
 // hexadecimal digits and optionally whitespace or colons between
 // the groups of digits. For example: 010203, 01:02:03, 01::02::03,

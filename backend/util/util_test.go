@@ -69,6 +69,35 @@ func TestParseIP(t *testing.T) {
 	require.True(t, ok)
 }
 
+// Test conversion of a string consisting of a string of hexadecimal
+// digits with and without whitespace and with and without colons
+// is successful. Also test that conversion of a string having
+// invalid format is unsuccessful.
+func TestFormatMACAddress(t *testing.T) {
+	// Whitespace.
+	formatted, ok := FormatMACAddress("01 02 03 04 05 06")
+	require.True(t, ok)
+	require.Equal(t, "01:02:03:04:05:06", formatted)
+
+	// Correct format already.
+	formatted, ok = FormatMACAddress("01:02:03:04:05:06")
+	require.True(t, ok)
+	require.Equal(t, "01:02:03:04:05:06", formatted)
+
+	// No separator.
+	formatted, ok = FormatMACAddress("aabbccddeeff")
+	require.True(t, ok)
+	require.Equal(t, "aa:bb:cc:dd:ee:ff", formatted)
+
+	// Non-hexadecimal digits present.
+	_, ok = FormatMACAddress("ab:cd:ef:gh")
+	require.False(t, ok)
+
+	// Invalid separator.
+	_, ok = FormatMACAddress("01,02,03,04,05,06")
+	require.False(t, ok)
+}
+
 // Test detection whether the text comprises an identifier
 // consisting of hexadecimal digits and optionally a whitespace
 // or colons.

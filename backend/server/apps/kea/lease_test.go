@@ -679,9 +679,15 @@ func TestGetLeases4Empty(t *testing.T) {
 		AccessPoints: accessPoints,
 	}
 
-	leases, err := GetLeases4ByHWAddress(agents, app, "00:00:00:00:00:00")
+	leases, err := GetLeases4ByHWAddress(agents, app, "000000000000")
 	require.NoError(t, err)
 	require.Empty(t, leases)
+
+	// Ensure that MAC address was converted to the format expected by Kea.
+	arguments := agents.RecordedCommands[0].Arguments
+	require.NotNil(t, arguments)
+	require.Contains(t, *arguments, "hw-address")
+	require.Equal(t, "00:00:00:00:00:00", (*arguments)["hw-address"])
 }
 
 // Test the scenario in sending lease6-get-by-hostname command to Kea when
@@ -885,7 +891,7 @@ func TestFindLeases(t *testing.T) {
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	// Find lease by identifier.
-	_, erredApps, err = FindLeases(db, agents, "01:02:03:04:05:06")
+	_, erredApps, err = FindLeases(db, agents, "010203040506")
 	require.NoError(t, err)
 	require.Empty(t, erredApps)
 
@@ -899,6 +905,13 @@ func TestFindLeases(t *testing.T) {
 	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[3].Command)
 	require.Equal(t, "lease4-get-by-client-id", agents.RecordedCommands[4].Command)
 	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[5].Command)
+
+	// In addition, ensure that the HW address was converted to the format
+	// expected by Kea.
+	arguments := agents.RecordedCommands[0].Arguments
+	require.NotNil(t, arguments)
+	require.Contains(t, *arguments, "hw-address")
+	require.Equal(t, "01:02:03:04:05:06", (*arguments)["hw-address"])
 
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
