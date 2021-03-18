@@ -15,6 +15,7 @@ export class LeaseSearchPageComponent implements OnInit {
     searchText = ''
     lastSearchText = ''
     leases: any[]
+    erredApps: any[]
 
     constructor(private dhcpApi: DHCPService) {}
 
@@ -30,10 +31,12 @@ export class LeaseSearchPageComponent implements OnInit {
             .getLeases(searchText)
             .pipe(
                 map((data) => {
-                    let id = 1
-                    for (const lease of data.items) {
-                        lease.id = id
-                        id++
+                    if (data.items) {
+                        let id = 1
+                        for (const lease of data.items) {
+                            lease.id = id
+                            id++
+                        }
                     }
                     return data
                 })
@@ -41,11 +44,13 @@ export class LeaseSearchPageComponent implements OnInit {
             .subscribe(
                 (data) => {
                     this.leases = data.items
+                    this.erredApps = data.erredApps
                     this.searched = true
                 },
                 (error) => {
                     console.log(error)
                     this.leases = []
+                    this.erredApps = []
                     this.searched = true
                 }
             )

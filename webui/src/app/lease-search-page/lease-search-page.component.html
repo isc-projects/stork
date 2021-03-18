@@ -13,7 +13,7 @@
 </app-breadcrumbs>
 
 <div>
-    <div style="margin: 0 0 10px 5px; padding-top: 30px; padding-bottom: 30px">
+    <div style="margin: 0 0 10px 5px; padding-top: 30px">
         <span>
             <input
                 type="text"
@@ -66,7 +66,25 @@
         </span>
     </div>
 
-    <div style="margin: 0 0 10px, 5x">
+    <div *ngIf="erredApps" style="margin: 0 0 10px 5px">
+        <p-messages severity="warn">
+            <ng-template pTemplate>
+                <div class="ui-ml-2">
+                    Stork attempted to find leases on the Kea servers but some of the servers failed to respond or
+                    returned an error as a result of processing the control commands. The results presented in the table
+                    below may not comprise all leases matching the query, because some matching leases may reside on the
+                    servers which returned an error. Issues were found for the following Kea servers:
+                    <ul style="list-style-type: disc">
+                        <li *ngFor="let erredApp of erredApps">
+                            <a routerLink="/apps/kea/{{ erredApp.id }}">{{ erredApp.name }}</a>
+                        </li>
+                    </ul>
+                </div>
+            </ng-template>
+        </p-messages>
+    </div>
+
+    <div style="margin: 0 0 10px 5px">
         <p-table [value]="leases" dataKey="id">
             <ng-template pTemplate="header">
                 <tr>
