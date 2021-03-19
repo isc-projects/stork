@@ -26,6 +26,18 @@ export function datetimeToLocal(d) {
 }
 
 /**
+ * Converts epoch time to local time.
+ *
+ * @param epochTime epoch time in seconds.
+ * @returns Human readable local time.
+ */
+export function epochToLocal(epochTime) {
+    // Date constructor takes epoch time in milliseconds.
+    const d = new Date(epochTime * 1000)
+    return datetimeToLocal(d)
+}
+
+/**
  * Return formatted time duration.
  *
  * @param duration input duration.
