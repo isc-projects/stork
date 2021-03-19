@@ -248,8 +248,9 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 				// with one daemon, but the other one is still operational.
 				log.Warn(err)
 				warns = true
+			} else {
+				leases = append(leases, (*response)[0].Arguments.Leases...)
 			}
-			leases = append(leases, (*response)[0].Arguments.Leases...)
 		}
 	}
 	for i := range leases {
