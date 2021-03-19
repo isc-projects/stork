@@ -45,16 +45,15 @@
                     <li>DHCPv6 DUID</li>
                     <li>hostname</li>
                 </ul>
-                <p>A client identifier and DUID can be specified in the following formats:</p>
+                <p>MAC address, client identifier and DUID can be specified in the following formats:</p>
                 <ul>
                     <li>01:02:03:04:05</li>
                     <li>01 02 03 04 05</li>
                     <li>0102030405</li>
                 </ul>
-                <p>The MAC address must use the notation with colons, e.g. 01:02:03:04:05:06.</p>
                 <p>
                     The specified text must match exactly one of the lease properties. Searching for leases using
-                    partial text, e.g. 192.0., is currently not supported.
+                    partial value, e.g. 192.0., is currently not supported.
                 </p>
                 <p>
                     The search engine will look for the specified lease on all monitored Kea servers having the
@@ -67,13 +66,13 @@
     </div>
 
     <div *ngIf="erredApps" style="margin: 0 0 10px 5px">
-        <p-messages severity="warn">
+        <p-messages [closable]="false" severity="warn">
             <ng-template pTemplate>
-                <div class="ui-ml-2">
-                    Stork attempted to find leases on the Kea servers but some of the servers failed to respond or
-                    returned an error as a result of processing the control commands. The results presented in the table
-                    below may not comprise all leases matching the query, because some matching leases may reside on the
-                    servers which returned an error. Issues were found for the following Kea servers:
+                <div>
+                    Stork attempted to find leases on the Kea servers, but some servers failed to respond or returned an
+                    error in response to the control commands. The results presented in the table below may not comprise
+                    all leases matching the query because some matching leases may reside on the servers, which returned
+                    an error. Issues were found for the following Kea servers:
                     <ul style="list-style-type: disc">
                         <li *ngFor="let erredApp of erredApps">
                             <a routerLink="/apps/kea/{{ erredApp.id }}">{{ erredApp.name }}</a>
