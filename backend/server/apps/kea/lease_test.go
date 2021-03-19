@@ -216,51 +216,6 @@ func mockLeases4GetSecondError(callNo int, responses []interface{}) {
 	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
 }
 
-// Generates a mock response to lease4-get-by-hw-address and lease4-get-by-client-id
-// combined in a single gRPC command. The first response is empty, the second
-// response contains leases.
-func mockLeases4GetFirstEmpty(callNo int, responses []interface{}) {
-	// Response to lease4-get-by-hw-address.
-	json := []byte(`[
-        {
-            "result": 3,
-            "text": "Leases not found",
-            "arguments": { }
-        }
-
-    ]`)
-	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
-	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
-
-	// Response to lease4-get-by-client-id.
-	json = []byte(`[
-        {
-            "result": 0,
-            "text": "Leases found",
-            "arguments": {
-                "leases": [
-                    {
-                        "client-id": "42:42:42:42:42:42:42:42",
-                        "cltt": 12345678,
-                        "fqdn-fwd": false,
-                        "fqdn-rev": true,
-                        "hostname": "myhost.example.com.",
-                        "hw-address": "08:08:08:08:08:08",
-                        "ip-address": "192.0.2.1",
-                        "state": 0,
-                        "subnet-id": 44,
-                        "valid-lft": 3600
-                    }
-                ]
-            }
-        }
-    ]`)
-	daemons, _ = keactrl.NewDaemons("dhcp4")
-	command, _ = keactrl.NewCommand("lease4-get-by-client-id", daemons, nil)
-	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
-}
-
 // Generates a mock empty response to commands fetching DHCPv4 leases.
 func mockLeases4GetEmpty(callNo int, responses []interface{}) {
 	json := []byte(`[
@@ -271,7 +226,6 @@ func mockLeases4GetEmpty(callNo int, responses []interface{}) {
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
 	command, _ := keactrl.NewCommand("lease4-get", daemons, nil)
-
 	for i := range responses {
 		_ = keactrl.UnmarshalResponseList(command, json, responses[i])
 	}
@@ -466,74 +420,6 @@ func TestGetLease6ByIPAddressEmpty(t *testing.T) {
 	require.Nil(t, lease)
 }
 
-// Test success scenario in sending combined lease4-get-by-hw-address and lease4-get-by-client-id
-// in a single gRPC command to the agent.
-func TestGetLeases4ByIdentifier(t *testing.T) {
-	agents := agentcommtest.NewFakeAgents(mockLeases4Get, nil)
-
-	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
-	app := &dbmodel.App{
-		ID:           4,
-		AccessPoints: accessPoints,
-	}
-
-	leases, err := GetLeases4ByIdentifier(agents, app, "42:42:42:42:42:42:42:42")
-	require.NoError(t, err)
-	require.Len(t, leases, 2)
-
-	// For simplicity, we use the same lease in both responses. Other cases are
-	// tested in other tests.
-	for _, lease := range leases {
-		require.EqualValues(t, app.ID, lease.AppID)
-		require.NotNil(t, lease.App)
-		require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
-		require.EqualValues(t, 12345678, lease.CLTT)
-		require.False(t, lease.FqdnFwd)
-		require.True(t, lease.FqdnRev)
-		require.Equal(t, "myhost.example.com.", lease.Hostname)
-		require.Equal(t, "08:08:08:08:08:08", lease.HWAddress)
-		require.Equal(t, "192.0.2.1", lease.IPAddress)
-		require.EqualValues(t, 0, lease.State)
-		require.EqualValues(t, 44, lease.SubnetID)
-		require.EqualValues(t, 3600, lease.ValidLifetime)
-	}
-}
-
-// Test the case when lease4-get-by-hw-address and lease4-get-by-client-id are combined
-// in a single gRPC command and the response to the latter contains an error.
-func TestGetLeases4ByIdentifierSecondError(t *testing.T) {
-	agents := agentcommtest.NewFakeAgents(mockLeases4GetSecondError, nil)
-
-	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
-	app := &dbmodel.App{
-		ID:           4,
-		AccessPoints: accessPoints,
-	}
-	leases, err := GetLeases4ByIdentifier(agents, app, "42:42:42:42:42:42:42:42")
-	// An error in the second response, yelds the function error.
-	require.Error(t, err)
-	require.Empty(t, leases)
-}
-
-// Test the case when lease4-get-by-hw-address and lease4-get-by-client-id are combined
-// in a single gRPC command and the response to the former is empty. The leases returned
-// in the response to the latter command should be returned.
-func TestGetLeases4ByIdentifierFirstEmpty(t *testing.T) {
-	agents := agentcommtest.NewFakeAgents(mockLeases4GetFirstEmpty, nil)
-
-	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
-	app := &dbmodel.App{
-		ID:           4,
-		AccessPoints: accessPoints,
-	}
-	leases, err := GetLeases4ByIdentifier(agents, app, "42:42:42:42:42:42:42:42")
-	require.NoError(t, err)
-	require.Len(t, leases, 1)
-}
-
 // Test success scenarios in sending lease4-get-by-hw-address, lease4-get-by-client-id
 // and lease4-get-by-hostname commands to Kea.
 func TestGetLeases4(t *testing.T) {
@@ -704,6 +590,39 @@ func TestGetLeases6Empty(t *testing.T) {
 	leases, err := GetLeases6ByHostname(agents, app, "myhost")
 	require.NoError(t, err)
 	require.Empty(t, leases)
+}
+
+// Test sending multiple combined commands when one of the commands fails. The
+// function should still return some leases but it should also return the warns
+// flag to indicate that there were issues.
+func TestGetLeasesByPropertiesSecondError(t *testing.T) {
+	agents := agentcommtest.NewFakeAgents(mockLeases4GetSecondError, nil)
+
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	app := &dbmodel.App{
+		ID:           4,
+		AccessPoints: accessPoints,
+	}
+
+	leases, warns, err := getLeasesByProperties(agents, app, "42:42:42:42:42:42:42:42", "lease4-get-by-hw-address", "lease4-get-by-client-id")
+	require.NoError(t, err)
+	require.True(t, warns)
+	require.Len(t, leases, 1)
+
+	lease := leases[0]
+	require.EqualValues(t, app.ID, lease.AppID)
+	require.NotNil(t, lease.App)
+	require.Equal(t, "42:42:42:42:42:42:42:42", lease.ClientID)
+	require.EqualValues(t, 12345678, lease.CLTT)
+	require.False(t, lease.FqdnFwd)
+	require.True(t, lease.FqdnRev)
+	require.Equal(t, "myhost.example.com.", lease.Hostname)
+	require.Equal(t, "08:08:08:08:08:08", lease.HWAddress)
+	require.Equal(t, "192.0.2.1", lease.IPAddress)
+	require.EqualValues(t, 0, lease.State)
+	require.EqualValues(t, 44, lease.SubnetID)
+	require.EqualValues(t, 3600, lease.ValidLifetime)
 }
 
 // Test validation of the Kea servers' iunvalid responses or indicating errors.
