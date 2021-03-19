@@ -178,13 +178,13 @@
                             <tr>
                                 <td style="width: 10rem">Allocated at:</td>
                                 <td>
-                                    <i>{{ leaseTime(lease.cltt) }}</i>
+                                    <i>{{ lease.cltt | localtime }}</i>
                                 </td>
                             </tr>
                             <tr>
                                 <td style="width: 10rem">Expires at:</td>
                                 <td>
-                                    <i>{{ leaseTime(lease.cltt + lease.validLifetime) }}</i>
+                                    <i>{{ lease.cltt + lease.validLifetime | localtime }}</i>
                                 </td>
                             </tr>
                         </table>

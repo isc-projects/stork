@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { map } from 'rxjs/operators'
 import { DHCPService } from '../backend/api/api'
-import { datetimeToLocal } from '../utils'
+import { LocaltimePipe } from '../localtime.pipe'
 
 @Component({
     selector: 'app-lease-search-page',
@@ -87,10 +87,5 @@ export class LeaseSearchPageComponent implements OnInit {
             }
         }
         return 'Unknown'
-    }
-
-    leaseTime(epochTime) {
-        const d = new Date(epochTime * 1000)
-        return datetimeToLocal(d)
     }
 }
