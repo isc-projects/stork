@@ -358,8 +358,7 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 				if err != nil {
 					appError = true
 					log.Warn(err)
-				}
-				if lease != nil {
+				} else if lease != nil {
 					leases = append(leases, *lease)
 				}
 			}
@@ -372,8 +371,7 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 					if err != nil {
 						appError = true
 						log.Warn(err)
-					}
-					if lease != nil {
+					} else if lease != nil {
 						leases = append(leases, *lease)
 						// If we found a lease by IP address there is no reason to
 						// query by delegated prefix because the IP address/prefix
@@ -408,8 +406,9 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 			if err != nil {
 				appError = true
 				log.Warn(err)
+			} else {
+				leases = append(leases, leasesByProperties...)
 			}
-			leases = append(leases, leasesByProperties...)
 		}
 		if appError {
 			erredApps = append(erredApps, &apps[i])
