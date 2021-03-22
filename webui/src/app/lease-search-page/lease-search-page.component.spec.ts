@@ -58,7 +58,7 @@ describe('LeaseSearchPageComponent', () => {
         const searchInput = fixture.debugElement.query(By.css('#leases-search-input'))
         const searchInputElement = searchInput.nativeElement
 
-        let fakeLeases: any = {
+        const fakeLeases: any = {
             items: [
                 {
                     id: 0,
@@ -167,7 +167,7 @@ describe('LeaseSearchPageComponent', () => {
         const startDate = new Date(1616149050000)
         const endDate = new Date(1616149050000 + 3600000)
 
-        let expectedLeaseData: any = [
+        const expectedLeaseData: any = [
             ['MAC address', '01:02:03:04:05:06'],
             ['Client Identifier', '01:02:03:04'],
             ['Hostname', 'faq.example.org'],
@@ -184,7 +184,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // For each table row, compare its contents with the expected data.
         let i = 0
-        for (let row of rows) {
+        for (const row of rows) {
             expect(row.children.length).toBe(2)
             expect(row.children[0].nativeElement.innerText).toBe(expectedLeaseData[i][0] + ':')
             expect(row.children[1].nativeElement.innerText).toBe(expectedLeaseData[i][1])
@@ -307,7 +307,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // For each table row, compare its contents with the expected data.
         let i = 0
-        for (let row of rows) {
+        for (const row of rows) {
             expect(row.children.length).toBe(2)
             expect(row.children[0].nativeElement.innerText).toBe(expectedLeaseData[i][0] + ':')
             expect(row.children[1].nativeElement.innerText).toBe(expectedLeaseData[i][1])
@@ -331,7 +331,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // For each table row, compare its contents with the expected data.
         i = 0
-        for (let row of rows) {
+        for (const row of rows) {
             expect(row.children.length).toBe(2)
             expect(row.children[0].nativeElement.innerText).toBe(expectedLeaseData[i][0] + ':')
             expect(row.children[1].nativeElement.innerText).toBe(expectedLeaseData[i][1])
