@@ -106,7 +106,7 @@ export class LeaseSearchPageComponent implements OnInit {
                 // unique identifiers. The unique identifiers are required as
                 // the data keys in the expandable table.
                 map((data) => {
-                    if (data.items) {
+                    if (data.hasOwnProperty('items')) {
                         // For each returned lease assign a unique id.
                         let id = 1
                         for (const lease of data.items) {
@@ -161,6 +161,27 @@ export class LeaseSearchPageComponent implements OnInit {
                 break
             }
         }
+    }
+
+    /**
+     * Decodes lease type.
+     *
+     * @param leaseType lease type returned by Kea.
+     * @returns IPv6 address (IA_NA) or IPv6 prefix (IA_PD).
+     */
+    leaseTypeAsText(leaseType) {
+        if (!leaseType) {
+            return 'IPv4 address'
+        }
+        switch (leaseType) {
+            case 'IA_NA':
+                return 'IPv6 address (IA_NA)'
+            case 'IA_PD':
+                return 'IPv6 prefix (IA_PD)'
+            default:
+                break
+        }
+        return 'Unknown'
     }
 
     /**
