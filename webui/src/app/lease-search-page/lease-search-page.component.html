@@ -12,8 +12,8 @@
     </div>
 </app-breadcrumbs>
 
-<div>
-    <div style="margin: 0 0 10px 5px; padding-top: 30px">
+<div class="p-grid">
+    <div class="p-col-12" style="margin: 0 0 10px 5px; padding-top: 30px">
         <span>
             <input
                 type="text"
@@ -65,7 +65,7 @@
         </span>
     </div>
 
-    <div *ngIf="erredApps && erredApps.length > 0" style="margin: 0 0 10px 5px">
+    <div *ngIf="erredApps && erredApps.length > 0" class="p-col-4" style="margin: 0 0 10px 5px">
         <p-messages id="erred-apps-message" [closable]="false" severity="warn">
             <ng-template pTemplate>
                 <div>
@@ -83,7 +83,7 @@
         </p-messages>
     </div>
 
-    <div style="margin: 0 0 10px 5px">
+    <div class="p-col-12" style="margin: 0 0 10px 5px">
         <p-table id="leases-table" [value]="leases" dataKey="id">
             <ng-template pTemplate="header">
                 <tr>
