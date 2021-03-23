@@ -3,8 +3,7 @@
         <p>
             This page offers a simple DHCP leases search engine. It utilizes Kea control channel to find leases by an IP
             address, delegated prefix, client identifier, DHCPv6 DUID, or hostname. Type one of these parameters in the
-            search box and click the Search button. The engine will find all matching leases on the monitored Kea
-            servers running
+            search box and press Enter. The engine will find all matching leases on the monitored Kea servers running
             <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#lease-cmds-lease-commands"
                 >lease_cmds hooks library</a
             >. The Kea servers not running this hooks library are excluded from the search.
@@ -15,6 +14,8 @@
 <div class="p-grid">
     <div class="p-col-12" style="margin: 0 0 10px 5px; padding-top: 30px">
         <span>
+            <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
+            Search leases:
             <input
                 type="text"
                 id="leases-search-input"
@@ -24,14 +25,6 @@
                 size="36"
                 (keyup)="handleKeyUp($event)"
             />
-            <button
-                pButton
-                class="ui-button-warning"
-                type="button"
-                icon="pi pi-search"
-                iconPos="left"
-                (click)="searchLeases()"
-            ></button>
             <app-help-tip title="leases search" id="leases-search-help-button">
                 <p>
                     Use the input box to specify a searched lease. You can search the lease by one of the following
