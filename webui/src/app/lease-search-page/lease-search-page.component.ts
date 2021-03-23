@@ -106,7 +106,7 @@ export class LeaseSearchPageComponent implements OnInit {
                 // unique identifiers. The unique identifiers are required as
                 // the data keys in the expandable table.
                 map((data) => {
-                    if (data.hasOwnProperty('items')) {
+                    if (data.items) {
                         // For each returned lease assign a unique id.
                         let id = 1
                         for (const lease of data.items) {
