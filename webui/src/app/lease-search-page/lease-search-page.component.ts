@@ -7,6 +7,18 @@ import { DHCPService } from '../backend/api/api'
 import { LocaltimePipe } from '../localtime.pipe'
 
 /**
+ * Enumeration specifying the status of the leases search.
+ *
+ * The status indicates if the lease search was never started,
+ * is in progress or was completed.
+ */
+enum LeasesSearchStatus {
+    NotSearched,
+    Searching,
+    Searched,
+}
+
+/**
  * Component providing an input box to search for DHCP leases.
  *
  * User should type one of the lease properties in the input box in
@@ -30,7 +42,19 @@ import { LocaltimePipe } from '../localtime.pipe'
     styleUrls: ['./lease-search-page.component.sass'],
 })
 export class LeaseSearchPageComponent implements OnInit {
+    public Status = LeasesSearchStatus
+
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Leases Search' }]
+
+    /**
+     * Leases search status indicator.
+     *
+     * Holds the information if any attempt to search a lease was
+     * made, the search is in progress or the search was finished.
+     * This information is used to produce the results table contents
+     * when leases collection is empty.
+     */
+    searchStatus = this.Status.NotSearched
 
     /**
      * Boolean flag indicating if at least one search attempt has been made.
@@ -99,6 +123,10 @@ export class LeaseSearchPageComponent implements OnInit {
         // Remember the text used for search. It will be used to display
         // information accompanying the search results.
         this.lastSearchText = searchText
+        // Activate a spinner indicating that the search is in progress.
+        this.searchStatus = this.Status.Searching
+        this.leases = []
+        this.erredApps = []
         this.dhcpApi
             .getLeases(searchText)
             .pipe(
@@ -122,7 +150,7 @@ export class LeaseSearchPageComponent implements OnInit {
                     // Fetching leases successful.
                     this.leases = data.items
                     this.erredApps = data.erredApps
-                    this.searched = true
+                    this.searchStatus = this.Status.Searched
                 },
                 (err) => {
                     // Fetching leases erred.
@@ -139,7 +167,7 @@ export class LeaseSearchPageComponent implements OnInit {
 
                     this.leases = []
                     this.erredApps = []
-                    this.searched = true
+                    this.searchStatus = this.Status.Searched
                 }
             )
     }

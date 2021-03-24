@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { async, fakeAsync, tick, ComponentFixture, TestBed } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
@@ -54,7 +54,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(dhcpApi.getLeases).not.toHaveBeenCalled()
     })
 
-    it('should trigger leases search', () => {
+    it('should trigger leases search', fakeAsync(() => {
         const searchInput = fixture.debugElement.query(By.css('#leases-search-input'))
         const searchInputElement = searchInput.nativeElement
 
@@ -81,6 +81,7 @@ describe('LeaseSearchPageComponent', () => {
         searchInputElement.value = '192.1.0.1'
         searchInputElement.dispatchEvent(new Event('input'))
         searchInputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }))
+        tick()
         fixture.detectChanges()
 
         // Make sure that search is triggered.
@@ -89,7 +90,7 @@ describe('LeaseSearchPageComponent', () => {
         // Make sure that the information was correctly populated.
         expect(component.searchText).toBe('192.1.0.1')
         expect(component.lastSearchText).toBe('192.1.0.1')
-        expect(component.searched).toBeTrue()
+        expect(component.searchStatus).toBe(component.Status.Searched)
         expect(component.leases.length).toBe(1)
         expect(component.leases[0].hasOwnProperty('id')).toBeTrue()
         expect(component.leases[0].id).toBe(1)
@@ -97,7 +98,7 @@ describe('LeaseSearchPageComponent', () => {
         // A warning message informing about erred apps should not be displayed.
         const erredAppsMessage = fixture.debugElement.query(By.css('#erred-apps-message'))
         expect(erredAppsMessage).toBeNull()
-    })
+    }))
 
     it('should return correct lease state name', () => {
         expect(component.leaseStateAsText(null)).toBe('Valid')
@@ -158,37 +159,49 @@ describe('LeaseSearchPageComponent', () => {
         expandButton.click()
         fixture.detectChanges()
 
-        // Find the table holding expanded information.
+        // Find the tables holding expanded information.
         const tables = fixture.debugElement.queryAll(By.css('table'))
-        expect(tables.length).toBe(2)
-        const expandedTable = tables[1]
+        expect(tables.length).toBe(4)
 
         // Find allocation and expiration time.
         const startDate = new Date(1616149050000)
         const endDate = new Date(1616149050000 + 3600000)
 
+        // Expected data in various tables within the expanded row.
         const expectedLeaseData: any = [
-            ['MAC address', '01:02:03:04:05:06'],
-            ['Client Identifier', '01:02:03:04'],
-            ['Hostname', 'faq.example.org'],
-            ['Forward DDNS', 'no'],
-            ['Reverse DDNS', 'yes'],
-            ['Subnet Identifier', '123'],
-            ['Valid Lifetime', '3600 seconds'],
-            ['Allocated at', datetimeToLocal(startDate)],
-            ['Expires at', datetimeToLocal(endDate)],
+            [
+                ['MAC address', '01:02:03:04:05:06'],
+                ['Client Identifier', '01:02:03:04'],
+            ],
+            [
+                ['Subnet Identifier', '123'],
+                ['Valid Lifetime', '3600 seconds'],
+                ['Allocated at', datetimeToLocal(startDate)],
+                ['Expires at', datetimeToLocal(endDate)],
+            ],
+            [
+                ['Hostname', 'faq.example.org'],
+                ['Forward DDNS', 'no'],
+                ['Reverse DDNS', 'yes'],
+            ],
         ]
 
-        const rows = expandedTable.queryAll(By.css('tr'))
-        expect(rows.length).toBe(expectedLeaseData.length)
+        // Second, third and forth tables should contain expanded lease information.
+        // For each table check if the data is correct.
+        let tableIndex = 1
+        for (const expectedDataGroup of expectedLeaseData) {
+            const rows = tables[tableIndex].queryAll(By.css('tr'))
+            expect(rows.length).toBe(expectedDataGroup.length)
 
-        // For each table row, compare its contents with the expected data.
-        let i = 0
-        for (const row of rows) {
-            expect(row.children.length).toBe(2)
-            expect(row.children[0].nativeElement.innerText).toBe(expectedLeaseData[i][0] + ':')
-            expect(row.children[1].nativeElement.innerText).toBe(expectedLeaseData[i][1])
-            i++
+            // For each table row, compare its contents with the expected data.
+            let i = 0
+            for (const row of rows) {
+                expect(row.children.length).toBe(2)
+                expect(row.children[0].nativeElement.innerText).toBe(expectedDataGroup[i][0] + ':')
+                expect(row.children[1].nativeElement.innerText).toBe(expectedDataGroup[i][1])
+                i++
+            }
+            tableIndex++
         }
 
         // Test summary.
@@ -281,61 +294,78 @@ describe('LeaseSearchPageComponent', () => {
 
         // Find the table holding expanded information.
         const tables = fixture.debugElement.queryAll(By.css('table'))
-        expect(tables.length).toBe(3)
-        let expandedTable = tables[1]
+        expect(tables.length).toBe(6)
 
         // Find allocation and expiration time.
         const startDate = new Date(1616149050000)
         const endDate = new Date(1616149050000 + 1800000)
 
         let expectedLeaseData: any = [
-            ['MAC address', '01:02:03:04:05:06'],
-            ['DUID', '01:02:03:04'],
-            ['Hostname', 'faq.example.org'],
-            ['Forward DDNS', 'yes'],
-            ['Reverse DDNS', 'no'],
-            ['Subnet Identifier', '234'],
-            ['IAID', '12'],
-            ['Preferred Lifetime', '900 seconds'],
-            ['Valid Lifetime', '1800 seconds'],
-            ['Allocated at', datetimeToLocal(startDate)],
-            ['Expires at', datetimeToLocal(endDate)],
+            [
+                ['MAC address', '01:02:03:04:05:06'],
+                ['DUID', '01:02:03:04'],
+            ],
+            [
+                ['Subnet Identifier', '234'],
+                ['IAID', '12'],
+                ['Preferred Lifetime', '900 seconds'],
+                ['Valid Lifetime', '1800 seconds'],
+                ['Allocated at', datetimeToLocal(startDate)],
+                ['Expires at', datetimeToLocal(endDate)],
+            ],
+            [
+                ['Hostname', 'faq.example.org'],
+                ['Forward DDNS', 'yes'],
+                ['Reverse DDNS', 'no'],
+            ],
         ]
 
-        let rows = expandedTable.queryAll(By.css('tr'))
-        expect(rows.length).toBe(expectedLeaseData.length)
+        // Second and further tables should contain expanded lease information.
+        // For each table check if the data is correct.
+        let tableIndex = 1
+        for (const expectedDataGroup of expectedLeaseData) {
+            const rows = tables[tableIndex].queryAll(By.css('tr'))
+            expect(rows.length).toBe(expectedDataGroup.length)
 
-        // For each table row, compare its contents with the expected data.
-        let i = 0
-        for (const row of rows) {
-            expect(row.children.length).toBe(2)
-            expect(row.children[0].nativeElement.innerText).toBe(expectedLeaseData[i][0] + ':')
-            expect(row.children[1].nativeElement.innerText).toBe(expectedLeaseData[i][1])
-            i++
+            // For each table row, compare its contents with the expected data.
+            let i = 0
+            for (const row of rows) {
+                expect(row.children.length).toBe(2)
+                expect(row.children[0].nativeElement.innerText).toBe(expectedDataGroup[i][0] + ':')
+                expect(row.children[1].nativeElement.innerText).toBe(expectedDataGroup[i][1])
+                i++
+            }
+            tableIndex++
         }
 
-        expandedTable = tables[2]
-
         expectedLeaseData = [
-            ['DUID', '01:02:03:05'],
-            ['Subnet Identifier', '345'],
-            ['IAID', '13'],
-            ['Preferred Lifetime', '900 seconds'],
-            ['Valid Lifetime', '1800 seconds'],
-            ['Allocated at', datetimeToLocal(startDate)],
-            ['Expires at', datetimeToLocal(endDate)],
+            [['DUID', '01:02:03:05']],
+            [
+                ['Subnet Identifier', '345'],
+                ['IAID', '13'],
+                ['Preferred Lifetime', '900 seconds'],
+                ['Valid Lifetime', '1800 seconds'],
+                ['Allocated at', datetimeToLocal(startDate)],
+                ['Expires at', datetimeToLocal(endDate)],
+            ],
         ]
 
-        rows = expandedTable.queryAll(By.css('tr'))
-        expect(rows.length).toBe(expectedLeaseData.length)
+        // Fifth and sixth table should contain expanded lease information.
+        // For each table check if the data is correct.
+        tableIndex = 4
+        for (const expectedDataGroup of expectedLeaseData) {
+            const rows = tables[tableIndex].queryAll(By.css('tr'))
+            expect(rows.length).toBe(expectedDataGroup.length)
 
-        // For each table row, compare its contents with the expected data.
-        i = 0
-        for (const row of rows) {
-            expect(row.children.length).toBe(2)
-            expect(row.children[0].nativeElement.innerText).toBe(expectedLeaseData[i][0] + ':')
-            expect(row.children[1].nativeElement.innerText).toBe(expectedLeaseData[i][1])
-            i++
+            // For each table row, compare its contents with the expected data.
+            let i = 0
+            for (const row of rows) {
+                expect(row.children.length).toBe(2)
+                expect(row.children[0].nativeElement.innerText).toBe(expectedDataGroup[i][0] + ':')
+                expect(row.children[1].nativeElement.innerText).toBe(expectedDataGroup[i][1])
+                i++
+            }
+            tableIndex++
         }
 
         // Test summary.
@@ -362,7 +392,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(erredAppsMessage).not.toBeNull()
     })
 
-    it('should handle communication error', () => {
+    it('should handle communication error', fakeAsync(() => {
         // Set erred apps to non-empty array.
         component.erredApps = [
             {
@@ -397,13 +427,14 @@ describe('LeaseSearchPageComponent', () => {
         spyOn(msgService, 'add')
 
         component.searchLeases()
+        tick()
 
         // The lease information and metadata should have been cleared.
         expect(component.leases.length).toBe(0)
         expect(component.erredApps.length).toBe(0)
-        expect(component.searched).toBeTrue()
+        expect(component.searchStatus).toBe(component.Status.Searched)
 
         // An error message should have been displayed.
         expect(msgService.add).toHaveBeenCalled()
-    })
+    }))
 })
