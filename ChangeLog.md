@@ -1,3 +1,8 @@
+* 136 [doc] marcin
+
+    Implemented Leases Search.
+    (Gitlab #509)
+
 * 135 [func] godfryd
 
     Added Grafana dashboard for DHCPv6. Enabled generating
