@@ -355,6 +355,53 @@ up to 60 seconds after it was applied. This interval is currently not configurab
    The list of host reservations must be manually refreshed by reloading the
    browser page to see the most recent updates fetched from the Kea servers.
 
+Leases Search
+~~~~~~~~~~~~~
+
+Stork has a utility to search DHCP leases on monitored Kea servers. It is helpful
+for troubleshooting issues with a particular IP address or delegated prefix.
+It is also helpful in resolving lease allocation issues for certain DHCP clients.
+The search mechanism utilizes Kea control commands to find leases on the monitored
+servers. An operator must ensure that Kea servers on which he intends to search
+the leases have the `lease_cmds hooks library <https://kea.readthedocs.io/en/latest/arm/hooks.html#lease-cmds-lease-commands>`_ loaded. Stork does not search leases on the Kea instances without
+this library.
+
+The leases search is available via the ``DHCP -> Leases Search`` menu. Type one
+of the searched lease properties in the search box:
+
+- IPv4 address, e.g. ``192.0.2.3``
+- IPv6 address or delegated prefix without prefix length, ``3000::``
+- MAC address, e.g. ``01:02:03:04:05:06``
+- DHCPv4 Client Identifier, e.g. ``01:02:03:04``
+- DHCPv6 DUID, e.g. ``00:02:00:00:00:04:05:06:07``
+- Hostname, e.g. ``myhost.example.org``
+
+Searching using partial text is currently not supported. For example: searching by
+partial IPv4 address ``192.0.2`` is not accepted by the search box. Partial MAC
+address ``01:02:03`` is accepted but will return no results. Specify the complete
+MAC address instead, e.g. ``01:02:03:04:05:06``.
+
+Alternatively, all three identifier types can be specified using the notation
+with spaces, e.g. ``01 02 03 04 05 06``, or the notation without any separator,
+e.g. ``010203040506``.
+
+The search utility automatically recognizes the specified lease type property and
+communicates with the Kea servers to find leases using appropriate commands. Each
+search attempt may result in several commands to multiple Kea servers. Therefore,
+it may take several seconds or more before Stork displays the search results.
+Suppose some Kea servers are unavailable or return an error. In that case, Stork
+shows leases found on the servers which returned success status, and displays a
+warning message containing the list of Kea servers that returned an error.
+
+If the same lease is found on two or more Kea servers, the results list contains
+all that lease occurrences. For example, if there is a pair of servers cooperating
+via HA hooks library, the servers exchange the lease information, and each of them
+maintains a copy of the lease database. In that case, the lease search on these
+servers typically returns two occurrences of the same lease.
+
+To display the detailed lease information click the expand button (``>``) in the
+first column for the selected lease.
+
 Kea High Availability Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
