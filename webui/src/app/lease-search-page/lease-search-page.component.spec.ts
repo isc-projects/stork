@@ -475,4 +475,48 @@ describe('LeaseSearchPageComponent', () => {
             expect(component.invalidSearchText).toBeFalse()
         }
     })
+
+    it('should display error message for wrong use of colons', () => {
+        const searchInput = fixture.debugElement.query(By.css('#leases-search-input'))
+        const searchInputElement = searchInput.nativeElement
+
+        const invalidTexts = [
+            { text: '00:', error: 'Invalid trailing colon.' },
+            { text: ':00', error: 'Invalid leading colon.' },
+            { text: '::00:', error: 'Invalid trailing colon.' },
+            { text: ':::', error: 'Invalid multiple consecutive colons.' },
+            { text: '20:::34', error: 'Invalid multiple consecutive colons.' },
+            { text: '20::::34', error: 'Invalid multiple consecutive colons.' },
+            { text: '20: 34::', error: 'Invalid whitespace near a colon.' },
+            { text: '20 :34', error: 'Invalid whitespace near a colon.' },
+            { text: '2001::db8::1', error: 'Invalid IPv6 address.' },
+        ]
+
+        for (const invalid of invalidTexts) {
+            searchInputElement.value = invalid.text
+            searchInputElement.dispatchEvent(new Event('input'))
+            searchInputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }))
+            fixture.detectChanges()
+
+            // Ensure that the hint is displayed.
+            const inputError = fixture.debugElement.query(By.css('#leases-search-input-error'))
+            expect(inputError).not.toBeNull()
+            expect(inputError.properties.innerText).toBe(invalid.error)
+            expect(component.invalidSearchText).toBeTrue()
+        }
+
+        // Make sure that valid search text is accepted.
+        const validTexts = ['::', '::1', '2001:db8:1::', '2001:db8::0']
+
+        for (const valid of validTexts) {
+            searchInputElement.value = valid
+            searchInputElement.dispatchEvent(new Event('input'))
+            searchInputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }))
+            fixture.detectChanges()
+
+            // Ensure that the hint is not displayed.
+            const inputError = fixture.debugElement.query(By.css('#leases-search-input-error'))
+            expect(inputError).toBeNull()
+        }
+    })
 })

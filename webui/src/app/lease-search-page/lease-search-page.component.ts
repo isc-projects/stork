@@ -79,6 +79,11 @@ export class LeaseSearchPageComponent implements OnInit {
     invalidSearchText = false
 
     /**
+     * Holds hint message displayed when search text is invalid.
+     */
+    invalidSearchTextError = ''
+
+    /**
      * Holds a list of leases found as a result of the previous search attempt.
      */
     leases: any[]
@@ -185,7 +190,7 @@ export class LeaseSearchPageComponent implements OnInit {
      * @param event event containing pressed key's name.
      */
     handleKeyUp(event) {
-        this.invalidSearchText = this.isInvalid()
+        this.validate()
         if (this.invalidSearchText) {
             return
         }
@@ -249,16 +254,84 @@ export class LeaseSearchPageComponent implements OnInit {
     }
 
     /**
-     * Checks if the current search string is invalid.
+     * Checks if the current search text is valid.
      *
-     * Currently, this function only checks if the current search text
-     * comprises partial IPv4 address. Searching by partial IP address
-     * is currently not supported and it is considered invalid.
-     * @returns true if the current search text is invalid.
+     * If the search text is invalid an approprate error message is raised.
+     * The following cases are considered invalid:
+     * - partial IPv4 address,
+     * - single colon,
+     * - single trailing colon,
+     * - single leading colon,
+     * - whitespaces near colons,
+     * - three or more consecutive colons,
+     * - IPv6 address having more than one occurence of double colons.
      */
-    private isInvalid() {
+    private validate() {
         const searchText = this.searchText.trim()
-        const regexp = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){1,2}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.{0,1}){0,1}$/
-        return regexp.test(searchText)
+        if (searchText.length === 0) {
+            this.clearSearchTextError()
+            return
+        }
+        // Partial IPv4 address.
+        let regexp = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){1,2}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.{0,1}){0,1}$/
+        if (regexp.test(searchText)) {
+            this.reportSearchTextError('Please enter the complete IPv4 address.')
+            return
+        }
+        // Single colon.
+        if (searchText.length === 1 && searchText[0] === ':') {
+            this.reportSearchTextError('Invalid single colon.')
+            return
+        }
+        // Trailing colon.
+        const lastTwo = searchText.slice(-2)
+        if (lastTwo[1] === ':' && lastTwo[0] !== ':') {
+            this.reportSearchTextError('Invalid trailing colon.')
+            return
+        }
+        // Leading colon.
+        if (searchText[0] === ':' && searchText[1] !== ':') {
+            this.reportSearchTextError('Invalid leading colon.')
+            return
+        }
+        // Whitespace near colon.
+        regexp = /(?:\s+:|:\s+)/
+        if (regexp.test(searchText)) {
+            this.reportSearchTextError('Invalid whitespace near a colon.')
+            return
+        }
+        // More than two consecutive colons.
+        regexp = /:{3,}/
+        if (regexp.test(searchText)) {
+            this.reportSearchTextError('Invalid multiple consecutive colons.')
+            return
+        }
+        // Invalid IPv6 address having two or more occurences of ::.
+        const matches = searchText.match(/::/g)
+        if (matches && matches.length > 1) {
+            this.reportSearchTextError('Invalid IPv6 address.')
+            return
+        }
+        // Everything is fine.
+        this.clearSearchTextError()
+    }
+
+    /**
+     * Indicates that search text is invalid.
+     *
+     * @param errorMessage error message displayed as a hint next to
+     *                     next to the search box.
+     */
+    private reportSearchTextError(errorMessage) {
+        this.invalidSearchText = true
+        this.invalidSearchTextError = errorMessage
+    }
+
+    /**
+     * Clears search text error message.
+     */
+    private clearSearchTextError() {
+        this.invalidSearchText = false
+        this.invalidSearchTextError = ''
     }
 }
