@@ -74,6 +74,11 @@ export class LeaseSearchPageComponent implements OnInit {
     lastSearchText = ''
 
     /**
+     * Flag indicating if the current search text is invalid.
+     */
+    invalidSearchText = false
+
+    /**
      * Holds a list of leases found as a result of the previous search attempt.
      */
     leases: any[]
@@ -180,6 +185,10 @@ export class LeaseSearchPageComponent implements OnInit {
      * @param event event containing pressed key's name.
      */
     handleKeyUp(event) {
+        this.invalidSearchText = this.isInvalid()
+        if (this.invalidSearchText) {
+            return
+        }
         switch (event.key) {
             case 'Enter': {
                 this.searchLeases()
@@ -237,5 +246,19 @@ export class LeaseSearchPageComponent implements OnInit {
             }
         }
         return 'Unknown'
+    }
+
+    /**
+     * Checks if the current search string is invalid.
+     *
+     * Currently, this function only checks if the current search text
+     * comprises partial IPv4 address. Searching by partial IP address
+     * is currently not supported and it is considered invalid.
+     * @returns true if the current search text is invalid.
+     */
+    private isInvalid() {
+        const searchText = this.searchText.trim()
+        const regexp = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){1,2}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.{0,1}){0,1}$/
+        return regexp.test(searchText)
     }
 }

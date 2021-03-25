@@ -437,4 +437,42 @@ describe('LeaseSearchPageComponent', () => {
         // An error message should have been displayed.
         expect(msgService.add).toHaveBeenCalled()
     }))
+
+    it('should display error message for partial IPv4 address', () => {
+        const searchInput = fixture.debugElement.query(By.css('#leases-search-input'))
+        const searchInputElement = searchInput.nativeElement
+
+        // Searching by partial addresses is not supported. Hint should be
+        // displayed when currently typed text is recognized as partial
+        // IPv4 address.
+        const partialAddresses = ['192.', '192.255', '192.255.', '192.255.0', '192.255.0.']
+
+        for (const partial of partialAddresses) {
+            searchInputElement.value = partial
+            searchInputElement.dispatchEvent(new Event('input'))
+            searchInputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }))
+            fixture.detectChanges()
+
+            // Ensure that the hint is displayed.
+            const inputError = fixture.debugElement.query(By.css('#leases-search-input-error'))
+            expect(inputError).not.toBeNull()
+            expect(inputError.properties.innerText).toBe('Please enter the complete IPv4 address.')
+            expect(component.invalidSearchText).toBeTrue()
+        }
+
+        // Text consisting of digits and full IPv4 address are valid.
+        const validTexts = ['192', '192.0.2.1']
+
+        for (const valid of validTexts) {
+            searchInputElement.value = valid
+            searchInputElement.dispatchEvent(new Event('input'))
+            searchInputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }))
+            fixture.detectChanges()
+
+            // Ensure that the hint is not displayed.
+            const inputError = fixture.debugElement.query(By.css('#leases-search-input-error'))
+            expect(inputError).toBeNull()
+            expect(component.invalidSearchText).toBeFalse()
+        }
+    })
 })
