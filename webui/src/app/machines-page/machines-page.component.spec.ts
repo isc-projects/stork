@@ -57,7 +57,7 @@ describe('MachinesPageComponent', () => {
 
         const showBtnEl = fixture.debugElement.query(By.css('#show-agent-installation-instruction-button'))
 
-        // show instruction but error should appear, so it shoult be handled
+        // show instruction but error should appear, so it should be handled
         showBtnEl.triggerEventHandler('click', null)
 
         // check if it is NOT displayed and server token is still empty
