@@ -1,20 +1,24 @@
 import { async, ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
-
-import { MachinesPageComponent } from './machines-page.component'
+import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
-import { ServicesService, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { By } from '@angular/platform-browser'
+import { of, throwError } from 'rxjs'
+
 import { MessageService } from 'primeng/api'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { TableModule } from 'primeng/table'
-import { By } from '@angular/platform-browser'
-import { of } from 'rxjs'
+
+import { MachinesPageComponent } from './machines-page.component'
+import { ServicesService, UsersService } from '../backend'
+import { LocaltimePipe } from '../localtime.pipe'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
     let fixture: ComponentFixture<MachinesPageComponent>
     let servicesApi: ServicesService
+    let msgService: MessageService
 
     beforeEach(fakeAsync(() => {
         TestBed.configureTestingModule({
@@ -22,15 +26,17 @@ describe('MachinesPageComponent', () => {
             imports: [
                 HttpClientTestingModule,
                 RouterTestingModule.withRoutes([{ path: 'machines/all', component: MachinesPageComponent }]),
+                FormsModule,
                 SelectButtonModule,
                 TableModule,
             ],
-            declarations: [MachinesPageComponent],
+            declarations: [MachinesPageComponent, LocaltimePipe],
         }).compileComponents()
 
         fixture = TestBed.createComponent(MachinesPageComponent)
         component = fixture.componentInstance
         servicesApi = fixture.debugElement.injector.get(ServicesService)
+        msgService = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
         tick()
     }))
@@ -56,13 +62,32 @@ describe('MachinesPageComponent', () => {
         expect(servicesApi.getMachinesServerToken).toHaveBeenCalled()
         expect(component.serverToken).toBe('ABC')
 
+        // POSITIVE case of regen token
+
         // regenerate server token
         const regenerateMachinesServerTokenResp: any = { token: 'DEF' }
-        spyOn(servicesApi, 'regenerateMachinesServerToken').and.returnValue(of(regenerateMachinesServerTokenResp))
+        const regenSpy = spyOn(servicesApi, 'regenerateMachinesServerToken')
+        regenSpy.and.returnValue(of(regenerateMachinesServerTokenResp))
         component.regenerateServerToken()
 
         // check if server token has changed
         expect(component.serverToken).toBe('DEF')
+
+        // NEGATIVE case of regen token
+
+        const msgSrvAddSpy = spyOn(msgService, 'add')
+
+        // regenerate server token but it returns error, so in UI token should not change
+        const regenerateMachinesServerTokenRespErr: any = { statusText: 'some error' }
+        regenSpy.and.returnValue(throwError(regenerateMachinesServerTokenRespErr))
+        component.regenerateServerToken()
+
+        // check if server token has NOT changed
+        expect(component.serverToken).toBe('DEF')
+
+        // error message should be issued
+        expect(msgSrvAddSpy.calls.count()).toBe(1)
+        expect(msgSrvAddSpy.calls.argsFor(0)[0]['severity']).toBe('error')
 
         // close instruction
         const closeBtnEl = fixture.debugElement.query(By.css('#close-agent-installation-instruction-button'))
@@ -73,9 +98,7 @@ describe('MachinesPageComponent', () => {
     })
 
     it('should list machines', fakeAsync(() => {
-        // TODO: Automatic updating showUnauthorized does not work as registerOnChange is not called on selectButton
-        // during component creation. fakeAsync and tick in beforeEach should help but they do not :(
-        // expect(component.showUnauthorized).toBeFalse()
+        expect(component.showUnauthorized).toBeFalse()
 
         // get references to select buttons
         const selectBtns = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .ui-button')
@@ -83,24 +106,40 @@ describe('MachinesPageComponent', () => {
         const unauthSelectBtnEl = selectBtns[1]
 
         // prepare response for call to getMachines for (un)authorized machines
-        const getUnauthorizedMachinesResp: any = { items: [{}, {}, {}], total: 3 }
-        const getAuthorizedMachinesResp: any = { items: [{}, {}], total: 2 }
+        const getUnauthorizedMachinesResp: any = {
+            items: [{ hostname: 'aaa' }, { hostname: 'bbb' }, { hostname: 'ccc' }],
+            total: 3,
+        }
+        const getAuthorizedMachinesResp: any = { items: [{ hostname: 'zzz' }, { hostname: 'xxx' }], total: 2 }
         const gmSpy = spyOn(servicesApi, 'getMachines')
         gmSpy.withArgs(0, 1, null, null, false).and.returnValue(of(getUnauthorizedMachinesResp))
         gmSpy.withArgs(0, 10, undefined, undefined, false).and.returnValue(of(getUnauthorizedMachinesResp))
         gmSpy.withArgs(0, 10, undefined, undefined, true).and.returnValue(of(getAuthorizedMachinesResp))
 
         // show unauthorized machines
-        component.showUnauthorized = true
         unauthSelectBtnEl.dispatchEvent(new Event('click'))
-        // expect(component.showUnauthorized).toBeTrue()
+        fixture.detectChanges()
+
+        expect(component.showUnauthorized).toBeTrue()
         expect(component.totalMachines).toBe(3)
 
+        // check if hostnames are displayed
+        const nativeEl = fixture.nativeElement
+        expect(nativeEl.textContent).toContain('aaa')
+        expect(nativeEl.textContent).toContain('bbb')
+        expect(nativeEl.textContent).toContain('ccc')
+
         // show authorized machines
-        component.showUnauthorized = false
         authSelectBtnEl.dispatchEvent(new Event('click'))
-        // expect(component.showUnauthorized).toBeTrue()
+        fixture.detectChanges()
+
+        expect(component.showUnauthorized).toBeFalse()
         expect(component.totalMachines).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(3)
+
+        // check if hostnames are displayed
+        expect(nativeEl.textContent).toContain('zzz')
+        expect(nativeEl.textContent).toContain('xxx')
+        expect(nativeEl.textContent).not.toContain('aaa')
     }))
 })
