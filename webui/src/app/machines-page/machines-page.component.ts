@@ -507,6 +507,7 @@ export class MachinesPageComponent implements OnInit {
         this.servicesApi.getMachinesServerToken().subscribe(
             (data) => {
                 this.serverToken = data.token
+                this.displayAgentInstallationInstruction = true
             },
             (err) => {
                 let msg = err.statusText
@@ -521,7 +522,6 @@ export class MachinesPageComponent implements OnInit {
                 })
             }
         )
-        this.displayAgentInstallationInstruction = true
     }
 
     /**
