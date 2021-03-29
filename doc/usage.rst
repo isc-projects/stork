@@ -370,7 +370,7 @@ The leases search is available via the ``DHCP -> Leases Search`` menu. Type one
 of the searched lease properties in the search box:
 
 - IPv4 address, e.g. ``192.0.2.3``
-- IPv6 address or delegated prefix without prefix length, ``3000::``
+- IPv6 address or delegated prefix without prefix length, ``2001:db8::1``
 - MAC address, e.g. ``01:02:03:04:05:06``
 - DHCPv4 Client Identifier, e.g. ``01:02:03:04``
 - DHCPv6 DUID, e.g. ``00:02:00:00:00:04:05:06:07``
