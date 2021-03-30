@@ -256,7 +256,7 @@ export class LeaseSearchPageComponent implements OnInit {
     /**
      * Checks if the current search text is valid.
      *
-     * If the search text is invalid an approprate error message is raised.
+     * If the search text is invalid an appropriate error message is raised.
      * The following cases are considered invalid:
      * - partial IPv4 address,
      * - single colon,
@@ -264,7 +264,7 @@ export class LeaseSearchPageComponent implements OnInit {
      * - single leading colon,
      * - whitespaces near colons,
      * - three or more consecutive colons,
-     * - IPv6 address having more than one occurence of double colons.
+     * - IPv6 address having more than one occurrence of double colons.
      */
     private validate() {
         const searchText = this.searchText.trim()
@@ -306,7 +306,7 @@ export class LeaseSearchPageComponent implements OnInit {
             this.reportSearchTextError('Invalid multiple consecutive colons.')
             return
         }
-        // Invalid IPv6 address having two or more occurences of ::.
+        // Invalid IPv6 address having two or more occurrences of ::.
         const matches = searchText.match(/::/g)
         if (matches && matches.length > 1) {
             this.reportSearchTextError('Invalid IPv6 address.')

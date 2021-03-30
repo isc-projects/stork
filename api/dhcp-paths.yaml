@@ -13,7 +13,7 @@
       parameters:
         - name: text
           in: query
-          description: Should contain an IP address, MAC addres, client id or hostname.
+          description: Should contain an IP address, MAC address, client id or hostname.
           type: string
       responses:
         200:

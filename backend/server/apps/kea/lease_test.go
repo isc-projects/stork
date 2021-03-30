@@ -625,7 +625,7 @@ func TestGetLeasesByPropertiesSecondError(t *testing.T) {
 	require.EqualValues(t, 3600, lease.ValidLifetime)
 }
 
-// Test validation of the Kea servers' iunvalid responses or indicating errors.
+// Test validation of the Kea servers' invalid responses or indicating errors.
 func TestValidateGetLeasesResponse(t *testing.T) {
 	validArgs := &struct{}{}
 	invalidArgs := (*struct{})(nil)

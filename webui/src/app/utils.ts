@@ -128,7 +128,7 @@ export function getGrafanaSubnetTooltip(subnet, machine) {
  * and expected flags are passed as flags.
  */
 export function extractKeyValsAndPrepareQueryParams(text, keys, flags) {
-    // find all occurences key=val in the text
+    // find all occurrences key=val in the text
     const re = /(\w+):(\w*)/g
     const matches = []
     let match = re.exec(text)
