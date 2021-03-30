@@ -136,33 +136,77 @@
                             <!-- Overview -->
                             <div style="margin-bottom: 14px" [ngClass]="{ disabled: !daemon.active }">
                                 <h3>Overview</h3>
-                                <table style="width: 100%">
-                                    <tr>
-                                        <td style="width: 10rem">Version</td>
-                                        <td>{{ daemon.version }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 10rem; vertical-align: top">Version Ext</td>
-                                        <td [innerHTML]="daemon.extendedVersion"></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="with: 10rem; vertical-align: top">Hooks</td>
-                                        <td>
+                                <div class="p-grid">
+                                    <div class="p-col-6">
+                                        <p-fieldset legend="Daemon Information">
+                                            <table style="width: 100%">
+                                                <tr>
+                                                    <td style="width: 10rem">Version</td>
+                                                    <td>{{ daemon.version }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 10rem; vertical-align: top">Version Ext</td>
+                                                    <td [innerHTML]="daemon.extendedVersion"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 10rem; vertical-align: top">Uptime</td>
+                                                    <td>{{ showDuration(daemon.uptime) }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 10rem; vertical-align: top">Last Reloaded At</td>
+                                                    <td>{{ daemon.reloadedAt | localtime }}</td>
+                                                </tr>
+                                            </table>
+                                        </p-fieldset>
+                                    </div>
+                                    <div class="p-col-6">
+                                        <p-fieldset legend="Hooks">
                                             <div *ngFor="let hook of daemon.hooks">
                                                 {{ hook }}
                                             </div>
                                             <div *ngIf="daemon.hooks.length === 0" style="color: #aaa">no hooks</div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 10rem; vertical-align: top">Uptime</td>
-                                        <td>{{ showDuration(daemon.uptime) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 10rem; vertical-align: top">Last Reloaded At</td>
-                                        <td>{{ daemon.reloadedAt | localtime }}</td>
-                                    </tr>
-                                </table>
+                                        </p-fieldset>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Database Configurations -->
+                            <div style="margin-bottom: 14px">
+                                <h3>Data Storage</h3>
+                                <div class="p-grid">
+                                    <div class="p-col-6">
+                                        <p-fieldset legend="Files">
+                                            <table style="width: 100%">
+                                                <tr>
+                                                    <td style="width: 8rem">Configuration file:</td>
+                                                    <td>/etc/kea/kea.conf</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 8rem">Lease file:</td>
+                                                    <td>/var/run/kea/kea-dhcp4-leases.csv</td>
+                                                </tr>
+                                            </table>
+                                        </p-fieldset>
+                                    </div>
+                                    <div class="p-col-6"></div>
+                                    <div class="p-col-6">
+                                        <p-fieldset legend="Database backends">
+                                            <i style="color: grey" class="fa fa-database"></i>
+                                            MySQL database kea@localhost:
+                                            <ul style="list-style-type: none">
+                                                <li>Leases</li>
+                                                <li>Host Reservations</li>
+                                                <li>Config Backend></li>
+                                            </ul>
+
+                                            <i style="color: grey" class="fa fa-database"></i>
+                                            Postgres database kea@localhost:
+                                            <ul style="list-style-type: none">
+                                                <li>Forensic Logging</li>
+                                            </ul>
+                                        </p-fieldset>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- High Availability -->
