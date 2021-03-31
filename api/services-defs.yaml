@@ -1,3 +1,11 @@
+  File:
+    type: object
+    properties:
+      filetype:
+        type: string
+      filename:
+        type: string
+
   LogTarget:
     type: object
     properties:
@@ -209,6 +217,20 @@
           - $ref: '#/definitions/AppKea'
           - $ref: '#/definitions/AppBind9'
 
+  KeaDaemonDatabase:
+    type: object
+    properties:
+      backendType:
+        type: string
+      database:
+        type: string
+      host:
+        type: string
+      dataTypes:
+        type: array
+        items:
+          type: string
+
   KeaDaemon:
     type: object
     properties:
@@ -235,6 +257,14 @@
         type: array
         items:
           type: string
+      files:
+        type: array
+        items:
+          $ref: '#/definitions/File'
+      backends:
+        type: array
+        items:
+          $ref: '#/definitions/KeaDaemonDatabase'
       agentCommErrors:
         type: integer
       caCommErrors:

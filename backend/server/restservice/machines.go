@@ -14,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
+	keaconfig "isc.org/stork/appcfg/kea"
 	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
@@ -680,6 +681,76 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 	return rsp
 }
 
+// Merges information carried in the Kea database configuration into the map of
+// existing database configurations formatted to be sent over the REST API.
+// This function is called by the getKeaStorages function.
+func mergeKeaDatabase(keaDatabase *keaconfig.Database, dataType string, existingDatabases *map[string]*models.KeaDaemonDatabase) {
+	id := fmt.Sprintf("%s:%s@%s", keaDatabase.Type, keaDatabase.Name, keaDatabase.Host)
+	if existingDatabase, ok := (*existingDatabases)[id]; ok {
+		existingDatabase.DataTypes = append(existingDatabase.DataTypes, dataType)
+	} else {
+		newDatabase := &models.KeaDaemonDatabase{
+			BackendType: keaDatabase.Type,
+			Database:    keaDatabase.Name,
+			Host:        keaDatabase.Host,
+			DataTypes:   []string{dataType},
+		}
+		(*existingDatabases)[id] = newDatabase
+	}
+}
+
+// Parses Kea configuration, discovers all configured backends and returns them.
+// They are returned in two structures, one containing files and one containing
+// information about database connections in use. The first structure contains
+// files used by Memfile lease database backend and Forensic Logging hooks library.
+// If neither of them is used, this structure is empty.
+func getKeaStorages(config *dbmodel.KeaConfig) (files []*models.File, databases []*models.KeaDaemonDatabase) {
+	if config == nil {
+		return files, databases
+	}
+	foundDatabases := make(map[string]*models.KeaDaemonDatabase)
+	keaDatabases := config.GetAllDatabases()
+	// Leases.
+	if keaDatabases.Lease != nil {
+		if keaDatabases.Lease.Type == "memfile" {
+			// Storing leases in a lease file.
+			files = append(files, &models.File{
+				Filename: keaDatabases.Lease.Name,
+				Filetype: "Lease file",
+			})
+		} else {
+			// Storing leases in a database.
+			mergeKeaDatabase(keaDatabases.Lease, "Leases", &foundDatabases)
+		}
+	}
+	// Host reservations.
+	for i := range keaDatabases.Hosts {
+		mergeKeaDatabase(&keaDatabases.Hosts[i], "Host Reservations", &foundDatabases)
+	}
+	// Config backend.
+	for i := range keaDatabases.Config {
+		mergeKeaDatabase(&keaDatabases.Config[i], "Config Backend", &foundDatabases)
+	}
+	// Forensic logging.
+	if keaDatabases.Forensic != nil {
+		if len(keaDatabases.Forensic.Path) > 0 {
+			// Not logging to a database.
+			files = append(files, &models.File{
+				Filename: keaDatabases.Forensic.Path,
+				Filetype: "Forensic Logging",
+			})
+		} else {
+			// Logging to a database.
+			mergeKeaDatabase(keaDatabases.Forensic, "Forensic Logging", &foundDatabases)
+		}
+	}
+	// Return found databases as a list.
+	for _, d := range foundDatabases {
+		databases = append(databases, d)
+	}
+	return files, databases
+}
+
 func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	app := models.App{
 		ID:      dbApp.ID,
@@ -764,6 +835,10 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 					Output:   logTarget.Output,
 				})
 			}
+
+			// Files and backends.
+			dmn.Files, dmn.Backends = getKeaStorages(d.KeaDaemon.Config)
+
 			keaDaemons = append(keaDaemons, dmn)
 		}
 
@@ -936,9 +1011,7 @@ func (r *RestAPI) GetApp(ctx context.Context, params services.GetAppParams) midd
 	}
 
 	var a *models.App
-	if dbApp.Type == dbmodel.AppTypeBind9 {
-		a = r.appToRestAPI(dbApp)
-	} else if dbApp.Type == dbmodel.AppTypeKea {
+	if dbApp.Type == dbmodel.AppTypeBind9 || dbApp.Type == dbmodel.AppTypeKea {
 		a = r.appToRestAPI(dbApp)
 	}
 	rsp := services.NewGetAppOK().WithPayload(a)

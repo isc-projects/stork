@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/pki"
 	"isc.org/stork/server/agentcomm"
@@ -1824,4 +1825,119 @@ func TestRenameApp(t *testing.T) {
 	require.IsType(t, &services.RenameAppDefault{}, rsp)
 	defaultRsp = rsp.(*services.RenameAppDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+}
+
+// This test verifies that database backend configurations are parsed correctly
+// from the Kea configuration and formatted such that they can be returned over
+// the REST API.
+func TestGetKeaStorages(t *testing.T) {
+	configString := `{
+        "Dhcp4": {
+            "lease-database": {
+                "type": "memfile",
+                "name": "/tmp/leases4.csv"
+            },
+            "hosts-database": {
+                "type": "mysql",
+                "name": "kea-hosts-mysql",
+                "host": "mysql.example.org"
+            },
+            "config-control": {
+                "config-databases": [
+                    {
+                        "type": "mysql",
+                        "name": "kea-config-mysql"
+                    }
+                ]
+            },
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_legal_log.so",
+                    "parameters": {
+                         "path": "/tmp/legal_log.log"
+                    }
+                }
+            ]
+        }
+    }`
+	keaConfig, err := keaconfig.NewFromJSON(configString)
+	require.NoError(t, err)
+	require.NotNil(t, keaConfig)
+
+	files, databases := getKeaStorages(keaConfig)
+	require.Len(t, files, 2)
+	require.Len(t, databases, 2)
+
+	// Ensure that the lease file is present.
+	require.Equal(t, "/tmp/leases4.csv", files[0].Filename)
+	require.Equal(t, "Lease file", files[0].Filetype)
+
+	// Ensure that the forensic logging file is present.
+	require.Equal(t, "/tmp/legal_log.log", files[1].Filename)
+	require.Equal(t, "Forensic Logging", files[1].Filetype)
+
+	// Test database configurations.
+	for _, d := range databases {
+		if d.Database == "kea-hosts-mysql" {
+			require.Equal(t, "mysql", d.BackendType)
+			require.Equal(t, "mysql.example.org", d.Host)
+		} else {
+			require.Equal(t, "mysql", d.BackendType)
+			require.Equal(t, "kea-config-mysql", d.Database)
+			require.Equal(t, "localhost", d.Host)
+		}
+	}
+}
+
+// This test verifies that the lease database configuration storing the
+// leases in an SQL database is correctly recognized.
+func TestGetKeaStoragesLeaseDatabase(t *testing.T) {
+	configString := `{
+        "Dhcp4": {
+            "lease-database": {
+                "type": "postgresql",
+                "name": "kea"
+            }
+        }
+    }`
+	keaConfig, err := keaconfig.NewFromJSON(configString)
+	require.NoError(t, err)
+	require.NotNil(t, keaConfig)
+
+	files, databases := getKeaStorages(keaConfig)
+	require.Empty(t, files, 0)
+	require.Len(t, databases, 1)
+
+	require.Equal(t, "postgresql", databases[0].BackendType)
+	require.Equal(t, "kea", databases[0].Database)
+	require.Equal(t, "localhost", databases[0].Host)
+}
+
+// This test verifies that the forensic logging database configuration is
+// correctly recognized.
+func TestGetKeaStoragesForensicDatabase(t *testing.T) {
+	configString := `{
+        "Dhcp4": {
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_legal_log.so",
+                    "parameters": {
+                         "type": "mysql",
+                         "name": "kea"
+                    }
+                }
+            ]
+        }
+    }`
+	keaConfig, err := keaconfig.NewFromJSON(configString)
+	require.NoError(t, err)
+	require.NotNil(t, keaConfig)
+
+	files, databases := getKeaStorages(keaConfig)
+	require.Empty(t, files, 0)
+	require.Len(t, databases, 1)
+
+	require.Equal(t, "mysql", databases[0].BackendType)
+	require.Equal(t, "kea", databases[0].Database)
+	require.Equal(t, "localhost", databases[0].Host)
 }
