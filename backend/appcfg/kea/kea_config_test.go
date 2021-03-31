@@ -1,6 +1,7 @@
 package keaconfig
 
 import (
+	"fmt"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
@@ -596,4 +597,195 @@ func TestGetLocalIPv6SubnetID(t *testing.T) {
 	require.EqualValues(t, 234, cfg.GetLocalSubnetID("2001:db8:2::/64"))
 	require.EqualValues(t, 345, cfg.GetLocalSubnetID("2001:db8:3::/64"))
 	require.EqualValues(t, 0, cfg.GetLocalSubnetID("2001:db8:4::/64"))
+}
+
+// Test that all database connections configurations are parsed and returned
+// correctly: lease-database, hosts-database, hosts-databases, config-databases
+// and forensic logging config.
+func TestGetAllDatabases(t *testing.T) {
+	// Create template configuration into which we will be inserting
+	// different configurations in different tests.
+	configTemplate := `{
+        "Dhcp4": {
+            %s
+            %s
+            %s
+            "config-control": {
+                %s
+            },
+            "hooks-libraries": [
+                %s
+            ]
+        }
+    }`
+	leaseDatabase := `"lease-database": {
+        "type": "mysql",
+        "name": "kea-lease-mysql"
+    },`
+	hostsDatabase := `"hosts-database": {
+        "type": "mysql",
+        "name": "kea-hosts-mysql",
+        "host": "mysql.example.org"
+    },`
+	hostsDatabases := `"hosts-databases": [
+        {
+            "type": "postgresql",
+            "name": "kea-hosts-pgsql",
+            "host": "localhost"
+        },
+        {
+            "type": "mysql",
+            "name": "kea-hosts-mysql"
+        }
+    ],`
+	configDatabases := `"config-databases": [
+        {
+            "type": "mysql",
+            "name": "kea-hosts-mysql"
+        },
+        {
+            "type": "postgresql",
+            "name": "kea-hosts-pgsql",
+            "host": "localhost"
+        }
+    ]`
+	legalConfig := `{
+        "library": "/usr/lib/kea/libdhcp_legal_log.so",
+        "parameters": {
+            "path": "/tmp/legal_log.log"
+        }
+    }`
+
+	// All configurations used together.
+	t.Run("all configs present", func(t *testing.T) {
+		configStr := fmt.Sprintf(configTemplate, leaseDatabase, hostsDatabase, hostsDatabases, configDatabases, legalConfig)
+		cfg, err := NewFromJSON(configStr)
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+
+		databases := cfg.GetAllDatabases()
+		require.NotNil(t, databases.Lease)
+		require.Len(t, databases.Hosts, 1)
+		require.Len(t, databases.Config, 2)
+		require.NotNil(t, databases.Forensic)
+	})
+
+	// No database configuration.
+	t.Run("no configs present", func(t *testing.T) {
+		configStr := fmt.Sprintf(configTemplate, "", "", "", "", "")
+		cfg, err := NewFromJSON(configStr)
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+
+		databases := cfg.GetAllDatabases()
+		require.Nil(t, databases.Lease)
+		require.Empty(t, databases.Hosts)
+		require.Empty(t, databases.Config)
+		require.Nil(t, databases.Forensic)
+	})
+
+	// lease-database
+	t.Run("lease-database only", func(t *testing.T) {
+		configStr := fmt.Sprintf(configTemplate, leaseDatabase, "", "", "", "")
+		cfg, err := NewFromJSON(configStr)
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+
+		databases := cfg.GetAllDatabases()
+		require.NotNil(t, databases.Lease)
+		require.Empty(t, databases.Hosts)
+		require.Empty(t, databases.Config)
+		require.Nil(t, databases.Forensic)
+
+		require.Empty(t, databases.Lease.Path)
+		require.Equal(t, "mysql", databases.Lease.Type)
+		require.Equal(t, "kea-lease-mysql", databases.Lease.Name)
+		require.Equal(t, "localhost", databases.Lease.Host)
+	})
+
+	// hosts-database
+	t.Run("hosts-database only", func(t *testing.T) {
+		configStr := fmt.Sprintf(configTemplate, "", hostsDatabase, "", "", "")
+		cfg, err := NewFromJSON(configStr)
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+
+		databases := cfg.GetAllDatabases()
+		require.Nil(t, databases.Lease)
+		require.Len(t, databases.Hosts, 1)
+		require.Empty(t, databases.Config)
+		require.Nil(t, databases.Forensic)
+
+		require.Empty(t, databases.Hosts[0].Path)
+		require.Equal(t, "mysql", databases.Hosts[0].Type)
+		require.Equal(t, "kea-hosts-mysql", databases.Hosts[0].Name)
+		require.Equal(t, "mysql.example.org", databases.Hosts[0].Host)
+	})
+
+	// hosts-databases
+	t.Run("hosts-databases only", func(t *testing.T) {
+		configStr := fmt.Sprintf(configTemplate, "", "", hostsDatabases, "", "")
+		cfg, err := NewFromJSON(configStr)
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+
+		databases := cfg.GetAllDatabases()
+		require.Nil(t, databases.Lease)
+		require.Len(t, databases.Hosts, 2)
+		require.Empty(t, databases.Config)
+		require.Nil(t, databases.Forensic)
+
+		require.Empty(t, databases.Hosts[0].Path)
+		require.Equal(t, "postgresql", databases.Hosts[0].Type)
+		require.Equal(t, "kea-hosts-pgsql", databases.Hosts[0].Name)
+		require.Equal(t, "localhost", databases.Hosts[0].Host)
+
+		require.Empty(t, databases.Hosts[1].Path)
+		require.Equal(t, "mysql", databases.Hosts[1].Type)
+		require.Equal(t, "kea-hosts-mysql", databases.Hosts[1].Name)
+		require.Equal(t, "localhost", databases.Hosts[1].Host)
+	})
+
+	// config-databases
+	t.Run("config-databases only", func(t *testing.T) {
+		configStr := fmt.Sprintf(configTemplate, "", "", "", configDatabases, "")
+		cfg, err := NewFromJSON(configStr)
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+
+		databases := cfg.GetAllDatabases()
+		require.Nil(t, databases.Lease)
+		require.Empty(t, databases.Hosts)
+		require.Len(t, databases.Config, 2)
+		require.Nil(t, databases.Forensic)
+
+		require.Empty(t, databases.Config[0].Path)
+		require.Equal(t, "mysql", databases.Config[0].Type)
+		require.Equal(t, "kea-hosts-mysql", databases.Config[0].Name)
+		require.Equal(t, "localhost", databases.Config[0].Host)
+
+		require.Empty(t, databases.Config[1].Path)
+		require.Equal(t, "postgresql", databases.Config[1].Type)
+		require.Equal(t, "kea-hosts-pgsql", databases.Config[1].Name)
+		require.Equal(t, "localhost", databases.Config[1].Host)
+	})
+
+	// legal logging hook
+	t.Run("legal logging only", func(t *testing.T) {
+		configStr := fmt.Sprintf(configTemplate, "", "", "", "", legalConfig)
+		cfg, err := NewFromJSON(configStr)
+		require.NoError(t, err)
+		require.NotNil(t, cfg)
+
+		databases := cfg.GetAllDatabases()
+		require.Nil(t, databases.Lease)
+		require.Empty(t, databases.Hosts)
+		require.Empty(t, databases.Config)
+		require.NotNil(t, databases.Forensic)
+
+		require.Equal(t, "/tmp/legal_log.log", databases.Forensic.Path)
+		require.Empty(t, databases.Forensic.Type)
+		require.Empty(t, databases.Forensic.Name)
+		require.Empty(t, databases.Forensic.Host)
+	})
 }

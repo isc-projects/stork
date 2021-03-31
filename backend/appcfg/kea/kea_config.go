@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const localhost string = "localhost"
+
 // Kea daemon configuration map. It comprises a set of functions
 // which retrieve complex data structures from the configuration.
 type Map map[string]interface{}
@@ -69,6 +71,22 @@ type ControlSockets struct {
 	NetConf *ControlSocket
 }
 
+// Structure representing database connection parameters. It is common
+// for all supported backend types.
+type Database struct {
+	Path string `mapstructure:"path"`
+	Type string `mapstructure:"type"`
+	Name string `mapstructure:"name"`
+	Host string `mapstructure:"host"`
+}
+
+type Databases struct {
+	Lease    *Database
+	Hosts    []Database
+	Config   []Database
+	Forensic *Database
+}
+
 // Creates new instance from the pointer to the map of interfaces.
 func New(rawCfg *map[string]interface{}) *Map {
 	newCfg := Map(*rawCfg)
@@ -101,38 +119,37 @@ func (c *Map) GetRootName() (string, bool) {
 	return "", false
 }
 
+// Returns root node of the Kea configuration.
+func (c *Map) getRootNode() (rootNode map[string]interface{}, ok bool) {
+	rootName, rootNameOk := c.GetRootName()
+	if !rootNameOk {
+		return rootNode, rootNameOk
+	}
+	if cfg, rootNodeOk := (*c)[rootName]; rootNodeOk {
+		rootNode, ok = cfg.(map[string]interface{})
+	}
+	return rootNode, ok
+}
+
 // Returns a list found at the top level of the configuration under
 // a given name. If the given parameter does not exist or it is
 // not a list, the ok value returned is set to false.
 func (c *Map) GetTopLevelList(name string) (list []interface{}, ok bool) {
-	root, ok := c.GetRootName()
-	if !ok {
-		return list, ok
-	}
-	if cfg, ok := (*c)[root]; ok {
-		if rootNode, ok := cfg.(map[string]interface{}); ok {
-			if listNode, ok := rootNode[name].([]interface{}); ok {
-				return listNode, ok
-			}
+	if rootNode, ok := c.getRootNode(); ok {
+		if listNode, ok := rootNode[name].([]interface{}); ok {
+			return listNode, ok
 		}
 	}
-
-	return list, false
+	return list, ok
 }
 
 // Returns a map found at the top level of the configuration under a
 // given name. If the given parameter does not exist or it is not
 // a map, the ok value returned is set to false.
 func (c *Map) GetTopLevelMap(name string) (m map[string]interface{}, ok bool) {
-	root, ok := c.GetRootName()
-	if !ok {
-		return m, ok
-	}
-	if cfg, ok := (*c)[root]; ok {
-		if rootNode, ok := cfg.(map[string]interface{}); ok {
-			if mapNode, ok := rootNode[name].(map[string]interface{}); ok {
-				return mapNode, ok
-			}
+	if rootNode, ok := c.getRootNode(); ok {
+		if mapNode, ok := rootNode[name].(map[string]interface{}); ok {
+			return mapNode, ok
 		}
 	}
 	return m, false
@@ -313,4 +330,81 @@ func (sockets ControlSockets) ConfiguredDaemonNames() (names []string) {
 		}
 	}
 	return names
+}
+
+// Convenience function extracting database connection information at the
+// certain scope level. The first argument is the map structure containing
+// the map under specified name. This map should contain the database
+// connection information to be returned. If that map doesn't exist a nil
+// value is returned. This function can be used to extract the values of the
+// lease-database and legal logging configurations.
+func getDatabase(scope map[string]interface{}, name string) *Database {
+	if databaseNode, ok := scope[name]; ok {
+		database := Database{}
+		_ = mapstructure.Decode(databaseNode, &database)
+		// Set default host value.
+		if len(database.Host) == 0 {
+			database.Host = localhost
+		}
+		return &database
+	}
+	return nil
+}
+
+// Convenience function extracting an array of the database connection
+// information at the certain scope level. The first argument is the map
+// structure containing the list under specified name. This list should
+// contain zero, one or more maps with database connection information
+// to be returned. If that map doesn't exist an empty slice is returned.
+// This function can be used to extract values of hosts-databases and
+// config-databases lists.
+func getDatabases(scope map[string]interface{}, name string) (databases []Database) {
+	if databaseNode, ok := scope[name]; ok {
+		_ = mapstructure.Decode(databaseNode, &databases)
+		// Set default host value.
+		for i := range databases {
+			if len(databases[i].Host) == 0 {
+				databases[i].Host = localhost
+			}
+		}
+	}
+	return databases
+}
+
+// It returns all database backend configurations found in the Kea configuration.
+// It includes lease-database, host-database or hosts-databases, config-databases
+// and the database used by the Legal Log hooks library.
+func (c *Map) GetAllDatabases() (databases Databases) {
+	rootNode, ok := c.getRootNode()
+	if !ok {
+		return databases
+	}
+	// lease-database
+	databases.Lease = getDatabase(rootNode, "lease-database")
+	// hosts-database
+	hostsDatabase := getDatabase(rootNode, "hosts-database")
+	if hostsDatabase == nil {
+		// hosts-database is empty, but hosts-databases can contain
+		// multiple entries.
+		databases.Hosts = getDatabases(rootNode, "hosts-databases")
+	} else {
+		// hosts-database was not empty, so append this single
+		// element.
+		databases.Hosts = append(databases.Hosts, *hostsDatabase)
+	}
+	// config-databases
+	if configControl, ok := rootNode["config-control"].(map[string]interface{}); ok {
+		databases.Config = getDatabases(configControl, "config-databases")
+	}
+	// Forensic Logging hooks library configuration.
+	if _, legalParams, ok := c.GetHooksLibrary("libdhcp_legal_log"); ok {
+		database := Database{}
+		_ = mapstructure.Decode(legalParams, &database)
+		// Set default host value.
+		if len(database.Path) == 0 && len(database.Host) == 0 {
+			database.Host = localhost
+		}
+		databases.Forensic = &database
+	}
+	return databases
 }
