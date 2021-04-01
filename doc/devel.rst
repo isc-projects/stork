@@ -20,7 +20,7 @@ Stork services directly or in Docker containers.
 
 There are several other Rake targets. For a complete list of available
 tasks, use `rake -T`.  Also see the Stork `wiki
-<https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment#building-testing-and-running-stork>`_
+<https://gitlab.isc.org/isc-projects/stork/-/wikis/Processes/development-Environment#building-testing-and-running-stork>`_
 for detailed instructions.
 
 Generating Documentation

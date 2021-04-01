@@ -4,7 +4,7 @@ WORKDIR /agent
 RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-certificates gnupg apt-transport-https supervisor prometheus-node-exporter mysql-client
 # Install Kea.
 ARG CS_REPO_ACCESS_TOKEN
-RUN curl -1sLf "https://dl.cloudsmith.io/${CS_REPO_ACCESS_TOKEN}/isc/kea-1-7-prv/cfg/setup/bash.deb.sh" | bash
+RUN curl -1sLf "https://dl.cloudsmith.io/${CS_REPO_ACCESS_TOKEN}/isc/kea-1-9-prv/cfg/setup/bash.deb.sh" | bash
 RUN apt-get update && apt-get install -y --no-install-recommends \
         isc-kea-dhcp4-server=1.7.3-isc0009420191217090201 \
         isc-kea-ctrl-agent=1.7.3-isc0009420191217090201 \

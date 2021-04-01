@@ -15,8 +15,8 @@ Here's a quick list of how to contribute a patch:
    If you can't, you didn't complete step 3.
 5. **Implement your fix or feature, push code** to your repo. Make sure it compiles, has unit-tests,
    is documented and does what it's supposed to do.
-6. **Open Merge Request**: go to Stork project [merge requests page](https://gitlab.isc.org/isc-projects/stork/merge_requests),
-   click [New merge request](https://gitlab.isc.org/isc-projects/stork/merge_requests/new). If you
+6. **Open Merge Request**: go to Stork project [merge requests page](https://gitlab.isc.org/isc-projects/stork/-/merge_requests/),
+   click [New merge request](https://gitlab.isc.org/isc-projects/stork/-/merge_requests/new). If you
    don't see the button, you didn't complete step 3.
 7. **Participate in the code review**: Once you submit the MR, someone from ISC will eventually get
    to the issue and will review your code. Please make sure you respond to comments. It's likely
@@ -112,7 +112,7 @@ automatically notified.
 
 Once you fork the Stork code in gitlab, you have your own copy and you can commit your changes there
 and push them to your copy of Stork repo. Once you feel that your patch is ready, go to Stork project
-and [submit a Merge Request](https://gitlab.isc.org/isc-projects/Stork/merge_requests/new).
+and [submit a Merge Request](https://gitlab.isc.org/isc-projects/stork/-/merge_requests/new).
 
 ## Send Pull Request on github
 

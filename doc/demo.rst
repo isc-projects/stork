@@ -33,7 +33,7 @@ Besides the standard dependencies, the ``Stork Demo`` requires:
 - Docker Compose
 
 For details, please see the Stork wiki at
-https://gitlab.isc.org/isc-projects/stork/wikis/Development-Environment.
+https://gitlab.isc.org/isc-projects/stork/-/wikis/Processes/development-Environment
 
 Setup Steps
 -----------
@@ -55,9 +55,9 @@ Premium Features
 It is possible to run the demo with premium features enabled in Kea
 apps. It requires starting the demo with an access token to the Kea premium
 repositories. Access tokens are provided to ISC's paying customers and can be found on
-https://cloudsmith.io/~isc/repos/kea-1-7-prv/setup/#formats-deb. The
+https://cloudsmith.io/~isc/repos/kea-1-9-prv/setup/#tab-formats-deb. The
 token can be found inside this URL on that page:
-``https://dl.cloudsmith.io/<access token>/isc/kea-1-7-prv/cfg/setup/bash.deb.sh``.
+``https://dl.cloudsmith.io/${ACCESS_TOKEN}/isc/kea-1-9-prv/cfg/setup/bash.deb.sh``.
 This web page and the token are available only to paying customers of ISC.
 
 .. code-block:: console

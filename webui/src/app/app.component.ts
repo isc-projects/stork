@@ -181,7 +181,7 @@ export class AppComponent implements OnInit {
                         label: 'BIND 9 Manual',
                         id: 'bind9-manual',
                         icon: 'fa fa-book',
-                        url: 'https://downloads.isc.org/isc/bind9/cur/9.16/doc/arm/Bv9ARM.html',
+                        url: 'https://bind9.readthedocs.io/'
                         target: 'blank',
                     },
                     {
