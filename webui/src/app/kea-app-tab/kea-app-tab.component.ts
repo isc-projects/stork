@@ -343,4 +343,46 @@ export class KeaAppTabComponent implements OnInit {
             }
         )
     }
+
+    /**
+     * Returns formatted filename for the file object returned by the server.
+     *
+     * @param file object containing the file type and file name returned by the
+     *             server.
+     * @param returns 'none' if file name is blank and it is not a lease file,
+     *                'none (lease persistence disabled) if it is a lease file,
+     *                original file name if it is not blank.
+     */
+    filenameFromFile(file) {
+        if (!file.filename || file.filename.length === 0) {
+            if (file.filetype === 'Lease file') {
+                return 'none (lease persistence disabled)'
+            } else {
+                return 'none'
+            }
+        }
+        return file.filename
+    }
+
+    /**
+     * Returns formatted database name from type returned by the server.
+     *
+     * @param databaseType database type.
+     * @returns 'MySQL', 'PostgreSQL', 'Cassandra' or 'Unknown'.
+     */
+    databaseNameFromType(databaseType) {
+        switch (databaseType) {
+            case 'memfile':
+                return 'Memfile'
+            case 'mysql':
+                return 'MySQL'
+            case 'postgresql':
+                return 'PostgreSQL'
+            case 'cql':
+                return 'Cassandra'
+            default:
+                break
+        }
+        return 'Unknown'
+    }
 }

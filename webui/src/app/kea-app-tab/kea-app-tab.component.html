@@ -43,7 +43,8 @@
     <div class="p-col-12" style="padding: 0">
         <p-tabView [activeIndex]="activeTabIndex" styleClass="daemon-tabs" class="daemon-tabs" ngClass="daemon-tabs">
             <p-tabPanel
-                *ngFor="let daemon of daemons"
+                *ngFor="let daemon of daemons; let i = index"
+                [selected]="i == 0"
                 styleClass="daemon-tabs"
                 class="daemon-tabs"
                 ngClass="daemon-tabs"
@@ -171,39 +172,50 @@
                             </div>
 
                             <!-- Database Configurations -->
-                            <div style="margin-bottom: 14px">
+                            <div
+                                id="data-storage-div"
+                                *ngIf="
+                                    (daemon.files && daemon.files.length > 0) ||
+                                    (daemon.backends && daemon.backends.length > 0)
+                                "
+                                style="margin-bottom: 14px"
+                            >
                                 <h3>Data Storage</h3>
                                 <div class="p-grid">
                                     <div class="p-col-6">
-                                        <p-fieldset legend="Files">
+                                        <p-fieldset
+                                            id="data-storage-files-fieldset"
+                                            *ngIf="daemon.files"
+                                            legend="Files"
+                                        >
                                             <table style="width: 100%">
-                                                <tr>
-                                                    <td style="width: 8rem">Configuration file:</td>
-                                                    <td>/etc/kea/kea.conf</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="width: 8rem">Lease file:</td>
-                                                    <td>/var/run/kea/kea-dhcp4-leases.csv</td>
+                                                <tr *ngFor="let file of daemon.files">
+                                                    <td style="width: 8rem">{{ file.filetype }}:</td>
+                                                    <td>
+                                                        <i>{{ filenameFromFile(file) }}</i>
+                                                    </td>
                                                 </tr>
                                             </table>
                                         </p-fieldset>
                                     </div>
                                     <div class="p-col-6"></div>
                                     <div class="p-col-6">
-                                        <p-fieldset legend="Database backends">
-                                            <i style="color: grey" class="fa fa-database"></i>
-                                            MySQL database kea@localhost:
-                                            <ul style="list-style-type: none">
-                                                <li>Leases</li>
-                                                <li>Host Reservations</li>
-                                                <li>Config Backend></li>
-                                            </ul>
-
-                                            <i style="color: grey" class="fa fa-database"></i>
-                                            Postgres database kea@localhost:
-                                            <ul style="list-style-type: none">
-                                                <li>Forensic Logging</li>
-                                            </ul>
+                                        <p-fieldset
+                                            id="data-storage-backends-fieldset"
+                                            *ngIf="daemon.backends"
+                                            legend="Database Backends"
+                                        >
+                                            <div *ngFor="let backend of daemon.backends">
+                                                <i style="color: grey" class="fa fa-database"></i>
+                                                {{ databaseNameFromType(backend.backendType) }} ({{
+                                                    backend.database
+                                                }}@{{ backend.host }}) with:
+                                                <ul style="list-style-type: disc">
+                                                    <li *ngFor="let dataType of backend.dataTypes">
+                                                        <i>{{ dataType }}</i>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </p-fieldset>
                                     </div>
                                 </div>
