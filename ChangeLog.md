@@ -1,3 +1,5 @@
+Stork 0.16.0 released on 2021-04-07.
+
 * 136 [doc] marcin
 
     Implemented Leases Search.
