@@ -250,6 +250,19 @@ def _wait_for_event(server, text):
         time.sleep(2)
     assert event_occured, 'no event about `%s`' % text
 
+def _search_leases(server, text):
+    leases_found = False
+    for i in range(10):
+        r = server.api_get('/leases?text=%s' % text)
+        data = r.json()
+
+        if 'items' in data and data['items'] and len(data['items']) > 0:
+            leases_found = True
+            break
+        time.sleep(2)
+    assert leases_found, 'failed to find any leases by search text `%s`' % text
+    return data['items']
+
 
 @pytest.mark.parametrize("agent, server", [('centos/7', 'ubuntu/18.04')])
 def test_change_kea_ca_access_point(agent, server):
@@ -298,6 +311,49 @@ def test_change_kea_ca_access_point(agent, server):
     assert len(m['apps']) == 1
     assert len(m['apps'][0]['accessPoints']) == 1
     assert m['apps'][0]['accessPoints'][0]['address'] == agent.mgmt_ip
+
+
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/7')])
+def test_search_leases(agent, server):
+    # Install Kea on the machine with a Stork Agent.
+    agent.install_kea()
+    agent.stop_kea('kea-dhcp4')
+
+    subprocess.run('./gen-lease4-file.py > kea-leases4.csv', shell=True, check=True)
+    agent.upload('kea-leases4.csv', '/var/lib/kea/kea-leases4.csv')
+    subprocess.run('rm -rf kea-leases4.csv', shell=True)
+    agent.upload('kea-dhcp4.conf', '/etc/kea/kea-dhcp4.conf')
+    agent.start_kea('kea-dhcp4')
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    m = _get_machine_and_authorize_it(server, agent)
+
+    # Search by IP.
+    leases = _search_leases(server, '192.0.2.1')
+    assert len(leases) is 1
+    assert 'ipAddress' in leases[0]
+    assert leases[0]['ipAddress'] == '192.0.2.1'
+
+    # Search by MAC.
+    leases = _search_leases(server, '00:01:02:03:04:02')
+    assert len(leases) is 1
+    assert 'ipAddress' in leases[0]
+    assert leases[0]['ipAddress'] == '192.0.2.2'
+
+    # Search by client id.
+    leases = _search_leases(server, '01:02:03:04')
+    assert len(leases) is 1
+    assert 'ipAddress' in leases[0]
+    assert leases[0]['ipAddress'] == '192.0.2.4'
+
+    # Search by hostname.
+    leases = _search_leases(server, 'host-6.example.org')
+    assert len(leases) is 1
+    assert 'ipAddress' in leases[0]
+    assert leases[0]['ipAddress'] == '192.0.2.6'
 
 
 def run_perfdhcp(src_cntr, dest_ip_addr):
