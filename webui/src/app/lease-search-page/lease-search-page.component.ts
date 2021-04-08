@@ -272,6 +272,26 @@ export class LeaseSearchPageComponent implements OnInit {
             this.clearSearchTextError()
             return
         }
+        // Handle a special case when user is searching by lease state.
+        let matches = searchText.match(/^state:\s*(\S*)\s*$/)
+        if (matches && matches.length === 2) {
+            const state = matches[1].trim()
+            if (state.length === 0) {
+                this.reportSearchTextError('Specify lease state.')
+                return
+            }
+            if (state !== 'declined') {
+                if ('declined'.indexOf(state) === 0) {
+                    this.reportSearchTextError('Use state:declined to search declined leases.')
+                } else {
+                    this.reportSearchTextError('Searching leases in the ' + state + ' state is unsupported.')
+                }
+                return
+            }
+            this.clearSearchTextError()
+            return
+        }
+
         // Partial IPv4 address.
         let regexp = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){1,2}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.{0,1}){0,1}$/
         if (regexp.test(searchText)) {
@@ -307,7 +327,7 @@ export class LeaseSearchPageComponent implements OnInit {
             return
         }
         // Invalid IPv6 address having two or more occurrences of ::.
-        const matches = searchText.match(/::/g)
+        matches = searchText.match(/::/g)
         if (matches && matches.length > 1) {
             this.reportSearchTextError('Invalid IPv6 address.')
             return

@@ -519,4 +519,46 @@ describe('LeaseSearchPageComponent', () => {
             expect(inputError).toBeNull()
         }
     })
+
+    it('should display error message when invalid state is specified', () => {
+        const searchInput = fixture.debugElement.query(By.css('#leases-search-input'))
+        const searchInputElement = searchInput.nativeElement
+
+        const invalidTexts = [
+            { text: 'state:', error: 'Specify lease state.' },
+            { text: 'state:default', error: 'Searching leases in the default state is unsupported.' },
+            {
+                text: 'state:expired-reclaimed',
+                error: 'Searching leases in the expired-reclaimed state is unsupported.',
+            },
+            { text: 'state:dec', error: 'Use state:declined to search declined leases.' },
+        ]
+
+        for (const invalid of invalidTexts) {
+            searchInputElement.value = invalid.text
+            searchInputElement.dispatchEvent(new Event('input'))
+            searchInputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }))
+            fixture.detectChanges()
+
+            // Ensure that the hint is displayed.
+            const inputError = fixture.debugElement.query(By.css('#leases-search-input-error'))
+            expect(inputError).not.toBeNull()
+            expect(inputError.properties.innerText).toBe(invalid.error)
+            expect(component.invalidSearchText).toBeTrue()
+        }
+
+        // Make sure that valid search text is accepted.
+        const validTexts = ['state:declined', 'state: declined']
+
+        for (const valid of validTexts) {
+            searchInputElement.value = valid
+            searchInputElement.dispatchEvent(new Event('input'))
+            searchInputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }))
+            fixture.detectChanges()
+
+            // Ensure that the hint is not displayed.
+            const inputError = fixture.debugElement.query(By.css('#leases-search-input-error'))
+            expect(inputError).toBeNull()
+        }
+    })
 })

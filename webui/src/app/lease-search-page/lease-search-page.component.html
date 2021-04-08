@@ -3,7 +3,8 @@
         <p>
             This page offers a simple DHCP leases search engine. It utilizes Kea control channel to find leases by an IP
             address, delegated prefix, client identifier, DHCPv6 DUID, or hostname. Type one of these parameters in the
-            search box and press Enter. The engine will find all matching leases on the monitored Kea servers running
+            search box and press Enter. To find all declined leases, type <i class="monospace">state:declined</i> in the
+            search box. The engine will find all matching leases on the monitored Kea servers running
             <a href="https://kea.readthedocs.io/en/latest/arm/hooks.html#lease-cmds-lease-commands"
                 >lease_cmds hooks library</a
             >. The Kea servers not running this hooks library are excluded from the search.
@@ -46,8 +47,9 @@
                 </ul>
                 <p>
                     The specified text must match exactly one of the lease properties. Searching for leases using
-                    partial value, e.g. 192.0., is currently not supported.
+                    partial value, e.g. <i class="monospace">192.0.</i>, is currently not supported.
                 </p>
+                <p>To find all declined leases, type <i class="monospace">state:declined</i> in the search box.</p>
                 <p>
                     The search engine will look for the specified lease on all monitored Kea servers having the
                     lease_cmds hooks library loaded. It may return multiple leases for the same IP address or delegated
