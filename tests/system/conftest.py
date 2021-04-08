@@ -84,31 +84,31 @@ def pytest_pyfunc_call(pyfuncitem):
 
     # change test case arguments from container system names
     # to actual started container instances
-    srv_cntrs = []
-    agn_cntrs = []
+    server_containers = []
+    agent_containers = []
     for name, val in pyfuncitem.funcargs.items():
         if name.startswith('agent'):
             a = containers.StorkAgentContainer(alias=val)
-            agn_cntrs.append(a)
+            agent_containers.append(a)
             pyfuncitem.funcargs[name] = a
         elif name.startswith('server'):
             s = containers.StorkServerContainer(alias=val)
-            srv_cntrs.append(s)
+            server_containers.append(s)
             pyfuncitem.funcargs[name] = s
-    assert len(srv_cntrs) <= 1
-    all_cntrs = srv_cntrs + agn_cntrs
+    assert len(server_containers) <= 1
+    all_containers = server_containers + agent_containers
 
     # start all agent containers in background so they can run in parallel and be ready quickly
-    if srv_cntrs:
-        srv_cntrs[0].setup_bg()
-        while srv_cntrs[0].mgmt_ip is None:
+    if server_containers:
+        server_containers[0].setup_bg()
+        while server_containers[0].mgmt_ip is None:
             time.sleep(0.1)
 
-    for c in agn_cntrs:
-        c.setup_bg(None, srv_cntrs[0].mgmt_ip)
+    for c in agent_containers:
+        c.setup_bg(None, server_containers[0].mgmt_ip)
 
     # wait for all containers
-    for c in all_cntrs:
+    for c in all_containers:
         c.setup_wait()
         print('CONTAINER %s READY @ %s' % (c.name, c.mgmt_ip))
     time.sleep(3)
@@ -131,13 +131,13 @@ def pytest_pyfunc_call(pyfuncitem):
     test_dir.mkdir()
 
     # download stork server and agent logs to test dir
-    for idx, s in enumerate(srv_cntrs):
+    for idx, s in enumerate(server_containers):
         _, out, _ = s.run('journalctl -u isc-stork-server')
         fname = test_dir / ('stork-server-%d.log' % idx)
         with open(fname, 'w') as f:
             f.write(out)
         s.stop()
-    for idx, a in enumerate(agn_cntrs):
+    for idx, a in enumerate(agent_containers):
         _, out, _ = a.run('journalctl -u isc-stork-agent')
         fname = test_dir / ('stork-agent-%d.log' % idx)
         with open(fname, 'w') as f:
