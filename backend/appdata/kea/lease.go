@@ -1,5 +1,11 @@
 package keadata
 
+const (
+	LeaseStateDefault          = 0
+	LeaseStateDeclined         = 1
+	LeaseStateExpiredReclaimed = 2
+)
+
 // Represents a DHCP lease fetched from Kea.
 type Lease struct {
 	ClientID          string `mapstructure:"client-id" json:"client-id,omitempty"`

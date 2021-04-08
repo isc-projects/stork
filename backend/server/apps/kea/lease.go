@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	keactrl "isc.org/stork/appctrl/kea"
+	keadata "isc.org/stork/appdata/kea"
 	"isc.org/stork/server/agentcomm"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -155,18 +156,23 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 	for _, commandName := range commandNames {
 		var daemons *keactrl.Daemons
 		var propertyName string
+		sentPropertyValue := propertyValue
 		switch commandName {
 		case "lease4-get-by-hw-address":
 			daemons, err = keactrl.NewDaemons("dhcp4")
 			if err != nil {
 				return leases, false, err
 			}
-			// When searching by MAC address we must ensure that it has the format
-			// expected by Kea, i.e. 01:02:03:04:05:06.
-			if formattedPropertyValue, ok := storkutil.FormatMACAddress(propertyValue); ok {
-				propertyValue = formattedPropertyValue
-			} else {
-				return leases, false, errors.Errorf("invalid format of the property %s used to get leases by MAC address from Kea", propertyValue)
+			// Searching by empty MAC address is allowed when trying to find declined leases.
+			// If the value is non-empty, it has to be properly formatted.
+			if len(sentPropertyValue) > 0 {
+				// When searching by MAC address we must ensure that it has the format
+				// expected by Kea, i.e. 01:02:03:04:05:06.
+				if formattedPropertyValue, ok := storkutil.FormatMACAddress(sentPropertyValue); ok {
+					sentPropertyValue = formattedPropertyValue
+				} else {
+					return leases, false, errors.Errorf("invalid format of the property %s used to get leases by MAC address from Kea", propertyValue)
+				}
 			}
 			propertyName = "hw-address"
 		case "lease4-get-by-client-id":
@@ -176,6 +182,10 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 			}
 			propertyName = "client-id"
 		case "lease6-get-by-duid":
+			// Kea does not accept empty DUIDs. Empty DUID in Kea is represented by a zero byte.
+			if len(sentPropertyValue) == 0 {
+				sentPropertyValue = "0"
+			}
 			daemons, err = keactrl.NewDaemons("dhcp6")
 			if err != nil {
 				return leases, false, err
@@ -197,7 +207,7 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 			continue
 		}
 		arguments := map[string]interface{}{
-			propertyName: propertyValue,
+			propertyName: sentPropertyValue,
 		}
 		command, err := keactrl.NewCommand(commandName, daemons, &arguments)
 		if err != nil {
@@ -409,6 +419,58 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 				log.Warn(err)
 			} else {
 				leases = append(leases, leasesByProperties...)
+			}
+		}
+		if appError {
+			erredApps = append(erredApps, &apps[i])
+		}
+	}
+	return leases, erredApps, nil
+}
+
+// Attempts to find declined leases on the Kea servers. Kea provides no
+// API to search the leases by state but the declined leases have HW address
+// and DUID empty. Thus, this function sends lease4-get-by-hw-address and
+// lease6-get-by-duid with empty hw-address and empty duid parameters
+// respectively. Next, it removes the leases which are not in the declined
+// state from the result. The  Kea servers which returned an error response
+// are returned as a second parameter. Such failures do not preclude the
+// function from returning leases found on other servers, but the caller
+// becomes aware that some leases may not be included due to the communication
+// errors with some servers. The third returned parameter indicates a
+// general error, e.g. issues with Stork database communication.
+func FindDeclinedLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (leases []dbmodel.Lease, erredApps []*dbmodel.App, err error) {
+	// Get all Kea apps.
+	apps, err := dbmodel.GetAppsByType(db, dbmodel.AppTypeKea)
+	if err != nil {
+		err = errors.WithMessagef(err, "failed to fetch Kea apps while searching for declined leases")
+		return leases, erredApps, err
+	}
+
+	// Send appropriate commands to each app.
+	for i := range apps {
+		appError := false
+
+		var commands []string
+		if hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv4) {
+			commands = append(commands, "lease4-get-by-hw-address")
+		}
+		if hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv6) {
+			commands = append(commands, "lease6-get-by-duid")
+		}
+
+		// Send these commands with empty hw-address and empty duid.
+		leasesByProperties, warns, err := getLeasesByProperties(agents, &apps[i], "", commands...)
+		appError = warns
+		if err != nil {
+			appError = true
+			log.Warn(err)
+		} else {
+			for j := range leasesByProperties {
+				// Only return the leases in the declined state.
+				if leasesByProperties[j].State == keadata.LeaseStateDeclined {
+					leases = append(leases, leasesByProperties[j])
+				}
 			}
 		}
 		if appError {
