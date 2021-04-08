@@ -1,3 +1,8 @@
+* 138 [func] marcin
+
+    Implemented declined leases search.
+    (Gitlab #510)
+
 * 137 [func] godfryd
 
     Added system tests for new agent registration.
