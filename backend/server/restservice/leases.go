@@ -3,21 +3,23 @@ package restservice
 import (
 	"context"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork/server/apps/kea"
+	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 )
 
 // This call searches for leases allocated by monitored DHCP servers.
 // The text parameter may contain an IP address, delegated prefix,
-// MAC address, client identifier, or hostname. The Stork server
-// tries to identify the specified value type and sends queries to
-// the Kea servers to find a lease or multiple leases.
+// MAC address, client identifier, hostname or the text state:declined.
+// The Stork server tries to identify the specified value type and
+// sends queries tothe Kea servers to find a lease or multiple leases.
 func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) middleware.Responder {
 	leases := &models.Leases{
 		Total: 0,
@@ -32,8 +34,18 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		return rsp
 	}
 
-	// Try to find the leases from monitored Kea servers.
-	keaLeases, erredApps, err := kea.FindLeases(r.DB, r.Agents, text)
+	var (
+		keaLeases []dbmodel.Lease
+		erredApps []*dbmodel.App
+		err       error
+	)
+	// Handle a special case when user specified state:declined search text
+	// to find declined leases.
+	if ok, _ := regexp.Match(`state:\s*declined`, []byte(text)); ok {
+		keaLeases, erredApps, err = kea.FindDeclinedLeases(r.DB, r.Agents)
+	} else {
+		keaLeases, erredApps, err = kea.FindLeases(r.DB, r.Agents, text)
+	}
 	if err != nil {
 		msg := "problem with searching leases on the Kea servers due to Stork database errors"
 		log.Error(err)

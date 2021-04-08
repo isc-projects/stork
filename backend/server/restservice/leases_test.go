@@ -100,6 +100,26 @@ func mockLease4GetError(callNo int, responses []interface{}) {
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
+// Generates empty response to searching leases on the DHCPv4 and DHCPv6 server.
+func mockLeasesGetEmpty(callNo int, responses []interface{}) {
+	json := []byte(`[
+        {
+            "result": 3,
+            "text": "No leases found",
+            "arguments": {
+                "leases": [ ]
+            }
+        }
+    ]`)
+	daemons, _ := keactrl.NewDaemons("dhcp4")
+	command, _ := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
+	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+
+	daemons, _ = keactrl.NewDaemons("dhcp6")
+	command, _ = keactrl.NewCommand("lease6-get-by-duid", daemons, nil)
+	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
+}
+
 // This test verifies that it is possible to search DHCPv4 leases by text
 // over the REST API.
 func TestFindLeases4(t *testing.T) {
@@ -376,4 +396,87 @@ func TestFindLeasesEmptyText(t *testing.T) {
 	require.Empty(t, okRsp.Payload.Items)
 	require.Empty(t, okRsp.Payload.ErredApps)
 	require.Zero(t, okRsp.Payload.Total)
+}
+
+// Test that declined leases are searched when state:declined search text
+// is specified.
+func TestFindDeclinedLeases(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "machine",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add Kea app with a DHCPv4 and DHCPv6 configuration loading the
+	// lease_cmds hooks library.
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	app := &dbmodel.App{
+		Name:         "fxz",
+		MachineID:    machine.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: dbmodel.DaemonNameDHCPv4,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+			{
+				Name: dbmodel.DaemonNameDHCPv6,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	// Setup REST API.
+	settings := RestAPISettings{}
+	agents := agentcommtest.NewFakeAgents(mockLeasesGetEmpty, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, agents, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	text := "state:declined"
+	params := dhcp.GetLeasesParams{
+		Text: &text,
+	}
+	rsp := rapi.GetLeases(ctx, params)
+	require.IsType(t, &dhcp.GetLeasesOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetLeasesOK)
+	require.Len(t, okRsp.Payload.Items, 0)
+	require.EqualValues(t, 0, okRsp.Payload.Total)
+	require.Empty(t, okRsp.Payload.ErredApps)
+
+	// Ensure that appropriate commands were sent to Kea.
+	require.Len(t, agents.RecordedCommands, 2)
+	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[0].Command)
+	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[1].Command)
 }
