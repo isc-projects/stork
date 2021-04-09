@@ -376,14 +376,19 @@ of the searched lease properties in the search box:
 - DHCPv6 DUID, e.g. ``00:02:00:00:00:04:05:06:07``
 - Hostname, e.g. ``myhost.example.org``
 
-Searching using partial text is currently not supported. For example: searching by
+All identifier types can also be specified using the notation with spaces,
+e.g. 01 02 03 04 05 06, or the notation with hexadecimal digits only, e.g. 010203040506.
+
+To search all declined leases, type ``state:declined``. Beware that this query may
+return a large result if there are many declined leases, and in this case, the query
+processing time may also increase.
+
+Searching using partial text is currently unsupported. For example: searching by
 partial IPv4 address ``192.0.2`` is not accepted by the search box. Partial MAC
 address ``01:02:03`` is accepted but will return no results. Specify the complete
-MAC address instead, e.g. ``01:02:03:04:05:06``.
-
-Alternatively, all three identifier types can be specified using the notation
-with spaces, e.g. ``01 02 03 04 05 06``, or the notation without any separator,
-e.g. ``010203040506``.
+MAC address instead, e.g. ``01:02:03:04:05:06``. Searching leases in states other
+than declined is also unsupported. For example, the text ``state:expired-reclaimed``
+is not accepted by the search box.
 
 The search utility automatically recognizes the specified lease type property and
 communicates with the Kea servers to find leases using appropriate commands. Each
