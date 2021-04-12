@@ -101,8 +101,18 @@
                             icon="fa fa-network-wired"
                             class="ui-button-secondary"
                             type="button"
+                            style="margin-right: 16px"
                             pButton
                         ></button>
+                        <!-- Using anchor tag allows to open page in new tab by hold Ctrl and click on it -->
+                        <a
+                            label="Raw configuration"
+                            icon="fa fa-file-alt"
+                            class="ui-button-secondary"
+                            type="button"
+                            routerLink="/apps/kea/{{ appTab.app.id }}/daemons/{{ daemon.id }}/config"
+                            pButton
+                        ></a>
                     </div>
 
                     <div class="p-grid" style="padding: 12px">

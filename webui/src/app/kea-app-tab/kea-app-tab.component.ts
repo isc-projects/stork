@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { forkJoin } from 'rxjs'
 
 import * as moment from 'moment-timezone'
@@ -16,6 +16,7 @@ import {
     daemonStatusIconColor,
     daemonStatusIconTooltip,
 } from '../utils'
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http'
 
 @Component({
     selector: 'app-kea-app-tab',
@@ -53,6 +54,12 @@ export class KeaAppTabComponent implements OnInit {
     appRenameDialogVisible = false
 
     /**
+     * Controls whether the kea-daemon-config-dialog is visible or not.
+     * Indicates visible daemon ID or null if none daemon is visible.
+     */
+    keaDaemonConfigDialogVisibleId: number | null = null
+
+    /**
      * Indicates if a pencil icon was clicked.
      *
      * As a result of clicking this icon a dialog box is shown to
@@ -71,6 +78,7 @@ export class KeaAppTabComponent implements OnInit {
 
     constructor(
         private route: ActivatedRoute,
+        private router: Router,
         private servicesApi: ServicesService,
         private serverData: ServerDataService,
         private msgService: MessageService
@@ -312,6 +320,19 @@ export class KeaAppTabComponent implements OnInit {
      */
     handleRenameDialogHidden() {
         this.appRenameDialogVisible = false
+    }
+
+    /**
+     * Reacts to hiding a dialog box for displaying a Kea daemon JSON configuration.
+     *
+     * This function is called when a dialog box is
+     * closed. It is triggered both in the case when the form is submitted
+     * or cancelled.
+     */
+    handleKeaDaemonConfigDialogHidden(daemonId: number) {
+        if (this.keaDaemonConfigDialogVisibleId === daemonId) {
+            this.keaDaemonConfigDialogVisibleId = null
+        }
     }
 
     /**

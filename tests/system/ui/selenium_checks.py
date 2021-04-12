@@ -32,6 +32,11 @@ def find_element(sel, element_type, element, number_of_tests=10):
                 el.is_displayed()
                 print("Element '%s' found by it's type: %s" % (element, element_type))
                 return el
+            elif element_type == 'partial_link_text':
+                el = sel.find_element_by_partial_link_text(element)
+                el.is_displayed()
+                print("Element '%s' found by it's type: %s" % (element, element_type))
+                return el
             else:
                 print("Element %s not defined" % element_type)
         except:

@@ -276,6 +276,10 @@
         items:
           $ref: '#/definitions/LogTarget'
 
+  KeaDaemonConfig:
+    type: object
+    additionalProperties: true
+
   AppKea:
     type: object
     properties:

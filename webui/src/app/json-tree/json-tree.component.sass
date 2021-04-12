@@ -1,0 +1,149 @@
+.tree-level
+    // Nest tree level
+    // Use margin to avoid highlight effect on margin
+    margin-left: 1.5em
+    // Decrease indent on small screens
+    @media all and (max-width: 400px)
+        margin-left: 0.5em
+    // Fixed char size font
+    font-family: monospace, Courier New, Courier 
+    // Fixed-size font is very dense. Increase line height for better look.
+    line-height: 1.5
+
+    .tree-level__key
+        // Default font color
+        color: darkblue
+        // Minimal spacing between key and value
+        margin-right: 2em
+
+        &::after
+            // Add colon after key
+            content: ":"
+
+    .tree-level__value
+        // Default font color for values
+        color: darkgreen
+
+    .tree-level__value--clickable
+        // Mark link as clickable
+        cursor: pointer
+        &:hover
+            text-decoration: underline
+
+    .tree-level__value--object
+        @extend %arround-quotes
+        // Specify brackets around object
+        quotes: "{" "}"
+        // Font color
+        color: blue
+
+    .tree-level__value--array
+        @extend %arround-quotes
+        // Specify brackets around array
+        quotes: "[" "]"
+        // Font color
+        color: blue
+
+    .tree-level__value--string
+        @extend %arround-quotes
+        // Font color
+        color: magenta
+
+    .tree-level__value--collapse
+        // Pull right the collapse mark
+        float: right
+        color: #555
+
+    .tree-level__value--not-assigned
+        // Fix for Chromium-like browsers to prevent horizontal bar
+        // display.
+        padding-right: 1em
+
+    .tree-level__value--hidden
+        // We cannot hide the subnodes using display:none, because
+        // it shifts the elements below to top and back.
+        // I can use visibility:hidden and put the loader spinner
+        // on top, but during loading the browser has problems with
+        // animation. The same a tricks with animated gradient background
+        // fails due performance issue.
+        // The blur is nice workaround as it is simple and looks good.
+        filter: blur(2px)
+        // Disable clicks
+        pointer-events: none
+
+
+.tree-level--corrupted
+    .tree-level__key:first-child
+        // Mark corrupted value with red wave
+        text-decoration-line: underline
+        text-decoration-style: wavy
+        text-decoration-color: red
+
+
+.tree-level--leaf
+    @extend %hover_highlight
+    // Align leaf to label of node (pad marker)
+    // Highlight effect on margin
+    padding-left: 1rem
+    // Allow long value (long line) to break and
+    // avoid to overlapping next key or continue
+    // text directly below key
+    display: flex
+    flex-direction: row
+    justify-content: space-between
+    // Allow to break "dense" long line on tiny screens
+    line-break: anywhere
+
+    .tree-level__value
+        // Align text to right edge as part of flex layout
+        text-align: right
+        // Avoid showing global dialog scrollbars when
+        // resolution is small and line is long. Scrollbars
+        // are show only on specific value.
+        overflow: auto
+
+
+.tree-level--node
+    summary
+        @extend %hover_highlight
+        // Change pointer to inform user that it is clickable
+        cursor: pointer
+
+    &.tree-level--non-collapsible
+        >summary
+            // Reset cursor for non-collapsible nodes
+            cursor: auto
+    
+
+// When node is openned the its hidden indicator is hiden. 
+details[open]
+    >summary
+        >.tree-level__value--collapse
+            // Hide collapse mark when openned
+            visibility: hidden
+
+
+::ng-deep .ui-paginator
+    // Scale paginator. Default is little too big to put inside tree
+    scale: 0.85
+    // Pull to the left to better expose assigned node
+    // Align to a key with pad for collapse marker
+    margin-left: 0
+
+    .ui-paginator__jump-to-page
+        width: 5em
+        margin-left: 0.5em
+
+
+%hover_highlight
+    &:hover
+        // Highlight row. 
+        background-color: rgba(88, 88, 88, 0.2)
+
+%arround-quotes
+    &::before
+        // Add "quotes" before value. Default is string quote specific to user locale
+        content: open-quote
+    &::after
+        // Add "quotes" after value. Default is string quote specific to user locale
+        content: close-quote

@@ -1,0 +1,96 @@
+<ng-container *ngIf="isPrimitive() || isEmpty() || isRecursionLevelReached(); then leaf; else node"></ng-container>
+
+<ng-template #leaf>
+    <div class="tree-level tree-level--leaf" [ngClass]="{ 'tree-level--corrupted': isCorrupted() }">
+        <span *ngIf="!isRootLevel()" class="tree-level__key">{{ key }}</span>
+        <span
+            class="tree-level__value"
+            [ngClass]="{
+                'tree-level__value--string': isString(),
+                'tree-level__value--object': isObject(),
+                'tree-level__value--array': isArray(),
+                'tree-level__value--not-assigned': !hasAssignedValue(),
+                'tree-level__value--clickable': isRecursionLevelReached()
+            }"
+        >
+            <!-- Primitive value or empty, but not object -->
+            <ng-container *ngIf="(isPrimitive() || isEmpty()) && !isObject() && hasAssignedValue()">{{
+                value + ''
+            }}</ng-container>
+            <!-- Not assigned value yet -->
+            <ng-container *ngIf="!hasAssignedValue()"><i class="fa fa-spinner fa-spin"></i></ng-container>
+            <!-- Complex, but recursion level reached -->
+            <ng-container *ngIf="isComplex() && !isEmpty() && isRecursionLevelReached()">
+                <span (click)="onClickResetRecursionLevel()">Load more...</span>
+            </ng-container>
+            <!-- Object is rendered as [Object object] normal way, then omit -->
+        </span>
+    </div>
+</ng-template>
+
+<ng-template #node>
+    <!-- Omit expandable elements -->
+    <ng-container *ngIf="isRootLevel(); then children"></ng-container>
+    <!-- Expandable node -->
+    <details
+        class="tree-level tree-level--node"
+        *ngIf="!isRootLevel()"
+        [ngClass]="{ 'tree-level--corrupted': isCorrupted(), 'tree-level--non-collapsible': forceOpenThisLevel }"
+        [open]="isInitiallyOpened() ? 'open' : null"
+    >
+        <summary (click)="(!forceOpenThisLevel)">
+            <span class="tree-level__key">{{ key }}</span>
+            <span
+                class="tree-level__value tree-level__value--collapse"
+                [ngClass]="{
+                    'tree-level__value--object': isObject(),
+                    'tree-level__value--array': isArray()
+                }"
+                >...</span
+            >
+        </summary>
+        <ng-container *ngTemplateOutlet="children"></ng-container>
+    </details>
+</ng-template>
+
+<!-- Children of node -->
+<ng-template #children>
+    <div class="tree-level__value" [ngClass]="{ 'tree-level__value--hidden': areChildrenLoading() }">
+        <app-json-tree
+            *ngFor="let item of value | keyvalue: keyValueComparator | slice: childStart:childEnd; let last = last"
+            [key]="item.key"
+            [value]="item.value"
+            [autoExpandMaxNodeCount]="autoExpandMaxNodeCount"
+            [forceOpenThisLevel]="hasSingleChild()"
+            [recursionLevel]="recursionLevel + 1"
+        >
+            <ng-container *ngIf="last && areChildrenLoading()">
+                {{ onFinishRenderChildren() }}
+            </ng-container>
+        </app-json-tree>
+        <p-paginator
+            *ngIf="hasPaginateChildren()"
+            showCurrentPageReport="true"
+            currentPageReportTemplate="({currentPage}/{totalPages})"
+            [templateRight]="jumpToPage"
+            [first]="childStart"
+            [rows]="childStep"
+            [totalRecords]="totalChildrenCount"
+            (onPageChange)="onPageChildrenChanged($event)"
+        ></p-paginator>
+    </div>
+</ng-template>
+
+<!-- Jump to page pagination control -->
+<ng-template #jumpToPage>
+    <input
+        class="ui-paginator__jump-to-page"
+        type="number"
+        pInputText
+        min="1"
+        step="1"
+        #jumpToPageBox
+        (keyup.enter)="onEnterJumpToPage(jumpToPageBox.value - 1); jumpToPageBox.value = ''"
+        placeholder="Page"
+    />
+</ng-template>

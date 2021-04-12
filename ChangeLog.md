@@ -1,3 +1,8 @@
+* 144 [func] slawek
+
+    Added Kea daemon configuration preview in JSON format.
+    (Gitlab #531)
+
 * 143 [bug] ymartin-ovh
 
     Fixed honoring the listen-only flags in Stork Agent.

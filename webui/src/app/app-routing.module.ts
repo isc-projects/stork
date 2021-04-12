@@ -18,6 +18,7 @@ import { EventsPageComponent } from './events-page/events-page.component'
 import { ForbiddenPageComponent } from './forbidden-page/forbidden-page.component'
 import { LogViewPageComponent } from './log-view-page/log-view-page.component'
 import { LeaseSearchPageComponent } from './lease-search-page/lease-search-page.component'
+import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-page/kea-daemon-configuration-page.component'
 
 const routes: Routes = [
     {
@@ -56,6 +57,11 @@ const routes: Routes = [
     {
         path: 'apps/:appType/:id',
         component: AppsPageComponent,
+        canActivate: [AuthGuard],
+    },
+    {
+        path: 'apps/kea/:appId/daemons/:daemonId/config',
+        component: KeaDaemonConfigurationPageComponent,
         canActivate: [AuthGuard],
     },
     {

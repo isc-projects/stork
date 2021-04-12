@@ -230,12 +230,32 @@ func TestGetDaemonByID(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	// add app but without machine, error should be raised
+	daemonEntry := NewKeaDaemon("kea-dhcp4", true)
+
+	// Set initial configuration with one logger.
+	err = daemonEntry.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "loggers": [
+                {
+                    "name": "kea-dhcp4",
+                    "severity": "debug",
+                    "output_options": [
+                        {
+                            "output": "/tmp/kea-dhcp4.log"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
 	app := &App{
 		ID:        0,
 		MachineID: m.ID,
 		Type:      AppTypeKea,
 		Daemons: []*Daemon{
-			NewKeaDaemon(DaemonNameDHCPv4, true),
+			daemonEntry,
 		},
 	}
 	_, err = AddApp(db, app)
@@ -251,6 +271,8 @@ func TestGetDaemonByID(t *testing.T) {
 	require.NotNil(t, dmn)
 	require.EqualValues(t, daemon.ID, dmn.ID)
 	require.EqualValues(t, daemon.Active, dmn.Active)
+	require.NotNil(t, dmn.KeaDaemon)
+	require.NotNil(t, dmn.KeaDaemon.Config)
 }
 
 // Tests that Kea loggin configuration information is correctly populated within

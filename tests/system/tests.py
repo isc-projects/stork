@@ -230,6 +230,21 @@ def test_add_kea_with_many_subnets(agent, server):
         time.sleep(2)
     assert data['total'] == 6912
 
+    # Fetch raw Kea daemon configuration
+    banner("FETCH KEA DAEMON CONFIG")
+    daemons = m['apps'][0]['details']['daemons']
+    daemons = [d for d in daemons if d['name'] == 'dhcp4']
+    assert len(daemons) == 1
+    daemon_id = daemons[0]['id']
+
+    r = server.api_get('/daemons/%d/config' % (daemon_id,))
+    data = r.json()
+
+    assert 'Dhcp4' in data
+    assert 'subnet4' in data['Dhcp4']
+    subnets = data['Dhcp4']['subnet4']
+    assert len(subnets) == 6912
+
 
 def _wait_for_event(server, text):
     last_ts = None

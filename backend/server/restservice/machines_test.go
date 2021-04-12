@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"sort"
@@ -1940,4 +1941,269 @@ func TestGetKeaStoragesForensicDatabase(t *testing.T) {
 	require.Equal(t, "mysql", databases[0].BackendType)
 	require.Equal(t, "kea", databases[0].Database)
 	require.Equal(t, "localhost", databases[0].Host)
+}
+
+// Test that GetDaemonConfig works for Kea daemon with assigned configuration.
+func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add app kea to machine
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	app := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Name:         "test-app",
+		Active:       true,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+			dbmodel.NewKeaDaemon("dhcp6", true),
+		},
+	}
+	// Daemon has assigned configuration
+	configDhcp4, err := dbmodel.NewKeaConfigFromJSON(`{
+		"Dhcp4": { }
+    }`)
+	require.NoError(t, err)
+
+	app.Daemons[0].KeaDaemon.Config = configDhcp4
+
+	configDhcp6, err := dbmodel.NewKeaConfigFromJSON(`{
+		"Dhcp6": { }
+    }`)
+	require.NoError(t, err)
+
+	app.Daemons[1].KeaDaemon.Config = configDhcp6
+
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	// Check Dhcp4 daemon
+	params := services.GetDaemonConfigParams{
+		ID: app.Daemons[0].ID,
+	}
+
+	rsp := rapi.GetDaemonConfig(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonConfigOK)
+	require.NotEmpty(t, okRsp.Payload)
+	require.Equal(t, configDhcp4, okRsp.Payload)
+
+	params = services.GetDaemonConfigParams{
+		ID: app.Daemons[1].ID,
+	}
+
+	// Check Dhcp6 daemon
+	rsp = rapi.GetDaemonConfig(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigOK{}, rsp)
+	okRsp = rsp.(*services.GetDaemonConfigOK)
+	require.NotEmpty(t, okRsp.Payload)
+	require.Equal(t, configDhcp6, okRsp.Payload)
+}
+
+// Test that GetDaemonConfig returns HTTP Not Found status for Kea daemon withot
+// assigned configuration.
+func TestGetDaemonConfigForKeaDaemonWithoutAssignedConfiguration(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add app kea to machine
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	app := &dbmodel.App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		Name:         "test-app",
+		Active:       true,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+			dbmodel.NewKeaDaemon("dhcp6", true),
+		},
+	}
+
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	params := services.GetDaemonConfigParams{
+		ID: app.Daemons[0].ID,
+	}
+
+	rsp := rapi.GetDaemonConfig(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetDaemonConfigDefault)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	msg := fmt.Sprintf("config not assigned for daemon with id %d", params.ID)
+	require.Equal(t, msg, *defaultRsp.Payload.Message)
+}
+
+// Test that GetDaemonConfig returns HTTP Bad Request status for not-Kea daemon.
+func TestGetDaemonConfigForBind9Daemon(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add BIND 9 app
+	var bind9Points []*dbmodel.AccessPoint
+	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124)
+	app := &dbmodel.App{
+		MachineID:    m.ID,
+		Machine:      m,
+		Type:         dbmodel.AppTypeBind9,
+		AccessPoints: bind9Points,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Bind9Daemon: &dbmodel.Bind9Daemon{},
+			},
+		},
+	}
+
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	params := services.GetDaemonConfigParams{
+		ID: app.Daemons[0].ID,
+	}
+
+	rsp := rapi.GetDaemonConfig(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetDaemonConfigDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	msg := fmt.Sprintf("daemon with id %d isn't Kea daemon", params.ID)
+	require.Equal(t, msg, *defaultRsp.Payload.Message)
+}
+
+// Test that GetDaemonConfig returns HTTP Bad Request for not exist daemon.
+func TestGetDaemonConfigForNonExistsDaemon(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add an app
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	app := &dbmodel.App{
+		MachineID:    m.ID,
+		Machine:      m,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: keaPoints,
+	}
+
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	params := services.GetDaemonConfigParams{
+		ID: 42,
+	}
+
+	rsp := rapi.GetDaemonConfig(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetDaemonConfigDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	msg := fmt.Sprintf("cannot find daemon with id %d", params.ID)
+	require.Equal(t, msg, *defaultRsp.Payload.Message)
+}
+
+// Test that GetDaemonConfig returns HTTP Internal Server Error status for failed database connection.
+func TestGetDaemonConfigForDatabaseError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// add an app
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	app := &dbmodel.App{
+		MachineID:    m.ID,
+		Machine:      m,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: keaPoints,
+	}
+
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	params := services.GetDaemonConfigParams{
+		ID: 42,
+	}
+
+	// Disconnect database for fail connection
+	teardown()
+
+	rsp := rapi.GetDaemonConfig(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetDaemonConfigDefault)
+	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	msg := fmt.Sprintf("cannot get daemon with id %d from db", params.ID)
+	require.Equal(t, msg, *defaultRsp.Payload.Message)
 }

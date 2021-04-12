@@ -1439,6 +1439,44 @@ func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemon
 	return rsp
 }
 
+// Get daemon config. Only Kea daemon supported.
+func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemonConfigParams) middleware.Responder {
+	dbDaemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("cannot get daemon with id %d from db", params.ID)
+		rsp := services.NewGetDaemonConfigDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbDaemon == nil {
+		msg := fmt.Sprintf("cannot find daemon with id %d", params.ID)
+		rsp := services.NewGetDaemonConfigDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	if dbDaemon.KeaDaemon == nil {
+		msg := fmt.Sprintf("daemon with id %d isn't Kea daemon", params.ID)
+		rsp := services.NewGetDaemonConfigDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if dbDaemon.KeaDaemon.Config == nil {
+		msg := fmt.Sprintf("config not assigned for daemon with id %d", params.ID)
+		rsp := services.NewGetDaemonConfigDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	rsp := services.NewGetDaemonConfigOK().WithPayload(dbDaemon.KeaDaemon.Config)
+	return rsp
+}
+
 // Rename an app. The request must contain two parameters: app ID and new app name. The app
 // is renamed in the database. If the name is invalid or the given app does not exist,
 // an error is returned.

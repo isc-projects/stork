@@ -463,3 +463,26 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /daemons/{id}/config:
+    get:
+      summary: Get daemon configuration
+      description: Get internal daemon configuration. Only Kea daemon supported.
+      operationId: getDaemonConfig
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Daemon ID
+      responses:
+        200:
+          description: Daemon configuration information.
+          schema:
+            $ref: "#/definitions/KeaDaemonConfig"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

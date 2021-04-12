@@ -4,7 +4,7 @@ import string
 import time
 
 import containers
-from selenium.common.exceptions import ElementNotInteractableException
+from selenium.common.exceptions import ElementNotInteractableException, NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 
 from selenium_checks import check_phrases, find_and_check_tooltip, refresh_until_status_turn_green, display_sleep, stork_login, \
@@ -404,6 +404,64 @@ def test_add_new_machine(selenium, agent, server):
     check_phrases(selenium, r'Welcome to Stork!')
 
     selenium.close()
+
+
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'ubuntu/18.04')])
+def test_read_kea_daemon_config(selenium, agent, server):
+    """
+    Login with default credentials
+    Add stork agent with Kea4 and CA running
+    Open a application list
+    Open a Kea application
+    Click on "Raw configuration" button
+    Check configuration page, should display configuration
+    """
+    # install kea on the agent machine
+    agent.install_kea()
+
+    # TODO change xpaths to ids where we can
+    print('http://localhost:%d' % server.port)
+    selenium.get('http://localhost:%d' % server.port)
+
+    selenium.implicitly_wait(10)
+    selenium.maximize_window()
+    assert "Stork" in selenium.title
+
+    stork_login(selenium, "admin", "admin")
+
+    # add stork agent
+    find_element(selenium, 'id', 'machines').click()
+    check_phrases(selenium, ["Machines can be added by clicking the", "No machines found.", "Add New Machine"])
+
+    find_element(selenium, 'id', 'add-new-machine').click()
+    find_element(selenium, 'id', 'cancel-machine-dialog').click()
+    find_element(selenium, 'id', 'add-new-machine').click()
+    find_element(selenium, 'id', "machine-address").clear()
+    find_element(selenium, 'id', "machine-address").send_keys(agent.mgmt_ip)
+    find_element(selenium, 'id', 'add-new-machine-page').click()
+
+    check_phrases(selenium, ["%s:8080" % agent.mgmt_ip, "Hostname", "Address", "Agent Version", "Memory",
+                             "Used Memory", "Uptime", "Virtualization", "Last Visited"])
+    check_phrases(selenium, ["Machines can be added by clicking the", "No machines found.", "Add New Machine"],
+                  expect=False)
+
+    # Open configuration page
+    find_element(selenium, 'id', 'services').click()
+    find_element(selenium, 'id', 'kea-apps').click()
+    find_element(selenium, 'partial_link_text', 'kea@agent').click()
+    find_element(selenium, 'xpath', "//button[@label='Raw configuration']").click()
+
+    # Wait for finish loading
+    while True:
+        try:
+            selenium.implicitly_wait(10)
+            find_element(selenium, 'class_name', 'fa-spinner')
+        except NoSuchElementException:
+            break
+
+    # Check if JSON is rendered
+    check_phrases(selenium, [r'Dhcp4'])
+
 
 # TODO let's finish this
 # def test_recreate_demo(selenium):

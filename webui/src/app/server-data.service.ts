@@ -1,5 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http'
 import { Injectable } from '@angular/core'
-import { Observable, Subject, merge, timer, EMPTY } from 'rxjs'
+import { Observable, Subject, merge, timer, EMPTY, of } from 'rxjs'
 import { switchMap, shareReplay, catchError, filter, map } from 'rxjs/operators'
 
 import { AuthService } from './auth.service'
@@ -18,9 +19,11 @@ export class ServerDataService {
     private appsStats: Observable<AppsStats>
     private groups: Observable<Groups>
     private reloadAppStats = new Subject<void>()
+    private reloadDaemonConfiguration: { [daemonId: number]: Subject<number> } = {}
 
     private _machinesAddresses: Observable<any>
     private _appsNames: Observable<any>
+    private _daemonConfigurations: { [daemonId: number]: Observable<any> } = {}
 
     constructor(private auth: AuthService, public servicesApi: ServicesService, private usersApi: UsersService) {}
 
@@ -37,12 +40,12 @@ export class ServerDataService {
             // make an http request to fetch new data
             this.appsStats = merge(refreshTimer, this.reloadAppStats, this.auth.currentUser).pipe(
                 filter((x) => x !== null), // filter out trigger which is logout ie user changed to null
-                switchMap((_) =>
-                    this.servicesApi.getAppsStats().pipe(
+                switchMap((_) => {
+                    return this.servicesApi.getAppsStats().pipe(
                         // use subpipe to not complete source due to error
                         catchError((err) => EMPTY) // in case of error drop the response (it should not be cached)
                     )
-                ),
+                }),
                 shareReplay(1) // cache the response for all subscribers
             )
         }
@@ -145,5 +148,41 @@ export class ServerDataService {
             })
         )
         return this._appsNames
+    }
+
+    /**
+     * Get (Kea) daemon configuration from the server and cache it for other subscribers.
+     * Cache is refreshed manually or when the user is logged in.
+     * @param daemonId Daemon ID
+     * @returns Observable of daemon configuration
+     */
+    public getDaemonConfiguration(daemonId: number): Observable<any | HttpErrorResponse> {
+        if (!(daemonId in this._daemonConfigurations)) {
+            this.reloadDaemonConfiguration[daemonId] = new Subject<number>()
+            this._daemonConfigurations[daemonId] = merge(
+                this.reloadDaemonConfiguration[daemonId],
+                this.auth.currentUser
+            ).pipe(
+                filter((x) => x !== null), // filter out trigger which is logout ie user changed to null
+                switchMap((_) => {
+                    return this.servicesApi.getDaemonConfig(daemonId).pipe(
+                        // use subpipe to not complete source due to error
+                        catchError((err) => of(err)) // in case of error continue with it to prevent to broke pipe
+                    )
+                }),
+                shareReplay(1) // cache the response for all subscribers
+            )
+        }
+        return this._daemonConfigurations[daemonId]
+    }
+
+    /**
+     * Force reloading cache for daemon configuration.
+     * @param daemonId Daemon ID
+     */
+    forceReloadDaemonConfiguration(daemonId: number) {
+        if (daemonId in this.reloadDaemonConfiguration) {
+            this.reloadDaemonConfiguration[daemonId].next(daemonId)
+        }
     }
 }

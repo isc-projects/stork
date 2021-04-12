@@ -519,6 +519,38 @@ Please keep in mind that extending the size of the viewed log tail may
 cause slowness of the log viewer and network congestion as
 the amount of data fetched from the monitored machine increases.
 
+Viewing the raw Kea daemon configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Stork offers a JSON-viewing mechanism to display raw Kea daemon configuration.
+
+.. note::
+
+   This mechanism only supports viewing Kea daemon configuration;
+   viewing BIND 9 daemon configuration is not yet supported.
+
+Stork has a possibility to shown raw Kea daemon configuration,
+directly fetched from Kea agent, in JSON format. It may be useful
+to diagnose the problems with configuration or check parameters
+that haven't the dedicated controls.
+
+The configuration is available on the ``Kea App`` page. After choosing
+a specific daemon the "Raw configuration" button is displayed. Click on it
+opens the JSON viewer page. (You can hold the control key and click on this
+button to open the configuration in the new browser tab. It may be helpful to compare
+the configurations of two daemons at the same time.)
+
+The configuration is visualized in tree form with collapsible/expandable nodes.
+Hovered tree level is highlighted. The keys are presented on the left side and values on the right side. The values have
+a different color depending on a type or value (string, number, bool...).
+
+If the configuration contains a large number of subnets then they are paginated to
+avoid a degrading browser performance.
+
+The configuration is updated only on request by pressing the refresh button. Another button -
+"Download" - may be used to download the configuration in JSON format.
+
+
 Dashboard
 =========
 
