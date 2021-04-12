@@ -380,6 +380,14 @@ def test_search_leases(agent, server):
     assert 'ipAddress' in leases[1]
     assert leases[1]['ipAddress'] == '3001:db8:1::6'
 
+    # Blank search text should return none leases
+    r = server.api_get('/leases?text=')
+    data = r.json()
+    assert data['items'] is None
+
+    r = server.api_get('/leases')
+    data = r.json()
+    assert data['items'] is None
 
 
 def run_perfdhcp(src_cntr, dest_ip_addr):
