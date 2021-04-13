@@ -201,9 +201,9 @@ To check the status:
    $ sudo systemctl status isc-stork-server
 
 By default, the ``Stork Server`` web service is exposed on port 8080 and
-can be tested using web browser at http://localhost:8080. If you want it to listen
-on a different IP address or port, please change the `STORK_REST_HOST` and `STORK_REST_PORT`
-variables in the ``/etc/stork/stork.env`` file.
+can be tested using web browser at http://localhost:8080. To use a different IP address or port,
+please set the `STORK_REST_HOST` and `STORK_REST_PORT` variables in the ``/etc/stork/stork.env``
+file.
 
 The ``Stork Server`` can be configured to run behind an HTTP reverse proxy
 using `Nginx` or `Apache`. The ``Stork Server`` package contains an example
