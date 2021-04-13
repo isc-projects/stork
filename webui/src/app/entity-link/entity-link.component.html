@@ -1,9 +1,10 @@
-<span [ngSwitch]="entity">
+<span [ngSwitch]="entity" [ngClass]="'entity-link'" [class]="styleClass">
     <!-- daemon -->
     <ng-container *ngSwitchCase="'daemon'">
-        daemon
+        {{ showEntityName ? 'daemon' : '' }}
         <a
             id="daemon-link"
+            class="entity-link-anchor"
             routerLink="/apps/{{ attrs.appType }}/{{ attrs.appId }}"
             [queryParams]="{ daemon: attrs.name }"
         >
@@ -13,24 +14,37 @@
 
     <!-- app -->
     <ng-container *ngSwitchCase="'app'">
-        app
-        <a id="app-link" routerLink="/apps/{{ attrs.type }}/{{ attrs.id }}">{{ attrs.name }}</a>
+        {{ showEntityName ? 'app' : '' }}
+        <a id="app-link" class="entity-link-anchor" routerLink="/apps/{{ attrs.type }}/{{ attrs.id }}">{{
+            attrs.name
+        }}</a>
     </ng-container>
 
     <!-- machine -->
     <ng-container *ngSwitchCase="'machine'">
-        machine <a id="machine-link" routerLink="/machines/{{ attrs.id }}"> [{{ attrs.id }}] {{ attrs.address }} </a>
+        {{ showEntityName ? 'machine' : '' }}
+        <a id="machine-link" class="entity-link-anchor" routerLink="/machines/{{ attrs.id }}">
+            [{{ attrs.id }}] {{ attrs.address }}
+        </a>
     </ng-container>
 
     <!-- subnet -->
-    <ng-container *ngSwitchCase="'subnet'"> subnet [{{ attrs.id }}] {{ attrs.prefix }} </ng-container>
+    <ng-container *ngSwitchCase="'subnet'">
+        {{ showEntityName ? 'subnet ' : '' }}[{{ attrs.id }}] {{ attrs.prefix }}
+    </ng-container>
 
     <!-- user -->
     <ng-container *ngSwitchCase="'user'">
-        user
-        <a id="user-link" routerLink="/users/{{ attrs.id }}">
+        {{ showEntityName ? 'user' : '' }}
+        <a id="user-link" class="entity-link-anchor" routerLink="/users/{{ attrs.id }}">
             [{{ attrs.id }}] {{ attrs.login ? attrs.login : attrs.email }}
         </a>
+    </ng-container>
+
+    <!-- host reservation -->
+    <ng-container *ngSwitchCase="'host'">
+        {{ showEntityName ? 'host' : '' }}
+        <a id="host-link" class="entity-link-anchor" routerLink="/dhcp/hosts/{{ attrs.id }}">{{ attrs.label }}</a>
     </ng-container>
 
     <!-- unsupported -->

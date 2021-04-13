@@ -96,46 +96,31 @@
             <ng-template pTemplate="body" let-h>
                 <tr id="host-row-{{ h.id }}" class="alternate-list">
                     <td>
-                        <div
+                        <app-entity-link
                             *ngFor="let i of h.hostIdentifiers"
-                            style="
-                                display: inline-block;
-                                border-radius: 4px;
-                                background-color: #ddd;
-                                padding: 0 4px;
-                                margin: 0 4px 2px 0;
-                            "
-                        >
-                            {{ i.idType + '=' + i.idHexValue }}
-                        </div>
+                            entity="host"
+                            [showEntityName]="false"
+                            [attrs]="{ id: h.id, label: i.idType + '=' + i.idHexValue }"
+                            styleClass="host-link"
+                        ></app-entity-link>
                     </td>
                     <td>
-                        <div
+                        <app-entity-link
                             *ngFor="let r of h.addressReservations"
-                            style="
-                                display: inline-block;
-                                border-radius: 4px;
-                                background-color: #ddd;
-                                padding: 0 4px;
-                                margin: 0 4px 2px 0;
-                            "
-                        >
-                            {{ r.address }}
-                        </div>
+                            entity="host"
+                            [showEntityName]="false"
+                            [attrs]="{ id: h.id, label: r.address }"
+                            styleClass="host-link"
+                        ></app-entity-link>
                     </td>
                     <td>
-                        <div
+                        <app-entity-link
                             *ngFor="let r of h.prefixReservations"
-                            style="
-                                display: inline-block;
-                                border-radius: 4px;
-                                background-color: #ddd;
-                                padding: 0 4px;
-                                margin: 0 4px 2px 0;
-                            "
-                        >
-                            {{ r.address }}
-                        </div>
+                            entity="host"
+                            [showEntityName]="false"
+                            [attrs]="{ id: h.id, label: r.address }"
+                            styleClass="host-link"
+                        ></app-entity-link>
                     </td>
                     <td>
                         {{ h.hostname ? h.hostname : '' }}
