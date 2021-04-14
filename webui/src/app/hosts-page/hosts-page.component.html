@@ -18,7 +18,24 @@
     </div>
 </app-breadcrumbs>
 
-<div>
+<p-tabMenu [model]="tabs" [activeItem]="activeTab" [style]="{ 'margin-top': '10px' }">
+    <ng-template pTemplate="item" let-item let-i="index">
+        <div style="display: flex; justify-content: space-between">
+            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em"></div>
+            <div class="ui-menuitem-text">
+                <b>{{ item.label }}</b>
+            </div>
+            <div
+                *ngIf="i !== 0"
+                class="ui-menuitem-icon pi pi-times"
+                style="font-size: 1.3rem"
+                (click)="closeHostTab($event, i)"
+            ></div>
+        </div>
+    </ng-template>
+</p-tabMenu>
+
+<div *ngIf="activeTabIndex === 0" style="margin: 10px">
     <div style="margin: 0 0 10px 5px">
         <span>
             <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
@@ -141,4 +158,8 @@
             </ng-template>
         </p-table>
     </div>
+</div>
+
+<div *ngIf="activeTabIndex != 0" class="ui-widget">
+    <app-host-tab> </app-host-tab>
 </div>

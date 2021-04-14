@@ -80,6 +80,7 @@ import { RenameAppDialogComponent } from './rename-app-dialog/rename-app-dialog.
 import { LeaseSearchPageComponent } from './lease-search-page/lease-search-page.component'
 import { JsonTreeComponent } from './json-tree/json-tree.component'
 import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-page/kea-daemon-configuration-page.component'
+import { HostTabComponent } from './host-tab/host-tab.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -126,6 +127,7 @@ export function cfgFactory() {
         LeaseSearchPageComponent,
         JsonTreeComponent,
         KeaDaemonConfigurationPageComponent,
+        HostTabComponent,
     ],
     imports: [
         BrowserModule,

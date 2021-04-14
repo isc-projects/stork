@@ -71,6 +71,11 @@ const routes: Routes = [
     },
     {
         path: 'dhcp/hosts',
+        pathMatch: 'full',
+        redirectTo: 'dhcp/hosts/all',
+    },
+    {
+        path: 'dhcp/hosts/:id',
         component: HostsPageComponent,
         canActivate: [AuthGuard],
     },
