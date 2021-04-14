@@ -66,6 +66,29 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /hosts/{id}:
+    get:
+      summary: Get host reservation by ID.
+      description: Get host reservation by the database specific ID.
+      operationId: getHost
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Host ID.
+      responses:
+        200:
+          description: Host reservation.
+          schema:
+            $ref: "#/definitions/Host"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /subnets:
     get:
       summary: Get list of DHCP subnets.

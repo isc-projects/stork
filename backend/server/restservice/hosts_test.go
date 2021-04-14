@@ -307,3 +307,37 @@ func TestGetHostsWithFiltering(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
 }
+
+// Test that host can be fetched by ID over the REST API.
+func TestGetHost(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
+	hosts, _ := addTestHosts(t, db)
+
+	params := dhcp.GetHostParams{
+		ID: hosts[0].ID,
+	}
+	rsp := rapi.GetHost(ctx, params)
+	require.IsType(t, &dhcp.GetHostOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetHostOK)
+	returnedHost := okRsp.Payload
+	require.EqualValues(t, hosts[0].ID, returnedHost.ID)
+	require.EqualValues(t, hosts[0].SubnetID, returnedHost.SubnetID)
+	require.Equal(t, hosts[0].Hostname, returnedHost.Hostname)
+
+	// Get host for non-existing ID should return a default response.
+	params = dhcp.GetHostParams{
+		ID: 100000000,
+	}
+	rsp = rapi.GetHost(ctx, params)
+	require.IsType(t, &dhcp.GetHostDefault{}, rsp)
+}
