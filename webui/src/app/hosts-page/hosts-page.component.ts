@@ -1,11 +1,13 @@
 import { Component, OnInit, ViewChild } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 
-import { MenuItem } from 'primeng/api'
+import { MenuItem, MessageService } from 'primeng/api'
 import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 import { extractKeyValsAndPrepareQueryParams } from '../utils'
+import { concat, of } from 'rxjs'
+import { filter, take } from 'rxjs/operators'
 
 /**
  * This component implements a page which displays hosts along with
@@ -70,8 +72,14 @@ export class HostsPageComponent implements OnInit {
      * @param route activated route used to gather parameters from the URL.
      * @param router router used to navigate between tabs.
      * @param dhcpApi server API used to gather hosts information.
+     * @param messageService message service used to display error messages to a user.
      */
-    constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) {}
+    constructor(
+        private route: ActivatedRoute,
+        private router: Router,
+        private dhcpApi: DHCPService,
+        private messageService: MessageService
+    ) {}
 
     /**
      * Component lifecycle hook called upon initialization.
@@ -199,17 +207,40 @@ export class HostsPageComponent implements OnInit {
                 return
             }
         }
-        const filteredHosts = this.hosts.filter((host) => host.id === id)
+        // Check if the host info is already available.
         let hostInfo: any
-        if (filteredHosts.length > 0) {
-            hostInfo = filteredHosts[0]
+        if (this.hosts) {
+            const filteredHosts = this.hosts.filter((host) => host.id === id)
+            if (filteredHosts.length > 0) {
+                hostInfo = filteredHosts[0]
+            }
         }
-        this.tabs.push({
-            label: this.getHostLabel(hostInfo),
-            routerLink: '/dhcp/hosts/' + id,
-        })
-        this.openedTabs.push(id)
-        this.switchToTab(this.tabs.length - 1)
+        // Use the available host info if present (filter operator skips undefined).
+        // Otherwise, send the getHost query to the server.
+        concat(of(hostInfo).pipe(filter((data) => data)), this.dhcpApi.getHost(id))
+            .pipe(take(1))
+            .subscribe(
+                (data) => {
+                    this.tabs.push({
+                        label: this.getHostLabel(data),
+                        routerLink: '/dhcp/hosts/' + id,
+                    })
+                    this.openedTabs.push(id)
+                    this.switchToTab(this.tabs.length - 1)
+                },
+                (err) => {
+                    let msg = err.statusText
+                    if (err.error && err.error.message) {
+                        msg = err.error.message
+                    }
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Cannot get host reservation',
+                        detail: 'Getting host reservation with ID ' + id + ' erred: ' + msg,
+                        life: 10000,
+                    })
+                }
+            )
     }
 
     /**
@@ -265,8 +296,17 @@ export class HostsPageComponent implements OnInit {
                 this.hosts = data.items
                 this.totalHosts = data.total
             },
-            (error) => {
-                console.log(error)
+            (err) => {
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot get host reservations list',
+                    detail: 'Getting host reservations list erred: ' + msg,
+                    life: 10000,
+                })
             }
         )
     }

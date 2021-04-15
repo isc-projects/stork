@@ -3,13 +3,14 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing'
 import { HostsPageComponent } from './hosts-page.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { FormsModule } from '@angular/forms'
+import { MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 import { DHCPService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { By } from '@angular/platform-browser'
-import { of, BehaviorSubject } from 'rxjs'
+import { of, throwError, BehaviorSubject } from 'rxjs'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -22,13 +23,15 @@ describe('HostsPageComponent', () => {
     let fixture: ComponentFixture<HostsPageComponent>
     let router: Router
     let route: ActivatedRoute
+    let dhcpApi: DHCPService
+    let messageService: MessageService
     let paramMap: any
     let paramMapSubject: BehaviorSubject<any>
     let paramMapSpy: any
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService],
+            providers: [DHCPService, MessageService],
             imports: [
                 FormsModule,
                 TableModule,
@@ -54,6 +57,8 @@ describe('HostsPageComponent', () => {
         component = fixture.componentInstance
         router = fixture.debugElement.injector.get(Router)
         route = fixture.debugElement.injector.get(ActivatedRoute)
+        dhcpApi = fixture.debugElement.injector.get(DHCPService)
+        messageService = fixture.debugElement.injector.get(MessageService)
         paramMap = convertToParamMap({})
         paramMapSubject = new BehaviorSubject(paramMap)
         paramMapSpy = spyOnProperty(route, 'paramMap').and.returnValue(paramMapSubject)
@@ -133,6 +138,11 @@ describe('HostsPageComponent', () => {
         ]
         fixture.detectChanges()
 
+        // Ensure that we don't fetch the host information from the server upon
+        // opening a new tab. We should use the information available in the
+        // hosts structure.
+        spyOn(dhcpApi, 'getHost')
+
         // Open tab with host with id 1.
         paramMapSubject.next(convertToParamMap({ id: 1 }))
         fixture.detectChanges()
@@ -168,6 +178,51 @@ describe('HostsPageComponent', () => {
         fixture.detectChanges()
         expect(component.tabs.length).toBe(1)
         expect(component.activeTab).toBe(component.tabs[0])
+    })
+
+    it('should open a tab when hosts have not been loaded', () => {
+        const host: any = {
+            id: 1,
+            hostIdentifiers: [
+                {
+                    idType: 'duid',
+                    idHexValue: '01:02:03:04',
+                },
+            ],
+            addressReservations: [
+                {
+                    address: '192.0.2.1',
+                },
+            ],
+            localHosts: [
+                {
+                    appId: 1,
+                    appName: 'frog',
+                    dataSource: 'config',
+                },
+            ],
+        }
+        // Do not initialize the hosts list. Instead, simulate returning the
+        // host information from the server. The component should send the
+        // request to the server to get the host.
+        spyOn(dhcpApi, 'getHost').and.returnValue(of(host))
+        paramMapSubject.next(convertToParamMap({ id: 1 }))
+        fixture.detectChanges()
+        // There should be two tabs opened. One with the list of hosts and one
+        // with the host details.
+        expect(component.tabs.length).toBe(2)
+    })
+
+    it('should not open a tab when getting host information erred', () => {
+        // Simulate the getHost call to return an error.
+        spyOn(dhcpApi, 'getHost').and.returnValue(throwError({ status: 404 }))
+        spyOn(messageService, 'add')
+        paramMapSubject.next(convertToParamMap({ id: 1 }))
+        fixture.detectChanges()
+        // There should still be one tab open with a list of hosts.
+        expect(component.tabs.length).toBe(1)
+        // Ensure that the error message was displayed.
+        expect(messageService.add).toHaveBeenCalled()
     })
 
     it('should generate a label from host information', () => {
