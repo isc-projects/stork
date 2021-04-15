@@ -44,7 +44,8 @@ Stork requires the open source ``Stat Commands (stat_cmds)`` hooks library to be
 statistics. Stork does work without the Stat Commands hooks library, but will not be able to show pool utilization and other
 statistics.
 
-Stork uses Go implementation for handling TLS connections, certificates and keys. The secrets are stored in the PostgreSQL database.
+Stork uses Go implementation for handling TLS connections, certificates and keys. The secrets are stored in the PostgreSQL
+database, in the `secret` table.
 
 For the ``Stork Server``, a PostgreSQL database (https://www.postgresql.org/) version 11 or later is required. It may work with
 PostgreSQL 10, but this has not been tested. The general installation procedure for PostgreSQL is OS-specific and is not included
