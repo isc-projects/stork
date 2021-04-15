@@ -202,7 +202,7 @@ export class HostsPageComponent implements OnInit {
      */
     private openHostTab(id) {
         for (let index = 0; index < this.openedTabs.length; index++) {
-            if (this.openedTabs[index] === id) {
+            if (this.openedTabs[index].host.id === id) {
                 this.switchToTab(index + 1)
                 return
             }
@@ -225,7 +225,7 @@ export class HostsPageComponent implements OnInit {
                         label: this.getHostLabel(data),
                         routerLink: '/dhcp/hosts/' + id,
                     })
-                    this.openedTabs.push(id)
+                    this.openedTabs.push({ host: data })
                     this.switchToTab(this.tabs.length - 1)
                 },
                 (err) => {

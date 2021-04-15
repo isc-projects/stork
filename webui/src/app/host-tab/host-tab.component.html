@@ -1,1 +1,90 @@
-<p>host-tab works!</p>
+<div *ngIf="host" style="margin: 10px">
+    <div style="font-size: 1.2em; font-weight: bold; margin-left: 10px; color: #007ad9">
+        <i class="fa fa-laptop" style="padding-right: 10px"></i>
+        <span id="tab-title-span" *ngIf="host.subnetId && host.subnetId > 0">
+            [{{ host.id }}] Host in subnet {{ host.subnetPrefix }}
+        </span>
+        <span id="tab-title-span" *ngIf="!host.subnetId || host.subnetId === 0"> [{{ host.id }}] Global host </span>
+    </div>
+    <div class="p-grid">
+        <div class="p-col-4">
+            <div class="p-grid">
+                <div *ngIf="host.addressReservations && host.addressReservations.length > 0" class="p-col-12">
+                    <p-fieldset id="address-reservations-fieldset" legend="Address Reservations">
+                        <p-table [value]="host.addressReservations" dataKey="address">
+                            <ng-template pTemplate="body" let-r>
+                                <tr>
+                                    <td style="border: none; width: 15rem">{{ r.address }}</td>
+                                    <td style="border: none">
+                                        <!--                                        <i
+                                            class="pi pi-check icon-ok"
+                                            [ngStyle]="{ color: '#00a800' }"
+                                            ></i>
+                                        in use
+                                        -->
+                                    </td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </p-fieldset>
+                </div>
+                <div *ngIf="host.prefixReservations && host.prefixReservations.length > 0" class="p-col-12">
+                    <p-fieldset id="prefix-reservations-fieldset" legend="Prefix Reservations">
+                        <p-table [value]="host.prefixReservations" dataKey="address">
+                            <ng-template pTemplate="body" let-r>
+                                <tr>
+                                    <td style="border: none; width: 15rem">{{ r.address }}</td>
+                                    <td style="border: none">
+                                        <!--
+                                            <i class="pi pi-check icon-ok" [ngStyle]="{ color: '#00a800' }"></i>
+                                            in use
+                                        -->
+                                    </td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </p-fieldset>
+                </div>
+                <div *ngIf="host.hostname && host.hostname.length > 0" class="p-col-12">
+                    <p-fieldset id="non-ip-reservations-fieldset" legend="Non-IP Reservations">
+                        <table style="width: 100%">
+                            <tr>
+                                <td style="border: none; width: 10rem">Hostname</td>
+                                <td style="border: none">{{ host.hostname }}</td>
+                            </tr>
+                        </table>
+                    </p-fieldset>
+                </div>
+                <div class="p-col-12">
+                    <p-fieldset id="dhcp-identifiers-fieldset" legend="DHCP Identifiers">
+                        <p-table [value]="host.hostIdentifiers">
+                            <ng-template pTemplate="body" let-i>
+                                <tr>
+                                    <td style="border: none; width: 8rem">{{ i.idType }}</td>
+                                    <td style="border: none">{{ i.idHexValue }}</td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </p-fieldset>
+                </div>
+            </div>
+        </div>
+        <div class="p-col-4">
+            <p-fieldset id="apps-fieldset" legend="Kea Apps using the reservations">
+                <p-table [value]="host.localHosts">
+                    <ng-template pTemplate="body" let-l>
+                        <tr>
+                            <td style="border: none; width: 10rem">
+                                <a routerLink="/apps/kea/{{ l.appId }}">{{ l.appName }}</a>
+                                <sup>
+                                    <span *ngIf="l.dataSource === 'config'" class="cfg-srctag">config</span>
+                                    <span *ngIf="l.dataSource === 'api'" class="hostcmds-srctag">host_cmds</span>
+                                </sup>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </p-fieldset>
+        </div>
+    </div>
+</div>
