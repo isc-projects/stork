@@ -17,6 +17,26 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// IP protocol type.
+type IPType int
+
+// IP protocol type enum.
+const (
+	IPv4 IPType = iota
+	IPv6
+)
+
+// Structure returned by ParseIP function. It comprises the information about
+// the parsed IP address or delegated prefix.
+type ParsedIP struct {
+	NetworkAddress string // Full address or delegated prefix e.g. 192.0.2.0/24.
+	Protocol       IPType // Detected IP type: IPv4 or IPv6.
+	NetworkPrefix  string // Prefix part (slash and length excluded).
+	PrefixLength   int    // Network address mask.
+	Prefix         bool   // Boolean indicating if it is an address or prefix.
+	CIDR           bool   // Boolean indicating if parsed value was in CIDR form.
+}
+
 func UTCNow() time.Time {
 	return time.Now().UTC()
 }
@@ -67,24 +87,63 @@ func MakeCIDR(address string) (string, error) {
 	return address, nil
 }
 
-// Recognizes if the specified value is an IP address or prefix and
-// converts it if necessary. An IP address specified as 192.0.2.2/32
-// will be converted to 192.0.2.2. Similarly, an IP address of
-// 2001:db8:1::/128 will be converted to 2001:db8:1::. If the specified
-// value is a prefix, e.g. 2001:db8:1::/48 it will be returned as is.
-// The second returned value indicates if this is a prefix or address.
-// The third value indicates if the specified value was valid and the
-// conversion was successful.
-func ParseIP(address string) (string, bool, bool) {
-	ip, ipNet, err := net.ParseCIDR(address)
-	if err != nil {
-		return "", false, false
+// Parses an IP address or prefix and returns parsed information in the
+// structure. If the specified value is invalid, a nil structure is
+// returned.
+func ParseIP(address string) *ParsedIP {
+	var ipNet *net.IPNet
+
+	// Check if this is an IP address without a prefix length.
+	ipAddr := net.ParseIP(address)
+	if ipAddr == nil {
+		// Apparently it comprises a prefix length.
+		ip, net, err := net.ParseCIDR(address)
+		if err != nil {
+			// It is neither an IP address nor prefix.
+			return nil
+		}
+		// Gather prefix information from the network.
+		ipAddr = ip
+		ipNet = net
 	}
-	ones, bits := ipNet.Mask.Size()
-	if ones == bits {
-		return ip.String(), false, true
+
+	parsedIP := &ParsedIP{}
+
+	if ipNet != nil {
+		// Check prefix length.
+		ones, bits := ipNet.Mask.Size()
+		if ones != bits {
+			// This seems to be a prefix.
+			parsedIP.NetworkAddress = ipNet.String()
+			parsedIP.NetworkPrefix = ipNet.IP.String()
+			parsedIP.PrefixLength = ones
+			parsedIP.Prefix = true
+		}
+		// Caller specified it with a prefix length.
+		parsedIP.CIDR = true
 	}
-	return ipNet.String(), true, true
+
+	// Prefix length wasn't specified, so we need to parse the
+	// IP address.
+	if !parsedIP.Prefix {
+		parsedIP.NetworkAddress = ipAddr.String()
+		parsedIP.NetworkPrefix = ipAddr.String()
+	}
+
+	// Check if this is IPv4 or IPv6 address/prefix.
+	if ipAddr.To4() != nil {
+		if parsedIP.PrefixLength == 0 {
+			parsedIP.PrefixLength = 32
+		}
+		parsedIP.Protocol = IPv4
+	} else {
+		if parsedIP.PrefixLength == 0 {
+			parsedIP.PrefixLength = 128
+		}
+		parsedIP.Protocol = IPv6
+	}
+	// Parsing finished.
+	return parsedIP
 }
 
 // Formats provided string of hexadecimal digits to MAC address format

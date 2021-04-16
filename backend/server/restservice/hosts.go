@@ -36,14 +36,14 @@ func hostToRestAPI(dbHost *dbmodel.Host) *models.Host {
 	}
 	// Convert IP reservations.
 	for _, dbHostIP := range dbHost.IPReservations {
-		ip, prefix, ok := storkutil.ParseIP(dbHostIP.Address)
-		if !ok {
+		parsedIP := storkutil.ParseIP(dbHostIP.Address)
+		if parsedIP == nil {
 			continue
 		}
 		hostIP := models.IPReservation{
-			Address: ip,
+			Address: parsedIP.NetworkAddress,
 		}
-		if prefix {
+		if parsedIP.Prefix {
 			host.PrefixReservations = append(host.PrefixReservations, &hostIP)
 		} else {
 			host.AddressReservations = append(host.AddressReservations, &hostIP)
