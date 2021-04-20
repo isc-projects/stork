@@ -49,7 +49,7 @@ func runAgent(settings *cli.Context) {
 	appMonitor.Start(storkAgent)
 
 	// Only start the exporters if they're enabled.
-	if !settings.Bool("stork-only") {
+	if !settings.Bool("listen-stork-only") {
 		promKeaExporter.Start()
 		defer promKeaExporter.Shutdown()
 
@@ -58,7 +58,7 @@ func runAgent(settings *cli.Context) {
 	}
 
 	// Only start the agent service if it's enabled.
-	if !settings.Bool("prometheus-only") {
+	if !settings.Bool("listen-prometheus-only") {
 		go storkAgent.Serve()
 		defer storkAgent.Shutdown()
 	}
