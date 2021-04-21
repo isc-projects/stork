@@ -405,6 +405,20 @@ func mockLeasesGetDeclinedErrors(callNo int, responses []interface{}) {
 	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
 }
 
+// Generate an error mock response to a command fetching lease by an IPv6
+// address.
+func mockLease6GetError(callNo int, responses []interface{}) {
+	json := []byte(`[
+        {
+            "result": 1,
+            "text": "Getting an lease erred."
+        }
+    ]`)
+	daemons, _ := keactrl.NewDaemons("dhcp6")
+	command, _ := keactrl.NewCommand("lease6-get", daemons, nil)
+	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+}
+
 // Test the success scenario in sending lease4-get command to Kea.
 func TestGetLease4ByIPAddress(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLease4Get, nil)
@@ -1118,4 +1132,185 @@ func TestFindDeclinedLeasesNoLeaseCmds(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, erredApps)
 	require.Empty(t, leases)
+}
+
+func TestFindLeasesByHostID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine1 := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine1)
+	require.NoError(t, err)
+
+	machine2 := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8081,
+	}
+	err = dbmodel.AddMachine(db, machine2)
+	require.NoError(t, err)
+
+	// Create Kea apps with lease_cmds hooks library loaded.
+	accessPoints1 := []*dbmodel.AccessPoint{}
+	accessPoints1 = dbmodel.AppendAccessPoint(accessPoints1, dbmodel.AccessPointControl, "localhost", "", 8000)
+	app1 := dbmodel.App{
+		MachineID:    machine1.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints1,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: dbmodel.DaemonNameDHCPv6,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+		},
+	}
+	// Add the app to the database.
+	_, err = dbmodel.AddApp(db, &app1)
+	require.NoError(t, err)
+
+	// Create Kea apps with lease_cmds hooks library loaded.
+	accessPoints2 := []*dbmodel.AccessPoint{}
+	accessPoints2 = dbmodel.AppendAccessPoint(accessPoints2, dbmodel.AccessPointControl, "localhost", "", 8001)
+	app2 := dbmodel.App{
+		MachineID:    machine2.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints2,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: dbmodel.DaemonNameDHCPv4,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+			{
+				Name: dbmodel.DaemonNameDHCPv6,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+		},
+	}
+	// Add the app to the database.
+	_, err = dbmodel.AddApp(db, &app2)
+	require.NoError(t, err)
+
+	host := dbmodel.Host{
+		HostIdentifiers: []dbmodel.HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		IPReservations: []dbmodel.IPReservation{
+			{
+				Address: "192.0.2.1",
+			},
+			{
+				Address: "2001:db8:2::1",
+			},
+			{
+				Address: "2001:db8:0:0:2::/80",
+			},
+		},
+		LocalHosts: []dbmodel.LocalHost{
+			{
+				AppID:      app1.ID,
+				DataSource: "config",
+				UpdateSeq:  1,
+			},
+			{
+				AppID:      app2.ID,
+				DataSource: "config",
+				UpdateSeq:  1,
+			},
+		},
+	}
+	err = dbmodel.AddHost(db, &host)
+	require.NoError(t, err)
+
+	// Expecting the following commands and responses:
+	// - lease6-get (by address) to app1 - returning empty response
+	// - lease6-get (by prefix) to app1  - returning the lease 2001:db8:0:0:2::"
+	// - lease4-get to app2 - returning the lease 192.0.2.1
+	// - lease6-get (by address) to app2 - returning empty response
+	// - lease6-get (by prefix) to app2 - returning empty response
+	agents := agentcommtest.NewKeaFakeAgents(mockLeases6GetEmpty, mockLease6GetByPrefix, mockLease4Get, mockLeases6GetEmpty)
+
+	leases, erredApps, err := FindLeasesByHostID(db, agents, host.ID)
+	require.NoError(t, err)
+	require.Empty(t, erredApps)
+	require.Len(t, leases, 2)
+	require.Equal(t, "2001:db8:0:0:2::", leases[0].IPAddress)
+	require.Equal(t, "192.0.2.1", leases[1].IPAddress)
+	require.Len(t, agents.RecordedCommands, 5)
+
+	// Expecting the following commands and responses:
+	// - lease6-get (by address) to app1 - returning the lease 2001:db8:2::1
+	// - lease6-get (by prefix) to app1  - returning empty response
+	// - lease4-get to app2 - returning empty response
+	// - lease6-get (by address) to app2 - returning empty response
+	// - lease6-get (by prefix) to app2 - returning empty response
+	agents = agentcommtest.NewKeaFakeAgents(mockLease6GetByIPAddress, mockLeases6GetEmpty, mockLeases4GetEmpty, mockLeases6GetEmpty)
+
+	leases, erredApps, err = FindLeasesByHostID(db, agents, host.ID)
+	require.NoError(t, err)
+	require.Empty(t, erredApps)
+	require.Len(t, leases, 1)
+	require.Equal(t, "2001:db8:2::1", leases[0].IPAddress)
+	require.Len(t, agents.RecordedCommands, 5)
+
+	// Expecting the following commands and responses:
+	// - lease6-get (by address) to app1 - returning an error
+	// - lease4-get to app2 - returning the lease 192.0.2.1
+	// - lease6-get (by address) to app2 - returning the lease 2001:db8:2::1
+	// - lease6-get (by prefix) to app2 - returning the lease 2001:db8:0:0:2::
+	agents = agentcommtest.NewKeaFakeAgents(mockLease6GetError, mockLease4Get, mockLease6GetByIPAddress, mockLease6GetByPrefix)
+
+	leases, erredApps, err = FindLeasesByHostID(db, agents, host.ID)
+	require.NoError(t, err)
+	require.Len(t, erredApps, 1)
+	require.Len(t, leases, 3)
+	require.Len(t, agents.RecordedCommands, 4)
+
+	// Expecting the following commands and responses:
+	// - lease6-get (by address) to app1 - returning an error
+	// - lease4-get to app2 - returning an error
+	// - lease6-get (by address) to app2 - returning an error
+	agents = agentcommtest.NewKeaFakeAgents(mockLease6GetError)
+
+	leases, erredApps, err = FindLeasesByHostID(db, agents, host.ID)
+	require.NoError(t, err)
+	require.Len(t, erredApps, 2)
+	require.Empty(t, leases)
+	require.Len(t, agents.RecordedCommands, 3)
 }

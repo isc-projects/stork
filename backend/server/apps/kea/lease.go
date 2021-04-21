@@ -477,3 +477,93 @@ func FindDeclinedLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (lease
 	}
 	return leases, erredApps, nil
 }
+
+// Attempts to find leases for a given host reservation. An error is returned
+// only if there is a problem with database communication. If the host doesn't
+// exist, no leases are returned. This function will send commands to all
+// monitored Kea servers querying for leases assigned to the given host.
+// If there is a communication problem with any of the Kea servers, the details
+// of the server are recorded in the erredApps slice.
+func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID int64) (leases []dbmodel.Lease, erredApps []*dbmodel.App, err error) {
+	host, err := dbmodel.GetHost(db, hostID)
+	if err != nil {
+		err = errors.WithMessagef(err, "failed to fetch host with ID %d while searching for its leases", hostID)
+		return leases, erredApps, err
+	}
+	if host == nil {
+		return leases, erredApps, err
+	}
+
+	// Get Kea apps from the database. We will send commands to these
+	// apps to find leases.
+	apps, err := dbmodel.GetAppsByType(db, dbmodel.AppTypeKea)
+	if err != nil {
+		err = errors.WithMessagef(err, "failed to fetch Kea apps while searching for leases for host id %d", hostID)
+		return leases, erredApps, err
+	}
+
+	for i := range apps {
+		// Monitor if a daemon returned an error. We stop sending commands to the
+		// daemon it first returns an error.
+		dhcp4Error := false
+		dhcp6Error := false
+		appError := false
+		// Go over all IP reservations and send appropriate commands to the app
+		// for each of them.
+		for _, r := range host.IPReservations {
+			parsedIP := storkutil.ParseIP(r.Address)
+			if parsedIP == nil {
+				// This is rather impossible condition, but let's be safe.
+				continue
+			}
+			// Determine if this is IPv4 or IPv6 lease.
+			switch parsedIP.Protocol {
+			case storkutil.IPv4:
+				if !dhcp4Error && hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv4) {
+					lease, err := GetLease4ByIPAddress(agents, &apps[i], parsedIP.NetworkPrefix)
+					if err != nil {
+						dhcp4Error = true
+						log.Warn(err)
+					} else if lease != nil {
+						leases = append(leases, *lease)
+					}
+				}
+			case storkutil.IPv6:
+				if !dhcp6Error && hasLeaseCmdsHook(&apps[i], dbmodel.DaemonNameDHCPv6) {
+					// These commands distinguish between IA_NA and IA_PD. A caller
+					// must specify the lease type.
+					leaseType := "IA_NA"
+					if parsedIP.Prefix {
+						leaseType = "IA_PD"
+					}
+					lease, err := GetLease6ByIPAddress(agents, &apps[i], leaseType, parsedIP.NetworkPrefix)
+					if err != nil {
+						dhcp6Error = true
+						log.Warn(err)
+					} else if lease != nil {
+						leases = append(leases, *lease)
+					}
+				}
+			default:
+				// Again, this is impossible condition.
+				continue
+			}
+			// The app returned an error. Maybe the server is unavailable. We don't
+			// want to send more commands to a daemon returning an error because there
+			// is a minimal chance it will reply with success.
+			if dhcp4Error || dhcp6Error {
+				if !appError {
+					// Record an app for which the error was returned.
+					erredApps = append(erredApps, &apps[i])
+					appError = true
+				}
+				// If both daemons returned an error, stop sending any commands to
+				// this app.
+				if dhcp4Error && dhcp6Error {
+					break
+				}
+			}
+		}
+	}
+	return leases, erredApps, err
+}

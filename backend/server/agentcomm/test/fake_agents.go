@@ -13,7 +13,7 @@ import (
 type FakeAgents struct {
 	RecordedURL      string
 	RecordedCommands []keactrl.Command
-	mockKeaFunc      func(int, []interface{})
+	mockKeaFunc      []func(int, []interface{})
 	CallNo           int
 
 	RecordedAddress string
@@ -54,10 +54,22 @@ server is up and running`
 // a custom response set.
 func NewFakeAgents(fnKea func(int, []interface{}), fnNamed func(int, interface{})) *FakeAgents {
 	fa := &FakeAgents{
-		mockKeaFunc:    fnKea,
 		mockNamedFunc:  fnNamed,
 		mockRndcOutput: mockRndcOutput(),
 		GetStateCalled: false,
+	}
+	if fnKea != nil {
+		fa.mockKeaFunc = append(fa.mockKeaFunc, fnKea)
+	}
+	return fa
+}
+
+// Create new instance of the FakeAgents structure with multiple mock functions
+// returning Kea responses. The subsequent mock functions are invoked for each
+// new call.
+func NewKeaFakeAgents(fnsKea ...func(int, []interface{})) *FakeAgents {
+	fa := &FakeAgents{
+		mockKeaFunc: fnsKea,
 	}
 	return fa
 }
@@ -118,7 +130,7 @@ func (fa *FakeAgents) GetLastCommand() *keactrl.Command {
 // to the Kea servers. It records some arguments used in the call to this
 // function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
-// call to NewFakeAgents.
+// call to NewFakeAgents or NewKeaFakeAgents.
 func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.App, commands []*keactrl.Command, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
 	ctrlPoint, _ := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
 	caAddress := ctrlPoint.Address
@@ -133,8 +145,14 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.A
 		result.CmdsErrors = append(result.CmdsErrors, nil)
 	}
 	// Generate response.
-	if fa.mockKeaFunc != nil {
-		fa.mockKeaFunc(fa.CallNo, cmdResponses)
+	var mock func(int, []interface{})
+	if len(fa.mockKeaFunc) > 0 {
+		if fa.CallNo >= len(fa.mockKeaFunc) {
+			mock = fa.mockKeaFunc[len(fa.mockKeaFunc)-1]
+		} else {
+			mock = fa.mockKeaFunc[fa.CallNo]
+		}
+		mock(fa.CallNo, cmdResponses)
 	}
 	fa.CallNo++
 	return result, nil
