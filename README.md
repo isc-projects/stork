@@ -15,7 +15,7 @@ possible to run Stork without docker. See Installation section of the Stork ARM.
 
 # Reporting issues
 
-Please use the issue tracker on ISC gitlab: https://gitlab.isc.org/isc-projects/stork/-/issues
+Please use the issue tracker on [ISC gitlab](https://gitlab.isc.org/isc-projects/stork/-/issues)
 to report issues and submit feature requests.
 
 # Getting involved
@@ -26,11 +26,11 @@ new release every month. If you'd like to get involved, feel free to subscribe t
 at [Stork project page](https://gitlab.isc.org/isc-projects/stork).
 We're also on [github](https://github.com/isc-projects/stork).
 
-If you have a patch to send, by far the best way is to submit a MR on gitlab:
-https://gitlab.isc.org/isc-projects/stork/-/merge_requests. Stork developers use this
-system daily and you may expect reasonably quick reaction. The second alternative
-is to submit PR on github: https://github.com/isc-projects/stork/pulls. This will also
-work, but this system is not monitored, so delayed response is expected.
+If you have a patch to send, by far the best way is to submit
+[MR on gitlab](https://gitlab.isc.org/isc-projects/stork/-/merge_requests).
+Stork developers use this system daily and you may expect reasonably quick reaction.
+The second alternative is to submit [PR on github](https://github.com/isc-projects/stork/pulls).
+This will also work, but this system is not monitored, so delayed response is expected.
 
 # Screenshots
 
