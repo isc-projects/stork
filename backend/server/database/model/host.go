@@ -581,6 +581,16 @@ func (host Host) HasIdentifier(idType string, identifier []byte) (bool, bool) {
 	return false, false
 }
 
+// This function checks if the given host has an identifier of a given type.
+func (host Host) HasIdentifierType(idType string) bool {
+	for _, i := range host.HostIdentifiers {
+		if idType == i.Type {
+			return true
+		}
+	}
+	return false
+}
+
 // Checks if two hosts have the same IP reservations.
 func (host Host) HasEqualIPReservations(other *Host) bool {
 	if len(host.IPReservations) != len(other.IPReservations) {

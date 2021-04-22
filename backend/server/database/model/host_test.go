@@ -816,18 +816,22 @@ func TestHasIdentifier(t *testing.T) {
 	exists, equal := host.HasIdentifier("hw-address", []byte{1, 2, 3, 4, 5, 6})
 	require.True(t, exists)
 	require.True(t, equal)
+	require.True(t, host.HasIdentifierType("hw-address"))
 
 	exists, equal = host.HasIdentifier("circuit-id", []byte{1, 2, 3, 4})
 	require.True(t, exists)
 	require.True(t, equal)
+	require.True(t, host.HasIdentifierType("circuit-id"))
 
 	exists, equal = host.HasIdentifier("hw-address", []byte{1, 2, 3, 4})
 	require.True(t, exists)
 	require.False(t, equal)
+	require.True(t, host.HasIdentifierType("hw-address"))
 
 	exists, equal = host.HasIdentifier("duid", []byte{1, 2, 3, 4})
 	require.False(t, exists)
 	require.False(t, equal)
+	require.False(t, host.HasIdentifierType("duid"))
 }
 
 // Test the functions which compares two hosts for equality and which
