@@ -2,6 +2,7 @@ package storkutil
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"os"
@@ -225,4 +226,11 @@ func BytesToHex(bytesArray []byte) string {
 		fmt.Fprintf(&buf, "%02X", f)
 	}
 	return buf.String()
+}
+
+// Convert a string of hexadecimal digits to bytes array.
+func HexToBytes(hexString string) []byte {
+	hexString = strings.ReplaceAll(hexString, ":", "")
+	decoded, _ := hex.DecodeString(hexString)
+	return decoded
 }

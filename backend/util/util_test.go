@@ -159,3 +159,10 @@ func TestBytesToHex(t *testing.T) {
 	str := BytesToHex(bytesArray)
 	require.Equal(t, "0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20", str)
 }
+
+// Test conversion from hex to bytes.
+func TestHexToBytes(t *testing.T) {
+	require.EqualValues(t, HexToBytes("00:01:02:03:04:05:06"), []byte{0, 1, 2, 3, 4, 5, 6})
+	require.EqualValues(t, HexToBytes("ffeeaa"), []byte{0xff, 0xee, 0xaa})
+	require.Empty(t, HexToBytes("dog"))
+}
