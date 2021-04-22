@@ -13,8 +13,16 @@
       parameters:
         - name: text
           in: query
-          description: Should contain an IP address, MAC address, client id or hostname.
+          description: >-
+            Should contain an IP address, MAC address, client id or hostname.
+            It is mutually exclusive with the hostId parameter.
           type: string
+        - name: hostId
+          in: query
+          description: >-
+            Identifier of the host for which leases should be searched. It is
+            mutually exclusive with the text parameter.
+          type: integer
       responses:
         200:
           description: Success result. It may contain 0, 1 or more leases.

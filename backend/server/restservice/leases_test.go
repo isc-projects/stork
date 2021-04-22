@@ -39,6 +39,31 @@ func mockLease4Get(callNo int, responses []interface{}) {
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
+// Generates a success mock response to a command fetching a DHCPv4
+// lease by IP address.
+func mockLease6Get(callNo int, responses []interface{}) {
+	json := []byte(`[
+        {
+            "result": 0,
+            "text": "Lease found",
+            "arguments": {
+                "cltt": 12345678,
+                "duid": "42:42:42:42:42:42:42:42:42:42:42:42:42:42:42",
+                "iaid": 1,
+                "ip-address": "2001:db8:2::1",
+                "preferred-lft": 500,
+                "state": 0,
+                "subnet-id": 44,
+                "type": "IA_NA",
+                "valid-lft": 3600
+            }
+        }
+    ]`)
+	daemons, _ := keactrl.NewDaemons("dhcp6")
+	command, _ := keactrl.NewCommand("lease6-get", daemons, nil)
+	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+}
+
 // Generates a success mock response to a command fetching DHCPv6 leases
 // by DUID.
 func mockLeases6Get(callNo int, responses []interface{}) {
@@ -555,4 +580,121 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.Len(t, agents.RecordedCommands, 8)
 	require.Equal(t, "lease4-get-by-hostname", agents.RecordedCommands[6].Command)
 	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[7].Command)
+}
+
+// Test searching leases and conflicting leases by host ID.
+func TestFindLeasesByHostID(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "machine",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add Kea app with a DHCPv4 configuration loading the lease_cmds hooks library.
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	app := &dbmodel.App{
+		MachineID:    machine.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: dbmodel.DaemonNameDHCPv4,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+			{
+				Name: dbmodel.DaemonNameDHCPv6,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": map[string]interface{}{
+							"hooks-libraries": []interface{}{
+								map[string]interface{}{
+									"library": "libdhcp_lease_cmds.so",
+								},
+							},
+						},
+					}),
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	// Add a host.
+	host := dbmodel.Host{
+		HostIdentifiers: []dbmodel.HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{8, 8, 8, 8, 8, 8},
+			},
+		},
+		IPReservations: []dbmodel.IPReservation{
+			{
+				Address: "192.0.2.1",
+			},
+			{
+				Address: "2001:db8:2::1",
+			},
+		},
+		LocalHosts: []dbmodel.LocalHost{
+			{
+				AppID:      app.ID,
+				DataSource: "config",
+				UpdateSeq:  1,
+			},
+		},
+	}
+	err = dbmodel.AddHost(db, &host)
+	require.NoError(t, err)
+
+	// Setup REST API.
+	settings := RestAPISettings{}
+	agents := agentcommtest.NewKeaFakeAgents(mockLease4Get, mockLease6Get)
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, agents, fec, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	hostID := host.ID
+	params := dhcp.GetLeasesParams{
+		HostID: &hostID,
+	}
+	// Get leases by host ID.
+	rsp := rapi.GetLeases(ctx, params)
+	require.IsType(t, &dhcp.GetLeasesOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetLeasesOK)
+
+	// Two leases should be returned. One DHCPv4 and one DHCPv6 lease.
+	require.Len(t, okRsp.Payload.Items, 2)
+	require.EqualValues(t, 2, okRsp.Payload.Total)
+
+	// The DHCPv6 is in conflict with host reservation, because DUID
+	// is not in the host reservation.
+	require.Len(t, okRsp.Payload.Conflicts, 1)
+	require.Empty(t, okRsp.Payload.ErredApps)
+
+	// Verify the leases.
+	require.NotNil(t, okRsp.Payload.Items[0].IPAddress)
+	require.Equal(t, "192.0.2.1", *okRsp.Payload.Items[0].IPAddress)
+	require.NotNil(t, okRsp.Payload.Items[1].IPAddress)
+	require.Equal(t, "2001:db8:2::1", *okRsp.Payload.Items[1].IPAddress)
+	require.NotNil(t, okRsp.Payload.Conflicts[0].IPAddress)
+	require.Equal(t, "2001:db8:2::1", *okRsp.Payload.Conflicts[0].IPAddress)
 }

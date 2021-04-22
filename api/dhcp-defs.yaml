@@ -69,6 +69,10 @@
         type: array
         items:
           $ref: '#/definitions/Lease'
+      conflicts:
+        type: array
+        items:
+          $ref: '#/definitions/Lease'
       erredApps:
         type: array
         items:
