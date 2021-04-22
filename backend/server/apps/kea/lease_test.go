@@ -1134,6 +1134,7 @@ func TestFindDeclinedLeasesNoLeaseCmds(t *testing.T) {
 	require.Empty(t, leases)
 }
 
+// Test searching leases associated with a host reservation.
 func TestFindLeasesByHostID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -1228,7 +1229,11 @@ func TestFindLeasesByHostID(t *testing.T) {
 		HostIdentifiers: []dbmodel.HostIdentifier{
 			{
 				Type:  "hw-address",
-				Value: []byte{1, 2, 3, 4, 5, 6},
+				Value: []byte{8, 8, 8, 8, 8, 8},
+			},
+			{
+				Type:  "duid",
+				Value: []byte{0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42},
 			},
 		},
 		IPReservations: []dbmodel.IPReservation{
@@ -1266,8 +1271,9 @@ func TestFindLeasesByHostID(t *testing.T) {
 	// - lease6-get (by prefix) to app2 - returning empty response
 	agents := agentcommtest.NewKeaFakeAgents(mockLeases6GetEmpty, mockLease6GetByPrefix, mockLease4Get, mockLeases6GetEmpty)
 
-	leases, erredApps, err := FindLeasesByHostID(db, agents, host.ID)
+	leases, conflicts, erredApps, err := FindLeasesByHostID(db, agents, host.ID)
 	require.NoError(t, err)
+	require.Empty(t, conflicts)
 	require.Empty(t, erredApps)
 	require.Len(t, leases, 2)
 	require.Equal(t, "2001:db8:0:0:2::", leases[0].IPAddress)
@@ -1282,8 +1288,9 @@ func TestFindLeasesByHostID(t *testing.T) {
 	// - lease6-get (by prefix) to app2 - returning empty response
 	agents = agentcommtest.NewKeaFakeAgents(mockLease6GetByIPAddress, mockLeases6GetEmpty, mockLeases4GetEmpty, mockLeases6GetEmpty)
 
-	leases, erredApps, err = FindLeasesByHostID(db, agents, host.ID)
+	leases, conflicts, erredApps, err = FindLeasesByHostID(db, agents, host.ID)
 	require.NoError(t, err)
+	require.Empty(t, conflicts)
 	require.Empty(t, erredApps)
 	require.Len(t, leases, 1)
 	require.Equal(t, "2001:db8:2::1", leases[0].IPAddress)
@@ -1296,8 +1303,9 @@ func TestFindLeasesByHostID(t *testing.T) {
 	// - lease6-get (by prefix) to app2 - returning the lease 2001:db8:0:0:2::
 	agents = agentcommtest.NewKeaFakeAgents(mockLease6GetError, mockLease4Get, mockLease6GetByIPAddress, mockLease6GetByPrefix)
 
-	leases, erredApps, err = FindLeasesByHostID(db, agents, host.ID)
+	leases, conflicts, erredApps, err = FindLeasesByHostID(db, agents, host.ID)
 	require.NoError(t, err)
+	require.Empty(t, conflicts)
 	require.Len(t, erredApps, 1)
 	require.Len(t, leases, 3)
 	require.Len(t, agents.RecordedCommands, 4)
@@ -1308,9 +1316,184 @@ func TestFindLeasesByHostID(t *testing.T) {
 	// - lease6-get (by address) to app2 - returning an error
 	agents = agentcommtest.NewKeaFakeAgents(mockLease6GetError)
 
-	leases, erredApps, err = FindLeasesByHostID(db, agents, host.ID)
+	leases, conflicts, erredApps, err = FindLeasesByHostID(db, agents, host.ID)
 	require.NoError(t, err)
+	require.Empty(t, conflicts)
 	require.Len(t, erredApps, 2)
 	require.Empty(t, leases)
 	require.Len(t, agents.RecordedCommands, 3)
+}
+
+// Test that lease conflicts with host reservations are detected for reservations
+// using hw-address, client-id and DUID.
+func TestFindHostLeaseConflicts(t *testing.T) {
+	host := &dbmodel.Host{
+		HostIdentifiers: []dbmodel.HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{8, 8, 8, 8, 8, 8},
+			},
+			{
+				Type:  "client-id",
+				Value: []byte{1, 1, 1, 1},
+			},
+			{
+				Type:  "duid",
+				Value: []byte{0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42, 0x42},
+			},
+		},
+	}
+
+	// None of the leases matches the host reservation.
+	leases := []dbmodel.Lease{
+		{
+			Lease: keadata.Lease{
+				HWAddress: "010203040506",
+			},
+		},
+		{
+			Lease: keadata.Lease{
+				ClientID: "02020202",
+			},
+		},
+		{
+			Lease: keadata.Lease{
+				DUID: "4343434343434343",
+			},
+		},
+	}
+	conflicts := findHostLeaseConflicts(host, leases)
+	require.Len(t, conflicts, 3)
+	require.Contains(t, conflicts, leases[0])
+	require.Contains(t, conflicts, leases[1])
+	require.Contains(t, conflicts, leases[2])
+
+	// First lease matches the host reservation.
+	leases = []dbmodel.Lease{
+		{
+			Lease: keadata.Lease{
+				HWAddress: "08:08:08:08:08:08",
+			},
+		},
+		{
+			Lease: keadata.Lease{
+				ClientID: "02020202",
+			},
+		},
+		{
+			Lease: keadata.Lease{
+				DUID: "4343434343434343",
+			},
+		},
+	}
+	conflicts = findHostLeaseConflicts(host, leases)
+	require.Len(t, conflicts, 2)
+	require.Contains(t, conflicts, leases[1])
+	require.Contains(t, conflicts, leases[2])
+
+	// Second lease matches the host reservation.
+	leases = []dbmodel.Lease{
+		{
+			Lease: keadata.Lease{
+				HWAddress: "09:09:09:09:09:09",
+			},
+		},
+		{
+			Lease: keadata.Lease{
+				ClientID: "01010101",
+			},
+		},
+		{
+			Lease: keadata.Lease{
+				DUID: "4343434343434343",
+			},
+		},
+	}
+	conflicts = findHostLeaseConflicts(host, leases)
+	require.Len(t, conflicts, 2)
+	require.Contains(t, conflicts, leases[0])
+	require.Contains(t, conflicts, leases[2])
+
+	// Third lease matches the host reservation.
+	leases = []dbmodel.Lease{
+		{
+			Lease: keadata.Lease{
+				HWAddress: "09:09:09:09:09:09",
+			},
+		},
+		{
+			Lease: keadata.Lease{
+				ClientID: "02020202",
+			},
+		},
+		{
+			Lease: keadata.Lease{
+				DUID: "4242424242424242",
+			},
+		},
+	}
+	conflicts = findHostLeaseConflicts(host, leases)
+	require.Len(t, conflicts, 2)
+	require.Contains(t, conflicts, leases[0])
+	require.Contains(t, conflicts, leases[1])
+
+	// All leases contain one of the identifiers that matches the host reservation.
+	leases = []dbmodel.Lease{
+		{
+			Lease: keadata.Lease{
+				HWAddress: "09:09:09:09:09:09",
+				ClientID:  "02020202",
+				DUID:      "4242424242424242",
+			},
+		},
+		{
+			Lease: keadata.Lease{
+				HWAddress: "09:09:09:09:09:09",
+				ClientID:  "01010101",
+				DUID:      "4343434343434343",
+			},
+		},
+		{
+			Lease: keadata.Lease{
+				HWAddress: "09:09:09:09:09:09",
+				ClientID:  "02020202",
+				DUID:      "4242424242424242",
+			},
+		},
+	}
+	conflicts = findHostLeaseConflicts(host, leases)
+	require.Empty(t, conflicts)
+}
+
+// Test that conflict detection between leases and and host reservation
+// is not triggered when host reservation contains flex-id and/or circuit-id.
+func TestFindHostLeaseConflictsSkipDetection(t *testing.T) {
+	tests := []string{"flex-id", "circuit-id"}
+	for i := range tests {
+		idName := tests[i]
+		t.Run(idName, func(t *testing.T) {
+			host := &dbmodel.Host{
+				HostIdentifiers: []dbmodel.HostIdentifier{
+					{
+						Type:  "hw-address",
+						Value: []byte{8, 8, 8, 8, 8, 8},
+					},
+					{
+						Type:  idName,
+						Value: []byte{8, 8, 8, 8, 8, 8},
+					},
+				},
+			}
+
+			leases := []dbmodel.Lease{
+				{
+					Lease: keadata.Lease{
+						HWAddress: "010203040506",
+					},
+				},
+			}
+			conflicts := findHostLeaseConflicts(host, leases)
+			require.Empty(t, conflicts)
+		})
+	}
 }

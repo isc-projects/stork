@@ -478,20 +478,70 @@ func FindDeclinedLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (lease
 	return leases, erredApps, nil
 }
 
+// Selects leases not matching specified host reservation. It compares DHCP
+// identifiers in the lease with host identifiers. If match is not found,
+// the lease is considered in conflict with the host and returned in the
+// conflicts slice. This mechanism has a limitation that lease conflicts
+// can't be detected if the host contains flex-id or circuit-id identifiers.
+// Lease information does not contain any indication if the lease has been
+// assigned using any of these identifiers.
+func findHostLeaseConflicts(host *dbmodel.Host, leases []dbmodel.Lease) (conflicts []dbmodel.Lease) {
+	if host.HasIdentifierType("circuit-id") || host.HasIdentifierType("flex-id") {
+		return conflicts
+	}
+
+	// Detect conflicting leases.
+	for i := range leases {
+		lease := leases[i]
+		ids := []struct {
+			leaseID    string
+			hostIDType string
+		}{
+			{
+				leaseID:    lease.ClientID,
+				hostIDType: "client-id",
+			},
+			{
+				leaseID:    lease.DUID,
+				hostIDType: "duid",
+			},
+			{
+				leaseID:    lease.HWAddress,
+				hostIDType: "hw-address",
+			},
+		}
+		conflict := true
+		for _, id := range ids {
+			// If the identifier is present in the lease, let's check
+			// if it matches any in the host reservation.
+			if len(id.leaseID) > 0 {
+				if _, equal := host.HasIdentifier(id.hostIDType, storkutil.HexToBytes(id.leaseID)); equal {
+					conflict = false
+					break
+				}
+			}
+		}
+		if conflict {
+			conflicts = append(conflicts, lease)
+		}
+	}
+	return conflicts
+}
+
 // Attempts to find leases for a given host reservation. An error is returned
 // only if there is a problem with database communication. If the host doesn't
 // exist, no leases are returned. This function will send commands to all
 // monitored Kea servers querying for leases assigned to the given host.
 // If there is a communication problem with any of the Kea servers, the details
 // of the server are recorded in the erredApps slice.
-func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID int64) (leases []dbmodel.Lease, erredApps []*dbmodel.App, err error) {
+func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID int64) (leases []dbmodel.Lease, conflicts []dbmodel.Lease, erredApps []*dbmodel.App, err error) {
 	host, err := dbmodel.GetHost(db, hostID)
 	if err != nil {
 		err = errors.WithMessagef(err, "failed to fetch host with ID %d while searching for its leases", hostID)
-		return leases, erredApps, err
+		return leases, conflicts, erredApps, err
 	}
 	if host == nil {
-		return leases, erredApps, err
+		return leases, conflicts, erredApps, err
 	}
 
 	// Get Kea apps from the database. We will send commands to these
@@ -499,7 +549,7 @@ func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID
 	apps, err := dbmodel.GetAppsByType(db, dbmodel.AppTypeKea)
 	if err != nil {
 		err = errors.WithMessagef(err, "failed to fetch Kea apps while searching for leases for host id %d", hostID)
-		return leases, erredApps, err
+		return leases, conflicts, erredApps, err
 	}
 
 	for i := range apps {
@@ -565,5 +615,10 @@ func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID
 			}
 		}
 	}
-	return leases, erredApps, err
+
+	// Detect conflicting leases, i.e. leases assigned to clients having different
+	// DHCP identifiers than those in our host reservations.
+	conflicts = findHostLeaseConflicts(host, leases)
+
+	return leases, conflicts, erredApps, err
 }
