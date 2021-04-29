@@ -1,5 +1,17 @@
 package keadata
 
+// Constants representing various lease states in Kea. A valid
+// (non-expired) lease is in the default state. A lease for
+// which a client detected that it is used by another client
+// and sent the DHCP decline message is in the declined state.
+// A lease for which valid lifetime elapsed and the Kea server
+// detected that the lease is expired can be removed from the
+// database or left in the expired-reclaimed state. Keeping the
+// lease in the expired-reclaimed state increases chances that
+// the returning client will be allocated the same lease.
+// However, such lease can be allocated to any client requesting
+// it. Other states can be added in the future in Kea. In such
+// case this constants list should be extended.
 const (
 	LeaseStateDefault          = 0
 	LeaseStateDeclined         = 1
