@@ -318,13 +318,12 @@ func hasLeaseCmdsHook(app *dbmodel.App, daemonName string) bool {
 // all Kea servers, which may potentially have the lease. If
 // multiple servers have the same lease (e.g. in HA configuration),
 // it returns all that lease instances. The  Kea servers which
-// returned an error response are returned as a second parameter.
+// returned an error response are returned in the second value.
 // Such failures do not preclude the function from returning
 // leases found on other servers, but the caller becomes aware
 // that some leases may not be included due to the communication
-// errors with some servers. The third returned parameter
-// indicates a general error, e.g. issues with Stork database
-// communication.
+// errors with some servers. The third returned value indicates
+// a general error, e.g. issues with Stork database communication.
 func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (leases []dbmodel.Lease, erredApps []*dbmodel.App, err error) {
 	// Recognize if the text comprises an IP address or some identifier,
 	// e.g. MAC address or client identifier.
@@ -434,11 +433,11 @@ func FindLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents, text string) (
 // lease6-get-by-duid with empty hw-address and empty duid parameters
 // respectively. Next, it removes the leases which are not in the declined
 // state from the result. The  Kea servers which returned an error response
-// are returned as a second parameter. Such failures do not preclude the
-// function from returning leases found on other servers, but the caller
-// becomes aware that some leases may not be included due to the communication
-// errors with some servers. The third returned parameter indicates a
-// general error, e.g. issues with Stork database communication.
+// are returned in second value. Such failures do not preclude the function
+// from returning leases found on other servers, but the caller becomes
+// aware that some leases may not be included due to the communication
+// errors with some servers. The third returned value indicates a general
+// error, e.g. issues with Stork database communication.
 func FindDeclinedLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (leases []dbmodel.Lease, erredApps []*dbmodel.App, err error) {
 	// Get all Kea apps.
 	apps, err := dbmodel.GetAppsByType(db, dbmodel.AppTypeKea)
