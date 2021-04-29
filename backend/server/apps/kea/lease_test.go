@@ -1067,3 +1067,55 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.Len(t, erredApps, 1)
 	require.Len(t, leases, 1)
 }
+
+// Test that a search for declied leases returns empty result when
+// none of the servers uses lease_cmds hooks library.
+func TestFindDeclinedLeasesNoLeaseCmds(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine with the Kea app including both DHCPv4 and DHCPv6
+	// daemon without the lease_cmds hooks library loaded.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "machine",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	app := &dbmodel.App{
+		MachineID:    machine.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: dbmodel.DaemonNameDHCPv4,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp4": map[string]interface{}{},
+					}),
+				},
+			},
+			{
+				Name: dbmodel.DaemonNameDHCPv6,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+						"Dhcp6": map[string]interface{}{},
+					}),
+				},
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	agents := agentcommtest.NewFakeAgents(mockLeasesGetDeclined, nil)
+
+	leases, erredApps, err := FindDeclinedLeases(db, agents)
+	require.NoError(t, err)
+	require.Empty(t, erredApps)
+	require.Empty(t, leases)
+}

@@ -216,8 +216,7 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 		commands = append(commands, command)
 	}
 
-	// This is only possible if someone specified wrong command name, but let's
-	// make sure.
+	// A caller specified no commands or command names were invalid.
 	if len(commands) == 0 {
 		return leases, false, nil
 	}
