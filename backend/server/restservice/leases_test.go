@@ -479,4 +479,32 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.Len(t, agents.RecordedCommands, 2)
 	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[0].Command)
 	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[1].Command)
+
+	// Whitespace should be allowed between state: and declined.
+	text = "state:   declined"
+	rsp = rapi.GetLeases(ctx, params)
+	require.IsType(t, &dhcp.GetLeasesOK{}, rsp)
+
+	require.Len(t, agents.RecordedCommands, 4)
+	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[2].Command)
+	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[3].Command)
+
+	// Ensure that the invalid search text is treated as a hostname rather
+	// than a search string to find declined leases.
+	text = "ABCstate:declinedDEF"
+	rsp = rapi.GetLeases(ctx, params)
+	require.IsType(t, &dhcp.GetLeasesOK{}, rsp)
+
+	require.Len(t, agents.RecordedCommands, 6)
+	require.Equal(t, "lease4-get-by-hostname", agents.RecordedCommands[4].Command)
+	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[5].Command)
+
+	// Whitespace after state is not allowed.
+	text = "state :declined"
+	rsp = rapi.GetLeases(ctx, params)
+	require.IsType(t, &dhcp.GetLeasesOK{}, rsp)
+
+	require.Len(t, agents.RecordedCommands, 8)
+	require.Equal(t, "lease4-get-by-hostname", agents.RecordedCommands[6].Command)
+	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[7].Command)
 }
