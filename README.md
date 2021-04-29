@@ -15,7 +15,7 @@ possible to run Stork without Docker. See Installation section of the Stork ARM.
 
 # Reporting issues
 
-Please use the issue tracker on [ISC gitlab](https://gitlab.isc.org/isc-projects/stork/-/issues)
+Please use the issue tracker on [ISC GitLab](https://gitlab.isc.org/isc-projects/stork/-/issues)
 to report issues and submit feature requests.
 
 # Getting involved
