@@ -135,8 +135,8 @@
 
                         <div class="p-col-7">
                             <!-- Overview -->
-                            <div style="margin-bottom: 14px" [ngClass]="{ disabled: !daemon.active }">
-                                <h3>Overview</h3>
+                            <div style="margin-bottom: 20px" [ngClass]="{ disabled: !daemon.active }">
+                                <h3 style="margin-bottom: 0">Overview</h3>
                                 <div class="p-grid">
                                     <div class="p-col-6">
                                         <p-fieldset legend="Daemon Information">
@@ -178,33 +178,27 @@
                                     (daemon.files && daemon.files.length > 0) ||
                                     (daemon.backends && daemon.backends.length > 0)
                                 "
-                                style="margin-bottom: 14px"
+                                style="margin-bottom: 20px"
                             >
-                                <h3>Data Storage</h3>
+                                <h3 style="margin-bottom: 0">Data Storage</h3>
                                 <div class="p-grid">
-                                    <div class="p-col-6">
-                                        <p-fieldset
-                                            id="data-storage-files-fieldset"
-                                            *ngIf="daemon.files"
-                                            legend="Files"
-                                        >
-                                            <table style="width: 100%">
-                                                <tr *ngFor="let file of daemon.files">
-                                                    <td style="width: 8rem">{{ file.filetype }}:</td>
-                                                    <td>
-                                                        <i>{{ filenameFromFile(file) }}</i>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </p-fieldset>
-                                    </div>
-                                    <div class="p-col-6"></div>
-                                    <div class="p-col-6">
-                                        <p-fieldset
-                                            id="data-storage-backends-fieldset"
-                                            *ngIf="daemon.backends"
-                                            legend="Database Backends"
-                                        >
+                                    <ng-container *ngIf="daemon.files">
+                                        <div class="p-col-6">
+                                            <p-fieldset id="data-storage-files-fieldset" legend="Files">
+                                                <table style="width: 100%">
+                                                    <tr *ngFor="let file of daemon.files">
+                                                        <td style="width: 8rem">{{ file.filetype }}:</td>
+                                                        <td>
+                                                            <i>{{ filenameFromFile(file) }}</i>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </p-fieldset>
+                                        </div>
+                                        <div class="p-col-6"></div>
+                                    </ng-container>
+                                    <div *ngIf="daemon.backends" class="p-col-6">
+                                        <p-fieldset id="data-storage-backends-fieldset" legend="Database Backends">
                                             <div *ngFor="let backend of daemon.backends">
                                                 <i style="color: grey" class="fa fa-database"></i>
                                                 {{ databaseNameFromType(backend.backendType) }} ({{
@@ -224,7 +218,7 @@
                             <!-- High Availability -->
                             <div
                                 *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
-                                style="margin-bottom: 18px"
+                                style="margin-bottom: 20px"
                                 [ngClass]="{ disabled: !daemon.active }"
                             >
                                 <app-ha-status [appId]="appTab.app.id" [daemonName]="daemon.name"></app-ha-status>
