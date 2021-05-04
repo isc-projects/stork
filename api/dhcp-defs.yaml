@@ -72,7 +72,7 @@
       conflicts:
         type: array
         items:
-          $ref: '#/definitions/Lease'
+          type: integer
       erredApps:
         type: array
         items:

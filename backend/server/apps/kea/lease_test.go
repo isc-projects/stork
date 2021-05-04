@@ -1276,7 +1276,9 @@ func TestFindLeasesByHostID(t *testing.T) {
 	require.Empty(t, conflicts)
 	require.Empty(t, erredApps)
 	require.Len(t, leases, 2)
+	require.EqualValues(t, 1, leases[0].ID)
 	require.Equal(t, "2001:db8:0:0:2::", leases[0].IPAddress)
+	require.EqualValues(t, 2, leases[1].ID)
 	require.Equal(t, "192.0.2.1", leases[1].IPAddress)
 	require.Len(t, agents.RecordedCommands, 5)
 
@@ -1293,6 +1295,7 @@ func TestFindLeasesByHostID(t *testing.T) {
 	require.Empty(t, conflicts)
 	require.Empty(t, erredApps)
 	require.Len(t, leases, 1)
+	require.EqualValues(t, 1, leases[0].ID)
 	require.Equal(t, "2001:db8:2::1", leases[0].IPAddress)
 	require.Len(t, agents.RecordedCommands, 5)
 
@@ -1364,9 +1367,9 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 	}
 	conflicts := findHostLeaseConflicts(host, leases)
 	require.Len(t, conflicts, 3)
-	require.Contains(t, conflicts, leases[0])
-	require.Contains(t, conflicts, leases[1])
-	require.Contains(t, conflicts, leases[2])
+	require.Contains(t, conflicts, leases[0].ID)
+	require.Contains(t, conflicts, leases[1].ID)
+	require.Contains(t, conflicts, leases[2].ID)
 
 	// First lease matches the host reservation.
 	leases = []dbmodel.Lease{
@@ -1388,8 +1391,8 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 	}
 	conflicts = findHostLeaseConflicts(host, leases)
 	require.Len(t, conflicts, 2)
-	require.Contains(t, conflicts, leases[1])
-	require.Contains(t, conflicts, leases[2])
+	require.Contains(t, conflicts, leases[1].ID)
+	require.Contains(t, conflicts, leases[2].ID)
 
 	// Second lease matches the host reservation.
 	leases = []dbmodel.Lease{
@@ -1411,8 +1414,8 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 	}
 	conflicts = findHostLeaseConflicts(host, leases)
 	require.Len(t, conflicts, 2)
-	require.Contains(t, conflicts, leases[0])
-	require.Contains(t, conflicts, leases[2])
+	require.Contains(t, conflicts, leases[0].ID)
+	require.Contains(t, conflicts, leases[2].ID)
 
 	// Third lease matches the host reservation.
 	leases = []dbmodel.Lease{
@@ -1434,8 +1437,8 @@ func TestFindHostLeaseConflicts(t *testing.T) {
 	}
 	conflicts = findHostLeaseConflicts(host, leases)
 	require.Len(t, conflicts, 2)
-	require.Contains(t, conflicts, leases[0])
-	require.Contains(t, conflicts, leases[1])
+	require.Contains(t, conflicts, leases[0].ID)
+	require.Contains(t, conflicts, leases[1].ID)
 
 	// All leases contain one of the identifiers that matches the host reservation.
 	leases = []dbmodel.Lease{

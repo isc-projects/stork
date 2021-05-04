@@ -485,7 +485,7 @@ func FindDeclinedLeases(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (lease
 // can't be detected if the host contains flex-id or circuit-id identifiers.
 // Lease information does not contain any indication if the lease has been
 // assigned using any of these identifiers.
-func findHostLeaseConflicts(host *dbmodel.Host, leases []dbmodel.Lease) (conflicts []dbmodel.Lease) {
+func findHostLeaseConflicts(host *dbmodel.Host, leases []dbmodel.Lease) (conflicts []int64) {
 	if host.HasIdentifierType("circuit-id") || host.HasIdentifierType("flex-id") {
 		return conflicts
 	}
@@ -522,7 +522,7 @@ func findHostLeaseConflicts(host *dbmodel.Host, leases []dbmodel.Lease) (conflic
 			}
 		}
 		if conflict {
-			conflicts = append(conflicts, lease)
+			conflicts = append(conflicts, lease.ID)
 		}
 	}
 	return conflicts
@@ -534,7 +534,7 @@ func findHostLeaseConflicts(host *dbmodel.Host, leases []dbmodel.Lease) (conflic
 // monitored Kea servers querying for leases assigned to the given host.
 // If there is a communication problem with any of the Kea servers, the details
 // of the server are recorded in the erredApps slice.
-func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID int64) (leases []dbmodel.Lease, conflicts []dbmodel.Lease, erredApps []*dbmodel.App, err error) {
+func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID int64) (leases []dbmodel.Lease, conflicts []int64, erredApps []*dbmodel.App, err error) {
 	host, err := dbmodel.GetHost(db, hostID)
 	if err != nil {
 		err = errors.WithMessagef(err, "failed to fetch host with ID %d while searching for its leases", hostID)
@@ -552,6 +552,7 @@ func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID
 		return leases, conflicts, erredApps, err
 	}
 
+	currentLeaseID := int64(1)
 	for i := range apps {
 		// Monitor if a daemon returned an error. We stop sending commands to the
 		// daemon it first returns an error.
@@ -575,6 +576,8 @@ func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID
 						dhcp4Error = true
 						log.Warn(err)
 					} else if lease != nil {
+						lease.ID = currentLeaseID
+						currentLeaseID++
 						leases = append(leases, *lease)
 					}
 				}
@@ -591,6 +594,8 @@ func FindLeasesByHostID(db *dbops.PgDB, agents agentcomm.ConnectedAgents, hostID
 						dhcp6Error = true
 						log.Warn(err)
 					} else if lease != nil {
+						lease.ID = currentLeaseID
+						currentLeaseID++
 						leases = append(leases, *lease)
 					}
 				}

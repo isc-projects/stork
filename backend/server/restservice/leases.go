@@ -50,9 +50,10 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 
 	// Try to find the leases from monitored Kea servers.
 	var (
-		keaLeases, conflicts []dbmodel.Lease
-		erredApps            []*dbmodel.App
-		err                  error
+		keaLeases []dbmodel.Lease
+		conflicts []int64
+		erredApps []*dbmodel.App
+		err       error
 	)
 	if len(text) > 0 {
 		// Handle a special case when user specified state:declined search text
@@ -81,7 +82,6 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		if l.App != nil {
 			appName = l.App.Name
 		}
-		id := int64(0)
 		cltt := int64(l.CLTT)
 		state := int64(l.State)
 		subnetID := int64(l.SubnetID)
@@ -94,7 +94,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 			duid = l.DUID
 		}
 		lease := models.Lease{
-			ID:                &id,
+			ID:                &l.ID,
 			AppID:             &l.AppID,
 			AppName:           &appName,
 			ClientID:          l.ClientID,
@@ -116,16 +116,8 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		leases.Items = append(leases.Items, &lease)
 	}
 
-	// Record conflicting leases.
-	for i := range conflicts {
-		l := conflicts[i]
-		leases.Conflicts = append(leases.Conflicts, &models.Lease{
-			IPAddress:    &l.IPAddress,
-			LeaseType:    l.Type,
-			PrefixLength: int64(l.PrefixLength),
-		})
-	}
-
+	// Record conflicting leases and leases count.
+	leases.Conflicts = append(leases.Conflicts, conflicts...)
 	leases.Total = int64(len(leases.Items))
 
 	// Record apps for which there was an error communicating with the Kea servers.

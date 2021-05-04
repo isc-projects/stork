@@ -695,6 +695,6 @@ func TestFindLeasesByHostID(t *testing.T) {
 	require.Equal(t, "192.0.2.1", *okRsp.Payload.Items[0].IPAddress)
 	require.NotNil(t, okRsp.Payload.Items[1].IPAddress)
 	require.Equal(t, "2001:db8:2::1", *okRsp.Payload.Items[1].IPAddress)
-	require.NotNil(t, okRsp.Payload.Conflicts[0].IPAddress)
-	require.Equal(t, "2001:db8:2::1", *okRsp.Payload.Conflicts[0].IPAddress)
+	require.Len(t, okRsp.Payload.Conflicts, 1)
+	require.EqualValues(t, *okRsp.Payload.Items[1].ID, okRsp.Payload.Conflicts[0])
 }
