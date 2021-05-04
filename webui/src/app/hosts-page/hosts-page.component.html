@@ -160,6 +160,6 @@
     </div>
 </div>
 
-<div *ngIf="activeTabIndex != 0" class="ui-widget">
-    <app-host-tab [host]="openedTabs[activeTabIndex - 1].host"></app-host-tab>
+<div class="ui-widget">
+    <app-host-tab [host]="selectedHost"></app-host-tab>
 </div>

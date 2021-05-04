@@ -1,90 +1,168 @@
-<div *ngIf="host" style="margin: 10px">
-    <div style="font-size: 1.2em; font-weight: bold; margin-left: 10px; color: #007ad9">
-        <i class="fa fa-laptop" style="padding-right: 10px"></i>
-        <span id="tab-title-span" *ngIf="host.subnetId && host.subnetId > 0">
-            [{{ host.id }}] Host in subnet {{ host.subnetPrefix }}
-        </span>
-        <span id="tab-title-span" *ngIf="!host.subnetId || host.subnetId === 0"> [{{ host.id }}] Global host </span>
+<div *ngIf="host" class="p-grid" style="margin: 10px">
+    <div class="p-col-12">
+        <div style="font-size: 1.2em; font-weight: bold; margin-left: 10px; color: #007ad9">
+            <i class="fa fa-laptop" style="padding-right: 10px"></i>
+            <span id="tab-title-span" *ngIf="host.subnetId && host.subnetId > 0">
+                [{{ host.id }}] Host in subnet {{ host.subnetPrefix }}
+            </span>
+            <span id="tab-title-span" *ngIf="!host.subnetId || host.subnetId === 0"> [{{ host.id }}] Global host </span>
+        </div>
     </div>
-    <div class="p-grid">
-        <div class="p-col-4">
-            <div class="p-grid">
-                <div *ngIf="host.addressReservations && host.addressReservations.length > 0" class="p-col-12">
-                    <p-fieldset id="address-reservations-fieldset" legend="Address Reservations">
-                        <p-table [value]="host.addressReservations" dataKey="address">
-                            <ng-template pTemplate="body" let-r>
+    <ng-container *ngIf="erredApps && erredApps.length > 0">
+        <div class="p-col-8">
+            <p-messages id="erred-apps-message" [closable]="false" severity="warn">
+                <ng-template pTemplate>
+                    <div>
+                        Stork attempted to find leases on the Kea servers, but some servers failed to respond or
+                        returned an error in response to the control commands. The reservation usage status may not take
+                        into account all matching leases because some of them may reside on the servers, which returned
+                        an error. Issues were found for the following Kea servers:
+                        <ul style="list-style-type: disc">
+                            <li *ngFor="let erredApp of erredApps">
+                                <a routerLink="/apps/kea/{{ erredApp.id }}">{{ erredApp.name }}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </ng-template>
+            </p-messages>
+        </div>
+        <div class="p-col-4"></div>
+    </ng-container>
+    <div class="p-col-4">
+        <div class="p-grid">
+            <ng-container
+                *ngFor="let reservations of [host.addressReservations, host.prefixReservations]; let i = index"
+            >
+                <div *ngIf="reservations && reservations.length > 0" class="p-col-12">
+                    <p-fieldset id="{{ ipReservationsStatics[i].id }}" legend="{{ ipReservationsStatics[i].legend }}">
+                        <p-table [value]="reservations" dataKey="address">
+                            <ng-template pTemplate="body" let-r let-expanded="expanded">
                                 <tr>
-                                    <td style="border: none; width: 15rem">{{ r.address }}</td>
+                                    <td style="width: 1rem; border: none">
+                                        <a [pRowToggler]="r">
+                                            <i [ngClass]="expanded ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"></i>
+                                        </a>
+                                    </td>
+                                    <td style="border: none; width: 15rem">
+                                        <a routerLink="/dhcp/leases" [queryParams]="{ text: r.address }">{{
+                                            r.address
+                                        }}</a>
+                                    </td>
                                     <td style="border: none">
-                                        <!--                                        <i
-                                            class="pi pi-check icon-ok"
-                                            [ngStyle]="{ color: '#00a800' }"
-                                            ></i>
-                                        in use
-                                        -->
+                                        <p-progressSpinner
+                                            *ngIf="leasesSearchInProgress"
+                                            [style]="{ width: '15px', height: '15px' }"
+                                            styleClass="host-tab-leases-spinner"
+                                            fill="#FFFFFF"
+                                            strokeWidth="6"
+                                        ></p-progressSpinner>
+                                        <ng-container *ngIf="!leasesSearchInProgress">
+                                            <span
+                                                *ngIf="
+                                                    currentLeases && currentLeases.has(r.address);
+                                                    else leaseNotFoundBlock
+                                                "
+                                            >
+                                                <ng-container [ngSwitch]="currentLeases.get(r.address)['usage']">
+                                                    <i
+                                                        *ngSwitchCase="Usage.Used"
+                                                        class="fa fa-signal"
+                                                        [ngStyle]="{ color: '#00a800' }"
+                                                    ></i>
+                                                    <i
+                                                        *ngSwitchCase="Usage.Expired"
+                                                        class="fa fa-signal"
+                                                        [ngStyle]="{ color: '#f11' }"
+                                                    ></i>
+                                                    <i
+                                                        *ngSwitchDefault
+                                                        class="fa fa-lock"
+                                                        [ngStyle]="{ color: 'grey' }"
+                                                    ></i>
+                                                </ng-container>
+                                                {{ getLeaseUsageText(currentLeases.get(r.address)['usage']) }}
+                                            </span>
+                                            <ng-template #leaseNotFoundBlock>
+                                                <i class="fa fa-power-off" [ngStyle]="{ color: 'grey' }"></i>
+                                                unused
+                                            </ng-template>
+                                        </ng-container>
+                                    </td>
+                                </tr>
+                            </ng-template>
+                            <ng-template pTemplate="rowexpansion" let-r>
+                                <tr>
+                                    <td style="border: none; background-color: #fff"></td>
+                                    <td style="border: none; background-color: #fff" colspan="2">
+                                        <ng-container
+                                            *ngIf="
+                                                !leasesSearchInProgress && currentLeases.get(r.address) as leaseInfo;
+                                                else leaseFoundBlock
+                                            "
+                                        >
+                                            {{ getLeaseSummary(leaseInfo) }}
+                                        </ng-container>
+                                        <ng-template #leaseFoundBlock>{{
+                                            leasesSearchInProgress ? 'Checking leases...' : 'No lease found.'
+                                        }}</ng-template>
                                     </td>
                                 </tr>
                             </ng-template>
                         </p-table>
                     </p-fieldset>
                 </div>
-                <div *ngIf="host.prefixReservations && host.prefixReservations.length > 0" class="p-col-12">
-                    <p-fieldset id="prefix-reservations-fieldset" legend="Prefix Reservations">
-                        <p-table [value]="host.prefixReservations" dataKey="address">
-                            <ng-template pTemplate="body" let-r>
-                                <tr>
-                                    <td style="border: none; width: 15rem">{{ r.address }}</td>
-                                    <td style="border: none">
-                                        <!--
-                                            <i class="pi pi-check icon-ok" [ngStyle]="{ color: '#00a800' }"></i>
-                                            in use
-                                        -->
-                                    </td>
-                                </tr>
-                            </ng-template>
-                        </p-table>
-                    </p-fieldset>
-                </div>
-                <div *ngIf="host.hostname && host.hostname.length > 0" class="p-col-12">
-                    <p-fieldset id="non-ip-reservations-fieldset" legend="Non-IP Reservations">
-                        <table style="width: 100%">
+            </ng-container>
+            <div *ngIf="host.hostname && host.hostname.length > 0" class="p-col-12">
+                <p-fieldset id="non-ip-reservations-fieldset" legend="Non-IP Reservations">
+                    <table style="width: 100%">
+                        <tr>
+                            <td style="border: none; width: 10rem">Hostname</td>
+                            <td style="border: none">{{ host.hostname }}</td>
+                        </tr>
+                    </table>
+                </p-fieldset>
+            </div>
+            <div class="p-col-12">
+                <p-fieldset id="dhcp-identifiers-fieldset" legend="DHCP Identifiers">
+                    <p-table [value]="host.hostIdentifiers">
+                        <ng-template pTemplate="body" let-i>
                             <tr>
-                                <td style="border: none; width: 10rem">Hostname</td>
-                                <td style="border: none">{{ host.hostname }}</td>
+                                <td style="border: none; width: 8rem">{{ i.idType }}</td>
+                                <td style="border: none">{{ i.idHexValue }}</td>
                             </tr>
-                        </table>
-                    </p-fieldset>
-                </div>
-                <div class="p-col-12">
-                    <p-fieldset id="dhcp-identifiers-fieldset" legend="DHCP Identifiers">
-                        <p-table [value]="host.hostIdentifiers">
-                            <ng-template pTemplate="body" let-i>
-                                <tr>
-                                    <td style="border: none; width: 8rem">{{ i.idType }}</td>
-                                    <td style="border: none">{{ i.idHexValue }}</td>
-                                </tr>
-                            </ng-template>
-                        </p-table>
-                    </p-fieldset>
-                </div>
+                        </ng-template>
+                    </p-table>
+                </p-fieldset>
             </div>
         </div>
-        <div class="p-col-4">
-            <p-fieldset id="apps-fieldset" legend="Kea Apps using the reservations">
-                <p-table [value]="host.localHosts">
-                    <ng-template pTemplate="body" let-l>
-                        <tr>
-                            <td style="border: none; width: 10rem">
-                                <a routerLink="/apps/kea/{{ l.appId }}">{{ l.appName }}</a>
-                                <sup>
-                                    <span *ngIf="l.dataSource === 'config'" class="cfg-srctag">config</span>
-                                    <span *ngIf="l.dataSource === 'api'" class="hostcmds-srctag">host_cmds</span>
-                                </sup>
-                            </td>
-                        </tr>
-                    </ng-template>
-                </p-table>
-            </p-fieldset>
-        </div>
+    </div>
+    <div class="p-col-4">
+        <p-fieldset id="apps-fieldset" legend="Kea Apps using the reservations">
+            <p-table [value]="host.localHosts">
+                <ng-template pTemplate="body" let-l>
+                    <tr>
+                        <td style="border: none; width: 10rem">
+                            <a routerLink="/apps/kea/{{ l.appId }}">{{ l.appName }}</a>
+                            <sup>
+                                <span *ngIf="l.dataSource === 'config'" class="cfg-srctag">config</span>
+                                <span *ngIf="l.dataSource === 'api'" class="hostcmds-srctag">host_cmds</span>
+                            </sup>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </p-fieldset>
+    </div>
+    <div class="p-col-4"></div>
+    <div class="p-col-12">
+        <button
+            type="button"
+            pButton
+            [disabled]="leasesSearchInProgress"
+            label="Leases"
+            id="refresh-app-button"
+            icon="pi pi-refresh"
+            (click)="refreshLeases()"
+        ></button>
     </div>
 </div>

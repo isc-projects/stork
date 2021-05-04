@@ -66,6 +66,8 @@ export class HostsPageComponent implements OnInit {
      */
     openedTabs = []
 
+    selectedHost: any
+
     /**
      * Constructor.
      *
@@ -280,6 +282,11 @@ export class HostsPageComponent implements OnInit {
     private switchToTab(tabIndex) {
         this.activeTab = this.tabs[tabIndex]
         this.activeTabIndex = tabIndex
+        if (this.activeTabIndex > 0) {
+            this.selectedHost = this.openedTabs[this.activeTabIndex - 1].host
+        } else {
+            this.selectedHost = null
+        }
     }
 
     /**
