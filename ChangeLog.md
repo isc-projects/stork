@@ -1,6 +1,6 @@
 * 139 [func] marcin
 
-    New information presented for in the Kea tab includes
+    New information presented in the Kea tab includes
     locations of a lease file, forensic logging file and the
     information about database backends used by the particular
     Kea instance.
