@@ -80,6 +80,12 @@ type Database struct {
 	Host string `mapstructure:"host"`
 }
 
+// Structure holding all possible database configurations in the Kea
+// configuration structure, i.e. lease database, hosts databases,
+// config backend and forensic logging database. If some of the
+// configurations are not present, nil values or empty slices are
+// returned for them. This structure is returned by functions parsing
+// Kea configurations to find present database configurations.
 type Databases struct {
 	Lease    *Database
 	Hosts    []Database
@@ -335,7 +341,7 @@ func (sockets ControlSockets) ConfiguredDaemonNames() (names []string) {
 // Convenience function extracting database connection information at the
 // certain scope level. The first argument is the map structure containing
 // the map under specified name. This map should contain the database
-// connection information to be returned. If that map doesn't exist a nil
+// connection information to be returned. If that map doesn't exist, a nil
 // value is returned. This function can be used to extract the values of the
 // lease-database and legal logging configurations.
 func getDatabase(scope map[string]interface{}, name string) *Database {
