@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"os/exec"
 	"runtime"
 	"strings"
 
@@ -32,7 +31,6 @@ type StorkAgent struct {
 	AppMonitor AppMonitor
 
 	HTTPClient     *HTTPClient // to communicate with Kea Control Agent and named statistics-channel
-	RndcClient     *RndcClient // to communicate with BIND 9 via rndc
 	server         *grpc.Server
 	logTailer      *logTailer
 	keaInterceptor *keaInterceptor
@@ -40,20 +38,12 @@ type StorkAgent struct {
 
 // API exposed to Stork Server.
 func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor) *StorkAgent {
-	// rndc is the command to interface with BIND 9.
-	rndc := func(command []string) ([]byte, error) {
-		cmd := exec.Command(command[0], command[1:]...) //nolint:gosec
-		return cmd.Output()
-	}
-	rndcClient := NewRndcClient(rndc)
-
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
 		Settings:       settings,
 		AppMonitor:     appMonitor,
 		HTTPClient:     NewHTTPClient(),
-		RndcClient:     rndcClient,
 		logTailer:      logTailer,
 		keaInterceptor: newKeaInterceptor(),
 	}
@@ -209,21 +199,8 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 // ForwardRndcCommand forwards one rndc command sent by the Stork server to
 // the named daemon.
 func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.ForwardRndcCommandReq) (*agentapi.ForwardRndcCommandRsp, error) {
-	accessPoints := []AccessPoint{
-		{
-			Type:    AccessPointControl,
-			Address: in.Address,
-			Port:    in.Port,
-			Key:     in.Key,
-		},
-	}
-
-	app := &Bind9App{
-		BaseApp{
-			Type:         AppTypeBind9,
-			AccessPoints: accessPoints,
-		},
-	}
+	app := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, in.Address, in.Port)
+	bind9App := app.(*Bind9App)
 
 	request := in.GetRndcRequest()
 	response := &agentapi.ForwardRndcCommandRsp{
@@ -237,7 +214,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	}
 
 	// Try to forward the command to rndc.
-	output, err := sa.RndcClient.Call(app, strings.Fields(request.Request))
+	output, err := bind9App.sendCommand(strings.Fields(request.Request))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Address": in.Address,

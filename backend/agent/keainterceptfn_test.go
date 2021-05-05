@@ -12,7 +12,7 @@ import (
 // configuration are recorded. The log tailer is permitted to access only
 // those log files.
 func TestIcptConfigGetLoggers(t *testing.T) {
-	sa, _ := setupAgentTest(nil)
+	sa, _ := setupAgentTest()
 
 	responseArgsJSON := `{
         "Dhcp4": {

@@ -320,6 +320,7 @@ func TestGetAccessPoint(t *testing.T) {
 				},
 			},
 		},
+		RndcClient: nil,
 	}
 
 	keaApp := &KeaApp{
@@ -387,6 +388,7 @@ func TestPrintNewOrUpdatedApps(t *testing.T) {
 				},
 			},
 		},
+		RndcClient: nil,
 	}
 
 	keaApp := &KeaApp{

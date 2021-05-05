@@ -59,16 +59,14 @@ func mockRndcEmpty(command []string) ([]byte, error) {
 }
 
 // Initializes StorkAgent instance and context used by the tests.
-func setupAgentTest(rndc CommandExecutor) (*StorkAgent, context.Context) {
+func setupAgentTest() (*StorkAgent, context.Context) {
 	httpClient := NewHTTPClient()
-	rndcClient := NewRndcClient(rndc)
 	gock.InterceptClient(httpClient.client)
 
 	fam := FakeAppMonitor{}
 	sa := &StorkAgent{
 		AppMonitor:     &fam,
 		HTTPClient:     httpClient,
-		RndcClient:     rndcClient,
 		logTailer:      newLogTailer(),
 		keaInterceptor: newKeaInterceptor(),
 	}
@@ -123,7 +121,7 @@ func TestNewStorkAgent(t *testing.T) {
 
 // Check if an agent returns a response to a ping message..
 func TestPing(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 	args := &agentapi.PingReq{}
 	rsp, err := sa.Ping(ctx, args)
 	require.NoError(t, err)
@@ -132,7 +130,7 @@ func TestPing(t *testing.T) {
 
 // Check if GetState works.
 func TestGetState(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	// app monitor is empty, no apps should be returned by GetState
 	rsp, err := sa.GetState(ctx, &agentapi.GetStateReq{})
@@ -163,6 +161,7 @@ func TestGetState(t *testing.T) {
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
+		RndcClient: nil,
 	})
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
@@ -215,7 +214,7 @@ func doGunzip(data []byte) string {
 // Test forwarding command to Kea when HTTP 200 status code
 // is returned.
 func TestForwardToKeaOverHTTPSuccess(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	// Expect appropriate content type and the body. If they are not matched
 	// an error will be raised.
@@ -246,7 +245,7 @@ func TestForwardToKeaOverHTTPSuccess(t *testing.T) {
 // Test forwarding command to Kea when HTTP 400 (Bad Request) status
 // code is returned.
 func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	defer gock.Off()
 	gock.New("http://localhost:45634").
@@ -272,7 +271,7 @@ func TestForwardToKeaOverHTTPBadRequest(t *testing.T) {
 
 // Test forwarding command to Kea when no body is returned.
 func TestForwardToKeaOverHTTPEmptyBody(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	defer gock.Off()
 	gock.New("http://localhost:45634").
@@ -298,7 +297,7 @@ func TestForwardToKeaOverHTTPEmptyBody(t *testing.T) {
 
 // Test forwarding command when Kea is unavailable.
 func TestForwardToKeaOverHTTPNoKea(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	req := &agentapi.ForwardToKeaOverHTTPReq{
 		Url:         "http://localhost:45634/",
@@ -317,7 +316,7 @@ func TestForwardToKeaOverHTTPNoKea(t *testing.T) {
 
 // Test successful forwarding stats request to named.
 func TestForwardToNamedStatsSuccess(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	// Expect appropriate content type and the body. If they are not matched
 	// an error will be raised.
@@ -347,7 +346,7 @@ func TestForwardToNamedStatsSuccess(t *testing.T) {
 // Test forwarding command to named when HTTP 400 (Bad Request) status
 // code is returned.
 func TestForwardToNamedStatsBadRequest(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	defer gock.Off()
 	gock.New("http://localhost:45634/json/v1").
@@ -374,7 +373,7 @@ func TestForwardToNamedStatsBadRequest(t *testing.T) {
 
 // Test forwarding command to named statistics-channel when no body is returned.
 func TestForwardToNamedStatsHTTPEmptyBody(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	defer gock.Off()
 	gock.New("http://localhost:45634/json/v1").
@@ -400,7 +399,7 @@ func TestForwardToNamedStatsHTTPEmptyBody(t *testing.T) {
 
 // Test forwarding statistics request when named is unavailable.
 func TestForwardToNamedStatsNoNamed(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	req := &agentapi.ForwardToNamedStatsReq{
 		Url:               "http://localhost:45634/json/v1",
@@ -419,7 +418,7 @@ func TestForwardToNamedStatsNoNamed(t *testing.T) {
 
 // Test a successful rndc command.
 func TestForwardRndcCommandSuccess(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 2345)
 	var apps []App
@@ -428,6 +427,7 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
+		RndcClient: NewRndcClient(mockRndc),
 	})
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
@@ -473,7 +473,7 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 
 // Test rndc command failed to forward.
 func TestForwardRndcCommandError(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndcError)
+	sa, ctx := setupAgentTest()
 
 	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 2345)
 	var apps []App
@@ -482,6 +482,7 @@ func TestForwardRndcCommandError(t *testing.T) {
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
+		RndcClient: NewRndcClient(mockRndcError),
 	})
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
@@ -505,7 +506,7 @@ func TestForwardRndcCommandError(t *testing.T) {
 
 // Test rndc command successfully forwarded, but bad response.
 func TestForwardRndcCommandEmpty(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndcEmpty)
+	sa, ctx := setupAgentTest()
 
 	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 2345)
 	var apps []App
@@ -514,6 +515,7 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
+		RndcClient: NewRndcClient(mockRndcEmpty),
 	})
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
@@ -538,7 +540,7 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 
 // Test that the tail of the text file can be fetched.
 func TestTailTextFile(t *testing.T) {
-	sa, ctx := setupAgentTest(mockRndc)
+	sa, ctx := setupAgentTest()
 
 	filename := fmt.Sprintf("test%d.log", rand.Int63())
 	f, err := os.Create(filename)

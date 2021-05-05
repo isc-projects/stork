@@ -31,6 +31,7 @@ func (fam *PromFakeBind9AppMonitor) GetApps() []App {
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
+		RndcClient: nil,
 	}
 	return []App{ba}
 }

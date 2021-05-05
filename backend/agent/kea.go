@@ -53,7 +53,6 @@ func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) e
 	if err != nil {
 		return errors.WithMessagef(err, "failed to parse Kea response body received from %s", caURL)
 	}
-
 	return nil
 }
 
