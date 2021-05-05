@@ -222,6 +222,7 @@ func GetHost(db *pg.DB, hostID int64) (*Host, error) {
 		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
+		Relation("Subnet").
 		Relation("LocalHosts.App").
 		Where("host.id = ?", hostID).
 		Select()
