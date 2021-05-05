@@ -1,6 +1,8 @@
 import { async, fakeAsync, tick, ComponentFixture, TestBed } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { ActivatedRoute, Router } from '@angular/router'
+import { RouterTestingModule } from '@angular/router/testing'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
 
@@ -17,11 +19,23 @@ describe('LeaseSearchPageComponent', () => {
     let fixture: ComponentFixture<LeaseSearchPageComponent>
     let dhcpApi: DHCPService
     let msgService: MessageService
+    let router: Router
+    let route: ActivatedRoute
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
             providers: [DHCPService, MessageService],
-            imports: [FormsModule, HttpClientTestingModule, TableModule],
+            imports: [
+                FormsModule,
+                HttpClientTestingModule,
+                RouterTestingModule.withRoutes([
+                    {
+                        path: 'dhcp/leases',
+                        component: LeaseSearchPageComponent,
+                    },
+                ]),
+                TableModule,
+            ],
             declarations: [LeaseSearchPageComponent, LocaltimePipe],
         }).compileComponents()
     }))
@@ -31,6 +45,9 @@ describe('LeaseSearchPageComponent', () => {
         component = fixture.componentInstance
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
         msgService = fixture.debugElement.injector.get(MessageService)
+        router = fixture.debugElement.injector.get(Router)
+        route = fixture.debugElement.injector.get(ActivatedRoute)
+        router.navigate(['dhcp/leases'])
         fixture.detectChanges()
     })
 
@@ -153,7 +170,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // Validate app link.
         expect(cols[4].children.length).toBe(1)
-        expect(cols[4].children[0].properties.routerLink).toBe('/apps/kea/1')
+        expect(cols[4].children[0].attributes.href).toBe('/apps/kea/1')
 
         // Simulate expanding the lease information.
         expandButton.click()
@@ -343,7 +360,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // Validate app link.
         expect(cols[4].children.length).toBe(1)
-        expect(cols[4].children[0].properties.routerLink).toBe('/apps/kea/2')
+        expect(cols[4].children[0].attributes.href).toBe('/apps/kea/2')
 
         // Prefix lease.
 
@@ -360,7 +377,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // Validate app link.
         expect(cols[9].children.length).toBe(1)
-        expect(cols[9].children[0].properties.routerLink).toBe('/apps/kea/2')
+        expect(cols[9].children[0].attributes.href).toBe('/apps/kea/2')
 
         // Simulate expanding the lease information.
         expandButton1.click()
@@ -637,4 +654,34 @@ describe('LeaseSearchPageComponent', () => {
             expect(inputError).toBeNull()
         }
     })
+
+    it('should trigger lease search when valid text query parameter is specified', fakeAsync(() => {
+        spyOn(dhcpApi, 'getLeases').and.returnValue(throwError({ status: 404 }))
+        router.navigate(['/dhcp/leases'], { queryParams: { text: 'abc' } })
+        tick()
+        component.ngOnInit()
+        expect(dhcpApi.getLeases).toHaveBeenCalled()
+    }))
+
+    it('should not start lease search when invalid text query parameter is specified', fakeAsync(() => {
+        spyOn(dhcpApi, 'getLeases').and.returnValue(throwError({ status: 404 }))
+        // Specify partial IP address. The search should not be triggered and an
+        // error message should be shown.
+        router.navigate(['/dhcp/leases'], { queryParams: { text: '192.0.2' } })
+        tick()
+        component.ngOnInit()
+        expect(dhcpApi.getLeases).not.toHaveBeenCalled()
+        expect(component.invalidSearchText).toBeTrue()
+    }))
+
+    it('should clear empty text parameter', fakeAsync(() => {
+        spyOn(dhcpApi, 'getLeases').and.returnValue(throwError({ status: 404 }))
+        router.navigate(['/dhcp/leases'], { queryParams: { text: '   ' } })
+        tick()
+        component.ngOnInit()
+        tick()
+        expect(dhcpApi.getLeases).not.toHaveBeenCalled()
+        expect(component.invalidSearchText).toBeFalse()
+        expect(route.snapshot.queryParamMap.has('text')).toBeFalse()
+    }))
 })

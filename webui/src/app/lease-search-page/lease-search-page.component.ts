@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core'
+import { Router, ActivatedRoute } from '@angular/router'
 import { map } from 'rxjs/operators'
 
 import { MessageService } from 'primeng/api'
@@ -101,14 +102,33 @@ export class LeaseSearchPageComponent implements OnInit {
      *
      * @param dhcpApi service used to contact the DHCP servers.
      */
-    constructor(private msgService: MessageService, private dhcpApi: DHCPService) {}
+    constructor(
+        private route: ActivatedRoute,
+        private router: Router,
+        private msgService: MessageService,
+        private dhcpApi: DHCPService
+    ) {}
 
     /**
      * Hook displayed during component initialization.
      *
-     * It currently does nothing.
+     * It uses a text query parameter value to perform leases search.
+     * If the parameter is not present, the search is not triggered.
      */
-    ngOnInit(): void {}
+    ngOnInit(): void {
+        const searchText = this.route.snapshot.queryParamMap.get('text')
+        if (searchText) {
+            this.searchText = searchText.trim()
+            this.validate()
+            if (!this.invalidSearchText) {
+                this.searchLeases()
+            }
+        }
+        if (this.searchText.length === 0) {
+            // Remove empty text parameter.
+            this.router.navigate(['/dhcp/leases'])
+        }
+    }
 
     /**
      * Attempts to search leases using the text specified in the input box.
@@ -190,6 +210,10 @@ export class LeaseSearchPageComponent implements OnInit {
      * @param event event containing pressed key's name.
      */
     handleKeyUp(event) {
+        // Remove the text parameter as soon as we start typing the query.
+        if (this.route.snapshot.queryParamMap.has('text')) {
+            this.router.navigate(['/dhcp/leases'])
+        }
         this.validate()
         if (this.invalidSearchText) {
             return
