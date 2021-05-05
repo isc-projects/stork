@@ -44,9 +44,11 @@
                                         </a>
                                     </td>
                                     <td style="border: none; width: 15rem">
-                                        <a routerLink="/dhcp/leases" [queryParams]="{ text: r.address }">{{
-                                            r.address
-                                        }}</a>
+                                        <a
+                                            routerLink="/dhcp/leases"
+                                            [queryParams]="{ text: r.address.split('/')[0] }"
+                                            >{{ r.address }}</a
+                                        >
                                     </td>
                                     <td style="border: none">
                                         <p-progressSpinner

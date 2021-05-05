@@ -224,6 +224,12 @@ describe('HostTabComponent', () => {
         expect(addressReservationTrs[0].nativeElement.textContent).toContain('in use')
         expect(addressReservationTrs[1].nativeElement.textContent).toContain('unused')
 
+        let links = addressReservationTrs[0].queryAll(By.css('a'))
+        expect(links.length).toBe(2)
+        expect(links[1].attributes.routerLink).toBe('/dhcp/leases')
+        expect(links[1].properties.queryParams.hasOwnProperty('text')).toBeTrue()
+        expect(links[1].properties.queryParams.text).toBe('2001:db8:1::1')
+
         const expandAddressLink = addressReservationTrs[0].query(By.css('a'))
         expect(expandAddressLink).toBeTruthy()
         expandAddressLink.nativeElement.click()
@@ -243,6 +249,12 @@ describe('HostTabComponent', () => {
         expect(prefixReservationTrs.length).toBe(2)
         expect(prefixReservationTrs[0].nativeElement.textContent).toContain('in conflict')
         expect(prefixReservationTrs[1].nativeElement.textContent).toContain('unused')
+
+        links = prefixReservationTrs[0].queryAll(By.css('a'))
+        expect(links.length).toBe(2)
+        expect(links[1].attributes.routerLink).toBe('/dhcp/leases')
+        expect(links[1].properties.queryParams.hasOwnProperty('text')).toBeTrue()
+        expect(links[1].properties.queryParams.text).toBe('2001:db8:2::')
     })
 
     it('should display multiple lease information', () => {
