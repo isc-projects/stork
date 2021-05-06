@@ -100,24 +100,54 @@ func mockLease4GetError(callNo int, responses []interface{}) {
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
-// Generates empty response to searching leases on the DHCPv4 and DHCPv6 server.
-func mockLeasesGetEmpty(callNo int, responses []interface{}) {
-	json := []byte(`[
+// Generates response to declined leases searching on the DHCPv4 and DHCPv6 server.
+func mockLeasesGetDeclined(callNo int, responses []interface{}) {
+	json4 := []byte(`[
         {
-            "result": 3,
-            "text": "No leases found",
+            "result": 0,
+            "text": "Lease found.",
             "arguments": {
-                "leases": [ ]
+                "leases": [
+                    {
+                        "cltt": 12345678,
+                        "ip-address": "192.0.2.1",
+                        "state": 1,
+                        "subnet-id": 44,
+                        "valid-lft": 3600
+                    }
+                ]
             }
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
 	command, _ := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
-	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
+	_ = keactrl.UnmarshalResponseList(command, json4, responses[0])
+
+	json6 := []byte(`[
+        {
+            "result": 0,
+            "text": "Lease found.",
+            "arguments": {
+                "leases": [
+                    {
+                        "cltt": 12345678,
+                        "duid": "00",
+                        "iaid": 1,
+                        "ip-address": "2001:db8:2::1",
+                        "preferred-lft": 500,
+                        "state": 1,
+                        "subnet-id": 44,
+                        "type": "IA_NA",
+                        "valid-lft": 3600
+                    }
+                ]
+            }
+        }
+    ]`)
 
 	daemons, _ = keactrl.NewDaemons("dhcp6")
 	command, _ = keactrl.NewCommand("lease6-get-by-duid", daemons, nil)
-	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
+	_ = keactrl.UnmarshalResponseList(command, json6, responses[1])
 }
 
 // This test verifies that it is possible to search DHCPv4 leases by text
@@ -458,7 +488,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 
 	// Setup REST API.
 	settings := RestAPISettings{}
-	agents := agentcommtest.NewFakeAgents(mockLeasesGetEmpty, nil)
+	agents := agentcommtest.NewFakeAgents(mockLeasesGetDeclined, nil)
 	fec := &storktest.FakeEventCenter{}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, agents, fec, nil)
 	require.NoError(t, err)
@@ -471,9 +501,27 @@ func TestFindDeclinedLeases(t *testing.T) {
 	rsp := rapi.GetLeases(ctx, params)
 	require.IsType(t, &dhcp.GetLeasesOK{}, rsp)
 	okRsp := rsp.(*dhcp.GetLeasesOK)
-	require.Len(t, okRsp.Payload.Items, 0)
-	require.EqualValues(t, 0, okRsp.Payload.Total)
+	require.Len(t, okRsp.Payload.Items, 2)
+	require.EqualValues(t, 2, okRsp.Payload.Total)
 	require.Empty(t, okRsp.Payload.ErredApps)
+
+	// Verify that the lease contents were parsed correctly. Specifically, we should
+	// ensure that HW address, client-id and DUID are empty.
+	leases := okRsp.Payload.Items
+	require.NotNil(t, leases[0].IPAddress)
+	require.Equal(t, "192.0.2.1", *leases[0].IPAddress)
+	require.NotNil(t, leases[0].State)
+	require.Empty(t, leases[0].HwAddress)
+	require.Empty(t, leases[0].ClientID)
+	require.Empty(t, leases[0].Duid)
+	require.EqualValues(t, 1, *leases[0].State)
+	require.NotNil(t, leases[1].IPAddress)
+	require.Equal(t, "2001:db8:2::1", *leases[1].IPAddress)
+	require.EqualValues(t, 1, *leases[1].State)
+	require.NotNil(t, leases[1].State)
+	require.Empty(t, leases[1].HwAddress)
+	require.Empty(t, leases[1].ClientID)
+	require.Empty(t, leases[1].Duid)
 
 	// Ensure that appropriate commands were sent to Kea.
 	require.Len(t, agents.RecordedCommands, 2)

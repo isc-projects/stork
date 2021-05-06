@@ -67,13 +67,20 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		state := int64(l.State)
 		subnetID := int64(l.SubnetID)
 		validLifetime := int64(l.ValidLifetime)
+
+		// Handle a special case when returned DUID is equal to 00. Kea returns such DUID
+		// in declined DHCPv6 leases. We treat is as empty DUID.
+		duid := ""
+		if len(l.DUID) > 0 && l.DUID != "00" {
+			duid = l.DUID
+		}
 		lease := models.Lease{
 			ID:                &id,
 			AppID:             &l.AppID,
 			AppName:           &appName,
 			ClientID:          l.ClientID,
 			Cltt:              &cltt,
-			Duid:              l.DUID,
+			Duid:              duid,
 			FqdnFwd:           l.FqdnFwd,
 			FqdnRev:           l.FqdnRev,
 			Hostname:          l.Hostname,
