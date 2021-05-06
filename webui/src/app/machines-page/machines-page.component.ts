@@ -141,7 +141,7 @@ export class MachinesPageComponent implements OnInit {
                 value: false,
             },
             {
-                label: 'Unauthorized',
+                label: 'Unauthorized (0)',
                 value: true,
             },
         ]
@@ -218,7 +218,9 @@ export class MachinesPageComponent implements OnInit {
             return
         }
         this.servicesApi.getMachines(0, 1, null, null, false).subscribe((data) => {
-            this.unauthorizedMachinesCount = data.total
+            const total = data.total || 0
+            this.unauthorizedMachinesCount = total
+            this.viewSelectionOptions[1].label = 'Unauthorized (' + total + ')'
         })
     }
 
@@ -235,7 +237,12 @@ export class MachinesPageComponent implements OnInit {
 
         this.servicesApi.getMachines(event.first, event.rows, text, app, !this.showUnauthorized).subscribe((data) => {
             this.machines = data.items
-            this.totalMachines = data.total
+            const total = data.total || 0
+            this.totalMachines = total
+            if (this.showUnauthorized) {
+                this.unauthorizedMachinesCount = total
+                this.viewSelectionOptions[1].label = 'Unauthorized (' + total + ')'
+            }
         })
         this.refreshUnauthorizedMachinesCount()
     }

@@ -1,3 +1,9 @@
+* 140 [func] godfryd
+
+    Added displaying number of unauthorized machines on machines
+    page in select button.
+    (Gitlab #492)
+
 * 139 [func] marcin
 
     New information presented in the Kea tab includes
