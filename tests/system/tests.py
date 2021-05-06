@@ -380,6 +380,22 @@ def test_search_leases(agent, server):
     assert 'ipAddress' in leases[1]
     assert leases[1]['ipAddress'] == '3001:db8:1::6'
 
+    # Search declined leases.
+    leases = _search_leases(server, 'state:declined')
+    assert len(leases) is 20
+    for lease in leases:
+        # Declined leases should lack identifiers.
+        assert 'hwaddr' not in lease
+        assert 'clientId' not in lease
+        assert 'duid' not in lease
+        # The state is declined.
+        assert lease['state'] is 1
+        # An address should be set.
+        assert 'ipAddress' in lease
+    # Sanity check addresses returned.
+    assert leases[0]['ipAddress'] == '192.0.2.1'
+    assert leases[10]['ipAddress'] == '3001:db8:1::1'
+
     # Blank search text should return none leases
     r = server.api_get('/leases?text=')
     data = r.json()
