@@ -171,6 +171,8 @@ describe('MachinesPageComponent', () => {
 
         expect(component.showUnauthorized).toBeTrue()
         expect(component.totalMachines).toBe(3)
+        expect(component.unauthorizedMachinesCount).toBe(3)
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
 
         // check if hostnames are displayed
         const nativeEl = fixture.nativeElement
@@ -185,6 +187,7 @@ describe('MachinesPageComponent', () => {
         expect(component.showUnauthorized).toBeFalse()
         expect(component.totalMachines).toBe(2)
         expect(component.unauthorizedMachinesCount).toBe(3)
+        expect(component.viewSelectionOptions[1].label).toBe('Unauthorized (3)')
 
         // check if hostnames are displayed
         expect(nativeEl.textContent).toContain('zzz')
