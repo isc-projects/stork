@@ -1168,10 +1168,10 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 	apps := pbe.AppMonitor.GetApps()
 	for _, app := range apps {
 		// ignore non-bind9 apps
-		if app.Type != AppTypeBind9 {
+		if app.GetBaseApp().Type != AppTypeBind9 {
 			continue
 		}
-		bind9Pid = app.Pid
+		bind9Pid = app.GetBaseApp().Pid
 
 		// get stats from named
 		sap, err := getAccessPoint(app, AccessPointStatistics)

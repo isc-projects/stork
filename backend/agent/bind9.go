@@ -25,6 +25,21 @@ type Bind9State struct {
 	Daemon  Bind9Daemon
 }
 
+type Bind9App struct {
+	BaseApp
+}
+
+// Get base app data.
+func (ba *Bind9App) GetBaseApp() *BaseApp {
+	return &ba.BaseApp
+}
+
+// Detect allowed logs provided by BIND 9. Currently it is not implemeneted,
+// it returns always empty list and no error.
+func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
+	return nil, nil
+}
+
 const (
 	RndcDefaultPort         = 953
 	StatsChannelDefaultPort = 80
@@ -227,7 +242,7 @@ func getStatisticsChannelFromBind9Config(text string) (statsAddress string, stat
 	return statsAddress, statsPort, statsKey
 }
 
-func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) (bind9App *App) {
+func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) App {
 	if len(match) < 3 {
 		log.Warnf("problem with parsing BIND 9 cmdline: %s", match[0])
 		return nil
@@ -297,8 +312,12 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) (bind9
 		log.Warnf("cannot parse BIND 9 statistics-channels clause")
 	}
 
-	return &App{
-		Type:         AppTypeBind9,
-		AccessPoints: accessPoints,
+	bind9App := &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
 	}
+
+	return bind9App
 }

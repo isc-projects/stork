@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -17,6 +18,71 @@ func TestGetApps(t *testing.T) {
 	apps := am.GetApps()
 	require.Len(t, apps, 0)
 	am.Shutdown()
+}
+
+func TestGetApp(t *testing.T) {
+	am := NewAppMonitor()
+
+	var apps []App
+	apps = append(apps, &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234),
+		},
+		HTTPClient: nil,
+	})
+
+	accessPoints := makeAccessPoint(AccessPointControl, "2.3.4.4", "abcd", 2345)
+	accessPoints = append(accessPoints, AccessPoint{
+		Type:    AccessPointStatistics,
+		Address: "2.3.4.5",
+		Port:    2346,
+		Key:     "",
+	})
+
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+	})
+
+	var wg sync.WaitGroup
+
+	// find kea app
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		app := am.GetApp(AppTypeKea, AccessPointControl, "1.2.3.1", 1234)
+		require.NotNil(t, app)
+		require.EqualValues(t, AppTypeKea, app.GetBaseApp().Type)
+	}()
+	ret := <-am.(*appMonitor).requests
+	ret <- apps
+	wg.Wait()
+
+	// find bind app
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		app := am.GetApp(AppTypeBind9, AccessPointControl, "2.3.4.4", 2345)
+		require.NotNil(t, app)
+		require.EqualValues(t, AppTypeBind9, app.GetBaseApp().Type)
+	}()
+	ret = <-am.(*appMonitor).requests
+	ret <- apps
+	wg.Wait()
+
+	// find not existing app - should return nil
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		app := am.GetApp(AppTypeKea, AccessPointControl, "0.0.0.0", 1)
+		require.Nil(t, app)
+	}()
+	ret = <-am.(*appMonitor).requests
+	ret <- apps
+	wg.Wait()
 }
 
 func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
@@ -120,15 +186,18 @@ func TestDetectApps(t *testing.T) {
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
 func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	am := &appMonitor{}
-	am.apps = append(am.apps, &App{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{
-				Type:    AccessPointControl,
-				Address: "localhost",
-				Port:    45678,
+	am.apps = append(am.apps, &KeaApp{
+		BaseApp: BaseApp{
+			Type: AppTypeKea,
+			AccessPoints: []AccessPoint{
+				{
+					Type:    AccessPointControl,
+					Address: "localhost",
+					Port:    45678,
+				},
 			},
 		},
+		HTTPClient: NewHTTPClient(),
 	})
 
 	var settings cli.Context
@@ -161,14 +230,14 @@ func TestDetectBind9App(t *testing.T) {
 	cmdr := &TestCommander{}
 	app := detectBind9App([]string{"", "", "-c /fake/path.cfg"}, "", cmdr)
 	require.NotNil(t, app)
-	require.Equal(t, app.Type, AppTypeBind9)
-	require.Len(t, app.AccessPoints, 2)
-	point := app.AccessPoints[0]
+	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
+	require.Len(t, app.GetBaseApp().AccessPoints, 2)
+	point := app.GetBaseApp().AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
 	require.EqualValues(t, 5353, point.Port)
 	require.Equal(t, "hmac-sha256:abcd", point.Key)
-	point = app.AccessPoints[1]
+	point = app.GetBaseApp().AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "127.0.0.80", point.Address)
 	require.EqualValues(t, 80, point.Port)
@@ -177,7 +246,7 @@ func TestDetectBind9App(t *testing.T) {
 	// check BIND 9 app detection when its conf file is relative to CWD of its process
 	app = detectBind9App([]string{"", "", "-c path.cfg"}, "/fake", cmdr)
 	require.NotNil(t, app)
-	require.Equal(t, app.Type, AppTypeBind9)
+	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 }
 
 func makeKeaConfFile() (file *os.File, removeFunc func(string) error) {
@@ -204,11 +273,11 @@ func TestDetectKeaApp(t *testing.T) {
 	tmpFilePath := tmpFile.Name()
 	defer remove(tmpFilePath)
 
-	checkApp := func(app *App) {
+	checkApp := func(app App) {
 		require.NotNil(t, app)
-		require.Equal(t, AppTypeKea, app.Type)
-		require.Len(t, app.AccessPoints, 1)
-		ctrlPoint := app.AccessPoints[0]
+		require.Equal(t, AppTypeKea, app.GetBaseApp().Type)
+		require.Len(t, app.GetBaseApp().AccessPoints, 1)
+		ctrlPoint := app.GetBaseApp().AccessPoints[0]
 		require.Equal(t, AccessPointControl, ctrlPoint.Type)
 		require.Equal(t, "localhost", ctrlPoint.Address)
 		require.EqualValues(t, 45634, ctrlPoint.Port)
@@ -226,34 +295,39 @@ func TestDetectKeaApp(t *testing.T) {
 }
 
 func TestGetAccessPoint(t *testing.T) {
-	bind9App := &App{
-		Type: AppTypeBind9,
-		AccessPoints: []AccessPoint{
-			{
-				Type:    AccessPointControl,
-				Address: "127.0.0.53",
-				Port:    int64(5353),
-				Key:     "hmac-sha256:abcd",
-			},
-			{
-				Type:    AccessPointStatistics,
-				Address: "127.0.0.80",
-				Port:    int64(80),
-				Key:     "",
+	bind9App := &Bind9App{
+		BaseApp: BaseApp{
+			Type: AppTypeBind9,
+			AccessPoints: []AccessPoint{
+				{
+					Type:    AccessPointControl,
+					Address: "127.0.0.53",
+					Port:    int64(5353),
+					Key:     "hmac-sha256:abcd",
+				},
+				{
+					Type:    AccessPointStatistics,
+					Address: "127.0.0.80",
+					Port:    int64(80),
+					Key:     "",
+				},
 			},
 		},
 	}
 
-	keaApp := &App{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{
-				Type:    AccessPointControl,
-				Address: "localhost",
-				Port:    int64(45634),
-				Key:     "",
+	keaApp := &KeaApp{
+		BaseApp: BaseApp{
+			Type: AppTypeKea,
+			AccessPoints: []AccessPoint{
+				{
+					Type:    AccessPointControl,
+					Address: "localhost",
+					Port:    int64(45634),
+					Key:     "",
+				},
 			},
 		},
+		HTTPClient: nil,
 	}
 
 	// test get bind 9 access points
@@ -288,38 +362,43 @@ func TestGetAccessPoint(t *testing.T) {
 }
 
 func TestPrintNewOrUpdatedApps(t *testing.T) {
-	bind9App := &App{
-		Type: AppTypeBind9,
-		AccessPoints: []AccessPoint{
-			{
-				Type:    AccessPointControl,
-				Address: "127.0.0.53",
-				Port:    int64(5353),
-				Key:     "hmac-sha256:abcd",
-			},
-			{
-				Type:    AccessPointStatistics,
-				Address: "127.0.0.80",
-				Port:    int64(80),
-				Key:     "",
-			},
-		},
-	}
-
-	keaApp := &App{
-		Type: AppTypeKea,
-		AccessPoints: []AccessPoint{
-			{
-				Type:    AccessPointControl,
-				Address: "localhost",
-				Port:    int64(45634),
-				Key:     "",
+	bind9App := &Bind9App{
+		BaseApp: BaseApp{
+			Type: AppTypeBind9,
+			AccessPoints: []AccessPoint{
+				{
+					Type:    AccessPointControl,
+					Address: "127.0.0.53",
+					Port:    int64(5353),
+					Key:     "hmac-sha256:abcd",
+				},
+				{
+					Type:    AccessPointStatistics,
+					Address: "127.0.0.80",
+					Port:    int64(80),
+					Key:     "",
+				},
 			},
 		},
 	}
 
-	newApps := []*App{bind9App, keaApp}
-	var oldApps []*App
+	keaApp := &KeaApp{
+		BaseApp: BaseApp{
+			Type: AppTypeKea,
+			AccessPoints: []AccessPoint{
+				{
+					Type:    AccessPointControl,
+					Address: "localhost",
+					Port:    int64(45634),
+					Key:     "",
+				},
+			},
+		},
+		HTTPClient: nil,
+	}
+
+	newApps := []App{bind9App, keaApp}
+	var oldApps []App
 
 	printNewOrUpdatedApps(newApps, oldApps)
 }

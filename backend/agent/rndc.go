@@ -27,7 +27,7 @@ func NewRndcClient(ce CommandExecutor) *RndcClient {
 	return rndcClient
 }
 
-func (c *RndcClient) Call(app *App, command []string) (output []byte, err error) {
+func (c *RndcClient) Call(app App, command []string) (output []byte, err error) {
 	ctrl, err := getAccessPoint(app, AccessPointControl)
 	if err != nil {
 		return nil, err

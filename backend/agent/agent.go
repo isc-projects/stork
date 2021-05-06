@@ -47,14 +47,12 @@ func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor) *StorkAgent {
 	}
 	rndcClient := NewRndcClient(rndc)
 
-	httpClient := NewHTTPClient()
-
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
 		Settings:       settings,
 		AppMonitor:     appMonitor,
-		HTTPClient:     httpClient,
+		HTTPClient:     NewHTTPClient(),
 		RndcClient:     rndcClient,
 		logTailer:      logTailer,
 		keaInterceptor: newKeaInterceptor(),
@@ -169,7 +167,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 	var apps []*agentapi.App
 	for _, app := range sa.AppMonitor.GetApps() {
 		var accessPoints []*agentapi.AccessPoint
-		for _, point := range app.AccessPoints {
+		for _, point := range app.GetBaseApp().AccessPoints {
 			accessPoints = append(accessPoints, &agentapi.AccessPoint{
 				Type:    point.Type,
 				Address: point.Address,
@@ -179,7 +177,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		}
 
 		apps = append(apps, &agentapi.App{
-			Type:         app.Type,
+			Type:         app.GetBaseApp().Type,
 			AccessPoints: accessPoints,
 		})
 	}
@@ -220,9 +218,11 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 		},
 	}
 
-	app := &App{
-		Type:         AppTypeBind9,
-		AccessPoints: accessPoints,
+	app := &Bind9App{
+		BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
 	}
 
 	request := in.GetRndcRequest()
@@ -240,9 +240,8 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	output, err := sa.RndcClient.Call(app, strings.Fields(request.Request))
 	if err != nil {
 		log.WithFields(log.Fields{
-			"Address": accessPoints[0].Address,
-			"Port":    accessPoints[0].Port,
-			"Key":     accessPoints[0].Key,
+			"Address": in.Address,
+			"Port":    in.Port,
 		}).Errorf("Failed to forward commands to rndc: %+v", err)
 		rndcRsp.Status.Code = agentapi.Status_ERROR
 		rndcRsp.Status.Message = fmt.Sprintf("Failed to forward commands to rndc: %s", err.Error())

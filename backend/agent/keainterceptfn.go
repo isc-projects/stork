@@ -8,7 +8,10 @@ import (
 // found in the daemon's configuration  making them accessible by the
 // log viewer.
 func icptConfigGetLoggers(agent *StorkAgent, response *keactrl.Response) error {
-	updateKeaAllowedLogs(agent, response)
+	paths := collectKeaAllowedLogs(response)
+	for _, p := range paths {
+		agent.logTailer.allow(p)
+	}
 	return nil
 }
 

@@ -472,7 +472,7 @@ func (pke *PromKeaExporter) collectStats() error {
 	apps := pke.AppMonitor.GetApps()
 	for _, app := range apps {
 		// ignore non-kea apps
-		if app.Type != AppTypeKea {
+		if app.GetBaseApp().Type != AppTypeKea {
 			continue
 		}
 

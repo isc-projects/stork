@@ -27,7 +27,7 @@ import (
 )
 
 type FakeAppMonitor struct {
-	Apps []*App
+	Apps []App
 }
 
 // mockRndc mocks successful rndc output.
@@ -77,8 +77,23 @@ func setupAgentTest(rndc CommandExecutor) (*StorkAgent, context.Context) {
 	return sa, ctx
 }
 
-func (fam *FakeAppMonitor) GetApps() []*App {
+func (fam *FakeAppMonitor) GetApps() []App {
 	return fam.Apps
+}
+
+// Stub function for AppMonitor. It behaves in the same way as original one.
+func (fam *FakeAppMonitor) GetApp(appType, apType, address string, port int64) App {
+	for _, app := range fam.Apps {
+		if app.GetBaseApp().Type != appType {
+			continue
+		}
+		for _, ap := range app.GetBaseApp().AccessPoints {
+			if ap.Type == apType && ap.Address == address && ap.Port == port {
+				return app
+			}
+		}
+	}
+	return nil
 }
 
 func (fam *FakeAppMonitor) Shutdown() {
@@ -104,7 +119,6 @@ func TestNewStorkAgent(t *testing.T) {
 	sa := NewStorkAgent(&settings, fam)
 	require.NotNil(t, sa.AppMonitor)
 	require.NotNil(t, sa.HTTPClient)
-	require.NotNil(t, sa.RndcClient)
 }
 
 // Check if an agent returns a response to a ping message..
@@ -127,10 +141,13 @@ func TestGetState(t *testing.T) {
 	require.Empty(t, rsp.Apps)
 
 	// add some apps to app monitor so GetState should return something
-	var apps []*App
-	apps = append(apps, &App{
-		Type:         AppTypeKea,
-		AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234),
+	var apps []App
+	apps = append(apps, &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234),
+		},
+		HTTPClient: nil,
 	})
 
 	accessPoints := makeAccessPoint(AccessPointControl, "2.3.4.4", "abcd", 2345)
@@ -141,9 +158,11 @@ func TestGetState(t *testing.T) {
 		Key:     "",
 	})
 
-	apps = append(apps, &App{
-		Type:         AppTypeBind9,
-		AccessPoints: accessPoints,
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
 	})
 	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
 	fam.Apps = apps
@@ -401,6 +420,18 @@ func TestForwardToNamedStatsNoNamed(t *testing.T) {
 // Test a successful rndc command.
 func TestForwardRndcCommandSuccess(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndc)
+
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 2345)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
@@ -443,6 +474,18 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 // Test rndc command failed to forward.
 func TestForwardRndcCommandError(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndcError)
+
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 2345)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
@@ -463,6 +506,18 @@ func TestForwardRndcCommandError(t *testing.T) {
 // Test rndc command successfully forwarded, but bad response.
 func TestForwardRndcCommandEmpty(t *testing.T) {
 	sa, ctx := setupAgentTest(mockRndcEmpty)
+
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 2345)
+	var apps []App
+	apps = append(apps, &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+	})
+	fam, _ := sa.AppMonitor.(*FakeAppMonitor)
+	fam.Apps = apps
+
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{

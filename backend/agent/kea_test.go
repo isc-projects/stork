@@ -10,8 +10,9 @@ import (
 )
 
 // Test the case that the command is successfully sent to Kea.
-func TestSendToKeaOverHTTPSuccess(t *testing.T) {
-	sa, _ := setupAgentTest(nil)
+func TestSendCommand(t *testing.T) {
+	httpClient := NewHTTPClient()
+	gock.InterceptClient(httpClient.client)
 
 	// Expect appropriate content type and the body. If they are not matched
 	// an error will be raised.
@@ -26,16 +27,24 @@ func TestSendToKeaOverHTTPSuccess(t *testing.T) {
 	command, err := keactrl.NewCommand("list-commands", nil, nil)
 	require.NoError(t, err)
 
+	ka := &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634),
+		},
+		HTTPClient: httpClient,
+	}
 	responses := keactrl.ResponseList{}
-	err = sendToKeaOverHTTP(sa, "localhost", 45634, command, &responses)
+	err = ka.sendCommand(command, &responses)
 	require.NoError(t, err)
 
 	require.Len(t, responses, 1)
 }
 
 // Test the case when Kea returns invalid response to the command.
-func TestSendToKeaOverHTTPInvalidResponse(t *testing.T) {
-	sa, _ := setupAgentTest(nil)
+func TestSendCommandInvalidResponse(t *testing.T) {
+	httpClient := NewHTTPClient()
+	gock.InterceptClient(httpClient.client)
 
 	// Return invalid response. Arguments must be a map not an integer.
 	defer gock.Off()
@@ -49,20 +58,32 @@ func TestSendToKeaOverHTTPInvalidResponse(t *testing.T) {
 	command, err := keactrl.NewCommand("list-commands", nil, nil)
 	require.NoError(t, err)
 
+	ka := &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634),
+		},
+		HTTPClient: httpClient,
+	}
 	responses := keactrl.ResponseList{}
-	err = sendToKeaOverHTTP(sa, "localhost", 45634, command, &responses)
+	err = ka.sendCommand(command, &responses)
 	require.Error(t, err)
 }
 
 // Test the case when Kea server is unreachable.
-func TestSendToKeaOverHTTPNoKea(t *testing.T) {
-	sa, _ := setupAgentTest(nil)
-
+func TestSendCommandNoKea(t *testing.T) {
 	command, err := keactrl.NewCommand("list-commands", nil, nil)
 	require.NoError(t, err)
 
+	ka := &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634),
+		},
+		HTTPClient: NewHTTPClient(),
+	}
 	responses := keactrl.ResponseList{}
-	err = sendToKeaOverHTTP(sa, "localhost", 45634, command, &responses)
+	err = ka.sendCommand(command, &responses)
 	require.Error(t, err)
 }
 
@@ -70,7 +91,8 @@ func TestSendToKeaOverHTTPNoKea(t *testing.T) {
 // application by sending the request to the Kea Control Agent and the
 // daemons behind it.
 func TestKeaAllowedLogs(t *testing.T) {
-	sa, _ := setupAgentTest(nil)
+	httpClient := NewHTTPClient()
+	gock.InterceptClient(httpClient.client)
 
 	// The first config-get command should go to the Kea Control Agent.
 	// The logs should be extracted from there and the subsequent config-get
@@ -158,23 +180,27 @@ func TestKeaAllowedLogs(t *testing.T) {
 		Reply(200).
 		JSON(dhcpResponses)
 
-	err = detectKeaAllowedLogs(sa, "localhost", 45634)
+	ka := &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634),
+		},
+		HTTPClient: httpClient,
+	}
+	paths, err := ka.DetectAllowedLogs()
 	require.NoError(t, err)
 
 	// We should have three log files recorded from the returned configurations.
 	// One from CA, one from DHCPv4 and one from DHCPv6.
-	require.Len(t, sa.logTailer.allowedPaths, 3)
-
-	require.True(t, sa.logTailer.allowed("/tmp/kea-ctrl-agent.log"))
-	require.True(t, sa.logTailer.allowed("/tmp/kea-dhcp4.log"))
-	require.True(t, sa.logTailer.allowed("/tmp/kea-dhcp6.log"))
+	require.Len(t, paths, 3)
 }
 
 // This test verifies that an error is returned when the number of responses
 // from the Kea daemons is lower than the number of services specified in the
 // command.
 func TestKeaAllowedLogsFewerResponses(t *testing.T) {
-	sa, _ := setupAgentTest(nil)
+	httpClient := NewHTTPClient()
+	gock.InterceptClient(httpClient.client)
 
 	defer gock.Off()
 
@@ -199,6 +225,13 @@ func TestKeaAllowedLogsFewerResponses(t *testing.T) {
 		Reply(200).
 		JSON(dhcpResponses)
 
-	err = detectKeaAllowedLogs(sa, "localhost", 45634)
+	ka := &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634),
+		},
+		HTTPClient: httpClient,
+	}
+	_, err = ka.DetectAllowedLogs()
 	require.Error(t, err)
 }

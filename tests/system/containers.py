@@ -379,7 +379,7 @@ class StorkServerContainer(Container):
 
         self.run("perl -pi -e 's/.*STORK_DATABASE_PASSWORD.*/STORK_DATABASE_PASSWORD=stork/g' /etc/stork/server.env")
         # Stork server should be widely available
-        self.run("perl -pi -e 's/.*STORK_REST_HOST.*/STORK_REST_HOST=0\.0\.0\.0/g' /etc/stork/server.env")
+        self.run(r"perl -pi -e 's/.*STORK_REST_HOST.*/STORK_REST_HOST=0\.0\.0\.0/g' /etc/stork/server.env")
 
         self.run('systemctl daemon-reload')
         self.run('systemctl enable isc-stork-server')

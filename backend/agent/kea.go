@@ -16,15 +16,25 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+type KeaApp struct {
+	BaseApp
+	HTTPClient *HTTPClient // to communicate with Kea Control Agent
+}
+
+func (ka *KeaApp) GetBaseApp() *BaseApp {
+	return &ka.BaseApp
+}
+
 // Sends a command to Kea and returns a response.
-func sendToKeaOverHTTP(storkAgent *StorkAgent, caAddress string, caPort int64, command *keactrl.Command, responses interface{}) error {
-	caURL := storkutil.HostWithPortURL(caAddress, caPort)
+func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) error {
+	ap := &ka.BaseApp.AccessPoints[0]
+	caURL := storkutil.HostWithPortURL(ap.Address, ap.Port)
 
 	// Get the textual representation of the command.
 	request := command.Marshal()
 
 	// Send the command to the Kea server.
-	response, err := storkAgent.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
+	response, err := ka.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
 	if err != nil {
 		return errors.WithMessagef(err, "failed to send command to Kea: %s", caURL)
 	}
@@ -45,42 +55,45 @@ func sendToKeaOverHTTP(storkAgent *StorkAgent, caAddress string, caPort int64, c
 	return nil
 }
 
-// Updates the list of log files which can be viewed by the Stork user from the
-// UI. The response variable holds the pointer to the response to the config-get
-// command returned by one of the Kea daemons. If this response contains loggers'
-// configuration the log files are extracted from it and stored in the logTailer
-// instance of the agent. This function is intended to be called by the functions
-// which intercept config-get commands sent periodically by the server to the
-// agents and by the detectKeaAllowedLogs when the agent is started.
-func updateKeaAllowedLogs(agent *StorkAgent, response *keactrl.Response) {
+// Collect the list of log files which can be viewed by the Stork user
+// from the UI. The response variable holds the pointer to the
+// response to the config-get command returned by one of the Kea
+// daemons. If this response contains loggers' configuration the log
+// files are extracted from it and returned. This function is intended
+// to be called by the functions which intercept config-get commands
+// sent periodically by the server to the agents and by the
+// DetectAllowedLogs when the agent is started.
+func collectKeaAllowedLogs(response *keactrl.Response) []string {
 	if response.Result > 0 {
 		log.Warn("skipped refreshing viewable log files because config-get returned non success result")
-		return
+		return nil
 	}
 	if response.Arguments == nil {
 		log.Warn("skipped refreshing viewable log files because config-get response has no arguments")
-		return
+		return nil
 	}
 	cfg := keaconfig.New(response.Arguments)
 	if cfg == nil {
 		log.Warn("skipped refreshing viewable log files because config-get response contains arguments which could not be parsed")
-		return
+		return nil
 	}
 
 	loggers := cfg.GetLoggers()
 	if len(loggers) == 0 {
 		log.Info("no loggers found in the returned configuration while trying to refresh the viewable log files")
-		return
+		return nil
 	}
 
-	// Go over returned loggers and allow those found in the returned configuration.
+	// Go over returned loggers and collect those found in the returned configuration.
+	var paths []string
 	for _, l := range loggers {
 		for _, o := range l.OutputOptions {
 			if o.Output != "stdout" && o.Output != "stderr" && !strings.HasPrefix(o.Output, "syslog") {
-				agent.logTailer.allow(o.Output)
+				paths = append(paths, o.Output)
 			}
 		}
 	}
+	return paths
 }
 
 // Sends config-get command to all running Kea daemons belonging to the given Kea app
@@ -90,45 +103,47 @@ func updateKeaAllowedLogs(agent *StorkAgent, response *keactrl.Response) {
 // is fetched. The log files locations are stored in the logTailer instance of the
 // agent as allowed for viewing. This function should be called when the agent has
 // been started and the running Kea apps have been detected.
-func detectKeaAllowedLogs(storkAgent *StorkAgent, caAddress string, caPort int64) error {
+func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	// Prepare config-get command to be sent to Kea Control Agent.
 	command, err := keactrl.NewCommand("config-get", nil, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Send the command to Kea.
 	responses := keactrl.ResponseList{}
-	err = sendToKeaOverHTTP(storkAgent, caAddress, caPort, command, &responses)
+	err = ka.sendCommand(command, &responses)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	ap := ka.BaseApp.AccessPoints[0]
 
 	// There should be exactly one response received because we sent the command
 	// to only one daemon.
 	if len(responses) != 1 {
-		return errors.Errorf("invalid response received from Kea CA to config-get command sent to %s:%d", caAddress, caPort)
+		return nil, errors.Errorf("invalid response received from Kea CA to config-get command sent to %s:%d", ap.Address, ap.Port)
 	}
 
 	// It does not make sense to proceed if the CA returned non-success status
 	// because this response neither contains logging configuration nor
 	// sockets configurations.
 	if responses[0].Result != 0 {
-		return errors.Errorf("non success response %d received from Kea CA to config-get command sent to %s:%d", responses[0].Result, caAddress, caPort)
+		return nil, errors.Errorf("non success response %d received from Kea CA to config-get command sent to %s:%d", responses[0].Result, ap.Address, ap.Port)
 	}
 
 	// Allow the log files used by the CA.
-	updateKeaAllowedLogs(storkAgent, &responses[0])
+	paths := collectKeaAllowedLogs(&responses[0])
 
 	// Arguments should be returned in response to the config-get command.
 	rawConfig := responses[0].Arguments
 	if rawConfig == nil {
-		return errors.Errorf("empty arguments received from Kea CA in response to config-get command sent to %s:%d", caAddress, caPort)
+		return nil, errors.Errorf("empty arguments received from Kea CA in response to config-get command sent to %s:%d", ap.Address, ap.Port)
 	}
 	// The returned configuration has unexpected structure.
 	config := keaconfig.New(rawConfig)
 	if config == nil {
-		return errors.Errorf("unable to parse the config received from Kea CA in response to config-get command sent to %s:%d", caAddress, caPort)
+		return nil, errors.Errorf("unable to parse the config received from Kea CA in response to config-get command sent to %s:%d", ap.Address, ap.Port)
 	}
 
 	// Control Agent should be configured to forward commands to some
@@ -138,38 +153,38 @@ func detectKeaAllowedLogs(storkAgent *StorkAgent, caAddress string, caPort int64
 
 	// Apparently, it isn't configured to forward commands to the daemons behind it.
 	if len(daemonNames) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	// Prepare config-get command to be sent to the daemons behind CA.
 	daemons, err := keactrl.NewDaemons(daemonNames...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	command, err = keactrl.NewCommand("config-get", daemons, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Send config-get to the daemons behind CA.
 	responses = keactrl.ResponseList{}
-	err = sendToKeaOverHTTP(storkAgent, caAddress, caPort, command, &responses)
+	err = ka.sendCommand(command, &responses)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Check that we got responses for all daemons.
 	if len(responses) != len(daemonNames) {
-		return errors.Errorf("invalid number of responses received from daemons to config-get command sent via %s:%d", caAddress, caPort)
+		return nil, errors.Errorf("invalid number of responses received from daemons to config-get command sent via %s:%d", ap.Address, ap.Port)
 	}
 
 	// For each daemon try to extract its logging configuration and allow view
 	// the log files it contains.
 	for i := range responses {
-		updateKeaAllowedLogs(storkAgent, &responses[i])
+		paths = append(paths, collectKeaAllowedLogs(&responses[i])...)
 	}
 
-	return nil
+	return paths, nil
 }
 
 func getCtrlAddressFromKeaConfig(path string) (string, int64) {
@@ -209,7 +224,7 @@ func getCtrlAddressFromKeaConfig(path string) (string, int64) {
 	return address, int64(port)
 }
 
-func detectKeaApp(match []string, cwd string) *App {
+func detectKeaApp(match []string, cwd string) App {
 	if len(match) < 3 {
 		log.Warnf("problem with parsing Kea cmdline: %s", match[0])
 		return nil
@@ -232,9 +247,12 @@ func detectKeaApp(match []string, cwd string) *App {
 			Port:    port,
 		},
 	}
-	keaApp := &App{
-		Type:         AppTypeKea,
-		AccessPoints: accessPoints,
+	keaApp := &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: accessPoints,
+		},
+		HTTPClient: NewHTTPClient(),
 	}
 
 	return keaApp

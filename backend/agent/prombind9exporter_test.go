@@ -14,10 +14,10 @@ import (
 
 // Fake app monitor that returns some predefined list of apps.
 type PromFakeBind9AppMonitor struct {
-	Apps []*App
+	Apps []App
 }
 
-func (fam *PromFakeBind9AppMonitor) GetApps() []*App {
+func (fam *PromFakeBind9AppMonitor) GetApps() []App {
 	log.Println("GetApps")
 	accessPoints := makeAccessPoint(AccessPointStatistics, "1.2.3.4", "", 1234)
 	accessPoints = append(accessPoints, AccessPoint{
@@ -26,10 +26,17 @@ func (fam *PromFakeBind9AppMonitor) GetApps() []*App {
 		Port:    1953,
 		Key:     "abcd",
 	})
-	return []*App{{
-		Type:         AppTypeBind9,
-		AccessPoints: accessPoints,
-	}}
+	ba := &Bind9App{
+		BaseApp: BaseApp{
+			Type:         AppTypeBind9,
+			AccessPoints: accessPoints,
+		},
+	}
+	return []App{ba}
+}
+
+func (fam *PromFakeBind9AppMonitor) GetApp(appType, apType, address string, port int64) App {
+	return nil
 }
 
 func (fam *PromFakeBind9AppMonitor) Shutdown() {

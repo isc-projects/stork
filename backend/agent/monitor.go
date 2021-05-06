@@ -29,10 +29,15 @@ const (
 	AccessPointStatistics = "statistics"
 )
 
-type App struct {
+type BaseApp struct {
 	Pid          int32
 	Type         string
 	AccessPoints []AccessPoint
+}
+
+type App interface {
+	GetBaseApp() *BaseApp
+	DetectAllowedLogs() ([]string, error)
 }
 
 // Currently supported types are: "kea" and "bind9".
@@ -42,18 +47,19 @@ const (
 )
 
 type AppMonitor interface {
-	GetApps() []*App
+	GetApps() []App
+	GetApp(appType, apType, address string, port int64) App
 	Start(agent *StorkAgent)
 	Shutdown()
 }
 
 type appMonitor struct {
-	requests chan chan []*App // input to app monitor, ie. channel for receiving requests
-	quit     chan bool        // channel for stopping app monitor
+	requests chan chan []App // input to app monitor, ie. channel for receiving requests
+	quit     chan bool       // channel for stopping app monitor
 	running  bool
 	wg       *sync.WaitGroup
 
-	apps []*App // list of detected apps on the host
+	apps []App // list of detected apps on the host
 }
 
 // Names of apps that are being detected.
@@ -66,7 +72,7 @@ const (
 // by a dedicated method Start(). Make sure you call Start() before using app monitor.
 func NewAppMonitor() AppMonitor {
 	sm := &appMonitor{
-		requests: make(chan chan []*App),
+		requests: make(chan chan []App),
 		quit:     make(chan bool),
 		wg:       &sync.WaitGroup{},
 	}
@@ -117,12 +123,14 @@ func (sm *appMonitor) run(storkAgent *StorkAgent) {
 	}
 }
 
-func printNewOrUpdatedApps(newApps []*App, oldApps []*App) {
+func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 	// look for new or updated apps
-	var newUpdatedApps []*App
-	for _, appNew := range newApps {
+	var newUpdatedApps []App
+	for _, an := range newApps {
+		appNew := an.GetBaseApp()
 		found := false
-		for _, appOld := range oldApps {
+		for _, ao := range oldApps {
+			appOld := ao.GetBaseApp()
 			if appOld.Type != appNew.Type {
 				continue
 			}
@@ -144,7 +152,7 @@ func printNewOrUpdatedApps(newApps []*App, oldApps []*App) {
 			found = true
 		}
 		if !found {
-			newUpdatedApps = append(newUpdatedApps, appNew)
+			newUpdatedApps = append(newUpdatedApps, an)
 		}
 	}
 	// if found print new or updated apps
@@ -152,11 +160,11 @@ func printNewOrUpdatedApps(newApps []*App, oldApps []*App) {
 		log.Printf("new or updated apps detected:")
 		for _, app := range newUpdatedApps {
 			var acPts []string
-			for _, acPt := range app.AccessPoints {
+			for _, acPt := range app.GetBaseApp().AccessPoints {
 				s := fmt.Sprintf("%s: %s:%d", acPt.Type, acPt.Address, acPt.Port)
 				acPts = append(acPts, s)
 			}
-			log.Printf("   %s: %s", app.Type, strings.Join(acPts, ", "))
+			log.Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
 		}
 	}
 }
@@ -171,7 +179,7 @@ func (sm *appMonitor) detectApps() {
 	// where cmdline of the process contains given pattern with named substring.
 	bind9Ptrn := regexp.MustCompile(`(.*?)named\s+(.*)`)
 
-	var apps []*App
+	var apps []App
 
 	procs, _ := process.Processes()
 	for _, p := range procs {
@@ -198,7 +206,7 @@ func (sm *appMonitor) detectApps() {
 			if m != nil {
 				keaApp := detectKeaApp(m, cwd)
 				if keaApp != nil {
-					keaApp.Pid = p.Pid
+					keaApp.GetBaseApp().Pid = p.Pid
 					apps = append(apps, keaApp)
 				}
 			}
@@ -212,7 +220,7 @@ func (sm *appMonitor) detectApps() {
 				cmdr := &storkutil.RealCommander{}
 				bind9App := detectBind9App(m, cwd, cmdr)
 				if bind9App != nil {
-					bind9App.Pid = p.Pid
+					bind9App.GetBaseApp().Pid = p.Pid
 					apps = append(apps, bind9App)
 				}
 			}
@@ -236,42 +244,57 @@ func (sm *appMonitor) detectAllowedLogs(storkAgent *StorkAgent) {
 		return
 	}
 	for _, app := range sm.apps {
-		// Only Kea apps are currently supported.
-		if app.Type == AppTypeKea {
-			for _, ac := range app.AccessPoints {
-				if ac.Type == AccessPointControl {
-					err := detectKeaAllowedLogs(storkAgent, ac.Address, ac.Port)
-					if err != nil {
-						err = errors.WithMessagef(err, "failed to detect log files for Kea")
-						log.WithFields(
-							log.Fields{
-								"address": ac.Address,
-								"port":    ac.Port,
-							},
-						).Warn(err)
-					}
-					break
-				}
+		paths, err := app.DetectAllowedLogs()
+		if err != nil {
+			ap := app.GetBaseApp().AccessPoints[0]
+			err = errors.WithMessagef(err, "failed to detect log files for Kea")
+			log.WithFields(
+				log.Fields{
+					"address": ap.Address,
+					"port":    ap.Port,
+				},
+			).Warn(err)
+		} else {
+			for _, p := range paths {
+				storkAgent.logTailer.allow(p)
 			}
 		}
 	}
 }
 
-func (sm *appMonitor) GetApps() []*App {
-	ret := make(chan []*App)
+// Get a list of detected apps by a monitor.
+func (sm *appMonitor) GetApps() []App {
+	ret := make(chan []App)
 	sm.requests <- ret
 	srvs := <-ret
 	return srvs
 }
 
+// Get an app from a monitor that matches provided params.
+func (sm *appMonitor) GetApp(appType, apType, address string, port int64) App {
+	apps := sm.GetApps()
+	for _, app := range apps {
+		if app.GetBaseApp().Type != appType {
+			continue
+		}
+		for _, ap := range app.GetBaseApp().AccessPoints {
+			if ap.Type == apType && ap.Address == address && ap.Port == port {
+				return app
+			}
+		}
+	}
+	return nil
+}
+
+// Shut down monitor. Stop its background goroutine.
 func (sm *appMonitor) Shutdown() {
 	sm.quit <- true
 	sm.wg.Wait()
 }
 
 // getAccessPoint retrieves the requested type of access point from the app.
-func getAccessPoint(app *App, accessType string) (*AccessPoint, error) {
-	for _, point := range app.AccessPoints {
+func getAccessPoint(app App, accessType string) (*AccessPoint, error) {
+	for _, point := range app.GetBaseApp().AccessPoints {
 		if point.Type != accessType {
 			continue
 		}

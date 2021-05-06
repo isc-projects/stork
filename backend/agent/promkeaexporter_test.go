@@ -15,15 +15,23 @@ import (
 
 // Fake app monitor that returns some predefined list of apps.
 type PromFakeAppMonitor struct {
-	Apps []*App
+	Apps []App
 }
 
-func (fam *PromFakeAppMonitor) GetApps() []*App {
+func (fam *PromFakeAppMonitor) GetApps() []App {
 	log.Println("GetApps")
-	return []*App{{
-		Type:         AppTypeKea,
-		AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234),
-	}}
+	ka := &KeaApp{
+		BaseApp: BaseApp{
+			Type:         AppTypeKea,
+			AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234),
+		},
+		HTTPClient: nil,
+	}
+	return []App{ka}
+}
+
+func (fam *PromFakeAppMonitor) GetApp(appType, apType, address string, port int64) App {
+	return nil
 }
 
 func (fam *PromFakeAppMonitor) Shutdown() {
