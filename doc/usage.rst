@@ -266,6 +266,9 @@ utilization is shown for each subnet.
 Host Reservations
 ~~~~~~~~~~~~~~~~~
 
+Listing Host Reservations
+-------------------------
+
 Kea DHCP servers can be configured to assign static resources or parameters to the
 DHCP clients communicating with the servers. Most commonly these resources are the
 IP addresses or delegated prefixes. However, Kea also allows for assigning hostnames,
@@ -330,8 +333,58 @@ colons between the pairs of hexadecimal digits. For example, the
 reservation ``hw-address=0a:1b:bd:43:5f:99`` will be found
 whether the filtering text is ``1b:bd:43`` or ``1bbd43``.
 
+Host Reservation Usage Status
+-----------------------------
+
+Click on the selected host reservation in the host reservation list.
+It will open a new tab presenting the host reservation details. The
+opened tab also comprises the information about the reserved addresses
+and delegated prefixes usage. Stork needs to query Kea servers to gather
+the lease information for each address and prefix in the selected
+reservation. It may take several seconds or longer before this
+information is available. To refresh the lease information, click
+on the `Leases` button at the bottom of the tab.
+
+The usage status is shown next to each IP address and delegated prefix.
+Possible statuses and their meanings are listed in the table below.
+
+.. table:: Possible IP Reservation Statuses
+   :widths: 10 90
+
+   +-----------------+---------------------------------------------------------------+
+   | Status          | Meaning                                                       |
+   +=================+===============================================================+
+   | ``in use``      | There are valid leases assigned to the client. The client     |
+   |                 | owns the reservation, or the reservation includes ``flex-id`` |
+   |                 | or ``circuit-id`` identifier making it impossible to detect   |
+   |                 | conflicts (see note below).                                   |
+   +-----------------+---------------------------------------------------------------+
+   | ``expired``     | At least one of the leases assigned to the client owning      |
+   |                 | the reservation is expired.                                   |
+   +-----------------+---------------------------------------------------------------+
+   | ``declined``    | The address is declined in at least one of the Kea servers.   |
+   +-----------------+---------------------------------------------------------------+
+   | ``in conflict`` | At least one of the leases for the given reservation is       |
+   |                 | assigned to a client who does not own this reservation.       |
+   +-----------------+---------------------------------------------------------------+
+   | ``unused``      | There are no leases for the given reservation.                |
+   +-----------------+---------------------------------------------------------------+
+
+Expand selected address or delegated prefix row to view status details.
+Clicking on the selected address or delegated prefix navigates to the leases
+search page, where all leases associated with the address or prefix can be
+listed.
+
+.. note::
+
+   Detecting ``in conflict`` status is currently not supported for host
+   reservations with ``flex-id`` or ``circuit-id`` identifiers. If there are
+   valid leases for such reservations, they are marked ``in use`` regardless
+   if the conflict exists or not.
+
+
 Sources of Host Reservations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 There are two ways to configure the Kea servers to use host reservations. First,
 the host reservations can be specified within the Kea configuration files; see
