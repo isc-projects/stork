@@ -1,3 +1,14 @@
+* 146 [func] marcin
+
+    Added new tab displaying selected host reservation's details.
+    The tab includes the information about the allocated leases
+    for the reservation, e.g. if the reservation is in use by the
+    client owning the reservation or there is a conflict (the lease
+    is allocated to a different client). It also indicates whether
+    the matching lease is declined, expired or there are no matching
+    leases.
+    (Gitlab #530)
+
 * 145 [func] godfryd
 
     Refactored stork-db-migrate tool to stork-tool and added
