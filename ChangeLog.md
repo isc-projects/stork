@@ -1,3 +1,5 @@
+Stork 0.17.0 released on 2021-05-07.
+
 * 140 [func] godfryd
 
     Added displaying number of unauthorized machines on machines
