@@ -265,10 +265,15 @@ def _wait_for_event(server, text):
         time.sleep(2)
     assert event_occured, 'no event about `%s`' % text
 
-def _search_leases(server, text):
+def _search_leases(server, text=None, host_id=None):
+    assert text != None or host_id != None
     leases_found = False
     for i in range(10):
-        r = server.api_get('/leases?text=%s' % text)
+        r = None
+        if text != None:
+            r = server.api_get('/leases?text=%s' % text)
+        elif host_id != None:
+            r = server.api_get('/leases?hostId=%d' % host_id)
         data = r.json()
 
         if 'items' in data and data['items'] and len(data['items']) > 0:
@@ -276,7 +281,7 @@ def _search_leases(server, text):
             break
         time.sleep(2)
     assert leases_found, 'failed to find any leases by search text `%s`' % text
-    return data['items']
+    return data['items'], data['conflicts']
 
 
 @pytest.mark.parametrize("agent, server", [('centos/7', 'ubuntu/18.04')])
@@ -362,38 +367,43 @@ def test_search_leases(agent, server):
     m = _get_machine_and_authorize_it(server, agent)
 
     # Search by IPv4 address..
-    leases = _search_leases(server, '192.0.2.1')
+    leases, conflicts = _search_leases(server, '192.0.2.1')
     assert len(leases) is 1
     assert 'ipAddress' in leases[0]
     assert leases[0]['ipAddress'] == '192.0.2.1'
+    assert conflicts is None
 
     # Search by IPv6 address.
-    leases = _search_leases(server, '3001:db8:1::1')
+    leases, conflicts = _search_leases(server, '3001:db8:1::1')
     assert len(leases) is 1
     assert 'ipAddress' in leases[0]
     assert leases[0]['ipAddress'] == '3001:db8:1::1'
+    assert conflicts is None
 
     # Search by MAC.
-    leases = _search_leases(server, '00:01:02:03:04:02')
+    leases, conflicts = _search_leases(server, '00:01:02:03:04:02')
     assert len(leases) is 1
     assert 'ipAddress' in leases[0]
     assert leases[0]['ipAddress'] == '192.0.2.2'
+    assert conflicts is None
 
     # Search by client id and DUID.
-    leases = _search_leases(server, '01:02:03:04')
+    leases, conflicts = _search_leases(server, '01:02:03:04')
     assert len(leases) is 2
     assert 'ipAddress' in leases[0]
     assert leases[0]['ipAddress'] == '192.0.2.4'
     assert 'ipAddress' in leases[1]
     assert leases[1]['ipAddress'] == '3001:db8:1::4'
+    assert conflicts is None
 
     # Search by hostname.
-    leases = _search_leases(server, 'host-6.example.org')
+    leases, conflicts = _search_leases(server, 'host-6.example.org')
     assert len(leases) is 2
     assert 'ipAddress' in leases[0]
     assert leases[0]['ipAddress'] == '192.0.2.6'
     assert 'ipAddress' in leases[1]
     assert leases[1]['ipAddress'] == '3001:db8:1::6'
+    assert conflicts is None
 
     # Search declined leases.
     leases = _search_leases(server, 'state:declined')
@@ -522,7 +532,6 @@ def atest_get_kea_stats(agent_kea, agent_old_kea, server):
                 sn_with_addrs += 1
     assert sn_with_addrs == 2
 
-
 @pytest.mark.parametrize("agent, server, bind_version", [('centos/7', 'ubuntu/18.04', None),
                                                          ('centos/7', 'ubuntu/18.04', '9.11'),
                                                          ('centos/7', 'ubuntu/18.04', '9.16'),
@@ -553,3 +562,87 @@ def test_bind9_versions(agent, server, bind_version):
         assert bind_version in m['apps'][0]['version']
     assert len(m['apps'][0]['accessPoints']) == 2
     assert m['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'
+
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/7')])
+def test_get_host_leases(agent, server):
+    # Install Kea on the machine with a Stork Agent.
+    agent.install_kea()
+    agent.install_kea('kea-dhcp6')
+    agent.stop_kea('kea-dhcp4')
+    agent.stop_kea('kea-dhcp6')
+
+    # Generate DHCPv4 lease file.
+    subprocess.run('./gen-lease4-file.py > kea-leases4.csv', shell=True, check=True)
+    agent.upload('kea-leases4.csv', '/var/lib/kea/kea-leases4.csv')
+    subprocess.run('rm -rf kea-leases4.csv', shell=True)
+
+    # Generate DHCPv6 lease file.
+    subprocess.run('./gen-lease6-file.py > kea-leases6.csv', shell=True, check=True)
+    agent.upload('kea-leases6.csv', '/var/lib/kea/kea-leases6.csv')
+    subprocess.run('rm -rf kea-leases6.csv', shell=True)
+
+    # Replace DHCPv4 config file.
+    agent.upload('kea-dhcp4.conf', '/etc/kea/kea-dhcp4.conf')
+    agent.start_kea('kea-dhcp4')
+
+    # Replace DHCPv6 config file.
+    agent.upload('kea-dhcp6.conf', '/etc/kea/kea-dhcp6.conf')
+    agent.start_kea('kea-dhcp6')
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # Approve agent registration.
+    m = _get_machine_and_authorize_it(server, agent)
+
+    # Find the host reservation for which we will be checking the
+    # leases status.
+    host_id = 0
+    for i in range(10):
+        r = server.api_get('/hosts?text=192.0.2.2')
+        data = r.json()
+
+        if 'items' in data and data['items'] and len(data['items']) > 0:
+            # Record host id, which will be later used to search leases.
+            host_id = data['items'][0]['id']
+            break
+        time.sleep(2)
+    assert host_id > 0, 'failed to find host with IP address `%s`' % '192.0.2.2'
+
+    # Find the leases for the host.
+    leases, conflicts = _search_leases(server, host_id=host_id)
+    assert len(leases) is 1
+    assert 'ipAddress' in leases[0]
+    assert leases[0]['ipAddress'] == '192.0.2.2'
+    assert conflicts is None
+
+    # Find the host reservation for IPv6 address.
+    host_id = 0
+    for i in range(10):
+        r = server.api_get('/hosts?text=3001:db8:1::2')
+        data = r.json()
+
+        if 'items' in data and data['items'] and len(data['items']) > 0:
+            # Record host id, which will be later used to search leases.
+            host_id = data['items'][0]['id']
+            break
+        time.sleep(2)
+    assert host_id > 0, 'failed to find host with IP address `%s`' % '3001:db8:1::2'
+
+    # Find leases for the IPv6 host reservation.
+    leases, conflicts = _search_leases(server, host_id=host_id)
+    assert len(leases) is 1
+    assert 'ipAddress' in leases[0]
+    assert leases[0]['ipAddress'] == '3001:db8:1::2'
+
+    # The lease was assigned to a different client. There should be
+    # a conflict returned.
+    assert conflicts is not None
+    assert len(conflicts) is 1
+    assert conflicts[0] is leases[0]['id']
+
+    # Find leases for non-existing host id.
+    r = server.api_get('/leases?hostId=1000000')
+    data = r.json()
+    assert data['items'] is None
