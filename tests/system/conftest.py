@@ -4,6 +4,7 @@ import sys
 import time
 import glob
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -33,6 +34,32 @@ def firefox_options(firefox_options, pytestconfig):
     if pytestconfig.getoption('headless'):
         firefox_options.set_headless(True)
     return firefox_options
+
+
+def pytest_runtest_logstart(nodeid, location):
+    banner = '\n\n************ START   %s ' % nodeid
+    banner += '*' * (140 - len(banner))
+    banner += '\n'
+    banner = '\u001b[36m' + banner + '\u001b[0m'
+    print(banner)
+
+
+def pytest_runtest_logfinish(nodeid, location):
+    banner = '\n************ END   %s ' % nodeid
+    banner += '*' * (140 - len(banner))
+    banner = '\u001b[36;1m' + banner + '\u001b[0m'
+    print(banner)
+
+
+def pytest_runtest_logreport(report):
+    if report.when == 'call':
+        banner = '\n************ RESULT %s   %s ' % (report.outcome.upper(), report.nodeid)
+        banner += '*' * (140 - len(banner))
+        if report.outcome == 'passed':
+            banner = '\u001b[32;1m' + banner + '\u001b[0m'
+        else:
+            banner = '\u001b[31;1m' + banner + '\u001b[0m'
+        print(banner)
 
 
 def _get_pkg_version(pkg_pattern):
@@ -118,33 +145,34 @@ def pytest_pyfunc_call(pyfuncitem):
         print('CONTAINER %s READY @ %s' % (c.name, c.mgmt_ip))
     time.sleep(3)
 
-    # DO RUN TEST CASE
-    outcome = yield
+    try:
+        # DO RUN TEST CASE
+        outcome = yield
+    finally:
+        print('TEST %s FINISHED: %s, COLLECTING LOGS' % (pyfuncitem.name, outcome.get_result()))
 
-    print('TEST %s FINISHED: %s, COLLECTING LOGS' % (pyfuncitem.name, outcome.get_result()))
+        # prepare test directory for logs, etc
+        tests_dir = Path('test-results')
+        tests_dir.mkdir(exist_ok=True)
+        test_name = pyfuncitem.name
+        test_name = test_name.replace('[', '__')
+        test_name = test_name.replace('/', '_')
+        test_name = test_name.replace(']', '')
+        test_dir = tests_dir / test_name
+        if test_dir.exists():
+            shutil.rmtree(test_dir)
+        test_dir.mkdir()
 
-    # prepare test directory for logs, etc
-    tests_dir = Path('test-results')
-    tests_dir.mkdir(exist_ok=True)
-    test_name = pyfuncitem.name
-    test_name = test_name.replace('[', '__')
-    test_name = test_name.replace('/', '_')
-    test_name = test_name.replace(']', '')
-    test_dir = tests_dir / test_name
-    if test_dir.exists():
-        shutil.rmtree(test_dir)
-    test_dir.mkdir()
-
-    # download stork server and agent logs to test dir
-    for idx, s in enumerate(server_containers):
-        _, out, _ = s.run('journalctl -u isc-stork-server')
-        fname = test_dir / ('stork-server-%d.log' % idx)
-        with open(fname, 'w') as f:
-            f.write(out)
-        s.stop()
-    for idx, a in enumerate(agent_containers):
-        _, out, _ = a.run('journalctl -u isc-stork-agent')
-        fname = test_dir / ('stork-agent-%d.log' % idx)
-        with open(fname, 'w') as f:
-            f.write(out)
-        a.stop()
+        # download stork server and agent logs to test dir
+        for idx, s in enumerate(server_containers):
+            _, out, _ = s.run('journalctl -u isc-stork-server')
+            fname = test_dir / ('stork-server-%d.log' % idx)
+            with open(fname, 'w') as f:
+                f.write(out)
+            s.stop()
+        for idx, a in enumerate(agent_containers):
+            _, out, _ = a.run('journalctl -u isc-stork-agent')
+            fname = test_dir / ('stork-agent-%d.log' % idx)
+            with open(fname, 'w') as f:
+                f.write(out)
+            a.stop()

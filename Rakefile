@@ -930,7 +930,7 @@ end
 
 ### System testing ######################
 
-PYTEST = './venv/bin/pytest --tb=long -l -r ap -s'
+PYTEST = './venv/bin/pytest --tb=long -l -r ap -s -v'
 SELENIUM_DIR = "#{TOOLS_DIR}/selenium"
 directory SELENIUM_DIR
 

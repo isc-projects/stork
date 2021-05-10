@@ -5,10 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -262,7 +263,7 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 // and http server for exposing them to Prometheus.
 func (pke *PromKeaExporter) Start() {
 	// set address for listening from config
-	addrPort := fmt.Sprintf("%s:%d", pke.Settings.String("prometheus-kea-exporter-address"), pke.Settings.Int("prometheus-kea-exporter-port"))
+	addrPort := net.JoinHostPort(pke.Settings.String("prometheus-kea-exporter-address"), strconv.Itoa(pke.Settings.Int("prometheus-kea-exporter-port")))
 	pke.HTTPServer.Addr = addrPort
 
 	log.Printf("Prometheus Kea Exporter listening on %s, stats pulling interval: %d seconds",

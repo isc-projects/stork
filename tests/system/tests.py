@@ -18,8 +18,8 @@ def banner(txt):
     print(txt)
 
 
-def _get_machines(server, agent, authorized=None, expected_items=None):
-    # get machine that automaticaly registered in the server and authorize it
+def _get_machines(server, authorized=None, expected_items=None):
+    # get machine from the server
     url = '/machines'
     if authorized is not None:
         url += '?authorized=%s' % ('true' if authorized else 'false')
@@ -38,20 +38,20 @@ def _get_machines(server, agent, authorized=None, expected_items=None):
     return data['items']
 
 
-def _get_machine_and_authorize_it(server, agent):
+def _get_machines_and_authorize_them(server, expected_items=1):
     # get machine that automaticaly registered in the server and authorize it
-    machines = _get_machines(server, agent, authorized=None, expected_items=1)
-    m = machines[0]
-    machine = dict(
-        address=m['address'],
-        agentPort=m['agentPort'],
-        authorized=True)
-    r = server.api_put('/machines/%d' % m['id'], json=machine, expected_status=200)
-    data = r.json()
-    assert agent.mgmt_ip is not None
-    assert data['address'] == agent.mgmt_ip
-    assert data['authorized']
-    return data
+    machines = _get_machines(server, authorized=None, expected_items=expected_items)
+    machines2 = []
+    for m in machines:
+        machine = dict(
+            address=m['address'],
+            agentPort=m['agentPort'],
+            authorized=True)
+        r = server.api_put('/machines/%d' % m['id'], json=machine, expected_status=200)
+        data = r.json()
+        assert data['authorized']
+        machines2.append(data)
+    return machines2
 
 
 def _get_machine_state(server, m_id):
@@ -124,7 +124,8 @@ def test_pkg_upgrade_agent_token(distro_agent, distro_server):
     assert r.json()['login'] == 'admin'
 
     # get machine that automaticaly registered in the server and authorize it
-    m = _get_machine_and_authorize_it(server, agent)
+    m = _get_machines_and_authorize_them(server)[0]
+    assert m['address'] == agent.mgmt_ip
 
     # retrieve state of machines
     m = _get_machine_state(server, m['id'])
@@ -182,7 +183,7 @@ def test_pkg_upgrade_server_token(distro_agent, distro_server):
     agent.run('./stork-install-agent.sh', env=env)
 
     # check current machines, there should be one authorized
-    machines = _get_machines(server, agent, authorized=True, expected_items=1)
+    machines = _get_machines(server, authorized=True, expected_items=1)
 
     # retrieve state of machines
     m = _get_machine_state(server, machines[0]['id'])
@@ -209,7 +210,8 @@ def test_add_kea_with_many_subnets(agent, server):
     assert r.json()['login'] == 'admin'
 
     # get machine that automaticaly registered in the server and authorize it
-    m = _get_machine_and_authorize_it(server, agent)
+    m = _get_machines_and_authorize_them(server)[0]
+    assert m['address'] == agent.mgmt_ip
 
     # check machine state
     m = _get_machine_state(server, m['id'])
@@ -302,7 +304,8 @@ def test_change_kea_ca_access_point(agent, server):
     assert r.json()['login'] == 'admin'
 
     # get machine that automaticaly registered in the server and authorize it
-    m = _get_machine_and_authorize_it(server, agent)
+    m = _get_machines_and_authorize_them(server)[0]
+    assert m['address'] == agent.mgmt_ip
 
     # check machine state
     m = _get_machine_state(server, m['id'])
@@ -332,7 +335,7 @@ def test_change_kea_ca_access_point(agent, server):
 
     # check for sure if app has new access point address
     banner("CHECK IF RECONFIGURED")
-    machines = _get_machines(server, agent, authorized=True, expected_items=1)
+    machines = _get_machines(server, authorized=True, expected_items=1)
     m = machines[0]
     assert m['apps'] is not None
     assert len(m['apps']) == 1
@@ -371,7 +374,8 @@ def test_search_leases(agent, server):
     assert r.json()['login'] == 'admin'
 
     # Approve agent registration.
-    m = _get_machine_and_authorize_it(server, agent)
+    m = _get_machines_and_authorize_them(server)[0]
+    assert m['address'] == agent.mgmt_ip
 
     # Search by IPv4 address..
     leases, conflicts = _search_leases(server, '192.0.2.1')
@@ -449,14 +453,14 @@ def run_perfdhcp(src_cntr, dest_ip_addr):
 # TODO: the test is disabled for now because it does not work on GitLab CI because whole network inside LXD
 # is IPv6 but it is needed to be IPv4
 @pytest.mark.parametrize("agent_kea, agent_old_kea, server", [('ubuntu/20.04', 'ubuntu/18.04', 'centos/7')])
-def atest_get_kea_stats(agent_kea, agent_old_kea, server):
+def test_get_kea_stats(agent_kea, agent_old_kea, server):
     elems = [(agent_kea, KEA_LATEST, agent_old_kea.mgmt_ip),
              (agent_old_kea, KEA_1_6, agent_kea.mgmt_ip)]
     for idx, (a, ver, relay_addr) in enumerate(elems):
         a.install_kea(kea_version=ver)
         a.upload('kea-dhcp4.conf', '/etc/kea/kea-dhcp4.conf')
         # set proper relay address
-        a.run('sed -i -e s/172\.100\.0\.200/%s/g /etc/kea/kea-dhcp4.conf' % relay_addr)
+        a.run(r'sed -i -e s/172\.100\.0\.200/%s/g /etc/kea/kea-dhcp4.conf' % relay_addr)
         # differentiate subnets which are used in this test
         prefix = '192.%d.2' % idx
         a.run('sed -i -e s/192.0.2/%s/g /etc/kea/kea-dhcp4.conf' % prefix)
@@ -465,43 +469,46 @@ def atest_get_kea_stats(agent_kea, agent_old_kea, server):
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
-    # add machine: kea and old_kea
-    banner("ADD MACHINES")
-    machines = []
-    for addr in [agent_kea.mgmt_ip, agent_old_kea.mgmt_ip]:
-        machine = dict(
-            address=addr,
-            agentPort=8080,
-            agentCSR='TODO')
-        r = server.api_post('/machines', json=machine, expected_status=200)  # TODO: POST should return 201
-        m = r.json()
-        assert m['address'] == addr
-        machines.append(m)
+    banner("AUTHORIZE MACHINES")
+    # get machines (kea and old_kea) that automaticaly registered in the server and authorize them
+    machines = _get_machines_and_authorize_them(server, 2)
+    m_new = None
+    m_old = None
+    for m in machines:
+        if m['address'] == agent_kea.mgmt_ip:
+            m_new = m
+        elif m['address'] == agent_old_kea.mgmt_ip:
+            m_old = m
+    assert m_new is not None
+    assert m_old is not None
 
-    # wait for discovering apps
-    banner("WAIT FOR DISCOVERING APPS")
-    for i in range(60):
-        # force refreshing machines' state
-        for m in machines:
-            server.api_get('/machines/%d/state' % m['id'])
-        # get machines and check if there is expected data
-        r = server.api_get('/machines')
-        data = r.json()
-        if len(data['items']) == 2 and data['items'][0]['apps'] is not None and data['items'][1]['apps'] is not None:
-            break
-        time.sleep(2)
+    # TODO: CA sometimes does not receive reqs, but works after restart
+    agent_kea.run('systemctl restart isc-kea-ctrl-agent')
+    agent_old_kea.run('systemctl restart isc-kea-ctrl-agent')
 
-    # check apps
-    for m in data['items']:
-        assert m['apps'] and len(m['apps']) == 1
+    # check machine state with new kea
     latest_ver = KEA_LATEST.split('-')[0]
-    assert ((data['items'][0]['apps'][0]['version'] == '1.6.3' and data['items'][1]['apps'][0]['version'] == latest_ver) or
-            (data['items'][0]['apps'][0]['version'] == latest_ver and data['items'][1]['apps'][0]['version'] == '1.6.3'))
+    m_new = _get_machine_state(server, m_new['id'])
+    assert m_new['apps'] is not None
+    assert len(m_new['apps']) == 1
+    app = m_new['apps'][0]
+    assert app['version'] == latest_ver
+    assert len(app['accessPoints']) == 1
+    assert app['accessPoints'][0]['address'] == '127.0.0.1'
+
+    # check machine state with old kea
+    m_old = _get_machine_state(server, m_old['id'])
+    assert m_old['apps'] is not None
+    assert len(m_old['apps']) == 1
+    app = m_old['apps'][0]
+    assert app['version'] == '1.6.3'
+    assert len(app['accessPoints']) == 1
+    assert app['accessPoints'][0]['address'] == '127.0.0.1'
 
     # send DHCP traffic to Kea apps
     banner("SEND DHCP TRAFFIC TO KEA APPS")
 
-    # send DHCP traffic to old kea
+    # send DHCP traffic to old kea - TODO here is a problem
     agent_kea.run('systemctl stop isc-kea-dhcp4-server')
     run_perfdhcp(agent_kea, agent_old_kea.mgmt_ip)
     agent_kea.run('systemctl start isc-kea-dhcp4-server')
@@ -515,8 +522,11 @@ def atest_get_kea_stats(agent_kea, agent_old_kea, server):
     for i in range(80):
         r = server.api_get('/overview')
         data = r.json()
-        if data['dhcp4Stats'] and 'assignedAddresses' in data['dhcp4Stats'] and data['dhcp4Stats']['assignedAddresses'] > 150:
-            break
+        if data['dhcp4Stats'] and 'assignedAddresses' in data['dhcp4Stats']:
+            # sent 100 requests to 2 subnets so there should be 200 leases
+            # so at least 150
+            if data['dhcp4Stats']['assignedAddresses'] > 150:
+                break
         time.sleep(2)
 
     assert data['dhcp4Stats']

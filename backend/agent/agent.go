@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -407,7 +408,7 @@ func (sa *StorkAgent) Serve() {
 	agentapi.RegisterAgentServer(sa.server, sa)
 
 	// Prepare listener on configured address.
-	addr := fmt.Sprintf("%s:%d", sa.Settings.String("host"), sa.Settings.Int("port"))
+	addr := net.JoinHostPort(sa.Settings.String("host"), strconv.Itoa(sa.Settings.Int("port")))
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatalf("Failed to listen on port: %+v", err)

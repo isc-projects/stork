@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"net"
 	"net/http"
 	"sort"
 	"strconv"
@@ -815,7 +816,7 @@ func (pbe *PromBind9Exporter) Start() {
 	pbe.Registry.MustRegister(pbe.procExporter)
 
 	// set address for listening from config
-	addrPort := fmt.Sprintf("%s:%d", pbe.Settings.String("prometheus-bind9-exporter-address"), pbe.Settings.Int("prometheus-bind9-exporter-port"))
+	addrPort := net.JoinHostPort(pbe.Settings.String("prometheus-bind9-exporter-address"), strconv.Itoa(pbe.Settings.Int("prometheus-bind9-exporter-port")))
 	pbe.HTTPServer.Addr = addrPort
 
 	log.Printf("Prometheus BIND 9 Exporter listening on %s, stats pulling interval: %d seconds", addrPort, pbe.Settings.Int("prometheus-bind9-exporter-interval"))
