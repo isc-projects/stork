@@ -15,7 +15,6 @@ services:
     extra_hosts:
       - "agent-kea:172.20.0.100"
       - "agent-kea6:172.20.0.106"
-      - "agent-kea6:3009:db8:1::106"
     image: registry.gitlab.isc.org/isc-projects/stork/server:latest
     networks:
       - storknet
@@ -64,6 +63,7 @@ services:
       # publish ports for development purposes
       - "8888:8080"  # port to agent
       - "9001:9001"  # port to supervisor xml-rpc
+      - server
 
   agent-kea6:
     restart: always
@@ -78,13 +78,11 @@ services:
     # DHCP communication instead.
     extra_hosts:
       - "agent-kea6:172.20.0.106"
-      - "agent-kea6:3009:db8:1::106"
     image: registry.gitlab.isc.org/isc-projects/stork/agent-kea6:latest
     hostname: agent-kea6
     networks:
       storknet:
         ipv4_address: 172.20.0.106
-        ipv6_address: 3009:db8:1::106
       subnet6-00:
         ipv6_address: 3000:db8:1::100
       subnet6-01:
@@ -94,6 +92,7 @@ services:
       - "9547"  # kea_exporter for prometheus
     ports:
       - "8886:8080"  # publish ports for development purposes
+      - server
 
   agent-kea-ha1:
     restart: always
@@ -110,6 +109,8 @@ services:
       - "9547"  # kea_exporter for prometheus
     ports:
       - "8881:8080"  # publish ports for development purposes
+    depends_on:
+      - server
 
   agent-kea-ha2:
     restart: always
@@ -125,6 +126,8 @@ services:
       - "8080"
     ports:
       - "8110:8080"  # publish ports for development purposes
+    depends_on:
+      - server
 
   agent-kea-many-subnets:
     restart: always
@@ -141,6 +144,8 @@ services:
       - "9547"  # kea_exporter for prometheus
     ports:
       - "8882:8080"  # publish ports for development purposes
+    depends_on:
+      - server
 
   agent-bind9:
     restart: always
@@ -156,6 +161,8 @@ services:
       - "8080"
       - "9100"  # node_exporter for prometheus
       - "9119"  # bind_exporter for prometheus
+    depends_on:
+      - server
 
   agent-bind9-2:
     restart: always
@@ -171,6 +178,8 @@ services:
       - "8080"
       - "9100"  # node_exporter for prometheus
       - "9119"  # bind_exporter for prometheus
+    depends_on:
+      - server
 
   webui:
     build:
@@ -234,7 +243,6 @@ services:
     extra_hosts:
       - "agent-kea:172.20.0.100"
       - "agent-kea6:172.20.0.106"
-      - "agent-kea6:3009:db8:1::106"
     image: registry.gitlab.isc.org/isc-projects/stork/dhcp-traffic:latest
     hostname: simulator
     networks:
@@ -252,6 +260,8 @@ services:
         ipv6_address: 3001:db8:1::200
     ports:
       - "5000:5000"
+    depends_on:
+      - server
 
 volumes:
   db-data:
