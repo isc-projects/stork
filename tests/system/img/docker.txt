@@ -1,0 +1,3 @@
+FROM scratch
+ARG UBUNTU_VER
+ADD stork-tests-ubuntu-${UBUNTU_VER}-x86_64.qcow2 stork-tests-ubuntu-${UBUNTU_VER}-x86_64.qcow2

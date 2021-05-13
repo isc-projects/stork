@@ -1,0 +1,11 @@
+#cloud-config
+ssh_pwauth: true
+users:
+  - name: packer
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users, admin
+    passwd: $6$rounds=4096$XxQGokSw4FI8unZF$lAnQ0ZSMuCvSlv.rFjcxOpyAZr/ZDwtaI/X6BSSH0wtKngvprmgr9nvSMV/dBzE.TJ7Tvd8y0.T50dW5Bi1vf/
+    lock_passwd: false
+apt:
+    preserve_sources_list: true
+    package_update: false
