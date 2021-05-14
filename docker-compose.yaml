@@ -94,6 +94,8 @@ services:
       - "9547"  # kea_exporter for prometheus
     ports:
       - "8886:8080"  # publish ports for development purposes
+    depends_on:
+      - agent-kea6-postgres
       - server
 
   agent-kea-ha1:
@@ -276,6 +278,19 @@ services:
       MYSQL_DATABASE: kea
       MYSQL_USER: kea
       MYSQL_PASSWORD: kea
+
+  agent-kea6-postgres:
+    image: postgres:11
+    restart: always
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.116
+    environment:
+      POSTGRES_USER: kea
+      POSTGRES_PASSWORD: kea
+      POSTGRES_DB: kea
+    ports:
+      - "6789:5432"
 
 volumes:
   db-data:
