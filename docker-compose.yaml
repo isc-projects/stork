@@ -63,6 +63,8 @@ services:
       # publish ports for development purposes
       - "8888:8080"  # port to agent
       - "9001:9001"  # port to supervisor xml-rpc
+    depends_on:
+      - agent-kea-mysql
       - server
 
   agent-kea6:
@@ -262,6 +264,18 @@ services:
       - "5000:5000"
     depends_on:
       - server
+
+  agent-kea-mysql:
+    image: mysql:5.7
+    restart: always
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.115
+    environment:
+      MYSQL_ROOT_PASSWORD: kea
+      MYSQL_DATABASE: kea
+      MYSQL_USER: kea
+      MYSQL_PASSWORD: kea
 
 volumes:
   db-data:
