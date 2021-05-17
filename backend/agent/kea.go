@@ -16,11 +16,13 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// It holds common and Kea specifc runtime information.
 type KeaApp struct {
 	BaseApp
 	HTTPClient *HTTPClient // to communicate with Kea Control Agent
 }
 
+// Get base information about Kea app.
 func (ka *KeaApp) GetBaseApp() *BaseApp {
 	return &ka.BaseApp
 }

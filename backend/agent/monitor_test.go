@@ -20,6 +20,7 @@ func TestGetApps(t *testing.T) {
 	am.Shutdown()
 }
 
+// Check if detected apps are returned by GetApp.
 func TestGetApp(t *testing.T) {
 	am := NewAppMonitor()
 
@@ -47,6 +48,12 @@ func TestGetApp(t *testing.T) {
 		},
 	})
 
+	// Monitor holds apps in background goroutine. So to get apps we need
+	// to send a request over a channel to this goroutine and wait for
+	// a response with detected apps. We do not want to spawn monitor background
+	// goroutine so we are calling GetApp in our background goroutine
+	// and are serving this request in the main thread.
+	// To make it in sync the wait group is used here.
 	var wg sync.WaitGroup
 
 	// find kea app
@@ -62,7 +69,7 @@ func TestGetApp(t *testing.T) {
 	wg.Wait()
 
 	// find bind app
-	wg.Add(1)
+	wg.Add(1) // expect 1 Done in the wait group
 	go func() {
 		defer wg.Done()
 		app := am.GetApp(AppTypeBind9, AccessPointControl, "2.3.4.4", 2345)
@@ -74,7 +81,7 @@ func TestGetApp(t *testing.T) {
 	wg.Wait()
 
 	// find not existing app - should return nil
-	wg.Add(1)
+	wg.Add(1) // expect 1 Done in the wait group
 	go func() {
 		defer wg.Done()
 		app := am.GetApp(AppTypeKea, AccessPointControl, "0.0.0.0", 1)

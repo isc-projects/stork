@@ -29,6 +29,8 @@ const (
 	AccessPointStatistics = "statistics"
 )
 
+// Base application information. This structure is embedded
+// in other app specific structs like KeaApp and Bind9App.
 type BaseApp struct {
 	Pid          int32
 	Type         string

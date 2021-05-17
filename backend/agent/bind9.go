@@ -25,16 +25,18 @@ type Bind9State struct {
 	Daemon  Bind9Daemon
 }
 
+// It holds common and BIND 9 specifc runtime information.
 type Bind9App struct {
 	BaseApp
 }
 
-// Get base app data.
+// Get base information about BIND 9 app.
 func (ba *Bind9App) GetBaseApp() *BaseApp {
 	return &ba.BaseApp
 }
 
-// Detect allowed logs provided by BIND 9. Currently it is not implemeneted,
+// Detect allowed logs provided by BIND 9.
+// TODO: currently it is not implemeneted and not used,
 // it returns always empty list and no error.
 func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
 	return nil, nil
