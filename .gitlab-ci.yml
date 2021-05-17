@@ -135,7 +135,7 @@ debs_and_rpms:
   stage: build
   rules:
     - when: always
-  image: stork-tests-ubuntu-18.04-x86_64
+  image: stork-tests-ubuntu-20.04-x86_64
   tags:
     - libvirt
     - amd64
@@ -163,7 +163,7 @@ system_testing:
   stage: test
   rules:
     - when: on_success
-  image: stork-tests-ubuntu-18.04-x86_64
+  image: stork-tests-ubuntu-20.04-x86_64
   tags:
     - libvirt
     - amd64
