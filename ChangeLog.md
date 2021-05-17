@@ -1,3 +1,8 @@
+* 141 [bug] ymartin-ovh
+
+    Fixed honoring the listen-only flags in Stork Agent.
+    (Gitlab #536)
+
 Stork 0.17.0 released on 2021-05-07.
 
 * 140 [func] godfryd
