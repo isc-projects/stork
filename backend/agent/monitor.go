@@ -37,6 +37,9 @@ type BaseApp struct {
 	AccessPoints []AccessPoint
 }
 
+// Specific App like KeaApp or Bind9App have to implement
+// this interface. The methods should be implemented
+// in a specific way in given concrete App.
 type App interface {
 	GetBaseApp() *BaseApp
 	DetectAllowedLogs() ([]string, error)
