@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
+
+	storkutil "isc.org/stork/util"
 )
 
 func TestGetApps(t *testing.T) {
@@ -232,10 +235,18 @@ func (c TestCommander) Output(command string, args ...string) ([]byte, error) {
 	return []byte(text), nil
 }
 
-func TestDetectBind9App(t *testing.T) {
+// Check BIND 9 app detection when its conf file is absolute path.
+func TestDetectBind9AppAbsPath(t *testing.T) {
+	sb := storkutil.NewSandbox()
+	defer sb.Close()
+
 	// check BIND 9 app detection
 	cmdr := &TestCommander{}
-	app := detectBind9App([]string{"", "", "-c /fake/path.cfg"}, "", cmdr)
+	cfgPath := sb.Join("etc/path.cfg")
+	namedDir := sb.JoinDir("usr/sbin")
+	sb.Join("usr/bin/named-checkconf")
+	sb.Join("usr/sbin/rndc")
+	app := detectBind9App([]string{"", namedDir, fmt.Sprintf("-c %s", cfgPath)}, "", cmdr)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 	require.Len(t, app.GetBaseApp().AccessPoints, 2)
@@ -243,15 +254,25 @@ func TestDetectBind9App(t *testing.T) {
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "127.0.0.53", point.Address)
 	require.EqualValues(t, 5353, point.Port)
-	require.Equal(t, "hmac-sha256:abcd", point.Key)
 	point = app.GetBaseApp().AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "127.0.0.80", point.Address)
 	require.EqualValues(t, 80, point.Port)
 	require.Empty(t, point.Key)
+}
 
-	// check BIND 9 app detection when its conf file is relative to CWD of its process
-	app = detectBind9App([]string{"", "", "-c path.cfg"}, "/fake", cmdr)
+// Check BIND 9 app detection when its conf file is relative to CWD of its process.
+func TestDetectBind9AppRelativePath(t *testing.T) {
+	sb := storkutil.NewSandbox()
+	defer sb.Close()
+
+	cmdr := &TestCommander{}
+	sb.Join("etc/path.cfg")
+	cfgDir := sb.JoinDir("etc")
+	namedDir := sb.JoinDir("usr/sbin")
+	sb.Join("usr/sbin/named-checkconf")
+	sb.Join("usr/bin/rndc")
+	app := detectBind9App([]string{"", namedDir, "-c path.cfg"}, cfgDir, cmdr)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 }

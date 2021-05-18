@@ -34,7 +34,7 @@ type FakeAppMonitor struct {
 func mockRndc(command []string) ([]byte, error) {
 	var output string
 
-	if command[len(command)-1] == "status" {
+	if len(command) > 0 && command[len(command)-1] == "status" {
 		output = "server is up and running"
 		return []byte(output), nil
 	}
@@ -420,7 +420,7 @@ func TestForwardToNamedStatsNoNamed(t *testing.T) {
 func TestForwardRndcCommandSuccess(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 2345)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{
@@ -475,7 +475,7 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 func TestForwardRndcCommandError(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 2345)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{
@@ -504,11 +504,32 @@ func TestForwardRndcCommandError(t *testing.T) {
 	require.NotEmpty(t, rsp.Status.Message)
 }
 
+// Test rndc command when there is no app.
+func TestForwardRndcCommandNoApp(t *testing.T) {
+	sa, ctx := setupAgentTest()
+
+	cmd := &agentapi.RndcRequest{Request: "status"}
+
+	req := &agentapi.ForwardRndcCommandReq{
+		Address:     "127.0.0.1",
+		Port:        1234,
+		Key:         "hmac-sha256:abcd",
+		RndcRequest: cmd,
+	}
+
+	// Expect an error status code and some message.
+	rsp, err := sa.ForwardRndcCommand(ctx, req)
+	require.NotNil(t, rsp)
+	require.NoError(t, err)
+	require.Equal(t, agentapi.Status_ERROR, rsp.Status.Code)
+	require.EqualValues(t, "Cannot find BIND 9 app", rsp.Status.Message)
+}
+
 // Test rndc command successfully forwarded, but bad response.
 func TestForwardRndcCommandEmpty(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 2345)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{

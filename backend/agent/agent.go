@@ -199,19 +199,26 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 // ForwardRndcCommand forwards one rndc command sent by the Stork server to
 // the named daemon.
 func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.ForwardRndcCommandReq) (*agentapi.ForwardRndcCommandRsp, error) {
-	app := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, in.Address, in.Port)
-	bind9App := app.(*Bind9App)
-
-	request := in.GetRndcRequest()
+	rndcRsp := &agentapi.RndcResponse{
+		Status: &agentapi.Status{},
+	}
 	response := &agentapi.ForwardRndcCommandRsp{
 		Status: &agentapi.Status{
 			Code: agentapi.Status_OK, // all ok
 		},
+		RndcResponse: rndcRsp,
 	}
 
-	rndcRsp := &agentapi.RndcResponse{
-		Status: &agentapi.Status{},
+	app := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, in.Address, in.Port)
+	if app == nil {
+		rndcRsp.Status.Code = agentapi.Status_ERROR
+		rndcRsp.Status.Message = "Cannot find BIND 9 app"
+		response.Status = rndcRsp.Status
+		return response, nil
 	}
+	bind9App := app.(*Bind9App)
+
+	request := in.GetRndcRequest()
 
 	// Try to forward the command to rndc.
 	output, err := bind9App.sendCommand(strings.Fields(request.Request))
@@ -228,7 +235,6 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 	}
 
 	response.Status = rndcRsp.Status
-	response.RndcResponse = rndcRsp
 	return response, nil
 }
 

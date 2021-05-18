@@ -1,3 +1,8 @@
+* 141 [func] godfryd
+
+    Fixed and improved detecting various versions of BIND 9.
+    (Gitlab #474)
+
 Stork 0.17.0 released on 2021-05-07.
 
 * 140 [func] godfryd

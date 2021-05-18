@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	storkutil "isc.org/stork/util"
@@ -31,7 +32,7 @@ type Bind9State struct {
 // It holds common and BIND 9 specifc runtime information.
 type Bind9App struct {
 	BaseApp
-	RndcClient     *RndcClient // to communicate with BIND 9 via rndc
+	RndcClient *RndcClient // to communicate with BIND 9 via rndc
 }
 
 // Get base information about BIND 9 app.
@@ -46,17 +47,81 @@ func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
 	return nil, nil
 }
 
+// List of BIND 9 executables used durint app detection.
+const (
+	namedCheckconfExec = "named-checkconf"
+	rndcExec           = "rndc"
+)
+
+// rndc key file name.
+const RndcKeyFile = "rndc.key"
+
+// Default ports for rndc and stats channel.
 const (
 	RndcDefaultPort         = 953
 	StatsChannelDefaultPort = 80
 )
 
+// Default locations of named.conf file.
 const (
 	defaultNamedConfFile1 = "/etc/bind/named.conf"
 	defaultNamedConfFile2 = "/etc/opt/isc/isc-bind/named.conf"
 )
 
-const namedCheckconf = "named-checkconf"
+// Object for interacting with named using rndc.
+type RndcClient struct {
+	execute     CommandExecutor
+	BaseCommand []string
+}
+
+// CommandExecutor takes an array of strings, with the first element of the
+// array being the program to call, followed by its arguments.  It returns
+// the command output, and possibly an error (for example if running the
+// command failed).
+type CommandExecutor func([]string) ([]byte, error)
+
+// Create an rndc client to communicate with BIND 9 named daemon.
+func NewRndcClient(ce CommandExecutor) *RndcClient {
+	rndcClient := &RndcClient{
+		execute: ce,
+	}
+	return rndcClient
+}
+
+// Determine rndc details in the system.
+// It find rndc executable and prepare base command with all necessary
+// parameters including rndc secret key.
+func (rc *RndcClient) DetermineDetails(baseNamedDir, bind9ConfDir string, ctrlAddress string, ctrlPort int64, ctrlKey string) error {
+	rndcPath, err := determineBinPath(baseNamedDir, rndcExec)
+	if err != nil {
+		return err
+	}
+
+	cmd := []string{rndcPath, "-s", ctrlAddress, "-p", fmt.Sprintf("%d", ctrlPort)}
+
+	if len(ctrlKey) > 0 {
+		cmd = append(cmd, "-y")
+		cmd = append(cmd, ctrlKey)
+	} else {
+		keyPath := path.Join(bind9ConfDir, RndcKeyFile)
+		if _, err := os.Stat(keyPath); err == nil {
+			cmd = append(cmd, "-k")
+			cmd = append(cmd, keyPath)
+		} else {
+			return errors.New("cannot determine rndc key")
+		}
+	}
+	rc.BaseCommand = cmd
+	return nil
+}
+
+// Send command to named using rndc executable.
+func (rc *RndcClient) SendCommand(command []string) (output []byte, err error) {
+	rndcCommand := append(rc.BaseCommand, command...)
+	log.Debugf("rndc: %+v", rndcCommand)
+
+	return rc.execute(rndcCommand)
+}
 
 // getRndcKey looks for the key with a given `name` in `contents`.
 //
@@ -251,6 +316,28 @@ func getStatisticsChannelFromBind9Config(text string) (statsAddress string, stat
 	return statsAddress, statsPort, statsKey
 }
 
+// Determine executable using base named directory or system default paths.
+func determineBinPath(baseNamedDir, executable string) (string, error) {
+	// look for executable in base named directory and sbin or bin subdirectory
+	log.Printf("baseNamedDir %s", baseNamedDir)
+	log.Printf("executable %s", executable)
+	if baseNamedDir != "" {
+		for _, binDir := range []string{"sbin", "bin"} {
+			fullPath := path.Join(baseNamedDir, binDir, executable)
+			if _, err := os.Stat(fullPath); err == nil {
+				return fullPath, nil
+			}
+		}
+	}
+
+	// not found so try to find generally in the system
+	fullPath, err := exec.LookPath("fortune")
+	if err != nil {
+		return "", errors.Errorf("cannot determine location of %s", executable)
+	}
+	return fullPath, nil
+}
+
 func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) App {
 	if len(match) < 3 {
 		log.Warnf("problem with parsing BIND 9 cmdline: %s", match[0])
@@ -287,22 +374,23 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) App {
 		return nil
 	}
 
-	// run named-checkconf on main config file and get preprocessed content of whole config
-	prog := namedCheckconf
+	// determine config directory
+	bind9ConfDir := path.Dir(bind9ConfPath)
+
+	// determine base named directory
+	baseNamedDir := ""
 	if namedDir != "" {
 		// remove sbin or bin at the end
-		baseNamedDir, _ := filepath.Split(strings.TrimRight(namedDir, "/"))
-
-		// and now determine where named-checkconf actually is located
-		for _, binDir := range []string{"sbin", "bin"} {
-			prog2 := path.Join(baseNamedDir, binDir, prog)
-			if _, err := os.Stat(prog2); err == nil {
-				prog = prog2
-				break
-			}
-		}
+		baseNamedDir, _ = filepath.Split(strings.TrimRight(namedDir, "/"))
 	}
-	out, err := cmdr.Output(prog, "-p", bind9ConfPath)
+
+	// run named-checkconf on main config file and get preprocessed content of whole config
+	namedCheckconfPath, err := determineBinPath(baseNamedDir, namedCheckconfExec)
+	if err != nil {
+		log.Warnf("cannot find BIND 9 %s: %s", namedCheckconfExec, err)
+		return nil
+	}
+	out, err := cmdr.Output(namedCheckconfPath, "-p", bind9ConfPath)
 	if err != nil {
 		log.Warnf("cannot parse BIND 9 config file %s: %+v; %s", bind9ConfPath, err, out)
 		return nil
@@ -310,22 +398,21 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) App {
 	cfgText := string(out)
 
 	// look for control address in config
-	address, port, key := getCtrlAddressFromBind9Config(cfgText)
-	if port == 0 || len(address) == 0 {
+	ctrlAddress, ctrlPort, ctrlKey := getCtrlAddressFromBind9Config(cfgText)
+	if ctrlPort == 0 || len(ctrlAddress) == 0 {
 		log.Warnf("found BIND 9 config file (%s) but cannot parse controls clause", bind9ConfPath)
 		return nil
 	}
 	accessPoints := []AccessPoint{
 		{
 			Type:    AccessPointControl,
-			Address: address,
-			Port:    port,
-			Key:     key,
+			Address: ctrlAddress,
+			Port:    ctrlPort,
 		},
 	}
 
 	// look for statistics channel address in config
-	address, port, key = getStatisticsChannelFromBind9Config(cfgText)
+	address, port, key := getStatisticsChannelFromBind9Config(cfgText)
 	if port > 0 && len(address) != 0 {
 		accessPoints = append(accessPoints, AccessPoint{
 			Type:    AccessPointStatistics,
@@ -343,77 +430,27 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) App {
 		return cmd.Output()
 	}
 
+	// determine rndc details
+	rndcClient := NewRndcClient(rndc)
+	err = rndcClient.DetermineDetails(baseNamedDir, bind9ConfDir, ctrlAddress, ctrlPort, ctrlKey)
+	if err != nil {
+		log.Warnf("cannot determine BIND 9 rndc details: %s", err)
+		return nil
+	}
+
+	// prepare final BIND 9 app
 	bind9App := &Bind9App{
 		BaseApp: BaseApp{
 			Type:         AppTypeBind9,
 			AccessPoints: accessPoints,
 		},
-		RndcClient: NewRndcClient(rndc),
+		RndcClient: rndcClient,
 	}
 
 	return bind9App
 }
 
-func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
-	return nil, nil
-}
-
-// CommandExecutor takes an array of strings, with the first element of the
-// array being the program to call, followed by its arguments.  It returns
-// the command output, and possibly an error (for example if running the
-// command failed).
-type CommandExecutor func([]string) ([]byte, error)
-
-type RndcClient struct {
-	execute CommandExecutor
-}
-
-const (
-	RndcKeyFile1 = "/etc/bind/rndc.key"
-	RndcKeyFile2 = "/etc/opt/isc/isc-bind/rndc.key"
-)
-
-const (
-	RndcPath1 = "/usr/sbin/rndc"
-	RndcPath2 = "/opt/isc/isc-bind/root/usr/sbin/rndc"
-)
-
-// Create an rndc client to communicate with BIND 9 named daemon.
-func NewRndcClient(ce CommandExecutor) *RndcClient {
-	rndcClient := &RndcClient{
-		execute: ce,
-	}
-	return rndcClient
-}
-
+// Send a command to named using rndc client.
 func (ba *Bind9App) sendCommand(command []string) (output []byte, err error) {
-	ctrl, err := getAccessPoint(ba, AccessPointControl)
-	if err != nil {
-		return nil, err
-	}
-
-	rndcPath := ""
-	if _, err := os.Stat(RndcPath1); err == nil {
-		rndcPath = RndcPath1
-	} else if _, err := os.Stat(RndcPath2); err == nil {
-		rndcPath = RndcPath2
-	} else {
-		rndcPath = "rndc"
-	}
-
-	rndcCommand := []string{rndcPath, "-s", ctrl.Address, "-p", fmt.Sprintf("%d", ctrl.Port)}
-	if len(ctrl.Key) > 0 {
-		rndcCommand = append(rndcCommand, "-y")
-		rndcCommand = append(rndcCommand, ctrl.Key)
-	} else if _, err := os.Stat(RndcKeyFile1); err == nil {
-		rndcCommand = append(rndcCommand, "-k")
-		rndcCommand = append(rndcCommand, RndcKeyFile1)
-	} else if _, err := os.Stat(RndcKeyFile2); err == nil {
-		rndcCommand = append(rndcCommand, "-k")
-		rndcCommand = append(rndcCommand, RndcKeyFile2)
-	}
-	rndcCommand = append(rndcCommand, command...)
-	log.Debugf("rndc: %+v", rndcCommand)
-
-	return ba.RndcClient.execute(rndcCommand)
+	return ba.RndcClient.SendCommand(command)
 }
