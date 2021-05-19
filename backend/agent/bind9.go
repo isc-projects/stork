@@ -62,12 +62,6 @@ const (
 	StatsChannelDefaultPort = 80
 )
 
-// Default locations of named.conf file.
-const (
-	defaultNamedConfFile1 = "/etc/bind/named.conf"
-	defaultNamedConfFile2 = "/etc/opt/isc/isc-bind/named.conf"
-)
-
 // Object for interacting with named using rndc.
 type RndcClient struct {
 	execute     CommandExecutor
@@ -319,8 +313,6 @@ func getStatisticsChannelFromBind9Config(text string) (statsAddress string, stat
 // Determine executable using base named directory or system default paths.
 func determineBinPath(baseNamedDir, executable string) (string, error) {
 	// look for executable in base named directory and sbin or bin subdirectory
-	log.Printf("baseNamedDir %s", baseNamedDir)
-	log.Printf("executable %s", executable)
 	if baseNamedDir != "" {
 		for _, binDir := range []string{"sbin", "bin"} {
 			fullPath := path.Join(baseNamedDir, binDir, executable)
@@ -331,11 +323,19 @@ func determineBinPath(baseNamedDir, executable string) (string, error) {
 	}
 
 	// not found so try to find generally in the system
-	fullPath, err := exec.LookPath("fortune")
+	fullPath, err := exec.LookPath(executable)
 	if err != nil {
 		return "", errors.Errorf("cannot determine location of %s", executable)
 	}
 	return fullPath, nil
+}
+
+// Get potential locations of named.conf.
+func getPotentialNamedConfLocations() []string {
+	return []string{
+		"/etc/bind/named.conf",
+		"/etc/opt/isc/isc-bind/named.conf",
+	}
 }
 
 func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) App {
@@ -360,7 +360,7 @@ func detectBind9App(match []string, cwd string, cmdr storkutil.Commander) App {
 		}
 	} else {
 		// config path not found in cmdline params so try to guess its location
-		for _, f := range []string{defaultNamedConfFile1, defaultNamedConfFile2} {
+		for _, f := range getPotentialNamedConfLocations() {
 			if _, err := os.Stat(f); err == nil {
 				bind9ConfPath = f
 				break

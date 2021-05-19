@@ -8,7 +8,8 @@ from pathlib import Path
 
 import pytest
 
-# in case of xdist force output to screen
+# In case of xdist the output is hidden by default.
+# The redirection below forces output to screen.
 if os.environ.get('PYTEST_XDIST_WORKER', False):
     sys.stdout = sys.stderr
 

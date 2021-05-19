@@ -217,6 +217,12 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 		return response, nil
 	}
 	bind9App := app.(*Bind9App)
+	if bind9App == nil {
+		rndcRsp.Status.Code = agentapi.Status_ERROR
+		rndcRsp.Status.Message = fmt.Sprintf("Incorrect app found: %s instead of BIND 9", app.GetBaseApp().Type)
+		response.Status = rndcRsp.Status
+		return response, nil
+	}
 
 	request := in.GetRndcRequest()
 

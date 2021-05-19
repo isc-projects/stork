@@ -1,4 +1,4 @@
-package storkutil
+package testutil
 
 import (
 	"io/ioutil"
@@ -6,6 +6,13 @@ import (
 	"os"
 	"path"
 )
+
+// Sandbox is an object that creates a sandbox for files or directories
+// that needs to be created to do some tests. Sandbox provides
+// utility functions for creating files and dirs, getting paths to them
+// and at the end removing whole sandbox with its content.
+// Each created sandbox has its own, unique directory so two sandboxes
+// never interfere.
 
 // Struct that holds information about sandbox.
 type Sandbox struct {
@@ -31,9 +38,10 @@ func (sb *Sandbox) Close() {
 	os.RemoveAll(sb.BasePath)
 }
 
-// Create parent directory in sandbox and all parent directories,
-// create indicated file in this parent directory, and return a full
-// path to this file.
+// Create parent directory in sandbox (and all missing directories
+// above it if needed, similar to -p option in mkdir), create
+// indicated file in this parent directory, and return a full path to
+// this file.
 func (sb *Sandbox) Join(name string) string {
 	// build full path
 	fpath := path.Join(sb.BasePath, name)

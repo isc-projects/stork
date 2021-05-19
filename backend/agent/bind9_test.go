@@ -15,3 +15,9 @@ func TestBind9AllowedLogs(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, paths, 0)
 }
+
+// Check if getPotentialNamedConfLocations returns paths.
+func TestGetPotentialNamedConfLocations(t *testing.T) {
+	paths := getPotentialNamedConfLocations()
+	require.Greater(t, len(paths), 1)
+}

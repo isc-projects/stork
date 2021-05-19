@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 
-	storkutil "isc.org/stork/util"
+	"isc.org/stork/testutil"
 )
 
 func TestGetApps(t *testing.T) {
@@ -237,7 +237,7 @@ func (c TestCommander) Output(command string, args ...string) ([]byte, error) {
 
 // Check BIND 9 app detection when its conf file is absolute path.
 func TestDetectBind9AppAbsPath(t *testing.T) {
-	sb := storkutil.NewSandbox()
+	sb := testutil.NewSandbox()
 	defer sb.Close()
 
 	// check BIND 9 app detection
@@ -263,7 +263,7 @@ func TestDetectBind9AppAbsPath(t *testing.T) {
 
 // Check BIND 9 app detection when its conf file is relative to CWD of its process.
 func TestDetectBind9AppRelativePath(t *testing.T) {
-	sb := storkutil.NewSandbox()
+	sb := testutil.NewSandbox()
 	defer sb.Close()
 
 	cmdr := &TestCommander{}

@@ -1,4 +1,4 @@
-package storkutil
+package testutil
 
 import (
 	"os"

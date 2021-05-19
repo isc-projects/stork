@@ -42,6 +42,9 @@ DEFAULT_STORK_RPM_VERSION = None
 
 
 def get_distro(content):
+    '''Get distro information (name, var) from a content
+    that should be read from /etc/os-release'''
+
     name = None
     ver = None
     for l in content.splitlines():
