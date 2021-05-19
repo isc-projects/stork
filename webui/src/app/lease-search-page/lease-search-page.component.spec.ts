@@ -209,6 +209,82 @@ describe('LeaseSearchPageComponent', () => {
         expect(leasesSearchSummary.properties.innerText).toBe('Found 1 lease matching 192.0.2.3.')
     })
 
+    it('should display declined DHCPv4 lease', () => {
+        // Declined lease lacks MAC address and client identifier.
+        component.leases = [
+            {
+                id: 0,
+                ipAddress: '192.0.2.3',
+                state: 1,
+                appId: 1,
+                appName: 'kea@frog',
+                subnetId: 123,
+                cltt: 1616149050,
+                validLifetime: 3600,
+            },
+        ]
+        component.lastSearchText = '192.0.2.3'
+        fixture.detectChanges()
+
+        const leasesTable = fixture.debugElement.query(By.css('#leases-table'))
+        const cols = leasesTable.queryAll(By.css('td'))
+        expect(cols.length).toBe(5)
+
+        // Expand button existence.
+        expect(cols[0].children.length).toBe(1)
+        const expandButton = cols[0].children[0].nativeElement
+        expect(expandButton.nodeName).toBe('A')
+
+        // Lease properties.
+        expect(cols[1].nativeElement.innerText).toBe('192.0.2.3')
+        expect(cols[2].nativeElement.innerText).toBe('IPv4 address')
+        expect(cols[3].nativeElement.innerText).toBe('Declined')
+        expect(cols[4].nativeElement.innerText).toBe('kea@frog')
+
+        // Validate app link.
+        expect(cols[4].children.length).toBe(1)
+        expect(cols[4].children[0].properties.routerLink).toBe('/apps/kea/1')
+
+        // Simulate expanding the lease information.
+        expandButton.click()
+        fixture.detectChanges()
+
+        // There should be one table holding the expanded information.
+        // In particular, there should be no table with client identifiers
+        // because they are not present for a declined lease.
+        const tables = fixture.debugElement.queryAll(By.css('table'))
+        expect(tables.length).toBe(2)
+
+        // Find allocation and expiration time.
+        const startDate = new Date(1616149050000)
+        const endDate = new Date(1616149050000 + 3600000)
+
+        // Expected data within the expanded row.
+        const expectedLeaseData: any = [
+            ['Subnet Identifier', '123'],
+            ['Valid Lifetime', '3600 seconds'],
+            ['Allocated at', datetimeToLocal(startDate)],
+            ['Expires at', datetimeToLocal(endDate)],
+        ]
+
+        // Find rows.
+        const rows = tables[1].queryAll(By.css('tr'))
+        expect(rows.length).toBe(4)
+
+        // For each table row, compare its contents with the expected data.
+        let i = 0
+        for (const row of rows) {
+            expect(row.children.length).toBe(2)
+            expect(row.children[0].nativeElement.innerText).toBe(expectedLeaseData[i][0] + ':')
+            expect(row.children[1].nativeElement.innerText).toBe(expectedLeaseData[i][1])
+            i++
+        }
+
+        // Test summary.
+        const leasesSearchSummary = fixture.debugElement.query(By.css('#leases-search-summary-span'))
+        expect(leasesSearchSummary.properties.innerText).toBe('Found 1 lease matching 192.0.2.3.')
+    })
+
     it('should display DHCPv6 leases', () => {
         component.leases = [
             {

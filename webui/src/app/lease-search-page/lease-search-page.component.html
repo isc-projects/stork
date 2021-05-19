@@ -119,7 +119,7 @@
                 <tr>
                     <td colspan="5">
                         <div class="p-grid">
-                            <div class="p-col-3">
+                            <div *ngIf="lease.hwAddress || lease.clientId || lease.duid" class="p-col-3">
                                 <p-fieldset legend="Client">
                                     <table>
                                         <tr *ngIf="lease.hwAddress">
