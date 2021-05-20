@@ -1,7 +1,14 @@
+* 142 [func] marcin
+
+    Updated Stork demo to expose new features: leases search,
+    Kea database backends and files locations.
+    (Gitlab #542)
+
 * 141 [func] godfryd
 
-    Fixed and improved detecting various versions of BIND 9.
-    (Gitlab #474)
+    Updated Stork demo to expose new features: leases search,
+    Kea database backends and files locations.
+    (Gitlab #542)
 
 Stork 0.17.0 released on 2021-05-07.
 
