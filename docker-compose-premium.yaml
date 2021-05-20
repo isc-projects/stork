@@ -1,13 +1,13 @@
 version: '2.1'
 
 services:
-  agent-kea-hosts:
+  agent-kea-premium:
     restart: always
     build:
       context: .
-      dockerfile: docker/docker-agent-kea-hosts.txt
-    image: registry.gitlab.isc.org/isc-private/stork/agent-kea-hosts:latest
-    hostname: agent-kea-hosts
+      dockerfile: docker/docker-agent-kea-premium.txt
+    image: registry.gitlab.isc.org/isc-private/stork/agent-kea-premium:latest
+    hostname: agent-kea-premium
     networks:
       storknet:
         ipv4_address: 172.20.0.103
@@ -15,6 +15,9 @@ services:
       - "8080"  # stork server to agent
     ports:
       - "8838:8080"  # publish ports for development purposes
+    depends_on:
+      - hosts-db
+      - server
 
   hosts-db:
     image: mysql:5.7

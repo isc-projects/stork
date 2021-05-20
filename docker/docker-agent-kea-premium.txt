@@ -18,8 +18,8 @@ RUN perl -pi -e 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/kea/kea-ctrl-agent.conf
 COPY build-root/root/usr/bin/stork-agent /agent/
 RUN mkdir -p /var/lib/stork-agent/certs /var/lib/stork-agent/tokens
 # Copy configuration files.
-COPY docker/supervisor-agent-kea-hosts.conf /etc/supervisor.conf
-COPY docker/kea-dhcp4-hosts.conf /etc/kea/kea-dhcp4.conf
+COPY docker/supervisor-agent-kea-premium.conf /etc/supervisor.conf
+COPY docker/kea-dhcp4-premium.conf /etc/kea/kea-dhcp4.conf
 COPY docker/kea-hosts-db-init.sh /agent
 # Start supervisor.
 CMD sleep 15 && /agent/kea-hosts-db-init.sh && supervisord -c /etc/supervisor.conf
