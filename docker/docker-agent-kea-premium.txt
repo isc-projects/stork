@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         isc-kea-ctrl-agent=1.7.3-isc0009420191217090201 \
         isc-kea-admin=1.7.3-isc0009420191217090201 \
         isc-kea-premium-host-cmds=1.7.3-isc0009420191217090201 \
+        isc-kea-premium-forensic-log=1.7.3-isc0009420191217090201 \
         isc-kea-common=1.7.3-isc0009420191217090201 \
         && mkdir -p /var/run/kea/
 # Tell CA to listen on all interfaces.
