@@ -1,3 +1,8 @@
+* 143 [bug] ymartin-ovh
+
+    Fixed honoring the listen-only flags in Stork Agent.
+    (Gitlab #536)
+
 * 142 [func] marcin
 
     Updated Stork demo to expose new features: leases search,
