@@ -333,13 +333,13 @@ task :run_server_db do |t, args|
 end
 
 
-desc 'Compile database migrations tool'
-task :build_migrations =>  [GO] do
-  sh "cd backend/cmd/stork-db-migrate/ && #{GO} build #{go_build_date_opt}"
+desc 'Compile Stork tool'
+task :build_tool =>  [GO] do
+  sh "cd backend/cmd/stork-tool/ && #{GO} build #{go_build_date_opt}"
 end
 
 desc 'Compile whole backend: server, migrations and agent'
-task :build_backend => [:build_agent, :build_server, :build_migrations]
+task :build_backend => [:build_agent, :build_server, :build_tool]
 
 file GOLANGCILINT => TOOLS_DIR do
   Dir.chdir(TOOLS_DIR) do
@@ -387,7 +387,7 @@ def remove_remaining_databases(pgsql_host, pgsql_port)
 end
 
 desc 'Run backend unit tests'
-task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_agent, :build_migrations] do
+task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_agent, :build_tool] do
   at_exit {
     sh 'rm -f backend/server/agentcomm/api_mock.go'
   }
@@ -437,7 +437,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     remove_remaining_databases(pgsql_host, pgsql_port)
     sh "createdb -h #{pgsql_host} -p #{pgsql_port} -U storktest -O storktest storktest"
   end
-  sh "STORK_DATABASE_PASSWORD=storktest ./backend/cmd/stork-db-migrate/stork-db-migrate -d storktest -u storktest --db-host #{pgsql_host} -p #{pgsql_port} up"
+  sh "STORK_TOOL_DB_PASSWORD=storktest ./backend/cmd/stork-tool/stork-tool db-up -d storktest -u storktest --db-host #{pgsql_host} -p #{pgsql_port}"
 
   if ENV['dbtrace'] == 'true'
     ENV['STORK_DATABASE_TRACE'] = 'true'
@@ -859,15 +859,15 @@ task :install_agent => [:build_agent, :doc, BIN_DIR, UNIT_DIR, ETC_DIR, MAN_DIR]
 end
 
 desc 'Install server files to DESTDIR. It depends on building tasks.'
-task :install_server => [:build_server, :build_migrations, :build_ui, :doc, BIN_DIR, UNIT_DIR, ETC_DIR, WWW_DIR, EXAMPLES_DIR, MAN_DIR] do
+task :install_server => [:build_server, :build_tool, :build_ui, :doc, BIN_DIR, UNIT_DIR, ETC_DIR, WWW_DIR, EXAMPLES_DIR, MAN_DIR] do
   sh "cp -a backend/cmd/stork-server/stork-server #{BIN_DIR}"
-  sh "cp -a backend/cmd/stork-db-migrate/stork-db-migrate #{BIN_DIR}"
+  sh "cp -a backend/cmd/stork-tool/stork-tool #{BIN_DIR}"
   sh "cp -a etc/isc-stork-server.service #{UNIT_DIR}"
   sh "cp -a etc/server.env #{ETC_DIR}"
   sh "cp -a etc/nginx-stork.conf #{EXAMPLES_DIR}"
   sh "cp -a webui/dist/stork/* #{WWW_DIR}"
   sh "cp -a doc/man/stork-server.8 #{MAN_DIR}"
-  sh "cp -a doc/man/stork-db-migrate.8 #{MAN_DIR}"
+  sh "cp -a doc/man/stork-tool.8 #{MAN_DIR}"
 end
 
 # invoke fpm for building RPM or deb package
@@ -1044,7 +1044,7 @@ task :clean do
   sh 'rm -rf webui/src/app/backend/'
   sh 'rm -f backend/cmd/stork-agent/stork-agent'
   sh 'rm -f backend/cmd/stork-server/stork-server'
-  sh 'rm -f backend/cmd/stork-db-migrate/stork-db-migrate'
+  sh 'rm -f backend/cmd/stork-tool/stork-tool'
 end
 
 desc 'Download all dependencies'

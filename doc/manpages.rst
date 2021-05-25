@@ -18,4 +18,4 @@ Manual Pages
 
    man/stork-server.8
    man/stork-agent.8
-   man/stork-db-migrate.8
+   man/stork-tool.8

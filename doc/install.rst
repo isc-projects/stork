@@ -596,6 +596,20 @@ Further configuration and usage of the ``Stork Server`` and the
 ``Stork Agent`` are described in the :ref:`usage` chapter.
 
 
+Inspecting Keys and Certificates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Stork Server maintains internally TLS keys and certificates for securing
+communication between ``Stork Server`` and ``Stork Agents``. They can be inspected
+and exported using ``Stork Tool``, e.g:
+
+.. code-block:: console
+
+    $ stork-tool cert-export --db-url postgresql://user:pass@localhost/dbname -f srvcert -o srv-cert.pem
+
+For more details check ``stork-tool`` manual: :ref:`man-stork-tool`.
+
+
 Upgrading
 ---------
 
@@ -693,9 +707,9 @@ but not yet run the server. In most cases this step can be skipped.
 
 .. code-block:: console
 
-    $ rake build_migrations
-    $ backend/cmd/stork-db-migrate/stork-db-migrate init
-    $ backend/cmd/stork-db-migrate/stork-db-migrate up
+    $ rake build_tool
+    $ backend/cmd/stork-tool/stork-tool db-init
+    $ backend/cmd/stork-tool/stork-tool db-up
 
 The up and down commands have an optional `-t` parameter that specifies the desired
 schema version. This is only useful when debugging database migrations.
@@ -703,29 +717,29 @@ schema version. This is only useful when debugging database migrations.
 .. code-block:: console
 
     $ # migrate up version 25
-    $ backend/cmd/stork-db-migrate/stork-db-migrate up -t 25
+    $ backend/cmd/stork-tool/stork-tool db-up -t 25
     $ # migrate down back to version 17
-    $ backend/cmd/stork-db-migrate/stork-db-migrate down -t 17
+    $ backend/cmd/stork-tool/stork-tool db-down -t 17
 
 Note that the server requires the latest database version to run, always
 runs the migration on its own, and will refuse to start if the migration fails
 for any reason. The migration tool is mostly useful for debugging
 problems with migration or migrating the database without actually running
 the service. For complete reference, see the manual page here:
-:ref:`man-stork-db-migrate`.
+:ref:`man-stork-tool`.
 
 To debug migrations, another useful feature is SQL tracing using the `--db-trace-queries` parameter.
 It takes either "all" (trace all SQL operations, including migrations and run-time) or "run" (just
 trace run-time operations, skip migrations). If specified without any parameters, "all" is assumed. With it enabled,
-`stork-db-migrate` prints out all its SQL queries on stderr. For example, these commands can be used
+`stork-tool` prints out all its SQL queries on stderr. For example, these commands can be used
 to generate an SQL script that updates the schema. Note that for some migrations, the steps are
 dependent on the contents of the database, so this is not a universal Stork schema. This parameter
 is also supported by the ``Stork Server``.
 
 .. code-block:: console
 
-   $ backend/cmd/stork-db-migrate/stork-db-migrate down -t 0
-   $ backend/cmd/stork-db-migrate/stork-db-migrate up --db-trace-queries 2> stork-schema.txt
+   $ backend/cmd/stork-tool/stork-tool db-down -t 0
+   $ backend/cmd/stork-tool/stork-tool db-up --db-trace-queries 2> stork-schema.txt
 
 
 Integration With Prometheus and Grafana

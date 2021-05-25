@@ -22,7 +22,7 @@ type BaseDatabaseSettings struct {
 
 type DatabaseSettings struct {
 	BaseDatabaseSettings
-	TraceSQL string `long:"db-trace-queries" description:"enable tracing SQL queries: run (only runtime, without migrations), all (migrations and run-time), all is the default and covers both migrations and run-time." env:"STORK_DATABASE_TRACE" optional:"true" optional-value:"all"`
+	TraceSQL string `long:"db-trace-queries" description:"enable tracing SQL queries: run (only run-time, without migrations), all (migrations and run-time), all is the default and covers both migrations and run-time." env:"STORK_DATABASE_TRACE" optional:"true" optional-value:"all"`
 }
 
 // Alias to pg.DB.
@@ -122,4 +122,9 @@ func Password(settings *DatabaseSettings) {
 
 		settings.Password = string(pass)
 	}
+}
+
+// Parse DB URL to Pg options.
+func ParseURL(url string) (*pg.Options, error) {
+	return pg.ParseURL(url)
 }

@@ -1,3 +1,9 @@
+* 145 [func] godfryd
+
+    Refactored stork-db-migrate tool to stork-tool and added
+    commands for certificates management.
+    (Gitlab #515)
+
 * 144 [func] slawek
 
     Added Kea daemon configuration preview in JSON format.

@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
+	"io/ioutil"
 	"math/rand"
 	"net"
 
@@ -190,4 +191,39 @@ func SetupServerCerts(db *pg.DB) ([]byte, []byte, []byte, error) {
 	}
 
 	return rootCertPEM, serverCertPEM, serverKeyPEM, nil
+}
+
+// Export a secret e.g. certificate or server token to stdout or to indicated file.
+func ExportSecret(db *pg.DB, object string, filename string) error {
+	var objDisplayName string
+	switch object {
+	case dbmodel.SecretCAKey:
+		objDisplayName = "CA key"
+	case dbmodel.SecretCACert:
+		objDisplayName = "CA cert"
+	case dbmodel.SecretServerKey:
+		objDisplayName = "server key"
+	case dbmodel.SecretServerCert:
+		objDisplayName = "server cert"
+	case dbmodel.SecretServerToken:
+		objDisplayName = "server token"
+	default:
+		return errors.Errorf("requested unknown object '%s'", object)
+	}
+
+	content, err := dbmodel.GetSecret(db, object)
+	if err != nil {
+		return errors.Wrapf(err, "problem with getting '%s' from database", objDisplayName)
+	}
+	if filename != "" {
+		err := ioutil.WriteFile(filename, content, 0600)
+		if err != nil {
+			return err
+		}
+		log.Printf("%s saved to file: %s", objDisplayName, filename)
+	} else {
+		log.Printf("%s:\n%s", objDisplayName, string(content))
+	}
+
+	return nil
 }

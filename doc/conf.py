@@ -122,7 +122,7 @@ latex_elements = {
 man_pages = [
     ('man/stork-agent.8', 'stork-agent', 'Stork Agent', author, 8),
     ('man/stork-server.8', 'stork-server', 'Stork Server', author, 8),
-    ('man/stork-db-migrate.8', 'stork-db-migrate', 'Stork Database Migration', author, 8)
+    ('man/stork-tool.8', 'stork-tool', 'Stork Tool', author, 8)
 ]
 
 # -- Extension configuration -------------------------------------------------

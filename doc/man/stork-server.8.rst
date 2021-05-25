@@ -35,9 +35,6 @@ Arguments
 ``-v`` or ``--version``
    the ``stork-server`` version.
 
-``-d`` or ``--db-name=``
-   the name of the database to connect to. (default: stork) [$STORK_DATABASE_NAME]
-
 ``-u`` or ``--db-user``
    the user name to be used for database connections. (default: stork) [$STORK_DATABASE_USER_NAME]
 
@@ -47,9 +44,12 @@ Arguments
 ``-p`` or ``--db-port``
    the port on which the database is available. (default: 5432) [$STORK_DATABASE_PORT]
 
+``-d`` or ``--db-name=``
+   the name of the database to connect to. (default: stork) [$STORK_DATABASE_NAME]
+
 ``--db-trace-queries=``
-   enable tracing SQL queries: run (only runtime, without migrations), all (migrations and run-time)).
-   ``all`` is the default and covers both migrations and ``run-time.enable`` tracing SQL queries. [$STORK_DATABASE_TRACE]
+   enable tracing SQL queries: "run" - only run-time, without migrations), "all" - migrations and run-time.
+   [$STORK_DATABASE_TRACE]
 
 ``--rest-cleanup-timeout``
    the period to wait before killing idle connections. (default: 10s)
