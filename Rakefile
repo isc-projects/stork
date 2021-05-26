@@ -154,6 +154,7 @@ UNIT_DIR=File.join(DESTDIR, 'lib/systemd/system')
 ETC_DIR=File.join(DESTDIR, 'etc/stork')
 WWW_DIR=File.join(DESTDIR, 'usr/share/stork/www')
 EXAMPLES_DIR=File.join(DESTDIR, 'usr/share/stork/examples')
+EXAMPLES_GRAFANA_DIR=File.join(EXAMPLES_DIR, 'grafana')
 MAN_DIR=File.join(DESTDIR, 'usr/share/man/man8')
 
 # Directories
@@ -165,6 +166,7 @@ directory UNIT_DIR
 directory ETC_DIR
 directory WWW_DIR
 directory EXAMPLES_DIR
+directory EXAMPLES_GRAFANA_DIR
 directory MAN_DIR
 
 # establish Stork version
@@ -657,7 +659,7 @@ end
 # internal task used by build_all_in_container
 task :build_all_copy_in_subdir do
   sh 'mkdir -p ./build-root'
-  sh 'rsync -av --exclude=webui/node_modules --exclude=webui/dist --exclude=webui/src/assets/arm --exclude=webui/src/assets/pkgs --exclude=doc/_build --exclude=doc/doctrees --exclude=backend/server/gen --exclude=*~ --delete api backend doc etc webui Rakefile ./build-root'
+  sh 'rsync -av --exclude=webui/node_modules --exclude=webui/dist --exclude=webui/src/assets/arm --exclude=webui/src/assets/pkgs --exclude=doc/_build --exclude=doc/doctrees --exclude=backend/server/gen --exclude=*~ --delete api backend doc etc grafana webui Rakefile ./build-root'
   sh "cd ./build-root && GOPATH=/repo/build-root/go rake install_server install_agent"
 end
 
@@ -831,7 +833,6 @@ end
 
 # Internal task that copies sources and builds packages on a side. It is used by run_build_pkg_in_docker.
 task :build_pkg do
-  cwd = Dir.pwd
   # If the host is using an OS other than Linux, e.g. macOS, the appropriate
   # versions of tools will have to be downloaded. Thus, we don't copy the
   # tools from the stork package. If the host OS is Linux, we copy the tools
@@ -839,11 +840,6 @@ task :build_pkg do
   # the containers onto which they are copied.
   if OS != 'linux' and Dir.exist?("/tools")
     sh "cp -a /tools /tmp/build"
-  end
-  if File.exist?('/etc/redhat-release')
-    pkg_type = 'rpm'
-  else
-    pkg_type = 'deb'
   end
   sh "rm -rf root && rake #{ENV['pkg']} STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
   sh "ls -al isc-stork*"
@@ -863,12 +859,13 @@ task :install_agent => [:build_agent, :doc, BIN_DIR, UNIT_DIR, ETC_DIR, MAN_DIR]
 end
 
 desc 'Install server files to DESTDIR. It depends on building tasks.'
-task :install_server => [:build_server, :build_tool, :build_ui, :doc, BIN_DIR, UNIT_DIR, ETC_DIR, WWW_DIR, EXAMPLES_DIR, MAN_DIR] do
+task :install_server => [:build_server, :build_tool, :build_ui, :doc, BIN_DIR, UNIT_DIR, ETC_DIR, WWW_DIR, EXAMPLES_DIR, EXAMPLES_GRAFANA_DIR, MAN_DIR] do
   sh "cp -a backend/cmd/stork-server/stork-server #{BIN_DIR}"
   sh "cp -a backend/cmd/stork-tool/stork-tool #{BIN_DIR}"
   sh "cp -a etc/isc-stork-server.service #{UNIT_DIR}"
   sh "cp -a etc/server.env #{ETC_DIR}"
   sh "cp -a etc/nginx-stork.conf #{EXAMPLES_DIR}"
+  sh "cp -a grafana/*json #{EXAMPLES_GRAFANA_DIR}"
   sh "cp -a webui/dist/stork/* #{WWW_DIR}"
   sh "cp -a doc/man/stork-server.8 #{MAN_DIR}"
   sh "cp -a doc/man/stork-tool.8 #{MAN_DIR}"
