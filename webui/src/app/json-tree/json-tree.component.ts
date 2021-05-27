@@ -418,29 +418,29 @@ export class JsonTreeComponent {
     }
 
     /**
-     * Specifies when current component is root level.
-     * Root level means that the current component isn't
-     * nested in other "json-tree-component".
+     * Specifies if this component instance represents a root level.
      *
-     * Root level hasn't key, because JSON is just object.
+     * The root level component isn't nested in other json-tree-components.
+     * and has no key. There must be exactly one root level component instance
+     * in the JSON viewer. All sub-nodes must have keys.
      *
-     * Should be only one root level component in viewer. All subnodes must to have the keys.
+     * The root level component can't be collapsed.
      *
-     * If component is root level then collapse marker is omitted and subnodes are directly rendered.
-     * @returns boolean
+     * @returns boolean value indicating if the component represents the root
+     *          level.
      */
     isRootLevel(): boolean {
         return !this._key
     }
 
     /**
-     * Specifies when current component has assigned value.
-     * It is intended for handle not-initialized state of viewer
-     * when parent component has not fetched the value yet.
-     * Therefore, only top level may have no assigned value. It must have
-     * value to display @_value set to null or undefined.
+     * Specifies when the node represented by this component instance has a value.
      *
-     * @returns boolean
+     * It is intended for handling non-initialized viewer state,
+     * when parent component has not fetched the value yet.
+     *
+     * @returns true if the node represented by this component instance has been
+     *          assigned.
      */
     hasAssignedValue(): boolean {
         return !this.isRootLevel() || !this.isNullOrUndefined()
@@ -449,38 +449,39 @@ export class JsonTreeComponent {
     /**
      * Specifies when current level should be initially opened.
      *
-     * The state of node is managed internally by HTML, but initial
-     * state may be opened or closed.
+     * The node state is managed internally by HTML, but initial state may
+     * be opened or closed.
      *
      * Node is initially opened if it is forced by parent component
-     * (when current node hasn't siblings) or number of children is
+     * (when current node has no siblings) or the number of children is
      * less or equal @_autoExpandMaxNodeCount.
      *
-     * Top level is always initially opened, but top level isn't indented
+     * Top level is always initially opened, but it is never indented
      * and cannot be collapsed.
      *
-     * @returns boolean
+     * @returns true if the node is initially opened.
      */
     isInitiallyOpened(): boolean {
         return this._forceOpenThisLevel || this.totalChildrenCount <= this._autoExpandMaxNodeCount
     }
 
     /**
-     * Specifies when value to display @_value is corrupted.
-     * When node is corrupted then key is marked with red wave.
+     * Specifies when the value to display is corrupted.
      *
-     * This is experimental function and may result in false alarms.
-     * It is intended for help to find places when value was manually
-     * edited and some characters (as quotes) were lost.
+     * When a node is corrupted its key is marked with a red wave.
+     *
+     * This is an experimental function and may result in false alarms.
+     * It is intended to help find places when a value was manually
+     * edited and some characters (like quotes) were lost.
      *
      * Node is corrupted when:
      * For string:
-     *     - Number of open and close curly or square brackets aren't the same
-     *     - Number of single or double quotes is odd.
+     *     - A number of open and close curly or square brackets aren't the same.
+     *     - A number of single or double quotes is odd.
      * For arrays:
      *     - Items have different types.
      *
-     * @returns boolean
+     * @returns true if the node value is considered corrupted.
      */
     isCorrupted(): boolean {
         if (typeof this._value === 'string') {
@@ -518,35 +519,39 @@ export class JsonTreeComponent {
 
     /**
      * Specifies when recursion level is reached.
+     *
      * It is used to avoid performance problems on cyclic objects.
-     * @returns boolean
+     *
+     * @returns true if recursion level was reached.
      */
     isRecursionLevelReached(): boolean {
         return this._recursionLevel >= this._maxRecursionLevel
     }
 
     /**
-     * Specifies when value to display @_value has only one child.
+     * Specifies when value to display has only one child.
      *
-     * Only complex type may to have single child.
-     * @returns boolean
+     * Only complex type value can have a single child.
+     *
+     * @returns true if the node has a single child.
      */
     hasSingleChild(): boolean {
         return this.totalChildrenCount === 1
     }
 
     /**
-     * Specifies when value to display @_value has too many children
-     * to display at once.
+     * Specifies when the node has too many children to display at once.
+     *
+     * @returns true if the value has to be paginated.
      */
     hasPaginateChildren(): boolean {
         return this.totalChildrenCount > this._childStep
     }
 
     /**
-     * Specifies if page of paginator is loading.
-     * If initial page is loading then it returns false.
-     * It is only valid for user-trig loading.
+     * Specifies if the paginated children of the component are loading.
+     *
+     * @returns true if the paginated children are loading.
      */
     areChildrenLoading() {
         return this._childrenLoading

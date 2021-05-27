@@ -8,9 +8,10 @@ import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
 
 /**
- * Component providing a dedicated page for Kea daemon configuration.
+ * A component providing a dedicated page displaying Kea daemon configuration.
  *
- * It fetching all needed data, displaying JSON viewer and providing a few additional functionalities.
+ * It fetches configuration data and displays it in a JSON viewer.
+ * The viewer allows for collapsing and expanding selected or all nodes.
  */
 @Component({
     selector: 'app-kea-daemon-configuration-page',
@@ -54,19 +55,18 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Here the component subscribes for data: friendly names and Kea daemon configuration JSON
+     * Component lifecycle hook invoked upon the component initialization.
      *
-     * Handles application ID URL query parameter.
-     * When application ID changes then the component displays its friendly name.
-     * Properly application ID is optional. It may be omitted or invalid then the name
-     * will be invalid or placeholder, but the component displays correct Kea daemon configuration.
+     * It subscribes for neccessary data, i.e. friendly names and daemon configuration JSON.
      *
-     * Handles daemon ID URL query parameter.
-     * When daemon ID changes then the component displays its friendly name and fetch Kea daemon
-     * configuration JSON. If daemon ID is empty or invalid (non-numeric) then user is redirected to
+     * The app friendly name is fetched for the specified app ID query parameter. If the app
+     * with the specified ID does not exist or the ID is invalid, a placeholder for app name
+     * is displayed.
+     *
+     * The daemon ID must be valid and must point to an existing daemon. The function uses
+     * it to fetch daemon's friendly name and fetch its configuration. If the daemon ID is
+     * invalid, the user is redirected to the apps list.
      * application list.
-     *
-     * This component subscribes the updates of Kea daemon configuration JSON too.
      */
     ngOnInit(): void {
         // Friendly names of daemons
@@ -134,8 +134,8 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
 
                 this._daemonId = daemonId
 
-                // Fetch app and daemon names
-                // It may fail, but it isn't critical (for this view).
+                // Ignore App ID if it is incorrect. It is not neccessary to display
+                // the configuration tree. It is merely used in breadcrumbs.
                 if (Number.isFinite(appId)) {
                     this.changeAppId.next(appId)
                 }
@@ -152,13 +152,8 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
      * directly control collapse/expand state. We can only toggle "open" HTML property
      * to indicate that tag should be initially expanded or not.
      *
-     * This function uses a trick with auto expand feature and set it to 0 or max integer value.
-     *
-     * It works well as expected, but it must have a toggle behavior. It is impossible
-     * to collapse viewer which wasn't previously expanded. And vice-versa.
-     *
-     * To resolve this issue it is needed to explicit manage details-summary tags state
-     * in component. But it will complicate viewer solution and not bring many benefits.
+     * This function implements an auto expand feature and setting the count of the
+     * auto expanded nodes to 0 (collapse) or max integer value (expand).
      */
     onClickToggleNodes() {
         if (this._autoExpandNodeCount === Number.MAX_SAFE_INTEGER) {
