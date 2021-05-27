@@ -519,37 +519,37 @@ Please keep in mind that extending the size of the viewed log tail may
 cause slowness of the log viewer and network congestion as
 the amount of data fetched from the monitored machine increases.
 
-Viewing the raw Kea daemon configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Viewing the Kea Configuration as JSON Tree
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Stork offers a JSON-viewing mechanism to display raw Kea daemon configuration.
+Kea uses JSON (JavaScript Object Notation) to represent its configuration
+in the configuration files and the command channel. Parts of the Kea
+configuration held in the `Config Backend <https://kea.readthedocs.io/en/latest/arm/config.html#kea-configuration-backend>`_
+are also converted to JSON and returned over the control channel in that
+format. Diagnostics of issues with a particular server often begins by
+inspecting its configuration.
+
+In the ``Kea App`` view, select a tab appropriate for the daemon which
+configuration you want to inspect. Click on the ``Raw Configuration``
+button. The displayed tree view comprises the selected daemon's
+configuration fetched using the Kea ``config-get`` command.
 
 .. note::
 
-   This mechanism only supports viewing Kea daemon configuration;
-   viewing BIND 9 daemon configuration is not yet supported.
+   The ``config-get`` command returns the configuration presently used
+   by the selected Kea server. It is a combination of the configuration
+   read from the configuration file and the Config Backend, if Kea uses
+   the backend. Therefore, the configuration tree presented in Stork may
+   differ (sometimes significantly) from the configuration file contents.
 
-Stork has a possibility to shown raw Kea daemon configuration,
-directly fetched from Kea agent, in JSON format. It may be useful
-to diagnose the problems with configuration or check parameters
-that haven't the dedicated controls.
+The nodes with complex data types can be individually expanded and
+collapsed. All nodes can also be expanded using the ``Expand`` button.
+Click this button again to collapse all nodes. When expanding the nodes
+with many sub-nodes, they may be paginated to avoid degrading browser
+performance.
 
-The configuration is available on the ``Kea App`` page. After choosing
-a specific daemon the "Raw configuration" button is displayed. Click on it
-opens the JSON viewer page. (You can hold the control key and click on this
-button to open the configuration in the new browser tab. It may be helpful to compare
-the configurations of two daemons at the same time.)
-
-The configuration is visualized in tree form with collapsible/expandable nodes.
-Hovered tree level is highlighted. The keys are presented on the left side and values on the right side. The values have
-a different color depending on a type or value (string, number, bool...).
-
-If the configuration contains a large number of subnets then they are paginated to
-avoid a degrading browser performance.
-
-The configuration is updated only on request by pressing the refresh button. Another button -
-"Download" - may be used to download the configuration in JSON format.
-
+Click the ``Refresh`` button to fetch and display the latest configuration.
+Click ``Download`` to download the entire configuration into a text file.
 
 Dashboard
 =========
