@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 
 import { FieldsetModule } from 'primeng/fieldset'
+import { MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 
 import { of } from 'rxjs'
@@ -19,7 +20,7 @@ describe('HostTabComponent', () => {
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
-            providers: [DHCPService],
+            providers: [DHCPService, MessageService],
             imports: [FieldsetModule, FormsModule, HttpClientTestingModule, NoopAnimationsModule, TableModule],
             declarations: [HostTabComponent],
         }).compileComponents()
@@ -398,23 +399,27 @@ describe('HostTabComponent', () => {
         expect(summary).toContain('Found 2 assigned leases with the latest expiration time at')
 
         // Single expired lease.
+        // Set cltt so that the expiration time elapses 10 or more seconds ago.
+        const testCltt = new Date().getTime() / 1000 - 3610
         leaseInfo = {
             culprit: {
                 hwAddress: '1a:1b:1c:1d:1e:1f',
-                cltt: 0,
+                cltt: testCltt,
                 validLifetime: 3600,
             },
             usage: component.Usage.Expired,
             leases: [
                 {
                     hwAddress: '1a:1b:1c:1d:1e:1f',
-                    cltt: 0,
+                    cltt: testCltt,
                     validLifetime: 3600,
                 },
             ],
         }
         summary = component.getLeaseSummary(leaseInfo)
-        expect(summary).toContain('Found 1 lease for this reservation which expired at')
+        expect(summary).toMatch(
+            /Found 1 lease for this reservation which expired at \d{4}-\d{2}-\d{2}\s\d{2}\:\d{2}\:\d{2} \(\d{2} s ago\)/
+        )
 
         // Two expired leases.
         leaseInfo = {

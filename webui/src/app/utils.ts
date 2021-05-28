@@ -43,13 +43,19 @@ export function epochToLocal(epochTime) {
  * @param duration input duration.
  * @param short boolean flag indicating if the duration should be output
  *              using short (if true) or long format (if false).
- * @returns Duration in the format of "D days H hours M minutes S seconds"
- *          or "D d H h M min S sec".
+ * @returns Duration in the format of "Y years M months D days H hours
+ *            M minutes S seconds or "Y y M m D d H h M min S sec".
  */
 export function durationToString(duration, short = false) {
     if (duration > 0) {
         const d = moment.duration(duration, 'seconds')
         let txt = ''
+        if (d.years() > 0) {
+            txt += ' ' + d.years() + (short ? ' y' : ' years')
+        }
+        if (d.months() > 0) {
+            txt += ' ' + d.months() + (short ? ' m' : ' months')
+        }
         if (d.days() > 0) {
             txt += ' ' + d.days() + (short ? ' d' : ' days')
         }

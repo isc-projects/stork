@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { DHCPService } from '../backend/api/api'
-import { epochToLocal } from '../utils'
+import { durationToString, epochToLocal } from '../utils'
 
 enum HostReservationUsage {
     Conflicted = 1,
@@ -298,6 +298,8 @@ export class HostTabComponent implements OnInit {
                     '.'
                 return summary
             case this.Usage.Expired:
+                const expirationTime = leaseInfo.culprit.cltt + leaseInfo.culprit.validLifetime
+                const expirationDuration = durationToString(new Date().getTime() / 1000 - expirationTime, true)
                 summary =
                     'Found ' +
                     leaseInfo.leases.length +
@@ -306,8 +308,11 @@ export class HostTabComponent implements OnInit {
                     ' for this reservation' +
                     (m ? '. They include a lease' : '') +
                     ' which expired at ' +
-                    epochToLocal(leaseInfo.culprit.cltt + leaseInfo.culprit.validLifetime) +
-                    '.'
+                    epochToLocal(expirationTime)
+
+                if (expirationDuration) {
+                    summary += ' ' + '(' + expirationDuration + ' ago).'
+                }
                 return summary
             case this.Usage.Declined:
                 // Found leases for our client but at least one of them is declined.
