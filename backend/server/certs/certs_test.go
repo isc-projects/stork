@@ -60,7 +60,8 @@ func TestSetupServerCerts(t *testing.T) {
 	require.NotEqualValues(t, serverKeyPEM, serverKeyPEM3)
 }
 
-// Check if ExportSecret works.
+// Check if ExportSecret correctly exports various keys and
+// certificates from a database to a file.
 func TestExportSecret(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
@@ -87,7 +88,7 @@ func TestExportSecret(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, serverCertPEM, serverCertPEM2)
 
-	// check exporting Server Cert
+	// check exporting Server Key
 	err = ExportSecret(db, dbmodel.SecretServerKey, "")
 	require.NoError(t, err)
 

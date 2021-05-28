@@ -486,9 +486,13 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
 
                        # this function requires interaction with user so it is hard to test
                        'getAgentAddrAndPortFromUser',
+
+                       # this requires interacting with terminal
+                       'GetSecretInTerminal',
                       ]
         if ENV['short'] == 'true'
-          ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts'])
+          ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts',
+                              'ExportSecret'])
         end
 
         if cov < 35 and not ignore_list.include? func

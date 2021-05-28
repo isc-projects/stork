@@ -27,12 +27,20 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 		}
 		opts.TLSConfig = nil // ParseURL sets it automatically but we do not use TLS so reset it
 	} else {
+		var passwd string
+		if settings.IsSet("db-password") {
+			passwd = settings.String("db-password")
+		} else {
+			// if password is missing then prompt for it
+			passwd = storkutil.GetSecretInTerminal("database password: ")
+		}
+
 		addrPort := net.JoinHostPort(settings.String("db-host"), settings.String("db-port"))
 
 		// Use the provided credentials to connect to the database.
 		opts = &dbops.PgOptions{
 			User:     settings.String("db-user"),
-			Password: settings.String("db-password"),
+			Password: passwd,
 			Database: settings.String("db-name"),
 			Addr:     addrPort,
 		}
@@ -53,9 +61,6 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 
 // Execute DB migration command.
 func runDBMigrate(settings *cli.Context, command, version string) {
-	// Password from the environment variable takes precedence.
-	// TODO dbops.Password(&opts.DatabaseSettings)
-
 	// The up and down commands require special treatment. If the target version is specified
 	// it must be appended to the arguments we pass to the go-pg migrations.
 	var args []string

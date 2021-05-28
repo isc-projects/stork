@@ -1,7 +1,5 @@
 # stork-tool
 
-TODO....
-
 This program provides commands to 1) initialize the Stork database and migrate the
 database between selected versions and 2) inspect and export server keys and certificates.
 

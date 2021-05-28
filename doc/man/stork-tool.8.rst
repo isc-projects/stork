@@ -52,7 +52,7 @@ Options specific to ``cert-export`` command:
 Examples
 ........
 
-Dump CA key to the console:
+Print CA key in the console:
 
 .. code-block:: console
 
@@ -65,7 +65,7 @@ Dump CA key to the console:
     R5X1x72axq2cAhCFm7EpD88oYZ3EBdoXmG9fihV5ZGtfFkSpIdzCNPQI
     -----END PRIVATE KEY-----
 
-Dump server certificate to a file:
+Export server certificate to a file:
 
 .. code-block:: console
 
@@ -106,7 +106,7 @@ Initialize database schema:
     INFO[2021-05-25 12:30:53]       connection.go:59    checking connection to database
     INFO[2021-05-25 12:30:53]             main.go:100   Database version is 0 (new version 33 available)
 
-Overwrite current schema version to arbitrary value:
+Overwrite the current schema version to an arbitrary value:
 
 .. code-block:: console
 

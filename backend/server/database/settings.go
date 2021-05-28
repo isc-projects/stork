@@ -2,14 +2,14 @@ package dbops
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"strings"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
-	"golang.org/x/crypto/ssh/terminal"
+
+	storkutil "isc.org/stork/util"
 )
 
 type BaseDatabaseSettings struct {
@@ -112,15 +112,8 @@ func Password(settings *DatabaseSettings) {
 		settings.Password = passwd
 	} else {
 		// Prompt the user for database password.
-		fmt.Printf("database password: ")
-		pass, err := terminal.ReadPassword(0)
-		fmt.Print("\n")
-
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-
-		settings.Password = string(pass)
+		pass := storkutil.GetSecretInTerminal("database password: ")
+		settings.Password = pass
 	}
 }
 

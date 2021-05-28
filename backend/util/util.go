@@ -16,6 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // IP protocol type.
@@ -233,4 +234,16 @@ func HexToBytes(hexString string) []byte {
 	hexString = strings.ReplaceAll(hexString, ":", "")
 	decoded, _ := hex.DecodeString(hexString)
 	return decoded
+}
+
+func GetSecretInTerminal(prompt string) string {
+	// Prompt the user for a secret
+	fmt.Print(prompt)
+	pass, err := terminal.ReadPassword(0)
+	fmt.Print("\n")
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	return string(pass)
 }
