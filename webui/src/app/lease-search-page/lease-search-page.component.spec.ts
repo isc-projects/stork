@@ -260,7 +260,7 @@ describe('LeaseSearchPageComponent', () => {
 
         // Validate app link.
         expect(cols[4].children.length).toBe(1)
-        expect(cols[4].children[0].properties.routerLink).toBe('/apps/kea/1')
+        expect(cols[4].children[0].attributes.href).toBe('/apps/kea/1')
 
         // Simulate expanding the lease information.
         expandButton.click()
