@@ -270,6 +270,7 @@ def _wait_for_event(server, text):
 def _search_leases(server, text=None, host_id=None):
     assert text != None or host_id != None
     leases_found = False
+    data = None
     for i in range(10):
         r = None
         if text != None:
@@ -283,7 +284,11 @@ def _search_leases(server, text=None, host_id=None):
             break
         time.sleep(2)
     assert leases_found, 'failed to find any leases by search text `%s`' % text
-    return data['items'], data['conflicts']
+
+    if 'conflicts' in data:
+        return data['items'], data['conflicts']
+
+    return data['items'], None
 
 
 @pytest.mark.parametrize("agent, server", [('centos/7', 'ubuntu/18.04')])
@@ -408,7 +413,7 @@ def test_search_leases(agent, server):
     assert conflicts is None
 
     # Search declined leases.
-    leases = _search_leases(server, 'state:declined')
+    leases, conflicts = _search_leases(server, 'state:declined')
     assert len(leases) is 20
     for lease in leases:
         # Declined leases should lack identifiers.
@@ -422,6 +427,7 @@ def test_search_leases(agent, server):
     # Sanity check addresses returned.
     assert leases[0]['ipAddress'] == '192.0.2.1'
     assert leases[10]['ipAddress'] == '3001:db8:1::1'
+    assert conflicts is None
 
     # Blank search text should return none leases
     r = server.api_get('/leases?text=')
