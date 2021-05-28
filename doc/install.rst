@@ -599,7 +599,7 @@ Further configuration and usage of the ``Stork Server`` and the
 Inspecting Keys and Certificates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Stork Server maintains internally TLS keys and certificates for securing
+Stork Server maintains TLS keys and certificates internally for securing
 communication between ``Stork Server`` and ``Stork Agents``. They can be inspected
 and exported using ``Stork Tool``, e.g:
 

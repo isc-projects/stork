@@ -10,8 +10,8 @@
 
 .. _man-stork-tool:
 
-stork-tool - A tool for inspecting and changing Stork Server internals
-----------------------------------------------------------------------
+stork-tool - A tool for managing Stork Server
+---------------------------------------------
 
 Synopsis
 ~~~~~~~~

@@ -193,7 +193,7 @@ func setupApp() *cli.App {
 
 	app := &cli.App{
 		Name: "Stork Tool",
-		Usage: `A tool for inspecting and changing Stork Server internals
+		Usage: `A tool for managing Stork Server
 
    The tool operates in two areas:
 
