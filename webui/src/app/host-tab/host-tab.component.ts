@@ -1,4 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core'
+
+import { MessageService } from 'primeng/api'
+
 import { DHCPService } from '../backend/api/api'
 import { durationToString, epochToLocal } from '../utils'
 
@@ -82,9 +85,11 @@ export class HostTabComponent implements OnInit {
     /**
      * Component constructor.
      *
+     * @param msgService service displaying error messages upon a communication
+     *                   error with the server.
      * @param dhcpApi service used to communicate with the server over REST API.
      */
-    constructor(private dhcpApi: DHCPService) {}
+    constructor(private dhcpApi: DHCPService, private msgService: MessageService) {}
 
     /**
      * Lifecycle hook triggered during component initialization.
@@ -156,7 +161,6 @@ export class HostTabComponent implements OnInit {
         this.erredApps = []
         this.dhcpApi.getLeases(undefined, hostId).subscribe(
             (data) => {
-                console.info(data)
                 // Finished searching the leases.
                 this._leasesSearchStatus.set(hostId, false)
                 // Collect the lease information and store it in the cache.
@@ -173,7 +177,16 @@ export class HostTabComponent implements OnInit {
             (err) => {
                 // Finished searching the leases.
                 this._leasesSearchStatus.set(hostId, false)
-                console.info(err)
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                this.msgService.add({
+                    severity: 'error',
+                    summary: 'Searching leases for the host erred',
+                    detail: 'Leases search by host id ' + hostId + ' erred: ' + msg,
+                    life: 10000,
+                })
             }
         )
     }

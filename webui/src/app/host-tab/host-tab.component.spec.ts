@@ -8,7 +8,7 @@ import { FieldsetModule } from 'primeng/fieldset'
 import { MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 
-import { of } from 'rxjs'
+import { of, throwError } from 'rxjs'
 
 import { DHCPService } from '../backend'
 import { HostTabComponent } from './host-tab.component'
@@ -17,6 +17,7 @@ describe('HostTabComponent', () => {
     let component: HostTabComponent
     let fixture: ComponentFixture<HostTabComponent>
     let dhcpApi: DHCPService
+    let msgService: MessageService
 
     beforeEach(async(() => {
         TestBed.configureTestingModule({
@@ -30,6 +31,7 @@ describe('HostTabComponent', () => {
         fixture = TestBed.createComponent(HostTabComponent)
         component = fixture.componentInstance
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
+        msgService = fixture.debugElement.injector.get(MessageService)
         fixture.detectChanges()
     })
 
@@ -140,6 +142,18 @@ describe('HostTabComponent', () => {
         const titleSpan = fixture.debugElement.query(By.css('#tab-title-span'))
         expect(titleSpan).toBeTruthy()
         expect(titleSpan.nativeElement.innerText).toBe('[2] Global host')
+    })
+
+    it('should handle error while fetching host information', () => {
+        const fakeLeases: any = {}
+        spyOn(dhcpApi, 'getLeases').and.returnValue(throwError({ status: 404 }))
+        spyOn(msgService, 'add')
+        const host = {
+            id: 1,
+        }
+        component.host = host
+        expect(dhcpApi.getLeases).toHaveBeenCalled()
+        expect(msgService.add).toHaveBeenCalled()
     })
 
     it('should display lease information', () => {
