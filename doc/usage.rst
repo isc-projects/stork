@@ -336,14 +336,13 @@ whether the filtering text is ``1b:bd:43`` or ``1bbd43``.
 Host Reservation Usage Status
 -----------------------------
 
-Click on the selected host reservation in the host reservation list.
-It will open a new tab presenting the host reservation details. The
-opened tab also comprises the information about the reserved addresses
-and delegated prefixes usage. Stork needs to query Kea servers to gather
-the lease information for each address and prefix in the selected
-reservation. It may take several seconds or longer before this
-information is available. To refresh the lease information, click
-on the `Leases` button at the bottom of the tab.
+Clicking on a selected host in the host reservations list will open a new tab
+presenting host details. The tab also comprises the information about the
+reserved addresses and delegated prefixes usage. Stork needs to query Kea
+servers to gather the lease information for each address and prefix in the
+selected reservation. It may take several seconds or longer before this
+information is available. The lease information can be refreshed using the
+`Leases` button at the bottom of the tab.
 
 The usage status is shown next to each IP address and delegated prefix.
 Possible statuses and their meanings are listed in the table below.
