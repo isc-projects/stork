@@ -123,7 +123,7 @@ def test_pkg_upgrade_agent_token(distro_agent, distro_server):
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
-    # get machine that automaticaly registered in the server and authorize it
+    # get machine that automatically registered in the server and authorize it
     m = _get_machines_and_authorize_them(server)[0]
     assert m['address'] == agent.mgmt_ip
 
@@ -209,7 +209,7 @@ def test_add_kea_with_many_subnets(agent, server):
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
-    # get machine that automaticaly registered in the server and authorize it
+    # get machine that automatically registered in the server and authorize it
     m = _get_machines_and_authorize_them(server)[0]
     assert m['address'] == agent.mgmt_ip
 
@@ -303,7 +303,7 @@ def test_change_kea_ca_access_point(agent, server):
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
-    # get machine that automaticaly registered in the server and authorize it
+    # get machine that automatically registered in the server and authorize it
     m = _get_machines_and_authorize_them(server)[0]
     assert m['address'] == agent.mgmt_ip
 
@@ -472,7 +472,7 @@ def test_get_kea_stats(agent_kea, agent_old_kea, server):
     assert r.json()['login'] == 'admin'
 
     banner("AUTHORIZE MACHINES")
-    # get machines (kea and old_kea) that automaticaly registered in the server and authorize them
+    # get machines (kea and old_kea) that automatically registered in the server and authorize them
     machines = _get_machines_and_authorize_them(server, 2)
     m_new = None
     m_old = None
@@ -572,7 +572,7 @@ def test_bind9_versions(agent, server, bind_version):
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
 
-    # get machine that automaticaly registered in the server and authorize it
+    # get machine that automatically registered in the server and authorize it
     m = _get_machines_and_authorize_them(server)[0]
 
     # check machine state
