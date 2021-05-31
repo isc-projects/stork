@@ -2018,8 +2018,8 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	require.Equal(t, configDhcp6, okRsp.Payload)
 }
 
-// Test that GetDaemonConfig returns HTTP Not Found status for Kea daemon withot
-// assigned configuration.
+// Test that GetDaemonConfig returns HTTP Not Found status for Kea daemon
+// without assigned configuration.
 func TestGetDaemonConfigForKeaDaemonWithoutAssignedConfiguration(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

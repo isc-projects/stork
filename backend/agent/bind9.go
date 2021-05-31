@@ -41,7 +41,7 @@ func (ba *Bind9App) GetBaseApp() *BaseApp {
 }
 
 // Detect allowed logs provided by BIND 9.
-// TODO: currently it is not implemeneted and not used,
+// TODO: currently it is not implemented and not used,
 // it returns always empty list and no error.
 func (ba *Bind9App) DetectAllowedLogs() ([]string, error) {
 	return nil, nil

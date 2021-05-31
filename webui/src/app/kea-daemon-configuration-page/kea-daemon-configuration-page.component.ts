@@ -57,7 +57,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
     /**
      * Component lifecycle hook invoked upon the component initialization.
      *
-     * It subscribes for neccessary data, i.e. friendly names and daemon configuration JSON.
+     * It subscribes for necessary data, i.e. friendly names and daemon configuration JSON.
      *
      * The app friendly name is fetched for the specified app ID query parameter. If the app
      * with the specified ID does not exist or the ID is invalid, a placeholder for app name
@@ -134,7 +134,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
 
                 this._daemonId = daemonId
 
-                // Ignore App ID if it is incorrect. It is not neccessary to display
+                // Ignore App ID if it is incorrect. It is not necessary to display
                 // the configuration tree. It is merely used in breadcrumbs.
                 if (Number.isFinite(appId)) {
                     this.changeAppId.next(appId)

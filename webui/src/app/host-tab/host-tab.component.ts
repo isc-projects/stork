@@ -365,7 +365,7 @@ export class HostTabComponent implements OnInit {
     }
 
     /**
-     * Returns the leatest expiration time from the leases held in the
+     * Returns the latest expiration time from the leases held in the
      * cache for the particular IP address or delegated prefix.
      *
      * @param leaseInfo lease information for a reserved IP address or

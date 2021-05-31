@@ -6,7 +6,7 @@
     @media all and (max-width: 400px)
         margin-left: 0.5em
     // Fixed char size font
-    font-family: monospace, Courier New, Courier 
+    font-family: monospace, Courier New, Courier
     // Fixed-size font is very dense. Increase line height for better look.
     line-height: 1.5
 
@@ -31,21 +31,21 @@
             text-decoration: underline
 
     .tree-level__value--object
-        @extend %arround-quotes
+        @extend %around-quotes
         // Specify brackets around object
         quotes: "{" "}"
         // Font color
         color: blue
 
     .tree-level__value--array
-        @extend %arround-quotes
+        @extend %around-quotes
         // Specify brackets around array
         quotes: "[" "]"
         // Font color
         color: blue
 
     .tree-level__value--string
-        @extend %arround-quotes
+        @extend %around-quotes
         // Font color
         color: magenta
 
@@ -113,13 +113,13 @@
         >summary
             // Reset cursor for non-collapsible nodes
             cursor: auto
-    
 
-// When node is openned the its hidden indicator is hiden. 
+
+// When the node is opened, its collapse mark is hidden.
 details[open]
     >summary
         >.tree-level__value--collapse
-            // Hide collapse mark when openned
+            // Hide collapse mark when opened.
             visibility: hidden
 
 
@@ -137,10 +137,10 @@ details[open]
 
 %hover_highlight
     &:hover
-        // Highlight row. 
+        // Highlight row.
         background-color: rgba(88, 88, 88, 0.2)
 
-%arround-quotes
+%around-quotes
     &::before
         // Add "quotes" before value. Default is string quote specific to user locale
         content: open-quote

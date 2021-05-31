@@ -1082,7 +1082,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.Len(t, leases, 1)
 }
 
-// Test that a search for declied leases returns empty result when
+// Test that a search for declined leases returns empty result when
 // none of the servers uses lease_cmds hooks library.
 func TestFindDeclinedLeasesNoLeaseCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

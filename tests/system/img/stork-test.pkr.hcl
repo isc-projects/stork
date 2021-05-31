@@ -50,7 +50,7 @@ build {
       "sudo apt-get update",
       "sudo DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get -y --no-install-recommends -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' --quiet=2 install docker-ce docker-ce-cli containerd.io",
 
-      # allow loging using root account, this is used by gitlab libvirt custom runner which expects root with vagrant password
+      # allow login using root account, this is used by gitlab libvirt custom runner which expects root with vagrant password
       "sudo bash -c 'echo -e \"vagrant\\nvagrant\" | passwd root'",
       "sudo sed -ie 's/.*PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config",
 
