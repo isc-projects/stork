@@ -1,3 +1,9 @@
+* 148 [func] godfryd
+
+    Added including Grafana dashboard JSON files to RPM
+    and deb packages.
+    (Gitlab #544)
+
 * 147 [func] godfryd
 
     Added system tests for collecting statistics from
