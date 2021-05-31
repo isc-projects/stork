@@ -1,3 +1,9 @@
+* 147 [func] godfryd
+
+    Added system tests for collecting statistics from
+    various versions of Kea app.
+    (Gitlab #439)
+
 * 146 [func] marcin
 
     Added new tab displaying selected host reservation's details.
@@ -33,9 +39,8 @@
 
 * 141 [func] godfryd
 
-    Updated Stork demo to expose new features: leases search,
-    Kea database backends and files locations.
-    (Gitlab #542)
+    Fixed and improved detecting various versions of BIND 9.
+    (Gitlab #474)
 
 Stork 0.17.0 released on 2021-05-07.
 

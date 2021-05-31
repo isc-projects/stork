@@ -39,7 +39,7 @@ def _get_machines(server, authorized=None, expected_items=None):
 
 
 def _get_machines_and_authorize_them(server, expected_items=1):
-    # get machine that automaticaly registered in the server and authorize it
+    # get machine that automatically registered in the server and authorize it
     machines = _get_machines(server, authorized=None, expected_items=expected_items)
     machines2 = []
     for m in machines:
@@ -450,10 +450,12 @@ def run_perfdhcp(src_cntr, dest_ip_addr):
         raise Exception('perfdhcp erred: %s' % str(result))
 
 
-# TODO: the test is disabled for now because it does not work on GitLab CI because whole network inside LXD
-# is IPv6 but it is needed to be IPv4
 @pytest.mark.parametrize("agent_kea, agent_old_kea, server", [('ubuntu/20.04', 'ubuntu/18.04', 'centos/7')])
 def test_get_kea_stats(agent_kea, agent_old_kea, server):
+    """Check if collecting stats from various Kea versions works.
+       DHCPv4 traffic is send to old Kea, then to new kea
+       and then it is checked if Stork Server has collected
+       stats about the traffic."""
     elems = [(agent_kea, KEA_LATEST, agent_old_kea.mgmt_ip),
              (agent_old_kea, KEA_1_6, agent_kea.mgmt_ip)]
     for idx, (a, ver, relay_addr) in enumerate(elems):
@@ -508,7 +510,7 @@ def test_get_kea_stats(agent_kea, agent_old_kea, server):
     # send DHCP traffic to Kea apps
     banner("SEND DHCP TRAFFIC TO KEA APPS")
 
-    # send DHCP traffic to old kea - TODO here is a problem
+    # send DHCP traffic to old kea
     agent_kea.run('systemctl stop isc-kea-dhcp4-server')
     run_perfdhcp(agent_kea, agent_old_kea.mgmt_ip)
     agent_kea.run('systemctl start isc-kea-dhcp4-server')
@@ -550,6 +552,7 @@ def test_get_kea_stats(agent_kea, agent_old_kea, server):
                 sn_with_addrs += 1
     assert sn_with_addrs == 2
 
+
 @pytest.mark.parametrize("agent, server, bind_version", [('centos/7', 'ubuntu/18.04', None),
                                                          ('centos/7', 'ubuntu/18.04', '9.11'),
                                                          ('centos/7', 'ubuntu/18.04', '9.16'),
@@ -570,7 +573,7 @@ def test_bind9_versions(agent, server, bind_version):
     assert r.json()['login'] == 'admin'
 
     # get machine that automaticaly registered in the server and authorize it
-    m = _get_machine_and_authorize_it(server, agent)
+    m = _get_machines_and_authorize_them(server)[0]
 
     # check machine state
     m = _get_machine_state(server, m['id'])
@@ -580,6 +583,7 @@ def test_bind9_versions(agent, server, bind_version):
         assert bind_version in m['apps'][0]['version']
     assert len(m['apps'][0]['accessPoints']) == 2
     assert m['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'
+
 
 @pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/7')])
 def test_get_host_leases(agent, server):
@@ -612,7 +616,7 @@ def test_get_host_leases(agent, server):
     assert r.json()['login'] == 'admin'
 
     # Approve agent registration.
-    m = _get_machine_and_authorize_it(server, agent)
+    _get_machines_and_authorize_them(server)
 
     # Find the host reservation for which we will be checking the
     # leases status.

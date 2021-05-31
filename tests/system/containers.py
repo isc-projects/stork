@@ -315,7 +315,7 @@ class Container:
 
     def prepare_system_common(self):
         if self.pkg_format == 'deb':
-            self.run('apt-get update')
+            self.run('apt-get update', attempts=3, sleep_time_after_attempt=3)
             self.set_locale()
             self.install_pkgs("curl less net-tools")
         else:
@@ -383,9 +383,11 @@ class StorkServerContainer(Container):
         self.upload(pkg_path, '/root/isc-stork-server.%s' % self.pkg_format)
 
         if self.pkg_format == 'deb':
-            self.run('apt install -y -o Dpkg::Options::=--force-confold --allow-downgrades /root/isc-stork-server.deb', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
+            self.run('apt install -y -o Dpkg::Options::=--force-confold --allow-downgrades /root/isc-stork-server.deb',
+                     {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'},
+                     attempts=3, sleep_time_after_attempt=3)
         else:
-            self.run('yum install -y /root/isc-stork-server.rpm')
+            self.run('yum install -y /root/isc-stork-server.rpm', attempts=3, sleep_time_after_attempt=3)
 
 
     def prepare_stork_server(self, pkg_ver=None):
@@ -475,7 +477,7 @@ class StorkAgentContainer(Container):
         repo = 'kea-' + kea_version[:3].replace('.', '-')
         self.setup_cloudsmith_repo(repo)
         if self.pkg_format == 'deb':
-            self.run("apt-get update")
+            self.run("apt-get update", attempts=3, sleep_time_after_attempt=3)
             if service_name == 'default':
                 pkgs = " isc-kea-dhcp4-server={kea_version} isc-kea-ctrl-agent={kea_version} isc-kea-common={kea_version} isc-kea-admin={kea_version}"
             elif 'dhcp6' in service_name:
@@ -530,7 +532,7 @@ class StorkAgentContainer(Container):
                 ver = res[1].strip()
                 self.install_pkgs('bind9=%s' % ver)
             else:
-                self.run('apt update')
+                self.run('apt update', attempts=3, sleep_time_after_attempt=3)
                 self.install_pkgs('bind9')
                 if self.distro_ver == '18.04':
                     srv_name = 'bind9'
@@ -628,9 +630,11 @@ class StorkAgentContainer(Container):
         self.upload(pkg_path, '/root/isc-stork-agent.%s' % self.pkg_format)
 
         if self.pkg_format == 'deb':
-            self.run('apt install -y -o Dpkg::Options::=--force-confold --allow-downgrades /root/isc-stork-agent.deb', {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'})
+            self.run('apt install -y -o Dpkg::Options::=--force-confold --allow-downgrades /root/isc-stork-agent.deb',
+                     {'DEBIAN_FRONTEND': 'noninteractive', 'TERM': 'linux'},
+                     attempts=3, sleep_time_after_attempt=3)
         else:
-            self.run('yum install -y /root/isc-stork-agent.rpm')
+            self.run('yum install -y /root/isc-stork-agent.rpm', attempts=3, sleep_time_after_attempt=3)
 
     def prepare_stork_agent(self, pkg_ver=None, server_ip=None, server_token=None):
         if pkg_ver == 'cloudsmith':
