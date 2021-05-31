@@ -1,3 +1,5 @@
+Stork 0.18.0 released on 2021-06-02.
+
 * 148 [func] godfryd
 
     Added including Grafana dashboard JSON files to RPM
