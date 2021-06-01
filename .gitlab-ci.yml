@@ -161,6 +161,7 @@ debs_and_rpms:
 
 system_testing:
   stage: test
+  allow_failure: true
   rules:
     - when: on_success
   image: stork-tests-ubuntu-20.04-x86_64
