@@ -248,7 +248,7 @@ describe('JsonTreeComponent', () => {
         expect(component.hasPaginateChildren()).toBeFalse()
 
         fixture.detectChanges()
-        const paginator = fixture.debugElement.query(By.css('.ui-paginator'))
+        const paginator = fixture.debugElement.query(By.css('.p-paginator'))
         expect(paginator).toBeNull()
     })
 
@@ -258,7 +258,7 @@ describe('JsonTreeComponent', () => {
         expect(component.hasPaginateChildren()).toBeTrue()
 
         fixture.detectChanges()
-        const paginator = fixture.debugElement.query(By.css('.ui-paginator'))
+        const paginator = fixture.debugElement.query(By.css('.p-paginator'))
         expect(paginator).not.toBeNull()
     })
 
@@ -281,8 +281,8 @@ describe('JsonTreeComponent', () => {
         component.value = items
 
         fixture.detectChanges()
-        const paginator = fixture.debugElement.query(By.css('.ui-paginator'))
-        const pages = paginator.queryAll(By.css('.ui-paginator-page'))
+        const paginator = fixture.debugElement.query(By.css('.p-paginator'))
+        const pages = paginator.queryAll(By.css('.p-paginator-page'))
         expect(pages.length).toBeGreaterThan(1)
         const page = pages[pages.length - 1]
         const pageElement = page.nativeElement as HTMLElement
@@ -301,7 +301,7 @@ describe('JsonTreeComponent', () => {
         fixture.detectChanges()
 
         const pressEnterHandler = spyOn(component, 'onEnterJumpToPage').and.callThrough()
-        const jumpInput = fixture.debugElement.query(By.css('.ui-paginator__jump-to-page'))
+        const jumpInput = fixture.debugElement.query(By.css('.p-paginator__jump-to-page'))
         const jumpInputElement = jumpInput.nativeElement as HTMLInputElement
         expect(jumpInputElement.tagName).toBe('INPUT')
         // Human input - index starts from 1

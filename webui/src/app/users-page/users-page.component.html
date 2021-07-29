@@ -14,16 +14,11 @@
 <p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
     <ng-template pTemplate="item" let-item let-i="index">
         <div style="display: flex; justify-content: space-between">
-            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em"></div>
-            <div class="ui-menuitem-text">
+            <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
+            <div class="p-menuitem-text">
                 <b>{{ item.label }}</b>
             </div>
-            <div
-                class="ui-menuitem-icon pi pi-times"
-                style="font-size: 1.3rem"
-                (click)="closeTab($event, i)"
-                *ngIf="i !== 0"
-            ></div>
+            <div class="pi pi-times" style="margin: -2px 0 0 8px" (click)="closeTab($event, i)" *ngIf="i !== 0"></div>
         </div>
     </ng-template>
 </p-tabMenu>
@@ -86,7 +81,7 @@
     </p-table>
 </div>
 
-<div *ngIf="existingUserTab" class="ui-widget">
+<div *ngIf="existingUserTab" class="p-component">
     <div style="display: flex; margin: 10px">
         <div style="min-width: 600px">
             <div class="p-grid p-align-center" style="margin: 10px 0px">
@@ -143,14 +138,14 @@
                             ></button>
                         </div>
                     </div>
-                    <div class="ui-grid-col-10"></div>
+                    <div class="p-col-10"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div *ngIf="newUserTab || editedUserTab" class="ui-widget">
+<div *ngIf="newUserTab || editedUserTab" class="p-component">
     <div style="display: flex; margin: 10px">
         <div class="p-grid">
             <div class="p-col-3">
@@ -297,6 +292,7 @@
                                             [options]="userGroups"
                                             formControlName="usergroup"
                                             id="usergroup"
+                                            [style]="{ width: '14em' }"
                                         ></p-dropdown>
                                     </div>
                                     <div class="p-col-12">

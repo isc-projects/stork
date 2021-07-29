@@ -233,6 +233,8 @@ export class AppComponent implements OnInit {
             } else {
                 menuItem['visible'] = false
             }
+            // force refresh of top menu in UI
+            this.menuItems = [...this.menuItems]
 
             // Only get the stats and settings when the user is logged in.
             if (this.auth.currentUserValue) {
@@ -256,6 +258,9 @@ export class AppComponent implements OnInit {
                     } else {
                         bind9AppsMenuItem['visible'] = false
                     }
+
+                    // force refresh of top menu in UI
+                    this.menuItems = [...this.menuItems]
                 })
 
                 // If Grafana url is not empty, we need to make
@@ -272,6 +277,9 @@ export class AppComponent implements OnInit {
                     } else {
                         grafanaMenuItem['visible'] = false
                     }
+
+                    // force refresh of top menu in UI
+                    this.menuItems = [...this.menuItems]
                 })
             }
         })

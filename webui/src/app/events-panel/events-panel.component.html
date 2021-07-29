@@ -2,17 +2,14 @@
     <table class="events-table">
         <ng-container *ngFor="let ev of events.items; index as i">
             <tr [class.odd-row]="i % 2 === 0">
-                <td
-                    *ngIf="ev.level === undefined || ev.level === 0"
-                    style="font-size: 1.5em; color: #9db2d3; width: 1em"
-                >
-                    <i class="pi pi-info-circle"></i>
+                <td *ngIf="ev.level === undefined || ev.level === 0" style="color: #9db2d3; width: 1em">
+                    <i class="pi pi-info-circle" style="font-size: 1.2rem"></i>
                 </td>
-                <td *ngIf="ev.level === 1" style="font-size: 1.5em; color: orange; width: 1em">
-                    <i class="pi pi-exclamation-triangle"></i>
+                <td *ngIf="ev.level === 1" style="color: orange; width: 1em">
+                    <i class="pi pi-exclamation-triangle" style="font-size: 1.2rem"></i>
                 </td>
-                <td *ngIf="ev.level === 2" style="font-size: 1.5em; color: red; width: 1em">
-                    <i class="pi pi-exclamation-circle"></i>
+                <td *ngIf="ev.level === 2" style="color: red; width: 1em">
+                    <i class="pi pi-exclamation-circle" style="font-size: 1.2rem"></i>
                 </td>
                 <td style="width: 6em">{{ ev.createdAt | localtime }}</td>
                 <td>
@@ -56,16 +53,11 @@
 <div *ngIf="ui === 'table'">
     <!-- filter bar -->
     <div style="margin: 10px 0; display: flex; flex-wrap: wrap">
-        <div style="width: 18em">
+        <div style="width: 20em">
             <p-selectButton [options]="levels" [(ngModel)]="filter.level" (onChange)="refreshEvents(null)">
                 <ng-template let-item>
-                    <div style="padding: 0.5em 1em">
-                        <i
-                            [ngClass]="item.icon"
-                            style="vertical-align: text-top; margin-right: 6px; font-size: 1.4em"
-                        ></i>
-                        <span>{{ item.label }}</span>
-                    </div>
+                    <i [ngClass]="item.icon" style="margin-right: 6px; font-size: 1.2em"></i>
+                    <span>{{ item.label }}</span>
                 </ng-template>
             </p-selectButton>
         </div>
@@ -81,6 +73,7 @@
                     placeholder="any"
                     showClear="true"
                     tooltip="Show events related to selected machine"
+                    [style]="{ width: '12em' }"
                     (onChange)="onMachineSelect($event)"
                 ></p-dropdown>
             </div>
@@ -97,6 +90,7 @@
                     placeholder="any"
                     showClear="true"
                     tooltip="Show events related to selected app type"
+                    [style]="{ width: '10em' }"
                     (onChange)="onAppTypeSelect($event)"
                 ></p-dropdown>
             </div>
@@ -113,6 +107,7 @@
                     placeholder="any"
                     showClear="true"
                     tooltip="Show events related to selected daemon type"
+                    [style]="{ width: '10em' }"
                     (onChange)="onDaemonTypeSelect($event)"
                 ></p-dropdown>
             </div>
@@ -129,6 +124,7 @@
                     placeholder="any"
                     showClear="true"
                     tooltip="Show events related to selected user"
+                    [style]="{ width: '10em' }"
                     (onChange)="onUserSelect($event)"
                 ></p-dropdown>
             </div>
@@ -158,17 +154,14 @@
         </ng-template>
         <ng-template pTemplate="body" let-ev>
             <tr>
-                <td
-                    *ngIf="ev.level === undefined || ev.level === 0"
-                    style="font-size: 1.5em; color: #9db2d3; width: 2em"
-                >
-                    <i class="pi pi-info-circle"></i>
+                <td *ngIf="ev.level === undefined || ev.level === 0" style="color: #9db2d3; width: 2em">
+                    <i class="pi pi-info-circle" style="font-size: 1.2rem"></i>
                 </td>
-                <td *ngIf="ev.level === 1" style="font-size: 1.5em; color: orange; width: 2em">
-                    <i class="pi pi-exclamation-triangle"></i>
+                <td *ngIf="ev.level === 1" style="color: orange; width: 2em">
+                    <i class="pi pi-exclamation-triangle" style="font-size: 1.2rem"></i>
                 </td>
-                <td *ngIf="ev.level === 2" style="font-size: 1.5em; color: red; width: 2em">
-                    <i class="pi pi-exclamation-circle"></i>
+                <td *ngIf="ev.level === 2" style="color: red; width: 2em">
+                    <i class="pi pi-exclamation-circle" style="font-size: 1.2rem"></i>
                 </td>
 
                 <td style="width: 11em">{{ ev.createdAt | localtime }}</td>

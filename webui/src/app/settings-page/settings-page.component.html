@@ -94,30 +94,34 @@
 
     <!-- right panel with link to machines page -->
     <div class="p-col-4" style="padding: 30px 0 0 20px">
-        <div class="ui-message ui-widget ui-corner-all ui-message-info" style="background-color: #dae7f2">
-            <span class="ui-message-icon pi pi-info-circle"></span>
-            To add or remove machines go to <a routerLink="/machines/all">machines page</a>.
-        </div>
+        <p-messages severity="info">
+            <ng-template pTemplate>
+                <span class="pi pi-info-circle p-message-icon"></span>
+                To add or remove machines go to <a routerLink="/machines/all">machines page</a>.
+            </ng-template>
+        </p-messages>
 
-        <div
-            id="intervals-config-msg"
-            class="ui-message ui-widget ui-corner-all ui-message-info"
-            style="margin-top: 20px; background-color: #dae7f2"
-        >
-            <p style="margin-top: 0">
-                <span class="ui-message-icon pi pi-info-circle"></span>
-                Using the settings in the Intervals section it is possible to configure the intervals at which the Stork
-                server fetches various types of information from the monitored machines and applications. Each
-                configured value designates a time period between completion of the previous attempt to fetch some type
-                of information from the machines and the beginning of the next attempt to fetch new information.
-            </p>
-            <p style="margin-bottom: 0">
-                For example, if the Kea Hosts Puller Interval is set to 10 seconds and it takes 5 seconds to pull the
-                hosts information, the time period between the beginnings of the two consecutive attempts to pull the
-                hosts information will be equal to 15 seconds. The pull time varies between deployments and depends on
-                the amount of information pulled, network congestion and other factors. The setting specified here
-                guarantees that there is a constant idle time between any two attempts.
-            </p>
-        </div>
+        <p-messages severity="info">
+            <ng-template pTemplate>
+                <span class="pi pi-info-circle p-message-icon"></span>
+                <div>
+                    <p>
+                        Using the settings in the Intervals section it is possible to configure the intervals at which
+                        the Stork server fetches various types of information from the monitored machines and
+                        applications. Each configured value designates a time period between completion of the previous
+                        attempt to fetch some type of information from the machines and the beginning of the next
+                        attempt to fetch new information.
+                    </p>
+                    <p>
+                        For example, if the Kea Hosts Puller Interval is set to 10 seconds and it takes 5 seconds to
+                        pull the hosts information, the time period between the beginnings of the two consecutive
+                        attempts to pull the hosts information will be equal to 15 seconds. The pull time varies between
+                        deployments and depends on the amount of information pulled, network congestion and other
+                        factors. The setting specified here guarantees that there is a constant idle time between any
+                        two attempts.
+                    </p>
+                </div>
+            </ng-template>
+        </p-messages>
     </div>
 </div>

@@ -2,15 +2,15 @@
     <a
         pTooltip="{{ daemonStatusIconTooltip(d) }}"
         [ngStyle]="{ color: daemonStatusIconColor(d) }"
-        style="white-space: nowrap"
+        style="white-space: nowrap; margin: 0 0.5rem 0 0"
         routerLink="/apps/{{ app.type }}/{{ app.id }}"
         [queryParams]="{ daemon: d.name }"
     >
         <i
             class="pi {{ daemonStatusIconName(d) }}"
             [ngStyle]="{
-                'font-size': '1.5em',
-                'vertical-align': d.active ? 'text-bottom' : 'text-top'
+                'font-size': '0.9rem',
+                'padding-right': '0.25rem'
             }"
         ></i
         >{{ d.niceName }}

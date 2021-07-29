@@ -10,13 +10,13 @@
     >
     </app-rename-app-dialog>
     <div class="p-col-12" style="display: flex; justify-content: space-between">
-        <div style="font-size: 1.8em; font-weight: bold; margin-left: 10px; color: #007ad9">
+        <div style="font-size: 1.7em; font-weight: bold; color: #007ad9">
             <i class="fa fa-server" style="padding-right: 10px"></i> {{ appTab.app.name }}
             <i
                 *ngIf="!showRenameDialogClicked"
                 class="pi pi-pencil"
                 id="rename-app-icon"
-                style="vertical-align: text-top; margin-left: 15px; color: #aaa; cursor: pointer"
+                style="vertical-align: text-top; margin-left: 0.25em; color: #aaa; cursor: pointer"
                 (click)="showRenameAppDialog()"
             ></i>
             <p-progressSpinner

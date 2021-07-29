@@ -3,17 +3,29 @@
   background-color: #005B9F
   border-width: 0px
 
-:host ::ng-deep .stork-menubar .ui-menuitem-link
+:host ::ng-deep .stork-menubar.p-menubar
+  padding: 0
+
+:host ::ng-deep .stork-menubar.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-link
   color: white
+  &:hover
+    color: black
 
-:host ::ng-deep .stork-menubar .ui-menuitem-link .ui-menuitem-text
-  color: white
+:host ::ng-deep .stork-menubar.p-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-menuitem-link
+    color: black
 
-:host ::ng-deep .stork-menubar .ui-submenu .ui-menuitem-link .ui-menuitem-text
-  color: black
+:host ::ng-deep .stork-menubar.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-link .p-menuitem-text
+  color: inherit
+  &:hover
+    color: inherit
+
+:host ::ng-deep .stork-menubar.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-link .p-submenu-icon
+  color: inherit
+  &:hover
+    color: inherit
 
 
-@keyframes ui-progress-spinner-color
+@keyframes p-progress-spinner-color
     0%
         stroke: #fff
     100%
@@ -25,14 +37,30 @@
   left: 44px !important
 
 // make it wider
-::ng-deep .ui-tooltip.stork-version-tooltip
+::ng-deep .p-tooltip.stork-version-tooltip
   max-width: 600px
 
 // hide arrow
-::ng-deep .stork-version-tooltip .ui-tooltip-arrow
+::ng-deep .stork-version-tooltip .p-tooltip-arrow
   display: none
 
 // set nice look of stork version tooltip
-::ng-deep body .ui-tooltip.stork-version-tooltip .ui-tooltip-text
+::ng-deep body .p-tooltip.stork-version-tooltip .p-tooltip-text
   background-color: #c6c6c6
   color: #000
+
+
+// logo styling
+.logo
+  margin-right: 30px
+  &:hover
+    text-decoration: none
+
+.logo img
+  padding: 2px 0 0 6px
+
+.logo span
+  font-family: 'Mansalva', cursive
+  font-size: 2.3rem
+  color: white
+  vertical-align: super

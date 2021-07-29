@@ -3,7 +3,7 @@ require 'rake'
 
 # Tool Versions
 NODE_VER = '12.16.2'
-SWAGGER_CODEGEN_VER = '2.4.17'
+OPENAPI_GENERATOR_VER = '5.2.0'
 GOSWAGGER_VER = 'v0.23.0'
 GOLANGCILINT_VER = '1.33.0'
 GO_VER = '1.15.5'
@@ -52,7 +52,7 @@ GOLANGCILINT_URL = "https://github.com/golangci/golangci-lint/releases/download/
 GO_URL = "https://dl.google.com/go/go#{GO_VER}.#{GO_SUFFIX}.tar.gz"
 PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v#{PROTOC_VER}/protoc-#{PROTOC_VER}-#{PROTOC_ZIP_SUFFIX}.zip"
 PROTOC_GEN_GO_URL = 'github.com/golang/protobuf/protoc-gen-go'
-SWAGGER_CODEGEN_URL = "https://oss.sonatype.org/content/repositories/releases/io/swagger/swagger-codegen-cli/#{SWAGGER_CODEGEN_VER}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
+OPENAPI_GENERATOR_URL = "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/#{OPENAPI_GENERATOR_VER}/openapi-generator-cli-#{OPENAPI_GENERATOR_VER}.jar"
 NODE_URL = "https://nodejs.org/dist/v#{NODE_VER}/node-v#{NODE_VER}-#{NODE_SUFFIX}.tar.xz"
 MOCKERY_URL = 'github.com/vektra/mockery/.../@v1.0.0'
 MOCKGEN_URL = 'github.com/golang/mock/mockgen'
@@ -61,7 +61,7 @@ RICHGO_URL = 'github.com/kyoh86/richgo'
 # Tools and Other Paths
 TOOLS_DIR = File.expand_path('tools')
 NPX = "#{TOOLS_DIR}/node-v#{NODE_VER}-#{NODE_SUFFIX}/bin/npx"
-SWAGGER_CODEGEN = "#{TOOLS_DIR}/swagger-codegen-cli-#{SWAGGER_CODEGEN_VER}.jar"
+OPENAPI_GENERATOR = "#{TOOLS_DIR}/swagger-codegen-cli-#{OPENAPI_GENERATOR_VER}.jar"
 GOSWAGGER_DIR = "#{TOOLS_DIR}/#{GOSWAGGER_VER}"
 GOSWAGGER = "#{GOSWAGGER_DIR}/#{GOSWAGGER_BIN}"
 NG = File.expand_path('webui/node_modules/.bin/ng')
@@ -537,15 +537,16 @@ end
 
 ### Web UI Tasks #########################
 
-desc 'Generate client part of REST API using swagger_codegen based on swagger.yml'
-task :gen_client => [SWAGGER_CODEGEN, SWAGGER_FILE] do
+desc 'Generate client part of REST API using openapi generator based on swagger.yml'
+task :gen_client => [OPENAPI_GENERATOR, SWAGGER_FILE] do
   Dir.chdir('webui') do
-    sh "java -jar #{SWAGGER_CODEGEN} generate -l typescript-angular -i #{SWAGGER_FILE} -o src/app/backend --additional-properties snapshot=true,ngVersion=8.2.8"
+    sh "java -jar #{OPENAPI_GENERATOR} generate  -g typescript-angular -i #{SWAGGER_FILE} -o src/app/backend --additional-properties snapshot=true,ngVersion=10.1.5,modelPropertyNaming=camelCase"
+
   end
 end
 
-file SWAGGER_CODEGEN => TOOLS_DIR do
-  sh "#{WGET} #{SWAGGER_CODEGEN_URL} -O #{SWAGGER_CODEGEN}"
+file OPENAPI_GENERATOR => TOOLS_DIR do
+  sh "#{WGET} #{OPENAPI_GENERATOR_URL} -O #{OPENAPI_GENERATOR}"
 end
 
 file NPX => TOOLS_DIR do
@@ -673,7 +674,7 @@ end
 
 desc 'Build container with Stork Agent and Kea DHCPv4 server'
 task :build_kea_container do
-  sh 'docker-compose build agent-kea'
+  sh 'docker-compose build agent-kea agent-kea-mysql'
 end
 
 desc 'Run container with Stork Agent and Kea and mount current Agent binary'
@@ -681,7 +682,7 @@ task :run_kea_container do
   at_exit {
     sh 'docker-compose down'
   }
-  sh 'docker-compose up agent-kea'
+  sh 'docker-compose up --no-deps agent-kea agent-kea-mysql'
 end
 
 desc 'Build container with Stork Agent and Kea DHCPv6 server'
@@ -1057,7 +1058,7 @@ task :clean do
 end
 
 desc 'Download all dependencies'
-task :prepare_env => [GO, PROTOC, PROTOC_GEN_GO, GOSWAGGER, GOLANGCILINT, SWAGGER_CODEGEN, NPX] do
+task :prepare_env => [GO, PROTOC, PROTOC_GEN_GO, GOSWAGGER, GOLANGCILINT, OPENAPI_GENERATOR, NPX] do
   Dir.chdir('backend') do
     sh "#{GO} mod download"
   end

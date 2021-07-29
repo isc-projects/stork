@@ -55,6 +55,7 @@
                 [options]="dhcpVersions"
                 id="protocol-dropdown-menu"
                 [(ngModel)]="queryParams.dhcpVersion"
+                [style]="{ width: '10em' }"
                 (onChange)="filterByDhcpVersion()"
             ></p-dropdown>
         </div>
@@ -129,7 +130,7 @@
                                 display: inline-block;
                                 border-radius: 4px;
                                 background-color: #ddd;
-                                padding: 0 4px;
+                                padding: 3px 4px 0 4px;
                                 margin: 0 4px 2px 0;
                             "
                         >

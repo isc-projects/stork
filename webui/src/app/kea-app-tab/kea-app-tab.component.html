@@ -10,13 +10,13 @@
     >
     </app-rename-app-dialog>
     <div class="p-col-12" style="display: flex; justify-content: space-between">
-        <div style="font-size: 1.8em; font-weight: bold; margin-left: 10px; color: #007ad9">
+        <div style="font-size: 1.7em; font-weight: bold; color: #007ad9">
             <i class="fa fa-server" style="padding-right: 10px"></i> {{ appTab.app.name }}
             <i
                 *ngIf="!showRenameDialogClicked"
                 class="pi pi-pencil"
                 id="rename-app-icon"
-                style="vertical-align: text-top; margin-left: 15px; color: #aaa; cursor: pointer"
+                style="vertical-align: text-top; margin-left: 0.25em; color: #aaa; cursor: pointer"
                 (click)="showRenameAppDialog()"
             ></i>
             <p-progressSpinner
@@ -51,10 +51,7 @@
             >
                 <ng-template pTemplate="header">
                     <div>
-                        <span
-                            class="pi {{ daemonStatusIconName(daemon) }}"
-                            style="font-size: 1.6em; vertical-align: bottom; font-weight: bold"
-                        ></span>
+                        <span class="pi {{ daemonStatusIconName(daemon) }}" style="font-weight: bold"></span>
                         <span style="margin-right: 0.5em; font-weight: bold">
                             {{ daemon.niceName }}
                         </span>
@@ -62,22 +59,21 @@
                 </ng-template>
 
                 <ng-template pTemplate="content">
-                    <div style="background: #d9d9d9; padding: 10px; width: 100%">
-                        <span style="display: inline-block; margin-right: 30px; padding: 0.4em 0">
+                    <div style="background: #d9d9d9; width: 100%; padding: 4px; display: flex; align-items: center">
+                        <div style="margin-right: 8px">
                             <p-inputSwitch
                                 [ngModel]="daemon.monitored"
                                 (onChange)="changeMonitored(daemon)"
-                                [style]="{ 'vertical-align': 'middle', 'margin-right': '8px' }"
                             ></p-inputSwitch>
-                            <span>Monitoring</span>
-                        </span>
+                        </div>
+                        <div style="margin-right: 30px">Monitoring</div>
                         <button
                             *ngIf="daemon.name === 'dhcp4' || daemon.name === 'dhcp6'"
                             routerLink="/dhcp/hosts"
                             [queryParams]="{ appId: appTab.app.id }"
                             label="Host Reservations"
                             icon="fa fa-laptop"
-                            class="ui-button-secondary"
+                            class="p-button-secondary"
                             type="button"
                             pButton
                             style="margin-right: 16px"
@@ -89,7 +85,7 @@
                             label="Subnets"
                             icon="fa fa-project-diagram"
                             type="button"
-                            class="ui-button-secondary"
+                            class="p-button-secondary"
                             pButton
                             style="margin-right: 16px"
                         ></button>
@@ -99,7 +95,7 @@
                             [queryParams]="{ appId: appTab.app.id }"
                             label="Shared Networks"
                             icon="fa fa-network-wired"
-                            class="ui-button-secondary"
+                            class="p-button-secondary"
                             type="button"
                             style="margin-right: 16px"
                             pButton
@@ -108,7 +104,8 @@
                         <a
                             label="Raw configuration"
                             icon="fa fa-file-alt"
-                            class="ui-button-secondary"
+                            class="p-button-secondary"
+                            style="display: block"
                             type="button"
                             routerLink="/apps/kea/{{ appTab.app.id }}/daemons/{{ daemon.id }}/config"
                             pButton
@@ -146,7 +143,7 @@
                         <div class="p-col-7">
                             <!-- Overview -->
                             <div style="margin-bottom: 20px" [ngClass]="{ disabled: !daemon.active }">
-                                <h3 style="margin-bottom: 0">Overview</h3>
+                                <h3>Overview</h3>
                                 <div class="p-grid">
                                     <div class="p-col-6">
                                         <p-fieldset legend="Daemon Information">
@@ -190,7 +187,7 @@
                                 "
                                 style="margin-bottom: 20px"
                             >
-                                <h3 style="margin-bottom: 0">Data Storage</h3>
+                                <h3>Data Storage</h3>
                                 <div class="p-grid">
                                     <ng-container *ngIf="daemon.files">
                                         <div class="p-col-6">

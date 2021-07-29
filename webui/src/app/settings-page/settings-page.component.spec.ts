@@ -37,9 +37,4 @@ describe('SettingsPageComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy()
     })
-
-    it('has help information about intervals configuration', () => {
-        const intervalsConfigMsg = fixture.debugElement.query(By.css('#intervals-config-msg'))
-        expect(intervalsConfigMsg).toBeTruthy()
-    })
 })

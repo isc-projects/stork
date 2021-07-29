@@ -2,7 +2,7 @@
   padding: 5px 6px
   vertical-align: top
 
-:host ::ng-deep .ev-pager .ui-paginator
+:host ::ng-deep .ev-pager .p-paginator
   border: 0px
   margin-top: 5px
 
@@ -24,11 +24,7 @@
 
 
 
-// shift total records number in right paginator to center
-::ng-deep .events-panel .ui-paginator .ui-paginator-right-content
-  display: inline-block
-  float: unset
+// format right content in paginator
+::ng-deep .p-paginator .p-paginator-right-content
+  margin-left: 20px
   color: #848484
-  padding-left: 20px
-  line-height: 2.286em
-  height: 2.286em

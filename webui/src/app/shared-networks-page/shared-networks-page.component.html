@@ -17,6 +17,7 @@
                 placeholder="network or any other field"
                 (keyup)="keyupFilterText($event)"
             />
+
             <app-help-tip title="filtering" id="filtering-help-button">
                 <p>
                     Shared networks in the table below can be filtered by entering a text in the search box; the table
@@ -45,6 +46,7 @@
                 [options]="dhcpVersions"
                 id="protocol-dropdown-menu"
                 [(ngModel)]="queryParams.dhcpVersion"
+                [style]="{ width: '10em' }"
                 (onChange)="filterByDhcpVersion()"
             ></p-dropdown>
         </div>

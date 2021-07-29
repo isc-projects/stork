@@ -2,7 +2,7 @@
     <div class="p-col-4" *ngIf="appsStats.keaAppsTotal === 0 && appsStats.bind9AppsTotal === 0">
         <p-panel>
             <p-header>
-                <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
+                <span class="p-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
                     >Welcome to Stork!</span
                 >
             </p-header>
@@ -13,9 +13,10 @@
 
             <p style="padding-bottom: 1em">
                 The
-                <a target="blank" href="/assets/arm/index.html"
-                    >Stork documentation<i class="pi pi-external-link" style="font-size: 1em"></i
-                ></a>
+                <a target="blank" href="/assets/arm/index.html">
+                    Stork documentation
+                    <i class="pi pi-external-link" style="font-size: 0.7em"></i>
+                </a>
                 describes how to configure and use Stork.
             </p>
 
@@ -39,7 +40,7 @@
         <p-panel>
             <p-header>
                 <div style="display: flex; justify-content: space-between">
-                    <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
+                    <span class="p-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
                         >DHCP Dashboard</span
                     >
                     <p-button id="refresh-dhcp-button" icon="pi pi-refresh" (click)="refreshDhcpOverview()"></p-button>
@@ -313,7 +314,7 @@
                         <td>
                             <i
                                 class="pi pi-{{ haStateIcon(d) }}"
-                                style="font-size: 1.5em; vertical-align: text-bottom; color: {{
+                                style="font-size: 0.9rem; padding-right: 0.25rem; color: {{
                                     haStateIconColor(haStateIcon(d))
                                 }};"
                             ></i>
@@ -344,7 +345,7 @@
         <p-panel>
             <p-header>
                 <div style="display: flex; justify-content: space-between">
-                    <span class="ui-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
+                    <span class="p-panel-title" style="font-size: 1.8em; display: inline-block; margin-top: 2px"
                         >Events</span
                     >
                     <div>

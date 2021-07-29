@@ -56,7 +56,7 @@
             icon="pi pi-check"
             label="Change"
             id="change-machine-button"
-            class="ui-button-warning"
+            class="p-button-warning"
         ></button>
     </p-footer>
 </p-dialog>
@@ -127,7 +127,7 @@ sudo ./stork-install-agent.sh</textarea
             icon="pi pi-refresh"
             label="Regenerate"
             pTooltip="If the server token has been compromised then regenerate it."
-            class="ui-button-secondary"
+            class="p-button-secondary"
             (click)="regenerateServerToken()"
         ></button>
     </p>
@@ -153,13 +153,13 @@ sudo ./stork-install-agent.sh</textarea
 <p-tabMenu [model]="tabs" [activeItem]="activeItem" [style]="{ 'margin-top': '10px' }">
     <ng-template pTemplate="item" let-item let-i="index">
         <div style="display: flex; justify-content: space-between">
-            <div class="ui-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon" style="font-size: 2em"></div>
-            <div class="ui-menuitem-text">
+            <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
+            <div class="p-menuitem-text">
                 <b>{{ item.label }}</b>
             </div>
             <div
-                class="ui-menuitem-icon pi pi-times"
-                style="font-size: 1.3rem"
+                class="pi pi-times"
+                style="margin: -2px 0 0 8px"
                 (click)="closeTab($event, i)"
                 id="{{ 'close-machine-tab-' + item.label }}"
                 *ngIf="i !== 0"
@@ -262,12 +262,18 @@ sudo ./stork-install-agent.sh</textarea
                     <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #fff"></i>
                     No {{ showUnauthorized ? 'unauthorized' : 'authorized' }} machines found.
                     <div style="margin-top: 15px">
-                        <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
+                        <i
+                            class="pi pi-info-circle"
+                            style="font-size: 1.2em; vertical-align: middle; color: #007ad9"
+                        ></i>
                         Information about adding new machines to Stork server is available after clicking on the
                         <b>How to Install Agent to New Machine</b> button at the top.
                     </div>
                     <div *ngIf="!showUnauthorized && unauthorizedMachinesCount > 0">
-                        <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
+                        <i
+                            class="pi pi-info-circle"
+                            style="font-size: 1.2em; vertical-align: middle; color: #007ad9"
+                        ></i>
                         There {{ unauthorizedMachinesCount === 1 ? 'is' : 'are' }}
                         <b style="font-size: 1.2em; color: red">{{ unauthorizedMachinesCount }}</b>
                         unauthorized machine{{ unauthorizedMachinesCount > 1 ? 's' : '' }}. Check
@@ -275,7 +281,10 @@ sudo ./stork-install-agent.sh</textarea
                         above.
                     </div>
                     <div *ngIf="showUnauthorized">
-                        <i class="pi pi-info-circle" style="font-size: 2em; vertical-align: middle; color: #007ad9"></i>
+                        <i
+                            class="pi pi-info-circle"
+                            style="font-size: 1.2em; vertical-align: middle; color: #007ad9"
+                        ></i>
                         There are no machines waiting for the authorization. You can now select the <b>Authorized</b>
                         button above to see all authorized machines.
                     </div>
@@ -408,16 +417,16 @@ sudo ./stork-install-agent.sh</textarea
 </div>
 
 <!-- Single machine tab -->
-<div *ngIf="activeTabIdx != 0" class="ui-widget">
+<div *ngIf="activeTabIdx != 0" class="p-component">
     <div class="p-grid" style="width: 100%">
         <div class="p-col-12" style="display: flex">
-            <div style="font-size: 1.8em; font-weight: bold; margin-left: 10px; color: #007ad9">
+            <div style="font-size: 1.8em; font-weight: bold; margin: 10px 0 0 10px; color: #007ad9">
                 <i class="fa fa-server" style="padding-right: 10px"></i> {{ machineTab.machine.address
                 }}<span style="color: #007ad930">:{{ machineTab.machine.agentPort }}</span>
                 <i
                     class="pi pi-pencil"
                     id="edit-machine-icon"
-                    style="vertical-align: text-top; margin-left: 15px; color: #aaa; cursor: pointer"
+                    style="vertical-align: text-top; margin-left: 15px; color: #aaa; cursor: pointer; font-size: 1.2rem"
                     (click)="editAddress(machineTab)"
                 ></i>
             </div>

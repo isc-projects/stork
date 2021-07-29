@@ -221,6 +221,9 @@ export class MachinesPageComponent implements OnInit {
             const total = data.total || 0
             this.unauthorizedMachinesCount = total
             this.viewSelectionOptions[1].label = 'Unauthorized (' + total + ')'
+
+            // force refresh in UI
+            this.viewSelectionOptions = [...this.viewSelectionOptions]
         })
     }
 
@@ -242,6 +245,9 @@ export class MachinesPageComponent implements OnInit {
             if (this.showUnauthorized) {
                 this.unauthorizedMachinesCount = total
                 this.viewSelectionOptions[1].label = 'Unauthorized (' + total + ')'
+
+                // force refresh in UI
+                this.viewSelectionOptions = [...this.viewSelectionOptions]
             }
         })
         this.refreshUnauthorizedMachinesCount()
