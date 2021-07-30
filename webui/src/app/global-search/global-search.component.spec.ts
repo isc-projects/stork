@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { GlobalSearchComponent } from './global-search.component'
 import { SearchService } from '../backend/api/api'
@@ -9,13 +9,15 @@ describe('GlobalSearchComponent', () => {
     let component: GlobalSearchComponent
     let fixture: ComponentFixture<GlobalSearchComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            declarations: [GlobalSearchComponent],
-            providers: [SearchService],
-            imports: [HttpClientTestingModule],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [GlobalSearchComponent],
+                providers: [SearchService],
+                imports: [HttpClientTestingModule],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(GlobalSearchComponent)

@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { ProfilePageComponent } from './profile-page.component'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
@@ -12,24 +12,26 @@ describe('ProfilePageComponent', () => {
     let component: ProfilePageComponent
     let fixture: ComponentFixture<ProfilePageComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [
-                MessageService,
-                UsersService,
-                ServicesService,
-                { provide: Router, useValue: {} },
-                {
-                    provide: AuthService,
-                    useValue: {
-                        currentUser: of({}),
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                providers: [
+                    MessageService,
+                    UsersService,
+                    ServicesService,
+                    { provide: Router, useValue: {} },
+                    {
+                        provide: AuthService,
+                        useValue: {
+                            currentUser: of({}),
+                        },
                     },
-                },
-            ],
-            declarations: [ProfilePageComponent],
-            imports: [HttpClientTestingModule],
-        }).compileComponents()
-    }))
+                ],
+                declarations: [ProfilePageComponent],
+                imports: [HttpClientTestingModule],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(ProfilePageComponent)

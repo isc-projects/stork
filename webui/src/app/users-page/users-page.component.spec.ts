@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { UsersPageComponent } from './users-page.component'
 import { ActivatedRoute, Router } from '@angular/router'
@@ -18,28 +18,30 @@ describe('UsersPageComponent', () => {
     let component: UsersPageComponent
     let fixture: ComponentFixture<UsersPageComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            declarations: [UsersPageComponent],
-            providers: [
-                FormBuilder,
-                UsersService,
-                ServicesService,
-                MessageService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        paramMap: of(new MockParamMap()),
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [HttpClientTestingModule],
+                declarations: [UsersPageComponent],
+                providers: [
+                    FormBuilder,
+                    UsersService,
+                    ServicesService,
+                    MessageService,
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            paramMap: of(new MockParamMap()),
+                        },
                     },
-                },
-                {
-                    provide: Router,
-                    useValue: {},
-                },
-            ],
-        }).compileComponents()
-    }))
+                    {
+                        provide: Router,
+                        useValue: {},
+                    },
+                ],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(UsersPageComponent)

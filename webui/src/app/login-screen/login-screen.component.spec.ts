@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { LoginScreenComponent } from './login-screen.component'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
@@ -11,27 +11,29 @@ describe('LoginScreenComponent', () => {
     let component: LoginScreenComponent
     let fixture: ComponentFixture<LoginScreenComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [ReactiveFormsModule, FormsModule, RouterModule, HttpClientTestingModule],
-            declarations: [LoginScreenComponent],
-            providers: [
-                GeneralService,
-                UsersService,
-                MessageService,
-                {
-                    provide: Router,
-                    useValue: {},
-                },
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParams: {} },
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [ReactiveFormsModule, FormsModule, RouterModule, HttpClientTestingModule],
+                declarations: [LoginScreenComponent],
+                providers: [
+                    GeneralService,
+                    UsersService,
+                    MessageService,
+                    {
+                        provide: Router,
+                        useValue: {},
                     },
-                },
-            ],
-        }).compileComponents()
-    }))
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            snapshot: { queryParams: {} },
+                        },
+                    },
+                ],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(LoginScreenComponent)

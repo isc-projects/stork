@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { HostsPageComponent } from './hosts-page.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
@@ -29,28 +29,30 @@ describe('HostsPageComponent', () => {
     let paramMapSubject: BehaviorSubject<any>
     let paramMapSpy: any
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [DHCPService, MessageService],
-            imports: [
-                FormsModule,
-                TableModule,
-                HttpClientTestingModule,
-                RouterTestingModule.withRoutes([
-                    {
-                        path: 'dhcp/hosts',
-                        pathMatch: 'full',
-                        redirectTo: 'dhcp/hosts/all',
-                    },
-                    {
-                        path: 'dhcp/hosts/:id',
-                        component: HostsPageComponent,
-                    },
-                ]),
-            ],
-            declarations: [EntityLinkComponent, HostsPageComponent],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                providers: [DHCPService, MessageService],
+                imports: [
+                    FormsModule,
+                    TableModule,
+                    HttpClientTestingModule,
+                    RouterTestingModule.withRoutes([
+                        {
+                            path: 'dhcp/hosts',
+                            pathMatch: 'full',
+                            redirectTo: 'dhcp/hosts/all',
+                        },
+                        {
+                            path: 'dhcp/hosts/:id',
+                            component: HostsPageComponent,
+                        },
+                    ]),
+                ],
+                declarations: [EntityLinkComponent, HostsPageComponent],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HostsPageComponent)

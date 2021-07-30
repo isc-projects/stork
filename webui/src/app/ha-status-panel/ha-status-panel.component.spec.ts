@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 
 import { HaStatusPanelComponent } from './ha-status-panel.component'
@@ -61,11 +61,13 @@ describe('HaStatusPanelComponent', () => {
         expect(serverStateNative.textContent).toBe(text)
     }
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            declarations: [HaStatusPanelComponent],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [HaStatusPanelComponent],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HaStatusPanelComponent)

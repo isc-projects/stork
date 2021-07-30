@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { SimpleChange } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { By } from '@angular/platform-browser'
@@ -9,12 +9,14 @@ describe('RenameAppDialogComponent', () => {
     let component: RenameAppDialogComponent
     let fixture: ComponentFixture<RenameAppDialogComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [FormsModule],
-            declarations: [RenameAppDialogComponent],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [FormsModule],
+                declarations: [RenameAppDialogComponent],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(RenameAppDialogComponent)

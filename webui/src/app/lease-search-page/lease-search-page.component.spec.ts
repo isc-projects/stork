@@ -1,4 +1,4 @@
-import { async, fakeAsync, tick, ComponentFixture, TestBed } from '@angular/core/testing'
+import { fakeAsync, tick, ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ActivatedRoute, Router } from '@angular/router'
@@ -22,23 +22,25 @@ describe('LeaseSearchPageComponent', () => {
     let router: Router
     let route: ActivatedRoute
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [DHCPService, MessageService],
-            imports: [
-                FormsModule,
-                HttpClientTestingModule,
-                RouterTestingModule.withRoutes([
-                    {
-                        path: 'dhcp/leases',
-                        component: LeaseSearchPageComponent,
-                    },
-                ]),
-                TableModule,
-            ],
-            declarations: [LeaseSearchPageComponent, LocaltimePipe],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                providers: [DHCPService, MessageService],
+                imports: [
+                    FormsModule,
+                    HttpClientTestingModule,
+                    RouterTestingModule.withRoutes([
+                        {
+                            path: 'dhcp/leases',
+                            component: LeaseSearchPageComponent,
+                        },
+                    ]),
+                    TableModule,
+                ],
+                declarations: [LeaseSearchPageComponent, LocaltimePipe],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(LeaseSearchPageComponent)

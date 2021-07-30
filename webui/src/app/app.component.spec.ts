@@ -1,4 +1,4 @@
-import { TestBed, async } from '@angular/core/testing'
+import { TestBed, waitForAsync } from '@angular/core/testing'
 import { RouterTestingModule } from '@angular/router/testing'
 import { AppComponent } from './app.component'
 import { TooltipModule } from 'primeng/tooltip'
@@ -11,21 +11,23 @@ import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
 
 describe('AppComponent', () => {
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                RouterTestingModule.withRoutes([{ path: 'apps/bind9/all', component: AppComponent }]),
-                TooltipModule,
-                MenubarModule,
-                SplitButtonModule,
-                ProgressSpinnerModule,
-                ToastModule,
-                HttpClientTestingModule,
-            ],
-            declarations: [AppComponent],
-            providers: [GeneralService, UsersService, MessageService, ServicesService, SettingsService],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [
+                    RouterTestingModule.withRoutes([{ path: 'apps/bind9/all', component: AppComponent }]),
+                    TooltipModule,
+                    MenubarModule,
+                    SplitButtonModule,
+                    ProgressSpinnerModule,
+                    ToastModule,
+                    HttpClientTestingModule,
+                ],
+                declarations: [AppComponent],
+                providers: [GeneralService, UsersService, MessageService, ServicesService, SettingsService],
+            }).compileComponents()
+        })
+    )
 
     it('should create the app', () => {
         const fixture = TestBed.createComponent(AppComponent)

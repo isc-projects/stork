@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { SubnetsPageComponent } from './subnets-page.component'
 import { FormsModule } from '@angular/forms'
@@ -22,29 +22,38 @@ describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
     let fixture: ComponentFixture<SubnetsPageComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [
-                DHCPService,
-                UsersService,
-                MessageService,
-                SettingsService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParamMap: new MockParamMap() },
-                        queryParamMap: of(new MockParamMap()),
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                providers: [
+                    DHCPService,
+                    UsersService,
+                    MessageService,
+                    SettingsService,
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            snapshot: { queryParamMap: new MockParamMap() },
+                            queryParamMap: of(new MockParamMap()),
+                        },
                     },
-                },
-                {
-                    provide: Router,
-                    useValue: {},
-                },
-            ],
-            imports: [FormsModule, DropdownModule, TableModule, TooltipModule, RouterModule, HttpClientTestingModule],
-            declarations: [SubnetsPageComponent, SubnetBarComponent],
-        }).compileComponents()
-    }))
+                    {
+                        provide: Router,
+                        useValue: {},
+                    },
+                ],
+                imports: [
+                    FormsModule,
+                    DropdownModule,
+                    TableModule,
+                    TooltipModule,
+                    RouterModule,
+                    HttpClientTestingModule,
+                ],
+                declarations: [SubnetsPageComponent, SubnetBarComponent],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(SubnetsPageComponent)

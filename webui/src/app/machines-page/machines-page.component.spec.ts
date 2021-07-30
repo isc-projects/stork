@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
+import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'

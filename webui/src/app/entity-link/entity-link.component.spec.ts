@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { EntityLinkComponent } from './entity-link.component'
 import { RouterTestingModule } from '@angular/router/testing'
 import { By } from '@angular/platform-browser'
@@ -7,12 +7,14 @@ describe('EntityLinkComponent', () => {
     let component: EntityLinkComponent
     let fixture: ComponentFixture<EntityLinkComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
-            declarations: [EntityLinkComponent],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [RouterTestingModule],
+                declarations: [EntityLinkComponent],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(EntityLinkComponent)

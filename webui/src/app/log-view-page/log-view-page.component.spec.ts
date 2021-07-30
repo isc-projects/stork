@@ -1,5 +1,5 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { ActivatedRoute, convertToParamMap } from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { ServicesService } from '../backend'
@@ -10,21 +10,23 @@ describe('LogViewPageComponent', () => {
     let component: LogViewPageComponent
     let fixture: ComponentFixture<LogViewPageComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [
-                ServicesService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        paramMap: of(convertToParamMap({})),
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                providers: [
+                    ServicesService,
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            paramMap: of(convertToParamMap({})),
+                        },
                     },
-                },
-            ],
-            imports: [HttpClientTestingModule],
-            declarations: [LogViewPageComponent],
-        }).compileComponents()
-    }))
+                ],
+                imports: [HttpClientTestingModule],
+                declarations: [LogViewPageComponent],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(LogViewPageComponent)

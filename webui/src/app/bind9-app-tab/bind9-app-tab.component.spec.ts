@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { Bind9AppTabComponent } from './bind9-app-tab.component'
 import { RouterLink, Router, RouterModule, ActivatedRoute } from '@angular/router'
@@ -43,13 +43,15 @@ describe('Bind9AppTabComponent', () => {
     let servicesApi: ServicesService
     let serverData: ServerDataService
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [UsersService, ServicesService, MessageService, MockLocationStrategy],
-            imports: [HttpClientTestingModule, RouterModule, RouterTestingModule, TooltipModule, TabViewModule],
-            declarations: [Bind9AppTabComponent, LocaltimePipe],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                providers: [UsersService, ServicesService, MessageService, MockLocationStrategy],
+                imports: [HttpClientTestingModule, RouterModule, RouterTestingModule, TooltipModule, TabViewModule],
+                declarations: [Bind9AppTabComponent, LocaltimePipe],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(Bind9AppTabComponent)

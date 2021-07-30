@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { ActivatedRoute } from '@angular/router'
 
 import { EventsPageComponent } from './events-page.component'
@@ -8,20 +8,22 @@ describe('EventsPageComponent', () => {
     let component: EventsPageComponent
     let fixture: ComponentFixture<EventsPageComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [
-                EventsService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParams: {} },
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                providers: [
+                    EventsService,
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            snapshot: { queryParams: {} },
+                        },
                     },
-                },
-            ],
-            declarations: [EventsPageComponent],
-        }).compileComponents()
-    }))
+                ],
+                declarations: [EventsPageComponent],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(EventsPageComponent)

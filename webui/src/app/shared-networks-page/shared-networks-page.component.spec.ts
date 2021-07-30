@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { SharedNetworksPageComponent } from './shared-networks-page.component'
 import { FormsModule } from '@angular/forms'
@@ -21,26 +21,28 @@ describe('SharedNetworksPageComponent', () => {
     let component: SharedNetworksPageComponent
     let fixture: ComponentFixture<SharedNetworksPageComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [FormsModule, DropdownModule, TableModule, TooltipModule, HttpClientTestingModule],
-            declarations: [SharedNetworksPageComponent, SubnetBarComponent],
-            providers: [
-                {
-                    provide: Router,
-                    useValue: {},
-                },
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParamMap: new MockParamMap() },
-                        queryParamMap: of(new MockParamMap()),
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [FormsModule, DropdownModule, TableModule, TooltipModule, HttpClientTestingModule],
+                declarations: [SharedNetworksPageComponent, SubnetBarComponent],
+                providers: [
+                    {
+                        provide: Router,
+                        useValue: {},
                     },
-                },
-                DHCPService,
-            ],
-        }).compileComponents()
-    }))
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            snapshot: { queryParamMap: new MockParamMap() },
+                            queryParamMap: of(new MockParamMap()),
+                        },
+                    },
+                    DHCPService,
+                ],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(SharedNetworksPageComponent)

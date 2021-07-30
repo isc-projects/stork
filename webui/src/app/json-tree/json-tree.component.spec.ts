@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { PaginatorModule } from 'primeng/paginator'
 
@@ -8,12 +8,14 @@ describe('JsonTreeComponent', () => {
     let component: JsonTreeComponent
     let fixture: ComponentFixture<JsonTreeComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [PaginatorModule],
-            declarations: [JsonTreeComponent],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [PaginatorModule],
+                declarations: [JsonTreeComponent],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(JsonTreeComponent)

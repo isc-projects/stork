@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { DashboardComponent } from './dashboard.component'
 import { PanelModule } from 'primeng/panel'
@@ -13,28 +13,30 @@ describe('DashboardComponent', () => {
     let component: DashboardComponent
     let fixture: ComponentFixture<DashboardComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [PanelModule, ButtonModule, RouterModule, HttpClientTestingModule],
-            declarations: [DashboardComponent],
-            providers: [
-                ServicesService,
-                LocationStrategy,
-                DHCPService,
-                MessageService,
-                UsersService,
-                SettingsService,
-                {
-                    provide: Router,
-                    useValue: {},
-                },
-                {
-                    provide: ActivatedRoute,
-                    useValue: {},
-                },
-            ],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [PanelModule, ButtonModule, RouterModule, HttpClientTestingModule],
+                declarations: [DashboardComponent],
+                providers: [
+                    ServicesService,
+                    LocationStrategy,
+                    DHCPService,
+                    MessageService,
+                    UsersService,
+                    SettingsService,
+                    {
+                        provide: Router,
+                        useValue: {},
+                    },
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {},
+                    },
+                ],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DashboardComponent)

@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { ActivatedRoute, convertToParamMap, Router, RouterModule } from '@angular/router'
@@ -30,49 +30,51 @@ describe('KeaDaemonConfigurationPageComponent', () => {
     let fixture: ComponentFixture<KeaDaemonConfigurationPageComponent>
     let service: ServerDataService
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                PanelModule,
-                ButtonModule,
-                RouterModule,
-                HttpClientTestingModule,
-                OverlayPanelModule,
-                NoopAnimationsModule,
-                MessageModule,
-            ],
-            declarations: [
-                KeaDaemonConfigurationPageComponent,
-                JsonTreeComponent,
-                BreadcrumbsComponent,
-                HelpTipComponent,
-            ],
-            providers: [
-                ServicesService,
-                MessageService,
-                UsersService,
-                {
-                    provide: Router,
-                    useValue: {},
-                },
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: { queryParamMap: new MockParamMap() },
-                        queryParamMap: of(new MockParamMap()),
-                        paramMap: of(convertToParamMap({ appId: '1', daemonId: '2' })),
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [
+                    PanelModule,
+                    ButtonModule,
+                    RouterModule,
+                    HttpClientTestingModule,
+                    OverlayPanelModule,
+                    NoopAnimationsModule,
+                    MessageModule,
+                ],
+                declarations: [
+                    KeaDaemonConfigurationPageComponent,
+                    JsonTreeComponent,
+                    BreadcrumbsComponent,
+                    HelpTipComponent,
+                ],
+                providers: [
+                    ServicesService,
+                    MessageService,
+                    UsersService,
+                    {
+                        provide: Router,
+                        useValue: {},
                     },
-                },
-                {
-                    provide: AuthService,
-                    useValue: {
-                        currentUser: of({}),
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            snapshot: { queryParamMap: new MockParamMap() },
+                            queryParamMap: of(new MockParamMap()),
+                            paramMap: of(convertToParamMap({ appId: '1', daemonId: '2' })),
+                        },
                     },
-                },
-            ],
+                    {
+                        provide: AuthService,
+                        useValue: {
+                            currentUser: of({}),
+                        },
+                    },
+                ],
+            })
+            service = TestBed.inject(ServerDataService)
         })
-        service = TestBed.inject(ServerDataService)
-    }))
+    )
 
     beforeEach(() => {
         const fakeResponse: any = {

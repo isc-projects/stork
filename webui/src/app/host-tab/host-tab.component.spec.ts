@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { FormsModule } from '@angular/forms'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
@@ -19,13 +19,15 @@ describe('HostTabComponent', () => {
     let dhcpApi: DHCPService
     let msgService: MessageService
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [DHCPService, MessageService],
-            imports: [FieldsetModule, FormsModule, HttpClientTestingModule, NoopAnimationsModule, TableModule],
-            declarations: [HostTabComponent],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                providers: [DHCPService, MessageService],
+                imports: [FieldsetModule, FormsModule, HttpClientTestingModule, NoopAnimationsModule, TableModule],
+                declarations: [HostTabComponent],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HostTabComponent)

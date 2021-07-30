@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { SubnetBarComponent } from './subnet-bar.component'
 import { TooltipModule } from 'primeng/tooltip'
@@ -7,12 +7,14 @@ describe('SubnetBarComponent', () => {
     let component: SubnetBarComponent
     let fixture: ComponentFixture<SubnetBarComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [TooltipModule],
-            declarations: [SubnetBarComponent],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [TooltipModule],
+                declarations: [SubnetBarComponent],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(SubnetBarComponent)

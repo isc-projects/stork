@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { AppsPageComponent } from './apps-page.component'
 import { TabMenuModule } from 'primeng/tabmenu'
@@ -29,31 +29,33 @@ describe('AppsPageComponent', () => {
     let component: AppsPageComponent
     let fixture: ComponentFixture<AppsPageComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [ServicesService, MessageService],
-            imports: [
-                HttpClientTestingModule,
-                TabMenuModule,
-                MenuModule,
-                FormsModule,
-                TableModule,
-                TooltipModule,
-                TabViewModule,
-                PanelModule,
-                MessageModule,
-                RouterModule,
-                RouterTestingModule.withRoutes([{ path: 'apps/:appType/all', component: AppsPageComponent }]),
-            ],
-            declarations: [
-                AppsPageComponent,
-                Bind9AppTabComponent,
-                KeaAppTabComponent,
-                LocaltimePipe,
-                HaStatusComponent,
-            ],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                providers: [ServicesService, MessageService],
+                imports: [
+                    HttpClientTestingModule,
+                    TabMenuModule,
+                    MenuModule,
+                    FormsModule,
+                    TableModule,
+                    TooltipModule,
+                    TabViewModule,
+                    PanelModule,
+                    MessageModule,
+                    RouterModule,
+                    RouterTestingModule.withRoutes([{ path: 'apps/:appType/all', component: AppsPageComponent }]),
+                ],
+                declarations: [
+                    AppsPageComponent,
+                    Bind9AppTabComponent,
+                    KeaAppTabComponent,
+                    LocaltimePipe,
+                    HaStatusComponent,
+                ],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(AppsPageComponent)

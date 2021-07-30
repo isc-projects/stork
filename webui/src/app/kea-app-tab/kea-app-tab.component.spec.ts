@@ -1,4 +1,4 @@
-import { fakeAsync, tick, async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { fakeAsync, tick, ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { KeaAppTabComponent } from './kea-app-tab.component'
 import { RouterModule, Router, ActivatedRoute } from '@angular/router'
@@ -71,22 +71,24 @@ describe('KeaAppTabComponent', () => {
     let servicesApi: ServicesService
     let serverData: ServerDataService
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            providers: [UsersService, DHCPService, ServicesService, MessageService, MockLocationStrategy],
-            imports: [
-                RouterModule,
-                RouterTestingModule,
-                TableModule,
-                TabViewModule,
-                PanelModule,
-                TooltipModule,
-                MessageModule,
-                HttpClientTestingModule,
-            ],
-            declarations: [KeaAppTabComponent, HaStatusComponent, LocaltimePipe],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                providers: [UsersService, DHCPService, ServicesService, MessageService, MockLocationStrategy],
+                imports: [
+                    RouterModule,
+                    RouterTestingModule,
+                    TableModule,
+                    TabViewModule,
+                    PanelModule,
+                    TooltipModule,
+                    MessageModule,
+                    HttpClientTestingModule,
+                ],
+                declarations: [KeaAppTabComponent, HaStatusComponent, LocaltimePipe],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(KeaAppTabComponent)

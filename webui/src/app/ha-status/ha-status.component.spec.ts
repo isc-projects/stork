@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { HaStatusComponent } from './ha-status.component'
 import { PanelModule } from 'primeng/panel'
@@ -13,13 +13,15 @@ describe('HaStatusComponent', () => {
     let component: HaStatusComponent
     let fixture: ComponentFixture<HaStatusComponent>
 
-    beforeEach(async(() => {
-        TestBed.configureTestingModule({
-            imports: [PanelModule, TooltipModule, MessageModule, RouterModule, HttpClientTestingModule],
-            declarations: [HaStatusComponent, LocaltimePipe],
-            providers: [ServicesService],
-        }).compileComponents()
-    }))
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [PanelModule, TooltipModule, MessageModule, RouterModule, HttpClientTestingModule],
+                declarations: [HaStatusComponent, LocaltimePipe],
+                providers: [ServicesService],
+            }).compileComponents()
+        })
+    )
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HaStatusComponent)
