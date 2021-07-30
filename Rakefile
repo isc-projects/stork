@@ -565,7 +565,7 @@ end
 desc 'Build angular application'
 task :build_ui => [NG, :gen_client, :doc] do
   Dir.chdir('webui') do
-    sh 'npx ng build --prod'
+    sh 'npx ng build --configuration production'
   end
 end
 
