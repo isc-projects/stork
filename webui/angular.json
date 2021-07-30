@@ -22,7 +22,6 @@
                         "main": "src/main.ts",
                         "polyfills": "src/polyfills.ts",
                         "tsConfig": "tsconfig.app.json",
-                        "aot": true,
                         "assets": ["src/favicon.ico", "src/assets"],
                         "styles": [
                             "node_modules/primeicons/primeicons.css",
@@ -36,7 +35,13 @@
                         "scripts": [
                             "node_modules/swagger-ui-dist/swagger-ui-bundle.js",
                             "node_modules/swagger-ui-dist/swagger-ui-standalone-preset.js"
-                        ]
+                        ],
+                        "vendorChunk": true,
+                        "extractLicenses": false,
+                        "buildOptimizer": false,
+                        "sourceMap": true,
+                        "optimization": false,
+                        "namedChunks": true
                     },
                     "configurations": {
                         "production": {
@@ -66,7 +71,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "defaultConfiguration": ""
                 },
                 "serve": {
                     "builder": "@angular-devkit/build-angular:dev-server",
