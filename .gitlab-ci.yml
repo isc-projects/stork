@@ -255,10 +255,24 @@ deploy_demo:
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
   script:
+    ## build docker images ##
+
+    # build artifacts
     - rake build_all_in_container
+    # build container images with these artifacts
     - docker-compose -f docker-compose.yaml -f docker-compose-premium.yaml build --build-arg CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN
+    # push built images to docker registry
     - docker-compose -f docker-compose.yaml -f docker-compose-premium.yaml push
+
+    ## start deplyment ###
+
+    # shut down old demo with deep cleanup
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml down -v --remove-orphans
+    # force network cleanup and to make sure we have clean state do restart docker service
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker network prune -f
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org sudo systemctl restart docker
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker network prune -f
+    # copy files needed for deployment
     - scp -o StrictHostKeyChecking=no docker-compose.yaml jenkins@stork.lab.isc.org:~/deploy
     - scp -o StrictHostKeyChecking=no docker-compose-premium.yaml jenkins@stork.lab.isc.org:~/deploy
     - scp -o StrictHostKeyChecking=no docker/prometheus.yml jenkins@stork.lab.isc.org:~/deploy/docker/prometheus.yml
@@ -266,7 +280,9 @@ deploy_demo:
     - scp -o StrictHostKeyChecking=no docker/grafana/dashboards.yaml jenkins@stork.lab.isc.org:~/deploy/docker/grafana/dashboards.yaml
     - scp -o StrictHostKeyChecking=no docker/grafana/datasource.yaml jenkins@stork.lab.isc.org:~/deploy/docker/grafana/datasource.yaml
     - scp -o StrictHostKeyChecking=no docker/grafana/grafana.ini jenkins@stork.lab.isc.org:~/deploy/docker/grafana/grafana.ini
+    # pull just built docker images
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml pull
+    # and start demo in the background
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml up -d --no-build
 
 
