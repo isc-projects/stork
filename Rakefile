@@ -825,7 +825,7 @@ def run_build_pkg_in_docker(dkr_image, pkg_type, side)
   cmd +=      " && tar -C /tmp/build -zxvf /home/$USER/stork-#{TIMESTAMP}.tar.gz"
   cmd +=      " && cp /home/$USER/isc-stork-agent* /tmp/build"
   cmd +=      "  ; cd /tmp/build"
-  cmd +=      " && rake build_pkg pkg=#{pkg_type}_#{side} STORK_BUILD_TIMESTAMP=#{TIMESTAMP}"
+  cmd +=      " && rake build_pkg pkg=#{pkg_type}_#{side} STORK_BUILD_TIMESTAMP=#{TIMESTAMP} GOPATH=/tmp/build/go GOCACHE=/tmp/build/.cache/"
   cmd +=      " && mv isc-stork* /home/$USER"
   cmd +=      " && ls -al /home/$USER/"
   cmd +=      "\""
