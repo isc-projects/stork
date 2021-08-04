@@ -646,6 +646,14 @@ task :docker_down do
   sh "docker-compose #{DOCKER_COMPOSE_FILES} down"
 end
 
+desc 'Build and push demo images'
+task :build_and_push_demo_images => :build_all_in_container do
+  # build container images with built artifacts
+  sh "docker-compose #{DOCKER_COMPOSE_FILES} build #{DOCKER_COMPOSE_PREMIUM_OPTS}"
+  # push built images to docker registry
+  sh "docker-compose #{DOCKER_COMPOSE_FILES} push"
+end
+
 desc 'Build all in container'
 task :build_all_in_container do
   sh 'docker/gen-kea-config.py 7000 > docker/kea-dhcp4-many-subnets.conf'

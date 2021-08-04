@@ -255,14 +255,8 @@ deploy_demo:
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
   script:
-    ## build docker images ##
-
-    # build artifacts
-    - rake build_all_in_container
-    # build container images with these artifacts
-    - docker-compose -f docker-compose.yaml -f docker-compose-premium.yaml build --build-arg CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN
-    # push built images to docker registry
-    - docker-compose -f docker-compose.yaml -f docker-compose-premium.yaml push
+    ## build demo docker images ##
+    - rake build_and_push_demo_images cs_repo_access_token=$CLOUDSMITH_REPO_ACCESS_TOKEN
 
     ## start deplyment ###
 
