@@ -1,3 +1,8 @@
+* 149 [func] godfryd
+
+    Upgraded Angular and PrimeNG to version 12.x.
+    (Gitlab #405)
+
 Stork 0.18.0 released on 2021-06-02.
 
 * 148 [func] godfryd

@@ -7,6 +7,8 @@ import { FieldsetModule } from 'primeng/fieldset'
 import { MessageService } from 'primeng/api'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 
+import { MessagesModule } from 'primeng/messages'
+
 import { SettingsPageComponent } from './settings-page.component'
 import { SettingsService } from '../backend/api/api'
 
@@ -23,6 +25,7 @@ describe('SettingsPageComponent', () => {
                     BrowserAnimationsModule,
                     FieldsetModule,
                     HttpClientTestingModule,
+                    MessagesModule,
                 ],
                 declarations: [SettingsPageComponent],
                 providers: [SettingsService, MessageService],
@@ -38,5 +41,10 @@ describe('SettingsPageComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
+    })
+
+    it('has help information about intervals configuration', () => {
+        const intervalsConfigMsg = fixture.debugElement.query(By.css('#intervals-config-msg'))
+        expect(intervalsConfigMsg).toBeTruthy()
     })
 })

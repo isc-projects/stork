@@ -111,8 +111,7 @@ const routes: Routes = [
     },
     {
         path: 'users',
-        redirectTo: 'users/',
-        pathMatch: 'full',
+        component: UsersPageComponent,
         canActivate: [AuthGuard],
     },
     {
