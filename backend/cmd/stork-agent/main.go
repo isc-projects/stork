@@ -132,7 +132,7 @@ func setupApp() *cli.App {
 			},
 			// Prometheus Kea exporter settings
 			&cli.StringFlag{
-				Name:    "prometheus-kea-exporter-host",
+				Name:    "prometheus-kea-exporter-address",
 				Value:   "0.0.0.0",
 				Usage:   "the IP or hostname to listen on for incoming Prometheus connection",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS"},
@@ -151,7 +151,7 @@ func setupApp() *cli.App {
 			},
 			// Prometheus Bind 9 exporter settings
 			&cli.StringFlag{
-				Name:    "prometheus-bind9-exporter-host",
+				Name:    "prometheus-bind9-exporter-address",
 				Value:   "0.0.0.0",
 				Usage:   "the IP or hostname to listen on for incoming Prometheus connection",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS"},

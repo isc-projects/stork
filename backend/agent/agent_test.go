@@ -620,8 +620,8 @@ func checkOutput(output string, exp []string, reason string) bool {
 func getExpectedSwitches() []string {
 	return []string{
 		"-v", "--version", "--listen-prometheus-only", "--listen-stork-only",
-		"--host", "--port", "--prometheus-kea-exporter-host", "--prometheus-kea-exporter-port",
-		"--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-host",
+		"--host", "--port", "--prometheus-kea-exporter-address", "--prometheus-kea-exporter-port",
+		"--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-address",
 		"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval",
 	}
 }

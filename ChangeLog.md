@@ -1,3 +1,10 @@
+* 150 [bug] godfryd
+
+    Fixed reading STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS
+    and STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS environment
+    variables in Stork Agent.
+    (Gitlab #559)
+
 * 149 [func] godfryd
 
     Upgraded Angular and PrimeNG to version 12.x.

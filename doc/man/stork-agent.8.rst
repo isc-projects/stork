@@ -53,7 +53,7 @@ Equivalent environment variables are listed in square brackets, where applicable
 
 ``Prometheus Kea Exporter`` flags:
 
-``--prometheus-kea-exporter-host=``
+``--prometheus-kea-exporter-address=``
    the IP or hostname to listen on for incoming Prometheus connections. (default: 0.0.0.0)
    [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS]
 
@@ -67,7 +67,7 @@ Equivalent environment variables are listed in square brackets, where applicable
 
 ``Prometheus BIND 9 Exporter`` flags:
 
-``--prometheus-bind9-exporter-host=``
+``--prometheus-bind9-exporter-address=``
    the IP or hostname to listen on for incoming Prometheus connections. (default: 0.0.0.0)
    [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS]
 
