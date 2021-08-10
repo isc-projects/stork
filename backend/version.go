@@ -1,5 +1,5 @@
 package stork
 
-const Version = "0.18.0"
+const Version = "0.19.0"
 
 var BuildDate = "unset"

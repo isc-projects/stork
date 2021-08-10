@@ -1,3 +1,5 @@
+Stork 0.19.0 released on 2021-08-11.
+
 * 150 [bug] godfryd
 
     Fixed reading STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS
