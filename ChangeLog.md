@@ -1,3 +1,7 @@
+* 152 [build] marcin
+    MacOS building improved.
+    (Gitlab #490)
+
 * 151 [func] slawek
 
     Obfuscate sensitive Kea configuration parts displayed using
