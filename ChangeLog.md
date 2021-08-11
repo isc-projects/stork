@@ -1,3 +1,9 @@
+* 157 [func] godfryd, slawek
+
+    Added cert-import command to stork-tool. This allows
+    importing CA key and cert, and server key and cert.
+    (Gitlab #570)
+
 * 156 [build] marcin
     Running unit tests no longer requires specifying a password
     explicitly. Renamed database connection specific environment

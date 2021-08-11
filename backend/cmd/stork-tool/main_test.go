@@ -9,11 +9,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"isc.org/stork"
 	"isc.org/stork/server/certs"
 	dbtest "isc.org/stork/server/database/test"
-
-	"github.com/stretchr/testify/require"
+	"isc.org/stork/testutil"
 )
 
 // Aux function checks if a list of expected strings is present in the string.
@@ -36,6 +37,7 @@ func getExpectedMainFragments() []string {
 		"-h",
 		"--help",
 		"cert-export",
+		"cert-import",
 		"db-init",
 		"db-up",
 		"db-down",
@@ -89,7 +91,7 @@ func TestDbOptsHelp(t *testing.T) {
 		"STORK_DATABASE_",
 	}
 
-	cmds := []string{"db-init", "db-up", "db-down", "db-reset", "db-version", "db-set-version", "cert-export"}
+	cmds := []string{"db-init", "db-up", "db-down", "db-reset", "db-version", "db-set-version", "cert-export", "cert-import"}
 	for _, cmd := range cmds {
 		// Run the --help version and get its output.
 		toolCmd := exec.Command(ToolBin, cmd, "-h")
@@ -152,6 +154,33 @@ func TestRunCertExport(t *testing.T) {
 		"--db-host", dbOpts.Host,
 		"--db-port", strconv.Itoa(dbOpts.Port),
 		"-f", "srvtkn",
+	}
+	main()
+}
+
+// Check if cert-import can be invoked.
+func TestRunCertImport(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	db, gOpts, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	dbOpts := gOpts.BaseDatabaseSettings
+
+	_, err := certs.GenerateServerToken(db)
+	require.NoError(t, err)
+
+	srvTknFile := sb.Write("srv.tkn", "abc")
+
+	os.Args = []string{
+		"stork-tool", "cert-import",
+		"--db-name", dbOpts.DBName,
+		"--db-user", dbOpts.User,
+		"--db-password", dbOpts.Password,
+		"--db-host", dbOpts.Host,
+		"--db-port", strconv.Itoa(dbOpts.Port),
+		"-f", "srvtkn",
+		"-i", srvTknFile,
 	}
 	main()
 }

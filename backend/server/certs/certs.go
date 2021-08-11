@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net"
+	"os"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/pkg/errors"
@@ -223,6 +224,49 @@ func ExportSecret(db *pg.DB, object string, filename string) error {
 		log.Printf("%s saved to file: %s", objDisplayName, filename)
 	} else {
 		log.Printf("%s:\n%s", objDisplayName, string(content))
+	}
+
+	return nil
+}
+
+// Import a secret e.g. certificate or server token from stdin or from indicated file.
+func ImportSecret(db *pg.DB, object string, filename string) error {
+	var objDisplayName string
+	switch object {
+	case dbmodel.SecretCAKey:
+		objDisplayName = "CA key"
+	case dbmodel.SecretCACert:
+		objDisplayName = "CA cert"
+	case dbmodel.SecretServerKey:
+		objDisplayName = "server key"
+	case dbmodel.SecretServerCert:
+		objDisplayName = "server cert"
+	case dbmodel.SecretServerToken:
+		objDisplayName = "server token"
+	default:
+		return errors.Errorf("indicated unknown object '%s'", object)
+	}
+
+	var content []byte
+	var err error
+	if filename != "" {
+		content, err = ioutil.ReadFile(filename)
+		if err != nil {
+			return err
+		}
+		log.Printf("%s loaded from %s file, length %d", objDisplayName, filename, len(content))
+	} else {
+		log.Printf("reading %s from stdin", objDisplayName)
+		content, err = ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			return err
+		}
+		log.Printf("%s read from stdin, length %d", objDisplayName, len(content))
+	}
+
+	err = dbmodel.SetSecret(db, object, content)
+	if err != nil {
+		return errors.Wrapf(err, "problem with setting '%s' in database", objDisplayName)
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,6 +44,19 @@ func TestSandboxJoin(t *testing.T) {
 
 	// 2 files expected: ./a, ./b/c
 	require.EqualValues(t, 2, fileCount)
+}
+
+// Check if Sandbox Write works.
+func TestSandboxWrite(t *testing.T) {
+	sb := NewSandbox()
+	defer sb.Close()
+
+	fpath := sb.Write("abc", "def")
+	require.Contains(t, fpath, "abc")
+
+	content, err := ioutil.ReadFile(fpath)
+	require.NoError(t, err)
+	require.EqualValues(t, "def", content)
 }
 
 // Check if Sandbox JoinDir works.

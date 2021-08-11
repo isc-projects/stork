@@ -136,3 +136,53 @@ func TestExportSecret(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, serverToken, serverToken2)
 }
+
+// Check if ImportSecret correctly imports various keys and
+// certificates from a file to a database.
+func TestImportSecret(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	// check importing Server Cert
+	serverCertPEMFile := sb.Write("server-cert.pem", "abc")
+	err := ImportSecret(db, dbmodel.SecretServerCert, serverCertPEMFile)
+	require.NoError(t, err)
+	serverCertPEM, err := dbmodel.GetSecret(db, dbmodel.SecretServerCert)
+	require.NoError(t, err)
+	require.EqualValues(t, serverCertPEM, "abc")
+
+	// check importing Server Key
+	serverKeyPEMFile := sb.Write("server-key.pem", "def")
+	err = ImportSecret(db, dbmodel.SecretServerKey, serverKeyPEMFile)
+	require.NoError(t, err)
+	serverKeyPEM, err := dbmodel.GetSecret(db, dbmodel.SecretServerKey)
+	require.NoError(t, err)
+	require.EqualValues(t, "def", serverKeyPEM)
+
+	// check importing CA Cert
+	rootCertPEMFile := sb.Write("root-cert.pem", "ghi")
+	err = ImportSecret(db, dbmodel.SecretCACert, rootCertPEMFile)
+	require.NoError(t, err)
+	rootCertPEM, err := dbmodel.GetSecret(db, dbmodel.SecretCACert)
+	require.NoError(t, err)
+	require.EqualValues(t, "ghi", rootCertPEM)
+
+	// check importing CA Key
+	rootKeyPEMFile := sb.Write("root-key.pem", "jkl")
+	err = ImportSecret(db, dbmodel.SecretCAKey, rootKeyPEMFile)
+	require.NoError(t, err)
+	rootKeyPEM, err := dbmodel.GetSecret(db, dbmodel.SecretCAKey)
+	require.NoError(t, err)
+	require.EqualValues(t, "jkl", rootKeyPEM)
+
+	// check importing Server Token
+	serverTokenFile := sb.Write("server-token.txt", "mno")
+	err = ImportSecret(db, dbmodel.SecretServerToken, serverTokenFile)
+	require.NoError(t, err)
+	serverToken, err := dbmodel.GetSecret(db, dbmodel.SecretServerToken)
+	require.NoError(t, err)
+	require.EqualValues(t, "mno", serverToken)
+}

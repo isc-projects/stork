@@ -586,6 +586,7 @@ for the new registrations.
 The server token can be regenerated in the ``How to Install Agent on New Machine``
 dialog box available after entering the ``Services -> Machines`` page.
 
+
 Agent Setup Summary
 ~~~~~~~~~~~~~~~~~~~
 
@@ -610,6 +611,22 @@ and exported using ``Stork Tool``, e.g:
 
 For more details check ``stork-tool`` manual: :ref:`man-stork-tool`.
 
+
+Using External Keys and Certificates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is possible to use external TLS keys and certificates. They can be imported
+to ``Stork Server`` using ``stork-tool``:
+
+.. code-block:: console
+
+    $ stork-tool cert-export --db-url postgresql://user:pass@localhost/dbname -f srvcert -o srv-cert.pem
+
+Both CA key and CA certificate have to be changed at the same time as
+CA certificate depends on CA key. If they are changed then server key
+and certificate also need to be changed.
+
+For more details check ``stork-tool`` manual: :ref:`man-stork-tool`.
 
 Upgrading
 ---------

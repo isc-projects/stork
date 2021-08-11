@@ -77,3 +77,15 @@ func (sb *Sandbox) JoinDir(name string) string {
 
 	return fpath
 }
+
+// Create a file and write provided contect to it.
+func (sb *Sandbox) Write(name string, content string) string {
+	fpath := sb.Join(name)
+
+	err := ioutil.WriteFile(fpath, []byte(content), 0600)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return fpath
+}

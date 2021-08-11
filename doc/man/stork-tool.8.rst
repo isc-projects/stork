@@ -73,6 +73,38 @@ Export server certificate to a file:
     INFO[2021-05-25 12:36:46]       connection.go:59    checking connection to database
     INFO[2021-05-25 12:36:46]            certs.go:221   server cert saved to file: srv-cert.pem
 
+- ``cert-import``     Import certificate or other secret data
+
+Options specific to ``cert-import`` command:
+
+``-f``, ``--object=``
+   the object to dump, it can be one of ``cakey``, ``cacert``, ``srvkey``, ``srvcert``, ``srvtkn``.
+   [$STORK_TOOL_CERT_OBJECT]
+
+``-i``, ``--file=``
+   the file location from which the object will be loaded. [$STORK_TOOL_CERT_FILE]
+
+
+Examples
+........
+
+Read server token from stdin:
+
+.. code-block:: console
+
+    $ echo abc | stork-tool cert-import --db-url postgresql://user:pass@localhost/dbname -f srvtkn
+    INFO[2021-08-11 13:31:55]       connection.go:59    checking connection to database
+    INFO[2021-08-11 13:31:55]            certs.go:259   reading server token from stdin
+    INFO[2021-08-11 13:31:55]            certs.go:261   server token read from stdin, length 4
+
+Import server certificate from a file:
+
+.. code-block:: console
+
+    $ stork-tool cert-import --db-url postgresql://user:pass@localhost/dbname -f srvcert -i srv.cert
+    INFO[2021-08-11 15:22:28]       connection.go:59    checking connection to database
+    INFO[2021-08-11 15:22:28]            certs.go:257   server cert loaded from srv.cert file, length 14
+
 Database Migration
 ~~~~~~~~~~~~~~~~~~
 

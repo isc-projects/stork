@@ -116,6 +116,16 @@ func runCertExport(settings *cli.Context) {
 	}
 }
 
+// Execute cert import command.
+func runCertImport(settings *cli.Context) {
+	db := getDBConn(settings)
+
+	err := certs.ImportSecret(db, settings.String("object"), settings.String("file"))
+	if err != nil {
+		log.Fatalf("unable to import: %s", err)
+	}
+}
+
 // Prepare urfave cli app with all flags and commands defined.
 func setupApp() *cli.App {
 	cli.VersionPrinter = func(c *cli.Context) {
@@ -186,8 +196,23 @@ func setupApp() *cli.App {
 		},
 		&cli.StringFlag{
 			Name:    "file",
-			Usage:   "The file location where the object should be saved.",
+			Usage:   "The file location where the object should be saved. If not provided then object is printed to stdout.",
 			Aliases: []string{"o"},
+			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
+		})
+
+	certImportFlags := append(dbFlags,
+		&cli.StringFlag{
+			Name:     "object",
+			Usage:    "The object to dump, it can be one of 'cakey', 'cacert', 'srvkey', 'srvcert', 'srvtkn'.",
+			Required: true,
+			Aliases:  []string{"f"},
+			EnvVars:  []string{"STORK_TOOL_CERT_OBJECT"},
+		},
+		&cli.StringFlag{
+			Name:    "file",
+			Usage:   "The file location where the object should be saved. If not provided then object is read from stdin.",
+			Aliases: []string{"i"},
 			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
 		})
 
@@ -289,6 +314,18 @@ func setupApp() *cli.App {
 				Category:    "Certificates Management",
 				Action: func(c *cli.Context) error {
 					runCertExport(c)
+					return nil
+				},
+			},
+			{
+				Name:        "cert-import",
+				Usage:       "Import certificate or other secret data",
+				UsageText:   "stork-tool cert-import [options for db connecion] [-f object] [-i filename]",
+				Description: ``,
+				Flags:       certImportFlags,
+				Category:    "Certificates Management",
+				Action: func(c *cli.Context) error {
+					runCertImport(c)
 					return nil
 				},
 			},
