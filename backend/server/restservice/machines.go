@@ -1473,8 +1473,41 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 		return rsp
 	}
 
+	_, dbUser := r.SessionManager.Logged(ctx)
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+		hideSensitiveData((*map[string]interface{})(dbDaemon.KeaDaemon.Config))
+	}
+
 	rsp := services.NewGetDaemonConfigOK().WithPayload(dbDaemon.KeaDaemon.Config)
 	return rsp
+}
+
+// Hide any sensitive data from object. Data is sensitive if its key is equal "password" or "secret".
+func hideSensitiveData(obj *map[string]interface{}) {
+	for entryKey, entryValue := range *obj {
+		// Check it is is a sensitive data.
+		if entryKey == "password" || entryKey == "secret" {
+			(*obj)[entryKey] = nil
+			return
+		}
+		// Check if it is an array.
+		array, ok := entryValue.([]interface{})
+		if ok {
+			for _, arrayItemValue := range array {
+				// Check if it is a subobject (or array).
+				subobject, ok := arrayItemValue.(map[string]interface{})
+				if ok {
+					hideSensitiveData(&subobject)
+				}
+			}
+			return
+		}
+		// Check if it is a subobject (but not array).
+		subobject, ok := entryValue.(map[string]interface{})
+		if ok {
+			hideSensitiveData(&subobject)
+		}
+	}
 }
 
 // Rename an app. The request must contain two parameters: app ID and new app name. The app
