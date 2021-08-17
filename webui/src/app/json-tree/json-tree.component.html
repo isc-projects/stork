@@ -44,12 +44,12 @@
     <ng-container *ngIf="isRootLevel(); then children"></ng-container>
     <!-- Expandable node -->
     <details
-        class="tree-level tree-level--node"
+        class="tree-level tree-level__expandable-container tree-level--node"
         *ngIf="!isRootLevel()"
         [ngClass]="{ 'tree-level--corrupted': isCorrupted(), 'tree-level--non-collapsible': forceOpenThisLevel }"
         [open]="isInitiallyOpened() ? 'open' : null"
     >
-        <summary (click)="(!forceOpenThisLevel)">
+        <summary (click)="(!forceOpenThisLevel)" class="tree-level__expandable-head">
             <span class="tree-level__key">{{ key }}</span>
             <span
                 class="tree-level__value tree-level__value--collapse"

@@ -104,20 +104,20 @@
 
 
 .tree-level--node
-    summary
+    .tree-level__expandable-head
         @extend %hover_highlight
         // Change pointer to inform user that it is clickable
         cursor: pointer
 
     &.tree-level--non-collapsible
-        >summary
+        >.tree-level__expandable-head
             // Reset cursor for non-collapsible nodes
             cursor: auto
 
 
 // When the node is opened, its collapse mark is hidden.
-details[open]
-    >summary
+.tree-level__expandable-container[open]
+    >.tree-level__expandable-head
         >.tree-level__value--collapse
             // Hide collapse mark when opened.
             visibility: hidden
