@@ -134,4 +134,7 @@ todo_include_todos = True
 
 # custom setup hook
 def setup(app):
-    app.add_stylesheet('stork.css')
+    if hasattr(app, 'add_css_file'):
+        app.add_css_file('stork.css')
+    else:
+        app.add_stylesheet('stork.css')
