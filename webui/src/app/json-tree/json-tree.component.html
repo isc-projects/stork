@@ -2,8 +2,11 @@
 
 <ng-template #leaf>
     <div class="tree-level tree-level--leaf" [ngClass]="{ 'tree-level--corrupted': isCorrupted() }">
+        <!-- Key, all nodes without top -->
         <span *ngIf="!isRootLevel()" class="tree-level__key">{{ key }}</span>
+        <!-- Standard value rendering -->
         <span
+            *ngIf="!hasCustomValueTemplate()"
             class="tree-level__value"
             [ngClass]="{
                 'tree-level__value--string': isString(),
@@ -24,6 +27,14 @@
                 <span (click)="onClickResetRecursionLevel()">Load more...</span>
             </ng-container>
             <!-- Object is rendered as [Object object] normal way, then omit -->
+        </span>
+        <!-- Custom value rendering -->
+        <span *ngIf="hasCustomValueTemplate()" class="tree-level__value">
+            <ng-template
+                [ngTemplateOutlet]="customValueTemplates[key]"
+                [ngTemplateOutletContext]="{ key: key, value: value }"
+            >
+            </ng-template>
         </span>
     </div>
 </ng-template>
@@ -63,6 +74,7 @@
             [autoExpandMaxNodeCount]="autoExpandMaxNodeCount"
             [forceOpenThisLevel]="hasSingleChild()"
             [recursionLevel]="recursionLevel + 1"
+            [customValueTemplates]="customValueTemplates"
         >
             <ng-container *ngIf="last && areChildrenLoading()">
                 {{ onFinishRenderChildren() }}

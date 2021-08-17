@@ -1,5 +1,5 @@
 import { KeyValue } from '@angular/common'
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
+import { Component, OnInit, Input, Output, EventEmitter, TemplateRef } from '@angular/core'
 
 /**
  * Typing for page changed event of PrimeNG navigation.
@@ -149,6 +149,13 @@ export class JsonTreeComponent {
     get recursionLevel() {
         return this._recursionLevel
     }
+
+    /**
+     * Allow render custom content (for example links, labels or glyphs) instead of
+     * standard value for specific keys. Custom content is applied only for the leafs.
+     */
+    @Input()
+    customValueTemplates: { [key: string]: TemplateRef<{ key: string; value: string }> } = {}
 
     /** First child index to display using pagination. */
     get childStart() {
@@ -526,6 +533,15 @@ export class JsonTreeComponent {
      */
     isRecursionLevelReached(): boolean {
         return this._recursionLevel >= this._maxRecursionLevel
+    }
+
+    /**
+     * Specifies when the value of leaf should be rendered using custom template
+     *
+     * @returns true if the value should be rendered using custom template
+     */
+    hasCustomValueTemplate(): boolean {
+        return this.key in this.customValueTemplates
     }
 
     /**
