@@ -98,7 +98,6 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         )
 
         spyOn(userService, 'createSession').and.returnValues(
-            //of({} as any)
             of({
                 id: 1,
                 login: 'foo',
@@ -217,7 +216,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         const valueElements = jsonElement.queryAll(By.css('.tree-level--leaf .tree-level__value'))
         expect(valueElements.length).toBe(2)
 
-        for (let valueElement of valueElements) {
+        for (const valueElement of valueElements) {
             const valueNativeElement = valueElement.nativeElement as HTMLElement
             // We extract only visible text - the secret should be hidden
             const content = valueNativeElement.innerText
@@ -255,7 +254,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         const keyElements = jsonElement.queryAll(By.css('.tree-level--leaf .tree-level__key'))
         expect(keyElements.length).toBe(2)
 
-        for (let keyElement of keyElements) {
+        for (const keyElement of keyElements) {
             const key = (keyElement.nativeElement as HTMLElement).textContent.trim()
             const expectedValue = key.toUpperCase()
             const leafElement = keyElement.parent
@@ -302,7 +301,7 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         const keyElements = jsonElement.queryAll(By.css('.tree-level--leaf .tree-level__key'))
         expect(keyElements.length).toBe(2)
 
-        for (let keyElement of keyElements) {
+        for (const keyElement of keyElements) {
             const key = (keyElement.nativeElement as HTMLElement).textContent.trim()
             const expectedValue = key.toUpperCase()
             const leafElement = keyElement.parent

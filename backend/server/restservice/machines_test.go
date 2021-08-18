@@ -2026,7 +2026,7 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	require.Equal(t, configDhcp6, okRsp.Payload)
 }
 
-// Test that GetDaemonConfig returns the secrets for super admin
+// Test that GetDaemonConfig returns the secrets for super admin.
 func TestGetDaemonConfigWithSecretsForSuperAdmin(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -2109,7 +2109,7 @@ func TestGetDaemonConfigWithSecretsForSuperAdmin(t *testing.T) {
 	require.Equal(t, configDhcp4, okRsp.Payload)
 }
 
-// Test that GetDaemonConfig returns the secrets for super admin
+// Test that GetDaemonConfig returns the secrets for super admin.
 func TestGetDaemonConfigWithoutSecretsForAdmin(t *testing.T) {
 	// Test database initialization
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -2222,6 +2222,7 @@ func TestGetDaemonConfigWithoutSecretsForAdmin(t *testing.T) {
 		}
     }`)
 
+	require.NoError(t, err)
 	require.NotEmpty(t, expected)
 	require.Equal(t, expected, okRsp.Payload)
 }
