@@ -603,6 +603,12 @@ performance.
 Click the ``Refresh`` button to fetch and display the latest configuration.
 Click ``Download`` to download the entire configuration into a text file.
 
+.. note::
+
+   Some of the configuration fields may contain sensitive data (eg. passwords
+   or tokens). The content of these fields is hidden and a placeholder is shown.
+   Users in the super admin group can display a plain value on demand.
+
 Dashboard
 =========
 
