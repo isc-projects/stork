@@ -1,3 +1,4 @@
+import { Component, TemplateRef, ViewChild } from '@angular/core'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { PaginatorModule } from 'primeng/paginator'
@@ -595,5 +596,129 @@ describe('JsonTreeComponent', () => {
 
         component.value = 42
         expect(component.hasSingleChild()).toBeFalse()
+    })
+
+    it('should indicate that custom value template is available', () => {
+        component.customValueTemplates = { foo: {} as any, bar: {} as any }
+
+        component.key = null
+        expect(component.hasCustomValueTemplate()).toBeFalse()
+
+        component.key = 'foo'
+        expect(component.hasCustomValueTemplate()).toBeTrue()
+
+        component.key = 'bar'
+        expect(component.hasCustomValueTemplate()).toBeTrue()
+
+        component.key = 'baz'
+        expect(component.hasCustomValueTemplate()).toBeFalse()
+    })
+})
+
+/**
+ * Set of tests that requires external (not being part of component) templates
+ */
+describe('JsonTreeComponent-ExternalTemplates', () => {
+    let component: JsonTreeComponent
+    let fixture: ComponentFixture<WrapperComponent>
+
+    @Component({
+        template: `
+            <ng-template #foo>FOO</ng-template>
+            <ng-template #bar>BAR</ng-template>
+            <app-json-tree [customValueTemplates]="{ foo: foo, bar: bar }"></app-json-tree>
+        `,
+    })
+    class WrapperComponent {
+        @ViewChild(JsonTreeComponent, { static: true })
+        innerComponentRef: JsonTreeComponent
+    }
+
+    beforeEach(
+        waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [PaginatorModule],
+                declarations: [WrapperComponent, JsonTreeComponent],
+            }).compileComponents()
+        })
+    )
+
+    beforeEach(() => {
+        fixture = TestBed.createComponent(WrapperComponent)
+        const wrapperComponent = fixture.componentInstance
+        component = wrapperComponent.innerComponentRef
+        fixture.detectChanges()
+    })
+
+    it('should create the component', () => {
+        expect(component).toBeDefined()
+    })
+
+    it('should not render custom value component when assigned key is missing', async () => {
+        component.key = 'baz'
+        component.value = 'biz'
+        await fixture.detectChanges()
+        await fixture.whenRenderingDone()
+
+        const element = fixture.debugElement.query(By.css('.tree-level__value.tree-level__value--string'))
+        expect(element).not.toBeNull()
+        const nativeElement = element.nativeElement as HTMLElement
+        expect(nativeElement).not.toBeNull()
+        const content = nativeElement.textContent
+        expect(content).toBe('biz')
+    })
+
+    it('should render custom value component for assigned key and primitive value', async () => {
+        component.key = 'foo'
+        component.value = 'biz'
+        await fixture.detectChanges()
+        await fixture.whenRenderingDone()
+
+        let element = fixture.debugElement.query(By.css('.tree-level__value'))
+        expect(element).not.toBeNull()
+        let nativeElement = element.nativeElement as HTMLElement
+        expect(nativeElement).not.toBeNull()
+        let content = nativeElement.textContent
+        expect(content).toBe('FOO')
+
+        component.key = 'bar'
+        component.value = 'biz'
+        await fixture.detectChanges()
+        await fixture.whenRenderingDone()
+
+        element = fixture.debugElement.query(By.css('.tree-level__value'))
+        expect(element).not.toBeNull()
+        nativeElement = element.nativeElement as HTMLElement
+        expect(nativeElement).not.toBeNull()
+        content = nativeElement.textContent
+        expect(content).toBe('BAR')
+    })
+
+    it('should not render custom value component for assigned key and complex value', async () => {
+        component.key = 'bar'
+        component.value = { biz: 42 }
+        await fixture.detectChanges()
+        await fixture.whenRenderingDone()
+
+        const element = fixture.debugElement.query(By.css('.tree-level__value.tree-level__value--object'))
+        expect(element).not.toBeNull()
+        const nativeElement = element.nativeElement as HTMLElement
+        expect(nativeElement).not.toBeNull()
+        const content = nativeElement.textContent
+        expect(content).toBe('...') // Collapsed
+    })
+
+    it('should not render custom value component when element is top-level', async () => {
+        component.key = null
+        component.value = 'biz'
+        await fixture.detectChanges()
+        await fixture.whenRenderingDone()
+
+        const element = fixture.debugElement.query(By.css('.tree-level__value.tree-level__value--string'))
+        expect(element).not.toBeNull()
+        const nativeElement = element.nativeElement as HTMLElement
+        expect(nativeElement).not.toBeNull()
+        const content = nativeElement.textContent
+        expect(content).toBe('biz')
     })
 })

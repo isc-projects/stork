@@ -28,7 +28,9 @@ class MockParamMap {
 describe('KeaDaemonConfigurationPageComponent', () => {
     let component: KeaDaemonConfigurationPageComponent
     let fixture: ComponentFixture<KeaDaemonConfigurationPageComponent>
-    let service: ServerDataService
+    let dataService: ServerDataService
+    let userService: UsersService
+    let authService: AuthService
 
     beforeEach(
         waitForAsync(() => {
@@ -54,7 +56,9 @@ describe('KeaDaemonConfigurationPageComponent', () => {
                     UsersService,
                     {
                         provide: Router,
-                        useValue: {},
+                        useValue: {
+                            navigate: () => {},
+                        },
                     },
                     {
                         provide: ActivatedRoute,
@@ -64,15 +68,11 @@ describe('KeaDaemonConfigurationPageComponent', () => {
                             paramMap: of(convertToParamMap({ appId: '1', daemonId: '2' })),
                         },
                     },
-                    {
-                        provide: AuthService,
-                        useValue: {
-                            currentUser: of({}),
-                        },
-                    },
                 ],
             })
-            service = TestBed.inject(ServerDataService)
+            dataService = TestBed.inject(ServerDataService)
+            userService = TestBed.inject(UsersService)
+            authService = TestBed.inject(AuthService)
         })
     )
 
@@ -89,12 +89,35 @@ describe('KeaDaemonConfigurationPageComponent', () => {
                 ],
             },
         }
-        spyOn(service.servicesApi, 'getApp').and.returnValue(of(fakeResponse))
-        spyOn(service.servicesApi, 'getDaemonConfig').and.returnValues(
+        spyOn(dataService.servicesApi, 'getApp').and.returnValue(of(fakeResponse))
+        spyOn(dataService.servicesApi, 'getDaemonConfig').and.returnValues(
             of({} as any),
             of({ foo: 42 } as any),
+            of({ secret: 'SECRET', password: 'PASSWORD' } as any),
             throwError(new HttpErrorResponse({ status: 400 }))
         )
+
+        spyOn(userService, 'createSession').and.returnValues(
+            //of({} as any)
+            of({
+                id: 1,
+                login: 'foo',
+                email: 'foo@bar.baz',
+                name: 'foo',
+                lastname: 'bar',
+                groups: [],
+            } as any),
+            of({
+                id: 1,
+                login: 'foo',
+                email: 'foo@bar.baz',
+                name: 'foo',
+                lastname: 'bar',
+                groups: [1],
+            } as any)
+        )
+
+        authService.login('foo', 'bar', 'baz')
 
         fixture = TestBed.createComponent(KeaDaemonConfigurationPageComponent)
         component = fixture.componentInstance
@@ -148,11 +171,157 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         component.onClickRefresh()
         fixture.detectChanges()
         await fixture.whenRenderingDone()
+
+        component.onClickRefresh()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
         expect(component.configuration).toBeNull()
         expect(component.failedFetch).toBeTrue()
 
         const messageElement = fixture.debugElement.query(By.css('.p-inline-message-text'))
         expect(messageElement).not.toBeNull()
         expect((messageElement.nativeElement as Element).textContent).toBe('Fetching daemon configuration failed')
+    })
+
+    it('should have custom value templates', async () => {
+        await fixture.whenStable()
+        const jsonElement = fixture.debugElement.query(By.directive(JsonTreeComponent))
+        expect(jsonElement).toBeDefined()
+        const jsonComponent = jsonElement.componentInstance as JsonTreeComponent
+        expect(jsonComponent).not.toBeNull()
+        const templates = jsonComponent.customValueTemplates
+        expect(Object.keys(templates)).toContain('password')
+        expect(Object.keys(templates)).toContain('secret')
+    })
+
+    it('should hide the secrets', async () => {
+        // Move to configuration with secrets
+        await fixture.whenStable()
+        for (let i = 0; i < 2; i++) {
+            component.onClickRefresh()
+            await fixture.whenStable()
+        }
+        fixture.detectChanges()
+
+        expect(component.configuration).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
+
+        // Extract JSON viewer component
+        const jsonElement = fixture.debugElement.query(By.directive(JsonTreeComponent))
+        expect(jsonElement).toBeDefined()
+        const jsonComponent = jsonElement.componentInstance as JsonTreeComponent
+        expect(jsonComponent).not.toBeNull()
+        console.log(jsonComponent.value)
+        expect(jsonComponent.value).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
+
+        // Extract specific levels
+        const valueElements = jsonElement.queryAll(By.css('.tree-level--leaf .tree-level__value'))
+        expect(valueElements.length).toBe(2)
+
+        for (let valueElement of valueElements) {
+            const valueNativeElement = valueElement.nativeElement as HTMLElement
+            // We extract only visible text - the secret should be hidden
+            const content = valueNativeElement.innerText
+            expect(content).toBeFalsy()
+        }
+    })
+
+    it('should show the secrets after click when user is super admin', async () => {
+        // Log-out and log-in, now user is super admin
+        authService.logout()
+        await fixture.whenStable()
+        authService.login('foo', 'bar', 'baz')
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        expect(component.canShowSecrets).toBeTrue()
+
+        // Move to configuration with secrets
+        await fixture.whenStable()
+        component.onClickRefresh()
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        expect(component.configuration).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
+
+        // Extract JSON viewer component
+        const jsonElement = fixture.debugElement.query(By.directive(JsonTreeComponent))
+        expect(jsonElement).toBeDefined()
+        const jsonComponent = jsonElement.componentInstance as JsonTreeComponent
+        expect(jsonComponent).not.toBeNull()
+        console.log(jsonComponent.value)
+        expect(jsonComponent.value).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
+
+        // Extract specific levels
+        const keyElements = jsonElement.queryAll(By.css('.tree-level--leaf .tree-level__key'))
+        expect(keyElements.length).toBe(2)
+
+        for (let keyElement of keyElements) {
+            const key = (keyElement.nativeElement as HTMLElement).textContent.trim()
+            const expectedValue = key.toUpperCase()
+            const leafElement = keyElement.parent
+            const valueElement = leafElement.query(By.css('.tree-level__value'))
+            expect(valueElement).not.toBeNull()
+            const valueNativeElement = valueElement.nativeElement as HTMLElement
+
+            // We extract only visible text - the secret should be hidden
+            let content = valueNativeElement.innerText
+            expect(content).toBeFalsy()
+
+            // Click on hidden value
+            const summaryElement = valueElement.query(By.css('summary'))
+            expect(summaryElement).not.toBeNull()
+            const summaryNativeElement = summaryElement.nativeElement as HTMLElement
+            summaryNativeElement.click()
+            await fixture.whenRenderingDone()
+            content = valueNativeElement.innerText.trim()
+            expect(content).toBe(expectedValue)
+        }
+    })
+
+    it('should ignore click on the secret field when user is not a super admin', async () => {
+        expect(component.canShowSecrets).toBeFalse()
+        // Move to configuration with secrets
+        await fixture.whenStable()
+        for (let i = 0; i < 2; i++) {
+            component.onClickRefresh()
+            await fixture.whenStable()
+        }
+        fixture.detectChanges()
+
+        expect(component.configuration).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
+
+        // Extract JSON viewer component
+        const jsonElement = fixture.debugElement.query(By.directive(JsonTreeComponent))
+        expect(jsonElement).toBeDefined()
+        const jsonComponent = jsonElement.componentInstance as JsonTreeComponent
+        expect(jsonComponent).not.toBeNull()
+        console.log(jsonComponent.value)
+        expect(jsonComponent.value).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
+
+        // Extract specific levels
+        const keyElements = jsonElement.queryAll(By.css('.tree-level--leaf .tree-level__key'))
+        expect(keyElements.length).toBe(2)
+
+        for (let keyElement of keyElements) {
+            const key = (keyElement.nativeElement as HTMLElement).textContent.trim()
+            const expectedValue = key.toUpperCase()
+            const leafElement = keyElement.parent
+            const valueElement = leafElement.query(By.css('.tree-level__value'))
+            expect(valueElement).not.toBeNull()
+            const valueNativeElement = valueElement.nativeElement as HTMLElement
+
+            // We extract only visible text - the secret should be hidden
+            let content = valueNativeElement.innerText
+            expect(content).toBeFalsy()
+
+            // Click on hidden value
+            const summaryElement = valueElement.query(By.css('summary'))
+            expect(summaryElement).not.toBeNull()
+            const summaryNativeElement = summaryElement.nativeElement as HTMLElement
+            summaryNativeElement.click()
+            await fixture.whenRenderingDone()
+            content = valueNativeElement.innerText.trim()
+            expect(content).toBeFalsy() // Nothing changed
+        }
     })
 })
