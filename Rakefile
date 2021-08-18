@@ -187,7 +187,7 @@ STORK_VERSION = stork_version
 if !ENV['CHROME_BIN']
   chrome_locations = []
   if OS == 'linux'
-    chrome_locations = ['/usr/bin/chromium-browser', '/snap/bin/chromium']
+    chrome_locations = ['/usr/bin/chromium-browser', '/snap/bin/chromium', '/usr/bin/chromium']
   elsif OS == 'macos'
     chrome_locations = ["/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"]
   end
@@ -952,6 +952,8 @@ if ENV['CHROME_BIN']
     CHROME_DRV_VERSION = '86.0.4240.22'
   elsif out.include? '87.'
     CHROME_DRV_VERSION = '87.0.4280.20'
+  elsif out.include? '90.'
+    CHROME_DRV_VERSION = '90.0.4430.72'
   else
     CHROME_DRV_VERSION = ""
     puts "Cannot match Chrome browser version and chromedriver version"
