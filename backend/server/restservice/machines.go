@@ -1488,7 +1488,7 @@ func hideSensitiveData(obj *map[string]interface{}) {
 		// Check it is is a sensitive data.
 		if entryKey == "password" || entryKey == "secret" {
 			(*obj)[entryKey] = nil
-			return
+			continue
 		}
 		// Check if it is an array.
 		array, ok := entryValue.([]interface{})
@@ -1500,7 +1500,7 @@ func hideSensitiveData(obj *map[string]interface{}) {
 					hideSensitiveData(&subobject)
 				}
 			}
-			return
+			continue
 		}
 		// Check if it is a subobject (but not array).
 		subobject, ok := entryValue.(map[string]interface{})

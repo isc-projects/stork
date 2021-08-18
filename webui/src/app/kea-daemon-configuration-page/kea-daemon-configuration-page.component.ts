@@ -213,6 +213,6 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
 
     /** Return true if user can show the secrets (is super admin) */
     get canShowSecrets() {
-        return this._canShowSecrets && false
+        return this._canShowSecrets
     }
 }
