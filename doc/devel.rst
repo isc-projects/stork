@@ -28,7 +28,10 @@ Generating Documentation
 
 To generate documentation, simply type ``rake doc``.
 `Sphinx <https://www.sphinx-doc.org>`_ and `rtd-theme
-<https://github.com/readthedocs/sphinx_rtd_theme>`_ must be installed. The
+<https://github.com/readthedocs/sphinx_rtd_theme>`_ must be installed.
+You can install all dependencies using ``pip install -r requirements.txt``
+
+The
 generated documentation will be available in the ``doc/singlehtml``
 directory.
 
@@ -654,3 +657,125 @@ packages are prebuilt with all dependencies required, using the
 `build_fpm_containers` Rake task. The definitions
 of these containers are placed in `docker/pkgs/centos-8.txt` and
 `docker/pkgs/ubuntu-18-04.txt`.
+
+
+Implementing details
+====================
+
+Agent registration process
+--------------------------
+
+Below diagram showing a flowchart of the agent registration process in Stork.
+First Certificate Signing Request (CSR) is generating using an existing or new
+private key. Next, if a server token isn't provided then an agent token is created.
+The CSR, server token, or agent token are sent to the Stork server. It all is good the server
+responses with a signed agent certificate, a server CA certificate, and assigned Machine ID.
+The agent uses this ID to verify that the registration is done correctly.
+
+The diagram only contains the positive path.
+
+.. mermaid::
+
+    flowchart TD
+
+    %% Generating private key
+
+    AServerUrl([Server URL])
+    AAgentUrl([Agent address])
+    AServerToken([Server Token])
+    
+    subgraph Regen ["Regenerate CSR"]
+    APrivateKeyFile[/KeyPEMFile/]
+    ARegenCert([Regen cert])
+    CHasPrivateKey{Has private key file?}
+    CShouldRegen{Should regen cert?}
+
+    PGenerateKeys(Generate cert and private key)
+    PGenerateCSR(Generate CSR)
+    PSavePrivateKey(Save private key to file)
+
+    ARegenCert-->CShouldRegen
+    APrivateKeyFile-->CHasPrivateKey
+    APrivateKeyFile -->PGenerateCSR
+    CShouldRegen-->|NO| CHasPrivateKey
+    CShouldRegen-->|YES| PGenerateKeys
+    CHasPrivateKey-->|YES| PGenerateCSR
+    CHasPrivateKey-->|NO| PGenerateKeys
+    PGenerateKeys-->PSavePrivateKey
+    PSavePrivateKey-->APrivateKeyFile
+
+    subgraph GenerateOutput [" "]
+    APrivateKey((Private key))
+    AFingerprint((Fingerprint))
+    ACSR((CSR))
+    ACSR-->AFingerprint
+    end
+
+    end
+
+    %% Generating access token
+    subgraph AccessToken ["Generating access token"]
+
+    PGenerateCSR-->ACSR
+    PGenerateCSR-->APrivateKey
+    PGenerateKeys-->ACSR
+    PGenerateKeys-->APrivateKey
+
+    AFingerprint-->PFingerprintToAccessToken
+    CHasServerToken{Has server token?}
+    PFingerprintToAccessToken(AgentToken = Fingerprint)
+    PAgentTokenEmpty(AgentToken is empty)
+    PSaveAgentToken(Save AgentToken to file)
+
+    AAgentToken((AgentToken))
+    AAgentTokenFile[/AgentTokenFile/]
+
+    AServerToken-->CHasServerToken
+    CHasServerToken-->|NO| PFingerprintToAccessToken
+    CHasServerToken-->|YES| PAgentTokenEmpty
+    PFingerprintToAccessToken-->PSaveAgentToken
+    PSaveAgentToken-->AAgentTokenFile
+    PFingerprintToAccessToken-->AAgentToken
+    PAgentTokenEmpty-->AAgentToken
+    end
+    
+    %% Acquire certificates
+    subgraph AcquireCertificates ["Acquire certificates"]
+
+    PSendToServer(Send to server)
+    PSaveCerts(Save certs)
+    
+    ARootCertFile[/RootCAFile/]
+    AAgentCertFile[/CertPEMFile/]
+    
+    AServerToken-->PSendToServer
+    AServerUrl-->PSendToServer
+    AAgentUrl-->PSendToServer
+    AAgentToken-->PSendToServer
+    ACSR-->PSendToServer
+    
+    subgraph ServerResponse [" "]
+    direction LR
+    AMachineID((Machine ID))
+    AServerCert((Server CA cert))
+    AAgentCert((Agent CA cert))
+    end
+    
+    PSendToServer-->AMachineID
+    PSendToServer-->AServerCert
+    PSendToServer-->|Fingerprint of this certificate is stored in the database| AAgentCert
+    
+    AServerCert-->PSaveCerts
+    AAgentCert-->PSaveCerts
+    PSaveCerts-->ARootCertFile
+    PSaveCerts-->AAgentCertFile
+    end
+
+    PPing(Ping agent)
+    AMachineID-->PPing
+    AServerToken-->PPing
+    AAgentToken-->PPing
+
+    classDef persist stroke:#F00,stroke-width:3px;
+    class APrivateKeyFile,ARootCertFile,AAgentCertFile,AAgentTokenFile persist
+
