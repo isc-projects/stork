@@ -49,6 +49,7 @@ version = release
 # ones.
 extensions = [
     'sphinx.ext.todo',
+    'sphinxcontrib.mermaid'
 ]
 
 # The suffix(es) of source filenames.
@@ -131,6 +132,7 @@ man_pages = [
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
 
 # custom setup hook
 def setup(app):
