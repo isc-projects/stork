@@ -1,0 +1,62 @@
+@startuml
+
+start
+if (Should regen certs or hasn't private key?) is (YES) then
+    :Generate CSR and private key;
+    :Save private key to file;
+    :KeyPEMFile\\
+else (NO)
+    :KeyPEMFile\\
+    :Generate CSR;
+endif
+
+if (Has server token?) is (YES) then
+    :Agent Token is empty;
+else (NO)
+    :AgentToken = Fingerprint;
+    :Save Agent Token to file;
+    :AgentTokenFile\\
+endif
+
+split
+    :Server Token/
+split again
+    :Agent Token/
+end split
+floating note left: One of them is empty
+
+split
+    :Send to server;
+    split
+        split
+            :Agent CA cert/
+            note right
+                Fingerprint of
+                this certificate 
+                is stored
+                in database
+            end note
+        split again
+            :Server CA cert/
+        end split
+        :Save certs;
+        split
+            :RootCAFile\\
+            detach
+        split again
+            :CertPEMFile\\
+            detach
+        end split
+    split again
+        :Machine ID/
+    end split
+
+split again
+end split
+
+if (Is server token provided?) is (YES) then
+    :Ping agent;
+else (NO)
+endif
+end
+@enduml
