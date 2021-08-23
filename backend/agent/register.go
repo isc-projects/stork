@@ -401,20 +401,20 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		return false
 	}
 
-	// If server token was not provided then use cert fingerprint as agent token.
+	// Use cert fingerprint as agent token.
 	// Agent token is another mode for checking identity of an agent.
-	var agentToken string
+	agentToken := fingerprint
+	log.Println("=============================================================================")
+	log.Printf("AGENT TOKEN: %s", agentToken)
+	log.Println("=============================================================================")
+	err = writeAgentFile(AgentTokenFile, []byte(agentToken))
+	if err != nil {
+		log.Errorf("problem with storing agent token in %s: %s", AgentTokenFile, err)
+		return false
+	}
+	log.Printf("agent token stored in %s", AgentTokenFile)
+
 	if serverToken2 == "" {
-		agentToken = fingerprint
-		log.Println("=============================================================================")
-		log.Printf("AGENT TOKEN: %s", fingerprint)
-		log.Println("=============================================================================")
-		err = writeAgentFile(AgentTokenFile, []byte(fingerprint))
-		if err != nil {
-			log.Errorf("problem with storing agent token in %s: %s", AgentTokenFile, err)
-			return false
-		}
-		log.Printf("agent token stored in %s", AgentTokenFile)
 		log.Printf("authorize machine in Stork web UI")
 	} else {
 		log.Printf("machine will be automatically authorized using server token")

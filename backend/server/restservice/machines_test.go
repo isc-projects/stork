@@ -291,7 +291,7 @@ func TestCreateMachine(t *testing.T) {
 			AgentPort:   port,
 			AgentCSR:    &agentCSR,
 			ServerToken: serverToken,
-			AgentToken:  agentToken,
+			AgentToken:  &agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
@@ -307,7 +307,7 @@ func TestCreateMachine(t *testing.T) {
 			AgentPort:   0,
 			AgentCSR:    &agentCSR,
 			ServerToken: serverToken,
-			AgentToken:  agentToken,
+			AgentToken:  &agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
@@ -323,7 +323,7 @@ func TestCreateMachine(t *testing.T) {
 			AgentPort:   port,
 			AgentCSR:    &agentCSR,
 			ServerToken: serverToken,
-			AgentToken:  agentToken,
+			AgentToken:  &agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
@@ -356,7 +356,7 @@ func TestCreateMachine(t *testing.T) {
 			AgentPort:   port,
 			AgentCSR:    &agentCSR,
 			ServerToken: badServerToken,
-			AgentToken:  agentToken,
+			AgentToken:  &agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
@@ -373,7 +373,7 @@ func TestCreateMachine(t *testing.T) {
 			AgentPort:   port,
 			AgentCSR:    &badAgentCSR,
 			ServerToken: serverToken,
-			AgentToken:  agentToken,
+			AgentToken:  &agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
@@ -382,6 +382,23 @@ func TestCreateMachine(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.Equal(t, "problem with agent CSR", *defaultRsp.Payload.Message)
 
+	// bad (empty) agent token
+	emptyAgentToken := ""
+	params = services.CreateMachineParams{
+		Machine: &models.NewMachineReq{
+			Address:     &addr,
+			AgentPort:   8080,
+			AgentCSR:    &agentCSR,
+			ServerToken: serverToken,
+			AgentToken:  &emptyAgentToken,
+		},
+	}
+	rsp = rapi.CreateMachine(ctx, params)
+	require.IsType(t, &services.CreateMachineDefault{}, rsp)
+	defaultRsp = rsp.(*services.CreateMachineDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, "agent token cannot be empty", *defaultRsp.Payload.Message)
+
 	// all ok
 	params = services.CreateMachineParams{
 		Machine: &models.NewMachineReq{
@@ -389,7 +406,7 @@ func TestCreateMachine(t *testing.T) {
 			AgentPort:   8080,
 			AgentCSR:    &agentCSR,
 			ServerToken: serverToken,
-			AgentToken:  agentToken,
+			AgentToken:  &agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
@@ -428,7 +445,7 @@ func TestCreateMachine(t *testing.T) {
 			AgentPort:   8080,
 			AgentCSR:    &agentCSR,
 			ServerToken: serverToken,
-			AgentToken:  agentToken,
+			AgentToken:  &agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
@@ -454,7 +471,7 @@ func TestCreateMachine(t *testing.T) {
 			AgentPort:   8080,
 			AgentCSR:    &agentCSR,
 			ServerToken: serverToken,
-			AgentToken:  agentToken,
+			AgentToken:  &agentToken,
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)

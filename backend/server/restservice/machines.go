@@ -294,6 +294,15 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
+	if *params.Machine.AgentToken == "" {
+		msg := "agent token cannot be empty"
+		log.Warnf(msg)
+		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
 	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.DB, addr, params.Machine.AgentPort)
 	if err != nil {
 		msg := fmt.Sprintf("problem with finding machine %s:%d in database", addr, params.Machine.AgentPort)
@@ -374,7 +383,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		dbMachine = &dbmodel.Machine{
 			Address:         addr,
 			AgentPort:       params.Machine.AgentPort,
-			AgentToken:      params.Machine.AgentToken,
+			AgentToken:      *params.Machine.AgentToken,
 			CertFingerprint: agentCertFingerprint,
 			Authorized:      machineAuthorized,
 		}
@@ -389,7 +398,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		}
 		r.EventCenter.AddInfoEvent("added {machine}", dbMachine)
 	} else {
-		dbMachine.AgentToken = params.Machine.AgentToken
+		dbMachine.AgentToken = *params.Machine.AgentToken
 		dbMachine.CertFingerprint = agentCertFingerprint
 		dbMachine.Authorized = machineAuthorized
 		err = dbmodel.UpdateMachine(r.DB, dbMachine)

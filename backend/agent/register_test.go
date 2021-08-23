@@ -54,11 +54,10 @@ func TestRegisterBasic(t *testing.T) {
 			require.EqualValues(t, int(req["agentPort"].(float64)), agentPort)
 			serverTokenRcvd := req["serverToken"].(string)
 			agentToken := req["agentToken"].(string)
-			if serverToken == "" {
-				require.NotEmpty(t, agentToken)
-			} else {
+
+			require.NotEmpty(t, agentToken)
+			if serverToken != "" {
 				require.EqualValues(t, serverToken, serverTokenRcvd)
-				require.Empty(t, agentToken)
 			}
 
 			agentCSR := []byte(req["agentCSR"].(string))
@@ -82,11 +81,10 @@ func TestRegisterBasic(t *testing.T) {
 		if strings.HasSuffix(r.URL.Path, "/ping") {
 			serverTokenRcvd := req["serverToken"].(string)
 			agentToken := req["agentToken"].(string)
-			if serverToken == "" {
-				require.NotEmpty(t, agentToken)
-			} else {
+
+			require.NotEmpty(t, agentToken)
+			if serverToken != "" {
 				require.EqualValues(t, serverToken, serverTokenRcvd)
-				require.Empty(t, agentToken)
 			}
 
 			w.WriteHeader(http.StatusOK)
@@ -132,12 +130,16 @@ func TestRegisterBadServer(t *testing.T) {
 	regenCerts := false
 	retry := false
 
-	machineRegResp := map[string]interface{}{
-		"id":           10,
-		"serverCACert": "rootCertPEM",
-		"agentCert":    "agentCertPEM",
-	}
-	machinRegRespPtr := &machineRegResp
+	withID := true
+	withServerCert := true
+	withAgentCert := true
+
+	var idValue interface{}
+	var serverCertValue interface{}
+	var agentCertValue interface{}
+	idValue = 10
+	serverCertValue = nil
+	agentCertValue = nil
 
 	// internal http server for testing
 	require.NoError(t, err)
@@ -155,18 +157,51 @@ func TestRegisterBadServer(t *testing.T) {
 		if r.URL.Path == "/api/machines" {
 			// missing data in response
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(*machinRegRespPtr)
+
+			agentCSR := []byte(req["agentCSR"].(string))
+			require.NotEmpty(t, agentCSR)
+
+			_, rootKeyPEM, _, rootCertPEM, err := pki.GenCAKeyCert(1)
+			require.NoError(t, err)
+			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
+			require.NoError(t, paramsErr)
+			require.NoError(t, innerErr)
+
+			w.WriteHeader(http.StatusOK)
+			resp := map[string]interface{}{
+				"id":           idValue,
+				"serverCACert": string(rootCertPEM),
+				"agentCert":    string(agentCertPEM),
+			}
+
+			if serverCertValue != nil {
+				resp["serverCACert"] = serverCertValue
+			}
+
+			if agentCertValue != nil {
+				resp["agentCert"] = agentCertValue
+			}
+
+			if !withID {
+				delete(resp, "id")
+			}
+			if !withServerCert {
+				delete(resp, "serverCACert")
+			}
+			if !withAgentCert {
+				delete(resp, "agentCert")
+			}
+
+			json.NewEncoder(w).Encode(resp)
 		}
 
 		// response to ping machine
 		if strings.HasSuffix(r.URL.Path, "/ping") {
 			serverTokenRcvd := req["serverToken"].(string)
 			agentToken := req["agentToken"].(string)
-			if serverToken == "" {
-				require.NotEmpty(t, agentToken)
-			} else {
+			require.NotEmpty(t, agentToken)
+			if serverToken != "" {
 				require.EqualValues(t, serverToken, serverTokenRcvd)
-				require.Empty(t, agentToken)
 			}
 
 			w.WriteHeader(http.StatusOK)
@@ -181,40 +216,40 @@ func TestRegisterBadServer(t *testing.T) {
 	serverURL := ts.URL
 
 	// missing ID in response
-	delete(machineRegResp, "id")
+	withID = false
 	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenCerts, retry)
 	require.False(t, res)
-	machineRegResp["id"] = 10 // restore proper value
+	withID = true
 
 	// bad ID in response
-	machineRegResp["id"] = "agerw"
+	idValue = "agerw"
 	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenCerts, retry)
 	require.False(t, res)
-	machineRegResp["id"] = 10 // restore proper value
+	idValue = 10 // restore proper value
 
 	// missing serverCACert in response
-	delete(machineRegResp, "serverCACert")
+	withServerCert = false
 	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenCerts, retry)
 	require.False(t, res)
-	machineRegResp["serverCACert"] = "serverCACert" // restore proper value
+	withServerCert = true // restore proper value
 
 	// bad serverCACert in response
-	machineRegResp["serverCACert"] = 5
+	serverCertValue = 5
 	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenCerts, retry)
 	require.False(t, res)
-	machineRegResp["serverCACert"] = "serverCACert" // restore proper value
+	serverCertValue = nil // restore proper value
 
 	// missing agentCert in response
-	delete(machineRegResp, "agentCert")
+	withAgentCert = false
 	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenCerts, retry)
 	require.False(t, res)
-	machineRegResp["agentCert"] = "agentCert" // restore proper value
+	withAgentCert = true // restore proper value
 
 	// bad serverCACert in response
-	machineRegResp["agentCert"] = 5
+	agentCertValue = 5
 	res = Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenCerts, retry)
 	require.False(t, res)
-	machineRegResp["agentCert"] = "agentCert" // restore proper value
+	agentCertValue = nil // restore proper value
 }
 
 // Check Register response to bad arguments or how it behaves in bad environment.
@@ -321,4 +356,97 @@ func TestGenerateCerts(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM3)
 	require.NotEqualValues(t, privKeyPEM2, privKeyPEM3)
+}
+
+// Check if generating agent token file works and a value in the file
+// match a value received by server.
+func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
+	// prepare temp dir for cert files
+	tmpDir, err := ioutil.TempDir("", "reg")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
+	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
+
+	// redefined consts with paths to cert files
+	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
+	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
+	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
+	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
+
+	// register arguments
+	serverToken := "serverToken"
+	agentAddr := "1.2.3.4"
+	agentPort := 8080
+	regenCerts := false
+	retry := false
+
+	// Received agent tokens
+	var lastPingAgentToken string
+	var lastRegisterAgentToken string
+
+	// internal http server for testing
+	require.NoError(t, err)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := ioutil.ReadAll(r.Body)
+		require.NoError(t, err)
+		var req map[string]interface{}
+		err = json.Unmarshal(body, &req)
+		require.NoError(t, err)
+
+		// response to register machine
+		if r.URL.Path == "/api/machines" {
+			// missing data in response
+			w.WriteHeader(http.StatusOK)
+
+			agentToken := req["agentToken"].(string)
+			require.NotEmpty(t, agentToken)
+			lastRegisterAgentToken = agentToken
+
+			agentCSR := []byte(req["agentCSR"].(string))
+			require.NotEmpty(t, agentCSR)
+
+			_, rootKeyPEM, _, rootCertPEM, err := pki.GenCAKeyCert(1)
+			require.NoError(t, err)
+			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
+			require.NoError(t, paramsErr)
+			require.NoError(t, innerErr)
+
+			w.WriteHeader(http.StatusOK)
+			resp := map[string]interface{}{
+				"id":           10,
+				"serverCACert": string(rootCertPEM),
+				"agentCert":    string(agentCertPEM),
+			}
+			json.NewEncoder(w).Encode(resp)
+		}
+
+		// response to ping machine
+		if strings.HasSuffix(r.URL.Path, "/ping") {
+			agentToken := req["agentToken"].(string)
+			require.NotEmpty(t, agentToken)
+
+			w.WriteHeader(http.StatusOK)
+			resp := map[string]interface{}{
+				"id": 10,
+			}
+			json.NewEncoder(w).Encode(resp)
+
+			lastPingAgentToken = agentToken
+		}
+	}))
+	defer ts.Close()
+
+	serverURL := ts.URL
+
+	res := Register(serverURL, serverToken, agentAddr, fmt.Sprintf("%d", agentPort), regenCerts, retry)
+	require.True(t, res)
+	require.NotEmpty(t, lastRegisterAgentToken)
+	require.NotEmpty(t, lastPingAgentToken)
+	require.Equal(t, lastPingAgentToken, lastRegisterAgentToken)
+
+	agentTokenFromFile, err := ioutil.ReadFile(AgentTokenFile)
+	require.NoError(t, err)
+	require.NotEmpty(t, agentTokenFromFile)
+	require.Equal(t, string(agentTokenFromFile), lastPingAgentToken)
 }

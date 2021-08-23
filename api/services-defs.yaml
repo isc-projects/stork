@@ -56,6 +56,7 @@
     required:
       - address
       - agentCSR
+      - agentToken
     properties:
       address:
         type: string
@@ -70,7 +71,7 @@
           A token that is issued by the Stork server. It can be taken
           from Machines page. If it is provided then an agent will
           be immediately authorized in the server and will be operational.
-          If it is empty then agentToken must be provided.
+          It may be empty.
       agentToken:
         type: string
         description: >-
@@ -79,7 +80,7 @@
           /var/lib/stork-agent/tokens/agent-token.txt. A machine added
           this way to the Stork server requires separate authorization
           that can be made in the Stork server UI or using server API.
-          If it is empty then serverToken must be provided.
+          It cannot be empty.
 
   NewMachineResp:
     type: object
