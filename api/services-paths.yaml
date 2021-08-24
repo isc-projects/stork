@@ -53,7 +53,7 @@
           description: Registration information
           schema:
             $ref: '#/definitions/NewMachineResp'
-        303:
+        409:
           description: Already registered
           headers:
             Location:

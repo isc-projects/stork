@@ -316,7 +316,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	// Check if a machine is already registered with a provided agent token
 	if dbMachine != nil && dbMachine.AgentToken == *params.Machine.AgentToken {
 		link := fmt.Sprintf("/machines/%d", dbMachine.ID)
-		rsp := services.NewCreateMachineSeeOther().WithLocation(link)
+		rsp := services.NewCreateMachineConflict().WithLocation(link)
 		return rsp
 	}
 
