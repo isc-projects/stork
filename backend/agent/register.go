@@ -194,6 +194,7 @@ func prepareRegistrationRequestPayload(csrPEM []byte, serverToken, agentToken, a
 // If retry is true then registration is repeated until it connection to server
 // is established. This case is used when agent automatically tries to register
 // during startup.
+// If the agent is already register then only ID is returned, the certificates are empty.
 func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload *bytes.Buffer, retry bool) (int64, string, string, error) {
 	url, _ := baseSrvURL.Parse("api/machines")
 	var err error
@@ -226,6 +227,21 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 	if err != nil {
 		return 0, "", "", errors.Wrapf(err, "problem with reading server's response while registering the machine")
 	}
+
+	// Special case - the agent is already registered
+	if resp.StatusCode == http.StatusConflict {
+		location := resp.Header.Get("Location")
+		lastSeparatorIdx := strings.LastIndex(location, "/")
+		if lastSeparatorIdx < 0 || lastSeparatorIdx+1 >= len(location) {
+			return 0, "", "", errors.New("missing ID in response from server for registration request")
+		}
+		agentID, err := strconv.Atoi(location[lastSeparatorIdx+1:])
+		if err != nil {
+			return 0, "", "", errors.New("bad ID in response from server for registration request")
+		}
+		return int64(agentID), "", "", nil
+	}
+
 	var result map[string]interface{}
 	err = json.Unmarshal(data, &result)
 	if err != nil {
@@ -255,29 +271,30 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 		}
 		return 0, "", "", errors.New(msg)
 	}
+
 	// check received machine ID
 	if result["id"] == nil {
-		return 0, "", "", errors.Wrapf(err, "missing ID in response from server for registration request")
+		return 0, "", "", errors.New("missing ID in response from server for registration request")
 	}
 	machineID, ok := result["id"].(float64)
 	if !ok {
-		return 0, "", "", errors.Wrapf(err, "bad ID in response from server for registration request")
+		return 0, "", "", errors.New("bad ID in response from server for registration request")
 	}
 	// check received serverCACert
 	if result["serverCACert"] == nil {
-		return 0, "", "", errors.Wrapf(err, "missing serverCACert in response from server for registration request")
+		return 0, "", "", errors.New("missing serverCACert in response from server for registration request")
 	}
 	serverCACert, ok := result["serverCACert"].(string)
 	if !ok {
-		return 0, "", "", errors.Wrapf(err, "bad serverCACert in response from server for registration request")
+		return 0, "", "", errors.New("bad serverCACert in response from server for registration request")
 	}
 	// check received agentCert
 	if result["agentCert"] == nil {
-		return 0, "", "", errors.Wrapf(err, "missing agentCert in response from server for registration request")
+		return 0, "", "", errors.New("missing agentCert in response from server for registration request")
 	}
 	agentCert, ok := result["agentCert"].(string)
 	if !ok {
-		return 0, "", "", errors.Wrapf(err, "bad agentCert in response from server for registration request")
+		return 0, "", "", errors.New("bad agentCert in response from server for registration request")
 	}
 	// all ok
 	log.Printf("machine registered")
@@ -445,10 +462,13 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	}
 
 	// store certs
-	err = checkAndStoreCerts(serverCACert, agentCert)
-	if err != nil {
-		log.Errorf("problem with certs: %s", err)
-		return false
+	// if server and agent CA certs are empty then the agent should use existing ones
+	if serverCACert != "" && agentCert != "" {
+		err = checkAndStoreCerts(serverCACert, agentCert)
+		if err != nil {
+			log.Errorf("problem with certs: %s", err)
+			return false
+		}
 	}
 
 	if serverToken2 != "" {

@@ -452,3 +452,160 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 	require.NotEmpty(t, agentTokenFromFile)
 	require.Equal(t, agentTokenFromFile, lastPingAgentToken)
 }
+
+// Check if registration works in basic situation.
+func TestRepeatRegister(t *testing.T) {
+	// prepare temp dir for cert files
+	tmpDir, err := ioutil.TempDir("", "reg")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
+	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
+
+	// redefined consts with paths to cert files
+	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
+	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
+	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
+	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
+
+	// register arguments
+	serverToken := "serverToken"
+	agentAddr := "1.2.3.4"
+	agentPort := 8080
+	regenCerts := false
+	retry := false
+
+	lastAgentToken := ""
+	locationHeaderValue := "/api/machines/10"
+
+	// internal http server for testing
+	require.NoError(t, err)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("URL: %v\n", r.URL.Path)
+
+		body, err := ioutil.ReadAll(r.Body)
+		require.NoError(t, err)
+		fmt.Printf("BODY: %v\n", string(body))
+		var req map[string]interface{}
+		err = json.Unmarshal(body, &req)
+		require.NoError(t, err)
+
+		if r.URL.Path == "/api/machines" {
+			require.EqualValues(t, req["address"].(string), agentAddr)
+			require.EqualValues(t, int(req["agentPort"].(float64)), agentPort)
+			serverTokenRcvd := req["serverToken"].(string)
+			agentToken := req["agentToken"].(string)
+
+			require.NotEmpty(t, agentToken)
+			if serverToken != "" {
+				require.EqualValues(t, serverToken, serverTokenRcvd)
+			}
+
+			if agentToken == lastAgentToken {
+				w.Header().Add("Location", locationHeaderValue)
+				w.WriteHeader(409)
+				return
+			}
+
+			lastAgentToken = agentToken
+
+			agentCSR := []byte(req["agentCSR"].(string))
+			require.NotEmpty(t, agentCSR)
+
+			_, rootKeyPEM, _, rootCertPEM, err := pki.GenCAKeyCert(1)
+			require.NoError(t, err)
+			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
+			require.NoError(t, paramsErr)
+			require.NoError(t, innerErr)
+
+			w.WriteHeader(http.StatusOK)
+			resp := map[string]interface{}{
+				"id":           10,
+				"serverCACert": string(rootCertPEM),
+				"agentCert":    string(agentCertPEM),
+			}
+			json.NewEncoder(w).Encode(resp)
+		}
+
+		if strings.HasSuffix(r.URL.Path, "/ping") {
+			serverTokenRcvd := req["serverToken"].(string)
+			agentToken := req["agentToken"].(string)
+
+			require.NotEmpty(t, agentToken)
+			if serverToken != "" {
+				require.EqualValues(t, serverToken, serverTokenRcvd)
+			}
+
+			w.WriteHeader(http.StatusOK)
+			resp := map[string]interface{}{
+				"id": 10,
+			}
+			json.NewEncoder(w).Encode(resp)
+		}
+	}))
+	defer ts.Close()
+
+	serverURL := ts.URL
+	agentPortStr := fmt.Sprintf("%d", agentPort)
+
+	// register with server token
+	res := Register(serverURL, serverToken, agentAddr, agentPortStr, regenCerts, retry)
+	require.True(t, res)
+
+	privKeyPEM1, err := ioutil.ReadFile(KeyPEMFile)
+	require.NoError(t, err)
+	agentToken1, err := ioutil.ReadFile(AgentTokenFile)
+	require.NoError(t, err)
+	certPEM1, err := ioutil.ReadFile(CertPEMFile)
+	require.NoError(t, err)
+	rootCA1, err := ioutil.ReadFile(RootCAFile)
+	require.NoError(t, err)
+
+	// re-register with the same agent token
+	serverToken = ""
+	res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenCerts, retry)
+	require.True(t, res)
+
+	privKeyPEM2, err := ioutil.ReadFile(KeyPEMFile)
+	require.NoError(t, err)
+	agentToken2, err := ioutil.ReadFile(AgentTokenFile)
+	require.NoError(t, err)
+	certPEM2, err := ioutil.ReadFile(CertPEMFile)
+	require.NoError(t, err)
+	rootCA2, err := ioutil.ReadFile(RootCAFile)
+	require.NoError(t, err)
+
+	require.Equal(t, privKeyPEM1, privKeyPEM2)
+	require.Equal(t, agentToken1, agentToken2)
+	require.Equal(t, certPEM1, certPEM2)
+	require.Equal(t, rootCA1, rootCA2)
+
+	// Regenerate certs
+	regenCerts = true
+	serverToken = "serverToken"
+	res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenCerts, retry)
+	require.True(t, res)
+
+	privKeyPEM3, err := ioutil.ReadFile(KeyPEMFile)
+	require.NoError(t, err)
+	agentToken3, err := ioutil.ReadFile(AgentTokenFile)
+	require.NoError(t, err)
+	certPEM3, err := ioutil.ReadFile(CertPEMFile)
+	require.NoError(t, err)
+	rootCA3, err := ioutil.ReadFile(RootCAFile)
+	require.NoError(t, err)
+
+	require.NotEqual(t, privKeyPEM1, privKeyPEM3)
+	require.NotEqual(t, agentToken1, agentToken3)
+	require.NotEqual(t, certPEM1, certPEM3)
+	require.NotEqual(t, rootCA1, rootCA3)
+
+	// Re-registration, but invalid header is returned
+	regenCerts = false
+	invalidHeaderValues := []string{"", "/machines/", "/machines", "/machines/abc", "/machines/1a", "/machines/2a2"}
+	for _, value := range invalidHeaderValues {
+		locationHeaderValue = value
+		res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenCerts, retry)
+		require.False(t, res)
+	}
+}
