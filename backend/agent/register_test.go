@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/pki"
+	storkutil "isc.org/stork/util"
 )
 
 // Check if registration works in basic situation.
@@ -320,22 +321,22 @@ func TestGenerateCerts(t *testing.T) {
 	// 1) just generate
 	agentAddr := "addr"
 	regenCerts := false
-	csrPEM1, fingerprintStr1, err := generateCerts(agentAddr, regenCerts)
+	csrPEM1, agentToken1, err := generateCerts(agentAddr, regenCerts)
 	require.NoError(t, err)
 	require.NotEmpty(t, csrPEM1)
-	require.NotEmpty(t, fingerprintStr1)
+	require.NotEmpty(t, agentToken1)
 	privKeyPEM1, err := ioutil.ReadFile(KeyPEMFile)
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM1)
 
 	// 2) generate again, no changes to args, result key should be the same
-	csrPEM2, fingerprintStr2, err := generateCerts(agentAddr, regenCerts)
+	csrPEM2, agentToken2, err := generateCerts(agentAddr, regenCerts)
 	require.NoError(t, err)
 	require.NotEmpty(t, csrPEM2)
-	require.NotEmpty(t, fingerprintStr2)
-	// CSR is regenerated and its fingerprint too
+	require.NotEmpty(t, agentToken2)
+	// CSR is regenerated but no agent token
 	require.NotEqualValues(t, csrPEM1, csrPEM2)
-	require.NotEqualValues(t, fingerprintStr1, fingerprintStr2)
+	require.EqualValues(t, agentToken1, agentToken2)
 	// but key in the file is the same
 	privKeyPEM2, err := ioutil.ReadFile(KeyPEMFile)
 	require.NoError(t, err)
@@ -344,13 +345,13 @@ func TestGenerateCerts(t *testing.T) {
 
 	// 3) generate again but now regenCerts is true, result should be be different
 	regenCerts = true
-	csrPEM3, fingerprintStr3, err := generateCerts(agentAddr, regenCerts)
+	csrPEM3, agentToken3, err := generateCerts(agentAddr, regenCerts)
 	require.NoError(t, err)
 	require.NotEmpty(t, csrPEM3)
-	require.NotEmpty(t, fingerprintStr3)
-	// CSR is regenerated and its fingerprint too
+	require.NotEmpty(t, agentToken3)
+	// CSR is regenerated and its agent token too
 	require.NotEqualValues(t, csrPEM2, csrPEM3)
-	require.NotEqualValues(t, fingerprintStr2, fingerprintStr3)
+	require.NotEqualValues(t, agentToken1, agentToken3)
 	// but this time key in the file is different (regenerated)
 	privKeyPEM3, err := ioutil.ReadFile(KeyPEMFile)
 	require.NoError(t, err)
@@ -445,8 +446,9 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 	require.NotEmpty(t, lastPingAgentToken)
 	require.Equal(t, lastPingAgentToken, lastRegisterAgentToken)
 
-	agentTokenFromFile, err := ioutil.ReadFile(AgentTokenFile)
+	agentTokenFromFileRaw, err := ioutil.ReadFile(AgentTokenFile)
+	agentTokenFromFile := storkutil.BytesToHex(agentTokenFromFileRaw)
 	require.NoError(t, err)
 	require.NotEmpty(t, agentTokenFromFile)
-	require.Equal(t, string(agentTokenFromFile), lastPingAgentToken)
+	require.Equal(t, agentTokenFromFile, lastPingAgentToken)
 }

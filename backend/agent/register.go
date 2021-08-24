@@ -123,30 +123,45 @@ func generateCerts(agentAddr string, regenCerts bool) ([]byte, string, error) {
 
 	agentIPs, agentNames := resolveAddr(agentAddr)
 
-	var fingerprint [32]byte
+	var agentToken []byte
 	var csrPEM []byte
 	var privKeyPEM []byte
 	if regenCerts {
 		// generate private key and CSR
+		var fingerprint [32]byte
 		privKeyPEM, csrPEM, fingerprint, err = pki.GenKeyAndCSR("agent", agentNames, agentIPs)
 		if err != nil {
 			return nil, "", err
 		}
+		agentToken = fingerprint[:]
 
 		// save private key to file
 		err = writeAgentFile(KeyPEMFile, privKeyPEM)
 		if err != nil {
 			return nil, "", err
 		}
-		log.Printf("agent key and CSR (re)generated")
+
+		err = writeAgentFile(AgentTokenFile, agentToken)
+		if err != nil {
+			log.Errorf("problem with storing agent token in %s: %s", AgentTokenFile, err)
+			return nil, "", err
+		}
+
+		log.Printf("agent token stored in %s", AgentTokenFile)
+		log.Printf("agent key, agent token and CSR (re)generated")
 	} else {
-		// generate CSR using existing private key
+		// generate CSR using existing private key and agent token
 		privKeyPEM, err = ioutil.ReadFile(KeyPEMFile)
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "could not load key PEM file: %s", KeyPEMFile)
 		}
 
-		csrPEM, fingerprint, err = pki.GenCSRUsingKey("agent", agentNames, agentIPs, privKeyPEM)
+		agentToken, err = ioutil.ReadFile(AgentTokenFile)
+		if err != nil {
+			return nil, "", err
+		}
+
+		csrPEM, _, err = pki.GenCSRUsingKey("agent", agentNames, agentIPs, privKeyPEM)
 		if err != nil {
 			return nil, "", err
 		}
@@ -154,7 +169,7 @@ func generateCerts(agentAddr string, regenCerts bool) ([]byte, string, error) {
 	}
 
 	// convert fingerprint to hex string
-	fingerprintStr := storkutil.BytesToHex(fingerprint[:])
+	fingerprintStr := storkutil.BytesToHex(agentToken)
 
 	return csrPEM, fingerprintStr, nil
 }
@@ -395,7 +410,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	}
 
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
-	csrPEM, fingerprint, err := generateCerts(agentAddr, regenCerts)
+	csrPEM, agentToken, err := generateCerts(agentAddr, regenCerts)
 	if err != nil {
 		log.Errorf("problem with generating certs: %s", err)
 		return false
@@ -403,16 +418,9 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 
 	// Use cert fingerprint as agent token.
 	// Agent token is another mode for checking identity of an agent.
-	agentToken := fingerprint
 	log.Println("=============================================================================")
 	log.Printf("AGENT TOKEN: %s", agentToken)
 	log.Println("=============================================================================")
-	err = writeAgentFile(AgentTokenFile, []byte(agentToken))
-	if err != nil {
-		log.Errorf("problem with storing agent token in %s: %s", AgentTokenFile, err)
-		return false
-	}
-	log.Printf("agent token stored in %s", AgentTokenFile)
 
 	if serverToken2 == "" {
 		log.Printf("authorize machine in Stork web UI")
