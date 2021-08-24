@@ -313,6 +313,13 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
+	// Check if a machine is already registered with a provided agent token
+	if dbMachine != nil && dbMachine.AgentToken == *params.Machine.AgentToken {
+		link := fmt.Sprintf("/machines/%d", dbMachine.ID)
+		rsp := services.NewCreateMachineSeeOther().WithLocation(link)
+		return rsp
+	}
+
 	// check server token
 	machineAuthorized, httpRspCode, rspMsg := r.checkServerToken(params.Machine.ServerToken, true)
 	if httpRspCode != 0 {

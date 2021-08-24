@@ -438,7 +438,7 @@ func TestCreateMachine(t *testing.T) {
 	// check if GetMachineAndAppsState was called
 	require.True(t, fa.GetStateCalled)
 
-	// re-register (the same) machine
+	// re-register (the same) machine (it should be break)
 	params = services.CreateMachineParams{
 		Machine: &models.NewMachineReq{
 			Address:     &addr,
@@ -449,18 +449,19 @@ func TestCreateMachine(t *testing.T) {
 		},
 	}
 	rsp = rapi.CreateMachine(ctx, params)
-	require.IsType(t, &services.CreateMachineOK{}, rsp)
-	okRsp = rsp.(*services.CreateMachineOK)
-	require.NotEmpty(t, okRsp.Payload.ID)
-	require.NotEmpty(t, okRsp.Payload.ServerCACert)
-	require.NotEmpty(t, okRsp.Payload.AgentCert)
+	require.IsType(t, &services.CreateMachineSeeOther{}, rsp)
+	seeOtherRsp := rsp.(*services.CreateMachineSeeOther)
+	require.NotEmpty(t, seeOtherRsp.Location)
+	expectedLocation := fmt.Sprintf("/machines/%d", okRsp.Payload.ID)
+	require.Equal(t, expectedLocation, seeOtherRsp.Location)
+
 	machines, err = dbmodel.GetAllMachines(db, nil)
 	require.NoError(t, err)
 	require.Len(t, machines, 1)
 	m1 = machines[0]
 	require.True(t, m1.Authorized)
-	// agent cert is re-signed so fingerprint should be different
-	require.NotEqual(t, certFingerprint1, m1.CertFingerprint)
+	// agent cert isn't re-signed so fingerprint should be the sae
+	require.Equal(t, certFingerprint1, m1.CertFingerprint)
 
 	// add another machine but with no server token (agent token is used for authorization)
 	addr = "5.6.7.8"

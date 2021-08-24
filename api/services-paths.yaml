@@ -34,10 +34,8 @@
     post:
       summary: Add new machine.
       description: >-
-        Register new machine in the server. It requires two
-        parameters: address and agentCSR. It also requires one of two
-        other parameters: serverToken or agentToken depending or the
-        registration method selected.
+        Register a new machine on the server. It requires two parameters: address and agentCSR.
+        It also requires agentToken and optionally serverToken depending on the registration method selected.
       operationId: createMachine
       # security disabled because anyone can add machine but it still requires
       # either server token or manual authorization in web ui
@@ -55,6 +53,11 @@
           description: Registration information
           schema:
             $ref: '#/definitions/NewMachineResp'
+        303:
+          description: Already registered
+          headers:
+            Location:
+              type: string
         default:
           description: generic error response
           schema:
