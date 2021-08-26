@@ -1,3 +1,8 @@
+* 154 [bug] slawek
+
+    Fixed re-registration problem after agent restart
+    (Gitlab #528 and #558)
+
 * 153 [bug] slawek
 
     Corrected an issue with fetching Stork events from the
