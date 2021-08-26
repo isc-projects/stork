@@ -5,16 +5,13 @@ if (Should regen certs or hasn't private key?) is (YES) then
     :Generate CSR and private key;
     :Save private key to file;
     :KeyPEMFile\\
+    :Save Agent Token (fingerprint of CSR) to file;
+    :AgentTokenFile\\
 else (NO)
+    :Read private key file;
     :KeyPEMFile\\
     :Generate CSR;
-endif
-
-if (Has server token?) is (YES) then
-    :Agent Token is empty;
-else (NO)
-    :AgentToken = Fingerprint;
-    :Save Agent Token to file;
+    :Read agent token from file;
     :AgentTokenFile\\
 endif
 
@@ -22,12 +19,16 @@ split
     :Server Token/
 split again
     :Agent Token/
+    note left: It is required
 end split
-floating note left: One of them is empty
 
 split
     :Send to server;
-    split
+    fork
+        if (Server returns that the agent is already registered?) is (YES) then
+            end
+        else (NO)
+        endif
         split
             :Agent CA cert/
             note right
@@ -47,9 +48,9 @@ split
             :CertPEMFile\\
             detach
         end split
-    split again
+    fork again
         :Machine ID/
-    end split
+    end fork
 
 split again
 end split
