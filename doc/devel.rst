@@ -393,6 +393,52 @@ space but rather with the space in this subvolume. To free space, remove stale i
 or stopped containers. Basic usage of ``LXD`` is presented at:
 https://linuxcontainers.org/lxd/getting-started-cli/#lxd-client
 
+
+LXD troubleshooting on Arch
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Problem**: After call `lxd init` you get this message
+
+.. code-block:: console
+
+    Error: Failed to connect to local LXD: Get "http://unix.socket/1.0": dial unix /var/lib/lxd/unix.socket: connect: no such file or directory
+
+**Solution**: You should restart `lxd` daemon:
+
+.. code-block:: console
+
+    sudo systemctl restart lxd
+
+--------------
+
+**Problem**: After start `rake system_tests` you get these message (tail):
+
+.. code-block:: console
+
+    ************ START   tests.py::test_users_management[ubuntu/18.04-centos/7] **************************************************************
+
+    stork-agent-ubuntu-18-04-gw0: {'fg': 'yellow', 'style': ''}
+    stork-server-centos-7-gw0: {'fg': 'red', 'style': 'bold'}
+
+and nothing more happens, CPU and RAM usage by lxd are ~0%.
+
+**Solution**: `original post <https://discuss.linuxcontainers.org/t/solved-arch-linux-containers-only-run-when-security-privileged-true/4006/5>`_
+
+1. Create `/etc/subuid` file with content:
+
+.. code-block:: console
+
+    root:1000000:65536
+
+1. Create `/etc/subuid` with the same content
+2. Add these lines to `/etc/default/lxc`:
+
+.. code-block:: console
+
+    lxc.idmap = u 0 100000 65536
+    lxc.idmap = g 0 100000 65536
+
+
 Running System Tests
 --------------------
 
