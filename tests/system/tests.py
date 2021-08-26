@@ -668,3 +668,54 @@ def test_get_host_leases(agent, server):
     r = server.api_get('/leases?hostId=1000000')
     data = r.json()
     assert data['items'] is None
+
+
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'ubuntu/18.04')])
+def test_agent_reregistration_after_restart(agent, server):
+    """Check if after restart the agent isn't re-register.
+       It should use the same agent token and certs as before restart."""
+
+    agent_cert_files = [
+        '/var/lib/stork-agent/certs/key.pem',
+        '/var/lib/stork-agent/certs/cert.pem',
+        '/var/lib/stork-agent/certs/ca.pem',
+        '/var/lib/stork-agent/tokens/agent-token.txt'
+    ]
+
+    # install kea on the agent machine
+    agent.install_kea()
+
+    # prepare kea config
+    banner("UPLOAD KEA CONFIG")
+    agent.upload('kea-dhcp4.conf', '/etc/kea/kea-dhcp4.conf')
+    agent.run('systemctl restart isc-kea-dhcp4-server')
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # get machine that automatically registered in the server and authorize it
+    m = _get_machines_and_authorize_them(server)[0]
+    assert m['address'] == agent.mgmt_ip
+
+    # get agent token
+    agent_token_before = m['agentToken']
+
+    # get agent cert file hashes
+    hashes_before = [agent.run('sha1sum %s' % p).stdout.split()[0] for p in agent_cert_files]
+
+    # restart agent
+    agent.run('systemctl restart isc-kea-ctrl-agent')
+
+    # get machine after restart
+    m = _get_machines(server)[0]
+
+    # get agent token after restart
+    agent_token_after = m['agentToken']
+
+    # get agent cert file hashes after restart
+    hashes_after = [agent.run('sha1sum %s' % p).stdout.split()[0] for p in agent_cert_files]
+
+    # the agent token and cert files should be the same as before restart
+    assert agent_token_before == agent_token_after
+    assert tuple(hashes_before) == tuple(hashes_after)
