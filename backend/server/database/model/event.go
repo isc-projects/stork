@@ -67,18 +67,18 @@ func GetEventsByPage(db *pg.DB, offset int64, limit int64, level int64, daemonTy
 		q = q.Where("level >= ?", level)
 	}
 	if daemonType != nil {
-		q = q.Join("JOIN daemon ON daemon.id = CAST (relations->'DaemonID' AS INTEGER)")
+		q = q.Join("JOIN daemon ON daemon.id = CAST (relations->>'DaemonID' AS INTEGER)")
 		q = q.Where("daemon.name = ?", daemonType)
 	}
 	if appType != nil {
-		q = q.Join("JOIN app ON app.id = CAST (relations->'AppID' AS INTEGER)")
+		q = q.Join("JOIN app ON app.id = CAST (relations->>'AppID' AS INTEGER)")
 		q = q.Where("app.type = ?", appType)
 	}
 	if machineID != nil {
-		q = q.Where("CAST (relations->'MachineID' AS INTEGER) = ?", *machineID)
+		q = q.Where("CAST (relations->>'MachineID' AS INTEGER) = ?", *machineID)
 	}
 	if userID != nil {
-		q = q.Where("CAST (relations->'UserID' AS INTEGER) = ?", *userID)
+		q = q.Where("CAST (relations->>'UserID' AS INTEGER) = ?", *userID)
 	}
 
 	// prepare sorting expression, offset and limit
