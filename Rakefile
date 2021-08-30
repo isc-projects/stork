@@ -955,6 +955,8 @@ if ENV['CHROME_BIN']
     CHROME_DRV_VERSION = '87.0.4280.20'
   elsif out.include? '90.'
     CHROME_DRV_VERSION = '90.0.4430.72'
+  elsif out.include? '92.'
+    CHROME_DRV_VERSION = '92.0.4515.159'
   else
     CHROME_DRV_VERSION = ""
     puts "Cannot match Chrome browser version and chromedriver version"
