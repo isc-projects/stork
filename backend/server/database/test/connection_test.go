@@ -43,3 +43,21 @@ func TestTransaction(t *testing.T) {
 	// Those two pointers should point at the same object.
 	require.Same(t, tx, tx2)
 }
+
+// Tests the logic that fetches database server version.
+func TestGetDatabaseServerVersion(t *testing.T) {
+	db, _, teardown := SetupDatabaseTestCase(t)
+	defer teardown()
+
+	version, err := dbops.GetDatabaseServerVersion(db)
+
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, version, 130000)
+}
+
+// Tests the logic that creates an error when the database server has an unsupported version.
+func TestCreateUnsupportedDatabaseServerVersionError(t *testing.T) {
+	err := dbops.UnsupportedDatabaseServerVersionError(90120)
+	require.EqualValues(t, err.Error(),
+		"unsupported database version: got 9.1.20, required at least 10.0.0")
+}

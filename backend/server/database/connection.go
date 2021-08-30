@@ -15,6 +15,29 @@ import (
 
 type DBLogger struct{}
 
+const (
+	minSupportedDatabaseServerVersionMajor = 10
+	minSupportedDatabaseServerVersionMinor = 0
+	minSupportedDatabaseServerVersionPatch = 0
+	minSupportedDatabaseServerVersion      = minSupportedDatabaseServerVersionMajor*10000 +
+		minSupportedDatabaseServerVersionMinor*100 +
+		minSupportedDatabaseServerVersionPatch
+)
+
+var errUnsupportedDatabaseServerVersion = errors.New("unsupported database version")
+
+func UnsupportedDatabaseServerVersionError(version int) error {
+	patch := version % 100
+	minor := (version / 100) % 100
+	major := version / (100 * 100)
+	return fmt.Errorf("%w: got %d.%d.%d, required at least %d.%d.%d",
+		errUnsupportedDatabaseServerVersion, major, minor, patch,
+		minSupportedDatabaseServerVersionMajor,
+		minSupportedDatabaseServerVersionMinor,
+		minSupportedDatabaseServerVersionPatch,
+	)
+}
+
 // Hook run before SQL query execution.
 func (d DBLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
 	// When making queries on the system_user table we want to make sure that
@@ -77,6 +100,18 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 	if err != nil {
 		return nil, pkgerrors.Wrapf(err, "unable to connect to the database using provided credentials")
 	}
+
+	// Check that a database version is supported
+	version, err := GetDatabaseServerVersion(db)
+	if err != nil {
+		return nil, err
+	}
+
+	if version < minSupportedDatabaseServerVersion {
+		err = UnsupportedDatabaseServerVersionError(version)
+		return nil, err
+	}
+
 	return db, nil
 }
 
@@ -152,4 +187,14 @@ func Transaction(dbIface interface{}) (tx *pg.Tx, rollback func(), commit func()
 		}
 	}
 	return tx, rollback, commit, err
+}
+
+// Fetch the connected Postgres version in numeric format.
+func GetDatabaseServerVersion(db *PgDB) (int, error) {
+	var version int
+	_, err := db.QueryOne(pg.Scan(&version), "SELECT CAST(current_setting('server_version_num') AS integer)")
+	if err != nil {
+		return 0, err
+	}
+	return version, nil
 }
