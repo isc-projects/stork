@@ -15,29 +15,6 @@ import (
 
 type DBLogger struct{}
 
-const (
-	minSupportedDatabaseServerVersionMajor = 10
-	minSupportedDatabaseServerVersionMinor = 0
-	minSupportedDatabaseServerVersionPatch = 0
-	minSupportedDatabaseServerVersion      = minSupportedDatabaseServerVersionMajor*10000 +
-		minSupportedDatabaseServerVersionMinor*100 +
-		minSupportedDatabaseServerVersionPatch
-)
-
-var errUnsupportedDatabaseServerVersion = errors.New("unsupported database version")
-
-func UnsupportedDatabaseServerVersionError(version int) error {
-	patch := version % 100
-	minor := (version / 100) % 100
-	major := version / (100 * 100)
-	return fmt.Errorf("%w: got %d.%d.%d, required at least %d.%d.%d",
-		errUnsupportedDatabaseServerVersion, major, minor, patch,
-		minSupportedDatabaseServerVersionMajor,
-		minSupportedDatabaseServerVersionMinor,
-		minSupportedDatabaseServerVersionPatch,
-	)
-}
-
 // Hook run before SQL query execution.
 func (d DBLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Context, error) {
 	// When making queries on the system_user table we want to make sure that
@@ -107,9 +84,24 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		return nil, err
 	}
 
-	if version < minSupportedDatabaseServerVersion {
-		err = UnsupportedDatabaseServerVersionError(version)
-		return nil, err
+	// Minimal supported database server version
+	minMajnor := 10
+	minMinor := 0
+	minPatch := 0
+
+	minVersion := minMajnor*100*100 + minMinor*100 + minPatch
+
+	if version < minVersion {
+		currentPatch := version % 100
+		currentMinor := (version / 100) % 100
+		currentMajnor := version / (100 * 100)
+
+		return nil, pkgerrors.Errorf("unsupported database server version: got %d.%d.%d, required at least %d.%d.%d",
+			currentMajnor, currentMinor, currentPatch,
+			minMajnor,
+			minMinor,
+			minPatch,
+		)
 	}
 
 	return db, nil
