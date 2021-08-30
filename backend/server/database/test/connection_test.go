@@ -52,7 +52,8 @@ func TestGetDatabaseServerVersion(t *testing.T) {
 	version, err := dbops.GetDatabaseServerVersion(db)
 
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, version, 130000)
+	require.GreaterOrEqual(t, version, 100000)
+	require.Less(t, version, 200000)
 }
 
 // Tests the logic that creates an error when the database server has an unsupported version.
