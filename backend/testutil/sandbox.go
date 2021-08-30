@@ -78,7 +78,7 @@ func (sb *Sandbox) JoinDir(name string) string {
 	return fpath
 }
 
-// Create a file and write provided contect to it.
+// Create a file and write provided content to it.
 func (sb *Sandbox) Write(name string, content string) string {
 	fpath := sb.Join(name)
 
