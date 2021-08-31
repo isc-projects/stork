@@ -1482,10 +1482,10 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 	return rsp
 }
 
-// Hide any sensitive data from object. Data is sensitive if its key is equal "password" or "secret".
+// Hide any sensitive data in the object. Data is sensitive if its key is equal to "password" or "secret".
 func hideSensitiveData(obj *map[string]interface{}) {
 	for entryKey, entryValue := range *obj {
-		// Check it is is a sensitive data.
+		// Check if the value holds sensitive data.
 		if entryKey == "password" || entryKey == "secret" {
 			(*obj)[entryKey] = nil
 			continue
