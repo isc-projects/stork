@@ -1,5 +1,6 @@
 * 152 [build] marcin
-    MacOS building improved.
+    Resolved an issue with building Stork packages in Docker on
+    the MacOS.
     (Gitlab #490)
 
 * 151 [func] slawek
