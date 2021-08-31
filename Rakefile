@@ -815,6 +815,7 @@ def run_build_pkg_in_docker(dkr_image, pkg_type, side)
   cmd += " -v tools:/tools "
   cmd += " --user `id -u`:`id -g` "
   cmd += " --workdir=\"/home/$USER\""
+  cmd += " -e \"HOME=/home/$USER\""
   cmd += " --volume=\"/etc/group:/etc/group:ro\""
   cmd += " --volume=\"/etc/passwd:/etc/passwd:ro\""
   cmd += " --volume=\"/etc/shadow:/etc/shadow:ro\""
