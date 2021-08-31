@@ -1,3 +1,11 @@
+Stork 0.20.0
+
+* 151 [func] slawek
+
+    Obfuscate sensitive Kea configuration parts displayed using
+    JSON viewer.
+    (Gitlab #561)
+
 Stork 0.19.0 released on 2021-08-11.
 
 * 150 [bug] godfryd
