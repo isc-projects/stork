@@ -142,6 +142,14 @@ export class JsonTreeComponent {
         this._recursionLevel = level
     }
 
+    /**
+     * Current recursion level.
+     * This value is decreased and pass through levels below.
+     */
+    get recursionLevel() {
+        return this._recursionLevel
+    }
+
     private _secretKeys = ['password', 'secret']
 
     /**
@@ -175,14 +183,6 @@ export class JsonTreeComponent {
      */
     get canShowSecrets() {
         return this._canShowSecrets
-    }
-
-    /**
-     * Current recursion level.
-     * This value is decreased and pass through levels below.
-     */
-    get recursionLevel() {
-        return this._recursionLevel
     }
 
     /**
