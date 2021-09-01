@@ -607,9 +607,8 @@ Click ``Download`` to download the entire configuration into a text file.
 
    Some of the configuration fields may contain sensitive data (e.g. passwords
    or tokens). The content of these fields is hidden, and a placeholder is shown.
-   Users in the super admin group can display a plain value on demand.
-   The rest of the users see a placeholder, and JSON returned from API contains
-   `null` instead of the real secret value.
+   Configurations downloaded as JSON files by users other than super admins contain
+   null values in place of the sensitive data.
 
 Dashboard
 =========
