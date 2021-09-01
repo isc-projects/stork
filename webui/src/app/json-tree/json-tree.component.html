@@ -4,7 +4,9 @@
     <div class="tree-level tree-level--leaf" [ngClass]="{ 'tree-level--corrupted': isCorrupted() }">
         <!-- Key, all nodes without top -->
         <span *ngIf="!isRootLevel()" class="tree-level__key">{{ key }}</span>
+        <!-- Standard value rendering -->
         <span
+            *ngIf="!hasCustomValueTemplate()"
             class="tree-level__value"
             [ngClass]="{
                 'tree-level__value--string': isString(),
@@ -15,16 +17,9 @@
             }"
         >
             <!-- Primitive value or empty, but not object -->
-            <ng-container *ngIf="(isPrimitive() || isEmpty()) && !isObject() && hasAssignedValue()">
-                <!-- Standard value rendering -->
-                <ng-container *ngIf="!hasCustomValueTemplate()">{{ value + '' }}</ng-container>
-                <!-- Custom value rendering -->
-                <ng-template
-                    *ngIf="hasCustomValueTemplate()"
-                    [ngTemplateOutlet]="customValueTemplates[key]"
-                    [ngTemplateOutletContext]="{ key: key, value: value }"
-                ></ng-template>
-            </ng-container>
+            <ng-container *ngIf="(isPrimitive() || isEmpty()) && !isObject() && hasAssignedValue()">{{
+                value + ''
+            }}</ng-container>
             <!-- Not assigned value yet -->
             <ng-container *ngIf="!hasAssignedValue()"><i class="fa fa-spinner fa-spin"></i></ng-container>
             <!-- Complex, but recursion level reached -->
@@ -32,6 +27,14 @@
                 <span (click)="onClickResetRecursionLevel()">Load more...</span>
             </ng-container>
             <!-- Object is rendered as [Object object] normal way, then omit -->
+        </span>
+        <!-- Custom value rendering -->
+        <span *ngIf="hasCustomValueTemplate()" class="tree-level__value">
+            <ng-template
+                [ngTemplateOutlet]="customValueTemplates[key]"
+                [ngTemplateOutletContext]="{ key: key, value: value }"
+            >
+            </ng-template>
         </span>
     </div>
 </ng-template>
