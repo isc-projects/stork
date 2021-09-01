@@ -96,7 +96,8 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		currentMinor := (version / 100) % 100
 		currentMajnor := version / (100 * 100)
 
-		return nil, pkgerrors.Errorf("unsupported database server version: got %d.%d.%d, required at least %d.%d.%d",
+		log.Warnf("unsupported database server version: got %d.%d.%d, required at least %d.%d.%d,\n"+
+			"Stork was tested using Postgres 11, you use older version on your own risk",
 			currentMajnor, currentMinor, currentPatch,
 			minMajnor,
 			minMinor,
