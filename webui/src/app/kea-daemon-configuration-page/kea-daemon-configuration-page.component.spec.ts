@@ -128,16 +128,13 @@ describe('KeaDaemonConfigurationPageComponent', () => {
     })
 
     it('should toggle expand nodes', () => {
-        expect(component.autoExpandNodeCount).toBe(0)
-        expect(component.currentAction).toBe('expand')
+        expect(component.autoExpand).toBe('none')
         component.onClickToggleNodes()
 
-        expect(component.autoExpandNodeCount).toBe(Number.MAX_SAFE_INTEGER)
-        expect(component.currentAction).toBe('collapse')
+        expect(component.autoExpand).toBe('all')
         component.onClickToggleNodes()
 
-        expect(component.autoExpandNodeCount).toBe(0)
-        expect(component.currentAction).toBe('expand')
+        expect(component.autoExpand).toBe('none')
     })
 
     it('should set filename for download file', async () => {
@@ -180,147 +177,5 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         const messageElement = fixture.debugElement.query(By.css('.p-inline-message-text'))
         expect(messageElement).not.toBeNull()
         expect((messageElement.nativeElement as Element).textContent).toBe('Fetching daemon configuration failed')
-    })
-
-    it('should have custom value templates', async () => {
-        await fixture.whenStable()
-        const jsonElement = fixture.debugElement.query(By.directive(JsonTreeComponent))
-        expect(jsonElement).toBeDefined()
-        const jsonComponent = jsonElement.componentInstance as JsonTreeComponent
-        expect(jsonComponent).not.toBeNull()
-        const templates = jsonComponent.customValueTemplates
-        expect(Object.keys(templates)).toContain('password')
-        expect(Object.keys(templates)).toContain('secret')
-    })
-
-    it('should hide the secrets', async () => {
-        // Move to configuration with secrets
-        await fixture.whenStable()
-        for (let i = 0; i < 2; i++) {
-            component.onClickRefresh()
-            await fixture.whenStable()
-        }
-        fixture.detectChanges()
-
-        expect(component.configuration).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
-
-        // Extract JSON viewer component
-        const jsonElement = fixture.debugElement.query(By.directive(JsonTreeComponent))
-        expect(jsonElement).toBeDefined()
-        const jsonComponent = jsonElement.componentInstance as JsonTreeComponent
-        expect(jsonComponent).not.toBeNull()
-        console.log(jsonComponent.value)
-        expect(jsonComponent.value).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
-
-        // Extract specific levels
-        const valueElements = jsonElement.queryAll(By.css('.tree-level--leaf .tree-level__value'))
-        expect(valueElements.length).toBe(2)
-
-        for (const valueElement of valueElements) {
-            const valueNativeElement = valueElement.nativeElement as HTMLElement
-            // We extract only visible text - the secret should be hidden
-            const content = valueNativeElement.innerText
-            expect(content).toBeFalsy()
-        }
-    })
-
-    it('should show the secrets after click when user is super admin', async () => {
-        // Log-out and log-in, now user is super admin
-        authService.logout()
-        await fixture.whenStable()
-        authService.login('foo', 'bar', 'baz')
-        await fixture.whenStable()
-        fixture.detectChanges()
-
-        expect(component.canShowSecrets).toBeTrue()
-
-        // Move to configuration with secrets
-        await fixture.whenStable()
-        component.onClickRefresh()
-        await fixture.whenStable()
-        fixture.detectChanges()
-
-        expect(component.configuration).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
-
-        // Extract JSON viewer component
-        const jsonElement = fixture.debugElement.query(By.directive(JsonTreeComponent))
-        expect(jsonElement).toBeDefined()
-        const jsonComponent = jsonElement.componentInstance as JsonTreeComponent
-        expect(jsonComponent).not.toBeNull()
-        console.log(jsonComponent.value)
-        expect(jsonComponent.value).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
-
-        // Extract specific levels
-        const keyElements = jsonElement.queryAll(By.css('.tree-level--leaf .tree-level__key'))
-        expect(keyElements.length).toBe(2)
-
-        for (const keyElement of keyElements) {
-            const key = (keyElement.nativeElement as HTMLElement).textContent.trim()
-            const expectedValue = key.toUpperCase()
-            const leafElement = keyElement.parent
-            const valueElement = leafElement.query(By.css('.tree-level__value'))
-            expect(valueElement).not.toBeNull()
-            const valueNativeElement = valueElement.nativeElement as HTMLElement
-
-            // We extract only visible text - the secret should be hidden
-            let content = valueNativeElement.innerText
-            expect(content).toBeFalsy()
-
-            // Click on hidden value
-            const summaryElement = valueElement.query(By.css('summary'))
-            expect(summaryElement).not.toBeNull()
-            const summaryNativeElement = summaryElement.nativeElement as HTMLElement
-            summaryNativeElement.click()
-            await fixture.whenRenderingDone()
-            content = valueNativeElement.innerText.trim()
-            expect(content).toBe(expectedValue)
-        }
-    })
-
-    it('should ignore click on the secret field when user is not a super admin', async () => {
-        expect(component.canShowSecrets).toBeFalse()
-        // Move to configuration with secrets
-        await fixture.whenStable()
-        for (let i = 0; i < 2; i++) {
-            component.onClickRefresh()
-            await fixture.whenStable()
-        }
-        fixture.detectChanges()
-
-        expect(component.configuration).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
-
-        // Extract JSON viewer component
-        const jsonElement = fixture.debugElement.query(By.directive(JsonTreeComponent))
-        expect(jsonElement).toBeDefined()
-        const jsonComponent = jsonElement.componentInstance as JsonTreeComponent
-        expect(jsonComponent).not.toBeNull()
-        console.log(jsonComponent.value)
-        expect(jsonComponent.value).toEqual({ secret: 'SECRET', password: 'PASSWORD' })
-
-        // Extract specific levels
-        const keyElements = jsonElement.queryAll(By.css('.tree-level--leaf .tree-level__key'))
-        expect(keyElements.length).toBe(2)
-
-        for (const keyElement of keyElements) {
-            const key = (keyElement.nativeElement as HTMLElement).textContent.trim()
-            const expectedValue = key.toUpperCase()
-            const leafElement = keyElement.parent
-            const valueElement = leafElement.query(By.css('.tree-level__value'))
-            expect(valueElement).not.toBeNull()
-            const valueNativeElement = valueElement.nativeElement as HTMLElement
-
-            // We extract only visible text - the secret should be hidden
-            let content = valueNativeElement.innerText
-            expect(content).toBeFalsy()
-
-            // Click on hidden value
-            const summaryElement = valueElement.query(By.css('summary'))
-            expect(summaryElement).not.toBeNull()
-            const summaryNativeElement = summaryElement.nativeElement as HTMLElement
-            summaryNativeElement.click()
-            await fixture.whenRenderingDone()
-            content = valueNativeElement.innerText.trim()
-            expect(content).toBeFalsy() // Nothing changed
-        }
     })
 })

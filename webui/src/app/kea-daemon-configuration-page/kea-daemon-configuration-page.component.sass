@@ -15,23 +15,3 @@
 .panel-header__entry+.panel-header__entry
     // Define spacing between buttons, because header resets it.
     margin-right: .25em
-
-.sensitive-data
-    .sensitive-data__icon
-        // Click pointer
-        cursor: help
-        // Hide collapse mark
-        list-style: none
-        &::marker
-            // Hide collapse mark
-            list-style: none
-    &[open]
-        .sensitive-data__icon
-            // Hide lock icon after click on it and expand value
-            display: none
-
-.sensitive-data--forbidden
-    .sensitive-data__icon
-        // Disable click pointer
-        cursor: not-allowed
-

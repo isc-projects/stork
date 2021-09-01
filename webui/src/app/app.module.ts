@@ -79,6 +79,7 @@ import { EventsPageComponent } from './events-page/events-page.component'
 import { RenameAppDialogComponent } from './rename-app-dialog/rename-app-dialog.component'
 import { LeaseSearchPageComponent } from './lease-search-page/lease-search-page.component'
 import { JsonTreeComponent } from './json-tree/json-tree.component'
+import { JsonTreeRootComponent } from './json-tree-root/json-tree-root.component'
 import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-page/kea-daemon-configuration-page.component'
 import { HostTabComponent } from './host-tab/host-tab.component'
 
@@ -126,6 +127,7 @@ export function cfgFactory() {
         RenameAppDialogComponent,
         LeaseSearchPageComponent,
         JsonTreeComponent,
+        JsonTreeRootComponent,
         KeaDaemonConfigurationPageComponent,
         HostTabComponent,
     ],

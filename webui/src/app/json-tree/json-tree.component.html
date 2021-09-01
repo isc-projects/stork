@@ -4,38 +4,22 @@
     <div class="tree-level tree-level--leaf" [ngClass]="{ 'tree-level--corrupted': isCorrupted() }">
         <!-- Key, all nodes without top -->
         <span *ngIf="!isRootLevel()" class="tree-level__key">{{ key }}</span>
-        <!-- Standard value rendering -->
-        <span
-            *ngIf="!hasCustomValueTemplate()"
-            class="tree-level__value"
-            [ngClass]="{
-                'tree-level__value--string': isString(),
-                'tree-level__value--object': isObject(),
-                'tree-level__value--array': isArray(),
-                'tree-level__value--not-assigned': !hasAssignedValue(),
-                'tree-level__value--clickable': isRecursionLevelReached()
-            }"
-        >
-            <!-- Primitive value or empty, but not object -->
-            <ng-container *ngIf="(isPrimitive() || isEmpty()) && !isObject() && hasAssignedValue()">{{
-                value + ''
-            }}</ng-container>
-            <!-- Not assigned value yet -->
-            <ng-container *ngIf="!hasAssignedValue()"><i class="fa fa-spinner fa-spin"></i></ng-container>
-            <!-- Complex, but recursion level reached -->
-            <ng-container *ngIf="isComplex() && !isEmpty() && isRecursionLevelReached()">
-                <span (click)="onClickResetRecursionLevel()">Load more...</span>
-            </ng-container>
-            <!-- Object is rendered as [Object object] normal way, then omit -->
-        </span>
-        <!-- Custom value rendering -->
-        <span *ngIf="hasCustomValueTemplate()" class="tree-level__value">
+        <div class="tree-level__value">
+            <!-- Secret value rendering -->
             <ng-template
+                *ngIf="!hasCustomValueTemplate() && isSecret()"
+                [ngTemplateOutlet]="leafSecretValue"
+            ></ng-template>
+            <!-- Standard value rendering -->
+            <ng-template *ngIf="!hasCustomValueTemplate() && !isSecret()" [ngTemplateOutlet]="leafValue"></ng-template>
+            <!-- Custom value rendering -->
+            <ng-template
+                *ngIf="hasCustomValueTemplate()"
                 [ngTemplateOutlet]="customValueTemplates[key]"
                 [ngTemplateOutletContext]="{ key: key, value: value }"
             >
             </ng-template>
-        </span>
+        </div>
     </div>
 </ng-template>
 
@@ -75,6 +59,8 @@
             [forceOpenThisLevel]="hasSingleChild()"
             [recursionLevel]="recursionLevel + 1"
             [customValueTemplates]="customValueTemplates"
+            [secretKeys]="secretKeys"
+            [canShowSecrets]="canShowSecrets"
         >
             <ng-container *ngIf="last && areChildrenLoading()">
                 {{ onFinishRenderChildren() }}
@@ -91,6 +77,46 @@
             (onPageChange)="onPageChildrenChanged($event)"
         ></p-paginator>
     </div>
+</ng-template>
+
+<!-- Value of a leaf -->
+<ng-template #leafValue>
+    <span
+        [ngClass]="{
+            'tree-level__value--string': isString(),
+            'tree-level__value--object': isObject(),
+            'tree-level__value--array': isArray(),
+            'tree-level__value--not-assigned': !hasAssignedValue(),
+            'tree-level__value--clickable': isRecursionLevelReached()
+        }"
+    >
+        <!-- Primitive value or empty, but not object -->
+        <ng-container *ngIf="(isPrimitive() || isEmpty()) && !isObject() && hasAssignedValue()">{{
+            value + ''
+        }}</ng-container>
+        <!-- Not assigned value yet -->
+        <ng-container *ngIf="!hasAssignedValue()"><i class="fa fa-spinner fa-spin"></i></ng-container>
+        <!-- Complex, but recursion level reached -->
+        <ng-container *ngIf="isComplex() && !isEmpty() && isRecursionLevelReached()">
+            <span (click)="onClickResetRecursionLevel()">Load more...</span>
+        </ng-container>
+        <!-- Object is rendered as [Object object] normal way, then omit -->
+    </span>
+</ng-template>
+
+<!-- Secret placeholder -->
+<ng-template #leafSecretValue>
+    <details
+        class="sensitive-data"
+        (click)="(canShowSecrets)"
+        [ngClass]="{ 'sensitive-data--forbidden': !canShowSecrets }"
+    >
+        <summary class="sensitive-data__icon" [title]="canShowSecrets ? 'Click to show a secret' : 'Forbidden'">
+            <i [class]="{ fas: true, 'fa-lock': !canShowSecrets, 'fa-eye-slash': canShowSecrets }"></i>
+        </summary>
+        <!-- Secret value rendering -->
+        <ng-template [ngTemplateOutlet]="leafValue"></ng-template>
+    </details>
 </ng-template>
 
 <!-- Jump to page pagination control -->

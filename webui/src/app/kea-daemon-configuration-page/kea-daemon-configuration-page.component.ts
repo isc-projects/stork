@@ -4,7 +4,6 @@ import { Router, ActivatedRoute } from '@angular/router'
 import { MessageService } from 'primeng/api'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { AuthService } from '../auth.service'
 import { ServicesService } from '../backend/api/api'
 import { ServerDataService } from '../server-data.service'
 
@@ -30,12 +29,11 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
     ]
 
     // Variables to store values for getters. See specific getter for documentation.
-    private _autoExpandNodeCount = 0
+    private _autoExpand: 'none' | 'all' = 'none'
     private _configuration = null
     private _daemonId: number = null
     private _downloadFilename = 'data.json'
     private _failedFetch = false
-    private _canShowSecrets = false
 
     private changeDaemonId = new Subject<number>()
     private changeAppId = new Subject<number>()
@@ -46,8 +44,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
         private router: Router,
         private servicesApi: ServicesService,
         private serverData: ServerDataService,
-        private msgService: MessageService,
-        private auth: AuthService
+        private msgService: MessageService
     ) {}
 
     /**
@@ -146,13 +143,6 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
                 this.changeDaemonId.next(daemonId)
             })
         )
-
-        // Check if user can show the secrets
-        this.subscription.add(
-            this.auth.currentUser.subscribe((_) => {
-                this._canShowSecrets = this.auth.superAdmin()
-            })
-        )
     }
 
     /**
@@ -166,10 +156,10 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
      * auto expanded nodes to 0 (collapse) or max integer value (expand).
      */
     onClickToggleNodes() {
-        if (this._autoExpandNodeCount === Number.MAX_SAFE_INTEGER) {
-            this._autoExpandNodeCount = 0
+        if (this._autoExpand === 'none') {
+            this._autoExpand = 'all'
         } else {
-            this._autoExpandNodeCount = Number.MAX_SAFE_INTEGER
+            this._autoExpand = 'none'
         }
     }
 
@@ -182,13 +172,8 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
     }
 
     /** Specifies current toggle/expand button state. */
-    get currentAction() {
-        return this._autoExpandNodeCount === 0 ? 'expand' : 'collapse'
-    }
-
-    /** Returns 0 for collapse nodes or maximal integer for expand. */
-    get autoExpandNodeCount() {
-        return this._autoExpandNodeCount
+    get autoExpand() {
+        return this._autoExpand
     }
 
     /** Kea daemon configuration to display */
@@ -209,10 +194,5 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
     /** Indicates that fetch configuration failed. */
     get failedFetch() {
         return this._failedFetch
-    }
-
-    /** Return true if user can show the secrets (is super admin) */
-    get canShowSecrets() {
-        return this._canShowSecrets
     }
 }

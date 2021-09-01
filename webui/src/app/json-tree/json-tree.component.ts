@@ -1,5 +1,5 @@
 import { KeyValue } from '@angular/common'
-import { Component, OnInit, Input, Output, EventEmitter, TemplateRef } from '@angular/core'
+import { Component, Input, TemplateRef } from '@angular/core'
 
 /**
  * Typing for page changed event of PrimeNG navigation.
@@ -140,6 +140,41 @@ export class JsonTreeComponent {
     @Input()
     set recursionLevel(level: number) {
         this._recursionLevel = level
+    }
+
+    private _secretKeys = ['password', 'secret']
+
+    /**
+     * Set list of secret keys that values will hide using a placeholder.
+     * It applies only to a leaf of the tree.
+     */
+    @Input()
+    set secretKeys(keys: string[]) {
+        this._secretKeys = keys
+    }
+
+    /**
+     * Get list of secret keys that values will hide using a placeholder.
+     */
+    get secretKeys() {
+        return this._secretKeys
+    }
+
+    private _canShowSecrets = false
+
+    /**
+     * Enable/disable showing a secret value after a click on the placeholder
+     */
+    @Input()
+    set canShowSecrets(enabled: boolean) {
+        this._canShowSecrets = enabled
+    }
+
+    /**
+     * Indicates if a secret should be shown after clicking on the placeholder.
+     */
+    get canShowSecrets() {
+        return this._canShowSecrets
     }
 
     /**
@@ -533,6 +568,13 @@ export class JsonTreeComponent {
      */
     isRecursionLevelReached(): boolean {
         return this._recursionLevel >= this._maxRecursionLevel
+    }
+
+    /**
+     * Specifies when the value is a secret and should be hide using a placeholder.
+     */
+    isSecret(): boolean {
+        return this.secretKeys.includes(this.key)
     }
 
     /**

@@ -613,6 +613,60 @@ describe('JsonTreeComponent', () => {
         component.key = 'baz'
         expect(component.hasCustomValueTemplate()).toBeFalse()
     })
+
+    it('should hide the secrets', () => {
+        component.key = 'password'
+        component.value = 'foo'
+        component.canShowSecrets = true
+        expect(component.isSecret()).toBeTrue()
+
+        fixture.detectChanges()
+
+        // Extract element
+        const valueElement = fixture.debugElement.query(By.css('.tree-level--leaf .tree-level__value'))
+        const valueNativeElement = valueElement.nativeElement as HTMLElement
+        const content = valueNativeElement.innerText
+        expect(content).toBeFalsy()
+    })
+
+    it('should show the secrets after click when user can show secrets', async () => {
+        component.key = 'secret'
+        component.value = 'foo'
+        component.canShowSecrets = true
+
+        fixture.detectChanges()
+
+        // Click on hidden value
+        const valueElement = fixture.debugElement.query(By.css('.tree-level--leaf .tree-level__value'))
+        let content = valueElement.nativeElement.innerText.trim()
+        expect(content).toBe('')
+        const summaryElement = valueElement.query(By.css('summary'))
+        expect(summaryElement).not.toBeNull()
+        const summaryNativeElement = summaryElement.nativeElement as HTMLElement
+        summaryNativeElement.click()
+        await fixture.whenRenderingDone()
+        content = valueElement.nativeElement.innerText.trim()
+        expect(content).toBe('foo')
+    })
+
+    it('should ignore click on the secret field when user is not a super admin', async () => {
+        component.key = 'secret'
+        component.value = 'foo'
+        component.canShowSecrets = false
+
+        fixture.detectChanges()
+
+        const valueElement = fixture.debugElement.query(By.css('.tree-level--leaf .tree-level__value'))
+        let content = valueElement.nativeElement.innerText.trim()
+        expect(content).toBe('')
+        const summaryElement = valueElement.query(By.css('summary'))
+        expect(summaryElement).not.toBeNull()
+        const summaryNativeElement = summaryElement.nativeElement as HTMLElement
+        summaryNativeElement.click()
+        await fixture.whenRenderingDone()
+        content = valueElement.nativeElement.innerText.trim()
+        expect(content).toBe('')
+    })
 })
 
 /**
@@ -660,7 +714,7 @@ describe('JsonTreeComponent-ExternalTemplates', () => {
         await fixture.detectChanges()
         await fixture.whenRenderingDone()
 
-        const element = fixture.debugElement.query(By.css('.tree-level__value.tree-level__value--string'))
+        const element = fixture.debugElement.query(By.css('.tree-level__value .tree-level__value--string'))
         expect(element).not.toBeNull()
         const nativeElement = element.nativeElement as HTMLElement
         expect(nativeElement).not.toBeNull()
@@ -714,7 +768,7 @@ describe('JsonTreeComponent-ExternalTemplates', () => {
         await fixture.detectChanges()
         await fixture.whenRenderingDone()
 
-        const element = fixture.debugElement.query(By.css('.tree-level__value.tree-level__value--string'))
+        const element = fixture.debugElement.query(By.css('.tree-level__value .tree-level__value--string'))
         expect(element).not.toBeNull()
         const nativeElement = element.nativeElement as HTMLElement
         expect(nativeElement).not.toBeNull()

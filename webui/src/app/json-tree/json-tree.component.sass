@@ -135,6 +135,26 @@
         margin-left: 0.5em
 
 
+.sensitive-data
+    .sensitive-data__icon
+        // Click pointer
+        cursor: help
+        // Hide collapse mark
+        list-style: none
+        &::marker
+            // Hide collapse mark
+            list-style: none
+    &[open]
+        .sensitive-data__icon
+            // Hide lock icon after click on it and expand value
+            display: none
+
+.sensitive-data--forbidden
+    .sensitive-data__icon
+        // Disable click pointer
+        cursor: not-allowed
+
+
 %hover_highlight
     &:hover
         // Highlight row.

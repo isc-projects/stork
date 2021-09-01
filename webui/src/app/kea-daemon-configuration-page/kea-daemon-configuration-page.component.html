@@ -46,7 +46,7 @@
                 icon="fa fa-expand-alt"
                 label="Expand"
                 (click)="onClickToggleNodes()"
-                *ngIf="currentAction === 'expand'"
+                *ngIf="autoExpand === 'all'"
                 [disabled]="configuration == null"
             ></button>
             <button
@@ -56,33 +56,18 @@
                 icon="fa fa-compress-alt"
                 label="Collapse"
                 (click)="onClickToggleNodes()"
-                *ngIf="currentAction === 'collapse'"
+                *ngIf="autoExpand === 'none'"
                 [disabled]="configuration == null"
             ></button>
         </div>
     </p-header>
 
     <!-- JSON viewer -->
-    <app-json-tree
+    <app-json-tree-root
         *ngIf="!failedFetch"
         class="json-content"
         [value]="configuration"
-        [autoExpandMaxNodeCount]="autoExpandNodeCount"
-        [customValueTemplates]="{ password: sensitiveData, secret: sensitiveData }"
-    ></app-json-tree>
+        [autoExpand]="autoExpand"
+    ></app-json-tree-root>
     <p-message *ngIf="failedFetch" severity="warn" text="Fetching daemon configuration failed"></p-message>
 </p-panel>
-
-<!-- Sensitive data placeholder -->
-<ng-template #sensitiveData let-key="key" let-value="value">
-    <details
-        class="sensitive-data"
-        (click)="(canShowSecrets)"
-        [ngClass]="{ 'sensitive-data--forbidden': !canShowSecrets }"
-    >
-        <summary class="sensitive-data__icon" [title]="canShowSecrets ? 'Click to show a secret' : 'Forbidden'">
-            <i [class]="{ fas: true, 'fa-lock': !canShowSecrets, 'fa-eye-slash': canShowSecrets }"></i>
-        </summary>
-        {{ value }}
-    </details>
-</ng-template>
