@@ -571,7 +571,7 @@ export class JsonTreeComponent {
     }
 
     /**
-     * Specifies when the value is a secret and should be hide using a placeholder.
+     * Specifies when the value is a secret and should be hidden using a placeholder.
      */
     isSecret(): boolean {
         return this.secretKeys.includes(this.key)
