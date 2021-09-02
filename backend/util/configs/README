@@ -1,2 +1,2 @@
 The configurations are intentionally in a nested directory to test relative imports.
-Nested import may be relative to a parent configuration, not a working directory.
+Nested import may be relative to a parent configuration file, not a working directory.

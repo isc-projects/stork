@@ -1,5 +1,5 @@
 {
     "biz": "zib",
-    "buz": <?include "config-without-includes.json" ?>,
+    "buz": <?include "config-without-includes.json"?>,
     "boz": "zob"
 }

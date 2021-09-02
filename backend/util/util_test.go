@@ -284,3 +284,10 @@ func TestReadConfigurationWithMultipleTheSameIncludes(t *testing.T) {
 		require.EqualValues(t, baz, true)
 	}
 }
+
+// Test read a configuration with an import statement related to a non-existing file.
+func TestReadConfigurationWithNonExistingIncludes(t *testing.T) {
+	path := "configs/config-with-non-existing-includes.json"
+	_, err := ReadConfigurationWithIncludes(path)
+	require.Error(t, err)
+}
