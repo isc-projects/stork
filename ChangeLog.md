@@ -1,5 +1,3 @@
-Stork 0.20.0
-
 * 151 [func] slawek
 
     Obfuscate sensitive Kea configuration parts displayed using
