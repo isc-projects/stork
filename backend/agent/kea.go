@@ -189,14 +189,14 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 }
 
 func getCtrlAddressFromKeaConfig(path string) (string, int64) {
-	text, err := storkutil.ReadConfigurationWithImports(path)
+	text, err := storkutil.ReadConfigurationWithIncludes(path)
 	if err != nil {
 		log.Warnf("cannot read kea config file: %+v", err)
 		return "", 0
 	}
 
 	ptrn := regexp.MustCompile(`"http-port"\s*:\s*([0-9]+)`)
-	m := ptrn.FindStringSubmatch(string(text))
+	m := ptrn.FindStringSubmatch(text)
 	if len(m) == 0 {
 		log.Warnf("cannot parse http-port: %+v", err)
 		return "", 0
@@ -209,7 +209,7 @@ func getCtrlAddressFromKeaConfig(path string) (string, int64) {
 	}
 
 	ptrn = regexp.MustCompile(`"http-host"\s*:\s*\"(\S+)\"\s*,`)
-	m = ptrn.FindStringSubmatch(string(text))
+	m = ptrn.FindStringSubmatch(text)
 	address := "localhost"
 	if len(m) == 0 {
 		log.Warnf("cannot parse http-host: %+v", err)

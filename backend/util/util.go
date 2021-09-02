@@ -267,9 +267,13 @@ func readConfigurationWithIncludes(path string, parentPaths map[string]bool) (st
 
 	text := string(raw)
 
-	// Must contains propert prefix (<?include) and suffix ("?>").
-	// Path must by escaped by double quotes ("). Between path and prefix or suffix
-	// may be whitespace separator. Path must end with ".json" extension.
+	// Include pattern definition:
+	// - Must start with prefix: <?include
+	// - Must end with suffix: ?>
+	// - Path may be relative to parent configuration or absolute
+	// - Path must be escaped with double quotes
+	// - May to contains spacing before and after the path quotes
+	// - Path must contain ".json" extension
 	// Produce two groups: first for the whole statement and second for path.
 	includePattern := regexp.MustCompile(`<\?include\s*\"([^"]+\.json)\"\s*\?>`)
 	matchesGroupIndices := includePattern.FindAllStringSubmatchIndex(text, -1)
