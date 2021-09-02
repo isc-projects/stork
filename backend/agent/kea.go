@@ -189,7 +189,7 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 }
 
 func getCtrlAddressFromKeaConfig(path string) (string, int64) {
-	text, err := ioutil.ReadFile(path)
+	text, err := storkutil.ReadConfigurationWithImports(path)
 	if err != nil {
 		log.Warnf("cannot read kea config file: %+v", err)
 		return "", 0

@@ -296,6 +296,39 @@ func makeKeaConfFile() (file *os.File, removeFunc func(string) error) {
 	return file, removeFunc
 }
 
+func makeKeaConfFileWithImport() (parentConfig *os.File, childConfig *os.File, removeFunc func(string) error) {
+	// prepare kea conf file
+	parentConfig, err := ioutil.TempFile(os.TempDir(), "prefix-*.json")
+	if err != nil {
+		log.Fatal("Cannot create temporary file for parent config", err)
+	}
+
+	childConfig, err = ioutil.TempFile(os.TempDir(), "prefix-*.json")
+	if err != nil {
+		log.Fatal("Cannot create temporary file for child config", err)
+	}
+
+	removeFunc = os.Remove
+
+	text := []byte("{ \"http-host\": \"localhost\", \"http-port\": 45634 }")
+	if _, err = childConfig.Write(text); err != nil {
+		log.Fatal("Failed to write to temporary file", err)
+	}
+	if err := childConfig.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	text = []byte(fmt.Sprintf("{ \"Dhcp4\": <?include \"%s\"?> }", childConfig.Name()))
+	if _, err = parentConfig.Write(text); err != nil {
+		log.Fatal("Failed to write to temporary file", err)
+	}
+	if err := parentConfig.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	return parentConfig, childConfig, removeFunc
+}
+
 func TestDetectKeaApp(t *testing.T) {
 	tmpFile, remove := makeKeaConfFile()
 	tmpFilePath := tmpFile.Name()
@@ -318,6 +351,21 @@ func TestDetectKeaApp(t *testing.T) {
 
 	// check kea app detection when kea conf file is relative to CWD of kea process
 	cwd, file := path.Split(tmpFilePath)
+	app = detectKeaApp([]string{"", "", file}, cwd)
+	checkApp(app)
+
+	// Check configuration with an import statement
+	tmpFile, nestedFile, remove := makeKeaConfFileWithImport()
+	tmpFilePath = tmpFile.Name()
+	defer remove(tmpFilePath)
+	defer remove(nestedFile.Name())
+
+	// check kea app detection
+	app = detectKeaApp([]string{"", "", tmpFilePath}, "")
+	checkApp(app)
+
+	// check kea app detection when kea conf file is relative to CWD of kea process
+	cwd, file = path.Split(tmpFilePath)
 	app = detectKeaApp([]string{"", "", file}, cwd)
 	checkApp(app)
 }
