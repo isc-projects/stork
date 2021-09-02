@@ -1,3 +1,0 @@
-{
-    "ban": [0, 1, 2, <?include "config-with-imports.json"?>, 4]
-}

@@ -169,9 +169,9 @@ func TestHexToBytes(t *testing.T) {
 }
 
 // Test read a configuration without an import statements.
-func TestReadConfigurationWithoutImports(t *testing.T) {
-	path := "configs/config-without-imports.json"
-	raw, err := ReadConfigurationWithImports(path)
+func TestReadConfigurationWithoutIncludes(t *testing.T) {
+	path := "configs/config-without-includes.json"
+	raw, err := ReadConfigurationWithIncludes(path)
 	require.NoError(t, err)
 
 	var content interface{}
@@ -187,10 +187,10 @@ func TestReadConfigurationWithoutImports(t *testing.T) {
 	require.EqualValues(t, baz, true)
 }
 
-// Test read a configuration with an import statements.
-func TestReadConfigurationWithImports(t *testing.T) {
-	path := "configs/config-with-imports.json"
-	raw, err := ReadConfigurationWithImports(path)
+// Test read a configuration with an include statements.
+func TestReadConfigurationWithIncludes(t *testing.T) {
+	path := "configs/config-with-includes.json"
+	raw, err := ReadConfigurationWithIncludes(path)
 	require.NoError(t, err)
 
 	var content interface{}
@@ -216,9 +216,9 @@ func TestReadConfigurationWithImports(t *testing.T) {
 }
 
 // Test read a configuration with an nested import statements.
-func TestReadConfigurationWithNestedImports(t *testing.T) {
-	path := "configs/config-with-nested-imports.json"
-	raw, err := ReadConfigurationWithImports(path)
+func TestReadConfigurationWithNestedIncludes(t *testing.T) {
+	path := "configs/config-with-nested-includes.json"
+	raw, err := ReadConfigurationWithIncludes(path)
 	require.NoError(t, err)
 
 	var content interface{}
@@ -256,15 +256,15 @@ func TestReadConfigurationWithNestedImports(t *testing.T) {
 // Test read a configuration with an infinite loop.
 func TestReadConfigurationWithInfiniteLoop(t *testing.T) {
 	path := "configs/config-with-infinite-loop.json"
-	raw, err := ReadConfigurationWithImports(path)
+	raw, err := ReadConfigurationWithIncludes(path)
 	require.Empty(t, raw)
 	require.Error(t, err)
 }
 
 // Test read a configuration with multiple the same import statements.
-func TestReadConfigurationWithMultipleTheSameImports(t *testing.T) {
-	path := "configs/config-with-multiple-the-same-imports.json"
-	raw, err := ReadConfigurationWithImports(path)
+func TestReadConfigurationWithMultipleTheSameIncludes(t *testing.T) {
+	path := "configs/config-with-multiple-the-same-includes.json"
+	raw, err := ReadConfigurationWithIncludes(path)
 	require.NoError(t, err)
 
 	var content interface{}

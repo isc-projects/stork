@@ -1,5 +1,0 @@
-{
-    "biz": "zib",
-    "buz": <?include "config-without-imports.json" ?>,
-    "boz": "zob"
-}

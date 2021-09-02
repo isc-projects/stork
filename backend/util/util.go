@@ -250,14 +250,14 @@ func GetSecretInTerminal(prompt string) string {
 	return string(pass)
 }
 
-// Read a configuration file and resolve all import statements.
-func ReadConfigurationWithImports(path string) (string, error) {
+// Read a configuration file and resolve all include statements.
+func ReadConfigurationWithIncludes(path string) (string, error) {
 	parentPaths := map[string]bool{}
-	return readConfigurationWithImports(path, parentPaths)
+	return readConfigurationWithIncludes(path, parentPaths)
 }
 
-// Recursive function to read a configuration file and resolve all import statements.
-func readConfigurationWithImports(path string, parentPaths map[string]bool) (string, error) {
+// Recursive function to read a configuration file and resolve all include statements.
+func readConfigurationWithIncludes(path string, parentPaths map[string]bool) (string, error) {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Warnf("cannot read kea config file: %+v", err)
@@ -271,9 +271,9 @@ func readConfigurationWithImports(path string, parentPaths map[string]bool) (str
 	// Path must by escaped by double quotes ("). Between path and prefix or suffix
 	// may be whitespace separator. Path must end with ".json" extension.
 	// Produce two groups: first for the whole statement and second for path.
-	importPattern := regexp.MustCompile(`<\?include\s*\"([^"]+\.json)\"\s*\?>`)
-	matchesGroupIndices := importPattern.FindAllStringSubmatchIndex(text, -1)
-	matchesGroups := importPattern.FindAllStringSubmatch(text, -1)
+	includePattern := regexp.MustCompile(`<\?include\s*\"([^"]+\.json)\"\s*\?>`)
+	matchesGroupIndices := includePattern.FindAllStringSubmatchIndex(text, -1)
+	matchesGroups := includePattern.FindAllStringSubmatch(text, -1)
 
 	// Probably never met
 	if (matchesGroupIndices == nil) != (matchesGroups == nil) {
@@ -294,7 +294,7 @@ func readConfigurationWithImports(path string, parentPaths map[string]bool) (str
 	baseDirectory := filepath.Dir(path)
 
 	// Iteration from end to keep correct index values as when the pattern
-	// is replaced with an import content the positions of next patterns are shifting
+	// is replaced with an include content the positions of next patterns are shifting
 	for i := len(matchesGroupIndices) - 1; i >= 0; i-- {
 		matchedGroupIndex := matchesGroupIndices[i]
 		matchedGroup := matchesGroups[i]
@@ -304,18 +304,18 @@ func readConfigurationWithImports(path string, parentPaths map[string]bool) (str
 		matchedStatementLength := len(matchedGroup[0])
 		statementEndIndex := statementStartIndex + matchedStatementLength
 
-		// Import path may be absolute or relative to parent configuration
-		nestedImportPath := matchedPath
-		if !filepath.IsAbs(nestedImportPath) {
-			nestedImportPath = filepath.Join(baseDirectory, nestedImportPath)
+		// Include path may be absolute or relative to parent configuration
+		nestedIncludePath := matchedPath
+		if !filepath.IsAbs(nestedIncludePath) {
+			nestedIncludePath = filepath.Join(baseDirectory, nestedIncludePath)
 		}
-		nestedImportPath = filepath.Clean(nestedImportPath)
+		nestedIncludePath = filepath.Clean(nestedIncludePath)
 
 		// Check for infinite loop
-		_, isVisited := parentPaths[nestedImportPath]
+		_, isVisited := parentPaths[nestedIncludePath]
 		if isVisited {
 			err := errors.New("infinite loop")
-			return "", errors.Wrapf(err, "detected on import '%s' in file '%s'", matchedPath, path)
+			return "", errors.Wrapf(err, "detected on include '%s' in file '%s'", matchedPath, path)
 		}
 
 		// Prepare the parent paths for the nested level
@@ -323,15 +323,15 @@ func readConfigurationWithImports(path string, parentPaths map[string]bool) (str
 		for k, v := range parentPaths {
 			nestedParentPaths[k] = v
 		}
-		nestedParentPaths[nestedImportPath] = true
+		nestedParentPaths[nestedIncludePath] = true
 
 		// Recursive call
-		content, err := readConfigurationWithImports(nestedImportPath, nestedParentPaths)
+		content, err := readConfigurationWithIncludes(nestedIncludePath, nestedParentPaths)
 		if err != nil {
-			return "", errors.Wrapf(err, "problem with inner include: '%s' of '%s': '%s'", matchedPath, path, nestedImportPath)
+			return "", errors.Wrapf(err, "problem with inner include: '%s' of '%s': '%s'", matchedPath, path, nestedIncludePath)
 		}
 
-		// Replace import statement with imported content
+		// Replace include statement with includeed content
 		text = text[:statementStartIndex] + content + text[statementEndIndex:]
 	}
 

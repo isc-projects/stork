@@ -296,7 +296,7 @@ func makeKeaConfFile() (file *os.File, removeFunc func(string) error) {
 	return file, removeFunc
 }
 
-func makeKeaConfFileWithImport() (parentConfig *os.File, childConfig *os.File, removeFunc func(string) error) {
+func makeKeaConfFileWithInclude() (parentConfig *os.File, childConfig *os.File, removeFunc func(string) error) {
 	// prepare kea conf file
 	parentConfig, err := ioutil.TempFile(os.TempDir(), "prefix-*.json")
 	if err != nil {
@@ -354,8 +354,8 @@ func TestDetectKeaApp(t *testing.T) {
 	app = detectKeaApp([]string{"", "", file}, cwd)
 	checkApp(app)
 
-	// Check configuration with an import statement
-	tmpFile, nestedFile, remove := makeKeaConfFileWithImport()
+	// Check configuration with an include statement
+	tmpFile, nestedFile, remove := makeKeaConfFileWithInclude()
 	tmpFilePath = tmpFile.Name()
 	defer remove(tmpFilePath)
 	defer remove(nestedFile.Name())
