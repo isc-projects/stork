@@ -1,6 +1,7 @@
 package storkutil
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -165,4 +166,121 @@ func TestHexToBytes(t *testing.T) {
 	require.EqualValues(t, HexToBytes("00:01:02:03:04:05:06"), []byte{0, 1, 2, 3, 4, 5, 6})
 	require.EqualValues(t, HexToBytes("ffeeaa"), []byte{0xff, 0xee, 0xaa})
 	require.Empty(t, HexToBytes("dog"))
+}
+
+// Test read a configuration without an import statements.
+func TestReadConfigurationWithoutImports(t *testing.T) {
+	path := "configs/config-without-imports.json"
+	raw, err := ReadConfigurationWithImports(path)
+	require.NoError(t, err)
+
+	var content interface{}
+	json.Unmarshal([]byte(raw), &content)
+	data := content.(map[string]interface{})
+
+	require.Contains(t, data, "foo", "bar", "baz")
+	foo := int(data["foo"].(float64))
+	require.EqualValues(t, foo, 42)
+	bar := data["bar"].(string)
+	require.EqualValues(t, bar, "24")
+	baz := data["baz"].(bool)
+	require.EqualValues(t, baz, true)
+}
+
+// Test read a configuration with an import statements.
+func TestReadConfigurationWithImports(t *testing.T) {
+	path := "configs/config-with-imports.json"
+	raw, err := ReadConfigurationWithImports(path)
+	require.NoError(t, err)
+
+	var content interface{}
+	json.Unmarshal([]byte(raw), &content)
+	data := content.(map[string]interface{})
+	require.Contains(t, data, "biz", "buz", "boz")
+
+	// Non-imported content
+	biz := data["biz"].(string)
+	require.EqualValues(t, biz, "zib")
+	boz := data["boz"].(string)
+	require.EqualValues(t, boz, "zob")
+
+	// Imported content
+	buz := data["buz"].(map[string]interface{})
+	require.Contains(t, buz, "foo", "bar", "baz")
+	foo := int(buz["foo"].(float64))
+	require.EqualValues(t, foo, 42)
+	bar := buz["bar"].(string)
+	require.EqualValues(t, bar, "24")
+	baz := buz["baz"].(bool)
+	require.EqualValues(t, baz, true)
+}
+
+// Test read a configuration with an nested import statements.
+func TestReadConfigurationWithNestedImports(t *testing.T) {
+	path := "configs/config-with-nested-imports.json"
+	raw, err := ReadConfigurationWithImports(path)
+	require.NoError(t, err)
+
+	var content interface{}
+	json.Unmarshal([]byte(raw), &content)
+	data := content.(map[string]interface{})
+	require.Contains(t, data, "ban")
+
+	// Non-imported content
+	ban := data["ban"].([]interface{})
+	require.EqualValues(t, len(ban), 5)
+	require.Equal(t, ban[0], float64(0))
+	require.Equal(t, ban[1], float64(1))
+	require.Equal(t, ban[2], float64(2))
+	require.Equal(t, ban[4], float64(4))
+
+	// 1-level nesting
+	firstNest := ban[3].(map[string]interface{})
+	require.Contains(t, firstNest, "biz", "buz", "boz")
+	biz := firstNest["biz"].(string)
+	require.EqualValues(t, biz, "zib")
+	boz := firstNest["boz"].(string)
+	require.EqualValues(t, boz, "zob")
+
+	// 2-level nesting
+	buz := firstNest["buz"].(map[string]interface{})
+	require.Contains(t, buz, "foo", "bar", "baz")
+	foo := int(buz["foo"].(float64))
+	require.EqualValues(t, foo, 42)
+	bar := buz["bar"].(string)
+	require.EqualValues(t, bar, "24")
+	baz := buz["baz"].(bool)
+	require.EqualValues(t, baz, true)
+}
+
+// Test read a configuration with an infinite loop.
+func TestReadConfigurationWithInfiniteLoop(t *testing.T) {
+	path := "configs/config-with-infinite-loop.json"
+	raw, err := ReadConfigurationWithImports(path)
+	require.Empty(t, raw)
+	require.Error(t, err)
+}
+
+// Test read a configuration with multiple the same import statements.
+func TestReadConfigurationWithMultipleTheSameImports(t *testing.T) {
+	path := "configs/config-with-multiple-the-same-imports.json"
+	raw, err := ReadConfigurationWithImports(path)
+	require.NoError(t, err)
+
+	var content interface{}
+	err = json.Unmarshal([]byte(raw), &content)
+	require.NoError(t, err)
+	data := content.(map[string]interface{})
+	require.Contains(t, data, "biz", "buz", "boz")
+
+	for _, key := range []string{"biz", "buz", "boz"} {
+		nested := data[key].(map[string]interface{})
+		require.Contains(t, nested, "foo", "bar", "baz")
+		foo := int(nested["foo"].(float64))
+		require.EqualValues(t, foo, 42)
+		bar := nested["bar"].(string)
+		require.EqualValues(t, bar, "24")
+		baz := nested["baz"].(bool)
+		require.EqualValues(t, baz, true)
+	}
 }

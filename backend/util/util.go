@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -246,4 +248,92 @@ func GetSecretInTerminal(prompt string) string {
 		log.Fatal(err.Error())
 	}
 	return string(pass)
+}
+
+// Read a configuration file and resolve all import statements.
+func ReadConfigurationWithImports(path string) (string, error) {
+	parentPaths := map[string]bool{}
+	return readConfigurationWithImports(path, parentPaths)
+}
+
+// Recursive function to read a configuration file and resolve all import statements.
+func readConfigurationWithImports(path string, parentPaths map[string]bool) (string, error) {
+	raw, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Warnf("cannot read kea config file: %+v", err)
+		err = errors.Wrap(err, "cannot read kea config file")
+		return "", err
+	}
+
+	text := string(raw)
+
+	// Must contains propert prefix (<?include) and suffix ("?>").
+	// Path must by escaped by double quotes ("). Between path and prefix or suffix
+	// may be whitespace separator. Path must end with ".json" extension.
+	// Produce two groups: first for the whole statement and second for path.
+	importPattern := regexp.MustCompile(`<\?include\s*\"([^"]+\.json)\"\s*\?>`)
+	matchesGroupIndices := importPattern.FindAllStringSubmatchIndex(text, -1)
+	matchesGroups := importPattern.FindAllStringSubmatch(text, -1)
+
+	// Probably never met
+	if (matchesGroupIndices == nil) != (matchesGroups == nil) {
+		return "", errors.New("include statement recognition failed")
+	}
+
+	// No matches - nothing to expand
+	if matchesGroupIndices == nil {
+		return text, nil
+	}
+
+	// Probably never met
+	if len(matchesGroupIndices) != len(matchesGroups) {
+		return "", errors.New("include statement recognition asymmetric")
+	}
+
+	// The configuration directory
+	baseDirectory := filepath.Dir(path)
+
+	// Iteration from end to keep correct index values as when the pattern
+	// is replaced with an import content the positions of next patterns are shifting
+	for i := len(matchesGroupIndices) - 1; i >= 0; i-- {
+		matchedGroupIndex := matchesGroupIndices[i]
+		matchedGroup := matchesGroups[i]
+
+		statementStartIndex := matchedGroupIndex[0]
+		matchedPath := matchedGroup[1]
+		matchedStatementLength := len(matchedGroup[0])
+		statementEndIndex := statementStartIndex + matchedStatementLength
+
+		// Import path may be absolute or relative to parent configuration
+		nestedImportPath := matchedPath
+		if !filepath.IsAbs(nestedImportPath) {
+			nestedImportPath = filepath.Join(baseDirectory, nestedImportPath)
+		}
+		nestedImportPath = filepath.Clean(nestedImportPath)
+
+		// Check for infinite loop
+		_, isVisited := parentPaths[nestedImportPath]
+		if isVisited {
+			err := errors.New("infinite loop")
+			return "", errors.Wrapf(err, "detected on import '%s' in file '%s'", matchedPath, path)
+		}
+
+		// Prepare the parent paths for the nested level
+		nestedParentPaths := make(map[string]bool, len(parentPaths)+1)
+		for k, v := range parentPaths {
+			nestedParentPaths[k] = v
+		}
+		nestedParentPaths[nestedImportPath] = true
+
+		// Recursive call
+		content, err := readConfigurationWithImports(nestedImportPath, nestedParentPaths)
+		if err != nil {
+			return "", errors.Wrapf(err, "problem with inner include: '%s' of '%s': '%s'", matchedPath, path, nestedImportPath)
+		}
+
+		// Replace import statement with imported content
+		text = text[:statementStartIndex] + content + text[statementEndIndex:]
+	}
+
+	return text, nil
 }
