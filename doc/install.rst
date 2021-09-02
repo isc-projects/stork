@@ -47,8 +47,9 @@ statistics.
 Stork uses Go implementation for handling TLS connections, certificates and keys. The secrets are stored in the PostgreSQL
 database, in the `secret` table.
 
-For the ``Stork Server``, a PostgreSQL database (https://www.postgresql.org/) version 11 or later is required. It may work with
-PostgreSQL 10, but this has not been tested. The general installation procedure for PostgreSQL is OS-specific and is not included
+For the ``Stork Server``, a PostgreSQL database (https://www.postgresql.org/) version 10
+or later is required. Stork will attempt to run with older versions but may not work
+correctly. The general installation procedure for PostgreSQL is OS-specific and is not included
 here. However, please note that Stork uses pgcrypto extensions, which often come in a separate package. For
 example, a postgresql-crypto package is required on Fedora and postgresql12-contrib is needed on RHEL and CentOS.
 

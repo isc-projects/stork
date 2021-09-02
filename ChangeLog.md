@@ -1,3 +1,10 @@
+* 153 [bug] slawek
+
+    Corrected an issue with fetching Stork events from the
+    databases running on PostgreSQL 10. Also, the Stork
+    server requires PostgreSQL version 10 or later.
+    (Gitlab #571)
+
 * 152 [build] marcin
     Resolved an issue with building Stork packages in Docker on
     the MacOS.
