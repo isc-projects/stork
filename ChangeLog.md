@@ -1,3 +1,9 @@
+* 155 [func] slawek
+
+    Added resolving the include statement in Kea configuration when
+    an agent is detecting applications.
+    (Gitlab #564)
+
 * 154 [bug] slawek
 
     Prevent agent re-registration after its restart.
