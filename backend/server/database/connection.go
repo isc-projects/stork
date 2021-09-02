@@ -13,6 +13,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Minimal supported database Postgres server version.
+const (
+	minSupportedDatabaseServerVersionMajnor = 10
+	minSupportedDatabaseServerVersionMinor  = 0
+	minSupportedDatabaseServerVersionPatch  = 0
+)
+
 type DBLogger struct{}
 
 // Hook run before SQL query execution.
@@ -84,12 +91,9 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		return nil, err
 	}
 
-	// Minimal supported database server version
-	minMajnor := 10
-	minMinor := 0
-	minPatch := 0
-
-	minVersion := minMajnor*100*100 + minMinor*100 + minPatch
+	minVersion := minSupportedDatabaseServerVersionMajnor*100*100 +
+		minSupportedDatabaseServerVersionMinor*100 +
+		minSupportedDatabaseServerVersionPatch
 
 	if version < minVersion {
 		currentPatch := version % 100
@@ -99,9 +103,9 @@ func NewPgDBConn(pgParams *pg.Options, tracing bool) (*PgDB, error) {
 		log.Warnf("unsupported database server version: got %d.%d.%d, required at least %d.%d.%d, "+
 			"please consider upgrading Postgres server because Stork may not work correctly with this version",
 			currentMajnor, currentMinor, currentPatch,
-			minMajnor,
-			minMinor,
-			minPatch,
+			minSupportedDatabaseServerVersionMajnor,
+			minSupportedDatabaseServerVersionMinor,
+			minSupportedDatabaseServerVersionPatch,
 		)
 	}
 
