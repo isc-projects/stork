@@ -3,12 +3,12 @@ package agent
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"sync"
 	"testing"
 
+	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 
@@ -277,62 +277,66 @@ func TestDetectBind9AppRelativePath(t *testing.T) {
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
 }
 
-func makeKeaConfFile() (file *os.File, removeFunc func(string) error) {
+// Creates a basic Kea configuration file.
+// Caller is responsible for remove the file.
+func makeKeaConfFile() (*os.File, error) {
 	// prepare kea conf file
 	file, err := ioutil.TempFile(os.TempDir(), "prefix-")
 	if err != nil {
-		log.Fatal("Cannot create temporary file", err)
+		return nil, pkgerrors.Wrap(err, "Cannot create temporary file")
 	}
-	removeFunc = os.Remove
 
 	text := []byte("\"http-host\": \"localhost\", \"http-port\": 45634")
 	if _, err = file.Write(text); err != nil {
-		log.Fatal("Failed to write to temporary file", err)
+		return nil, pkgerrors.Wrap(err, "Failed to write to temporary file")
 	}
 	if err := file.Close(); err != nil {
-		log.Fatal(err)
+		return nil, pkgerrors.Wrap(err, "Failed to close a temporary file")
 	}
 
-	return file, removeFunc
+	return file, nil
 }
 
-func makeKeaConfFileWithInclude() (parentConfig *os.File, childConfig *os.File, removeFunc func(string) error) {
+// Creates a basic Kea configuration file with include statement.
+// It returns both inner and outer files.
+// Caller is responsible for remove the files.
+func makeKeaConfFileWithInclude() (parentConfig *os.File, childConfig *os.File, err error) {
 	// prepare kea conf file
-	parentConfig, err := ioutil.TempFile(os.TempDir(), "prefix-*.json")
+	parentConfig, err = ioutil.TempFile(os.TempDir(), "prefix-*.json")
+
 	if err != nil {
-		log.Fatal("Cannot create temporary file for parent config", err)
+		return nil, nil, pkgerrors.Wrap(err, "Cannot create temporary file for parent config")
 	}
 
 	childConfig, err = ioutil.TempFile(os.TempDir(), "prefix-*.json")
 	if err != nil {
-		log.Fatal("Cannot create temporary file for child config", err)
+		return nil, nil, pkgerrors.Wrap(err, "Cannot create temporary file for child config")
 	}
-
-	removeFunc = os.Remove
 
 	text := []byte("{ \"http-host\": \"localhost\", \"http-port\": 45634 }")
 	if _, err = childConfig.Write(text); err != nil {
-		log.Fatal("Failed to write to temporary file", err)
+		return nil, nil, pkgerrors.Wrap(err, "Failed to write to temporary file")
 	}
 	if err := childConfig.Close(); err != nil {
-		log.Fatal(err)
+		return nil, nil, pkgerrors.Wrap(err, "Failed to close to temporary file")
 	}
 
 	text = []byte(fmt.Sprintf("{ \"Dhcp4\": <?include \"%s\"?> }", childConfig.Name()))
 	if _, err = parentConfig.Write(text); err != nil {
-		log.Fatal("Failed to write to temporary file", err)
+		return nil, nil, pkgerrors.Wrap(err, "Failed to write to temporary file")
 	}
 	if err := parentConfig.Close(); err != nil {
-		log.Fatal(err)
+		return nil, nil, pkgerrors.Wrap(err, "Failed to close to temporary file")
 	}
 
-	return parentConfig, childConfig, removeFunc
+	return parentConfig, childConfig, nil
 }
 
 func TestDetectKeaApp(t *testing.T) {
-	tmpFile, remove := makeKeaConfFile()
+	tmpFile, err := makeKeaConfFile()
+	require.NoError(t, err)
 	tmpFilePath := tmpFile.Name()
-	defer remove(tmpFilePath)
+	defer os.Remove(tmpFilePath)
 
 	checkApp := func(app App) {
 		require.NotNil(t, app)
@@ -355,10 +359,11 @@ func TestDetectKeaApp(t *testing.T) {
 	checkApp(app)
 
 	// Check configuration with an include statement
-	tmpFile, nestedFile, remove := makeKeaConfFileWithInclude()
+	tmpFile, nestedFile, err := makeKeaConfFileWithInclude()
+	require.NoError(t, err)
 	tmpFilePath = tmpFile.Name()
-	defer remove(tmpFilePath)
-	defer remove(nestedFile.Name())
+	defer os.Remove(tmpFilePath)
+	defer os.Remove(nestedFile.Name())
 
 	// check kea app detection
 	app = detectKeaApp([]string{"", "", tmpFilePath}, "")
