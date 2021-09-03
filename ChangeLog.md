@@ -1,6 +1,6 @@
 * 154 [bug] slawek
 
-    Fixed re-registration problem after agent restart
+    Prevent agent re-registration after its restart.
     (Gitlab #528 and #558)
 
 * 153 [bug] slawek

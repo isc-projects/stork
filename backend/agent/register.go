@@ -194,7 +194,7 @@ func prepareRegistrationRequestPayload(csrPEM []byte, serverToken, agentToken, a
 // If retry is true then registration is repeated until it connection to server
 // is established. This case is used when agent automatically tries to register
 // during startup.
-// If the agent is already register then only ID is returned, the certificates are empty.
+// If the agent is already registered then only ID is returned, the certificates are empty.
 func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload *bytes.Buffer, retry bool) (int64, string, string, error) {
 	url, _ := baseSrvURL.Parse("api/machines")
 	var err error
@@ -233,11 +233,11 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 		location := resp.Header.Get("Location")
 		lastSeparatorIdx := strings.LastIndex(location, "/")
 		if lastSeparatorIdx < 0 || lastSeparatorIdx+1 >= len(location) {
-			return 0, "", "", errors.New("missing ID in response from server for registration request")
+			return 0, "", "", errors.New("missing machine ID in response from server for registration request")
 		}
 		agentID, err := strconv.Atoi(location[lastSeparatorIdx+1:])
 		if err != nil {
-			return 0, "", "", errors.New("bad ID in response from server for registration request")
+			return 0, "", "", errors.New("bad machine ID in response from server for registration request")
 		}
 		return int64(agentID), "", "", nil
 	}

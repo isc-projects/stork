@@ -360,7 +360,7 @@ func TestGenerateCerts(t *testing.T) {
 }
 
 // Check if generating agent token file works and a value in the file
-// match a value received by server.
+// matches a value received by server.
 func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 	// prepare temp dir for cert files
 	tmpDir, err := ioutil.TempDir("", "reg")

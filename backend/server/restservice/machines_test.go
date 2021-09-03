@@ -460,7 +460,7 @@ func TestCreateMachine(t *testing.T) {
 	require.Len(t, machines, 1)
 	m1 = machines[0]
 	require.True(t, m1.Authorized)
-	// agent cert isn't re-signed so fingerprint should be the sae
+	// agent cert isn't re-signed so fingerprint should be the same
 	require.Equal(t, certFingerprint1, m1.CertFingerprint)
 
 	// add another machine but with no server token (agent token is used for authorization)

@@ -397,7 +397,7 @@ https://linuxcontainers.org/lxd/getting-started-cli/#lxd-client
 LXD troubleshooting on Arch
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Problem**: After call `lxd init` you get this message
+**Problem**: After running `lxd init` you get this message
 
 .. code-block:: console
 
@@ -411,7 +411,7 @@ LXD troubleshooting on Arch
 
 --------------
 
-**Problem**: After start `rake system_tests` you get these message (tail):
+**Problem**: After running `rake system_tests` you get these message (tail):
 
 .. code-block:: console
 
@@ -702,10 +702,10 @@ of these containers are placed in `docker/pkgs/centos-8.txt` and
 `docker/pkgs/ubuntu-18-04.txt`.
 
 
-Implementing details
+Implementation details
 ====================
 
-Agent registration process
+Agent Registration Process
 --------------------------
 
 Below diagram showing a flowchart of the agent registration process in Stork.
