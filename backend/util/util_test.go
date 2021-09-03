@@ -168,7 +168,7 @@ func TestHexToBytes(t *testing.T) {
 	require.Empty(t, HexToBytes("dog"))
 }
 
-// Test read a configuration without an import statements.
+// Test read a configuration without import statements.
 func TestReadConfigurationWithoutIncludes(t *testing.T) {
 	path := "configs/config-without-includes.json"
 	raw, err := ReadConfigurationWithIncludes(path)
@@ -187,7 +187,7 @@ func TestReadConfigurationWithoutIncludes(t *testing.T) {
 	require.EqualValues(t, baz, true)
 }
 
-// Test read a configuration with an include statements.
+// Test read a configuration with include statements.
 func TestReadConfigurationWithIncludes(t *testing.T) {
 	path := "configs/config-with-includes.json"
 	raw, err := ReadConfigurationWithIncludes(path)
@@ -215,7 +215,7 @@ func TestReadConfigurationWithIncludes(t *testing.T) {
 	require.EqualValues(t, baz, true)
 }
 
-// Test read a configuration with an nested import statements.
+// Test read a configuration with nested import statements.
 func TestReadConfigurationWithNestedIncludes(t *testing.T) {
 	path := "configs/config-with-nested-includes.json"
 	raw, err := ReadConfigurationWithIncludes(path)

@@ -260,8 +260,8 @@ func ReadConfigurationWithIncludes(path string) (string, error) {
 func readConfigurationWithIncludes(path string, parentPaths map[string]bool) (string, error) {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Warnf("cannot read kea config file: %+v", err)
-		err = errors.Wrap(err, "cannot read kea config file")
+		log.Warnf("cannot read Kea config file: %+v", err)
+		err = errors.Wrap(err, "cannot read Kea config file")
 		return "", err
 	}
 
@@ -297,7 +297,7 @@ func readConfigurationWithIncludes(path string, parentPaths map[string]bool) (st
 	// The configuration directory
 	baseDirectory := filepath.Dir(path)
 
-	// Iteration from end to keep correct index values as when the pattern
+	// Iteration from the end to keep correct index values because when the pattern
 	// is replaced with an include content the positions of next patterns are shifting
 	for i := len(matchesGroupIndices) - 1; i >= 0; i-- {
 		matchedGroupIndex := matchesGroupIndices[i]
@@ -335,7 +335,7 @@ func readConfigurationWithIncludes(path string, parentPaths map[string]bool) (st
 			return "", errors.Wrapf(err, "problem with inner include: '%s' of '%s': '%s'", matchedPath, path, nestedIncludePath)
 		}
 
-		// Replace include statement with includeed content
+		// Replace include statement with included content
 		text = text[:statementStartIndex] + content + text[statementEndIndex:]
 	}
 
