@@ -453,7 +453,8 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 	require.Equal(t, agentTokenFromFile, lastPingAgentToken)
 }
 
-// Check if registration works in basic situation.
+// Check if registration doesn't change the agent token and certs
+// for an already registered agent until the agent doesn't force regenerating certs.
 func TestRepeatRegister(t *testing.T) {
 	// prepare temp dir for cert files
 	tmpDir, err := ioutil.TempDir("", "reg")

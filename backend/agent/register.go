@@ -158,7 +158,8 @@ func generateCerts(agentAddr string, regenCerts bool) ([]byte, string, error) {
 
 		agentToken, err = ioutil.ReadFile(AgentTokenFile)
 		if err != nil {
-			return nil, "", err
+			msg := "could not load agent token from file: %s, try to force the certs regeneration"
+			return nil, "", errors.Wrapf(err, msg, AgentTokenFile)
 		}
 
 		csrPEM, _, err = pki.GenCSRUsingKey("agent", agentNames, agentIPs, privKeyPEM)
@@ -235,11 +236,11 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 		if lastSeparatorIdx < 0 || lastSeparatorIdx+1 >= len(location) {
 			return 0, "", "", errors.New("missing machine ID in response from server for registration request")
 		}
-		agentID, err := strconv.Atoi(location[lastSeparatorIdx+1:])
+		machineID, err := strconv.Atoi(location[lastSeparatorIdx+1:])
 		if err != nil {
 			return 0, "", "", errors.New("bad machine ID in response from server for registration request")
 		}
-		return int64(agentID), "", "", nil
+		return int64(machineID), "", "", nil
 	}
 
 	var result map[string]interface{}

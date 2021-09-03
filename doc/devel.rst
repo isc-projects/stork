@@ -703,21 +703,22 @@ of these containers are placed in `docker/pkgs/centos-8.txt` and
 
 
 Implementation details
-====================
+======================
 
 Agent Registration Process
 --------------------------
 
-Below diagram showing a flowchart of the agent registration process in Stork.
-First Certificate Signing Request (CSR) is generating using an existing or new
-private key and agent token.
-The CSR, server token (optional), and agent token are sent to the Stork server. It all is good the server
-responses with a signed agent certificate, a server CA certificate, and assigned Machine ID.
-If the agent is already registered with provided agent token then only the assigned Machine ID is returned
-without new certificates.
-The agent uses the machine ID to verify that the registration is done correctly.
+The diagram below shows a flowchart of the agent registration process in Stork.
+It merely demonstrates the successful registration path.
+First Certificate Signing Request (CSR) is generated using an existing or new
+private key and agent token. 
+The CSR, server token (optional), and agent token are sent to the Stork server.
+A successful server response contains a signed agent certificate, a server CA
+certificate, and an assigned Machine ID. 
+If the agent was already registered with the provided agent token, only the assigned
+machine ID is returned without new certificates. 
+The agent uses the returned machine ID to verify that the registration was successful.
 
-The diagram only contains the positive path.
 
 .. figure:: uml/registration-agent.*
 
