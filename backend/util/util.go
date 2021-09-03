@@ -318,8 +318,8 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 		// Check for infinite loop
 		_, isVisited := parentPaths[nestedIncludePath]
 		if isVisited {
-			err := errors.New("infinite loop")
-			return "", errors.Wrapf(err, "detected on include '%s' in file '%s'", matchedPath, path)
+			err := errors.Errorf("detected infinite loop on include '%s' in file '%s'", matchedPath, path)
+			return "", err
 		}
 
 		// Prepare the parent paths for the nested level
