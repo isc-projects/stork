@@ -171,7 +171,7 @@ func TestHexToBytes(t *testing.T) {
 // Test read a configuration without import statements.
 func TestReadConfigurationWithoutIncludes(t *testing.T) {
 	path := "configs/config-without-includes.json"
-	raw, err := ReadConfigurationWithIncludes(path)
+	raw, err := ReadFileWithIncludes(path)
 	require.NoError(t, err)
 
 	var content interface{}
@@ -188,9 +188,9 @@ func TestReadConfigurationWithoutIncludes(t *testing.T) {
 }
 
 // Test read a configuration with include statements.
-func TestReadConfigurationWithIncludes(t *testing.T) {
+func TestReadFileWithIncludes(t *testing.T) {
 	path := "configs/config-with-includes.json"
-	raw, err := ReadConfigurationWithIncludes(path)
+	raw, err := ReadFileWithIncludes(path)
 	require.NoError(t, err)
 
 	var content interface{}
@@ -218,7 +218,7 @@ func TestReadConfigurationWithIncludes(t *testing.T) {
 // Test read a configuration with nested import statements.
 func TestReadConfigurationWithNestedIncludes(t *testing.T) {
 	path := "configs/config-with-nested-includes.json"
-	raw, err := ReadConfigurationWithIncludes(path)
+	raw, err := ReadFileWithIncludes(path)
 	require.NoError(t, err)
 
 	var content interface{}
@@ -256,7 +256,7 @@ func TestReadConfigurationWithNestedIncludes(t *testing.T) {
 // Test read a configuration with an infinite loop.
 func TestReadConfigurationWithInfiniteLoop(t *testing.T) {
 	path := "configs/config-with-infinite-loop.json"
-	raw, err := ReadConfigurationWithIncludes(path)
+	raw, err := ReadFileWithIncludes(path)
 	require.Empty(t, raw)
 	require.Error(t, err)
 }
@@ -264,7 +264,7 @@ func TestReadConfigurationWithInfiniteLoop(t *testing.T) {
 // Test read a configuration with multiple the same import statements.
 func TestReadConfigurationWithMultipleTheSameIncludes(t *testing.T) {
 	path := "configs/config-with-multiple-the-same-includes.json"
-	raw, err := ReadConfigurationWithIncludes(path)
+	raw, err := ReadFileWithIncludes(path)
 	require.NoError(t, err)
 
 	var content interface{}
@@ -288,6 +288,6 @@ func TestReadConfigurationWithMultipleTheSameIncludes(t *testing.T) {
 // Test read a configuration with an import statement related to a non-existing file.
 func TestReadConfigurationWithNonExistingIncludes(t *testing.T) {
 	path := "configs/config-with-non-existing-includes.json"
-	_, err := ReadConfigurationWithIncludes(path)
+	_, err := ReadFileWithIncludes(path)
 	require.Error(t, err)
 }

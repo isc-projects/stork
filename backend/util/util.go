@@ -250,18 +250,18 @@ func GetSecretInTerminal(prompt string) string {
 	return string(pass)
 }
 
-// Read a configuration file and resolve all include statements.
-func ReadConfigurationWithIncludes(path string) (string, error) {
+// Read a file and resolve all include statements.
+func ReadFileWithIncludes(path string) (string, error) {
 	parentPaths := map[string]bool{}
-	return readConfigurationWithIncludes(path, parentPaths)
+	return readFileWithIncludes(path, parentPaths)
 }
 
-// Recursive function to read a configuration file and resolve all include statements.
-func readConfigurationWithIncludes(path string, parentPaths map[string]bool) (string, error) {
+// Recursive function to read a file and resolve all include statements.
+func readFileWithIncludes(path string, parentPaths map[string]bool) (string, error) {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Warnf("cannot read Kea config file: %+v", err)
-		err = errors.Wrap(err, "cannot read Kea config file")
+		log.Warnf("cannot read file: %+v", err)
+		err = errors.Wrap(err, "cannot read file")
 		return "", err
 	}
 
@@ -270,7 +270,7 @@ func readConfigurationWithIncludes(path string, parentPaths map[string]bool) (st
 	// Include pattern definition:
 	// - Must start with prefix: <?include
 	// - Must end with suffix: ?>
-	// - Path may be relative to parent configuration or absolute
+	// - Path may be relative to parent file or absolute
 	// - Path must be escaped with double quotes
 	// - May to contains spacing before and after the path quotes
 	// - Path must contain ".json" extension
@@ -294,7 +294,7 @@ func readConfigurationWithIncludes(path string, parentPaths map[string]bool) (st
 		return "", errors.New("include statement recognition asymmetric")
 	}
 
-	// The configuration directory
+	// The root directory for includes
 	baseDirectory := filepath.Dir(path)
 
 	// Iteration from the end to keep correct index values because when the pattern
@@ -308,7 +308,7 @@ func readConfigurationWithIncludes(path string, parentPaths map[string]bool) (st
 		matchedStatementLength := len(matchedGroup[0])
 		statementEndIndex := statementStartIndex + matchedStatementLength
 
-		// Include path may be absolute or relative to parent configuration
+		// Include path may be absolute or relative to a parent file
 		nestedIncludePath := matchedPath
 		if !filepath.IsAbs(nestedIncludePath) {
 			nestedIncludePath = filepath.Join(baseDirectory, nestedIncludePath)
@@ -330,7 +330,7 @@ func readConfigurationWithIncludes(path string, parentPaths map[string]bool) (st
 		nestedParentPaths[nestedIncludePath] = true
 
 		// Recursive call
-		content, err := readConfigurationWithIncludes(nestedIncludePath, nestedParentPaths)
+		content, err := readFileWithIncludes(nestedIncludePath, nestedParentPaths)
 		if err != nil {
 			return "", errors.Wrapf(err, "problem with inner include: '%s' of '%s': '%s'", matchedPath, path, nestedIncludePath)
 		}
