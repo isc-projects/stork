@@ -16,6 +16,14 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
+const (
+	SecretTypeCACert   = "CA cert"
+	SecretTypeCAKey    = "CA key"
+	SecretTypeSrvKey   = "server key"
+	SecretTypeSrvCert  = "server cert"
+	SecretTypeSrvToken = "server token"
+)
+
 // Generate server token and store it in database.  It is used during
 // manual agent registration.  This function uses random numbers
 // generator so it is expected that it is seeded prior its use.
@@ -199,15 +207,15 @@ func ExportSecret(db *pg.DB, object string, filename string) error {
 	var objDisplayName string
 	switch object {
 	case dbmodel.SecretCAKey:
-		objDisplayName = "CA key"
+		objDisplayName = SecretTypeCAKey
 	case dbmodel.SecretCACert:
-		objDisplayName = "CA cert"
+		objDisplayName = SecretTypeCACert
 	case dbmodel.SecretServerKey:
-		objDisplayName = "server key"
+		objDisplayName = SecretTypeSrvKey
 	case dbmodel.SecretServerCert:
-		objDisplayName = "server cert"
+		objDisplayName = SecretTypeSrvCert
 	case dbmodel.SecretServerToken:
-		objDisplayName = "server token"
+		objDisplayName = SecretTypeSrvToken
 	default:
 		return errors.Errorf("requested unknown object '%s'", object)
 	}
@@ -234,15 +242,15 @@ func ImportSecret(db *pg.DB, object string, filename string) error {
 	var objDisplayName string
 	switch object {
 	case dbmodel.SecretCAKey:
-		objDisplayName = "CA key"
+		objDisplayName = SecretTypeCAKey
 	case dbmodel.SecretCACert:
-		objDisplayName = "CA cert"
+		objDisplayName = SecretTypeCACert
 	case dbmodel.SecretServerKey:
-		objDisplayName = "server key"
+		objDisplayName = SecretTypeSrvKey
 	case dbmodel.SecretServerCert:
-		objDisplayName = "server cert"
+		objDisplayName = SecretTypeSrvCert
 	case dbmodel.SecretServerToken:
-		objDisplayName = "server token"
+		objDisplayName = SecretTypeSrvToken
 	default:
 		return errors.Errorf("indicated unknown object '%s'", object)
 	}
@@ -264,6 +272,36 @@ func ImportSecret(db *pg.DB, object string, filename string) error {
 		log.Printf("%s read from stdin, length %d", objDisplayName, len(content))
 	}
 
+	// Now we need to conduct verification if the content is sane.
+	switch object {
+	case dbmodel.SecretCAKey:
+		objDisplayName = SecretTypeCAKey
+		// I don't know how to verify the private key. There is no code for it in pki. There
+		// are several methods in https://pkg.go.dev/crypto/x509 that in principle should work.
+		// x509.ParsePKCS8PrivateKey(), x509.ParsePKCS1PrivateKey(), or x509.ParseECPrivateKey().
+		// None of them works.
+	case dbmodel.SecretCACert:
+		objDisplayName = SecretTypeCACert
+		_, err = pki.ParseCert(content)
+	case dbmodel.SecretServerKey:
+		objDisplayName = SecretTypeSrvKey
+		// see SecretCAKey comment above.
+	case dbmodel.SecretServerCert:
+		objDisplayName = SecretTypeSrvCert
+		_, err = pki.ParseCert(content)
+	case dbmodel.SecretServerToken:
+		objDisplayName = SecretTypeSrvToken
+		if len(content) != 32 {
+			return errors.Errorf("server token has to be exactly 32 bytes long, provided is %d bytes", len(content))
+		}
+	default:
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "problem parsing the %s", objDisplayName)
+	}
+
+	// The value looks reasonable. Let's set it in the DB
 	err = dbmodel.SetSecret(db, object, content)
 	if err != nil {
 		return errors.Wrapf(err, "problem with setting '%s' in database", objDisplayName)
