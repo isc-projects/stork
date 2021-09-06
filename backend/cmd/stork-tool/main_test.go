@@ -170,7 +170,8 @@ func TestRunCertImport(t *testing.T) {
 	_, err := certs.GenerateServerToken(db)
 	require.NoError(t, err)
 
-	srvTknFile := sb.Write("srv.tkn", "abc")
+	srvTknFile, err := sb.Write("srv.tkn", "abc")
+	require.NoError(t, err)
 
 	os.Args = []string{
 		"stork-tool", "cert-import",

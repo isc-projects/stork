@@ -51,7 +51,8 @@ func TestSandboxWrite(t *testing.T) {
 	sb := NewSandbox()
 	defer sb.Close()
 
-	fpath := sb.Write("abc", "def")
+	fpath, err := sb.Write("abc", "def")
+	require.NoError(t, err)
 	require.Contains(t, fpath, "abc")
 
 	content, err := ioutil.ReadFile(fpath)

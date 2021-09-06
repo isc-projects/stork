@@ -147,15 +147,17 @@ func TestImportSecret(t *testing.T) {
 	defer sb.Close()
 
 	// check importing Server Cert
-	serverCertPEMFile := sb.Write("server-cert.pem", "abc")
-	err := ImportSecret(db, dbmodel.SecretServerCert, serverCertPEMFile)
+	serverCertPEMFile, err := sb.Write("server-cert.pem", "abc")
+	require.NoError(t, err)
+	err = ImportSecret(db, dbmodel.SecretServerCert, serverCertPEMFile)
 	require.NoError(t, err)
 	serverCertPEM, err := dbmodel.GetSecret(db, dbmodel.SecretServerCert)
 	require.NoError(t, err)
 	require.EqualValues(t, serverCertPEM, "abc")
 
 	// check importing Server Key
-	serverKeyPEMFile := sb.Write("server-key.pem", "def")
+	serverKeyPEMFile, err := sb.Write("server-key.pem", "def")
+	require.NoError(t, err)
 	err = ImportSecret(db, dbmodel.SecretServerKey, serverKeyPEMFile)
 	require.NoError(t, err)
 	serverKeyPEM, err := dbmodel.GetSecret(db, dbmodel.SecretServerKey)
@@ -163,7 +165,8 @@ func TestImportSecret(t *testing.T) {
 	require.EqualValues(t, "def", serverKeyPEM)
 
 	// check importing CA Cert
-	rootCertPEMFile := sb.Write("root-cert.pem", "ghi")
+	rootCertPEMFile, err := sb.Write("root-cert.pem", "ghi")
+	require.NoError(t, err)
 	err = ImportSecret(db, dbmodel.SecretCACert, rootCertPEMFile)
 	require.NoError(t, err)
 	rootCertPEM, err := dbmodel.GetSecret(db, dbmodel.SecretCACert)
@@ -171,7 +174,8 @@ func TestImportSecret(t *testing.T) {
 	require.EqualValues(t, "ghi", rootCertPEM)
 
 	// check importing CA Key
-	rootKeyPEMFile := sb.Write("root-key.pem", "jkl")
+	rootKeyPEMFile, err := sb.Write("root-key.pem", "jkl")
+	require.NoError(t, err)
 	err = ImportSecret(db, dbmodel.SecretCAKey, rootKeyPEMFile)
 	require.NoError(t, err)
 	rootKeyPEM, err := dbmodel.GetSecret(db, dbmodel.SecretCAKey)
@@ -179,7 +183,8 @@ func TestImportSecret(t *testing.T) {
 	require.EqualValues(t, "jkl", rootKeyPEM)
 
 	// check importing Server Token
-	serverTokenFile := sb.Write("server-token.txt", "mno")
+	serverTokenFile, err := sb.Write("server-token.txt", "mno")
+	require.NoError(t, err)
 	err = ImportSecret(db, dbmodel.SecretServerToken, serverTokenFile)
 	require.NoError(t, err)
 	serverToken, err := dbmodel.GetSecret(db, dbmodel.SecretServerToken)
