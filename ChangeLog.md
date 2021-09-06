@@ -1,3 +1,13 @@
+* 158 [build] marcin
+
+    Corrected issues with the nginx-server.conf, an example Nginx
+    configuration file providing the reverse proxy setup for Stork.
+    The proxy now correctly forwards calls to download the Stork
+    Agent installation script. The updated configuration also
+    allows for accurately determining the Stork server URL while
+    generating the downloaded script.
+    (Gitlab #557)
+
 * 157 [func] godfryd, slawek
 
     Added cert-import command to stork-tool. This allows
