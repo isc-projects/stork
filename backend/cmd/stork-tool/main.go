@@ -306,9 +306,7 @@ func setupApp() *cli.App {
 				Description: ``,
 				Flags:       certExportFlags,
 				Category:    "Certificates Management",
-				Action: func(c *cli.Context) error {
-					return runCertExport(c)
-				},
+				Action:      runCertExport,
 			},
 			{
 				Name:        "cert-import",
@@ -317,9 +315,7 @@ func setupApp() *cli.App {
 				Description: ``,
 				Flags:       certImportFlags,
 				Category:    "Certificates Management",
-				Action: func(c *cli.Context) error {
-					return runCertImport(c)
-				},
+				Action:      runCertImport,
 			},
 		},
 	}
