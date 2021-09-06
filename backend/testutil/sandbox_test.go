@@ -60,6 +60,19 @@ func TestSandboxWrite(t *testing.T) {
 	require.EqualValues(t, "def", content)
 }
 
+// Check if write returns error if there is a writing failure.
+func TestSandboxWriteFail(t *testing.T) {
+	// Create a sandbox and then immediately close it, which will force the removal of the
+	// whole directory.
+	sb := NewSandbox()
+	defer sb.Close()
+
+	// Now we ask the code to write file.txt in non-existent directory. It should fail.
+	fpath, err := sb.Write("abc", "file.txt")
+	require.Error(t, err)
+	require.EqualValues(t, "", fpath)
+}
+
 // Check if Sandbox JoinDir works.
 func TestSandboxJoinDir(t *testing.T) {
 	sb := NewSandbox()

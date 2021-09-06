@@ -85,6 +85,7 @@ func (sb *Sandbox) Write(name string, content string) (string, error) {
 	err := ioutil.WriteFile(fpath, []byte(content), 0600)
 	if err != nil {
 		log.Fatal(err)
+		return "", err
 	}
 
 	return fpath, err
