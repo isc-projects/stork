@@ -609,8 +609,12 @@ and exported using ``Stork Tool``, e.g:
 
     $ stork-tool cert-export --db-url postgresql://user:pass@localhost/dbname -f srvcert -o srv-cert.pem
 
-For more details check ``stork-tool`` manual: :ref:`man-stork-tool`.
+The certificates can be inspected using openssl (e.g. ``openssl x509 -noout -text -in srv-cert.pem``).
+Similarly, the secret keys can be inspected in similar fashion (e.g. ``openssl ec -noout -text -in cakey``)
 
+For more details check ``stork-tool`` manual: :ref:`man-stork-tool`. There are five secrets that can be
+exported or imported: Certificate Authority secret key (``cakey``), Certificate Authority certificate (``cacert``),
+Stork server private key (``srvkey``), Stork server certificate (``srvcert``) and a server token (``srvtkn``).
 
 Using External Keys and Certificates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -620,11 +624,13 @@ to ``Stork Server`` using ``stork-tool``:
 
 .. code-block:: console
 
-    $ stork-tool cert-export --db-url postgresql://user:pass@localhost/dbname -f srvcert -o srv-cert.pem
+    $ stork-tool cert-import --db-url postgresql://user:pass@localhost/dbname -f srvcert -i srv-cert.pem
 
 Both CA key and CA certificate have to be changed at the same time as
 CA certificate depends on CA key. If they are changed then server key
 and certificate also need to be changed.
+
+The capability to use external certificates and key is considered experimental.
 
 For more details check ``stork-tool`` manual: :ref:`man-stork-tool`.
 
