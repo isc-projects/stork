@@ -1,3 +1,8 @@
+* 156 [build] marcin
+    Running unit tests no longer requires specifying a password
+    explicitly.
+    (Gitlab #555)
+
 * 155 [func] slawek
 
     Added resolving the include statement in Kea configuration when
