@@ -299,7 +299,7 @@ func makeKeaConfFile() (*os.File, error) {
 
 // Creates a basic Kea configuration file with include statement.
 // It returns both inner and outer files.
-// Caller is responsible for remove the files.
+// Caller is responsible for removing the files.
 func makeKeaConfFileWithInclude() (parentConfig *os.File, childConfig *os.File, err error) {
 	// prepare kea conf file
 	parentConfig, err = ioutil.TempFile(os.TempDir(), "prefix-*.json")
