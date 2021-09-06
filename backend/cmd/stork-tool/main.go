@@ -107,23 +107,17 @@ func runDBMigrate(settings *cli.Context, command, version string) {
 }
 
 // Execute cert export command.
-func runCertExport(settings *cli.Context) {
+func runCertExport(settings *cli.Context) error {
 	db := getDBConn(settings)
 
-	err := certs.ExportSecret(db, settings.String("object"), settings.String("file"))
-	if err != nil {
-		log.Fatalf("unable to export: %s", err)
-	}
+	return certs.ExportSecret(db, settings.String("object"), settings.String("file"))
 }
 
 // Execute cert import command.
-func runCertImport(settings *cli.Context) {
+func runCertImport(settings *cli.Context) error {
 	db := getDBConn(settings)
 
-	err := certs.ImportSecret(db, settings.String("object"), settings.String("file"))
-	if err != nil {
-		log.Fatalf("unable to import: %s", err)
-	}
+	return certs.ImportSecret(db, settings.String("object"), settings.String("file"))
 }
 
 // Prepare urfave cli app with all flags and commands defined.
@@ -313,8 +307,7 @@ func setupApp() *cli.App {
 				Flags:       certExportFlags,
 				Category:    "Certificates Management",
 				Action: func(c *cli.Context) error {
-					runCertExport(c)
-					return nil
+					return runCertExport(c)
 				},
 			},
 			{
@@ -325,8 +318,7 @@ func setupApp() *cli.App {
 				Flags:       certImportFlags,
 				Category:    "Certificates Management",
 				Action: func(c *cli.Context) error {
-					runCertImport(c)
-					return nil
+					return runCertImport(c)
 				},
 			},
 		},
