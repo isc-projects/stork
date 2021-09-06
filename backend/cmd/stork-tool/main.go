@@ -205,7 +205,7 @@ func setupApp() *cli.App {
 		},
 		&cli.StringFlag{
 			Name:    "file",
-			Usage:   "The file location where the object should be saved. If not provided then object is read from stdin.",
+			Usage:   "The file location from which the object will be read. If not provided then the object is read from stdin.",
 			Aliases: []string{"i"},
 			EnvVars: []string{"STORK_TOOL_CERT_FILE"},
 		})
