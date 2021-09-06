@@ -19,13 +19,22 @@ import (
 // returns pointer to the teardown function. The specified argument
 // must be of a *testing.T or *testing.B type.
 func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSettings, func()) {
+	// Default Postgres server password.
+	pgPass := "storktest"
+	// Check if user wants to use a different one.
+	for _, envName := range []string{"PGPASSWORD", "STORK_DATABASE_PASSWORD"} {
+		if envPass, ok := os.LookupEnv(envName); ok {
+			pgPass = envPass
+			break
+		}
+	}
 	// Common set of database connection options which may be converted to a string
 	// of space separated options used by SQL drivers.
 	genericConnOptions := dbops.DatabaseSettings{
 		BaseDatabaseSettings: dbops.BaseDatabaseSettings{
 			DBName:   "storktest",
 			User:     "storktest",
-			Password: "storktest",
+			Password: pgPass,
 			Host:     "localhost",
 			Port:     5432,
 		},
