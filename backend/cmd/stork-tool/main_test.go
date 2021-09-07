@@ -86,7 +86,7 @@ func TestDbOptsHelp(t *testing.T) {
 		"--db-trace-queries",
 		"-h",
 		"--help",
-		"STORK_TOOL_DB_",
+		"STORK_DATABASE_",
 	}
 
 	cmds := []string{"db-init", "db-up", "db-down", "db-reset", "db-version", "db-set-version", "cert-export"}

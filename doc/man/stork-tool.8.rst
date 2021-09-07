@@ -102,7 +102,7 @@ Initialize database schema:
 
 .. code-block:: console
 
-    $ STORK_TOOL_DB_PASSWORD=pass stork-tool db-init -u user -d dbname
+    $ STORK_DATABASE_PASSWORD=pass stork-tool db-init -u user -d dbname
     INFO[2021-05-25 12:30:53]       connection.go:59    checking connection to database
     INFO[2021-05-25 12:30:53]             main.go:100   Database version is 0 (new version 33 available)
 
@@ -110,7 +110,7 @@ Overwrite the current schema version to an arbitrary value:
 
 .. code-block:: console
 
-    $ STORK_TOOL_DB_PASSWORD=pass stork-tool db-set-version -u user -d dbname -t 42
+    $ STORK_DATABASE_PASSWORD=pass stork-tool db-set-version -u user -d dbname -t 42
     INFO[2021-05-25 12:31:30]             main.go:77    Requested setting version to 42
     INFO[2021-05-25 12:31:30]       connection.go:59    checking connection to database
     INFO[2021-05-25 12:31:30]             main.go:94    Migrated database from version 0 to 42
@@ -121,32 +121,32 @@ Common Options
 Options common for db-* and cert-* commands:
 
 ``--db-url=``
-   the URL to locate Stork PostgreSQL database. [$STORK_TOOL_DB_URL]
+   the URL to locate Stork PostgreSQL database. [$STORK_DATABASE_URL]
 
 ``-u``, ``--db-user=``
-   the user name to be used for database connections. (default: stork) [$STORK_TOOL_DB_USER]
+   the user name to be used for database connections. (default: stork) [$STORK_DATABASE_USER_NAME]
 
 ``--db-password=``
-   the database password to be used for database connections. [$STORK_TOOL_DB_PASSWORD]
+   the database password to be used for database connections. [$STORK_DATABASE_PASSWORD]
 
 ``--db-host=``
-   the name of the host where the database is available. (default: localhost) [$STORK_TOOL_DB_HOST]
+   the name of the host where the database is available. (default: localhost) [$STORK_DATABASE_HOST]
 
 ``-p``, ``--db-port=``
-   the port on which the database is available. (default: 5432) [$STORK_TOOL_DB_PORT]
+   the port on which the database is available. (default: 5432) [$STORK_DATABASE_PORT]
 
 ``-d``, ``--db-name=``
-   the name of the database to connect to. (default: stork) [$STORK_TOOL_DB_NAME]
+   the name of the database to connect to. (default: stork) [$STORK_DATABASE_NAME]
 
 ``--db-trace-queries=``
    enable tracing SQL queries: "run" - only runtime, without migrations, "all" - migrations and run-time.
-   [$STORK_TOOL_DB_TRACE_QUERIES]
+   [$STORK_DATABASE_TRACE_QUERIES]
 
 ``-h``, ``--help``
    show help message
 
 Note that there is no argument for the database password, as the command-line arguments can sometimes be seen
-by other users. It can be passed using the STORK_TOOL_DB_PASSWORD variable.
+by other users. It can be passed using the STORK_DATABASE_PASSWORD variable.
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~

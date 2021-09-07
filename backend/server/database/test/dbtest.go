@@ -22,11 +22,8 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	// Default Postgres server password.
 	pgPass := "storktest"
 	// Check if user wants to use a different one.
-	for _, envName := range []string{"PGPASSWORD", "STORK_DATABASE_PASSWORD"} {
-		if envPass, ok := os.LookupEnv(envName); ok {
-			pgPass = envPass
-			break
-		}
+	if envPass, ok := os.LookupEnv("STORK_DATABASE_PASSWORD"); ok {
+		pgPass = envPass
 	}
 	// Common set of database connection options which may be converted to a string
 	// of space separated options used by SQL drivers.

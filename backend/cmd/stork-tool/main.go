@@ -126,45 +126,45 @@ func setupApp() *cli.App {
 		&cli.StringFlag{
 			Name:    "db-url",
 			Usage:   "The URL to locate Stork PostgreSQL database.",
-			EnvVars: []string{"STORK_TOOL_DB_URL"},
+			EnvVars: []string{"STORK_DATABASE_URL"},
 		},
 		&cli.StringFlag{
 			Name:    "db-user",
 			Usage:   "The user name to be used for database connections.",
 			Aliases: []string{"u"},
 			Value:   "stork",
-			EnvVars: []string{"STORK_TOOL_DB_USER"},
+			EnvVars: []string{"STORK_DATABASE_USER_NAME"},
 		},
 		&cli.StringFlag{
 			Name:    "db-password",
 			Usage:   "The database password to be used for database connections.",
-			EnvVars: []string{"STORK_TOOL_DB_PASSWORD"},
+			EnvVars: []string{"STORK_DATABASE_PASSWORD"},
 		},
 		&cli.StringFlag{
 			Name:    "db-host",
 			Usage:   "The name of the host where the database is available.",
 			Value:   "localhost",
-			EnvVars: []string{"STORK_TOOL_DB_HOST"},
+			EnvVars: []string{"STORK_DATABASE_HOST"},
 		},
 		&cli.StringFlag{
 			Name:    "db-port",
 			Usage:   "The port on which the database is available.",
 			Aliases: []string{"p"},
 			Value:   "5432",
-			EnvVars: []string{"STORK_TOOL_DB_PORT"},
+			EnvVars: []string{"STORK_DATABASE_PORT"},
 		},
 		&cli.StringFlag{
 			Name:    "db-name",
 			Usage:   "The name of the database to connect to.",
 			Aliases: []string{"d"},
 			Value:   "stork",
-			EnvVars: []string{"STORK_TOOL_DB_NAME"},
+			EnvVars: []string{"STORK_DATABASE_NAME"},
 		},
 		&cli.StringFlag{
 			Name:    "db-trace-queries",
 			Usage:   "Enable tracing SQL queries: \"run\" - only run-time, without migrations, \"all\" - migrations and run-time.",
 			Value:   "",
-			EnvVars: []string{"STORK_TOOL_DB_TRACE_QUERIES"},
+			EnvVars: []string{"STORK_DATABASE_TRACE_QUERIES"},
 		},
 	}
 

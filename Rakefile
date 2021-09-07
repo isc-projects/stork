@@ -434,19 +434,19 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     short_param = '-short'
   end
 
-  # Set the default PGPASSWORD. It is picked by createdb, unit tests and the script
-  # cleaning up the databases.
-  if !ENV['PGPASSWORD']
-    ENV['PGPASSWORD'] = 'storktest'
+  # Set the default STORK_DATABASE_PASSWORD for tests.
+  if !ENV['STORK_DATABASE_PASSWORD']
+    ENV['STORK_DATABASE_PASSWORD'] = 'storktest'
   end
 
   # prepare database for unit tests: clear any remainings from previous runs, prepare up-to-date template db
   if ENV['POSTGRES_IN_DOCKER'] != 'yes'
+    ENV['PGPASSWORD'] = ENV['STORK_DATABASE_PASSWORD']
     remove_remaining_databases(pgsql_host, pgsql_port)
     sh "createdb -h #{pgsql_host} -p #{pgsql_port} -U storktest -O storktest storktest"
   end
 
-  sh "./backend/cmd/stork-tool/stork-tool db-up -d storktest -u storktest --db-host #{pgsql_host} -p #{pgsql_port} --db-password=#{ENV['PGPASSWORD']}"
+  sh "./backend/cmd/stork-tool/stork-tool db-up -d storktest -u storktest --db-host #{pgsql_host} -p #{pgsql_port}"
 
   if ENV['dbtrace'] == 'true'
     ENV['STORK_DATABASE_TRACE'] = 'true'
@@ -465,6 +465,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
 
     # drop test databases
     if ENV['POSTGRES_IN_DOCKER'] != 'yes'
+      ENV['PGPASSWORD'] = ENV['STORK_DATABASE_PASSWORD']
       remove_remaining_databases(pgsql_host, pgsql_port)
     end
 

@@ -201,12 +201,12 @@ environment variable, e.g.:
 By default it points to ``localhost:5432``.
 
 Similarly, if the database setup requires a password other than the default
-``storktest``,  the PGPASSWORD variable can be used by issuing the following
-command:
+``storktest``,  the STORK_DATABASE_PASSWORD variable can be used by issuing
+the following command:
 
 .. code:: console
 
-          $ rake unittest_backend PGPASSWORD=secret123
+          $ rake unittest_backend STORK_DATABASE_PASSWORD=secret123
 
 Note that there is no need to create the ``storktest`` database itself; it is created
 and destroyed by the Rakefile task.
