@@ -257,13 +257,13 @@ hbkkHg8CIQDEfP1HGySpXF5AhAK5RSIxSJTvVhzSSMKtAEmqG2BgYw==
 	err = ImportSecret(db, dbmodel.SecretServerCert, nonsenseFile)
 	require.Error(t, err)
 	// Key validation is not implemented yet.
-	// err = ImportSecret(db, dbmodel.SecretServerKey, nonsenseFile)
-	// require.Error(t, err)
+	err = ImportSecret(db, dbmodel.SecretServerKey, nonsenseFile)
+	require.Error(t, err)
 	err = ImportSecret(db, dbmodel.SecretCACert, nonsenseFile)
 	require.Error(t, err)
 	// Key validation is not implemented yet.
-	// err = ImportSecret(db, dbmodel.SecretCAKey, nonsenseFile)
-	// require.Error(t, err)
+	err = ImportSecret(db, dbmodel.SecretCAKey, nonsenseFile)
+	require.Error(t, err)
 	err = ImportSecret(db, dbmodel.SecretServerToken, nonsenseFile)
 	require.Error(t, err)
 }

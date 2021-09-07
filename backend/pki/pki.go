@@ -188,12 +188,10 @@ func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKe
 		return nil, fingerprint, errors.New("DNS names and IP addresses both cannot be empty")
 	}
 	// parse priv key
-	pemBlock, _ := pem.Decode(privKeyPEM)
-	privKeyIf, err := x509.ParsePKCS8PrivateKey(pemBlock.Bytes)
+	privKey, err := ParsePrivateKey(privKeyPEM)
 	if err != nil {
-		return nil, fingerprint, errors.Wrapf(err, "parsing priv key")
+		return nil, fingerprint, err
 	}
-	privKey := privKeyIf.(*ecdsa.PrivateKey)
 
 	// generate a CSR template
 	csrTemplate := x509.CertificateRequest{
@@ -264,6 +262,20 @@ func ParseCert(certPEM []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
+// Parse a private key in PEM format. Return it in *ecdsa.PrivateKey
+// form.
+func ParsePrivateKey(privKeyPEM []byte) (*ecdsa.PrivateKey, error) {
+	pemBlock, _ := pem.Decode(privKeyPEM)
+	if pemBlock == nil {
+		return nil, errors.New("decoding PEM with private key failed")
+	}
+	privKeyIf, err := x509.ParsePKCS8PrivateKey(pemBlock.Bytes)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing private key")
+	}
+	return privKeyIf.(*ecdsa.PrivateKey), nil
+}
+
 // Sign a certificate for a given CSR in PEM format using provided
 // serial number, a CA key and a CA cert.  It returns PEM of signed
 // CSR, fingerprint of signed CSR, parameters error and inner
@@ -297,12 +309,10 @@ func SignCert(csrPEM []byte, serialNumber int64, parentCertPEM []byte, parentKey
 	}
 
 	// parse CA cert and key
-	pemBlock, _ = pem.Decode(parentKeyPEM)
-	parentKeyIf, err := x509.ParsePKCS8PrivateKey(pemBlock.Bytes)
+	parentKey, err := ParsePrivateKey(parentKeyPEM)
 	if err != nil {
 		return nil, fingerprint, nil, errors.Wrapf(err, "parsing CA keys")
 	}
-	parentKey := parentKeyIf.(*ecdsa.PrivateKey)
 	parentCert, err := ParseCert(parentCertPEM)
 	if err != nil {
 		return nil, fingerprint, nil, errors.Wrapf(err, "parsing CA cert")

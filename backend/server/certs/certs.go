@@ -276,16 +276,13 @@ func ImportSecret(db *pg.DB, object string, filename string) error {
 	switch object {
 	case dbmodel.SecretCAKey:
 		objDisplayName = SecretTypeCAKey
-		// I don't know how to verify the private key. There is no code for it in pki. There
-		// are several methods in https://pkg.go.dev/crypto/x509 that in principle should work.
-		// x509.ParsePKCS8PrivateKey(), x509.ParsePKCS1PrivateKey(), or x509.ParseECPrivateKey().
-		// None of them works.
+		_, err = pki.ParsePrivateKey(content)
 	case dbmodel.SecretCACert:
 		objDisplayName = SecretTypeCACert
 		_, err = pki.ParseCert(content)
 	case dbmodel.SecretServerKey:
 		objDisplayName = SecretTypeSrvKey
-		// see SecretCAKey comment above.
+		_, err = pki.ParsePrivateKey(content)
 	case dbmodel.SecretServerCert:
 		objDisplayName = SecretTypeSrvCert
 		_, err = pki.ParseCert(content)
@@ -295,6 +292,7 @@ func ImportSecret(db *pg.DB, object string, filename string) error {
 			return errors.Errorf("server token has to be exactly 32 bytes long, provided is %d bytes", len(content))
 		}
 	default:
+		return errors.Errorf("unsupported object: %s", object)
 	}
 
 	if err != nil {
