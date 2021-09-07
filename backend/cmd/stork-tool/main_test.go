@@ -170,7 +170,9 @@ func TestRunCertImport(t *testing.T) {
 	_, err := certs.GenerateServerToken(db)
 	require.NoError(t, err)
 
-	srvTknFile, err := sb.Write("srv.tkn", "abc")
+	serverToken := "01234567890123456789001234567890" // 32-bytes
+	require.EqualValues(t, len(serverToken), 32)
+	srvTknFile, err := sb.Write("srv.tkn", serverToken)
 	require.NoError(t, err)
 
 	os.Args = []string{
