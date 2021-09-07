@@ -1,6 +1,7 @@
 * 156 [build] marcin
     Running unit tests no longer requires specifying a password
-    explicitly.
+    explicitly. Renamed database connection specific environment
+    variables in the stork-tool.
     (Gitlab #555)
 
 * 155 [func] slawek
