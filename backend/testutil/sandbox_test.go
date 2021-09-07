@@ -18,12 +18,14 @@ func TestSandboxJoin(t *testing.T) {
 	require.DirExists(t, sb.BasePath)
 
 	// check 'a' file in sandbox root
-	aFile := sb.Join("a")
+	aFile, err := sb.Join("a")
+	require.NoError(t, err)
 	require.FileExists(t, aFile)
 	require.True(t, strings.HasSuffix(aFile, "/a"))
 
 	// check 'c' file in sandbox subdir 'b'
-	cFile := sb.Join("b/c")
+	cFile, err := sb.Join("b/c")
+	require.NoError(t, err)
 	require.FileExists(t, cFile)
 	require.True(t, strings.HasSuffix(cFile, "/b/c"))
 
@@ -67,8 +69,8 @@ func TestSandboxWriteFail(t *testing.T) {
 	sb := NewSandbox()
 	defer sb.Close()
 
-	// Now we ask the code to write file.txt in non-existent directory. It should fail.
-	fpath, err := sb.Write("abc", "file.txt")
+	// Now we ask the code to write path with illegal character. It should fail.
+	fpath, err := sb.Write("/", "abc")
 	require.Error(t, err)
 	require.EqualValues(t, "", fpath)
 }
@@ -81,12 +83,14 @@ func TestSandboxJoinDir(t *testing.T) {
 	require.DirExists(t, sb.BasePath)
 
 	// check 'a' dir in sandbox root
-	aDir := sb.JoinDir("a")
+	aDir, err := sb.JoinDir("a")
+	require.NoError(t, err)
 	require.DirExists(t, aDir)
 	require.True(t, strings.HasSuffix(aDir, "/a"))
 
 	// check 'c' dir in sandbox subdir 'b'
-	cDir := sb.JoinDir("b/c")
+	cDir, err := sb.JoinDir("b/c")
+	require.NoError(t, err)
 	require.DirExists(t, cDir)
 	require.True(t, strings.HasSuffix(cDir, "/b/c"))
 

@@ -81,7 +81,8 @@ func TestExportSecret(t *testing.T) {
 	err = ExportSecret(db, dbmodel.SecretServerCert, "")
 	require.NoError(t, err)
 
-	serverCertPEMFile := sb.Join("server-cert.pem")
+	serverCertPEMFile, err := sb.Join("server-cert.pem")
+	require.NoError(t, err)
 	err = ExportSecret(db, dbmodel.SecretServerCert, serverCertPEMFile)
 	require.NoError(t, err)
 	serverCertPEM2, err := ioutil.ReadFile(serverCertPEMFile)
@@ -92,7 +93,8 @@ func TestExportSecret(t *testing.T) {
 	err = ExportSecret(db, dbmodel.SecretServerKey, "")
 	require.NoError(t, err)
 
-	serverKeyPEMFile := sb.Join("server-key.pem")
+	serverKeyPEMFile, err := sb.Join("server-key.pem")
+	require.NoError(t, err)
 	err = ExportSecret(db, dbmodel.SecretServerKey, serverKeyPEMFile)
 	require.NoError(t, err)
 	serverKeyPEM2, err := ioutil.ReadFile(serverKeyPEMFile)
@@ -103,7 +105,8 @@ func TestExportSecret(t *testing.T) {
 	err = ExportSecret(db, dbmodel.SecretCACert, "")
 	require.NoError(t, err)
 
-	rootCertPEMFile := sb.Join("root-cert.pem")
+	rootCertPEMFile, err := sb.Join("root-cert.pem")
+	require.NoError(t, err)
 	err = ExportSecret(db, dbmodel.SecretCACert, rootCertPEMFile)
 	require.NoError(t, err)
 	rootCertPEM2, err := ioutil.ReadFile(rootCertPEMFile)
@@ -114,7 +117,8 @@ func TestExportSecret(t *testing.T) {
 	err = ExportSecret(db, dbmodel.SecretCAKey, "")
 	require.NoError(t, err)
 
-	rootKeyPEMFile := sb.Join("root-key.pem")
+	rootKeyPEMFile, err := sb.Join("root-key.pem")
+	require.NoError(t, err)
 	err = ExportSecret(db, dbmodel.SecretCAKey, rootKeyPEMFile)
 	require.NoError(t, err)
 	rootKeyPEM2, err := ioutil.ReadFile(rootKeyPEMFile)
@@ -127,7 +131,8 @@ func TestExportSecret(t *testing.T) {
 	err = ExportSecret(db, dbmodel.SecretServerToken, "")
 	require.NoError(t, err)
 
-	serverTokenFile := sb.Join("server-token.txt")
+	serverTokenFile, err := sb.Join("server-token.txt")
+	require.NoError(t, err)
 	err = ExportSecret(db, dbmodel.SecretServerToken, serverTokenFile)
 	require.NoError(t, err)
 	serverToken2, err := ioutil.ReadFile(serverTokenFile)

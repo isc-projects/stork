@@ -42,47 +42,50 @@ func (sb *Sandbox) Close() {
 // above it if needed, similar to -p option in mkdir), create
 // indicated file in this parent directory, and return a full path to
 // this file.
-func (sb *Sandbox) Join(name string) string {
+func (sb *Sandbox) Join(name string) (string, error) {
 	// build full path
 	fpath := path.Join(sb.BasePath, name)
 
 	// ensure directory
 	dir := path.Dir(fpath)
-	err := os.MkdirAll(dir, 0777)
+	err := os.MkdirAll(dir, 0o777)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	// create file in the filesystem
 	file, err := os.Create(fpath)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	defer file.Close()
 
-	return fpath
+	return fpath, nil
 }
 
 // Create indicated directory in sandbox and all parent directories
 // and return a full path.
-func (sb *Sandbox) JoinDir(name string) string {
+func (sb *Sandbox) JoinDir(name string) (string, error) {
 	// build full path
 	fpath := path.Join(sb.BasePath, name)
 
 	// ensure directory
-	err := os.MkdirAll(fpath, 0777)
+	err := os.MkdirAll(fpath, 0o777)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
-	return fpath
+	return fpath, nil
 }
 
 // Create a file and write provided content to it.
 func (sb *Sandbox) Write(name string, content string) (string, error) {
-	fpath := sb.Join(name)
+	fpath, err := sb.Join(name)
+	if err != nil {
+		return "", err
+	}
 
-	err := ioutil.WriteFile(fpath, []byte(content), 0600)
+	err = ioutil.WriteFile(fpath, []byte(content), 0o600)
 	if err != nil {
 		log.Fatal(err)
 		return "", err

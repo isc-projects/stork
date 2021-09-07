@@ -242,10 +242,14 @@ func TestDetectBind9AppAbsPath(t *testing.T) {
 
 	// check BIND 9 app detection
 	cmdr := &TestCommander{}
-	cfgPath := sb.Join("etc/path.cfg")
-	namedDir := sb.JoinDir("usr/sbin")
-	sb.Join("usr/bin/named-checkconf")
-	sb.Join("usr/sbin/rndc")
+	cfgPath, err := sb.Join("etc/path.cfg")
+	require.NoError(t, err)
+	namedDir, err := sb.JoinDir("usr/sbin")
+	require.NoError(t, err)
+	_, err = sb.Join("usr/bin/named-checkconf")
+	require.NoError(t, err)
+	_, err = sb.Join("usr/sbin/rndc")
+	require.NoError(t, err)
 	app := detectBind9App([]string{"", namedDir, fmt.Sprintf("-c %s", cfgPath)}, "", cmdr)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
@@ -268,10 +272,14 @@ func TestDetectBind9AppRelativePath(t *testing.T) {
 
 	cmdr := &TestCommander{}
 	sb.Join("etc/path.cfg")
-	cfgDir := sb.JoinDir("etc")
-	namedDir := sb.JoinDir("usr/sbin")
-	sb.Join("usr/sbin/named-checkconf")
-	sb.Join("usr/bin/rndc")
+	cfgDir, err := sb.JoinDir("etc")
+	require.NoError(t, err)
+	namedDir, err := sb.JoinDir("usr/sbin")
+	require.NoError(t, err)
+	_, err = sb.Join("usr/sbin/named-checkconf")
+	require.NoError(t, err)
+	_, err = sb.Join("usr/bin/rndc")
+	require.NoError(t, err)
 	app := detectBind9App([]string{"", namedDir, "-c path.cfg"}, cfgDir, cmdr)
 	require.NotNil(t, app)
 	require.Equal(t, app.GetBaseApp().Type, AppTypeBind9)
