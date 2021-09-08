@@ -1,3 +1,5 @@
+Stork 0.20.0 released on 2021-09-08.
+
 * 158 [build] marcin
 
     Corrected issues with the nginx-server.conf, an example Nginx
