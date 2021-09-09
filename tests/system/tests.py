@@ -8,8 +8,8 @@ import containers
 from containers import KEA_1_6, KEA_LATEST
 
 SUPPORTED_DISTROS = [
-    ('ubuntu/18.04', 'centos/7'),
-    ('centos/7', 'ubuntu/18.04')
+    ('ubuntu/18.04', 'centos/8'),
+    ('centos/8', 'ubuntu/18.04')
 ]
 
 
@@ -192,7 +192,7 @@ def test_pkg_upgrade_server_token(distro_agent, distro_server):
     assert m['apps'][0]['version'] == KEA_LATEST.split('-')[0]
 
 
-@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/7')])
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/8')])
 def test_add_kea_with_many_subnets(agent, server):
     """Check if Stork agent and server will handle Kea instance with huge amount of subnets."""
     # install kea on the agent machine
@@ -292,8 +292,7 @@ def _search_leases(server, text=None, host_id=None):
 
     return data['items'], None
 
-
-@pytest.mark.parametrize("agent, server", [('centos/7', 'ubuntu/18.04')])
+@pytest.mark.parametrize("agent, server", [('centos/8', 'ubuntu/18.04')])
 def test_change_kea_ca_access_point(agent, server):
     """Check if Stork server notices that Kea CA has changed its listening address."""
     # install kea on the agent machine
@@ -311,7 +310,7 @@ def test_change_kea_ca_access_point(agent, server):
     m = _get_machine_state(server, m['id'])
     assert m['apps'] is not None
     assert len(m['apps']) == 1
-    assert m['apps'][0]['version'] == '1.8.0'
+    assert m['apps'][0]['version'] == '1.8.2'
     assert len(m['apps'][0]['accessPoints']) == 1
     assert m['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'
 
@@ -343,7 +342,7 @@ def test_change_kea_ca_access_point(agent, server):
     assert m['apps'][0]['accessPoints'][0]['address'] == agent.mgmt_ip
 
 
-@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/7')])
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/8')])
 def test_search_leases(agent, server):
     # Install Kea on the machine with a Stork Agent.
     agent.install_kea()
@@ -450,7 +449,7 @@ def run_perfdhcp(src_cntr, dest_ip_addr):
         raise Exception('perfdhcp erred: %s' % str(result))
 
 
-@pytest.mark.parametrize("agent_kea, agent_old_kea, server", [('ubuntu/20.04', 'ubuntu/18.04', 'centos/7')])
+@pytest.mark.parametrize("agent_kea, agent_old_kea, server", [('ubuntu/20.04', 'ubuntu/18.04', 'centos/8')])
 def test_get_kea_stats(agent_kea, agent_old_kea, server):
     """Check if collecting stats from various Kea versions works.
        DHCPv4 traffic is send to old Kea, then to new kea
@@ -553,16 +552,16 @@ def test_get_kea_stats(agent_kea, agent_old_kea, server):
     assert sn_with_addrs == 2
 
 
-@pytest.mark.parametrize("agent, server, bind_version", [('centos/7', 'ubuntu/18.04', None),
-                                                         ('centos/7', 'ubuntu/18.04', '9.11'),
-                                                         ('centos/7', 'ubuntu/18.04', '9.16'),
-                                                         ('centos/7', 'ubuntu/18.04', '9.17'),
+@pytest.mark.parametrize("agent, server, bind_version", [('centos/8', 'ubuntu/18.04', None),
+                                                         ('centos/8', 'ubuntu/18.04', '9.11'),
+                                                         ('centos/8', 'ubuntu/18.04', '9.16'),
+                                                         ('centos/8', 'ubuntu/18.04', '9.17'),
                                                          ('centos/8', 'ubuntu/18.04', None),
-                                                         ('ubuntu/18.04', 'centos/7', None),
-                                                         ('ubuntu/18.04', 'centos/7', '9.11'),
-                                                         ('ubuntu/18.04', 'centos/7', '9.16'),
-                                                         ('ubuntu/18.04', 'centos/7', '9.17'),
-                                                         ('ubuntu/20.04', 'centos/7', None)])
+                                                         ('ubuntu/18.04', 'centos/8', None),
+                                                         ('ubuntu/18.04', 'centos/8', '9.11'),
+                                                         ('ubuntu/18.04', 'centos/8', '9.16'),
+                                                         ('ubuntu/18.04', 'centos/8', '9.17'),
+                                                         ('ubuntu/20.04', 'centos/8', None)])
 def test_bind9_versions(agent, server, bind_version):
     """Check if Stork agent detects different BIND 9 versions."""
     # install kea on the agent machine
@@ -585,7 +584,7 @@ def test_bind9_versions(agent, server, bind_version):
     assert m['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'
 
 
-@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/7')])
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/8')])
 def test_get_host_leases(agent, server):
     # Install Kea on the machine with a Stork Agent.
     agent.install_kea()

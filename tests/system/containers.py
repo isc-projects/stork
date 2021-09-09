@@ -8,6 +8,7 @@ import shlex
 import random
 import argparse
 import threading
+import traceback
 import unicodedata
 
 from pylxd import Client
@@ -32,7 +33,7 @@ STYLES = [dict(fg='red', style=''),
 
 KEA_1_6 = '1.6.3-isc0044120200730112858'
 KEA_1_7 = '1.7.3-isc0009420191217090201'
-KEA_1_8 = '1.8.0-isc0000420200825110759'
+KEA_1_8 = '1.8.2-isc0001520201206093433'
 KEA_LATEST = KEA_1_8
 
 
@@ -72,7 +73,6 @@ class Container:
 
         # prepare styling for traces
         self.style = random.choice(STYLES)
-        print(colors.color('%s: %s' % (name, str(self.style)), **self.style))
 
         # open separate connection to LXD
         self.lxd = Client()
@@ -224,6 +224,7 @@ class Container:
         self.thread.join()
         if self.bg_exc:
             print("problem with container %s" % self.name)
+            traceback.print_exception(type(self.bg_exc), self.bg_exc, self.bg_exc.__traceback__)
             e = self.bg_exc
             self.bg_exc = None
             raise e
@@ -344,8 +345,13 @@ class StorkServerContainer(Container):
         else:
             #self.run('yum install -y postgresql-server postgresql-contrib sudo perl', attempts=5, sleep_time_after_attempt=5)
             #self.run('postgresql-setup initdb')
-            self.run('rpm -Uvh https://yum.postgresql.org/11/redhat/rhel-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm')
-            self.install_pkgs('postgresql11-server postgresql11 postgresql11-contrib')
+            self.run('yum -y --nogpgcheck localinstall '
+                'https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-8-x86_64/postgresql11-libs-11.13-1PGDG.rhel8.x86_64.rpm '
+                'https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-8-x86_64/postgresql11-contrib-11.13-1PGDG.rhel8.x86_64.rpm '
+                'https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-8-x86_64/postgresql11-server-11.13-1PGDG.rhel8.x86_64.rpm '
+                'https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-8-x86_64/postgresql11-11.13-1PGDG.rhel8.x86_64.rpm '
+            )
+            self.install_pkgs('postgresql11-libs postgresql11-server postgresql11 postgresql11-contrib')
             self.run('/usr/pgsql-11/bin/postgresql-11-setup initdb')
             self.run("perl -pi -e 's/(host.*)ident/\\1md5/g'  /var/lib/pgsql/11/data/pg_hba.conf")
 
@@ -489,7 +495,7 @@ class StorkAgentContainer(Container):
         else:
             self.install_pkgs('epel-release')
             pkgs = 'perl'
-            pkgs += " isc-kea-{kea_version}.el7 isc-kea-hooks-{kea_version}.el7 isc-kea-libs-{kea_version}.el7"
+            pkgs += " isc-kea-{kea_version}.el8 isc-kea-hooks-{kea_version}.el8 isc-kea-libs-{kea_version}.el8"
 
         pkgs = pkgs.format(kea_version=kea_version)
         self.install_pkgs(pkgs)
@@ -542,14 +548,14 @@ class StorkAgentContainer(Container):
         else:
             # install named on rpm distro
             if bind_version:
-                self.install_pkgs('yum-utils epel-release')
+                self.install_pkgs('yum-utils epel-release policycoreutils-python-utils')
 
                 if bind_version == '9.17':
-                    repo = 'https://copr.fedorainfracloud.org/coprs/isc/bind-dev/repo/epel-7/isc-bind-dev-epel-7.repo'
+                    repo = 'https://copr.fedorainfracloud.org/coprs/isc/bind-dev/repo/epel-8/isc-bind-dev-epel-8.repo'
                 elif bind_version == '9.16':
-                    repo = 'https://copr.fedorainfracloud.org/coprs/isc/bind/repo/epel-7/isc-bind-epel-7.repo'
+                    repo = 'https://copr.fedorainfracloud.org/coprs/isc/bind/repo/epel-8/isc-bind-epel-8.repo'
                 elif bind_version == '9.11':
-                    repo = 'https://copr.fedorainfracloud.org/coprs/isc/bind-esv/repo/epel-7/isc-bind-esv-epel-7.repo'
+                    repo = 'https://copr.fedorainfracloud.org/coprs/isc/bind-esv/repo/epel-8/isc-bind-esv-epel-8.repo'
                 else:
                     raise NotImplementedError
 
@@ -557,8 +563,7 @@ class StorkAgentContainer(Container):
                 self.install_pkgs('isc-bind')
                 self.run("bash -c 'rpm -qa | grep isc-bind | grep %s'" % bind_version)
                 srv_name = 'isc-bind-named'
-                named_conf_path = '/etc/opt/isc/isc-bind/named.conf'
-
+                named_conf_path = '/etc/opt/isc/scls/isc-bind/named.conf'
             else:
                 self.install_pkgs('bind bind-utils')
                 srv_name = 'named'
