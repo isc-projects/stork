@@ -47,6 +47,7 @@ func createAppWithSubnets(t *testing.T, db *dbops.PgDB, index int64, v4Config, v
 	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
 	app := dbmodel.App{
 		MachineID:    m.ID,
+		Machine:      m,
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{

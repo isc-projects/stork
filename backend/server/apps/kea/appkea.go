@@ -571,23 +571,15 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 	}
 	defer rollback()
 
-	newApp := false
-	var addedDaemons, deletedDaemons []*dbmodel.Daemon
-	if app.ID == 0 {
-		// New app, insert it.
-		addedDaemons, err = dbmodel.AddApp(tx, app)
-		newApp = true
-	} else {
-		// Existing app, update it if needed.
-		addedDaemons, deletedDaemons, err = dbmodel.UpdateApp(tx, app)
-	}
-
+	addedDaemons, deletedDaemons, newApp, err := dbmodel.AddOrUpdateApp(tx, app)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "cannot add/update app %s in database", app.Name)
 	}
 
 	if newApp {
 		eventCenter.AddInfoEvent("added {app} on {machine}", app.Machine, app)
+	} else {
+		eventCenter.AddInfoEvent("updated {app} on {machine}", app.Machine, app)
 	}
 
 	for _, daemon := range deletedDaemons {

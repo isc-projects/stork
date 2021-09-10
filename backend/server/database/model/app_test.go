@@ -459,6 +459,154 @@ func TestUpdateApp(t *testing.T) {
 	require.Equal(t, "abcd", pt.Key)
 }
 
+// Test that the app is correctly added or updated if exist.
+func TestAddOrUpdateApp(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add first machine, should be no error
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotZero(t, m.ID)
+
+	accessPoints := []*AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234)
+
+	dhcp4Config, err := NewKeaConfigFromJSON(`{
+        "Dhcp4": {
+            "valid-lifetime": 4000
+        }
+    }`)
+	require.NoError(t, err)
+	require.NotNil(t, dhcp4Config)
+
+	caConfig, err := NewKeaConfigFromJSON(`{
+        "Control-agent": {
+            "http-host": "10.20.30.40"
+        }
+    }`)
+	require.NoError(t, err)
+	require.NotNil(t, caConfig)
+
+	protoApp := App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         AppTypeKea,
+		Name:         "kea-app",
+		Active:       true,
+		AccessPoints: accessPoints,
+		Daemons: []*Daemon{
+			{
+				Name:    "kea-dhcp4",
+				Version: "1.7.5",
+				Active:  true,
+				KeaDaemon: &KeaDaemon{
+					Config: dhcp4Config,
+					KeaDHCPDaemon: &KeaDHCPDaemon{
+						Stats: KeaDHCPDaemonStats{
+							RPS1: 1024,
+							RPS2: 2048,
+						},
+					},
+				},
+				LogTargets: []*LogTarget{
+					{
+						Name:     "frog",
+						Severity: "ERROR",
+						Output:   "stdout",
+					},
+					{
+						Name:     "lion",
+						Severity: "FATAL",
+						Output:   "/tmp/filename.log",
+					},
+				},
+			},
+			{
+				Name:    "kea-ctrl-agent",
+				Version: "1.7.4",
+				Active:  false,
+				KeaDaemon: &KeaDaemon{
+					Config: caConfig,
+				},
+				LogTargets: []*LogTarget{
+					{
+						Name:     "foo",
+						Severity: "INFO",
+						Output:   "stdout",
+					},
+					{
+						Name:     "bar",
+						Severity: "DEBUG",
+						Output:   "/tmp/filename.log",
+					},
+				},
+			},
+		},
+	}
+
+	// Copy original app
+	a := protoApp
+
+	addedDaemons, deletedDaemons, newApp, err := AddOrUpdateApp(db, &a)
+	require.NoError(t, err)
+	require.NotZero(t, a.ID)
+	require.True(t, newApp)
+	require.NotNil(t, addedDaemons)
+	require.Equal(t, len(addedDaemons), 2)
+	require.Nil(t, deletedDaemons)
+
+	// Remember for later use
+	appID := a.ID
+
+	// Copy original app
+	a = protoApp
+
+	// Remove daemon at the begin
+	a.Daemons = a.Daemons[1:]
+
+	// Add daemon at the end
+	toAddDaemon := Daemon{
+		Name:    "foo",
+		Version: "4.2.0",
+		Active:  true,
+		KeaDaemon: &KeaDaemon{
+			Config: dhcp4Config,
+			KeaDHCPDaemon: &KeaDHCPDaemon{
+				Stats: KeaDHCPDaemonStats{
+					RPS1: 4242,
+					RPS2: 2424,
+				},
+			},
+		},
+		LogTargets: []*LogTarget{
+			{
+				Name:     "bar",
+				Severity: "ERROR",
+				Output:   "stdout",
+			},
+		},
+	}
+
+	a.Daemons = append(a.Daemons, &toAddDaemon)
+	addedDaemons, deletedDaemons, newApp, err = AddOrUpdateApp(db, &a)
+	require.NoError(t, err)
+	require.Equal(t, a.ID, appID)
+	require.False(t, newApp)
+	require.NotNil(t, addedDaemons)
+	require.Equal(t, len(addedDaemons), 1)
+	require.NotNil(t, deletedDaemons)
+	require.Equal(t, len(deletedDaemons), 1)
+
+	require.EqualValues(t, addedDaemons[0].Name, "foo")
+	require.EqualValues(t, deletedDaemons[0].Name, "kea-dhcp4")
+}
+
 // Test that an app can be renamed without affecting other app
 // specific information.
 func TestRenameApp(t *testing.T) {

@@ -211,7 +211,7 @@ func AddApp(dbIface interface{}, app *App) ([]*Daemon, error) {
 
 	addedDaemons, deletedDaemons, err := updateAppDaemons(tx, app)
 	if err != nil {
-		return nil, pkgerrors.WithMessagef(err, "problem with inserting daemons for a new app")
+		return nil, pkgerrors.Wrapf(err, "problem with inserting daemons for a new app")
 	}
 	if len(deletedDaemons) > 0 {
 		return nil, pkgerrors.Errorf("problem with deleting daemons for a new app")
@@ -272,6 +272,69 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 	return addedDaemons, deletedDaemons, nil
 }
 
+// Insert or update the application in the database.
+// First, the function tries to insert a new entry
+// into the database. If it volatiles the unique constraint
+// (entry is already added), then the update query is performed.
+// The dbIface object may either be a pg.DB object
+// or pg.Tx. In the latter case, this function uses an existing
+// transaction to add/update an app.
+// Returns a list of added daemons, deleted daemons (only if the
+// update performs), a flag that indicates that the INSERT query
+// executed and error if occurred.
+// This function is composed from 3 stages.
+// 1. Insert app
+//    It is executed when AppID equals 0. It
+//    If any other query inserted the app before this query then the transaction rollbacks
+//    else the function successfully returns.
+// 2. Retrieve app ID.
+//    If the app exists then we need an application ID.
+// 3. Update the application.
+func AddOrUpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, bool, error) {
+	hasInsertConflict := false
+	if app.ID == 0 {
+		// New app, insert it.
+		addedDaemons, err := AddApp(dbIface, app)
+
+		if err == nil {
+			return addedDaemons, nil, true, nil
+		}
+
+		// AddApp fails
+		var pgErr pg.Error
+		ok := errors.As(pkgerrors.Cause(err), &pgErr)
+		// Is it a conflict on an unique constraint?
+		if !ok || !pgErr.IntegrityViolation() {
+			return nil, nil, false, err
+		}
+
+		hasInsertConflict = true
+	}
+
+	// Stage 2: Check conflict and retrieve AppID if needed
+	if hasInsertConflict {
+		// We need a transaction object to execute select ID query
+		tx, rollback, _, err := dbops.Transaction(dbIface)
+		if err != nil {
+			return nil, nil, false, err
+		}
+		defer rollback()
+
+		// Get App ID
+		existingApp, err := getAppByName(tx, app.Name)
+		if err != nil {
+			return nil, nil, false, err
+		}
+		app.ID = existingApp.ID
+		app.CreatedAt = existingApp.CreatedAt
+	}
+
+	// Stage 3: Update application
+	// Existing app, update it if needed.
+	addedDaemons, deletedDaemons, err := UpdateApp(dbIface, app)
+	return addedDaemons, deletedDaemons, false, err
+}
+
 // Updates specified app's name. It returns app instance with old name and possibly
 // an error. If an error occurs, a nil app is returned.
 func RenameApp(db *pg.DB, id int64, newName string) (*App, error) {
@@ -323,6 +386,21 @@ func GetAppByID(db *pg.DB, id int64) (*App, error) {
 		return nil, pkgerrors.Wrapf(err, "problem with getting app %v", id)
 	}
 	return &app, nil
+}
+
+// Return app with given name as the name has a unique constraint.
+// It doesn't include related entries. Intended to the internal use.
+func getAppByName(dbIface interface{}, name string) (*App, error) {
+	tx, _, _, err := dbops.Transaction(dbIface)
+	if err != nil {
+		return nil, err
+	}
+
+	app := App{}
+	q := tx.Model(&app)
+	q = q.Where("app.name = ?", name)
+	err = q.Select()
+	return &app, err
 }
 
 func GetAppsByMachine(db *pg.DB, machineID int64) ([]*App, error) {
