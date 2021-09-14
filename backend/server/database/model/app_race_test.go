@@ -136,6 +136,7 @@ func TestAddOrUpdateAppRace(t *testing.T) {
 	errorCount := 0
 	newCount := 0
 	for res := range out {
+		require.NoError(t, res.Error)
 		if res.Error != nil {
 			errorCount++
 		}
