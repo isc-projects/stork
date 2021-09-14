@@ -11,7 +11,7 @@ import (
 
 	require "github.com/stretchr/testify/require"
 	dbtest "isc.org/stork/server/database/test"
-	storktestutil "isc.org/stork/server/testutil"
+	configGen "isc.org/stork/server/test/gen"
 )
 
 // When multiple parallel queries try to add the same application
@@ -94,7 +94,7 @@ func TestAddOrUpdateAppRace(t *testing.T) {
 
 	// DHCPv4 configuration.
 	var kea4Config *KeaConfig
-	v4Config, err := json.Marshal(storktestutil.GenerateKeaConfig(5000))
+	v4Config, err := json.Marshal(configGen.GenerateKeaConfig(5000))
 	require.NoError(t, err)
 	kea4Config, err = NewKeaConfigFromJSON(string(v4Config))
 	require.NoError(t, err)

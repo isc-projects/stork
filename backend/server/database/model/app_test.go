@@ -8,7 +8,7 @@ import (
 	require "github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbtest "isc.org/stork/server/database/test"
-	storktestutil "isc.org/stork/server/testutil"
+	configGen "isc.org/stork/server/test/gen"
 )
 
 func TestAddApp(t *testing.T) {
@@ -479,7 +479,7 @@ func TestAddOrUpdateApp(t *testing.T) {
 	accessPoints := []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234)
 
-	rawConfig, err := json.Marshal(storktestutil.GenerateKeaConfig(5000))
+	rawConfig, err := json.Marshal(configGen.GenerateKeaConfig(5000))
 	require.NoError(t, err)
 	dhcp4Config, err := NewKeaConfigFromJSON(string(rawConfig))
 	require.NoError(t, err)

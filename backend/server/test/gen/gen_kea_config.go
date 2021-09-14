@@ -1,10 +1,13 @@
-package storktestutil
+// Config generator for test purpose
+package storktestgen
 
 import (
 	"fmt"
 	"math/rand"
 )
 
+// Generate Kea configuration with specific number of subnets.
+// It is a port of the "main" function from "gen-kea-config.py" file.
 func GenerateKeaConfig(n int) map[string]interface{} {
 	inner := 0
 	outer := 0
