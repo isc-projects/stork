@@ -1,12 +1,14 @@
 package dbmodel
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbtest "isc.org/stork/server/database/test"
+	storktestutil "isc.org/stork/server/testutil"
 )
 
 func TestAddApp(t *testing.T) {
@@ -477,11 +479,9 @@ func TestAddOrUpdateApp(t *testing.T) {
 	accessPoints := []*AccessPoint{}
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234)
 
-	dhcp4Config, err := NewKeaConfigFromJSON(`{
-        "Dhcp4": {
-            "valid-lifetime": 4000
-        }
-    }`)
+	rawConfig, err := json.Marshal(storktestutil.GenerateKeaConfig(5000))
+	require.NoError(t, err)
+	dhcp4Config, err := NewKeaConfigFromJSON(string(rawConfig))
 	require.NoError(t, err)
 	require.NotNil(t, dhcp4Config)
 

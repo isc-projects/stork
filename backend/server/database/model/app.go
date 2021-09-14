@@ -332,6 +332,9 @@ func AddOrUpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, bool, 
 	// Stage 3: Update application
 	// Existing app, update it if needed.
 	addedDaemons, deletedDaemons, err := UpdateApp(dbIface, app)
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "Invalid update for app: %+v, hasInsertConflict: %t", app, hasInsertConflict)
+	}
 	return addedDaemons, deletedDaemons, false, err
 }
 

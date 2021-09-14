@@ -1,14 +1,16 @@
-// +build !race
+//go:build !race
 
 // Tests that intentionally use race conditions.
 package dbmodel
 
 import (
+	"encoding/json"
 	"sync"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
 	dbtest "isc.org/stork/server/database/test"
+	storktestutil "isc.org/stork/server/testutil"
 )
 
 // When multiple parallel queries try to add the same application
@@ -89,17 +91,37 @@ func TestAddOrUpdateAppRace(t *testing.T) {
 	out := make(chan Result, tasks)
 	var wg sync.WaitGroup
 
+	// DHCPv4 configuration.
+	var kea4Config *KeaConfig
+	v4Config, err := json.Marshal(storktestutil.GenerateKeaConfig(5000))
+	require.NoError(t, err)
+	kea4Config, err = NewKeaConfigFromJSON(string(v4Config))
+	require.NoError(t, err)
+
+	protoApp := App{
+		ID:        0,
+		Type:      AppTypeKea,
+		MachineID: m.ID,
+		Name:      "single",
+		Daemons: []*Daemon{
+			{
+				Name:   "dhcp4",
+				Active: true,
+				KeaDaemon: &KeaDaemon{
+					Config:        kea4Config,
+					KeaDHCPDaemon: &KeaDHCPDaemon{},
+				},
+			},
+		},
+	}
+
 	wg.Add(tasks)
 	// Add function
 	for i := 0; i < tasks; i++ {
 		go func() {
-			app := &App{
-				ID:        0,
-				Type:      AppTypeKea,
-				MachineID: m.ID,
-				Name:      "single",
-			}
-			_, _, newApp, err := AddOrUpdateApp(db, app)
+			// Copy app object
+			app := protoApp
+			_, _, newApp, err := AddOrUpdateApp(db, &app)
 			id := app.ID
 			res := Result{err, id, newApp}
 			out <- res

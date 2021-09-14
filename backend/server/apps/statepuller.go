@@ -2,6 +2,7 @@ package apps
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -276,7 +277,7 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 
 		if err != nil {
 			log.Errorf("cannot store application state: %+v", err)
-			return "problem with storing application state in the database"
+			return fmt.Sprintf("problem with storing application state in the database: %+v", err)
 		}
 	}
 
