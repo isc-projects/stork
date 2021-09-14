@@ -564,17 +564,17 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		}
 	}
 
+	addedDaemons, deletedDaemons, newApp, err := dbmodel.AddOrUpdateApp(db, app)
+	if err != nil {
+		return errors.Wrapf(err, "cannot add/update app %s in database", app.Name)
+	}
+
 	// Begin transaction.
 	tx, rollback, commit, err := dbops.Transaction(db)
 	if err != nil {
 		return err
 	}
 	defer rollback()
-
-	addedDaemons, deletedDaemons, newApp, err := dbmodel.AddOrUpdateApp(tx, app)
-	if err != nil {
-		return errors.Wrapf(err, "cannot add/update app %s in database", app.Name)
-	}
 
 	if newApp {
 		eventCenter.AddInfoEvent("added {app} on {machine}", app.Machine, app)

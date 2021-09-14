@@ -276,9 +276,6 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 // First, the function tries to insert a new entry
 // into the database. If it volatiles the unique constraint
 // (entry is already added), then the update query is performed.
-// The dbIface object may either be a pg.DB object
-// or pg.Tx. In the latter case, this function uses an existing
-// transaction to add/update an app.
 // Returns a list of added daemons, deleted daemons (only if the
 // update performs), a flag that indicates that the INSERT query
 // executed and error if occurred.
@@ -290,11 +287,11 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 // 2. Retrieve app ID.
 //    If the app exists then we need an application ID.
 // 3. Update the application.
-func AddOrUpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, bool, error) {
+func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
 	hasInsertConflict := false
 	if app.ID == 0 {
 		// New app, insert it.
-		addedDaemons, err := AddApp(dbIface, app)
+		addedDaemons, err := AddApp(db, app)
 
 		if err == nil {
 			return addedDaemons, nil, true, nil
@@ -313,15 +310,8 @@ func AddOrUpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, bool, 
 
 	// Stage 2: Check conflict and retrieve AppID if needed
 	if hasInsertConflict {
-		// We need a transaction object to execute select ID query
-		tx, rollback, _, err := dbops.Transaction(dbIface)
-		if err != nil {
-			return nil, nil, false, err
-		}
-		defer rollback()
-
 		// Get App ID
-		existingApp, err := getAppByName(tx, app.Name)
+		existingApp, err := getAppByName(db, app.Name)
 		if err != nil {
 			return nil, nil, false, err
 		}
@@ -331,7 +321,7 @@ func AddOrUpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, bool, 
 
 	// Stage 3: Update application
 	// Existing app, update it if needed.
-	addedDaemons, deletedDaemons, err := UpdateApp(dbIface, app)
+	addedDaemons, deletedDaemons, err := UpdateApp(db, app)
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "Invalid update for app: %+v, hasInsertConflict: %t", app, hasInsertConflict)
 	}
@@ -393,16 +383,11 @@ func GetAppByID(db *pg.DB, id int64) (*App, error) {
 
 // Return app with given name as the name has a unique constraint.
 // It doesn't include related entries. Intended to the internal use.
-func getAppByName(dbIface interface{}, name string) (*App, error) {
-	tx, _, _, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return nil, err
-	}
-
+func getAppByName(db *pg.DB, name string) (*App, error) {
 	app := App{}
-	q := tx.Model(&app)
+	q := db.Model(&app)
 	q = q.Where("app.name = ?", name)
-	err = q.Select()
+	err := q.Select()
 	return &app, err
 }
 
