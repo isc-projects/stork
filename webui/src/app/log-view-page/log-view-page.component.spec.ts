@@ -1,10 +1,17 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { ActivatedRoute, convertToParamMap } from '@angular/router'
+import { ActivatedRoute, convertToParamMap, Router, RouterModule } from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { ServicesService } from '../backend'
 import { LogViewPageComponent } from './log-view-page.component'
 import { of } from 'rxjs'
+import { PanelModule } from 'primeng/panel'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { ButtonModule } from 'primeng/button'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { SharedModule } from 'primeng/api'
+import { EntityLinkComponent } from '../entity-link/entity-link.component'
+import { RouterTestingModule } from '@angular/router/testing'
 
 describe('LogViewPageComponent', () => {
     let component: LogViewPageComponent
@@ -22,8 +29,17 @@ describe('LogViewPageComponent', () => {
                         },
                     },
                 ],
-                imports: [HttpClientTestingModule],
-                declarations: [LogViewPageComponent],
+                imports: [
+                    HttpClientTestingModule,
+                    PanelModule,
+                    NoopAnimationsModule,
+                    ButtonModule,
+                    ProgressSpinnerModule,
+                    SharedModule,
+                    RouterModule,
+                    RouterTestingModule
+                ],
+                declarations: [LogViewPageComponent, EntityLinkComponent],
             }).compileComponents()
         })
     )
@@ -44,8 +60,9 @@ describe('LogViewPageComponent', () => {
         component.appName = 'fantastic-app'
         fixture.detectChanges()
         const appLink = fixture.debugElement.query(By.css('#app-link'))
-        expect(appLink.properties.hasOwnProperty('attrs')).toBeTrue()
-        expect(appLink.properties.attrs.hasOwnProperty('name')).toBeTrue()
-        expect(appLink.properties.attrs.name).toEqual('fantastic-app')
+        const appLinkComponent = appLink.componentInstance
+        expect(appLinkComponent).toBeDefined()
+        expect(appLinkComponent.attrs.hasOwnProperty('name')).toBeTrue()
+        expect(appLinkComponent.attrs.name).toEqual('fantastic-app')
     })
 })

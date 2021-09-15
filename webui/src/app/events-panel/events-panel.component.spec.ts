@@ -1,7 +1,9 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { ActivatedRoute, Router } from '@angular/router'
+import { ActivatedRoute, Router, RouterModule } from '@angular/router'
+import { RouterTestingModule } from '@angular/router/testing'
 import { MessageService } from 'primeng/api'
+import { PaginatorModule } from 'primeng/paginator'
 
 import { EventsService, ServicesService, UsersService } from '../backend'
 import { EventsPanelComponent } from './events-panel.component'
@@ -50,15 +52,11 @@ describe('EventsPanelComponent', () => {
                     ServicesService,
                     MessageService,
                     {
-                        provide: Router,
-                        useValue: {},
-                    },
-                    {
                         provide: ActivatedRoute,
                         useValue: {},
                     },
                 ],
-                imports: [HttpClientTestingModule],
+                imports: [HttpClientTestingModule, PaginatorModule, RouterTestingModule],
                 declarations: [EventsPanelComponent],
             }).compileComponents()
         })

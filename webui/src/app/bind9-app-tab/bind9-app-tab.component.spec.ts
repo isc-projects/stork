@@ -13,6 +13,10 @@ import { of, throwError } from 'rxjs'
 
 import { ServicesService, UsersService } from '../backend'
 import { ServerDataService } from '../server-data.service'
+import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
+import { DialogModule } from 'primeng/dialog'
+import { FormsModule } from '@angular/forms'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 
 class Daemon {
     name = 'bind9'
@@ -47,8 +51,16 @@ describe('Bind9AppTabComponent', () => {
         waitForAsync(() => {
             TestBed.configureTestingModule({
                 providers: [UsersService, ServicesService, MessageService, MockLocationStrategy],
-                imports: [HttpClientTestingModule, RouterModule, RouterTestingModule, TooltipModule, TabViewModule],
-                declarations: [Bind9AppTabComponent, LocaltimePipe],
+                imports: [
+                    HttpClientTestingModule,
+                    FormsModule,
+                    RouterTestingModule,
+                    TooltipModule,
+                    TabViewModule,
+                    DialogModule,
+                    NoopAnimationsModule
+                ],
+                declarations: [Bind9AppTabComponent, LocaltimePipe, RenameAppDialogComponent],
             }).compileComponents()
         })
     )

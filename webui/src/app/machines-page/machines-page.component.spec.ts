@@ -13,6 +13,15 @@ import { TableModule } from 'primeng/table'
 import { MachinesPageComponent } from './machines-page.component'
 import { ServicesService, UsersService } from '../backend'
 import { LocaltimePipe } from '../localtime.pipe'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { DialogModule } from 'primeng/dialog'
+import { TabMenuModule } from 'primeng/tabmenu'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { MenuModule } from 'primeng/menu'
+import { ProgressBarModule } from 'primeng/progressbar'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { BreadcrumbModule } from 'primeng/breadcrumb'
 
 describe('MachinesPageComponent', () => {
     let component: MachinesPageComponent
@@ -29,8 +38,15 @@ describe('MachinesPageComponent', () => {
                 FormsModule,
                 SelectButtonModule,
                 TableModule,
+                DialogModule,
+                TabMenuModule,
+                MenuModule,
+                ProgressBarModule,
+                OverlayPanelModule,
+                NoopAnimationsModule,
+                BreadcrumbModule
             ],
-            declarations: [MachinesPageComponent, LocaltimePipe],
+            declarations: [MachinesPageComponent, LocaltimePipe, BreadcrumbsComponent, HelpTipComponent],
         }).compileComponents()
 
         fixture = TestBed.createComponent(MachinesPageComponent)
@@ -56,6 +72,7 @@ describe('MachinesPageComponent', () => {
         spyOn(servicesApi, 'getMachinesServerToken').and.returnValue(throwError(serverTokenRespErr))
 
         const showBtnEl = fixture.debugElement.query(By.css('#show-agent-installation-instruction-button'))
+        expect(showBtnEl).toBeDefined()
 
         // show instruction but error should appear, so it should be handled
         showBtnEl.triggerEventHandler('click', null)
@@ -70,7 +87,7 @@ describe('MachinesPageComponent', () => {
         expect(msgSrvAddSpy.calls.argsFor(0)[0]['severity']).toBe('error')
     })
 
-    it('should display agent installation instruction if all is ok', () => {
+    it('should display agent installation instruction if all is ok', async () => {
         // dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
 
@@ -82,6 +99,8 @@ describe('MachinesPageComponent', () => {
 
         // show instruction
         showBtnEl.triggerEventHandler('click', null)
+        await fixture.whenStable()
+        fixture.detectChanges()
 
         // check if it is displayed and server token retrieved
         expect(component.displayAgentInstallationInstruction).toBeTrue()
@@ -99,13 +118,14 @@ describe('MachinesPageComponent', () => {
 
         // close instruction
         const closeBtnEl = fixture.debugElement.query(By.css('#close-agent-installation-instruction-button'))
+        expect(closeBtnEl).toBeDefined()
         closeBtnEl.triggerEventHandler('click', null)
 
         // now dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
     })
 
-    it('should error msg if regenerateServerToken fails', () => {
+    it('should error msg if regenerateServerToken fails', async () => {
         // dialog should be hidden
         expect(component.displayAgentInstallationInstruction).toBeFalse()
 
@@ -117,6 +137,8 @@ describe('MachinesPageComponent', () => {
 
         // show instruction but error should appear, so it should be handled
         showBtnEl.triggerEventHandler('click', null)
+        await fixture.whenStable()
+        fixture.detectChanges()
 
         // check if it is displayed and server token retrieved
         expect(component.displayAgentInstallationInstruction).toBeTrue()
@@ -140,6 +162,7 @@ describe('MachinesPageComponent', () => {
 
         // close instruction
         const closeBtnEl = fixture.debugElement.query(By.css('#close-agent-installation-instruction-button'))
+        expect(closeBtnEl).toBeDefined()
         closeBtnEl.triggerEventHandler('click', null)
 
         // now dialog should be hidden

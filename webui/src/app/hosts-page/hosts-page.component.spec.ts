@@ -11,6 +11,16 @@ import { ActivatedRoute, Router, convertToParamMap } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
 import { By } from '@angular/platform-browser'
 import { of, throwError, BehaviorSubject } from 'rxjs'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { TabMenuModule } from 'primeng/tabmenu'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { HostTabComponent } from '../host-tab/host-tab.component'
+import { BreadcrumbModule } from 'primeng/breadcrumb'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { TooltipModule } from 'primeng/tooltip'
+import { FieldsetModule } from 'primeng/fieldset'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -48,8 +58,22 @@ describe('HostsPageComponent', () => {
                             component: HostsPageComponent,
                         },
                     ]),
+                    TabMenuModule,
+                    BreadcrumbModule,
+                    OverlayPanelModule,
+                    NoopAnimationsModule,
+                    TooltipModule,
+                    FormsModule,
+                    FieldsetModule,
+                    ProgressSpinnerModule
                 ],
-                declarations: [EntityLinkComponent, HostsPageComponent],
+                declarations: [
+                    EntityLinkComponent,
+                    HostsPageComponent,
+                    BreadcrumbsComponent,
+                    HelpTipComponent,
+                    HostTabComponent
+                ],
             }).compileComponents()
         })
     )

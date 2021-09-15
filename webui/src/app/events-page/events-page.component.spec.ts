@@ -1,8 +1,15 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 
 import { EventsPageComponent } from './events-page.component'
 import { EventsService } from '../backend/api/events.service'
+import { EventsPanelComponent } from '../events-panel/events-panel.component'
+import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { MessageService } from 'primeng/api'
+import { FormsModule } from '@angular/forms'
+import { SelectButtonModule } from 'primeng/selectbutton'
+import { DropdownModule } from 'primeng/dropdown'
+import { TableModule } from 'primeng/table'
 
 describe('EventsPageComponent', () => {
     let component: EventsPageComponent
@@ -19,8 +26,22 @@ describe('EventsPageComponent', () => {
                             snapshot: { queryParams: {} },
                         },
                     },
+                    {
+                        provide: Router,
+                        useValue: {
+                            navigate: () => {},
+                        },
+                    },
+                    MessageService,
                 ],
-                declarations: [EventsPageComponent],
+                declarations: [EventsPageComponent, EventsPageComponent, EventsPanelComponent],
+                imports: [
+                    HttpClientTestingModule,
+                    FormsModule,
+                    SelectButtonModule,
+                    DropdownModule,
+                    TableModule
+                ]
             }).compileComponents()
         })
     )

@@ -4,6 +4,11 @@ import { By } from '@angular/platform-browser'
 import { HaStatusPanelComponent } from './ha-status-panel.component'
 
 import { of } from 'rxjs'
+import { PanelModule } from 'primeng/panel'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { SharedModule } from 'primeng/api'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
 
 describe('HaStatusPanelComponent', () => {
     let component: HaStatusPanelComponent
@@ -64,7 +69,8 @@ describe('HaStatusPanelComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                declarations: [HaStatusPanelComponent],
+                imports: [PanelModule, NoopAnimationsModule, SharedModule, OverlayPanelModule],
+                declarations: [HaStatusPanelComponent, HelpTipComponent],
             }).compileComponents()
         })
     )
@@ -177,12 +183,10 @@ describe('HaStatusPanelComponent', () => {
             scopes: [],
         }
         fixture.detectChanges()
-        // Make sure the help tip exists.
-        let scopesHelp = fixture.debugElement.query(By.css('#scopes-served-help-button'))
-        expect(scopesHelp.children.length).toBe(1)
         // Make sure that the non-empty help tip was included.
-        let scopesHelpPar = scopesHelp.query(By.css('p'))
-        expect(scopesHelpPar.nativeElement.textContent.length).not.toBe(0)
+        let scopesHelp = fixture.debugElement.query(By.css('#scopes-served-help-button'))
+
+        expect(scopesHelp).toBeDefined()
 
         // It should also be presented even if scopes are null.
         component.serverStatus = {
@@ -191,8 +195,6 @@ describe('HaStatusPanelComponent', () => {
         fixture.detectChanges()
 
         scopesHelp = fixture.debugElement.query(By.css('#scopes-served-help-button'))
-        expect(scopesHelp.children.length).toBe(1)
-        scopesHelpPar = scopesHelp.query(By.css('p'))
-        expect(scopesHelpPar.nativeElement.textContent.length).not.toBe(0)
+        expect(scopesHelp).toBeDefined()
     })
 })

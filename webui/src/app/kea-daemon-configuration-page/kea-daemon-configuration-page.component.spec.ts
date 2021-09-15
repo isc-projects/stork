@@ -4,7 +4,9 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { ActivatedRoute, convertToParamMap, Router, RouterModule } from '@angular/router'
+import { RouterTestingModule } from '@angular/router/testing'
 import { MessageService } from 'primeng/api'
+import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { ButtonModule } from 'primeng/button'
 import { MessageModule } from 'primeng/message'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
@@ -14,6 +16,7 @@ import { AuthService } from '../auth.service'
 import { ServicesService, UsersService } from '../backend'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { ServerDataService } from '../server-data.service'
 
@@ -43,10 +46,13 @@ describe('KeaDaemonConfigurationPageComponent', () => {
                     OverlayPanelModule,
                     NoopAnimationsModule,
                     MessageModule,
+                    BreadcrumbModule,
+                    RouterTestingModule.withRoutes([{ path: 'baz', component: KeaDaemonConfigurationPageComponent }]),
                 ],
                 declarations: [
                     KeaDaemonConfigurationPageComponent,
                     JsonTreeComponent,
+                    JsonTreeRootComponent,
                     BreadcrumbsComponent,
                     HelpTipComponent,
                 ],
@@ -54,12 +60,6 @@ describe('KeaDaemonConfigurationPageComponent', () => {
                     ServicesService,
                     MessageService,
                     UsersService,
-                    {
-                        provide: Router,
-                        useValue: {
-                            navigate: () => {},
-                        },
-                    },
                     {
                         provide: ActivatedRoute,
                         useValue: {

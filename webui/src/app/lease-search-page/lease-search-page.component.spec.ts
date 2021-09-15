@@ -13,6 +13,15 @@ import { LeaseSearchPageComponent } from './lease-search-page.component'
 import { DHCPService } from '../backend'
 import { LocaltimePipe } from '../localtime.pipe'
 import { datetimeToLocal } from '../utils'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { MessageModule } from 'primeng/message'
+import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { FieldsetModule } from 'primeng/fieldset'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { BreadcrumbModule } from 'primeng/breadcrumb'
+import { MessagesModule } from 'primeng/messages'
 
 describe('LeaseSearchPageComponent', () => {
     let component: LeaseSearchPageComponent
@@ -36,8 +45,15 @@ describe('LeaseSearchPageComponent', () => {
                         },
                     ]),
                     TableModule,
+                    MessageModule,
+                    ProgressSpinnerModule,
+                    FieldsetModule,
+                    OverlayPanelModule,
+                    NoopAnimationsModule,
+                    BreadcrumbModule,
+                    MessagesModule
                 ],
-                declarations: [LeaseSearchPageComponent, LocaltimePipe],
+                declarations: [LeaseSearchPageComponent, LocaltimePipe, BreadcrumbsComponent, HelpTipComponent],
             }).compileComponents()
         })
     )

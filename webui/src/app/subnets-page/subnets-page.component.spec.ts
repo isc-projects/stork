@@ -11,6 +11,11 @@ import { DHCPService, SettingsService, UsersService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
 import { MessageService } from 'primeng/api'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { BreadcrumbModule } from 'primeng/breadcrumb'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -49,8 +54,11 @@ describe('SubnetsPageComponent', () => {
                     TooltipModule,
                     RouterModule,
                     HttpClientTestingModule,
+                    BreadcrumbModule,
+                    OverlayPanelModule,
+                    NoopAnimationsModule
                 ],
-                declarations: [SubnetsPageComponent, SubnetBarComponent],
+                declarations: [SubnetsPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
             }).compileComponents()
         })
     )

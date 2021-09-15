@@ -19,6 +19,11 @@ import { MessageService } from 'primeng/api'
 import { RouterTestingModule } from '@angular/router/testing'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { BreadcrumbModule } from 'primeng/breadcrumb'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 
 class App {
     id: number
@@ -45,6 +50,9 @@ describe('AppsPageComponent', () => {
                     MessageModule,
                     RouterModule,
                     RouterTestingModule.withRoutes([{ path: 'apps/:appType/all', component: AppsPageComponent }]),
+                    BreadcrumbModule,
+                    OverlayPanelModule,
+                    NoopAnimationsModule
                 ],
                 declarations: [
                     AppsPageComponent,
@@ -52,6 +60,8 @@ describe('AppsPageComponent', () => {
                     KeaAppTabComponent,
                     LocaltimePipe,
                     HaStatusComponent,
+                    BreadcrumbsComponent,
+                    HelpTipComponent
                 ],
             }).compileComponents()
         })

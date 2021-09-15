@@ -18,6 +18,14 @@ import { BehaviorSubject, of, throwError } from 'rxjs'
 
 import { DHCPService, ServicesService, UsersService } from '../backend'
 import { ServerDataService } from '../server-data.service'
+import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog.component'
+import { InputSwitchModule } from 'primeng/inputswitch'
+import { FieldsetModule } from 'primeng/fieldset'
+import { EventsPanelComponent } from '../events-panel/events-panel.component'
+import { DialogModule } from 'primeng/dialog'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { PaginatorModule } from 'primeng/paginator'
+import { FormsModule } from '@angular/forms'
 
 class Details {
     daemons: any = [
@@ -84,8 +92,19 @@ describe('KeaAppTabComponent', () => {
                     TooltipModule,
                     MessageModule,
                     HttpClientTestingModule,
+                    FormsModule,
+                    InputSwitchModule,
+                    FieldsetModule,
+                    DialogModule,
+                    NoopAnimationsModule,
+                    PaginatorModule
                 ],
-                declarations: [KeaAppTabComponent, HaStatusComponent, LocaltimePipe],
+                declarations: [
+                    KeaAppTabComponent,
+                    HaStatusComponent,
+                    LocaltimePipe,
+                    RenameAppDialogComponent,
+                    EventsPanelComponent],
             }).compileComponents()
         })
     )

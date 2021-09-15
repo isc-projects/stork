@@ -10,6 +10,11 @@ import { Router, ActivatedRoute } from '@angular/router'
 import { DHCPService } from '../backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { of } from 'rxjs'
+import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { BreadcrumbModule } from 'primeng/breadcrumb'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -24,8 +29,8 @@ describe('SharedNetworksPageComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                imports: [FormsModule, DropdownModule, TableModule, TooltipModule, HttpClientTestingModule],
-                declarations: [SharedNetworksPageComponent, SubnetBarComponent],
+                imports: [FormsModule, DropdownModule, TableModule, TooltipModule, HttpClientTestingModule, BreadcrumbModule, OverlayPanelModule, NoopAnimationsModule],
+                declarations: [SharedNetworksPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
                 providers: [
                     {
                         provide: Router,

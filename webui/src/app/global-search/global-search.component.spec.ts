@@ -4,6 +4,11 @@ import { GlobalSearchComponent } from './global-search.component'
 import { SearchService } from '../backend/api/api'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { Router, RouterModule } from '@angular/router'
+import { FormsModule } from '@angular/forms'
+import { RouterTestingModule } from '@angular/router/testing'
 
 describe('GlobalSearchComponent', () => {
     let component: GlobalSearchComponent
@@ -13,8 +18,15 @@ describe('GlobalSearchComponent', () => {
         waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [GlobalSearchComponent],
-                providers: [SearchService],
-                imports: [HttpClientTestingModule],
+                providers: [
+                    SearchService
+                ],
+                imports: [
+                    HttpClientTestingModule,
+                    OverlayPanelModule,
+                    NoopAnimationsModule,
+                    FormsModule,
+                    RouterTestingModule],
             }).compileComponents()
         })
     )
@@ -29,7 +41,7 @@ describe('GlobalSearchComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should display app name and proper link to an app in the results', () => {
+    it('should display app name and proper link to an app in the results', async () => {
         component.searchResults = {
             subnets: { items: [] },
             sharedNetworks: { items: [] },
@@ -39,14 +51,20 @@ describe('GlobalSearchComponent', () => {
             users: { items: [] },
             groups: { items: [] },
         }
+
+        
+        // Show search result box, by default it is hidden
+        component.searchResultsBox.show({})
+        await fixture.whenRenderingDone()
         fixture.detectChanges()
+
         const appsDiv = fixture.debugElement.query(By.css('#apps-div'))
+        expect(appsDiv).toBeDefined()
         expect(appsDiv.children.length).toBe(2)
         const appDiv = appsDiv.children[1]
         expect(appDiv.children.length).toBe(1)
         const appAnchor = appDiv.children[0]
         expect(appAnchor.nativeElement.innerText).toBe('dhcp-server')
-        expect(appAnchor.properties.hasOwnProperty('routerLink')).toBeTrue()
-        expect(appAnchor.properties.routerLink).toBe('/apps/kea/1')
+        expect(appAnchor.properties.href).toBe('/apps/kea/1')
     })
 })

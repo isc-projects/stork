@@ -9,6 +9,10 @@ import { ToastModule } from 'primeng/toast'
 import { GeneralService, UsersService, SettingsService, ServicesService } from './backend'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { MessageService } from 'primeng/api'
+import { GlobalSearchComponent } from './global-search/global-search.component'
+import { OverlayPanelModule } from 'primeng/overlaypanel'
+import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { FormsModule } from '@angular/forms'
 
 describe('AppComponent', () => {
     beforeEach(
@@ -22,8 +26,11 @@ describe('AppComponent', () => {
                     ProgressSpinnerModule,
                     ToastModule,
                     HttpClientTestingModule,
+                    OverlayPanelModule,
+                    NoopAnimationsModule,
+                    FormsModule
                 ],
-                declarations: [AppComponent],
+                declarations: [AppComponent, GlobalSearchComponent],
                 providers: [GeneralService, UsersService, MessageService, ServicesService, SettingsService],
             }).compileComponents()
         })

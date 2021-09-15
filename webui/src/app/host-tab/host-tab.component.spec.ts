@@ -12,6 +12,8 @@ import { of, throwError } from 'rxjs'
 
 import { DHCPService } from '../backend'
 import { HostTabComponent } from './host-tab.component'
+import { RouterModule } from '@angular/router'
+import { RouterTestingModule } from '@angular/router/testing'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -22,8 +24,11 @@ describe('HostTabComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                providers: [DHCPService, MessageService],
-                imports: [FieldsetModule, FormsModule, HttpClientTestingModule, NoopAnimationsModule, TableModule],
+                providers: [
+                    DHCPService,
+                    MessageService
+                ],
+                imports: [FieldsetModule, FormsModule, HttpClientTestingModule, NoopAnimationsModule, TableModule, RouterModule, RouterTestingModule],
                 declarations: [HostTabComponent],
             }).compileComponents()
         })
@@ -122,8 +127,8 @@ describe('HostTabComponent', () => {
 
         const appLinks = appsFieldset.queryAll(By.css('a'))
         expect(appLinks.length).toBe(2)
-        expect(appLinks[0].properties.routerLink).toBe('/apps/kea/1')
-        expect(appLinks[1].properties.routerLink).toBe('/apps/kea/2')
+        expect(appLinks[0].properties.href).toBe('/apps/kea/1')
+        expect(appLinks[1].properties.href).toBe('/apps/kea/2')
 
         let configTag = appsFieldset.query(By.css('.cfg-srctag'))
         expect(configTag).toBeTruthy()
@@ -243,9 +248,8 @@ describe('HostTabComponent', () => {
 
         let links = addressReservationTrs[0].queryAll(By.css('a'))
         expect(links.length).toBe(2)
-        expect(links[1].attributes.routerLink).toBe('/dhcp/leases')
-        expect(links[1].properties.queryParams.hasOwnProperty('text')).toBeTrue()
-        expect(links[1].properties.queryParams.text).toBe('2001:db8:1::1')
+        expect(links[1].attributes.href).toBe('/dhcp/leases?text=2001:db8:1::1')
+        expect(links[1].properties.text).toBe('2001:db8:1::1')
 
         const expandAddressLink = addressReservationTrs[0].query(By.css('a'))
         expect(expandAddressLink).toBeTruthy()
@@ -269,9 +273,8 @@ describe('HostTabComponent', () => {
 
         links = prefixReservationTrs[0].queryAll(By.css('a'))
         expect(links.length).toBe(2)
-        expect(links[1].attributes.routerLink).toBe('/dhcp/leases')
-        expect(links[1].properties.queryParams.hasOwnProperty('text')).toBeTrue()
-        expect(links[1].properties.queryParams.text).toBe('2001:db8:2::')
+        expect(links[1].attributes.href).toBe('/dhcp/leases?text=2001:db8:2::')
+        expect(links[1].properties.text).toBe('2001:db8:2::/64')
     })
 
     it('should display multiple lease information', () => {
