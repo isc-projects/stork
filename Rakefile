@@ -619,8 +619,12 @@ def run_ng_test(progress, watch, browsers)
     puts("point to a wrong location.")
     abort('Aborting tests because Chrome binary was not found.')
   end
+   test_opt = ''
+   if ENV['test']
+    test_opt = "--include=#{ENV['test']}"
+   end
    Dir.chdir('webui') do
-     sh "npx ng test --progress #{progress} --watch #{watch} --browsers=#{browsers}"
+     sh "npx ng test #{test_opt} --progress #{progress} --watch #{watch} --browsers=#{browsers}"
 #     sh 'npx ng e2e --progress false --watch false'
    end
 end
