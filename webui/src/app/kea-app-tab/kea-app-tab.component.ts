@@ -1,6 +1,6 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
+import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
-import { forkJoin } from 'rxjs'
+import { forkJoin, Subscription } from 'rxjs'
 
 import * as moment from 'moment-timezone'
 
@@ -23,7 +23,8 @@ import { HttpErrorResponse, HttpResponse } from '@angular/common/http'
     templateUrl: './kea-app-tab.component.html',
     styleUrls: ['./kea-app-tab.component.sass'],
 })
-export class KeaAppTabComponent implements OnInit {
+export class KeaAppTabComponent implements OnInit, OnDestroy {
+    private subscriptions = new Subscription()
     private _appTab: any
     @Output() refreshApp = new EventEmitter<number>()
     @Input() refreshedAppTab: any
@@ -84,6 +85,10 @@ export class KeaAppTabComponent implements OnInit {
         private msgService: MessageService
     ) {}
 
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     /**
      * Subscribes to the updates of the information about daemons
      *
@@ -94,11 +99,11 @@ export class KeaAppTabComponent implements OnInit {
      * notifies this component via the subscription mechanism.
      */
     ngOnInit() {
-        this.refreshedAppTab.subscribe((data) => {
+        this.subscriptions.add(this.refreshedAppTab.subscribe((data) => {
             if (data) {
                 this.initDaemons(data.app.details.daemons)
             }
-        })
+        }))
     }
 
     /**

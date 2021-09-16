@@ -1,8 +1,8 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core'
+import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
 
 import * as moment from 'moment-timezone'
 
-import { forkJoin } from 'rxjs'
+import { forkJoin, Subscription } from 'rxjs'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
@@ -22,7 +22,8 @@ import {
     templateUrl: './bind9-app-tab.component.html',
     styleUrls: ['./bind9-app-tab.component.sass'],
 })
-export class Bind9AppTabComponent implements OnInit {
+export class Bind9AppTabComponent implements OnInit, OnDestroy {
+    private subscriptions = new Subscription()
     private _appTab: any
     @Output() refreshApp = new EventEmitter<number>()
     @Input() refreshedAppTab: any
@@ -73,6 +74,10 @@ export class Bind9AppTabComponent implements OnInit {
         private msgService: MessageService
     ) {}
 
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     /**
      * Subscribes to the updates of the information about daemons
      *
@@ -83,11 +88,11 @@ export class Bind9AppTabComponent implements OnInit {
      * notifies this component via the subscription mechanism.
      */
     ngOnInit() {
-        this.refreshedAppTab.subscribe((data) => {
+        this.subscriptions.add(this.refreshedAppTab.subscribe((data) => {
             if (data) {
                 this.initDaemon(data.app.details.daemon)
             }
-        })
+        }))
     }
 
     /**

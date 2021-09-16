@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { Table } from 'primeng/table'
@@ -7,6 +7,7 @@ import { DHCPService } from '../backend/api/api'
 import { humanCount, getGrafanaUrl, extractKeyValsAndPrepareQueryParams, getGrafanaSubnetTooltip } from '../utils'
 import { getTotalAddresses, getAssignedAddresses } from '../subnets'
 import { SettingService } from '../setting.service'
+import { Subscription } from 'rxjs'
 
 /**
  * Component for presenting DHCP subnets.
@@ -16,7 +17,8 @@ import { SettingService } from '../setting.service'
     templateUrl: './subnets-page.component.html',
     styleUrls: ['./subnets-page.component.sass'],
 })
-export class SubnetsPageComponent implements OnInit {
+export class SubnetsPageComponent implements OnInit, OnDestroy {
+    private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Subnets' }]
 
     @ViewChild('subnetsTable') subnetsTable: Table
@@ -43,6 +45,10 @@ export class SubnetsPageComponent implements OnInit {
         private settingSvc: SettingService
     ) {}
 
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     ngOnInit() {
         // prepare list of DHCP versions, this is used in subnets filtering
         this.dhcpVersions = [
@@ -51,14 +57,15 @@ export class SubnetsPageComponent implements OnInit {
             { label: 'DHCPv6', value: '6', id: 'dhcpv6-menu' },
         ]
 
-        this.settingSvc.getSettings().subscribe(
+        // ToDo: Silent error catching
+        this.subscriptions.add(this.settingSvc.getSettings().subscribe(
             (data) => {
                 this.grafanaUrl = data['grafana_url']
             },
             (error) => {
                 console.log(error)
             }
-        )
+        ))
 
         // handle initial query params
         const ssParams = this.route.snapshot.queryParamMap
@@ -73,7 +80,7 @@ export class SubnetsPageComponent implements OnInit {
         this.updateOurQueryParams(ssParams)
 
         // subscribe to subsequent changes to query params
-        this.route.queryParamMap.subscribe(
+        this.subscriptions.add(this.route.queryParamMap.subscribe(
             (params) => {
                 this.updateOurQueryParams(params)
                 let event = { first: 0, rows: 10 }
@@ -85,9 +92,10 @@ export class SubnetsPageComponent implements OnInit {
             (error) => {
                 console.log(error)
             }
-        )
+        ))
     }
 
+    // ToDo: Silent error catching
     updateOurQueryParams(params) {
         if (['4', '6'].includes(params.get('dhcpVersion'))) {
             this.queryParams.dhcpVersion = params.get('dhcpVersion')
@@ -105,15 +113,14 @@ export class SubnetsPageComponent implements OnInit {
     loadSubnets(event) {
         const params = this.queryParams
 
-        this.dhcpApi.getSubnets(event.first, event.rows, params.appId, params.dhcpVersion, params.text).subscribe(
-            (data) => {
+        this.dhcpApi.getSubnets(event.first, event.rows, params.appId, params.dhcpVersion, params.text).toPromise()
+            .then((data) => {
                 this.subnets = data.items
                 this.totalSubnets = data.total
-            },
-            (error) => {
+            })
+            .catch((error) => {
                 console.log(error)
-            }
-        )
+            })
     }
 
     /**

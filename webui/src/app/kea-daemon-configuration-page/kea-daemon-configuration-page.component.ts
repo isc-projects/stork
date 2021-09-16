@@ -37,7 +37,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
 
     private changeDaemonId = new Subject<number>()
     private changeAppId = new Subject<number>()
-    private subscription = new Subscription()
+    private subscriptions = new Subscription()
 
     constructor(
         private route: ActivatedRoute,
@@ -51,7 +51,10 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
      * Unsubscribe all subscriptions.
      */
     ngOnDestroy(): void {
-        this.subscription.unsubscribe()
+        console.log("Destory KDCP")
+        this.changeAppId.complete()
+        this.changeDaemonId.complete()
+        this.subscriptions.unsubscribe()
     }
 
     /**
@@ -79,7 +82,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
         }
 
         // Update friendly names
-        this.subscription.add(
+        this.subscriptions.add(
             this.changeAppId.pipe(switchMap((appId) => this.servicesApi.getApp(appId))).subscribe((app) => {
                 // Find specific daemon
                 const daemons = app.details.daemons.filter((d) => d.id === this._daemonId)
@@ -98,7 +101,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
         )
 
         // Update Kea daemon configuration
-        this.subscription.add(
+        this.subscriptions.add(
             this.changeDaemonId
                 .pipe(switchMap((daemonId) => this.serverData.getDaemonConfiguration(daemonId)))
                 .subscribe((res) => {
@@ -119,7 +122,7 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
         )
 
         // Resolve URI parameters
-        this.subscription.add(
+        this.subscriptions.add(
             this.route.paramMap.subscribe((params) => {
                 const appIdStr = params.get('appId')
                 const daemonIdStr = params.get('daemonId')

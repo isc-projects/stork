@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { MenuItem, MessageService } from 'primeng/api'
@@ -6,7 +6,7 @@ import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 import { extractKeyValsAndPrepareQueryParams } from '../utils'
-import { concat, of } from 'rxjs'
+import { concat, of, Subscription } from 'rxjs'
 import { filter, take } from 'rxjs/operators'
 
 /**
@@ -22,7 +22,8 @@ import { filter, take } from 'rxjs/operators'
     templateUrl: './hosts-page.component.html',
     styleUrls: ['./hosts-page.component.sass'],
 })
-export class HostsPageComponent implements OnInit {
+export class HostsPageComponent implements OnInit, OnDestroy {
+    private subscriptions = new Subscription()
     @ViewChild('hostsTable') hostsTable: Table
 
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Host Reservations' }]
@@ -83,6 +84,10 @@ export class HostsPageComponent implements OnInit {
         private messageService: MessageService
     ) {}
 
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     /**
      * Component lifecycle hook called upon initialization.
      *
@@ -110,7 +115,7 @@ export class HostsPageComponent implements OnInit {
         this.initFilterText()
 
         // Subscribe to the changes of the filtering parameters.
-        this.route.queryParamMap.subscribe(
+        this.subscriptions.add(this.route.queryParamMap.subscribe(
             (params) => {
                 this.updateQueryParams(params)
                 let event = { first: 0, rows: 10 }
@@ -120,13 +125,14 @@ export class HostsPageComponent implements OnInit {
                 this.loadHosts(event)
             },
             (error) => {
+                // ToDo: Fix silent error catching
                 console.log(error)
             }
-        )
+        ))
         // Apply to the changes of the host id, e.g. from /dhcp/hosts/all to
         // /dhcp/hosts/1. Those changes are triggered by switching between the
         // tabs.
-        this.route.paramMap.subscribe(
+        this.subscriptions.add(this.route.paramMap.subscribe(
             (params) => {
                 // Get host id.
                 const id = params.get('id')
@@ -146,7 +152,7 @@ export class HostsPageComponent implements OnInit {
             (error) => {
                 console.log(error)
             }
-        )
+        ))
     }
 
     /**
@@ -298,12 +304,12 @@ export class HostsPageComponent implements OnInit {
     loadHosts(event) {
         const params = this.queryParams
 
-        this.dhcpApi.getHosts(event.first, event.rows, params.appId, null, params.text, params.global).subscribe(
-            (data) => {
+        this.dhcpApi.getHosts(event.first, event.rows, params.appId, null, params.text, params.global).toPromise()
+            .then((data) => {
                 this.hosts = data.items
                 this.totalHosts = data.total
-            },
-            (err) => {
+            })
+            .catch((err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message
@@ -314,8 +320,7 @@ export class HostsPageComponent implements OnInit {
                     detail: 'Getting host reservations list erred: ' + msg,
                     life: 10000,
                 })
-            }
-        )
+            })
     }
 
     /**

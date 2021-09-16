@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core'
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
 
 import { Table } from 'primeng/table'
@@ -6,6 +6,7 @@ import { Table } from 'primeng/table'
 import { DHCPService } from '../backend/api/api'
 import { humanCount, extractKeyValsAndPrepareQueryParams } from '../utils'
 import { getTotalAddresses, getAssignedAddresses } from '../subnets'
+import { Subscription } from 'rxjs'
 
 /**
  * Component for presenting shared networks in a table.
@@ -15,7 +16,8 @@ import { getTotalAddresses, getAssignedAddresses } from '../subnets'
     templateUrl: './shared-networks-page.component.html',
     styleUrls: ['./shared-networks-page.component.sass'],
 })
-export class SharedNetworksPageComponent implements OnInit {
+export class SharedNetworksPageComponent implements OnInit, OnDestroy {
+    private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'DHCP' }, { label: 'Shared Networks' }]
 
     @ViewChild('networksTable') networksTable: Table
@@ -34,6 +36,10 @@ export class SharedNetworksPageComponent implements OnInit {
     }
 
     constructor(private route: ActivatedRoute, private router: Router, private dhcpApi: DHCPService) {}
+
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
 
     ngOnInit() {
         // prepare list of DHCP versions, this is used in networks filtering
@@ -55,7 +61,7 @@ export class SharedNetworksPageComponent implements OnInit {
         this.updateOurQueryParams(ssParams)
 
         // subscribe to subsequent changes to query params
-        this.route.queryParamMap.subscribe(
+        this.subscriptions.add(this.route.queryParamMap.subscribe(
             (params) => {
                 this.updateOurQueryParams(params)
                 let event = { first: 0, rows: 10 }
@@ -64,10 +70,11 @@ export class SharedNetworksPageComponent implements OnInit {
                 }
                 this.loadNetworks(event)
             },
+            // ToDo: Silent error catching
             (error) => {
                 console.log(error)
             }
-        )
+        ))
     }
 
     updateOurQueryParams(params) {

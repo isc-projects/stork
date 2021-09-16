@@ -1,9 +1,10 @@
-import { Component, OnInit, OnChanges, Input } from '@angular/core'
+import { Component, OnInit, OnChanges, Input, OnDestroy } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
 import { EventsService, UsersService, ServicesService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
+import { Subscription } from 'rxjs'
 
 /**
  * A component that presents events list. Each event has its own row.
@@ -14,7 +15,8 @@ import { AuthService } from '../auth.service'
     templateUrl: './events-panel.component.html',
     styleUrls: ['./events-panel.component.sass'],
 })
-export class EventsPanelComponent implements OnInit, OnChanges {
+export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
+    private subscriptions = new Subscription()
     events: any = { items: [], total: 0 }
     errorCnt = 0
     start = 0
@@ -93,6 +95,10 @@ export class EventsPanelComponent implements OnInit, OnChanges {
         public auth: AuthService
     ) {}
 
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     /**
      * Applies new filtering rules.
      *
@@ -141,7 +147,7 @@ export class EventsPanelComponent implements OnInit, OnChanges {
         this.applyFilter()
 
         if (this.auth.superAdmin()) {
-            this.usersApi.getUsers(0, 1000, null).subscribe(
+            this.subscriptions.add(this.usersApi.getUsers(0, 1000, null).subscribe(
                 (data) => {
                     this.users = data.items
 
@@ -165,9 +171,9 @@ export class EventsPanelComponent implements OnInit, OnChanges {
                         life: 10000,
                     })
                 }
-            )
+            ))
         }
-        this.servicesApi.getMachines(0, 1000, null, null).subscribe(
+        this.subscriptions.add(this.servicesApi.getMachines(0, 1000, null, null).subscribe(
             (data) => {
                 this.machines = data.items
 
@@ -191,7 +197,7 @@ export class EventsPanelComponent implements OnInit, OnChanges {
                     life: 10000,
                 })
             }
-        )
+        ))
     }
 
     /**
@@ -228,23 +234,22 @@ export class EventsPanelComponent implements OnInit, OnChanges {
                 this.filter.daemonType,
                 this.filter.user
             )
-            .subscribe(
-                (data) => {
-                    this.events = data
-                },
-                (err) => {
-                    let msg = err.statusText
-                    if (err.error && err.error.message) {
-                        msg = err.error.message
-                    }
-                    this.msgSrv.add({
-                        severity: 'error',
-                        summary: 'Cannot get events',
-                        detail: 'Getting events erred: ' + msg,
-                        life: 10000,
-                    })
+            .toPromise()
+            .then((data) => {
+                this.events = data
+            })
+            .catch((err) => {
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
                 }
-            )
+                this.msgSrv.add({
+                    severity: 'error',
+                    summary: 'Cannot get events',
+                    detail: 'Getting events erred: ' + msg,
+                    life: 10000,
+                })
+            })
     }
 
     /**

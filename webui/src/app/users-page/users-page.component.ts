@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit } from '@angular/core'
 import { FormBuilder, FormControl, FormGroup, NgForm, Validators } from '@angular/forms'
 import { ActivatedRoute, ParamMap, Router } from '@angular/router'
 import { MenuItem, MessageService, SelectItem } from 'primeng/api'
@@ -7,6 +7,7 @@ import { AuthService } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
 import { UsersService } from '../backend/api/api'
 import { UserAccount } from '../backend/model/models'
+import { Subscription } from 'rxjs'
 
 /**
  * An enum specifying tab types in the user view
@@ -92,10 +93,12 @@ function matchPasswords(passwordKey: string, confirmPasswordKey: string) {
     templateUrl: './users-page.component.html',
     styleUrls: ['./users-page.component.sass'],
 })
-export class UsersPageComponent implements OnInit {
+export class UsersPageComponent implements OnInit, OnDestroy {
+    private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'Configuration' }, { label: 'Users' }]
 
-    private groups: any[]
+    // ToDo: Strict typing
+    private groups: any[] = []
     // users table
     users: any[]
     totalUsers: number
@@ -120,6 +123,10 @@ export class UsersPageComponent implements OnInit {
         private serverData: ServerDataService,
         public auth: AuthService
     ) {}
+
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
 
     /**
      * Returns user form from the current tab.
@@ -229,7 +236,7 @@ export class UsersPageComponent implements OnInit {
             userlast: this.userTab.user.lastname,
         })
 
-        if (this.groups && this.groups.length > 0 && this.userTab.user.groups && this.userTab.user.groups.length > 0) {
+        if (this.groups.length > 0 && this.userTab.user.groups && this.userTab.user.groups.length > 0) {
             userform.patchValue({
                 usergroup: {
                     id: this.groups[this.userTab.user.groups[0] - 1].id,
@@ -307,12 +314,12 @@ export class UsersPageComponent implements OnInit {
      *              of rows to be returned and the filter text.
      */
     loadUsers(event) {
-        this.usersApi.getUsers(event.first, event.rows, event.filters.text).subscribe(
-            (data) => {
+        this.usersApi.getUsers(event.first, event.rows, event.filters.text).toPromise()
+            .then((data) => {
                 this.users = data.items
                 this.totalUsers = data.total
-            },
-            (err) => {
+            })
+            .catch((err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message
@@ -323,8 +330,7 @@ export class UsersPageComponent implements OnInit {
                     detail: 'Loading user accounts from the database failed: ' + msg,
                     sticky: true,
                 })
-            }
-        )
+            })
     }
 
     /**
@@ -337,16 +343,19 @@ export class UsersPageComponent implements OnInit {
      */
     ngOnInit() {
         this.users = []
-        this.userGroups = [
+        const initUserGroups = [
             {
                 label: 'Select Group',
                 value: null,
             },
         ]
+        this.userGroups = [...initUserGroups]
         // Get all groups from the server.
-        this.serverData.getGroups().subscribe((data) => {
+        // ToDo: Uncaught promise
+        this.subscriptions.add(this.serverData.getGroups().subscribe((data) => {
             if (data.items) {
                 this.groups = data.items
+                this.userGroups = [...initUserGroups]
                 for (const i in this.groups) {
                     if (this.groups.hasOwnProperty(i)) {
                         this.userGroups.push({
@@ -356,7 +365,7 @@ export class UsersPageComponent implements OnInit {
                     }
                 }
             }
-        })
+        }))
 
         // Open the default tab
         this.tabs = [{ label: 'Users', routerLink: '/users/list' }]
@@ -366,7 +375,7 @@ export class UsersPageComponent implements OnInit {
         const defaultTab = new UserTab(UserTabType.List, null)
         this.openedTabs.push(defaultTab)
 
-        this.route.paramMap.subscribe((params: ParamMap) => {
+        this.subscriptions.add(this.route.paramMap.subscribe((params: ParamMap) => {
             const userIdStr = params.get('id')
             if (!userIdStr || userIdStr === 'list') {
                 // Open the tab with the list of users.
@@ -414,11 +423,12 @@ export class UsersPageComponent implements OnInit {
 
                 // We have no information about the user, so let's try to fetch it
                 // from the server.
-                this.usersApi.getUser(userId).subscribe((data) => {
+                // ToDo: Non-catches promise
+                this.usersApi.getUser(userId).toPromise().then(((data) => {
                     this.addUserTab(UserTabType.User, data)
-                })
+                }))
             }
-        })
+        }))
     }
 
     /**
@@ -438,16 +448,16 @@ export class UsersPageComponent implements OnInit {
         }
         const password = this.userform.controls.userpassword.value
         const account = { user, password }
-        this.usersApi.createUser(account).subscribe(
-            (data) => {
+        this.usersApi.createUser(account).toPromise()
+            .then((data) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'New user account created',
                     detail: 'Adding new user account succeeded',
                 })
                 this.closeActiveTab()
-            },
-            (err) => {
+            })
+            .catch((err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message
@@ -458,8 +468,7 @@ export class UsersPageComponent implements OnInit {
                     detail: 'Creating new user account failed: ' + msg,
                     sticky: true,
                 })
-            }
-        )
+            })
     }
 
     /**
@@ -479,16 +488,16 @@ export class UsersPageComponent implements OnInit {
         const password = this.userform.controls.userpassword.value
         const account = { user, password }
 
-        this.usersApi.updateUser(account).subscribe(
-            (data) => {
+        this.usersApi.updateUser(account).toPromise()
+            .then((data) => {
                 this.msgSrv.add({
                     severity: 'success',
                     summary: 'User account updated',
                     detail: 'Updating user account succeeded',
                 })
                 this.closeActiveTab()
-            },
-            (err) => {
+            })
+            .catch((err) => {
                 console.info(err)
                 let msg = err.statusText
                 if (err.error && err.error.message) {
@@ -500,8 +509,7 @@ export class UsersPageComponent implements OnInit {
                     detail: 'Updating user account failed: ' + msg,
                     sticky: true,
                 })
-            }
-        )
+            })
     }
 
     /**

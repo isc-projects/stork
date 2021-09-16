@@ -1,5 +1,5 @@
-import { Component, Input, OnInit } from '@angular/core'
-import { interval } from 'rxjs'
+import { Component, Input, OnDestroy, OnInit } from '@angular/core'
+import { interval, Subscription } from 'rxjs'
 import { ServicesService } from '../backend/api/api'
 
 /**
@@ -12,15 +12,21 @@ import { ServicesService } from '../backend/api/api'
     templateUrl: './ha-status.component.html',
     styleUrls: ['./ha-status.component.sass'],
 })
-export class HaStatusComponent implements OnInit {
+export class HaStatusComponent implements OnInit, OnDestroy {
+    private subscriptions = new Subscription()
     private readonly _haRefreshInterval = 10000
     private readonly _countUpInterval = 1000
 
     private _appId: number
     private _daemonName: string
+    // ToDo: Strict typing. Avoid using `any`
     private _receivedStatus: Map<string, any>
 
     constructor(private servicesApi: ServicesService) {}
+
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
 
     /**
      * Initializes the component.
@@ -31,11 +37,12 @@ export class HaStatusComponent implements OnInit {
     ngOnInit() {
         this.refreshStatus()
 
-        interval(this._haRefreshInterval).subscribe((x) => {
+        this.subscriptions.add(interval(this._haRefreshInterval).subscribe((x) => {
             this.refreshStatus()
-        })
+        }))
         // Run the live age counters for both local and remote servers.
-        interval(this._countUpInterval).subscribe((x) => {
+        // ToDo: Check that it works as expected. Does the timer reset when the component is destroyed?
+        this.subscriptions.add(interval(this._countUpInterval).subscribe((x) => {
             if (this.hasStatus()) {
                 // Only increase the age counters if they are non-negative.
                 // Negative values indicate that the status age was unknown,
@@ -48,7 +55,7 @@ export class HaStatusComponent implements OnInit {
                     this.remoteServer().age += 1
                 }
             }
-        })
+        }))
     }
 
     /**
@@ -118,8 +125,8 @@ export class HaStatusComponent implements OnInit {
      * This function is invoked periodically to refresh the status.
      */
     private refreshStatus() {
-        this.servicesApi.getAppServicesStatus(this.appId).subscribe(
-            (data) => {
+        this.servicesApi.getAppServicesStatus(this.appId).toPromise()
+            .then((data) => {
                 if (data.items) {
                     this._receivedStatus = new Map()
                     for (const s of data.items) {
@@ -128,12 +135,11 @@ export class HaStatusComponent implements OnInit {
                         }
                     }
                 }
-            },
-            (err) => {
+            })
+            .catch((err) => {
                 console.warn('failed to fetch the HA status for Kea application id ' + this.appId)
                 this._receivedStatus = null
-            }
-        )
+            })
     }
 
     /**

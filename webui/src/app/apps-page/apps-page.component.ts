@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, Subscription } from 'rxjs'
 
 import { MessageService, MenuItem } from 'primeng/api'
 
@@ -45,7 +45,8 @@ function setDaemonStatusErred(app) {
     templateUrl: './apps-page.component.html',
     styleUrls: ['./apps-page.component.sass'],
 })
-export class AppsPageComponent implements OnInit {
+export class AppsPageComponent implements OnInit, OnDestroy {
+    private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'Services' }, { label: 'Apps' }]
 
     appType = ''
@@ -73,6 +74,10 @@ export class AppsPageComponent implements OnInit {
         private msgSrv: MessageService,
         private loadingService: LoadingService
     ) {}
+
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
 
     getAppsLabel() {
         if (this.appType === 'bind9') {
@@ -105,7 +110,7 @@ export class AppsPageComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.route.paramMap.subscribe((params) => {
+        this.subscriptions.add(this.route.paramMap.subscribe((params) => {
             const newAppType = params.get('appType')
 
             if (newAppType !== this.appType) {
@@ -162,8 +167,8 @@ export class AppsPageComponent implements OnInit {
                 // if app is not loaded in list fetch it individually
                 if (!found) {
                     console.info('fetching app')
-                    this.servicesApi.getApp(appId).subscribe(
-                        (data) => {
+                    this.servicesApi.getApp(appId).toPromise()
+                        .then((data) => {
                             if (data.type !== this.appType) {
                                 this.msgSrv.add({
                                     severity: 'error',
@@ -179,8 +184,8 @@ export class AppsPageComponent implements OnInit {
                             setDaemonStatusErred(data)
                             this.addAppTab(data)
                             this.switchToTab(this.tabs.length - 1)
-                        },
-                        (err) => {
+                        })
+                        .catch((err) => {
                             let msg = err.statusText
                             if (err.error && err.error.message) {
                                 msg = err.error.message
@@ -192,11 +197,10 @@ export class AppsPageComponent implements OnInit {
                                 life: 10000,
                             })
                             this.router.navigate(['/apps/' + this.appType + '/all'])
-                        }
-                    )
+                        })
                 }
             }
-        })
+        }))
     }
 
     loadApps(event) {
@@ -209,7 +213,8 @@ export class AppsPageComponent implements OnInit {
             text = event.filters.text.value
         }
 
-        this.servicesApi.getApps(event.first, event.rows, text, this.appType).subscribe((data) => {
+        // ToDo: Uncaught promise
+        this.servicesApi.getApps(event.first, event.rows, text, this.appType).toPromise().then((data) => {
             this.apps = data.items
             this.totalApps = data.total
             for (const s of this.apps) {

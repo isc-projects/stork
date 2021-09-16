@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
@@ -16,6 +16,7 @@ import {
 } from '../utils'
 import { SettingService } from '../setting.service'
 import { ServerDataService } from '../server-data.service'
+import { Subscription } from 'rxjs'
 
 /**
  * Component presenting dashboard with DHCP and DNS overview.
@@ -25,7 +26,8 @@ import { ServerDataService } from '../server-data.service'
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.sass'],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
+    private subscriptions = new Subscription()
     loaded = false
     appsStats: AppsStats
     overview: any
@@ -37,6 +39,10 @@ export class DashboardComponent implements OnInit {
         private msgSrv: MessageService,
         private settingSvc: SettingService
     ) {}
+
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
 
     ngOnInit() {
         // prepare initial data so it can be used in html templates
@@ -58,7 +64,7 @@ export class DashboardComponent implements OnInit {
         }
 
         // get stats about apps
-        this.serverData.getAppsStats().subscribe(
+        this.subscriptions.add(this.serverData.getAppsStats().subscribe(
             (data) => {
                 this.loaded = true
                 this.appsStats = { ...this.appsStats, ...data }
@@ -76,25 +82,25 @@ export class DashboardComponent implements OnInit {
                     life: 10000,
                 })
             }
-        )
+        ))
 
         // get DHCP overview from the server
         this.refreshDhcpOverview()
 
-        this.settingSvc.getSettings().subscribe((data) => {
+        this.subscriptions.add(this.settingSvc.getSettings().subscribe((data) => {
             this.grafanaUrl = data['grafana_url']
-        })
+        }))
     }
 
     /**
      * Get or refresh DHCP overview data from the server
      */
     refreshDhcpOverview() {
-        this.dhcpApi.getDhcpOverview().subscribe(
-            (data) => {
+        this.dhcpApi.getDhcpOverview().toPromise()
+            .then((data) => {
                 this.overview = data
-            },
-            (err) => {
+            })
+            .catch((err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message
@@ -105,8 +111,7 @@ export class DashboardComponent implements OnInit {
                     detail: 'Getting DHCP overview erred: ' + msg,
                     life: 10000,
                 })
-            }
-        )
+            })
     }
 
     /**

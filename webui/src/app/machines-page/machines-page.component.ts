@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit } from '@angular/core'
 import { ActivatedRoute, ParamMap, Router, NavigationEnd } from '@angular/router'
 
 import { MessageService, MenuItem } from 'primeng/api'
+import { Subscription } from 'rxjs'
 
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
@@ -19,7 +20,8 @@ interface AppType {
     templateUrl: './machines-page.component.html',
     styleUrls: ['./machines-page.component.sass'],
 })
-export class MachinesPageComponent implements OnInit {
+export class MachinesPageComponent implements OnInit, OnDestroy {
+    private subscriptions = new Subscription()
     breadcrumbs = [{ label: 'Services' }, { label: 'Machines' }]
 
     // machines table
@@ -63,6 +65,10 @@ export class MachinesPageComponent implements OnInit {
         private serverData: ServerDataService,
         private loadingService: LoadingService
     ) {}
+
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe()
+    }
 
     switchToTab(index) {
         if (this.activeTabIdx === index) {
@@ -148,7 +154,7 @@ export class MachinesPageComponent implements OnInit {
 
         this.openedMachines = []
 
-        this.route.paramMap.subscribe((params: ParamMap) => {
+        this.subscriptions.add(this.route.paramMap.subscribe((params: ParamMap) => {
             const machineIdStr = params.get('id')
             if (machineIdStr === 'all') {
                 this.switchToTab(0)
@@ -201,7 +207,7 @@ export class MachinesPageComponent implements OnInit {
                     )
                 }
             }
-        })
+        }))
 
         // check current number of unauthorized machines
         this.refreshUnauthorizedMachinesCount()
