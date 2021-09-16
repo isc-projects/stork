@@ -46,7 +46,7 @@
                 icon="fa fa-expand-alt"
                 label="Expand"
                 (click)="onClickToggleNodes()"
-                *ngIf="autoExpand === 'all'"
+                *ngIf="autoExpand === 'none'"
                 [disabled]="configuration == null"
             ></button>
             <button
@@ -56,7 +56,7 @@
                 icon="fa fa-compress-alt"
                 label="Collapse"
                 (click)="onClickToggleNodes()"
-                *ngIf="autoExpand === 'none'"
+                *ngIf="autoExpand === 'all'"
                 [disabled]="configuration == null"
             ></button>
         </div>

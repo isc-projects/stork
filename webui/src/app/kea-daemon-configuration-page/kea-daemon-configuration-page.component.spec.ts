@@ -127,14 +127,37 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should toggle expand nodes', () => {
-        expect(component.autoExpand).toBe('none')
-        component.onClickToggleNodes()
+    it('should toggle expand nodes', async () => {
+        await fixture.whenStable()
+        component.onClickRefresh()
+        fixture.detectChanges()
 
+        expect(component.autoExpand).toBe('none')
+        let expectedButtonCount = fixture.debugElement
+            .queryAll(By.css('.panel-header__entry'))
+            .map((b) => (b.nativeElement as HTMLElement).textContent.trim())
+            .filter((t) => t === 'Expand').length
+        expect(expectedButtonCount).toBe(1)
+
+        component.onClickToggleNodes()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
         expect(component.autoExpand).toBe('all')
-        component.onClickToggleNodes()
+        expectedButtonCount = fixture.debugElement
+            .queryAll(By.css('.panel-header__entry'))
+            .map((b) => (b.nativeElement as HTMLElement).textContent.trim())
+            .filter((t) => t === 'Collapse').length
+        expect(expectedButtonCount).toBe(1)
 
+        component.onClickToggleNodes()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
         expect(component.autoExpand).toBe('none')
+        expectedButtonCount = fixture.debugElement
+            .queryAll(By.css('.panel-header__entry'))
+            .map((b) => (b.nativeElement as HTMLElement).textContent.trim())
+            .filter((t) => t === 'Expand').length
+        expect(expectedButtonCount).toBe(1)
     })
 
     it('should set filename for download file', async () => {
