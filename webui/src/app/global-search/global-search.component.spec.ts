@@ -18,15 +18,14 @@ describe('GlobalSearchComponent', () => {
         waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [GlobalSearchComponent],
-                providers: [
-                    SearchService
-                ],
+                providers: [SearchService],
                 imports: [
                     HttpClientTestingModule,
                     OverlayPanelModule,
                     NoopAnimationsModule,
                     FormsModule,
-                    RouterTestingModule],
+                    RouterTestingModule,
+                ],
             }).compileComponents()
         })
     )
@@ -52,7 +51,6 @@ describe('GlobalSearchComponent', () => {
             groups: { items: [] },
         }
 
-        
         // Show search result box, by default it is hidden
         component.searchResultsBox.show({})
         await fixture.whenRenderingDone()

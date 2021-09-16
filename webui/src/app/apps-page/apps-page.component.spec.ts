@@ -52,7 +52,7 @@ describe('AppsPageComponent', () => {
                     RouterTestingModule.withRoutes([{ path: 'apps/:appType/all', component: AppsPageComponent }]),
                     BreadcrumbModule,
                     OverlayPanelModule,
-                    NoopAnimationsModule
+                    NoopAnimationsModule,
                 ],
                 declarations: [
                     AppsPageComponent,
@@ -61,7 +61,7 @@ describe('AppsPageComponent', () => {
                     LocaltimePipe,
                     HaStatusComponent,
                     BreadcrumbsComponent,
-                    HelpTipComponent
+                    HelpTipComponent,
                 ],
             }).compileComponents()
         })

@@ -154,60 +154,62 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
 
         this.openedMachines = []
 
-        this.subscriptions.add(this.route.paramMap.subscribe((params: ParamMap) => {
-            const machineIdStr = params.get('id')
-            if (machineIdStr === 'all') {
-                this.switchToTab(0)
-            } else {
-                const machineId = parseInt(machineIdStr, 10)
+        this.subscriptions.add(
+            this.route.paramMap.subscribe((params: ParamMap) => {
+                const machineIdStr = params.get('id')
+                if (machineIdStr === 'all') {
+                    this.switchToTab(0)
+                } else {
+                    const machineId = parseInt(machineIdStr, 10)
 
-                let found = false
-                // if tab for this machine is already opened then switch to it
-                for (let idx = 0; idx < this.openedMachines.length; idx++) {
-                    const m = this.openedMachines[idx].machine
-                    if (m.id === machineId) {
-                        this.switchToTab(idx + 1)
-                        found = true
-                    }
-                }
-
-                // if tab is not opened then search for list of machines if the one is present there,
-                // if so then open it in new tab and switch to it
-                if (!found) {
-                    for (const m of this.machines) {
+                    let found = false
+                    // if tab for this machine is already opened then switch to it
+                    for (let idx = 0; idx < this.openedMachines.length; idx++) {
+                        const m = this.openedMachines[idx].machine
                         if (m.id === machineId) {
-                            this.addMachineTab(m)
-                            this.switchToTab(this.tabs.length - 1)
+                            this.switchToTab(idx + 1)
                             found = true
-                            break
                         }
                     }
-                }
 
-                // if machine is not loaded in list fetch it individually
-                if (!found) {
-                    this.servicesApi.getMachine(machineId).subscribe(
-                        (data) => {
-                            this.addMachineTab(data)
-                            this.switchToTab(this.tabs.length - 1)
-                        },
-                        (err) => {
-                            let msg = err.statusText
-                            if (err.error && err.error.message) {
-                                msg = err.error.message
+                    // if tab is not opened then search for list of machines if the one is present there,
+                    // if so then open it in new tab and switch to it
+                    if (!found) {
+                        for (const m of this.machines) {
+                            if (m.id === machineId) {
+                                this.addMachineTab(m)
+                                this.switchToTab(this.tabs.length - 1)
+                                found = true
+                                break
                             }
-                            this.msgSrv.add({
-                                severity: 'error',
-                                summary: 'Cannot get machine',
-                                detail: 'Getting machine with ID ' + machineId + ' erred: ' + msg,
-                                life: 10000,
-                            })
-                            this.router.navigate(['/machines/all'])
                         }
-                    )
+                    }
+
+                    // if machine is not loaded in list fetch it individually
+                    if (!found) {
+                        this.servicesApi.getMachine(machineId).subscribe(
+                            (data) => {
+                                this.addMachineTab(data)
+                                this.switchToTab(this.tabs.length - 1)
+                            },
+                            (err) => {
+                                let msg = err.statusText
+                                if (err.error && err.error.message) {
+                                    msg = err.error.message
+                                }
+                                this.msgSrv.add({
+                                    severity: 'error',
+                                    summary: 'Cannot get machine',
+                                    detail: 'Getting machine with ID ' + machineId + ' erred: ' + msg,
+                                    life: 10000,
+                                })
+                                this.router.navigate(['/machines/all'])
+                            }
+                        )
+                    }
                 }
-            }
-        }))
+            })
+        )
 
         // check current number of unauthorized machines
         this.refreshUnauthorizedMachinesCount()

@@ -37,7 +37,7 @@ describe('LogViewPageComponent', () => {
                     ProgressSpinnerModule,
                     SharedModule,
                     RouterModule,
-                    RouterTestingModule
+                    RouterTestingModule,
                 ],
                 declarations: [LogViewPageComponent, EntityLinkComponent],
             }).compileComponents()

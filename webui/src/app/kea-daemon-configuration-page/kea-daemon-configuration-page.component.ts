@@ -51,7 +51,6 @@ export class KeaDaemonConfigurationPageComponent implements OnInit, OnDestroy {
      * Unsubscribe all subscriptions.
      */
     ngOnDestroy(): void {
-        console.log("Destory KDCP")
         this.changeAppId.complete()
         this.changeDaemonId.complete()
         this.subscriptions.unsubscribe()

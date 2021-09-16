@@ -29,7 +29,16 @@ describe('SharedNetworksPageComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                imports: [FormsModule, DropdownModule, TableModule, TooltipModule, HttpClientTestingModule, BreadcrumbModule, OverlayPanelModule, NoopAnimationsModule],
+                imports: [
+                    FormsModule,
+                    DropdownModule,
+                    TableModule,
+                    TooltipModule,
+                    HttpClientTestingModule,
+                    BreadcrumbModule,
+                    OverlayPanelModule,
+                    NoopAnimationsModule,
+                ],
                 declarations: [SharedNetworksPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
                 providers: [
                     {

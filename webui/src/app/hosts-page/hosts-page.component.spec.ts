@@ -65,14 +65,14 @@ describe('HostsPageComponent', () => {
                     TooltipModule,
                     FormsModule,
                     FieldsetModule,
-                    ProgressSpinnerModule
+                    ProgressSpinnerModule,
                 ],
                 declarations: [
                     EntityLinkComponent,
                     HostsPageComponent,
                     BreadcrumbsComponent,
                     HelpTipComponent,
-                    HostTabComponent
+                    HostTabComponent,
                 ],
             }).compileComponents()
         })

@@ -99,11 +99,13 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      * notifies this component via the subscription mechanism.
      */
     ngOnInit() {
-        this.subscriptions.add(this.refreshedAppTab.subscribe((data) => {
-            if (data) {
-                this.initDaemons(data.app.details.daemons)
-            }
-        }))
+        this.subscriptions.add(
+            this.refreshedAppTab.subscribe((data) => {
+                if (data) {
+                    this.initDaemons(data.app.details.daemons)
+                }
+            })
+        )
     }
 
     /**

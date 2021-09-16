@@ -39,7 +39,7 @@ describe('UsersPageComponent', () => {
                     OverlayPanelModule,
                     NoopAnimationsModule,
                     RouterModule,
-                    RouterTestingModule
+                    RouterTestingModule,
                 ],
                 declarations: [UsersPageComponent, BreadcrumbsComponent, HelpTipComponent],
                 providers: [

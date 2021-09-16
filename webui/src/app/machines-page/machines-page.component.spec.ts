@@ -44,7 +44,7 @@ describe('MachinesPageComponent', () => {
                 ProgressBarModule,
                 OverlayPanelModule,
                 NoopAnimationsModule,
-                BreadcrumbModule
+                BreadcrumbModule,
             ],
             declarations: [MachinesPageComponent, LocaltimePipe, BreadcrumbsComponent, HelpTipComponent],
         }).compileComponents()

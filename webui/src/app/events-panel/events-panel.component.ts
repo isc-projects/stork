@@ -147,14 +147,43 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         this.applyFilter()
 
         if (this.auth.superAdmin()) {
-            this.subscriptions.add(this.usersApi.getUsers(0, 1000, null).subscribe(
-                (data) => {
-                    this.users = data.items
+            this.subscriptions.add(
+                this.usersApi.getUsers(0, 1000, null).subscribe(
+                    (data) => {
+                        this.users = data.items
 
-                    if (this.filter.user) {
-                        for (const u of this.users) {
-                            if (u.id === this.filter.user) {
-                                this.selectedUser = u
+                        if (this.filter.user) {
+                            for (const u of this.users) {
+                                if (u.id === this.filter.user) {
+                                    this.selectedUser = u
+                                }
+                            }
+                        }
+                    },
+                    (err) => {
+                        let msg = err.statusText
+                        if (err.error && err.error.message) {
+                            msg = err.error.message
+                        }
+                        this.msgSrv.add({
+                            severity: 'error',
+                            summary: 'Loading user accounts failed',
+                            detail: 'Loading user accounts from the database failed: ' + msg,
+                            life: 10000,
+                        })
+                    }
+                )
+            )
+        }
+        this.subscriptions.add(
+            this.servicesApi.getMachines(0, 1000, null, null).subscribe(
+                (data) => {
+                    this.machines = data.items
+
+                    if (this.filter.machine) {
+                        for (const m of this.machines) {
+                            if (m.id === this.filter.machine) {
+                                this.selectedMachine = m
                             }
                         }
                     }
@@ -166,38 +195,13 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                     }
                     this.msgSrv.add({
                         severity: 'error',
-                        summary: 'Loading user accounts failed',
-                        detail: 'Loading user accounts from the database failed: ' + msg,
+                        summary: 'Cannot get machines',
+                        detail: 'Getting machines failed: ' + msg,
                         life: 10000,
                     })
                 }
-            ))
-        }
-        this.subscriptions.add(this.servicesApi.getMachines(0, 1000, null, null).subscribe(
-            (data) => {
-                this.machines = data.items
-
-                if (this.filter.machine) {
-                    for (const m of this.machines) {
-                        if (m.id === this.filter.machine) {
-                            this.selectedMachine = m
-                        }
-                    }
-                }
-            },
-            (err) => {
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
-                }
-                this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Cannot get machines',
-                    detail: 'Getting machines failed: ' + msg,
-                    life: 10000,
-                })
-            }
-        ))
+            )
+        )
     }
 
     /**

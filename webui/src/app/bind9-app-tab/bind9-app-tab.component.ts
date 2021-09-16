@@ -88,11 +88,13 @@ export class Bind9AppTabComponent implements OnInit, OnDestroy {
      * notifies this component via the subscription mechanism.
      */
     ngOnInit() {
-        this.subscriptions.add(this.refreshedAppTab.subscribe((data) => {
-            if (data) {
-                this.initDaemon(data.app.details.daemon)
-            }
-        }))
+        this.subscriptions.add(
+            this.refreshedAppTab.subscribe((data) => {
+                if (data) {
+                    this.initDaemon(data.app.details.daemon)
+                }
+            })
+        )
     }
 
     /**

@@ -115,44 +115,48 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         this.initFilterText()
 
         // Subscribe to the changes of the filtering parameters.
-        this.subscriptions.add(this.route.queryParamMap.subscribe(
-            (params) => {
-                this.updateQueryParams(params)
-                let event = { first: 0, rows: 10 }
-                if (this.hostsTable) {
-                    event = this.hostsTable.createLazyLoadMetadata()
+        this.subscriptions.add(
+            this.route.queryParamMap.subscribe(
+                (params) => {
+                    this.updateQueryParams(params)
+                    let event = { first: 0, rows: 10 }
+                    if (this.hostsTable) {
+                        event = this.hostsTable.createLazyLoadMetadata()
+                    }
+                    this.loadHosts(event)
+                },
+                (error) => {
+                    // ToDo: Fix silent error catching
+                    console.log(error)
                 }
-                this.loadHosts(event)
-            },
-            (error) => {
-                // ToDo: Fix silent error catching
-                console.log(error)
-            }
-        ))
+            )
+        )
         // Apply to the changes of the host id, e.g. from /dhcp/hosts/all to
         // /dhcp/hosts/1. Those changes are triggered by switching between the
         // tabs.
-        this.subscriptions.add(this.route.paramMap.subscribe(
-            (params) => {
-                // Get host id.
-                const id = params.get('id')
-                if (id && id !== 'all') {
-                    const numericId = parseInt(id, 10)
-                    if (!Number.isNaN(numericId)) {
-                        // The path has a numeric id indicating that we should
-                        // open a tab with selected host information or switch
-                        // to this tab if it has been already opened.
-                        this.openHostTab(numericId)
+        this.subscriptions.add(
+            this.route.paramMap.subscribe(
+                (params) => {
+                    // Get host id.
+                    const id = params.get('id')
+                    if (id && id !== 'all') {
+                        const numericId = parseInt(id, 10)
+                        if (!Number.isNaN(numericId)) {
+                            // The path has a numeric id indicating that we should
+                            // open a tab with selected host information or switch
+                            // to this tab if it has been already opened.
+                            this.openHostTab(numericId)
+                        }
+                    } else {
+                        // The special id 'all' means: switch to hosts list.
+                        this.switchToTab(0)
                     }
-                } else {
-                    // The special id 'all' means: switch to hosts list.
-                    this.switchToTab(0)
+                },
+                (error) => {
+                    console.log(error)
                 }
-            },
-            (error) => {
-                console.log(error)
-            }
-        ))
+            )
+        )
     }
 
     /**
@@ -304,7 +308,9 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     loadHosts(event) {
         const params = this.queryParams
 
-        this.dhcpApi.getHosts(event.first, event.rows, params.appId, null, params.text, params.global).toPromise()
+        this.dhcpApi
+            .getHosts(event.first, event.rows, params.appId, null, params.text, params.global)
+            .toPromise()
             .then((data) => {
                 this.hosts = data.items
                 this.totalHosts = data.total

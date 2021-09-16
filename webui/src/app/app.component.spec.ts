@@ -28,7 +28,7 @@ describe('AppComponent', () => {
                     HttpClientTestingModule,
                     OverlayPanelModule,
                     NoopAnimationsModule,
-                    FormsModule
+                    FormsModule,
                 ],
                 declarations: [AppComponent, GlobalSearchComponent],
                 providers: [GeneralService, UsersService, MessageService, ServicesService, SettingsService],

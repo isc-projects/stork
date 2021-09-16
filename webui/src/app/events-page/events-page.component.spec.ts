@@ -35,13 +35,7 @@ describe('EventsPageComponent', () => {
                     MessageService,
                 ],
                 declarations: [EventsPageComponent, EventsPageComponent, EventsPanelComponent],
-                imports: [
-                    HttpClientTestingModule,
-                    FormsModule,
-                    SelectButtonModule,
-                    DropdownModule,
-                    TableModule
-                ]
+                imports: [HttpClientTestingModule, FormsModule, SelectButtonModule, DropdownModule, TableModule],
             }).compileComponents()
         })
     )

@@ -56,7 +56,7 @@ describe('SubnetsPageComponent', () => {
                     HttpClientTestingModule,
                     BreadcrumbModule,
                     OverlayPanelModule,
-                    NoopAnimationsModule
+                    NoopAnimationsModule,
                 ],
                 declarations: [SubnetsPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
             }).compileComponents()

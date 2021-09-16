@@ -61,20 +61,22 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         this.updateOurQueryParams(ssParams)
 
         // subscribe to subsequent changes to query params
-        this.subscriptions.add(this.route.queryParamMap.subscribe(
-            (params) => {
-                this.updateOurQueryParams(params)
-                let event = { first: 0, rows: 10 }
-                if (this.networksTable) {
-                    event = this.networksTable.createLazyLoadMetadata()
+        this.subscriptions.add(
+            this.route.queryParamMap.subscribe(
+                (params) => {
+                    this.updateOurQueryParams(params)
+                    let event = { first: 0, rows: 10 }
+                    if (this.networksTable) {
+                        event = this.networksTable.createLazyLoadMetadata()
+                    }
+                    this.loadNetworks(event)
+                },
+                // ToDo: Silent error catching
+                (error) => {
+                    console.log(error)
                 }
-                this.loadNetworks(event)
-            },
-            // ToDo: Silent error catching
-            (error) => {
-                console.log(error)
-            }
-        ))
+            )
+        )
     }
 
     updateOurQueryParams(params) {

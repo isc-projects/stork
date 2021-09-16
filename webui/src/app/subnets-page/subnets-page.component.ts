@@ -58,14 +58,16 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         ]
 
         // ToDo: Silent error catching
-        this.subscriptions.add(this.settingSvc.getSettings().subscribe(
-            (data) => {
-                this.grafanaUrl = data['grafana_url']
-            },
-            (error) => {
-                console.log(error)
-            }
-        ))
+        this.subscriptions.add(
+            this.settingSvc.getSettings().subscribe(
+                (data) => {
+                    this.grafanaUrl = data['grafana_url']
+                },
+                (error) => {
+                    console.log(error)
+                }
+            )
+        )
 
         // handle initial query params
         const ssParams = this.route.snapshot.queryParamMap
@@ -80,19 +82,21 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
         this.updateOurQueryParams(ssParams)
 
         // subscribe to subsequent changes to query params
-        this.subscriptions.add(this.route.queryParamMap.subscribe(
-            (params) => {
-                this.updateOurQueryParams(params)
-                let event = { first: 0, rows: 10 }
-                if (this.subnetsTable) {
-                    event = this.subnetsTable.createLazyLoadMetadata()
+        this.subscriptions.add(
+            this.route.queryParamMap.subscribe(
+                (params) => {
+                    this.updateOurQueryParams(params)
+                    let event = { first: 0, rows: 10 }
+                    if (this.subnetsTable) {
+                        event = this.subnetsTable.createLazyLoadMetadata()
+                    }
+                    this.loadSubnets(event)
+                },
+                (error) => {
+                    console.log(error)
                 }
-                this.loadSubnets(event)
-            },
-            (error) => {
-                console.log(error)
-            }
-        ))
+            )
+        )
     }
 
     // ToDo: Silent error catching
@@ -113,7 +117,9 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
     loadSubnets(event) {
         const params = this.queryParams
 
-        this.dhcpApi.getSubnets(event.first, event.rows, params.appId, params.dhcpVersion, params.text).toPromise()
+        this.dhcpApi
+            .getSubnets(event.first, event.rows, params.appId, params.dhcpVersion, params.text)
+            .toPromise()
             .then((data) => {
                 this.subnets = data.items
                 this.totalSubnets = data.total

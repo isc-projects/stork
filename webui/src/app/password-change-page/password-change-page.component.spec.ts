@@ -42,9 +42,14 @@ describe('PasswordChangePageComponent', () => {
                     MenuModule,
                     RouterTestingModule,
                     ReactiveFormsModule,
-                    PasswordModule
+                    PasswordModule,
                 ],
-                declarations: [PasswordChangePageComponent, BreadcrumbsComponent, SettingsMenuComponent, HelpTipComponent],
+                declarations: [
+                    PasswordChangePageComponent,
+                    BreadcrumbsComponent,
+                    SettingsMenuComponent,
+                    HelpTipComponent,
+                ],
             }).compileComponents()
         })
     )

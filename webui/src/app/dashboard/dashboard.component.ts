@@ -64,39 +64,45 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
 
         // get stats about apps
-        this.subscriptions.add(this.serverData.getAppsStats().subscribe(
-            (data) => {
-                this.loaded = true
-                this.appsStats = { ...this.appsStats, ...data }
-            },
-            (err) => {
-                this.loaded = true
-                let msg = err.statusText
-                if (err.error && err.error.message) {
-                    msg = err.error.message
+        this.subscriptions.add(
+            this.serverData.getAppsStats().subscribe(
+                (data) => {
+                    this.loaded = true
+                    this.appsStats = { ...this.appsStats, ...data }
+                },
+                (err) => {
+                    this.loaded = true
+                    let msg = err.statusText
+                    if (err.error && err.error.message) {
+                        msg = err.error.message
+                    }
+                    this.msgSrv.add({
+                        severity: 'error',
+                        summary: 'Cannot get applications statistics',
+                        detail: 'Getting applications statistics erred: ' + msg,
+                        life: 10000,
+                    })
                 }
-                this.msgSrv.add({
-                    severity: 'error',
-                    summary: 'Cannot get applications statistics',
-                    detail: 'Getting applications statistics erred: ' + msg,
-                    life: 10000,
-                })
-            }
-        ))
+            )
+        )
 
         // get DHCP overview from the server
         this.refreshDhcpOverview()
 
-        this.subscriptions.add(this.settingSvc.getSettings().subscribe((data) => {
-            this.grafanaUrl = data['grafana_url']
-        }))
+        this.subscriptions.add(
+            this.settingSvc.getSettings().subscribe((data) => {
+                this.grafanaUrl = data['grafana_url']
+            })
+        )
     }
 
     /**
      * Get or refresh DHCP overview data from the server
      */
     refreshDhcpOverview() {
-        this.dhcpApi.getDhcpOverview().toPromise()
+        this.dhcpApi
+            .getDhcpOverview()
+            .toPromise()
             .then((data) => {
                 this.overview = data
             })

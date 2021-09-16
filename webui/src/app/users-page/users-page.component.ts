@@ -314,7 +314,9 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      *              of rows to be returned and the filter text.
      */
     loadUsers(event) {
-        this.usersApi.getUsers(event.first, event.rows, event.filters.text).toPromise()
+        this.usersApi
+            .getUsers(event.first, event.rows, event.filters.text)
+            .toPromise()
             .then((data) => {
                 this.users = data.items
                 this.totalUsers = data.total
@@ -352,20 +354,22 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         this.userGroups = [...initUserGroups]
         // Get all groups from the server.
         // ToDo: Uncaught promise
-        this.subscriptions.add(this.serverData.getGroups().subscribe((data) => {
-            if (data.items) {
-                this.groups = data.items
-                this.userGroups = [...initUserGroups]
-                for (const i in this.groups) {
-                    if (this.groups.hasOwnProperty(i)) {
-                        this.userGroups.push({
-                            label: this.groups[i].name,
-                            value: { id: this.groups[i].id, name: this.groups[i].name },
-                        })
+        this.subscriptions.add(
+            this.serverData.getGroups().subscribe((data) => {
+                if (data.items) {
+                    this.groups = data.items
+                    this.userGroups = [...initUserGroups]
+                    for (const i in this.groups) {
+                        if (this.groups.hasOwnProperty(i)) {
+                            this.userGroups.push({
+                                label: this.groups[i].name,
+                                value: { id: this.groups[i].id, name: this.groups[i].name },
+                            })
+                        }
                     }
                 }
-            }
-        }))
+            })
+        )
 
         // Open the default tab
         this.tabs = [{ label: 'Users', routerLink: '/users/list' }]
@@ -375,60 +379,65 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         const defaultTab = new UserTab(UserTabType.List, null)
         this.openedTabs.push(defaultTab)
 
-        this.subscriptions.add(this.route.paramMap.subscribe((params: ParamMap) => {
-            const userIdStr = params.get('id')
-            if (!userIdStr || userIdStr === 'list') {
-                // Open the tab with the list of users.
-                this.switchToTab(0)
-            } else {
-                // Deal with the case when specific user is selected or when the
-                // new user is to be created.
-                const userId = userIdStr === 'new' ? 0 : parseInt(userIdStr, 10)
+        this.subscriptions.add(
+            this.route.paramMap.subscribe((params: ParamMap) => {
+                const userIdStr = params.get('id')
+                if (!userIdStr || userIdStr === 'list') {
+                    // Open the tab with the list of users.
+                    this.switchToTab(0)
+                } else {
+                    // Deal with the case when specific user is selected or when the
+                    // new user is to be created.
+                    const userId = userIdStr === 'new' ? 0 : parseInt(userIdStr, 10)
 
-                // Iterate over opened tabs and check if any of them matches the
-                // given user id or is for new user.
-                for (const i in this.openedTabs) {
-                    if (this.openedTabs.hasOwnProperty(i)) {
-                        const tab = this.openedTabs[i]
-                        if (
-                            (userId > 0 &&
-                                (tab.tabType === UserTabType.User || tab.tabType === UserTabType.EditedUser) &&
-                                tab.user &&
-                                tab.user.id === userId) ||
-                            (userId === 0 && tab.tabType === UserTabType.NewUser)
-                        ) {
-                            this.switchToTab(i)
+                    // Iterate over opened tabs and check if any of them matches the
+                    // given user id or is for new user.
+                    for (const i in this.openedTabs) {
+                        if (this.openedTabs.hasOwnProperty(i)) {
+                            const tab = this.openedTabs[i]
+                            if (
+                                (userId > 0 &&
+                                    (tab.tabType === UserTabType.User || tab.tabType === UserTabType.EditedUser) &&
+                                    tab.user &&
+                                    tab.user.id === userId) ||
+                                (userId === 0 && tab.tabType === UserTabType.NewUser)
+                            ) {
+                                this.switchToTab(i)
+                                return
+                            }
+                        }
+                    }
+
+                    // If we are creating new user and the tab for the new user does not
+                    // exist, let's open the tab and bail.
+                    if (userId === 0) {
+                        this.showNewUserTab()
+                        return
+                    }
+
+                    // If we're interested in a tab for a specific user, let's see if we
+                    // already have the user information fetched.
+                    for (const u of this.users) {
+                        if (u.id === userId) {
+                            // Found user information, so let's open the tab using this
+                            // information and return.
+                            this.addUserTab(UserTabType.User, u)
                             return
                         }
                     }
-                }
 
-                // If we are creating new user and the tab for the new user does not
-                // exist, let's open the tab and bail.
-                if (userId === 0) {
-                    this.showNewUserTab()
-                    return
+                    // We have no information about the user, so let's try to fetch it
+                    // from the server.
+                    // ToDo: Non-catches promise
+                    this.usersApi
+                        .getUser(userId)
+                        .toPromise()
+                        .then((data) => {
+                            this.addUserTab(UserTabType.User, data)
+                        })
                 }
-
-                // If we're interested in a tab for a specific user, let's see if we
-                // already have the user information fetched.
-                for (const u of this.users) {
-                    if (u.id === userId) {
-                        // Found user information, so let's open the tab using this
-                        // information and return.
-                        this.addUserTab(UserTabType.User, u)
-                        return
-                    }
-                }
-
-                // We have no information about the user, so let's try to fetch it
-                // from the server.
-                // ToDo: Non-catches promise
-                this.usersApi.getUser(userId).toPromise().then(((data) => {
-                    this.addUserTab(UserTabType.User, data)
-                }))
-            }
-        }))
+            })
+        )
     }
 
     /**
@@ -448,7 +457,9 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         }
         const password = this.userform.controls.userpassword.value
         const account = { user, password }
-        this.usersApi.createUser(account).toPromise()
+        this.usersApi
+            .createUser(account)
+            .toPromise()
             .then((data) => {
                 this.msgSrv.add({
                     severity: 'success',
@@ -488,7 +499,9 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         const password = this.userform.controls.userpassword.value
         const account = { user, password }
 
-        this.usersApi.updateUser(account).toPromise()
+        this.usersApi
+            .updateUser(account)
+            .toPromise()
             .then((data) => {
                 this.msgSrv.add({
                     severity: 'success',

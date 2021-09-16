@@ -20,7 +20,7 @@ describe('SettingsMenuComponent', () => {
                         provide: ActivatedRoute,
                         useValue: {},
                     },
-                ]
+                ],
             }).compileComponents()
         })
     )

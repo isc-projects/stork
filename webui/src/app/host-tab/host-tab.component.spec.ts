@@ -24,11 +24,16 @@ describe('HostTabComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                providers: [
-                    DHCPService,
-                    MessageService
+                providers: [DHCPService, MessageService],
+                imports: [
+                    FieldsetModule,
+                    FormsModule,
+                    HttpClientTestingModule,
+                    NoopAnimationsModule,
+                    TableModule,
+                    RouterModule,
+                    RouterTestingModule,
                 ],
-                imports: [FieldsetModule, FormsModule, HttpClientTestingModule, NoopAnimationsModule, TableModule, RouterModule, RouterTestingModule],
                 declarations: [HostTabComponent],
             }).compileComponents()
         })

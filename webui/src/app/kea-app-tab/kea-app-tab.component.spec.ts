@@ -97,14 +97,15 @@ describe('KeaAppTabComponent', () => {
                     FieldsetModule,
                     DialogModule,
                     NoopAnimationsModule,
-                    PaginatorModule
+                    PaginatorModule,
                 ],
                 declarations: [
                     KeaAppTabComponent,
                     HaStatusComponent,
                     LocaltimePipe,
                     RenameAppDialogComponent,
-                    EventsPanelComponent],
+                    EventsPanelComponent,
+                ],
             }).compileComponents()
         })
     )

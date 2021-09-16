@@ -58,7 +58,7 @@ describe('Bind9AppTabComponent', () => {
                     TooltipModule,
                     TabViewModule,
                     DialogModule,
-                    NoopAnimationsModule
+                    NoopAnimationsModule,
                 ],
                 declarations: [Bind9AppTabComponent, LocaltimePipe, RenameAppDialogComponent],
             }).compileComponents()

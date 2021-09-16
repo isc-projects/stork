@@ -51,7 +51,7 @@ describe('LeaseSearchPageComponent', () => {
                     OverlayPanelModule,
                     NoopAnimationsModule,
                     BreadcrumbModule,
-                    MessagesModule
+                    MessagesModule,
                 ],
                 declarations: [LeaseSearchPageComponent, LocaltimePipe, BreadcrumbsComponent, HelpTipComponent],
             }).compileComponents()

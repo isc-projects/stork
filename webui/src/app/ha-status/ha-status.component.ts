@@ -37,25 +37,29 @@ export class HaStatusComponent implements OnInit, OnDestroy {
     ngOnInit() {
         this.refreshStatus()
 
-        this.subscriptions.add(interval(this._haRefreshInterval).subscribe((x) => {
-            this.refreshStatus()
-        }))
+        this.subscriptions.add(
+            interval(this._haRefreshInterval).subscribe((x) => {
+                this.refreshStatus()
+            })
+        )
         // Run the live age counters for both local and remote servers.
         // ToDo: Check that it works as expected. Does the timer reset when the component is destroyed?
-        this.subscriptions.add(interval(this._countUpInterval).subscribe((x) => {
-            if (this.hasStatus()) {
-                // Only increase the age counters if they are non-negative.
-                // Negative values indicate that the status age was unknown,
-                // probably because the server was down when attempted to get
-                // its status.
-                if (this.localServer().age >= 0) {
-                    this.localServer().age += 1
+        this.subscriptions.add(
+            interval(this._countUpInterval).subscribe((x) => {
+                if (this.hasStatus()) {
+                    // Only increase the age counters if they are non-negative.
+                    // Negative values indicate that the status age was unknown,
+                    // probably because the server was down when attempted to get
+                    // its status.
+                    if (this.localServer().age >= 0) {
+                        this.localServer().age += 1
+                    }
+                    if (this.remoteServer() && this.remoteServer().age >= 0) {
+                        this.remoteServer().age += 1
+                    }
                 }
-                if (this.remoteServer() && this.remoteServer().age >= 0) {
-                    this.remoteServer().age += 1
-                }
-            }
-        }))
+            })
+        )
     }
 
     /**
@@ -125,7 +129,9 @@ export class HaStatusComponent implements OnInit, OnDestroy {
      * This function is invoked periodically to refresh the status.
      */
     private refreshStatus() {
-        this.servicesApi.getAppServicesStatus(this.appId).toPromise()
+        this.servicesApi
+            .getAppServicesStatus(this.appId)
+            .toPromise()
             .then((data) => {
                 if (data.items) {
                     this._receivedStatus = new Map()

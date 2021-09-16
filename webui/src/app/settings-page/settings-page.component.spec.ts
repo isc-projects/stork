@@ -35,7 +35,7 @@ describe('SettingsPageComponent', () => {
                     BreadcrumbModule,
                     OverlayPanelModule,
                     NoopAnimationsModule,
-                    RouterTestingModule
+                    RouterTestingModule,
                 ],
                 declarations: [SettingsPageComponent, BreadcrumbsComponent, HelpTipComponent],
                 providers: [
