@@ -277,7 +277,7 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 // into the database. If it volatiles the unique constraint
 // (entry is already added), then the update query is performed.
 // Returns a list of added daemons, deleted daemons (only if the
-// update performs), a flag that indicates that the INSERT query
+// update is performed), a flag that indicates that the INSERT query
 // executed and error if occurred.
 // This function is composed from 3 stages.
 // 1. Insert app

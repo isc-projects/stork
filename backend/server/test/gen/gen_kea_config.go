@@ -149,6 +149,9 @@ func GenerateKeaConfig(n int) map[string]interface{} {
 	return config
 }
 
+// Generate IPv4 subnets.
+// It accepts two arguments that specify the number of created outer and inner networks.
+// Subnets have random option data and subsequent ID.
 func generateV4Subnet(rangeOfOuterScope int, rangeOfInnerScope int) interface{} {
 	var subnets []interface{}
 	netmask := 8

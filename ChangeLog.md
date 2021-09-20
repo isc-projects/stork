@@ -1,3 +1,9 @@
+* 160 [build] slawek
+
+    Fix failed pipeline issues - pump CentOS version and related
+    packages, fix bug with parallel insert.
+    (Gitlab #552)
+
 * 159 [bug] slawek
 
     Eliminated memory leaks from the Stork Web UI.
