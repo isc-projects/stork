@@ -179,10 +179,17 @@ system_testing:
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+  after_script:
+    - echo "Collecting LXD logs"
+    - lxc list -f csv -cn | xargs -i lxc exec {} journalctl > lxd-container-logs.log 
   script:
     # - rake system_tests_ui
     - rake system_tests
-
+  artifacts:
+    paths:
+      - lxd-container-logs.log
+    expire_in: 1 week
+    when: always
 
 ### upload release notes and tarball to repo.isc.org ###
 
