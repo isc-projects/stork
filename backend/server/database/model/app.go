@@ -279,14 +279,15 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 // Returns a list of added daemons, deleted daemons (only if the
 // update is performed), a flag that indicates that the INSERT query
 // executed and error if occurred.
-// This function is composed from 3 stages.
-// 1. Insert app
-//    It is executed when AppID equals 0. It
-//    If any other query inserted the app before this query then the transaction rollbacks
-//    else the function successfully returns.
-// 2. Retrieve app ID.
-//    If the app exists then we need an application ID.
-// 3. Update the application.
+// This function is composed of 3 stages:
+// 1. Insert the app
+//    It is executed when AppID equals 0. If any other query inserted the app
+//    before this query, then the transaction rollbacks else the function successfully
+//    returns.
+// 2. Retrieve the app ID.
+//    If the app exists, then we need an app ID. It should always be present at
+//    this stage, no matter if this is an insert or an update.
+// 3. Update the app.
 func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
 	hasInsertConflict := false
 	if app.ID == 0 {
