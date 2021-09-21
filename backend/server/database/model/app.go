@@ -303,7 +303,7 @@ func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
 		ok := errors.As(pkgerrors.Cause(err), &pgErr)
 		// Is it a conflict on an unique constraint?
 		if !ok || !pgErr.IntegrityViolation() {
-			return nil, nil, false, err
+			return nil, nil, false, pkgerrors.Wrapf(err, "unexpected error during insert app")
 		}
 
 		hasInsertConflict = true
@@ -314,7 +314,7 @@ func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
 		// Get App ID
 		existingApp, err := getAppByName(db, app.Name)
 		if err != nil {
-			return nil, nil, false, err
+			return nil, nil, false, pkgerrors.Wrapf(err, "cannot fetch app by name: %s", app.Name)
 		}
 		app.ID = existingApp.ID
 		app.CreatedAt = existingApp.CreatedAt
@@ -323,10 +323,7 @@ func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
 	// Stage 3: Update application
 	// Existing app, update it if needed.
 	addedDaemons, deletedDaemons, err := UpdateApp(db, app)
-	if err != nil {
-		err = pkgerrors.Wrapf(err, "Invalid update for app: %+v, hasInsertConflict: %t", app, hasInsertConflict)
-	}
-	return addedDaemons, deletedDaemons, false, err
+	return addedDaemons, deletedDaemons, false, pkgerrors.Wrapf(err, "Invalid update for app: %+v, hasInsertConflict: %t", app, hasInsertConflict)
 }
 
 // Updates specified app's name. It returns app instance with old name and possibly
