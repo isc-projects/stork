@@ -182,6 +182,11 @@ system_testing:
   script:
     # - rake system_tests_ui
     - rake system_tests
+  artifacts:
+    paths:
+      - test-results/*.log
+    expire_in: 1 week
+    when: always
 
 
 ### upload release notes and tarball to repo.isc.org ###
