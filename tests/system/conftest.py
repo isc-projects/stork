@@ -151,7 +151,12 @@ def pytest_pyfunc_call(pyfuncitem):
         # DO RUN TEST CASE
         outcome = yield
     finally:
-        print('TEST %s FINISHED: %s, COLLECTING LOGS' % (pyfuncitem.name, outcome.get_result()))
+        try:
+            result = outcome.get_result()
+        except Exception as ex:
+            result = False
+
+        print('TEST %s FINISHED: %s, COLLECTING LOGS' % (pyfuncitem.name, result))
 
         # prepare test directory for logs, etc
         tests_dir = Path('test-results')
