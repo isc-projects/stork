@@ -302,7 +302,7 @@ func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
 		var pgErr pg.Error
 		ok := errors.As(pkgerrors.Cause(err), &pgErr)
 		// Is it a conflict on an unique constraint?
-		if !ok || !pgErr.IntegrityViolation() {
+		if !ok || pgErr.Field('C') != "23505" {
 			return nil, nil, false, pkgerrors.Wrapf(err, "unexpected error during insert app")
 		}
 
