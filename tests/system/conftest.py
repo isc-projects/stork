@@ -161,15 +161,18 @@ def pytest_pyfunc_call(pyfuncitem):
        and store them in `test-results` folder
     """
     # Prepare containers - build and run
+    container_arguments = [arg for arg in pyfuncitem.funcargs.items()
+                               if arg[0].startswith('server') or arg[0].startswith('agent')]
+
     try:
-        containers = _prepare_containers(pyfuncitem.funcargs.items())
+        containers = _prepare_containers(container_arguments)
     except Exception:
-        print("ERROR: CANNOT PREPARE THE CONTAINERS")
+        print("ERROR: CANNOT PREPARE CONTAINERS")
         print(traceback.format_exc())
         raise
 
     # Assign containers to test arguments
-    for (name, _), (_, container) in zip(pyfuncitem.funcargs.items(), containers):
+    for (name, _), (_, container) in zip(container_arguments, containers):
         pyfuncitem.funcargs[name] = container
 
     try:
