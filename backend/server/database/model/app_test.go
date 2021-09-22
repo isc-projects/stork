@@ -43,7 +43,7 @@ func TestAddApp(t *testing.T) {
 
 	// add app, no error expected
 	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234, false)
 
 	a3 := &App{
 		ID:           0,
@@ -88,7 +88,7 @@ func TestAddApp(t *testing.T) {
 
 	// add app for the same machine and ctrl port - error should be raised
 	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234, true)
 	a4 := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -103,7 +103,7 @@ func TestAddApp(t *testing.T) {
 
 	// add app with empty control address, no error expected.
 	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "abcd", 4321)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "abcd", 4321, false)
 	a5 := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -117,8 +117,8 @@ func TestAddApp(t *testing.T) {
 
 	// add app with two control points - error should be raised.
 	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "dns1.example.org", "", 5555)
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "dns2.example.org", "", 5656)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "dns1.example.org", "", 5555, true)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "dns2.example.org", "", 5656, false)
 	a6 := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -133,7 +133,7 @@ func TestAddApp(t *testing.T) {
 
 	// add app with explicit access point, bad type - error should be raised.
 	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, "foobar", "dns1.example.org", "", 6666)
+	accessPoints = AppendAccessPoint(accessPoints, "foobar", "dns1.example.org", "", 6666, true)
 	a7 := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -161,7 +161,7 @@ func TestUpdateApp(t *testing.T) {
 	require.NotZero(t, m.ID)
 
 	accessPoints := []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234, false)
 
 	dhcp4Config, err := NewKeaConfigFromJSON(`{
         "Dhcp4": {
@@ -374,7 +374,7 @@ func TestUpdateApp(t *testing.T) {
 
 	// change access point
 	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "warm.example.org", "abcd", 2345)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "warm.example.org", "abcd", 2345, true)
 	a.AccessPoints = accessPoints
 	addedDaemons, deletedDaemons, err = UpdateApp(db, a)
 	require.NoError(t, err)
@@ -399,7 +399,7 @@ func TestUpdateApp(t *testing.T) {
 	require.Equal(t, "abcd", pt.Key)
 
 	// add access point
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointStatistics, "cold.example.org", "", 1234)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointStatistics, "cold.example.org", "", 1234, false)
 	a.AccessPoints = accessPoints
 	addedDaemons, deletedDaemons, err = UpdateApp(db, a)
 	require.NoError(t, err)
@@ -545,7 +545,7 @@ func TestDeleteApp(t *testing.T) {
 
 	// add app, no error expected
 	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "10.0.0.1", "", 4321)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "10.0.0.1", "", 4321, false)
 
 	s := &App{
 		ID:           0,
@@ -796,7 +796,7 @@ func TestGetAppsByMachine(t *testing.T) {
 
 	// add app, no error expected
 	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234, true)
 
 	s := &App{
 		ID:           0,
@@ -866,7 +866,7 @@ func TestGetAppsByType(t *testing.T) {
 
 	// add kea app
 	var keaPoints []*AccessPoint
-	keaPoints = AppendAccessPoint(keaPoints, AccessPointControl, "", "", 1234)
+	keaPoints = AppendAccessPoint(keaPoints, AccessPointControl, "", "", 1234, false)
 	aKea := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -888,7 +888,7 @@ func TestGetAppsByType(t *testing.T) {
 
 	// add bind9 app
 	var bind9Points []*AccessPoint
-	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "", 2234)
+	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "", 2234, false)
 	aBind9 := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -948,8 +948,8 @@ func TestGetAppByID(t *testing.T) {
 
 	// add app, no error expected
 	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 4444)
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointStatistics, "10.0.0.2", "abcd", 5555)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 4444, false)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointStatistics, "10.0.0.2", "abcd", 5555, true)
 
 	s := &App{
 		ID:           0,
@@ -1023,7 +1023,7 @@ func TestGetAppsByPage(t *testing.T) {
 
 	// add kea app, no error expected
 	var keaPoints []*AccessPoint
-	keaPoints = AppendAccessPoint(keaPoints, AccessPointControl, "", "", 1234)
+	keaPoints = AppendAccessPoint(keaPoints, AccessPointControl, "", "", 1234, false)
 
 	sKea := &App{
 		ID:           0,
@@ -1049,7 +1049,7 @@ func TestGetAppsByPage(t *testing.T) {
 
 	// add bind app, no error expected
 	var bind9Points []*AccessPoint
-	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "abcd", 4321)
+	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "abcd", 4321, true)
 
 	sBind := &App{
 		ID:           0,
@@ -1260,7 +1260,7 @@ func TestGetAllApps(t *testing.T) {
 
 	// add kea app, no error expected
 	var keaPoints []*AccessPoint
-	keaPoints = AppendAccessPoint(keaPoints, AccessPointControl, "", "", 1234)
+	keaPoints = AppendAccessPoint(keaPoints, AccessPointControl, "", "", 1234, false)
 
 	aKea := &App{
 		ID:           0,
@@ -1282,7 +1282,7 @@ func TestGetAllApps(t *testing.T) {
 
 	// add bind app, no error expected
 	var bind9Points []*AccessPoint
-	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "abcd", 4321)
+	bind9Points = AppendAccessPoint(bind9Points, AccessPointControl, "", "abcd", 4321, true)
 
 	aBind := &App{
 		ID:           0,
@@ -1337,7 +1337,7 @@ func TestGetLocalSubnetID(t *testing.T) {
 
 	// Create an app with the given configuration.
 	accessPoints := []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234, false)
 	app := &App{
 		ID:           0,
 		MachineID:    0,
@@ -1383,7 +1383,7 @@ func TestGetLocalSubnetIDWithIndexing(t *testing.T) {
 
 	// Create an app and assign indexed subnets with it.
 	accessPoints := []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234, true)
 	app := &App{
 		ID:           0,
 		MachineID:    0,

@@ -42,7 +42,7 @@ func TestGetSubnets(t *testing.T) {
 
 	// add app kea with dhcp4 to machine
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1114)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1114, false)
 
 	a4 := &dbmodel.App{
 		ID:           0,
@@ -95,7 +95,7 @@ func TestGetSubnets(t *testing.T) {
 
 	// add app kea with dhcp6 to machine
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1116)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1116, true)
 
 	a6 := &dbmodel.App{
 		ID:           0,
@@ -133,7 +133,7 @@ func TestGetSubnets(t *testing.T) {
 
 	// add app kea with dhcp4 and dhcp6 to machine
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1146)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1146, false)
 
 	a46 := &dbmodel.App{
 		ID:           0,
@@ -365,7 +365,7 @@ func TestGetSharedNetworks(t *testing.T) {
 
 	// add app kea with dhcp4 to machine
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1114)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1114, false)
 
 	a4 := &dbmodel.App{
 		ID:           0,
@@ -433,7 +433,7 @@ func TestGetSharedNetworks(t *testing.T) {
 
 	// add app kea with dhcp6 to machine
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1116)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1116, true)
 
 	a6 := &dbmodel.App{
 		ID:           0,

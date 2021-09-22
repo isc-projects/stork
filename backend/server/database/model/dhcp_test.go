@@ -63,7 +63,7 @@ func addTestSubnetApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 		require.NoError(t, err)
 
 		accessPoints := []*AccessPoint{}
-		accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", int64(1234+i))
+		accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", int64(1234+i), true)
 
 		a := &App{
 			ID:           0,

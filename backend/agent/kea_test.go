@@ -30,7 +30,7 @@ func TestSendCommand(t *testing.T) {
 	ka := &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634),
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, false),
 		},
 		HTTPClient: httpClient,
 	}
@@ -61,7 +61,7 @@ func TestSendCommandInvalidResponse(t *testing.T) {
 	ka := &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634),
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, false),
 		},
 		HTTPClient: httpClient,
 	}
@@ -78,7 +78,7 @@ func TestSendCommandNoKea(t *testing.T) {
 	ka := &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634),
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, false),
 		},
 		HTTPClient: NewHTTPClient(),
 	}
@@ -173,7 +173,7 @@ func TestKeaAllowedLogs(t *testing.T) {
 
 	// The config-get command sent to the daemons behind CA should return
 	// configurations of the DHCPv4 and DHCPv6 daemons.
-	gock.New("http://localhost:45634").
+	gock.New("https://localhost:45634").
 		MatchHeader("Content-Type", "application/json").
 		JSON(map[string]interface{}{"command": "config-get", "service": []string{"dhcp4", "dhcp6"}}).
 		Post("/").
@@ -183,7 +183,7 @@ func TestKeaAllowedLogs(t *testing.T) {
 	ka := &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634),
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, true),
 		},
 		HTTPClient: httpClient,
 	}
@@ -218,7 +218,7 @@ func TestKeaAllowedLogsFewerResponses(t *testing.T) {
 	err := json.Unmarshal([]byte(dhcpResponsesJSON), &dhcpResponses)
 	require.NoError(t, err)
 
-	gock.New("http://localhost:45634").
+	gock.New("https://localhost:45634").
 		MatchHeader("Content-Type", "application/json").
 		JSON(map[string]interface{}{"command": "config-get", "service": []string{"dhcp4", "dhcp6"}}).
 		Post("/").
@@ -228,7 +228,7 @@ func TestKeaAllowedLogsFewerResponses(t *testing.T) {
 	ka := &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634),
+			AccessPoints: makeAccessPoint(AccessPointControl, "localhost", "", 45634, true),
 		},
 		HTTPClient: httpClient,
 	}

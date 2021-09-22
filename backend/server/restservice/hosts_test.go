@@ -29,7 +29,7 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 		require.NoError(t, err)
 
 		accessPoints := []*dbmodel.AccessPoint{}
-		accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", int64(1234+i))
+		accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", int64(1234+i), true)
 
 		a := dbmodel.App{
 			ID:           0,

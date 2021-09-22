@@ -151,7 +151,7 @@ func addTestApps(t *testing.T, db *dbops.PgDB) (apps []*App) {
 		require.NoError(t, err)
 
 		var accessPoints []*AccessPoint
-		accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", int64(1234+i))
+		accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", int64(1234+i), false)
 		a := &App{
 			ID:           0,
 			MachineID:    m.ID,

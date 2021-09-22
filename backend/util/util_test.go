@@ -9,8 +9,10 @@ import (
 
 // Test that HostWithPort function generates proper output.
 func TestHostWithPortURL(t *testing.T) {
-	require.Equal(t, "http://localhost:1000/", HostWithPortURL("localhost", 1000))
-	require.Equal(t, "http://192.0.2.0:1/", HostWithPortURL("192.0.2.0", 1))
+	require.Equal(t, "http://localhost:1000/", HostWithPortURL("localhost", 1000, false))
+	require.Equal(t, "http://192.0.2.0:1/", HostWithPortURL("192.0.2.0", 1, false))
+	require.Equal(t, "https://localhost:1000/", HostWithPortURL("localhost", 1000, true))
+	require.Equal(t, "https://192.0.2.0:1/", HostWithPortURL("192.0.2.0", 1, true))
 }
 
 // Test parsing URL into host and port.

@@ -603,7 +603,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 
 	// Creates new app. Its configuration doesn't matter in this test.
 	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "localhost", "", 8000)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "localhost", "", 8000, false)
 	app := App{
 		MachineID:    m.ID,
 		Type:         AppTypeKea,

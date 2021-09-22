@@ -56,7 +56,7 @@ func TestSearchRecords(t *testing.T) {
 
 	// add app kea with dhcp4 to machine
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1114)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1114, true)
 
 	a4 := &dbmodel.App{
 		ID:           0,
@@ -108,7 +108,7 @@ func TestSearchRecords(t *testing.T) {
 
 	// add app kea with dhcp6 to machine
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1116)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1116, false)
 
 	a6 := &dbmodel.App{
 		ID:           0,
@@ -145,7 +145,7 @@ func TestSearchRecords(t *testing.T) {
 
 	// add app kea with dhcp4 and dhcp6 to machine
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1146)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1146, true)
 
 	a46 := &dbmodel.App{
 		ID:           0,

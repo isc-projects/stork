@@ -196,7 +196,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 
 	// add kea app
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "1.2.3.4", "", 123)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "1.2.3.4", "", 123, false)
 	keaApp := &dbmodel.App{
 		MachineID:    m.ID,
 		Machine:      m,
@@ -209,7 +209,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 
 	// add BIND 9 app
 	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124)
+	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124, true)
 	bind9App := &dbmodel.App{
 		MachineID:    m.ID,
 		Machine:      m,
@@ -625,7 +625,7 @@ func TestGetMachine(t *testing.T) {
 
 	// add app to machine 2
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, false)
 	s := &dbmodel.App{
 		ID:           0,
 		MachineID:    m2.ID,
@@ -864,7 +864,7 @@ func TestGetApp(t *testing.T) {
 
 	// add app to machine
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, true)
 	s := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -917,7 +917,7 @@ func TestRestGetApp(t *testing.T) {
 
 	// add kea app to machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
 	keaApp := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -942,7 +942,7 @@ func TestRestGetApp(t *testing.T) {
 
 	// add BIND 9 app to machine
 	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 953)
+	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 953, true)
 	bind9App := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -998,7 +998,7 @@ func TestRestGetApps(t *testing.T) {
 
 	// add app kea to machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
 	s1 := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -1025,7 +1025,7 @@ func TestRestGetApps(t *testing.T) {
 
 	// add app BIND 9 to machine
 	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321)
+	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321, true)
 	s2 := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -1098,7 +1098,7 @@ func TestGetAppsDirectory(t *testing.T) {
 
 	// Add Kea app to the machine.
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
 	keaApp := &dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -1111,7 +1111,7 @@ func TestGetAppsDirectory(t *testing.T) {
 
 	// Add BIND 9 app to the machine.
 	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321)
+	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321, true)
 	bind9App := &dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeBind9,
@@ -1167,7 +1167,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 
 	// Add Kea application to the machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234, false)
 	keaApp := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -1363,7 +1363,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 
 	// Add Kea application to the machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234, true)
 	keaApp := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -1472,7 +1472,7 @@ func TestRestGetAppsStats(t *testing.T) {
 
 	// add app kea to machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
 	s1 := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -1486,7 +1486,7 @@ func TestRestGetAppsStats(t *testing.T) {
 
 	// add app bind9 to machine
 	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321)
+	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "", "abcd", 4321, true)
 	s2 := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -1529,7 +1529,7 @@ func TestGetDhcpOverview(t *testing.T) {
 
 	// add app kea to machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, false)
 	app := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -1594,7 +1594,7 @@ func TestHAInDhcpOverview(t *testing.T) {
 
 	// Add Kea application to the machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234, true)
 	keaApp := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -1668,7 +1668,7 @@ func TestUpdateDaemon(t *testing.T) {
 
 	// Add Kea application to the machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "127.0.0.1", "", 1234, false)
 	keaApp := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -1990,7 +1990,7 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 
 	// add app kea to machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, true)
 	app := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -2075,7 +2075,7 @@ func TestGetDaemonConfigWithSecretsForSuperAdmin(t *testing.T) {
 
 	// add app kea to machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, false)
 	app := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -2172,7 +2172,7 @@ func TestGetDaemonConfigWithoutSecretsForAdmin(t *testing.T) {
 
 	// add app kea to machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, true)
 	app := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -2275,7 +2275,7 @@ func TestGetDaemonConfigForKeaDaemonWithoutAssignedConfiguration(t *testing.T) {
 
 	// add app kea to machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, false)
 	app := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -2333,7 +2333,7 @@ func TestGetDaemonConfigForBind9Daemon(t *testing.T) {
 
 	// add BIND 9 app
 	var bind9Points []*dbmodel.AccessPoint
-	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124)
+	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124, true)
 	app := &dbmodel.App{
 		MachineID:    m.ID,
 		Machine:      m,
@@ -2390,7 +2390,7 @@ func TestGetDaemonConfigForNonExistsDaemon(t *testing.T) {
 
 	// add an app
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, false)
 	app := &dbmodel.App{
 		MachineID:    m.ID,
 		Machine:      m,
@@ -2441,7 +2441,7 @@ func TestGetDaemonConfigForDatabaseError(t *testing.T) {
 
 	// add an app
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, true)
 	app := &dbmodel.App{
 		MachineID:    m.ID,
 		Machine:      m,

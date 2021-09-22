@@ -424,7 +424,7 @@ func TestGetLease4ByIPAddress(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLease4Get, nil)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := &dbmodel.App{
 		ID:           1,
 		AccessPoints: accessPoints,
@@ -454,7 +454,7 @@ func TestGetLease6ByIPAddress(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLease6GetByIPAddress, nil)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app := &dbmodel.App{
 		ID:           2,
 		AccessPoints: accessPoints,
@@ -487,7 +487,7 @@ func TestGetLease6ByPrefix(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLease6GetByPrefix, nil)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app := &dbmodel.App{
 		ID:           3,
 		AccessPoints: accessPoints,
@@ -521,7 +521,7 @@ func TestGetLease4ByIPAddressEmpty(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := &dbmodel.App{
 		AccessPoints: accessPoints,
 	}
@@ -537,7 +537,7 @@ func TestGetLease6ByIPAddressEmpty(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := &dbmodel.App{
 		AccessPoints: accessPoints,
 	}
@@ -553,7 +553,7 @@ func TestGetLeases4(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLeases4Get, nil)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app := &dbmodel.App{
 		ID:           4,
 		AccessPoints: accessPoints,
@@ -612,7 +612,7 @@ func TestGetLeases6(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLeases6Get, nil)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := &dbmodel.App{
 		ID:           5,
 		AccessPoints: accessPoints,
@@ -687,7 +687,7 @@ func TestGetLeases4Empty(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := &dbmodel.App{
 		AccessPoints: accessPoints,
 	}
@@ -709,7 +709,7 @@ func TestGetLeases6Empty(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLeases6GetEmpty, nil)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app := &dbmodel.App{
 		AccessPoints: accessPoints,
 	}
@@ -726,7 +726,7 @@ func TestGetLeasesByPropertiesSecondError(t *testing.T) {
 	agents := agentcommtest.NewFakeAgents(mockLeases4GetSecondError, nil)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := &dbmodel.App{
 		ID:           4,
 		AccessPoints: accessPoints,
@@ -781,7 +781,7 @@ func TestFindLeases(t *testing.T) {
 	require.NoError(t, err)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app1 := &dbmodel.App{
 		MachineID:    machine1.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -831,7 +831,7 @@ func TestFindLeases(t *testing.T) {
 	require.NoError(t, err)
 
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app2 := &dbmodel.App{
 		MachineID:    machine2.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -867,7 +867,7 @@ func TestFindLeases(t *testing.T) {
 	require.NoError(t, err)
 
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app3 := &dbmodel.App{
 		MachineID:    machine3.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -997,7 +997,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.NoError(t, err)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app := &dbmodel.App{
 		MachineID:    machine.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -1099,7 +1099,7 @@ func TestFindDeclinedLeasesNoLeaseCmds(t *testing.T) {
 	require.NoError(t, err)
 
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := &dbmodel.App{
 		MachineID:    machine.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -1157,7 +1157,7 @@ func TestFindLeasesByHostID(t *testing.T) {
 
 	// Create Kea apps with lease_cmds hooks library loaded.
 	accessPoints1 := []*dbmodel.AccessPoint{}
-	accessPoints1 = dbmodel.AppendAccessPoint(accessPoints1, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints1 = dbmodel.AppendAccessPoint(accessPoints1, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app1 := dbmodel.App{
 		MachineID:    machine1.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -1185,7 +1185,7 @@ func TestFindLeasesByHostID(t *testing.T) {
 
 	// Create Kea apps with lease_cmds hooks library loaded.
 	accessPoints2 := []*dbmodel.AccessPoint{}
-	accessPoints2 = dbmodel.AppendAccessPoint(accessPoints2, dbmodel.AccessPointControl, "localhost", "", 8001)
+	accessPoints2 = dbmodel.AppendAccessPoint(accessPoints2, dbmodel.AccessPointControl, "localhost", "", 8001, false)
 	app2 := dbmodel.App{
 		MachineID:    machine2.ID,
 		Type:         dbmodel.AppTypeKea,

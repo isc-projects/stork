@@ -79,7 +79,7 @@ func TestStatePullerPullData(t *testing.T) {
 		Type:      dbmodel.AppTypeKea,
 		Active:    true,
 		// initial access point is 1.1.1.1
-		AccessPoints: dbmodel.AppendAccessPoint(ap, dbmodel.AccessPointControl, "1.1.1.1", "", 1234),
+		AccessPoints: dbmodel.AppendAccessPoint(ap, dbmodel.AccessPointControl, "1.1.1.1", "", 1234, false),
 		Daemons: []*dbmodel.Daemon{
 			{
 				Active: true,
@@ -137,7 +137,7 @@ func TestAppCompare(t *testing.T) {
 
 	// access point only in dbApp so not equal
 	var ap []*dbmodel.AccessPoint
-	dbApp.AccessPoints = dbmodel.AppendAccessPoint(ap, dbmodel.AccessPointControl, "1.1.1.1", "", 1234)
+	dbApp.AccessPoints = dbmodel.AppendAccessPoint(ap, dbmodel.AccessPointControl, "1.1.1.1", "", 1234, true)
 	require.False(t, appCompare(dbApp, app))
 
 	// the same access points so equal

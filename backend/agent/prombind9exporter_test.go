@@ -19,7 +19,7 @@ type PromFakeBind9AppMonitor struct {
 
 func (fam *PromFakeBind9AppMonitor) GetApps() []App {
 	log.Println("GetApps")
-	accessPoints := makeAccessPoint(AccessPointStatistics, "1.2.3.4", "", 1234)
+	accessPoints := makeAccessPoint(AccessPointStatistics, "1.2.3.4", "", 1234, false)
 	accessPoints = append(accessPoints, AccessPoint{
 		Type:    AccessPointControl,
 		Address: "1.9.5.3",
@@ -36,7 +36,7 @@ func (fam *PromFakeBind9AppMonitor) GetApps() []App {
 	return []App{ba}
 }
 
-func (fam *PromFakeBind9AppMonitor) GetApp(appType, apType, address string, port int64) App {
+func (fam *PromFakeBind9AppMonitor) GetApp(appType, apType, address string, port int64, useSecureProtocol bool) App {
 	return nil
 }
 

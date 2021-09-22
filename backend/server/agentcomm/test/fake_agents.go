@@ -135,8 +135,9 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.A
 	ctrlPoint, _ := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
 	caAddress := ctrlPoint.Address
 	caPort := ctrlPoint.Port
+	caUseSecureProtocol := ctrlPoint.UseSecureProtocol
 
-	caURL := storkutil.HostWithPortURL(caAddress, caPort)
+	caURL := storkutil.HostWithPortURL(caAddress, caPort, caUseSecureProtocol)
 
 	fa.RecordedURL = caURL
 	result := &agentcomm.KeaCmdsResult{}
@@ -164,7 +165,7 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.A
 // response to the command by calling the function specified in the
 // call to NewFakeAgents.
 func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, path string, statsOutput interface{}) error {
-	fa.RecordedStatsURL = storkutil.HostWithPortURL(statsAddress, statsPort) + path
+	fa.RecordedStatsURL = storkutil.HostWithPortURL(statsAddress, statsPort, false) + path
 
 	// Generate response.
 	if fa.mockNamedFunc != nil {

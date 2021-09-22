@@ -192,7 +192,7 @@ func TestFindLeases4(t *testing.T) {
 
 	// Add Kea app with a DHCPv4 configuration loading the lease_cmds hooks library.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app := &dbmodel.App{
 		Name:         "fxz",
 		MachineID:    machine.ID,
@@ -294,7 +294,7 @@ func TestFindLeases6(t *testing.T) {
 
 	// Add Kea app with a DHCPv6 configuration loading the lease_cmds hooks library.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := &dbmodel.App{
 		Name:         "fyz",
 		MachineID:    machine.ID,
@@ -406,7 +406,7 @@ func TestFindLeasesEmptyText(t *testing.T) {
 
 	// Add Kea app with a DHCPv4 configuration loading the lease_cmds hooks library.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app := &dbmodel.App{
 		MachineID:    machine.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -471,7 +471,7 @@ func TestFindDeclinedLeases(t *testing.T) {
 	// Add Kea app with a DHCPv4 and DHCPv6 configuration loading the
 	// lease_cmds hooks library.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := &dbmodel.App{
 		Name:         "fxz",
 		MachineID:    machine.ID,
@@ -598,7 +598,7 @@ func TestFindLeasesByHostID(t *testing.T) {
 
 	// Add Kea app with a DHCPv4 configuration loading the lease_cmds hooks library.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app := &dbmodel.App{
 		MachineID:    machine.ID,
 		Type:         dbmodel.AppTypeKea,

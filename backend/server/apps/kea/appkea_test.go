@@ -200,7 +200,7 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234, true)
 
 	dbApp := dbmodel.App{
 		AccessPoints: accessPoints,
@@ -212,7 +212,7 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 
 	GetAppState(ctx, fa, &dbApp, fec)
 
-	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
+	require.Equal(t, "https://192.0.2.0:1234/", fa.RecordedURL)
 	require.Equal(t, "version-get", fa.RecordedCommands[0].Command)
 	require.Equal(t, "config-get", fa.RecordedCommands[1].Command)
 }
@@ -232,7 +232,7 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234, false)
 
 	dbApp := dbmodel.App{
 		AccessPoints: accessPoints,
@@ -265,7 +265,7 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.0", "", 1234, true)
 
 	dbApp := dbmodel.App{
 		ID:           1,
@@ -316,7 +316,7 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 	require.NotNil(t, state)
 	require.Empty(t, state.SameConfigDaemons)
 
-	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
+	require.Equal(t, "https://192.0.2.0:1234/", fa.RecordedURL)
 	require.Equal(t, "version-get", fa.RecordedCommands[0].Command)
 	require.Equal(t, "config-get", fa.RecordedCommands[1].Command)
 
@@ -473,7 +473,7 @@ func TestCommitAppIntoDB(t *testing.T) {
 
 	// add app with particular access point
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, false)
 	app := &dbmodel.App{
 		ID:           0,
 		MachineID:    machine.ID,
@@ -488,7 +488,7 @@ func TestCommitAppIntoDB(t *testing.T) {
 
 	// now change access point (different port) and trigger updating app in database
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 2345)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 2345, true)
 	app.AccessPoints = accessPoints
 	err = CommitAppIntoDB(db, app, fec, nil)
 	require.NoError(t, err)
@@ -498,4 +498,5 @@ func TestCommitAppIntoDB(t *testing.T) {
 	require.NotNil(t, returned)
 	require.Len(t, returned.AccessPoints, 1)
 	require.EqualValues(t, 2345, returned.AccessPoints[0].Port)
+	require.True(t, returned.AccessPoints[0].UseSecureProtocol)
 }

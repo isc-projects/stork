@@ -383,7 +383,7 @@ func TestDetectHostsFromConfig(t *testing.T) {
 
 	// Creates new app with provided configurations.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -466,7 +466,7 @@ func TestDetectHostsSameConfig(t *testing.T) {
 
 	// Creates new app with provided configurations.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app := dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -544,7 +544,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 
 	// Creates new app with provided configurations.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -1030,7 +1030,7 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 
 	// Creates new app with provided configurations.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -1116,7 +1116,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 
 	// Creates new app with provided configurations.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
 	app := dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -1197,7 +1197,7 @@ func TestReduceHostsIntoDB(t *testing.T) {
 
 	// Creates new app with provided configurations.
 	accessPoints := []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
 	app := dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,

@@ -334,7 +334,7 @@ func TestGetDHCPStatus(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockGetStatusLoadBalancing, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, false)
 
 	app := dbmodel.App{
 		AccessPoints: accessPoints,
@@ -384,7 +384,7 @@ func TestGetDHCPStatus178(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockGetStatusLoadBalancing178, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, true)
 
 	app := dbmodel.App{
 		AccessPoints: accessPoints,
@@ -443,7 +443,7 @@ func TestGetDHCPStatusNoHA(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockGetStatusNoHA, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, false)
 
 	app := dbmodel.App{
 		AccessPoints: accessPoints,
@@ -477,7 +477,7 @@ func TestGetDHCPStatusError(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockGetStatusError, nil)
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, true)
 
 	app := dbmodel.App{
 		AccessPoints: accessPoints,
@@ -531,7 +531,7 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 
 	// Add Kea application to the machine
 	var keaPoints []*dbmodel.AccessPoint
-	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234)
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "", "", 1234, false)
 	keaApp := &dbmodel.App{
 		ID:           0,
 		MachineID:    m.ID,

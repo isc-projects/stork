@@ -49,8 +49,8 @@ func TestGetAppState(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953)
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointStatistics, "127.0.0.1", "abcd", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "127.0.0.1", "abcd", 953, false)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointStatistics, "127.0.0.1", "abcd", 8000, false)
 	dbApp := dbmodel.App{
 		AccessPoints: accessPoints,
 		Machine: &dbmodel.Machine{
@@ -103,7 +103,7 @@ func TestCommitAppIntoDB(t *testing.T) {
 	require.NotZero(t, machine.ID)
 
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 1234, false)
 	app := &dbmodel.App{
 		ID:           0,
 		MachineID:    machine.ID,
@@ -116,7 +116,7 @@ func TestCommitAppIntoDB(t *testing.T) {
 	require.NoError(t, err)
 
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 2345)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "", "", 2345, false)
 	app.AccessPoints = accessPoints
 	err = CommitAppIntoDB(db, app, fec)
 	require.NoError(t, err)

@@ -23,14 +23,14 @@ func (fam *PromFakeAppMonitor) GetApps() []App {
 	ka := &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234),
+			AccessPoints: makeAccessPoint(AccessPointControl, "0.1.2.3", "", 1234, false),
 		},
 		HTTPClient: nil,
 	}
 	return []App{ka}
 }
 
-func (fam *PromFakeAppMonitor) GetApp(appType, apType, address string, port int64) App {
+func (fam *PromFakeAppMonitor) GetApp(appType, apType, address string, port int64, useSecureProtocol bool) App {
 	return nil
 }
 

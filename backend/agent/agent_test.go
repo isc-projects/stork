@@ -80,13 +80,13 @@ func (fam *FakeAppMonitor) GetApps() []App {
 }
 
 // Stub function for AppMonitor. It behaves in the same way as original one.
-func (fam *FakeAppMonitor) GetApp(appType, apType, address string, port int64) App {
+func (fam *FakeAppMonitor) GetApp(appType, apType, address string, port int64, useSecureProtocol bool) App {
 	for _, app := range fam.Apps {
 		if app.GetBaseApp().Type != appType {
 			continue
 		}
 		for _, ap := range app.GetBaseApp().AccessPoints {
-			if ap.Type == apType && ap.Address == address && ap.Port == port {
+			if ap.Type == apType && ap.Address == address && ap.Port == port && ap.UseSecureProtocol == useSecureProtocol {
 				return app
 			}
 		}
@@ -101,12 +101,13 @@ func (fam *FakeAppMonitor) Start(storkAgent *StorkAgent) {
 }
 
 // makeAccessPoint is an utility to make single element app access point slice.
-func makeAccessPoint(tp, address, key string, port int64) (ap []AccessPoint) {
+func makeAccessPoint(tp, address, key string, port int64, useSecureProtocol bool) (ap []AccessPoint) {
 	return append(ap, AccessPoint{
-		Type:    tp,
-		Address: address,
-		Port:    port,
-		Key:     key,
+		Type:              tp,
+		Address:           address,
+		Port:              port,
+		Key:               key,
+		UseSecureProtocol: useSecureProtocol,
 	})
 }
 
@@ -143,17 +144,18 @@ func TestGetState(t *testing.T) {
 	apps = append(apps, &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234),
+			AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234, false),
 		},
 		HTTPClient: nil,
 	})
 
-	accessPoints := makeAccessPoint(AccessPointControl, "2.3.4.4", "abcd", 2345)
+	accessPoints := makeAccessPoint(AccessPointControl, "2.3.4.4", "abcd", 2345, true)
 	accessPoints = append(accessPoints, AccessPoint{
-		Type:    AccessPointStatistics,
-		Address: "2.3.4.5",
-		Port:    2346,
-		Key:     "",
+		Type:              AccessPointStatistics,
+		Address:           "2.3.4.5",
+		Port:              2346,
+		Key:               "",
+		UseSecureProtocol: false,
 	})
 
 	apps = append(apps, &Bind9App{
@@ -176,6 +178,7 @@ func TestGetState(t *testing.T) {
 	point := keaApp.AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "1.2.3.1", point.Address)
+	require.False(t, point.UseSecureProtocol)
 	require.EqualValues(t, 1234, point.Port)
 	require.Empty(t, point.Key)
 
@@ -187,10 +190,12 @@ func TestGetState(t *testing.T) {
 	require.Equal(t, "2.3.4.4", point.Address)
 	require.EqualValues(t, 2345, point.Port)
 	require.Equal(t, "abcd", point.Key)
+	require.True(t, point.UseSecureProtocol)
 	point = bind9App.AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "2.3.4.5", point.Address)
 	require.EqualValues(t, 2346, point.Port)
+	require.False(t, point.UseSecureProtocol)
 	require.Empty(t, point.Key)
 }
 
@@ -420,7 +425,7 @@ func TestForwardToNamedStatsNoNamed(t *testing.T) {
 func TestForwardRndcCommandSuccess(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{
@@ -435,10 +440,11 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
-		Address:     "127.0.0.1",
-		Port:        1234,
-		Key:         "hmac-sha256:abcd",
-		RndcRequest: cmd,
+		Address:           "127.0.0.1",
+		Port:              1234,
+		Key:               "hmac-sha256:abcd",
+		RndcRequest:       cmd,
+		UseSecureProtocol: false,
 	}
 
 	// Expect no error, an OK status code, and an empty status message.
@@ -475,7 +481,7 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 func TestForwardRndcCommandError(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{
@@ -490,10 +496,11 @@ func TestForwardRndcCommandError(t *testing.T) {
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
-		Address:     "127.0.0.1",
-		Port:        1234,
-		Key:         "hmac-sha256:abcd",
-		RndcRequest: cmd,
+		Address:           "127.0.0.1",
+		Port:              1234,
+		Key:               "hmac-sha256:abcd",
+		RndcRequest:       cmd,
+		UseSecureProtocol: false,
 	}
 
 	// Expect an error status code and some message.
@@ -529,7 +536,7 @@ func TestForwardRndcCommandNoApp(t *testing.T) {
 func TestForwardRndcCommandEmpty(t *testing.T) {
 	sa, ctx := setupAgentTest()
 
-	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234)
+	accessPoints := makeAccessPoint(AccessPointControl, "127.0.0.1", "_", 1234, false)
 	var apps []App
 	apps = append(apps, &Bind9App{
 		BaseApp: BaseApp{
@@ -544,10 +551,11 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
-		Address:     "127.0.0.1",
-		Port:        1234,
-		Key:         "hmac-sha256:abcd",
-		RndcRequest: cmd,
+		Address:           "127.0.0.1",
+		Port:              1234,
+		Key:               "hmac-sha256:abcd",
+		RndcRequest:       cmd,
+		UseSecureProtocol: false,
 	}
 
 	// Empty output is not normal, but we are just forwarding, so expect
@@ -707,16 +715,18 @@ func TestPortParam(t *testing.T) {
 func TestGetRootCertificates(t *testing.T) {
 	params := &advancedtls.GetRootCAsParams{}
 
-	// missing cert file error
-	_, err := getRootCertificates(params)
-	require.EqualError(t, err, "could not read CA certificate: /var/lib/stork-agent/certs/ca.pem: open /var/lib/stork-agent/certs/ca.pem: no such file or directory")
-
 	// prepare temp dir for cert files
 	tmpDir, err := ioutil.TempDir("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
+
+	// missing cert file error
+	_, err = getRootCertificates(params)
+	require.EqualError(t, err,
+		fmt.Sprintf("could not read CA certificate: %s/certs/ca.pem: open %s/certs/ca.pem: no such file or directory",
+			tmpDir, tmpDir))
 
 	// store bad cert
 	err = ioutil.WriteFile(RootCAFile, []byte("CACertPEM"), 0600)
@@ -772,10 +782,6 @@ RXkm1+W4cMzZS14MLfmacBHnI7Z4mRKvc+zEdco/l4omlszafmUXxnCOmqZlhqbm
 func TestGetIdentityCertificatesForServer(t *testing.T) {
 	info := &tls.ClientHelloInfo{}
 
-	// missing key files
-	_, err := getIdentityCertificatesForServer(info)
-	require.EqualError(t, err, "could not load key PEM file: /var/lib/stork-agent/certs/key.pem: open /var/lib/stork-agent/certs/key.pem: no such file or directory")
-
 	// prepare temp dir for cert files
 	tmpDir, err := ioutil.TempDir("", "reg")
 	require.NoError(t, err)
@@ -784,6 +790,11 @@ func TestGetIdentityCertificatesForServer(t *testing.T) {
 	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
+
+	// missing key files
+	_, err = getIdentityCertificatesForServer(info)
+	require.EqualError(t, err,
+		fmt.Sprintf("could not load key PEM file: %s/certs/key.pem: open %s/certs/key.pem: no such file or directory", tmpDir, tmpDir))
 
 	// store bad content to files
 	err = ioutil.WriteFile(KeyPEMFile, []byte("KeyPEMFile"), 0600)

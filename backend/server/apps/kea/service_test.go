@@ -106,7 +106,7 @@ func TestDetectHAServices(t *testing.T) {
 	// Add the first Kea being a DHCPv4 secondary in load-balancing configuration
 	// and the DHCPv6 standby in the standby configuration.
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.66", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.66", "", 8000, false)
 
 	app := dbmodel.App{
 		MachineID:    m.ID,
@@ -218,7 +218,7 @@ func TestDetectHAServices(t *testing.T) {
 	require.NoError(t, err)
 
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.133", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.133", "", 8000, false)
 	app = dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -273,7 +273,7 @@ func TestDetectHAServices(t *testing.T) {
 
 	// The primary server includes both DHCPv4 and DHCPv6 configurations.
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.33", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.33", "", 8000, true)
 	app = dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -354,7 +354,7 @@ func TestDetectHAServices(t *testing.T) {
 	require.NoError(t, err)
 
 	accessPoints = []*dbmodel.AccessPoint{}
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.166", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.166", "", 8000, false)
 	app = dbmodel.App{
 		MachineID:    m.ID,
 		Type:         dbmodel.AppTypeKea,
@@ -405,7 +405,7 @@ func TestAppBelongsToHAServiceBlankService(t *testing.T) {
 	}
 	// Create an app.
 	var accessPoints []*dbmodel.AccessPoint
-	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.66", "", 8000)
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "192.0.2.66", "", 8000, true)
 	app := &dbmodel.App{
 		Type:         dbmodel.AppTypeKea,
 		AccessPoints: accessPoints,

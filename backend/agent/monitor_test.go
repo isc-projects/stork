@@ -31,12 +31,12 @@ func TestGetApp(t *testing.T) {
 	apps = append(apps, &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
-			AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234),
+			AccessPoints: makeAccessPoint(AccessPointControl, "1.2.3.1", "", 1234, true),
 		},
 		HTTPClient: nil,
 	})
 
-	accessPoints := makeAccessPoint(AccessPointControl, "2.3.4.4", "abcd", 2345)
+	accessPoints := makeAccessPoint(AccessPointControl, "2.3.4.4", "abcd", 2345, false)
 	accessPoints = append(accessPoints, AccessPoint{
 		Type:    AccessPointStatistics,
 		Address: "2.3.4.5",
@@ -63,7 +63,7 @@ func TestGetApp(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		app := am.GetApp(AppTypeKea, AccessPointControl, "1.2.3.1", 1234)
+		app := am.GetApp(AppTypeKea, AccessPointControl, "1.2.3.1", 1234, true)
 		require.NotNil(t, app)
 		require.EqualValues(t, AppTypeKea, app.GetBaseApp().Type)
 	}()
@@ -75,7 +75,7 @@ func TestGetApp(t *testing.T) {
 	wg.Add(1) // expect 1 Done in the wait group
 	go func() {
 		defer wg.Done()
-		app := am.GetApp(AppTypeBind9, AccessPointControl, "2.3.4.4", 2345)
+		app := am.GetApp(AppTypeBind9, AccessPointControl, "2.3.4.4", 2345, false)
 		require.NotNil(t, app)
 		require.EqualValues(t, AppTypeBind9, app.GetBaseApp().Type)
 	}()
@@ -87,7 +87,7 @@ func TestGetApp(t *testing.T) {
 	wg.Add(1) // expect 1 Done in the wait group
 	go func() {
 		defer wg.Done()
-		app := am.GetApp(AppTypeKea, AccessPointControl, "0.0.0.0", 1)
+		app := am.GetApp(AppTypeKea, AccessPointControl, "0.0.0.0", 1, false)
 		require.Nil(t, app)
 	}()
 	ret = <-am.(*appMonitor).requests
@@ -98,9 +98,10 @@ func TestGetApp(t *testing.T) {
 func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
 	// check reading from non existing file
 	path := "/tmp/non-existing-path"
-	address, port := getCtrlAddressFromKeaConfig(path)
+	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(path)
 	require.EqualValues(t, 0, port)
 	require.Empty(t, address)
+	require.False(t, useSecureProtocol)
 }
 
 func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
@@ -119,9 +120,10 @@ func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 
 	// check reading from prepared file with bad content
 	// so 0 should be returned as port
-	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
+	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(tmpFile.Name())
 	require.EqualValues(t, 0, port)
 	require.Empty(t, address)
+	require.False(t, useSecureProtocol)
 }
 
 func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
@@ -139,9 +141,10 @@ func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
 	require.NoError(t, err)
 
 	// check reading from proper file
-	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
+	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(tmpFile.Name())
 	require.EqualValues(t, 1234, port)
 	require.Equal(t, "host.example.org", address)
+	require.False(t, useSecureProtocol)
 }
 
 func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
@@ -161,9 +164,10 @@ func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
 	// check reading from proper file;
 	// if CA is listening on 0.0.0.0 then 127.0.0.1 should be returned
 	// as it is not possible to connect to 0.0.0.0
-	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
+	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(tmpFile.Name())
 	require.EqualValues(t, 1234, port)
 	require.Equal(t, "127.0.0.1", address)
+	require.False(t, useSecureProtocol)
 }
 
 func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
@@ -183,9 +187,10 @@ func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
 	// check reading from proper file;
 	// if CA is listening on :: then ::1 should be returned
 	// as it is not possible to connect to ::
-	address, port := getCtrlAddressFromKeaConfig(tmpFile.Name())
+	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(tmpFile.Name())
 	require.EqualValues(t, 1234, port)
 	require.Equal(t, "::1", address)
+	require.False(t, useSecureProtocol)
 }
 
 func TestDetectApps(t *testing.T) {

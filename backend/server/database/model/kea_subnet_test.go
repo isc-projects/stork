@@ -22,7 +22,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 
 	// Add Kea app with DHCPv4 subnets in two shared networks.
 	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1114)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1114, false)
 	a4 := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -139,7 +139,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 
 	// Add Kea app with DHCPv6 subnets, one global and one within a shared network.
 	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1116)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1116, true)
 	a6 := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -193,7 +193,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 
 	// Kea app with DHCPv4 and DHCPv6 subnets.
 	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1146)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1146, false)
 	a46 := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -439,7 +439,7 @@ func TestGetSubnetsByPageNoSubnets(t *testing.T) {
 
 	// Add Kea DHCPv4 without subnets
 	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1114)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1114, true)
 	a4 := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -481,7 +481,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 
 	// add app kea with dhcp4 to machine
 	var accessPoints []*AccessPoint
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1114)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1114, false)
 	a4 := &App{
 		ID:           0,
 		MachineID:    m.ID,
@@ -557,7 +557,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 
 	// add app kea with dhcp6 to machine
 	accessPoints = []*AccessPoint{}
-	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1116)
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1116, true)
 	a6 := &App{
 		ID:           0,
 		MachineID:    m.ID,
