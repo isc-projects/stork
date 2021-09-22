@@ -160,10 +160,11 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		var accessPoints []*agentapi.AccessPoint
 		for _, point := range app.GetBaseApp().AccessPoints {
 			accessPoints = append(accessPoints, &agentapi.AccessPoint{
-				Type:    point.Type,
-				Address: point.Address,
-				Port:    point.Port,
-				Key:     point.Key,
+				Type:              point.Type,
+				Address:           point.Address,
+				Port:              point.Port,
+				Key:               point.Key,
+				UseSecureProtocol: point.UseSecureProtocol,
 			})
 		}
 
@@ -210,7 +211,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 		RndcResponse: rndcRsp,
 	}
 
-	app := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, in.Address, in.Port)
+	app := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, in.Address, in.Port, in.UseSecureProtocol)
 	if app == nil {
 		rndcRsp.Status.Code = agentapi.Status_ERROR
 		rndcRsp.Status.Message = "Cannot find BIND 9 app"

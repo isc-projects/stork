@@ -194,6 +194,8 @@
          type: integer
        key:
          type: string
+       useSecureProtocol:
+         type: boolean
 
   App:
     type: object

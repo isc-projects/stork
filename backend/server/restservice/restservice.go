@@ -219,7 +219,7 @@ func (r *RestAPI) Serve() (err error) {
 	}
 
 	if s.StaticFilesDir == "" {
-		s.StaticFilesDir = "./webui/dist/stork/"
+		s.StaticFilesDir = "./webui/dist/stork"
 	}
 	httpServer.Handler = r.GlobalMiddleware(r.handler, s.StaticFilesDir, r.EventCenter)
 

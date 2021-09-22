@@ -484,7 +484,7 @@ func (pke *PromKeaExporter) collectStats() error {
 			log.Errorf("problem with getting stats from kea, bad Kea access control point: %+v", err)
 			continue
 		}
-		caURL := storkutil.HostWithPortURL(ctrl.Address, ctrl.Port)
+		caURL := storkutil.HostWithPortURL(ctrl.Address, ctrl.Port, ctrl.UseSecureProtocol)
 		httpRsp, err := pke.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
 		if err != nil {
 			lastErr = err

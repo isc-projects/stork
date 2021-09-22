@@ -24,10 +24,11 @@ import (
 // An access point for an application to retrieve information such
 // as status or metrics.
 type AccessPoint struct {
-	Type    string
-	Address string
-	Port    int64
-	Key     string
+	Type              string
+	Address           string
+	Port              int64
+	Key               string
+	UseSecureProtocol bool
 }
 
 // Currently supported types are: "control" and "statistics".
@@ -114,10 +115,11 @@ func (agents *connectedAgentsData) GetState(ctx context.Context, address string,
 
 		for _, point := range app.AccessPoints {
 			accessPoints = append(accessPoints, AccessPoint{
-				Type:    point.Type,
-				Address: point.Address,
-				Port:    point.Port,
-				Key:     point.Key,
+				Type:              point.Type,
+				Address:           point.Address,
+				Port:              point.Port,
+				Key:               point.Key,
+				UseSecureProtocol: point.UseSecureProtocol,
 			})
 		}
 
@@ -172,9 +174,10 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, dbApp
 
 	// Prepare the on-wire representation of the commands.
 	req := &agentapi.ForwardRndcCommandReq{
-		Address: ctrlPoint.Address,
-		Port:    ctrlPoint.Port,
-		Key:     ctrlPoint.Key,
+		Address:           ctrlPoint.Address,
+		Port:              ctrlPoint.Port,
+		Key:               ctrlPoint.Key,
+		UseSecureProtocol: ctrlPoint.UseSecureProtocol,
 		RndcRequest: &agentapi.RndcRequest{
 			Request: command,
 		},
@@ -278,7 +281,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, dbApp
 // construct the URL to the statistics-channel of the named daemon.
 func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agentAddress string, agentPort int64, statsAddress string, statsPort int64, statsPath string, statsOutput interface{}) error {
 	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
-	statsURL := storkutil.HostWithPortURL(statsAddress, statsPort)
+	statsURL := storkutil.HostWithPortURL(statsAddress, statsPort, false)
 	statsURL += statsPath
 
 	// Prepare the on-wire representation of the commands.
@@ -383,9 +386,10 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbA
 	}
 	caAddress := ctrlPoint.Address
 	caPort := ctrlPoint.Port
+	caUseSecureProtocol := ctrlPoint.UseSecureProtocol
 
 	addrPort := net.JoinHostPort(agentAddress, strconv.FormatInt(agentPort, 10))
-	caURL := storkutil.HostWithPortURL(caAddress, caPort)
+	caURL := storkutil.HostWithPortURL(caAddress, caPort, caUseSecureProtocol)
 
 	// Prepare the on-wire representation of the commands.
 	fdReq := &agentapi.ForwardToKeaOverHTTPReq{

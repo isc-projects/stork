@@ -46,8 +46,12 @@ func UTCNow() time.Time {
 }
 
 // Returns URL of the host with port.
-func HostWithPortURL(address string, port int64) string {
-	return fmt.Sprintf("http://%s:%d/", address, port)
+func HostWithPortURL(address string, port int64, secure bool) string {
+	protocol := "http"
+	if secure {
+		protocol = "https"
+	}
+	return fmt.Sprintf("%s://%s:%d/", protocol, address, port)
 }
 
 // Parses URL into host and port.

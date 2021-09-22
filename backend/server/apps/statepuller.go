@@ -201,10 +201,11 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 		var accessPoints []*dbmodel.AccessPoint
 		for _, point := range app.AccessPoints {
 			accessPoints = append(accessPoints, &dbmodel.AccessPoint{
-				Type:    point.Type,
-				Address: point.Address,
-				Port:    point.Port,
-				Key:     point.Key,
+				Type:              point.Type,
+				Address:           point.Address,
+				Port:              point.Port,
+				Key:               point.Key,
+				UseSecureProtocol: point.UseSecureProtocol,
 			})
 		}
 		dbApp.AccessPoints = accessPoints

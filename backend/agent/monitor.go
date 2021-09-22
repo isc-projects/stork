@@ -17,10 +17,11 @@ import (
 // An access point for an application to retrieve information such
 // as status or metrics.
 type AccessPoint struct {
-	Type    string
-	Address string
-	Port    int64
-	Key     string
+	Type              string
+	Address           string
+	Port              int64
+	UseSecureProtocol bool
+	Key               string
 }
 
 // Currently supported types are: "control" and "statistics".
@@ -30,7 +31,7 @@ const (
 )
 
 // Base application information. This structure is embedded
-// in other app specific structs like KeaApp and Bind9App.
+// in other app specific structures like KeaApp and Bind9App.
 type BaseApp struct {
 	Pid          int32
 	Type         string
@@ -53,7 +54,7 @@ const (
 
 type AppMonitor interface {
 	GetApps() []App
-	GetApp(appType, apType, address string, port int64) App
+	GetApp(appType, apType, address string, port int64, useSecureProtocol bool) App
 	Start(agent *StorkAgent)
 	Shutdown()
 }
@@ -153,6 +154,9 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 				if acPtNew.Port != acPtOld.Port {
 					continue
 				}
+				if acPtNew.UseSecureProtocol != acPtOld.UseSecureProtocol {
+					continue
+				}
 			}
 			found = true
 		}
@@ -166,7 +170,11 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 		for _, app := range newUpdatedApps {
 			var acPts []string
 			for _, acPt := range app.GetBaseApp().AccessPoints {
-				s := fmt.Sprintf("%s: %s:%d", acPt.Type, acPt.Address, acPt.Port)
+				protocol := "http"
+				if acPt.UseSecureProtocol {
+					protocol = "https"
+				}
+				s := fmt.Sprintf("%s: %s://%s:%d", acPt.Type, protocol, acPt.Address, acPt.Port)
 				acPts = append(acPts, s)
 			}
 			log.Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
@@ -255,8 +263,9 @@ func (sm *appMonitor) detectAllowedLogs(storkAgent *StorkAgent) {
 			err = errors.WithMessagef(err, "failed to detect log files for Kea")
 			log.WithFields(
 				log.Fields{
-					"address": ap.Address,
-					"port":    ap.Port,
+					"address":           ap.Address,
+					"port":              ap.Port,
+					"useSecureProtocol": ap.UseSecureProtocol,
 				},
 			).Warn(err)
 		} else {
@@ -276,14 +285,14 @@ func (sm *appMonitor) GetApps() []App {
 }
 
 // Get an app from a monitor that matches provided params.
-func (sm *appMonitor) GetApp(appType, apType, address string, port int64) App {
+func (sm *appMonitor) GetApp(appType, apType, address string, port int64, useSecureProtocol bool) App {
 	apps := sm.GetApps()
 	for _, app := range apps {
 		if app.GetBaseApp().Type != appType {
 			continue
 		}
 		for _, ap := range app.GetBaseApp().AccessPoints {
-			if ap.Type == apType && ap.Address == address && ap.Port == port {
+			if ap.Type == apType && ap.Address == address && ap.Port == port && ap.UseSecureProtocol == useSecureProtocol {
 				return app
 			}
 		}

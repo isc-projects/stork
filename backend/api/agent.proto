@@ -77,6 +77,7 @@ message AccessPoint {
   string address = 2;
   int64 port = 3;
   string key = 4;
+  bool useSecureProtocol = 5;
 }
 
 // Basic information about application.
@@ -127,8 +128,8 @@ message ForwardRndcCommandReq {
   string Address = 1;
   int64 Port = 2;
   string Key = 3;
-
-  RndcRequest rndcRequest = 4;
+  bool UseSecureProtocol = 4;
+  RndcRequest rndcRequest = 5;
 }
 
 // Response from Rndc.

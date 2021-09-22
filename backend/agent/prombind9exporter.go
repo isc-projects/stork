@@ -116,7 +116,7 @@ func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor) *PromBin
 		prometheus.BuildFQName(namespace, "", "incoming_queries_tcp"),
 		"Number of incoming TCP queries.",
 		nil, nil)
-	// incoming_queryies_udp
+	// incoming_queries_udp
 	serverStatsDesc["QryUDP"] = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "incoming_queries_udp"),
 		"Number of incoming UDP queries.",
@@ -404,7 +404,7 @@ func (pbe *PromBind9Exporter) collectTime(ch chan<- prometheus.Metric, key strin
 	}
 }
 
-// qryRTTHistrogram collects a histogram from QryRTT statistics.
+// qryRTTHistogram collects a histogram from QryRTT statistics.
 // RTT buckets are per second, for example bucket[0.8] stores how many query
 // round trips took up to 800 milliseconds (cumulative counter).
 // The total sum of all observed values is exposed with sum, but since named
@@ -473,7 +473,7 @@ func (pbe *PromBind9Exporter) qryRTTHistogram(stats map[string]float64) (uint64,
 	return count, math.NaN(), buckets, nil
 }
 
-// trafficSizesHistrogram collects a histogram from the traffic statistics as.
+// trafficSizesHistogram collects a histogram from the traffic statistics as.
 // 'buckets'.  Size buckets are in bytes, for example bucket[47] stores how
 // many packets were at most 47 bytes long (cumulative counter).  The total
 // sum of all observed values is exposed with 'sum', but since named does not
@@ -1181,7 +1181,7 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 			log.Errorf("problem with getting stats from BIND 9, bad access statistics point: %+v", err)
 			continue
 		}
-		address := storkutil.HostWithPortURL(sap.Address, sap.Port)
+		address := storkutil.HostWithPortURL(sap.Address, sap.Port, sap.UseSecureProtocol)
 		path := "json/v1"
 		url := fmt.Sprintf("%s%s", address, path)
 		httpRsp, err := pbe.HTTPClient.Call(url, bytes.NewBuffer([]byte(request)))

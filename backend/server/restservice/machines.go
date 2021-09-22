@@ -785,10 +785,11 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 	var accessPoints []*models.AppAccessPoint
 	for _, point := range dbApp.AccessPoints {
 		accessPoints = append(accessPoints, &models.AppAccessPoint{
-			Type:    point.Type,
-			Address: point.Address,
-			Port:    point.Port,
-			Key:     point.Key,
+			Type:              point.Type,
+			Address:           point.Address,
+			Port:              point.Port,
+			Key:               point.Key,
+			UseSecureProtocol: point.UseSecureProtocol,
 		})
 	}
 	app.AccessPoints = accessPoints

@@ -30,7 +30,7 @@ func (ka *KeaApp) GetBaseApp() *BaseApp {
 // Sends a command to Kea and returns a response.
 func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) error {
 	ap := &ka.BaseApp.AccessPoints[0]
-	caURL := storkutil.HostWithPortURL(ap.Address, ap.Port)
+	caURL := storkutil.HostWithPortURL(ap.Address, ap.Port, ap.UseSecureProtocol)
 
 	// Get the textual representation of the command.
 	request := command.Marshal()
@@ -188,26 +188,28 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	return paths, nil
 }
 
-func getCtrlAddressFromKeaConfig(path string) (string, int64) {
+func getCtrlTargetFromKeaConfig(path string) (string, int64, bool) {
 	text, err := storkutil.ReadFileWithIncludes(path)
 	if err != nil {
 		log.Warnf("cannot read Kea config file: %+v", err)
-		return "", 0
+		return "", 0, false
 	}
 
+	// Port
 	ptrn := regexp.MustCompile(`"http-port"\s*:\s*([0-9]+)`)
 	m := ptrn.FindStringSubmatch(text)
 	if len(m) == 0 {
 		log.Warnf("cannot parse http-port: %+v", err)
-		return "", 0
+		return "", 0, false
 	}
 
 	port, err := strconv.Atoi(m[1])
 	if err != nil {
 		log.Warnf("cannot parse http-port: %+v", err)
-		return "", 0
+		return "", 0, false
 	}
 
+	// Address
 	ptrn = regexp.MustCompile(`"http-host"\s*:\s*\"(\S+)\"\s*,`)
 	m = ptrn.FindStringSubmatch(text)
 	address := "localhost"
@@ -222,7 +224,18 @@ func getCtrlAddressFromKeaConfig(path string) (string, int64) {
 		}
 	}
 
-	return address, int64(port)
+	// Secure protocol
+	anchorPtrn := regexp.MustCompile(`"trust-anchor"\s*:\s*".*?"`)
+	certPtrn := regexp.MustCompile(`"cert-file"\s*:\s*".*?"`)
+	keyPtrn := regexp.MustCompile(`"key-file"\s*:\s*".*?"`)
+
+	hasAnchor := anchorPtrn.MatchString(text)
+	hasCert := certPtrn.MatchString(text)
+	hasKey := keyPtrn.MatchString(text)
+
+	useSecureProtocol := hasAnchor && hasCert && hasKey
+
+	return address, int64(port), useSecureProtocol
 }
 
 func detectKeaApp(match []string, cwd string) App {
@@ -237,15 +250,16 @@ func detectKeaApp(match []string, cwd string) App {
 		keaConfPath = path.Join(cwd, keaConfPath)
 	}
 
-	address, port := getCtrlAddressFromKeaConfig(keaConfPath)
-	if port == 0 || len(address) == 0 {
+	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(keaConfPath)
+	if address == "" || port == 0 {
 		return nil
 	}
 	accessPoints := []AccessPoint{
 		{
-			Type:    AccessPointControl,
-			Address: address,
-			Port:    port,
+			Type:              AccessPointControl,
+			Address:           address,
+			Port:              port,
+			UseSecureProtocol: useSecureProtocol,
 		},
 	}
 	keaApp := &KeaApp{
