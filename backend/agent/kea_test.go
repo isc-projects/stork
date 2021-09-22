@@ -126,7 +126,7 @@ func TestKeaAllowedLogs(t *testing.T) {
 	caResponse := make([]map[string]interface{}, 1)
 	err := json.Unmarshal([]byte(caResponseJSON), &caResponse)
 	require.NoError(t, err)
-	gock.New("http://localhost:45634").
+	gock.New("https://localhost:45634").
 		MatchHeader("Content-Type", "application/json").
 		JSON(map[string]string{"command": "config-get"}).
 		Post("/").
