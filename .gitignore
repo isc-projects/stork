@@ -60,3 +60,8 @@ TAGS
 /tests/system/__pycache__/
 /tests/system/test-results/
 /tests/system/ui/__pycache__/
+.vscode/
+/isc-stork-*.deb
+/isc-stork-*.rpm
+*.code-workspace
+/backend/api/stork/backend/api/agent/protocol/agent.pb.go
