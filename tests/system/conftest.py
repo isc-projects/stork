@@ -1,12 +1,13 @@
+import datetime
+import glob
 import os
+from pathlib import Path
 import re
+import shutil
 import sys
 import time
-import glob
-import shutil
-import datetime
-import subprocess
-from pathlib import Path
+import traceback
+from typing import Any, List, Literal, Sequence, Tuple
 
 import pytest
 
@@ -106,31 +107,31 @@ def pytest_configure(config):
         shutil.rmtree(tests_dir)
 
 
-@pytest.hookimpl(hookwrapper=True)
-def pytest_pyfunc_call(pyfuncitem):
-    """The purpose of this hook is:
-    1. replacing test case system name arguments with container instances
-    2. run the test case
-    3. after testing collect logs from these containers
-       and store them in `test-results` folder
-    """
+def _prepare_containers(containers_to_create: Sequence[Tuple[str, str]]) \
+        -> Sequence[Tuple[Literal['agent', 'server'], Any]]:
+    """Build and run all necessary containers.
+       Accepts sequence of tuples with container type (agent or server) and
+       container operating system name.
+       Return created, started containers."""
     import containers
 
     # change test case arguments from container system names
     # to actual started container instances
-    server_containers = []
-    agent_containers = []
-    for name, val in pyfuncitem.funcargs.items():
+    server_containers: List[containers.StorkServerContainer] = []
+    agent_containers: List[containers.StorkAgentContainer] = []
+    # Must have a specific order
+    # Items are tuples with container type and container object
+    all_containers: List[Tuple[Literal['agent', 'server'], containers.Container]] = []  
+    for name, val in containers_to_create:
         if name.startswith('agent'):
             a = containers.StorkAgentContainer(alias=val)
             agent_containers.append(a)
-            pyfuncitem.funcargs[name] = a
+            all_containers.append(('agent', a))
         elif name.startswith('server'):
             s = containers.StorkServerContainer(alias=val)
             server_containers.append(s)
-            pyfuncitem.funcargs[name] = s
+            all_containers.append(('server', s))
     assert len(server_containers) <= 1
-    all_containers = server_containers + agent_containers
 
     # start all agent containers in background so they can run in parallel and be ready quickly
     if server_containers:
@@ -142,10 +143,34 @@ def pytest_pyfunc_call(pyfuncitem):
         c.setup_bg(None, server_containers[0].mgmt_ip)
 
     # wait for all containers
-    for c in all_containers:
+    for _, c in all_containers:
         c.setup_wait()
         print('CONTAINER %s READY @ %s' % (c.name, c.mgmt_ip))
+
     time.sleep(3)
+
+    return all_containers
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_pyfunc_call(pyfuncitem):
+    """The purpose of this hook is:
+    1. replacing test case system name arguments with container instances
+    2. run the test case
+    3. after testing collect logs from these containers
+       and store them in `test-results` folder
+    """
+    # Prepare containers - build and run
+    try:
+        containers = _prepare_containers(pyfuncitem.funcargs.items())
+    except Exception:
+        print("ERROR: CANNOT PREPARE THE CONTAINERS")
+        print(traceback.format_exc())
+        raise
+
+    # Assign containers to test arguments
+    for (name, _), (_, container) in zip(pyfuncitem.funcargs.items(), containers):
+        pyfuncitem.funcargs[name] = container
 
     try:
         # DO RUN TEST CASE
@@ -171,13 +196,13 @@ def pytest_pyfunc_call(pyfuncitem):
         test_dir.mkdir()
 
         # download stork server and agent logs to test dir
-        for idx, s in enumerate(server_containers):
+        for idx, s in enumerate(c for t, c in containers if t == 'server'):
             _, out, _ = s.run('journalctl -u isc-stork-server')
             fname = test_dir / ('stork-server-%d.log' % idx)
             with open(fname, 'w') as f:
                 f.write(out)
             s.stop()
-        for idx, a in enumerate(agent_containers):
+        for idx, a in enumerate(c for t, c in containers if t == 'agent'):
             _, out, _ = a.run('journalctl -u isc-stork-agent')
             fname = test_dir / ('stork-agent-%d.log' % idx)
             with open(fname, 'w') as f:
