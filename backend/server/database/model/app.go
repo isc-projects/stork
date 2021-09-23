@@ -7,7 +7,6 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	pkgerrors "github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -303,13 +302,14 @@ func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
 		var pgErr pg.Error
 		ok := errors.As(pkgerrors.Cause(err), &pgErr)
 		// Is it a conflict on an unique constraint?
-		if !ok || pgErr.Field('C') != "23505" {
+		hasInsertConflict = ok && // 1. Must be PG Error
+			pgErr.Field('C') == "23505" && // 2. Must be unique constraint violation
+			pgErr.Field('t') == "app" && // 3. Must be on the App table
+			pgErr.Field('n') == "app_name_unique" // 4. Must be on specific index
+
+		if !hasInsertConflict {
 			return nil, nil, false, pkgerrors.Wrapf(err, "unexpected error during insert app")
 		}
-		log.Warnf("Unique conflict handled - has insert conflict: %+v", err)
-		log.Warnf("Postgres exception: %+v", pgErr)
-
-		hasInsertConflict = true
 	}
 
 	// Stage 2: Check conflict and retrieve AppID if needed
