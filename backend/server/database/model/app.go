@@ -7,6 +7,7 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 	pkgerrors "github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -305,6 +306,8 @@ func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
 		if !ok || pgErr.Field('C') != "23505" {
 			return nil, nil, false, pkgerrors.Wrapf(err, "unexpected error during insert app")
 		}
+		log.Warnf("Unique conflict handled - has insert conflict: %+v", err)
+		log.Warnf("Postgres exception: %+v", pgErr)
 
 		hasInsertConflict = true
 	}
