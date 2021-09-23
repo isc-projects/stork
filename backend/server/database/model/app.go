@@ -2,6 +2,8 @@ package dbmodel
 
 import (
 	"errors"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -289,36 +291,63 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 //    this stage, no matter if this is an insert or an update.
 // 3. Update the app.
 func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
-	hasInsertConflict := false
+	var pgErr pg.Error
+
 	if app.ID == 0 {
 		// New app, insert it.
 		addedDaemons, err := AddApp(db, app)
+		err = pkgerrors.Wrapf(err, "error during insert app")
 
 		if err == nil {
 			return addedDaemons, nil, true, nil
 		}
 
 		// AddApp fails
-		var pgErr pg.Error
 		ok := errors.As(pkgerrors.Cause(err), &pgErr)
 		// Is it a conflict on an unique constraint?
-		hasInsertConflict = ok && // 1. Must be PG Error
-			pgErr.Field('C') == "23505" && // 2. Must be unique constraint violation
-			pgErr.Field('t') == "app" && // 3. Must be on the App table
-			pgErr.Field('n') == "app_name_unique" // 4. Must be on specific index
-
-		if !hasInsertConflict {
-			return nil, nil, false, pkgerrors.Wrapf(err, "unexpected error during insert app")
+		if !ok || pgErr.Field('C') != "23505" {
+			return nil, nil, false, err
 		}
 	}
 
 	// Stage 2: Check conflict and retrieve AppID if needed
-	if hasInsertConflict {
-		// Get App ID
-		existingApp, err := getAppByName(db, app.Name)
-		if err != nil {
-			return nil, nil, false, pkgerrors.Wrapf(err, "cannot fetch app by name: %s", app.Name)
+	if pgErr != nil {
+		// Conflict on app name
+		tableName := pgErr.Field('t')
+		constraintName := pgErr.Field('n')
+		description := pgErr.Field('D')
+		var err error
+
+		var existingApp *App
+		if tableName == "app" && constraintName == "app_name_unique" {
+			existingApp, err = getAppByName(db, app.Name)
+			err = pkgerrors.Wrapf(err, "cannot fetch app by name: %s", app.Name)
+		} else if tableName == "access_point" && constraintName == "access_point_unique_idx" {
+			pattern := regexp.MustCompile(`\(machine_id, port\)=\((\d+), (\d+)\)`)
+			var machineID int
+			var port int
+
+			m := pattern.FindStringSubmatch(description)
+			if len(m) < 3 {
+				return nil, nil, false, pkgerrors.Wrapf(err, "cannot match keys")
+			}
+			machineID, err = strconv.Atoi(m[1])
+			if err != nil {
+				return nil, nil, false, pkgerrors.Wrapf(err, "cannot parse machine ID")
+			}
+			port, err = strconv.Atoi(m[2])
+			if err != nil {
+				return nil, nil, false, pkgerrors.Wrapf(err, "cannot parse port")
+			}
+
+			existingApp, err = getAppByAccessPoint(db, int64(machineID), int64(port))
+			err = pkgerrors.Wrapf(err, "cannot fetch app by access point (machine: %d, port: %d)", machineID, port)
 		}
+
+		if err != nil {
+			return nil, nil, false, err
+		}
+
 		app.ID = existingApp.ID
 		app.CreatedAt = existingApp.CreatedAt
 	}
@@ -326,7 +355,7 @@ func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
 	// Stage 3: Update application
 	// Existing app, update it if needed.
 	addedDaemons, deletedDaemons, err := UpdateApp(db, app)
-	return addedDaemons, deletedDaemons, false, pkgerrors.Wrapf(err, "Invalid update for app: %+v, hasInsertConflict: %t", app, hasInsertConflict)
+	return addedDaemons, deletedDaemons, false, pkgerrors.Wrapf(err, "Invalid update for app: %+v, hasInsertConflict: %t", app, pgErr != nil)
 }
 
 // Updates specified app's name. It returns app instance with old name and possibly
@@ -388,6 +417,19 @@ func getAppByName(db *pg.DB, name string) (*App, error) {
 	app := App{}
 	q := db.Model(&app)
 	q = q.Where("app.name = ?", name)
+	err := q.Select()
+	return &app, err
+}
+
+// Return app with an access point with given machine ID and port.
+// It doesn't include related entries. Intended to the internal use.
+func getAppByAccessPoint(db *pg.DB, machineID int64, port int64) (*App, error) {
+	app := App{}
+	q := db.Model(&app)
+	q = q.Column(("AccessPoints"))
+	q = q.Relation("AccessPoints", func(q *orm.Query) (*orm.Query, error) {
+		return q.Where("machine_id = ? AND port = ?", machineID, port), nil
+	})
 	err := q.Select()
 	return &app, err
 }

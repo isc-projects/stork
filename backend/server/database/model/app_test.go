@@ -607,6 +607,124 @@ func TestAddOrUpdateApp(t *testing.T) {
 	require.EqualValues(t, deletedDaemons[0].Name, "kea-dhcp4")
 }
 
+// Test that the app is correctly updated if it is inserted as new with
+// an unique name and existing access points.
+func TestAddOrUpdateExistingAppWithDifferentName(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// add first machine, should be no error
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotZero(t, m.ID)
+
+	accessPoints := []*AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "cool.example.org", "", 1234)
+
+	rawConfig, err := json.Marshal(configGen.GenerateKeaConfig(5000))
+	require.NoError(t, err)
+	dhcp4Config, err := NewKeaConfigFromJSON(string(rawConfig))
+	require.NoError(t, err)
+	require.NotNil(t, dhcp4Config)
+
+	caConfig, err := NewKeaConfigFromJSON(`{
+        "Control-agent": {
+            "http-host": "10.20.30.40"
+        }
+    }`)
+	require.NoError(t, err)
+	require.NotNil(t, caConfig)
+
+	protoApp := App{
+		ID:           0,
+		MachineID:    m.ID,
+		Type:         AppTypeKea,
+		Name:         "kea-app",
+		Active:       true,
+		AccessPoints: accessPoints,
+		Daemons: []*Daemon{
+			{
+				Name:    "kea-dhcp4",
+				Version: "1.7.5",
+				Active:  true,
+				KeaDaemon: &KeaDaemon{
+					Config: dhcp4Config,
+					KeaDHCPDaemon: &KeaDHCPDaemon{
+						Stats: KeaDHCPDaemonStats{
+							RPS1: 1024,
+							RPS2: 2048,
+						},
+					},
+				},
+				LogTargets: []*LogTarget{
+					{
+						Name:     "frog",
+						Severity: "ERROR",
+						Output:   "stdout",
+					},
+					{
+						Name:     "lion",
+						Severity: "FATAL",
+						Output:   "/tmp/filename.log",
+					},
+				},
+			},
+			{
+				Name:    "kea-ctrl-agent",
+				Version: "1.7.4",
+				Active:  false,
+				KeaDaemon: &KeaDaemon{
+					Config: caConfig,
+				},
+				LogTargets: []*LogTarget{
+					{
+						Name:     "foo",
+						Severity: "INFO",
+						Output:   "stdout",
+					},
+					{
+						Name:     "bar",
+						Severity: "DEBUG",
+						Output:   "/tmp/filename.log",
+					},
+				},
+			},
+		},
+	}
+
+	// Copy original app
+	first := protoApp
+
+	addedDaemons, deletedDaemons, newApp, err := AddOrUpdateApp(db, &first)
+	require.NoError(t, err)
+	require.NotZero(t, first.ID)
+	require.True(t, newApp)
+	require.NotNil(t, addedDaemons)
+	require.Equal(t, len(addedDaemons), 2)
+	require.Nil(t, deletedDaemons)
+
+	// Copy original app
+	second := protoApp
+
+	// Rename app
+	second.Name = "foobar"
+
+	addedDaemons, deletedDaemons, newApp, err = AddOrUpdateApp(db, &second)
+	require.NoError(t, err)
+	require.NotZero(t, second.ID)
+	require.EqualValues(t, first.ID, second.ID)
+	require.False(t, newApp)
+	require.Nil(t, addedDaemons)
+	require.Equal(t, len(addedDaemons), 0)
+	require.Nil(t, deletedDaemons)
+	require.Equal(t, len(deletedDaemons), 0)
+}
+
 // Test that an app can be renamed without affecting other app
 // specific information.
 func TestRenameApp(t *testing.T) {
