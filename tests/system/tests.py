@@ -214,7 +214,41 @@ def test_add_kea_with_many_subnets(agent, server):
     assert m['address'] == agent.mgmt_ip
 
     # check machine state
-    m = _get_machine_state(server, m['id'])
+    #
+    # We have a hard to resolve race problem with update machine state in the Stork.
+    # The problem occurs when the Stork tries refreshing an application state from multiple goroutines at the same time.
+    #
+    # Refresh may be triggered by:
+    # - On Stork start
+    # - Periodically
+    # - On user request
+    #
+    # Some refresh procedures may be called in the same time.
+    # Refresh state looks like this:
+    #
+    # 1. Get state from an agent
+    # 2. Get state from a database
+    # 3. Calculate diff
+    # 4. Provide changes in the application
+    # 5. Provide changes in the subnets and others
+    #
+    # Points 2, 4, and 5 are doing in a separate transaction.
+    # It may happen that after fetching state from the database (2.) and calculate diffs (3.) in one goroutine,
+    # another goroutine modified the application. It causes that the calculated diffs are incorrect.
+    # The exception is thrown from point 4. where the unique index constraints are checked.
+
+    # If exception is thrown then it means that the insert conflict may occur.
+    # Another gouroutine could correctly insert the state.
+    error_attempts = 0
+    while True:
+        try:
+            m = _get_machine_state(server, m['id'])
+            break
+        except Exception:
+            if error_attempts < 3:
+                continue
+            raise
+
     assert m['apps'] is not None
     assert len(m['apps']) == 1
     assert m['apps'][0]['version'] == KEA_LATEST.split('-')[0]
