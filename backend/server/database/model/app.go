@@ -2,8 +2,6 @@ package dbmodel
 
 import (
 	"errors"
-	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -274,90 +272,6 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 	return addedDaemons, deletedDaemons, nil
 }
 
-// Insert or update the application in the database.
-// First, the function tries to insert a new entry
-// into the database. If it volatiles the unique constraint
-// (entry is already added), then the update query is performed.
-// Returns a list of added daemons, deleted daemons (only if the
-// update is performed), a flag that indicates that the INSERT query
-// executed and error if occurred.
-// This function is composed of 3 stages:
-// 1. Insert the app
-//    It is executed when AppID equals 0. If any other query inserted the app
-//    before this query, then the transaction rollbacks else the function successfully
-//    returns.
-// 2. Retrieve the app ID.
-//    If the app exists, then we need an app ID. It should always be present at
-//    this stage, no matter if this is an insert or an update.
-// 3. Update the app.
-func AddOrUpdateApp(db *pg.DB, app *App) ([]*Daemon, []*Daemon, bool, error) {
-	var pgErr pg.Error
-
-	if app.ID == 0 {
-		// New app, insert it.
-		addedDaemons, err := AddApp(db, app)
-		err = pkgerrors.Wrapf(err, "error during insert app")
-
-		if err == nil {
-			return addedDaemons, nil, true, nil
-		}
-
-		// AddApp fails
-		ok := errors.As(pkgerrors.Cause(err), &pgErr)
-		// Is it a conflict on an unique constraint?
-		if !ok || pgErr.Field('C') != "23505" {
-			return nil, nil, false, err
-		}
-	}
-
-	// Stage 2: Check conflict and retrieve AppID if needed
-	if pgErr != nil {
-		// Conflict on app name
-		tableName := pgErr.Field('t')
-		constraintName := pgErr.Field('n')
-		description := pgErr.Field('D')
-		var err error
-
-		var existingApp *App
-		if tableName == "app" && constraintName == "app_name_unique" {
-			existingApp, err = getAppByName(db, app.Name)
-			err = pkgerrors.Wrapf(err, "cannot fetch app by name: %s", app.Name)
-		} else if tableName == "access_point" && constraintName == "access_point_unique_idx" {
-			pattern := regexp.MustCompile(`\(machine_id, port\)=\((\d+), (\d+)\)`)
-			var machineID int
-			var port int
-
-			m := pattern.FindStringSubmatch(description)
-			if len(m) < 3 {
-				return nil, nil, false, pkgerrors.Wrapf(err, "cannot match keys")
-			}
-			machineID, err = strconv.Atoi(m[1])
-			if err != nil {
-				return nil, nil, false, pkgerrors.Wrapf(err, "cannot parse machine ID")
-			}
-			port, err = strconv.Atoi(m[2])
-			if err != nil {
-				return nil, nil, false, pkgerrors.Wrapf(err, "cannot parse port")
-			}
-
-			existingApp, err = getAppByAccessPoint(db, int64(machineID), int64(port))
-			err = pkgerrors.Wrapf(err, "cannot fetch app by access point (machine: %d, port: %d)", machineID, port)
-		}
-
-		if err != nil {
-			return nil, nil, false, err
-		}
-
-		app.ID = existingApp.ID
-		app.CreatedAt = existingApp.CreatedAt
-	}
-
-	// Stage 3: Update application
-	// Existing app, update it if needed.
-	addedDaemons, deletedDaemons, err := UpdateApp(db, app)
-	return addedDaemons, deletedDaemons, false, pkgerrors.Wrapf(err, "Invalid update for app: %+v, hasInsertConflict: %t", app, pgErr != nil)
-}
-
 // Updates specified app's name. It returns app instance with old name and possibly
 // an error. If an error occurs, a nil app is returned.
 func RenameApp(db *pg.DB, id int64, newName string) (*App, error) {
@@ -409,29 +323,6 @@ func GetAppByID(db *pg.DB, id int64) (*App, error) {
 		return nil, pkgerrors.Wrapf(err, "problem with getting app %v", id)
 	}
 	return &app, nil
-}
-
-// Return app with given name as the name has a unique constraint.
-// It doesn't include related entries. Intended to the internal use.
-func getAppByName(db *pg.DB, name string) (*App, error) {
-	app := App{}
-	q := db.Model(&app)
-	q = q.Where("app.name = ?", name)
-	err := q.Select()
-	return &app, err
-}
-
-// Return app with an access point with given machine ID and port.
-// It doesn't include related entries. Intended to the internal use.
-func getAppByAccessPoint(db *pg.DB, machineID int64, port int64) (*App, error) {
-	app := App{}
-	q := db.Model(&app)
-	q = q.Column(("AccessPoints"))
-	q = q.Relation("AccessPoints", func(q *orm.Query) (*orm.Query, error) {
-		return q.Where("machine_id = ? AND port = ?", machineID, port), nil
-	})
-	err := q.Select()
-	return &app, err
 }
 
 func GetAppsByMachine(db *pg.DB, machineID int64) ([]*App, error) {

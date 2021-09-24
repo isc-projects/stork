@@ -176,17 +176,13 @@ func GetAppState(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *d
 
 // Inserts or updates information about BIND 9 app in the database.
 func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter) (err error) {
-	_, _, newApp, err := dbmodel.AddOrUpdateApp(db, app)
-	if err != nil {
-		return
-	}
-
-	if newApp {
+	if app.ID == 0 {
+		_, err = dbmodel.AddApp(db, app)
 		eventCenter.AddInfoEvent("added {app}", app.Machine, app)
 	} else {
-		eventCenter.AddInfoEvent("updated {app}", app.Machine, app)
+		_, _, err = dbmodel.UpdateApp(db, app)
 	}
 	// todo: perform any additional actions required after storing the
 	// app in the db.
-	return
+	return err
 }
