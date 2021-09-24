@@ -246,6 +246,7 @@ def test_add_kea_with_many_subnets(agent, server):
             break
         except Exception:
             if error_attempts < 3:
+                time.sleep(2)
                 continue
             raise
 

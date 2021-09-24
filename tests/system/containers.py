@@ -12,6 +12,7 @@ import traceback
 import unicodedata
 
 from pylxd import Client
+from pylxd.exceptions import ClientConnectionFailed
 import requests
 import colors
 
@@ -75,7 +76,21 @@ class Container:
         self.style = random.choice(STYLES)
 
         # open separate connection to LXD
-        self.lxd = Client()
+        # Sometimes (usually on the first tests, the LXD responds with:
+        # pylxd.exceptions.ClientConnectionFailed: ('Connection aborted.', ConnectionRefusedError(111, 'Connection refused'))
+        # We try few times to establish connection.
+        retry = 5
+        while True:
+            try:
+                self.lxd = Client()
+                break
+            except ClientConnectionFailed:
+                if retry > 0:
+                    retry -= 1
+                    time.sleep(10)
+                    continue
+                raise
+
 
         self.config = {
             'name': name,
