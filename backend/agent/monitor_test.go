@@ -19,7 +19,7 @@ func TestGetApps(t *testing.T) {
 	am := NewAppMonitor()
 	am.Start(nil)
 	apps := am.GetApps()
-	require.Len(t, apps, 0)
+	require.Len(t, apps, 1)
 	am.Shutdown()
 }
 
@@ -195,7 +195,9 @@ func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
 
 func TestDetectApps(t *testing.T) {
 	am := &appMonitor{}
-	am.detectApps()
+	var settings cli.Context
+	sa := NewStorkAgent(&settings, am)
+	am.detectApps(sa)
 }
 
 // Test that detectAllowedLogs does not panic when Kea server is unreachable.
@@ -212,7 +214,7 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 				},
 			},
 		},
-		HTTPClient: NewHTTPClient(),
+		HTTPClient: NewHTTPClient(false),
 	})
 
 	var settings cli.Context
@@ -362,13 +364,15 @@ func TestDetectKeaApp(t *testing.T) {
 		require.Empty(t, ctrlPoint.Key)
 	}
 
+	httpClient := NewHTTPClient(false)
+
 	// check kea app detection
-	app := detectKeaApp([]string{"", "", tmpFilePath}, "")
+	app := detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
 	checkApp(app)
 
 	// check kea app detection when kea conf file is relative to CWD of kea process
 	cwd, file := path.Split(tmpFilePath)
-	app = detectKeaApp([]string{"", "", file}, cwd)
+	app = detectKeaApp([]string{"", "", file}, cwd, httpClient)
 	checkApp(app)
 
 	// Check configuration with an include statement
@@ -379,12 +383,12 @@ func TestDetectKeaApp(t *testing.T) {
 	defer os.Remove(nestedFile.Name())
 
 	// check kea app detection
-	app = detectKeaApp([]string{"", "", tmpFilePath}, "")
+	app = detectKeaApp([]string{"", "", tmpFilePath}, "", httpClient)
 	checkApp(app)
 
 	// check kea app detection when kea conf file is relative to CWD of kea process
 	cwd, file = path.Split(tmpFilePath)
-	app = detectKeaApp([]string{"", "", file}, cwd)
+	app = detectKeaApp([]string{"", "", file}, cwd, httpClient)
 	checkApp(app)
 }
 

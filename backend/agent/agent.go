@@ -44,7 +44,7 @@ func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor) *StorkAgent {
 	sa := &StorkAgent{
 		Settings:       settings,
 		AppMonitor:     appMonitor,
-		HTTPClient:     NewHTTPClient(),
+		HTTPClient:     NewHTTPClient(settings.Bool("skip-tls-cert-verification")),
 		logTailer:      logTailer,
 		keaInterceptor: newKeaInterceptor(),
 	}

@@ -57,7 +57,7 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 	pke := &PromKeaExporter{
 		Settings:      settings,
 		AppMonitor:    appMonitor,
-		HTTPClient:    NewHTTPClient(),
+		HTTPClient:    NewHTTPClient(settings.Bool("skip-tls-cert-verification")),
 		DoneCollector: make(chan bool),
 		Wg:            &sync.WaitGroup{},
 		Registry:      prometheus.NewRegistry(),

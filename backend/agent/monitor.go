@@ -99,7 +99,7 @@ func (sm *appMonitor) run(storkAgent *StorkAgent) {
 	defer sm.wg.Done()
 
 	// run app detection one time immediately at startup
-	sm.detectApps()
+	sm.detectApps(storkAgent)
 
 	// For each detected Kea app, let's gather the logs which can be viewed
 	// from the UI.
@@ -118,7 +118,7 @@ func (sm *appMonitor) run(storkAgent *StorkAgent) {
 
 		case <-ticker.C:
 			// periodic detection
-			sm.detectApps()
+			sm.detectApps(storkAgent)
 
 		case <-sm.quit:
 			// exit run
@@ -182,7 +182,7 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 	}
 }
 
-func (sm *appMonitor) detectApps() {
+func (sm *appMonitor) detectApps(storkAgent *StorkAgent) {
 	// Kea app is being detected by browsing list of processes in the system
 	// where cmdline of the process contains given pattern with kea-ctrl-agent
 	// substring. Such found processes are being processed further and all other
@@ -217,7 +217,7 @@ func (sm *appMonitor) detectApps() {
 			// detect kea
 			m := keaPtrn.FindStringSubmatch(cmdline)
 			if m != nil {
-				keaApp := detectKeaApp(m, cwd)
+				keaApp := detectKeaApp(m, cwd, storkAgent.HTTPClient)
 				if keaApp != nil {
 					keaApp.GetBaseApp().Pid = p.Pid
 					apps = append(apps, keaApp)

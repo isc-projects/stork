@@ -60,7 +60,7 @@ func mockRndcEmpty(command []string) ([]byte, error) {
 
 // Initializes StorkAgent instance and context used by the tests.
 func setupAgentTest() (*StorkAgent, context.Context) {
-	httpClient := NewHTTPClient()
+	httpClient := NewHTTPClient(true)
 	gock.InterceptClient(httpClient.client)
 
 	fam := FakeAppMonitor{}

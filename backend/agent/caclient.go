@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // HTTPClient is a normal http client.
@@ -14,16 +17,59 @@ type HTTPClient struct {
 	client *http.Client
 }
 
+// TLS support - inspired by https://sirsean.medium.com/mutually-authenticated-tls-from-a-go-client-92a117e605a1
+func readTLSCredentials() (*x509.CertPool, []tls.Certificate, error) {
+	// Certificates
+	certPool := x509.NewCertPool()
+	ca, err := ioutil.ReadFile(RootCAFile)
+	if err != nil {
+		err = errors.Wrapf(err, "could not read CA certificate: %s", RootCAFile)
+		log.Errorf("%+v", err)
+		return nil, nil, err
+	}
+
+	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+		err = errors.New("failed to append client certs")
+		log.Errorf("%+v", err)
+		return nil, nil, err
+	}
+
+	certificate, err := tls.LoadX509KeyPair(CertPEMFile, KeyPEMFile)
+	if err != nil {
+		err = errors.Wrapf(err, "could not setup TLS key pair")
+		log.Errorf("%+v", err)
+		return nil, nil, err
+	}
+
+	return certPool, []tls.Certificate{certificate}, nil
+}
+
 // Create a client to contact with Kea Control Agent or named statistics-channel.
-func NewHTTPClient() *HTTPClient {
+// If @skipTLSVerification is true then it doesn't verify the server credentials
+// over HTTPS. It may be useful when Kea uses a self-signed certificate.
+func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 	// Kea only supports HTTP/1.1. By default, the client here would use HTTP/2.
 	// The instance of the client which is created here disables HTTP/2 and should
 	// be used whenever the communication with the Kea servers is required.
+	// append the client certificates from the CA
+	tlsConfig := tls.Config{
+		InsecureSkipVerify: skipTLSVerification, //nolint:gosec
+	}
+
+	certPool, certificates, err := readTLSCredentials()
+	if err == nil {
+		tlsConfig.RootCAs = certPool
+		tlsConfig.Certificates = certificates
+	} else {
+		log.Warnf("cannot read TLS credentials, use HTTP protocol, %+v", err)
+	}
+
 	httpTransport := &http.Transport{
 		// Creating empty, non-nil map here disables the HTTP/2.
 		TLSNextProto:    make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
+		TLSClientConfig: &tlsConfig,
 	}
+
 	httpClient := &http.Client{
 		Transport: httpTransport,
 	}

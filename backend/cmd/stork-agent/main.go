@@ -168,6 +168,12 @@ func setupApp() *cli.App {
 				Usage:   "specifies how often the agent collects stats from BIND 9, in seconds",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL"},
 			},
+			&cli.BoolFlag{
+				Name:    "skip-tls-cert-verification",
+				Value:   false,
+				Usage:   "Skip verification of TLS certificates during connection over HTTPS to Kea",
+				EnvVars: []string{"STORK_AGENT_SKIP_TLS_CERT_VERIFICATION"},
+			},
 			// Registration related settings
 			&cli.StringFlag{
 				Name:    "server-url",

@@ -891,16 +891,9 @@ def test_communication_with_kea_over_secure_protocol_authorized_client(agent, se
     banner("START CA")
     agent.run('systemctl start ' + ca_svc_name)
 
-    # wait for reachable event
-    banner("WAIT FOR REACHABLE EVENT")
-    _wait_for_event(server, 'is reachable now')
+    # Stork agent uses self-signed certificate, but Kea expects a valid one.
+    # Then Kea is unreachable, but with specific status.
+    _wait_for_event(server, 'is reachable now', expected=False)
 
-    _wait_for_event(server, 'Failed to forward commands to Kea', expected=False)
-
-    # Refresh app state - Stork must detect that CA uses the secure protocol now
-    url = "/machines/%d/state" % m['id']
-    r = server.api_get(url)
-    ap = r.json()['apps'][0]['accessPoints'][0]
-    has_secure = ap['useSecureProtocol']
-    assert has_secure
-
+    res = agent.run('journalctl -xeu ' + ca_svc_name)
+    assert 'TLS handshake with 127.0.0.1 failed with certificate verify failed' in res.stdout

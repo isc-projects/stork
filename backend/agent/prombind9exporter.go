@@ -81,7 +81,7 @@ func NewPromBind9Exporter(settings *cli.Context, appMonitor AppMonitor) *PromBin
 	pbe := &PromBind9Exporter{
 		Settings:   settings,
 		AppMonitor: appMonitor,
-		HTTPClient: NewHTTPClient(),
+		HTTPClient: NewHTTPClient(settings.Bool("skip-tls-cert-verification")),
 		Registry:   prometheus.NewRegistry(),
 	}
 

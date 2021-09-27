@@ -238,7 +238,7 @@ func getCtrlTargetFromKeaConfig(path string) (string, int64, bool) {
 	return address, int64(port), useSecureProtocol
 }
 
-func detectKeaApp(match []string, cwd string) App {
+func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
 	if len(match) < 3 {
 		log.Warnf("problem with parsing Kea cmdline: %s", match[0])
 		return nil
@@ -267,7 +267,7 @@ func detectKeaApp(match []string, cwd string) App {
 			Type:         AppTypeKea,
 			AccessPoints: accessPoints,
 		},
-		HTTPClient: NewHTTPClient(),
+		HTTPClient: httpClient,
 	}
 
 	return keaApp
