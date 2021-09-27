@@ -21,7 +21,8 @@ func NewHTTPClient() *HTTPClient {
 	// be used whenever the communication with the Kea servers is required.
 	httpTransport := &http.Transport{
 		// Creating empty, non-nil map here disables the HTTP/2.
-		TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+		TLSNextProto:    make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
 	}
 	httpClient := &http.Client{
 		Transport: httpTransport,
@@ -30,6 +31,7 @@ func NewHTTPClient() *HTTPClient {
 	client := &HTTPClient{
 		client: httpClient,
 	}
+
 	return client
 }
 
