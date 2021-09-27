@@ -1,7 +1,8 @@
 * 160 [build] slawek
 
     Fix failed pipeline issues - pump CentOS version and related
-    packages, fix bug with parallel insert.
+    packages, change some unit tests to avoid crashes in CI
+    environment.
     (Gitlab #552)
 
 * 159 [bug] slawek
