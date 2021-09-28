@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Check that HTTP client sets the TLS credentails if available.
+// Check that HTTP client sets the TLS credentials if available.
 func TestCreateHTTPClientWithClientCerts(t *testing.T) {
 	cleanup, err := GenerateSelfSignedCerts()
 	require.NoError(t, err)
@@ -27,7 +27,7 @@ func TestCreateHTTPClientWithClientCerts(t *testing.T) {
 	require.NotNil(t, transportConfig.Certificates)
 }
 
-// Check that HTTP client doesn't set the TLS credentails if missing
+// Check that HTTP client doesn't set the TLS credentials if missing
 // (for example in the unit tests).
 func TestCreateHTTPClientWithoutClientCerts(t *testing.T) {
 	cleanup := RememberCertPaths()
