@@ -49,8 +49,8 @@ func (fam *PromFakeBind9AppMonitor) Start(storkAgent *StorkAgent) {
 // Check creating PromBind9Exporter, check if prometheus stats are set up.
 func TestNewPromBind9ExporterBasic(t *testing.T) {
 	fam := &PromFakeBind9AppMonitor{}
-	var settings cli.Context
-	pbe := NewPromBind9Exporter(&settings, fam)
+	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
+	pbe := NewPromBind9Exporter(settings, fam)
 	defer pbe.Shutdown()
 
 	require.NotNil(t, pbe.HTTPClient)

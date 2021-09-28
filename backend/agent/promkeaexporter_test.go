@@ -43,8 +43,8 @@ func (fam *PromFakeAppMonitor) Start(storkAgent *StorkAgent) {
 // Check creating PromKeaExporter, check if prometheus stats are set up.
 func TestNewPromKeaExporterBasic(t *testing.T) {
 	fam := &PromFakeAppMonitor{}
-	var settings cli.Context
-	pke := NewPromKeaExporter(&settings, fam)
+	settings := cli.NewContext(nil, flag.NewFlagSet("", 0), nil)
+	pke := NewPromKeaExporter(settings, fam)
 	defer pke.Shutdown()
 
 	require.NotNil(t, pke.HTTPClient)

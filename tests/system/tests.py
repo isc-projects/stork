@@ -759,6 +759,154 @@ def test_agent_reregistration_after_restart(agent, server):
 def test_communication_with_kea_over_secure_protocol(agent, server):
     """Check if Stork agent communicates with Kea over HTTPS correctly.
     In this test the Kea doesn't require SSL certificate on the client side."""
+    # Edit Stork agent CA environment variables
+    cmd = "echo -e '\nSTORK_AGENT_SKIP_TLS_CERT_VERIFICATION=1' >> /etc/stork/agent.env"
+    agent.run('bash -c "%s"' % cmd)
+    agent.run('systemctl daemon-reload')
+    agent.run('systemctl restart isc-stork-agent')
+
+    # install kea on the agent machine
+    agent.install_kea()
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # get machine that automatically registered in the server and authorize it
+    m = _get_machines_and_authorize_them(server)[0]
+    assert m['address'] == agent.mgmt_ip
+
+    # Generate selfsigned certificates for Kea
+    cert_dir = '/root/certs'
+    agent.run('mkdir %s' % cert_dir)
+
+    trust_anchor_dir = os.path.join(cert_dir, "CA")
+    agent.run('mkdir %s' % trust_anchor_dir)
+
+    cert_file_path = os.path.join(cert_dir, 'cert.pem')
+    key_file_path = os.path.join(cert_dir, 'key.pem')
+    cmd = ('openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes '                       
+          '-keyout %s -out %s -subj "/CN=kea.isc.org" '
+          '-addext "subjectAltName=DNS:kea.isc.org,DNS:www.kea.isc.org,IP:127.0.0.1"') \
+              % (key_file_path, cert_file_path)
+    agent.run(cmd)
+
+    # stop and reconfigure CA to serve over HTTPS
+    banner("STOP CA and reconfigure listen IP address")
+
+    ca_config_path = '/etc/kea/kea-ctrl-agent.conf'
+
+    config_root = (r'"Control-agent": {')
+    cert_content = (r'    "trust-anchor": "%s",\n'
+                   r'    "cert-file": "%s",\n'
+                   r'    "key-file": "%s",\n'
+                   r'    "cert-required": false,') \
+                   % (trust_anchor_dir, cert_file_path, key_file_path)
+    config_root = config_root.replace(r'"', r'\"')
+    cert_content = cert_content.replace(r'"', r'\"').replace(r'/', r'\/')
+    replacement = config_root + r'\n' + cert_content
+    
+    cmd = r'sed -i -e s/"%s"/"%s"/ %s' % (config_root, replacement, ca_config_path)
+    agent.run(cmd)
+    agent.run('chmod o+x /root')
+    agent.run('chmod o+r %s' % key_file_path)
+
+    ca_svc_name = 'kea-ctrl-agent' if 'centos' in agent.name else 'isc-kea-ctrl-agent'
+    agent.run('systemctl stop ' + ca_svc_name)
+
+    # start CA
+    banner("START CA")
+    agent.run('systemctl start ' + ca_svc_name)
+
+    # wait for reachable event
+    banner("WAIT FOR REACHABLE EVENT")
+    _wait_for_event(server, 'is reachable now')
+
+    _wait_for_event(server, 'Failed to forward commands to Kea', expected=False)
+
+    # Refresh app state - Stork must detect that CA uses the secure protocol now
+    url = "/machines/%d/state" % m['id']
+    r = server.api_get(url)
+    ap = r.json()['apps'][0]['accessPoints'][0]
+    has_secure = ap['useSecureProtocol']
+    assert has_secure
+
+
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'ubuntu/18.04')])
+def test_communication_with_kea_over_secure_protocol_authorized_client(agent, server):
+    """Check if Stork agent communicates with Kea over HTTPS correctly.
+    In this test the Kea requires SSL certificate on the client side."""
+    # Edit Stork agent CA environment variables
+    cmd = "echo -e '\nSTORK_AGENT_SKIP_TLS_CERT_VERIFICATION=1' >> /etc/stork/agent.env"
+    agent.run('bash -c "%s"' % cmd)
+    agent.run('systemctl daemon-reload')
+    agent.run('systemctl restart isc-stork-agent')
+
+    # install kea on the agent machine
+    agent.install_kea()
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # get machine that automatically registered in the server and authorize it
+    m = _get_machines_and_authorize_them(server)[0]
+    assert m['address'] == agent.mgmt_ip
+
+    # Generate selfsigned certificates for Kea
+    cert_dir = '/root/certs'
+    agent.run('mkdir %s' % cert_dir)
+
+    trust_anchor_dir = os.path.join(cert_dir, "CA")
+    agent.run('mkdir %s' % trust_anchor_dir)
+
+    cert_file_path = os.path.join(cert_dir, 'cert.pem')
+    key_file_path = os.path.join(cert_dir, 'key.pem')
+    cmd = ('openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes '                       
+          '-keyout %s -out %s -subj "/CN=kea.isc.org" '
+          '-addext "subjectAltName=DNS:kea.isc.org,DNS:www.kea.isc.org,IP:127.0.0.1"') \
+              % (key_file_path, cert_file_path)
+    agent.run(cmd)
+
+    # stop and reconfigure CA to serve over HTTPS
+    banner("STOP CA and reconfigure listen IP address")
+
+    ca_config_path = '/etc/kea/kea-ctrl-agent.conf'
+
+    config_root = (r'"Control-agent": {')
+    cert_content = (r'    "trust-anchor": "%s",\n'
+                   r'    "cert-file": "%s",\n'
+                   r'    "key-file": "%s",\n'
+                   r'    "cert-required": true,') \
+                   % (trust_anchor_dir, cert_file_path, key_file_path)
+    config_root = config_root.replace(r'"', r'\"')
+    cert_content = cert_content.replace(r'"', r'\"').replace(r'/', r'\/')
+    replacement = config_root + r'\n' + cert_content
+    
+    cmd = r'sed -i -e s/"%s"/"%s"/ %s' % (config_root, replacement, ca_config_path)
+    agent.run(cmd)
+    agent.run('chmod o+x /root')
+    agent.run('chmod o+r %s' % key_file_path)
+
+    ca_svc_name = 'kea-ctrl-agent' if 'centos' in agent.name else 'isc-kea-ctrl-agent'
+    agent.run('systemctl stop ' + ca_svc_name)
+
+    # start CA
+    banner("START CA")
+    agent.run('systemctl start ' + ca_svc_name)
+
+    # Stork agent uses self-signed certificate, but Kea expects a valid one.
+    # Then Kea is unreachable, but with specific status.
+    _wait_for_event(server, 'is reachable now', expected=False)
+
+    res = agent.run('journalctl -xeu ' + ca_svc_name)
+    assert 'TLS handshake with 127.0.0.1 failed with certificate verify failed' in res.stdout
+
+
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'ubuntu/18.04')])
+def test_communication_with_kea_over_secure_protocol_require_trusted_cert(agent, server):
+    """Check if Stork agent requires a trusted Kea cert if specific flag is not set.
+    In this test the Kea doesn't require SSL certificate on the client side."""
     # install kea on the agent machine
     agent.install_kea()
 
@@ -816,84 +964,8 @@ def test_communication_with_kea_over_secure_protocol(agent, server):
     banner("START CA")
     agent.run('systemctl start ' + ca_svc_name)
 
-    # wait for reachable event
-    banner("WAIT FOR REACHABLE EVENT")
-    _wait_for_event(server, 'is reachable now')
-
-    _wait_for_event(server, 'Failed to forward commands to Kea', expected=False)
-
-    # Refresh app state - Stork must detect that CA uses the secure protocol now
-    url = "/machines/%d/state" % m['id']
-    r = server.api_get(url)
-    ap = r.json()['apps'][0]['accessPoints'][0]
-    has_secure = ap['useSecureProtocol']
-    assert has_secure
-
-
-@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'ubuntu/18.04')])
-def test_communication_with_kea_over_secure_protocol_authorized_client(agent, server):
-    """Check if Stork agent communicates with Kea over HTTPS correctly.
-    In this test the Kea requires SSL certificate on the client side."""
-    # install kea on the agent machine
-    agent.install_kea()
-
-    # login
-    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
-    assert r.json()['login'] == 'admin'
-
-    # get machine that automatically registered in the server and authorize it
-    m = _get_machines_and_authorize_them(server)[0]
-    assert m['address'] == agent.mgmt_ip
-
-    # Generate selfsigned certificates for Kea
-    cert_dir = '/root/certs'
-    agent.run('mkdir %s' % cert_dir)
-
-    trust_anchor_dir = os.path.join(cert_dir, "CA")
-    agent.run('mkdir %s' % trust_anchor_dir)
-
-    cert_file_path = os.path.join(cert_dir, 'cert.pem')
-    key_file_path = os.path.join(cert_dir, 'key.pem')
-    cmd = ('openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes '                       
-          '-keyout %s -out %s -subj "/CN=kea.isc.org" '
-          '-addext "subjectAltName=DNS:kea.isc.org,DNS:www.kea.isc.org,IP:127.0.0.1"') \
-              % (key_file_path, cert_file_path)
-    agent.run(cmd)
-
-    # stop and reconfigure CA to serve over HTTPS
-    banner("STOP CA and reconfigure listen IP address")
-
-    ca_config_path = '/etc/kea/kea-ctrl-agent.conf'
-
-    config_root = (r'"Control-agent": {')
-    cert_content = (r'    "trust-anchor": "%s",\n'
-                   r'    "cert-file": "%s",\n'
-                   r'    "key-file": "%s",\n'
-                   r'    "cert-required": true,') \
-                   % (trust_anchor_dir, cert_file_path, key_file_path)
-    config_root = config_root.replace(r'"', r'\"')
-    cert_content = cert_content.replace(r'"', r'\"').replace(r'/', r'\/')
-    replacement = config_root + r'\n' + cert_content
-    
-    cmd = r'sed -i -e s/"%s"/"%s"/ %s' % (config_root, replacement, ca_config_path)
-    agent.run(cmd)
-    agent.run('chmod o+x /root')
-    agent.run('chmod o+r %s' % key_file_path)
-
-    ca_svc_name = 'kea-ctrl-agent' if 'centos' in agent.name else 'isc-kea-ctrl-agent'
-    agent.run('systemctl stop ' + ca_svc_name)
-
-    # wait for unreachable event
-    banner("WAIT FOR UNREACHABLE EVENT")
-    _wait_for_event(server, 'is unreachable')
-
-    # start CA
-    banner("START CA")
-    agent.run('systemctl start ' + ca_svc_name)
-
-    # Stork agent uses self-signed certificate, but Kea expects a valid one.
-    # Then Kea is unreachable, but with specific status.
+    # check if reachable event isn't collected
     _wait_for_event(server, 'is reachable now', expected=False)
 
     res = agent.run('journalctl -xeu ' + ca_svc_name)
-    assert 'TLS handshake with 127.0.0.1 failed with certificate verify failed' in res.stdout
+    assert 'TLS handshake with 127.0.0.1 failed with sslv3 alert bad certificate' in res.stdout
