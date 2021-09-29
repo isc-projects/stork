@@ -211,7 +211,7 @@ func AddApp(dbIface interface{}, app *App) ([]*Daemon, error) {
 
 	addedDaemons, deletedDaemons, err := updateAppDaemons(tx, app)
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with inserting daemons for a new app")
+		return nil, pkgerrors.WithMessage(err, "problem with inserting daemons for a new app")
 	}
 	if len(deletedDaemons) > 0 {
 		return nil, pkgerrors.Errorf("problem with deleting daemons for a new app")
@@ -220,7 +220,7 @@ func AddApp(dbIface interface{}, app *App) ([]*Daemon, error) {
 	// Add access points.
 	err = updateAppAccessPoints(tx, app, false)
 	if err != nil {
-		return nil, pkgerrors.Wrapf(err, "problem with adding access points to app: %+v", app)
+		return nil, pkgerrors.WithMessagef(err, "problem with adding access points to app: %+v", app)
 	}
 
 	// Commit the changes if necessary.
