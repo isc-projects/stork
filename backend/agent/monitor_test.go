@@ -22,7 +22,7 @@ func TestGetApps(t *testing.T) {
 	sa := NewStorkAgent(settings, am)
 	am.Start(sa)
 	apps := am.GetApps()
-	require.Len(t, apps, 1)
+	require.Len(t, apps, 0)
 	am.Shutdown()
 }
 
