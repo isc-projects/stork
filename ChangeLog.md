@@ -1,3 +1,8 @@
+* 159 [bug] slawek
+
+    Eliminated memory leaks from the Stork Web UI.
+    (Gitlab #105)
+
 Stork 0.20.0 released on 2021-09-08.
 
 * 158 [build] marcin
