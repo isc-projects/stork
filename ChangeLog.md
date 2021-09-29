@@ -1,3 +1,11 @@
+* 161 [func] slawek
+
+    The Stork Agent supports now the ability to use HTTPS, 
+    rather than  HTTP connections in CA, introduced in the
+    Kea release 1.9.6. The protocol is detected based on the
+    Kea CA configuration.
+    (Gitlab #527)
+
 * 160 [build] slawek
 
     Fix failed pipeline issues - bump CentOS version and related
