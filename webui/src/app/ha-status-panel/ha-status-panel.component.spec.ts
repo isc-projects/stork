@@ -187,6 +187,9 @@ describe('HaStatusPanelComponent', () => {
         let scopesHelp = fixture.debugElement.query(By.css('#scopes-served-help-button'))
 
         expect(scopesHelp).toBeDefined()
+        let helpComponent = scopesHelp.componentInstance
+        expect(helpComponent).toBeDefined()
+        expect(helpComponent).toBeInstanceOf(HelpTipComponent)
 
         // It should also be presented even if scopes are null.
         component.serverStatus = {
@@ -196,5 +199,9 @@ describe('HaStatusPanelComponent', () => {
 
         scopesHelp = fixture.debugElement.query(By.css('#scopes-served-help-button'))
         expect(scopesHelp).toBeDefined()
+        
+        helpComponent = scopesHelp.componentInstance
+        expect(helpComponent).toBeDefined()
+        expect(helpComponent).toBeInstanceOf(HelpTipComponent)
     })
 })
