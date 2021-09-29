@@ -73,7 +73,7 @@ def _get_machine_state(server, m_id):
         4. Provide changes in the application
         5. Provide changes in the subnets and others
 
-    Points 2, 4, and 5 are doing in a separate transaction.
+    Points 2, 4, and 5 are done in a separate transaction.
     It may happen that after fetching state from the database (2.) and calculate diffs (3.) in one goroutine,
     another goroutine modified the application. It causes that the calculated diffs are incorrect.
     The exception is thrown from point 4. where the unique index constraints are checked.
