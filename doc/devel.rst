@@ -295,6 +295,14 @@ command:
 
 .. code:: console
 
+    test=src/app/ha-status-panel/ha-status-panel.component.spec.ts rake ng_test
+
+By default, all the tests are running. You may want to run only a specific test file.
+In this case, you can set the "test" environment variable to a relative path to any ".spec.ts"
+file (relative from project directory).
+
+.. code:: console
+
    rake ng_test debug=true
 
 That command causes a new browser window to open; the tests run there automatically.
