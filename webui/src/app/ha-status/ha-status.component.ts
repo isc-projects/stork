@@ -20,6 +20,9 @@ export class HaStatusComponent implements OnInit, OnDestroy {
     private _appId: number
     private _daemonName: string
     // ToDo: Strict typing. Avoid using `any`
+    // The map contains the complex objects. These objects are
+    // strongly used in this component. Now, we don't have any
+    // help from TS compiler or IDE.
     private _receivedStatus: Map<string, any>
 
     constructor(private servicesApi: ServicesService) {}

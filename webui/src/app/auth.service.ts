@@ -90,7 +90,7 @@ export class AuthService {
 
                     this.currentUserSubject.next(user)
                     localStorage.setItem('currentUser', JSON.stringify(user))
-                    // ToDo: Unhandled promise
+                    // ToDo: Unhandled exception from promise
                     this.router.navigate([returnUrl])
                 }
             },

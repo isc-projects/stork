@@ -218,6 +218,8 @@ export class AppsPageComponent implements OnInit, OnDestroy {
         }
 
         // ToDo: Uncaught promise
+        // If any HTTP exception will be thrown then the promise
+        // fails, but a user doesn't get any message, popup, log.
         this.servicesApi
             .getApps(event.first, event.rows, text, this.appType)
             .toPromise()

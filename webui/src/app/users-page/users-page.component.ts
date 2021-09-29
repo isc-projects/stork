@@ -353,7 +353,6 @@ export class UsersPageComponent implements OnInit, OnDestroy {
         ]
         this.userGroups = [...initUserGroups]
         // Get all groups from the server.
-        // ToDo: Uncaught promise
         this.subscriptions.add(
             this.serverData.getGroups().subscribe((data) => {
                 if (data.items) {
