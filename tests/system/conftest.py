@@ -169,7 +169,8 @@ def pytest_pyfunc_call(pyfuncitem):
     except Exception:
         print("ERROR: CANNOT PREPARE CONTAINERS")
         print(traceback.format_exc())
-        raise
+        pytest.skip("CANNOT PREPARE CONTAINERS")
+        return
 
     # Assign containers to test arguments
     for (name, _), (_, container) in zip(container_arguments, containers):
