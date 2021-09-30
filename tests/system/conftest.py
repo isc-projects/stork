@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 import re
 import shutil
-import signal
 import sys
 import time
 import traceback
@@ -16,33 +15,6 @@ import pytest
 # The redirection below forces output to screen.
 if os.environ.get('PYTEST_XDIST_WORKER', False):
     sys.stdout = sys.stderr
-
-
-class timeout:
-    '''
-    The decorator that timeout the function execution after
-    specific time and throws TimeoutError.
-
-    Example
-    -------
-    >>> with timeout(seconds=3):
-    >>>    time.sleep(4)
-    TimeoutError: Timeout
-
-    Notes
-    -----
-    See: https://stackoverflow.com/a/22348885
-    '''
-    def __init__(self, seconds=1, error_message='Timeout'):
-        self.seconds = seconds
-        self.error_message = error_message
-    def handle_timeout(self, signum, frame):
-        raise TimeoutError(self.error_message)
-    def __enter__(self):
-        signal.signal(signal.SIGALRM, self.handle_timeout)
-        signal.alarm(self.seconds)
-    def __exit__(self, type, value, traceback):
-        signal.alarm(0)
 
 
 def pytest_addoption(parser):
@@ -193,8 +165,7 @@ def pytest_pyfunc_call(pyfuncitem):
                                if arg[0].startswith('server') or arg[0].startswith('agent')]
 
     try:
-        with timeout(5*60, "Container creation timeout"):
-            containers = _prepare_containers(container_arguments)
+        containers = _prepare_containers(container_arguments)
     except Exception:
         print("ERROR: CANNOT PREPARE CONTAINERS")
         print(traceback.format_exc())

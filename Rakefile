@@ -1017,6 +1017,9 @@ task :system_tests => 'tests/system/venv/bin/activate' do
     xdist_param = ''
   end
 
+  # Set single system test timeout
+  ENV['PYTEST_TIMEOUT'] = '300'
+
   # run tests
   Dir.chdir('tests/system') do
     sh './venv/bin/pip install -r requirements.txt'
