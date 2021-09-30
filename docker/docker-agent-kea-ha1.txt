@@ -3,11 +3,11 @@ WORKDIR /agent
 # Install essentials.
 RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-certificates gnupg apt-transport-https supervisor prometheus-node-exporter
 # Install Kea.
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/isc/kea-1-7/cfg/setup/bash.deb.sh' | bash
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/isc/kea-1-8/cfg/setup/bash.deb.sh' | bash
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        isc-kea-dhcp4-server=1.7.8-isc0023920200525101542 \
-        isc-kea-ctrl-agent=1.7.8-isc0023920200525101542 \
-        isc-kea-common=1.7.8-isc0023920200525101542 \
+        isc-kea-dhcp4-server=1.8.2-isc0001520201206093433 \
+        isc-kea-ctrl-agent=1.8.2-isc0001520201206093433 \
+        isc-kea-common=1.8.2-isc0001520201206093433 \
         && mkdir -p /var/run/kea/
 # Install Stork agent.
 COPY build-root/root/usr/bin/stork-agent /agent/
