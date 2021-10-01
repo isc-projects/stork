@@ -822,6 +822,8 @@ def test_communication_with_kea_over_secure_protocol(agent, server):
     banner("WAIT FOR REACHABLE EVENT")
     _wait_for_event(server, 'is reachable now')
 
+    # Stork Agent should correctly connect to the Kea CA.
+    # No error can occur.
     _wait_for_event(server, 'Failed to forward commands to Kea', expected=False)
 
     # Refresh app state - Stork must detect that CA uses the secure protocol now
@@ -833,9 +835,10 @@ def test_communication_with_kea_over_secure_protocol(agent, server):
 
 
 @pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'ubuntu/18.04')])
-def test_communication_with_kea_over_secure_protocol_authorized_client(agent, server):
-    """Check if Stork agent communicates with Kea over HTTPS correctly.
-    In this test the Kea requires SSL certificate on the client side."""
+def test_communication_with_kea_over_secure_protocol_nontrusted_client(agent, server):
+    """The Stork Agent uses self-signed TLS certificates over HTTPS, but the Kea
+    requires the valid credentials. The Stork Agent should send request, but get
+    rejection from the Kea CA."""
     # Edit Stork agent CA environment variables
     cmd = "echo -e '\nSTORK_AGENT_SKIP_TLS_CERT_VERIFICATION=1' >> /etc/stork/agent.env"
     agent.run('bash -c "%s"' % cmd)

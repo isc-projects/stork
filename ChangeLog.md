@@ -1,9 +1,8 @@
 * 161 [func] slawek
 
-    The Stork Agent supports now the ability to use HTTPS, 
-    rather than  HTTP connections in CA, introduced in the
-    Kea release 1.9.6. The protocol is detected based on the
-    Kea CA configuration.
+    The Stork Agent now supports communication with Kea over TLS.
+    It automatically detects if the Kea Control Agent is configured
+    to use TLS.
     (Gitlab #527)
 
 * 160 [build] slawek

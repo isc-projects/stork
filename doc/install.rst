@@ -242,9 +242,9 @@ The general settings:
   i.e. disable Prometheus exporters; default is false
 * STORK_AGENT_LISTEN_PROMETHEUS_ONLY - enable Prometheus exporters
   only, i.e. disable Stork functionality; default is false
-* STORK_AGENT_SKIP_TLS_CERT_VERIFICATION - skip TLS certificate verification, it is
-  applicable only for HTTPS connections, allow connect to Kea CA over TLS that is configured
-  to use self-signed certificates; default is false
+* STORK_AGENT_SKIP_TLS_CERT_VERIFICATION - skip TLS certificate verification when the Stork Agent
+  connects to Kea over TLS and Kea uses self-signed certificates; default is false
+
 
 The following settings are specific to the Prometheus exporters:
 
@@ -318,26 +318,26 @@ The applicability of the two methods is described in
 The installation and registration process using both methods are described
 in the subsequent sections.
 
-.. _register-agent-token-cloudsmith:
-
 Securing Connections Between Stork Agent and Kea Control Agent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Kea Control Agent may be configured to accept connections only over TLS.
-It requires to specify `trust-anchor`, `cert-file` and `key-file` values in 
+It requires specifying `trust-anchor`, `cert-file` and `key-file` values in
 the `kea-ctrl-agent.conf`. For details, see the Kea Administrator Reference Manual.
 
-The Stork Agent will send requests over TLS if needed. It will utilize the same certificates
-that are used in connection to the Stork server.
+The Stork Agent can communicate with Kea over TLS. It will use the same certificates
+that it uses in communication with the Stork Server.
 
-The Stork Agent requires that Kea CA will provide valid certificates over HTTPS by default.
-If you use the self-signed certificates on the Kea CA side, then you can start the Stork with
-`--skip-tls-cert-verification` flag or set `STORK_AGENT_SKIP_TLS_CERT_VERIFICATION`
-environment variable to 1.
+The Stork Agent by default requires that the Kea Control Agent provides a trusted TLS certificate.
+If Kea uses a self-signed certificate the Stork Agent can be launched with the
+`--skip-tls-cert-verification` flag or `STORK_AGENT_SKIP_TLS_CERT_VERIFICATION` environment
+variable set to 1 to disable Kea certificate verification.
 
 The Kea CA accepts only requests signed with a valid certificate when the `cert-required` field
 is set to `true` in the Kea CA configuration file. In this case, the Stork Agent must use the valid
-certificates (it cannot use the credentials created by Stork Server).
+certificates (it cannot use self-signed certificates as created during Stork Agent registration).
+
+.. _register-agent-token-cloudsmith:
 
 Installation from Cloudsmith and Registration with an Agent Token
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
