@@ -68,6 +68,8 @@ func TestAddApp(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, a3.ID)
 	require.Len(t, addedDaemons, 2)
+	require.Len(t, a3.AccessPoints, 1)
+	require.False(t, a3.AccessPoints[0].UseSecureProtocol)
 
 	// add the same app but with no daemon this time
 	a3.Daemons = []*Daemon{
@@ -100,6 +102,8 @@ func TestAddApp(t *testing.T) {
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "duplicate")
 	require.Len(t, addedDaemons, 0)
+	require.Len(t, a4.AccessPoints, 1)
+	require.True(t, a4.AccessPoints[0].UseSecureProtocol)
 
 	// add app with empty control address, no error expected.
 	accessPoints = []*AccessPoint{}
@@ -130,6 +134,9 @@ func TestAddApp(t *testing.T) {
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "duplicate")
 	require.Len(t, addedDaemons, 0)
+	require.Len(t, a6.AccessPoints, 2)
+	require.True(t, a6.AccessPoints[0].UseSecureProtocol)
+	require.False(t, a6.AccessPoints[1].UseSecureProtocol)
 
 	// add app with explicit access point, bad type - error should be raised.
 	accessPoints = []*AccessPoint{}
@@ -384,6 +391,7 @@ func TestUpdateApp(t *testing.T) {
 	require.Equal(t, "warm.example.org", pt.Address)
 	require.EqualValues(t, 2345, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
+	require.True(t, pt.UseSecureProtocol)
 	require.Len(t, addedDaemons, 0)
 	require.Len(t, deletedDaemons, 0)
 
@@ -397,6 +405,7 @@ func TestUpdateApp(t *testing.T) {
 	require.Equal(t, "warm.example.org", pt.Address)
 	require.EqualValues(t, 2345, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
+	require.True(t, pt.UseSecureProtocol)
 
 	// add access point
 	accessPoints = AppendAccessPoint(accessPoints, AccessPointStatistics, "cold.example.org", "", 1234, false)
@@ -409,11 +418,13 @@ func TestUpdateApp(t *testing.T) {
 	require.Equal(t, "warm.example.org", pt.Address)
 	require.EqualValues(t, 2345, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
+	require.True(t, pt.UseSecureProtocol)
 	pt = a.AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, pt.Type)
 	require.Equal(t, "cold.example.org", pt.Address)
 	require.EqualValues(t, 1234, pt.Port)
 	require.Empty(t, pt.Key)
+	require.False(t, pt.UseSecureProtocol)
 	require.Len(t, addedDaemons, 0)
 	require.Len(t, deletedDaemons, 0)
 
@@ -427,11 +438,13 @@ func TestUpdateApp(t *testing.T) {
 	require.Equal(t, "warm.example.org", pt.Address)
 	require.EqualValues(t, 2345, pt.Port)
 	require.Equal(t, "abcd", pt.Key)
+	require.True(t, pt.UseSecureProtocol)
 	pt = updated.AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, pt.Type)
 	require.Equal(t, "cold.example.org", pt.Address)
 	require.EqualValues(t, 1234, pt.Port)
 	require.Empty(t, pt.Key)
+	require.False(t, pt.UseSecureProtocol)
 
 	// delete access point
 	accessPoints = accessPoints[0:1]
