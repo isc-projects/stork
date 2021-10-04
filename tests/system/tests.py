@@ -818,10 +818,6 @@ def test_communication_with_kea_over_secure_protocol(agent, server):
     banner("START CA")
     agent.run('systemctl start ' + ca_svc_name)
 
-    # wait for reachable event
-    banner("WAIT FOR REACHABLE EVENT")
-    _wait_for_event(server, 'is reachable now')
-
     # Stork Agent should correctly connect to the Kea CA.
     # No error can occur.
     _wait_for_event(server, 'Failed to forward commands to Kea', expected=False)
