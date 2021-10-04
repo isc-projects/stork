@@ -333,7 +333,7 @@ If Kea uses a self-signed certificate the Stork Agent can be launched with the
 `--skip-tls-cert-verification` flag or `STORK_AGENT_SKIP_TLS_CERT_VERIFICATION` environment
 variable set to 1 to disable Kea certificate verification.
 
-The Kea CA accepts only requests signed with a valid certificate when the `cert-required` field
+The Kea CA accepts only requests signed with a trusted certificate when the `cert-required` parameter
 is set to `true` in the Kea CA configuration file. In this case, the Stork Agent must use the valid
 certificates (it cannot use self-signed certificates as created during Stork Agent registration).
 
