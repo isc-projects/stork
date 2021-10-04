@@ -265,6 +265,8 @@ def test_add_kea_with_many_subnets(agent, server):
         if 'total' in data and data['total'] == 6912:
             break
         time.sleep(2)
+        # Fetch new state
+        m = _get_machine_state(server, m['id'])
     assert data['total'] == 6912
 
     # Fetch raw Kea daemon configuration
