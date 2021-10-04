@@ -816,9 +816,16 @@ def test_communication_with_kea_over_secure_protocol(agent, server):
     ca_svc_name = 'kea-ctrl-agent' if 'centos' in agent.name else 'isc-kea-ctrl-agent'
     agent.run('systemctl stop ' + ca_svc_name)
 
+    banner("WAIT FOR UNREACHABLE EVENT")
+    _wait_for_event(server, 'is unreachable')
+
     # start CA
     banner("START CA")
     agent.run('systemctl start ' + ca_svc_name)
+
+    # wait for reachable event
+    banner("WAIT FOR REACHABLE EVENT")
+    _wait_for_event(server, 'is reachable now')
 
     # Stork Agent should correctly connect to the Kea CA.
     # No error can occur.
