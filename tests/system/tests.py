@@ -690,7 +690,7 @@ def test_get_host_leases(agent, server):
     # Find leases for the IPv6 host reservation.
     leases, conflicts = _search_leases(server, host_id=host_id)
     assert len(leases) == 1
-    assert 'ipAddress' == leases[0]
+    assert 'ipAddress' in leases[0]
     assert leases[0]['ipAddress'] == '3001:db8:1::2'
 
     # The lease was assigned to a different client. There should be
