@@ -346,7 +346,7 @@ def test_change_kea_ca_access_point(agent, server):
     m = _get_machine_state(server, m['id'])
     assert m['apps'] is not None
     assert len(m['apps']) == 1
-    assert m['apps'][0]['version'] == '1.8.2'
+    assert m['apps'][0]['version'] == KEA_LATEST.split('-')[0]
     assert len(m['apps'][0]['accessPoints']) == 1
     assert m['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'
 
