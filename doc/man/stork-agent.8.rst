@@ -52,7 +52,7 @@ Equivalent environment variables are listed in square brackets, where applicable
    the TCP port to listen on for incoming Stork server connections. (default: 8080) [$STORK_AGENT_PORT]
 
 ``--skip-tls-cert-verification=``
-   skip verification of TLS certificates during connection over HTTPS to Kea. (default: false) [#STORK_AGENT_SKIP_TLS_CERT_VERIFICATION]
+   skip TLS certificate verification when the Stork Agent connects to Kea over TLS and Kea uses self-signed certificates. (default: false) [$STORK_AGENT_SKIP_TLS_CERT_VERIFICATION]
 
 ``Prometheus Kea Exporter`` flags:
 
