@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import enum
 import os
 import re
 import sys
@@ -479,6 +480,18 @@ class StorkServerContainer(Container):
         return r
 
 
+class KeaTLSSupport(enum.Enum):
+    '''Kea CA TLS support modes.
+    Defines if Kea should be configured to support TLS.
+    If TLS is enabled then the value specifies that a client certificate is optional or not.'''
+    # TLS support is disabled
+    NONE = 'none'
+    # TLS support is enabled and client certificate is required
+    REQUIRE_CLIENT_CERT = 'require-client-cert'
+    # TLS support is enabled and client certificate is optional
+    OPTIONAL_CLIENT_CERT = 'optional-client-cert'
+
+
 class StorkAgentContainer(Container):
     def __init__(self, port=None, alias=DEFAULT_SYSTEM_IMAGE):
         if port is None:
@@ -494,7 +507,7 @@ class StorkAgentContainer(Container):
         else:
             self.install_pkgs('yum-utils epel-release')
 
-    def install_kea(self, service_name='default', kea_version=KEA_LATEST):
+    def install_kea(self, service_name='default', kea_version=KEA_LATEST, tls_support=KeaTLSSupport.NONE):
         print('INSTALL KEA')
         repo = 'kea-' + kea_version[:3].replace('.', '-')
         self.setup_cloudsmith_repo(repo)
@@ -523,6 +536,43 @@ class StorkAgentContainer(Container):
         self.run("perl -pi -e 's#/tmp/kea-dhcp4-ctrl.sock#/tmp/kea4-ctrl-socket#g' /etc/kea/kea-ctrl-agent.conf")
         # avoid collision with Stork Agent which also listens on 8080
         self.run("perl -pi -e 's/8080/8000/g' /etc/kea/kea-ctrl-agent.conf")
+
+        # TLS support
+        print('Kea TLS support mode: %s' % tls_support)
+        if tls_support != KeaTLSSupport.NONE:
+            # Generate selfsigned certificates for Kea
+            cert_dir = '/root/certs'
+            self.run('mkdir %s' % cert_dir)
+
+            trust_anchor_dir = os.path.join(cert_dir, "CA")
+            self.run('mkdir %s' % trust_anchor_dir)
+
+            cert_file_path = os.path.join(cert_dir, 'cert.pem')
+            key_file_path = os.path.join(cert_dir, 'key.pem')
+            cmd = ('openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes '                       
+                '-keyout %s -out %s -subj "/CN=kea.isc.org" '
+                '-addext "subjectAltName=DNS:kea.isc.org,DNS:www.kea.isc.org,IP:127.0.0.1"') \
+                    % (key_file_path, cert_file_path)
+            self.run(cmd)
+
+            # Reconfigure KEA CA to use TLS
+            ca_config_path = '/etc/kea/kea-ctrl-agent.conf'
+            config_root = (r'"Control-agent": {')
+            cert_content = (r'    "trust-anchor": "%s",\n'
+                        r'    "cert-file": "%s",\n'
+                        r'    "key-file": "%s",\n'
+                        r'    "cert-required": %s,') \
+                        % (trust_anchor_dir, cert_file_path, key_file_path,
+                           str(tls_support == KeaTLSSupport.REQUIRE_CLIENT_CERT).lower())
+            config_root = config_root.replace(r'"', r'\"')
+            cert_content = cert_content.replace(r'"', r'\"').replace(r'/', r'\/')
+            replacement = config_root + r'\n' + cert_content
+            
+            cmd = r'sed -i -e s/"%s"/"%s"/ %s' % (config_root, replacement, ca_config_path)
+            self.run(cmd)
+            self.run('chmod o+x /root')
+            self.run('chmod o+r %s' % key_file_path)
+
         if self.pkg_format == 'deb':
             self.run('systemctl enable isc-kea-ctrl-agent')
             self.run('systemctl start isc-kea-ctrl-agent')
@@ -684,6 +734,14 @@ class StorkAgentContainer(Container):
         self.run('systemctl restart isc-stork-agent')
         self.run('systemctl status isc-stork-agent')
         # self.run('bash -c "ps axu|grep -v grep|grep isc"')  # TODO: it does not work - make it working
+
+    def set_skip_tls_cert_verification(self, enable=True):
+        '''Enable (or disable) skipping TLS cert verification in the Stork Agent. 
+        Verification should be skipped if the Kea CA uses self-signed certificates.'''
+        cmd = "echo -e '\nSTORK_AGENT_SKIP_TLS_CERT_VERIFICATION=%d' >> /etc/stork/agent.env" % int(enable)
+        self.run('bash -c "%s"' % cmd)
+        self.run('systemctl daemon-reload')
+        self.run('systemctl restart isc-stork-agent')
 
     def _setup(self, reused, pkg_ver=None, server_ip=None):
         if not reused:
