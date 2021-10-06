@@ -950,6 +950,58 @@ task :build_fpm_containers do
 #  sh 'docker build -f docker/pkgs/cloudsmith.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:latest docker/pkgs/'
 end
 
+desc 'Bump up major version'
+task :bump_major do
+  sh "
+    version=$(cat ./api/swagger.in.yaml | grep -E 'version: [0-9]+\.[0-9]+\.[0-9]+' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+    major=$(printf '%s' \"${version}\" | cut -d '.' -f 1)
+    new_major=$((major + 1))
+    new_version=\"${new_major}.0.0\"
+    sed -i \"0,/version: ${version}/s//version: ${new_version}/\" ./api/swagger.in.yaml
+    sed -i \"0,/const Version = \\\"${version}\\\"/s//const Version = \\\"${new_version}\\\"/\" ./backend/version.go
+    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package.json
+    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package-lock.json
+    printf 'Stork %s released on %s.\n\n' \"${new_version}\" \"$(date -dwednesday +%Y-%m-%d)\" | cat - ./ChangeLog.md > /tmp/stork-changelog && mv /tmp/stork-changelog ./ChangeLog.md
+    printf 'Version bumped to %s.\n' \"${new_version}\"
+
+  "
+end
+
+desc 'Bump up minor version'
+task :bump_minor do
+  sh "
+    version=$(cat ./api/swagger.in.yaml | grep -E 'version: [0-9]+\.[0-9]+\.[0-9]+' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+    major=$(printf '%s' \"${version}\" | cut -d '.' -f 1)
+    minor=$(printf '%s' \"${version}\" | cut -d '.' -f 2)
+    new_minor=$((minor + 1))
+    new_version=\"${major}.${new_minor}.0\"
+    sed -i \"0,/version: ${version}/s//version: ${new_version}/\" ./api/swagger.in.yaml
+    sed -i \"0,/const Version = \\\"${version}\\\"/s//const Version = \\\"${new_version}\\\"/\" ./backend/version.go
+    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package.json
+    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package-lock.json
+    printf 'Stork %s released on %s.\n\n' \"${new_version}\" \"$(date -dwednesday +%Y-%m-%d)\" | cat - ./ChangeLog.md > /tmp/stork-changelog && mv /tmp/stork-changelog ./ChangeLog.md
+    printf 'Version bumped to %s.\n' \"${new_version}\"
+  "
+end
+
+desc 'Bump up patch version'
+task :bump_patch do
+  sh "
+    version=$(cat ./api/swagger.in.yaml | grep -E 'version: [0-9]+\.[0-9]+\.[0-9]+' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+    major=$(printf '%s' \"${version}\" | cut -d '.' -f 1)
+    minor=$(printf '%s' \"${version}\" | cut -d '.' -f 2)
+    patch=$(printf '%s' \"${version}\" | cut -d '.' -f 3)
+    new_patch=$((patch + 1))
+    new_version=\"${major}.${minor}.${new_patch}\"
+    sed -i \"0,/version: ${version}/s//version: ${new_version}/\" ./api/swagger.in.yaml
+    sed -i \"0,/const Version = \\\"${version}\\\"/s//const Version = \\\"${new_version}\\\"/\" ./backend/version.go
+    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package.json
+    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package-lock.json
+    printf 'Stork %s released on %s.\n\n' \"${new_version}\" \"$(date -dwednesday +%Y-%m-%d)\" | cat - ./ChangeLog.md > /tmp/stork-changelog && mv /tmp/stork-changelog ./ChangeLog.md
+    printf 'Version bumped to %s.\n' \"${new_version}\"
+  "
+end
+
 
 ### System testing ######################
 
@@ -1070,7 +1122,6 @@ task :system_tests_ui => ['tests/system/venv/bin/activate', selenium_driver_path
     sh "#{PYTEST} #{headless_opt} --driver #{ENV['BROWSER']} --driver-path #{selenium_driver_path} #{test}"
   end
 end
-
 
 
 ### Other Tasks #########################
