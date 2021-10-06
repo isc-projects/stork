@@ -19,5 +19,3 @@ main
 /gen/restapi/embedded_spec.go
 /gen/restapi/operations/
 /gen/restapi/server.go
-
-

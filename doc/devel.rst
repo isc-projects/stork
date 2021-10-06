@@ -719,12 +719,12 @@ Agent Registration Process
 The diagram below shows a flowchart of the agent registration process in Stork.
 It merely demonstrates the successful registration path.
 First Certificate Signing Request (CSR) is generated using an existing or new
-private key and agent token. 
+private key and agent token.
 The CSR, server token (optional), and agent token are sent to the Stork server.
 A successful server response contains a signed agent certificate, a server CA
-certificate, and an assigned Machine ID. 
+certificate, and an assigned Machine ID.
 If the agent was already registered with the provided agent token, only the assigned
-machine ID is returned without new certificates. 
+machine ID is returned without new certificates.
 The agent uses the returned machine ID to verify that the registration was successful.
 
 

@@ -549,7 +549,7 @@ class StorkAgentContainer(Container):
 
             cert_file_path = os.path.join(cert_dir, 'cert.pem')
             key_file_path = os.path.join(cert_dir, 'key.pem')
-            cmd = ('openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes '                       
+            cmd = ('openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes '
                 '-keyout %s -out %s -subj "/CN=kea.isc.org" '
                 '-addext "subjectAltName=DNS:kea.isc.org,DNS:www.kea.isc.org,IP:127.0.0.1"') \
                     % (key_file_path, cert_file_path)
@@ -567,7 +567,7 @@ class StorkAgentContainer(Container):
             config_root = config_root.replace(r'"', r'\"')
             cert_content = cert_content.replace(r'"', r'\"').replace(r'/', r'\/')
             replacement = config_root + r'\n' + cert_content
-            
+
             cmd = r'sed -i -e s/"%s"/"%s"/ %s' % (config_root, replacement, ca_config_path)
             self.run(cmd)
             self.run('chmod o+x /root')
@@ -736,7 +736,7 @@ class StorkAgentContainer(Container):
         # self.run('bash -c "ps axu|grep -v grep|grep isc"')  # TODO: it does not work - make it working
 
     def set_skip_tls_cert_verification(self, enable=True):
-        '''Enable (or disable) skipping TLS cert verification in the Stork Agent. 
+        '''Enable (or disable) skipping TLS cert verification in the Stork Agent.
         Verification should be skipped if the Kea CA uses self-signed certificates.'''
         cmd = "echo -e '\nSTORK_AGENT_SKIP_TLS_CERT_VERIFICATION=%d' >> /etc/stork/agent.env" % int(enable)
         self.run('bash -c "%s"' % cmd)

@@ -292,7 +292,7 @@ The first column in the presented view displays one or more DHCP identifiers
 for each host in the format ``hw-address=0a:1b:bd:43:5f:99``, where
 ``hw-address`` is the identifier type. In this case, the identifier type is
 the MAC address of the DHCP client for which the reservation has been specified.
-Supported identifier types are described in the following sections of the Kea 
+Supported identifier types are described in the following sections of the Kea
 Administrator Reference Manual (ARM):
 `Host Reservation in DHCPv4 <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#host-reservation-in-dhcpv4>`_
 and `Host Reservation in DHCPv6 <https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#host-reservation-in-dhcpv6>`_.

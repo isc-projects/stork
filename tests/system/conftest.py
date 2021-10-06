@@ -121,7 +121,7 @@ def _prepare_containers(containers_to_create: Sequence[Tuple[str, str]]) \
     agent_containers: List[containers.StorkAgentContainer] = []
     # Must have a specific order
     # Items are tuples with container type and container object
-    all_containers: List[Tuple[Literal['agent', 'server'], containers.Container]] = []  
+    all_containers: List[Tuple[Literal['agent', 'server'], containers.Container]] = []
     for name, val in containers_to_create:
         if name.startswith('agent'):
             a = containers.StorkAgentContainer(alias=val)
