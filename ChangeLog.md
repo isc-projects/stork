@@ -1,3 +1,5 @@
+Stork 0.21.0 released on 2021-10-06.
+
 * 161 [func] slawek
 
     The Stork Agent now supports communication with Kea over TLS.
