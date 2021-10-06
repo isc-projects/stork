@@ -76,7 +76,7 @@ func GenerateSelfSignedCerts() (func(), error) {
 	return cleanup, nil
 }
 
-// This function always return the same content. It is intendent
+// This function always return the same content. It is intended
 // to avoid breaking IDE syntax highlighting (problem occurs on vscode).
 func getCACertPEMContent() []byte {
 	return []byte(`-----BEGIN CERTIFICATE-----
@@ -111,7 +111,7 @@ RXkm1+W4cMzZS14MLfmacBHnI7Z4mRKvc+zEdco/l4omlszafmUXxnCOmqZlhqbm
 -----END CERTIFICATE-----`)
 }
 
-// This function always return the same content. It is intendent
+// This function always return the same content. It is intended
 // to avoid breaking IDE syntax highlighting (problem occurs on vscode).
 func getKeyPEMContent() []byte {
 	return []byte(`-----BEGIN PRIVATE KEY-----
@@ -168,7 +168,7 @@ H/Njg8CqtOWDeTVICuUq60wkbEkxYg==
 -----END PRIVATE KEY-----`)
 }
 
-// This function always return the same content. It is intendent
+// This function always return the same content. It is intended
 // to avoid breaking IDE syntax highlighting (problem occurs on vscode).
 func getCertPEMContent() []byte {
 	return []byte(`-----BEGIN CERTIFICATE-----

@@ -79,7 +79,7 @@ def _get_machine_state(server, m_id):
     another goroutine modified the application. It causes that the calculated diffs are incorrect.
     The exception is thrown from point 4. where the unique index constraints are checked.
     If exception is thrown then it means that the insert conflict may occur.
-    Another gouroutine could correctly insert the state.
+    Another goroutine could correctly insert the state.
     '''
     error_attempts = 0
     for i in range(100):
