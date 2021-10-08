@@ -5,6 +5,8 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -15,6 +17,12 @@ import (
 // HTTPClient is a normal http client.
 type HTTPClient struct {
 	client *http.Client
+}
+
+// Basic authentication credentials.
+type BasicAuthCredentials struct {
+	login    string
+	password string
 }
 
 // TLS support - inspired by https://sirsean.medium.com/mutually-authenticated-tls-from-a-go-client-92a117e605a1
@@ -81,7 +89,7 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 	return client
 }
 
-func (c *HTTPClient) Call(url string, payload *bytes.Buffer) (*http.Response, error) {
+func (c *HTTPClient) Call(url string, payload *bytes.Buffer, basicAuth *BasicAuthCredentials) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, payload)
 	if err != nil {
 		err = errors.Wrapf(err, "problem with creating POST request to %s", url)
@@ -89,6 +97,13 @@ func (c *HTTPClient) Call(url string, payload *bytes.Buffer) (*http.Response, er
 		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/json")
+
+	if basicAuth != nil {
+		secret := fmt.Sprintf("%s:%s", basicAuth.login, basicAuth.password)
+		headerContent := base64.StdEncoding.EncodeToString([]byte(secret))
+		req.Header.Add("Authorization", headerContent)
+	}
+
 	rsp, err := c.client.Do(req)
 	if err != nil {
 		err = errors.Wrapf(err, "problem with sending POST to %s", url)
