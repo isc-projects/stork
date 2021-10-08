@@ -55,7 +55,7 @@ func HostWithPortURL(address string, port int64, secure bool) string {
 }
 
 // Parses URL into host and port.
-func ParseURL(url string) (host string, port int64) {
+func ParseURL(url string) (host string, port int64, secure bool) {
 	ptrn := regexp.MustCompile(`https{0,1}:\/\/\[{1}(\S+)\]{1}(:([0-9]+)){0,1}`)
 	m := ptrn.FindStringSubmatch(url)
 
@@ -74,7 +74,26 @@ func ParseURL(url string) (host string, port int64) {
 			port = int64(p)
 		}
 	}
-	return host, port
+
+	secure = strings.HasPrefix(url, "https://")
+
+	// Set default ports
+	if port == 0 {
+		defaultProtocolPorts := map[string]int64{
+			"http":  80,
+			"https": 443,
+		}
+
+		for protocol, defaultPort := range defaultProtocolPorts {
+			prefix := protocol + "://"
+			if strings.HasPrefix(url, prefix) {
+				port = defaultPort
+				break
+			}
+		}
+	}
+
+	return host, port, secure
 }
 
 // Turns IP address into CIDR. If the IP address already seems to be using

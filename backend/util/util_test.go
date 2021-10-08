@@ -17,17 +17,40 @@ func TestHostWithPortURL(t *testing.T) {
 
 // Test parsing URL into host and port.
 func TestParseURL(t *testing.T) {
-	host, port := ParseURL("https://xyz:8080/")
+	host, port, secure := ParseURL("https://xyz:8080/")
 	require.Equal(t, "xyz", host)
 	require.EqualValues(t, 8080, port)
+	require.True(t, secure)
 
-	host, port = ParseURL("https://[2001:db8:1::]:8080")
+	host, port, secure = ParseURL("https://[2001:db8:1::]:8080")
 	require.Equal(t, "2001:db8:1::", host)
 	require.EqualValues(t, 8080, port)
+	require.True(t, secure)
 
-	host, port = ParseURL("http://host.example.org/")
+	host, port, secure = ParseURL("http://host.example.org/")
 	require.Equal(t, "host.example.org", host)
-	require.Zero(t, port)
+	require.Equal(t, 80, port)
+	require.False(t, secure)
+
+	host, port, secure = ParseURL("https://host.example.org/")
+	require.Equal(t, "host.example.org", host)
+	require.Equal(t, 443, port)
+	require.True(t, secure)
+
+	host, port, secure = ParseURL("foo://host.example.org/")
+	require.Equal(t, "host.example.org", host)
+	require.Equal(t, 0, port)
+	require.False(t, secure)
+
+	host, port, secure = ParseURL("http://host.example.org?foo=bar")
+	require.Equal(t, "host.example.org", host)
+	require.Equal(t, 80, port)
+	require.False(t, secure)
+
+	host, port, secure = ParseURL("http://user:password@host.example.org?foo=bar")
+	require.Equal(t, "host.example.org", host)
+	require.Equal(t, 80, port)
+	require.False(t, secure)
 }
 
 // Tests function converting an address to CIDR.

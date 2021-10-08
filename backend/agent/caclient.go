@@ -9,47 +9,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
+var CredentialsFile = "/var/lib/stork-agent/credentials.json" // nolint:gochecknoglobals
+
 // HTTPClient is a normal http client.
 type HTTPClient struct {
-	client *http.Client
-}
-
-// Basic authentication credentials.
-type BasicAuthCredentials struct {
-	login    string
-	password string
-}
-
-// TLS support - inspired by https://sirsean.medium.com/mutually-authenticated-tls-from-a-go-client-92a117e605a1
-func readTLSCredentials() (*x509.CertPool, []tls.Certificate, error) {
-	// Certificates
-	certPool := x509.NewCertPool()
-	ca, err := ioutil.ReadFile(RootCAFile)
-	if err != nil {
-		err = errors.Wrapf(err, "could not read CA certificate: %s", RootCAFile)
-		log.Errorf("%+v", err)
-		return nil, nil, err
-	}
-
-	if ok := certPool.AppendCertsFromPEM(ca); !ok {
-		err = errors.New("failed to append client certs")
-		log.Errorf("%+v", err)
-		return nil, nil, err
-	}
-
-	certificate, err := tls.LoadX509KeyPair(CertPEMFile, KeyPEMFile)
-	if err != nil {
-		err = errors.Wrapf(err, "could not setup TLS key pair")
-		log.Errorf("%+v", err)
-		return nil, nil, err
-	}
-
-	return certPool, []tls.Certificate{certificate}, nil
+	client      *http.Client
+	credentials *CredentialsStore
 }
 
 // Create a client to contact with Kea Control Agent or named statistics-channel.
@@ -82,14 +53,24 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 		Transport: httpTransport,
 	}
 
+	credentialsStore := NewCredentialsStore()
+	// Check if the credential file exist
+	if _, err := os.Stat(CredentialsFile); err == nil {
+		err = credentialsStore.ReadFromFile(CredentialsFile)
+		if err != nil {
+			log.Warnf("cannot read HTTP credentials (e.g. Basic Auth) from file, %+v", err)
+		}
+	}
+
 	client := &HTTPClient{
-		client: httpClient,
+		client:      httpClient,
+		credentials: credentialsStore,
 	}
 
 	return client
 }
 
-func (c *HTTPClient) Call(url string, payload *bytes.Buffer, basicAuth *BasicAuthCredentials) (*http.Response, error) {
+func (c *HTTPClient) Call(url string, payload *bytes.Buffer) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, payload)
 	if err != nil {
 		err = errors.Wrapf(err, "problem with creating POST request to %s", url)
@@ -98,8 +79,8 @@ func (c *HTTPClient) Call(url string, payload *bytes.Buffer, basicAuth *BasicAut
 	}
 	req.Header.Add("Content-Type", "application/json")
 
-	if basicAuth != nil {
-		secret := fmt.Sprintf("%s:%s", basicAuth.login, basicAuth.password)
+	if basicAuth, ok := c.credentials.GetBasicAuthByURL(url); ok {
+		secret := fmt.Sprintf("%s:%s", basicAuth.Login, basicAuth.Password)
 		headerContent := base64.StdEncoding.EncodeToString([]byte(secret))
 		req.Header.Add("Authorization", headerContent)
 	}
@@ -109,4 +90,31 @@ func (c *HTTPClient) Call(url string, payload *bytes.Buffer, basicAuth *BasicAut
 		err = errors.Wrapf(err, "problem with sending POST to %s", url)
 	}
 	return rsp, err
+}
+
+// TLS support - inspired by https://sirsean.medium.com/mutually-authenticated-tls-from-a-go-client-92a117e605a1
+func readTLSCredentials() (*x509.CertPool, []tls.Certificate, error) {
+	// Certificates
+	certPool := x509.NewCertPool()
+	ca, err := ioutil.ReadFile(RootCAFile)
+	if err != nil {
+		err = errors.Wrapf(err, "could not read CA certificate: %s", RootCAFile)
+		log.Errorf("%+v", err)
+		return nil, nil, err
+	}
+
+	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+		err = errors.New("failed to append client certs")
+		log.Errorf("%+v", err)
+		return nil, nil, err
+	}
+
+	certificate, err := tls.LoadX509KeyPair(CertPEMFile, KeyPEMFile)
+	if err != nil {
+		err = errors.Wrapf(err, "could not setup TLS key pair")
+		log.Errorf("%+v", err)
+		return nil, nil, err
+	}
+
+	return certPool, []tls.Certificate{certificate}, nil
 }
