@@ -174,10 +174,8 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, dbApp
 
 	// Prepare the on-wire representation of the commands.
 	req := &agentapi.ForwardRndcCommandReq{
-		Address:           ctrlPoint.Address,
-		Port:              ctrlPoint.Port,
-		Key:               ctrlPoint.Key,
-		UseSecureProtocol: ctrlPoint.UseSecureProtocol,
+		Address: ctrlPoint.Address,
+		Port:    ctrlPoint.Port,
 		RndcRequest: &agentapi.RndcRequest{
 			Request: command,
 		},

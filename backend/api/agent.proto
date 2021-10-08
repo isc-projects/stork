@@ -127,9 +127,7 @@ message ForwardRndcCommandReq {
   // Daemon access control
   string Address = 1;
   int64 Port = 2;
-  string Key = 3;
-  bool UseSecureProtocol = 4;
-  RndcRequest rndcRequest = 5;
+  RndcRequest rndcRequest = 3;
 }
 
 // Response from Rndc.

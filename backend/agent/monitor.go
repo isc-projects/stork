@@ -54,7 +54,7 @@ const (
 
 type AppMonitor interface {
 	GetApps() []App
-	GetApp(appType, apType, address string, port int64, useSecureProtocol bool) App
+	GetApp(appType, apType, address string, port int64) App
 	Start(agent *StorkAgent)
 	Shutdown()
 }
@@ -170,11 +170,8 @@ func printNewOrUpdatedApps(newApps []App, oldApps []App) {
 		for _, app := range newUpdatedApps {
 			var acPts []string
 			for _, acPt := range app.GetBaseApp().AccessPoints {
-				protocol := "http"
-				if acPt.UseSecureProtocol {
-					protocol = "https"
-				}
-				s := fmt.Sprintf("%s: %s://%s:%d", acPt.Type, protocol, acPt.Address, acPt.Port)
+				url := storkutil.HostWithPortURL(acPt.Address, acPt.Port, acPt.UseSecureProtocol)
+				s := fmt.Sprintf("%s: %s", acPt.Type, url)
 				acPts = append(acPts, s)
 			}
 			log.Printf("   %s: %s", app.GetBaseApp().Type, strings.Join(acPts, ", "))
@@ -263,9 +260,8 @@ func (sm *appMonitor) detectAllowedLogs(storkAgent *StorkAgent) {
 			err = errors.WithMessagef(err, "failed to detect log files for Kea")
 			log.WithFields(
 				log.Fields{
-					"address":           ap.Address,
-					"port":              ap.Port,
-					"useSecureProtocol": ap.UseSecureProtocol,
+					"address": ap.Address,
+					"port":    ap.Port,
 				},
 			).Warn(err)
 		} else {
@@ -285,14 +281,14 @@ func (sm *appMonitor) GetApps() []App {
 }
 
 // Get an app from a monitor that matches provided params.
-func (sm *appMonitor) GetApp(appType, apType, address string, port int64, useSecureProtocol bool) App {
+func (sm *appMonitor) GetApp(appType, apType, address string, port int64) App {
 	apps := sm.GetApps()
 	for _, app := range apps {
 		if app.GetBaseApp().Type != appType {
 			continue
 		}
 		for _, ap := range app.GetBaseApp().AccessPoints {
-			if ap.Type == apType && ap.Address == address && ap.Port == port && ap.UseSecureProtocol == useSecureProtocol {
+			if ap.Type == apType && ap.Address == address && ap.Port == port {
 				return app
 			}
 		}

@@ -211,7 +211,7 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 		RndcResponse: rndcRsp,
 	}
 
-	app := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, in.Address, in.Port, in.UseSecureProtocol)
+	app := sa.AppMonitor.GetApp(AppTypeBind9, AccessPointControl, in.Address, in.Port)
 	if app == nil {
 		rndcRsp.Status.Code = agentapi.Status_ERROR
 		rndcRsp.Status.Message = "Cannot find BIND 9 app"
@@ -260,6 +260,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 	rsp := &agentapi.NamedStatsResponse{
 		Status: &agentapi.Status{},
 	}
+
 	// Try to forward the command to named daemon.
 	namedRsp, err := sa.HTTPClient.Call(reqURL, bytes.NewBuffer([]byte(req.Request)))
 	if err != nil {

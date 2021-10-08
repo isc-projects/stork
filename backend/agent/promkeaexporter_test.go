@@ -31,7 +31,7 @@ func (fam *PromFakeAppMonitor) GetApps() []App {
 	return []App{ka}
 }
 
-func (fam *PromFakeAppMonitor) GetApp(appType, apType, address string, port int64, useSecureProtocol bool) App {
+func (fam *PromFakeAppMonitor) GetApp(appType, apType, address string, port int64) App {
 	return nil
 }
 

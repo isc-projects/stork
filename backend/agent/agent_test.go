@@ -81,13 +81,13 @@ func (fam *FakeAppMonitor) GetApps() []App {
 }
 
 // Stub function for AppMonitor. It behaves in the same way as original one.
-func (fam *FakeAppMonitor) GetApp(appType, apType, address string, port int64, useSecureProtocol bool) App {
+func (fam *FakeAppMonitor) GetApp(appType, apType, address string, port int64) App {
 	for _, app := range fam.Apps {
 		if app.GetBaseApp().Type != appType {
 			continue
 		}
 		for _, ap := range app.GetBaseApp().AccessPoints {
-			if ap.Type == apType && ap.Address == address && ap.Port == port && ap.UseSecureProtocol == useSecureProtocol {
+			if ap.Type == apType && ap.Address == address && ap.Port == port {
 				return app
 			}
 		}
@@ -441,11 +441,9 @@ func TestForwardRndcCommandSuccess(t *testing.T) {
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
-		Address:           "127.0.0.1",
-		Port:              1234,
-		Key:               "hmac-sha256:abcd",
-		RndcRequest:       cmd,
-		UseSecureProtocol: false,
+		Address:     "127.0.0.1",
+		Port:        1234,
+		RndcRequest: cmd,
 	}
 
 	// Expect no error, an OK status code, and an empty status message.
@@ -497,11 +495,9 @@ func TestForwardRndcCommandError(t *testing.T) {
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
-		Address:           "127.0.0.1",
-		Port:              1234,
-		Key:               "hmac-sha256:abcd",
-		RndcRequest:       cmd,
-		UseSecureProtocol: false,
+		Address:     "127.0.0.1",
+		Port:        1234,
+		RndcRequest: cmd,
 	}
 
 	// Expect an error status code and some message.
@@ -521,7 +517,6 @@ func TestForwardRndcCommandNoApp(t *testing.T) {
 	req := &agentapi.ForwardRndcCommandReq{
 		Address:     "127.0.0.1",
 		Port:        1234,
-		Key:         "hmac-sha256:abcd",
 		RndcRequest: cmd,
 	}
 
@@ -552,11 +547,9 @@ func TestForwardRndcCommandEmpty(t *testing.T) {
 	cmd := &agentapi.RndcRequest{Request: "status"}
 
 	req := &agentapi.ForwardRndcCommandReq{
-		Address:           "127.0.0.1",
-		Port:              1234,
-		Key:               "hmac-sha256:abcd",
-		RndcRequest:       cmd,
-		UseSecureProtocol: false,
+		Address:     "127.0.0.1",
+		Port:        1234,
+		RndcRequest: cmd,
 	}
 
 	// Empty output is not normal, but we are just forwarding, so expect
