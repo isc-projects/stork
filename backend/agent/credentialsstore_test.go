@@ -35,7 +35,7 @@ func TestAddBasicAuthCredentials(t *testing.T) {
 	require.EqualValues(t, "bar", fetchedCredentials.Password)
 }
 
-// Test that the store accepts only valid IP addresses
+// Test that the store accepts only valid IP addresses.
 func TestAddBasicAuthCredentialsInvalidIPs(t *testing.T) {
 	ipAddresses := []string{
 		"",
@@ -239,7 +239,7 @@ func TestReadStoreFromFileWithAbbreviations(t *testing.T) {
 	}
 }
 
-// Test abbreviation normalization
+// Test abbreviation normalization.
 func TestAbbreviationNormalization(t *testing.T) {
 	store := NewCredentialsStore()
 	credentials := NewBasicAuthCredentials("foo", "bar")

@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Path to a credentials file.
+// CredentialsFile path to a credentials file.
 // It is being modified by tests so needs to be writable.
 var CredentialsFile = "/var/lib/stork-agent/credentials.json" // nolint:gochecknoglobals
 

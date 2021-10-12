@@ -134,7 +134,10 @@ func newLocation(address string, port int64) (Location, error) {
 func (cs *CredentialsStore) loadContent(content *CredentialsStoreContent) error {
 	for _, entry := range content.Basic {
 		credentials := NewBasicAuthCredentials(entry.Login, entry.Password)
-		cs.AddOrUpdateBasicAuth(entry.IP, entry.Port, credentials)
+		err := cs.AddOrUpdateBasicAuth(entry.IP, entry.Port, credentials)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -150,5 +153,4 @@ func normalizeIP(address string) (string, error) {
 	}
 	normalizedIP := ipObj.String()
 	return normalizedIP, nil
-
 }
