@@ -15,6 +15,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Path to a credentials file.
+// It is being modified by tests so needs to be writable.
 var CredentialsFile = "/var/lib/stork-agent/credentials.json" // nolint:gochecknoglobals
 
 // HTTPClient is a normal http client.
@@ -56,7 +58,11 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 	credentialsStore := NewCredentialsStore()
 	// Check if the credential file exist
 	if _, err := os.Stat(CredentialsFile); err == nil {
-		err = credentialsStore.ReadFromFile(CredentialsFile)
+		file, err := os.Open(CredentialsFile)
+		if err == nil {
+			defer file.Close()
+			err = credentialsStore.Read(file)
+		}
 		if err != nil {
 			log.Warnf("cannot read HTTP credentials (e.g. Basic Auth) from file, %+v", err)
 		}

@@ -1,10 +1,19 @@
 package agent
 
 import (
+	"bytes"
+	"encoding/base64"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
+	"os"
+	"path"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	storkutil "isc.org/stork/util"
 )
 
 // Check that HTTP client sets the TLS credentials if available.
@@ -25,12 +34,14 @@ func TestCreateHTTPClientWithClientCerts(t *testing.T) {
 
 	require.NotNil(t, transportConfig.RootCAs)
 	require.NotNil(t, transportConfig.Certificates)
+
+	require.NotNil(t, client.credentials)
 }
 
 // Check that HTTP client doesn't set the TLS credentials if missing
 // (for example in the unit tests).
 func TestCreateHTTPClientWithoutClientCerts(t *testing.T) {
-	cleanup := RememberCertPaths()
+	cleanup := RememberPaths()
 	defer cleanup()
 
 	KeyPEMFile = "/not/exists/path"
@@ -64,4 +75,55 @@ func TestCreateHTTPClientSkipVerification(t *testing.T) {
 
 	transportConfig := transport.TLSClientConfig
 	require.True(t, transportConfig.InsecureSkipVerify)
+}
+
+func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
+	restorePaths := RememberPaths()
+	defer restorePaths()
+
+	// Create temp dir
+	tmpDir, err := ioutil.TempDir("", "reg")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	// Prepare test server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		secret := r.Header.Get("Authorization")
+		require.NotEmpty(t, secret)
+		rawCredentials, err := base64.StdEncoding.DecodeString(secret)
+		require.NoError(t, err)
+		parts := strings.Split(string(rawCredentials), ":")
+		require.Len(t, parts, 2)
+		login := parts[0]
+		password := parts[1]
+		require.EqualValues(t, "foo", login)
+		require.EqualValues(t, "bar", password)
+	}))
+	defer ts.Close()
+
+	serverURL := ts.URL
+	serverIP, serverPort, _ := storkutil.ParseURL(serverURL)
+
+	// Create credentials file
+	CredentialsFile = path.Join(tmpDir, "credentials.json")
+	content := fmt.Sprintf(`{
+		"basic": [
+			{
+				"ip": "%s",
+				"port": %d,
+				"login": "foo",
+				"password": "bar"
+			}
+		]
+	}`, serverIP, serverPort)
+	err = ioutil.WriteFile(CredentialsFile, []byte(content), 0600)
+	require.NoError(t, err)
+
+	// Create HTTP Client
+	client := NewHTTPClient(true)
+	require.NotNil(t, client.credentials)
+
+	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
+	require.NoError(t, err)
+	defer res.Body.Close()
 }

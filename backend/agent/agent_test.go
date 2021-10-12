@@ -712,7 +712,7 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
-	restoreCerts := RememberCertPaths()
+	restoreCerts := RememberPaths()
 	defer restoreCerts()
 	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
 
@@ -755,7 +755,7 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
 	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
-	restoreCerts := RememberCertPaths()
+	restoreCerts := RememberPaths()
 	defer restoreCerts()
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")

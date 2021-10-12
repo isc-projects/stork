@@ -26,7 +26,7 @@ func TestRegisterBasic(t *testing.T) {
 	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
 
 	// redefined consts with paths to cert files
-	restoreCerts := RememberCertPaths()
+	restoreCerts := RememberPaths()
 	defer restoreCerts()
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
 	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
@@ -121,7 +121,7 @@ func TestRegisterBadServer(t *testing.T) {
 	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
 
 	// redefined consts with paths to cert files
-	restoreCerts := RememberCertPaths()
+	restoreCerts := RememberPaths()
 	defer restoreCerts()
 
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
@@ -268,7 +268,7 @@ func TestRegisterNegative(t *testing.T) {
 	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
 
 	// redefined consts with paths to cert files
-	restoreCerts := RememberCertPaths()
+	restoreCerts := RememberPaths()
 	defer restoreCerts()
 
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
@@ -321,7 +321,7 @@ func TestGenerateCerts(t *testing.T) {
 	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
 
 	// redefined consts with paths to cert files
-	restoreCerts := RememberCertPaths()
+	restoreCerts := RememberPaths()
 	defer restoreCerts()
 
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
@@ -381,7 +381,7 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
 
 	// redefined consts with paths to cert files
-	restoreCerts := RememberCertPaths()
+	restoreCerts := RememberPaths()
 	defer restoreCerts()
 
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
@@ -478,7 +478,7 @@ func TestRepeatRegister(t *testing.T) {
 	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
 
 	// redefined consts with paths to cert files
-	restoreCerts := RememberCertPaths()
+	restoreCerts := RememberPaths()
 	defer restoreCerts()
 
 	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")

@@ -7,18 +7,20 @@ import (
 )
 
 // Helper function to store and defer restore
-// original certificates and secrets paths.
-func RememberCertPaths() func() {
+// original paths of: certificates, secrets and credentials.
+func RememberPaths() func() {
 	originalKeyPEMFile := KeyPEMFile
 	originalCertPEMFile := CertPEMFile
 	originalRootCAFile := RootCAFile
 	originalAgentTokenFile := AgentTokenFile
+	originalCredentialsFile := CredentialsFile
 
 	return func() {
 		KeyPEMFile = originalKeyPEMFile
 		CertPEMFile = originalCertPEMFile
 		RootCAFile = originalRootCAFile
 		AgentTokenFile = originalAgentTokenFile
+		CredentialsFile = originalCredentialsFile
 	}
 }
 
@@ -27,7 +29,7 @@ func RememberCertPaths() func() {
 // and generation error. This function always creates
 // the files with the same content.
 func GenerateSelfSignedCerts() (func(), error) {
-	restoreCerts := RememberCertPaths()
+	restoreCerts := RememberPaths()
 	tmpDir, err := ioutil.TempDir("", "reg")
 	if err != nil {
 		return nil, err
