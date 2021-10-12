@@ -507,7 +507,24 @@ class StorkAgentContainer(Container):
         else:
             self.install_pkgs('yum-utils epel-release')
 
-    def install_kea(self, service_name='default', kea_version=KEA_LATEST, tls_support=KeaTLSSupport.NONE):
+    def install_kea(self, service_name='default', kea_version=KEA_LATEST, tls_support=KeaTLSSupport.NONE, basic_auth_enable=False):
+        '''
+        Install Kea and Kea CA daemons in the container.
+        
+        Parameters
+        ----------
+        service_name: default | dhcp6 | ddns
+            Name of Kea daemon to install. It is applicable only on Ubuntu.
+        kea_version: str
+            Version of the Kea to install.
+        tls_support: KeaTLSSupport enum
+            Kea TLS support mode. See enum for detailed info.
+        basic_auth_enable: boolean
+            If true then the Kea CA is configured to accept only the authorized
+            (using Basic Auth)requests. It creates one set of credentials
+            (login: foo, password: bar). It doesn't change the Stork Agent
+            configuration - you need call `use_credentials_file` method separatelly.
+        '''
         print('INSTALL KEA')
         repo = 'kea-' + kea_version[:3].replace('.', '-')
         self.setup_cloudsmith_repo(repo)
@@ -529,13 +546,16 @@ class StorkAgentContainer(Container):
         pkgs = pkgs.format(kea_version=kea_version)
         self.install_pkgs(pkgs)
 
+        ca_config_path = '/etc/kea/kea-ctrl-agent.conf'
+        config_root = (r'"Control-agent": {').replace(r'"', r'\"')
+
         self.run("mkdir -p /var/run/kea/")
         # CA should be widely accessible
-        self.run("perl -pi -e 's/127\\.0\\.0\\.1/0\\.0\\.0\\.0/g' /etc/kea/kea-ctrl-agent.conf")
+        self.run("perl -pi -e 's/127\\.0\\.0\\.1/0\\.0\\.0\\.0/g' %s" % ca_config_path)
         # in old Kea CA socket didn't match with Kea dhcp4 server
-        self.run("perl -pi -e 's#/tmp/kea-dhcp4-ctrl.sock#/tmp/kea4-ctrl-socket#g' /etc/kea/kea-ctrl-agent.conf")
+        self.run("perl -pi -e 's#/tmp/kea-dhcp4-ctrl.sock#/tmp/kea4-ctrl-socket#g' %s" % ca_config_path)
         # avoid collision with Stork Agent which also listens on 8080
-        self.run("perl -pi -e 's/8080/8000/g' /etc/kea/kea-ctrl-agent.conf")
+        self.run("perl -pi -e 's/8080/8000/g' %s" % ca_config_path)
 
         # TLS support
         print('Kea TLS support mode: %s' % tls_support)
@@ -556,15 +576,12 @@ class StorkAgentContainer(Container):
             self.run(cmd)
 
             # Reconfigure KEA CA to use TLS
-            ca_config_path = '/etc/kea/kea-ctrl-agent.conf'
-            config_root = (r'"Control-agent": {')
             cert_content = (r'    "trust-anchor": "%s",\n'
                         r'    "cert-file": "%s",\n'
                         r'    "key-file": "%s",\n'
                         r'    "cert-required": %s,') \
                         % (trust_anchor_dir, cert_file_path, key_file_path,
                            str(tls_support == KeaTLSSupport.REQUIRE_CLIENT_CERT).lower())
-            config_root = config_root.replace(r'"', r'\"')
             cert_content = cert_content.replace(r'"', r'\"').replace(r'/', r'\/')
             replacement = config_root + r'\n' + cert_content
 
@@ -572,6 +589,26 @@ class StorkAgentContainer(Container):
             self.run(cmd)
             self.run('chmod o+x /root')
             self.run('chmod o+r %s' % key_file_path)
+
+        # Basic auth
+        print('Kea Basic Auth support enabled: %s' % basic_auth_enable)
+        if basic_auth_enable:
+            content = (
+                r'    "authentication": {\n'
+                r'        "type": "basic",\n'
+                r'        "realm": "kea-control-agent",\n'
+                r'        "clients": [\n'
+                r'            {\n'
+                r'                "user": "foo",\n'
+                r'                "password": "bar"\n'
+                r'            }\n'
+                r'        ]\n'
+                r'    },'
+            )
+            content = content.replace(r'"', r'\"')
+            replacement = config_root + r'\n' + content
+            cmd = r'sed -i -e s/"%s"/"%s"/ %s' % (config_root, replacement, ca_config_path)
+            self.run(cmd)
 
         if self.pkg_format == 'deb':
             self.run('systemctl enable isc-kea-ctrl-agent')
@@ -741,6 +778,24 @@ class StorkAgentContainer(Container):
         cmd = "echo -e '\nSTORK_AGENT_SKIP_TLS_CERT_VERIFICATION=%d' >> /etc/stork/agent.env" % int(enable)
         self.run('bash -c "%s"' % cmd)
         self.run('systemctl daemon-reload')
+        self.run('systemctl restart isc-stork-agent')
+
+    def use_credentials_file(self):
+        '''Create credentials.json file and configure the Stork Agent use them.'''
+        content = (
+            r'{\n'
+            r'    "basic": [\n'
+            r'        {\n'
+            r'            "ip": "127.0.0.1",\n'
+            r'            "port": 8000,\n'
+            r'            "login": "foo",\n'
+            r'            "password": "bar"\n'
+            r'        }\n'
+            r'    ]\n'
+            r'}\n'
+        ).replace(r'"', r'\"')
+        cmd = "echo -e '%s' > /var/lib/stork-agent/credentials.json" % content
+        self.run('bash -c "%s"' % cmd)
         self.run('systemctl restart isc-stork-agent')
 
     def _setup(self, reused, pkg_ver=None, server_ip=None):

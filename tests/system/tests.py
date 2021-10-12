@@ -287,7 +287,7 @@ def test_add_kea_with_many_subnets(agent, server):
     # assert len(subnets) == 6912
 
 
-def _wait_for_event(server, text, expected=True, attempts=20):
+def _wait_for_event(server, text, expected=True, attempts=20, details=""):
     last_ts = None
     event_occured = False
     for i in range(attempts):
@@ -297,7 +297,7 @@ def _wait_for_event(server, text, expected=True, attempts=20):
             if last_ts and ev['createdAt'] < last_ts:
                 # skip older events
                 continue
-            if text in ev['text']:
+            if text in ev['text'] and details in ev['details']:
                 event_occured = True
                 break
         if event_occured:
@@ -783,7 +783,7 @@ def test_communication_with_kea_over_secure_protocol(agent, server):
 
 
 @pytest.mark.parametrize("agent, server", [('centos/8', 'ubuntu/18.04')])
-def test_communication_with_kea_over_secure_protocol_nontrusted_client(agent, server):
+def test_communication_with_kea_over_secure_protocol_nontrusted_client(agent: containers.StorkAgentContainer, server):
     """The Stork Agent uses self-signed TLS certificates over HTTPS, but the Kea
     requires the valid credentials. The Stork Agent should send request, but get
     rejection from the Kea CA."""
@@ -874,3 +874,48 @@ def test_get_dhcp4_config_review_reports(agent, server):
     assert len(data['items']) == 1
     assert data['items'][0]['checker'] is not None
     assert data['items'][0]['checker'] == 'stat_cmds_presence'
+
+@pytest.mark.parametrize("agent, server", [('centos/8', 'ubuntu/18.04')])
+def test_communication_with_kea_using_basic_auth_no_credentials(agent: containers.StorkAgentContainer, server):
+    """The Kea CA is configured to accept requests only with Basic Auth credentials in header.
+    The Stork Agent doesn't have a credentials file. Kea shouldn't accept the requests from the Stork Agent."""
+    # install kea on the agent machine
+    agent.set_skip_tls_cert_verification()
+    agent.install_kea(basic_auth_enable=True)
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # get machine that automatically registered in the server and authorize it
+    m = _get_machines_and_authorize_them(server)[0]
+    # trig forward command to Kea
+    m = _get_machine_state(server, m['id'])
+
+    # The Stork Agent doesn't know the credentials yet.
+    # The above request should fail.
+    _wait_for_event(server, 'communication with CA daemon of <app id="0" name="" type="kea" version=""> failed',
+        details='"result": 401, "text": "Unauthorized"')
+
+
+@pytest.mark.parametrize("agent, server", [('centos/8', 'ubuntu/18.04')])
+def test_communication_with_kea_using_basic_auth(agent: containers.StorkAgentContainer, server):
+    """The Kea CA is configured to accept requests only with Basic Auth credentials in header.
+    The Stork Agent has a credentials file. Kea should accept the requests from the Stork Agent."""
+    # Reconfigure the agent to use Basic Auth credentials
+    agent.use_credentials_file()
+    # install kea on the agent machine
+    agent.set_skip_tls_cert_verification()
+    agent.install_kea(basic_auth_enable=True)
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # get machine that automatically registered in the server and authorize it
+    m = _get_machines_and_authorize_them(server)[0]
+    # trig forward command to Kea
+    m = _get_machine_state(server, m['id'])
+
+    _wait_for_event(server, 'communication with CA daemon of <app id="0" name="" type="kea" version=""> failed',
+        details='"result": 401, "text": "Unauthorized"', expected=False)

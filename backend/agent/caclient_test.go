@@ -88,8 +88,10 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 
 	// Prepare test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		secret := r.Header.Get("Authorization")
-		require.NotEmpty(t, secret)
+		headerContent := r.Header.Get("Authorization")
+		require.NotEmpty(t, headerContent)
+		require.True(t, strings.HasPrefix(headerContent, "Basic "))
+		secret := strings.TrimPrefix(headerContent, "Basic ")
 		rawCredentials, err := base64.StdEncoding.DecodeString(secret)
 		require.NoError(t, err)
 		parts := strings.Split(string(rawCredentials), ":")
