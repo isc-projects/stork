@@ -138,11 +138,14 @@ func (cs *CredentialsStore) loadContent(content *CredentialsStoreContent) error 
 		// Check required fields
 		if entry.IP == nil {
 			return errors.Errorf("missing IP address")
-		} else if entry.Port == nil {
+		}
+		if entry.Port == nil {
 			return errors.Errorf("missing port")
-		} else if entry.Login == nil {
+		}
+		if entry.Login == nil {
 			return errors.Errorf("missing login")
-		} else if entry.Password == nil {
+		}
+		if entry.Password == nil {
 			return errors.Errorf("missing password")
 		}
 
