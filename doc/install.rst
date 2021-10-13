@@ -350,6 +350,45 @@ The Kea CA accepts only requests signed with a trusted certificate when the `cer
 is set to `true` in the Kea CA configuration file. In this case, the Stork Agent must use the valid
 certificates (it cannot use self-signed certificates as created during Stork Agent registration).
 
+.. warning::
+
+   Basic HTTP authentication (described below) is weak on its own as there are known dictionary attacks,
+   but those attacks require man-in-the-middle to get access to the HTTP traffic. That can be eliminated
+   by using basic HTTP authentication exclusively over TLS.
+   In fact, if possible, using client certificates for TLS is better than using basic HTTP authentication.
+
+Kea 1.9.0 added support for basic HTTP authentication to control access for incoming REST commands over HTTP.
+If the Kea CA is configured to use the Basic Auth then you need to provide the valid credentials in
+the Stork Agent credentials file. The credentials file should be located in `/var/lib/stork-agent/credentials.json`
+(if the file doesn't exist you should create it). The example file content:
+
+.. code-block:: json
+
+   {
+      "basic": [
+         {
+            "ip": "127.0.0.1",
+            "port": 8000,
+            "login": "foo",
+            "password": "bar"
+         }
+      ]
+   }
+
+It contains a single object with a single "basic" key. The "basic" value is a list of the Basic Auth credentials.
+All credentials must to contains the values for 4 keys:
+
+- "ip": IPv4 or IPv6 address of the Kea CA. It supports IPv6 abbreviations (e.g. "FF:0000::" is the same as "ff::").
+- "port": Number of the Kea CA.
+- "login": Basic Auth login to use in connection to specific Kea CA. 
+- "password": Basic Auth password to use in connection to specific Kea CA.
+
+To apply changes in the credentials file you need to restart the Stork Agent daemon.
+
+If the credentials file will be invalid then the Stork Agent runs as usual but without the Basic Auth support.
+You will get a specific message in the log.
+
+
 .. _register-agent-token-cloudsmith:
 
 Installation from Cloudsmith and Registration with an Agent Token
