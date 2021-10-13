@@ -64,8 +64,12 @@ func NewHTTPClient(skipTLSVerification bool) *HTTPClient {
 			err = credentialsStore.Read(file)
 		}
 		if err != nil {
-			log.Warnf("cannot read HTTP credentials (e.g. Basic Auth) from file, %+v", err)
+			log.Info("configured to use HTTP credentials from file")
+		} else {
+			log.Warnf("cannot read HTTP credentials (e.g. Basic Auth) from file (%s), %+v", CredentialsFile, err)
 		}
+	} else {
+		log.Infof("the HTTP credentials file (%s) is missing - HTTP authentication is not used", CredentialsFile)
 	}
 
 	client := &HTTPClient{

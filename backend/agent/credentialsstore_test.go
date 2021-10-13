@@ -257,7 +257,54 @@ func TestAbbreviationNormalization(t *testing.T) {
 // Test read the store from the invalid JSON content.
 func TestReadStoreFromInvalidContent(t *testing.T) {
 	store := NewCredentialsStore()
-	err := store.Read(strings.NewReader(""))
-	require.Error(t, err)
-	require.Len(t, store.basicAuthCredentials, 0)
+
+	contents := []string{
+		// Empty content
+		``,
+		// Port is not a number
+		`{
+			"basic": [
+				{
+					"ip": "192.168.0.1",
+					"port": "1234",
+					"login": "foo",
+					"password": "bar"
+				}
+			]
+		}`,
+		// Missing port
+		`{
+			"basic": [
+				{
+					"ip": "192.168.0.1",
+					"login": "foo",
+					"password": "bar"
+				}
+			]
+		}`,
+		// Missing all fields
+		`{
+			"basic": [
+				{ }
+			]
+		}`,
+		// Missing key quotes
+		`{
+			basic: [
+				{
+					ip: "192.168.0.1",
+					port: 8000
+					login: "foo",
+					password: "bar"
+				}
+			]
+		}`,
+	}
+
+	for _, rawContent := range contents {
+		content := strings.NewReader(rawContent)
+		err := store.Read(content)
+		require.Error(t, err, "Content:", content)
+		require.Len(t, store.basicAuthCredentials, 0)
+	}
 }
