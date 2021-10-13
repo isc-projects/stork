@@ -287,7 +287,7 @@ def test_add_kea_with_many_subnets(agent, server):
     # assert len(subnets) == 6912
 
 
-def _wait_for_event(server, text, expected=True, attempts=20, details=""):
+def _wait_for_event(server, text, expected=True, attempts=20, details=''):
     last_ts = None
     event_occured = False
     for i in range(attempts):
@@ -297,7 +297,7 @@ def _wait_for_event(server, text, expected=True, attempts=20, details=""):
             if last_ts and ev['createdAt'] < last_ts:
                 # skip older events
                 continue
-            if text in ev['text'] and details in ev['details']:
+            if text in ev['text'] and details in ev.get('details', ''):
                 event_occured = True
                 break
         if event_occured:
