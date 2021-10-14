@@ -204,9 +204,8 @@ deploy_to_repo:
     # prepare release notes file
     - git clone https://gitlab.isc.org/isc-projects/stork.wiki
     - stork_version=`perl -lne 'print $1 if /(\d+\.\d+\.\d+)/' < backend/version.go`
-    - stork_version_minor=`perl -lne 'print $1 if /"(\d+\.\d+)\.\d+/' < backend/version.go`
     - output=Stork-${stork_version}-ReleaseNotes.txt
-    - fold -sw 73 < stork.wiki/*eleases/*${stork_version_minor}.md > $output
+    - fold -sw 73 < stork.wiki/*eleases/Release-notes-${stork_version}.md > $output
     # upload release notes and tarball to repo.isc.org
     - eval $(ssh-agent -s)
     - echo "$REPO_SSH_PRIVATE_KEY" | base64 -d | ssh-add -
