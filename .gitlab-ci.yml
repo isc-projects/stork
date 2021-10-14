@@ -46,7 +46,6 @@ cache:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - apt-get update
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget xz-utils rake openjdk-11-jre-headless gcc g++ chromium-browser unzip python3-sphinx python3-sphinx-rtd-theme iputils-ping
     - rake prepare_env
 
 lint_go:
@@ -60,15 +59,8 @@ unittest_backend:
     - name: registry.gitlab.isc.org/isc-projects/stork/ci-postgres:11
       alias: postgres
   script:
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends postgresql-client
     - echo 'postgres:*:*:storktest:storktest' > ~/.pgpass
     - chmod 600 ~/.pgpass
-
-    # TODO: generate a new ci-postgres image with a valid certificate. Remove workaround after.
-    # Cloning into '/root/go/src/gopkg.in/yaml.v2'...
-    # fatal: unable to access 'https://gopkg.in/yaml.v2/': server certificate verification failed. CAfile: /etc/ssl/certs/ca-certificates.crt CRLfile: none
-    - export GIT_SSL_NO_VERIFY=1
-
     - rake unittest_backend
 
 ci_ui:
@@ -203,17 +195,12 @@ deploy_to_repo:
   needs:
     - tarball
   before_script:
+    # Disable IPv6 to avoid problems gem has accessing rubygems.org.
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
   script:
     - export LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
     - ls -al
-
-    # TODO: generate a new ci-postgres image with a valid certificate. Remove workaround after.
-    # Cloning into '/root/go/src/gopkg.in/yaml.v2'...
-    # fatal: unable to access 'https://gopkg.in/yaml.v2/': server certificate verification failed. CAfile: /etc/ssl/certs/ca-certificates.crt CRLfile: none
-    - export GIT_SSL_NO_VERIFY=1
-
     # prepare release notes file
     - git clone https://gitlab.isc.org/isc-projects/stork.wiki
     - stork_version=`perl -lne 'print $1 if /(\d+\.\d+\.\d+)/' < backend/version.go`
