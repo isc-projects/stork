@@ -1,3 +1,11 @@
+* 162 [build] andrei
+
+    Rebuilt CI image to upgrade openssl and renew certificate
+    following the LetsEncrypt root certificate expiration on
+    the 30th of September 2021. The CI image now also has the psql
+    client preinstalled.
+    (Gitlab #596)
+
 Stork 0.21.0 released on 2021-10-06.
 
 * 161 [func] slawek
