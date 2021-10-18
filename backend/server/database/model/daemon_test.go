@@ -1,11 +1,14 @@
 package dbmodel
 
 import (
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/go-pg/pg/v9"
 	require "github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
+	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -275,7 +278,280 @@ func TestGetDaemonByID(t *testing.T) {
 	require.NotNil(t, dmn.KeaDaemon.Config)
 }
 
-// Tests that Kea loggin configuration information is correctly populated within
+// Test selecting BIND9 daemon by ID for update which should result in locking
+// the daemon information until the transaction is committed or rolled back.
+func TestGetBind9DaemonsForUpdate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Get non-existing daemons.
+	tx, _, commit, err := dbops.Transaction(db)
+	require.NoError(t, err)
+
+	daemons, err := GetDaemonsForUpdate(tx, []*Daemon{
+		{
+			ID: 123,
+		},
+		{
+			ID: 567,
+		},
+	})
+	require.NoError(t, err)
+	require.Empty(t, daemons)
+	err = commit()
+	require.NoError(t, err)
+
+	// Create a machine.
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotZero(t, m.ID)
+
+	// Create an app.
+	app := &App{
+		ID:        0,
+		MachineID: m.ID,
+		Type:      AppTypeBind9,
+		Daemons: []*Daemon{
+			{
+				Name:   "bind9",
+				Active: true,
+			},
+		},
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+	require.Len(t, app.Daemons, 1)
+	require.NotZero(t, app.Daemons[0].ID)
+
+	// Start new transaction.
+	tx, _, commit, err = dbops.Transaction(db)
+	require.NoError(t, err)
+
+	// An attempt to select no particular daemon for update should result
+	// in an error.
+	daemons, err = GetDaemonsForUpdate(tx, []*Daemon{})
+	require.Error(t, err)
+	require.Empty(t, daemons)
+
+	// Select daemon for update.
+	daemons, err = GetDaemonsForUpdate(tx, app.Daemons)
+	require.NoError(t, err)
+	require.Len(t, daemons, 1)
+
+	// Sanity check selected data.
+	require.NotZero(t, daemons[0].ID)
+	require.True(t, daemons[0].Active)
+	require.NotNil(t, daemons[0].App)
+	require.Equal(t, app.ID, daemons[0].App.ID)
+	require.NotNil(t, daemons[0].App.Machine)
+	require.Equal(t, m.ID, daemons[0].App.Machine.ID)
+
+	// When daemon is selected for update within a transaction, no other
+	// transaction can modify the daemon until the current transaction is
+	// committed or rolled back. We will now run a goroutine which will
+	// attempt such a modification.
+	var err2 error
+	mutex := &sync.Mutex{}
+	mutex.Lock()
+	cond := sync.NewCond(mutex)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	// Actually run the goroutine.
+	go func() {
+		defer wg.Done()
+		// The main thread is waiting for this conditional to ensure that the
+		// goroutine is started before the test continues.
+		cond.Signal()
+		// Attempt to delete the app while the main transaction is in progress
+		// and the daemons are locked for update. This should block until the
+		// main transaction is committed or rolled back.
+		err2 = db.Delete(app)
+	}()
+
+	// Wait for the goroutine to begin.
+	cond.Wait()
+
+	// We want to ensure that the goroutine executes db.Delete() before we
+	// run the tx.Delete() from this transaction. If the tx.Delete() is
+	// executed first, it has no effect on the test result. But, running
+	// db.Delete() before tx.Delete() validates the effectiveness of the
+	// locking mechanism.
+	time.Sleep(100 * time.Millisecond)
+	// It should take precedence over the db.Delete() invoked from the goroutine.
+	// Thus, there should be no error.
+	err = tx.Delete(app)
+	require.NoError(t, err)
+
+	// Commit the transaction which should cause the goroutine to complete.
+	err = commit()
+	require.NoError(t, err)
+
+	// Wait for the goroutine to complete.
+	wg.Wait()
+
+	// Ensure that the goroutine deleted no data because the data was already
+	// deleted by the main thread. It tests that the locking mechanism works
+	// as expected.
+	require.ErrorIs(t, err2, pg.ErrNoRows)
+}
+
+// Test selecting Kea daemons by IDs for update which should result in locking
+// the daemon information until the transaction is committed or rolled back.
+func TestGetKeaDaemonsForUpdate(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Get non-existing daemons.
+	tx, _, commit, err := dbops.Transaction(db)
+	require.NoError(t, err)
+
+	daemons, err := GetKeaDaemonsForUpdate(tx, []*Daemon{
+		{
+			ID: 123,
+		},
+		{
+			ID: 567,
+		},
+	})
+	require.NoError(t, err)
+	require.Empty(t, daemons)
+	err = commit()
+	require.NoError(t, err)
+
+	// Create a machine.
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotZero(t, m.ID)
+
+	// Create the configs for daemons.
+	config1, err := NewKeaConfigFromJSON(`{"Dhcp4": { }}`)
+	require.NoError(t, err)
+	config2, err := NewKeaConfigFromJSON(`{"Dhcp6": { }}`)
+	require.NoError(t, err)
+
+	// Create an app.
+	app := &App{
+		ID:        0,
+		MachineID: m.ID,
+		Type:      AppTypeKea,
+		Daemons: []*Daemon{
+			{
+				Name:   "dhcp4",
+				Active: true,
+				KeaDaemon: &KeaDaemon{
+					Config:     config1,
+					ConfigHash: "1234",
+				},
+			},
+			{
+				Name:   "dhcp6",
+				Active: true,
+				KeaDaemon: &KeaDaemon{
+					Config:     config2,
+					ConfigHash: "2345",
+				},
+			},
+		},
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+	require.Len(t, app.Daemons, 2)
+	require.NotZero(t, app.Daemons[0].ID)
+	require.NotZero(t, app.Daemons[1].ID)
+
+	// Start new transaction.
+	tx, _, commit, err = dbops.Transaction(db)
+	require.NoError(t, err)
+
+	// An attempt to select no particular daemon for update should result
+	// in an error.
+	daemons, err = GetKeaDaemonsForUpdate(tx, []*Daemon{})
+	require.Error(t, err)
+	require.Empty(t, daemons)
+
+	// Select both daemons for update.
+	daemons, err = GetKeaDaemonsForUpdate(tx, app.Daemons)
+	require.NoError(t, err)
+	require.Len(t, daemons, 2)
+
+	// Sanity check selected data.
+	for i, daemon := range daemons {
+		require.NotZero(t, daemon.ID)
+		require.True(t, daemon.Active)
+		require.NotNil(t, daemon.KeaDaemon)
+		require.NotZero(t, daemon.KeaDaemon.ID)
+		require.NotNil(t, daemon.KeaDaemon.Config)
+		require.Equal(t, app.Daemons[i].KeaDaemon.ConfigHash, daemon.KeaDaemon.ConfigHash)
+		require.NotNil(t, daemon.App)
+		require.Equal(t, app.ID, daemon.App.ID)
+		require.NotNil(t, daemon.App.Machine)
+		require.Equal(t, m.ID, daemon.App.Machine.ID)
+	}
+
+	// When daemons are selected for update within a transaction, no other
+	// transaction can modify the daemons until the current transaction is
+	// committed or rolled back. We will now run a goroutine which will
+	// attempt such a modification.
+	var err2 error
+	mutex := &sync.Mutex{}
+	mutex.Lock()
+	cond := sync.NewCond(mutex)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	// Actually run the goroutine.
+	go func() {
+		defer wg.Done()
+		// The main thread is waiting for this conditional to ensure that the
+		// goroutine is started before the test continues.
+		cond.Signal()
+		// Attempt to delete the app while the main transaction is in progress
+		// and the daemons are locked for update. This should block until the
+		// main transaction is committed or rolled back.
+		err2 = db.Delete(app)
+	}()
+
+	// Wait for the goroutine to begin.
+	cond.Wait()
+
+	// We want to ensure that the goroutine executes db.Delete() before we
+	// run the tx.Delete() from this transaction. If the tx.Delete() is
+	// executed first, it has no effect on the test result. But, running
+	// db.Delete() before tx.Delete() validates the effectiveness of the
+	// locking mechanism.
+	time.Sleep(100 * time.Millisecond)
+	// It should take precedence over the db.Delete() invoked from the goroutine.
+	// Thus, there should be no error.
+	err = tx.Delete(app)
+	require.NoError(t, err)
+
+	// Commit the transaction which should cause the goroutine to complete.
+	err = commit()
+	require.NoError(t, err)
+
+	// Wait for the goroutine to complete.
+	wg.Wait()
+
+	// Ensure that the goroutine deleted no data because the data was already
+	// deleted by the main thread. It tests that the locking mechanism works
+	// as expected.
+	require.ErrorIs(t, err2, pg.ErrNoRows)
+}
+
+// Tests that Kea logging configuration information is correctly populated within
 // the daemon structures.
 func TestSetKeaLoggingConfig(t *testing.T) {
 	daemon := NewKeaDaemon("kea-dhcp4", true)

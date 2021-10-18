@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -256,6 +258,119 @@ func GetDaemonByID(db *pg.DB, id int64) (*Daemon, error) {
 		return nil, pkgerrors.Wrapf(err, "problem with getting daemon %v", id)
 	}
 	return &app, nil
+}
+
+// Select one or more daemons for update. The main use case for this function is
+// to prevent modifications and deletions of the daemons while the server inserts
+// config reports for them. It must be called within a transaction and the selected
+// rows remain locked until the transaction is committed or rolled back. Due to the
+// limitations of the go-pg library, this function does not select all columns in the
+// joined tables (machine and app).
+func GetDaemonsForUpdate(tx *pg.Tx, daemonsToSelect []*Daemon) ([]*Daemon, error) {
+	var daemons []*Daemon
+
+	// It is an error when no daemons are specified. Typically it will be one
+	// daemon but there can be more.
+	if len(daemonsToSelect) == 0 {
+		return daemons, pkgerrors.New("no daemons specified for select for update")
+	}
+
+	// Execute SELECT ... FROM daemon ... FOR UPDATE. It loocks all selected
+	// rows of the daemon table and the selected rows of the joined tables.
+	// PostgreSQL does not allow for such locking when LEFT JOIN is used
+	// because some joined rows may be NULL in this case. Unfortunately,
+	// the go-pg Relation() does not allow for choosing between the INNER and
+	// LEFT JOIN. Therefore, we can't use the Relation() call in this query.
+	// Instead, we use explicit Join() and ColumnExpr() calls. It requires
+	// explicitly specifying the selected column names. Thus, we limited the
+	// selected columns to ID for joined tables to avoid having to maintain
+	// the selected columns list. The query can be extended to select more
+	// columns if necessary.
+	var ids []int64
+	for _, d := range daemonsToSelect {
+		ids = append(ids, d.ID)
+	}
+	err := tx.Model(&daemons).
+		ColumnExpr("daemon.*").
+		ColumnExpr("app.id AS app__id").
+		ColumnExpr("machine.id AS app__machine__id").
+		Join("INNER JOIN app ON app.id = daemon.app_id").
+		Join("INNER JOIN machine ON app.machine_id = machine.id").
+		Where("daemon.id IN (?)", pg.In(ids)).
+		For("UPDATE").
+		OrderExpr("daemon.id ASC").
+		Select()
+
+	if errors.Is(err, pg.ErrNoRows) {
+		return daemons, nil
+	} else if err != nil {
+		var sids []string
+		for _, id := range ids {
+			sids = append(sids, fmt.Sprintf("%d", id))
+		}
+		return nil, pkgerrors.Wrapf(err, "problem with selecting daemons with ids: %s, for update",
+			strings.Join(sids, ", "))
+	}
+	return daemons, nil
+}
+
+// Select one or more Kea daemons for update. The main use case for this function is
+// to prevent modifications and deletions of the Kea daemons while the server inserts
+// config reports for them. It must be called within a transaction and the selected
+// rows remain locked until the transaction is committed or rolled back. Due to the
+// limitations of the go-pg library, this function does not select all columns in the
+// joined tables (machine, app and kea_daemon). It selects the config and the
+// config_hash columns from the kea_daemon so the configreview implementation can
+// verify that the configurations were not changed during the config review process.
+// For other joined tables, this function merely returns id columns values.
+func GetKeaDaemonsForUpdate(tx *pg.Tx, daemonsToSelect []*Daemon) ([]*Daemon, error) {
+	var daemons []*Daemon
+
+	// It is an error when no daemons are specified. Typically it will be one
+	// daemon but there can be more.
+	if len(daemonsToSelect) == 0 {
+		return daemons, pkgerrors.New("no Kea daemons specified for select for update")
+	}
+
+	// Execute SELECT ... FROM daemon ... FOR UPDATE. It loocks all selected
+	// rows of the daemon table and the selected rows of the joined tables.
+	// PostgreSQL does not allow for such locking when LEFT JOIN is used
+	// because some joined rows may be NULL in this case. Unfortunately,
+	// the go-pg Relation() does not allow for choosing between the INNER and
+	// LEFT JOIN. Therefore, we can't use the Relation() call in this query.
+	// Instead, we use explicit Join() and ColumnExpr() calls. It requires
+	// explicitly specifying the selected column names. Thus, we limited the
+	// selected columns to ID for joined tables to avoid having to maintain
+	// the selected columns list. The query can be extended to select more
+	// columns if necessary.
+	var ids []int64
+	for _, d := range daemonsToSelect {
+		ids = append(ids, d.ID)
+	}
+	err := tx.Model(&daemons).
+		ColumnExpr("daemon.*").
+		ColumnExpr("kea_daemon.id AS kea_daemon__id, kea_daemon.config AS kea_daemon__config, kea_daemon.config_hash AS kea_daemon__config_hash").
+		ColumnExpr("app.id AS app__id").
+		ColumnExpr("machine.id AS app__machine__id").
+		Join("INNER JOIN kea_daemon ON kea_daemon.daemon_id = daemon.id").
+		Join("INNER JOIN app ON app.id = daemon.app_id").
+		Join("INNER JOIN machine ON app.machine_id = machine.id").
+		Where("daemon.id IN (?)", pg.In(ids)).
+		For("UPDATE").
+		OrderExpr("daemon.id ASC").
+		Select()
+
+	if errors.Is(err, pg.ErrNoRows) {
+		return daemons, nil
+	} else if err != nil {
+		var sids []string
+		for _, id := range ids {
+			sids = append(sids, fmt.Sprintf("%d", id))
+		}
+		return nil, pkgerrors.Wrapf(err, "problem with selecting Kea daemons with ids: %s, for update",
+			strings.Join(sids, ", "))
+	}
+	return daemons, nil
 }
 
 // Updates a daemon, including dependent Daemon, KeaDaemon, KeaDHCPDaemon
