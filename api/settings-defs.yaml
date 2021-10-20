@@ -15,3 +15,5 @@
         type: integer
       prometheus_url:
         type: string
+      metrics_collector_interval:
+        type: integer
