@@ -33,8 +33,8 @@ type StorkServer struct {
 	RestAPISettings restservice.RestAPISettings
 	RestAPI         *restservice.RestAPI
 
-	Pullers *apps.Pullers
-	Control metricscollector.Control
+	Pullers                 *apps.Pullers
+	MetricsCollectorControl metricscollector.Control
 
 	EventCenter eventcenter.EventCenter
 
@@ -170,23 +170,19 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		return nil, err
 	}
 
-	if true {
-		ss.Control = metricscollector.NewControl()
-	}
+	ss.MetricsCollectorControl = metricscollector.NewControl(ss.DB)
 
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
 		ss.DB, ss.Agents, ss.EventCenter,
-		ss.Pullers, ss.ReviewDispatcher, ss.Control)
+		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollectorControl)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()
 		ss.Pullers.KeaStatsPuller.Shutdown()
 		ss.Pullers.Bind9StatsPuller.Shutdown()
 		ss.Pullers.AppsStatePuller.Shutdown()
-		if ss.Control != nil {
-			ss.Control.Shutdown()
-		}
+		ss.MetricsCollectorControl.Shutdown()
 
 		ss.DB.Close()
 		return nil, err
@@ -220,9 +216,7 @@ func (ss *StorkServer) Shutdown() {
 	ss.Agents.Shutdown()
 	ss.EventCenter.Shutdown()
 	ss.ReviewDispatcher.Shutdown()
-	if ss.Control != nil {
-		ss.Control.Shutdown()
-	}
+	ss.MetricsCollectorControl.Shutdown()
 	ss.DB.Close()
 	log.Println("Stork Server shut down")
 }

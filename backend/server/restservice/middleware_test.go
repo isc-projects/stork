@@ -15,6 +15,8 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
+// Fake metrics collector. It collects nothing, but
+// counts received requests.
 type FakeMetricsCollectorControl struct {
 	IsRunning    bool
 	RequestCount int
@@ -29,7 +31,7 @@ func NewFakeMetricsCollectorControl() *FakeMetricsCollectorControl {
 
 func (c *FakeMetricsCollectorControl) SetupHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c.RequestCount += 1
+		c.RequestCount++
 	})
 }
 

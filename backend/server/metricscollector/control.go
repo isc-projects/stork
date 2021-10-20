@@ -1,34 +1,58 @@
 package metricscollector
 
+// Controller of the metric collector.
+// It allows to start and stop the collector.
+// It is responsible for creating HTTP handler to access
+// the metrics.
+
 import (
 	"net/http"
 
+	"github.com/go-pg/pg/v9"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
+	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
 
+// Interface of the metrics collector.
 type Control interface {
+	// It returns the metrics on HTTP request.
 	SetupHandler(next http.Handler) http.Handler
+	// Shutdown metrics collecting.
 	Shutdown()
 }
 
+// Metrics collector created on top of
+// Prometheus library.
 type PrometheusControl struct {
 	registry *prometheus.Registry
 	metrics  Metrics
 	puller   *storkutil.PeriodicExecutor
 }
 
-func NewControl() Control {
+// Constructor of the metrics collector.
+func NewControl(db *pg.DB) Control {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
+	intervalSettingName := "metrics_collector_interval"
 
+	// Starts the periodically collecting the metrics.
 	metricPuller := storkutil.NewPeriodicExecutor("metrics",
 		func() error {
-			UpdateMetrics(metrics)
-			return nil
+			return UpdateMetrics(db, metrics)
 		},
-		func(prev int64) int64 { return 10 },
+		// ToDo: Setup the interval
+		func(prev int64) int64 {
+			interval, err := dbmodel.GetSettingInt(db, intervalSettingName)
+			if err != nil {
+				log.Errorf("problem with getting interval setting %s from db: %+v",
+					intervalSettingName, err)
+				interval = prev
+			}
+			return interval
+		},
 	)
 
 	return &PrometheusControl{
@@ -38,10 +62,13 @@ func NewControl() Control {
 	}
 }
 
+// Creates standard Prometheus HTTP handler.
 func (c *PrometheusControl) SetupHandler(next http.Handler) http.Handler {
 	return promhttp.HandlerFor(c.registry, promhttp.HandlerOpts{})
 }
 
+// Stops periodically collecting the metrics and unregister
+// all metrics.
 func (c *PrometheusControl) Shutdown() {
 	c.puller.Shutdown()
 	UnregisterAllMetrics(c.registry, c.metrics)

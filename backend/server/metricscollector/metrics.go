@@ -1,18 +1,31 @@
 package metricscollector
 
+// Functions to manage the Prometheus metrics.
+//
+// For add new statistic you should:
+// 1. Update the Metrics structure.
+// 2. Prepare the metric instance in the NewMetrics function.
+// 3. Update SQL query (if needed) in the database/model/metrics.go file.
+// 4. Change the UpdateMetrics function to collect new metric values.
+
 import (
 	"reflect"
 
+	"github.com/go-pg/pg/v9"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	dbmodel "isc.org/stork/server/database/model"
 )
 
+// Set of Stork server metrics.
 type Metrics struct {
 	AuthorizedMachineTotal   prometheus.Gauge
 	UnauthorizedMachineTotal prometheus.Gauge
 	UnreachableMachineTotal  prometheus.Gauge
 }
 
+// Constructor of the metrics. They are automatically
+// registered in the Prometheus.
 func NewMetrics(registry *prometheus.Registry) Metrics {
 	factory := promauto.With(registry)
 
@@ -42,14 +55,21 @@ func NewMetrics(registry *prometheus.Registry) Metrics {
 	return metrics
 }
 
-func UpdateMetrics(metrics Metrics) {
-	authorizedMachines := 10
-	unauthorizedMachines := 20
-	unreachableMachines := 5
+func UpdateMetrics(db *pg.DB, metrics Metrics) error {
+	// statistics, err := dbmodel.GetAllStats(db)
+	// if err != nil {
+	// 	return err
+	// }
 
-	metrics.AuthorizedMachineTotal.Set(float64(authorizedMachines))
-	metrics.UnauthorizedMachineTotal.Set(float64(unauthorizedMachines))
-	metrics.UnreachableMachineTotal.Set(float64(unreachableMachines))
+	calculatedMetrics, err := dbmodel.GetCalculatedMetrics(db)
+	if err != nil {
+		return err
+	}
+
+	metrics.AuthorizedMachineTotal.Set(float64(calculatedMetrics.AuthorizedMachines))
+	metrics.UnauthorizedMachineTotal.Set(float64(calculatedMetrics.UnauthorizedMachines))
+	metrics.UnreachableMachineTotal.Set(float64(calculatedMetrics.UnreachableMachines))
+	return nil
 }
 
 func UnregisterAllMetrics(registry *prometheus.Registry, metrics Metrics) {
