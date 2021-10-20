@@ -23,7 +23,7 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -107,7 +107,7 @@ func TestGetDaemonConfigWithSecretsForSuperAdmin(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -193,7 +193,7 @@ func TestGetDaemonConfigWithoutSecretsForAdmin(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -311,7 +311,7 @@ func TestGetDaemonConfigForKeaDaemonWithoutAssignedConfiguration(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -370,7 +370,7 @@ func TestGetDaemonConfigForBind9Daemon(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -428,7 +428,7 @@ func TestGetDaemonConfigForNonExistsDaemon(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -480,7 +480,7 @@ func TestGetDaemonConfigForDatabaseError(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -560,7 +560,7 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -691,7 +691,7 @@ func TestGetDaemonConfigReportsDatabaseError(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 

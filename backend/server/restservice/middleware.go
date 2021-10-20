@@ -15,6 +15,7 @@ import (
 
 	"isc.org/stork/server/auth"
 	"isc.org/stork/server/eventcenter"
+	"isc.org/stork/server/metricscollector"
 )
 
 // Struct for holding response details.
@@ -209,6 +210,23 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 	})
 }
 
+// Metric collector middelware that handle the metric endpoint.
+func metricsCollectorMiddleware(next http.Handler, control metricscollector.Control) http.Handler {
+	if control == nil {
+		return next
+	}
+
+	handler := control.SetupHandler(next)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/metrics") {
+			handler.ServeHTTP(w, r)
+		} else {
+			// pass request to another handler
+			next.ServeHTTP(w, r)
+		}
+	})
+}
+
 // Global middleware function provides a common place to setup middlewares for
 // the server. It is invoked before everything.
 func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir string, eventCenter eventcenter.EventCenter) http.Handler {
@@ -216,6 +234,7 @@ func (r *RestAPI) GlobalMiddleware(handler http.Handler, staticFilesDir string, 
 	handler = fileServerMiddleware(handler, staticFilesDir)
 	handler = agentInstallerMiddleware(handler, staticFilesDir)
 	handler = sseMiddleware(handler, eventCenter)
+	handler = metricsCollectorMiddleware(handler, r.Control)
 	handler = loggingMiddleware(handler)
 	return handler
 }

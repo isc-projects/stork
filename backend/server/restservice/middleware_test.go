@@ -15,6 +15,28 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
+type FakeMetricsCollectorControl struct {
+	IsRunning    bool
+	RequestCount int
+}
+
+func NewFakeMetricsCollectorControl() *FakeMetricsCollectorControl {
+	return &FakeMetricsCollectorControl{
+		IsRunning:    true,
+		RequestCount: 0,
+	}
+}
+
+func (c *FakeMetricsCollectorControl) SetupHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c.RequestCount += 1
+	})
+}
+
+func (c *FakeMetricsCollectorControl) Shutdown() {
+	c.IsRunning = false
+}
+
 // Check if fileServerMiddleware works and handles requests correctly.
 func TestFileServerMiddleware(t *testing.T) {
 	apiRequestReceived := false
@@ -55,7 +77,7 @@ func TestInnerMiddleware(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	sm, err := dbsession.NewSessionMgr(&rapi.DBSettings.BaseDatabaseSettings)
 	require.NoError(t, err)
@@ -131,6 +153,22 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 	w = httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	require.True(t, requestReceived)
+}
+
+// Check if metricsCollectorMiddelware works and handles requests correctly.
+func TestMetricsCollectorMiddleware(t *testing.T) {
+	// Arrange
+	metricsCollector := NewFakeMetricsCollectorControl()
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	handler := metricsCollectorMiddleware(nextHandler, metricsCollector)
+
+	// Act
+	req := httptest.NewRequest("GET", "http://localhost/metrics", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	// Assert
+	require.EqualValues(t, 1, metricsCollector.RequestCount)
 }
 
 // Dumb response writer struct with functions to enable testing

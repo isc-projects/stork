@@ -35,7 +35,7 @@ func TestGetVersion(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -55,7 +55,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -185,7 +185,7 @@ func TestGetMachineAndAppsState(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockGetAppsState, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -256,7 +256,7 @@ func TestCreateMachine(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -517,7 +517,7 @@ func TestGetMachines(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -559,7 +559,7 @@ func TestGetMachinesDirectory(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -591,7 +591,7 @@ func TestGetMachine(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -665,7 +665,7 @@ func TestUpdateMachine(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -797,7 +797,7 @@ func TestDeleteMachine(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -850,7 +850,7 @@ func TestGetApp(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -904,7 +904,7 @@ func TestRestGetApp(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -989,7 +989,7 @@ func TestRestGetApps(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1097,7 +1097,7 @@ func TestGetAppsDirectory(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1167,7 +1167,7 @@ func TestRestGetAppServicesStatus(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1364,7 +1364,7 @@ func TestRestGetAppServicesStatusPassiveBackup(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1466,7 +1466,7 @@ func TestRestGetAppsStats(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1533,7 +1533,7 @@ func TestGetDhcpOverview(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1598,7 +1598,7 @@ func TestHAInDhcpOverview(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1673,7 +1673,7 @@ func TestUpdateDaemon(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1749,7 +1749,7 @@ func TestServerToken(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -1815,7 +1815,7 @@ func TestRenameApp(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	require.NoError(t, err)
 	ctx := context.Background()
 
