@@ -240,11 +240,11 @@ func (puller *HAStatusPuller) commitHAServicesStatus(appID int64, services []dbm
 // Gets the status of the Kea apps and stores useful information in the database.
 // The High Availability status is stored in the database for those apps which
 // have the HA enabled.
-func (puller *HAStatusPuller) pullData() (int, error) {
+func (puller *HAStatusPuller) pullData() error {
 	// Get the list of all Kea apps from the database.
 	apps, err := dbmodel.GetAppsByType(puller.DB, dbmodel.AppTypeKea)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	var lastErr error
@@ -261,7 +261,7 @@ func (puller *HAStatusPuller) pullData() (int, error) {
 	}
 	log.Printf("completed pulling DHCP status from Kea apps: %d/%d succeeded", appsOkCnt, appsCnt)
 
-	return appsOkCnt, lastErr
+	return lastErr
 }
 
 // Gets the status of a Kea app and stores useful information in the database.

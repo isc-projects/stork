@@ -584,9 +584,8 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 	require.NotNil(t, puller)
 
 	// No need to wait for the puller to fetch the status.
-	count, err := puller.pullData()
+	err = puller.pullData()
 	require.NoError(t, err)
-	require.EqualValues(t, 1, count)
 
 	// We should have two services in the database. One for DHCPv4 and one
 	// for DHCPv6.
@@ -657,9 +656,8 @@ func testPullHAStatus(t *testing.T, version178 bool) {
 	}
 
 	// Pull the data again.
-	count, err = puller.pullData()
+	err = puller.pullData()
 	require.NoError(t, err)
-	require.EqualValues(t, 1, count)
 
 	// There should still be two services, one for DHCPv4 and one for DHCPv6.
 	services, err = dbmodel.GetDetailedAllServices(db)

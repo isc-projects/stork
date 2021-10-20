@@ -120,13 +120,13 @@ func getStatsFromLocalSubnets(localSubnets []*dbmodel.LocalSubnet, family int, a
 	return snAssigned, snTotal, snDeclined, snAssignedPds, snTotalPds, snMaxUsed, snMaxUsedPds
 }
 
-// Pull stats periodically for all Kea apps which Stork is monitoring. The function returns a number
-// of apps for which the stats were successfully pulled and last encountered error.
-func (statsPuller *StatsPuller) pullStats() (int, error) {
+// Pull stats periodically for all Kea apps which Stork is monitoring. The function returns
+// last encountered error.
+func (statsPuller *StatsPuller) pullStats() error {
 	// get list of all kea apps from database
 	dbApps, err := dbmodel.GetAppsByType(statsPuller.DB, dbmodel.AppTypeKea)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	// get lease stats from each kea app
@@ -147,11 +147,11 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 	// estimate addresses utilization for subnets
 	subnets, err := dbmodel.GetSubnetsWithLocalSubnets(statsPuller.DB)
 	if err != nil {
-		return appsOkCnt, err
+		return err
 	}
 
 	if len(subnets) == 0 {
-		return appsOkCnt, lastErr
+		return lastErr
 	}
 
 	// global stats to collect
@@ -249,7 +249,7 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 		lastErr = err
 	}
 
-	return appsOkCnt, lastErr
+	return lastErr
 }
 
 // Part of response for stat-lease4-get and stat-lease6-get commands.

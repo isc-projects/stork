@@ -143,9 +143,8 @@ func TestStatsPullerPullStats(t *testing.T) {
 	defer sp.Shutdown()
 
 	// invoke pulling stats
-	appsOkCnt, err := sp.pullStats()
+	err = sp.pullStats()
 	require.NoError(t, err)
-	require.Equal(t, 2, appsOkCnt)
 
 	// check collected stats
 	app1, err := dbmodel.GetAppByID(db, dbApp1.ID)
@@ -235,9 +234,8 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	defer sp.Shutdown()
 
 	// invoke pulling stats
-	appsOkCnt, err := sp.pullStats()
+	err = sp.pullStats()
 	require.NoError(t, err)
-	require.Equal(t, 1, appsOkCnt)
 
 	// check collected stats
 	app1, err := dbmodel.GetAppByID(db, dbApp.ID)

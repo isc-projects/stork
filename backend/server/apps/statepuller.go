@@ -45,12 +45,12 @@ func (puller *StatePuller) Shutdown() {
 }
 
 // Gets the status of machines and their apps and stores useful information in the database.
-func (puller *StatePuller) pullData() (int, error) {
+func (puller *StatePuller) pullData() error {
 	// get list of all authorized machines from database
 	authorized := true
 	dbMachines, err := dbmodel.GetAllMachines(puller.DB, &authorized)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	// get state from machines and their apps
@@ -68,7 +68,7 @@ func (puller *StatePuller) pullData() (int, error) {
 		}
 	}
 	log.Printf("completed pulling information from machines: %d/%d succeeded", okCnt, len(dbMachines))
-	return okCnt, lastErr
+	return lastErr
 }
 
 // Store updated machine fields in to database.

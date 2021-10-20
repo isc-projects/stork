@@ -142,9 +142,8 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	defer sp.Shutdown()
 
 	// invoke pulling stats
-	appsOkCnt, err := sp.pullStats()
+	err = sp.pullStats()
 	require.Error(t, err)
-	require.Equal(t, 0, appsOkCnt)
 }
 
 // Check if pulling stats works when RPS is included.
@@ -272,9 +271,8 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	defer sp.Shutdown()
 
 	// invoke pulling stats
-	appsOkCnt, err := sp.pullStats()
+	err = sp.pullStats()
 	require.NoError(t, err)
-	require.Equal(t, 1, appsOkCnt)
 
 	// check collected stats
 	subnets := []*dbmodel.LocalSubnet{}

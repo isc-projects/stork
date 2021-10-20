@@ -118,9 +118,8 @@ func TestStatePullerPullData(t *testing.T) {
 	defer sp.Shutdown()
 
 	// invoke pulling state
-	appsOkCnt, err := sp.pullData()
+	err = sp.pullData()
 	require.NoError(t, err)
-	require.Equal(t, 1, appsOkCnt)
 
 	// check if apps have been updated correctly
 	apps, err := dbmodel.GetAllApps(db, true)

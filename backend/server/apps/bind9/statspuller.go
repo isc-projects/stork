@@ -37,13 +37,12 @@ func (statsPuller *StatsPuller) Shutdown() {
 }
 
 // Pull stats periodically for all BIND 9 apps which Stork is monitoring.
-// The function returns a number of apps for which the stats were successfully
-// pulled and last encountered error.
-func (statsPuller *StatsPuller) pullStats() (int, error) {
+// The function returns last encountered error.
+func (statsPuller *StatsPuller) pullStats() error {
 	// get list of all bind9 apps from database
 	dbApps, err := dbmodel.GetAppsByType(statsPuller.DB, dbmodel.AppTypeBind9)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	// get stats from each bind9 app
@@ -60,7 +59,7 @@ func (statsPuller *StatsPuller) pullStats() (int, error) {
 		}
 	}
 	log.Printf("completed pulling stats from BIND 9 apps: %d/%d succeeded", appsOkCnt, len(dbApps))
-	return appsOkCnt, lastErr
+	return lastErr
 }
 
 // Get stats from given bind9 app.

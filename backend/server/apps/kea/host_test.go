@@ -1161,9 +1161,8 @@ func TestPullHostsIntoDB(t *testing.T) {
 	// Detect hosts to times in the row. This simulates periodic
 	// pull of the hosts for the given app.
 	for i := 0; i < 2; i++ {
-		count, err := puller.pullData()
+		err = puller.pullData()
 		require.NoError(t, err)
-		require.Equal(t, 1, count)
 
 		hosts, err := dbmodel.GetAllHosts(db, 4)
 		require.NoError(t, err)
@@ -1235,9 +1234,8 @@ func TestReduceHostsIntoDB(t *testing.T) {
 
 	// Get the hosts from Kea. This should result in having two hosts
 	// within the database.
-	count, err := puller.pullData()
+	err = puller.pullData()
 	require.NoError(t, err)
-	require.Equal(t, 1, count)
 
 	hosts, err := dbmodel.GetAllHosts(db, 4)
 	require.NoError(t, err)
@@ -1248,9 +1246,8 @@ func TestReduceHostsIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
-	count, err = puller.pullData()
+	err = puller.pullData()
 	require.NoError(t, err)
-	require.Equal(t, 1, count)
 
 	// The second host should have been removed from the database.
 	hosts, err = dbmodel.GetAllHosts(db, 4)

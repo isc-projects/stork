@@ -63,18 +63,18 @@ func (puller *HostsPuller) Shutdown() {
 }
 
 // Triggers fetch of the host reservations from the monitored Kea apps.
-func (puller *HostsPuller) pullData() (int, error) {
+func (puller *HostsPuller) pullData() error {
 	// Get the list of all Kea apps from the database.
 	apps, err := dbmodel.GetAppsByType(puller.DB, dbmodel.AppTypeKea)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	// Get sequence number to be associated with updated and inserted hosts.
 	seq, err := dbmodel.GetNextBulkUpdateSeq(puller.DB)
 	if err != nil {
 		err = errors.WithMessagef(err, "problem with getting next bulk update sequence number fetching hosts from Kea apps")
-		return 0, err
+		return err
 	}
 
 	// Synchronize hosts from all Kea apps.
@@ -98,7 +98,7 @@ func (puller *HostsPuller) pullData() (int, error) {
 	}
 
 	log.Printf("completed pulling hosts from Kea apps: %d/%d succeeded", appsOkCnt, len(apps))
-	return appsOkCnt, lastErr
+	return lastErr
 }
 
 // Structure reflecting a state of fetching host reservations from Kea
