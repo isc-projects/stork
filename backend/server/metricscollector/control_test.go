@@ -24,7 +24,7 @@ func parseAuthorizedMachinesFromPrometheus(input io.Reader) (int64, error) {
 		return 0, err
 	}
 
-	metric, ok := mf["stork_server_auth_authorized_machine_total"]
+	metric, ok := mf["storkserver_auth_authorized_machine_total"]
 	if !ok {
 		return 0, errors.Errorf("missing metric")
 	}

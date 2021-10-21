@@ -29,7 +29,7 @@ type Metrics struct {
 func NewMetrics(registry *prometheus.Registry) Metrics {
 	factory := promauto.With(registry)
 
-	namespace := "stork_server"
+	namespace := "storkserver"
 
 	metrics := Metrics{
 		AuthorizedMachineTotal: factory.NewGauge(prometheus.GaugeOpts{

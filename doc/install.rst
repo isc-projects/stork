@@ -840,7 +840,7 @@ Next, you should update the ``prometheus.yml`` file as fallow:
    # statistics from Stork Server
    - job_name: 'storkserver'
       static_configs:
-         - targets: ['server.example.org:80']
+         - targets: ['server.example.org:8080']
 
 The Stork Server exports metrics on the assigned HTTP/HTTPS port (defined via ``--rest-port`` flag).
 

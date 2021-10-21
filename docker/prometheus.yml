@@ -18,3 +18,8 @@ scrape_configs:
   - job_name: 'bind9'
     static_configs:
       - targets: ['agent-bind9:9119', 'agent-bind9-2:9119']
+
+  # statistics from Stork Server
+  - job_name: 'storkserver'
+    static_configs:
+        - targets: ['server:8080']
