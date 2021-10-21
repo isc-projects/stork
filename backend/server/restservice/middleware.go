@@ -212,11 +212,19 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 
 // Metric collector middelware that handle the metric endpoint.
 func metricsCollectorMiddleware(next http.Handler, control metricscollector.Control) http.Handler {
-	if control == nil {
-		return next
+	var handler http.Handler
+	if control != nil {
+		// Proper handler
+		handler = control.SetupHandler(next)
+	} else {
+		// Placeholder handler
+		handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			help := "The metrics collector endpoint is disabled."
+			_, _ = w.Write([]byte(help))
+		})
 	}
 
-	handler := control.SetupHandler(next)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/metrics") {
 			handler.ServeHTTP(w, r)

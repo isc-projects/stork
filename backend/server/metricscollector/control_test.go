@@ -49,11 +49,12 @@ func TestConstructControler(t *testing.T) {
 	defer teardown()
 
 	// Act
-	control := NewControl(db)
+	control, err := NewControl(db)
 	defer control.Shutdown()
 
 	// Assert
 	require.NotNil(t, control)
+	require.NoError(t, err)
 }
 
 // Test that the HTTP handler is created.
@@ -61,7 +62,7 @@ func TestCreateHttpHandler(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	control := NewControl(db)
+	control, _ := NewControl(db)
 	defer control.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
@@ -77,7 +78,7 @@ func TestHandlerResponse(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	control := NewControl(db)
+	control, _ := NewControl(db)
 	defer control.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handler := control.SetupHandler(nextHandler)
@@ -104,7 +105,7 @@ func TestPeriodicallyMetricsUpdate(t *testing.T) {
 	_ = dbmodel.InitializeSettings(db)
 	_ = dbmodel.SetSettingInt(db, "metrics_collector_interval", 1)
 
-	control := NewControl(db)
+	control, _ := NewControl(db)
 	defer control.Shutdown()
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})

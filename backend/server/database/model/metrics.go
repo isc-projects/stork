@@ -1,6 +1,9 @@
 package dbmodel
 
-import "github.com/go-pg/pg/v9"
+import (
+	"github.com/go-pg/pg/v9"
+	"github.com/pkg/errors"
+)
 
 type CalculatedMetrics struct {
 	AuthorizedMachines   int64
@@ -16,5 +19,5 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 	q = q.ColumnExpr("COUNT(*) FILTER (WHERE NOT(machine.authorized)) AS \"unauthorized_machines\"")
 	q = q.ColumnExpr("COUNT(*) FILTER (WHERE machine.error IS NOT NULL) AS \"unreachable_machines\"")
 	err := q.Select(&metrics)
-	return &metrics, err
+	return &metrics, errors.Wrap(err, "cannot calculate metrics")
 }

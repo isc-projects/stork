@@ -173,6 +173,26 @@ func TestMetricsCollectorMiddleware(t *testing.T) {
 	require.EqualValues(t, 1, metricsCollector.RequestCount)
 }
 
+// Check if metricsCollectorMiddelware returns placeholder when the endpoint is disabled.
+func TestMetricsCollectorMiddlewarePlaceholder(t *testing.T) {
+	// Arrange
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	handler := metricsCollectorMiddleware(nextHandler, nil)
+
+	// Act
+	req := httptest.NewRequest("GET", "http://localhost/metrics", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	content, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, 503, resp.StatusCode)
+	require.EqualValues(t, "The metrics collector endpoint is disabled.", content)
+}
+
 // Dumb response writer struct with functions to enable testing
 // loggingResponseWriter.
 type dumbRespWritter struct{}

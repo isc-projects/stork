@@ -33,7 +33,9 @@ type StorkServer struct {
 	RestAPISettings restservice.RestAPISettings
 	RestAPI         *restservice.RestAPI
 
-	Pullers                 *apps.Pullers
+	Pullers *apps.Pullers
+
+	EnableMetricsEndpoint   bool
 	MetricsCollectorControl metricscollector.Control
 
 	EventCenter eventcenter.EventCenter
@@ -43,7 +45,8 @@ type StorkServer struct {
 
 // Global server settings (called application settings in go-flags nomenclature).
 type Settings struct {
-	Version bool `short:"v" long:"version" description:"show software version"`
+	Version               bool `short:"v" long:"version" description:"show software version"`
+	EnableMetricsEndpoint bool `short:"m" long:"metrics" description:"enable Prometheus /metrics endpoint (no auth)" env:"STORK_ENABLE_METRICS"`
 }
 
 func (ss *StorkServer) ParseArgs() {
@@ -82,6 +85,8 @@ func (ss *StorkServer) ParseArgs() {
 		}
 		os.Exit(code)
 	}
+
+	ss.EnableMetricsEndpoint = serverSettings.EnableMetricsEndpoint
 
 	if serverSettings.Version {
 		// If user specified --version or -v, print the version and quit.
@@ -170,7 +175,15 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		return nil, err
 	}
 
-	ss.MetricsCollectorControl = metricscollector.NewControl(ss.DB)
+	if ss.EnableMetricsEndpoint {
+		ss.MetricsCollectorControl, err = metricscollector.NewControl(ss.DB)
+		if err != nil {
+			return nil, err
+		}
+		log.Info("the metric endpoint is enabled (ensure that it is properly secured)")
+	} else {
+		log.Warn("the metric endpoint is disabled (use specific flag to enable it)")
+	}
 
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
@@ -182,7 +195,9 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		ss.Pullers.KeaStatsPuller.Shutdown()
 		ss.Pullers.Bind9StatsPuller.Shutdown()
 		ss.Pullers.AppsStatePuller.Shutdown()
-		ss.MetricsCollectorControl.Shutdown()
+		if ss.MetricsCollectorControl != nil {
+			ss.MetricsCollectorControl.Shutdown()
+		}
 
 		ss.DB.Close()
 		return nil, err
@@ -216,7 +231,9 @@ func (ss *StorkServer) Shutdown() {
 	ss.Agents.Shutdown()
 	ss.EventCenter.Shutdown()
 	ss.ReviewDispatcher.Shutdown()
-	ss.MetricsCollectorControl.Shutdown()
+	if ss.MetricsCollectorControl != nil {
+		ss.MetricsCollectorControl.Shutdown()
+	}
 	ss.DB.Close()
 	log.Println("Stork Server shut down")
 }

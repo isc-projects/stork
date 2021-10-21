@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/go-pg/pg/v9"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
@@ -33,10 +34,16 @@ type PrometheusControl struct {
 }
 
 // Constructor of the metrics collector.
-func NewControl(db *pg.DB) Control {
+func NewControl(db *pg.DB) (Control, error) {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
 	intervalSettingName := "metrics_collector_interval"
+
+	// Initialize the metrics
+	err := UpdateMetrics(db, metrics)
+	if err != nil {
+		return nil, errors.WithMessage(err, "error during initialize metrics")
+	}
 
 	// Starts the periodically collecting the metrics.
 	metricPuller := storkutil.NewPeriodicExecutor("metrics",
@@ -59,7 +66,7 @@ func NewControl(db *pg.DB) Control {
 		metrics:  metrics,
 		registry: registry,
 		puller:   metricPuller,
-	}
+	}, nil
 }
 
 // Creates standard Prometheus HTTP handler.

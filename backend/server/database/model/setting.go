@@ -75,7 +75,7 @@ func InitializeSettings(db *pg.DB) error {
 		{
 			Name:    "metrics_collector_interval",
 			ValType: SettingValTypeInt,
-			Value:   "0", // in seconds
+			Value:   "10", // in seconds
 		},
 	}
 
