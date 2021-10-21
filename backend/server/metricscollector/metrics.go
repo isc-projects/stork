@@ -19,9 +19,13 @@ import (
 
 // Set of Stork server metrics.
 type Metrics struct {
-	AuthorizedMachineTotal   prometheus.Gauge
-	UnauthorizedMachineTotal prometheus.Gauge
-	UnreachableMachineTotal  prometheus.Gauge
+	AuthorizedMachineTotal          prometheus.Gauge
+	UnauthorizedMachineTotal        prometheus.Gauge
+	UnreachableMachineTotal         prometheus.Gauge
+	SubnetAddressUtilization        *prometheus.GaugeVec
+	SubnetPdUtilization             *prometheus.GaugeVec
+	SharedNetworkAddressUtilization *prometheus.GaugeVec
+	SharedNetworkPdUtilization      *prometheus.GaugeVec
 }
 
 // Constructor of the metrics. They are automatically
@@ -50,11 +54,36 @@ func NewMetrics(registry *prometheus.Registry) Metrics {
 			Subsystem: "auth",
 			Help:      "Unreachable machines",
 		}),
+		SubnetAddressUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "subnet_address_utilization",
+			Subsystem: "subnet",
+			Help:      "Subnet address utilization",
+		}, []string{"prefix"}),
+		SubnetPdUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "subnet_pd_utilization",
+			Subsystem: "subnet",
+			Help:      "Subnet pd utilization",
+		}, []string{"prefix"}),
+		SharedNetworkAddressUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "shared_network_address_utilization",
+			Subsystem: "shared_network",
+			Help:      "Shared network address utilization",
+		}, []string{"name"}),
+		SharedNetworkPdUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "shared_network_pd_utilization",
+			Subsystem: "shared_network",
+			Help:      "Shared network pd utilization",
+		}, []string{"name"}),
 	}
 
 	return metrics
 }
 
+// Calculate current metric values from the database.
 func UpdateMetrics(db *pg.DB, metrics Metrics) error {
 	// statistics, err := dbmodel.GetAllStats(db)
 	// if err != nil {
@@ -69,9 +98,29 @@ func UpdateMetrics(db *pg.DB, metrics Metrics) error {
 	metrics.AuthorizedMachineTotal.Set(float64(calculatedMetrics.AuthorizedMachines))
 	metrics.UnauthorizedMachineTotal.Set(float64(calculatedMetrics.UnauthorizedMachines))
 	metrics.UnreachableMachineTotal.Set(float64(calculatedMetrics.UnreachableMachines))
+
+	for _, networkMetrics := range calculatedMetrics.SubnetMetrics {
+		metrics.SubnetAddressUtilization.
+			With(prometheus.Labels{"prefix": networkMetrics.Label}).
+			Set(float64(networkMetrics.AddrUtilization / 100.))
+		metrics.SubnetPdUtilization.
+			With(prometheus.Labels{"prefix": networkMetrics.Label}).
+			Set(float64(networkMetrics.PdUtilization / 100.))
+	}
+
+	for _, networkMetrics := range calculatedMetrics.SharedNetworkMetrics {
+		metrics.SharedNetworkAddressUtilization.
+			With(prometheus.Labels{"name": networkMetrics.Label}).
+			Set(float64(networkMetrics.AddrUtilization / 100.))
+		metrics.SharedNetworkPdUtilization.
+			With(prometheus.Labels{"name": networkMetrics.Label}).
+			Set(float64(networkMetrics.PdUtilization / 100.))
+	}
+
 	return nil
 }
 
+// Unregister all metrics from the prometheus registry.
 func UnregisterAllMetrics(registry *prometheus.Registry, metrics Metrics) {
 	v := reflect.ValueOf(metrics)
 	typeMetrics := v.Type()

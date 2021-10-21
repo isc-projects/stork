@@ -43,7 +43,7 @@ func parseAuthorizedMachinesFromPrometheus(input io.Reader) (int64, error) {
 }
 
 // Test that the control is properly created.
-func TestConstructControler(t *testing.T) {
+func TestConstructController(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
