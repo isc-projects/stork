@@ -35,6 +35,9 @@ Arguments
 ``-v`` or ``--version``
    the ``stork-server`` version.
 
+``-m`` or ``--metrics``
+   enable the Prometheus metrics collector and /metrics endpoint. This endpoint hasn't any authentication and should be secure on the network level. (default: disabled)
+
 ``-u`` or ``--db-user``
    the user name to be used for database connections. (default: stork) [$STORK_DATABASE_USER_NAME]
 

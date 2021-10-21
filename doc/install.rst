@@ -187,6 +187,16 @@ The remaining settings pertain to the server's REST API configuration:
 * STORK_REST_TLS_CA_CERTIFICATE - a certificate authority file used for mutual TLS authentication
 * STORK_REST_STATIC_FILES_DIR - a directory with static files served in the UI
 
+The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration:
+
+* STORK_ENABLE_METRICS - enable the Prometheus metrics collector and ``/metrics`` endpoint - this endpoint hasn't any authentication and should be secure on the network level
+
+.. warning::
+
+   Prometheus ``/metrics`` endpoint doesn't provide any authentication mechanism.
+   It means that it should be secure on the network level, for example, in a firewall.
+   Only restricted IP hosts (Prometheus servers) should be able to establish a connection to this endpoint.
+
 With the settings in place, the ``Stork Server`` service can now be enabled and
 started:
 
@@ -791,7 +801,7 @@ is also supported by the ``Stork Server``.
 Integration With Prometheus and Grafana
 =======================================
 
-Stork can optionally be integrated with `Prometheus <https://prometheus.io/>`_, an open source monitoring and alerting toolkit,
+Stork can optionally be integrated with `Prometheus <https://prometheus.io/>`_, an open-source monitoring and alerting toolkit,
 and `Grafana <https://grafana.com/>`_, an easy-to-view analytics platform for querying, visualization, and alerting. Grafana
 requires external data storage. Prometheus is currently the only environment supported by both Stork and Grafana. It is possible
 to use Prometheus without Grafana, but using Grafana requires Prometheus.
@@ -800,8 +810,8 @@ Prometheus Integration
 ----------------------
 
 The Stork agent, by default, makes the
-Kea (and eventually, BIND 9) statistics available in a format understandable by Prometheus (it works as a Prometheus exporter, in Prometheus
-nomenclature). If Prometheus server is available, it can be configured to monitor Stork agents. To enable Stork agent
+Kea (and eventually, BIND 9) statistics are available in a format understandable by Prometheus (it works as a Prometheus exporter, in Prometheus
+nomenclature). If the Prometheus server is available, it can be configured to monitor Stork agents. To enable Stork agent
 monitoring, the ``prometheus.yml`` (which is typically stored in /etc/prometheus/, but this may vary depending on the
 installation) must be edited to add the following entries there:
 
@@ -821,8 +831,27 @@ By default, the Stork agent exports Kea data on TCP port 9547 (and BIND 9 data o
 command-line parameters, or the Prometheus export can be disabled altogether. For details, see the stork-agent manual page
 at :ref:`man-stork-agent`.
 
+The Stork Server can be optionally integrated too, but the Prometheus support is disabled by default. To enable it
+you need to run the server with flag ``-m/--metrics`` or with set ``STORK_ENABLE_METRICS`` environment variable.
+Next, you should update the ``prometheus.yml`` file as fallow:
+
+.. code-block:: yaml
+
+   # statistics from Stork Server
+   - job_name: 'storkserver'
+      static_configs:
+         - targets: ['server.example.org:80']
+
+The Stork Server exports metrics on the assigned HTTP/HTTPS port (defined via ``--rest-port`` flag).
+
+.. warning::
+
+   Prometheus ``/metrics`` endpoint doesn't provide any authentication mechanism.
+   It means that it should be secure on the network level, for example, in a firewall.
+   Only restricted IP hosts (Prometheus servers) should be able to establish a connection to this endpoint.
+
 After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly. Kea statistics use the ``kea_`` prefix (e.g. kea_dhcp4_addresses_assigned_total); BIND 9
-statistics will eventually use the ``bind_`` prefix (e.g. bind_incoming_queries_tcp).
+statistics will eventually use the ``bind_`` prefix (e.g. bind_incoming_queries_tcp), Stork Server statistics use the ``server_`` prefix.
 
 Grafana Integration
 -------------------
