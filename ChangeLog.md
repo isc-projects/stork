@@ -1,3 +1,9 @@
+* 167 [func] slawek
+
+    The Stork Server has now the ability to export metrics to
+    Prometheus. It reports the machine states and pool utilization.
+    (Gitlab #576)
+
 * 166 [bug] slawek
 
     Fixed the problem with too many log messages about

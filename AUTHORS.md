@@ -11,6 +11,7 @@ Primary developers:
 - Włodek Wencel (qa, release engineering)
 - Thomas Markwalder (kea)
 - Andrei Pavel (release engineering)
+- Sławek Figiel (server, agent, ui, prometheus)
 
 Primary area of work mentioned in parentheses. The list is in a
 roughly chronological order.
@@ -19,7 +20,5 @@ We have received the following contributions:
 
  - Franek Górski
    - 2019-09: Grafana template
- - Sławek Figiel
-   - 2021-04: Kea configuration JSON viewer
  - Yannick Martin (OVHCloud)
    - 2021-05: Fix for Stork agent not honoring the listen-only flags
