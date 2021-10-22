@@ -436,3 +436,27 @@
         type: array
         items:
           $ref: '#/definitions/ServiceStatus'
+
+  ConfigReport:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      createdAt:
+        type: string
+        format: date-time
+      checker:
+        type: string
+      content:
+        type: integer
+
+  ConfigReports:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ConfigReport'
+      total:
+        type: integer

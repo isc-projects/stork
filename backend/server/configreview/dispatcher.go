@@ -461,7 +461,7 @@ func (d *dispatcherImpl) RegisterChecker(selector DispatchGroupSelector, checker
 // Starts the dispatcher by launching the worker goroutine receiving
 // config reviews and populating them into the database.
 func (d *dispatcherImpl) Start() {
-	log.Info("Starting the configuration review dispatcher.")
+	log.Info("starting the configuration review dispatcher")
 	d.shutdownWg.Add(1)
 	go d.awaitReports()
 }
@@ -469,10 +469,10 @@ func (d *dispatcherImpl) Start() {
 // Stops the dispatcher gracefully. When there are any ongoing reviews,
 // this function blocks until all reviews are completed.
 func (d *dispatcherImpl) Shutdown() {
-	log.Info("Stopping the configuration review dispatcher.")
+	log.Info("stopping the configuration review dispatcher")
 	d.cancelDispatch()
 	d.shutdownWg.Wait()
-	log.Info("Stopped the configuration review dispatcher.")
+	log.Info("stopped the configuration review dispatcher")
 }
 
 // Begins a new review for a daemon. If the callback function is not
@@ -484,7 +484,7 @@ func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, callback CallbackFu
 	log.WithFields(log.Fields{
 		"daemon_id": daemon.ID,
 		"name":      daemon.Name,
-	}).Info("Scheduling a new configuration review")
+	}).Info("scheduling a new configuration review")
 	return d.beginReview(daemon, false, callback)
 }
 

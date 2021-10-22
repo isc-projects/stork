@@ -489,3 +489,29 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /daemons/{id}/config/reports:
+    get:
+      summary: Get configuration review reports
+      description: >-
+        Configuration review reports describe issues or suggestions for changes
+        in the daemon configurations. This call retrieves the reports by daemon
+        ID.
+      operationId: getDaemonConfigReports
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Daemon ID
+      responses:
+        200:
+          description: Daemon configuration review reports list.
+          schema:
+            $ref: "#/definitions/ConfigReports"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
