@@ -116,7 +116,7 @@ type dispatchGroup struct {
 // existing reports for the daemon. More advanced producers can look
 // into more than one daemon's configuration (e.g., to verify the
 // consistency of the HA configuration between two partners).
-type Dispatcher struct {
+type dispatcherImpl struct {
 	// Database instance where configuration reports are stored.
 	db *dbops.PgDB
 	// Config review dispatch groups containing producers segregated
@@ -141,15 +141,25 @@ type Dispatcher struct {
 	state map[int64]bool
 }
 
+// Dispatcher interface. The interface is used in the unit tests that
+// require replacing the default implementation with a mock dispatcher.
+type Dispatcher interface {
+	RegisterProducer(selector DispatchGroupSelector, producerName string, produceFn func(*reviewContext) (*report, error))
+	RegisterDefaultProducers()
+	Start()
+	Shutdown()
+	BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool
+}
+
 // Creates new context instance when a review is scheduled.
-func (d *Dispatcher) newContext() *reviewContext {
+func (d *dispatcherImpl) newContext() *reviewContext {
 	ctx := newReviewContext()
 	return ctx
 }
 
 // A worker function receiving ready configuration reports and populating
 // them into the database.
-func (d *Dispatcher) awaitReports() {
+func (d *dispatcherImpl) awaitReports() {
 	defer d.wg.Done()
 	for {
 		// Wait for ready reviews or for a signal that the dispatcher is
@@ -232,7 +242,7 @@ func (d *Dispatcher) awaitReports() {
 }
 
 // Goroutine performing configuration review for a daemon.
-func (d *Dispatcher) runForDaemon(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) {
+func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) {
 	defer d.wg2.Done()
 
 	ctx := d.newContext()
@@ -268,7 +278,7 @@ func (d *Dispatcher) runForDaemon(daemon *dbmodel.Daemon, internal bool, callbac
 // takes slightly different path when it inserts new reports to the database. The
 // BeginReview function internally calls the beginReview function with this flag set to
 // false.
-func (d *Dispatcher) beginReview(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) bool {
+func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) bool {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 	// Check if another review for this daemon has been already scheduled. Do not
@@ -286,7 +296,7 @@ func (d *Dispatcher) beginReview(daemon *dbmodel.Daemon, internal bool, callback
 }
 
 // Inserts new config review reports into the database.
-func (d *Dispatcher) populateReports(ctx *reviewContext) error {
+func (d *dispatcherImpl) populateReports(ctx *reviewContext) error {
 	// Ensure that the state indicates that the review is no longer
 	// in progress when this function returns.
 	defer func() {
@@ -401,9 +411,9 @@ func (d *Dispatcher) populateReports(ctx *reviewContext) error {
 }
 
 // Creates new dispatcher instance.
-func NewDispatcher(db *dbops.PgDB) *Dispatcher {
+func NewDispatcher(db *dbops.PgDB) Dispatcher {
 	ctx, cancel := context.WithCancel(context.Background())
-	dispatcher := &Dispatcher{
+	dispatcher := &dispatcherImpl{
 		db:             db,
 		groups:         make(map[DispatchGroupSelector]*dispatchGroup),
 		wg:             &sync.WaitGroup{},
@@ -422,7 +432,7 @@ func NewDispatcher(db *dbops.PgDB) *Dispatcher {
 // if it finds issues. It should return nil when no issues were found.
 // Each producer is assigned a unique name so it will be possible to
 // list available producers and/or selectively disable them.
-func (d *Dispatcher) RegisterProducer(selector DispatchGroupSelector, producerName string, produceFn func(*reviewContext) (*report, error)) {
+func (d *dispatcherImpl) RegisterProducer(selector DispatchGroupSelector, producerName string, produceFn func(*reviewContext) (*report, error)) {
 	if _, ok := d.groups[selector]; !ok {
 		d.groups[selector] = &dispatchGroup{}
 		d.groups[selector].producers = []*producer{}
@@ -437,20 +447,20 @@ func (d *Dispatcher) RegisterProducer(selector DispatchGroupSelector, producerNa
 
 // Registers default producers in this package. When new producer is
 // implemented it should be included in this function.
-func (d *Dispatcher) RegisterDefaultProducers() {
+func (d *dispatcherImpl) RegisterDefaultProducers() {
 	d.RegisterProducer(KeaDHCPDaemon, "stat_cmds_presence", statCmdsPresence)
 }
 
 // Starts the dispatcher by launching the worker goroutine receiving
 // config reviews and populating them into the database.
-func (d *Dispatcher) Start() {
+func (d *dispatcherImpl) Start() {
 	d.wg.Add(1)
 	go d.awaitReports()
 }
 
 // Stops the dispatcher gracefully. When there are any ongoing reviews,
 // this function blocks until all reviews are completed.
-func (d *Dispatcher) Shutdown() {
+func (d *dispatcherImpl) Shutdown() {
 	d.cancelDispatch()
 	d.wg.Wait()
 }
@@ -460,6 +470,6 @@ func (d *Dispatcher) Shutdown() {
 // returned boolean value indicates whether or not the review has
 // been scheduled. It is not scheduled when there is another review
 // for the daemon already in progress.
-func (d *Dispatcher) BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool {
+func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool {
 	return d.beginReview(daemon, false, callback)
 }

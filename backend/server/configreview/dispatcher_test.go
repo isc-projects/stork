@@ -15,7 +15,7 @@ func TestNewDispatcher(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	dispatcher := NewDispatcher(db)
+	dispatcher := NewDispatcher(db).(*dispatcherImpl)
 	require.NotNil(t, dispatcher)
 	require.Equal(t, db, dispatcher.db)
 	require.NotNil(t, dispatcher.groups)
@@ -324,7 +324,7 @@ func TestReviewInProgress(t *testing.T) {
 	require.Len(t, daemons, 1)
 
 	// Create new dispatcher.
-	dispatcher := NewDispatcher(db)
+	dispatcher := NewDispatcher(db).(*dispatcherImpl)
 	require.NotNil(t, dispatcher)
 
 	// Register the producer which blocks until it receives a value
@@ -517,7 +517,7 @@ func TestRegisterDefaultProducers(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	dispatcher := NewDispatcher(db)
+	dispatcher := NewDispatcher(db).(*dispatcherImpl)
 	require.NotNil(t, dispatcher)
 
 	dispatcher.RegisterDefaultProducers()
