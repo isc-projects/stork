@@ -1,3 +1,10 @@
+* 165 [func] slawek
+
+    The Stork Agent reports the metrics to Prometheus with the
+    subnet prefix instead of sequential ID if the subnet_cmds
+    is installed.
+    (Gitlab #574)
+
 * 164 [func] marcin
 
     Implemented Kea configuration review mechanism. It runs checks
