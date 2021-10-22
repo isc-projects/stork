@@ -76,6 +76,9 @@ func TestStatePullerPullData(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.ID)
 
+	config, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp4": { }}`)
+	require.NoError(t, err)
+
 	var ap []*dbmodel.AccessPoint
 	a := &dbmodel.App{
 		ID:        0,
@@ -89,6 +92,7 @@ func TestStatePullerPullData(t *testing.T) {
 				Active: true,
 				Name:   "dhcp4",
 				KeaDaemon: &dbmodel.KeaDaemon{
+					Config:        config,
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
 				},
 			},
@@ -130,6 +134,10 @@ func TestStatePullerPullData(t *testing.T) {
 	}
 	require.Len(t, keaApp.AccessPoints, 1)
 	require.EqualValues(t, keaApp.AccessPoints[0].Address, "1.2.3.4")
+
+	// Ensure that the puller initiated configuration review for the Kea daemon.
+	require.Len(t, fd.CallLog, 1)
+	require.Equal(t, "BeginReview", fd.CallLog[0])
 }
 
 // Check appCompare.

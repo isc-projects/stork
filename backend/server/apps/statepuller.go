@@ -27,7 +27,8 @@ type StatePuller struct {
 // the Kea apps.
 func NewStatePuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher) (*StatePuller, error) {
 	puller := &StatePuller{
-		EventCenter: eventCenter,
+		EventCenter:      eventCenter,
+		ReviewDispatcher: reviewDispatcher,
 	}
 	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Apps State",
 		"apps_state_puller_interval", puller.pullData)
@@ -270,6 +271,26 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 		case dbmodel.AppTypeKea:
 			state := kea.GetAppState(ctx2, agents, dbApp, eventCenter)
 			err = kea.CommitAppIntoDB(db, dbApp, eventCenter, state)
+			if err == nil {
+				// Let's now identify new daemons or the daemons with updated
+				// configurations and schedule configuration reviews for them
+				for i, daemon := range dbApp.Daemons {
+					if state != nil && state.SameConfigDaemons != nil {
+						if ok := state.SameConfigDaemons[daemon.Name]; ok {
+							// Configuration of this daemon hasn't changed. Don't
+							// run the configuration review.
+							continue
+						}
+					}
+					// It is a new daemon or its configuration has been recently updated.
+					// Let's make sure that the config pointer is set. It can be nil
+					// when the daemon is inactive.
+					if daemon.KeaDaemon != nil && daemon.KeaDaemon.Config != nil {
+						_ = reviewDispatcher.BeginReview(dbApp.Daemons[i], nil)
+					}
+				}
+			}
+
 		case dbmodel.AppTypeBind9:
 			bind9.GetAppState(ctx2, agents, dbApp, eventCenter)
 			err = bind9.CommitAppIntoDB(db, dbApp, eventCenter)
