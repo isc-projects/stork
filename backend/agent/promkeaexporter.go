@@ -24,6 +24,35 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// JSON structure of Kea `subnet4-list` and `subnet6-list` response
+type SubnetListJSON struct {
+	Result    int
+	Text      *string
+	Arguments *SubnetListJSONArguments
+}
+
+type SubnetListJSONArguments struct {
+	Subnets []SubnetListJSONArgumentsSubnet
+}
+
+type SubnetListJSONArgumentsSubnet struct {
+	ID     int
+	Subnet string
+}
+
+func (sl *SubnetListJSON) ToMap() map[int]string {
+	if sl.Arguments == nil {
+		return make(map[int]string, 0)
+	}
+	res := make(map[int]string, len(sl.Arguments.Subnets))
+
+	for _, subnet := range sl.Arguments.Subnets {
+		res[subnet.ID] = subnet.Subnet
+	}
+
+	return res
+}
+
 // Stats descriptor that holds reference to prometheus stats
 // and its 'operation' label.
 type statDescr struct {
@@ -344,7 +373,7 @@ func (pke *PromKeaExporter) statsCollectorLoop() {
 }
 
 // setDaemonStats stores the stat values from a daemon in the proper prometheus object.
-func (pke *PromKeaExporter) setDaemonStats(daemonIdx int, rspIfc interface{}, ignoredStats map[string]bool) error {
+func (pke *PromKeaExporter) setDaemonStats(daemonIdx int, rspIfc interface{}, ignoredStats map[string]bool, subnetLabelMap map[int]string) error {
 	rsp, ok := rspIfc.(map[string]interface{})
 	if !ok {
 		return pkgerrors.Errorf("problem with casting rspIfc: %+v", rspIfc)
@@ -428,21 +457,30 @@ func (pke *PromKeaExporter) setDaemonStats(daemonIdx int, rspIfc interface{}, ig
 			// if this is address per subnet stat
 			re := regexp.MustCompile(`subnet\[(\d+)\]\.(.+)`)
 			matches := re.FindStringSubmatch(statName)
-			subnetID := matches[1]
-			name := matches[2]
+			subnetIDRaw := matches[1]
+			metricName := matches[2]
+
+			subnetID, err := strconv.Atoi(subnetIDRaw)
+			subnetName := subnetIDRaw
+			if err == nil {
+				label, ok := subnetLabelMap[subnetID]
+				if ok {
+					subnetName = label
+				}
+			}
 
 			var stat *prometheus.GaugeVec
 			var ok bool
 			// daemon 0 is dhcp4, 1 is dhcp6
 			if daemonIdx == 0 {
-				stat, ok = pke.Adr4StatsMap[name]
+				stat, ok = pke.Adr4StatsMap[metricName]
 			} else {
-				stat, ok = pke.Adr6StatsMap[name]
+				stat, ok = pke.Adr6StatsMap[metricName]
 			}
 			if ok {
-				stat.With(prometheus.Labels{"subnet": subnetID}).Set(statValue)
+				stat.With(prometheus.Labels{"subnet": subnetName}).Set(statValue)
 			} else {
-				log.Printf("encountered unsupported stat: %s", name)
+				log.Printf("encountered unsupported stat: %s", metricName)
 			}
 		}
 	}
@@ -463,11 +501,23 @@ func (pke *PromKeaExporter) collectStats() error {
 
 	// Request to kea dhcp daemons for getting all stats. Both v4 and v6 is queried because
 	// here we do not have knowledge which are active.
-	request := `{
+	requestData := `{
              "command":"statistic-get-all",
              "service":["dhcp4", "dhcp6"],
              "arguments": {}
         }`
+
+	// Request to subnet labels. The above query returns only sequential, numeric IDs that aren't human-friendly.
+	requestDhcp4Labels := `{
+			"command":"subnet4-list",
+			"service":["dhcp4"],
+			"arguments": {}
+		}`
+	requestDhcp6Labels := `{
+		"command":"subnet6-list",
+		"service":["dhcp6"],
+		"arguments": {}
+	}`
 
 	// go through all kea apps discovered by monitor and query them for stats
 	apps := pke.AppMonitor.GetApps()
@@ -484,25 +534,53 @@ func (pke *PromKeaExporter) collectStats() error {
 			log.Errorf("problem with getting stats from kea, bad Kea access control point: %+v", err)
 			continue
 		}
-		caURL := storkutil.HostWithPortURL(ctrl.Address, ctrl.Port, ctrl.UseSecureProtocol)
-		httpRsp, err := pke.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
+
+		// Fetching DHCP subnet prefixes. It may fail if Kea doesn't support
+		// required commands.
+		responseDhcp4Labels, err := pke.sendCommandToKeaCA(ctrl, requestDhcp4Labels)
 		if err != nil {
-			lastErr = err
-			log.Errorf("problem with getting stats from kea: %+v", err)
+			log.Errorf("problem with fetching DHCP4 labels from kea: %+v", err)
 			continue
 		}
-		body, err := ioutil.ReadAll(httpRsp.Body)
-		httpRsp.Body.Close()
+
+		responseDhcp6Labels, err := pke.sendCommandToKeaCA(ctrl, requestDhcp6Labels)
 		if err != nil {
-			lastErr = err
-			log.Errorf("problem with reading stats response from kea: %+v", err)
+			log.Errorf("problem with fetching DHCP6 labels from kea: %+v", err)
 			continue
 		}
-		response := string(body)
+
+		dhcp4Labels, err := parseSubnetListResponse(responseDhcp4Labels)
+
+		if err != nil {
+			log.Errorf("problem with parsing DHCP4 labels from kea: %+v", err)
+		}
+
+		dhcp6Labels, err := parseSubnetListResponse(responseDhcp6Labels)
+
+		if err != nil {
+			log.Errorf("problem with parsing DHCP6 labels from kea: %+v", err)
+		}
+
+		// Fallback to numeric IDs
+		if dhcp4Labels == nil {
+			dhcp4Labels = make(map[int]string)
+		}
+		if dhcp6Labels == nil {
+			dhcp6Labels = make(map[int]string)
+		}
+
+		dhcpLabels := []map[int]string{dhcp4Labels, dhcp6Labels}
+
+		// Fetching statistics
+		responseData, err := pke.sendCommandToKeaCA(ctrl, requestData)
+		if err != nil {
+			log.Errorf("problem with fetching stats from kea: %+v", err)
+			continue
+		}
 
 		// parse response
 		var rspsIfc interface{}
-		err = json.Unmarshal([]byte(response), &rspsIfc)
+		err = json.Unmarshal([]byte(responseData), &rspsIfc)
 		if err != nil {
 			lastErr = err
 			log.Errorf("failed to parse responses from Kea: %s", err)
@@ -518,11 +596,58 @@ func (pke *PromKeaExporter) collectStats() error {
 		// Go though list of responses from daemons (it can have none or some responses from dhcp4/dhcp6)
 		// and store collected stats in Prometheus structures.
 		for daemonIdx, rspIfc := range rspList {
-			err = pke.setDaemonStats(daemonIdx, rspIfc, ignoredStats)
+			err = pke.setDaemonStats(daemonIdx, rspIfc, ignoredStats, dhcpLabels[daemonIdx])
 			if err != nil {
 				log.Errorf("cannot get stat from daemon: %+v", err)
 			}
 		}
 	}
 	return lastErr
+}
+
+// Send any command to Kea CA and returns body content.
+func (pke *PromKeaExporter) sendCommandToKeaCA(ctrl *AccessPoint, request string) ([]byte, error) {
+	caURL := storkutil.HostWithPortURL(ctrl.Address, ctrl.Port, ctrl.UseSecureProtocol)
+	httpRsp, err := pke.HTTPClient.Call(caURL, bytes.NewBuffer([]byte(request)))
+	if err != nil {
+		return nil, pkgerrors.Wrap(err, "problem with getting stats from kea")
+	}
+	body, err := ioutil.ReadAll(httpRsp.Body)
+	httpRsp.Body.Close()
+	if err != nil {
+		return nil, pkgerrors.Wrap(err, "problem with reading stats response from kea")
+	}
+	return body, nil
+}
+
+// Parse `subnet4-list` and `subnet6-list` responses to map (ID to subnet prefix).
+// If above commands aren't supported (Kea doesn't have installed a specific hook)
+// it returns empty map and nil error.
+func parseSubnetListResponse(response []byte) (map[int]string, error) {
+	var dhcpLabelsJSONs []SubnetListJSON
+	err := json.Unmarshal(response, &dhcpLabelsJSONs)
+	if err != nil {
+		return nil, pkgerrors.Wrap(err, "problem with parsing DHCP4 labels from kea")
+	}
+
+	if len(dhcpLabelsJSONs) == 0 {
+		return nil, pkgerrors.Errorf("empty response")
+	}
+
+	dhcpLabelsJSON := dhcpLabelsJSONs[0]
+
+	// Hook not installed. We shouldn't print error message
+	if dhcpLabelsJSON.Result == 2 {
+		return make(map[int]string), nil
+	}
+
+	if dhcpLabelsJSON.Result != 0 {
+		reason := "unknown"
+		if dhcpLabelsJSON.Text != nil {
+			reason = *dhcpLabelsJSON.Text
+		}
+		return nil, pkgerrors.Errorf("problem with content of DHCP4 labels response from kea: %s", reason)
+	}
+
+	return dhcpLabelsJSON.ToMap(), nil
 }
