@@ -24,7 +24,7 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// JSON structure of Kea `subnet4-list` and `subnet6-list` response
+// JSON structure of Kea `subnet4-list` and `subnet6-list` response.
 type SubnetListJSON struct {
 	Result    int
 	Text      *string
@@ -40,9 +40,10 @@ type SubnetListJSONArgumentsSubnet struct {
 	Subnet string
 }
 
+// Simplify the JSON structure to map (ID to subnet prefix).
 func (sl *SubnetListJSON) ToMap() map[int]string {
 	if sl.Arguments == nil {
-		return make(map[int]string, 0)
+		return make(map[int]string)
 	}
 	res := make(map[int]string, len(sl.Arguments.Subnets))
 
@@ -550,13 +551,11 @@ func (pke *PromKeaExporter) collectStats() error {
 		}
 
 		dhcp4Labels, err := parseSubnetListResponse(responseDhcp4Labels)
-
 		if err != nil {
 			log.Errorf("problem with parsing DHCP4 labels from kea: %+v", err)
 		}
 
 		dhcp6Labels, err := parseSubnetListResponse(responseDhcp6Labels)
-
 		if err != nil {
 			log.Errorf("problem with parsing DHCP6 labels from kea: %+v", err)
 		}
@@ -580,7 +579,7 @@ func (pke *PromKeaExporter) collectStats() error {
 
 		// parse response
 		var rspsIfc interface{}
-		err = json.Unmarshal([]byte(responseData), &rspsIfc)
+		err = json.Unmarshal(responseData, &rspsIfc)
 		if err != nil {
 			lastErr = err
 			log.Errorf("failed to parse responses from Kea: %s", err)
