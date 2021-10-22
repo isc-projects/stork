@@ -56,25 +56,25 @@ func NewMetrics(registry *prometheus.Registry) Metrics {
 		}),
 		SubnetAddressUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
-			Name:      "subnet_address_utilization",
+			Name:      "address_utilization",
 			Subsystem: "subnet",
 			Help:      "Subnet address utilization",
-		}, []string{"prefix"}),
+		}, []string{"subnet"}),
 		SubnetPdUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
-			Name:      "subnet_pd_utilization",
+			Name:      "pd_utilization",
 			Subsystem: "subnet",
 			Help:      "Subnet pd utilization",
-		}, []string{"prefix"}),
+		}, []string{"subnet"}),
 		SharedNetworkAddressUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
-			Name:      "shared_network_address_utilization",
+			Name:      "address_utilization",
 			Subsystem: "shared_network",
 			Help:      "Shared network address utilization",
 		}, []string{"name"}),
 		SharedNetworkPdUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
-			Name:      "shared_network_pd_utilization",
+			Name:      "pd_utilization",
 			Subsystem: "shared_network",
 			Help:      "Shared network pd utilization",
 		}, []string{"name"}),
@@ -101,20 +101,20 @@ func UpdateMetrics(db *pg.DB, metrics Metrics) error {
 
 	for _, networkMetrics := range calculatedMetrics.SubnetMetrics {
 		metrics.SubnetAddressUtilization.
-			With(prometheus.Labels{"prefix": networkMetrics.Label}).
-			Set(float64(networkMetrics.AddrUtilization / 100.))
+			With(prometheus.Labels{"subnet": networkMetrics.Label}).
+			Set(float64(networkMetrics.AddrUtilization) / 1000.)
 		metrics.SubnetPdUtilization.
-			With(prometheus.Labels{"prefix": networkMetrics.Label}).
-			Set(float64(networkMetrics.PdUtilization / 100.))
+			With(prometheus.Labels{"subnet": networkMetrics.Label}).
+			Set(float64(networkMetrics.PdUtilization) / 1000.)
 	}
 
 	for _, networkMetrics := range calculatedMetrics.SharedNetworkMetrics {
 		metrics.SharedNetworkAddressUtilization.
 			With(prometheus.Labels{"name": networkMetrics.Label}).
-			Set(float64(networkMetrics.AddrUtilization / 100.))
+			Set(float64(networkMetrics.AddrUtilization) / 1000.)
 		metrics.SharedNetworkPdUtilization.
 			With(prometheus.Labels{"name": networkMetrics.Label}).
-			Set(float64(networkMetrics.PdUtilization / 100.))
+			Set(float64(networkMetrics.PdUtilization) / 1000.)
 	}
 
 	return nil
