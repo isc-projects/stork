@@ -26,11 +26,12 @@ func TestStatsPullerBasic(t *testing.T) {
 	err := db.Insert(&setting)
 	require.NoError(t, err)
 
-	// prepare fake agents and event center
+	// Fake agents, event center and config review dispatcher.
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
 
-	sp, err := NewStatePuller(db, fa, fec)
+	sp, err := NewStatePuller(db, fa, fec, fd)
 	require.NoError(t, err)
 	require.NotNil(t, sp.PeriodicPuller)
 
@@ -60,6 +61,9 @@ func TestStatePullerPullData(t *testing.T) {
 
 	// prepare fake event center
 	fec := &storktest.FakeEventCenter{}
+
+	// fake config review dispatcher
+	fd := &storktest.FakeDispatcher{}
 
 	// add one machine with one kea app
 	m := &dbmodel.Machine{
@@ -104,7 +108,7 @@ func TestStatePullerPullData(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare stats puller
-	sp, err := NewStatePuller(db, fa, fec)
+	sp, err := NewStatePuller(db, fa, fec, fd)
 	require.NoError(t, err)
 	// shutdown state puller at the end
 	defer sp.Shutdown()

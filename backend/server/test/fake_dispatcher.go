@@ -32,4 +32,3 @@ func (d *FakeDispatcher) BeginReview(daemon *dbmodel.Daemon, callback configrevi
 	d.CallLog = append(d.CallLog, "BeginReview")
 	return true
 }
-

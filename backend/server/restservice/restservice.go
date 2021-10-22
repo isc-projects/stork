@@ -21,6 +21,7 @@ import (
 
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
+	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbsession "isc.org/stork/server/database/session"
 	"isc.org/stork/server/eventcenter"
@@ -49,12 +50,13 @@ type RestAPISettings struct {
 
 // Runtime information and settings for ReST API service.
 type RestAPI struct {
-	Settings       *RestAPISettings
-	DBSettings     *dbops.DatabaseSettings
-	DB             *dbops.PgDB
-	SessionManager *dbsession.SessionMgr
-	EventCenter    eventcenter.EventCenter
-	Pullers        *apps.Pullers
+	Settings         *RestAPISettings
+	DBSettings       *dbops.DatabaseSettings
+	DB               *dbops.PgDB
+	SessionManager   *dbsession.SessionMgr
+	EventCenter      eventcenter.EventCenter
+	Pullers          *apps.Pullers
+	ReviewDispatcher configreview.Dispatcher
 
 	Agents agentcomm.ConnectedAgents
 
@@ -69,7 +71,7 @@ type RestAPI struct {
 }
 
 // Do API initialization.
-func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, db *pg.DB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, pullers *apps.Pullers) (*RestAPI, error) {
+func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, db *pg.DB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, pullers *apps.Pullers, reviewDispatcher configreview.Dispatcher) (*RestAPI, error) {
 	// Initialize sessions with access to the database.
 	sm, err := dbsession.NewSessionMgr(&dbSettings.BaseDatabaseSettings)
 	if err != nil {
@@ -77,13 +79,14 @@ func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, d
 	}
 
 	r := &RestAPI{
-		Settings:       settings,
-		DBSettings:     dbSettings,
-		DB:             db,
-		SessionManager: sm,
-		Agents:         agents,
-		EventCenter:    eventCenter,
-		Pullers:        pullers,
+		Settings:         settings,
+		DBSettings:       dbSettings,
+		DB:               db,
+		SessionManager:   sm,
+		Agents:           agents,
+		EventCenter:      eventCenter,
+		Pullers:          pullers,
+		ReviewDispatcher: reviewDispatcher,
 	}
 
 	return r, nil

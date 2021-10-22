@@ -9,6 +9,7 @@ import (
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"
+	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
@@ -18,12 +19,13 @@ import (
 // Besides basic status information the High Availability status is fetched.
 type StatePuller struct {
 	*agentcomm.PeriodicPuller
-	EventCenter eventcenter.EventCenter
+	EventCenter      eventcenter.EventCenter
+	ReviewDispatcher configreview.Dispatcher
 }
 
 // Create an instance of the puller which periodically checks the status of
 // the Kea apps.
-func NewStatePuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter) (*StatePuller, error) {
+func NewStatePuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher) (*StatePuller, error) {
 	puller := &StatePuller{
 		EventCenter: eventCenter,
 	}
@@ -56,7 +58,7 @@ func (puller *StatePuller) pullData() (int, error) {
 	for _, dbM := range dbMachines {
 		dbM2 := dbM
 		ctx := context.Background()
-		errStr := GetMachineAndAppsState(ctx, puller.DB, &dbM2, puller.Agents, puller.EventCenter)
+		errStr := GetMachineAndAppsState(ctx, puller.DB, &dbM2, puller.Agents, puller.EventCenter, puller.ReviewDispatcher)
 		if errStr != "" {
 			lastErr = errors.New(errStr)
 			log.Errorf("error occurred while getting info from machine %d: %s", dbM2.ID, errStr)
@@ -230,7 +232,7 @@ func mergeNewAndOldApps(db *dbops.PgDB, dbMachine *dbmodel.Machine, discoveredAp
 }
 
 // Retrieve remotely machine and its apps state, and store it in the database.
-func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter) string {
+func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel.Machine, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher) string {
 	ctx2, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 

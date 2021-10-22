@@ -20,7 +20,8 @@ func TestGetSubnets(t *testing.T) {
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -343,7 +344,8 @@ func TestGetSharedNetworks(t *testing.T) {
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 

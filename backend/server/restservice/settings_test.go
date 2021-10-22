@@ -22,7 +22,8 @@ func TestSettings(t *testing.T) {
 	rSettings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
-	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa, fec, nil)
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa, fec, nil, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 

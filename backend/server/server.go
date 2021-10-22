@@ -14,6 +14,7 @@ import (
 	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/certs"
+	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
@@ -34,6 +35,8 @@ type StorkServer struct {
 	Pullers *apps.Pullers
 
 	EventCenter eventcenter.EventCenter
+
+	ReviewDispatcher configreview.Dispatcher
 }
 
 // Global server settings (called application settings in go-flags nomenclature).
@@ -122,6 +125,11 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	// 	}
 	// }()
 
+	// Setup configuration review dispatcher.
+	ss.ReviewDispatcher = configreview.NewDispatcher(ss.DB)
+	ss.ReviewDispatcher.RegisterDefaultProducers()
+	ss.ReviewDispatcher.Start()
+
 	// initialize stork statistics
 	err = dbmodel.InitializeStats(ss.DB)
 	if err != nil {
@@ -131,7 +139,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	ss.Pullers = &apps.Pullers{}
 
 	// setup apps state puller
-	ss.Pullers.AppsStatePuller, err = apps.NewStatePuller(ss.DB, ss.Agents, ss.EventCenter)
+	ss.Pullers.AppsStatePuller, err = apps.NewStatePuller(ss.DB, ss.Agents, ss.EventCenter, ss.ReviewDispatcher)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +169,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	}
 
 	// setup ReST API service
-	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings, ss.DB, ss.Agents, ss.EventCenter, ss.Pullers)
+	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings, ss.DB, ss.Agents, ss.EventCenter, ss.Pullers, ss.ReviewDispatcher)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()
@@ -199,6 +207,7 @@ func (ss *StorkServer) Shutdown() {
 	ss.Pullers.AppsStatePuller.Shutdown()
 	ss.Agents.Shutdown()
 	ss.EventCenter.Shutdown()
+	ss.ReviewDispatcher.Shutdown()
 	ss.DB.Close()
 	log.Println("Stork Server shut down")
 }
