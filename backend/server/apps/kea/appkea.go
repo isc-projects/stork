@@ -588,8 +588,6 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 
 	if newApp {
 		eventCenter.AddInfoEvent("added {app} on {machine}", app.Machine, app)
-	} else {
-		eventCenter.AddInfoEvent("updated {app} on {machine}", app.Machine, app)
 	}
 
 	for _, daemon := range deletedDaemons {
