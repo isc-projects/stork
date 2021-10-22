@@ -14,14 +14,14 @@ import (
 // review. Each daemon can be referenced at most once. The presence of
 // the referenced daemons may trigger cascaded/internal reviews. See
 // the dispatcher documentation.
-type report struct {
+type Report struct {
 	issue      string
 	daemon     int64
 	refDaemons []int64
 }
 
 // Represents an intermediate report which hasn't been validated yet.
-type intermediateReport report
+type IntermediateReport Report
 
 // Create new report. The report is associated with the subject daemon
 // (a daemon for which the review is conducted) and includes an issue
@@ -40,8 +40,8 @@ type intermediateReport report
 // use the referenced daemons to replace the {daemon} placeholders with
 // the detailed daemon information. See the similar mechanism implemented
 // in the eventcenter.
-func newReport(ctx *reviewContext, issue string) *intermediateReport {
-	return &intermediateReport{
+func NewReport(ctx *ReviewContext, issue string) *IntermediateReport {
+	return &IntermediateReport{
 		issue:  strings.TrimSpace(issue),
 		daemon: ctx.subjectDaemon.ID,
 	}
@@ -50,7 +50,7 @@ func newReport(ctx *reviewContext, issue string) *intermediateReport {
 // Associates a report with a daemon. Do not associate the same daemon
 // with the report multiple times. It will result in an error while
 // calling create().
-func (r *intermediateReport) referencingDaemon(daemon *dbmodel.Daemon) *intermediateReport {
+func (r *IntermediateReport) referencingDaemon(daemon *dbmodel.Daemon) *IntermediateReport {
 	r.refDaemons = append(r.refDaemons, daemon.ID)
 	return r
 }
@@ -58,7 +58,7 @@ func (r *intermediateReport) referencingDaemon(daemon *dbmodel.Daemon) *intermed
 // Validates the report contents and return an instance of the final
 // report or an error. It should never report an error if the producers
 // generating the reports are implemented properly.
-func (r *intermediateReport) create() (*report, error) {
+func (r *IntermediateReport) create() (*Report, error) {
 	// Ensure that the issue text is not blank.
 	if len(r.issue) == 0 {
 		return nil, pkgerrors.New("config review report must not be blank")
@@ -82,7 +82,7 @@ func (r *intermediateReport) create() (*report, error) {
 		presentDaemons[id] = true
 	}
 	// Everything is fine.
-	rc := &report{
+	rc := &Report{
 		issue:      r.issue,
 		daemon:     r.daemon,
 		refDaemons: r.refDaemons,

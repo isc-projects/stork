@@ -53,19 +53,19 @@ func TestGracefulShutdown(t *testing.T) {
 	// Each review/daemon is assigned a dedicated communication channel, so
 	// we can control the review process from the test.
 	channels := make([]chan bool, len(daemonNames))
-	reports := &[]*report{}
+	reports := &[]*Report{}
 	mutex := &sync.Mutex{}
 
 	// Register different producers for different daemon types.
 	for i := 0; i < len(selectors); i++ {
 		continueChan := make(chan bool)
 		channels[i] = continueChan
-		dispatcher.RegisterProducer(selectors[i], "test_producer", func(ctx *reviewContext) (*report, error) {
+		dispatcher.RegisterProducer(selectors[i], "test_producer", func(ctx *ReviewContext) (*Report, error) {
 			// The producer waits here until the test gives it a green light
 			// to proceed. It allows for controlling the concurency of the
 			// reviews.
 			<-continueChan
-			report, err := newReport(ctx, "test output").create()
+			report, err := NewReport(ctx, "test output").create()
 			mutex.Lock()
 			defer mutex.Unlock()
 			*reports = append(*reports, report)
@@ -167,13 +167,13 @@ func TestPopulateKeaReports(t *testing.T) {
 	require.NotNil(t, dispatcher)
 
 	// Register a different producer for each daemon.
-	dispatcher.RegisterProducer(KeaDHCPv4Daemon, "dhcp4_test_producer", func(ctx *reviewContext) (*report, error) {
-		report, err := newReport(ctx, "DHCPv4 test output").create()
+	dispatcher.RegisterProducer(KeaDHCPv4Daemon, "dhcp4_test_producer", func(ctx *ReviewContext) (*Report, error) {
+		report, err := NewReport(ctx, "DHCPv4 test output").create()
 		return report, err
 	})
 
-	dispatcher.RegisterProducer(KeaDHCPv6Daemon, "dhcp6_test_producer", func(ctx *reviewContext) (*report, error) {
-		report, err := newReport(ctx, "DHCPv6 test output").create()
+	dispatcher.RegisterProducer(KeaDHCPv6Daemon, "dhcp6_test_producer", func(ctx *ReviewContext) (*Report, error) {
+		report, err := NewReport(ctx, "DHCPv6 test output").create()
 		return report, err
 	})
 
@@ -259,8 +259,8 @@ func TestPopulateBind9Reports(t *testing.T) {
 	require.NotNil(t, dispatcher)
 
 	// Register a test producer for the BIND9 daemon.
-	dispatcher.RegisterProducer(Bind9Daemon, "test_producer", func(ctx *reviewContext) (*report, error) {
-		report, err := newReport(ctx, "Bind9 test output").create()
+	dispatcher.RegisterProducer(Bind9Daemon, "test_producer", func(ctx *ReviewContext) (*Report, error) {
+		report, err := NewReport(ctx, "Bind9 test output").create()
 		return report, err
 	})
 
@@ -331,8 +331,8 @@ func TestReviewInProgress(t *testing.T) {
 	// over the continueChan or when doneCtx is cancelled.
 	continueChan := make(chan bool)
 	doneCtx, cancel := context.WithCancel(context.Background())
-	dispatcher.RegisterProducer(Bind9Daemon, "test_producer", func(ctx *reviewContext) (*report, error) {
-		report, err := newReport(ctx, "Bind9 test output").create()
+	dispatcher.RegisterProducer(Bind9Daemon, "test_producer", func(ctx *ReviewContext) (*Report, error) {
+		report, err := NewReport(ctx, "Bind9 test output").create()
 		for {
 			select {
 			case <-continueChan:
@@ -440,9 +440,9 @@ func TestCascadeReview(t *testing.T) {
 
 	// Register a producer for the first daemon. It fetches the configuration of
 	// the other daemon besides the reviewed configuration.
-	dispatcher.RegisterProducer(KeaDHCPv4Daemon, "dhcp4_test_producer", func(ctx *reviewContext) (*report, error) {
+	dispatcher.RegisterProducer(KeaDHCPv4Daemon, "dhcp4_test_producer", func(ctx *ReviewContext) (*Report, error) {
 		ctx.refDaemons = append(ctx.refDaemons, daemons[1])
-		report, err := newReport(ctx, "DHCPv4 test output").
+		report, err := NewReport(ctx, "DHCPv4 test output").
 			referencingDaemon(ctx.refDaemons[0]).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
@@ -451,9 +451,9 @@ func TestCascadeReview(t *testing.T) {
 
 	// Register a producer for the second daemon. It fetches the configuration of
 	// the other daemon besides the reviewed configuration.
-	dispatcher.RegisterProducer(KeaCADaemon, "ca_test_producer", func(ctx *reviewContext) (*report, error) {
+	dispatcher.RegisterProducer(KeaCADaemon, "ca_test_producer", func(ctx *ReviewContext) (*Report, error) {
 		ctx.refDaemons = append(ctx.refDaemons, daemons[0])
-		report, _ := newReport(ctx, "CA test output").
+		report, _ := NewReport(ctx, "CA test output").
 			referencingDaemon(ctx.refDaemons[0]).
 			referencingDaemon(ctx.subjectDaemon).
 			create()

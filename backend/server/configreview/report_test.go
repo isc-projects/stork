@@ -16,7 +16,7 @@ func TestCreateReport(t *testing.T) {
 	referencedDaemon := &dbmodel.Daemon{
 		ID: 567,
 	}
-	report, err := newReport(ctx, "new report for {daemon}").
+	report, err := NewReport(ctx, "new report for {daemon}").
 		referencingDaemon(referencedDaemon).
 		referencingDaemon(ctx.subjectDaemon).
 		create()
@@ -36,7 +36,7 @@ func TestCreateBlankReport(t *testing.T) {
 	ctx.subjectDaemon = &dbmodel.Daemon{
 		ID: 123,
 	}
-	report, err := newReport(ctx, "   ").create()
+	report, err := NewReport(ctx, "   ").create()
 	require.Error(t, err)
 	require.Nil(t, report)
 }
@@ -49,7 +49,7 @@ func TestCreateZeroSubjectDaemonID(t *testing.T) {
 		ID: 0,
 	}
 
-	report, err := newReport(ctx, "new report").create()
+	report, err := NewReport(ctx, "new report").create()
 	require.Error(t, err)
 	require.Nil(t, report)
 }
@@ -64,7 +64,7 @@ func TestCreateZeroReferencedDaemonID(t *testing.T) {
 	referencedDaemon := &dbmodel.Daemon{
 		ID: 0,
 	}
-	report, err := newReport(ctx, "new report").
+	report, err := NewReport(ctx, "new report").
 		referencingDaemon(referencedDaemon).
 		create()
 	require.Error(t, err)
@@ -87,7 +87,7 @@ func TestCreateReportRepeatedSubjectDaemon(t *testing.T) {
 	ctx := newReviewContext()
 	ctx.subjectDaemon = daemons[1]
 
-	report, err := newReport(ctx, "new report").
+	report, err := NewReport(ctx, "new report").
 		referencingDaemon(daemons[0]).
 		referencingDaemon(daemons[1]).
 		referencingDaemon(daemons[2]).

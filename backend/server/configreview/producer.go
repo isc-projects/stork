@@ -2,5 +2,5 @@ package configreview
 
 type producer struct {
 	name      string
-	produceFn func(*reviewContext) (*report, error)
+	produceFn func(*ReviewContext) (*Report, error)
 }

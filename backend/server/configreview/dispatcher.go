@@ -20,7 +20,7 @@ type CallbackFunc func(int64, error)
 // the producer that generated the report).
 type taggedReport struct {
 	producerName string
-	report       *report
+	report       *Report
 }
 
 // Review context is valid throughout a review of a daemon configuration.
@@ -37,7 +37,7 @@ type taggedReport struct {
 // - callback: user callback to invoke after the review,
 // - internal: boolean flag indicating if the configuration review
 // was triggered internally by the dispatcher or by an external call.
-type reviewContext struct {
+type ReviewContext struct {
 	subjectDaemon *dbmodel.Daemon
 	refDaemons    []*dbmodel.Daemon
 	reports       []taggedReport
@@ -46,8 +46,8 @@ type reviewContext struct {
 }
 
 // Creates new review context instance.
-func newReviewContext() *reviewContext {
-	ctx := &reviewContext{}
+func newReviewContext() *ReviewContext {
+	ctx := &ReviewContext{}
 	return ctx
 }
 
@@ -131,7 +131,7 @@ type dispatcherImpl struct {
 	mutex *sync.Mutex
 	// Channel for passing ready review reports to the worker
 	// goroutine populating the reports into the database.
-	reviewDoneChan chan *reviewContext
+	reviewDoneChan chan *ReviewContext
 	// Context used for cancelling the worker goroutine when the
 	// dispatcher is stopped.
 	dispatchCtx context.Context
@@ -144,7 +144,7 @@ type dispatcherImpl struct {
 // Dispatcher interface. The interface is used in the unit tests that
 // require replacing the default implementation with a mock dispatcher.
 type Dispatcher interface {
-	RegisterProducer(selector DispatchGroupSelector, producerName string, produceFn func(*reviewContext) (*report, error))
+	RegisterProducer(selector DispatchGroupSelector, producerName string, produceFn func(*ReviewContext) (*Report, error))
 	RegisterDefaultProducers()
 	Start()
 	Shutdown()
@@ -152,7 +152,7 @@ type Dispatcher interface {
 }
 
 // Creates new context instance when a review is scheduled.
-func (d *dispatcherImpl) newContext() *reviewContext {
+func (d *dispatcherImpl) newContext() *ReviewContext {
 	ctx := newReviewContext()
 	return ctx
 }
@@ -296,7 +296,7 @@ func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, internal bool, call
 }
 
 // Inserts new config review reports into the database.
-func (d *dispatcherImpl) populateReports(ctx *reviewContext) error {
+func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 	// Ensure that the state indicates that the review is no longer
 	// in progress when this function returns.
 	defer func() {
@@ -419,7 +419,7 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 		wg:             &sync.WaitGroup{},
 		wg2:            &sync.WaitGroup{},
 		mutex:          &sync.Mutex{},
-		reviewDoneChan: make(chan *reviewContext),
+		reviewDoneChan: make(chan *ReviewContext),
 		dispatchCtx:    ctx,
 		cancelDispatch: cancel,
 		state:          make(map[int64]bool),
@@ -432,7 +432,7 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 // if it finds issues. It should return nil when no issues were found.
 // Each producer is assigned a unique name so it will be possible to
 // list available producers and/or selectively disable them.
-func (d *dispatcherImpl) RegisterProducer(selector DispatchGroupSelector, producerName string, produceFn func(*reviewContext) (*report, error)) {
+func (d *dispatcherImpl) RegisterProducer(selector DispatchGroupSelector, producerName string, produceFn func(*ReviewContext) (*Report, error)) {
 	if _, ok := d.groups[selector]; !ok {
 		d.groups[selector] = &dispatchGroup{}
 		d.groups[selector].producers = []*producer{}
