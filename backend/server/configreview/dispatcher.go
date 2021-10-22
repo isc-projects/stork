@@ -174,6 +174,11 @@ func (d *dispatcherImpl) awaitReports() {
 				if err != nil {
 					log.Errorf("problem with populating configuration review reports to the database for daemon %d: %+v",
 						ctx.subjectDaemon.ID, err)
+				} else {
+					log.WithFields(log.Fields{
+						"daemon_id":     ctx.subjectDaemon.ID,
+						"reports_count": len(ctx.reports),
+					}).Info("configuration review completed")
 				}
 				// Notify a caller that the review is finished if the caller
 				// supplied a callback function.
@@ -203,6 +208,11 @@ func (d *dispatcherImpl) awaitReports() {
 						if err != nil {
 							log.Errorf("problem with populating configuration review reports to the database for daemon %d: %+v",
 								ctx.subjectDaemon.ID, err)
+						} else {
+							log.WithFields(log.Fields{
+								"daemon_id":     ctx.subjectDaemon.ID,
+								"reports_count": len(ctx.reports),
+							}).Info("configuration review completed")
 						}
 						if ctx.callback != nil {
 							ctx.callback(ctx.subjectDaemon.ID, nil)
@@ -454,6 +464,7 @@ func (d *dispatcherImpl) RegisterDefaultProducers() {
 // Starts the dispatcher by launching the worker goroutine receiving
 // config reviews and populating them into the database.
 func (d *dispatcherImpl) Start() {
+	log.Info("Starting the configuration review dispatcher.")
 	d.wg.Add(1)
 	go d.awaitReports()
 }
@@ -461,8 +472,10 @@ func (d *dispatcherImpl) Start() {
 // Stops the dispatcher gracefully. When there are any ongoing reviews,
 // this function blocks until all reviews are completed.
 func (d *dispatcherImpl) Shutdown() {
+	log.Info("Stopping the configuration review dispatcher.")
 	d.cancelDispatch()
 	d.wg.Wait()
+	log.Info("Stopped the configuration review dispatcher.")
 }
 
 // Begins a new review for a daemon. If the callback function is not
@@ -471,5 +484,9 @@ func (d *dispatcherImpl) Shutdown() {
 // been scheduled. It is not scheduled when there is another review
 // for the daemon already in progress.
 func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool {
+	log.WithFields(log.Fields{
+		"daemon_id": daemon.ID,
+		"name":      daemon.Name,
+	}).Info("Scheduling a new configuration review")
 	return d.beginReview(daemon, false, callback)
 }
