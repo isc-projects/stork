@@ -213,14 +213,14 @@ func TestPopulateKeaReports(t *testing.T) {
 	require.Error(t, innerErrors[1])
 
 	// Ensure that the reports for the first daemon have been inserted.
-	reports, err := dbmodel.GetConfigReportsByDaemonID(db, daemons[0].ID)
+	reports, _, err := dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
 	require.Equal(t, "dhcp4_test_checker", reports[0].CheckerName)
 	require.Equal(t, "DHCPv4 test output", reports[0].Content)
 
 	// Ensure that the reports for the second daemon have not been inserted.
-	reports, err = dbmodel.GetConfigReportsByDaemonID(db, daemons[1].ID)
+	reports, _, err = dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[1].ID)
 	require.NoError(t, err)
 	require.Empty(t, reports)
 }
@@ -287,7 +287,7 @@ func TestPopulateBind9Reports(t *testing.T) {
 	require.NoError(t, innerError)
 
 	// Ensure that the reports have been populated.
-	reports, err := dbmodel.GetConfigReportsByDaemonID(db, daemons[0].ID)
+	reports, _, err := dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
 	require.Equal(t, "test_checker", reports[0].CheckerName)
@@ -476,7 +476,7 @@ func TestCascadeReview(t *testing.T) {
 	// Wait until it completes.
 	wg.Wait()
 
-	reports, err := dbmodel.GetConfigReportsByDaemonID(db, daemons[0].ID)
+	reports, _, err := dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
 	require.Equal(t, "dhcp4_test_checker", reports[0].CheckerName)
@@ -485,7 +485,7 @@ func TestCascadeReview(t *testing.T) {
 	// The first daemon's checker references the second daemon. Therefore,
 	// this review should cause the review of the second daemon's
 	// configuration. Ensure that it has been performed.
-	reports, err = dbmodel.GetConfigReportsByDaemonID(db, daemons[1].ID)
+	reports, _, err = dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[1].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
 	require.Equal(t, "ca_test_checker", reports[0].CheckerName)
@@ -501,12 +501,12 @@ func TestCascadeReview(t *testing.T) {
 
 	wg.Wait()
 
-	reports, err = dbmodel.GetConfigReportsByDaemonID(db, daemons[0].ID)
+	reports, _, err = dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
 	require.Equal(t, "DHCPv4 test output", reports[0].Content)
 
-	reports, err = dbmodel.GetConfigReportsByDaemonID(db, daemons[1].ID)
+	reports, _, err = dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[1].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
 	require.Equal(t, "CA test output", reports[0].Content)

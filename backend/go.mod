@@ -21,11 +21,14 @@ require (
 	github.com/go-pg/migrations/v7 v7.1.6
 	github.com/go-pg/pg v8.0.6+incompatible // indirect
 	github.com/go-pg/pg/v9 v9.1.0
+	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.4.2
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lib/pq v1.2.0
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.7.0
 	github.com/prometheus/common v0.10.0

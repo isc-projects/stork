@@ -92,22 +92,34 @@ func AddConfigReport(dbIface interface{}, configReport *ConfigReport) error {
 	return nil
 }
 
-// Select all config reports for the specified daemon.
-func GetConfigReportsByDaemonID(db *pg.DB, daemonID int64) ([]ConfigReport, error) {
+// Select all or a range of the config reports for the specified daemon.
+// The offset of 0 causes the function to return reports beginning from
+// the first one for the daemon. The limit of 0 causes the function to
+// return all reports beginning from the offset. A non-zero limit value
+// limits the number of returned reports. Specify an offset and limit of
+// 0 to fetch all reports for a daemon.
+func GetConfigReportsByDaemonID(db *pg.DB, offset, limit int64, daemonID int64) ([]ConfigReport, int64, error) {
 	var configReports []ConfigReport
-	err := db.Model(&configReports).
+	q := db.Model(&configReports).
 		Where("config_report.daemon_id = ?", daemonID).
+		Order("config_report.id ASC").
 		Relation("RefDaemons", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("daemon_to_config_report.order_index ASC"), nil
 		}).
 		Relation("RefDaemons.App").
-		Select()
+		Offset(int(offset))
+
+	if limit != 0 {
+		q = q.Limit(int(limit))
+	}
+
+	total, err := q.SelectAndCount()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
 		err = pkgerrors.Wrapf(err, "problem with selecting config reports for daemon %d", daemonID)
-		return configReports, err
+		return configReports, 0, err
 	}
-	return configReports, nil
+	return configReports, int64(total), nil
 }
 
 // Delete all config reports for the specified daemon.

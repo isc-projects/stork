@@ -627,8 +627,39 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.EqualValues(t, "name 2", okRsp.Payload.Items[1].Checker)
 	require.Equal(t, "another funny review contents for <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">", okRsp.Payload.Items[1].Content)
 
-	// Try to fetch the remaining config report for the second daemon.
-	params.ID = app.Daemons[1].ID
+	// Test getting the paged result.
+	params.Start = new(int64)
+	params.Limit = new(int64)
+	*params.Start = 0
+	*params.Limit = 1
+	rsp = rapi.GetDaemonConfigReports(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigReportsOK{}, rsp)
+	okRsp = rsp.(*services.GetDaemonConfigReportsOK)
+
+	// The total number is two but only one report has been returned.
+	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.Len(t, okRsp.Payload.Items, 1)
+	require.EqualValues(t, "name 1", okRsp.Payload.Items[0].Checker)
+	require.Equal(t, "funny review contents for <daemon id=\"1\" name=\"dhcp4\" appId=\"1\" appType=\"kea\"> and <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">",
+		okRsp.Payload.Items[0].Content)
+
+	// Start at offset 1.
+	*params.Start = 1
+	*params.Limit = 2
+	rsp = rapi.GetDaemonConfigReports(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigReportsOK{}, rsp)
+	okRsp = rsp.(*services.GetDaemonConfigReportsOK)
+
+	// The total number is two but only one report has been returned.
+	require.EqualValues(t, 2, okRsp.Payload.Total)
+	require.Len(t, okRsp.Payload.Items, 1)
+	require.EqualValues(t, "name 2", okRsp.Payload.Items[0].Checker)
+	require.Equal(t, "another funny review contents for <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">", okRsp.Payload.Items[0].Content)
+
+	// Try to fetch the config report for the second daemon.
+	params = services.GetDaemonConfigReportsParams{
+		ID: app.Daemons[1].ID,
+	}
 	rsp = rapi.GetDaemonConfigReports(ctx, params)
 	require.IsType(t, &services.GetDaemonConfigReportsOK{}, rsp)
 	okRsp = rsp.(*services.GetDaemonConfigReportsOK)

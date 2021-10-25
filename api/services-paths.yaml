@@ -501,8 +501,10 @@
       tags:
         - Services
       parameters:
-        - in: path
-          name: id
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - name: id
+          in: path
           type: integer
           required: true
           description: Daemon ID

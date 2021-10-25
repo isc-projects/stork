@@ -58,9 +58,22 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 }
 
 // Get configuration review reports for a specified daemon. Only Kea
-// daemons are currently supported.
+// daemons are currently supported. The daemon id value is mandatory.
+// The start and limit values are optional. They are used to retrieve
+// paged configuration review reports for a daemon. If they are not
+// specified, all configuration reports are returned.
 func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.GetDaemonConfigReportsParams) middleware.Responder {
-	dbReports, err := dbmodel.GetConfigReportsByDaemonID(r.DB, params.ID)
+	start := int64(0)
+	if params.Start != nil {
+		start = *params.Start
+	}
+
+	limit := int64(0)
+	if params.Limit != nil {
+		limit = *params.Limit
+	}
+
+	dbReports, total, err := dbmodel.GetConfigReportsByDaemonID(r.DB, start, limit, params.ID)
 	if err != nil {
 		log.Error(err)
 		msg := fmt.Sprintf("cannot get configuration review reports for daemon with id %d from db", params.ID)
@@ -71,7 +84,7 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 	}
 
 	configReports := &models.ConfigReports{
-		Total: int64(len(dbReports)),
+		Total: total,
 	}
 
 	for _, dbReport := range dbReports {
