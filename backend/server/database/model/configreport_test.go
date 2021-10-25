@@ -48,10 +48,12 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	configReports, err := GetConfigReportsByDaemonID(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, configReports, 1)
-	require.NotNil(t, configReports[0].Daemon)
+	require.NotZero(t, configReports[0].DaemonID)
 	require.Len(t, configReports[0].RefDaemons, 2)
 	require.Equal(t, "dhcp4", configReports[0].RefDaemons[0].Name)
+	require.NotNil(t, configReports[0].RefDaemons[0].App)
 	require.Equal(t, "dhcp6", configReports[0].RefDaemons[1].Name)
+	require.NotNil(t, configReports[0].RefDaemons[1].App)
 	require.Equal(t, "Here is the test report", configReports[0].Contents)
 
 	// Delete the configuration report.
@@ -121,6 +123,7 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, returnedConfigReports, 1)
 		require.Len(t, returnedConfigReports[0].RefDaemons, 1)
+		require.NotNil(t, returnedConfigReports[0].RefDaemons[0].App)
 		require.Equal(t, configReports[i].Contents, returnedConfigReports[0].Contents)
 	}
 

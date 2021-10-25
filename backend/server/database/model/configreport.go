@@ -21,7 +21,6 @@ type ConfigReport struct {
 	Contents     string
 
 	DaemonID int64
-	Daemon   *Daemon
 
 	RefDaemons []*Daemon `pg:"many2many:daemon_to_config_report,fk:config_report_id,joinFK:daemon_id"`
 }
@@ -96,13 +95,11 @@ func AddConfigReport(dbIface interface{}, configReport *ConfigReport) error {
 func GetConfigReportsByDaemonID(db *pg.DB, daemonID int64) ([]ConfigReport, error) {
 	var configReports []ConfigReport
 	err := db.Model(&configReports).
-		//		Join("INNER JOIN daemon_to_config_report AS dtcr ON dtcr.config_report_id = config_report.id").
-		//		Join("INNER JOIN daemon AS d ON d.id = dtcr.daemon_id").
 		Where("config_report.daemon_id = ?", daemonID).
-		Relation("Daemon.App").
 		Relation("RefDaemons", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("daemon_to_config_report.order_index ASC"), nil
 		}).
+		Relation("RefDaemons.App").
 		Select()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
