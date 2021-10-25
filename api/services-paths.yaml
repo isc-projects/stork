@@ -211,6 +211,32 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /machines/{id}/dump:
+    get:
+      summary: Dump machine configuration for troubleshooting purposes.
+      description: >-
+        The archive with the configuration dump can be used to diagnose service problems.
+        It's intended to easy download all necessary information from the Stork and
+        forward it to support team.
+      operationId: getMachineDump
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Machine ID.
+      tags:
+        - Services
+      responses:
+        200:
+          description: The archive with the configuration dump.
+          schema:
+            type: file
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
+
   /machines-server-token:
     get:
       summary: Get server token for registering machines.
