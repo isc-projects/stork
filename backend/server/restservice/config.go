@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/strfmt"
 	log "github.com/sirupsen/logrus"
 
 	dbmodel "isc.org/stork/server/database/model"
@@ -57,8 +58,32 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 }
 
 // Get configuration review reports for a specified daemon. Only Kea
-// daemons are supported currently.
+// daemons are currently supported.
 func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.GetDaemonConfigReportsParams) middleware.Responder {
-	rsp := services.NewGetDaemonConfigReportsOK()
+	dbReports, err := dbmodel.GetConfigReportsByDaemonID(r.DB, params.ID)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("cannot get configuration review reports for daemon with id %d from db", params.ID)
+		rsp := services.NewGetDaemonConfigReportsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	configReports := &models.ConfigReports{
+		Total: int64(len(dbReports)),
+	}
+
+	for _, dbReport := range dbReports {
+		report := &models.ConfigReport{
+			ID:        dbReport.ID,
+			CreatedAt: strfmt.DateTime(dbReport.CreatedAt),
+			Checker:   dbReport.CheckerName,
+			Content:   dbReport.Content,
+		}
+		configReports.Items = append(configReports.Items, report)
+	}
+
+	rsp := services.NewGetDaemonConfigReportsOK().WithPayload(configReports)
 	return rsp
 }

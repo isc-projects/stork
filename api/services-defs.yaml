@@ -449,7 +449,7 @@
       checker:
         type: string
       content:
-        type: integer
+        type: string
 
   ConfigReports:
     type: object
