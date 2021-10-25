@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -132,5 +133,18 @@ func DeleteConfigReportsByDaemonID(dbIface interface{}, daemonID int64) error {
 		return err
 	}
 
+	return nil
+}
+
+// A go-pg hook executed after selecting the config reports. It fills the
+// daemon placeholders with the tags that can be later turned into the links
+// to the daemons.
+func (r *ConfigReport) AfterSelect(ctx context.Context) error {
+	for _, daemon := range r.RefDaemons {
+		r.Content = strings.Replace(r.Content, "{daemon}",
+			fmt.Sprintf("<daemon id=\"%d\" name=\"%s\" appId=\"%d\" appType=\"%s\">",
+				daemon.ID, daemon.Name, daemon.AppID, daemon.App.Type),
+			1)
+	}
 	return nil
 }
