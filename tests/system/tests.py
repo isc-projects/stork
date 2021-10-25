@@ -830,3 +830,47 @@ def test_communication_with_kea_over_secure_protocol_require_trusted_cert(agent,
     ca_svc_name = 'kea-ctrl-agent' if 'centos' in agent.name else 'isc-kea-ctrl-agent'
     res = agent.run('journalctl -xeu ' + ca_svc_name)
     assert 'TLS handshake with 127.0.0.1 failed with sslv3 alert bad certificate' in res.stdout
+
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'centos/8')])
+def test_get_dhcp4_config_review_reports(agent, server):
+    """Test that the Stork server performs Kea configuration review and returns the reports."""
+    # Install kea on the agent machine.
+    agent.install_kea()
+
+    # Get Kea config having issues which Stork configuration review should catch.
+    banner("UPLOAD KEA CONFIG")
+    agent.upload('kea-dhcp4-config-review.conf', '/etc/kea/kea-dhcp4.conf')
+    agent.run('systemctl restart isc-kea-dhcp4-server')
+
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # Get the machine that automatically registered in the server and authorize it.
+    m = _get_machines_and_authorize_them(server)[0]
+    assert m['address'] == agent.mgmt_ip
+
+    # Check machine state.
+    m = _get_machine_state(server, m['id'])
+
+    # Retrieve daemon id.
+    assert m['apps'] is not None
+    assert len(m['apps']) == 1
+    daemons = m['apps'][0]['details']['daemons']
+    daemons = [d for d in daemons if d['name'] == 'dhcp4']
+    assert len(daemons) == 1
+    daemon_id = daemons[0]['id']
+
+    # Get config reports for the daemon.
+    banner("GET CONFIG REPORTS")
+    r = server.api_get('/daemons/%d/config/reports?start=0&limit=10' % daemon_id)
+    data = r.json()
+
+    # Expecting one report indicating that the stat_cmds hooks library
+    # was not loaded.
+    assert data['total'] is not None
+    assert data['total'] == 1
+    assert data['items'] is not None
+    assert len(data['items']) == 1
+    assert data['items'][0]['checker'] is not None
+    assert data['items'][0]['checker'] == 'stat_cmds_presence'
