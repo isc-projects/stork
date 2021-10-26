@@ -18,7 +18,7 @@ type ConfigReport struct {
 	ID           int64
 	CreatedAt    time.Time
 	ProducerName string
-	Contents     string
+	Content      string
 
 	DaemonID int64
 

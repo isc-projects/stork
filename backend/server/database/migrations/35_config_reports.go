@@ -12,7 +12,7 @@ func init() {
                 id BIGSERIAL PRIMARY KEY,
                 created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
                 producer_name TEXT NOT NULL,
-                contents TEXT NOT NULL,
+                content TEXT NOT NULL,
                 daemon_id BIGINT NOT NULL,
                 CONSTRAINT config_report_daemon_id FOREIGN KEY (daemon_id)
                     REFERENCES daemon (id)

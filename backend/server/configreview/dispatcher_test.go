@@ -217,7 +217,7 @@ func TestPopulateKeaReports(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
 	require.Equal(t, "dhcp4_test_producer", reports[0].ProducerName)
-	require.Equal(t, "DHCPv4 test output", reports[0].Contents)
+	require.Equal(t, "DHCPv4 test output", reports[0].Content)
 
 	// Ensure that the reports for the second daemon have not been inserted.
 	reports, err = dbmodel.GetConfigReportsByDaemonID(db, daemons[1].ID)
@@ -291,7 +291,7 @@ func TestPopulateBind9Reports(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
 	require.Equal(t, "test_producer", reports[0].ProducerName)
-	require.Equal(t, "Bind9 test output", reports[0].Contents)
+	require.Equal(t, "Bind9 test output", reports[0].Content)
 }
 
 // Tests the scenario when another review for the same daemon is scheduled
@@ -480,7 +480,7 @@ func TestCascadeReview(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
 	require.Equal(t, "dhcp4_test_producer", reports[0].ProducerName)
-	require.Equal(t, "DHCPv4 test output", reports[0].Contents)
+	require.Equal(t, "DHCPv4 test output", reports[0].Content)
 
 	// The first daemon's producer references the second daemon. Therefore,
 	// this review should cause the review of the second daemon's
@@ -489,7 +489,7 @@ func TestCascadeReview(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
 	require.Equal(t, "ca_test_producer", reports[0].ProducerName)
-	require.Equal(t, "CA test output", reports[0].Contents)
+	require.Equal(t, "CA test output", reports[0].Content)
 
 	// Now, start the review for the second daemon. It should result in the
 	// cascaded review as well.
@@ -504,12 +504,12 @@ func TestCascadeReview(t *testing.T) {
 	reports, err = dbmodel.GetConfigReportsByDaemonID(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
-	require.Equal(t, "DHCPv4 test output", reports[0].Contents)
+	require.Equal(t, "DHCPv4 test output", reports[0].Content)
 
 	reports, err = dbmodel.GetConfigReportsByDaemonID(db, daemons[1].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
-	require.Equal(t, "CA test output", reports[0].Contents)
+	require.Equal(t, "CA test output", reports[0].Content)
 }
 
 // Tests that default producers are registered.

@@ -37,7 +37,7 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	// Add a configuration report shared by both daemons.
 	configReport := &ConfigReport{
 		ProducerName: "test",
-		Contents:     "Here is the test report",
+		Content:      "Here is the test report",
 		DaemonID:     daemons[0].ID,
 		RefDaemons:   daemons,
 	}
@@ -54,7 +54,7 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 	require.NotNil(t, configReports[0].RefDaemons[0].App)
 	require.Equal(t, "dhcp6", configReports[0].RefDaemons[1].Name)
 	require.NotNil(t, configReports[0].RefDaemons[1].App)
-	require.Equal(t, "Here is the test report", configReports[0].Contents)
+	require.Equal(t, "Here is the test report", configReports[0].Content)
 
 	// Delete the configuration report.
 	err = DeleteConfigReportsByDaemonID(db, daemons[0].ID)
@@ -97,7 +97,7 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 	configReports := []ConfigReport{
 		{
 			ProducerName: "test",
-			Contents:     "Here is the first test report",
+			Content:      "Here is the first test report",
 			DaemonID:     daemons[0].ID,
 			RefDaemons: []*Daemon{
 				daemons[0],
@@ -105,7 +105,7 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 		},
 		{
 			ProducerName: "test",
-			Contents:     "Here is the second test report",
+			Content:      "Here is the second test report",
 			DaemonID:     daemons[1].ID,
 			RefDaemons: []*Daemon{
 				daemons[1],
@@ -124,7 +124,7 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 		require.Len(t, returnedConfigReports, 1)
 		require.Len(t, returnedConfigReports[0].RefDaemons, 1)
 		require.NotNil(t, returnedConfigReports[0].RefDaemons[0].App)
-		require.Equal(t, configReports[i].Contents, returnedConfigReports[0].Contents)
+		require.Equal(t, configReports[i].Content, returnedConfigReports[0].Content)
 	}
 
 	// Delete configuration reports for the first daemon.
@@ -175,7 +175,7 @@ func TestInvalidConfigReport(t *testing.T) {
 	configReports := []*ConfigReport{
 		{
 			ProducerName: "",
-			Contents:     "Here is the first test report",
+			Content:      "Here is the first test report",
 			DaemonID:     daemons[0].ID,
 			RefDaemons: []*Daemon{
 				daemons[0],
@@ -183,7 +183,7 @@ func TestInvalidConfigReport(t *testing.T) {
 		},
 		{
 			ProducerName: "test",
-			Contents:     "",
+			Content:      "",
 			DaemonID:     daemons[0].ID,
 			RefDaemons: []*Daemon{
 				daemons[0],
@@ -191,7 +191,7 @@ func TestInvalidConfigReport(t *testing.T) {
 		},
 		{
 			ProducerName: "test",
-			Contents:     "contents",
+			Content:      "contents",
 			DaemonID:     111111,
 			RefDaemons: []*Daemon{
 				daemons[0],
