@@ -520,7 +520,7 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	dispatcher := NewDispatcher(db).(*dispatcherImpl)
 	require.NotNil(t, dispatcher)
 
-	dispatcher.RegisterDefaultCheckers()
+	RegisterDefaultCheckers(dispatcher)
 
 	// KeaDHCPDaemon group.
 	require.Contains(t, dispatcher.groups, KeaDHCPDaemon)

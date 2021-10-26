@@ -127,7 +127,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 
 	// Setup configuration review dispatcher.
 	ss.ReviewDispatcher = configreview.NewDispatcher(ss.DB)
-	ss.ReviewDispatcher.RegisterDefaultCheckers()
+	configreview.RegisterDefaultCheckers(ss.ReviewDispatcher)
 	ss.ReviewDispatcher.Start()
 
 	// initialize stork statistics

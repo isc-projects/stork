@@ -156,7 +156,6 @@ type dispatcherImpl struct {
 // require replacing the default implementation with a mock dispatcher.
 type Dispatcher interface {
 	RegisterChecker(selector DispatchGroupSelector, checkerName string, checkFn func(*ReviewContext) (*Report, error))
-	RegisterDefaultCheckers()
 	Start()
 	Shutdown()
 	BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool
@@ -459,12 +458,6 @@ func (d *dispatcherImpl) RegisterChecker(selector DispatchGroupSelector, checker
 	)
 }
 
-// Registers default checkers in this package. When new checker is
-// implemented it should be included in this function.
-func (d *dispatcherImpl) RegisterDefaultCheckers() {
-	d.RegisterChecker(KeaDHCPDaemon, "stat_cmds_presence", statCmdsPresence)
-}
-
 // Starts the dispatcher by launching the worker goroutine receiving
 // config reviews and populating them into the database.
 func (d *dispatcherImpl) Start() {
@@ -493,4 +486,10 @@ func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, callback CallbackFu
 		"name":      daemon.Name,
 	}).Info("Scheduling a new configuration review")
 	return d.beginReview(daemon, false, callback)
+}
+
+// Registers default checkers in this package. When new checker is
+// implemented it should be included in this function.
+func RegisterDefaultCheckers(dispatcher Dispatcher) {
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "stat_cmds_presence", statCmdsPresence)
 }
