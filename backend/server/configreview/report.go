@@ -8,16 +8,16 @@ import (
 )
 
 // Represents a single config review report. It contains a description
-// of one issue found during a configuration review. The daemon field
+// of one issue found during a configuration review. The daemonID field
 // comprises an ID of the daemon for which the review is conducted.
-// The refDaemons slice contain IDs of the daemons referenced in the
+// The refDaemonIDs slice contain IDs of the daemons referenced in the
 // review. Each daemon can be referenced at most once. The presence of
 // the referenced daemons may trigger cascaded/internal reviews. See
 // the dispatcher documentation.
 type Report struct {
-	issue      string
-	daemon     int64
-	refDaemons []int64
+	issue        string
+	daemonID     int64
+	refDaemonIDs []int64
 }
 
 // Represents an intermediate report which hasn't been validated yet.
@@ -42,8 +42,8 @@ type IntermediateReport Report
 // in the eventcenter.
 func NewReport(ctx *ReviewContext, issue string) *IntermediateReport {
 	return &IntermediateReport{
-		issue:  strings.TrimSpace(issue),
-		daemon: ctx.subjectDaemon.ID,
+		issue:    strings.TrimSpace(issue),
+		daemonID: ctx.subjectDaemon.ID,
 	}
 }
 
@@ -51,7 +51,7 @@ func NewReport(ctx *ReviewContext, issue string) *IntermediateReport {
 // with the report multiple times. It will result in an error while
 // calling create().
 func (r *IntermediateReport) referencingDaemon(daemon *dbmodel.Daemon) *IntermediateReport {
-	r.refDaemons = append(r.refDaemons, daemon.ID)
+	r.refDaemonIDs = append(r.refDaemonIDs, daemon.ID)
 	return r
 }
 
@@ -65,14 +65,14 @@ func (r *IntermediateReport) create() (*Report, error) {
 	}
 
 	// Ensure that the subject daemon has non-zero ID.
-	if r.daemon == 0 {
+	if r.daemonID == 0 {
 		return nil, pkgerrors.New("ID of the daemon for which a config report is created must not be 0")
 	}
 
 	// Ensure that each daemon is referenced at most once and it has
 	// non-zero ID.
 	presentDaemons := make(map[int64]bool)
-	for _, id := range r.refDaemons {
+	for _, id := range r.refDaemonIDs {
 		if id == 0 {
 			return nil, pkgerrors.New("config review report must not reference a daemon with ID of 0")
 		}
@@ -83,9 +83,9 @@ func (r *IntermediateReport) create() (*Report, error) {
 	}
 	// Everything is fine.
 	rc := &Report{
-		issue:      r.issue,
-		daemon:     r.daemon,
-		refDaemons: r.refDaemons,
+		issue:        r.issue,
+		daemonID:     r.daemonID,
+		refDaemonIDs: r.refDaemonIDs,
 	}
 	return rc, nil
 }

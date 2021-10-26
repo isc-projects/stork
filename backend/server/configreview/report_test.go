@@ -9,10 +9,9 @@ import (
 
 // Test creating a valid report.
 func TestCreateReport(t *testing.T) {
-	ctx := newReviewContext()
-	ctx.subjectDaemon = &dbmodel.Daemon{
+	ctx := newReviewContext(&dbmodel.Daemon{
 		ID: 123,
-	}
+	}, false, nil)
 	referencedDaemon := &dbmodel.Daemon{
 		ID: 567,
 	}
@@ -23,19 +22,18 @@ func TestCreateReport(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Equal(t, "new report for {daemon}", report.issue)
-	require.EqualValues(t, 123, report.daemon)
-	require.Len(t, report.refDaemons, 2)
-	require.EqualValues(t, 567, report.refDaemons[0])
-	require.EqualValues(t, 123, report.refDaemons[1])
+	require.EqualValues(t, 123, report.daemonID)
+	require.Len(t, report.refDaemonIDs, 2)
+	require.EqualValues(t, 567, report.refDaemonIDs[0])
+	require.EqualValues(t, 123, report.refDaemonIDs[1])
 }
 
 // Test that an attempt to create a report with a blank issue is
 // not possible.
 func TestCreateBlankReport(t *testing.T) {
-	ctx := newReviewContext()
-	ctx.subjectDaemon = &dbmodel.Daemon{
+	ctx := newReviewContext(&dbmodel.Daemon{
 		ID: 123,
-	}
+	}, false, nil)
 	report, err := NewReport(ctx, "   ").create()
 	require.Error(t, err)
 	require.Nil(t, report)
@@ -44,10 +42,9 @@ func TestCreateBlankReport(t *testing.T) {
 // Test that an attempt to create a report with subject daemon ID
 // of 0 is not possible.
 func TestCreateZeroSubjectDaemonID(t *testing.T) {
-	ctx := newReviewContext()
-	ctx.subjectDaemon = &dbmodel.Daemon{
+	ctx := newReviewContext(&dbmodel.Daemon{
 		ID: 0,
-	}
+	}, false, nil)
 
 	report, err := NewReport(ctx, "new report").create()
 	require.Error(t, err)
@@ -57,10 +54,9 @@ func TestCreateZeroSubjectDaemonID(t *testing.T) {
 // Test that an attempt to create a report with referenced daemon
 // ID of 0 is not possible.
 func TestCreateZeroReferencedDaemonID(t *testing.T) {
-	ctx := newReviewContext()
-	ctx.subjectDaemon = &dbmodel.Daemon{
+	ctx := newReviewContext(&dbmodel.Daemon{
 		ID: 123,
-	}
+	}, false, nil)
 	referencedDaemon := &dbmodel.Daemon{
 		ID: 0,
 	}
@@ -84,8 +80,7 @@ func TestCreateReportRepeatedSubjectDaemon(t *testing.T) {
 			ID: 123,
 		},
 	}
-	ctx := newReviewContext()
-	ctx.subjectDaemon = daemons[1]
+	ctx := newReviewContext(daemons[1], false, nil)
 
 	report, err := NewReport(ctx, "new report").
 		referencingDaemon(daemons[0]).

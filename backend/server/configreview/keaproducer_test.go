@@ -10,18 +10,16 @@ import (
 // Tests the producer checking stat_cmds hooks library presence works
 // as expected.
 func TestStatCmdsPresence(t *testing.T) {
-	ctx := newReviewContext()
-
 	t.Run("stat_cmds_absent", func(t *testing.T) {
 		config, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp4": { }}`)
 		require.NoError(t, err)
 
-		ctx.subjectDaemon = &dbmodel.Daemon{
+		ctx := newReviewContext(&dbmodel.Daemon{
 			ID: 1,
 			KeaDaemon: &dbmodel.KeaDaemon{
 				Config: config,
 			},
-		}
+		}, false, nil)
 		report, err := statCmdsPresence(ctx)
 		require.NoError(t, err)
 		require.NotNil(t, report)
@@ -41,12 +39,12 @@ func TestStatCmdsPresence(t *testing.T) {
         }`)
 		require.NoError(t, err)
 
-		ctx.subjectDaemon = &dbmodel.Daemon{
+		ctx := newReviewContext(&dbmodel.Daemon{
 			ID: 1,
 			KeaDaemon: &dbmodel.KeaDaemon{
 				Config: config,
 			},
-		}
+		}, false, nil)
 		report, err := statCmdsPresence(ctx)
 		require.NoError(t, err)
 		require.Nil(t, report)

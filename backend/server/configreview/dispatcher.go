@@ -3,6 +3,7 @@ package configreview
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	pkgerrors "github.com/pkg/errors"
@@ -12,7 +13,9 @@ import (
 )
 
 // Callback function invoked when configuration review is completed
-// for a daemon.
+// for a daemon. The first argument holds an ID of a daemon for
+// which the review has been performed. The second argument holds an
+// error which occurred during the review or nil.
 type CallbackFunc func(int64, error)
 
 // A wrapper around the config report returned by a producer. It
@@ -46,8 +49,12 @@ type ReviewContext struct {
 }
 
 // Creates new review context instance.
-func newReviewContext() *ReviewContext {
-	ctx := &ReviewContext{}
+func newReviewContext(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) *ReviewContext {
+	ctx := &ReviewContext{
+		subjectDaemon: daemon,
+		callback:      callback,
+		internal:      internal,
+	}
 	return ctx
 }
 
@@ -89,6 +96,10 @@ func getDispatchGroupSelectors(daemonName string) []DispatchGroupSelector {
 	case "bind9":
 		return []DispatchGroupSelector{EachDaemon, Bind9Daemon}
 	}
+	log.WithFields(log.Fields{
+		"daemon_name": daemonName,
+	}).Warn("Config review dispatcher was unable to recognize the daemon by name and assign any suitable dispatch groups. Please consult this issue with the ISC Stork Development Team.")
+
 	return []DispatchGroupSelector{}
 }
 
@@ -124,9 +135,9 @@ type dispatcherImpl struct {
 	groups map[DispatchGroupSelector]*dispatchGroup
 	// Wait group used to gracefully stop the dispatcher when the server
 	// is shutdown. It waits for the remaining work to complete.
-	wg *sync.WaitGroup
+	shutdownWg *sync.WaitGroup
 	// Wait group used to synchronize the ongoing reviews.
-	wg2 *sync.WaitGroup
+	reviewWg *sync.WaitGroup
 	// Dispatcher main mutex.
 	mutex *sync.Mutex
 	// Channel for passing ready review reports to the worker
@@ -151,16 +162,20 @@ type Dispatcher interface {
 	BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool
 }
 
-// Creates new context instance when a review is scheduled.
-func (d *dispatcherImpl) newContext() *ReviewContext {
-	ctx := newReviewContext()
+// Creates new context instance when a review is scheduled. The daemon
+// is a pointer to a daemon instance for which the review is
+// performed. The internal flag indicates if the review has been
+// initiated internally by the dispatcher. The callback is a
+// callback function invoked after the review is completed.
+func (d *dispatcherImpl) newContext(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) *ReviewContext {
+	ctx := newReviewContext(daemon, internal, callback)
 	return ctx
 }
 
 // A worker function receiving ready configuration reports and populating
 // them into the database.
 func (d *dispatcherImpl) awaitReports() {
-	defer d.wg.Done()
+	defer d.shutdownWg.Done()
 	for {
 		// Wait for ready reviews or for a signal that the dispatcher is
 		// being stopped.
@@ -189,15 +204,13 @@ func (d *dispatcherImpl) awaitReports() {
 		case <-d.dispatchCtx.Done():
 			// The dispatcher is being stopped. There may be some reviews
 			// still in progress. We need to wait for them to complete.
-			allReviewsDone := new(bool)
-			*allReviewsDone = false
-			mutex := &sync.Mutex{}
+			allReviewsDone := int32(0)
 			wg := &sync.WaitGroup{}
 			wg.Add(1)
 
 			// Launch a goroutine waiting for the outstanding reviews. It needs
 			// a new goroutine because in the current goroutine we need to call
-			// a blocking d.wg2.Wait() to wait for all outstanding reviews.
+			// a blocking d.reviewWg.Wait() to wait for all outstanding reviews.
 			go func() {
 				defer wg.Done()
 				for {
@@ -224,11 +237,7 @@ func (d *dispatcherImpl) awaitReports() {
 						// reviews ongoing. If there are none, we're done.
 						// Otherwise, wait for another 50ms to avoid active
 						// waiting hammering the server.
-						done := false
-						mutex.Lock()
-						done = *allReviewsDone
-						mutex.Unlock()
-						if done {
+						if atomic.LoadInt32(&allReviewsDone) != 0 {
 							return
 						}
 						time.Sleep(50 * time.Millisecond)
@@ -236,12 +245,10 @@ func (d *dispatcherImpl) awaitReports() {
 				}
 			}()
 			// Wait for the outstanding reviews to complete.
-			d.wg2.Wait()
+			d.reviewWg.Wait()
 
 			// All reviews done. Let's signal it to the goroutine.
-			mutex.Lock()
-			*allReviewsDone = true
-			mutex.Unlock()
+			atomic.StoreInt32(&allReviewsDone, 1)
 
 			// Wait for the goroutine to finish.
 			wg.Wait()
@@ -253,12 +260,9 @@ func (d *dispatcherImpl) awaitReports() {
 
 // Goroutine performing configuration review for a daemon.
 func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) {
-	defer d.wg2.Done()
+	defer d.reviewWg.Done()
 
-	ctx := d.newContext()
-	ctx.subjectDaemon = daemon
-	ctx.callback = callback
-	ctx.internal = internal
+	ctx := d.newContext(daemon, internal, callback)
 
 	dispatchGroupSelectors := getDispatchGroupSelectors(daemon.Name)
 
@@ -296,12 +300,12 @@ func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, internal bool, call
 	inProgress, ok := d.state[daemon.ID]
 	if !ok || !inProgress {
 		d.state[daemon.ID] = true
-		d.wg2.Add(1)
+		d.reviewWg.Add(1)
 		// Run the review in the background.
 		go d.runForDaemon(daemon, internal, callback)
 		return true
 	}
-	// Another review in progress - bail.
+	// Another review in progress. Do not run another one..
 	return false
 }
 
@@ -382,7 +386,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 	// Add configuration reports.
 	for _, r := range ctx.reports {
 		var assoc []*dbmodel.Daemon
-		for _, id := range r.report.refDaemons {
+		for _, id := range r.report.refDaemonIDs {
 			assoc = append(assoc, &dbmodel.Daemon{
 				ID: id,
 			})
@@ -426,8 +430,8 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 	dispatcher := &dispatcherImpl{
 		db:             db,
 		groups:         make(map[DispatchGroupSelector]*dispatchGroup),
-		wg:             &sync.WaitGroup{},
-		wg2:            &sync.WaitGroup{},
+		shutdownWg:     &sync.WaitGroup{},
+		reviewWg:       &sync.WaitGroup{},
 		mutex:          &sync.Mutex{},
 		reviewDoneChan: make(chan *ReviewContext),
 		dispatchCtx:    ctx,
@@ -465,7 +469,7 @@ func (d *dispatcherImpl) RegisterDefaultProducers() {
 // config reviews and populating them into the database.
 func (d *dispatcherImpl) Start() {
 	log.Info("Starting the configuration review dispatcher.")
-	d.wg.Add(1)
+	d.shutdownWg.Add(1)
 	go d.awaitReports()
 }
 
@@ -474,7 +478,7 @@ func (d *dispatcherImpl) Start() {
 func (d *dispatcherImpl) Shutdown() {
 	log.Info("Stopping the configuration review dispatcher.")
 	d.cancelDispatch()
-	d.wg.Wait()
+	d.shutdownWg.Wait()
 	log.Info("Stopped the configuration review dispatcher.")
 }
 
