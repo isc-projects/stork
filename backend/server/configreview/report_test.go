@@ -21,14 +21,14 @@ func TestCreateReport(t *testing.T) {
 		create()
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Equal(t, "new report for {daemon}", report.issue)
+	require.Equal(t, "new report for {daemon}", report.content)
 	require.EqualValues(t, 123, report.daemonID)
 	require.Len(t, report.refDaemonIDs, 2)
 	require.EqualValues(t, 567, report.refDaemonIDs[0])
 	require.EqualValues(t, 123, report.refDaemonIDs[1])
 }
 
-// Test that an attempt to create a report with a blank issue is
+// Test that an attempt to create a report with a blank content is
 // not possible.
 func TestCreateBlankReport(t *testing.T) {
 	ctx := newReviewContext(&dbmodel.Daemon{

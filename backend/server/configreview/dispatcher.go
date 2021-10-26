@@ -393,7 +393,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 		}
 		cr := &dbmodel.ConfigReport{
 			ProducerName: r.producerName,
-			Contents:     r.report.issue,
+			Contents:     r.report.content,
 			DaemonID:     ctx.subjectDaemon.ID,
 			RefDaemons:   assoc,
 		}

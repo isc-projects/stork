@@ -23,7 +23,7 @@ func TestStatCmdsPresence(t *testing.T) {
 		report, err := statCmdsPresence(ctx)
 		require.NoError(t, err)
 		require.NotNil(t, report)
-		require.Contains(t, report.issue, "Consider using the libdhcp_stat_cmds")
+		require.Contains(t, report.content, "Consider using the libdhcp_stat_cmds")
 	})
 
 	t.Run("stat_cmds_present", func(t *testing.T) {
