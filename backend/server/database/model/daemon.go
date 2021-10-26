@@ -275,7 +275,7 @@ func GetDaemonsForUpdate(tx *pg.Tx, daemonsToSelect []*Daemon) ([]*Daemon, error
 		return daemons, pkgerrors.New("no daemons specified for select for update")
 	}
 
-	// Execute SELECT ... FROM daemon ... FOR UPDATE. It loocks all selected
+	// Execute SELECT ... FROM daemon ... FOR UPDATE. It locks all selected
 	// rows of the daemon table and the selected rows of the joined tables.
 	// PostgreSQL does not allow for such locking when LEFT JOIN is used
 	// because some joined rows may be NULL in this case. Unfortunately,
@@ -332,7 +332,7 @@ func GetKeaDaemonsForUpdate(tx *pg.Tx, daemonsToSelect []*Daemon) ([]*Daemon, er
 		return daemons, pkgerrors.New("no Kea daemons specified for select for update")
 	}
 
-	// Execute SELECT ... FROM daemon ... FOR UPDATE. It loocks all selected
+	// Execute SELECT ... FROM daemon ... FOR UPDATE. It locks all selected
 	// rows of the daemon table and the selected rows of the joined tables.
 	// PostgreSQL does not allow for such locking when LEFT JOIN is used
 	// because some joined rows may be NULL in this case. Unfortunately,
