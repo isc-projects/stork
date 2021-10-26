@@ -7,7 +7,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Tests the producer checking stat_cmds hooks library presence works
+// Tests the checker checking stat_cmds hooks library presence works
 // as expected.
 func TestStatCmdsPresence(t *testing.T) {
 	t.Run("stat_cmds_absent", func(t *testing.T) {

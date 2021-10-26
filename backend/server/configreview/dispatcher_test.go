@@ -56,12 +56,12 @@ func TestGracefulShutdown(t *testing.T) {
 	reports := &[]*Report{}
 	mutex := &sync.Mutex{}
 
-	// Register different producers for different daemon types.
+	// Register different checkers for different daemon types.
 	for i := 0; i < len(selectors); i++ {
 		continueChan := make(chan bool)
 		channels[i] = continueChan
-		dispatcher.RegisterProducer(selectors[i], "test_producer", func(ctx *ReviewContext) (*Report, error) {
-			// The producer waits here until the test gives it a green light
+		dispatcher.RegisterChecker(selectors[i], "test_checker", func(ctx *ReviewContext) (*Report, error) {
+			// The checker waits here until the test gives it a green light
 			// to proceed. It allows for controlling the concurency of the
 			// reviews.
 			<-continueChan
@@ -76,7 +76,7 @@ func TestGracefulShutdown(t *testing.T) {
 	// Start the dispatcher's worker goroutine.
 	dispatcher.Start()
 
-	// Schedule reviews for multiple daemons/daemon types. The producers should
+	// Schedule reviews for multiple daemons/daemon types. The checkers should
 	// now block reading from the continueChan.
 	for i := 0; i < len(daemonNames); i++ {
 		daemon := &dbmodel.Daemon{
@@ -87,7 +87,7 @@ func TestGracefulShutdown(t *testing.T) {
 		require.True(t, ok)
 	}
 
-	// Unblock first three producers. The remaining ones should still wait.
+	// Unblock first three checkers. The remaining ones should still wait.
 	// That way we cause the situtation that 3 reviews are done, and the
 	// other ones are still in progress.
 	for i := 0; i < 3; i++ {
@@ -166,13 +166,13 @@ func TestPopulateKeaReports(t *testing.T) {
 	dispatcher := NewDispatcher(db)
 	require.NotNil(t, dispatcher)
 
-	// Register a different producer for each daemon.
-	dispatcher.RegisterProducer(KeaDHCPv4Daemon, "dhcp4_test_producer", func(ctx *ReviewContext) (*Report, error) {
+	// Register a different checker for each daemon.
+	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "dhcp4_test_checker", func(ctx *ReviewContext) (*Report, error) {
 		report, err := NewReport(ctx, "DHCPv4 test output").create()
 		return report, err
 	})
 
-	dispatcher.RegisterProducer(KeaDHCPv6Daemon, "dhcp6_test_producer", func(ctx *ReviewContext) (*Report, error) {
+	dispatcher.RegisterChecker(KeaDHCPv6Daemon, "dhcp6_test_checker", func(ctx *ReviewContext) (*Report, error) {
 		report, err := NewReport(ctx, "DHCPv6 test output").create()
 		return report, err
 	})
@@ -216,7 +216,7 @@ func TestPopulateKeaReports(t *testing.T) {
 	reports, err := dbmodel.GetConfigReportsByDaemonID(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
-	require.Equal(t, "dhcp4_test_producer", reports[0].ProducerName)
+	require.Equal(t, "dhcp4_test_checker", reports[0].CheckerName)
 	require.Equal(t, "DHCPv4 test output", reports[0].Content)
 
 	// Ensure that the reports for the second daemon have not been inserted.
@@ -258,8 +258,8 @@ func TestPopulateBind9Reports(t *testing.T) {
 	dispatcher := NewDispatcher(db)
 	require.NotNil(t, dispatcher)
 
-	// Register a test producer for the BIND9 daemon.
-	dispatcher.RegisterProducer(Bind9Daemon, "test_producer", func(ctx *ReviewContext) (*Report, error) {
+	// Register a test checker for the BIND9 daemon.
+	dispatcher.RegisterChecker(Bind9Daemon, "test_checker", func(ctx *ReviewContext) (*Report, error) {
 		report, err := NewReport(ctx, "Bind9 test output").create()
 		return report, err
 	})
@@ -290,7 +290,7 @@ func TestPopulateBind9Reports(t *testing.T) {
 	reports, err := dbmodel.GetConfigReportsByDaemonID(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
-	require.Equal(t, "test_producer", reports[0].ProducerName)
+	require.Equal(t, "test_checker", reports[0].CheckerName)
 	require.Equal(t, "Bind9 test output", reports[0].Content)
 }
 
@@ -327,11 +327,11 @@ func TestReviewInProgress(t *testing.T) {
 	dispatcher := NewDispatcher(db).(*dispatcherImpl)
 	require.NotNil(t, dispatcher)
 
-	// Register the producer which blocks until it receives a value
+	// Register the checker which blocks until it receives a value
 	// over the continueChan or when doneCtx is cancelled.
 	continueChan := make(chan bool)
 	doneCtx, cancel := context.WithCancel(context.Background())
-	dispatcher.RegisterProducer(Bind9Daemon, "test_producer", func(ctx *ReviewContext) (*Report, error) {
+	dispatcher.RegisterChecker(Bind9Daemon, "test_checker", func(ctx *ReviewContext) (*Report, error) {
 		report, err := NewReport(ctx, "Bind9 test output").create()
 		for {
 			select {
@@ -385,7 +385,7 @@ func TestReviewInProgress(t *testing.T) {
 	require.False(t, state)
 }
 
-// Tests the case when a producers requires reviewing another daemon's
+// Tests the case when a checker requires reviewing another daemon's
 // configuration, beside the subject daemon's configuration. It should
 // cause deletion of both daemons' config reports and schedule a review
 // of the other daemon's configuration internally.
@@ -438,9 +438,9 @@ func TestCascadeReview(t *testing.T) {
 	dispatcher := NewDispatcher(db)
 	require.NotNil(t, dispatcher)
 
-	// Register a producer for the first daemon. It fetches the configuration of
+	// Register a checker for the first daemon. It fetches the configuration of
 	// the other daemon besides the reviewed configuration.
-	dispatcher.RegisterProducer(KeaDHCPv4Daemon, "dhcp4_test_producer", func(ctx *ReviewContext) (*Report, error) {
+	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "dhcp4_test_checker", func(ctx *ReviewContext) (*Report, error) {
 		ctx.refDaemons = append(ctx.refDaemons, daemons[1])
 		report, err := NewReport(ctx, "DHCPv4 test output").
 			referencingDaemon(ctx.refDaemons[0]).
@@ -449,9 +449,9 @@ func TestCascadeReview(t *testing.T) {
 		return report, err
 	})
 
-	// Register a producer for the second daemon. It fetches the configuration of
+	// Register a checker for the second daemon. It fetches the configuration of
 	// the other daemon besides the reviewed configuration.
-	dispatcher.RegisterProducer(KeaCADaemon, "ca_test_producer", func(ctx *ReviewContext) (*Report, error) {
+	dispatcher.RegisterChecker(KeaCADaemon, "ca_test_checker", func(ctx *ReviewContext) (*Report, error) {
 		ctx.refDaemons = append(ctx.refDaemons, daemons[0])
 		report, _ := NewReport(ctx, "CA test output").
 			referencingDaemon(ctx.refDaemons[0]).
@@ -479,16 +479,16 @@ func TestCascadeReview(t *testing.T) {
 	reports, err := dbmodel.GetConfigReportsByDaemonID(db, daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
-	require.Equal(t, "dhcp4_test_producer", reports[0].ProducerName)
+	require.Equal(t, "dhcp4_test_checker", reports[0].CheckerName)
 	require.Equal(t, "DHCPv4 test output", reports[0].Content)
 
-	// The first daemon's producer references the second daemon. Therefore,
+	// The first daemon's checker references the second daemon. Therefore,
 	// this review should cause the review of the second daemon's
 	// configuration. Ensure that it has been performed.
 	reports, err = dbmodel.GetConfigReportsByDaemonID(db, daemons[1].ID)
 	require.NoError(t, err)
 	require.Len(t, reports, 1)
-	require.Equal(t, "ca_test_producer", reports[0].ProducerName)
+	require.Equal(t, "ca_test_checker", reports[0].CheckerName)
 	require.Equal(t, "CA test output", reports[0].Content)
 
 	// Now, start the review for the second daemon. It should result in the
@@ -512,21 +512,21 @@ func TestCascadeReview(t *testing.T) {
 	require.Equal(t, "CA test output", reports[0].Content)
 }
 
-// Tests that default producers are registered.
-func TestRegisterDefaultProducers(t *testing.T) {
+// Tests that default checkers are registered.
+func TestRegisterDefaultCheckers(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	dispatcher := NewDispatcher(db).(*dispatcherImpl)
 	require.NotNil(t, dispatcher)
 
-	dispatcher.RegisterDefaultProducers()
+	dispatcher.RegisterDefaultCheckers()
 
 	// KeaDHCPDaemon group.
 	require.Contains(t, dispatcher.groups, KeaDHCPDaemon)
-	producerNames := []string{}
-	for _, p := range dispatcher.groups[KeaDHCPDaemon].producers {
-		producerNames = append(producerNames, p.name)
+	checkerNames := []string{}
+	for _, p := range dispatcher.groups[KeaDHCPDaemon].checkers {
+		checkerNames = append(checkerNames, p.name)
 	}
-	require.Contains(t, producerNames, "stat_cmds_presence")
+	require.Contains(t, checkerNames, "stat_cmds_presence")
 }

@@ -56,7 +56,7 @@ func (r *IntermediateReport) referencingDaemon(daemon *dbmodel.Daemon) *Intermed
 }
 
 // Validates the report contents and return an instance of the final
-// report or an error. It should never report an error if the producers
+// report or an error. It should never report an error if the checkers
 // generating the reports are implemented properly.
 func (r *IntermediateReport) create() (*Report, error) {
 	// Ensure that the content is not blank.

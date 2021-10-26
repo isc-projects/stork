@@ -15,10 +15,10 @@ import (
 // Structure representing a single config report generated during
 // the daemons configuration review.
 type ConfigReport struct {
-	ID           int64
-	CreatedAt    time.Time
-	ProducerName string
-	Content      string
+	ID          int64
+	CreatedAt   time.Time
+	CheckerName string
+	Content     string
 
 	DaemonID int64
 

@@ -18,22 +18,22 @@ import (
 // error which occurred during the review or nil.
 type CallbackFunc func(int64, error)
 
-// A wrapper around the config report returned by a producer. It
+// A wrapper around the config report returned by a checker. It
 // supplies additional information to the report (i.e., name of
-// the producer that generated the report).
+// the checker that generated the report).
 type taggedReport struct {
-	producerName string
-	report       *Report
+	checkerName string
+	report      *Report
 }
 
 // Review context is valid throughout a review of a daemon configuration.
 // It holds information about the daemons which configurations are
 // reviewed, and the review results output by the review report
-// producers. Producers can modify the context information (e.g. fetch
+// checkers. Checkers can modify the context information (e.g. fetch
 // additional daemon configurations as necessary). The following
 // fields are available in the context:
 // - subjectDaemon: a daemon for which review is conducted
-// - refDaemons: daemons fetched by the producers during the review
+// - refDaemons: daemons fetched by the checkers during the review
 // (e.g. daemons which configurations are associated with the subject
 // daemon configuration),
 // - reports: configuration reports produced so far,
@@ -59,13 +59,13 @@ func newReviewContext(daemon *dbmodel.Daemon, internal bool, callback CallbackFu
 }
 
 // Dispatch group selector is used to segregate different configuration
-// review producers by daemon types.
+// review checkers by daemon types.
 type DispatchGroupSelector int
 
-// Enumeration listing supported configuration review producer groups.
-// For instance, producers belonging to the KeaDHCPDaemon group are
+// Enumeration listing supported configuration review checker groups.
+// For instance, checkers belonging to the KeaDHCPDaemon group are
 // used for reviewing DHCPv4 and DHCPv6 servers configurations. The
-// producers belonging to the KeaDaemon group are used to review
+// checkers belonging to the KeaDaemon group are used to review
 // the configuration parts shared by all Kea daemons. And so on...
 const (
 	EachDaemon DispatchGroupSelector = iota
@@ -78,10 +78,10 @@ const (
 	Bind9Daemon
 )
 
-// Returns group selectors for selecting registered producers appropriate
+// Returns group selectors for selecting registered checkers appropriate
 // for the specified daemon name. For example, it returns EachDaemon,
 // KeaDaemon, KeaDHCPDaemon and KeaDHCPv4Daemon selector for the "dhcp4"
-// daemon. The corresponding producers will be used to review the
+// daemon. The corresponding checkers will be used to review the
 // daemon configuration.
 func getDispatchGroupSelectors(daemonName string) []DispatchGroupSelector {
 	switch daemonName {
@@ -103,34 +103,34 @@ func getDispatchGroupSelectors(daemonName string) []DispatchGroupSelector {
 	return []DispatchGroupSelector{}
 }
 
-// Dispatch group is a group of producers registered for the particular
+// Dispatch group is a group of checkers registered for the particular
 // dispatch group selector, e.g. for the KeaDHCPv4Daemon. Typically,
-// producers from multiple dispatch groups are used for reviewing
+// checkers from multiple dispatch groups are used for reviewing
 // a single configuration.
 type dispatchGroup struct {
-	producers []*producer
+	checkers []*checker
 }
 
 // The dispatcher coordinates configuration reviews of all daemons.
-// The dispatcher maintains a list of configuration review producers.
+// The dispatcher maintains a list of configuration review checkers.
 // They are segregated into dispatch groups invoked for different daemon
-// types. Producers are registered and associated with the dispatch
+// types. Checkers are registered and associated with the dispatch
 // groups by their implementers, and the registration takes place before
-// the dispatcher start. The producers perform specific checks on the
+// the dispatcher start. The checkers perform specific checks on the
 // selected part of the configuration and generate reports about issues.
 // The configuration review can end with a list of reports or an empty
 // list when no issues are found. A caller schedules a review by calling
 // the BeginReview function. It schedules the review and returns
 // immediately. The dispatcher runs the configuration through the
-// registered producers in the background. The dispatcher inserts the
+// registered checkers in the background. The dispatcher inserts the
 // reports into the database when the review finishes, replacing any
-// existing reports for the daemon. More advanced producers can look
+// existing reports for the daemon. More advanced checkers can look
 // into more than one daemon's configuration (e.g., to verify the
 // consistency of the HA configuration between two partners).
 type dispatcherImpl struct {
 	// Database instance where configuration reports are stored.
 	db *dbops.PgDB
-	// Config review dispatch groups containing producers segregated
+	// Config review dispatch groups containing checkers segregated
 	// into groups by daemon types.
 	groups map[DispatchGroupSelector]*dispatchGroup
 	// Wait group used to gracefully stop the dispatcher when the server
@@ -155,8 +155,8 @@ type dispatcherImpl struct {
 // Dispatcher interface. The interface is used in the unit tests that
 // require replacing the default implementation with a mock dispatcher.
 type Dispatcher interface {
-	RegisterProducer(selector DispatchGroupSelector, producerName string, produceFn func(*ReviewContext) (*Report, error))
-	RegisterDefaultProducers()
+	RegisterChecker(selector DispatchGroupSelector, checkerName string, checkFn func(*ReviewContext) (*Report, error))
+	RegisterDefaultCheckers()
 	Start()
 	Shutdown()
 	BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool
@@ -268,16 +268,16 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, internal bool, cal
 
 	for _, selector := range dispatchGroupSelectors {
 		if group, ok := d.groups[selector]; ok {
-			for i := range group.producers {
-				report, err := group.producers[i].produceFn(ctx)
+			for i := range group.checkers {
+				report, err := group.checkers[i].checkFn(ctx)
 				if err != nil {
-					log.Errorf("malformed report created by the config review producer %s: %+v",
-						group.producers[i].name, err)
+					log.Errorf("malformed report created by the config review checker %s: %+v",
+						group.checkers[i].name, err)
 				}
 				if report != nil {
 					ctx.reports = append(ctx.reports, taggedReport{
-						producerName: group.producers[i].name,
-						report:       report,
+						checkerName: group.checkers[i].name,
+						report:      report,
 					})
 				}
 			}
@@ -392,10 +392,10 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 			})
 		}
 		cr := &dbmodel.ConfigReport{
-			ProducerName: r.producerName,
-			Content:      r.report.content,
-			DaemonID:     ctx.subjectDaemon.ID,
-			RefDaemons:   assoc,
+			CheckerName: r.checkerName,
+			Content:     r.report.content,
+			DaemonID:    ctx.subjectDaemon.ID,
+			RefDaemons:  assoc,
 		}
 		err = dbmodel.AddConfigReport(tx, cr)
 		if err != nil {
@@ -441,28 +441,28 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 	return dispatcher
 }
 
-// Registers new producer. A producer implements an algorithm to verify
+// Registers new checker. A checker implements an algorithm to verify
 // a single configuration piece (or aspect) and output a suitable report
 // if it finds issues. It should return nil when no issues were found.
-// Each producer is assigned a unique name so it will be possible to
-// list available producers and/or selectively disable them.
-func (d *dispatcherImpl) RegisterProducer(selector DispatchGroupSelector, producerName string, produceFn func(*ReviewContext) (*Report, error)) {
+// Each checker is assigned a unique name so it will be possible to
+// list available checkers and/or selectively disable them.
+func (d *dispatcherImpl) RegisterChecker(selector DispatchGroupSelector, checkerName string, checkFn func(*ReviewContext) (*Report, error)) {
 	if _, ok := d.groups[selector]; !ok {
 		d.groups[selector] = &dispatchGroup{}
-		d.groups[selector].producers = []*producer{}
+		d.groups[selector].checkers = []*checker{}
 	}
-	d.groups[selector].producers = append(d.groups[selector].producers,
-		&producer{
-			name:      producerName,
-			produceFn: produceFn,
+	d.groups[selector].checkers = append(d.groups[selector].checkers,
+		&checker{
+			name:    checkerName,
+			checkFn: checkFn,
 		},
 	)
 }
 
-// Registers default producers in this package. When new producer is
+// Registers default checkers in this package. When new checker is
 // implemented it should be included in this function.
-func (d *dispatcherImpl) RegisterDefaultProducers() {
-	d.RegisterProducer(KeaDHCPDaemon, "stat_cmds_presence", statCmdsPresence)
+func (d *dispatcherImpl) RegisterDefaultCheckers() {
+	d.RegisterChecker(KeaDHCPDaemon, "stat_cmds_presence", statCmdsPresence)
 }
 
 // Starts the dispatcher by launching the worker goroutine receiving

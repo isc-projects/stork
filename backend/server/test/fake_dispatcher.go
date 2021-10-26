@@ -12,12 +12,12 @@ type FakeDispatcher struct {
 	CallLog []string
 }
 
-func (d *FakeDispatcher) RegisterProducer(selector configreview.DispatchGroupSelector, producerName string, produceFn func(*configreview.ReviewContext) (*configreview.Report, error)) {
-	d.CallLog = append(d.CallLog, "RegisterProducer")
+func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSelector, checkerName string, checkFn func(*configreview.ReviewContext) (*configreview.Report, error)) {
+	d.CallLog = append(d.CallLog, "RegisterChecker")
 }
 
-func (d *FakeDispatcher) RegisterDefaultProducers() {
-	d.CallLog = append(d.CallLog, "RegisterProducer")
+func (d *FakeDispatcher) RegisterDefaultCheckers() {
+	d.CallLog = append(d.CallLog, "RegisterChecker")
 }
 
 func (d *FakeDispatcher) Start() {

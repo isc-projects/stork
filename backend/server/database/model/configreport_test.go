@@ -36,10 +36,10 @@ func TestConfigReportSharingDaemons(t *testing.T) {
 
 	// Add a configuration report shared by both daemons.
 	configReport := &ConfigReport{
-		ProducerName: "test",
-		Content:      "Here is the test report",
-		DaemonID:     daemons[0].ID,
-		RefDaemons:   daemons,
+		CheckerName: "test",
+		Content:     "Here is the test report",
+		DaemonID:    daemons[0].ID,
+		RefDaemons:  daemons,
 	}
 	err = AddConfigReport(db, configReport)
 	require.NoError(t, err)
@@ -96,17 +96,17 @@ func TestConfigReportDistinctDaemons(t *testing.T) {
 	// Associate configuration reports with distinct daemons.
 	configReports := []ConfigReport{
 		{
-			ProducerName: "test",
-			Content:      "Here is the first test report",
-			DaemonID:     daemons[0].ID,
+			CheckerName: "test",
+			Content:     "Here is the first test report",
+			DaemonID:    daemons[0].ID,
 			RefDaemons: []*Daemon{
 				daemons[0],
 			},
 		},
 		{
-			ProducerName: "test",
-			Content:      "Here is the second test report",
-			DaemonID:     daemons[1].ID,
+			CheckerName: "test",
+			Content:     "Here is the second test report",
+			DaemonID:    daemons[1].ID,
 			RefDaemons: []*Daemon{
 				daemons[1],
 			},
@@ -168,31 +168,31 @@ func TestInvalidConfigReport(t *testing.T) {
 	require.Len(t, daemons, 1)
 
 	testCases := []string{
-		"empty producer name",
-		"empty contents",
+		"empty checker name",
+		"empty content",
 		"invalid daemon id",
 	}
 	configReports := []*ConfigReport{
 		{
-			ProducerName: "",
-			Content:      "Here is the first test report",
-			DaemonID:     daemons[0].ID,
+			CheckerName: "",
+			Content:     "Here is the first test report",
+			DaemonID:    daemons[0].ID,
 			RefDaemons: []*Daemon{
 				daemons[0],
 			},
 		},
 		{
-			ProducerName: "test",
-			Content:      "",
-			DaemonID:     daemons[0].ID,
+			CheckerName: "test",
+			Content:     "",
+			DaemonID:    daemons[0].ID,
 			RefDaemons: []*Daemon{
 				daemons[0],
 			},
 		},
 		{
-			ProducerName: "test",
-			Content:      "contents",
-			DaemonID:     111111,
+			CheckerName: "test",
+			Content:     "contents",
+			DaemonID:    111111,
 			RefDaemons: []*Daemon{
 				daemons[0],
 			},
