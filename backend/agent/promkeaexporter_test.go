@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"encoding/json"
 	"flag"
 	"testing"
 	"time"
@@ -93,4 +94,186 @@ func TestPromKeaExporterStart(t *testing.T) {
 	// check if pkt4-nak-received is 19
 	metric, _ = pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
 	require.Equal(t, 19.0, testutil.ToFloat64(metric))
+}
+
+// Test if the Kea JSON get-all-stats response is unmarshal correctly.
+func TestUnmarshalKeaGetAllStatisticsResponse(t *testing.T) {
+	// Arrange
+	rawResponse := `
+	[
+		{
+			"arguments": {
+				"cumulative-assigned-addresses": [ [0, "2021-10-14 10:44:18.687247"] ],
+				"declined-addresses": [ [0, "2021-10-14 10:44:18.687235"] ],
+				"pkt4-ack-received": [ [0, "2021-10-14 10:44:18.672377"] ],
+				"pkt4-ack-sent": [ [0, "2021-10-14 10:44:18.672378"] ],
+				"pkt4-decline-received": [ [0, "2021-10-14 10:44:18.672379"] ],
+				"pkt4-discover-received": [ [0, "2021-10-14 10:44:18.672380"] ],
+				"pkt4-inform-received": [ [0, "2021-10-14 10:44:18.672380"] ],
+				"pkt4-nak-received": [ [0, "2021-10-14 10:44:18.672381"] ],
+				"pkt4-nak-sent": [ [0, "2021-10-14 10:44:18.672382"] ],
+				"pkt4-offer-received": [ [0, "2021-10-14 10:44:18.672382"] ],
+				"pkt4-offer-sent": [ [0, "2021-10-14 10:44:18.672383"] ],
+				"pkt4-parse-failed": [ [0, "2021-10-14 10:44:18.672384"] ],
+				"pkt4-receive-drop": [ [0, "2021-10-14 10:44:18.672389"] ],
+				"pkt4-received": [ [0, "2021-10-14 10:44:18.672390"] ],
+				"pkt4-release-received": [ [0, "2021-10-14 10:44:18.672390"] ],
+				"pkt4-request-received": [ [0, "2021-10-14 10:44:18.672391"] ],
+				"pkt4-sent": [ [0, "2021-10-14 10:44:18.672392"] ],
+				"pkt4-unknown-received": [ [0, "2021-10-14 10:44:18.672392"] ],
+				"reclaimed-declined-addresses": [ [0, "2021-10-14 10:44:18.687239"] ],
+				"reclaimed-leases": [ [0, "2021-10-14 10:44:18.687243"] ],
+				"subnet[1].assigned-addresses": [ [0, "2021-10-14 10:44:18.687253"] ],
+				"subnet[1].cumulative-assigned-addresses": [ [0, "2021-10-14 10:44:18.687229"] ],
+				"subnet[1].declined-addresses": [ [0, "2021-10-14 10:44:18.687266"] ],
+				"subnet[1].reclaimed-declined-addresses": [ [0, "2021-10-14 10:44:18.687274"] ],
+				"subnet[1].reclaimed-leases": [ [0, "2021-10-14 10:44:18.687282"] ],
+				"subnet[1].total-addresses": [ [200, "2021-10-14 10:44:18.687221"] ]
+			},
+			"result": 0
+		},
+		{
+			"result": 1,
+			"text": "unable to forward command to the dhcp6 service: No such file or directory. The server is likely to be offline"
+		}
+	]`
+
+	// Act
+	var response GetAllStatisticsResponse
+	err := json.Unmarshal([]byte(rawResponse), &response)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, response.Dhcp4)
+	require.Nil(t, response.Dhcp6)
+	require.Len(t, response.Dhcp4, 26)
+	require.EqualValues(t, 200, response.Dhcp4["subnet[1].total-addresses"].Value)
+	require.NotNil(t, response.Dhcp4["reclaimed-leases"].Timestamp)
+	require.EqualValues(t, "2021-10-14 10:44:18.687243", *response.Dhcp4["reclaimed-leases"].Timestamp)
+}
+
+// Test if the Kea JSON subnet4-list or subnet6-list response in unmarshal correctly.
+func TestUnmarshalSubnetListOKResponse(t *testing.T) {
+	// Arrange
+	rawResponse := `[{
+		"result": 0,
+		"text": "2 IPv4 subnets found",
+		"arguments": {
+			"subnets": [
+				{
+					"id": 10,
+					"subnet": "10.0.0.0/8"
+				},
+				{
+					"id": 100,
+					"subnet": "192.0.2.0/24"
+				}
+			]
+		}
+	}]`
+
+	// Act
+	response := NewSubnetList()
+	err := json.Unmarshal([]byte(rawResponse), &response)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, response, 2)
+	require.EqualValues(t, "192.0.2.0/24", response[100])
+}
+
+// Test the Kea JSON subnet4-list or subnet6-list response when the hook is not installed.
+func TestUnmarshalSubnetListUnsupportedResponse(t *testing.T) {
+	// Arrange
+	rawResponse := `[
+		{ 
+			"result": 2,
+			"text": "'subnet4-list' command not supported."
+		}
+	]`
+
+	// Act
+	response := NewSubnetList()
+	err := json.Unmarshal([]byte(rawResponse), &response)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, response, 0)
+}
+
+// Test the Kea JSON subnet4-list or subnet6-list response when error occurs.
+func TestUnmarshalSubnetListErrorResponse(t *testing.T) {
+	// Arrange
+	rawResponse := ""
+
+	// Act
+	response := NewSubnetList()
+	err := json.Unmarshal([]byte(rawResponse), &response)
+
+	// Assert
+	require.Error(t, err)
+	require.Len(t, response, 0)
+}
+
+// Test that the Prometheus metrics use the subnet prefix if available.
+func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
+	// Arrange
+	defer gock.Off()
+	gock.New("http://0.1.2.3:1234/").
+		Post("/").
+		JSON(map[string]interface{}{
+			"command":   "statistic-get-all",
+			"service":   []string{"dhcp4", "dhcp6"},
+			"arguments": map[string]interface{}{},
+		}).
+		Persist().
+		Reply(200).
+		BodyString(`[{"result":0, "arguments": {
+	                "subnet[7].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
+	                "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
+	            }}]`)
+
+	gock.New("http://0.1.2.3:1234/").
+		Post("/").
+		JSON(map[string]interface{}{
+			"command":   "subnet4-list",
+			"service":   []string{"dhcp4"},
+			"arguments": map[string]interface{}{},
+		}).
+		Persist().
+		Reply(200).
+		BodyString(`[{
+			"result": 0,
+			"text": "1 IPv4 subnets found",
+			"arguments": {
+				"subnets": [
+					{
+						"id": 7,
+						"subnet": "10.0.0.0/8"
+					}
+				]
+			}
+		}]`)
+
+	fam := &PromFakeAppMonitor{}
+	flags := flag.NewFlagSet("test", 0)
+	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
+	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
+	settings := cli.NewContext(nil, flags, nil)
+	settings.Set("prometheus-kea-exporter-port", "1234")
+	settings.Set("prometheus-kea-exporter-interval", "1")
+
+	pke := NewPromKeaExporter(settings, fam)
+	defer pke.Shutdown()
+
+	gock.InterceptClient(pke.HTTPClient.client)
+	pke.Start()
+
+	// Act
+	// wait 1.5 seconds that collecting is invoked at least once
+	time.Sleep(1500 * time.Millisecond)
+	metric, _ := pke.Adr4StatsMap["assigned-addresses"].GetMetricWith(prometheus.Labels{"subnet": "10.0.0.0/8"})
+
+	// Assert
+	require.Equal(t, 13.0, testutil.ToFloat64(metric))
 }
