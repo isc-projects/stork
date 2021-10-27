@@ -11,16 +11,16 @@ import (
 // execute a function specified by a caller according to the timer
 // interval specified.
 type PeriodicExecutor struct {
-	name         string
-	executorFunc func() error
-	interval     int64
-	ticker       *time.Ticker
-	active       bool
-	pauseCount   uint16
-	done         chan bool
-	wg           *sync.WaitGroup
-	mutex        *sync.Mutex
-	intervalFunc func(prev int64) int64
+	name            string
+	executorFunc    func() error
+	interval        int64
+	ticker          *time.Ticker
+	active          bool
+	pauseCount      uint16
+	done            chan bool
+	wg              *sync.WaitGroup
+	mutex           *sync.Mutex
+	getIntervalFunc func() (int64, error)
 }
 
 const InactiveInterval int64 = 60
@@ -28,15 +28,19 @@ const InactiveInterval int64 = 60
 // Creates an instance of a new periodic executor. The periodic executor offers a mechanism
 // to periodically trigger an action. This action is supplied as a function instance.
 // This function is executed within a goroutine periodically according to the timer
-// interval calculated by `intervalFunc`. It accepts previous interval and returns next value.
-func NewPeriodicExecutor(name string, executorFunc func() error, intervalFunc func(prev int64) int64) *PeriodicExecutor {
-	log.Printf("starting %s Executor", name)
+// interval calculated by `getIntervalFunc`. It accepts previous interval and returns next value.
+func NewPeriodicExecutor(name string, executorFunc func() error, getIntervalFunc func() (int64, error)) (*PeriodicExecutor, error) {
+	log.Printf("starting %s executor", name)
+
+	interval, err := getIntervalFunc()
+	if err != nil {
+		return nil, err
+	}
 
 	// if interval is 0 then it means that executor is disabled,
 	// but it needs to check from time to time the interval using inactiveFunc
 	// to reenable itself when it gets to be > 0. When it is disabled
 	// then it checks db every 60 seconds (InactiveInterval).
-	interval := intervalFunc(0)
 	active := true
 	if interval <= 0 {
 		interval = InactiveInterval
@@ -44,32 +48,32 @@ func NewPeriodicExecutor(name string, executorFunc func() error, intervalFunc fu
 	}
 
 	periodicExecutor := &PeriodicExecutor{
-		name:         name,
-		executorFunc: executorFunc,
-		ticker:       time.NewTicker(time.Duration(interval) * time.Second),
-		active:       active,
-		pauseCount:   0,
-		done:         make(chan bool),
-		wg:           &sync.WaitGroup{},
-		mutex:        &sync.Mutex{},
-		interval:     interval,
-		intervalFunc: intervalFunc,
+		name:            name,
+		executorFunc:    executorFunc,
+		ticker:          time.NewTicker(time.Duration(interval) * time.Second),
+		active:          active,
+		pauseCount:      0,
+		done:            make(chan bool),
+		wg:              &sync.WaitGroup{},
+		mutex:           &sync.Mutex{},
+		interval:        interval,
+		getIntervalFunc: getIntervalFunc,
 	}
 
 	periodicExecutor.wg.Add(1)
 	go periodicExecutor.executorLoop()
 
-	log.Printf("started %s Executor", periodicExecutor.name)
-	return periodicExecutor
+	log.Printf("started %s executor", periodicExecutor.name)
+	return periodicExecutor, nil
 }
 
 // Terminates the executor, i.e. the executor no longer triggers the
 // user defined function.
 func (executor *PeriodicExecutor) Shutdown() {
-	log.Printf("stopping %s Executor", executor.name)
+	log.Printf("stopping %s executor", executor.name)
 	executor.done <- true
 	executor.wg.Wait()
-	log.Printf("stopped %s Executor", executor.name)
+	log.Printf("stopped %s executor", executor.name)
 }
 
 // Temporarily stops the timer triggering the exectutor action. This function
@@ -173,10 +177,16 @@ func (executor *PeriodicExecutor) executorLoop() {
 		}
 
 		// Check if the interval has changed. If so, recreate the ticker.
-		interval := executor.intervalFunc(executor.interval)
+		interval, err := executor.getIntervalFunc()
+		if err != nil {
+			log.Errorf("problem with getting interval: %+v", err)
+			return
+		}
+
 		executor.mutex.Lock()
 		executorInterval := executor.interval
 		executor.mutex.Unlock()
+
 		if interval <= 0 && executor.active {
 			// if executor should be disabled but it is active then
 			if executorInterval != InactiveInterval {

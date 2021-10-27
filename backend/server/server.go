@@ -18,7 +18,7 @@ import (
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/eventcenter"
-	"isc.org/stork/server/metricscollector"
+	"isc.org/stork/server/metrics"
 	"isc.org/stork/server/restservice"
 )
 
@@ -35,8 +35,8 @@ type StorkServer struct {
 
 	Pullers *apps.Pullers
 
-	EnableMetricsEndpoint   bool
-	MetricsCollectorControl metricscollector.Control
+	EnableMetricsEndpoint bool
+	MetricsCollector      metrics.Collector
 
 	EventCenter eventcenter.EventCenter
 
@@ -176,7 +176,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	}
 
 	if ss.EnableMetricsEndpoint {
-		ss.MetricsCollectorControl, err = metricscollector.NewControl(ss.DB)
+		ss.MetricsCollector, err = metrics.NewCollector(ss.DB)
 		if err != nil {
 			return nil, err
 		}
@@ -188,15 +188,15 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
 		ss.DB, ss.Agents, ss.EventCenter,
-		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollectorControl)
+		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()
 		ss.Pullers.KeaStatsPuller.Shutdown()
 		ss.Pullers.Bind9StatsPuller.Shutdown()
 		ss.Pullers.AppsStatePuller.Shutdown()
-		if ss.MetricsCollectorControl != nil {
-			ss.MetricsCollectorControl.Shutdown()
+		if ss.MetricsCollector != nil {
+			ss.MetricsCollector.Shutdown()
 		}
 
 		ss.DB.Close()
@@ -231,8 +231,8 @@ func (ss *StorkServer) Shutdown() {
 	ss.Agents.Shutdown()
 	ss.EventCenter.Shutdown()
 	ss.ReviewDispatcher.Shutdown()
-	if ss.MetricsCollectorControl != nil {
-		ss.MetricsCollectorControl.Shutdown()
+	if ss.MetricsCollector != nil {
+		ss.MetricsCollector.Shutdown()
 	}
 	ss.DB.Close()
 	log.Println("Stork Server shut down")

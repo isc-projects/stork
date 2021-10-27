@@ -1,12 +1,12 @@
-package metricscollector
+package metrics
 
 // Functions to manage the Prometheus metrics.
 //
 // To add new statistic you should:
-// 1. Update the Metrics structure.
-// 2. Prepare the metric instance in the NewMetrics function.
+// 1. Update the metrics structure.
+// 2. Prepare the metric instance in the newMetrics function.
 // 3. Update SQL query (if needed) in the database/model/metrics.go file.
-// 4. Change the UpdateMetrics function to collect new metric values.
+// 4. Change the updateMetrics function to collect new metric values.
 
 import (
 	"reflect"
@@ -18,7 +18,8 @@ import (
 )
 
 // Set of Stork server metrics.
-type Metrics struct {
+type metrics struct {
+	Registry                        *prometheus.Registry
 	AuthorizedMachineTotal          prometheus.Gauge
 	UnauthorizedMachineTotal        prometheus.Gauge
 	UnreachableMachineTotal         prometheus.Gauge
@@ -30,12 +31,14 @@ type Metrics struct {
 
 // Constructor of the metrics. They are automatically
 // registered in the Prometheus.
-func NewMetrics(registry *prometheus.Registry) Metrics {
+func newMetrics() *metrics {
+	registry := prometheus.NewRegistry()
 	factory := promauto.With(registry)
 
 	namespace := "storkserver"
 
-	metrics := Metrics{
+	metrics := metrics{
+		Registry: registry,
 		AuthorizedMachineTotal: factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "authorized_machine_total",
@@ -64,7 +67,7 @@ func NewMetrics(registry *prometheus.Registry) Metrics {
 			Namespace: namespace,
 			Name:      "pd_utilization",
 			Subsystem: "subnet",
-			Help:      "Subnet pd utilization",
+			Help:      "Subnet delegated prefix utilization",
 		}, []string{"subnet"}),
 		SharedNetworkAddressUtilization: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -76,43 +79,38 @@ func NewMetrics(registry *prometheus.Registry) Metrics {
 			Namespace: namespace,
 			Name:      "pd_utilization",
 			Subsystem: "shared_network",
-			Help:      "Shared network pd utilization",
+			Help:      "Shared network delegated prefix utilization",
 		}, []string{"name"}),
 	}
 
-	return metrics
+	return &metrics
 }
 
 // Calculate current metric values from the database.
-func UpdateMetrics(db *pg.DB, metrics Metrics) error {
-	// statistics, err := dbmodel.GetAllStats(db)
-	// if err != nil {
-	// 	return err
-	// }
-
+func (m *metrics) Update(db *pg.DB) error {
 	calculatedMetrics, err := dbmodel.GetCalculatedMetrics(db)
 	if err != nil {
 		return err
 	}
 
-	metrics.AuthorizedMachineTotal.Set(float64(calculatedMetrics.AuthorizedMachines))
-	metrics.UnauthorizedMachineTotal.Set(float64(calculatedMetrics.UnauthorizedMachines))
-	metrics.UnreachableMachineTotal.Set(float64(calculatedMetrics.UnreachableMachines))
+	m.AuthorizedMachineTotal.Set(float64(calculatedMetrics.AuthorizedMachines))
+	m.UnauthorizedMachineTotal.Set(float64(calculatedMetrics.UnauthorizedMachines))
+	m.UnreachableMachineTotal.Set(float64(calculatedMetrics.UnreachableMachines))
 
 	for _, networkMetrics := range calculatedMetrics.SubnetMetrics {
-		metrics.SubnetAddressUtilization.
+		m.SubnetAddressUtilization.
 			With(prometheus.Labels{"subnet": networkMetrics.Label}).
 			Set(float64(networkMetrics.AddrUtilization) / 1000.)
-		metrics.SubnetPdUtilization.
+		m.SubnetPdUtilization.
 			With(prometheus.Labels{"subnet": networkMetrics.Label}).
 			Set(float64(networkMetrics.PdUtilization) / 1000.)
 	}
 
 	for _, networkMetrics := range calculatedMetrics.SharedNetworkMetrics {
-		metrics.SharedNetworkAddressUtilization.
+		m.SharedNetworkAddressUtilization.
 			With(prometheus.Labels{"name": networkMetrics.Label}).
 			Set(float64(networkMetrics.AddrUtilization) / 1000.)
-		metrics.SharedNetworkPdUtilization.
+		m.SharedNetworkPdUtilization.
 			With(prometheus.Labels{"name": networkMetrics.Label}).
 			Set(float64(networkMetrics.PdUtilization) / 1000.)
 	}
@@ -121,8 +119,8 @@ func UpdateMetrics(db *pg.DB, metrics Metrics) error {
 }
 
 // Unregister all metrics from the Prometheus registry.
-func UnregisterAllMetrics(registry *prometheus.Registry, metrics Metrics) {
-	v := reflect.ValueOf(metrics)
+func (m *metrics) UnregisterAll() {
+	v := reflect.ValueOf(m)
 	typeMetrics := v.Type()
 	for i := 0; i < typeMetrics.NumField(); i++ {
 		rawField := v.Field(i).Interface()
@@ -130,6 +128,6 @@ func UnregisterAllMetrics(registry *prometheus.Registry, metrics Metrics) {
 		if !ok {
 			continue
 		}
-		registry.Unregister(collector)
+		m.Registry.Unregister(collector)
 	}
 }

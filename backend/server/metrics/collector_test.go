@@ -1,4 +1,4 @@
-package metricscollector
+package metrics
 
 import (
 	"io"
@@ -42,18 +42,18 @@ func parseAuthorizedMachinesFromPrometheus(input io.Reader) (int64, error) {
 	return int64(*gauge.Value), nil
 }
 
-// Test that the control is properly created.
-func TestConstructController(t *testing.T) {
+// Test that the collector is properly created.
+func TestConstructCollectorler(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
 	// Act
-	control, err := NewControl(db)
-	defer control.Shutdown()
+	collector, err := NewCollector(db)
+	defer collector.Shutdown()
 
 	// Assert
-	require.NotNil(t, control)
+	require.NotNil(t, collector)
 	require.NoError(t, err)
 }
 
@@ -62,12 +62,12 @@ func TestCreateHttpHandler(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	control, _ := NewControl(db)
-	defer control.Shutdown()
+	collector, _ := NewCollector(db)
+	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	// Act
-	handler := control.SetupHandler(nextHandler)
+	handler := collector.SetupHTTPHandler(nextHandler)
 
 	// Assert
 	require.NotNil(t, handler)
@@ -78,10 +78,10 @@ func TestHandlerResponse(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	control, _ := NewControl(db)
-	defer control.Shutdown()
+	collector, _ := NewCollector(db)
+	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	handler := control.SetupHandler(nextHandler)
+	handler := collector.SetupHTTPHandler(nextHandler)
 	req := httptest.NewRequest("GET", "http://localhost/abc", nil)
 	w := httptest.NewRecorder()
 
@@ -105,11 +105,11 @@ func TestPeriodicMetricsUpdate(t *testing.T) {
 	_ = dbmodel.InitializeSettings(db)
 	_ = dbmodel.SetSettingInt(db, "metrics_collector_interval", 1)
 
-	control, _ := NewControl(db)
-	defer control.Shutdown()
+	collector, _ := NewCollector(db)
+	defer collector.Shutdown()
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	handler := control.SetupHandler(nextHandler)
+	handler := collector.SetupHTTPHandler(nextHandler)
 	req := httptest.NewRequest("GET", "http://localhost/abc", nil)
 	w := httptest.NewRecorder()
 
@@ -119,13 +119,14 @@ func TestPeriodicMetricsUpdate(t *testing.T) {
 		AgentPort:  8000,
 		Authorized: true,
 	})
-	time.Sleep(5 * time.Second)
 
-	handler.ServeHTTP(w, req)
-	resp := w.Result()
-	defer resp.Body.Close()
-	authorizedCount, _ := parseAuthorizedMachinesFromPrometheus(resp.Body)
+	require.Eventually(t, func() bool {
+		handler.ServeHTTP(w, req)
+		resp := w.Result()
+		defer resp.Body.Close()
+		authorizedCount, _ := parseAuthorizedMachinesFromPrometheus(resp.Body)
 
-	// Assert
-	require.EqualValues(t, 1, authorizedCount)
+		// Assert
+		return authorizedCount == 1
+	}, 5*time.Second, time.Second)
 }

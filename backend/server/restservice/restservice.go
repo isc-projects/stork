@@ -27,7 +27,7 @@ import (
 	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/gen/restapi"
 	"isc.org/stork/server/gen/restapi/operations"
-	"isc.org/stork/server/metricscollector"
+	"isc.org/stork/server/metrics"
 )
 
 type RestAPISettings struct {
@@ -58,7 +58,7 @@ type RestAPI struct {
 	EventCenter      eventcenter.EventCenter
 	Pullers          *apps.Pullers
 	ReviewDispatcher configreview.Dispatcher
-	Control          metricscollector.Control
+	MetricsCollector metrics.Collector
 
 	Agents agentcomm.ConnectedAgents
 
@@ -75,7 +75,7 @@ type RestAPI struct {
 // Do API initialization.
 func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, db *pg.DB,
 	agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter,
-	pullers *apps.Pullers, reviewDispatcher configreview.Dispatcher, control metricscollector.Control) (*RestAPI, error) {
+	pullers *apps.Pullers, reviewDispatcher configreview.Dispatcher, collector metrics.Collector) (*RestAPI, error) {
 	// Initialize sessions with access to the database.
 	sm, err := dbsession.NewSessionMgr(&dbSettings.BaseDatabaseSettings)
 	if err != nil {
@@ -91,7 +91,7 @@ func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, d
 		EventCenter:      eventCenter,
 		Pullers:          pullers,
 		ReviewDispatcher: reviewDispatcher,
-		Control:        control,
+		MetricsCollector: collector,
 	}
 
 	return r, nil

@@ -38,7 +38,7 @@ func (executor *testExecutor) mockPull() error {
 // Test test verifies that the executor is paused while handler function is
 // being invoked.
 func TestPausedWhileHandling(t *testing.T) {
-	intervalFunc := func(prev int64) int64 { return 1 }
+	getIntervalFunc := func() (int64, error) { return 1, nil }
 
 	// Create an instance of the test executor which implements our mock function to
 	// be invoked by the executor under test.
@@ -46,9 +46,10 @@ func TestPausedWhileHandling(t *testing.T) {
 		pausedChan: make(chan bool, 1),
 		mutex:      new(sync.Mutex),
 	}
-	executor := NewPeriodicExecutor("Test",
-		testExecutorInstance.mockPull, intervalFunc)
+	executor, err := NewPeriodicExecutor("Test",
+		testExecutorInstance.mockPull, getIntervalFunc)
 	require.NotNil(t, executor)
+	require.NoError(t, err)
 	defer executor.Shutdown()
 
 	// There is a potential race condition between handler function trying to
@@ -80,7 +81,7 @@ func TestPausedWhileHandling(t *testing.T) {
 // This test verifies that the executor can be paused and resumed.
 func TestPauseAndUnapuseOrReset(t *testing.T) {
 	testCases := []string{"Unpause", "Reset"}
-	intervalFunc := func(prev int64) int64 { return 1 }
+	getIntervalFunc := func() (int64, error) { return 1, nil }
 
 	// The test is almost the same for both cases. The only difference is
 	// that we call Resume or Reset to start the executor again.
@@ -93,9 +94,10 @@ func TestPauseAndUnapuseOrReset(t *testing.T) {
 				pausedChan: make(chan bool, 1),
 				mutex:      new(sync.Mutex),
 			}
-			executor := NewPeriodicExecutor("Test",
-				testExecutorInstance.mockPull, intervalFunc)
+			executor, err := NewPeriodicExecutor("Test",
+				testExecutorInstance.mockPull, getIntervalFunc)
 			require.NotNil(t, executor)
+			require.NoError(t, err)
 			defer executor.Shutdown()
 
 			// Pause the executor twice and unpause it once. The executor should remain
@@ -142,10 +144,10 @@ func TestPauseAndUnapuseOrReset(t *testing.T) {
 func TestGetInterval(t *testing.T) {
 	// Arrange
 	intervalValue := int64(1)
-	intervalFunc := func(prev int64) int64 {
-		return atomic.LoadInt64(&intervalValue)
+	getIntervalFunc := func() (int64, error) {
+		return atomic.LoadInt64(&intervalValue), nil
 	}
-	executor := NewPeriodicExecutor("", func() error { return nil }, intervalFunc)
+	executor, _ := NewPeriodicExecutor("", func() error { return nil }, getIntervalFunc)
 	defer executor.Shutdown()
 
 	// Act

@@ -5,12 +5,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Metric values calculated for specific subnet or shared network.
 type CalculatedNetworkMetrics struct {
-	Label           string
+	// Identification of network.
+	Label string
+	// Address utilization in percentage multiplied by 10.
 	AddrUtilization int16
-	PdUtilization   int16
+	// Delegated prefix utilization in percentage multiplied by 10.
+	PdUtilization int16
 }
 
+// Metric values calculated from the database.
 type CalculatedMetrics struct {
 	AuthorizedMachines   int64
 	UnauthorizedMachines int64
@@ -19,6 +24,7 @@ type CalculatedMetrics struct {
 	SharedNetworkMetrics []CalculatedNetworkMetrics
 }
 
+// Calculates metrics using set of the SELECT queries.
 func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 	metrics := CalculatedMetrics{}
 	err := db.Model().

@@ -1,7 +1,7 @@
 package agentcomm
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -25,26 +25,20 @@ type PeriodicPuller struct {
 // interval available in the database. The intervalSettingName is a name of this
 // setting in the database. The pullerName is used for logging purposes.
 func NewPeriodicPuller(db *dbops.PgDB, agents ConnectedAgents, pullerName, intervalSettingName string, pullFunc func() error) (*PeriodicPuller, error) {
-	log.Printf("starting %s Puller", pullerName)
-
-	_, err := dbmodel.GetSettingInt(db, intervalSettingName)
+	periodicExecutor, err := storkutil.NewPeriodicExecutor(
+		pullerName, pullFunc,
+		func() (int64, error) {
+			interval, err := dbmodel.GetSettingInt(db, intervalSettingName)
+			return interval, errors.Wrapf(err, "problem with getting interval setting %s from db",
+				intervalSettingName)
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	periodicPuller := &PeriodicPuller{
-		storkutil.NewPeriodicExecutor(
-			pullerName, pullFunc,
-			func(prev int64) int64 {
-				interval, err := dbmodel.GetSettingInt(db, intervalSettingName)
-				if err != nil {
-					log.Errorf("problem with getting interval setting %s from db: %+v",
-						intervalSettingName, err)
-					interval = prev
-				}
-				return interval
-			},
-		),
+		periodicExecutor,
 		intervalSettingName,
 		db,
 		agents,

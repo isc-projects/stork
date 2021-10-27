@@ -15,30 +15,6 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
-// Fake metrics collector. It collects nothing, but
-// counts received requests.
-type FakeMetricsCollectorControl struct {
-	IsRunning    bool
-	RequestCount int
-}
-
-func NewFakeMetricsCollectorControl() *FakeMetricsCollectorControl {
-	return &FakeMetricsCollectorControl{
-		IsRunning:    true,
-		RequestCount: 0,
-	}
-}
-
-func (c *FakeMetricsCollectorControl) SetupHandler(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c.RequestCount++
-	})
-}
-
-func (c *FakeMetricsCollectorControl) Shutdown() {
-	c.IsRunning = false
-}
-
 // Check if fileServerMiddleware works and handles requests correctly.
 func TestFileServerMiddleware(t *testing.T) {
 	apiRequestReceived := false
@@ -157,12 +133,12 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 	require.True(t, requestReceived)
 }
 
-// Check if metricsCollectorMiddelware works and handles requests correctly.
-func TestMetricsCollectorMiddleware(t *testing.T) {
+// Check if metricsMiddelware works and handles requests correctly.
+func TestMetricsMiddleware(t *testing.T) {
 	// Arrange
-	metricsCollector := NewFakeMetricsCollectorControl()
+	metrics := storktest.NewFakeMetricsCollector()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	handler := metricsCollectorMiddleware(nextHandler, metricsCollector)
+	handler := metricsMiddleware(nextHandler, metrics)
 
 	// Act
 	req := httptest.NewRequest("GET", "http://localhost/metrics", nil)
@@ -170,14 +146,14 @@ func TestMetricsCollectorMiddleware(t *testing.T) {
 	handler.ServeHTTP(w, req)
 
 	// Assert
-	require.EqualValues(t, 1, metricsCollector.RequestCount)
+	require.EqualValues(t, 1, metrics.RequestCount)
 }
 
-// Check if metricsCollectorMiddelware returns placeholder when the endpoint is disabled.
-func TestMetricsCollectorMiddlewarePlaceholder(t *testing.T) {
+// Check if metricsMiddelware returns placeholder when the endpoint is disabled.
+func TestMetricsMiddlewarePlaceholder(t *testing.T) {
 	// Arrange
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	handler := metricsCollectorMiddleware(nextHandler, nil)
+	handler := metricsMiddleware(nextHandler, nil)
 
 	// Act
 	req := httptest.NewRequest("GET", "http://localhost/metrics", nil)
