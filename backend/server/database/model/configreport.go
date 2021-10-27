@@ -97,7 +97,9 @@ func AddConfigReport(dbIface interface{}, configReport *ConfigReport) error {
 // the first one for the daemon. The limit of 0 causes the function to
 // return all reports beginning from the offset. A non-zero limit value
 // limits the number of returned reports. Specify an offset and limit of
-// 0 to fetch all reports for a daemon.
+// 0 to fetch all reports for a daemon. Besides returning the config
+// reports this function also returns the total number of reports for
+// the daemon (useful when paging the results) and an error.
 func GetConfigReportsByDaemonID(db *pg.DB, offset, limit int64, daemonID int64) ([]ConfigReport, int64, error) {
 	var configReports []ConfigReport
 	q := db.Model(&configReports).
