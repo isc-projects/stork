@@ -42,10 +42,10 @@ func NewControl(db *pg.DB) (Control, error) {
 	// Initialize the metrics
 	err := UpdateMetrics(db, metrics)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error during initialize metrics")
+		return nil, errors.WithMessage(err, "error during metrics initialization")
 	}
 
-	// Starts the periodically collecting the metrics.
+	// Starts collecting the metrics periodically.
 	metricPuller := storkutil.NewPeriodicExecutor("metrics",
 		func() error {
 			return UpdateMetrics(db, metrics)
@@ -74,7 +74,7 @@ func (c *PrometheusControl) SetupHandler(next http.Handler) http.Handler {
 	return promhttp.HandlerFor(c.registry, promhttp.HandlerOpts{})
 }
 
-// Stops periodically collecting the metrics and unregister
+// Stops periodically collecting the metrics and unregisters
 // all metrics.
 func (c *PrometheusControl) Shutdown() {
 	c.puller.Shutdown()

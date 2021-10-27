@@ -180,9 +180,9 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		if err != nil {
 			return nil, err
 		}
-		log.Info("the metric endpoint is enabled (ensure that it is properly secured)")
+		log.Info("the metrics endpoint is enabled (ensure that it is properly secured)")
 	} else {
-		log.Warn("the metric endpoint is disabled (use specific flag to enable it)")
+		log.Warn("the metric endpoint is disabled (it can be enabled with the -m flag)")
 	}
 
 	// setup ReST API service

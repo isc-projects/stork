@@ -2,7 +2,7 @@ package metricscollector
 
 // Functions to manage the Prometheus metrics.
 //
-// For add new statistic you should:
+// To add new statistic you should:
 // 1. Update the Metrics structure.
 // 2. Prepare the metric instance in the NewMetrics function.
 // 3. Update SQL query (if needed) in the database/model/metrics.go file.
@@ -120,7 +120,7 @@ func UpdateMetrics(db *pg.DB, metrics Metrics) error {
 	return nil
 }
 
-// Unregister all metrics from the prometheus registry.
+// Unregister all metrics from the Prometheus registry.
 func UnregisterAllMetrics(registry *prometheus.Registry, metrics Metrics) {
 	v := reflect.ValueOf(metrics)
 	typeMetrics := v.Type()

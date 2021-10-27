@@ -28,7 +28,7 @@ const InactiveInterval int64 = 60
 // Creates an instance of a new periodic executor. The periodic executor offers a mechanism
 // to periodically trigger an action. This action is supplied as a function instance.
 // This function is executed within a goroutine periodically according to the timer
-// interval calculated by `intervalFunc`. It accepts previous interval and return next value.
+// interval calculated by `intervalFunc`. It accepts previous interval and returns next value.
 func NewPeriodicExecutor(name string, executorFunc func() error, intervalFunc func(prev int64) int64) *PeriodicExecutor {
 	log.Printf("starting %s Executor", name)
 

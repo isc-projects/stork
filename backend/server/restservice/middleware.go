@@ -210,7 +210,7 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 	})
 }
 
-// Metric collector middelware that handle the metric endpoint.
+// Metric collector middelware that handles the metric endpoint.
 func metricsCollectorMiddleware(next http.Handler, control metricscollector.Control) http.Handler {
 	var handler http.Handler
 	if control != nil {

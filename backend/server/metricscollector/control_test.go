@@ -98,7 +98,7 @@ func TestHandlerResponse(t *testing.T) {
 }
 
 // Test that the metrics are updated periodically.
-func TestPeriodicallyMetricsUpdate(t *testing.T) {
+func TestPeriodicMetricsUpdate(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()

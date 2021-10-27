@@ -832,8 +832,8 @@ command-line parameters, or the Prometheus export can be disabled altogether. Fo
 at :ref:`man-stork-agent`.
 
 The Stork Server can be optionally integrated too, but the Prometheus support is disabled by default. To enable it
-you need to run the server with flag ``-m/--metrics`` or with set ``STORK_ENABLE_METRICS`` environment variable.
-Next, you should update the ``prometheus.yml`` file as fallow:
+you need to run the server with the ``-m`` or ``--metrics`` flag or set the ``STORK_ENABLE_METRICS`` environment variable.
+Next, you should update the ``prometheus.yml`` file:
 
 .. code-block:: yaml
 
@@ -846,12 +846,12 @@ The Stork Server exports metrics on the assigned HTTP/HTTPS port (defined via ``
 
 .. warning::
 
-   Prometheus ``/metrics`` endpoint doesn't provide any authentication mechanism.
-   It means that it should be secure on the network level, for example, in a firewall.
-   Only restricted IP hosts (Prometheus servers) should be able to establish a connection to this endpoint.
+   Prometheus ``/metrics`` endpoint doesn't require any authentication.
+   It means that it should be secured at the network level, for example, with a firewall.
+   Only restricted IP hosts (Prometheus servers) should be able to establish connections to this endpoint.
 
 After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly. Kea statistics use the ``kea_`` prefix (e.g. kea_dhcp4_addresses_assigned_total); BIND 9
-statistics will eventually use the ``bind_`` prefix (e.g. bind_incoming_queries_tcp), Stork Server statistics use the ``server_`` prefix.
+statistics will eventually use the ``bind_`` prefix (e.g. bind_incoming_queries_tcp); Stork Server statistics use the ``server_`` prefix.
 
 Grafana Integration
 -------------------

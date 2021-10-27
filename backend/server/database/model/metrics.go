@@ -48,7 +48,7 @@ func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 		Select(&metrics.SharedNetworkMetrics)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot calculate shared_network metrics")
+		return nil, errors.Wrap(err, "cannot calculate shared network metrics")
 	}
 
 	return &metrics, nil
