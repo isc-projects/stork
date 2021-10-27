@@ -844,6 +844,12 @@ Next, you should update the ``prometheus.yml`` file:
 
 The Stork Server exports metrics on the assigned HTTP/HTTPS port (defined via ``--rest-port`` flag).
 
+.. note::
+
+   The Prometheus client periodically collects metrics from the clients (Stork Server or Stork Agent, for example).
+   It is done via an HTTP call. By convention, the endpoint that shares the metrics has the `/metrics` path.
+   This endpoint returns data in Prometheus-specific format.
+
 .. warning::
 
    Prometheus ``/metrics`` endpoint doesn't require any authentication.
