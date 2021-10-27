@@ -43,10 +43,11 @@ func parseAuthorizedMachinesFromPrometheus(input io.Reader) (int64, error) {
 }
 
 // Test that the collector is properly created.
-func TestConstructCollectorler(t *testing.T) {
+func TestConstructController(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	_ = dbmodel.InitializeSettings(db)
 
 	// Act
 	collector, err := NewCollector(db)
@@ -57,11 +58,27 @@ func TestConstructCollectorler(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// Test that the collector creation fails if the interval
+// setting is missing.
+func TestConstructControllerWhenIntervalSettingIsMissing(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Act
+	collector, err := NewCollector(db)
+
+	// Assert
+	require.Nil(t, collector)
+	require.Error(t, err)
+}
+
 // Test that the HTTP handler is created.
 func TestCreateHttpHandler(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	_ = dbmodel.InitializeSettings(db)
 	collector, _ := NewCollector(db)
 	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -78,6 +95,7 @@ func TestHandlerResponse(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
+	_ = dbmodel.InitializeSettings(db)
 	collector, _ := NewCollector(db)
 	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})

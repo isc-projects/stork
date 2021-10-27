@@ -120,7 +120,7 @@ func (m *metrics) Update(db *pg.DB) error {
 
 // Unregister all metrics from the Prometheus registry.
 func (m *metrics) UnregisterAll() {
-	v := reflect.ValueOf(m)
+	v := reflect.ValueOf(*m)
 	typeMetrics := v.Type()
 	for i := 0; i < typeMetrics.NumField(); i++ {
 		rawField := v.Field(i).Interface()
