@@ -17,9 +17,9 @@ func TestNewMetrics(t *testing.T) {
 	// Prometheus has lazy-initialization of the metrics.
 	// Only the metrics with at least one value are
 	// enumerated by the gather.
-	// The 3 metrics are a single counters (Gauge), they
+	// The 3 metrics are single counters (Gauge), they
 	// are initialized with 0 value at the beginning.
-	// Rest of metrics are vectors (GaugeVectors), they have
+	// Other metrics are vectors (GaugeVectors), they have
 	// no value at the beginning.
 	require.Len(t, mfs, 3)
 }

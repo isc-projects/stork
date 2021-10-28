@@ -31,7 +31,7 @@ type prometheusCollector struct {
 }
 
 // Creates an instance of the metrics collector and starts
-// collecting the metrics according to the value
+// collecting the metrics according to the interval
 // specified in the database.
 func NewCollector(db *pg.DB) (Collector, error) {
 	metrics := newMetrics(db)
