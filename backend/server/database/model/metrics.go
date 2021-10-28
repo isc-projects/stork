@@ -7,7 +7,7 @@ import (
 
 // Metric values calculated for specific subnet or shared network.
 type CalculatedNetworkMetrics struct {
-	// Identification of network.
+	// Subnet prefix or shared network name.
 	Label string
 	// Address utilization in percentage multiplied by 10.
 	AddrUtilization int16
@@ -24,7 +24,7 @@ type CalculatedMetrics struct {
 	SharedNetworkMetrics []CalculatedNetworkMetrics
 }
 
-// Calculates metrics using set of the SELECT queries.
+// Calculates various metrics using several SELECT queries.
 func GetCalculatedMetrics(db *pg.DB) (*CalculatedMetrics, error) {
 	metrics := CalculatedMetrics{}
 	err := db.Model().
