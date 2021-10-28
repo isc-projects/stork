@@ -863,7 +863,7 @@ def test_get_dhcp4_config_review_reports(agent, server):
 
     # Get config reports for the daemon.
     banner("GET CONFIG REPORTS")
-    r = server.api_get('/daemons/%d/config/reports?start=0&limit=10' % daemon_id)
+    r = server.api_get('/daemons/%d/config-reports?start=0&limit=10' % daemon_id)
     data = r.json()
 
     # Expecting one report indicating that the stat_cmds hooks library

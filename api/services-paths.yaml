@@ -490,7 +490,7 @@
           schema:
             $ref: "#/definitions/ApiError"
 
-  /daemons/{id}/config/reports:
+  /daemons/{id}/config-reports:
     get:
       summary: Get configuration review reports
       description: >-
