@@ -3,6 +3,7 @@ import { ActivatedRoute, ParamMap, Router, NavigationEnd } from '@angular/router
 
 import { MessageService, MenuItem } from 'primeng/api'
 import { Subscription } from 'rxjs'
+import { Machine } from '../backend'
 
 import { ServicesService } from '../backend/api/api'
 import { LoadingService } from '../loading.service'
@@ -106,6 +107,12 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 label: 'Refresh',
                 id: 'refresh-single-machine',
                 icon: 'pi pi-refresh',
+            },
+            {
+                label: 'Dump configuration',
+                id: 'dump-single-machine',
+                icon: 'pi pi-dump',
+                title: 'Dump configuration for troubleshooting purposes'
             },
             /* Temporarily disable unauthorization until we find an
                actual use case for it. Also, if we allow unauthorization
@@ -360,6 +367,10 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         )
     }
 
+    _dumpConfiguration(machine: Machine) {
+        
+    }
+
     /**
      * Authorize or unauthorize machine.
      *
@@ -432,13 +443,18 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 this._refreshMachineState(machine)
             }
 
+            // connect method to dump machine configuration
+            this.machineMenuItems[1].command = () => {
+                this._dumpConfiguration(machine)
+            }
+
             // connect method to authorize machine
-            /*this.machineMenuItems[1].command = () => {
+            /*this.machineMenuItems[2].command = () => {
                 this._changeMachineAuthorization(machine, false, machinesTable)
             }*/
 
             // connect method to delete machine
-            this.machineMenuItems[1].command = () => {
+            this.machineMenuItems[2].command = () => {
                 this.deleteMachine(machine.id)
             }
         }
