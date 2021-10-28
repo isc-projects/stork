@@ -697,6 +697,23 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 	return rsp
 }
 
+// Return a single archive machine dump. It is intendent for easy sharing the configuration
+// for diagnostic purposes. The archive contains the database dumps and some log files.
+func (r *RestAPI) GetMachineDump(ctx context.Context, params services.GetMachineDumpParams) middleware.Responder {
+	dump, err := apps.DumpMachine(r.DB, r.Agents, params.ID)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("cannot dump machine %d", params.ID)
+		rsp := services.NewGetMachineDumpDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	rsp := services.NewGetMachineDumpOK().WithPayload(dump)
+	return rsp
+}
+
 // Merges information carried in the Kea database configuration into the map of
 // existing database configurations formatted to be sent over the REST API.
 // This function is called by the getKeaStorages function.
