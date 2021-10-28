@@ -862,3 +862,12 @@ installation).
 
 Example dashboards with some live data can be seen in the `Stork screenshots gallery
 <https://gitlab.isc.org/isc-projects/stork/-/wikis/Screenshots#grafana>`_ .
+
+Subnet identification
+---------------------
+
+Kea CA shares subnet statistics labeled with the internal Kea IDs.
+The Prometheus/Graphana subnet labels depend on the installed Kea hooks.
+By default, the internal, numeric Kea IDs are used.
+But if the `subnet_cmds` hook is installed then the numeric IDs are resolved to subnet prefixes.
+It causes that the Graphana dashboard looks more human-friendly and descriptive.
