@@ -50,7 +50,7 @@ func NewCollector(db *pg.DB) (Collector, error) {
 		},
 		func() (int64, error) {
 			interval, err := dbmodel.GetSettingInt(db, intervalSettingName)
-			return interval, errors.Wrapf(err, "problem with getting interval setting %s from db",
+			return interval, errors.WithMessagef(err, "problem with getting interval setting %s from db",
 				intervalSettingName)
 		},
 	)
