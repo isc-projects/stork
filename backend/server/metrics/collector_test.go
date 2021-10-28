@@ -146,5 +146,5 @@ func TestPeriodicMetricsUpdate(t *testing.T) {
 
 		// Assert
 		return authorizedCount == 1
-	}, 5*time.Second, 100*time.Millisecond)
+	}, 5*time.Second, 1*time.Second)
 }

@@ -45,9 +45,7 @@ func NewCollector(db *pg.DB) (Collector, error) {
 
 	// Starts collecting the metrics periodically.
 	metricPuller, err := storkutil.NewPeriodicExecutor("metrics collector",
-		func() error {
-			return metrics.Update()
-		},
+		metrics.Update,
 		func() (int64, error) {
 			interval, err := dbmodel.GetSettingInt(db, intervalSettingName)
 			return interval, errors.WithMessagef(err, "problem with getting interval setting %s from db",

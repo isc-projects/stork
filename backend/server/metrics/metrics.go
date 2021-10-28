@@ -41,6 +41,8 @@ func newMetrics(db *pg.DB) *metrics {
 
 	metrics := metrics{
 		Registry: registry,
+		db:       db,
+
 		AuthorizedMachineTotal: factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "authorized_machine_total",
@@ -125,7 +127,12 @@ func (m *metrics) UnregisterAll() {
 	v := reflect.ValueOf(*m)
 	typeMetrics := v.Type()
 	for i := 0; i < typeMetrics.NumField(); i++ {
-		rawField := v.Field(i).Interface()
+		fieldObj := v.Field(i)
+		if !fieldObj.CanInterface() {
+			// Field is not exported.
+			continue
+		}
+		rawField := fieldObj.Interface()
 		collector, ok := rawField.(prometheus.Collector)
 		if !ok {
 			continue
