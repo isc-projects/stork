@@ -65,3 +65,4 @@ TAGS
 /isc-stork-*.rpm
 *.code-workspace
 /backend/api/stork/backend/api/agent/protocol/agent.pb.go
+root/
