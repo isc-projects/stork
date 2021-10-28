@@ -215,7 +215,7 @@ func metricsMiddleware(next http.Handler, collector metrics.Collector) http.Hand
 	var handler http.Handler
 	if collector != nil {
 		// Proper handler
-		handler = collector.SetupHTTPHandler(next)
+		handler = collector.GetHTTPHandler(next)
 	} else {
 		// Placeholder handler
 		handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

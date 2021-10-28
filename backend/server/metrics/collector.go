@@ -18,7 +18,7 @@ import (
 // the metrics.
 type Collector interface {
 	// It returns the metrics on HTTP request.
-	SetupHTTPHandler(next http.Handler) http.Handler
+	GetHTTPHandler(next http.Handler) http.Handler
 	// Shutdown metrics collecting.
 	Shutdown()
 }
@@ -65,7 +65,7 @@ func NewCollector(db *pg.DB) (Collector, error) {
 }
 
 // Creates standard Prometheus HTTP handler.
-func (c *prometheusCollector) SetupHTTPHandler(next http.Handler) http.Handler {
+func (c *prometheusCollector) GetHTTPHandler(next http.Handler) http.Handler {
 	return promhttp.HandlerFor(c.metrics.Registry, promhttp.HandlerOpts{})
 }
 

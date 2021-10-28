@@ -16,7 +16,7 @@ func NewFakeMetricsCollector() *FakeMetricsCollector {
 	}
 }
 
-func (c *FakeMetricsCollector) SetupHTTPHandler(next http.Handler) http.Handler {
+func (c *FakeMetricsCollector) GetHTTPHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c.RequestCount++
 	})

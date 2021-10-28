@@ -84,7 +84,7 @@ func TestCreateHttpHandler(t *testing.T) {
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	// Act
-	handler := collector.SetupHTTPHandler(nextHandler)
+	handler := collector.GetHTTPHandler(nextHandler)
 
 	// Assert
 	require.NotNil(t, handler)
@@ -99,7 +99,7 @@ func TestHandlerResponse(t *testing.T) {
 	collector, _ := NewCollector(db)
 	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	handler := collector.SetupHTTPHandler(nextHandler)
+	handler := collector.GetHTTPHandler(nextHandler)
 	req := httptest.NewRequest("GET", "http://localhost/abc", nil)
 	w := httptest.NewRecorder()
 
@@ -127,7 +127,7 @@ func TestPeriodicMetricsUpdate(t *testing.T) {
 	defer collector.Shutdown()
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	handler := collector.SetupHTTPHandler(nextHandler)
+	handler := collector.GetHTTPHandler(nextHandler)
 	req := httptest.NewRequest("GET", "http://localhost/abc", nil)
 	w := httptest.NewRecorder()
 
