@@ -192,8 +192,12 @@ func TestConfigReportsPaging(t *testing.T) {
 	require.Len(t, configReports, 10)
 	// Put the report IDs into the map to make sure that all reports were returned.
 	allReportIDs := make(map[int64]bool)
+	prevID := int64(0)
 	for _, r := range configReports {
 		allReportIDs[r.ID] = true
+		// Make sure that reports are ordered by ID.
+		require.Greater(t, r.ID, prevID)
+		prevID = r.ID
 	}
 	require.Len(t, allReportIDs, 10)
 
@@ -204,8 +208,12 @@ func TestConfigReportsPaging(t *testing.T) {
 	require.Len(t, configReports, 5)
 	// Store report IDs in another map and make sure we have 5 different IDs.
 	pagedReportIDs := make(map[int64]bool)
+	prevID = int64(0)
 	for _, r := range configReports {
 		pagedReportIDs[r.ID] = true
+		// Make sure that reports are ordered by ID.
+		require.Greater(t, r.ID, prevID)
+		prevID = r.ID
 	}
 	require.Len(t, pagedReportIDs, 5)
 
@@ -217,6 +225,9 @@ func TestConfigReportsPaging(t *testing.T) {
 	// Store all new IDs in the map.
 	for _, r := range configReports {
 		pagedReportIDs[r.ID] = true
+		// Make sure that reports are ordered by ID.
+		require.Greater(t, r.ID, prevID)
+		prevID = r.ID
 	}
 	// Make sure that we have all reports returned with paging.
 	require.Len(t, pagedReportIDs, 10)
