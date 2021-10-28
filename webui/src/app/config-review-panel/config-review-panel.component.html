@@ -1,0 +1,27 @@
+<div id="config-reports-div" *ngIf="reports && reports.length > 0; else elseBlock">
+    <div style="margin-bottom: 30px" *ngFor="let report of reports">
+        <p-divider styleClass="report-divider" type="dashed">
+            <p-tag>
+                {{ report.checker }}
+            </p-tag>
+        </p-divider>
+        <span class="fas fa-pencil-alt" style="font-size: 0.9rem; padding-right: 4px"></span>
+        <i style="color: #003366; font-size: 0.9rem">
+            <app-event-text [text]="report.content"></app-event-text>
+        </i>
+    </div>
+    <p-divider type="dashed"></p-divider>
+    <p-paginator
+        class="config-review-pager"
+        [rows]="limit"
+        [totalRecords]="total"
+        pageLinkSize="3"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="{first} - {last} of {totalRecords}"
+        (onPageChange)="paginate($event)"
+    >
+    </p-paginator>
+</div>
+<ng-template #elseBlock>
+    <i id="empty-list-text" style="font-size: 0.9rem">No issues found for this daemon.</i>
+</ng-template>

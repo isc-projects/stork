@@ -232,13 +232,13 @@
                             </div>
 
                             <!-- Loggers -->
-                            <div class="" [ngClass]="{ disabled: !daemon.active }">
+                            <div style="margin-bottom: 20px" class="">
                                 <h3>Loggers</h3>
                                 <p-table [value]="daemon.logTargets">
                                     <ng-template pTemplate="header">
                                         <tr>
                                             <th style="width: 10rem">Logger</th>
-                                            <th style="width: 5rem">Severity</th>
+                                            <th style="width: 7rem">Severity</th>
                                             <th>Output Location</th>
                                         </tr>
                                     </ng-template>
@@ -264,6 +264,26 @@
                                         </tr>
                                     </ng-template>
                                 </p-table>
+                            </div>
+
+                            <div [ngClass]="{ disabled: !daemon.active }">
+                                <h3>
+                                    Configuration Review Reports
+                                    <app-help-tip id="subnets4-help-button" title="daemon configuration review section">
+                                        <p>
+                                            Stork server reviews the monitored servers' configurations. It flags
+                                            potential configuration issues and suggests changes to these configurations
+                                            to improve Stork monitoring capabilities. The review is performed using
+                                            different checkers built into the Stork server. Each checker is responsible
+                                            for examining a different part or aspect of the configuration. The checkers
+                                            have unique names displayed in the list below as blue badges before each
+                                            issue text. In future releases, it will be possible to silence specific
+                                            checkers by name if their review reports are not desired in the particular
+                                            deployment.
+                                        </p>
+                                    </app-help-tip>
+                                </h3>
+                                <app-config-review-panel [daemonId]="daemon.id"> </app-config-review-panel>
                             </div>
                         </div>
 
