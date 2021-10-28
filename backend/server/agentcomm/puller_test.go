@@ -20,7 +20,7 @@ func TestNewPeriodicPuller(t *testing.T) {
 	defer agents.Shutdown()
 
 	// Act
-	puller, err := NewPeriodicPuller(db, agents, "Test", "kea_hosts_puller_interval",
+	puller, err := NewPeriodicPuller(db, agents, "test puller", "kea_hosts_puller_interval",
 		func() error { return nil })
 	defer puller.Shutdown()
 
@@ -39,7 +39,7 @@ func TestReadIntervalFromDatabase(t *testing.T) {
 	_ = dbmodel.InitializeSettings(db)
 	_ = dbmodel.SetSettingInt(db, "kea_hosts_puller_interval", 1)
 
-	puller, _ := NewPeriodicPuller(db, nil, "Test", "kea_hosts_puller_interval",
+	puller, _ := NewPeriodicPuller(db, nil, "test puller", "kea_hosts_puller_interval",
 		func() error { return nil })
 	defer puller.Shutdown()
 

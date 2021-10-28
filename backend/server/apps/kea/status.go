@@ -99,7 +99,7 @@ type HAStatusPuller struct {
 // the Kea apps.
 func NewHAStatusPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (*HAStatusPuller, error) {
 	puller := &HAStatusPuller{}
-	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Status",
+	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Status puller",
 		"kea_status_puller_interval", puller.pullData)
 	if err != nil {
 		return nil, err

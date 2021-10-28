@@ -22,7 +22,7 @@ func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents, eventCenter eve
 	statsPuller := &StatsPuller{
 		EventCenter: eventCenter,
 	}
-	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "BIND 9 Stats", "bind9_stats_puller_interval",
+	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "BIND 9 Stats puller", "bind9_stats_puller_interval",
 		statsPuller.pullStats)
 	if err != nil {
 		return nil, err

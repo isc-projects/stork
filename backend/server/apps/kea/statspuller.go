@@ -20,7 +20,7 @@ type StatsPuller struct {
 // Beneath it spawns a goroutine that pulls stats periodically from Kea apps (that are stored in database).
 func NewStatsPuller(db *pg.DB, agents agentcomm.ConnectedAgents) (*StatsPuller, error) {
 	statsPuller := &StatsPuller{}
-	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Stats", "kea_stats_puller_interval",
+	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Stats puller", "kea_stats_puller_interval",
 		statsPuller.pullStats)
 	if err != nil {
 		return nil, err

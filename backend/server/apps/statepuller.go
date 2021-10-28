@@ -30,7 +30,7 @@ func NewStatePuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents, eventCente
 		EventCenter:      eventCenter,
 		ReviewDispatcher: reviewDispatcher,
 	}
-	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Apps State",
+	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Apps State puller",
 		"apps_state_puller_interval", puller.pullData)
 	if err != nil {
 		return nil, err

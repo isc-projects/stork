@@ -46,7 +46,7 @@ func TestPausedWhileHandling(t *testing.T) {
 		pausedChan: make(chan bool, 1),
 		mutex:      new(sync.Mutex),
 	}
-	executor, err := NewPeriodicExecutor("Test",
+	executor, err := NewPeriodicExecutor("test executor",
 		testExecutorInstance.mockPull, getIntervalFunc)
 	require.NotNil(t, executor)
 	require.NoError(t, err)
@@ -94,7 +94,7 @@ func TestPauseAndUnapuseOrReset(t *testing.T) {
 				pausedChan: make(chan bool, 1),
 				mutex:      new(sync.Mutex),
 			}
-			executor, err := NewPeriodicExecutor("Test",
+			executor, err := NewPeriodicExecutor("test executor",
 				testExecutorInstance.mockPull, getIntervalFunc)
 			require.NotNil(t, executor)
 			require.NoError(t, err)

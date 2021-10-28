@@ -30,7 +30,7 @@ const InactiveInterval int64 = 60
 // This function is executed within a goroutine periodically according to the timer
 // interval calculated by `getIntervalFunc`. It accepts previous interval and returns next value.
 func NewPeriodicExecutor(name string, executorFunc func() error, getIntervalFunc func() (int64, error)) (*PeriodicExecutor, error) {
-	log.Printf("starting %s executor", name)
+	log.Printf("starting %s", name)
 
 	interval, err := getIntervalFunc()
 	if err != nil {
@@ -63,17 +63,17 @@ func NewPeriodicExecutor(name string, executorFunc func() error, getIntervalFunc
 	periodicExecutor.wg.Add(1)
 	go periodicExecutor.executorLoop()
 
-	log.Printf("started %s executor", periodicExecutor.name)
+	log.Printf("started %s", periodicExecutor.name)
 	return periodicExecutor, nil
 }
 
 // Terminates the executor, i.e. the executor no longer triggers the
 // user defined function.
 func (executor *PeriodicExecutor) Shutdown() {
-	log.Printf("stopping %s executor", executor.name)
+	log.Printf("stopping %s", executor.name)
 	executor.done <- true
 	executor.wg.Wait()
-	log.Printf("stopped %s executor", executor.name)
+	log.Printf("stopped %s", executor.name)
 }
 
 // Temporarily stops the timer triggering the exectutor action. This function

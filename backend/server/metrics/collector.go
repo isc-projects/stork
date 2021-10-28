@@ -44,7 +44,7 @@ func NewCollector(db *pg.DB) (Collector, error) {
 	}
 
 	// Starts collecting the metrics periodically.
-	metricPuller, err := storkutil.NewPeriodicExecutor("metrics",
+	metricPuller, err := storkutil.NewPeriodicExecutor("metrics collector",
 		func() error {
 			return metrics.Update(db)
 		},

@@ -48,7 +48,7 @@ type HostsPuller struct {
 // from monitored Kea apps via control channel.
 func NewHostsPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (*HostsPuller, error) {
 	hostsPuller := &HostsPuller{}
-	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Hosts", "kea_hosts_puller_interval",
+	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Hosts puller", "kea_hosts_puller_interval",
 		hostsPuller.pullData)
 	if err != nil {
 		return nil, err
