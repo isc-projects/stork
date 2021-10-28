@@ -9,7 +9,7 @@ import (
 // All metrics should be properly constructed.
 func TestNewMetrics(t *testing.T) {
 	// Act
-	metrics := newMetrics()
+	metrics := newMetrics(nil)
 	mfs, _ := metrics.Registry.Gather()
 
 	// Arrange
@@ -27,7 +27,7 @@ func TestNewMetrics(t *testing.T) {
 // All metrics should be unregistered.
 func TestUnregisterAllMetrics(t *testing.T) {
 	// Arrange
-	metrics := newMetrics()
+	metrics := newMetrics(nil)
 
 	// Act
 	metrics.UnregisterAll()

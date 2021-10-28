@@ -34,11 +34,11 @@ type prometheusCollector struct {
 // collecting the metrics according to the value
 // specified in the database.
 func NewCollector(db *pg.DB) (Collector, error) {
-	metrics := newMetrics()
+	metrics := newMetrics(db)
 	intervalSettingName := "metrics_collector_interval"
 
 	// Initialize the metrics
-	err := metrics.Update(db)
+	err := metrics.Update()
 	if err != nil {
 		return nil, errors.WithMessage(err, "error during metrics initialization")
 	}
@@ -46,7 +46,7 @@ func NewCollector(db *pg.DB) (Collector, error) {
 	// Starts collecting the metrics periodically.
 	metricPuller, err := storkutil.NewPeriodicExecutor("metrics collector",
 		func() error {
-			return metrics.Update(db)
+			return metrics.Update()
 		},
 		func() (int64, error) {
 			interval, err := dbmodel.GetSettingInt(db, intervalSettingName)

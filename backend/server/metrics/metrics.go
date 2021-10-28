@@ -19,7 +19,9 @@ import (
 
 // Set of Stork server metrics.
 type metrics struct {
-	Registry                        *prometheus.Registry
+	Registry *prometheus.Registry
+	db       *pg.DB
+
 	AuthorizedMachineTotal          prometheus.Gauge
 	UnauthorizedMachineTotal        prometheus.Gauge
 	UnreachableMachineTotal         prometheus.Gauge
@@ -31,7 +33,7 @@ type metrics struct {
 
 // Constructor of the metrics. They are automatically
 // registered in the Prometheus.
-func newMetrics() *metrics {
+func newMetrics(db *pg.DB) *metrics {
 	registry := prometheus.NewRegistry()
 	factory := promauto.With(registry)
 
@@ -87,8 +89,8 @@ func newMetrics() *metrics {
 }
 
 // Calculate current metric values from the database.
-func (m *metrics) Update(db *pg.DB) error {
-	calculatedMetrics, err := dbmodel.GetCalculatedMetrics(db)
+func (m *metrics) Update() error {
+	calculatedMetrics, err := dbmodel.GetCalculatedMetrics(m.db)
 	if err != nil {
 		return err
 	}
