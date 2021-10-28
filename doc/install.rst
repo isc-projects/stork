@@ -197,6 +197,10 @@ The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint 
    It means that it should be secure on the network level, for example, in a firewall.
    Only restricted IP hosts (Prometheus servers) should be able to establish a connection to this endpoint.
 
+   It is highly recommended to secure this endpoint from external access to avoid unauthorized parties
+   to gather the server's metrics. One way to limit endpoint access is by using an appropriate HTTP proxy
+   configuration. Please consult the NGINX example configuration file shipped with Stork.
+
 With the settings in place, the ``Stork Server`` service can now be enabled and
 started:
 
@@ -847,7 +851,7 @@ The Stork Server exports metrics on the assigned HTTP/HTTPS port (defined via ``
 .. note::
 
    The Prometheus client periodically collects metrics from the clients (Stork Server or Stork Agent, for example).
-   It is done via an HTTP call. By convention, the endpoint that shares the metrics has the `/metrics` path.
+   It is done via an HTTP call. By convention, the endpoint that shares the metrics has the ``/metrics`` path.
    This endpoint returns data in Prometheus-specific format.
 
 .. warning::
@@ -855,7 +859,10 @@ The Stork Server exports metrics on the assigned HTTP/HTTPS port (defined via ``
    Prometheus ``/metrics`` endpoint doesn't require any authentication.
    It means that it should be secured at the network level, for example, with a firewall.
    Only restricted IP hosts (Prometheus servers) should be able to establish connections to this endpoint.
-   You can see an Nginx configuration example that allows only localhost to establish a connection to this endpoint in the `/usr/share/stork/examples/nginx-stork.conf` file.
+   
+   It is highly recommended to secure this endpoint from external access to avoid unauthorized parties
+   to gather the server's metrics. One way to limit endpoint access is by using an appropriate HTTP
+   proxy configuration. Please consult the NGINX example configuration file shipped with Stork.
 
 After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly. Kea statistics use the ``kea_`` prefix (e.g. kea_dhcp4_addresses_assigned_total); BIND 9
 statistics will eventually use the ``bind_`` prefix (e.g. bind_incoming_queries_tcp); Stork Server statistics use the ``server_`` prefix.
