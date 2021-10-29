@@ -492,4 +492,5 @@ func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, callback CallbackFu
 // implemented it should be included in this function.
 func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "stat_cmds_presence", statCmdsPresence)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "host_cmds_presence", hostCmdsPresence)
 }

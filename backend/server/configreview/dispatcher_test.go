@@ -536,4 +536,5 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 		checkerNames = append(checkerNames, p.name)
 	}
 	require.Contains(t, checkerNames, "stat_cmds_presence")
+	require.Contains(t, checkerNames, "host_cmds_presence")
 }
