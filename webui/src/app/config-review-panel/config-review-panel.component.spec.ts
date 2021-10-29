@@ -5,6 +5,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { of, throwError } from 'rxjs'
 import { DividerModule } from 'primeng/divider'
 import { PaginatorModule } from 'primeng/paginator'
+import { TagModule } from 'primeng/tag'
 import { MessageService } from 'primeng/api'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
 import { EventTextComponent } from '../event-text/event-text.component'
@@ -19,7 +20,7 @@ describe('ConfigReviewPanelComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             providers: [ServicesService, MessageService],
-            imports: [DividerModule, HttpClientTestingModule, NoopAnimationsModule, PaginatorModule],
+            imports: [DividerModule, HttpClientTestingModule, NoopAnimationsModule, PaginatorModule, TagModule],
             declarations: [ConfigReviewPanelComponent, EventTextComponent],
         }).compileComponents()
     })
@@ -133,6 +134,9 @@ describe('ConfigReviewPanelComponent', () => {
             fakeReports.items.push(report)
         }
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(of(fakeReports))
+        spyOn(component.updateTotal, 'emit')
+
+        component.daemonId = 1
 
         // Try to get the reports.
         component.ngOnInit()
@@ -142,6 +146,10 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.reports).toBeTruthy()
         expect(component.reports.length).toBe(5)
         expect(component.total).toBe(5)
+
+        // Make sure that the event notifying about the new total number of
+        // reports was emitted.
+        expect(component.updateTotal.emit).toHaveBeenCalledWith({ daemonId: 1, total: 5 })
 
         // Refresh the view.
         fixture.detectChanges()

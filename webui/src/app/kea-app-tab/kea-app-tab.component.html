@@ -266,10 +266,10 @@
                                 </p-table>
                             </div>
 
-                            <div [ngClass]="{ disabled: !daemon.active }">
+                            <div id="config-review-reports-div" [ngClass]="{ disabled: !daemon.active }">
                                 <h3>
                                     Configuration Review Reports
-                                    <app-help-tip id="subnets4-help-button" title="daemon configuration review section">
+                                    <app-help-tip title="daemon configuration review section">
                                         <p>
                                             Stork server reviews the monitored servers' configurations. It flags
                                             potential configuration issues and suggests changes to these configurations
@@ -282,8 +282,21 @@
                                             deployment.
                                         </p>
                                     </app-help-tip>
+                                    <span
+                                        id="config-review-reports-total-tag"
+                                        *ngIf="totalConfigReports[daemon.id]"
+                                        style="margin-left: 20px"
+                                        class="p-tag"
+                                    >
+                                        {{ totalConfigReports[daemon.id] }} report{{
+                                            totalConfigReports[daemon.id] > 1 ? 's' : ''
+                                        }}
+                                    </span>
                                 </h3>
-                                <app-config-review-panel [daemonId]="daemon.id"> </app-config-review-panel>
+                                <app-config-review-panel
+                                    [daemonId]="daemon.id"
+                                    (updateTotal)="onUpdateTotalReports($event)"
+                                ></app-config-review-panel>
                             </div>
                         </div>
 

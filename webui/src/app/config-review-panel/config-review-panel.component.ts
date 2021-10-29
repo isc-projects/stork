@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
 import { MessageService } from 'primeng/api'
 import { ServicesService } from '../backend/api/api'
 
@@ -24,7 +24,18 @@ import { ServicesService } from '../backend/api/api'
     styleUrls: ['./config-review-panel.component.sass'],
 })
 export class ConfigReviewPanelComponent implements OnInit {
+    /**
+     * ID of a daemon for which reports are listed.
+     */
     @Input() daemonId: number
+
+    /**
+     * Event emitter notifying a parent component that the total number
+     * of reports has been updated.
+     *
+     * The event comprises daemon id and the total reports number.
+     */
+    @Output() updateTotal = new EventEmitter<{ daemonId: number; total: number }>()
 
     /**
      * List pagination offset.
@@ -84,7 +95,7 @@ export class ConfigReviewPanelComponent implements OnInit {
             .toPromise()
             .then((data) => {
                 this.reports = data.items
-                this.total = data.total
+                this.setTotal(data.total)
             })
             .catch((err) => {
                 let msg = err.statusText
@@ -99,7 +110,7 @@ export class ConfigReviewPanelComponent implements OnInit {
                 })
                 this.start = 0
                 this.limit = 5
-                this.total = 0
+                this.setTotal(0)
                 this.reports = []
             })
     }
@@ -115,5 +126,15 @@ export class ConfigReviewPanelComponent implements OnInit {
      */
     paginate(event) {
         this.refreshDaemonConfigReports(event)
+    }
+
+    /**
+     * Sets new total reports number and emits an event.
+     *
+     * @param total new total reports number.
+     */
+    setTotal(total: number) {
+        this.total = total
+        this.updateTotal.emit({ daemonId: this.daemonId, total: this.total })
     }
 }
