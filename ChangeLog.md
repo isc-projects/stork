@@ -1,3 +1,10 @@
+* 163 [build] marcin
+
+    Implemented host_cmds_presence configuration checker. It
+    verifies if the host_cmds hooks library is loaded when hosts
+    backend are used.
+    (Gitlab #601)
+
 * 162 [build] andrei
 
     Rebuilt CI image to upgrade openssl and renew certificate
