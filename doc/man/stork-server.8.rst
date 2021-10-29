@@ -36,7 +36,7 @@ Arguments
    the ``stork-server`` version.
 
 ``-m`` or ``--metrics``
-   enable the periodic metrics collector and /metrics HTTP endpoint for Prometheus. This endpoint requires no authentication and should be secured at the network level. (default: disabled)
+   enable the periodic metrics collector and /metrics HTTP endpoint for Prometheus. This endpoint requires no authentication and it is recommended to restrict external access to it (e.g. using the HTTP proxy). (default: disabled)
 
 ``-u`` or ``--db-user``
    the user name to be used for database connections. (default: stork) [$STORK_DATABASE_USER_NAME]

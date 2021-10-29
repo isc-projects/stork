@@ -189,17 +189,16 @@ The remaining settings pertain to the server's REST API configuration:
 
 The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration:
 
-* STORK_ENABLE_METRICS - enable the Prometheus metrics collector and ``/metrics`` endpoint - this endpoint hasn't any authentication and should be secure on the network level
+* STORK_ENABLE_METRICS - enable the Prometheus metrics collector and ``/metrics`` HTTP endpoint.
 
 .. warning::
 
-   Prometheus ``/metrics`` endpoint doesn't provide any authentication mechanism.
-   It means that it should be secure on the network level, for example, in a firewall.
-   Only restricted IP hosts (Prometheus servers) should be able to establish a connection to this endpoint.
+   Prometheus ``/metrics`` endpoint doesn't require authentication. Therefore, securing this endpoint
+   from external access is highly recommended to avoid unauthorized parties gathering the server's
+   metrics. One way to restrict endpoint access is by using appropriate HTTP proxy configuration
+   to allow only local access or access from the Prometheus host. Please consult the NGINX example
+   configuration file shipped with Stork.
 
-   It is highly recommended to secure this endpoint from external access to avoid unauthorized parties
-   to gather the server's metrics. One way to limit endpoint access is by using an appropriate HTTP proxy
-   configuration. Please consult the NGINX example configuration file shipped with Stork.
 
 With the settings in place, the ``Stork Server`` service can now be enabled and
 started:
@@ -856,13 +855,11 @@ The Stork Server exports metrics on the assigned HTTP/HTTPS port (defined via ``
 
 .. warning::
 
-   Prometheus ``/metrics`` endpoint doesn't require any authentication.
-   It means that it should be secured at the network level, for example, with a firewall.
-   Only restricted IP hosts (Prometheus servers) should be able to establish connections to this endpoint.
-   
-   It is highly recommended to secure this endpoint from external access to avoid unauthorized parties
-   to gather the server's metrics. One way to limit endpoint access is by using an appropriate HTTP
-   proxy configuration. Please consult the NGINX example configuration file shipped with Stork.
+   Prometheus ``/metrics`` endpoint doesn't require authentication. Therefore, securing this endpoint
+   from external access is highly recommended to avoid unauthorized parties gathering the server's
+   metrics. One way to restrict endpoint access is by using appropriate HTTP proxy configuration
+   to allow only local access or access from the Prometheus host. Please consult the NGINX example
+   configuration file shipped with Stork.
 
 After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly. Kea statistics use the ``kea_`` prefix (e.g. kea_dhcp4_addresses_assigned_total); BIND 9
 statistics will eventually use the ``bind_`` prefix (e.g. bind_incoming_queries_tcp); Stork Server statistics use the ``server_`` prefix.
