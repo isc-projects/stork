@@ -1,4 +1,11 @@
-* 163 [build] marcin
+* 164 [func] marcin
+
+    Implemented Kea configuration review mechanism. It runs checks
+    on the Kea server configurations, and displays found issues in
+    the Kea daemon tabs.
+    (Gitlab #461)
+
+* 163 [func] marcin
 
     Implemented host_cmds_presence configuration checker. It
     verifies if the host_cmds hooks library is loaded when hosts
