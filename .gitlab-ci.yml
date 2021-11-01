@@ -205,7 +205,13 @@ deploy_to_repo:
     - git clone https://gitlab.isc.org/isc-projects/stork.wiki
     - stork_version=`perl -lne 'print $1 if /(\d+\.\d+\.\d+)/' < backend/version.go`
     - output=Stork-${stork_version}-ReleaseNotes.txt
-    - fold -sw 73 < stork.wiki/*eleases/Release-notes-${stork_version}.md > $output
+    # 1. Remove lines starting with triple backticks. They are useful in
+    # markdown/wiki, but not that much in release notes.
+    # 2. Unescape square brackets.
+    # 3. Remove auto URL markdown formatting enforced by Gitlab Web Editor. Convert
+    # to normal links: [https://kea.isc.org/](https://kea.isc.org/) -> https://kea.isc.org/
+    # 4. Fold at column 73.
+    - cat "./stork.wiki/Releases/Release-notes-${stork_version}.md" | sed '/^```/d' | sed 's/\\\[/[/g;s/\\\]/]/g' | perl -pe 's|\[(http.*?)\]\(http.*\)|\1|' | fold -sw 73 > "${output}"
     # upload release notes and tarball to repo.isc.org
     - eval $(ssh-agent -s)
     - echo "$REPO_SSH_PRIVATE_KEY" | base64 -d | ssh-add -
