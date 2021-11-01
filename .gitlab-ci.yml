@@ -221,6 +221,7 @@ deploy_to_repo:
     - ssh-keyscan repo.isc.org >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
     - destdir=/data/shared/sweng/stork/releases/${stork_version}
+    - test -n "${DRY_RUN}" && exit 0
     - ssh -4 storkpush@repo.isc.org mkdir -p $destdir
     - scp -4 stork-${stork_version}.tar.gz $output storkpush@repo.isc.org:$destdir/
     - ssh -4 storkpush@repo.isc.org chmod -R g+w $destdir
