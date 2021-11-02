@@ -3,13 +3,11 @@ package agent
 // Store the agent credentials to Kea CA.
 // The data are read from a dedicated JSON file.
 //
-// It isn't just a map, because I predict that it may change
-// a lot in the future.
-// For example:
+// The file structure is flexible to allow for future extensions,
+// for example:
 //
-// - Credentials may be assigned not to exact IP/port, but
-//   to subnetwork.
-// - Store may contains different kinds of credentials
+// - Credentials may be assigned per network instead of IP/port.
+// - Store may contain different kinds of credentials
 
 import (
 	"encoding/json"
@@ -21,7 +19,7 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Location CA in the network. It is a key of the credentials store.
+// Kea CA location in the network. It is a key of the credentials store.
 // It is the internal structure of the credentials store.
 type Location struct {
 	IP   string
@@ -69,7 +67,7 @@ func NewBasicAuthCredentials(login, password string) *BasicAuthCredentials {
 
 // Get Basic Auth credentials by URL
 // The Basic Auth is often used during HTTP calls. It is helper function
-// for retrieve the credentials based on the request URL. The URL may contains
+// to retrieve the credentials based on the request URL. The URL contains
 // a protocol, URL segments and the query parameters.
 func (cs *CredentialsStore) GetBasicAuthByURL(url string) (*BasicAuthCredentials, bool) {
 	address, port, _ := storkutil.ParseURL(url)

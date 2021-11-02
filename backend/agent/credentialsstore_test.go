@@ -14,7 +14,7 @@ func TestCreateStore(t *testing.T) {
 	require.Len(t, store.basicAuthCredentials, 0)
 }
 
-// Test that the Basic Auth credentials is constructed correctly.
+// Test that the Basic Auth credentials are constructed correctly.
 func TestCreateBasicAuthCredentials(t *testing.T) {
 	credentials := NewBasicAuthCredentials("foo", "bar")
 	require.NotNil(t, credentials)
@@ -102,8 +102,8 @@ func TestDeleteBasicAuthCredentials(t *testing.T) {
 	require.Nil(t, fetchedCredentials)
 }
 
-// Test fetching non-exist Basic Auth credentials. It should
-// return Nil and proper (falsy) status.
+// Test fetching non-existing Basic Auth credentials. It should
+// return nil and proper (falsy) status.
 func TestGetMissingBasicAuthCredentials(t *testing.T) {
 	store := NewCredentialsStore()
 	fetchedCredentials, ok := store.GetBasicAuth("127.0.0.1", 1)
