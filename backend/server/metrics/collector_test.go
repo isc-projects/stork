@@ -129,7 +129,6 @@ func TestPeriodicMetricsUpdate(t *testing.T) {
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handler := collector.GetHTTPHandler(nextHandler)
 	req := httptest.NewRequest("GET", "http://localhost/abc", nil)
-	w := httptest.NewRecorder()
 
 	// Act
 	_ = dbmodel.AddMachine(db, &dbmodel.Machine{
@@ -139,6 +138,7 @@ func TestPeriodicMetricsUpdate(t *testing.T) {
 	})
 
 	require.Eventually(t, func() bool {
+		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 		defer resp.Body.Close()
@@ -146,5 +146,5 @@ func TestPeriodicMetricsUpdate(t *testing.T) {
 
 		// Assert
 		return authorizedCount == 1
-	}, 5*time.Second, 1*time.Second)
+	}, 5*time.Second, 100*time.Millisecond)
 }
