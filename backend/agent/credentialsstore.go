@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"net"
 
 	"github.com/pkg/errors"
 	storkutil "isc.org/stork/util"
@@ -123,11 +122,15 @@ func (cs *CredentialsStore) Read(reader io.Reader) error {
 
 // Constructor of the network location (IP address and port).
 func newLocation(address string, port int64) (location, error) {
-	address, err := normalizeIP(address)
+	ip := storkutil.ParseIP(address)
+	if ip != nil {
+		return location{}, errors.Errorf("Invalid IP address: %s", address)
+	}
+
 	return location{
 		IP:   address,
 		Port: port,
-	}, errors.WithMessage(err, "cannot create location object")
+	}, nil
 }
 
 // Load the content from JSON file to the credentials store.
@@ -154,17 +157,4 @@ func (cs *CredentialsStore) loadContent(content *CredentialsStoreContent) error 
 		}
 	}
 	return nil
-}
-
-// Remove any IP address abbreviations. Return error if address
-// isn't a valid IP.
-func normalizeIP(address string) (string, error) {
-	// Abbreviation and letter case normalization
-	ipObj := net.ParseIP(address)
-	// Validate IP address
-	if ipObj == nil {
-		return "", errors.Errorf("Invalid IP address: %s", address)
-	}
-	normalizedIP := ipObj.String()
-	return normalizedIP, nil
 }
