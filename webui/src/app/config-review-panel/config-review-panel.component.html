@@ -6,9 +6,9 @@
             </p-tag>
         </p-divider>
         <span class="fas fa-pencil-alt" style="font-size: 0.9rem; padding-right: 4px"></span>
-        <i style="color: #003366; font-size: 0.9rem">
+        <span class="p-text-italic" style="color: var(--text-color); font-size: 0.9rem">
             <app-event-text [text]="report.content"></app-event-text>
-        </i>
+        </span>
     </div>
     <p-divider type="dashed"></p-divider>
     <p-paginator
@@ -23,5 +23,5 @@
     </p-paginator>
 </div>
 <ng-template #elseBlock>
-    <i id="empty-list-text" style="font-size: 0.9rem">No issues found for this daemon.</i>
+    <span id="empty-list-text" class="p-text-italic" style="font-size: 0.9rem">No issues found for this daemon.</span>
 </ng-template>
