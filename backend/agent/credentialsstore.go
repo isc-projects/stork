@@ -21,7 +21,7 @@ import (
 
 // Kea CA location in the network. It is a key of the credentials store.
 // It is the internal structure of the credentials store.
-type Location struct {
+type location struct {
 	IP   string
 	Port int64
 }
@@ -34,7 +34,7 @@ type BasicAuthCredentials struct {
 
 // Credentials store with an API to add/update/delete the content.
 type CredentialsStore struct {
-	basicAuthCredentials map[Location]*BasicAuthCredentials
+	basicAuthCredentials map[location]*BasicAuthCredentials
 }
 
 // Structure of the credentials JSON file.
@@ -53,7 +53,7 @@ type CredentialsStoreContentBasicAuthEntry struct {
 // Constructor of the credentials store.
 func NewCredentialsStore() *CredentialsStore {
 	return &CredentialsStore{
-		basicAuthCredentials: make(map[Location]*BasicAuthCredentials),
+		basicAuthCredentials: make(map[location]*BasicAuthCredentials),
 	}
 }
 
@@ -122,9 +122,9 @@ func (cs *CredentialsStore) Read(reader io.Reader) error {
 }
 
 // Constructor of the network location (IP address and port).
-func newLocation(address string, port int64) (Location, error) {
+func newLocation(address string, port int64) (location, error) {
 	address, err := normalizeIP(address)
-	return Location{
+	return location{
 		IP:   address,
 		Port: port,
 	}, errors.WithMessage(err, "cannot create location object")
