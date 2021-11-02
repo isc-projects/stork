@@ -138,16 +138,16 @@ func (cs *CredentialsStore) loadContent(content *CredentialsStoreContent) error 
 	for _, entry := range content.Basic {
 		// Check required fields
 		if entry.IP == nil {
-			return errors.Errorf("missing IP address")
+			return errors.New("missing IP address")
 		}
 		if entry.Port == nil {
-			return errors.Errorf("missing port")
+			return errors.New("missing port")
 		}
 		if entry.Login == nil {
-			return errors.Errorf("missing user")
+			return errors.New("missing user")
 		}
 		if entry.Password == nil {
-			return errors.Errorf("missing password")
+			return errors.New("missing password")
 		}
 
 		credentials := NewBasicAuthCredentials(*entry.Login, *entry.Password)

@@ -258,53 +258,70 @@ func TestAbbreviationNormalization(t *testing.T) {
 func TestReadStoreFromInvalidContent(t *testing.T) {
 	store := NewCredentialsStore()
 
-	contents := []string{
-		// Empty content
-		``,
-		// Port is not a number
-		`{
-			"basic": [
-				{
-					"ip": "192.168.0.1",
-					"port": "1234",
-					"user": "foo",
-					"password": "bar"
-				}
-			]
-		}`,
-		// Missing port
-		`{
-			"basic": [
-				{
-					"ip": "192.168.0.1",
-					"user": "foo",
-					"password": "bar"
-				}
-			]
-		}`,
-		// Missing all fields
-		`{
-			"basic": [
-				{ }
-			]
-		}`,
-		// Missing key quotes
-		`{
-			basic: [
-				{
-					ip: "192.168.0.1",
-					port: 8000
-					user: "foo",
-					password: "bar"
-				}
-			]
-		}`,
+	type unitData struct {
+		Name    string
+		Content string
 	}
 
-	for _, rawContent := range contents {
-		content := strings.NewReader(rawContent)
-		err := store.Read(content)
-		require.Error(t, err, "Content:", content)
-		require.Len(t, store.basicAuthCredentials, 0)
+	items := []unitData{
+		{
+			"Empty content", ``,
+		},
+		{
+			"Port is not a number",
+			`{
+				"basic": [
+					{
+						"ip": "192.168.0.1",
+						"port": "1234",
+						"user": "foo",
+						"password": "bar"
+					}
+				]
+			}`,
+		},
+		{
+			"Missing port",
+			`{
+				"basic": [
+					{
+						"ip": "192.168.0.1",
+						"user": "foo",
+						"password": "bar"
+					}
+				]
+			}`,
+		},
+		{
+			"Missing all fields",
+			`{
+				"basic": [
+					{ }
+				]
+			}`,
+		},
+		{
+			"Missing key quotes",
+			`{
+				basic: [
+					{
+						ip: "192.168.0.1",
+						port: 8000
+						user: "foo",
+						password: "bar"
+					}
+				]
+			}`,
+		},
+	}
+
+	for _, item := range items {
+		testContent := item.Content
+		t.Run(item.Name, func(t *testing.T) {
+			reader := strings.NewReader(testContent)
+			err := store.Read(reader)
+			require.Error(t, err, "Content:", testContent)
+			require.Len(t, store.basicAuthCredentials, 0)
+		})
 	}
 }
