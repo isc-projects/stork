@@ -1,3 +1,10 @@
+* 166 [bug] slawek
+
+    Fixed the problem with too many log messages about
+    updating a machine state. Stork doesn't report that
+    a machine was updated anymore.
+    (Gitlab #595)
+
 * 165 [func] slawek
 
     The Stork Agent reports the metrics to Prometheus with the
