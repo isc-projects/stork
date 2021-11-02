@@ -60,7 +60,7 @@ func TestAddBasicAuthCredentialsInvalidIPs(t *testing.T) {
 	}
 }
 
-// Test that the empty Basic Auth credentials (without login and pasword)
+// Test that the empty Basic Auth credentials (without user and pasword)
 // are added to store correctly.
 func TestAddBasicAuthEmptyCredentials(t *testing.T) {
 	store := NewCredentialsStore()
@@ -161,7 +161,7 @@ func TestReadStoreFromProperContent(t *testing.T) {
 			{
 				"ip": "192.168.0.1",
 				"port": 1234,
-				"login": "foo",
+				"user": "foo",
 				"password": "bar"
 			}
 		]
@@ -186,31 +186,31 @@ func TestReadStoreFromFileWithAbbreviations(t *testing.T) {
 			{
 				"ip": "127.0.0.1",
 				"port": 1,
-				"login": "a",
+				"user": "a",
 				"password": "aa"
 			},
 			{
 				"ip": "::1",
 				"port": 2,
-				"login": "b",
+				"user": "b",
 				"password": "bb"
 			},
 			{
 				"ip": "2001:db8:0000::",
 				"port": 3,
-				"login": "c",
+				"user": "c",
 				"password": "cc"
 			},
 			{
 				"ip": "::1234:5678:91.123.4.56",
 				"port": 4,
-				"login": "d",
+				"user": "d",
 				"password": "dd"
 			},
 			{
 				"ip": "2001:0000:0000:0000:0000:0000:0000:FFFF",
 				"port": 5,
-				"login": "e",
+				"user": "e",
 				"password": "ee"
 			}
 		]
@@ -267,7 +267,7 @@ func TestReadStoreFromInvalidContent(t *testing.T) {
 				{
 					"ip": "192.168.0.1",
 					"port": "1234",
-					"login": "foo",
+					"user": "foo",
 					"password": "bar"
 				}
 			]
@@ -277,7 +277,7 @@ func TestReadStoreFromInvalidContent(t *testing.T) {
 			"basic": [
 				{
 					"ip": "192.168.0.1",
-					"login": "foo",
+					"user": "foo",
 					"password": "bar"
 				}
 			]
@@ -294,7 +294,7 @@ func TestReadStoreFromInvalidContent(t *testing.T) {
 				{
 					ip: "192.168.0.1",
 					port: 8000
-					login: "foo",
+					user: "foo",
 					password: "bar"
 				}
 			]

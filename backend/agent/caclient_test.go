@@ -96,9 +96,9 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 		require.NoError(t, err)
 		parts := strings.Split(string(rawCredentials), ":")
 		require.Len(t, parts, 2)
-		login := parts[0]
+		user := parts[0]
 		password := parts[1]
-		require.EqualValues(t, "foo", login)
+		require.EqualValues(t, "foo", user)
 		require.EqualValues(t, "bar", password)
 	}))
 	defer ts.Close()
@@ -113,7 +113,7 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 			{
 				"ip": "%s",
 				"port": %d,
-				"login": "foo",
+				"user": "foo",
 				"password": "bar"
 			}
 		]

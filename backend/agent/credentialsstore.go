@@ -58,9 +58,9 @@ func NewCredentialsStore() *CredentialsStore {
 }
 
 // Constructor of the Basic Auth credentials.
-func NewBasicAuthCredentials(login, password string) *BasicAuthCredentials {
+func NewBasicAuthCredentials(user, password string) *BasicAuthCredentials {
 	return &BasicAuthCredentials{
-		Login:    login,
+		Login:    user,
 		Password: password,
 	}
 }
@@ -141,7 +141,7 @@ func (cs *CredentialsStore) loadContent(content *CredentialsStoreContent) error 
 			return errors.Errorf("missing port")
 		}
 		if entry.Login == nil {
-			return errors.Errorf("missing login")
+			return errors.Errorf("missing user")
 		}
 		if entry.Password == nil {
 			return errors.Errorf("missing password")
