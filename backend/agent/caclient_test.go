@@ -77,6 +77,9 @@ func TestCreateHTTPClientSkipVerification(t *testing.T) {
 	require.True(t, transportConfig.InsecureSkipVerify)
 }
 
+// Test that an authorization header is added to the HTTP request
+// when the credentials file contains the credentials for specific
+// network location.
 func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 	restorePaths := RememberPaths()
 	defer restorePaths()
@@ -122,6 +125,27 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create HTTP Client
+	client := NewHTTPClient(true)
+	require.NotNil(t, client.credentials)
+
+	res, err := client.Call(ts.URL, bytes.NewBuffer([]byte{}))
+	require.NoError(t, err)
+	defer res.Body.Close()
+}
+
+// Test that an authorization header isn't added to the HTTP request
+// when the credentials file doesn't exist.
+func TestAddAuthorizationHeaderWhenBasicAuthCredentialsNonExist(t *testing.T) {
+	restorePaths := RememberPaths()
+	defer restorePaths()
+	CredentialsFile = path.Join("/path/that/not/exists.json")
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		headerContent := r.Header.Get("Authorization")
+		require.Empty(t, headerContent)
+	}))
+	defer ts.Close()
+
 	client := NewHTTPClient(true)
 	require.NotNil(t, client.credentials)
 
