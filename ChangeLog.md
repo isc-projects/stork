@@ -1,3 +1,10 @@
+* 168 [func] slawek
+
+    The Stork Agent support for the Basic Authorization introduced
+    in Kea 1.9.0. User has a possibility to define the credentials
+    used to establish connection with Kea CA.
+    (Gitlab #347)
+
 * 167 [func] slawek
 
     The Stork Server has now the ability to export metrics to

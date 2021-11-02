@@ -350,16 +350,17 @@ The Kea CA accepts only requests signed with a trusted certificate when the `cer
 is set to `true` in the Kea CA configuration file. In this case, the Stork Agent must use the valid
 certificates (it cannot use self-signed certificates as created during Stork Agent registration).
 
+Kea 1.9.0 added support for basic HTTP authentication to control access for incoming REST commands over HTTP.
+If Kea CA is configured to use the Basic Auth, you need to provide valid credentials in the Stork Agent's
+credentials file: `/var/lib/stork-agent/credentials.json`. Please create this file if it does not exist.
+
 .. warning::
 
    Basic HTTP authentication (described below) is weak on its own as there are known dictionary attacks,
    but those attacks require man-in-the-middle to get access to the HTTP traffic. That can be eliminated
    by using basic HTTP authentication exclusively over TLS.
    In fact, if possible, using client certificates for TLS is better than using basic HTTP authentication.
-
-Kea 1.9.0 added support for basic HTTP authentication to control access for incoming REST commands over HTTP.
-If Kea CA is configured to use the Basic Auth, you need to provide valid credentials in the Stork Agent's
-credentials file: `/var/lib/stork-agent/credentials.json`. Please create this file if it does not exist.
+   
 For example:
 
 .. code-block:: json
