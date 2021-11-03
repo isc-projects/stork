@@ -79,17 +79,11 @@ func ParseURL(url string) (host string, port int64, secure bool) {
 
 	// Set default ports
 	if port == 0 {
-		defaultProtocolPorts := map[string]int64{
-			"http":  80,
-			"https": 443,
-		}
-
-		for protocol, defaultPort := range defaultProtocolPorts {
-			prefix := protocol + "://"
-			if strings.HasPrefix(url, prefix) {
-				port = defaultPort
-				break
-			}
+		switch {
+		case strings.HasPrefix(url, "http://"):
+			port = 80
+		case strings.HasPrefix(url, "https://"):
+			port = 443
 		}
 	}
 
