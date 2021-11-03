@@ -27,7 +27,7 @@ type location struct {
 
 // Basic authentication credentials.
 type BasicAuthCredentials struct {
-	Login    string
+	User     string
 	Password string
 }
 
@@ -45,7 +45,7 @@ type CredentialsStoreContent struct {
 type CredentialsStoreContentBasicAuthEntry struct {
 	IP       *string
 	Port     *int64
-	Login    *string
+	User     *string
 	Password *string
 }
 
@@ -59,7 +59,7 @@ func NewCredentialsStore() *CredentialsStore {
 // Constructor of the Basic Auth credentials.
 func NewBasicAuthCredentials(user, password string) *BasicAuthCredentials {
 	return &BasicAuthCredentials{
-		Login:    user,
+		User:     user,
 		Password: password,
 	}
 }
@@ -123,12 +123,12 @@ func (cs *CredentialsStore) Read(reader io.Reader) error {
 // Constructor of the network location (IP address and port).
 func newLocation(address string, port int64) (location, error) {
 	ip := storkutil.ParseIP(address)
-	if ip != nil {
+	if ip == nil {
 		return location{}, errors.Errorf("Invalid IP address: %s", address)
 	}
 
 	return location{
-		IP:   address,
+		IP:   ip.NetworkAddress,
 		Port: port,
 	}, nil
 }
@@ -143,14 +143,14 @@ func (cs *CredentialsStore) loadContent(content *CredentialsStoreContent) error 
 		if entry.Port == nil {
 			return errors.New("missing port")
 		}
-		if entry.Login == nil {
+		if entry.User == nil {
 			return errors.New("missing user")
 		}
 		if entry.Password == nil {
 			return errors.New("missing password")
 		}
 
-		credentials := NewBasicAuthCredentials(*entry.Login, *entry.Password)
+		credentials := NewBasicAuthCredentials(*entry.User, *entry.Password)
 		err := cs.AddOrUpdateBasicAuth(*entry.IP, *entry.Port, credentials)
 		if err != nil {
 			return err

@@ -91,7 +91,7 @@ func (c *HTTPClient) Call(url string, payload *bytes.Buffer) (*http.Response, er
 	req.Header.Add("Content-Type", "application/json")
 
 	if basicAuth, ok := c.credentials.GetBasicAuthByURL(url); ok {
-		secret := fmt.Sprintf("%s:%s", basicAuth.Login, basicAuth.Password)
+		secret := fmt.Sprintf("%s:%s", basicAuth.User, basicAuth.Password)
 		encodedSecret := base64.StdEncoding.EncodeToString([]byte(secret))
 		headerContent := fmt.Sprintf("Basic %s", encodedSecret)
 		req.Header.Add("Authorization", headerContent)

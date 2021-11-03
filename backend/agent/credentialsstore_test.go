@@ -18,7 +18,7 @@ func TestCreateStore(t *testing.T) {
 func TestCreateBasicAuthCredentials(t *testing.T) {
 	credentials := NewBasicAuthCredentials("foo", "bar")
 	require.NotNil(t, credentials)
-	require.EqualValues(t, "foo", credentials.Login)
+	require.EqualValues(t, "foo", credentials.User)
 	require.EqualValues(t, "bar", credentials.Password)
 }
 
@@ -31,7 +31,7 @@ func TestAddBasicAuthCredentials(t *testing.T) {
 	fetchedCredentials, ok := store.GetBasicAuth("127.0.0.1", 1)
 	require.True(t, ok)
 	require.NotNil(t, fetchedCredentials)
-	require.EqualValues(t, "foo", fetchedCredentials.Login)
+	require.EqualValues(t, "foo", fetchedCredentials.User)
 	require.EqualValues(t, "bar", fetchedCredentials.Password)
 }
 
@@ -70,7 +70,7 @@ func TestAddBasicAuthEmptyCredentials(t *testing.T) {
 	fetchedCredentials, ok := store.GetBasicAuth("127.0.0.1", 1)
 	require.True(t, ok)
 	require.NotNil(t, fetchedCredentials)
-	require.EqualValues(t, "", fetchedCredentials.Login)
+	require.EqualValues(t, "", fetchedCredentials.User)
 	require.EqualValues(t, "", fetchedCredentials.Password)
 }
 
@@ -86,7 +86,7 @@ func TestUpdateBasicAuthCredentials(t *testing.T) {
 	fetchedCredentials, ok := store.GetBasicAuth("127.0.0.1", 1)
 	require.True(t, ok)
 	require.NotNil(t, fetchedCredentials)
-	require.EqualValues(t, "oof", fetchedCredentials.Login)
+	require.EqualValues(t, "oof", fetchedCredentials.User)
 	require.EqualValues(t, "rab", fetchedCredentials.Password)
 }
 
@@ -142,7 +142,7 @@ func TestGetBasicAuthCredentialsByURL(t *testing.T) {
 		fetchedCredentials, ok := store.GetBasicAuthByURL(url)
 		require.True(t, ok, "URL: %s", url)
 		require.NotNil(t, fetchedCredentials)
-		require.EqualValues(t, "foo", fetchedCredentials.Login)
+		require.EqualValues(t, "foo", fetchedCredentials.User)
 		require.EqualValues(t, "bar", fetchedCredentials.Password)
 	}
 
@@ -172,7 +172,7 @@ func TestReadStoreFromProperContent(t *testing.T) {
 	credentials, ok := store.GetBasicAuth("192.168.0.1", 1234)
 	require.True(t, ok)
 	require.NotNil(t, credentials)
-	require.EqualValues(t, "foo", credentials.Login)
+	require.EqualValues(t, "foo", credentials.User)
 	require.EqualValues(t, "bar", credentials.Password)
 }
 
@@ -229,12 +229,12 @@ func TestReadStoreFromFileWithAbbreviations(t *testing.T) {
 
 	for idx, address := range addresses {
 		port := idx + 1
-		expectedLogin := string(rune('a' + idx))
-		expectedPassword := expectedLogin + expectedLogin
+		expectedUser := string(rune('a' + idx))
+		expectedPassword := expectedUser + expectedUser
 		credentials, ok := store.GetBasicAuth(address, int64(port))
 		require.True(t, ok, "Address: %s", address)
 		require.NotNil(t, credentials)
-		require.EqualValues(t, expectedLogin, credentials.Login)
+		require.EqualValues(t, expectedUser, credentials.User)
 		require.EqualValues(t, expectedPassword, credentials.Password)
 	}
 }
