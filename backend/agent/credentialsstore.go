@@ -38,7 +38,7 @@ type CredentialsStore struct {
 
 // Structure of the credentials JSON file.
 type CredentialsStoreContent struct {
-	Basic []CredentialsStoreContentBasicAuthEntry
+	BasicAuth []CredentialsStoreContentBasicAuthEntry `json:"basic_auth"`
 }
 
 // Single Basic Auth item of the credentials JSON file.
@@ -135,7 +135,7 @@ func newLocation(address string, port int64) (location, error) {
 
 // Load the content from JSON file to the credentials store.
 func (cs *CredentialsStore) loadContent(content *CredentialsStoreContent) error {
-	for _, entry := range content.Basic {
+	for _, entry := range content.BasicAuth {
 		// Check required fields
 		if entry.IP == nil {
 			return errors.New("missing IP address")

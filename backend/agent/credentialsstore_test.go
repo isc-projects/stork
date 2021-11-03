@@ -157,7 +157,7 @@ func TestGetBasicAuthCredentialsByURL(t *testing.T) {
 func TestReadStoreFromProperContent(t *testing.T) {
 	store := NewCredentialsStore()
 	content := strings.NewReader(`{
-		"basic": [
+		"basic_auth": [
 			{
 				"ip": "192.168.0.1",
 				"port": 1234,
@@ -182,7 +182,7 @@ func TestReadStoreFromProperContent(t *testing.T) {
 func TestReadStoreFromFileWithAbbreviations(t *testing.T) {
 	store := NewCredentialsStore()
 	content := strings.NewReader(`{
-		"basic": [
+		"basic_auth": [
 			{
 				"ip": "127.0.0.1",
 				"port": 1,
@@ -270,7 +270,7 @@ func TestReadStoreFromInvalidContent(t *testing.T) {
 		{
 			"Port is not a number",
 			`{
-				"basic": [
+				"basic_auth": [
 					{
 						"ip": "192.168.0.1",
 						"port": "1234",
@@ -283,7 +283,7 @@ func TestReadStoreFromInvalidContent(t *testing.T) {
 		{
 			"Missing port",
 			`{
-				"basic": [
+				"basic_auth": [
 					{
 						"ip": "192.168.0.1",
 						"user": "foo",
@@ -295,7 +295,7 @@ func TestReadStoreFromInvalidContent(t *testing.T) {
 		{
 			"Missing all fields",
 			`{
-				"basic": [
+				"basic_auth": [
 					{ }
 				]
 			}`,
@@ -303,7 +303,7 @@ func TestReadStoreFromInvalidContent(t *testing.T) {
 		{
 			"Missing key quotes",
 			`{
-				basic: [
+				basic_auth: [
 					{
 						ip: "192.168.0.1",
 						port: 8000

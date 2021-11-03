@@ -112,7 +112,7 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 	// Create credentials file
 	CredentialsFile = path.Join(tmpDir, "credentials.json")
 	content := fmt.Sprintf(`{
-		"basic": [
+		"basic_auth": [
 			{
 				"ip": "%s",
 				"port": %d,

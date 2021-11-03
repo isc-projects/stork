@@ -784,7 +784,7 @@ class StorkAgentContainer(Container):
         '''Create credentials.json file and configure the Stork Agent use them.'''
         content = (
             r'{\n'
-            r'    "basic": [\n'
+            r'    "basic_auth": [\n'
             r'        {\n'
             r'            "ip": "127.0.0.1",\n'
             r'            "port": 8000,\n'
@@ -794,7 +794,7 @@ class StorkAgentContainer(Container):
             r'    ]\n'
             r'}\n'
         ).replace(r'"', r'\"')
-        cmd = "echo -e '%s' > /var/lib/stork-agent/credentials.json" % content
+        cmd = "echo -e '%s' > /etc/stork/agent-credentials.json" % content
         self.run('bash -c "%s"' % cmd)
         self.run('systemctl restart isc-stork-agent')
 
