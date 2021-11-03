@@ -868,7 +868,7 @@ Grafana Integration
 -------------------
 
 Stork provides several Grafana templates that can easily be imported. Those are available in the ``grafana/`` directory of the
-Stork source code. The currently available templates are `bind9-resolver.json` and `kea-dhcp4.json`. Grafana integration requires three steps:
+Stork source code. The currently available templates are `bind9-resolver.json`, `kea-dhcp4.json` and `kea-dhcp6.json`. Grafana integration requires three steps:
 
 1. Prometheus must be added as a data source. This can be done in several ways, including via the user interface to edit the Grafana
 configuration files. This is the easiest method; for details, see the Grafana documentation about Prometheus integration.

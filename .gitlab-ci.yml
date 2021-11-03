@@ -274,6 +274,8 @@ deploy_demo:
     - scp -o StrictHostKeyChecking=no docker-compose-premium.yaml jenkins@stork.lab.isc.org:~/deploy
     - scp -o StrictHostKeyChecking=no docker/prometheus.yml jenkins@stork.lab.isc.org:~/deploy/docker/prometheus.yml
     - scp -o StrictHostKeyChecking=no grafana/kea-dhcp4.json jenkins@stork.lab.isc.org:~/deploy/grafana/kea-dhcp4.json
+    - scp -o StrictHostKeyChecking=no grafana/kea-dhcp6.json jenkins@stork.lab.isc.org:~/deploy/grafana/kea-dhcp6.json
+    - scp -o StrictHostKeyChecking=no grafana/bind9-resolver.json jenkins@stork.lab.isc.org:~/deploy/grafana/bind9-resolver.json
     - scp -o StrictHostKeyChecking=no docker/grafana/dashboards.yaml jenkins@stork.lab.isc.org:~/deploy/docker/grafana/dashboards.yaml
     - scp -o StrictHostKeyChecking=no docker/grafana/datasource.yaml jenkins@stork.lab.isc.org:~/deploy/docker/grafana/datasource.yaml
     - scp -o StrictHostKeyChecking=no docker/grafana/grafana.ini jenkins@stork.lab.isc.org:~/deploy/docker/grafana/grafana.ini

@@ -232,6 +232,8 @@ services:
        - ./docker/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
        - ./docker/grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
        - ./grafana/kea-dhcp4.json:/var/lib/grafana/dashboards/kea-dhcp4.json
+       - ./grafana/kea-dhcp6.json:/var/lib/grafana/dashboards/kea-dhcp6.json
+       - ./grafana/bind9-resolver.json:/var/lib/grafana/dashboards/bind9-resolver.json
     depends_on:
       - prometheus
 
