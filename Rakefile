@@ -910,11 +910,10 @@ def fpm(pkg, fpm_target)
   cmd += " --after-install etc/isc-stork-#{pkg}.postinst"
   cmd += " --before-remove etc/isc-stork-#{pkg}.prerm"
   cmd += " --after-remove etc/isc-stork-#{pkg}.postrm"
-  config_files = "/etc/stork/#{pkg}.env"
+  cmd += " --config-files /etc/stork/#{pkg}.env"
   if pkg == "agent"
-    config_files += " /etc/stork/agent-credentials.json.template"
+    cmd += " --config-files /etc/stork/agent-credentials.json.template"
   end
-  cmd += " --config-files #{config_files}"
   cmd += " -s dir"
   cmd += " -t #{fpm_target}"
   cmd += " -C #{DESTDIR} ."
