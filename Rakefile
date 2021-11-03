@@ -882,6 +882,7 @@ task :install_agent => [:build_agent, :doc, BIN_DIR, UNIT_DIR, ETC_DIR, MAN_DIR]
   sh "cp -a backend/cmd/stork-agent/stork-agent #{BIN_DIR}"
   sh "cp -a etc/isc-stork-agent.service #{UNIT_DIR}"
   sh "cp -a etc/agent.env #{ETC_DIR}"
+  sh "cp -a etc/agent-credentials.json.template #{ETC_DIR}"
   sh "cp -a doc/man/stork-agent.8 #{MAN_DIR}"
 end
 
@@ -909,7 +910,11 @@ def fpm(pkg, fpm_target)
   cmd += " --after-install etc/isc-stork-#{pkg}.postinst"
   cmd += " --before-remove etc/isc-stork-#{pkg}.prerm"
   cmd += " --after-remove etc/isc-stork-#{pkg}.postrm"
-  cmd += " --config-files /etc/stork/#{pkg}.env"
+  config_files = "/etc/stork/#{pkg}.env"
+  if pkg == "agent"
+    config_files += " /etc/stork/agent-credentials.json.template"
+  end
+  cmd += " --config-files #{config_files}"
   cmd += " -s dir"
   cmd += " -t #{fpm_target}"
   cmd += " -C #{DESTDIR} ."
