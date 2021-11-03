@@ -352,7 +352,13 @@ certificates (it cannot use self-signed certificates as created during Stork Age
 
 Kea 1.9.0 added support for basic HTTP authentication to control access for incoming REST commands over HTTP.
 If Kea CA is configured to use the Basic Auth, you need to provide valid credentials in the Stork Agent's
-credentials file: `/var/lib/stork-agent/credentials.json`. Please create this file if it does not exist.
+credentials file: `/etc/stork/agent-credentials.json`. 
+
+By default, this file is missing, but there is `/etc/stork/agent-credentials.json.template` with example data.
+You can rename the template file by removing the `.template` suffix. Next, you can edit this file and provide
+valid credentials. You should also use the `chown` and `chmod` commands to set the proper permissions - this
+file contains the secrets and should be readable/writable only for the user that running the Stork Agent and
+administrators.
 
 .. warning::
 
@@ -366,7 +372,7 @@ For example:
 .. code-block:: json
 
    {
-      "basic": [
+      "basic_auth": [
          {
             "ip": "127.0.0.1",
             "port": 8000,
