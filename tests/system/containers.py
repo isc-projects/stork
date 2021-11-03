@@ -788,7 +788,7 @@ class StorkAgentContainer(Container):
             r'        {\n'
             r'            "ip": "127.0.0.1",\n'
             r'            "port": 8000,\n'
-            r'            "login": "foo",\n'
+            r'            "user": "foo",\n'
             r'            "password": "bar"\n'
             r'        }\n'
             r'    ]\n'
