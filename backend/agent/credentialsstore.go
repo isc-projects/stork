@@ -124,7 +124,7 @@ func (cs *CredentialsStore) Read(reader io.Reader) error {
 func newLocation(address string, port int64) (location, error) {
 	ip := storkutil.ParseIP(address)
 	if ip == nil {
-		return location{}, errors.Errorf("Invalid IP address: %s", address)
+		return location{}, errors.Errorf("invalid IP address: %s", address)
 	}
 
 	return location{

@@ -362,7 +362,7 @@ the administrators.
 
 .. warning::
 
-   Basic HTTP authentication (described below) is weak on its own as there are known dictionary attacks,
+   Basic HTTP authentication is weak on its own as there are known dictionary attacks,
    but those attacks require man-in-the-middle to get access to the HTTP traffic. That can be eliminated
    by using basic HTTP authentication exclusively over TLS.
    In fact, if possible, using client certificates for TLS is better than using basic HTTP authentication.
@@ -376,7 +376,7 @@ For example:
          {
             "ip": "127.0.0.1",
             "port": 8000,
-            "login": "foo",
+            "user": "foo",
             "password": "bar"
          }
       ]
