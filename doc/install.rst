@@ -357,8 +357,8 @@ credentials file: `/etc/stork/agent-credentials.json`.
 By default, this file is missing, but there is `/etc/stork/agent-credentials.json.template` with example data.
 You can rename the template file by removing the `.template` suffix. Next, you can edit this file and provide
 valid credentials. You should also use the `chown` and `chmod` commands to set the proper permissions - this
-file contains the secrets and should be readable/writable only for the user that running the Stork Agent and
-administrators.
+file contains the secrets and should be readable/writable only for the user running the Stork Agent and
+the administrators.
 
 .. warning::
 
@@ -387,13 +387,13 @@ All credentials must to contains the values for 4 keys:
 
 - "ip": IPv4 or IPv6 address of the Kea CA. It supports IPv6 abbreviations (e.g. "FF:0000::" is the same as "ff::").
 - "port": Number of the Kea CA.
-- "login": Basic Auth login to use in connection to specific Kea CA. 
+- "user": Basic Auth user-id to use in connection to specific Kea CA. 
 - "password": Basic Auth password to use in connection to specific Kea CA.
 
 To apply changes in the credentials file you need to restart the Stork Agent daemon.
 
-If the credentials file will be invalid then the Stork Agent runs as usual but without the Basic Auth support.
-You will get a specific message in the log.
+If the credentials file is invalid the Stork Agent will run as usual but without the Basic Auth support.
+It will be indicated with a specific message in the log.
 
 
 .. _register-agent-token-cloudsmith:

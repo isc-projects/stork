@@ -1,8 +1,8 @@
 * 168 [func] slawek
 
-    The Stork Agent support for the Basic Authorization introduced
-    in Kea 1.9.0. User has a possibility to define the credentials
-    used to establish connection with Kea CA.
+    The Stork Agent support for the Basic Authentication introduced
+    in Kea 1.9.0. User can define the credentials used to
+    establish connection with Kea CA.
     (Gitlab #347)
 
 * 167 [func] slawek
