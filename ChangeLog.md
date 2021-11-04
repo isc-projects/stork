@@ -1,3 +1,8 @@
+* 169 [func] marcin
+
+    Server database connection can be protected with TLS.
+    (Gitlab #403)
+
 Stork 0.22.0 released on 2021-11-05.
 
 * 168 [func] slawek
