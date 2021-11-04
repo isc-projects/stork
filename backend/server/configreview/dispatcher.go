@@ -327,7 +327,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 	}
 	defer rollback()
 
-	// The following calls serve two purposes. Firstly, they lock the daeamons
+	// The following calls serve two purposes. Firstly, they lock the daemons
 	// and other information in the database, so no other transaction can
 	// modify or delete the daemon while we insert the review reports.
 	// Secondly, we get the most current information about the daemons to
@@ -350,7 +350,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 		return pkgerrors.New("some daemons with reviewed configuration are missing in the database")
 	}
 
-	// Check if the configuration of any of the deamons has changed.
+	// Check if the configuration of any of the daemons has changed.
 	for _, dbDaemon := range dbDaemons {
 		for _, daemon := range daemons {
 			if daemon.ID == dbDaemon.ID {

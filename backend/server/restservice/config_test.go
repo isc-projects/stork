@@ -608,7 +608,7 @@ func TestGetDaemonConfigReports(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// Try to fetch config reports for the fisrt daemon.
+	// Try to fetch config reports for the first daemon.
 	params := services.GetDaemonConfigReportsParams{
 		ID: app.Daemons[0].ID,
 	}

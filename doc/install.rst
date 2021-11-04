@@ -352,7 +352,7 @@ certificates (it cannot use self-signed certificates as created during Stork Age
 
 Kea 1.9.0 added support for basic HTTP authentication to control access for incoming REST commands over HTTP.
 If Kea CA is configured to use the Basic Auth, you need to provide valid credentials in the Stork Agent's
-credentials file: `/etc/stork/agent-credentials.json`. 
+credentials file: `/etc/stork/agent-credentials.json`.
 
 By default, this file is missing, but there is `/etc/stork/agent-credentials.json.template` with example data.
 You can rename the template file by removing the `.template` suffix. Next, you can edit this file and provide
@@ -366,7 +366,7 @@ the administrators.
    but those attacks require man-in-the-middle to get access to the HTTP traffic. That can be eliminated
    by using basic HTTP authentication exclusively over TLS.
    In fact, if possible, using client certificates for TLS is better than using basic HTTP authentication.
-   
+
 For example:
 
 .. code-block:: json
@@ -387,7 +387,7 @@ All credentials must to contains the values for 4 keys:
 
 - "ip": IPv4 or IPv6 address of the Kea CA. It supports IPv6 abbreviations (e.g. "FF:0000::" is the same as "ff::").
 - "port": Number of the Kea CA.
-- "user": Basic Auth user-id to use in connection to specific Kea CA. 
+- "user": Basic Auth user-id to use in connection to specific Kea CA.
 - "password": Basic Auth password to use in connection to specific Kea CA.
 
 To apply changes in the credentials file you need to restart the Stork Agent daemon.
@@ -953,7 +953,7 @@ Subnet identification
 ---------------------
 
 Kea CA shares subnet statistics labeled with the internal Kea IDs.
-The Prometheus/Graphana subnet labels depend on the installed Kea hooks.
+The Prometheus/Grafana subnet labels depend on the installed Kea hooks.
 By default, the internal, numeric Kea IDs are used.
 But if the `subnet_cmds` hook is installed then the numeric IDs are resolved to subnet prefixes.
-It causes that the Graphana dashboard looks more human-friendly and descriptive.
+It causes that the Grafana dashboard looks more human-friendly and descriptive.

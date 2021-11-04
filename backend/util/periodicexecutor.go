@@ -76,7 +76,7 @@ func (executor *PeriodicExecutor) Shutdown() {
 	log.Printf("stopped %s", executor.name)
 }
 
-// Temporarily stops the timer triggering the exectutor action. This function
+// Temporarily stops the timer triggering the executor action. This function
 // is called internally by the executor while running the executor action to
 // avoid the situation that after long lasting action it is triggered again
 // shortly. It can also be called externally if the executor action would

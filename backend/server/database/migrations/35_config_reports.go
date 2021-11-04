@@ -37,7 +37,7 @@ func init() {
                     ON DELETE CASCADE
             );
 
-            -- Delete all configuration reports associated with a deleted deamon.
+            -- Delete all configuration reports associated with a deleted daemon.
             -- We can't use a cascade action for this operation, because not only
             -- do we want to remove associations between the config reports and the
             -- deleted daemon but also all reports from the config_report table.

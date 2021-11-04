@@ -60,7 +60,7 @@ func TestAddBasicAuthCredentialsInvalidIPs(t *testing.T) {
 	}
 }
 
-// Test that the empty Basic Auth credentials (without user and pasword)
+// Test that the empty Basic Auth credentials (without user and password)
 // are added to store correctly.
 func TestAddBasicAuthEmptyCredentials(t *testing.T) {
 	store := NewCredentialsStore()

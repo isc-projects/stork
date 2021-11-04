@@ -62,7 +62,7 @@ func TestGracefulShutdown(t *testing.T) {
 		channels[i] = continueChan
 		dispatcher.RegisterChecker(selectors[i], "test_checker", func(ctx *ReviewContext) (*Report, error) {
 			// The checker waits here until the test gives it a green light
-			// to proceed. It allows for controlling the concurency of the
+			// to proceed. It allows for controlling the concurrency of the
 			// reviews.
 			<-continueChan
 			report, err := NewReport(ctx, "test output").create()
@@ -88,7 +88,7 @@ func TestGracefulShutdown(t *testing.T) {
 	}
 
 	// Unblock first three checkers. The remaining ones should still wait.
-	// That way we cause the situtation that 3 reviews are done, and the
+	// That way we cause the situation that 3 reviews are done, and the
 	// other ones are still in progress.
 	for i := 0; i < 3; i++ {
 		channels[i] <- true

@@ -510,7 +510,7 @@ class StorkAgentContainer(Container):
     def install_kea(self, service_name='default', kea_version=KEA_LATEST, tls_support=KeaTLSSupport.NONE, basic_auth_enable=False):
         '''
         Install Kea and Kea CA daemons in the container.
-        
+
         Parameters
         ----------
         service_name: default | dhcp6 | ddns
@@ -523,7 +523,7 @@ class StorkAgentContainer(Container):
             If true then the Kea CA is configured to accept only the authorized
             (using Basic Auth)requests. It creates one set of credentials
             (login: foo, password: bar). It doesn't change the Stork Agent
-            configuration - you need call `use_credentials_file` method separatelly.
+            configuration - you need call `use_credentials_file` method separately.
         '''
         print('INSTALL KEA')
         repo = 'kea-' + kea_version[:3].replace('.', '-')
