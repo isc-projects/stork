@@ -13,11 +13,15 @@ import (
 )
 
 type BaseDatabaseSettings struct {
-	DBName   string `short:"d" long:"db-name" description:"the name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
-	User     string `short:"u" long:"db-user" description:"the user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
-	Password string `description:"the database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
-	Host     string `long:"db-host" description:"the name of the host where database is available" env:"STORK_DATABASE_HOST" default:"localhost"`
-	Port     int    `short:"p" long:"db-port" description:"the port on which the database is available" env:"STORK_DATABASE_PORT" default:"5432"`
+	DBName      string `short:"d" long:"db-name" description:"the name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
+	User        string `short:"u" long:"db-user" description:"the user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
+	Password    string `description:"the database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
+	Host        string `long:"db-host" description:"the name of the host where database is available" env:"STORK_DATABASE_HOST" default:"localhost"`
+	Port        int    `short:"p" long:"db-port" description:"the port on which the database is available" env:"STORK_DATABASE_PORT" default:"5432"`
+	SSLMode     string `long:"db-sslmode" description:"the secure database connection mode (disable, require, verify-ca or verify-full)" env:"STORK_DATABASE_SSLMODE" default:"disable"`
+	SSLCert     string `long:"db-sslcert" description:"the location of a certificate used to connect to the database" env:"STORK_DATABASE_SSL_CERT"`
+	SSLKey      string `long:"db-sslkey" description:"the location of a key file used to connect to the database" env:"STORK_DATABASE_SSL_KEY"`
+	SSLRootCert string `long:"db-sslrootcert" description:"the location of the root certificate file" env:"STORK_DATABASE_SSL_ROOTCERT"`
 }
 
 type DatabaseSettings struct {
@@ -94,15 +98,22 @@ func (c *BaseDatabaseSettings) ConnectionParams() string {
 		// Append the parameter in the name=value format.
 		s += fmt.Sprintf("%s=%v", strings.ToLower(vType.Field(i).Name), v.Field(i).Interface())
 	}
-	s += " sslmode='disable'"
+	if len(c.SSLMode) == 0 {
+		s += " sslmode='disable'"
+	}
 	return s
 }
 
 // Converts generic connection parameters to go-pg specific parameters.
-func (c *DatabaseSettings) PgParams() *PgOptions {
+func (c *DatabaseSettings) PgParams() (*PgOptions, error) {
 	pgopts := &PgOptions{Database: c.DBName, User: c.User, Password: c.Password}
 	pgopts.Addr = fmt.Sprintf("%s:%d", c.Host, c.Port)
-	return pgopts
+	tlsConfig, err := GetTLSConfig(c.SSLMode, c.Host, c.SSLCert, c.SSLKey, c.SSLRootCert)
+	if err != nil {
+		return nil, err
+	}
+	pgopts.TLSConfig = tlsConfig
+	return pgopts, nil
 }
 
 // Fetches database password from the environment variable or prompts the user

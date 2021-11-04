@@ -51,7 +51,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	}
 
 	// Convert generic options to go-pg options.
-	pgConnOptions := *genericConnOptions.PgParams()
+	pgConnOptions, _ := genericConnOptions.PgParams()
 
 	// Check if we're running tests in Gitlab CI. If so, the host
 	// running the database should be set to "postgres".
@@ -71,7 +71,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 
 	// Connect to base `postgres` database to be able to create test database.
 	pgConnOptions.Database = "postgres"
-	db, err := dbops.NewPgDBConn(&pgConnOptions, false)
+	db, err := dbops.NewPgDBConn(pgConnOptions, false)
 	if db == nil {
 		log.Fatalf("unable to create database instance: %+v", err)
 	}
@@ -109,7 +109,7 @@ func SetupDatabaseTestCase(testArg interface{}) (*dbops.PgDB, *dbops.DatabaseSet
 	pgConnOptions.Database = dbName
 	genericConnOptions.BaseDatabaseSettings.DBName = dbName
 
-	db, err = dbops.NewPgDBConn(&pgConnOptions, false)
+	db, err = dbops.NewPgDBConn(pgConnOptions, false)
 	if db == nil {
 		log.Fatalf("unable to create database instance: %+v", err)
 	}

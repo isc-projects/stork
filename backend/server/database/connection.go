@@ -118,7 +118,11 @@ func NewPgDB(settings *DatabaseSettings) (*PgDB, error) {
 	Password(settings)
 
 	// Make a connection to DB (tracing is enabled at this stage if set to all (migrations and run-time))
-	db, err := NewPgDBConn(settings.PgParams(), settings.TraceSQL == "all")
+	params, err := settings.PgParams()
+	if err != nil {
+		return nil, err
+	}
+	db, err := NewPgDBConn(params, settings.TraceSQL == "all")
 	if err != nil {
 		return nil, err
 	}
