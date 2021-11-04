@@ -22,11 +22,22 @@ import (
 // configurations and related artifacts
 // to single archive.
 
-type fileCreator func(filename string) (*os.File, error)
+type fileProducer func(filename string) (*os.File, error)
 
 type dumpResult struct {
 	DumpName string
 	Error    error
+}
+
+type dumpSummaryEntry struct {
+	Step   string
+	Status string
+	Error  error
+}
+
+type dumpSummary struct {
+	Timestamp string
+	Dumps     []dumpSummaryEntry
 }
 
 // Dump the machine and related artifacts to the single archive.
@@ -40,22 +51,22 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 
 	rootDir := os.TempDir()
 	defer os.RemoveAll(rootDir)
-	fileCreator := prepareFileCreator(rootDir)
+	fileProducer := prepareFileProducer(rootDir)
 	dumpResults := []*dumpResult{}
 
-	err = dumpMachineEntry(fileCreator, m)
+	err = dumpMachineEntry(fileProducer, m)
 	dumpResults = append(dumpResults, &dumpResult{DumpName: "machine-entry", Error: err})
 
-	err = dumpEvents(fileCreator, db, machineID)
+	err = dumpEvents(fileProducer, db, machineID)
 	dumpResults = append(dumpResults, &dumpResult{DumpName: "last-events", Error: err})
 
-	err = dumpLogs(fileCreator, connectedAgents, m)
+	err = dumpLogs(fileProducer, connectedAgents, m)
 	dumpResults = append(dumpResults, &dumpResult{DumpName: "log-tails", Error: err})
 
-	err = dumpSettings(fileCreator, db)
+	err = dumpSettings(fileProducer, db)
 	dumpResults = append(dumpResults, &dumpResult{DumpName: "settings", Error: err})
 
-	err = saveDumpSummary(fileCreator, dumpResults)
+	err = saveDumpSummary(fileProducer, dumpResults)
 	if err != nil {
 		return nil, err
 	}
@@ -79,11 +90,11 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 	return archiveFile, err
 }
 
-func dumpMachineEntry(targetProducer fileCreator, machine *dbmodel.Machine) error {
+func dumpMachineEntry(targetProducer fileProducer, machine *dbmodel.Machine) error {
 	return saveToFile(targetProducer, "machine", machine)
 }
 
-func dumpEvents(targetProducer fileCreator, db *pg.DB, machineID int64) error {
+func dumpEvents(targetProducer fileProducer, db *pg.DB, machineID int64) error {
 	events, _, err := dbmodel.GetEventsByPage(db, 0, 0, 1, nil, nil, &machineID, nil, "", dbmodel.SortDirAny)
 	if err != nil {
 		return err
@@ -92,7 +103,7 @@ func dumpEvents(targetProducer fileCreator, db *pg.DB, machineID int64) error {
 	return saveToFile(targetProducer, "events", events)
 }
 
-func dumpSettings(targetProducer fileCreator, db *pg.DB) error {
+func dumpSettings(targetProducer fileProducer, db *pg.DB) error {
 	settings, err := dbmodel.GetAllSettings(db)
 	if err != nil {
 		return nil
@@ -101,7 +112,7 @@ func dumpSettings(targetProducer fileCreator, db *pg.DB) error {
 	return saveToFile(targetProducer, "settings", settings)
 }
 
-func dumpLogs(targetProducer fileCreator, connectedAgents agentcomm.ConnectedAgents, machine *dbmodel.Machine) error {
+func dumpLogs(targetProducer fileProducer, connectedAgents agentcomm.ConnectedAgents, machine *dbmodel.Machine) error {
 	for _, app := range machine.Apps {
 		for _, daemon := range app.Daemons {
 			for logTargetID, logTarget := range daemon.LogTargets {
@@ -147,35 +158,24 @@ func dumpLogs(targetProducer fileCreator, connectedAgents agentcomm.ConnectedAge
 	return nil
 }
 
-func prepareFileCreator(root string) fileCreator {
+func prepareFileProducer(root string) fileProducer {
 	now := time.Now().UTC()
 	timestampPrefix := now.Format("2006-01-02T15-04-05_")
 	return func(filename string) (*os.File, error) {
-		filePath := timestampPrefix + path.Join(root, filename)
+		filePath := path.Join(root, timestampPrefix+filename)
 		return os.OpenFile(filePath, os.O_CREATE|os.O_RDWR, 0o755)
 	}
 }
 
-func saveDumpSummary(targetProducer fileCreator, results []*dumpResult) error {
-	type entry struct {
-		Step   string
-		Status string
-		Error  error
-	}
-
-	type dumpSummary struct {
-		Timestamp string
-		Dumps     []entry
-	}
-
-	entries := make([]entry, len(results))
+func saveDumpSummary(targetProducer fileProducer, results []*dumpResult) error {
+	entries := make([]dumpSummaryEntry, len(results))
 	for idx, res := range results {
 		status := "Success"
 		if res.Error != nil {
 			status = "Fail"
 		}
 
-		entries[idx] = entry{
+		entries[idx] = dumpSummaryEntry{
 			Step:   res.DumpName,
 			Status: status,
 			Error:  res.Error,
@@ -183,14 +183,14 @@ func saveDumpSummary(targetProducer fileCreator, results []*dumpResult) error {
 	}
 
 	summary := dumpSummary{
-		Timestamp: time.Now().UTC().Format("2016-01-02T15:04:05 UTC"),
+		Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05 UTC"),
 		Dumps:     entries,
 	}
 
 	return saveToFile(targetProducer, "summary", summary)
 }
 
-func saveToFile(targetProducer fileCreator, name string, data interface{}) error {
+func saveToFile(targetProducer fileProducer, name string, data interface{}) error {
 	file, err := targetProducer(name + ".json")
 	if err != nil {
 		return err
