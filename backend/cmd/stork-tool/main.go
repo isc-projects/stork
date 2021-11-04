@@ -179,22 +179,22 @@ func setupApp() *cli.App {
 			Name:    "db-sslmode",
 			Usage:   "The TLS mode for connecing to the database (e.g., disable, require, verify-ca or verify-full). See libpq - C library documentation for details.",
 			Value:   "disable",
-			EnvVars: []string{"STORK_DATABASE_SSL_MODE"},
+			EnvVars: []string{"STORK_DATABASE_SSLMODE"},
 		},
 		&cli.StringFlag{
 			Name:    "db-sslcert",
 			Usage:   "The location of the TLS certificate used by the server to connect to the database.",
-			EnvVars: []string{"STORK_DATABASE_SSL_CERT"},
+			EnvVars: []string{"STORK_DATABASE_SSLCERT"},
 		},
 		&cli.StringFlag{
 			Name:    "db-sslkey",
 			Usage:   "The location of the TLS key used by the server to connect to the database.",
-			EnvVars: []string{"STORK_DATABASE_SSL_KEY"},
+			EnvVars: []string{"STORK_DATABASE_SSLKEY"},
 		},
 		&cli.StringFlag{
 			Name:    "db-sslrootcert",
 			Usage:   "The location of the root certificate file used to verify the database server's certificate.",
-			EnvVars: []string{"STORK_DATABASE_SSL_ROOTCERT"},
+			EnvVars: []string{"STORK_DATABASE_SSLROOTCERT"},
 		},
 		&cli.StringFlag{
 			Name:    "db-trace-queries",
