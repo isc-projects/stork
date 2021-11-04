@@ -37,12 +37,23 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 
 		addrPort := net.JoinHostPort(settings.String("db-host"), settings.String("db-port"))
 
+		// TLS configuration.
+		tlsConfig, err := dbops.GetTLSConfig(settings.String("db-sslmode"),
+			settings.String("db-host"),
+			settings.String("db-sslcert"),
+			settings.String("db-sslkey"),
+			settings.String("db-sslrootcert"))
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
 		// Use the provided credentials to connect to the database.
 		opts = &dbops.PgOptions{
-			User:     settings.String("db-user"),
-			Password: passwd,
-			Database: settings.String("db-name"),
-			Addr:     addrPort,
+			User:      settings.String("db-user"),
+			Password:  passwd,
+			Database:  settings.String("db-name"),
+			Addr:      addrPort,
+			TLSConfig: tlsConfig,
 		}
 	}
 
@@ -163,6 +174,27 @@ func setupApp() *cli.App {
 			Aliases: []string{"d"},
 			Value:   "stork",
 			EnvVars: []string{"STORK_DATABASE_NAME"},
+		},
+		&cli.StringFlag{
+			Name:    "db-sslmode",
+			Usage:   "The TLS mode for connecing to the database (e.g., disable, require, verify-ca or verify-full). See libpq - C library documentation for details.",
+			Value:   "disable",
+			EnvVars: []string{"STORK_DATABASE_SSL_MODE"},
+		},
+		&cli.StringFlag{
+			Name:    "db-sslcert",
+			Usage:   "The location of the TLS certificate used by the server to connect to the database.",
+			EnvVars: []string{"STORK_DATABASE_SSL_CERT"},
+		},
+		&cli.StringFlag{
+			Name:    "db-sslkey",
+			Usage:   "The location of the TLS key used by the server to connect to the database.",
+			EnvVars: []string{"STORK_DATABASE_SSL_KEY"},
+		},
+		&cli.StringFlag{
+			Name:    "db-sslrootcert",
+			Usage:   "The location of the root certificate file used to verify the database server's certificate.",
+			EnvVars: []string{"STORK_DATABASE_SSL_ROOTCERT"},
 		},
 		&cli.StringFlag{
 			Name:    "db-trace-queries",
