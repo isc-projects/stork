@@ -3,12 +3,27 @@ package dbtest
 import (
 	"crypto/tls"
 	"os"
+	"os/user"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
 	testutil "isc.org/stork/testutil"
 )
+
+// Checks if the ~/.postgresql/postgresql.crt file exists in the
+// current user's home directory.
+func certExistsInHomeDir() bool {
+	user, _ := user.Current()
+
+	sslCert := filepath.Join(user.HomeDir, ".postgresql", "postgresql.crt")
+
+	if _, err := os.Stat(sslCert); err == nil {
+		return true
+	}
+	return false
+}
 
 // Creates the certificate, key and CA certificate for testing
 // secure database connections.
@@ -25,6 +40,19 @@ func createTestCerts(t *testing.T, sb *testutil.Sandbox) (serverCert, serverKey,
 	require.NoError(t, err)
 
 	return serverCert, serverKey, rootCert
+}
+
+// Test that the server ignores cert and key files when the SSL
+// mode is set to 'disable'.
+func TestGetTLSConfigDisableWithNonBlankFiles(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	serverCert, serverKey, rootCert := createTestCerts(t, sb)
+
+	tlsConfig, err := dbops.GetTLSConfig("disable", "localhost", serverCert, serverKey, rootCert)
+	require.NoError(t, err)
+	require.Nil(t, tlsConfig)
 }
 
 // Test the require mode without CA certificate. It disables all
@@ -62,6 +90,52 @@ func TestGetTLSConfigRequireVerifyCA(t *testing.T) {
 	require.NotNil(t, tlsConfig.VerifyConnection)
 	require.Empty(t, tlsConfig.ServerName)
 	require.Len(t, tlsConfig.Certificates, 1)
+	require.Equal(t, tls.RenegotiateFreelyAsClient, tlsConfig.Renegotiation)
+}
+
+// Test the require mode with blank cert, key and CA cert files locations.
+func TestGetTLSConfigRequireCertKeyUnspecified(t *testing.T) {
+	// The test doesn't make sense if the certificate file is in
+	// the user's home directory because the server will pick
+	// this cert for use.
+	if certExistsInHomeDir() {
+		t.Skipf("Certificate file %s exists in the home dir", "postgresql.crt")
+	}
+
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", "", "", "")
+	require.NoError(t, err)
+	require.NotNil(t, tlsConfig)
+
+	require.True(t, tlsConfig.InsecureSkipVerify)
+	require.Nil(t, tlsConfig.VerifyConnection)
+	require.Empty(t, tlsConfig.ServerName)
+	require.Empty(t, tlsConfig.Certificates)
+	require.Equal(t, tls.RenegotiateFreelyAsClient, tlsConfig.Renegotiation)
+}
+
+// Test the require mode with non-existing cert and key file.
+func TestGetTLSConfigRequireCertKeyDontExist(t *testing.T) {
+	// The test doesn't make sense if the certificate file is in
+	// the user's home directory because the server will pick
+	// this cert for use.
+	if certExistsInHomeDir() {
+		t.Skipf("Certificate file %s exists in the home dir", "postgresql.crt")
+	}
+
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", "nonexist", "nonexist", "")
+	require.NoError(t, err)
+	require.NotNil(t, tlsConfig)
+
+	require.True(t, tlsConfig.InsecureSkipVerify)
+	require.Nil(t, tlsConfig.VerifyConnection)
+	require.Empty(t, tlsConfig.ServerName)
+	require.Empty(t, tlsConfig.Certificates)
 	require.Equal(t, tls.RenegotiateFreelyAsClient, tlsConfig.Renegotiation)
 }
 
