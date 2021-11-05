@@ -226,6 +226,52 @@ The ``Stork Server`` can be configured to run behind an HTTP reverse proxy
 using `Nginx` or `Apache`. The ``Stork Server`` package contains an example
 configuration file for `Nginx`, in `/usr/share/stork/examples/nginx-stork.conf`.
 
+Securing Database Connection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PostgreSQL server can be configured to encrypt communications between the clients and
+the server. Detailed information on how to enable encryption on the database
+server and how to create the suitable certificate and key files is available
+in `PostgreSQL documentation
+<https://www.postgresql.org/docs/14/ssl-tcp.html>`_.
+
+Stork server has support for secure communications with the database. The following
+configuration settings in the `server.env` file enable and configure communication
+encryption with the database server. They correspond with the SSL settings provided
+by the libpq - the native PostgreSQL client library written in C:
+
+* STORK_DATABASE_SSLMODE - the SSL mode for connecing to the database (i.e., `disable`,
+  `require`, `verify-ca` or `verify-full`); default is `disable`
+* STORK_DATABASE_SSLCERT - the location of the SSL certificate used by the server
+  to connect to the database
+* STORK_DATABASE_SSLKEY - the location of the SSL key used by the server to connect
+  to the database
+* STORK_DATABASE_SSLROOTCERT - the location of the root certificate file used to
+  verify the database server's certificate
+
+The default SSL mode setting, ``disable``, configures the server to use unencrypted
+communication with the database. Other settings have the following meaning:
+
+* ``require`` - use secure communication but do not verify the server's identity
+  unless the root certificate location is specified and that certificate exists
+  If the root certificate exists, the behavior is the same as  in case of `verify-ca`
+  mode
+* ``verify-ca`` - use secure communication and verify the server's identity by
+  checking it against the root certificate stored on the Stork server machine
+* ``verify-full`` - use secure communication, verify the server's identity against
+  the root certificate. In addition, check that the server hostname matches the
+  name stored in the certificate.
+
+Specifying the SSL certificate and key location is optional. If they are not
+specified, the Stork server will use the ones from the current user's home
+directory: `~/.postgresql/postgresql.crt` and `~/.postgresql/postgresql.key`.
+If they are not present, Stork will try to find suitable keys in common system
+locations.
+
+Please consult  `libpq documentation <https://www.postgresql.org/docs/14/libpq-ssl.html>`_
+for similar `libpq` configuration details.
+
+
 Installing the Stork Agent
 --------------------------
 

@@ -177,7 +177,7 @@ func setupApp() *cli.App {
 		},
 		&cli.StringFlag{
 			Name:    "db-sslmode",
-			Usage:   "The TLS mode for connecing to the database (e.g., disable, require, verify-ca or verify-full). See libpq - C library documentation for details.",
+			Usage:   "The TLS mode for connecing to the database (i.e., disable, require, verify-ca or verify-full). See libpq - C library documentation for details.",
 			Value:   "disable",
 			EnvVars: []string{"STORK_DATABASE_SSLMODE"},
 		},

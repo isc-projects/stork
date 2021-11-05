@@ -50,6 +50,18 @@ Arguments
 ``-d`` or ``--db-name=``
    the name of the database to connect to. (default: stork) [$STORK_DATABASE_NAME]
 
+``--db-sslmode``
+   the SSL mode for connecing to the database (i.e., disable, require, verify-ca or verify-full). (default: disable) [$STORK_DATABASE_SSLMODE]
+
+``--db-sslcert``
+   the location of the SSL certificate used by the server to connect to the database. [$STORK_DATABASE_SSLCERT]
+
+``--db-sslkey``
+   the location of the SSL key used by the server to connect to the database. [$STORK_DATABASE_SSLKEY]
+
+``--db-sslrootcert``
+   the location of the root certificate file used to verify the database server's certificate. [$STORK_DATABASE_SSLROOTCERT]
+
 ``--db-trace-queries=``
    enable tracing SQL queries: "run" - only run-time, without migrations), "all" - migrations and run-time.
    [$STORK_DATABASE_TRACE]
@@ -94,8 +106,29 @@ Arguments
 ``--rest-static-files-dir``
    the directory with static files for the UI. [$STORK_REST_STATIC_FILES_DIR]
 
+The ``--db-sslmode`` argument can have one of the following values:
+
+``disable``
+  disable encryption between the Stork server and the PostgreSQL database.
+
+``require``
+  use secure communication but do not verify the server's identity unless the
+  root certificate location is specified and that certificate exists
+  If the root certificate exists, the behavior is the same as  in case of `verify-ca`
+  mode.
+
+``verify-ca``
+  use secure communication and verify the server's identity by checking it
+  against the root certificate stored on the Stork server machine.
+
+``verify-full``
+  use secure communication, verify the server's identity against the root
+  certificate. In addition, check that the server hostname matches the
+  name stored in the certificate.
+
 Note that there is no argument for database password, as the command-line arguments can sometimes be seen
 by other users. It can be passed using the STORK_DATABASE_PASSWORD variable.
+
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
