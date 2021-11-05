@@ -95,6 +95,7 @@ func TestConnectionParamsWithSSLMode(t *testing.T) {
 	require.Equal(t, "dbname='stork' user='admin' password='stork' sslmode='require' sslcert='/tmp/sslcert' sslkey='/tmp/sslkey' sslrootcert='/tmp/sslroot.crt'", params)
 }
 
+// Test that PgParams function outputs SSL related parameters.
 func TestPgParamsWithSSLMode(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
@@ -121,6 +122,8 @@ func TestPgParamsWithSSLMode(t *testing.T) {
 	require.Empty(t, params.TLSConfig.ServerName)
 }
 
+// Test that PgParams function fails when there is an error in the
+// SSL specific configuration.
 func TestPgParamsWithWrongSSLModeSettings(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
