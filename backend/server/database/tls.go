@@ -66,7 +66,7 @@ func GetTLSConfig(sslMode, host, sslCert, sslKey, sslRootCert string) (*tls.Conf
 				opts.Intermediates.AddCert(cert)
 			}
 			_, err := cs.PeerCertificates[0].Verify(opts)
-			return err
+			return pkgerrors.WithStack(err)
 		}
 	}
 
@@ -120,7 +120,7 @@ func setClientCertificates(tlsConfig *tls.Config, sslCert, sslKey string) error 
 			return pkgerrors.Wrapf(err, "failed to state the key file %s", sslKey)
 		}
 		if sslKeyInfo.Mode().Perm()&0077 != 0 {
-			return pkgerrors.Errorf("key file %s has too large permissions", sslKey)
+			return pkgerrors.Errorf("key file %s has too large permissions; please use 0600 permissions", sslKey)
 		}
 	}
 
@@ -144,7 +144,7 @@ func setCertificateAuthority(tlsConfig *tls.Config, sslRootCert string) error {
 		}
 
 		if !tlsConfig.RootCAs.AppendCertsFromPEM(rootCert) {
-			return pkgerrors.Wrapf(err, "unable to parse root CA certificate %s", sslRootCert)
+			return pkgerrors.Errorf("unable to parse root CA certificate %s", sslRootCert)
 		}
 	}
 	return nil
