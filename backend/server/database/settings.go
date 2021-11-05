@@ -12,13 +12,16 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Represents database connection settings. The field names and values must correspond to
+// the respective libpq parameters described in
+// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 type BaseDatabaseSettings struct {
 	DBName      string `short:"d" long:"db-name" description:"the name of the database to connect to" env:"STORK_DATABASE_NAME" default:"stork"`
 	User        string `short:"u" long:"db-user" description:"the user name to be used for database connections" env:"STORK_DATABASE_USER_NAME" default:"stork"`
 	Password    string `description:"the database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
 	Host        string `long:"db-host" description:"the name of the host where database is available" env:"STORK_DATABASE_HOST" default:"localhost"`
 	Port        int    `short:"p" long:"db-port" description:"the port on which the database is available" env:"STORK_DATABASE_PORT" default:"5432"`
-	SSLMode     string `long:"db-sslmode" description:"the SSL mode for connecing to the database (i.e., disable, require, verify-ca or verify-full)" env:"STORK_DATABASE_SSLMODE" default:"disable"`
+	SSLMode     string `long:"db-sslmode" description:"the SSL mode for connecing to the database" choice:"disable" choice:"require" choice:"verify-ca" choice:"verify-full" env:"STORK_DATABASE_SSLMODE" default:"disable"`
 	SSLCert     string `long:"db-sslcert" description:"the location of the SSL certificate used by the server to connect to the database" env:"STORK_DATABASE_SSLCERT"`
 	SSLKey      string `long:"db-sslkey" description:"the location of the SSL key used by the server to connect to the database" env:"STORK_DATABASE_SSLKEY"`
 	SSLRootCert string `long:"db-sslrootcert" description:"the location of the root certificate file used to verify the database server's certificate" env:"STORK_DATABASE_SSLROOTCERT"`
