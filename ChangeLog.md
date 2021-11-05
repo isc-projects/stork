@@ -1,3 +1,5 @@
+Stork 0.22.0 released on 2021-11-05.
+
 * 168 [func] slawek
 
     The Stork Agent support for the Basic Authentication introduced
