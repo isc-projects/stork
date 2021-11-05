@@ -197,7 +197,7 @@ The ``--db-sslmode`` argument can have one of the following values:
 ``require``
   use secure communication but do not verify the server's identity unless the
   root certificate location is specified and that certificate exists
-  If the root certificate exists, the behavior is the same as  in case of `verify-ca`
+  If the root certificate exists, the behavior is the same as in case of `verify-ca`
   mode.
 
 ``verify-ca``

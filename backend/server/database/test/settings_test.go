@@ -133,7 +133,7 @@ func TestPgParamsWithWrongSSLModeSettings(t *testing.T) {
 			DBName:   "stork",
 			User:     "admin",
 			Password: "stork",
-			SSLMode:  "unspported",
+			SSLMode:  "unsupported",
 		},
 	}
 
