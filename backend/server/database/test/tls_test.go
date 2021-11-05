@@ -10,54 +10,18 @@ import (
 	testutil "isc.org/stork/testutil"
 )
 
-// Creates a certificate, key and the CA certificate for testing
+// Creates the certificate, key and CA certificate for testing
 // secure database connections.
 func createTestCerts(t *testing.T, sb *testutil.Sandbox) (serverCert, serverKey, rootCert string) {
-	const CACERT = `-----BEGIN CERTIFICATE-----
-MIIBjDCCATKgAwIBAgIBATAKBggqhkjOPQQDAjAzMQswCQYDVQQGEwJVUzESMBAG
-A1UEChMJSVNDIFN0b3JrMRAwDgYDVQQDEwdSb290IENBMCAXDTIxMDkwNjEyMjU0
-N1oYDzIwNTEwOTA2MTIyNTQ3WjAzMQswCQYDVQQGEwJVUzESMBAGA1UEChMJSVND
-IFN0b3JrMRAwDgYDVQQDEwdSb290IENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcD
-QgAEJmbefKWfxvdpSnd8+NZVxjObDW4bc/1ANu2TjpP2dsaGXFI+4Jd0HHvdZoHB
-hOg2iwdY6i/aJjTftpaDQHwCBKM1MDMwEgYDVR0TAQH/BAgwBgEB/wIBATAdBgNV
-HQ4EFgQUU07u+8zyLNobqvJi4rtpsSrayu8wCgYIKoZIzj0EAwIDSAAwRQIhAPAf
-YfThoFyxzukrwN16eMP8lX8tVwhyNMZ0aRu3S4vdAiBAcDx0tFt+rWIyFz7eCkeB
-fVkdWL4LIJypZP53JBCFYg==
------END CERTIFICATE-----`
-
-	const SRVKEY = `-----BEGIN PRIVATE KEY-----
-MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgwxFLpLqRpR46bS46
-27ukTFCwOcL6I6NNEpfWSE8R+1yhRANCAAQMJcAWsP3nDDZdXYkeZI+D+IFozFbW
-HJ/kNaPkCQjuBN2t02BZu6bdr2p5rXcK2mMbxvvjJhSXrBS0/jpsJKZs
------END PRIVATE KEY-----`
-
-	const SRVCERT = `-----BEGIN CERTIFICATE-----
-MIICxDCCAmmgAwIBAgIBAjAKBggqhkjOPQQDAjAzMQswCQYDVQQGEwJVUzESMBAG
-A1UEChMJSVNDIFN0b3JrMRAwDgYDVQQDEwdSb290IENBMCAXDTIxMDkwNjEyMjU1
-MFoYDzIwNTEwOTA2MTIyNTUwWjBGMQswCQYDVQQGEwJVUzESMBAGA1UEChMJSVND
-IFN0b3JrMQ8wDQYDVQQLEwZzZXJ2ZXIxEjAQBgNVBAMTCWxvY2FsaG9zdDBZMBMG
-ByqGSM49AgEGCCqGSM49AwEHA0IABAwlwBaw/ecMNl1diR5kj4P4gWjMVtYcn+Q1
-o+QJCO4E3a3TYFm7pt2vanmtdwraYxvG++MmFJesFLT+OmwkpmyjggFXMIIBUzAf
-BgNVHSMEGDAWgBRTTu77zPIs2huq8mLiu2mxKtrK7zCCAS4GA1UdEQSCASUwggEh
-gglsb2NhbGhvc3SCBXR5Y2hvggV0eWNob4IFdHljaG+CDWlwNi1sb2NhbGhvc3SC
-BXR5Y2hvggV0eWNob4IFdHljaG+CBXR5Y2hvggV0eWNob4IFdHljaG+CBXR5Y2hv
-ggV0eWNob4cEfwAAAYcEwKgBY4cEwKh6AYcErBEAAYcQAAAAAAAAAAAAAAAAAAAA
-AYcQIAEEcGOJAAAAAAAAAAAOLYcQ/Qq4KPD/AAAAAAAAAAAOLYcQ/Qq4KPD/AAD0
-y69/jhT1zYcQ/Qq4KPD/AAAWRgqhR1EjJIcQIAEEcGOJAAAMjU3ezH+W/ocQIAEE
-cGOJAABrU7hrjAdOgIcQ/oAAAAAAAADxjY42pn4t9IcQ/oAAAAAAAAAAQiX//obP
-5DAKBggqhkjOPQQDAgNJADBGAiEAywycleZPDX5adSLRCghFA8476nVYmGlkwA7+
-hbkkHg8CIQDEfP1HGySpXF5AhAK5RSIxSJTvVhzSSMKtAEmqG2BgYw==
------END CERTIFICATE-----`
-
-	serverCert, err := sb.Write("server-cert.pem", SRVCERT)
+	serverCert, err := sb.Write("server-cert.pem", string(testutil.GetCertPEMContent()))
 	require.NoError(t, err)
 
-	serverKey, err = sb.Write("server-key.pem", SRVKEY)
+	serverKey, err = sb.Write("server-key.pem", string(testutil.GetKeyPEMContent()))
 	require.NoError(t, err)
 	err = os.Chmod(serverKey, 0600)
 	require.NoError(t, err)
 
-	rootCert, err = sb.Write("root-cert.pem", CACERT)
+	rootCert, err = sb.Write("root-cert.pem", string(testutil.GetCACertPEMContent()))
 	require.NoError(t, err)
 
 	return serverCert, serverKey, rootCert
