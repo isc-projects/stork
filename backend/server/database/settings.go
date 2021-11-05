@@ -18,9 +18,9 @@ type BaseDatabaseSettings struct {
 	Password    string `description:"the database password to be used for database connections" env:"STORK_DATABASE_PASSWORD"`
 	Host        string `long:"db-host" description:"the name of the host where database is available" env:"STORK_DATABASE_HOST" default:"localhost"`
 	Port        int    `short:"p" long:"db-port" description:"the port on which the database is available" env:"STORK_DATABASE_PORT" default:"5432"`
-	SSLMode     string `long:"db-sslmode" description:"the TLS mode for connecing to the database (i.e., disable, require, verify-ca or verify-full). See libpq - C library documentation for details" env:"STORK_DATABASE_SSLMODE" default:"disable"`
-	SSLCert     string `long:"db-sslcert" description:"the location of the TLS certificate used by the server to connect to the database" env:"STORK_DATABASE_SSLCERT"`
-	SSLKey      string `long:"db-sslkey" description:"the location of the TLS key used by the server to connect to the database" env:"STORK_DATABASE_SSLKEY"`
+	SSLMode     string `long:"db-sslmode" description:"the SSL mode for connecing to the database (i.e., disable, require, verify-ca or verify-full)" env:"STORK_DATABASE_SSLMODE" default:"disable"`
+	SSLCert     string `long:"db-sslcert" description:"the location of the SSL certificate used by the server to connect to the database" env:"STORK_DATABASE_SSLCERT"`
+	SSLKey      string `long:"db-sslkey" description:"the location of the SSL key used by the server to connect to the database" env:"STORK_DATABASE_SSLKEY"`
 	SSLRootCert string `long:"db-sslrootcert" description:"the location of the root certificate file used to verify the database server's certificate" env:"STORK_DATABASE_SSLROOTCERT"`
 }
 
