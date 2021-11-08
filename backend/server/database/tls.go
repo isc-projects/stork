@@ -94,20 +94,32 @@ func GetTLSConfig(sslMode, host, sslCert, sslKey, sslRootCert string) (*tls.Conf
 // .postgresql directory in the user's home directory. The configured
 // files must exist and have the correct permissions.
 func setClientCertificates(tlsConfig *tls.Config, sslCert, sslKey string) error {
+	// If the client certificate is explicitly specified in the command line
+	// or an env file check if the file exists.
+	if len(sslCert) > 0 {
+		if _, err := os.Stat(sslCert); err != nil {
+			return pkgerrors.Wrapf(err, "problem with the certificate file %s", sslCert)
+		}
+	}
+
 	user, _ := user.Current()
 
-	// In libpq, the client certificate is only loaded if the setting is not blank.
-	if len(sslCert) == 0 && user != nil {
-		sslCert = filepath.Join(user.HomeDir, ".postgresql", "postgresql.crt")
-	}
+	// Check if the cert file exists in the user's home directory if the cert
+	// file location was not explicitly specified.
 	if len(sslCert) == 0 {
-		return nil
-	}
-
-	if _, err := os.Stat(sslCert); os.IsNotExist(err) {
-		return nil
-	} else if err != nil {
-		return pkgerrors.Wrapf(err, "failed to stat the certificate file %s", sslCert)
+		if user != nil {
+			sslCert = filepath.Join(user.HomeDir, ".postgresql", "postgresql.crt")
+			// If the cert file does not exist in the home directory there is nothing
+			// more to do. The golang TLS library will try to locate the certificate
+			// in common system locations.
+			if _, err := os.Stat(sslCert); os.IsNotExist(err) {
+				return nil
+			} else if err != nil {
+				return pkgerrors.Wrapf(err, "problem with the certificate file %s", sslCert)
+			}
+		} else {
+			return nil
+		}
 	}
 
 	// In libpq, the ssl key is only loaded if the setting is not blank.
@@ -117,7 +129,7 @@ func setClientCertificates(tlsConfig *tls.Config, sslCert, sslKey string) error 
 	if len(sslKey) > 0 {
 		sslKeyInfo, err := os.Stat(sslKey)
 		if err != nil {
-			return pkgerrors.Wrapf(err, "failed to state the key file %s", sslKey)
+			return pkgerrors.Wrapf(err, "problem with the key file %s", sslKey)
 		}
 		if sslKeyInfo.Mode().Perm()&0077 != 0 {
 			return pkgerrors.Errorf("key file %s has too large permissions; please use 0600 permissions", sslKey)

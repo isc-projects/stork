@@ -116,27 +116,23 @@ func TestGetTLSConfigRequireCertKeyUnspecified(t *testing.T) {
 	require.Equal(t, tls.RenegotiateFreelyAsClient, tlsConfig.Renegotiation)
 }
 
-// Test the require mode with non-existing cert and key file.
-func TestGetTLSConfigRequireCertKeyDontExist(t *testing.T) {
-	// The test doesn't make sense if the certificate file is in
-	// the user's home directory because the server will pick
-	// this cert for use.
-	if certExistsInHomeDir() {
-		t.Skipf("Certificate file %s exists in the home dir", "postgresql.crt")
-	}
+// Test the require mode with non-existing cert file.
+func TestGetTLSConfigRequireCertDoesntExist(t *testing.T) {
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", "nonexist", "", "")
+	require.Error(t, err)
+	require.Nil(t, tlsConfig)
+}
 
+// Test the require mode with non-existing key file.
+func TestGetTLSConfigRequireKeyDoesntExist(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", "nonexist", "nonexist", "")
-	require.NoError(t, err)
-	require.NotNil(t, tlsConfig)
+	serverCert, _, _ := createTestCerts(t, sb)
 
-	require.True(t, tlsConfig.InsecureSkipVerify)
-	require.Nil(t, tlsConfig.VerifyConnection)
-	require.Empty(t, tlsConfig.ServerName)
-	require.Empty(t, tlsConfig.Certificates)
-	require.Equal(t, tls.RenegotiateFreelyAsClient, tlsConfig.Renegotiation)
+	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", serverCert, "nonexist", "")
+	require.Error(t, err)
+	require.Nil(t, tlsConfig)
 }
 
 // Test the verify-ca mode. It should setup the custom verification
