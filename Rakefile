@@ -792,6 +792,10 @@ task :doc_live do
   sh 'find doc -name "*.rst" | entr rake doc'
 end
 
+desc 'Generate documentation artifacts from sources'
+task :generate_doc_artifacts do
+  sh 'drawio doc/src/arch.drawio --export --output doc/static/arch.png'
+end
 
 ### Release Tasks #########################
 
