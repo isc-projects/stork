@@ -253,7 +253,7 @@ The default SSL mode setting, ``disable``, configures the server to use unencryp
 communication with the database. Other settings have the following meaning:
 
 * ``require`` - use secure communication but do not verify the server's identity
-  unless the root certificate location is specified and that certificate exists
+  unless the root certificate location is specified and that certificate exists.
   If the root certificate exists, the behavior is the same as  in case of `verify-ca`
   mode
 * ``verify-ca`` - use secure communication and verify the server's identity by
