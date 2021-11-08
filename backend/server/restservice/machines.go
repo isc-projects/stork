@@ -22,6 +22,7 @@ import (
 	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	"isc.org/stork/server/dumper"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	"isc.org/stork/server/gen/restapi/operations/general"
@@ -700,7 +701,7 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 // Return a single archive machine dump. It is intendent for easy sharing the configuration
 // for diagnostic purposes. The archive contains the database dumps and some log files.
 func (r *RestAPI) GetMachineDump(ctx context.Context, params services.GetMachineDumpParams) middleware.Responder {
-	dump, err := apps.DumpMachine(r.DB, r.Agents, params.ID)
+	dump, err := dumper.DumpMachine(r.DB, r.Agents, params.ID)
 	if err != nil {
 		log.Error(err)
 		msg := fmt.Sprintf("cannot dump machine %d", params.ID)
