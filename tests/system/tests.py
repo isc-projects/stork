@@ -919,3 +919,14 @@ def test_communication_with_kea_using_basic_auth(agent: containers.StorkAgentCon
 
     _wait_for_event(server, 'communication with CA daemon of <app id="0" name="" type="kea" version=""> failed',
         details='"result": 401, "text": "Unauthorized"', expected=False)
+
+@pytest.mark.parametrize("server", [('ubuntu/18.04')])
+def test_server_enable_sslmode(server):
+    server.enable_database_ssl()
+    server.enable_sslmode('require')
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)
+    assert r.json()['login'] == 'admin'
+
+    server.enable_sslmode('verify-ca')
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)
+    assert r.json()['login'] == 'admin'

@@ -390,6 +390,29 @@ class StorkServerContainer(Container):
         cmd += "EOF\n\""
         self.run(cmd)
 
+    def enable_database_ssl(self):
+        if self.pkg_format == 'deb':
+            self.run("perl -pi -e 's/(host.*)/#\\1/g'  /etc/postgresql/10/main/pg_hba.conf")
+            cmd = "echo -e 'hostssl all all 0.0.0.0/0 md5\n' >> /etc/postgresql/10/main/pg_hba.conf"
+            self.run('bash -c "%s"' % cmd)
+            self.run('systemctl restart postgresql.service')
+            self.run('systemctl status postgresql.service')
+        else:
+            self.run("perl -pi -e 's/#ssl = off/ssl = on/g'  /var/lib/pgsql/11/data/postgresql.conf")
+            self.run("perl -pi -e 's/(host.*)/#\\1/g'  /var/lib/pgsql/11/data/pg_hba.conf")
+            cmd = "echo -e 'hostssl all all 0.0.0.0/0 md5\n' >> /var/lib/pgsql/11/data/pg_hba.conf"
+            self.run('bash -c "%s"' % cmd)
+            self.run('systemctl restart postgresql-11.service')
+            self.run('systemctl status postgresql-11.service')
+            # TODO: Add certs generation because apparently there are no default certs
+            # installed with the server.
+
+    def enable_sslmode(self, sslmode):
+        self.run("perl -pi -e 's/.*STORK_DATABASE_HOST.*/STORK_DATABASE_HOST=127.0.0.1/g' /etc/stork/server.env")
+        self.run("perl -pi -e 's/.*STORK_DATABASE_SSLMODE.*/STORK_DATABASE_SSLMODE=%s/g' /etc/stork/server.env" % sslmode)
+        self.run('systemctl restart isc-stork-server')
+        self.run('systemctl status isc-stork-server')
+
     def install_stork_from_local_file(self, pkg_ver):
         if pkg_ver is None:
             if self.pkg_format == 'rpm':
