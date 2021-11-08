@@ -684,6 +684,19 @@ The following ``Rake`` tasks start these containers.
    | ``rake run_bind9_container``       | Start an `agent-bind9` container. Published port is 9999.  |
    +------------------------------------+------------------------------------------------------------+
 
+.. note::
+
+    It is recommended that these commands are run using a user account without
+    superuser privileges. This may require some previous steps to set up. On
+    most systems, adding the account to the ``docker`` group should be enough.
+    On most Linux systems, this is done with:
+
+    .. code:: console
+
+        $ sudo usermod -aG docker ${user}
+
+    A restart may be required for the change to take effect.
+
 
 Packaging
 =========
