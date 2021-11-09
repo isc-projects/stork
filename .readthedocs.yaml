@@ -5,7 +5,7 @@ build:
 formats: all
 python:
    install:
-   - requirements: doc/requirements.txt
+   - requirements: doc/src/requirements.txt
 sphinx:
    configuration: doc/conf.py
    fail_on_warning: true

@@ -797,6 +797,16 @@ task :generate_doc_artifacts do
   sh 'drawio doc/src/arch.drawio --export --output doc/static/arch.png'
 end
 
+desc 'Update the dependency versions for sphinx'
+task :update_frozen_doc_requirements_txt do
+  sh '
+    printf "
+      sphinx
+      sphinx-rtd-theme
+    " | pip-compile -o ./doc/src/requirements.txt -r -
+  '
+end
+
 ### Release Tasks #########################
 
 PKGS_BUILD_DIR = "#{Dir.pwd}/.pkgs-build"
