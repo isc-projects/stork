@@ -43,7 +43,6 @@ func (d *LogsDump) Execute() error {
 					d.machine.AgentPort,
 					logTarget.Output,
 					4000)
-
 				if err != nil {
 					return err
 				}

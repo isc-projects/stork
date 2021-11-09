@@ -370,7 +370,7 @@ func NewSelfDestoyFileWrapper(file *os.File) *SelfDestoyFileWrapper {
 }
 
 func (w *SelfDestoyFileWrapper) Read(p []byte) (n int, err error) {
-	return w.Read(p)
+	return w.file.Read(p)
 }
 
 func (w *SelfDestoyFileWrapper) Close() error {

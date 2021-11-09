@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"isc.org/stork/server/dumper/dumps"
 	dumperdumps "isc.org/stork/server/dumper/dumps"
 	storkutil "isc.org/stork/util"
 )
@@ -13,17 +12,11 @@ import (
 // Function that produces the names for the artifacts.
 // It is expected to return unique name for each dump-artifact combination.
 // The result haven't must be deterministic (e.g. may contain a timestamp).
-type namingConvention func(dump dumps.Dump, artifact dumps.Artifact) string
+type namingConvention func(dump dumperdumps.Dump, artifact dumperdumps.Artifact) string
 
 // Serialize the Go object to the binary content. It is expected to
 // return human-readable output (e.g. JSON or YAML).
 type structSerializer func(interface{}) ([]byte, error)
-
-// Specific objects are able to save dumps to the binary stream.
-// Caller is responsible for close the returned object.
-type saver interface {
-	Save(*io.Writer, []dumperdumps.Dump) (io.ReadCloser, error)
-}
 
 // Structure that saves the dumps to the tarball archive.
 // Each dump artifact is located in a separate file.

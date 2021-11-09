@@ -54,7 +54,7 @@ func (s *executionSummaryStep) IsSuccess() bool {
 // Custom serialization for the summary. It contains
 // the dump artifacts, but we want to serialize the status
 // of each task.
-func (es executionSummary) MarshalJSON() ([]byte, error) {
+func (s *executionSummary) MarshalJSON() ([]byte, error) {
 	type summaryStepInternal struct {
 		Name      string
 		Error     error
@@ -69,7 +69,7 @@ func (es executionSummary) MarshalJSON() ([]byte, error) {
 
 	var steps []*summaryStepInternal
 
-	for _, source := range es.Steps {
+	for _, source := range s.Steps {
 		var artifactNames []string
 		for i := 0; i < source.Dump.NumberOfArtifacts(); i++ {
 			artifactNames = append(artifactNames, source.Dump.GetArtifact(i).Name())
@@ -89,7 +89,7 @@ func (es executionSummary) MarshalJSON() ([]byte, error) {
 	}
 
 	summary := summaryInternal{
-		Timestamp: es.Timestamp.Format("2006-01-02T15:04:05"),
+		Timestamp: s.Timestamp.Format("2006-01-02T15:04:05"),
 		Steps:     steps,
 	}
 
