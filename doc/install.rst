@@ -240,7 +240,7 @@ configuration settings in the `server.env` file enable and configure communicati
 encryption with the database server. They correspond with the SSL settings provided
 by the libpq - the native PostgreSQL client library written in C:
 
-* STORK_DATABASE_SSLMODE - the SSL mode for connecing to the database (i.e., `disable`,
+* STORK_DATABASE_SSLMODE - the SSL mode for connecting to the database (i.e., `disable`,
   `require`, `verify-ca` or `verify-full`); default is `disable`
 * STORK_DATABASE_SSLCERT - the location of the SSL certificate used by the server
   to connect to the database

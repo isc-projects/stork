@@ -177,7 +177,7 @@ func setupApp() *cli.App {
 		},
 		&cli.StringFlag{
 			Name:    "db-sslmode",
-			Usage:   "The SSL mode for connecing to the database (i.e., disable, require, verify-ca or verify-full).",
+			Usage:   "The SSL mode for connecting to the database (i.e., disable, require, verify-ca or verify-full).",
 			Value:   "disable",
 			EnvVars: []string{"STORK_DATABASE_SSLMODE"},
 		},

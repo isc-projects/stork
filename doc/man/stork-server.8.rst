@@ -51,7 +51,7 @@ Arguments
    the name of the database to connect to. (default: stork) [$STORK_DATABASE_NAME]
 
 ``--db-sslmode``
-   the SSL mode for connecing to the database (i.e., disable, require, verify-ca or verify-full). (default: disable) [$STORK_DATABASE_SSLMODE]
+   the SSL mode for connecting to the database (i.e., disable, require, verify-ca or verify-full). (default: disable) [$STORK_DATABASE_SSLMODE]
 
 ``--db-sslcert``
    the location of the SSL certificate used by the server to connect to the database. [$STORK_DATABASE_SSLCERT]
