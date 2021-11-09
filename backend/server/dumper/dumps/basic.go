@@ -83,6 +83,6 @@ func NewBasicBinaryArtifact(name string, content []byte) *BasicBinaryArtifact {
 	}
 }
 
-func (a *BasicBinaryArtifact) GetBinary() interface{} {
+func (a *BasicBinaryArtifact) GetBinary() []byte {
 	return a.conent
 }
