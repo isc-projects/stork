@@ -798,13 +798,8 @@ task :generate_doc_artifacts do
 end
 
 desc 'Update the dependency versions for sphinx'
-task :update_frozen_doc_requirements_txt do
-  sh '
-    printf "
-      sphinx
-      sphinx-rtd-theme
-    " | pip-compile -o ./doc/src/requirements.txt -r -
-  '
+task :update_python_doc_dependencies do
+  sh 'pip-compile -r ./doc/src/requirements.in'
 end
 
 ### Release Tasks #########################
