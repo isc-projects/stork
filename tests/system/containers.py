@@ -86,7 +86,8 @@ class Container:
             try:
                 self.lxd = Client()
                 break
-            except ClientConnectionFailed:
+            except ClientConnectionFailed as e:
+                print(f'ClientConnectionFailed in Container.__init__(): {e}')
                 if retry > 0:
                     retry -= 1
                     time.sleep(10)
@@ -99,8 +100,7 @@ class Container:
             'source': {
                 'type': 'image',
                 'mode': 'pull',
-#                'server': 'https://cloud-images.ubuntu.com/daily',
-                'server': 'https://us.images.linuxcontainers.org/',
+                'server': 'https://images.linuxcontainers.org/',
                 'protocol': 'simplestreams',
                 'alias': alias
             },
@@ -130,7 +130,8 @@ class Container:
                     'alias': self.name
                 }
                 print('reused image for %s: %s' % (self.name, reused_img.fingerprint))
-        except:
+        except Exception as e:
+            print(f'Exception in Container.start(): {e}')
             reused_img = None
 
         self.cntr = None
@@ -252,6 +253,7 @@ class Container:
             time.sleep(5)
             self._setup(reused, *args)
         except Exception as e:
+            print(f'Exception in setup(): {e}')
             self.bg_exc = e
 
     def dump_image(self):
@@ -282,7 +284,8 @@ class Container:
         try:
             old_img = self.lxd.images.get_by_alias(self.name)
             old_img.delete(wait=True)
-        except:
+        except Exception as e:
+            print(f'Exception in dump_image(): {e}')
             pass
         image.add_alias(self.name, '')
         print('dumped %s, fingerprint: %s, alias: %s' % (self.name, image.fingerprint, self.name))

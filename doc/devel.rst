@@ -438,7 +438,7 @@ and nothing more happens, CPU and RAM usage by lxd are ~0%.
 
     root:1000000:65536
 
-1. Create `/etc/subuid` with the same content
+1. Create `/etc/subgid` with the same content
 2. Add these lines to `/etc/default/lxc`:
 
 .. code-block:: console
