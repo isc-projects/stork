@@ -32,11 +32,11 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 	// Init dump objects
 	dumps := factory.All()
 	// Perform dump process
-	summary := execute(dumps)
+	summary := executeDumps(dumps)
 	// Exclude the success dumps
 	// The dump summary is one of the dump artifacts too.
 	// Exact summary isn't returned to UI in the current version.
-	dumps = summary.GetSuccessDumps()
+	dumps = summary.GetSuccessfulDumps()
 
 	// Prepare the temporary file for the dump.
 	target, err := ioutil.TempFile("", archiveName(m))

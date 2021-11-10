@@ -65,5 +65,5 @@ func TestSaverSaveFilledDumpList(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.Greater(t, buffer.Len(), 150)
+	require.EqualValues(t, buffer.Len(), 145)
 }

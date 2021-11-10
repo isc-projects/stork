@@ -1,7 +1,6 @@
 package dumper
 
 import (
-	"encoding/json"
 	"time"
 
 	dumperdumps "isc.org/stork/server/dumper/dumps"
@@ -13,16 +12,39 @@ type executionSummary struct {
 	Steps     []*executionSummaryStep
 }
 
-func newExecutionSummary() *executionSummary {
+// Single dump execution entry. It contains the dump object and related
+// error object (or nil if no error occurs).
+type executionSummaryStep struct {
+	Dump  dumperdumps.Dump
+	Error error
+}
+
+// Simplify representation of the summary
+// intendent to use in the dump export.
+type executionSummarySimplify struct {
+	Timestamp string
+	Steps     []*executionSummaryStepSimplify
+}
+
+// Simplify representation of the summary step
+// intendent to use in the dump export.
+type executionSummaryStepSimplify struct {
+	Name      string
+	Error     error
+	Status    string
+	Artifacts []string
+}
+
+func newExecutionSummary(steps ...*executionSummaryStep) *executionSummary {
 	return &executionSummary{
 		Timestamp: time.Now().UTC(),
-		Steps:     make([]*executionSummaryStep, 0),
+		Steps:     steps,
 	}
 }
 
 // Extract only successfully finished dumps. The dump has a success
 // status if no error occurs.
-func (s *executionSummary) GetSuccessDumps() []dumperdumps.Dump {
+func (s *executionSummary) GetSuccessfulDumps() []dumperdumps.Dump {
 	dumps := make([]dumperdumps.Dump, 0)
 	for _, step := range s.Steps {
 		if step.IsSuccess() {
@@ -32,13 +54,36 @@ func (s *executionSummary) GetSuccessDumps() []dumperdumps.Dump {
 	return dumps
 }
 
-// Single dump execution entry. It contains the dump object and related
-// error object (or nil if no error occurs).
-type executionSummaryStep struct {
-	Dump  dumperdumps.Dump
-	Error error
+// Simplify the execution summary to the serializable form.
+func (s *executionSummary) Simplify() *executionSummarySimplify {
+	var steps []*executionSummaryStepSimplify
+
+	for _, source := range s.Steps {
+		steps = append(steps, source.Simplify())
+	}
+
+	return &executionSummarySimplify{
+		Timestamp: s.Timestamp.UTC().Format("2006-01-02T15:04:05 UTC"),
+		Steps:     steps,
+	}
 }
 
+// Append summary dump to the steps
+func (s *executionSummary) appendSummaryDump() {
+	dumpSummaryArtifact := dumperdumps.NewBasicStructArtifact(
+		"executed-steps", nil,
+	)
+
+	dumpSummary := dumperdumps.NewBasicDump(
+		"summary",
+		dumpSummaryArtifact,
+	)
+
+	s.Steps = append(s.Steps, newExecutionSummaryStep(dumpSummary, nil))
+	dumpSummaryArtifact.SetStruct(s.Simplify())
+}
+
+// Construct a new execution summary step instance.
 func newExecutionSummaryStep(dump dumperdumps.Dump, err error) *executionSummaryStep {
 	return &executionSummaryStep{
 		Dump:  dump,
@@ -51,54 +96,29 @@ func (s *executionSummaryStep) IsSuccess() bool {
 	return s.Error == nil
 }
 
-// Custom serialization for the summary. It contains
-// the dump artifacts, but we want to serialize the status
-// of each task.
-func (s *executionSummary) MarshalJSON() ([]byte, error) {
-	type summaryStepInternal struct {
-		Name      string
-		Error     error
-		Status    string
-		Artifacts []string
+// Simplify the execution summary step to the serializable form.
+func (s *executionSummaryStep) Simplify() *executionSummaryStepSimplify {
+	var artifactNames []string
+	for i := 0; i < s.Dump.NumberOfArtifacts(); i++ {
+		artifactNames = append(artifactNames, s.Dump.GetArtifact(i).Name())
 	}
 
-	type summaryInternal struct {
-		Timestamp string
-		Steps     []*summaryStepInternal
+	status := "SUCCESS"
+	if s.Error != nil {
+		status = "FAIL"
 	}
 
-	var steps []*summaryStepInternal
-
-	for _, source := range s.Steps {
-		var artifactNames []string
-		for i := 0; i < source.Dump.NumberOfArtifacts(); i++ {
-			artifactNames = append(artifactNames, source.Dump.GetArtifact(i).Name())
-		}
-
-		status := "SUCCESS"
-		if source.Error != nil {
-			status = "ERROR"
-		}
-
-		steps = append(steps, &summaryStepInternal{
-			Name:      source.Dump.Name(),
-			Error:     source.Error,
-			Artifacts: artifactNames,
-			Status:    status,
-		})
+	return &executionSummaryStepSimplify{
+		Name:      s.Dump.Name(),
+		Error:     s.Error,
+		Artifacts: artifactNames,
+		Status:    status,
 	}
-
-	summary := summaryInternal{
-		Timestamp: s.Timestamp.Format("2006-01-02T15:04:05"),
-		Steps:     steps,
-	}
-
-	return json.Marshal(summary)
 }
 
 // Execute the dump process. Besides the provided dumps the
 // result will contain one more dump with the dump summary.
-func execute(dumps []dumperdumps.Dump) *executionSummary {
+func executeDumps(dumps []dumperdumps.Dump) *executionSummary {
 	summary := newExecutionSummary()
 
 	for _, dump := range dumps {
@@ -107,13 +127,7 @@ func execute(dumps []dumperdumps.Dump) *executionSummary {
 		summary.Steps = append(summary.Steps, step)
 	}
 
-	dumpSummary := dumperdumps.NewBasicDump(
-		"summary",
-		dumperdumps.NewBasicStructArtifact(
-			"executed-steps", summary,
-		),
-	)
-	summary.Steps = append(summary.Steps, newExecutionSummaryStep(dumpSummary, nil))
+	summary.appendSummaryDump()
 
 	return summary
 }

@@ -70,6 +70,10 @@ func (a *BasicStructArtifact) GetStruct() interface{} {
 	return a.conent
 }
 
+func (a *BasicStructArtifact) SetStruct(content interface{}) {
+	a.conent = content
+}
+
 // Simple artifact-wrapper for the byte array.
 type BasicBinaryArtifact struct {
 	BasicArtifact
