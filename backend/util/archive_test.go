@@ -34,7 +34,7 @@ func TestWalkEmptyTarball(t *testing.T) {
 	// Act
 	err := WalkFilesInTarball(&buffer,
 		func(header *tar.Header, read func() ([]byte, error)) bool {
-			callbackCallCount += 1
+			callbackCallCount++
 			return true
 		})
 
@@ -57,7 +57,7 @@ func TestWalkFilledTarball(t *testing.T) {
 	// Act
 	err := WalkFilesInTarball(&buffer,
 		func(header *tar.Header, read func() ([]byte, error)) bool {
-			callbackCallCount += 1
+			callbackCallCount++
 			return true
 		},
 	)

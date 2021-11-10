@@ -68,7 +68,7 @@ func (s *executionSummary) Simplify() *executionSummarySimplify {
 	}
 }
 
-// Append summary dump to the steps
+// Append summary dump to the steps.
 func (s *executionSummary) appendSummaryDump() {
 	dumpSummaryArtifact := dumperdumps.NewBasicStructArtifact(
 		"executed-steps", nil,

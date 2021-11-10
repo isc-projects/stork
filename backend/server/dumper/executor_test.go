@@ -1,10 +1,10 @@
 package dumper
 
 import (
-	"errors"
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/dumper/dumps"
 )
@@ -165,7 +165,7 @@ func TestSimplifyExecutionSummary(t *testing.T) {
 	require.Len(t, simplified.Steps, 1)
 }
 
-// Mock dump - only for test purposes
+// Mock dump - only for test purposes.
 type mockDump struct {
 	dumps.Dump
 	err       error
@@ -181,7 +181,7 @@ func newMockDump(name string, err error) *mockDump {
 }
 
 func (d *mockDump) Execute() error {
-	d.callCount += 1
+	d.callCount++
 	return d.err
 }
 

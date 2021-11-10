@@ -3,9 +3,10 @@ package storkutil
 import (
 	"archive/tar"
 	"compress/gzip"
+	"errors"
 	"io"
 
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 )
 
 // Callback that accepts the TAR header of a file/directory/link,
@@ -29,12 +30,12 @@ func WalkFilesInTarball(tarball io.Reader, callback WalkCallback) error {
 
 	for {
 		header, err := tarReader.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 
 		if err != nil {
-			return errors.Wrap(err, "problem with read next header")
+			return pkgerrors.Wrap(err, "problem with read next header")
 		}
 
 		switch header.Typeflag {
@@ -42,13 +43,13 @@ func WalkFilesInTarball(tarball io.Reader, callback WalkCallback) error {
 			if !callback(header, func() ([]byte, error) {
 				data := make([]byte, header.Size)
 				_, err := tarReader.Read(data)
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					// The full content is read.
 					err = nil
 				}
 
 				return data,
-					errors.Wrapf(
+					pkgerrors.Wrapf(
 						err,
 						"cannot read content for the tarball file (%s)",
 						header.Name,
@@ -58,7 +59,7 @@ func WalkFilesInTarball(tarball io.Reader, callback WalkCallback) error {
 			}
 		default:
 			if !callback(header, func() ([]byte, error) {
-				return nil, errors.New("reading unsupported")
+				return nil, pkgerrors.New("reading unsupported")
 			}) {
 				break
 			}
@@ -100,8 +101,8 @@ func SearchFileInTarball(tarball io.Reader, filename string) ([]byte, error) {
 				return false
 			}
 			return true
-		})
-
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
