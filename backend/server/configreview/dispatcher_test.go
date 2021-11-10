@@ -538,3 +538,69 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, checkerNames, "stat_cmds_presence")
 	require.Contains(t, checkerNames, "host_cmds_presence")
 }
+
+// Verifies that registering new checkers and bumping up the
+// enforceDispatchSeq affects the returned signature.
+func TestGetSignature(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	dispatcher := NewDispatcher(db).(*dispatcherImpl)
+	require.NotNil(t, dispatcher)
+
+	signatures := make([]string, 9)
+
+	// No checkers registered yet. The signature should be returned anyway.
+	signatures[0] = dispatcher.GetSignature()
+
+	// Register checkers and record the signatures.
+	dispatcher.RegisterChecker(EachDaemon, "checker1", nil)
+	signatures[1] = dispatcher.GetSignature()
+	require.NotEqual(t, signatures[0], signatures[1])
+
+	dispatcher.RegisterChecker(EachDaemon, "checker2", nil)
+	signatures[2] = dispatcher.GetSignature()
+	require.NotEqual(t, signatures[0], signatures[2])
+	require.NotEqual(t, signatures[1], signatures[2])
+
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "checker3", nil)
+	signatures[3] = dispatcher.GetSignature()
+	require.NotEqual(t, signatures[0], signatures[3])
+	require.NotEqual(t, signatures[1], signatures[3])
+	require.NotEqual(t, signatures[2], signatures[3])
+
+	// Unregister the last checker. The signature should be now
+	// equal to the signature from before registering the
+	// checker3.
+	require.True(t, dispatcher.UnregisterChecker(KeaDHCPDaemon, "checker3"))
+	signatures[4] = dispatcher.GetSignature()
+	require.Equal(t, signatures[2], signatures[4])
+
+	// Register this checker but for a different dispatch group.
+	// The new signature should be different than previously.
+	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "checker3", nil)
+	signatures[5] = dispatcher.GetSignature()
+	require.NotEqual(t, signatures[0], signatures[5])
+	require.NotEqual(t, signatures[1], signatures[5])
+	require.NotEqual(t, signatures[2], signatures[5])
+	require.NotEqual(t, signatures[3], signatures[5])
+	require.NotEqual(t, signatures[4], signatures[5])
+
+	// Unregister the checker2.
+	require.True(t, dispatcher.UnregisterChecker(EachDaemon, "checker2"))
+	signatures[6] = dispatcher.GetSignature()
+
+	// Re-register it. Make sure that the signature is affected
+	// and that it is equal to the signature from before
+	// unregistering the checker2.
+	dispatcher.RegisterChecker(EachDaemon, "checker2", nil)
+	signatures[7] = dispatcher.GetSignature()
+	require.Equal(t, signatures[5], signatures[7])
+	require.NotEqual(t, signatures[6], signatures[7])
+
+	// Ensure that bumping up the sequence number also affects
+	// the signature.
+	enforceDispatchSeq++
+	signatures[8] = dispatcher.GetSignature()
+	require.NotEqual(t, signatures[8], signatures[7])
+}

@@ -2,6 +2,7 @@ package configreview
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -10,7 +11,15 @@ import (
 	log "github.com/sirupsen/logrus"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	storkutil "isc.org/stork/util"
 )
+
+// A constant value bumped to enforce new config reviews after
+// the server is started. Typically, it should be bumped when
+// an implementation of any checker was modified but the
+// dispatch groups were not changed. It is declared as a global
+// variable because it is modified in the unit tests.
+var enforceDispatchSeq = 1 //nolint:gochecknoglobals
 
 // Callback function invoked when configuration review is completed
 // for a daemon. The first argument holds an ID of a daemon for
@@ -111,6 +120,18 @@ type dispatchGroup struct {
 	checkers []*checker
 }
 
+// Stringer implementation for a dispatchGroup. It lists checker names
+// as a slice. It excludes chcker function pointers making the output
+// consistent across function runs. The dispatcher uses this function
+// to create a signature.
+func (d dispatchGroup) String() string {
+	names := []string{}
+	for _, checker := range d.checkers {
+		names = append(names, checker.name)
+	}
+	return fmt.Sprintf("%+v", names)
+}
+
 // The dispatcher coordinates configuration reviews of all daemons.
 // The dispatcher maintains a list of configuration review checkers.
 // They are segregated into dispatch groups invoked for different daemon
@@ -156,6 +177,7 @@ type dispatcherImpl struct {
 // require replacing the default implementation with a mock dispatcher.
 type Dispatcher interface {
 	RegisterChecker(selector DispatchGroupSelector, checkerName string, checkFn func(*ReviewContext) (*Report, error))
+	UnregisterChecker(selector DispatchGroupSelector, checkerName string) bool
 	Start()
 	Shutdown()
 	BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool
@@ -456,6 +478,38 @@ func (d *dispatcherImpl) RegisterChecker(selector DispatchGroupSelector, checker
 			checkFn: checkFn,
 		},
 	)
+}
+
+// Unregisters a checker from a dispatch group. It returns a boolean
+// value indicating if the matching checker was found and removed (if true).
+func (d *dispatcherImpl) UnregisterChecker(selector DispatchGroupSelector, checkerName string) bool {
+	if _, ok := d.groups[selector]; ok {
+		for i := range d.groups[selector].checkers {
+			if d.groups[selector].checkers[i].name == checkerName {
+				newGroups := make([]*checker, 0)
+				newGroups = append(newGroups, d.groups[selector].checkers[:i]...)
+				newGroups = append(newGroups, d.groups[selector].checkers[i+1:]...)
+				d.groups[selector].checkers = newGroups
+				if len(d.groups[selector].checkers) == 0 {
+					delete(d.groups, selector)
+				}
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Returns dispatcher's signature. The signature is a hash function output
+// which depends on the registered checkers and dispatch groups. Comparing
+// this signature with signatures stored in the database for already performed
+// reviews is useful to determine whether new reviews are required. The
+// signature changes whenever new checkers are registered. It does not
+// change when an implementation of any existing checker has been modified.
+// In this case, bump up the enforceDispatchSeq constant value to enforce
+// generation of a new signature and new config reviews.
+func (d *dispatcherImpl) GetSignature() string {
+	return storkutil.Fnv128(fmt.Sprintf("%d:%+v", enforceDispatchSeq, d.groups))
 }
 
 // Starts the dispatcher by launching the worker goroutine receiving

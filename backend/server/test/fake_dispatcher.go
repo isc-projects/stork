@@ -16,6 +16,11 @@ func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSele
 	d.CallLog = append(d.CallLog, "RegisterChecker")
 }
 
+func (d *FakeDispatcher) UnregisterChecker(selector configreview.DispatchGroupSelector, checkerName string) bool {
+	d.CallLog = append(d.CallLog, "UnregisterChecker")
+	return true
+}
+
 func (d *FakeDispatcher) Start() {
 	d.CallLog = append(d.CallLog, "Start")
 }
