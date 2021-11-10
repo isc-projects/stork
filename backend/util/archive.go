@@ -2,76 +2,109 @@ package storkutil
 
 import (
 	"archive/tar"
-	"bytes"
 	"compress/gzip"
 	"io"
-	"os"
-	"time"
 
 	"github.com/pkg/errors"
 )
 
-// Helper object to creating the tarball (TAR archive).
-// It allows to append the file or binary content.
-// It doesn't support subfolders (not implemented).
-// The owner is responsible for call the close method.
-type TarballWriter struct {
-	gzipWriter *gzip.Writer
-	tarWriter  *tar.Writer
-}
+// Callback that accepts the TAR header of a file/directory/link,
+// and a read content function - it retruns a binary content or error.
+// Callback must return the flag indicating to need to continue walking
+// (true - continue, false - stop).
+type WalkCallback = func(header *tar.Header, read func() ([]byte, error)) bool
 
-func NewTarballWriter(target io.Writer) *TarballWriter {
-	gzipWriter := gzip.NewWriter(target)
-	tarWriter := tar.NewWriter(gzipWriter)
-	return &TarballWriter{
-		gzipWriter: gzipWriter,
-		tarWriter:  tarWriter,
-	}
-}
-
-// Add a file to the tarball. Path is a path to the physical file,
-// info is the file info object that describes this file.
-func (t *TarballWriter) AddFile(path string, info os.FileInfo) error {
-	header, err := tar.FileInfoHeader(info, "")
+// General purpose walk function. It unpacks the Tarball and call the
+// callback with each entry one-by-one.
+// Current implementation doesn't support the subdirectory walking
+// and read the content from the non-regular files.
+func WalkFilesInTarball(tarball io.Reader, callback WalkCallback) error {
+	gzipReader, err := gzip.NewReader(tarball)
 	if err != nil {
-		return errors.Wrap(err, "could not create a TAR header")
+		return err
 	}
-	header.Name = path
+	defer gzipReader.Close()
 
-	file, err := os.Open(path)
+	tarReader := tar.NewReader(gzipReader)
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return errors.Wrap(err, "problem with read next header")
+		}
+
+		switch header.Typeflag {
+		case tar.TypeReg:
+			if !callback(header, func() ([]byte, error) {
+				data := make([]byte, header.Size)
+				_, err := tarReader.Read(data)
+				if err == io.EOF {
+					// The full content is read.
+					err = nil
+				}
+
+				return data,
+					errors.Wrapf(
+						err,
+						"cannot read content for the tarball file (%s)",
+						header.Name,
+					)
+			}) {
+				break
+			}
+		default:
+			if !callback(header, func() ([]byte, error) {
+				return nil, errors.New("reading unsupported")
+			}) {
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// List the files inside the tarball.
+func ListFilesInTarball(tarball io.Reader) ([]string, error) {
+	result := make([]string, 0)
+
+	err := WalkFilesInTarball(tarball,
+		func(header *tar.Header, read func() ([]byte, error)) bool {
+			if header.Typeflag == tar.TypeReg {
+				result = append(result, header.Name)
+			}
+			return true
+		})
+	return result, err
+}
+
+// Search for a specific file in the tarball.
+// If the file is found returns its binary content.
+// If file doesn't exist in the tarball returns nil content and no error.
+// Returns error if the tarball is unavailable or any reading problem occurs.
+func SearchFileInTarball(tarball io.Reader, filename string) ([]byte, error) {
+	var result []byte
+	var readErr error
+
+	err := WalkFilesInTarball(tarball,
+		func(header *tar.Header, read func() ([]byte, error)) bool {
+			if header.Typeflag != tar.TypeReg {
+				return true
+			}
+			if header.Name == filename {
+				result, readErr = read()
+				return false
+			}
+			return true
+		})
+
 	if err != nil {
-		return errors.Wrap(err, "could not open the file")
-	}
-	defer file.Close()
-
-	return t.addRaw(header, file)
-}
-
-// Add a binary content to the tarball. The path is a location inside the tarball,
-// content is binary data, modTime is modification time related to the content.
-func (t *TarballWriter) AddContent(path string, content []byte, modTime time.Time) error {
-	header := &tar.Header{
-		Name:    path,
-		Size:    int64(len(content)),
-		ModTime: modTime,
+		return nil, err
 	}
 
-	return t.addRaw(header, bytes.NewReader(content))
-}
-
-// Add a header and binary content to the tarball.
-func (t *TarballWriter) addRaw(header *tar.Header, content io.Reader) error {
-	err := t.tarWriter.WriteHeader(header)
-	if err != nil {
-		return errors.Wrap(err, "could not write header to TAR archive")
-	}
-
-	_, err = io.Copy(t.tarWriter, content)
-	return errors.Wrap(err, "could not add the file to TAR archive")
-}
-
-// Close the internal writers.
-func (t *TarballWriter) Close() {
-	t.tarWriter.Close()
-	t.gzipWriter.Close()
+	return result, readErr
 }
