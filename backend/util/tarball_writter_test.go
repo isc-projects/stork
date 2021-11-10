@@ -16,10 +16,7 @@ func TestConstructNewTarballWriter(t *testing.T) {
 	writer := NewTarballWriter(nil)
 
 	// Assert
-	require.NotNil(t, writer)
-
-	// Cleanup
-	writer.Close()
+	require.Nil(t, writer)
 }
 
 // Test that the tarball content is saved after close.

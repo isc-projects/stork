@@ -358,26 +358,3 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 
 	return text, nil
 }
-
-// The simple wrapper on the os.File object that removes the file after a successful close.
-// It implements only the io.ReadCloser interface.
-type SelfDestoyFileWrapper struct {
-	file *os.File
-}
-
-func NewSelfDestoyFileWrapper(file *os.File) *SelfDestoyFileWrapper {
-	return &SelfDestoyFileWrapper{file}
-}
-
-func (w *SelfDestoyFileWrapper) Read(p []byte) (n int, err error) {
-	return w.file.Read(p)
-}
-
-func (w *SelfDestoyFileWrapper) Close() error {
-	err := w.file.Close()
-	if err != nil {
-		return err
-	}
-
-	return os.Remove(w.file.Name())
-}

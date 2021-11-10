@@ -156,7 +156,7 @@ func TestSimplifyExecutionSummary(t *testing.T) {
 
 	// Act
 	simplified := summary.Simplify()
-	actualTimestamp, err := time.Parse("2006-01-02T15:04:05 UTC", simplified.Timestamp)
+	actualTimestamp, err := time.Parse(time.RFC3339, simplified.Timestamp)
 
 	// Assert
 	require.NoError(t, err)

@@ -73,3 +73,34 @@ func TestFactoryProducesTheUniqueDumps(t *testing.T) {
 		dumpTypeLookup[dumpType] = true
 	}
 }
+
+// Test that all created dumps are executed properly.
+func TestAllProducedDumpsAreExecutedWithNoErrorForValidData(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &dbmodel.Machine{
+		ID:         0,
+		Address:    "localhost",
+		AgentPort:  8080,
+		Authorized: true,
+	}
+	_ = dbmodel.AddMachine(db, m)
+
+	settings := agentcomm.AgentsSettings{}
+	fec := &storktest.FakeEventCenter{}
+	agents := agentcomm.NewConnectedAgents(&settings, fec, []byte{}, []byte{}, []byte{})
+	defer agents.Shutdown()
+
+	factory := newFactory(db, m, agents)
+	dumps := factory.All()
+
+	// Act
+	for _, dump := range dumps {
+		err := dump.Execute()
+
+		// Assert
+		require.NoError(t, err)
+	}
+}

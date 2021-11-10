@@ -63,7 +63,7 @@ func (s *executionSummary) Simplify() *executionSummarySimplify {
 	}
 
 	return &executionSummarySimplify{
-		Timestamp: s.Timestamp.UTC().Format("2006-01-02T15:04:05 UTC"),
+		Timestamp: s.Timestamp.Format(time.RFC3339),
 		Steps:     steps,
 	}
 }

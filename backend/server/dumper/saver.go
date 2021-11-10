@@ -18,6 +18,13 @@ type namingConvention func(dump dumperdumps.Dump, artifact dumperdumps.Artifact)
 // return human-readable output (e.g. JSON or YAML).
 type structSerializer func(interface{}) ([]byte, error)
 
+// Save the dumps to binary content in any format.
+// It is responsible for serialize the dump artifacts
+// and design of exported structure.
+type saver interface {
+	Save(target io.Writer, dumps []dumperdumps.Dump) error
+}
+
 // Structure that saves the dumps to the tarball archive.
 // Each dump artifact is located in a separate file.
 type tarbalSaver struct {

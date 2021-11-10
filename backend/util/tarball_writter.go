@@ -21,6 +21,9 @@ type TarballWriter struct {
 }
 
 func NewTarballWriter(target io.Writer) *TarballWriter {
+	if target == nil {
+		return nil
+	}
 	gzipWriter := gzip.NewWriter(target)
 	tarWriter := tar.NewWriter(gzipWriter)
 	return &TarballWriter{
