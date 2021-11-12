@@ -27,7 +27,7 @@ func (f *factory) All() []dumps.Dump {
 	return []dumps.Dump{
 		dumps.NewMachineDump(f.m),
 		dumps.NewEventsDump(f.db, f.m),
-		dumps.NewLogsDump(f.db, f.m, f.connectedAgents),
+		dumps.NewLogsDump(f.m, f.connectedAgents),
 		dumps.NewSettingsDump(f.db),
 	}
 }

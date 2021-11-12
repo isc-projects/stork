@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-pg/pg/v9"
-	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 )
@@ -16,15 +14,20 @@ import (
 // related to the machine except stdin/stdout/syslog targets.
 type LogsDump struct {
 	BasicDump
-	db      *pg.DB
-	machine *dbmodel.Machine
-	agents  agentcomm.ConnectedAgents
+	machine    *dbmodel.Machine
+	logSources LogTailSource
 }
 
-func NewLogsDump(db *pg.DB, machine *dbmodel.Machine, agents agentcomm.ConnectedAgents) *LogsDump {
+// Log tail source - it corresponds to agentcomm.ConnectedlogSources interface.
+// It is needed to avoid the dependency cycle.
+type LogTailSource interface {
+	TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset int64) ([]string, error)
+}
+
+func NewLogsDump(machine *dbmodel.Machine, logSources LogTailSource) *LogsDump {
 	return &LogsDump{
 		*NewBasicDump("logs"),
-		db, machine, agents,
+		machine, logSources,
 	}
 }
 
@@ -37,14 +40,16 @@ func (d *LogsDump) Execute() error {
 					continue
 				}
 
-				contents, err := d.agents.TailTextFile(
+				contents, err := d.logSources.TailTextFile(
 					context.Background(),
 					d.machine.Address,
 					d.machine.AgentPort,
 					logTarget.Output,
 					4000)
+
+				var errStr string
 				if err != nil {
-					return err
+					errStr = err.Error()
 				}
 
 				tail := &models.LogTail{
@@ -58,7 +63,7 @@ func (d *LogsDump) Execute() error {
 					AppType:         app.Type,
 					LogTargetOutput: logTarget.Output,
 					Contents:        contents,
-					Error:           err.Error(),
+					Error:           errStr,
 				}
 
 				name := fmt.Sprintf("a-%d-%s_d-%d-%s_t-%d-%s",

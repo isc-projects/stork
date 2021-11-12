@@ -58,5 +58,4 @@ func TestEventsDumpExecute(t *testing.T) {
 	require.Len(t, events, 1)
 	event := events[0]
 	require.EqualValues(t, "foo", event.Text)
-
 }

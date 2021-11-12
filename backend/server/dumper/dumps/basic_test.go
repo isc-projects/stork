@@ -55,8 +55,8 @@ func TestBasicDumpAppendArtifact(t *testing.T) {
 
 	// Assert
 	require.EqualValues(t, 2, dump.NumberOfArtifacts())
-	require.EqualValues(t, "bar", dump.GetArtifact(0))
-	require.EqualValues(t, "baz", dump.GetArtifact(1))
+	require.EqualValues(t, "bar", dump.GetArtifact(0).Name())
+	require.EqualValues(t, "baz", dump.GetArtifact(1).Name())
 }
 
 // Test that the basic struct artifact contains the data.

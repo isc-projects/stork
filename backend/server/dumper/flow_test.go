@@ -75,6 +75,7 @@ func TestNamingConventionForBinaryDump(t *testing.T) {
 	require.Contains(t, filename, artifact.Name())
 }
 
+// Test that the naming convention creates the filename without illegal characters.
 func TestNamingConventionReturnsValidFilenames(t *testing.T) {
 	// Arrange
 	characters := "!@#$%^&*()_+{}:\"<>?~10-=[];',./πœę©ßß←↓↓→óþ¨~^´`ł…ə’ŋæðśążźć„”ńµ≤≥ ̣|\\"
