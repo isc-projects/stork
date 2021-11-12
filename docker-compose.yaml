@@ -15,7 +15,7 @@ services:
     extra_hosts:
       - "agent-kea:172.20.0.100"
       - "agent-kea6:172.20.0.106"
-    image: registry.gitlab.isc.org/isc-projects/stork/server:latest
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/server:latest"
     networks:
       - storknet
     expose:
@@ -45,7 +45,7 @@ services:
     # DHCP communication instead.
     extra_hosts:
       - "agent-kea:172.20.0.100"
-    image: registry.gitlab.isc.org/isc-projects/stork/agent-kea:latest
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea:latest"
     hostname: agent-kea
     networks:
       storknet:
@@ -81,7 +81,7 @@ services:
     # DHCP communication instead.
     extra_hosts:
       - "agent-kea6:172.20.0.106"
-    image: registry.gitlab.isc.org/isc-projects/stork/agent-kea6:latest
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea6:latest"
     hostname: agent-kea6
     networks:
       storknet:
@@ -104,7 +104,7 @@ services:
     build:
       context: .
       dockerfile: docker/docker-agent-kea-ha1.txt
-    image: registry.gitlab.isc.org/isc-projects/stork/agent-kea-ha1:latest
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-ha1:latest"
     hostname: agent-kea-ha1
     networks:
       storknet:
@@ -122,7 +122,7 @@ services:
     build:
       context: .
       dockerfile: docker/docker-agent-kea-ha2.txt
-    image: registry.gitlab.isc.org/isc-projects/stork/agent-kea-ha2:latest
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-ha2:latest"
     hostname: agent-kea-ha2
     networks:
       storknet:
@@ -139,7 +139,7 @@ services:
     build:
       context: .
       dockerfile: docker/docker-agent-kea-many-subnets.txt
-    image: registry.gitlab.isc.org/isc-projects/stork/agent-kea-many-subnets:latest
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-many-subnets:latest"
     hostname: agent-kea-many-subnets
     networks:
       storknet:
@@ -157,7 +157,7 @@ services:
     build:
       context: .
       dockerfile: docker/docker-agent-bind9.txt
-    image: registry.gitlab.isc.org/isc-projects/stork/agent-bind9:latest
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-bind9:latest"
     hostname: agent-bind9
     networks:
       storknet:
@@ -174,7 +174,7 @@ services:
     build:
       context: .
       dockerfile: docker/docker-agent-bind9-2.txt
-    image: registry.gitlab.isc.org/isc-projects/stork/agent-bind9-2:latest
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-bind9-2:latest"
     hostname: agent-bind9-2
     networks:
       storknet:
@@ -190,7 +190,7 @@ services:
     build:
       context: .
       dockerfile: docker/docker-webui.txt
-    image: registry.gitlab.isc.org/isc-projects/stork/webui:latest
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/webui:latest"
     networks:
       - storknet
     ports:
@@ -250,7 +250,7 @@ services:
     extra_hosts:
       - "agent-kea:172.20.0.100"
       - "agent-kea6:172.20.0.106"
-    image: registry.gitlab.isc.org/isc-projects/stork/dhcp-traffic:latest
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/dhcp-traffic:latest"
     hostname: simulator
     networks:
       storknet:
