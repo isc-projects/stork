@@ -257,7 +257,6 @@ deploy_demo:
     - docker:dind
   before_script:
     - ip -6 route del default
-    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
     - docker info
     - apk update
     - apk upgrade
@@ -266,8 +265,10 @@ deploy_demo:
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
   script:
     # Build and push core images to public registry.
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
     - rake build_and_push_demo_images
     # Build and push core and premium images to private registry.
+    - docker login -u stork-ci -p "${STORK_CI_TOKEN_FOR_PREMIUM_REGISTRY}" "${CI_REGISTRY}"
     - REGISTRY='registry.gitlab.isc.org/isc-private/stork' rake build_and_push_demo_images cs_repo_access_token=$CLOUDSMITH_REPO_ACCESS_TOKEN
 
     ## start deplyment ###
