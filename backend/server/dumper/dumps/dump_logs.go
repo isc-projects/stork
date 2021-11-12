@@ -66,7 +66,7 @@ func (d *LogsDump) Execute() error {
 					daemon.ID, daemon.Name,
 					logTargetID, logTarget.Name)
 
-				d.artifacts = append(d.artifacts, NewBasicStructArtifact(
+				d.AppendArtifact(NewBasicStructArtifact(
 					name, tail,
 				))
 			}

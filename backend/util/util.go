@@ -358,3 +358,32 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) (string, err
 
 	return text, nil
 }
+
+// Hide any sensitive data in the object. Data is sensitive if its key is equal to "password", "token" or "secret".
+func HideSensitiveData(obj *map[string]interface{}) {
+	for entryKey, entryValue := range *obj {
+		// Check if the value holds sensitive data.
+		entryKeyNormalized := strings.ToLower(entryKey)
+		if entryKeyNormalized == "password" || entryKeyNormalized == "secret" || entryKeyNormalized == "token" {
+			(*obj)[entryKey] = nil
+			continue
+		}
+		// Check if it is an array.
+		array, ok := entryValue.([]interface{})
+		if ok {
+			for _, arrayItemValue := range array {
+				// Check if it is a subobject (or array).
+				subobject, ok := arrayItemValue.(map[string]interface{})
+				if ok {
+					HideSensitiveData(&subobject)
+				}
+			}
+			continue
+		}
+		// Check if it is a subobject (but not array).
+		subobject, ok := entryValue.(map[string]interface{})
+		if ok {
+			HideSensitiveData(&subobject)
+		}
+	}
+}

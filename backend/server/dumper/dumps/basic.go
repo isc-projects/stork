@@ -33,6 +33,10 @@ func (d *BasicDump) GetArtifact(i int) Artifact {
 	return d.artifacts[i]
 }
 
+func (d *BasicDump) AppendArtifact(artifact Artifact) {
+	d.artifacts = append(d.artifacts, artifact)
+}
+
 func (d *BasicDump) Execute() error {
 	return nil
 }

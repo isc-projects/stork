@@ -301,3 +301,48 @@ func TestReadConfigurationWithNonExistingIncludes(t *testing.T) {
 	_, err := ReadFileWithIncludes(path)
 	require.Error(t, err)
 }
+
+// Test that the sensitive data are hidden.
+func TestHideSensitiveData(t *testing.T) {
+	// Arrange
+	data := map[string]interface{}{
+		"foo":      "bar",
+		"password": "xxx",
+		"token":    "",
+		"secret":   "aaa",
+		"first": map[string]interface{}{
+			"foo":      "baz",
+			"Password": 42,
+			"Token":    nil,
+			"Secret":   "bbb",
+			"second": map[string]interface{}{
+				"foo":      "biz",
+				"passworD": true,
+				"tokeN":    "yyy",
+				"secreT":   "ccc",
+			},
+		},
+	}
+
+	// Act
+	HideSensitiveData(&data)
+
+	// Assert
+	// Top level
+	require.EqualValues(t, "bar", data["foo"])
+	require.EqualValues(t, nil, data["password"])
+	require.EqualValues(t, nil, data["token"])
+	require.EqualValues(t, nil, data["secret"])
+	// First level of the nesting
+	first := data["first"].(map[string]interface{})
+	require.EqualValues(t, "baz", first["foo"])
+	require.EqualValues(t, nil, first["Password"])
+	require.EqualValues(t, nil, first["Token"])
+	require.EqualValues(t, nil, first["Secret"])
+	// Second level of the nesting
+	second := first["second"].(map[string]interface{})
+	require.EqualValues(t, "biz", second["foo"])
+	require.EqualValues(t, nil, second["passworD"])
+	require.EqualValues(t, nil, second["tokeN"])
+	require.EqualValues(t, nil, second["secreT"])
+}

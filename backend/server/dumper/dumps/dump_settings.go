@@ -24,7 +24,7 @@ func (d *SettingsDump) Execute() error {
 		return err
 	}
 
-	d.artifacts = append(d.artifacts, NewBasicStructArtifact(
+	d.AppendArtifact(NewBasicStructArtifact(
 		"all", settings,
 	))
 	return nil

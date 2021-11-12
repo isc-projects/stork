@@ -1474,34 +1474,6 @@ func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemon
 	return rsp
 }
 
-// Hide any sensitive data in the object. Data is sensitive if its key is equal to "password" or "secret".
-func hideSensitiveData(obj *map[string]interface{}) {
-	for entryKey, entryValue := range *obj {
-		// Check if the value holds sensitive data.
-		if entryKey == "password" || entryKey == "secret" {
-			(*obj)[entryKey] = nil
-			continue
-		}
-		// Check if it is an array.
-		array, ok := entryValue.([]interface{})
-		if ok {
-			for _, arrayItemValue := range array {
-				// Check if it is a subobject (or array).
-				subobject, ok := arrayItemValue.(map[string]interface{})
-				if ok {
-					hideSensitiveData(&subobject)
-				}
-			}
-			continue
-		}
-		// Check if it is a subobject (but not array).
-		subobject, ok := entryValue.(map[string]interface{})
-		if ok {
-			hideSensitiveData(&subobject)
-		}
-	}
-}
-
 // Rename an app. The request must contain two parameters: app ID and new app name. The app
 // is renamed in the database. If the name is invalid or the given app does not exist,
 // an error is returned.

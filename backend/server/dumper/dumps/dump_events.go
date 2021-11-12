@@ -20,12 +20,12 @@ func NewEventsDump(db *pg.DB, machine *dbmodel.Machine) *EventsDump {
 }
 
 func (d *EventsDump) Execute() error {
-	events, _, err := dbmodel.GetEventsByPage(d.db, 0, 0, 1, nil, nil, &d.machineID, nil, "", dbmodel.SortDirAny)
+	events, _, err := dbmodel.GetEventsByPage(d.db, 0, 1000, 1, nil, nil, &d.machineID, nil, "", dbmodel.SortDirAny)
 	if err != nil {
 		return err
 	}
 
-	d.artifacts = append(d.artifacts, NewBasicStructArtifact(
+	d.AppendArtifact(NewBasicStructArtifact(
 		"all", events,
 	))
 	return nil

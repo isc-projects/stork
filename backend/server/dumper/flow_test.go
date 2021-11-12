@@ -1,6 +1,8 @@
 package dumper
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -15,20 +17,20 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// // Check if it is possible to create a file
-// // with the provided filename.
-// func isValidFilename(filename string) bool {
-// 	if strings.ContainsAny(filename, "*") {
-// 		return false
-// 	}
-// 	file, err := ioutil.TempFile("", filename+"*")
-// 	if err != nil {
-// 		return false
-// 	}
-// 	file.Close()
-// 	os.Remove(file.Name())
-// 	return true
-// }
+// Check if it is possible to create a file
+// with the provided filename.
+func isValidFilename(filename string) bool {
+	if strings.ContainsAny(filename, "*") {
+		return false
+	}
+	file, err := ioutil.TempFile("", filename+"*")
+	if err != nil {
+		return false
+	}
+	file.Close()
+	os.Remove(file.Name())
+	return true
+}
 
 // Check if the filename has a conventional timestamp prefix.
 func hasTimestampPrefix(filename string) bool {
@@ -71,6 +73,40 @@ func TestNamingConventionForBinaryDump(t *testing.T) {
 	require.False(t, strings.HasSuffix(filename, ".json"))
 	require.Contains(t, filename, dump.Name())
 	require.Contains(t, filename, artifact.Name())
+}
+
+func TestNamingConventionReturnsValidFilenames(t *testing.T) {
+	// Arrange
+	characters := "!@#$%^&*()_+{}:\"<>?~10-=[];',./πœę©ßß←↓↓→óþ¨~^´`ł…ə’ŋæðśążźć„”ńµ≤≥ ̣|\\"
+
+	cases := []dumps.Dump{
+		dumps.NewBasicDump("foo",
+			dumps.NewBasicArtifact("bar"),
+			dumps.NewBasicArtifact("BAZ"),
+			dumps.NewBasicArtifact("42"),
+		),
+		dumps.NewBasicDump("123", dumps.NewBasicArtifact("foobar")),
+	}
+
+	for _, ch := range characters {
+		str := string(ch)
+		cases = append(cases, dumps.NewBasicDump(str, dumps.NewBasicArtifact(str)))
+	}
+
+	// Act
+	filenames := make([]string, 0)
+	for _, dump := range cases {
+		for i := 0; i < dump.NumberOfArtifacts(); i++ {
+			artifact := dump.GetArtifact(i)
+			filename := flatStructureWithTimestampNamingConvention(dump, artifact)
+			filenames = append(filenames, filename)
+		}
+	}
+
+	// Assert
+	for _, filename := range filenames {
+		require.True(t, isValidFilename(filename), fmt.Sprintf("Wrong filename: %s", filename))
+	}
 }
 
 // Test that the machine dump is properly created.

@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/dumper/dumps"
+	storktest "isc.org/stork/server/test"
 )
 
 // Test that the execution summary is properly constructed.
@@ -165,31 +166,11 @@ func TestSimplifyExecutionSummary(t *testing.T) {
 	require.Len(t, simplified.Steps, 1)
 }
 
-// Mock dump - only for test purposes.
-type mockDump struct {
-	dumps.Dump
-	err       error
-	callCount int
-}
-
-func newMockDump(name string, err error) *mockDump {
-	return &mockDump{
-		dumps.NewBasicDump(name),
-		err,
-		0,
-	}
-}
-
-func (d *mockDump) Execute() error {
-	d.callCount++
-	return d.err
-}
-
 // Test that the dumps are executed properly.
 func TestExecuteDumps(t *testing.T) {
 	// Arrange
-	successMock := newMockDump("foo", nil)
-	failedMock := newMockDump("foobar", errors.New("fail"))
+	successMock := storktest.NewMockDump("foo", nil)
+	failedMock := storktest.NewMockDump("foobar", errors.New("fail"))
 
 	dumps := []dumps.Dump{
 		successMock,
@@ -202,8 +183,8 @@ func TestExecuteDumps(t *testing.T) {
 	summary := executeDumps(dumps)
 
 	// Assert
-	require.EqualValues(t, successMock.callCount, 1)
-	require.EqualValues(t, failedMock.callCount, 1)
+	require.EqualValues(t, successMock.CallCount, 1)
+	require.EqualValues(t, failedMock.CallCount, 1)
 
 	require.Len(t, summary.Steps, 5)
 	require.EqualValues(t, "bar", summary.Steps[1].Dump.Name())
@@ -217,7 +198,7 @@ func TestExecuteDumpProducesSummaryDump(t *testing.T) {
 	// Arrange
 	summary := executeDumps([]dumps.Dump{
 		dumps.NewBasicDump("baz", dumps.NewBasicArtifact("buz"), dumps.NewBasicArtifact("bez")),
-		newMockDump("bar", errors.New("fail")),
+		storktest.NewMockDump("bar", errors.New("fail")),
 	})
 
 	// Act
