@@ -2,6 +2,7 @@ package dumps_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/go-pg/pg/v9"
 	"github.com/stretchr/testify/require"
@@ -37,7 +38,20 @@ func initDatabase(db *pg.DB) *dbmodel.Machine {
 		},
 		Daemons: []*dbmodel.Daemon{
 			dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
-			dbmodel.NewBind9Daemon(true),
+			{
+				Name:    dbmodel.DaemonNameBind9,
+				Version: "1.0.0",
+				Active:  true,
+				LogTargets: []*dbmodel.LogTarget{
+					{
+						Output: "stdout",
+					},
+					{
+						Output: "/tmp/filename.log",
+					},
+				},
+				Bind9Daemon: &dbmodel.Bind9Daemon{},
+			},
 		},
 	}
 	ds, _ := dbmodel.AddApp(db, a)
@@ -49,9 +63,26 @@ func initDatabase(db *pg.DB) *dbmodel.Machine {
 			"secret": "hidden"
         }
     }`)
+	d.LogTargets = []*dbmodel.LogTarget{
+		{
+			Name:      "foo",
+			Severity:  "bar",
+			Output:    "/var/log/foo",
+			CreatedAt: time.Time{},
+			DaemonID:  d.ID,
+		},
+	}
 	_ = dbmodel.UpdateDaemon(db, d)
 
-	m, _ = dbmodel.GetMachineByID(db, m.ID)
+	m, _ = dbmodel.GetMachineByIDWithRelations(db, m.ID,
+		dbmodel.MachineRelationApps,
+		dbmodel.MachineRelationDaemons,
+		dbmodel.MachineRelationKeaDaemons,
+		dbmodel.MachineRelationBind9Daemons,
+		dbmodel.MachineRelationDaemonLogTargets,
+		dbmodel.MachineRelationAppAccessPoints,
+		dbmodel.MachineRelationKeaDHCPConfigs,
+	)
 	return m
 }
 
@@ -88,6 +119,7 @@ func TestMachineDumpExecute(t *testing.T) {
 	require.Len(t, machine.Apps, 1)
 	require.Len(t, machine.Apps[0].AccessPoints, 1)
 	require.Len(t, machine.Apps[0].Daemons, 2)
+	require.Len(t, machine.Apps[0].Daemons[1].LogTargets, 2)
 	require.NotNil(t, machine.Apps[0].Daemons[0].KeaDaemon.Config)
 }
 

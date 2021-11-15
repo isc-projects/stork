@@ -21,7 +21,15 @@ var ErrNotFoundMachine error = errors.New("machine not found")
 
 // The main function of this module. It dumps the specific machine (and related data) to the tarball archive.
 func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID int64) (io.ReadCloser, error) {
-	m, err := dbmodel.GetMachineByID(db, machineID)
+	m, err := dbmodel.GetMachineByIDWithRelations(db, machineID,
+		dbmodel.MachineRelationApps,
+		dbmodel.MachineRelationDaemons,
+		dbmodel.MachineRelationKeaDaemons,
+		dbmodel.MachineRelationBind9Daemons,
+		dbmodel.MachineRelationDaemonLogTargets,
+		dbmodel.MachineRelationAppAccessPoints,
+		dbmodel.MachineRelationKeaDHCPConfigs,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -435,7 +435,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 // Ping given machine, i.e. check connectivity.
 func (r *RestAPI) PingMachine(ctx context.Context, params services.PingMachineParams) middleware.Responder {
 	// find machine in db
-	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
+	dbMachine, err := dbmodel.GetMachineByIDWithRelations(r.DB, params.ID)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get machine with id %d from db", params.ID)
 		log.Error(err)
@@ -669,7 +669,7 @@ func (r *RestAPI) RegenerateMachinesServerToken(ctx context.Context, params serv
 
 // Add a machine where Stork Agent is running.
 func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachineParams) middleware.Responder {
-	dbMachine, err := dbmodel.GetMachineByID(r.DB, params.ID)
+	dbMachine, err := dbmodel.GetMachineByIDWithRelations(r.DB, params.ID)
 	if err == nil && dbMachine == nil {
 		rsp := services.NewDeleteMachineOK()
 		return rsp

@@ -44,6 +44,28 @@ type Machine struct {
 	Authorized      bool `pg:",use_zero"`
 }
 
+type MachineRelation int
+
+const (
+	MachineRelationApps MachineRelation = iota
+	MachineRelationDaemons
+	MachineRelationKeaDaemons
+	MachineRelationBind9Daemons
+	MachineRelationDaemonLogTargets
+	MachineRelationAppAccessPoints
+	MachineRelationKeaDHCPConfigs
+)
+
+var machineRelationToTableChainMap = map[MachineRelation]string{
+	MachineRelationApps:             "Apps",
+	MachineRelationDaemons:          "Apps.Daemons",
+	MachineRelationKeaDaemons:       "Apps.Daemons.KeaDaemon",
+	MachineRelationBind9Daemons:     "Apps.Daemons.Bind9Daemon",
+	MachineRelationDaemonLogTargets: "Apps.Daemons.LogTargets",
+	MachineRelationAppAccessPoints:  "Apps.AccessPoints",
+	MachineRelationKeaDHCPConfigs:   "Apps.Daemons.KeaDaemon.KeaDHCPDaemon",
+}
+
 // Add new machine to database.
 func AddMachine(db *pg.DB, machine *Machine) error {
 	err := db.Insert(machine)
@@ -78,13 +100,34 @@ func GetMachineByAddressAndAgentPort(db *pg.DB, address string, agentPort int64)
 	return &machine, nil
 }
 
-// Get a machine by its ID.
+// Get a machine by its ID with default relations.
 func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
+	return GetMachineByIDWithRelations(db, id,
+		MachineRelationAppAccessPoints,
+		MachineRelationBind9Daemons,
+		MachineRelationKeaDHCPConfigs)
+}
+
+// Get a machine by its ID with relations
+func GetMachineByIDWithRelations(db *pg.DB, id int64, relations ...MachineRelation) (*Machine, error) {
+	tables := make([]string, len(relations))
+	for idx, relation := range relations {
+		tableName, ok := machineRelationToTableChainMap[relation]
+		if !ok {
+			return nil, pkgerrors.Errorf("unknown relation: %d", relation)
+		}
+		tables[idx] = tableName
+	}
+	return getMachineByID(db, id, tables)
+}
+
+// Get a machine by its ID with relations - internal.
+func getMachineByID(db *pg.DB, id int64, relations []string) (*Machine, error) {
 	machine := Machine{}
 	q := db.Model(&machine).Where("machine.id = ?", id)
-	q = q.Relation("Apps.Daemons.KeaDaemon.KeaDHCPDaemon")
-	q = q.Relation("Apps.Daemons.Bind9Daemon")
-	q = q.Relation("Apps.AccessPoints")
+	for _, relation := range relations {
+		q = q.Relation(relation)
+	}
 	err := q.Select()
 	if errors.Is(err, pg.ErrNoRows) {
 		return nil, nil

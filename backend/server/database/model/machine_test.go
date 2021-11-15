@@ -183,6 +183,120 @@ func TestGetMachineByID(t *testing.T) {
 	require.Nil(t, m)
 }
 
+// Check if getting machine by its ID with relations.
+func TestGetMachineByIDWithRelations(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &Machine{
+		ID:         42,
+		Address:    "localhost",
+		AgentPort:  8080,
+		Authorized: true,
+		AgentToken: "secret",
+	}
+	_ = AddMachine(db, m)
+
+	a := &App{
+		ID:        0,
+		MachineID: m.ID,
+		Type:      "bind9",
+		AccessPoints: []*AccessPoint{
+			{
+				MachineID: m.ID,
+				Type:      "control",
+				Address:   "dns.example.",
+				Port:      953,
+				Key:       "abcd",
+			},
+		},
+		Daemons: []*Daemon{
+			NewKeaDaemon(DaemonNameDHCPv4, true),
+			{
+				Name:    DaemonNameBind9,
+				Version: "1.0.0",
+				Active:  true,
+				LogTargets: []*LogTarget{
+					{
+						Output: "stdout",
+					},
+					{
+						Output: "/tmp/filename.log",
+					},
+				},
+				Bind9Daemon: &Bind9Daemon{},
+			},
+		},
+	}
+	ds, _ := AddApp(db, a)
+
+	d := ds[0]
+	_ = d.SetConfigFromJSON(`{
+        "Dhcp4": {
+            "valid-lifetime": 1234,
+			"secret": "hidden"
+        }
+    }`)
+	_ = UpdateDaemon(db, d)
+
+	// Act
+	machine, machineErr := GetMachineByIDWithRelations(db, 42)
+	machineApps, machineAppsErr := GetMachineByIDWithRelations(db, 42, MachineRelationApps)
+	machineDaemons, machineDaemonsErr := GetMachineByIDWithRelations(db, 42, MachineRelationDaemons)
+	machineKeaDaemons, machineKeaDaemonsErr := GetMachineByIDWithRelations(db, 42, MachineRelationKeaDaemons)
+	machineBind9Daemons, machineBind9DaemonsErr := GetMachineByIDWithRelations(db, 42, MachineRelationBind9Daemons)
+	machineDaemonLogTargets, machineDaemonLogTargetsErr := GetMachineByIDWithRelations(db, 42, MachineRelationDaemonLogTargets)
+	machineAppAccessPoints, machineAppAccessPointsErr := GetMachineByIDWithRelations(db, 42, MachineRelationAppAccessPoints)
+	machineKeaDHCPConfigs, machineKeaDHCPConfigsErr := GetMachineByIDWithRelations(db, 42, MachineRelationKeaDHCPConfigs)
+	machineAppAccessPointsKeaDHCPConfigs, machineAppAccessPointsKeaDHCPConfigsErr := GetMachineByIDWithRelations(db, 42, MachineRelationAppAccessPoints, MachineRelationKeaDHCPConfigs)
+
+	// Assert
+	require.NoError(t, machineErr)
+	require.NoError(t, machineAppsErr)
+	require.NoError(t, machineDaemonsErr)
+	require.NoError(t, machineKeaDaemonsErr)
+	require.NoError(t, machineBind9DaemonsErr)
+	require.NoError(t, machineDaemonLogTargetsErr)
+	require.NoError(t, machineAppAccessPointsErr)
+	require.NoError(t, machineKeaDHCPConfigsErr)
+	require.NoError(t, machineAppAccessPointsKeaDHCPConfigsErr)
+
+	// Just machine
+	require.NotNil(t, machine.State)
+	require.Len(t, machine.Apps, 0)
+	// Machine with apps
+	require.Nil(t, machineApps.Apps[0].AccessPoints)
+	require.Nil(t, machineApps.Apps[0].Daemons)
+	// Machine with daemons
+	require.Nil(t, machineDaemons.Apps[0].AccessPoints)
+	require.Len(t, machineDaemons.Apps[0].Daemons, 2)
+	require.Nil(t, machineDaemons.Apps[0].Daemons[1].LogTargets)
+	require.Nil(t, machineDaemons.Apps[0].Daemons[1].KeaDaemon)
+	require.Nil(t, machineDaemons.Apps[0].Daemons[0].Bind9Daemon)
+	// Machine with kea daemons
+	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[0].Bind9Daemon)
+	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[1].KeaDaemon.KeaDHCPDaemon)
+	require.Nil(t, machineKeaDaemons.Apps[0].Daemons[1].LogTargets)
+	// Machine with Bind9 daemons
+	require.NotNil(t, machineBind9Daemons.Apps[0].Daemons[0].Bind9Daemon)
+	require.Nil(t, machineBind9Daemons.Apps[0].Daemons[1].KeaDaemon)
+	require.Nil(t, machineBind9Daemons.Apps[0].Daemons[1].LogTargets)
+	// Machine with daemon log targets
+	require.Len(t, machineDaemonLogTargets.Apps[0].Daemons[0].LogTargets, 2)
+	require.Nil(t, machineDaemonLogTargets.Apps[0].Daemons[1].KeaDaemon)
+	require.Nil(t, machineDaemonLogTargets.Apps[0].Daemons[0].Bind9Daemon)
+	require.Nil(t, machineDaemonLogTargets.Apps[0].AccessPoints)
+	// Machine with the access points
+	require.NotNil(t, machineAppAccessPoints.Apps[0].AccessPoints)
+	require.Nil(t, machineAppAccessPoints.Apps[0].Daemons)
+	// Machine with Kea DHCP configurations
+	require.NotNil(t, machineKeaDHCPConfigs.Apps[0].Daemons[1].KeaDaemon.KeaDHCPDaemon)
+	// Machine with the access points and Kea DHCP configurations
+	require.NotNil(t, machineAppAccessPointsKeaDHCPConfigs.Apps[0].Daemons[1].KeaDaemon.KeaDHCPDaemon)
+	require.Len(t, machineAppAccessPointsKeaDHCPConfigs.Apps[0].AccessPoints, 1)
+}
+
 // Basic check if getting machines by pages works.
 func TestGetMachinesByPageBasic(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
