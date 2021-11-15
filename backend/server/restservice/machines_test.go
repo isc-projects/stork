@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"regexp"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -2084,4 +2086,49 @@ func TestGetMachineDumpNotExists(t *testing.T) {
 	defaultRsp, ok := rsp.(*services.GetMachineDumpDefault)
 	require.True(t, ok)
 	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+}
+
+// Test that the GetMachineDump returns a file with expected filename.
+func TestGetMachineDumpReturnsExpectedFilename(t *testing.T) {
+	// Arrange
+	// Database init
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	_ = dbmodel.InitializeSettings(db)
+	m := &dbmodel.Machine{
+		ID:        42,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, m)
+	// REST init
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	rapi, _ := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	ctx := context.Background()
+	// User init
+	user, _ := dbmodel.GetUserByID(rapi.DB, 1)
+	ctx, _ = rapi.SessionManager.Load(ctx, "")
+	_ = rapi.SessionManager.LoginHandler(ctx, user)
+	// Request init
+	params := services.GetMachineDumpParams{
+		ID: m.ID,
+	}
+
+	headerPattern := regexp.MustCompile("attachment; filename=\"(.*)\"")
+
+	// Act
+	rsp := rapi.GetMachineDump(ctx, params).(*services.GetMachineDumpOK)
+	headerValue := rsp.ContentDisposition
+	submatches := headerPattern.FindStringSubmatch(headerValue)
+
+	// Assert
+	require.Len(t, submatches, 2)
+	filename := submatches[1]
+	timestamp, rest, err := storkutil.ParseTimestampPrefix(filename)
+	require.NoError(t, err)
+	require.Contains(t, rest, "machine-42")
+	require.True(t, strings.HasSuffix(filename, ".tar.gz"))
+	require.LessOrEqual(t, time.Now().UTC().Sub(timestamp).Seconds(), float64(10))
 }

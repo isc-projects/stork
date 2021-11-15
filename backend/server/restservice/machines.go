@@ -719,10 +719,16 @@ func (r *RestAPI) GetMachineDump(ctx context.Context, params services.GetMachine
 		return rsp
 	}
 
+	dispositionHeaderValue := fmt.Sprintf(
+		"attachment; filename=\"%s_stork-machine-%d-dump.tar.gz\"",
+		strings.ReplaceAll(time.Now().UTC().Format(time.RFC3339), ":", "-"),
+		params.ID,
+	)
+
 	rsp := services.
 		NewGetMachineDumpOK().
 		WithContentType("application/gzip").
-		WithContentDisposition("attachment; filename=\"dump.tar.gz\"").
+		WithContentDisposition(dispositionHeaderValue).
 		WithPayload(dump)
 	return rsp
 }
