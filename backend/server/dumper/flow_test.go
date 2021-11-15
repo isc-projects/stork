@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/agentcomm"
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/dumper/dumps"
@@ -125,9 +126,7 @@ func TestDumpMachineReturnsNoErrorWhenMachineExists(t *testing.T) {
 	_ = dbmodel.AddMachine(db, m)
 	_ = dbmodel.InitializeSettings(db)
 
-	settings := agentcomm.AgentsSettings{}
-	fec := &storktest.FakeEventCenter{}
-	agents := agentcomm.NewConnectedAgents(&settings, fec, []byte{}, []byte{}, []byte{})
+	agents := agentcommtest.NewFakeAgents(nil, nil)
 	defer agents.Shutdown()
 
 	// Act

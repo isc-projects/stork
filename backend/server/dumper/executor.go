@@ -30,7 +30,7 @@ type executionSummarySimplify struct {
 // intendent to use in the dump export.
 type executionSummaryStepSimplify struct {
 	Name      string
-	Error     error
+	Error     error `json:",omitempty"`
 	Status    string
 	Artifacts []string
 }

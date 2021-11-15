@@ -227,11 +227,21 @@
           description: Machine ID.
       tags:
         - Services
+      produces:
+        - application/octet-stream
       responses:
         200:
           description: The archive with the configuration dump.
+          headers:
+            Content-Disposition:
+              type: string
+              description: "The attachment filename"
+            Content-Type:
+              type: string
+              description: The content type"
           schema:
-            type: file
+            type: string
+            format: binary
         default:
           description: generic error response
           schema:
