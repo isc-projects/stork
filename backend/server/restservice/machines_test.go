@@ -1981,3 +1981,107 @@ func TestGetKeaStoragesForensicDatabase(t *testing.T) {
 	require.Equal(t, "kea", databases[0].Database)
 	require.Equal(t, "localhost", databases[0].Host)
 }
+
+// Test that the GetMachineDump returns OK status when the machine exists.
+func TestGetMachineDumpOK(t *testing.T) {
+	// Arrange
+	// Database init
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	_ = dbmodel.InitializeSettings(db)
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, m)
+	// REST init
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	ctx := context.Background()
+	// User init
+	user, _ := dbmodel.GetUserByID(rapi.DB, 1)
+	ctx, _ = rapi.SessionManager.Load(ctx, "")
+	_ = rapi.SessionManager.LoginHandler(ctx, user)
+	// Request init
+	params := services.GetMachineDumpParams{
+		ID: m.ID,
+	}
+
+	// Act
+	rsp := rapi.GetMachineDump(ctx, params)
+
+	// Assert
+	require.IsType(t, &services.GetMachineDumpOK{}, rsp)
+}
+
+// Test that the GetMachineDump returns a tarball file.
+func TestGetMachineDumpReturnsTarball(t *testing.T) {
+	// Arrange
+	// Database init
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	_ = dbmodel.InitializeSettings(db)
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = dbmodel.AddMachine(db, m)
+	// REST init
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	ctx := context.Background()
+	// User init
+	user, _ := dbmodel.GetUserByID(rapi.DB, 1)
+	ctx, _ = rapi.SessionManager.Load(ctx, "")
+	_ = rapi.SessionManager.LoginHandler(ctx, user)
+	// Request init
+	params := services.GetMachineDumpParams{
+		ID: m.ID,
+	}
+
+	// Act
+	rsp := rapi.GetMachineDump(ctx, params).(*services.GetMachineDumpOK)
+	filenames, err := storkutil.ListFilesInTarball(rsp.Payload)
+
+	// Assert
+	require.NoError(t, err)
+	require.NotZero(t, len(filenames))
+}
+
+// Test that the GetMachineDump returns HTTP 404 Not Found when the machine is missing.
+func TestGetMachineDumpNotExists(t *testing.T) {
+	// Arrange
+	// Database init
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	_ = dbmodel.InitializeSettings(db)
+	// REST init
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	ctx := context.Background()
+	// User init
+	user, _ := dbmodel.GetUserByID(rapi.DB, 1)
+	ctx, _ = rapi.SessionManager.Load(ctx, "")
+	_ = rapi.SessionManager.LoginHandler(ctx, user)
+	// Request init
+	params := services.GetMachineDumpParams{
+		ID: 42,
+	}
+
+	// Act
+	rsp := rapi.GetMachineDump(ctx, params)
+
+	// Assert
+	defaultRsp, ok := rsp.(*services.GetMachineDumpDefault)
+	require.True(t, ok)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+}

@@ -2,6 +2,7 @@ package restservice
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,7 +11,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"isc.org/stork"
@@ -702,16 +703,28 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 // for diagnostic purposes. The archive contains the database dumps and some log files.
 func (r *RestAPI) GetMachineDump(ctx context.Context, params services.GetMachineDumpParams) middleware.Responder {
 	dump, err := dumper.DumpMachine(r.DB, r.Agents, params.ID)
+
 	if err != nil {
+		status := http.StatusInternalServerError
+		statusMessage := fmt.Sprintf("cannot dump machine %d", params.ID)
+
+		if errors.Is(err, dumper.ErrNotFoundMachine) {
+			status = http.StatusNotFound
+			statusMessage = fmt.Sprintf("cannot find machine %d", params.ID)
+		}
+
 		log.Error(err)
-		msg := fmt.Sprintf("cannot dump machine %d", params.ID)
-		rsp := services.NewGetMachineDumpDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
+		rsp := services.NewGetMachineDumpDefault(status).WithPayload(&models.APIError{
+			Message: &statusMessage,
 		})
 		return rsp
 	}
 
-	rsp := services.NewGetMachineDumpOK().WithPayload(dump)
+	rsp := services.
+		NewGetMachineDumpOK().
+		WithContentType("application/gzip").
+		WithContentDisposition("attachment; filename=\"dump.tar.gz\"").
+		WithPayload(dump)
 	return rsp
 }
 
@@ -1199,7 +1212,7 @@ func (r *RestAPI) GetAppServicesStatus(ctx context.Context, params services.GetA
 
 	if dbApp == nil {
 		msg := fmt.Sprintf("cannot find app with id %d", params.ID)
-		log.Warn(errors.New(msg))
+		log.Warn(pkgerrors.New(msg))
 		rsp := services.NewGetAppDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
 		})
