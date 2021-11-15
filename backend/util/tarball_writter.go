@@ -57,6 +57,7 @@ func (t *TarballWriter) AddContent(path string, content []byte, modTime time.Tim
 		Name:    path,
 		Size:    int64(len(content)),
 		ModTime: modTime,
+		Mode:    0444,
 	}
 
 	return t.addRaw(header, bytes.NewReader(content))

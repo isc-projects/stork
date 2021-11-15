@@ -81,6 +81,5 @@ func TestTarballAddFile(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, buffer.Len(), 133)
-	require.LessOrEqual(t, buffer.Len(), 134)
+	require.GreaterOrEqual(t, buffer.Len(), 100)
 }
