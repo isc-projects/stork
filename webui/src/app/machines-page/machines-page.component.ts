@@ -112,7 +112,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 label: 'Dump configuration',
                 id: 'dump-single-machine',
                 icon: 'pi pi-download',
-                title: 'Dump configuration for troubleshooting purposes'
+                title: 'Dump configuration for troubleshooting purposes',
             },
             /* Temporarily disable unauthorization until we find an
                actual use case for it. Also, if we allow unauthorization
