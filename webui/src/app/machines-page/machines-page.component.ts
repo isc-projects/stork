@@ -111,7 +111,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
             {
                 label: 'Dump configuration',
                 id: 'dump-single-machine',
-                icon: 'pi pi-dump',
+                icon: 'pi pi-download',
                 title: 'Dump configuration for troubleshooting purposes'
             },
             /* Temporarily disable unauthorization until we find an
@@ -367,7 +367,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         )
     }
 
-    _dumpConfiguration(machine: Machine) {
+    dumpConfiguration(machine: Machine) {
         window.location.href = `api/machines/${machine.id}/dump`
     }
 
@@ -445,7 +445,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
 
             // connect method to dump machine configuration
             this.machineMenuItems[1].command = () => {
-                this._dumpConfiguration(machine)
+                this.dumpConfiguration(machine)
             }
 
             // connect method to authorize machine
