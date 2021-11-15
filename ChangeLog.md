@@ -1,3 +1,12 @@
+* 171 [func] slawek
+
+    Dump machine configuration to file. After pressing the button
+    on UI, all data related to a specific machine (database entries,
+    configurations, logs) are packed into a single tarball. Next,
+    they can be easily shared with technical support (e.g. as an
+    email attachment).
+    (Gitlab #43)
+
 * 170 [func] marcin
 
     Kea configuration review can now be requested from the Kea
