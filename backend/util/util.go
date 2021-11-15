@@ -387,3 +387,32 @@ func HideSensitiveData(obj *map[string]interface{}) {
 		}
 	}
 }
+
+// Check if the filename has a conventional timestamp prefix.
+// Returns a parsed timestamp, rest of filename and error (if failed).
+func ParseTimestampPrefix(filename string) (time.Time, string, error) {
+	timestampEnd := strings.Index(filename, "_")
+	if timestampEnd <= 0 {
+		return time.Time{}, "", errors.New("missing prefix delimiter")
+	}
+	raw := filename[:timestampEnd]
+	raw = raw[:11] + strings.ReplaceAll(raw[11:], "-", ":")
+
+	timestamp, err := time.Parse(time.RFC3339, raw)
+	return timestamp, filename[len(raw):], err
+}
+
+// Check if it is possible to create a file
+// with the provided filename.
+func IsValidFilename(filename string) bool {
+	if strings.ContainsAny(filename, "*") {
+		return false
+	}
+	file, err := ioutil.TempFile("", filename+"*")
+	if err != nil {
+		return false
+	}
+	file.Close()
+	os.Remove(file.Name())
+	return true
+}

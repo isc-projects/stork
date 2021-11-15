@@ -2,11 +2,9 @@ package dumper
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/agentcomm"
@@ -15,36 +13,9 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/dumper/dumps"
 	storktest "isc.org/stork/server/test"
+	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
-
-// Check if it is possible to create a file
-// with the provided filename.
-func isValidFilename(filename string) bool {
-	if strings.ContainsAny(filename, "*") {
-		return false
-	}
-	file, err := ioutil.TempFile("", filename+"*")
-	if err != nil {
-		return false
-	}
-	file.Close()
-	os.Remove(file.Name())
-	return true
-}
-
-// Check if the filename has a conventional timestamp prefix.
-func hasTimestampPrefix(filename string) bool {
-	timestampEnd := strings.Index(filename, "_")
-	if timestampEnd <= 0 {
-		return false
-	}
-	raw := filename[:timestampEnd]
-	raw = raw[:11] + strings.ReplaceAll(raw[11:], "-", ":")
-
-	_, err := time.Parse(time.RFC3339, raw)
-	return err == nil
-}
 
 func TestNamingConventionForStructureDump(t *testing.T) {
 	// Arrange
@@ -55,7 +26,8 @@ func TestNamingConventionForStructureDump(t *testing.T) {
 	filename := flatStructureWithTimestampNamingConvention(dump, artifact)
 
 	// Assert
-	require.True(t, hasTimestampPrefix(filename))
+	_, _, err := storkutil.ParseTimestampPrefix(filename)
+	require.NoError(t, err)
 	require.True(t, strings.HasSuffix(filename, ".json"))
 	require.Contains(t, filename, dump.Name())
 	require.Contains(t, filename, artifact.Name())
@@ -70,7 +42,8 @@ func TestNamingConventionForBinaryDump(t *testing.T) {
 	filename := flatStructureWithTimestampNamingConvention(dump, artifact)
 
 	// Assert
-	require.True(t, hasTimestampPrefix(filename))
+	_, _, err := storkutil.ParseTimestampPrefix(filename)
+	require.NoError(t, err)
 	require.False(t, strings.HasSuffix(filename, ".json"))
 	require.Contains(t, filename, dump.Name())
 	require.Contains(t, filename, artifact.Name())
@@ -107,7 +80,7 @@ func TestNamingConventionReturnsValidFilenames(t *testing.T) {
 
 	// Assert
 	for _, filename := range filenames {
-		require.True(t, isValidFilename(filename), fmt.Sprintf("Wrong filename: %s", filename))
+		require.True(t, testutil.IsValidFilename(filename), fmt.Sprintf("Wrong filename: %s", filename))
 	}
 }
 

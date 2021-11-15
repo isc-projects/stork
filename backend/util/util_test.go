@@ -2,7 +2,10 @@ package storkutil
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -345,4 +348,115 @@ func TestHideSensitiveData(t *testing.T) {
 	require.EqualValues(t, nil, second["passworD"])
 	require.EqualValues(t, nil, second["tokeN"])
 	require.EqualValues(t, nil, second["secreT"])
+}
+
+// Function for a valid prefix should return no error.
+func TestParseTimestampPrefixNoErrorForValid(t *testing.T) {
+	// Arrange
+	timestamp := time.Time{}.Format(time.RFC3339)
+	timestamp = strings.ReplaceAll(timestamp, ":", "-")
+	filename := fmt.Sprintf("%s_foo.ext", timestamp)
+
+	// Act
+	_, _, err := ParseTimestampPrefix(filename)
+
+	// Assert
+	require.NoError(t, err)
+}
+
+// Function for a missing delimiter in prefix should return error.
+func TestParseTimestampPrefixErrorForNoDelimiter(t *testing.T) {
+	// Arrange
+	timestamp := time.Time{}.Format(time.RFC3339)
+	timestamp = strings.ReplaceAll(timestamp, ":", "-")
+	filename := fmt.Sprintf("%sfoo.ext", timestamp)
+
+	// Act
+	_, _, err := ParseTimestampPrefix(filename)
+
+	// Assert
+	require.Error(t, err)
+}
+
+// Function for a invalid prefix should return error.
+func TestParseTimestampPrefixErrorForInvalid(t *testing.T) {
+	// Arrange
+	timestamp := time.Time{}.Format(time.RFC3339)
+	filename := fmt.Sprintf("%s_foo.ext", timestamp)
+
+	// Act
+	_, _, err := ParseTimestampPrefix(filename)
+
+	// Assert
+	require.Error(t, err)
+}
+
+// Function for a valid prefix should return rest of filename.
+func TestParseTimestampPrefixRestOfFilenameForValid(t *testing.T) {
+	// Arrange
+	timestamp := time.Time{}.Format(time.RFC3339)
+	timestamp = strings.ReplaceAll(timestamp, ":", "-")
+	filename := fmt.Sprintf("%s_foo-bar.ext", timestamp)
+
+	// Act
+	_, prefix, _ := ParseTimestampPrefix(filename)
+
+	// Assert
+	require.EqualValues(t, "_foo-bar.ext", prefix)
+}
+
+// Function for a valid prefix should return the parsed timestamp.
+func TestParseTimestampPrefixTimestampForValid(t *testing.T) {
+	// Arrange
+	timestamp := time.Time{}.Format(time.RFC3339)
+	timestamp = strings.ReplaceAll(timestamp, ":", "-")
+	filename := fmt.Sprintf("%s_foo.ext", timestamp)
+
+	// Act
+	timestampObj, _, _ := ParseTimestampPrefix(filename)
+
+	// Assert
+	require.EqualValues(t, time.Time{}, timestampObj)
+}
+
+// Test that function returns true for proper filename.
+func TestIsValidFilenameForProperFilename(t *testing.T) {
+	// Arrange
+	filenames := []string{
+		// Standard letter
+		"foo.bar",
+		// Numbers
+		"12345667890",
+		// Standard keyboard characters without *, \ and /
+		"!@#$%^&()_+.{}|:\"<>?`~-=[];',.",
+		// Unicode character
+		"πœę©ß←↓→óþąśðæŋ’ə…ł´^¨~ ̣≥≤µń”„„ćźżż",
+		// Backslash
+		"\\",
+	}
+
+	for _, filename := range filenames {
+		// Act
+		ok := IsValidFilename(filename)
+		// Assert
+		require.True(t, ok)
+	}
+}
+
+// Test that function returns false for invalid filenames.
+func TestIsValidFilenameForInvalidFilename(t *testing.T) {
+	// Arrange
+	filenames := []string{
+		// Asterisk
+		"*",
+		// Slash
+		"/",
+	}
+
+	for _, filename := range filenames {
+		// Act
+		ok := IsValidFilename(filename)
+		// Assert
+		require.False(t, ok, filename)
+	}
 }
