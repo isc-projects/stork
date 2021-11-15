@@ -18,6 +18,7 @@ func initDatabase(db *pg.DB) *dbmodel.Machine {
 		Address:    "localhost",
 		AgentPort:  8080,
 		Authorized: true,
+		AgentToken: "secret",
 	}
 	_ = dbmodel.AddMachine(db, m)
 
@@ -108,4 +109,5 @@ func TestMachineDumpExecuteHideSecrets(t *testing.T) {
 	config := *(*map[string]interface{})(daemon.KeaDaemon.Config)
 	secret := (config["Dhcp4"]).(map[string]interface{})["secret"]
 	require.Nil(t, secret)
+	require.Empty(t, machine.AgentToken)
 }
