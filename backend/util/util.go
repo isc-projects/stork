@@ -395,6 +395,10 @@ func ParseTimestampPrefix(filename string) (time.Time, string, error) {
 	if timestampEnd <= 0 {
 		return time.Time{}, "", errors.New("missing prefix delimiter")
 	}
+	if timestampEnd < len(time.RFC3339)-5 { // Timezone is optional
+		return time.Time{}, "", errors.New("timestamp is too short")
+	}
+
 	raw := filename[:timestampEnd]
 	raw = raw[:11] + strings.ReplaceAll(raw[11:], "-", ":")
 

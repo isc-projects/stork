@@ -381,7 +381,20 @@ func TestParseTimestampPrefixErrorForNoDelimiter(t *testing.T) {
 // Function for a invalid prefix should return error.
 func TestParseTimestampPrefixErrorForInvalid(t *testing.T) {
 	// Arrange
-	timestamp := time.Time{}.Format(time.RFC3339)
+	timestamp := "bar"
+	filename := fmt.Sprintf("%s_foo.ext", timestamp)
+
+	// Act
+	_, _, err := ParseTimestampPrefix(filename)
+
+	// Assert
+	require.Error(t, err)
+}
+
+// Function for too short prefix should return error.
+func TestParseTimestampPrefixTooShort(t *testing.T) {
+	// Arrange
+	timestamp := "2021-11-15T12:00:00"
 	filename := fmt.Sprintf("%s_foo.ext", timestamp)
 
 	// Act
