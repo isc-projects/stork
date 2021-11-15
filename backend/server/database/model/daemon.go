@@ -208,6 +208,8 @@ type Daemon struct {
 
 	KeaDaemon   *KeaDaemon
 	Bind9Daemon *Bind9Daemon
+
+	ConfigReview *ConfigReview
 }
 
 // Structure representing HA service information displayed for the daemon

@@ -485,6 +485,36 @@ func TestGetAllMachines(t *testing.T) {
 		}
 		err := AddMachine(db, m)
 		require.NoError(t, err)
+
+		a := &App{
+			MachineID: m.ID,
+			Type:      AppTypeKea,
+			AccessPoints: []*AccessPoint{
+				{
+					MachineID: m.ID,
+					Type:      "control",
+					Address:   "localhost",
+					Port:      1234,
+					Key:       "",
+				},
+			},
+			Daemons: []*Daemon{
+				{
+					Name:   "dhcp4",
+					Active: true,
+				},
+			},
+		}
+		_, err = AddApp(db, a)
+		require.NoError(t, err)
+
+		cr := &ConfigReview{
+			ConfigHash: "1234",
+			Signature:  "2345",
+			DaemonID:   a.Daemons[0].ID,
+		}
+		err = AddConfigReview(db, cr)
+		require.NoError(t, err)
 	}
 
 	// get all machines should return 20 machines
@@ -498,6 +528,13 @@ func TestGetAllMachines(t *testing.T) {
 	require.EqualValues(t, 4, machines[0].State.Cpus)
 	require.EqualValues(t, 4, machines[19].State.Cpus)
 	require.NotEqual(t, machines[0].AgentPort, machines[19].AgentPort)
+
+	// Ensure that we fetched apps, daemons and config reviews too.
+	require.Len(t, machines[0].Apps, 1)
+	require.Len(t, machines[0].Apps[0].Daemons, 1)
+	require.NotNil(t, machines[0].Apps[0].Daemons[0].ConfigReview)
+	require.Equal(t, "1234", machines[0].Apps[0].Daemons[0].ConfigReview.ConfigHash)
+	require.Equal(t, "2345", machines[0].Apps[0].Daemons[0].ConfigReview.Signature)
 
 	// get only unauthorized machines
 	authorized := false

@@ -193,6 +193,7 @@ func GetAllMachines(db *pg.DB, authorized *bool) ([]Machine, error) {
 	q = q.Relation("Apps.AccessPoints")
 	q = q.Relation("Apps.Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Apps.Daemons.Bind9Daemon")
+	q = q.Relation("Apps.Daemons.ConfigReview")
 
 	err := q.Select()
 	if err != nil && errors.Is(err, pg.ErrNoRows) {
