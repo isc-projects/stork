@@ -368,7 +368,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
     }
 
     _dumpConfiguration(machine: Machine) {
-        
+        window.location.href = `api/machines/${machine.id}/dump`
     }
 
     /**
