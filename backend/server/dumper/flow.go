@@ -115,7 +115,7 @@ func flatStructureWithTimestampNamingConvention(dump dumps.Dump, artifact dumps.
 	return filename
 }
 
-// Serialize Go struct to pretty indent JSON
+// Serialize Go struct to pretty indent JSON.
 func indentJSONSerializer(v interface{}) ([]byte, error) {
 	return json.MarshalIndent(v, "", "    ")
 }

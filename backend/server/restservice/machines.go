@@ -703,7 +703,6 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 // for diagnostic purposes. The archive contains the database dumps and some log files.
 func (r *RestAPI) GetMachineDump(ctx context.Context, params services.GetMachineDumpParams) middleware.Responder {
 	dump, err := dumper.DumpMachine(r.DB, r.Agents, params.ID)
-
 	if err != nil {
 		status := http.StatusInternalServerError
 		statusMessage := fmt.Sprintf("cannot dump machine %d", params.ID)

@@ -56,16 +56,6 @@ const (
 	MachineRelationKeaDHCPConfigs
 )
 
-var machineRelationToTableChainMap = map[MachineRelation]string{
-	MachineRelationApps:             "Apps",
-	MachineRelationDaemons:          "Apps.Daemons",
-	MachineRelationKeaDaemons:       "Apps.Daemons.KeaDaemon",
-	MachineRelationBind9Daemons:     "Apps.Daemons.Bind9Daemon",
-	MachineRelationDaemonLogTargets: "Apps.Daemons.LogTargets",
-	MachineRelationAppAccessPoints:  "Apps.AccessPoints",
-	MachineRelationKeaDHCPConfigs:   "Apps.Daemons.KeaDaemon.KeaDHCPDaemon",
-}
-
 // Add new machine to database.
 func AddMachine(db *pg.DB, machine *Machine) error {
 	err := db.Insert(machine)
@@ -108,8 +98,18 @@ func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 		MachineRelationKeaDHCPConfigs)
 }
 
-// Get a machine by its ID with relations
+// Get a machine by its ID with relations.
 func GetMachineByIDWithRelations(db *pg.DB, id int64, relations ...MachineRelation) (*Machine, error) {
+	machineRelationToTableChainMap := map[MachineRelation]string{
+		MachineRelationApps:             "Apps",
+		MachineRelationDaemons:          "Apps.Daemons",
+		MachineRelationKeaDaemons:       "Apps.Daemons.KeaDaemon",
+		MachineRelationBind9Daemons:     "Apps.Daemons.Bind9Daemon",
+		MachineRelationDaemonLogTargets: "Apps.Daemons.LogTargets",
+		MachineRelationAppAccessPoints:  "Apps.AccessPoints",
+		MachineRelationKeaDHCPConfigs:   "Apps.Daemons.KeaDaemon.KeaDHCPDaemon",
+	}
+
 	tables := make([]string, len(relations))
 	for idx, relation := range relations {
 		tableName, ok := machineRelationToTableChainMap[relation]
