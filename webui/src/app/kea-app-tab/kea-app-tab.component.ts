@@ -77,12 +77,6 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
      */
     @Output() renameApp = new EventEmitter<string>()
 
-    /**
-     * A map holding the total number of the config review reports for
-     * different daemons.
-     */
-    totalConfigReports = new Map()
-
     constructor(
         private route: ActivatedRoute,
         private router: Router,
@@ -418,20 +412,5 @@ export class KeaAppTabComponent implements OnInit, OnDestroy {
                 break
         }
         return 'Unknown'
-    }
-
-    /**
-     * This function is invoked whenever the config review panel component
-     * emits an event that the total number of review reports has been
-     * updated.
-     *
-     * The function records the received data to display a badge with
-     * the total number of reports for a displayed daemon.
-     *
-     * @param event an event comprising daemon id and the new total
-     *        events number.
-     */
-    onUpdateTotalReports(event) {
-        this.totalConfigReports[event.daemonId] = event.total
     }
 }

@@ -9,7 +9,8 @@ import (
 // It substitutes the default dispatcher implementation in the
 // unit tests.
 type FakeDispatcher struct {
-	CallLog []string
+	CallLog   []string
+	Signature string
 }
 
 func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSelector, checkerName string, checkFn func(*configreview.ReviewContext) (*configreview.Report, error)) {
@@ -19,6 +20,11 @@ func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSele
 func (d *FakeDispatcher) UnregisterChecker(selector configreview.DispatchGroupSelector, checkerName string) bool {
 	d.CallLog = append(d.CallLog, "UnregisterChecker")
 	return true
+}
+
+func (d *FakeDispatcher) GetSignature() string {
+	d.CallLog = append(d.CallLog, "GetSignature")
+	return d.Signature
 }
 
 func (d *FakeDispatcher) Start() {

@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/agentcomm"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
+	kea "isc.org/stork/server/apps/kea"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
@@ -158,4 +159,58 @@ func TestAppCompare(t *testing.T) {
 	// different ports so not equal
 	dbApp.AccessPoints[0].Port = 4321
 	require.False(t, appCompare(dbApp, app))
+}
+
+// Test that new configuration review is scheduled when a daemon's
+// configuration has changed or when review dispatcher's checkers
+// have changed.
+func TestConditionallyBeginKeaConfigReviews(t *testing.T) {
+	config, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp4": { }}`)
+	require.NoError(t, err)
+
+	app := &dbmodel.App{
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name: "dhcp4",
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: config,
+				},
+				ConfigReview: &dbmodel.ConfigReview{
+					Signature: "",
+				},
+			},
+		},
+	}
+
+	state := &kea.AppStateMeta{
+		SameConfigDaemons: make(map[string]bool),
+	}
+
+	dispatcher := &storktest.FakeDispatcher{}
+
+	// New daemon. The review should be initiated.
+	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
+	require.Len(t, dispatcher.CallLog, 1)
+	require.Equal(t, "BeginReview", dispatcher.CallLog[0])
+
+	// There are no "same daemons". The review should be
+	// performed again.
+	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
+	require.Len(t, dispatcher.CallLog, 2)
+	require.Equal(t, "BeginReview", dispatcher.CallLog[1])
+
+	// Neither daemon's configuration nor dispatcher's signature
+	// have changed. The review should not be performed.
+	state.SameConfigDaemons["dhcp4"] = true
+	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
+	require.Len(t, dispatcher.CallLog, 3)
+	require.Equal(t, "GetSignature", dispatcher.CallLog[2])
+
+	// Modify the dispatcher's signature. It should result in
+	// another config review.
+	dispatcher.Signature = "new signature"
+	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
+	require.Len(t, dispatcher.CallLog, 5)
+	require.Equal(t, "GetSignature", dispatcher.CallLog[3])
+	require.Equal(t, "BeginReview", dispatcher.CallLog[4])
 }

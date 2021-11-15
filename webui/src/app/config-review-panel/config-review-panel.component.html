@@ -1,27 +1,62 @@
-<div id="config-reports-div" *ngIf="reports && reports.length > 0; else elseBlock">
-    <div style="margin-bottom: 30px" *ngFor="let report of reports">
-        <p-divider styleClass="report-divider" type="dashed">
-            <p-tag>
-                {{ report.checker }}
-            </p-tag>
-        </p-divider>
-        <span class="fas fa-pencil-alt" style="font-size: 0.9rem; padding-right: 4px"></span>
-        <span class="p-text-italic" style="color: var(--text-color); font-size: 0.9rem">
-            <app-event-text [text]="report.content"></app-event-text>
+<p-panel>
+    <ng-template pTemplate="header">
+        <div style="width: 100%; display: flex; justify-content: space-between">
+            <div id="review-summary-div" *ngIf="review" class="p-text-normal">
+                <span class="p-text-bold"> {{ total || 0 }}</span> report{{ total != 1 ? 's' : '' }} generated at
+                <span class="p-text-bold">{{ review.createdAt | localtime }} </span>
+            </div>
+            <button
+                id="review-button"
+                pButton
+                *ngIf="!refreshFailed; else refreshFailedElse"
+                type="button"
+                label="Run review"
+                class="p-button-sm"
+                icon="pi pi-search"
+                [loading]="busy"
+                (click)="runReview()"
+            ></button>
+            <ng-template #refreshFailedElse>
+                <button
+                    id="refresh-button"
+                    pButton
+                    type="button"
+                    label="Refresh reports"
+                    class="p-button-sm"
+                    icon="pi pi-search"
+                    [loading]="busy"
+                    (click)="refreshDaemonConfigReports(null)"
+                ></button>
+            </ng-template>
+        </div>
+    </ng-template>
+    <ng-container *ngIf="reports && reports.length > 0; else elseBlock">
+        <div style="margin-bottom: 30px" *ngFor="let report of reports">
+            <p-divider styleClass="report-divider" type="solid" align="left">
+                <p-tag>
+                    {{ report.checker }}
+                </p-tag>
+            </p-divider>
+            <span class="fas fa-pencil-alt" style="font-size: 0.9rem; padding-right: 4px"></span>
+            <span class="p-text-italic" style="color: var(--text-color); font-size: 0.9rem">
+                <app-event-text [text]="report.content"></app-event-text>
+            </span>
+        </div>
+        <p-divider type="solid"></p-divider>
+        <p-paginator
+            class="config-review-pager"
+            [rows]="limit"
+            [totalRecords]="total"
+            pageLinkSize="3"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="{first} - {last} of {totalRecords}"
+            (onPageChange)="paginate($event)"
+        >
+        </p-paginator>
+    </ng-container>
+    <ng-template #elseBlock>
+        <span id="status-text" class="p-text-italic" style="font-size: 0.9rem">
+            {{ getStatusText() }}
         </span>
-    </div>
-    <p-divider type="dashed"></p-divider>
-    <p-paginator
-        class="config-review-pager"
-        [rows]="limit"
-        [totalRecords]="total"
-        pageLinkSize="3"
-        [showCurrentPageReport]="true"
-        currentPageReportTemplate="{first} - {last} of {totalRecords}"
-        (onPageChange)="paginate($event)"
-    >
-    </p-paginator>
-</div>
-<ng-template #elseBlock>
-    <span id="empty-list-text" class="p-text-italic" style="font-size: 0.9rem">No issues found for this daemon.</span>
-</ng-template>
+    </ng-template>
+</p-panel>

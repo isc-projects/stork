@@ -178,6 +178,7 @@ type dispatcherImpl struct {
 type Dispatcher interface {
 	RegisterChecker(selector DispatchGroupSelector, checkerName string, checkFn func(*ReviewContext) (*Report, error))
 	UnregisterChecker(selector DispatchGroupSelector, checkerName string) bool
+	GetSignature() string
 	Start()
 	Shutdown()
 	BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool

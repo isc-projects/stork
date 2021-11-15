@@ -237,26 +237,4 @@ describe('KeaAppTabComponent', () => {
         const dataStorage = fixture.debugElement.query(By.css('#data-storage-div'))
         expect(dataStorage).toBeNull()
     })
-
-    it('should display a badge with total number of reports', () => {
-        // Simulate having 100 config review reports.
-        component.totalConfigReports[1] = 100
-        fixture.detectChanges()
-        // Ensure that the badge with the total number of reports has been displayed.
-        let configReviewReportsTotalTag = fixture.debugElement.query(By.css('#config-review-reports-total-tag'))
-        expect(configReviewReportsTotalTag).toBeTruthy()
-        expect(configReviewReportsTotalTag.nativeElement.innerText).toContain('100 reports')
-
-        // Repeat the same test for a single report.
-        component.totalConfigReports[1] = 1
-        fixture.detectChanges()
-        expect(configReviewReportsTotalTag).toBeTruthy()
-        expect(configReviewReportsTotalTag.nativeElement.innerText).toContain('1 report')
-
-        // When there are no reports the badge should not be displayed.
-        component.totalConfigReports[1] = 0
-        fixture.detectChanges()
-        configReviewReportsTotalTag = fixture.debugElement.query(By.css('#config-review-reports-total-tag'))
-        expect(configReviewReportsTotalTag).toBeFalsy()
-    })
 })

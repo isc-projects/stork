@@ -1,4 +1,5 @@
 import { fakeAsync, tick, ComponentFixture, TestBed } from '@angular/core/testing'
+import { HttpStatusCode } from '@angular/common/http'
 import { HttpClientTestingModule } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
@@ -6,10 +7,13 @@ import { of, throwError } from 'rxjs'
 import { DividerModule } from 'primeng/divider'
 import { PaginatorModule } from 'primeng/paginator'
 import { TagModule } from 'primeng/tag'
+import { PanelModule } from 'primeng/panel'
+import { ButtonModule } from 'primeng/button'
 import { MessageService } from 'primeng/api'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { ServicesService } from '../backend'
+import { LocaltimePipe } from '../localtime.pipe'
 
 describe('ConfigReviewPanelComponent', () => {
     let component: ConfigReviewPanelComponent
@@ -20,8 +24,16 @@ describe('ConfigReviewPanelComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             providers: [ServicesService, MessageService],
-            imports: [DividerModule, HttpClientTestingModule, NoopAnimationsModule, PaginatorModule, TagModule],
-            declarations: [ConfigReviewPanelComponent, EventTextComponent],
+            imports: [
+                ButtonModule,
+                DividerModule,
+                HttpClientTestingModule,
+                NoopAnimationsModule,
+                PaginatorModule,
+                PanelModule,
+                TagModule,
+            ],
+            declarations: [ConfigReviewPanelComponent, EventTextComponent, LocaltimePipe],
         }).compileComponents()
     })
 
@@ -38,7 +50,7 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component).toBeTruthy()
     })
 
-    it('should handle a communication error', fakeAsync(() => {
+    it('should handle a communication error while initially fetching the reports', fakeAsync(() => {
         // Simulate an error returned by the server and ensure that the
         // error message is displayed over the message service.
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(throwError({ status: 404 }))
@@ -56,21 +68,29 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.limit).toBe(5)
         expect(component.total).toBe(0)
         expect(component.reports.length).toBe(0)
+        expect(component.refreshFailed).toBeTruthy()
 
-        // Ensure that the report list box is not displayed.
-        const configReportsDiv = fixture.debugElement.query(By.css('#config-reports-div'))
-        expect(configReportsDiv).toBeFalsy()
+        fixture.detectChanges()
 
-        // A message indicating that no reports were found should be shown.
-        const emptyListText = fixture.debugElement.query(By.css('#empty-list-text'))
-        expect(emptyListText.properties.innerText).toBe('No issues found for this daemon.')
+        // A message indicating that we were unable to fetch the reports should
+        // be displayed.
+        const statusText = fixture.debugElement.query(By.css('#status-text'))
+        expect(statusText.properties.innerText).toBe(
+            'An error occurred while fetching the configuration review reports.'
+        )
     }))
 
-    it('should display empty list message when null reports returned', fakeAsync(() => {
+    it('should display empty list message when null reports are returned', fakeAsync(() => {
         // The API call returns a null items value when no reports were found.
         const fakeReports: any = {
-            items: null,
-            total: 0,
+            status: HttpStatusCode.Ok,
+            body: {
+                items: null,
+                total: 0,
+                review: {
+                    createdAt: '2021-11-18',
+                },
+            },
         }
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(of(fakeReports))
 
@@ -78,26 +98,34 @@ describe('ConfigReviewPanelComponent', () => {
         component.ngOnInit()
         tick()
 
-        // The reports and the total values should be set accordingly.
+        // The reports, review information and the total values should be set accordingly.
         expect(component.reports).toBeNull()
         expect(component.total).toBe(0)
+        expect(component.review).toBeTruthy()
 
         // Make sure that the view was properly updated.
         fixture.detectChanges()
 
-        const configReportsDiv = fixture.debugElement.query(By.css('#config-reports-div'))
-        expect(configReportsDiv).toBeFalsy()
+        // Ensure that the review button is present.
+        const reviewButton = fixture.debugElement.query(By.css('#review-button'))
+        expect(reviewButton).toBeTruthy()
 
-        const emptyListText = fixture.debugElement.query(By.css('#empty-list-text'))
-        expect(emptyListText.properties.innerText).toBe('No issues found for this daemon.')
+        const statusText = fixture.debugElement.query(By.css('#status-text'))
+        expect(statusText.properties.innerText).toBe('No configuration issues found for this daemon.')
     }))
 
-    it('should display empty list message when empty reports returned', fakeAsync(() => {
+    it('should display empty list message when empty reports list is returned', fakeAsync(() => {
         // Let's return an empty list of reports and make sure that
         // the information about no returned reports is displayed.
         const fakeReports: any = {
-            items: [],
-            total: 0,
+            status: HttpStatusCode.Ok,
+            body: {
+                items: [],
+                total: 0,
+                review: {
+                    createdAt: '2021-11-18',
+                },
+            },
         }
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(of(fakeReports))
 
@@ -109,32 +137,39 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.reports).toBeTruthy()
         expect(component.reports.length).toBe(0)
         expect(component.total).toBe(0)
+        expect(component.review).toBeTruthy()
 
         // Refresh the view.
         fixture.detectChanges()
 
-        const configReportsDiv = fixture.debugElement.query(By.css('#config-reports-div'))
-        expect(configReportsDiv).toBeFalsy()
+        // Ensure that the review button is present.
+        const reviewButton = fixture.debugElement.query(By.css('#review-button'))
+        expect(reviewButton).toBeTruthy()
 
-        const emptyListText = fixture.debugElement.query(By.css('#empty-list-text'))
-        expect(emptyListText.properties.innerText).toBe('No issues found for this daemon.')
+        const statusText = fixture.debugElement.query(By.css('#status-text'))
+        expect(statusText.properties.innerText).toBe('No configuration issues found for this daemon.')
     }))
 
-    it('should get config reports', fakeAsync(() => {
+    it('should get and display config reports', fakeAsync(() => {
         // Generate and return several reports.
         const fakeReports: any = {
-            items: new Array(),
-            total: 5,
+            status: HttpStatusCode.Ok,
+            body: {
+                items: new Array(),
+                total: 5,
+                review: {
+                    createdAt: '2021-11-18',
+                },
+            },
         }
         for (let i = 0; i < 5; i++) {
             const report = {
                 checker: 'checker_no_' + i,
                 content: 'test content no ' + i,
             }
-            fakeReports.items.push(report)
+            fakeReports.body.items.push(report)
         }
         spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(of(fakeReports))
-        spyOn(component.updateTotal, 'emit')
 
         component.daemonId = 1
 
@@ -146,44 +181,164 @@ describe('ConfigReviewPanelComponent', () => {
         expect(component.reports).toBeTruthy()
         expect(component.reports.length).toBe(5)
         expect(component.total).toBe(5)
-
-        // Make sure that the event notifying about the new total number of
-        // reports was emitted.
-        expect(component.updateTotal.emit).toHaveBeenCalledWith({ daemonId: 1, total: 5 })
+        expect(component.review).toBeTruthy()
 
         // Refresh the view.
         fixture.detectChanges()
 
-        // The box holding the report list should be visible.
-        const configReportsDiv = fixture.debugElement.query(By.css('#config-reports-div'))
-        expect(configReportsDiv).toBeTruthy()
+        // Ensure that the review button is present.
+        const reviewButton = fixture.debugElement.query(By.css('#review-button'))
+        expect(reviewButton).toBeTruthy()
+
+        // It should contain the config review summary text.
+        const reviewSummaryDiv = fixture.debugElement.query(By.css('#review-summary-div'))
+        expect(reviewSummaryDiv).toBeTruthy()
+        expect(reviewSummaryDiv.properties.innerText).toContain('5 reports generated at 2021-11-18')
 
         // It should contain 5 badges with checker names.
-        const checkerTags = configReportsDiv.queryAll(By.css('p-tag'))
+        const checkerTags = fixture.debugElement.queryAll(By.css('p-tag'))
         expect(checkerTags.length).toBe(5)
 
         // It should contain 5 config reports.
-        const reportContents = configReportsDiv.queryAll(By.css('app-event-text'))
+        const reportContents = fixture.debugElement.queryAll(By.css('app-event-text'))
         expect(reportContents.length).toBe(5)
 
         // Validate the checker names and the report contents.
         for (let i = 0; i < 5; i++) {
-            expect(checkerTags[i].nativeElement.innerText).toBe(fakeReports.items[i].checker)
-            expect(reportContents[i].nativeElement.innerText).toBe(fakeReports.items[i].content)
+            expect(checkerTags[i].nativeElement.innerText).toBe(fakeReports.body.items[i].checker)
+            expect(reportContents[i].nativeElement.innerText).toBe(fakeReports.body.items[i].content)
         }
     }))
 
-    it('should get daemon configs after on pagination', fakeAsync(() => {
+    it('should get daemon configs on pagination', fakeAsync(() => {
         spyOn(servicesApi, 'getDaemonConfigReports').and.callThrough()
 
         // Set the input for the paginate function.
         component.daemonId = 123
         const event = { first: 2, rows: 5 }
+        const observe: any = 'response'
         component.paginate(event)
         tick()
 
         // This function should execute getDaemonConfigReports with appropriate
         // parameters.
-        expect(servicesApi.getDaemonConfigReports).toHaveBeenCalledWith(component.daemonId, event.first, event.rows)
+        expect(servicesApi.getDaemonConfigReports).toHaveBeenCalledWith(
+            component.daemonId,
+            event.first,
+            event.rows,
+            observe
+        )
+    }))
+
+    it('should re-run review and refresh config reports', fakeAsync(() => {
+        const putResponse: any = {
+            status: HttpStatusCode.Accepted,
+        }
+        spyOn(servicesApi, 'putDaemonConfigReview').and.returnValue(of(putResponse))
+
+        // Simulate the case when the was not performed for the daemon yet,
+        const getResponse: any = {
+            status: HttpStatusCode.NoContent,
+        }
+        spyOn(servicesApi, 'getDaemonConfigReports').and.returnValue(of(getResponse))
+
+        // Run review with no delays between retries.
+        component.runReview(false)
+        tick()
+
+        // Ensure that the appropriate API calls were made. The second
+        // call follows the success (Accepted) response to the first
+        // call.
+        const observe: any = 'response'
+        expect(servicesApi.putDaemonConfigReview).toHaveBeenCalledWith(component.daemonId, observe)
+        expect(servicesApi.getDaemonConfigReports).toHaveBeenCalled()
+
+        expect(component.reports).toBeTruthy()
+        expect(component.reports.length).toBe(0)
+        expect(component.review).toBeFalsy()
+        expect(component.total).toBe(0)
+        expect(component.start).toBe(0)
+        expect(component.limit).toBe(5)
+        expect(component.refreshFailed).toBeFalse()
+
+        fixture.detectChanges()
+
+        // Ensure that the review button is present.
+        const reviewButton = fixture.debugElement.query(By.css('#review-button'))
+        expect(reviewButton).toBeTruthy()
+    }))
+
+    it('should report an error when review request fails', fakeAsync(() => {
+        // Simulate the situation that the reports were already fetched.
+        component.reports = [
+            {
+                checker: 'checker',
+                content: 'content',
+            },
+        ]
+        component.total = 1
+        component.review = {
+            createdAt: '2021-11-18',
+        }
+
+        // Simulate an error returned by the server and ensure that the
+        // error message is displayed over the message service.
+        spyOn(servicesApi, 'putDaemonConfigReview').and.returnValue(throwError({ status: 404 }))
+        spyOn(msgService, 'add')
+
+        // This call should trigger the API call without delays between
+        // the retries.
+        component.runReview(false)
+        tick()
+
+        // Ensure that the API call is triggered and that the error
+        // message is displayed.
+        expect(servicesApi.putDaemonConfigReview).toHaveBeenCalled()
+        expect(msgService.add).toHaveBeenCalled()
+
+        // The error should not affect already presented reports.
+        expect(component.reports).toBeTruthy()
+        expect(component.reports.length).toBe(1)
+        expect(component.total).toBe(1)
+
+        fixture.detectChanges()
+
+        // Ensure that the review button is present.
+        const reviewButton = fixture.debugElement.query(By.css('#review-button'))
+        expect(reviewButton).toBeTruthy()
+    }))
+
+    it('should warn after several refresh retries', fakeAsync(() => {
+        // Simulate the case that the server returns HTTP Accepted status
+        // code endlessly. It should eventually cause the client to
+        // stop retrying.
+        const fakeResponse: any = {
+            status: HttpStatusCode.Accepted,
+        }
+        spyOn(servicesApi, 'getDaemonConfigReports').and.returnValues(of(fakeResponse))
+        spyOn(msgService, 'add')
+
+        // Try to get the reports.
+        component.refreshDaemonConfigReports(null, false)
+        tick()
+
+        // Ensure that the API call is made and that the warning message
+        // is displayed informing that the user should try refreshing
+        // later.
+        expect(servicesApi.getDaemonConfigReports).toHaveBeenCalled()
+        expect(msgService.add).toHaveBeenCalled()
+
+        expect(component.busy).toBeFalse()
+        expect(component.refreshFailed).toBeTrue()
+
+        fixture.detectChanges()
+
+        // Ensure that the review button is absent.
+        const reviewButton = fixture.debugElement.query(By.css('#review-button'))
+        expect(reviewButton).toBeFalsy()
+
+        // Ensure that the refresh button is present.
+        const refreshButton = fixture.debugElement.query(By.css('#refresh-button'))
+        expect(refreshButton).toBeTruthy()
     }))
 })

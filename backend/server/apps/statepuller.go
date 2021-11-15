@@ -274,23 +274,8 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 			if err == nil {
 				// Let's now identify new daemons or the daemons with updated
 				// configurations and schedule configuration reviews for them
-				for i, daemon := range dbApp.Daemons {
-					if state != nil && state.SameConfigDaemons != nil {
-						if ok := state.SameConfigDaemons[daemon.Name]; ok {
-							// Configuration of this daemon hasn't changed. Don't
-							// run the configuration review.
-							continue
-						}
-					}
-					// It is a new daemon or its configuration has been recently updated.
-					// Let's make sure that the config pointer is set. It can be nil
-					// when the daemon is inactive.
-					if daemon.KeaDaemon != nil && daemon.KeaDaemon.Config != nil {
-						_ = reviewDispatcher.BeginReview(dbApp.Daemons[i], nil)
-					}
-				}
+				conditionallyBeginKeaConfigReviews(dbApp, state, reviewDispatcher)
 			}
-
 		case dbmodel.AppTypeBind9:
 			bind9.GetAppState(ctx2, agents, dbApp, eventCenter)
 			err = bind9.CommitAppIntoDB(db, dbApp, eventCenter)
@@ -309,4 +294,28 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 	dbMachine.Apps = allApps
 
 	return ""
+}
+
+// This function iterates over the app's daemons and checks if a new config
+// review should be performed. It is performed when daemon's configuration
+// or dispatcher's signature has changed.
+func conditionallyBeginKeaConfigReviews(dbApp *dbmodel.App, state *kea.AppStateMeta, reviewDispatcher configreview.Dispatcher) {
+	for i, daemon := range dbApp.Daemons {
+		// Let's make sure that the config pointer is set. It can be nil
+		// when the daemon is inactive.
+		if daemon.KeaDaemon == nil || daemon.KeaDaemon.Config == nil {
+			continue
+		}
+		if state != nil && state.SameConfigDaemons != nil {
+			if ok := state.SameConfigDaemons[daemon.Name]; ok && state.SameConfigDaemons[daemon.Name] {
+				if daemon.ConfigReview != nil &&
+					daemon.ConfigReview.Signature == reviewDispatcher.GetSignature() {
+					// Configuration of this daemon hasn't changed and the dispatcher has
+					// no checkers modified since the last review. Skip the review.
+					continue
+				}
+			}
+		}
+		_ = reviewDispatcher.BeginReview(dbApp.Daemons[i], nil)
+	}
 }
