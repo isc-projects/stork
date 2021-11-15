@@ -1,7 +1,7 @@
 package dumper
 
 import (
-	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,7 +14,6 @@ import (
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/dumper/dumps"
-	storkutil "isc.org/stork/util"
 )
 
 var ErrNotFoundMachine error = errors.New("machine not found")
@@ -60,39 +59,13 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 // on returned reader all resources will be released.
 // The returned reader is ready to read.
 func saveDumpsToAutoReleaseContainer(saver saver, dumps []dumps.Dump) (io.ReadCloser, error) {
-	// Prepare the temporary file for the dump.
-	target, err := ioutil.TempFile("", "stork-dump-*")
+	// Prepare the temporary buffer.
+	var buffer bytes.Buffer
+	err := saver.Save(&buffer, dumps)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot create an archive file")
+		return nil, err
 	}
-	// The dump file will closed by the HTTP middelware. Therefore, we
-	// pack it into self-destroy wrapper to be sure that the file will
-	// be deleted. It is the temporary file. It means that it will deleted even
-	// if the app crashes.
-	elfDestructWrapper := storkutil.NewSelfDestructFileWrapper(target)
-
-	// Save the dumps to the tarball.
-	bufferWriter := bufio.NewWriter(target)
-	err = saver.Save(bufferWriter, dumps)
-
-	if err != nil {
-		elfDestructWrapper.Close()
-		return nil, errors.Wrap(err, "cannot save the dumps")
-	}
-
-	err = bufferWriter.Flush()
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot flush the dump content")
-	}
-
-	// Reset the file position to the beginning.
-	_, err = target.Seek(0, io.SeekStart)
-	if err != nil {
-		elfDestructWrapper.Close()
-		return nil, errors.Wrap(err, "cannot seek the file")
-	}
-
-	return elfDestructWrapper, nil
+	return ioutil.NopCloser(bytes.NewReader(buffer.Bytes())), nil
 }
 
 // Naming convention rules:

@@ -2,7 +2,6 @@ package dumper
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 
@@ -13,7 +12,6 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/dumper/dumps"
 	storktest "isc.org/stork/server/test"
-	"isc.org/stork/testutil"
 	storkutil "isc.org/stork/util"
 )
 
@@ -80,7 +78,7 @@ func TestNamingConventionReturnsValidFilenames(t *testing.T) {
 
 	// Assert
 	for _, filename := range filenames {
-		require.True(t, testutil.IsValidFilename(filename), fmt.Sprintf("Wrong filename: %s", filename))
+		require.True(t, storkutil.IsValidFilename(filename), fmt.Sprintf("Wrong filename: %s", filename))
 	}
 }
 
@@ -140,41 +138,4 @@ func TestDumpMachineReturnsProperContent(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.Len(t, filenames, 4)
-}
-
-// Test that the machine dump return a self-destoy file.
-// It is very important to ensure that the dump is deleted
-// after a request handling because the file is closed internally
-// by a HTTP framework.
-func TestSaveToAutoReleaseContainer(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	m := &dbmodel.Machine{
-		ID:         0,
-		Address:    "localhost",
-		AgentPort:  8080,
-		Authorized: true,
-	}
-	_ = dbmodel.AddMachine(db, m)
-	_ = dbmodel.InitializeSettings(db)
-
-	settings := agentcomm.AgentsSettings{}
-	fec := &storktest.FakeEventCenter{}
-	agents := agentcomm.NewConnectedAgents(&settings, fec, []byte{}, []byte{}, []byte{})
-	defer agents.Shutdown()
-	result, _ := DumpMachine(db, agents, m.ID)
-
-	// Act
-	// I don't have any better approach to check if the all garbages
-	// are collected after close the file.
-	// It looks as a code bloat, but it is very important use case.
-	wrapper := result.(*storkutil.SelfDestructFileWrapper)
-	path := wrapper.Name()
-	result.Close()
-	_, err := os.Stat(path)
-
-	// Assert
-	require.ErrorIs(t, err, os.ErrNotExist)
 }
