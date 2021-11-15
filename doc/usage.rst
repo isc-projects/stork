@@ -117,6 +117,25 @@ agent process must be done manually, e.g. by connecting to the machine
 using ssh and stopping the agent there. The preferred way to achieve that is to
 issue the ``killall stork-agent`` command.
 
+Dump a Machine
+~~~~~~~~~~~~~~
+
+The Stork has the possibility to dump all machine-related data and configurations into a single archive.  It can be used to diagnose problems with Kea, Bind9, or Stork itself.
+
+The dump can be downloaded via the ``Action`` menu. On the
+``Machines`` list, each machine has its own menu; click on the
+triple-lines button on the right side and choose the ``Dump configuration`` option. The same function can be called from the machine page - there is a gray button with the same title.
+After clicking the downloading starts in a few seconds.
+
+The archive has a tarball format (``.tar.gz``). It contains:
+
+- the machine database entry with all related data (access points, apps, daemons,  log targets, and detailed daemon configurations)
+- the global server settings
+- last events related to a specific machine
+- all log tails related to a specific machine (if the Stork Agent is available)
+
+The Stork removes the sensitive data (password and tokens) from the dumped data.
+
 Monitoring Applications
 =======================
 
