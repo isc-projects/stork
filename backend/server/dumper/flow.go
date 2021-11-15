@@ -17,18 +17,23 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+var ErrNotFoundMachine error = errors.New("machine not found")
+
 // The main function of this module. It dumps the specific machine (and related data) to the tarball archive.
 func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID int64) (io.ReadCloser, error) {
 	m, err := dbmodel.GetMachineByID(db, machineID)
 	if err != nil {
 		return nil, err
 	}
+	if m == nil {
+		return nil, ErrNotFoundMachine
+	}
 
 	// Factory will create the dump instances
 	factory := newFactory(db, m, connectedAgents)
 	// Saver will save the dumps to the tarball as JSON and raw binary files
 	// It uses a flat structure - it means the output doesn't contain subfolders.
-	saver := newTarbalSaver(json.Marshal, flatStructureWithTimestampNamingConvention)
+	saver := newTarbalSaver(indentJSONSerializer, flatStructureWithTimestampNamingConvention)
 
 	// Init dump objects
 	dumps := factory.All()
@@ -48,7 +53,7 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 // The returned reader is ready to read.
 func saveDumpsToAutoReleaseContainer(saver saver, dumps []dumps.Dump) (io.ReadCloser, error) {
 	// Prepare the temporary file for the dump.
-	target, err := ioutil.TempFile("", "*")
+	target, err := ioutil.TempFile("", "stork-dump-*")
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create an archive file")
 	}
@@ -100,4 +105,9 @@ func flatStructureWithTimestampNamingConvention(dump dumps.Dump, artifact dumps.
 	filename = strings.ReplaceAll(filename, "/", "?")
 	filename = strings.ReplaceAll(filename, "*", "?")
 	return filename
+}
+
+// Serialize Go struct to pretty indent JSON
+func indentJSONSerializer(v interface{}) ([]byte, error) {
+	return json.MarshalIndent(v, "", "    ")
 }
