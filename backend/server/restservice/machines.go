@@ -707,7 +707,7 @@ func (r *RestAPI) GetMachineDump(ctx context.Context, params services.GetMachine
 		status := http.StatusInternalServerError
 		statusMessage := fmt.Sprintf("cannot dump machine %d", params.ID)
 
-		if errors.Is(err, dumper.ErrNotFoundMachine) {
+		if errors.Is(err, dumper.ErrMachineNotFound) {
 			status = http.StatusNotFound
 			statusMessage = fmt.Sprintf("cannot find machine %d", params.ID)
 		}

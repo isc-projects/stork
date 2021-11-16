@@ -367,7 +367,8 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         )
     }
 
-    dumpConfiguration(machine: Machine) {
+    // Start downloading the dump file.
+    downloadDump(machine: Machine) {
         window.location.href = `api/machines/${machine.id}/dump`
     }
 
@@ -445,7 +446,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
 
             // connect method to dump machine configuration
             this.machineMenuItems[1].command = () => {
-                this.dumpConfiguration(machine)
+                this.downloadDump(machine)
             }
 
             // connect method to authorize machine

@@ -16,7 +16,7 @@ import (
 	"isc.org/stork/server/dumper/dumps"
 )
 
-var ErrNotFoundMachine error = errors.New("machine not found")
+var ErrMachineNotFound error = errors.New("machine not found")
 
 // The main function of this module. It dumps the specific machine (and related data) to the tarball archive.
 func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID int64) (io.ReadCloser, error) {
@@ -33,7 +33,7 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 		return nil, err
 	}
 	if m == nil {
-		return nil, ErrNotFoundMachine
+		return nil, ErrMachineNotFound
 	}
 
 	// Factory will create the dump instances
