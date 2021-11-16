@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
@@ -220,11 +221,22 @@ func TestPopulateKeaReports(t *testing.T) {
 	require.Equal(t, "dhcp4_test_checker", reports[0].CheckerName)
 	require.Equal(t, "DHCPv4 test output", reports[0].Content)
 
+	review, err := dbmodel.GetConfigReviewByDaemonID(db, daemons[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, review)
+	require.WithinDuration(t, time.Now(), review.CreatedAt, 5*time.Second)
+	require.NotEmpty(t, review.ConfigHash)
+	require.NotEmpty(t, review.Signature)
+
 	// Ensure that the reports for the second daemon have not been inserted.
 	reports, total, err = dbmodel.GetConfigReportsByDaemonID(db, 0, 0, daemons[1].ID)
 	require.NoError(t, err)
 	require.Zero(t, total)
 	require.Empty(t, reports)
+
+	review, err = dbmodel.GetConfigReviewByDaemonID(db, daemons[1].ID)
+	require.NoError(t, err)
+	require.Nil(t, review)
 }
 
 // Tests that the configuration reviews for the BIND9 daemon are populated

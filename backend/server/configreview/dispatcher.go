@@ -425,6 +425,21 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 		}
 	}
 
+	// Add configuration review summary.
+	// todo: add config review summary for BIND9. Currently we don't because
+	// BIND9 does not include a config hash.
+	if ctx.subjectDaemon.KeaDaemon != nil {
+		configReview := &dbmodel.ConfigReview{
+			ConfigHash: ctx.subjectDaemon.KeaDaemon.ConfigHash,
+			Signature:  d.GetSignature(),
+			DaemonID:   ctx.subjectDaemon.ID,
+		}
+		err = dbmodel.AddConfigReview(tx, configReview)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = commit()
 	if err != nil {
 		return err
