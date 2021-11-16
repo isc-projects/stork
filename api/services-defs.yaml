@@ -437,6 +437,17 @@
         items:
           $ref: '#/definitions/ServiceStatus'
 
+  ConfigReview:
+    type: object
+    properties:
+      id:
+        type: integer
+      daemonId:
+        type: integer
+      createdAt:
+        type: string
+        format: date-time
+
   ConfigReport:
     type: object
     properties:
@@ -454,6 +465,8 @@
   ConfigReports:
     type: object
     properties:
+      review:
+        $ref: '#/definitions/ConfigReview'
       items:
         type: array
         items:

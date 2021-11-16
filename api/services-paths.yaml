@@ -513,6 +513,10 @@
           description: Daemon configuration review reports list.
           schema:
             $ref: "#/definitions/ConfigReports"
+        202:
+          description: Config review for the daemon is in progress.
+        204:
+          description: No config reports currently available for the daemon.
         default:
           description: generic error response
           schema:

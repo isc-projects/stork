@@ -608,6 +608,24 @@ func TestGetDaemonConfigReports(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	// Add related config review entries.
+	configReviews := []dbmodel.ConfigReview{
+		{
+			DaemonID:   app.Daemons[0].ID,
+			ConfigHash: "1234",
+			Signature:  "2345",
+		},
+		{
+			DaemonID:   app.Daemons[1].ID,
+			ConfigHash: "2345",
+			Signature:  "3456",
+		},
+	}
+	for i := range configReviews {
+		err = dbmodel.AddConfigReview(db, &configReviews[i])
+		require.NoError(t, err)
+	}
+
 	// Try to fetch config reports for the first daemon.
 	params := services.GetDaemonConfigReportsParams{
 		ID: app.Daemons[0].ID,
@@ -642,6 +660,8 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.EqualValues(t, "name 1", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "funny review contents for <daemon id=\"1\" name=\"dhcp4\" appId=\"1\" appType=\"kea\"> and <daemon id=\"2\" name=\"dhcp6\" appId=\"1\" appType=\"kea\">",
 		okRsp.Payload.Items[0].Content)
+	require.NotNil(t, okRsp.Payload.Review)
+	require.NotZero(t, okRsp.Payload.Review.ID)
 
 	// Start at offset 1.
 	*params.Start = 1
@@ -669,14 +689,10 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.EqualValues(t, "name 3", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "review contents for another daemon", okRsp.Payload.Items[0].Content)
 
-	// Fetching non-existing reports should return no reports.
+	// Fetching non-existing reports should return HTTP No Content.
 	params.ID = 1111
 	rsp = rapi.GetDaemonConfigReports(ctx, params)
-	require.IsType(t, &services.GetDaemonConfigReportsOK{}, rsp)
-	okRsp = rsp.(*services.GetDaemonConfigReportsOK)
-
-	require.Zero(t, okRsp.Payload.Total)
-	require.Empty(t, okRsp.Payload.Items)
+	require.IsType(t, &services.GetDaemonConfigReportsNoContent{}, rsp)
 }
 
 // Test that HTTP internal server error is returned when the database
@@ -702,7 +718,7 @@ func TestGetDaemonConfigReportsDatabaseError(t *testing.T) {
 	require.IsType(t, &services.GetDaemonConfigReportsDefault{}, rsp)
 	defaultRsp := rsp.(*services.GetDaemonConfigReportsDefault)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
-	require.Equal(t, "cannot get configuration review reports for daemon with id 1 from db",
+	require.Equal(t, "cannot get configuration review for daemon with id 1 from db",
 		*defaultRsp.Payload.Message)
 }
 

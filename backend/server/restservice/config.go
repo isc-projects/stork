@@ -73,6 +73,20 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 		limit = *params.Limit
 	}
 
+	review, err := dbmodel.GetConfigReviewByDaemonID(r.DB, params.ID)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("cannot get configuration review for daemon with id %d from db", params.ID)
+		rsp := services.NewGetDaemonConfigReportsDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	if review == nil {
+		rsp := services.NewGetDaemonConfigReportsNoContent()
+		return rsp
+	}
+
 	dbReports, total, err := dbmodel.GetConfigReportsByDaemonID(r.DB, start, limit, params.ID)
 	if err != nil {
 		log.Error(err)
@@ -84,6 +98,11 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 	}
 
 	configReports := &models.ConfigReports{
+		Review: &models.ConfigReview{
+			ID:        review.ID,
+			DaemonID:  review.DaemonID,
+			CreatedAt: strfmt.DateTime(review.CreatedAt),
+		},
 		Total: total,
 	}
 
