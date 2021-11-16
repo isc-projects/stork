@@ -705,3 +705,90 @@ func TestGetDaemonConfigReportsDatabaseError(t *testing.T) {
 	require.Equal(t, "cannot get configuration review reports for daemon with id 1 from db",
 		*defaultRsp.Payload.Message)
 }
+
+// Test triggering new configuration review for a daemon.
+func TestPutDaemonConfigReview(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, false)
+	app := &dbmodel.App{
+		MachineID:    machine.ID,
+		Machine:      machine,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
+	}
+
+	daemons, err := dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, daemons, 1)
+	require.NotZero(t, daemons[0].ID)
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Use a valid daemon ID to create new config review.
+	params := services.PutDaemonConfigReviewParams{
+		ID: daemons[0].ID,
+	}
+	rsp := rapi.PutDaemonConfigReview(ctx, params)
+	require.IsType(t, &services.PutDaemonConfigReviewAccepted{}, rsp)
+	acceptedRsp := rsp.(*services.PutDaemonConfigReviewAccepted)
+	require.NotNil(t, acceptedRsp)
+
+	// Ensure that the review has been started.
+	require.Len(t, fd.CallLog, 1)
+	require.Equal(t, "BeginReview", fd.CallLog[0])
+
+	// Try to create a new review for a non-existing daemon.
+	params.ID++
+	rsp = rapi.PutDaemonConfigReview(ctx, params)
+	require.IsType(t, &services.PutDaemonConfigReviewDefault{}, rsp)
+	defaultRsp := rsp.(*services.PutDaemonConfigReviewDefault)
+	require.NotNil(t, defaultRsp)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Contains(t, *defaultRsp.Payload.Message, "cannot find daemon with id")
+}
+
+// Test that HTTP internal server error is returned when the database
+// connection fails while creating new config review.
+func TestPutDaemonConfigReviewDatabaseError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	// Close the database connection to cause the failure while
+	// communicating with the database
+	teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	params := services.PutDaemonConfigReviewParams{
+		ID: 1,
+	}
+	rsp := rapi.PutDaemonConfigReview(ctx, params)
+	require.IsType(t, &services.PutDaemonConfigReviewDefault{}, rsp)
+	defaultRsp := rsp.(*services.PutDaemonConfigReviewDefault)
+	require.NotNil(t, defaultRsp)
+	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	require.Equal(t, "cannot get daemon with id 1 from db", *defaultRsp.Payload.Message)
+}

@@ -100,3 +100,32 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 	rsp := services.NewGetDaemonConfigReportsOK().WithPayload(configReports)
 	return rsp
 }
+
+// Begins daemon configuration review on demand.
+func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.PutDaemonConfigReviewParams) middleware.Responder {
+	// Try to get the daemon information from the database.
+	daemon, err := dbmodel.GetDaemonByID(r.DB, params.ID)
+	if err != nil {
+		log.Error(err)
+		msg := fmt.Sprintf("cannot get daemon with id %d from db", params.ID)
+		rsp := services.NewPutDaemonConfigReviewDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// If the daemon doesn't exist there is nothing to do. Return the
+	// HTTP Bad Request status.
+	if daemon == nil {
+		msg := fmt.Sprintf("cannot find daemon with id %d", params.ID)
+		rsp := services.NewPutDaemonConfigReviewDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Begin the review but do not wait for the result.
+	_ = r.ReviewDispatcher.BeginReview(daemon, nil)
+
+	// Inform the caller that the review request has been "accepted".
+	rsp := services.NewPutDaemonConfigReviewAccepted()
+	return rsp
+}

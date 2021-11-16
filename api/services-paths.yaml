@@ -517,3 +517,30 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /daemons/{id}/config-review:
+    put:
+      summary: Attempt to begin a new configuration review.
+      description: >-
+        Configuration review is a background server task. This method schedules
+        a new review for selected daemon. If a review for this daemon is already
+        in progress the new review is not started.
+      operationId: putDaemonConfigReview
+      tags:
+        - Services
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          required: true
+          description: Daemon ID
+      responses:
+        202:
+          description: >-
+            New configuration review has been started but the review results
+            are not available yet. Poll config reports for the daemon to check
+            their availability.
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"
