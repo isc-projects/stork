@@ -689,7 +689,13 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	require.EqualValues(t, "name 3", okRsp.Payload.Items[0].Checker)
 	require.Equal(t, "review contents for another daemon", okRsp.Payload.Items[0].Content)
 
+	// If the config review is in progress it should return HTTP Accepted.
+	fd.InProgress = true
+	rsp = rapi.GetDaemonConfigReports(ctx, params)
+	require.IsType(t, &services.GetDaemonConfigReportsAccepted{}, rsp)
+
 	// Fetching non-existing reports should return HTTP No Content.
+	fd.InProgress = false
 	params.ID = 1111
 	rsp = rapi.GetDaemonConfigReports(ctx, params)
 	require.IsType(t, &services.GetDaemonConfigReportsNoContent{}, rsp)

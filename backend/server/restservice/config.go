@@ -61,18 +61,21 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 // daemons are currently supported. The daemon id value is mandatory.
 // The start and limit values are optional. They are used to retrieve
 // paged configuration review reports for a daemon. If they are not
-// specified, all configuration reports are returned.
+// specified, all configuration reports are returned. When the
+// configuration review is in progress for the specified daemon it
+// returns HTTP Accepted status code. When the review hasn't been
+// yet performed for the daemon, it returns HTTP No Content status
+// code. If the review is available it returns HTTP OK status code.
 func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.GetDaemonConfigReportsParams) middleware.Responder {
-	start := int64(0)
-	if params.Start != nil {
-		start = *params.Start
+	// If the review is in progress return HTTP Accepted status
+	// code to indicate that the caller can try again soon to
+	// get the new reports.
+	if r.ReviewDispatcher.ReviewInProgress(params.ID) {
+		rsp := services.NewGetDaemonConfigReportsAccepted()
+		return rsp
 	}
 
-	limit := int64(0)
-	if params.Limit != nil {
-		limit = *params.Limit
-	}
-
+	// Get the basic information about the last review.
 	review, err := dbmodel.GetConfigReviewByDaemonID(r.DB, params.ID)
 	if err != nil {
 		log.Error(err)
@@ -83,8 +86,21 @@ func (r *RestAPI) GetDaemonConfigReports(ctx context.Context, params services.Ge
 		return rsp
 	}
 	if review == nil {
+		// If the information is not present it means that the daemon
+		// configuration has never been reviewed. HTTP No Content status
+		// indicates it to the client.
 		rsp := services.NewGetDaemonConfigReportsNoContent()
 		return rsp
+	}
+
+	start := int64(0)
+	if params.Start != nil {
+		start = *params.Start
+	}
+
+	limit := int64(0)
+	if params.Limit != nil {
+		limit = *params.Limit
 	}
 
 	dbReports, total, err := dbmodel.GetConfigReportsByDaemonID(r.DB, start, limit, params.ID)

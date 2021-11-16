@@ -182,6 +182,7 @@ type Dispatcher interface {
 	Start()
 	Shutdown()
 	BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool
+	ReviewInProgress(daemonID int64) bool
 }
 
 // Creates new context instance when a review is scheduled. The daemon
@@ -556,6 +557,14 @@ func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, callback CallbackFu
 		"name":      daemon.Name,
 	}).Info("scheduling a new configuration review")
 	return d.beginReview(daemon, false, callback)
+}
+
+// Checks if the review for the specified daemon is in progress.
+func (d *dispatcherImpl) ReviewInProgress(daemonID int64) bool {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	inProgress, ok := d.state[daemonID]
+	return ok && inProgress
 }
 
 // Registers default checkers in this package. When new checker is

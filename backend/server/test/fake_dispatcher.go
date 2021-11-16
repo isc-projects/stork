@@ -9,8 +9,9 @@ import (
 // It substitutes the default dispatcher implementation in the
 // unit tests.
 type FakeDispatcher struct {
-	CallLog   []string
-	Signature string
+	CallLog    []string
+	Signature  string
+	InProgress bool
 }
 
 func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSelector, checkerName string, checkFn func(*configreview.ReviewContext) (*configreview.Report, error)) {
@@ -38,4 +39,9 @@ func (d *FakeDispatcher) Shutdown() {
 func (d *FakeDispatcher) BeginReview(daemon *dbmodel.Daemon, callback configreview.CallbackFunc) bool {
 	d.CallLog = append(d.CallLog, "BeginReview")
 	return true
+}
+
+func (d *FakeDispatcher) ReviewInProgress(daemonID int64) bool {
+	d.CallLog = append(d.CallLog, "ReviewInProgress")
+	return d.InProgress
 }
