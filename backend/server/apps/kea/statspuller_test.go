@@ -233,19 +233,50 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
 	// prepare apps with subnets and local subnets
+	// the host reservations shouldn't affect the statistics
 	v4Config := `
         {
             "Dhcp4": {
-                "subnet4": [{"id": 10, "subnet": "192.0.2.0/24"},
-                            {"id": 20, "subnet": "192.0.3.0/24"}]
+                "subnet4": [
+					{"id": 10, "subnet": "192.0.2.0/24"},
+					{
+						"id": 20,
+						"subnet": "192.0.3.0/24",
+						"reservations": [
+                            {
+                                "hw-address": "00:00:00:00:00:22",
+                                "ip-address": "192.0.2.22"
+                            },
+                            {
+                                "hw-address": "00:00:00:00:00:23",
+                                "ip-address": "192.0.2.23"
+                            }
+						]
+					}
+				]
             }
         }`
 	v6Config := `
         {
             "Dhcp6": {
-                "subnet6": [{"id": 30, "subnet": "2001:db8:1::/64"},
-                            {"id": 40, "subnet": "2001:db8:2::/64"},
-                            {"id": 50, "subnet": "2001:db8:3::/64"}]
+                "subnet6": [
+					{"id": 30, "subnet": "2001:db8:1::/64"},
+					{"id": 40, "subnet": "2001:db8:2::/64"},
+					{
+						"id": 50,
+						"subnet": "2001:db8:3::/64",
+						"reservations": [
+                            {
+                                "hw-address": "00:00:00:00:01:22",
+                                "ip-address": "2001:db8:3::21"
+                            },
+                            {
+                                "hw-address": "00:00:00:00:01:23",
+                                "ip-address": "2001:db8:3::23"
+                            }
+						]
+					}
+				]
             }
         }`
 	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)

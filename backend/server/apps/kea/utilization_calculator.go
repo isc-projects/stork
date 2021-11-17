@@ -6,11 +6,11 @@ type globalStats struct {
 	TotalAddresses         int64
 	TotalAssignedAddresses int64
 	TotalDeclinedAddresses int64
-	TotalNas               int64
-	TotalAssignedNas       int64
-	TotalDeclinedNas       int64
-	TotalPds               int64
-	TotalAssignedPds       int64
+	TotalNAs               int64
+	TotalAssignedNAs       int64
+	TotalDeclinedNAs       int64
+	TotalPDs               int64
+	TotalAssignedPDs       int64
 }
 
 func (g *globalStats) AddIPv4Subnet(subnet *subnetIPv4Stats) {
@@ -20,31 +20,33 @@ func (g *globalStats) AddIPv4Subnet(subnet *subnetIPv4Stats) {
 }
 
 func (g *globalStats) AddIPv6Subnet(subnet *subnetIPv6Stats) {
-	g.TotalNas += subnet.TotalNas
-	g.TotalAssignedNas += subnet.TotalAssignedNas
-	g.TotalDeclinedNas += subnet.TotalDeclinedNas
-	g.TotalPds += subnet.TotalPds
-	g.TotalAssignedPds += subnet.TotalAssignedPds
+	g.TotalNAs += subnet.TotalNAs
+	g.TotalAssignedNAs += subnet.TotalAssignedNAs
+	g.TotalDeclinedNAs += subnet.TotalDeclinedNAs
+	g.TotalPDs += subnet.TotalPDs
+	g.TotalAssignedPDs += subnet.TotalAssignedPDs
 }
 
 type Utilization interface {
 	AddressUtilization() float64
-	PdUtilization() float64
+	PDUtilization() float64
 }
 
 type sharedNetworkStats struct {
 	TotalAddresses         int64
 	TotalAssignedAddresses int64
-	TotalPds               int64
-	TotalAssignedPds       int64
+	TotalPDs               int64
+	TotalAssignedPDs       int64
 }
 
 func (s *sharedNetworkStats) AddressUtilization() float64 {
+	// The assigned addresses includes the declined addresses that aren't reclaimed yet.
 	return safeFloatingDiv(s.TotalAssignedAddresses, s.TotalAddresses)
 }
 
-func (s *sharedNetworkStats) PdUtilization() float64 {
-	return safeFloatingDiv(s.TotalAssignedPds, s.TotalPds)
+func (s *sharedNetworkStats) PDUtilization() float64 {
+	// The assigned pds includes the declined pds that aren't reclaimed yet.
+	return safeFloatingDiv(s.TotalAssignedPDs, s.TotalPDs)
 }
 
 func (s *sharedNetworkStats) AddIPv4Subnet(subnet *subnetIPv4Stats) {
@@ -53,10 +55,10 @@ func (s *sharedNetworkStats) AddIPv4Subnet(subnet *subnetIPv4Stats) {
 }
 
 func (s *sharedNetworkStats) AddIPv6Subnet(subnet *subnetIPv6Stats) {
-	s.TotalAddresses += subnet.TotalNas
-	s.TotalAssignedAddresses += subnet.TotalAssignedNas
-	s.TotalPds += subnet.TotalPds
-	s.TotalAssignedPds += subnet.TotalAssignedPds
+	s.TotalAddresses += subnet.TotalNAs
+	s.TotalAssignedAddresses += subnet.TotalAssignedNAs
+	s.TotalPDs += subnet.TotalPDs
+	s.TotalAssignedPDs += subnet.TotalAssignedPDs
 }
 
 type subnetIPv4Stats struct {
@@ -66,27 +68,30 @@ type subnetIPv4Stats struct {
 }
 
 func (s *subnetIPv4Stats) AddressUtilization() float64 {
+	// The assigned addresses includes the declined addresses that aren't reclaimed yet.
 	return safeFloatingDiv(s.TotalAssignedAddresses, s.TotalAddresses)
 }
 
-func (s *subnetIPv4Stats) PdUtilization() float64 {
+func (s *subnetIPv4Stats) PDUtilization() float64 {
 	return 0.0
 }
 
 type subnetIPv6Stats struct {
-	TotalNas         int64
-	TotalAssignedNas int64
-	TotalDeclinedNas int64
-	TotalPds         int64
-	TotalAssignedPds int64
+	TotalNAs         int64
+	TotalAssignedNAs int64
+	TotalDeclinedNAs int64
+	TotalPDs         int64
+	TotalAssignedPDs int64
 }
 
 func (s *subnetIPv6Stats) AddressUtilization() float64 {
-	return safeFloatingDiv(s.TotalAssignedNas, s.TotalNas)
+	// The assigned nas includes the declined nas that aren't reclaimed yet.
+	return safeFloatingDiv(s.TotalAssignedNAs, s.TotalNAs)
 }
 
-func (s *subnetIPv6Stats) PdUtilization() float64 {
-	return safeFloatingDiv(s.TotalAssignedPds, s.TotalPds)
+func (s *subnetIPv6Stats) PDUtilization() float64 {
+	// The assigned pds includes the declined pds that aren't reclaimed yet.
+	return safeFloatingDiv(s.TotalAssignedPDs, s.TotalPDs)
 }
 
 type UtilizationCalculator struct {
@@ -132,11 +137,11 @@ func (c *UtilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet) *subnetIPv
 
 func (c *UtilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		TotalNas:         sumStatLocalSubnets(subnet, "total-nas"),
-		TotalAssignedNas: sumStatLocalSubnets(subnet, "assigned-nas"),
-		TotalDeclinedNas: sumStatLocalSubnets(subnet, "declined-nas"),
-		TotalPds:         sumStatLocalSubnets(subnet, "total-pds"),
-		TotalAssignedPds: sumStatLocalSubnets(subnet, "assigned-pds"),
+		TotalNAs:         sumStatLocalSubnets(subnet, "total-nas"),
+		TotalAssignedNAs: sumStatLocalSubnets(subnet, "assigned-nas"),
+		TotalDeclinedNAs: sumStatLocalSubnets(subnet, "declined-nas"),
+		TotalPDs:         sumStatLocalSubnets(subnet, "total-pds"),
+		TotalAssignedPDs: sumStatLocalSubnets(subnet, "assigned-pds"),
 	}
 
 	if subnet.SharedNetworkID != 0 {

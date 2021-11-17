@@ -86,13 +86,13 @@ func (statsPuller *StatsPuller) pullStats() error {
 		err = sn.UpdateUtilization(
 			statsPuller.DB,
 			int16(1000*su.AddressUtilization()),
-			int16(1000*su.PdUtilization()),
+			int16(1000*su.PDUtilization()),
 		)
 
 		if err != nil {
 			lastErr = err
 			log.Errorf("cannot update utilization (%.3f, %.3f) in subnet %d: %s",
-				su.AddressUtilization(), su.PdUtilization(), sn.ID, err)
+				su.AddressUtilization(), su.PDUtilization(), sn.ID, err)
 			continue
 		}
 	}
@@ -101,12 +101,12 @@ func (statsPuller *StatsPuller) pullStats() error {
 	for sharedNetworkID, u := range calculator.SharedNetworks {
 		err = dbmodel.UpdateUtilizationInSharedNetwork(statsPuller.DB, sharedNetworkID,
 			int16(1000*u.AddressUtilization()),
-			int16(1000*u.PdUtilization()))
+			int16(1000*u.PDUtilization()))
 
 		if err != nil {
 			lastErr = err
 			log.Errorf("cannot update utilization (%.3f, %.3f) in shared network %d: %s",
-				u.AddressUtilization(), u.PdUtilization(), sharedNetworkID, err)
+				u.AddressUtilization(), u.PDUtilization(), sharedNetworkID, err)
 			continue
 		}
 	}
@@ -116,11 +116,11 @@ func (statsPuller *StatsPuller) pullStats() error {
 		"total-addresses":    calculator.Global.TotalAddresses,
 		"assigned-addresses": calculator.Global.TotalAssignedAddresses,
 		"declined-addresses": calculator.Global.TotalDeclinedAddresses,
-		"total-nas":          calculator.Global.TotalNas,
-		"assigned-nas":       calculator.Global.TotalAssignedNas,
-		"declined-nas":       calculator.Global.TotalDeclinedNas,
-		"assigned-pds":       calculator.Global.TotalAssignedPds,
-		"total-pds":          calculator.Global.TotalPds,
+		"total-nas":          calculator.Global.TotalNAs,
+		"assigned-nas":       calculator.Global.TotalAssignedNAs,
+		"declined-nas":       calculator.Global.TotalDeclinedNAs,
+		"assigned-pds":       calculator.Global.TotalAssignedPDs,
+		"total-pds":          calculator.Global.TotalPDs,
 	}
 
 	// update global statistics in db
