@@ -740,6 +740,12 @@ func TestPutDaemonConfigReview(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
+	// Create DHCPv4 config.
+	configDhcp4, err := dbmodel.NewKeaConfigFromJSON(`{
+		"Dhcp4": { }
+    }`)
+	require.NoError(t, err)
+
 	var keaPoints []*dbmodel.AccessPoint
 	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, false)
 	app := &dbmodel.App{
@@ -751,6 +757,7 @@ func TestPutDaemonConfigReview(t *testing.T) {
 			dbmodel.NewKeaDaemon("dhcp4", true),
 		},
 	}
+	app.Daemons[0].KeaDaemon.Config = configDhcp4
 
 	daemons, err := dbmodel.AddApp(db, app)
 	require.NoError(t, err)
@@ -813,4 +820,104 @@ func TestPutDaemonConfigReviewDatabaseError(t *testing.T) {
 	require.NotNil(t, defaultRsp)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
 	require.Equal(t, "cannot get daemon with id 1 from db", *defaultRsp.Payload.Message)
+}
+
+// Test that HTTP Bad Request status is returned as a result of requesting
+// a configuration review for a non-Kea daemon.
+func TestPutDaemonConfigReviewNotKeaDaemon(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Create BIND9 app instance.
+	var bind9Points []*dbmodel.AccessPoint
+	bind9Points = dbmodel.AppendAccessPoint(bind9Points, dbmodel.AccessPointControl, "1.2.3.4", "abcd", 124, true)
+	app := &dbmodel.App{
+		MachineID:    machine.ID,
+		Machine:      machine,
+		Type:         dbmodel.AppTypeBind9,
+		AccessPoints: bind9Points,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Bind9Daemon: &dbmodel.Bind9Daemon{},
+			},
+		},
+	}
+	daemons, err := dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	params := services.PutDaemonConfigReviewParams{
+		ID: daemons[0].ID,
+	}
+	rsp := rapi.PutDaemonConfigReview(ctx, params)
+	require.IsType(t, &services.PutDaemonConfigReviewDefault{}, rsp)
+	defaultRsp := rsp.(*services.PutDaemonConfigReviewDefault)
+	require.NotNil(t, defaultRsp)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, fmt.Sprintf("daemon with id %d is not a Kea daemon", daemons[0].ID),
+		*defaultRsp.Payload.Message)
+}
+
+// Test that HTTP Bad Request status is returned as a result of requesting
+// a Kea daemon configuration review when the configuration is not found in
+// the database.
+func TestPutDaemonConfigReviewNoConfig(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Create Kea app instance with a DHCPv4 daemon with no configuration
+	// assigned.
+	var keaPoints []*dbmodel.AccessPoint
+	keaPoints = dbmodel.AppendAccessPoint(keaPoints, dbmodel.AccessPointControl, "localhost", "", 1234, false)
+	app := &dbmodel.App{
+		MachineID:    machine.ID,
+		Machine:      machine,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: keaPoints,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
+	}
+	daemons, err := dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	params := services.PutDaemonConfigReviewParams{
+		ID: daemons[0].ID,
+	}
+	rsp := rapi.PutDaemonConfigReview(ctx, params)
+	require.IsType(t, &services.PutDaemonConfigReviewDefault{}, rsp)
+	defaultRsp := rsp.(*services.PutDaemonConfigReviewDefault)
+	require.NotNil(t, defaultRsp)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.Equal(t, fmt.Sprintf("configuration not found for daemon with id %d", daemons[0].ID),
+		*defaultRsp.Payload.Message)
 }

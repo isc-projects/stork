@@ -157,6 +157,23 @@ func (r *RestAPI) PutDaemonConfigReview(ctx context.Context, params services.Put
 		})
 		return rsp
 	}
+	// Config review is currently only supported for Kea.
+	if daemon.KeaDaemon == nil {
+		msg := fmt.Sprintf("daemon with id %d is not a Kea daemon", params.ID)
+		rsp := services.NewPutDaemonConfigReviewDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Config must be present to perform the review.
+	if daemon.KeaDaemon.Config == nil {
+		msg := fmt.Sprintf("configuration not found for daemon with id %d", params.ID)
+		rsp := services.NewPutDaemonConfigReviewDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
 	// Begin the review but do not wait for the result.
 	_ = r.ReviewDispatcher.BeginReview(daemon, nil)
 
