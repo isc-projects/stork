@@ -160,7 +160,7 @@ type dispatcherImpl struct {
 	// Wait group used to synchronize the ongoing reviews.
 	reviewWg *sync.WaitGroup
 	// Dispatcher main mutex.
-	mutex *sync.Mutex
+	mutex *sync.RWMutex
 	// Channel for passing ready review reports to the worker
 	// goroutine populating the reports into the database.
 	reviewDoneChan chan *ReviewContext
@@ -470,7 +470,7 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 		groups:         make(map[DispatchGroupSelector]*dispatchGroup),
 		shutdownWg:     &sync.WaitGroup{},
 		reviewWg:       &sync.WaitGroup{},
-		mutex:          &sync.Mutex{},
+		mutex:          &sync.RWMutex{},
 		reviewDoneChan: make(chan *ReviewContext),
 		dispatchCtx:    ctx,
 		cancelDispatch: cancel,
