@@ -487,8 +487,35 @@ def test_search_leases(agent, server):
     assert data['items'] is None
 
 
-def run_perfdhcp(src_cntr, dest_ip_addr):
-    cmd = '/usr/sbin/perfdhcp -4 -r %d -R %d -p 10 -b mac=%s:00:00:00:00 %s' % (10, 10000, '00:00', dest_ip_addr)
+def run_perfdhcp(src_cntr, dest_ip_addr, *, family=4, mac_prefix='00:00', option=None, duid_prefix=None):
+    '''
+    Run the perfdhcp with provided parameters.
+
+    Keyword arguments:
+        - family: int
+            The IP family. 4 - IPv4, 6 - IPv6
+        - mac_prefix: string or None
+            The base mac address prefix, 5 characters (middle should be a colon),
+            prefer to use with IPv4. None value disables this feature.
+        - option: tuple of two strings or None
+            Option to be added to the packets. First item is option ID, second is option value,
+            None value disables this feature.
+        - duid_prefix: string or None
+            The base DUID prefix, 4 digits, prefer to use with IPv6.
+            None value disables this feature. Current perfdhcp has probably a bug
+            and this flag is ignored.
+    '''
+    flags = []
+    if mac_prefix is not None:
+        flags.append("-b mac=" + mac_prefix + ":00:00:00:00")
+    if option is not None:
+        flags.append("-o %s,%s" % option)
+    if duid_prefix is not None:
+        flags.append("-b duid=" + duid_prefix + "00000000")
+    
+    flags_str = " ".join(flags)
+
+    cmd = '/usr/sbin/perfdhcp -%d -r %d -R %d -p 10 %s %s' % (family, 10, 10000, flags_str, dest_ip_addr)
     result = src_cntr.run(cmd, ignore_error=True)
     if result[0] not in [0, 3]:
         raise Exception('perfdhcp erred: %s' % str(result))
@@ -504,13 +531,20 @@ def test_get_kea_stats(agent_kea, agent_old_kea, server):
              (agent_old_kea, KEA_1_6, agent_kea.mgmt_ip)]
     for idx, (a, ver, relay_addr) in enumerate(elems):
         a.install_kea(kea_version=ver)
+        a.install_kea('kea-dhcp6', kea_version=ver)
         a.upload('kea-dhcp4.conf', '/etc/kea/kea-dhcp4.conf')
+        a.upload('kea-dhcp6.conf', '/etc/kea/kea-dhcp6.conf')
         # set proper relay address
         a.run(r'sed -i -e s/172\.100\.0\.200/%s/g /etc/kea/kea-dhcp4.conf' % relay_addr)
         # differentiate subnets which are used in this test
+        # IPv4
         prefix = '192.%d.2' % idx
         a.run('sed -i -e s/192.0.2/%s/g /etc/kea/kea-dhcp4.conf' % prefix)
         a.run('systemctl restart isc-kea-dhcp4-server')
+        # IPv6
+        prefix = ':db%d:' % (idx + 8)
+        a.run('sed -i -e s/:db8:/%s/g /etc/kea/kea-dhcp6.conf' % prefix)
+        a.run('systemctl restart isc-kea-dhcp6-server')
 
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
     assert r.json()['login'] == 'admin'
@@ -556,13 +590,19 @@ def test_get_kea_stats(agent_kea, agent_old_kea, server):
 
     # send DHCP traffic to old kea
     agent_kea.run('systemctl stop isc-kea-dhcp4-server')
+    agent_kea.run('systemctl stop isc-kea-dhcp6-server')
     run_perfdhcp(agent_kea, agent_old_kea.mgmt_ip)
+    run_perfdhcp(agent_kea, agent_old_kea.mgmt_ip6, family=6, duid_prefix='3001')
     agent_kea.run('systemctl start isc-kea-dhcp4-server')
+    agent_kea.run('systemctl start isc-kea-dhcp6-server')
 
     # send DHCP traffic to new kea
     agent_old_kea.run('systemctl stop isc-kea-dhcp4-server')
+    agent_old_kea.run('systemctl stop isc-kea-dhcp6-server')
     run_perfdhcp(agent_old_kea, agent_kea.mgmt_ip)
+    run_perfdhcp(agent_old_kea, agent_kea.mgmt_ip6, family=6, duid_prefix='3001')
     agent_old_kea.run('systemctl start isc-kea-dhcp4-server')
+    agent_old_kea.run('systemctl start isc-kea-dhcp6-server')
 
     # check gathered stats by Stork server
     for i in range(80):
@@ -577,6 +617,7 @@ def test_get_kea_stats(agent_kea, agent_old_kea, server):
 
     assert data['dhcp4Stats']
     assert 'assignedAddresses' in data['dhcp4Stats']
+    assert 'assignedNAs' in data['dhcp6Stats']
     assert data['dhcp4Stats']['assignedAddresses'] > 150
     assert 'subnets4' in data
     assert data['subnets4']['items']
