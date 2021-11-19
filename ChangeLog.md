@@ -1,3 +1,11 @@
+* 170 [func] marcin
+
+    Kea configuration review can now be requested from the Kea
+    daemon tab in the UI. In addition, the server automatically
+    re-reviews the configurations whenever new configuration
+    checkers are available in the new Stork releases.
+    (Gitlab #609)
+
 * 169 [func] marcin
 
     Server database connection can be protected with TLS.
