@@ -17,9 +17,8 @@ import (
 // A constant value bumped to enforce new config reviews after
 // the server is started. Typically, it should be bumped when
 // an implementation of any checker was modified but the
-// dispatch groups were not changed. It is declared as a global
-// variable because it is modified in the unit tests.
-var enforceDispatchSeq = 1 //nolint:gochecknoglobals
+// dispatch groups were not changed.
+const enforceDispatchSeq = 1
 
 // Callback function invoked when configuration review is completed
 // for a daemon. The first argument holds an ID of a daemon for
@@ -171,6 +170,8 @@ type dispatcherImpl struct {
 	cancelDispatch context.CancelFunc
 	// A map holding information about currently scheduled reviews.
 	state map[int64]bool
+	// Current value of the enforceDispatchSeq.
+	enforceSeq int
 }
 
 // Dispatcher interface. The interface is used in the unit tests that
@@ -475,6 +476,7 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 		dispatchCtx:    ctx,
 		cancelDispatch: cancel,
 		state:          make(map[int64]bool),
+		enforceSeq:     enforceDispatchSeq,
 	}
 	return dispatcher
 }
@@ -526,7 +528,7 @@ func (d *dispatcherImpl) UnregisterChecker(selector DispatchGroupSelector, check
 // In this case, bump up the enforceDispatchSeq constant value to enforce
 // generation of a new signature and new config reviews.
 func (d *dispatcherImpl) GetSignature() string {
-	return storkutil.Fnv128(fmt.Sprintf("%d:%+v", enforceDispatchSeq, d.groups))
+	return storkutil.Fnv128(fmt.Sprintf("%d:%+v", d.enforceSeq, d.groups))
 }
 
 // Starts the dispatcher by launching the worker goroutine receiving

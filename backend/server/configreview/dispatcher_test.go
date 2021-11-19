@@ -614,7 +614,7 @@ func TestGetSignature(t *testing.T) {
 
 	// Ensure that bumping up the sequence number also affects
 	// the signature.
-	enforceDispatchSeq++
+	dispatcher.enforceSeq++
 	signatures[8] = dispatcher.GetSignature()
 	require.NotEqual(t, signatures[8], signatures[7])
 }
