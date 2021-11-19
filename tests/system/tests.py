@@ -521,7 +521,7 @@ def run_perfdhcp(src_cntr, dest_ip_addr, *, family=4, mac_prefix='00:00', option
         raise Exception('perfdhcp erred: %s' % str(result))
 
 
-@pytest.mark.parametrize("agent_kea, agent_old_kea, server", [('ubuntu/20.04', 'ubuntu/18.04', 'centos/8')])
+@pytest.mark.parametrize("agent_kea, agent_old_kea, server", [('ubuntu/20.04', 'ubuntu/18.04', 'ubuntu/18.04')])
 def test_get_kea_stats(agent_kea, agent_old_kea, server):
     """Check if collecting stats from various Kea versions works.
        DHCPv4 traffic is send to old Kea, then to new kea
