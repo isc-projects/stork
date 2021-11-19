@@ -168,7 +168,7 @@ export class ConfigReviewPanelComponent implements OnInit {
                         // the number of retries. Note that the take() can't follow
                         // the concatMap() because the latter needs to handle the
                         // case when we exceed the retries limit (i.e., show the warning
-                        // message). The rake(retries+1) will allow for handling this
+                        // message). The take(retries+1) will allow for handling this
                         // case and stop afterwards.
                         take(retries + 1),
                         // Look into the error (an actual error or Accpted status).
