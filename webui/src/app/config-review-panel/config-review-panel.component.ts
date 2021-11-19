@@ -278,10 +278,11 @@ export class ConfigReviewPanelComponent implements OnInit {
     getStatusText() {
         if (this.refreshFailed) {
             return 'An error occurred while fetching the configuration review reports.'
+        } else if (this.review) {
+            return 'No configuration issues found for this daemon.'
+        } else {
+            return 'Configuration review was not performed for this daemon.'
         }
-        return this.review
-            ? 'No configuration issues found for this daemon.'
-            : 'Configuration review was not performed for this daemon.'
     }
 
     /**
