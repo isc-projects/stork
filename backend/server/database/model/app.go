@@ -333,6 +333,7 @@ func GetAppsByMachine(db *pg.DB, machineID int64) ([]*App, error) {
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
 	q = q.Relation("Daemons.LogTargets")
+	q = q.Relation("Daemons.ConfigReview")
 	q = q.Where("machine_id = ?", machineID)
 	q = q.OrderExpr("id ASC")
 	err := q.Select()

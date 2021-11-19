@@ -828,6 +828,14 @@ func TestGetAppsByMachine(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, s.ID)
 
+	cr := &ConfigReview{
+		ConfigHash: "1234",
+		Signature:  "2345",
+		DaemonID:   s.Daemons[0].ID,
+	}
+	err = AddConfigReview(db, cr)
+	require.NoError(t, err)
+
 	// get apps of given machine
 	apps, err = GetAppsByMachine(db, m.ID)
 	require.Len(t, apps, 1)
@@ -860,6 +868,11 @@ func TestGetAppsByMachine(t *testing.T) {
 	pt, err = app.GetAccessPoint("foobar")
 	require.Nil(t, pt)
 	require.Error(t, err)
+
+	// Make sure the config review was returned.
+	require.NotNil(t, apps[0].Daemons[0].ConfigReview)
+	require.Equal(t, "1234", apps[0].Daemons[0].ConfigReview.ConfigHash)
+	require.Equal(t, "2345", apps[0].Daemons[0].ConfigReview.Signature)
 }
 
 // Check getting apps by type only.
