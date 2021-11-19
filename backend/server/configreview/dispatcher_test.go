@@ -375,6 +375,7 @@ func TestReviewInProgress(t *testing.T) {
 	state, ok := dispatcher.state[daemons[0].ID]
 	require.True(t, ok)
 	require.True(t, state)
+	require.True(t, dispatcher.ReviewInProgress(daemons[0].ID))
 
 	// Try to begin another review for the same daemon.
 	ok = dispatcher.BeginReview(daemons[0], nil)
@@ -398,6 +399,7 @@ func TestReviewInProgress(t *testing.T) {
 	state, ok = dispatcher.state[daemons[0].ID]
 	require.True(t, ok)
 	require.False(t, state)
+	require.False(t, dispatcher.ReviewInProgress(daemons[0].ID))
 }
 
 // Tests the case when a checker requires reviewing another daemon's
