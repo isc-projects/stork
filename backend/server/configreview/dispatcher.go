@@ -317,8 +317,8 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, internal bool, cal
 // BeginReview function internally calls the beginReview function with this flag set to
 // false.
 func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) bool {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 	// Check if another review for this daemon has been already scheduled. Do not
 	// schedule new review if one is already in progress.
 	inProgress, ok := d.state[daemon.ID]
@@ -563,8 +563,8 @@ func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, callback CallbackFu
 
 // Checks if the review for the specified daemon is in progress.
 func (d *dispatcherImpl) ReviewInProgress(daemonID int64) bool {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 	inProgress, ok := d.state[daemonID]
 	return ok && inProgress
 }
