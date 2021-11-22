@@ -116,6 +116,7 @@ class Container:
         self.thread = None
         self.bg_exc = None
         self.mgmt_ip = None
+        self.mgmt_ip6 = None
 
     def start(self):
         try:
@@ -154,15 +155,17 @@ class Container:
         nets = self.cntr.state().network
         # print('NETS: %s' % str(nets))
         self.mgmt_ip = None
+        self.mgmt_ip6 = None
         for ifname, net in nets.items():
             if ifname == 'lo':
                 continue
             for addr in net['addresses']:
-                # pick only IPv4 address, TODO: commented out for now as it doesn not work in GitLab CI
-                #if '.' in addr['address']:
-                if True:
+                if addr['scope'] != 'global':
+                    continue
+                if addr['family'] == 'inet':
                     self.mgmt_ip = addr['address']
-                    break
+                elif addr['family'] == 'inet6':
+                    self.mgmt_ip6 = addr['address']
         if self.mgmt_ip is None:
             raise Exception('cannot find IPv4 management address of the container %s' % self.name)
 
@@ -805,6 +808,14 @@ class StorkAgentContainer(Container):
         self.run('bash -c "%s"' % cmd)
         self.run('systemctl daemon-reload')
         self.run('systemctl restart isc-stork-agent')
+
+    def set_stork_agent_ip6_address(self):
+        if self.mgmt_ip6 is None:
+            return
+        self.run(r'sed -i -e s/STORK_AGENT_ADDRESS=.\\+/STORK_AGENT_ADDRESS=%s/g /etc/stork/agent.env' % self.mgmt_ip6)
+        self.run('systemctl daemon-reload')
+        self.run('systemctl restart isc-stork-agent')
+        self.run('systemctl status isc-stork-agent')
 
     def use_credentials_file(self):
         '''Create credentials.json file and configure the Stork Agent use them.'''

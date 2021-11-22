@@ -19,7 +19,7 @@ def banner(txt):
     print(txt)
 
 
-def _get_machines(server, authorized=None, expected_items=None):
+def _get_machines(server, authorized=None, expected_items=None, machine_filter=None):
     # get machine from the server
     url = '/machines'
     if authorized is not None:
@@ -32,17 +32,24 @@ def _get_machines(server, authorized=None, expected_items=None):
         if 'items' in data and data['items'] and len(data['items']) > 0:
             break
         time.sleep(2)
+
+    assert 'items' in data
+    machines = data['items']
+    assert machines is not None
+
+    if machine_filter is not None:
+        machines = [m for m in machines if machine_filter(m)]
+
     if expected_items is not None:
-        assert 'items' in data
-        assert data['items'] is not None
-        assert len(data['items']) == expected_items
-    return data['items']
+        assert len(machines) == expected_items
+    return machines
 
 
-def _get_machines_and_authorize_them(server, expected_items=1):
+def _get_machines_and_authorize_them(server, expected_items=1, machine_filter=None):
     # get machine that automatically registered in the server and authorize it
-    machines = _get_machines(server, authorized=None, expected_items=expected_items)
+    machines = _get_machines(server, authorized=None, expected_items=expected_items, machine_filter=machine_filter)
     machines2 = []
+
     for m in machines:
         machine = dict(
             address=m['address'],
@@ -756,6 +763,26 @@ def test_agent_reregistration_after_restart(agent, server):
     # the agent token and cert files should be the same as before restart
     assert agent_token_before == agent_token_after
     assert tuple(hashes_before) == tuple(hashes_after)
+
+@pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'ubuntu/18.04')])
+def test_agent_over_ip6(agent, server):
+    # Setup the Stork Agent over IPv6
+    agent.set_stork_agent_ip6_address()
+    
+    # login
+    r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
+    assert r.json()['login'] == 'admin'
+
+    # get machine that automatically registered in the server and authorize it
+    # but only machines that use IPv6
+    m = _get_machines_and_authorize_them(server,
+        machine_filter=lambda m: ':' in m['address'])[0]
+    assert m['address'] == agent.mgmt_ip6
+
+    m = _get_machine_state(server, m['id'])
+    assert m["apps"] is not None
+    assert len(m["apps"]) > 0
+
 
 @pytest.mark.parametrize("agent, server", [('centos/8', 'ubuntu/18.04')])
 def test_communication_with_kea_over_secure_protocol(agent, server):
