@@ -317,20 +317,29 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, internal bool, cal
 // BeginReview function internally calls the beginReview function with this flag set to
 // false.
 func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) bool {
-	d.mutex.RLock()
-	defer d.mutex.RUnlock()
 	// Check if another review for this daemon has been already scheduled. Do not
 	// schedule new review if one is already in progress.
+	d.mutex.RLock()
 	inProgress, ok := d.state[daemon.ID]
-	if !ok || !inProgress {
-		d.state[daemon.ID] = true
-		d.reviewWg.Add(1)
-		// Run the review in the background.
-		go d.runForDaemon(daemon, internal, callback)
-		return true
+	d.mutex.RUnlock()
+	if ok && inProgress {
+		// Another review in progress. Do not run another one.
+		return false
 	}
-	// Another review in progress. Do not run another one..
-	return false
+
+	d.mutex.Lock()
+	inProgress, ok = d.state[daemon.ID]
+	if ok && inProgress {
+		d.mutex.Unlock()
+		return false
+	}
+	d.state[daemon.ID] = true
+	d.mutex.Unlock()
+
+	d.reviewWg.Add(1)
+	// Run the review in the background.
+	go d.runForDaemon(daemon, internal, callback)
+	return true
 }
 
 // Inserts new config review reports into the database.
