@@ -309,3 +309,47 @@ func TestConfigReportDeleteNonExisting(t *testing.T) {
 	err := DeleteConfigReportsByDaemonID(db, 12345)
 	require.NoError(t, err)
 }
+
+// This test verifies that it is possible to delete a daemon
+// having configuration reviews.
+func TestDeleteAppWithConfigReview(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add an app.
+	app := &App{
+		Type:      AppTypeKea,
+		MachineID: machine.ID,
+		Daemons: []*Daemon{
+			NewKeaDaemon("dhcp4", true),
+		},
+	}
+	daemons, err := AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, daemons, 1)
+
+	// Add config report for the daemon.
+	configReport := &ConfigReport{
+		CheckerName: "test",
+		Content:     "Here is the first test report",
+		DaemonID:    daemons[0].ID,
+		RefDaemons: []*Daemon{
+			daemons[0],
+		},
+	}
+	err = AddConfigReport(db, configReport)
+	require.NoError(t, err)
+
+	// Make sure we can delete an app. The associated config
+	// reports should be deleted.
+	err = DeleteApp(db, app)
+	require.NoError(t, err)
+}
