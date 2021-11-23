@@ -6,7 +6,7 @@ package dumps
 // and stored as an array.
 //
 // The artifacts can be assigned in the constructor (for trivial cases)
-// or by appending to the internal array in the Execute function.
+// or by appending to the internal array in the AppendArtifact function.
 //
 // The Execute method should be overwritten to define the execution code.
 type BasicDump struct {
