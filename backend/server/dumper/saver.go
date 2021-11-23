@@ -48,7 +48,7 @@ func (t *tarbalSaver) Save(target io.Writer, dumps []dumperdumps.Dump) error {
 	defer tarbal.Close()
 
 	for _, dump := range dumps {
-		for i := 0; i < dump.NumberOfArtifacts(); i++ {
+		for i := 0; i < dump.GetArtifactsNumber(); i++ {
 			artifact := dump.GetArtifact(i)
 			path := t.namingConvention(dump, artifact)
 
@@ -58,17 +58,17 @@ func (t *tarbalSaver) Save(target io.Writer, dumps []dumperdumps.Dump) error {
 				var err error
 				rawContent, err = t.serializer(a.GetStruct())
 				if err != nil {
-					return errors.Wrapf(err, "cannot serialize a dump artifact: %s - %s", dump.Name(), artifact.Name())
+					return errors.Wrapf(err, "cannot serialize a dump artifact: %s - %s", dump.GetName(), artifact.GetName())
 				}
 			case dumperdumps.BinaryArtifact:
 				rawContent = a.GetBinary()
 			default:
-				return errors.Errorf("unknown type of artifact: %s - %s", dump.Name(), artifact.Name())
+				return errors.Errorf("unknown type of artifact: %s - %s", dump.GetName(), artifact.GetName())
 			}
 
 			err := tarbal.AddContent(path, rawContent, time.Now().UTC())
 			if err != nil {
-				return errors.Wrapf(err, "cannot append a dump artifact: %s - %s to tarbal", dump.Name(), artifact.Name())
+				return errors.Wrapf(err, "cannot append a dump artifact: %s - %s to tarbal", dump.GetName(), artifact.GetName())
 			}
 		}
 	}

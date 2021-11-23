@@ -81,7 +81,7 @@ func flatStructureWithTimestampNamingConvention(dump dumps.Dump, artifact dumps.
 	if _, ok := artifact.(dumps.BinaryArtifact); ok {
 		extension = ""
 	}
-	filename := fmt.Sprintf("%s_%s_%s%s", timestamp, dump.Name(), artifact.Name(), extension)
+	filename := fmt.Sprintf("%s_%s_%s%s", timestamp, dump.GetName(), artifact.GetName(), extension)
 	// Remove the insane characters
 	filename = strings.ReplaceAll(filename, "/", "?")
 	filename = strings.ReplaceAll(filename, "*", "?")

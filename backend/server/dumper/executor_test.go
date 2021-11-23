@@ -31,7 +31,7 @@ func TestConstructExecutionSummaryStep(t *testing.T) {
 	step := newExecutionSummaryStep(dump, err)
 
 	// Asset
-	require.EqualValues(t, "foo", step.Dump.Name())
+	require.EqualValues(t, "foo", step.Dump.GetName())
 	require.Error(t, step.Error)
 }
 
@@ -93,8 +93,8 @@ func TestGetSuccessfulDumps(t *testing.T) {
 
 	// Assert
 	require.Len(t, dumps, 2)
-	require.EqualValues(t, "foo", dumps[0].Name())
-	require.EqualValues(t, "boz", dumps[1].Name())
+	require.EqualValues(t, "foo", dumps[0].GetName())
+	require.EqualValues(t, "boz", dumps[1].GetName())
 }
 
 // Test that the execution step without an error is simplified as expected.
@@ -187,9 +187,9 @@ func TestExecuteDumps(t *testing.T) {
 	require.EqualValues(t, failedMock.CallCount, 1)
 
 	require.Len(t, summary.Steps, 5)
-	require.EqualValues(t, "bar", summary.Steps[1].Dump.Name())
+	require.EqualValues(t, "bar", summary.Steps[1].Dump.GetName())
 	require.NoError(t, summary.Steps[1].Error)
-	require.EqualValues(t, "foobar", summary.Steps[3].Dump.Name())
+	require.EqualValues(t, "foobar", summary.Steps[3].Dump.GetName())
 	require.Error(t, summary.Steps[3].Error)
 }
 
@@ -209,6 +209,6 @@ func TestExecuteDumpProducesSummaryDump(t *testing.T) {
 
 	// Assert
 	require.True(t, ok)
-	require.EqualValues(t, 1, summaryStep.Dump.NumberOfArtifacts())
+	require.EqualValues(t, 1, summaryStep.Dump.GetArtifactsNumber())
 	require.Len(t, simplifySummary.Steps, 3)
 }

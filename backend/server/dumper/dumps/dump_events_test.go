@@ -49,7 +49,7 @@ func TestEventsDumpExecute(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 
-	require.EqualValues(t, 1, dump.NumberOfArtifacts())
+	require.EqualValues(t, 1, dump.GetArtifactsNumber())
 	artifact := dump.GetArtifact(0).(dumps.StructArtifact)
 	artifactContent := artifact.GetStruct()
 	events, ok := artifactContent.([]dbmodel.Event)

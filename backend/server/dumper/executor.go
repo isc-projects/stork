@@ -99,8 +99,8 @@ func (s *executionSummaryStep) IsSuccess() bool {
 // Simplify the execution summary step to the serializable form.
 func (s *executionSummaryStep) Simplify() *executionSummaryStepSimplify {
 	var artifactNames []string
-	for i := 0; i < s.Dump.NumberOfArtifacts(); i++ {
-		artifactNames = append(artifactNames, s.Dump.GetArtifact(i).Name())
+	for i := 0; i < s.Dump.GetArtifactsNumber(); i++ {
+		artifactNames = append(artifactNames, s.Dump.GetArtifact(i).GetName())
 	}
 
 	status := "SUCCESS"
@@ -109,7 +109,7 @@ func (s *executionSummaryStep) Simplify() *executionSummaryStepSimplify {
 	}
 
 	return &executionSummaryStepSimplify{
-		Name:      s.Dump.Name(),
+		Name:      s.Dump.GetName(),
 		Error:     s.Error,
 		Artifacts: artifactNames,
 		Status:    status,

@@ -4,16 +4,16 @@ package dumps
 // It may contain multiple result artifacts
 // collected.
 type Dump interface {
-	Name() string
+	GetName() string
 	Execute() error
 
-	NumberOfArtifacts() int
+	GetArtifactsNumber() int
 	GetArtifact(int) Artifact
 }
 
 // The portion of data collected during the dump.
 type Artifact interface {
-	Name() string
+	GetName() string
 }
 
 // The artifact that contains pure (serializable)

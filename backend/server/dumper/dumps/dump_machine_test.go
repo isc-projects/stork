@@ -88,7 +88,7 @@ func initDatabase(db *pg.DB) *dbmodel.Machine {
 
 // Helper function that extract the machine from the dump.
 func extractMachineFromDump(dump dumps.Dump) (*dbmodel.Machine, bool) {
-	if dump.NumberOfArtifacts() != 1 {
+	if dump.GetArtifactsNumber() != 1 {
 		return nil, false
 	}
 	artifact := dump.GetArtifact(0).(dumps.StructArtifact)
@@ -112,7 +112,7 @@ func TestMachineDumpExecute(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, 1, dump.NumberOfArtifacts())
+	require.EqualValues(t, 1, dump.GetArtifactsNumber())
 	require.True(t, ok)
 
 	require.EqualValues(t, "localhost", machine.Address)

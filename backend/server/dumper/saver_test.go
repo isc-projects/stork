@@ -48,7 +48,7 @@ func TestSaverSaveFilledDumpList(t *testing.T) {
 	saver := newTarbalSaver(
 		json.Marshal,
 		func(dump dumps.Dump, artifact dumps.Artifact) string {
-			return dump.Name() + artifact.Name()
+			return dump.GetName() + artifact.GetName()
 		},
 	)
 	var buffer bytes.Buffer
@@ -78,7 +78,7 @@ func TestSavedTarball(t *testing.T) {
 	saver := newTarbalSaver(
 		json.Marshal,
 		func(dump dumps.Dump, artifact dumps.Artifact) string {
-			return dump.Name() + artifact.Name()
+			return dump.GetName() + artifact.GetName()
 		},
 	)
 	var buffer bytes.Buffer
@@ -122,7 +122,7 @@ func TestSavedTarballToFile(t *testing.T) {
 	saver := newTarbalSaver(
 		json.Marshal,
 		func(dump dumps.Dump, artifact dumps.Artifact) string {
-			return dump.Name() + artifact.Name()
+			return dump.GetName() + artifact.GetName()
 		},
 	)
 	file, _ := ioutil.TempFile("", "*")

@@ -21,11 +21,11 @@ func NewBasicDump(name string, artifacts ...Artifact) *BasicDump {
 	}
 }
 
-func (d *BasicDump) Name() string {
+func (d *BasicDump) GetName() string {
 	return d.name
 }
 
-func (d *BasicDump) NumberOfArtifacts() int {
+func (d *BasicDump) GetArtifactsNumber() int {
 	return len(d.artifacts)
 }
 
@@ -51,7 +51,7 @@ func NewBasicArtifact(name string) *BasicArtifact {
 	return &BasicArtifact{name}
 }
 
-func (a *BasicArtifact) Name() string {
+func (a *BasicArtifact) GetName() string {
 	return a.name
 }
 

@@ -27,8 +27,8 @@ func TestNamingConventionForStructureDump(t *testing.T) {
 	_, _, err := storkutil.ParseTimestampPrefix(filename)
 	require.NoError(t, err)
 	require.True(t, strings.HasSuffix(filename, ".json"))
-	require.Contains(t, filename, dump.Name())
-	require.Contains(t, filename, artifact.Name())
+	require.Contains(t, filename, dump.GetName())
+	require.Contains(t, filename, artifact.GetName())
 }
 
 func TestNamingConventionForBinaryDump(t *testing.T) {
@@ -43,8 +43,8 @@ func TestNamingConventionForBinaryDump(t *testing.T) {
 	_, _, err := storkutil.ParseTimestampPrefix(filename)
 	require.NoError(t, err)
 	require.False(t, strings.HasSuffix(filename, ".json"))
-	require.Contains(t, filename, dump.Name())
-	require.Contains(t, filename, artifact.Name())
+	require.Contains(t, filename, dump.GetName())
+	require.Contains(t, filename, artifact.GetName())
 }
 
 // Test that the naming convention creates the filename without illegal characters.
@@ -69,7 +69,7 @@ func TestNamingConventionReturnsValidFilenames(t *testing.T) {
 	// Act
 	filenames := make([]string, 0)
 	for _, dump := range cases {
-		for i := 0; i < dump.NumberOfArtifacts(); i++ {
+		for i := 0; i < dump.GetArtifactsNumber(); i++ {
 			artifact := dump.GetArtifact(i)
 			filename := flatStructureWithTimestampNamingConvention(dump, artifact)
 			filenames = append(filenames, filename)

@@ -13,8 +13,8 @@ func TestBasicDump(t *testing.T) {
 	dump := dumps.NewBasicDump("foo")
 
 	// Assert
-	require.EqualValues(t, "foo", dump.Name())
-	require.EqualValues(t, 0, dump.NumberOfArtifacts())
+	require.EqualValues(t, "foo", dump.GetName())
+	require.EqualValues(t, 0, dump.GetArtifactsNumber())
 	require.NoError(t, dump.Execute())
 }
 
@@ -24,7 +24,7 @@ func TestBasicArtifact(t *testing.T) {
 	artifact := dumps.NewBasicArtifact("foo")
 
 	// Assert
-	require.EqualValues(t, "foo", artifact.Name())
+	require.EqualValues(t, "foo", artifact.GetName())
 }
 
 // Test that the basic dump with the artifacts is constructed.
@@ -37,11 +37,11 @@ func TestBasicDumpWithArtifacts(t *testing.T) {
 	dump := dumps.NewBasicDump("foo", first, second)
 
 	// Assert
-	require.EqualValues(t, "foo", dump.Name())
-	require.EqualValues(t, 2, dump.NumberOfArtifacts())
+	require.EqualValues(t, "foo", dump.GetName())
+	require.EqualValues(t, 2, dump.GetArtifactsNumber())
 	require.NoError(t, dump.Execute())
-	require.EqualValues(t, "bar", dump.GetArtifact(0).Name())
-	require.EqualValues(t, "baz", dump.GetArtifact(1).Name())
+	require.EqualValues(t, "bar", dump.GetArtifact(0).GetName())
+	require.EqualValues(t, "baz", dump.GetArtifact(1).GetName())
 }
 
 // Test that the artifacts are appended.
@@ -54,9 +54,9 @@ func TestBasicDumpAppendArtifact(t *testing.T) {
 	dump.AppendArtifact(dumps.NewBasicArtifact("baz"))
 
 	// Assert
-	require.EqualValues(t, 2, dump.NumberOfArtifacts())
-	require.EqualValues(t, "bar", dump.GetArtifact(0).Name())
-	require.EqualValues(t, "baz", dump.GetArtifact(1).Name())
+	require.EqualValues(t, 2, dump.GetArtifactsNumber())
+	require.EqualValues(t, "bar", dump.GetArtifact(0).GetName())
+	require.EqualValues(t, "baz", dump.GetArtifact(1).GetName())
 }
 
 // Test that the basic struct artifact contains the data.
@@ -68,7 +68,7 @@ func TestBasicStructArtifact(t *testing.T) {
 	artifact := dumps.NewBasicStructArtifact("foo", data)
 
 	// Assert
-	require.EqualValues(t, "foo", artifact.Name())
+	require.EqualValues(t, "foo", artifact.GetName())
 	require.Equal(t, data, artifact.GetStruct())
 }
 
@@ -91,6 +91,6 @@ func TestBasicBinaryArtifact(t *testing.T) {
 	artifact := dumps.NewBasicBinaryArtifact("foo", []byte("bar"))
 
 	// Assert
-	require.EqualValues(t, "foo", artifact.Name())
+	require.EqualValues(t, "foo", artifact.GetName())
 	require.EqualValues(t, []byte("bar"), artifact.GetBinary())
 }
