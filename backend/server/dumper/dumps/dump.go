@@ -37,8 +37,8 @@ type StructArtifact interface {
 	GetStruct() interface{}
 }
 
-// The artifact that contains raw binary. It is
-// intendent to store the files.
+// The artifact that contains raw bytes
+// or binary content (e.g. file).
 type BinaryArtifact interface {
 	Artifact
 	// Returns binary representation of the artifact.
