@@ -72,7 +72,7 @@ func (a *BasicArtifact) GetName() string {
 // must be serializable.
 type BasicStructArtifact struct {
 	BasicArtifact
-	conent interface{}
+	content interface{}
 }
 
 // Constructs the artifact with the Go object as content.
@@ -86,19 +86,19 @@ func NewBasicStructArtifact(name string, content interface{}) *BasicStructArtifa
 
 // The content getter. Part of the StructArtifact interface.
 func (a *BasicStructArtifact) GetStruct() interface{} {
-	return a.conent
+	return a.content
 }
 
 // The content setter. It is useful in case when the artifact
 // object is created before the content is ready.
 func (a *BasicStructArtifact) SetStruct(content interface{}) {
-	a.conent = content
+	a.content = content
 }
 
 // Simple artifact-wrapper for the byte array.
 type BasicBinaryArtifact struct {
 	BasicArtifact
-	conent []byte
+	content []byte
 }
 
 // Constructs the artifact with binary data as content.
@@ -111,5 +111,5 @@ func NewBasicBinaryArtifact(name string, content []byte) *BasicBinaryArtifact {
 
 // The content getter. Part of the BinaryArtifact interface.
 func (a *BasicBinaryArtifact) GetBinary() []byte {
-	return a.conent
+	return a.content
 }
