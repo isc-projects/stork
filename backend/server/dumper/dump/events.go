@@ -20,16 +20,25 @@ func NewEventsDump(db *pg.DB, machine *dbmodel.Machine) *EventsDump {
 	}
 }
 
-// Executes the event dump. It fetches the latest events from the database
-// for a specific machine.
+// Executes the event dump. It fetches the latest error and warning
+// events from the database for a specific machine.
 func (d *EventsDump) Execute() error {
-	events, _, err := dbmodel.GetEventsByPage(d.db, 0, 1000, 1, nil, nil, &d.machineID, nil, "", dbmodel.SortDirAny)
+	events, _, err := dbmodel.GetEventsByPage(
+		d.db,
+		// Limit and offset
+		0, 1000,
+		// Severity
+		1,
+		// Filters
+		nil, nil, &d.machineID, nil,
+		// Sorting
+		"created_at", dbmodel.SortDirDesc)
 	if err != nil {
 		return err
 	}
 
 	d.AppendArtifact(NewBasicStructArtifact(
-		"all", events,
+		"latest", events,
 	))
 	return nil
 }
