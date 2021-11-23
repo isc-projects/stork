@@ -109,10 +109,10 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
                 icon: 'pi pi-refresh',
             },
             {
-                label: 'Dump configuration',
+                label: 'Dump troubleshooting data',
                 id: 'dump-single-machine',
                 icon: 'pi pi-download',
-                title: 'Dump configuration for troubleshooting purposes',
+                title: 'Download data archive for troubleshooting purposes',
             },
             /* Temporarily disable unauthorization until we find an
                actual use case for it. Also, if we allow unauthorization
