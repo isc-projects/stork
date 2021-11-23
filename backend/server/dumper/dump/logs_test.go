@@ -1,4 +1,4 @@
-package dumps_test
+package dump_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
-	"isc.org/stork/server/dumper/dumps"
+	"isc.org/stork/server/dumper/dump"
 )
 
 type logSourceMockCall struct {
@@ -63,7 +63,7 @@ func TestLogDumpExecute(t *testing.T) {
 	}
 
 	// Act
-	dump := dumps.NewLogsDump(&m, logSource)
+	dump := dump.NewLogsDump(&m, logSource)
 	err := dump.Execute()
 
 	// Assert

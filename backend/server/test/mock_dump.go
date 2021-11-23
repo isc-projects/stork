@@ -1,17 +1,17 @@
 package storktest
 
-import "isc.org/stork/server/dumper/dumps"
+import "isc.org/stork/server/dumper/dump"
 
 // Mock dump - only for test purposes.
 type MockDump struct {
-	*dumps.BasicDump
+	*dump.BasicDump
 	Err       error
 	CallCount int
 }
 
 func NewMockDump(name string, err error) *MockDump {
 	return &MockDump{
-		dumps.NewBasicDump(name),
+		dump.NewBasicDump(name),
 		err,
 		0,
 	}

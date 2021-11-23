@@ -3,7 +3,7 @@ package dumper
 import (
 	"time"
 
-	dumperdumps "isc.org/stork/server/dumper/dumps"
+	"isc.org/stork/server/dumper/dump"
 )
 
 // Summary of the dump process execution.
@@ -15,7 +15,7 @@ type executionSummary struct {
 // Single dump execution entry. It contains the dump object and related
 // error object (or nil if no error occurs).
 type executionSummaryStep struct {
-	Dump  dumperdumps.Dump
+	Dump  dump.Dump
 	Error error
 }
 
@@ -44,8 +44,8 @@ func newExecutionSummary(steps ...*executionSummaryStep) *executionSummary {
 
 // Extract only successfully finished dumps. The dump has a success
 // status if no error occurs.
-func (s *executionSummary) GetSuccessfulDumps() []dumperdumps.Dump {
-	dumps := make([]dumperdumps.Dump, 0)
+func (s *executionSummary) GetSuccessfulDumps() []dump.Dump {
+	dumps := make([]dump.Dump, 0)
 	for _, step := range s.Steps {
 		if step.IsSuccess() {
 			dumps = append(dumps, step.Dump)
@@ -70,11 +70,11 @@ func (s *executionSummary) Simplify() *executionSummarySimplify {
 
 // Append summary dump to the steps.
 func (s *executionSummary) appendSummaryDump() {
-	dumpSummaryArtifact := dumperdumps.NewBasicStructArtifact(
+	dumpSummaryArtifact := dump.NewBasicStructArtifact(
 		"executed-steps", nil,
 	)
 
-	dumpSummary := dumperdumps.NewBasicDump(
+	dumpSummary := dump.NewBasicDump(
 		"summary",
 		dumpSummaryArtifact,
 	)
@@ -84,7 +84,7 @@ func (s *executionSummary) appendSummaryDump() {
 }
 
 // Construct a new execution summary step instance.
-func newExecutionSummaryStep(dump dumperdumps.Dump, err error) *executionSummaryStep {
+func newExecutionSummaryStep(dump dump.Dump, err error) *executionSummaryStep {
 	return &executionSummaryStep{
 		Dump:  dump,
 		Error: err,
@@ -118,7 +118,7 @@ func (s *executionSummaryStep) Simplify() *executionSummaryStepSimplify {
 
 // Execute the dump process. Besides the provided dumps the
 // result will contain one more dump with the dump summary.
-func executeDumps(dumps []dumperdumps.Dump) *executionSummary {
+func executeDumps(dumps []dump.Dump) *executionSummary {
 	summary := newExecutionSummary()
 
 	for _, dump := range dumps {

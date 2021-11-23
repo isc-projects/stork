@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/server/dumper/dumps"
+	"isc.org/stork/server/dumper/dump"
 	storkutil "isc.org/stork/util"
 )
 
@@ -18,7 +18,7 @@ func TestConstructSaver(t *testing.T) {
 	// Act
 	saver := newTarbalSaver(
 		json.Marshal,
-		func(dump dumps.Dump, artifact dumps.Artifact) string { return "" },
+		func(dump dump.Dump, artifact dump.Artifact) string { return "" },
 	)
 
 	// Assert
@@ -30,12 +30,12 @@ func TestSaverSaveEmptyDumpList(t *testing.T) {
 	// Arrange
 	saver := newTarbalSaver(
 		json.Marshal,
-		func(dump dumps.Dump, artifact dumps.Artifact) string { return "" },
+		func(dump dump.Dump, artifact dump.Artifact) string { return "" },
 	)
 	var buffer bytes.Buffer
 
 	// Act
-	err := saver.Save(&buffer, []dumps.Dump{})
+	err := saver.Save(&buffer, []dump.Dump{})
 
 	// Assert
 	require.NoError(t, err)
@@ -47,22 +47,22 @@ func TestSaverSaveFilledDumpList(t *testing.T) {
 	// Arrange
 	saver := newTarbalSaver(
 		json.Marshal,
-		func(dump dumps.Dump, artifact dumps.Artifact) string {
+		func(dump dump.Dump, artifact dump.Artifact) string {
 			return dump.GetName() + artifact.GetName()
 		},
 	)
 	var buffer bytes.Buffer
 
 	// Act
-	dumps := []dumps.Dump{
-		dumps.NewBasicDump(
+	dumps := []dump.Dump{
+		dump.NewBasicDump(
 			"foo",
-			dumps.NewBasicStructArtifact("bar", 42),
+			dump.NewBasicStructArtifact("bar", 42),
 		),
-		dumps.NewBasicDump(
+		dump.NewBasicDump(
 			"baz",
-			dumps.NewBasicBinaryArtifact("biz", []byte{42, 24}),
-			dumps.NewBasicStructArtifact("boz", "buz"),
+			dump.NewBasicBinaryArtifact("biz", []byte{42, 24}),
+			dump.NewBasicStructArtifact("boz", "buz"),
 		),
 	}
 	err := saver.Save(&buffer, dumps)
@@ -77,21 +77,21 @@ func TestSavedTarball(t *testing.T) {
 	// Arrange
 	saver := newTarbalSaver(
 		json.Marshal,
-		func(dump dumps.Dump, artifact dumps.Artifact) string {
+		func(dump dump.Dump, artifact dump.Artifact) string {
 			return dump.GetName() + artifact.GetName()
 		},
 	)
 	var buffer bytes.Buffer
 
-	dumps := []dumps.Dump{
-		dumps.NewBasicDump(
+	dumps := []dump.Dump{
+		dump.NewBasicDump(
 			"foo",
-			dumps.NewBasicStructArtifact("bar", 42),
+			dump.NewBasicStructArtifact("bar", 42),
 		),
-		dumps.NewBasicDump(
+		dump.NewBasicDump(
 			"baz",
-			dumps.NewBasicBinaryArtifact("biz", []byte{42, 24}),
-			dumps.NewBasicStructArtifact("boz", "buz"),
+			dump.NewBasicBinaryArtifact("biz", []byte{42, 24}),
+			dump.NewBasicStructArtifact("boz", "buz"),
 		),
 	}
 	_ = saver.Save(&buffer, dumps)
@@ -121,7 +121,7 @@ func TestSavedTarballToFile(t *testing.T) {
 	// Arrange
 	saver := newTarbalSaver(
 		json.Marshal,
-		func(dump dumps.Dump, artifact dumps.Artifact) string {
+		func(dump dump.Dump, artifact dump.Artifact) string {
 			return dump.GetName() + artifact.GetName()
 		},
 	)
@@ -129,7 +129,7 @@ func TestSavedTarballToFile(t *testing.T) {
 	bufferWriter := bufio.NewWriter(file)
 
 	// Act
-	err := saver.Save(bufferWriter, []dumps.Dump{})
+	err := saver.Save(bufferWriter, []dump.Dump{})
 	_ = bufferWriter.Flush()
 	stat, _ := file.Stat()
 	position, _ := file.Seek(0, io.SeekCurrent)

@@ -10,15 +10,15 @@ import (
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
-	"isc.org/stork/server/dumper/dumps"
+	"isc.org/stork/server/dumper/dump"
 	storktest "isc.org/stork/server/test"
 	storkutil "isc.org/stork/util"
 )
 
 func TestNamingConventionForStructureDump(t *testing.T) {
 	// Arrange
-	artifact := dumps.NewBasicStructArtifact("bar", nil)
-	dump := dumps.NewBasicDump("foo", artifact)
+	artifact := dump.NewBasicStructArtifact("bar", nil)
+	dump := dump.NewBasicDump("foo", artifact)
 
 	// Act
 	filename := flatStructureWithTimestampNamingConvention(dump, artifact)
@@ -33,8 +33,8 @@ func TestNamingConventionForStructureDump(t *testing.T) {
 
 func TestNamingConventionForBinaryDump(t *testing.T) {
 	// Arrange
-	artifact := dumps.NewBasicBinaryArtifact("bar", nil)
-	dump := dumps.NewBasicDump("foo", artifact)
+	artifact := dump.NewBasicBinaryArtifact("bar", nil)
+	dump := dump.NewBasicDump("foo", artifact)
 
 	// Act
 	filename := flatStructureWithTimestampNamingConvention(dump, artifact)
@@ -52,18 +52,18 @@ func TestNamingConventionReturnsValidFilenames(t *testing.T) {
 	// Arrange
 	characters := "!@#$%^&*()_+{}:\"<>?~10-=[];',./πœę©ßß←↓↓→óþ¨~^´`ł…ə’ŋæðśążźć„”ńµ≤≥ ̣|\\"
 
-	cases := []dumps.Dump{
-		dumps.NewBasicDump("foo",
-			dumps.NewBasicArtifact("bar"),
-			dumps.NewBasicArtifact("BAZ"),
-			dumps.NewBasicArtifact("42"),
+	cases := []dump.Dump{
+		dump.NewBasicDump("foo",
+			dump.NewBasicArtifact("bar"),
+			dump.NewBasicArtifact("BAZ"),
+			dump.NewBasicArtifact("42"),
 		),
-		dumps.NewBasicDump("123", dumps.NewBasicArtifact("foobar")),
+		dump.NewBasicDump("123", dump.NewBasicArtifact("foobar")),
 	}
 
 	for _, ch := range characters {
 		str := string(ch)
-		cases = append(cases, dumps.NewBasicDump(str, dumps.NewBasicArtifact(str)))
+		cases = append(cases, dump.NewBasicDump(str, dump.NewBasicArtifact(str)))
 	}
 
 	// Act

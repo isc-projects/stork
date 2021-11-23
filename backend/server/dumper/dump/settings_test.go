@@ -1,4 +1,4 @@
-package dumps_test
+package dump_test
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
-	"isc.org/stork/server/dumper/dumps"
+	dumppkg "isc.org/stork/server/dumper/dump"
 )
 
 // Test that the dump is executed properly.
@@ -28,7 +28,7 @@ func TestSettingsDumpExecute(t *testing.T) {
 			Value:   "secret",
 		},
 	}).Insert()
-	dump := dumps.NewSettingsDump(db)
+	dump := dumppkg.NewSettingsDump(db)
 
 	// Act
 	err := dump.Execute()
@@ -37,7 +37,7 @@ func TestSettingsDumpExecute(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 1, dump.GetArtifactsNumber())
 
-	artifact := dump.GetArtifact(0).(dumps.StructArtifact)
+	artifact := dump.GetArtifact(0).(dumppkg.StructArtifact)
 	artifactContent := artifact.GetStruct()
 	settings, ok := artifactContent.(map[string]interface{})
 

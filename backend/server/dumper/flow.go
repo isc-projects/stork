@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
-	"isc.org/stork/server/dumper/dumps"
+	"isc.org/stork/server/dumper/dump"
 )
 
 var ErrMachineNotFound error = errors.New("machine not found")
@@ -58,7 +58,7 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 // Save the dumps to self-cleaned container. After the call to the Close function
 // on the returned reader all resources will be released.
 // The returned reader is ready to read.
-func saveDumpsToAutoReleaseContainer(saver saver, dumps []dumps.Dump) (io.ReadCloser, error) {
+func saveDumpsToAutoReleaseContainer(saver saver, dumps []dump.Dump) (io.ReadCloser, error) {
 	// Prepare the temporary buffer.
 	var buffer bytes.Buffer
 	err := saver.Save(&buffer, dumps)
@@ -74,14 +74,14 @@ func saveDumpsToAutoReleaseContainer(saver saver, dumps []dumps.Dump) (io.ReadCl
 //    The binary artifacts ends with the artifact name (it may contain extension).
 // 3. Naming convention doesn't use subfolders.
 // 4. Filename contains the dump name and artifact name.
-func flatStructureWithTimestampNamingConvention(dump dumps.Dump, artifact dumps.Artifact) string {
+func flatStructureWithTimestampNamingConvention(dumpObj dump.Dump, artifact dump.Artifact) string {
 	timestamp := time.Now().UTC().Format(time.RFC3339)
 	timestamp = strings.ReplaceAll(timestamp, ":", "-")
 	extension := ".json"
-	if _, ok := artifact.(dumps.BinaryArtifact); ok {
+	if _, ok := artifact.(dump.BinaryArtifact); ok {
 		extension = ""
 	}
-	filename := fmt.Sprintf("%s_%s_%s%s", timestamp, dump.GetName(), artifact.GetName(), extension)
+	filename := fmt.Sprintf("%s_%s_%s%s", timestamp, dumpObj.GetName(), artifact.GetName(), extension)
 	// Remove the insane characters
 	filename = strings.ReplaceAll(filename, "/", "?")
 	filename = strings.ReplaceAll(filename, "*", "?")

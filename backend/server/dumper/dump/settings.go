@@ -1,4 +1,4 @@
-package dumps
+package dump
 
 import (
 	"github.com/go-pg/pg/v9"

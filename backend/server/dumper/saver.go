@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	dumperdumps "isc.org/stork/server/dumper/dumps"
+	"isc.org/stork/server/dumper/dump"
 	storkutil "isc.org/stork/util"
 )
 
 // Function that produces the names for the artifacts.
 // It is expected to return unique name for each dump-artifact combination.
 // The result haven't must be deterministic (e.g. may contain a timestamp).
-type namingConvention func(dump dumperdumps.Dump, artifact dumperdumps.Artifact) string
+type namingConvention func(dump dump.Dump, artifact dump.Artifact) string
 
 // Serialize the Go object to the binary content. It is expected to
 // return human-readable output (e.g. JSON or YAML).
@@ -22,7 +22,7 @@ type structSerializer func(interface{}) ([]byte, error)
 // It is responsible for serialize the dump artifacts
 // and design of exported structure.
 type saver interface {
-	Save(target io.Writer, dumps []dumperdumps.Dump) error
+	Save(target io.Writer, dumps []dump.Dump) error
 }
 
 // Structure that saves the dumps to the tarball archive.
@@ -43,32 +43,32 @@ func newTarbalSaver(serializer structSerializer, namingConvention namingConventi
 
 // Save the dumps as a tarball archive.
 // Remember that the "target" writter position is at the end after finishing this process.
-func (t *tarbalSaver) Save(target io.Writer, dumps []dumperdumps.Dump) error {
+func (t *tarbalSaver) Save(target io.Writer, dumps []dump.Dump) error {
 	tarbal := storkutil.NewTarballWriter(target)
 	defer tarbal.Close()
 
-	for _, dump := range dumps {
-		for i := 0; i < dump.GetArtifactsNumber(); i++ {
-			artifact := dump.GetArtifact(i)
-			path := t.namingConvention(dump, artifact)
+	for _, dumpObj := range dumps {
+		for i := 0; i < dumpObj.GetArtifactsNumber(); i++ {
+			artifact := dumpObj.GetArtifact(i)
+			path := t.namingConvention(dumpObj, artifact)
 
 			var rawContent []byte
 			switch a := artifact.(type) {
-			case dumperdumps.StructArtifact:
+			case dump.StructArtifact:
 				var err error
 				rawContent, err = t.serializer(a.GetStruct())
 				if err != nil {
-					return errors.Wrapf(err, "cannot serialize a dump artifact: %s - %s", dump.GetName(), artifact.GetName())
+					return errors.Wrapf(err, "cannot serialize a dump artifact: %s - %s", dumpObj.GetName(), artifact.GetName())
 				}
-			case dumperdumps.BinaryArtifact:
+			case dump.BinaryArtifact:
 				rawContent = a.GetBinary()
 			default:
-				return errors.Errorf("unknown type of artifact: %s - %s", dump.GetName(), artifact.GetName())
+				return errors.Errorf("unknown type of artifact: %s - %s", dumpObj.GetName(), artifact.GetName())
 			}
 
 			err := tarbal.AddContent(path, rawContent, time.Now().UTC())
 			if err != nil {
-				return errors.Wrapf(err, "cannot append a dump artifact: %s - %s to tarbal", dump.GetName(), artifact.GetName())
+				return errors.Wrapf(err, "cannot append a dump artifact: %s - %s to tarbal", dumpObj.GetName(), artifact.GetName())
 			}
 		}
 	}

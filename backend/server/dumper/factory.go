@@ -4,7 +4,7 @@ import (
 	"github.com/go-pg/pg/v9"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
-	"isc.org/stork/server/dumper/dumps"
+	"isc.org/stork/server/dumper/dump"
 )
 
 // Initialize (construct) the dump instances.
@@ -23,11 +23,11 @@ func newFactory(db *pg.DB, m *dbmodel.Machine, agents agentcomm.ConnectedAgents)
 }
 
 // Construct all supported dumps.
-func (f *factory) All() []dumps.Dump {
-	return []dumps.Dump{
-		dumps.NewMachineDump(f.m),
-		dumps.NewEventsDump(f.db, f.m),
-		dumps.NewLogsDump(f.m, f.connectedAgents),
-		dumps.NewSettingsDump(f.db),
+func (f *factory) All() []dump.Dump {
+	return []dump.Dump{
+		dump.NewMachineDump(f.m),
+		dump.NewEventsDump(f.db, f.m),
+		dump.NewLogsDump(f.m, f.connectedAgents),
+		dump.NewSettingsDump(f.db),
 	}
 }

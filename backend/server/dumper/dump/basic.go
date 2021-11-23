@@ -1,4 +1,4 @@
-package dumps
+package dump
 
 // Trivial implementation of the dump interfaces.
 // It should be enough in the most use cases.

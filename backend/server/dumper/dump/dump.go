@@ -1,4 +1,4 @@
-package dumps
+package dump
 
 // Dump - single unit of the dump process.
 // It may contain multiple result artifacts

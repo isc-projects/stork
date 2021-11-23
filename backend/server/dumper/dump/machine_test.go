@@ -1,4 +1,4 @@
-package dumps_test
+package dump_test
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
-	"isc.org/stork/server/dumper/dumps"
+	dumppkg "isc.org/stork/server/dumper/dump"
 )
 
 // Helper function that fills the database
@@ -87,11 +87,11 @@ func initDatabase(db *pg.DB) *dbmodel.Machine {
 }
 
 // Helper function that extract the machine from the dump.
-func extractMachineFromDump(dump dumps.Dump) (*dbmodel.Machine, bool) {
+func extractMachineFromDump(dump dumppkg.Dump) (*dbmodel.Machine, bool) {
 	if dump.GetArtifactsNumber() != 1 {
 		return nil, false
 	}
-	artifact := dump.GetArtifact(0).(dumps.StructArtifact)
+	artifact := dump.GetArtifact(0).(dumppkg.StructArtifact)
 	artifactContent := artifact.GetStruct()
 	machine, ok := artifactContent.(*dbmodel.Machine)
 	return machine, ok
@@ -104,7 +104,7 @@ func TestMachineDumpExecute(t *testing.T) {
 	defer teardown()
 	m := initDatabase(db)
 
-	dump := dumps.NewMachineDump(m)
+	dump := dumppkg.NewMachineDump(m)
 
 	// Act
 	err := dump.Execute()
@@ -129,7 +129,7 @@ func TestMachineDumpExecuteHideSecrets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 	m := initDatabase(db)
-	dump := dumps.NewMachineDump(m)
+	dump := dumppkg.NewMachineDump(m)
 
 	// Act
 	_ = dump.Execute()

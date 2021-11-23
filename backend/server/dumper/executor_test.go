@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/server/dumper/dumps"
+	"isc.org/stork/server/dumper/dump"
 	storktest "isc.org/stork/server/test"
 )
 
@@ -24,7 +24,7 @@ func TestConstructExecutionSummary(t *testing.T) {
 // Test that the execution step summary is properly constructed.
 func TestConstructExecutionSummaryStep(t *testing.T) {
 	// Arrange
-	dump := dumps.NewBasicDump("foo")
+	dump := dump.NewBasicDump("foo")
 	err := errors.New("bar")
 
 	// Act
@@ -40,10 +40,10 @@ func TestConstructExecutionSummaryWithSteps(t *testing.T) {
 	// Act
 	summary := newExecutionSummary(
 		newExecutionSummaryStep(
-			dumps.NewBasicDump("foo"), nil,
+			dump.NewBasicDump("foo"), nil,
 		),
 		newExecutionSummaryStep(
-			dumps.NewBasicDump("bar"), errors.New("bar"),
+			dump.NewBasicDump("bar"), errors.New("bar"),
 		),
 	)
 
@@ -71,19 +71,19 @@ func TestGetSuccessfulDumps(t *testing.T) {
 	// Arrange
 	summary := newExecutionSummary(
 		newExecutionSummaryStep(
-			dumps.NewBasicDump("foo"),
+			dump.NewBasicDump("foo"),
 			nil,
 		),
 		newExecutionSummaryStep(
-			dumps.NewBasicDump("bar"),
+			dump.NewBasicDump("bar"),
 			errors.New("bar"),
 		),
 		newExecutionSummaryStep(
-			dumps.NewBasicDump("baz"),
+			dump.NewBasicDump("baz"),
 			errors.New("baz"),
 		),
 		newExecutionSummaryStep(
-			dumps.NewBasicDump("boz"),
+			dump.NewBasicDump("boz"),
 			nil,
 		),
 	)
@@ -101,10 +101,10 @@ func TestGetSuccessfulDumps(t *testing.T) {
 func TestSimplifySuccessExecutionStep(t *testing.T) {
 	// Arrange
 	step := newExecutionSummaryStep(
-		dumps.NewBasicDump("foo",
-			dumps.NewBasicArtifact("alfa"),
-			dumps.NewBasicArtifact("beta"),
-			dumps.NewBasicArtifact("gamma"),
+		dump.NewBasicDump("foo",
+			dump.NewBasicArtifact("alfa"),
+			dump.NewBasicArtifact("beta"),
+			dump.NewBasicArtifact("gamma"),
 		),
 		nil,
 	)
@@ -123,10 +123,10 @@ func TestSimplifySuccessExecutionStep(t *testing.T) {
 func TestSimplifyFailedExecutionStep(t *testing.T) {
 	// Arrange
 	step := newExecutionSummaryStep(
-		dumps.NewBasicDump("foo",
-			dumps.NewBasicArtifact("alfa"),
-			dumps.NewBasicArtifact("beta"),
-			dumps.NewBasicArtifact("gamma"),
+		dump.NewBasicDump("foo",
+			dump.NewBasicArtifact("alfa"),
+			dump.NewBasicArtifact("beta"),
+			dump.NewBasicArtifact("gamma"),
 		),
 		errors.New("foo"),
 	)
@@ -146,10 +146,10 @@ func TestSimplifyExecutionSummary(t *testing.T) {
 	// Arrange
 	summary := newExecutionSummary(
 		newExecutionSummaryStep(
-			dumps.NewBasicDump("foo",
-				dumps.NewBasicArtifact("alfa"),
-				dumps.NewBasicArtifact("beta"),
-				dumps.NewBasicArtifact("gamma"),
+			dump.NewBasicDump("foo",
+				dump.NewBasicArtifact("alfa"),
+				dump.NewBasicArtifact("beta"),
+				dump.NewBasicArtifact("gamma"),
 			),
 			errors.New("foo"),
 		),
@@ -172,10 +172,10 @@ func TestExecuteDumps(t *testing.T) {
 	successMock := storktest.NewMockDump("foo", nil)
 	failedMock := storktest.NewMockDump("foobar", errors.New("fail"))
 
-	dumps := []dumps.Dump{
+	dumps := []dump.Dump{
 		successMock,
-		dumps.NewBasicDump("bar", dumps.NewBasicArtifact("bir")),
-		dumps.NewBasicDump("baz", dumps.NewBasicArtifact("buz"), dumps.NewBasicArtifact("bez")),
+		dump.NewBasicDump("bar", dump.NewBasicArtifact("bir")),
+		dump.NewBasicDump("baz", dump.NewBasicArtifact("buz"), dump.NewBasicArtifact("bez")),
 		failedMock,
 	}
 
@@ -196,15 +196,15 @@ func TestExecuteDumps(t *testing.T) {
 // Test that the dump execution produces the proper summary dump.
 func TestExecuteDumpProducesSummaryDump(t *testing.T) {
 	// Arrange
-	summary := executeDumps([]dumps.Dump{
-		dumps.NewBasicDump("baz", dumps.NewBasicArtifact("buz"), dumps.NewBasicArtifact("bez")),
+	summary := executeDumps([]dump.Dump{
+		dump.NewBasicDump("baz", dump.NewBasicArtifact("buz"), dump.NewBasicArtifact("bez")),
 		storktest.NewMockDump("bar", errors.New("fail")),
 	})
 
 	// Act
 	summaryStep := summary.Steps[2]
 	summaryArtifact := summaryStep.Dump.GetArtifact(0)
-	summaryObject := summaryArtifact.(*dumps.BasicStructArtifact)
+	summaryObject := summaryArtifact.(*dump.BasicStructArtifact)
 	simplifySummary, ok := summaryObject.GetStruct().(*executionSummarySimplify)
 
 	// Assert

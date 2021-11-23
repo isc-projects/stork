@@ -1,16 +1,16 @@
-package dumps_test
+package dump_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/server/dumper/dumps"
+	dumppkg "isc.org/stork/server/dumper/dump"
 )
 
 // Test that the basic dump is constructed.
 func TestBasicDump(t *testing.T) {
 	// Act
-	dump := dumps.NewBasicDump("foo")
+	dump := dumppkg.NewBasicDump("foo")
 
 	// Assert
 	require.EqualValues(t, "foo", dump.GetName())
@@ -21,7 +21,7 @@ func TestBasicDump(t *testing.T) {
 // Test that the basic artifact is constructed.
 func TestBasicArtifact(t *testing.T) {
 	// Act
-	artifact := dumps.NewBasicArtifact("foo")
+	artifact := dumppkg.NewBasicArtifact("foo")
 
 	// Assert
 	require.EqualValues(t, "foo", artifact.GetName())
@@ -30,11 +30,11 @@ func TestBasicArtifact(t *testing.T) {
 // Test that the basic dump with the artifacts is constructed.
 func TestBasicDumpWithArtifacts(t *testing.T) {
 	// Arrange
-	first := dumps.NewBasicArtifact("bar")
-	second := dumps.NewBasicArtifact("baz")
+	first := dumppkg.NewBasicArtifact("bar")
+	second := dumppkg.NewBasicArtifact("baz")
 
 	// Act
-	dump := dumps.NewBasicDump("foo", first, second)
+	dump := dumppkg.NewBasicDump("foo", first, second)
 
 	// Assert
 	require.EqualValues(t, "foo", dump.GetName())
@@ -47,11 +47,11 @@ func TestBasicDumpWithArtifacts(t *testing.T) {
 // Test that the artifacts are appended.
 func TestBasicDumpAppendArtifact(t *testing.T) {
 	// Arrange
-	dump := dumps.NewBasicDump("foo")
+	dump := dumppkg.NewBasicDump("foo")
 
 	// Act
-	dump.AppendArtifact(dumps.NewBasicArtifact("bar"))
-	dump.AppendArtifact(dumps.NewBasicArtifact("baz"))
+	dump.AppendArtifact(dumppkg.NewBasicArtifact("bar"))
+	dump.AppendArtifact(dumppkg.NewBasicArtifact("baz"))
 
 	// Assert
 	require.EqualValues(t, 2, dump.GetArtifactsNumber())
@@ -65,7 +65,7 @@ func TestBasicStructArtifact(t *testing.T) {
 	data := []string{"bar"}
 
 	// Act
-	artifact := dumps.NewBasicStructArtifact("foo", data)
+	artifact := dumppkg.NewBasicStructArtifact("foo", data)
 
 	// Assert
 	require.EqualValues(t, "foo", artifact.GetName())
@@ -76,7 +76,7 @@ func TestBasicStructArtifact(t *testing.T) {
 func TestBasicStructArtifactSet(t *testing.T) {
 	// Arrange
 	data := []string{"bar"}
-	artifact := dumps.NewBasicStructArtifact("foo", 42)
+	artifact := dumppkg.NewBasicStructArtifact("foo", 42)
 
 	// Act
 	artifact.SetStruct(data)
@@ -88,7 +88,7 @@ func TestBasicStructArtifactSet(t *testing.T) {
 // Test that the basic binary artifact is constructed.
 func TestBasicBinaryArtifact(t *testing.T) {
 	// Act
-	artifact := dumps.NewBasicBinaryArtifact("foo", []byte("bar"))
+	artifact := dumppkg.NewBasicBinaryArtifact("foo", []byte("bar"))
 
 	// Assert
 	require.EqualValues(t, "foo", artifact.GetName())
