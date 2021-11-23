@@ -699,7 +699,7 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 	return rsp
 }
 
-// Return a single archive machine dump. It is intendent for easy sharing the configuration
+// Return a single machine dump archive. It is intended for easily sharing the configuration
 // for diagnostic purposes. The archive contains the database dumps and some log files.
 func (r *RestAPI) GetMachineDump(ctx context.Context, params services.GetMachineDumpParams) middleware.Responder {
 	dump, err := dumper.DumpMachine(r.DB, r.Agents, params.ID)

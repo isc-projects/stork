@@ -46,7 +46,7 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 	dumps := factory.All()
 	// Perform dump process
 	summary := executeDumps(dumps)
-	// Exclude the success dumps
+	// Include only successful dumps
 	// The dump summary is one of the dump artifacts too.
 	// Exact summary isn't returned to UI in the current version.
 	dumps = summary.GetSuccessfulDumps()
@@ -55,8 +55,8 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 	return saveDumpsToAutoReleaseContainer(saver, dumps)
 }
 
-// Save the dumps to self-cleaned container. After call the Close function
-// on returned reader all resources will be released.
+// Save the dumps to self-cleaned container. After the call to the Close function
+// on the returned reader all resources will be released.
 // The returned reader is ready to read.
 func saveDumpsToAutoReleaseContainer(saver saver, dumps []dumps.Dump) (io.ReadCloser, error) {
 	// Prepare the temporary buffer.

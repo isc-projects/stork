@@ -9,7 +9,7 @@ import (
 	"isc.org/stork/server/gen/models"
 )
 
-// The dump of the all fetchable logs.
+// The dump of all fetchable logs of the monitored apps.
 // It means that it dumps the log tails from each log target
 // related to the machine except stdin/stdout/syslog targets.
 type LogsDump struct {

@@ -11,7 +11,7 @@ import (
 	"isc.org/stork/server/dumper/dumps"
 )
 
-// Helper function that fill the database
+// Helper function that fills the database
 // and returns the created machine.
 func initDatabase(db *pg.DB) *dbmodel.Machine {
 	m := &dbmodel.Machine{

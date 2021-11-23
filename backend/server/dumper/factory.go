@@ -22,7 +22,7 @@ func newFactory(db *pg.DB, m *dbmodel.Machine, agents agentcomm.ConnectedAgents)
 	}
 }
 
-// Construct all possible dumps.
+// Construct all supported dumps.
 func (f *factory) All() []dumps.Dump {
 	return []dumps.Dump{
 		dumps.NewMachineDump(f.m),

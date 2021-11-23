@@ -23,7 +23,7 @@ func TestWalkNonExistsTarball(t *testing.T) {
 }
 
 // When walk through the empty tarball then
-// no files should be occurred.
+// no files should occur.
 func TestWalkEmptyTarball(t *testing.T) {
 	// Arrange
 	var buffer bytes.Buffer

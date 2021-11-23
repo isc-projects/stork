@@ -10,15 +10,15 @@ import (
 )
 
 // Callback that accepts the TAR header of a file/directory/link,
-// and a read content function - it retruns a binary content or error.
+// and a read content function - it returns a binary content or error.
 // Callback must return the flag indicating to need to continue walking
 // (true - continue, false - stop).
 type WalkCallback = func(header *tar.Header, read func() ([]byte, error)) bool
 
-// General purpose walk function. It unpacks the Tarball and call the
+// General purpose walk function. It unpacks the Tarball and calls the
 // callback with each entry one-by-one.
 // Current implementation doesn't support the subdirectory walking
-// and read the content from the non-regular files.
+// and reading the content from the non-regular files.
 func WalkFilesInTarball(tarball io.Reader, callback WalkCallback) error {
 	gzipReader, err := gzip.NewReader(tarball)
 	if err != nil {
@@ -35,7 +35,7 @@ func WalkFilesInTarball(tarball io.Reader, callback WalkCallback) error {
 		}
 
 		if err != nil {
-			return pkgerrors.Wrap(err, "problem with read next header")
+			return pkgerrors.Wrap(err, "problem with reading next header")
 		}
 
 		switch header.Typeflag {
