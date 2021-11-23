@@ -5,15 +5,15 @@ package dumps
 // The artifacts are collected in the expected form
 // and stored as an array.
 //
-// The artifacts can be assigned in the constructor (for trivial cases)
-// or by appending to the internal array in the AppendArtifact function.
-//
 // The Execute method should be overwritten to define the execution code.
 type BasicDump struct {
 	name      string
 	artifacts []Artifact
 }
 
+// Create instance of the basic dump.
+// The artifacts can be assigned in this constructor (for trivial cases)
+// or by appending to the internal array in the AppendArtifact function.
 func NewBasicDump(name string, artifacts ...Artifact) *BasicDump {
 	return &BasicDump{
 		name,
@@ -21,22 +21,32 @@ func NewBasicDump(name string, artifacts ...Artifact) *BasicDump {
 	}
 }
 
+// The name of the dump.
+// Default implementation returns the fixed name
+// from the constructor.
 func (d *BasicDump) GetName() string {
 	return d.name
 }
 
+// Returns the length of the internal artifact slice.
 func (d *BasicDump) GetArtifactsNumber() int {
 	return len(d.artifacts)
 }
 
+// Returns the artifact from the internal artifact slice.
 func (d *BasicDump) GetArtifact(i int) Artifact {
 	return d.artifacts[i]
 }
 
+// Append artifact to the internal artifact slice.
 func (d *BasicDump) AppendArtifact(artifact Artifact) {
 	d.artifacts = append(d.artifacts, artifact)
 }
 
+// Default implementation does nothing and returns no error.
+// It is good for trivial cases when the artifacts are provided
+// in the costructor, but is should be overridden for the advanced
+// use cases.
 func (d *BasicDump) Execute() error {
 	return nil
 }
@@ -47,22 +57,26 @@ type BasicArtifact struct {
 	name string
 }
 
+// Constructs the basic artifact. It shouldn't be used directly,
+// but in the child class constructors.
 func NewBasicArtifact(name string) *BasicArtifact {
 	return &BasicArtifact{name}
 }
 
+// Returns a name provided in the constructor.
 func (a *BasicArtifact) GetName() string {
 	return a.name
 }
 
-// Simple artifact-wrapper for any Go object. The content
-// is intendent to serialize then assigned object must
-// be serializable.
+// Simple artifact-wrapper for a Go object. The content
+// must be serializable.
 type BasicStructArtifact struct {
 	BasicArtifact
 	conent interface{}
 }
 
+// Constructs the artifact with the Go object as content.
+// The content must be serializable.
 func NewBasicStructArtifact(name string, content interface{}) *BasicStructArtifact {
 	return &BasicStructArtifact{
 		*NewBasicArtifact(name),
@@ -70,10 +84,13 @@ func NewBasicStructArtifact(name string, content interface{}) *BasicStructArtifa
 	}
 }
 
+// The content getter. Part of the StructArtifact interface.
 func (a *BasicStructArtifact) GetStruct() interface{} {
 	return a.conent
 }
 
+// The content setter. It is useful in case when the artifact
+// object is created before the content is ready.
 func (a *BasicStructArtifact) SetStruct(content interface{}) {
 	a.conent = content
 }
@@ -84,6 +101,7 @@ type BasicBinaryArtifact struct {
 	conent []byte
 }
 
+// Constructs the artifact with binary data as content.
 func NewBasicBinaryArtifact(name string, content []byte) *BasicBinaryArtifact {
 	return &BasicBinaryArtifact{
 		*NewBasicArtifact(name),
@@ -91,6 +109,7 @@ func NewBasicBinaryArtifact(name string, content []byte) *BasicBinaryArtifact {
 	}
 }
 
+// The content getter. Part of the BinaryArtifact interface.
 func (a *BasicBinaryArtifact) GetBinary() []byte {
 	return a.conent
 }

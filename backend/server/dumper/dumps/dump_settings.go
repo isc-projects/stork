@@ -11,6 +11,7 @@ type SettingsDump struct {
 	db *pg.DB
 }
 
+// Construct the server settings dump.
 func NewSettingsDump(db *pg.DB) *SettingsDump {
 	return &SettingsDump{
 		*NewBasicDump("server-settings"),
@@ -18,6 +19,7 @@ func NewSettingsDump(db *pg.DB) *SettingsDump {
 	}
 }
 
+// It just dumps the setting DB table content.
 func (d *SettingsDump) Execute() error {
 	settings, err := dbmodel.GetAllSettings(d.db)
 	if err != nil {

@@ -24,6 +24,8 @@ type LogTailSource interface {
 	TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset int64) ([]string, error)
 }
 
+// Constructs the log dump instance. It needs access to the log tail source
+// (prefer ConnectedAgents) that is used to fetch the log content.
 func NewLogsDump(machine *dbmodel.Machine, logSources LogTailSource) *LogsDump {
 	return &LogsDump{
 		*NewBasicDump("logs"),
@@ -31,6 +33,12 @@ func NewLogsDump(machine *dbmodel.Machine, logSources LogTailSource) *LogsDump {
 	}
 }
 
+// It iterates over all log targets for a specific machine
+// (the log targets of each daemon for each app in the machine)
+// and fetches the tail of each log.
+// Each log target dump has attached the metadata and is dumped to a separate artifact.
+//
+// Current implementation excludes the non-file logs (stdout, stderr, syslog).
 func (d *LogsDump) Execute() error {
 	for _, app := range d.machine.Apps {
 		for _, daemon := range app.Daemons {

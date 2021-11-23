@@ -12,6 +12,7 @@ type EventsDump struct {
 	machineID int64
 }
 
+// Constructs new events dump instance.
 func NewEventsDump(db *pg.DB, machine *dbmodel.Machine) *EventsDump {
 	return &EventsDump{
 		*NewBasicDump("events"),
@@ -19,6 +20,8 @@ func NewEventsDump(db *pg.DB, machine *dbmodel.Machine) *EventsDump {
 	}
 }
 
+// Executes the event dump. It fetches the latest events from the database
+// for a specific machine.
 func (d *EventsDump) Execute() error {
 	events, _, err := dbmodel.GetEventsByPage(d.db, 0, 1000, 1, nil, nil, &d.machineID, nil, "", dbmodel.SortDirAny)
 	if err != nil {

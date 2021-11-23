@@ -13,6 +13,7 @@ type MachineDump struct {
 	machine *dbmodel.Machine
 }
 
+// Constructs the machine dump.
 func NewMachineDump(m *dbmodel.Machine) *MachineDump {
 	return &MachineDump{
 		*NewBasicDump("machine"),
@@ -20,6 +21,12 @@ func NewMachineDump(m *dbmodel.Machine) *MachineDump {
 	}
 }
 
+// Dumps the machine instance provided in the constructor.
+// It removes the sensitive data from the dumped data.
+// The removed data:
+//
+// - Agent token
+// - The values for restricted keys from Kea daemon configurations.
 func (d *MachineDump) Execute() error {
 	// Hide agent tokens
 	d.machine.AgentToken = ""
