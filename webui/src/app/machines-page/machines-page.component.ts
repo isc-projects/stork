@@ -367,7 +367,9 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
         )
     }
 
-    // Start downloading the dump file.
+    /**
+     * Start downloading the dump file.
+     */
     downloadDump(machine: Machine) {
         window.location.href = `api/machines/${machine.id}/dump`
     }
