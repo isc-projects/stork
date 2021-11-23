@@ -205,7 +205,7 @@ func TestExecuteDumpProducesSummaryDump(t *testing.T) {
 	summaryStep := summary.Steps[2]
 	summaryArtifact := summaryStep.Dump.GetArtifact(0)
 	summaryObject := summaryArtifact.(*dump.BasicStructArtifact)
-	simplifySummary, ok := summaryObject.GetStruct().(*executionSummarySimplify)
+	simplifySummary, ok := summaryObject.GetStruct().(*executionSummarySimplified)
 
 	// Assert
 	require.True(t, ok)

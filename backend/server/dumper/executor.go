@@ -19,16 +19,16 @@ type executionSummaryStep struct {
 	Error error
 }
 
-// Simplify representation of the summary
-// intendent to use in the dump export.
-type executionSummarySimplify struct {
+// Simplified representation of the summary
+// to use in the dump.
+type executionSummarySimplified struct {
 	Timestamp string
-	Steps     []*executionSummaryStepSimplify
+	Steps     []*executionSummaryStepSimplified
 }
 
-// Simplify representation of the summary step
-// intendent to use in the dump export.
-type executionSummaryStepSimplify struct {
+// Simplified representation of the summary step
+// to use in the dump export.
+type executionSummaryStepSimplified struct {
 	Name      string
 	Error     error `json:",omitempty"`
 	Status    string
@@ -55,14 +55,14 @@ func (s *executionSummary) GetSuccessfulDumps() []dump.Dump {
 }
 
 // Simplify the execution summary to the serializable form.
-func (s *executionSummary) Simplify() *executionSummarySimplify {
-	var steps []*executionSummaryStepSimplify
+func (s *executionSummary) Simplify() *executionSummarySimplified {
+	var steps []*executionSummaryStepSimplified
 
 	for _, source := range s.Steps {
 		steps = append(steps, source.Simplify())
 	}
 
-	return &executionSummarySimplify{
+	return &executionSummarySimplified{
 		Timestamp: s.Timestamp.Format(time.RFC3339),
 		Steps:     steps,
 	}
@@ -97,7 +97,7 @@ func (s *executionSummaryStep) IsSuccess() bool {
 }
 
 // Simplify the execution summary step to the serializable form.
-func (s *executionSummaryStep) Simplify() *executionSummaryStepSimplify {
+func (s *executionSummaryStep) Simplify() *executionSummaryStepSimplified {
 	var artifactNames []string
 	for i := 0; i < s.Dump.GetArtifactsNumber(); i++ {
 		artifactNames = append(artifactNames, s.Dump.GetArtifact(i).GetName())
@@ -108,7 +108,7 @@ func (s *executionSummaryStep) Simplify() *executionSummaryStepSimplify {
 		status = "FAIL"
 	}
 
-	return &executionSummaryStepSimplify{
+	return &executionSummaryStepSimplified{
 		Name:      s.Dump.GetName(),
 		Error:     s.Error,
 		Artifacts: artifactNames,
