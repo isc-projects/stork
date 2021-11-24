@@ -17,13 +17,7 @@ func TestConstructFactory(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	m := &dbmodel.Machine{
-		ID:         0,
-		Address:    "localhost",
-		AgentPort:  8080,
-		Authorized: true,
-	}
-	_ = dbmodel.AddMachine(db, m)
+	m := &dbmodel.Machine{}
 
 	settings := agentcomm.AgentsSettings{}
 	fec := &storktest.FakeEventCenter{}

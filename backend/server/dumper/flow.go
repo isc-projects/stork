@@ -10,15 +10,14 @@ import (
 	"time"
 
 	"github.com/go-pg/pg/v9"
-	"github.com/pkg/errors"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/dumper/dump"
 )
 
-var ErrMachineNotFound error = errors.New("machine not found")
-
 // The main function of this module. It dumps the specific machine (and related data) to the tarball archive.
+// Returns closeable stream with the dump binary and error. If the machine doesn't exist it returns
+// nil and no error.
 func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID int64) (io.ReadCloser, error) {
 	m, err := dbmodel.GetMachineByIDWithRelations(db, machineID,
 		dbmodel.MachineRelationApps,
@@ -33,7 +32,7 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 		return nil, err
 	}
 	if m == nil {
-		return nil, ErrMachineNotFound
+		return nil, nil
 	}
 
 	// Factory will create the dump instances
