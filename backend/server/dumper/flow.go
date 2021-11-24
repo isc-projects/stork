@@ -43,7 +43,7 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 	saver := newTarbalSaver(indentJSONSerializer, flatStructureWithTimestampNamingConvention)
 
 	// Init dump objects
-	dumps := factory.all()
+	dumps := factory.createAll()
 	// Perform dump process
 	summary := executeDumps(dumps)
 	// Include only successful dumps

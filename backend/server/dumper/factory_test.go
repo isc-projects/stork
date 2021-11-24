@@ -61,7 +61,7 @@ func TestFactoryProducesTheUniqueDumps(t *testing.T) {
 	dumpTypeLookup := make(map[reflect.Type]bool)
 
 	// Act
-	dumps := factory.all()
+	dumps := factory.createAll()
 
 	// Assert
 	require.Len(t, dumps, 4)
@@ -94,7 +94,7 @@ func TestAllProducedDumpsAreExecutedWithNoErrorForValidData(t *testing.T) {
 	defer agents.Shutdown()
 
 	factory := newFactory(db, m, agents)
-	dumps := factory.all()
+	dumps := factory.createAll()
 
 	// Act
 	for _, dump := range dumps {
