@@ -15,6 +15,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Test that the convention produces expected name
+// for a struct dump.
 func TestNamingConventionForStructureDump(t *testing.T) {
 	// Arrange
 	artifact := dump.NewBasicStructArtifact("bar", nil)
@@ -31,6 +33,8 @@ func TestNamingConventionForStructureDump(t *testing.T) {
 	require.Contains(t, filename, artifact.GetName())
 }
 
+// Test that the convention produces expected name
+// for a binary dump.
 func TestNamingConventionForBinaryDump(t *testing.T) {
 	// Arrange
 	artifact := dump.NewBasicBinaryArtifact("bar", nil)
