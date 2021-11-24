@@ -7,6 +7,9 @@ import (
 )
 
 // Summary of the dump process execution.
+// It is the output of the main execution function.
+// It contains the time of the execution and results
+// of the execution of each dump.
 type executionSummary struct {
 	Timestamp time.Time
 	Steps     []*executionSummaryStep
@@ -35,6 +38,10 @@ type executionSummaryStepSimplified struct {
 	Artifacts []string
 }
 
+// Construct the execution summary object.
+// It can be created after the execution (by passing the steps to
+// this constructor) or befor the execution (append steps to
+// the Steps slice member).
 func newExecutionSummary(steps ...*executionSummaryStep) *executionSummary {
 	return &executionSummary{
 		Timestamp: time.Now().UTC(),
@@ -91,7 +98,7 @@ func newExecutionSummaryStep(dump dump.Dump, err error) *executionSummaryStep {
 	}
 }
 
-// Specifies that has no error.
+// Specifies that the step has no error (the dump was executed correctly).
 func (s *executionSummaryStep) IsSuccess() bool {
 	return s.Error == nil
 }
@@ -127,6 +134,8 @@ func executeDumps(dumps []dump.Dump) *executionSummary {
 		summary.Steps = append(summary.Steps, step)
 	}
 
+	// Add the summary to the steps slice. The summary
+	// will be included with other dumped data.
 	summary.appendSummaryDump()
 
 	return summary
