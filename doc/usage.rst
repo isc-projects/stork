@@ -117,24 +117,34 @@ agent process must be done manually, e.g. by connecting to the machine
 using ssh and stopping the agent there. The preferred way to achieve that is to
 issue the ``killall stork-agent`` command.
 
-Dump a Machine
-~~~~~~~~~~~~~~
+Dumping Diagnostic Information into a File
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Stork has the possibility to dump all machine-related data and configurations into a single archive.  It can be used to diagnose problems with Kea, Bind9, or Stork itself.
+Users often seek help from other users or ISC staff when they face a monitored
+machine, application, or Stork software problem. It is sometimes difficult or
+impossible to diagnose issues from a brief description without seeing the actual
+logs, database contents, and configuration files. Gathering such information can
+be challenging for a user because it requires looking into many places like
+databases, remote machine logs, etc.
 
-The dump can be downloaded via the ``Action`` menu. On the
-``Machines`` list, each machine has its own menu; click on the
-triple-lines button on the right side and choose the ``Dump configuration`` option. The same function can be called from the machine page - there is a gray button with the same title.
-After clicking the downloading starts in a few seconds.
+Stork makes it convenient for the users to gather diagnostic information from the
+selected machines with a single click.  Navigate to the ``Machines`` page (i.e.,
+the page where all monitored machines are listed), click on the ``Action`` button
+for the selected machine, and choose ``Dump Troubleshooting Data`` option. Alternatively,
+navigate to the selected machine's page and click on the ``Dump Troubleshooting Data``
+button at the bottom of the page. In both cases, the Stork server will
+automatically gather useful diagnostics information and offer it for download as a
+``tar.gz`` file. The downloaded package contains configurations, log tails, Stork
+server settings, warning and error-level events, etc.
 
-The archive has a tarball format (``.tar.gz``). It contains:
+..note:
+Stork sanitizes the passwords and other sensitive information while it creates
+the package.
 
-- the machine database entry with all related data (access points, apps, daemons,  log targets, and detailed daemon configurations)
-- the global server settings
-- last events related to a specific machine
-- all log tails related to a specific machine (if the Stork Agent is available)
+The tarball can be easily sent over the email or attached to a bug report. ISC
+Staff can ask paid customers to generate and share the tarballs while working on
+the support tickets.
 
-The Stork removes the sensitive data (password and tokens) from the dumped data.
 
 Monitoring Applications
 =======================
