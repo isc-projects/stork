@@ -76,6 +76,12 @@ func (s *executionSummary) simplify() *executionSummarySimplified {
 }
 
 // Append summary dump to the steps.
+// The summary is included in the dump because contains
+// a list of the executed steps and all occurred errors.
+// It is a specialized function that creates the summary
+// dump and appends it to the steps slice, but also ensures
+// that the summary dump contains itself on the executed
+// step internal list.
 func (s *executionSummary) appendSummaryDump() {
 	dumpSummaryArtifact := dump.NewBasicStructArtifact(
 		"executed-steps", nil,
