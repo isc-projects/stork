@@ -217,4 +217,50 @@ describe('MachinesPageComponent', () => {
         expect(nativeEl.textContent).toContain('xxx')
         expect(nativeEl.textContent).not.toContain('aaa')
     }))
+
+    it('should button menu click triggers the download handler', async () => {
+        // Prepare the data
+        const selectBtns = fixture.nativeElement.querySelectorAll('#unauthorized-select-button .p-button')
+        const authSelectBtnEl = selectBtns[0]
+        const getAuthorizedMachinesResp: any = {
+            items: [
+                { id: 1, hostname: 'zzz' },
+                { id: 2, hostname: 'xxx' },
+            ],
+            total: 2,
+        }
+        spyOn(servicesApi, 'getMachines').and.returnValue(of(getAuthorizedMachinesResp))
+        authSelectBtnEl.dispatchEvent(new Event('click'))
+        fixture.detectChanges()
+
+        // Show the menu
+        const menuButton = fixture.debugElement.query(By.css('#show-machines-menu'))
+        expect(menuButton).not.toBeNull()
+
+        // This call throws
+        // ERROR: 'ERROR', TypeError: Cannot read properties of null (reading 'offsetHeight')
+        // from the PrimeNG menu code but the test pass throught.
+        menuButton.triggerEventHandler(
+            'click',
+            new PointerEvent('click', {
+                relatedTarget: menuButton.nativeElement,
+            })
+        )
+        await fixture.whenStable()
+        await fixture.whenRenderingDone()
+        fixture.detectChanges()
+
+        // Check the dunp button
+        const dumpButton = fixture.debugElement.query(By.css('#dump-single-machine'))
+        expect(dumpButton).not.toBeNull()
+
+        const downloadSpy = spyOn(component, 'downloadDump').and.returnValue()
+
+        dumpButton.triggerEventHandler('click', new PointerEvent('click', { relatedTarget: dumpButton.nativeElement }))
+        await fixture.whenStable()
+        fixture.detectChanges()
+
+        expect(downloadSpy).toHaveBeenCalledTimes(1)
+        expect(downloadSpy.calls.first().args[0].id).toBe(1)
+    })
 })
