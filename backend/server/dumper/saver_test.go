@@ -116,7 +116,7 @@ func TestSavedTarball(t *testing.T) {
 	require.EqualValues(t, expectedBazBozContent, bazBozContent)
 }
 
-// Test if the tarbal is properly saved to file.
+// Test if the tarball is properly saved to file.
 func TestSavedTarballToFile(t *testing.T) {
 	// Arrange
 	saver := newTarbalSaver(

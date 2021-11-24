@@ -44,8 +44,8 @@ func newTarbalSaver(serializer structSerializer, namingConvention namingConventi
 // Save the dumps as a tarball archive.
 // Remember that the "target" writter position is at the end after finishing this process.
 func (t *tarbalSaver) Save(target io.Writer, dumps []dump.Dump) error {
-	tarbal := storkutil.NewTarballWriter(target)
-	defer tarbal.Close()
+	tarball := storkutil.NewTarballWriter(target)
+	defer tarball.Close()
 
 	for _, dumpObj := range dumps {
 		for i := 0; i < dumpObj.GetArtifactsNumber(); i++ {
@@ -66,9 +66,9 @@ func (t *tarbalSaver) Save(target io.Writer, dumps []dump.Dump) error {
 				return errors.Errorf("unknown type of artifact: %s - %s", dumpObj.GetName(), artifact.GetName())
 			}
 
-			err := tarbal.AddContent(path, rawContent, time.Now().UTC())
+			err := tarball.AddContent(path, rawContent, time.Now().UTC())
 			if err != nil {
-				return errors.Wrapf(err, "cannot append a dump artifact: %s - %s to tarbal", dumpObj.GetName(), artifact.GetName())
+				return errors.Wrapf(err, "cannot append a dump artifact: %s - %s to tarball", dumpObj.GetName(), artifact.GetName())
 			}
 		}
 	}

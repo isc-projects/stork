@@ -64,7 +64,7 @@ func TestTarballAddEmptyContent(t *testing.T) {
 	require.NotZero(t, buffer.Len())
 }
 
-// Test that the the file is added to the tarbal.
+// Test that the the file is added to the tarball.
 func TestTarballAddFile(t *testing.T) {
 	// Arrange
 	var buffer bytes.Buffer
