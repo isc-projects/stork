@@ -260,6 +260,7 @@ func TestDeleteSharedNetwork(t *testing.T) {
 	require.Zero(t, returnedSubnet.SharedNetworkID)
 }
 
+// Tests that deleting a shared network also deletes its subnets.
 func TestDeleteSharedNetworkWithSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -288,4 +289,60 @@ func TestDeleteSharedNetworkWithSubnets(t *testing.T) {
 	returnedSubnets, err := GetSubnetsByPrefix(db, "192.0.2.0/24")
 	require.NoError(t, err)
 	require.Empty(t, returnedSubnets)
+}
+
+// Test deleting all empty shared networks.
+func TestDeleteStaleSharedNetworks(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create three shared networks. Two of them have no subnets.
+	networks := []SharedNetwork{
+		{
+			Name:   "with subnets",
+			Family: 4,
+			Subnets: []Subnet{
+				{
+					Prefix: "192.0.2.0/24",
+				},
+			},
+		},
+		{
+			Name:   "without subnets",
+			Family: 4,
+		},
+		{
+			Name:   "again without subnets",
+			Family: 4,
+		},
+	}
+	for i := range networks {
+		err := AddSharedNetwork(db, &networks[i])
+		require.NoError(t, err)
+		require.NotZero(t, networks[i].ID)
+	}
+
+	// Delete shared networks having no subnets.
+	count, err := DeleteEmptySharedNetworks(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, count)
+
+	// The first shared network should still exist.
+	returned, err := GetSharedNetwork(db, networks[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+
+	// The other two should have been deleted.
+	returned, err = GetSharedNetwork(db, networks[1].ID)
+	require.NoError(t, err)
+	require.Nil(t, returned)
+
+	returned, err = GetSharedNetwork(db, networks[2].ID)
+	require.NoError(t, err)
+	require.Nil(t, returned)
+
+	// Deleting shared networks again should affect no shared networks.
+	count, err = DeleteEmptySharedNetworks(db)
+	require.NoError(t, err)
+	require.Zero(t, count)
 }

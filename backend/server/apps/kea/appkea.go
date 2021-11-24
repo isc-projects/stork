@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-pg/pg/v9"
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	keactrl "isc.org/stork/appctrl/kea"
@@ -502,91 +503,66 @@ func handleConfigEvent(daemon, oldDaemon *dbmodel.Daemon, events *[]*dbmodel.Eve
 	return false
 }
 
-// Inserts or updates information about Kea app in the database. Next, it extracts
-// Kea's configurations and uses to either update or create new shared networks,
-// subnets and pools. Finally, the relations between the subnets and the Kea app
-// are created. Note that multiple apps can be associated with the same subnet.
-func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter, state *AppStateMeta) (err error) {
-	// Go over the shared networks and subnets stored in the Kea configuration
-	// and match them with the existing entries in the database. If some of
-	// the shared networks or subnets do not exist they are instantiated and
-	// returned here.
-	var (
-		networks []dbmodel.SharedNetwork
-		subnets  []dbmodel.Subnet
-	)
+// Removes associations between the app, subnets and hosts.
+func removeAppAssociations(tx *pg.Tx, app *dbmodel.App) error {
+	// Remove associations between the app and the existing hosts.
+	// We will recreate the associations using new configuration.
+	_, err := dbmodel.DeleteAppFromHosts(tx, app.ID, "config")
+	if err != nil {
+		return err
+	}
+
+	// Remove associations between the app and the subnets. We will
+	// recreate the associations using new configuration.
+	_, err = dbmodel.DeleteAppFromSubnets(tx, app.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Removes empty shared networks and orphaned subnets and hosts.
+func removeEmptyAndOrphanedObjects(tx *pg.Tx) error {
+	// Removed the hosts that no longer belong to any app.
+	_, err := dbmodel.DeleteOrphanedHosts(tx)
+	if err != nil {
+		return err
+	}
+
+	// Remove the subnets that no longer belong to any app.
+	_, err = dbmodel.DeleteOrphanedSubnets(tx)
+	if err != nil {
+		return err
+	}
+
+	// Delete shared networks which became empty as a result of this update.
+	_, err = dbmodel.DeleteEmptySharedNetworks(tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Detects and commits the discovered services into the database for each
+// daemon belonging to the app.
+func detectAndCommitServices(tx *pg.Tx, app *dbmodel.App) error {
 	for _, daemon := range app.Daemons {
-		if state != nil && state.SameConfigDaemons != nil {
-			// There are quite frequent cases when the daemons' configurations haven't
-			// changed since last update. If that's the case, this map contains the
-			// names of these daemons. For such daemons we should safely skip processing
-			// subnets and shared networks. This saves many CPU cycles.
-			if ok := state.SameConfigDaemons[daemon.Name]; ok {
-				continue
-			}
-		}
-		detectedNetworks, detectedSubnets, err := detectDaemonNetworks(db, daemon, app)
+		// Check what HA services the daemon belongs to.
+		services := DetectHAServices(tx, daemon)
+
+		// For the given daemon, iterate over the services and add/update them in the
+		// database.
+		err := dbmodel.CommitServicesIntoDB(tx, services, daemon)
 		if err != nil {
-			err = errors.Wrapf(err, "unable to detect subnets and shared networks for Kea daemon %s belonging to app with id %d", daemon.Name, app.ID)
-			return err
-		}
-		networks = append(networks, detectedNetworks...)
-		subnets = append(subnets, detectedSubnets...)
-	}
-
-	activeDHCPDaemonCount := len(app.GetActiveDHCPDaemonNames())
-	updateGlobalHosts := activeDHCPDaemonCount > 0
-
-	// If we have any daemons with a configuration that hasn't changed let's see if we
-	// can potentially skip updating global hosts.
-	if updateGlobalHosts && state != nil && state.SameConfigDaemons != nil {
-		// Count the number of DHCP daemons for which configuration hasn't changed.
-		var sameConfigCount int
-		for _, name := range []string{dbmodel.DaemonNameDHCPv4, dbmodel.DaemonNameDHCPv6} {
-			if state.SameConfigDaemons[name] {
-				sameConfigCount++
-			}
-		}
-		// If the number of daemons for which configuration hasn't changed is equal
-		// to the number of DHCP daemons we can skip the update. If there is at
-		// least one daemon for which configuration has changed we do the update.
-		updateGlobalHosts = activeDHCPDaemonCount > sameConfigCount
-	}
-
-	var globalHosts []dbmodel.Host
-	if updateGlobalHosts {
-		// Go over the global reservations stored in the Kea configuration and
-		// match them with the existing global hosts.
-		globalHosts, err = detectGlobalHostsFromConfig(db, app)
-		if err != nil {
-			err = errors.Wrapf(err, "unable to detect global host reservations for Kea app with id %d", app.ID)
 			return err
 		}
 	}
+	return nil
+}
 
-	// Begin transaction.
-	tx, rollback, commit, err := dbops.Transaction(db)
-	if err != nil {
-		return err
-	}
-	defer rollback()
-
-	newApp := false
-	var addedDaemons, deletedDaemons []*dbmodel.Daemon
+// Adds events specific to the recent app updates.
+func addOnCommitAppEvents(app *dbmodel.App, addedDaemons, deletedDaemons []*dbmodel.Daemon, state *AppStateMeta, eventCenter eventcenter.EventCenter) {
 	if app.ID == 0 {
-		// New app, insert it.
-		addedDaemons, err = dbmodel.AddApp(tx, app)
-		newApp = true
-	} else {
-		// Existing app, update it if needed.
-		addedDaemons, deletedDaemons, err = dbmodel.UpdateApp(tx, app)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	if newApp {
 		eventCenter.AddInfoEvent("added {app} on {machine}", app.Machine, app)
 	}
 
@@ -603,52 +579,143 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 			eventCenter.AddEvent(ev)
 		}
 	}
+}
 
-	// Associating an app with subnets is expensive operation. It involves finding
-	// local subnet id for each subnet. In order for this operation to be efficient
-	// we have to index subnets in the Kea configurations so the local subnet id
-	// can be quickly found by subnet prefix.
-	if err = dbmodel.PopulateIndexedSubnets(app); err != nil {
-		return err
-	}
-
-	// For the given app, iterate over the networks and subnets and update their
-	// global instances accordingly in the database.
-	addedSubnets, err := dbmodel.CommitNetworksIntoDB(tx, networks, subnets, app, 1)
-	if err != nil {
-		return err
-	}
+// Adds events specific to the recent app subnets updates.
+func addOnCommitSubnetEvents(app *dbmodel.App, addedSubnets []*dbmodel.Subnet, eventCenter eventcenter.EventCenter) {
 	if len(addedSubnets) > 0 {
 		// add event per subnet only if there is not more than 10 subnets
 		if len(addedSubnets) < 10 {
 			for _, sn := range addedSubnets {
 				eventCenter.AddInfoEvent("added {subnet} to {app}", app, sn)
 			}
-		}
+			}
 		t := fmt.Sprintf("added %d subnets to {app}", len(addedSubnets))
 		eventCenter.AddInfoEvent(t, app)
 	}
+}
 
-	// For the given app, iterate over the global hosts and update their instances
-	// in the database or insert them into the database.
-	err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts, app, "config", 1)
-	if err != nil {
-		return err
-	}
-
-	for _, daemon := range app.Daemons {
-		// Check what HA services the daemon belongs to.
-		services := DetectHAServices(db, daemon)
-
-		// For the given daemon, iterate over the services and add/update them in the
-		// database.
-		err = dbmodel.CommitServicesIntoDB(tx, services, daemon)
+// Inserts or updates information about Kea app in the database. Next, it extracts
+// Kea's configurations and uses to either update or create new shared networks,
+// subnets and pools. Finally, the relations between the subnets and the Kea app
+// are created. Note that multiple apps can be associated with the same subnet.
+func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter, state *AppStateMeta) (err error) {
+	err = db.RunInTransaction(func(tx *pg.Tx) error {
+		// Remove app associations with hosts and subnets.
+		err = removeAppAssociations(tx, app)
 		if err != nil {
 			return err
 		}
-	}
 
-	// Commit the changes if everything went fine.
-	err = commit()
+		// Go over the shared networks and subnets stored in the Kea configuration
+		// and match them with the existing entries in the database. If some of
+		// the shared networks or subnets do not exist they are instantiated and
+		// returned here.
+		var (
+			networks []dbmodel.SharedNetwork
+			subnets  []dbmodel.Subnet
+		)
+		for _, daemon := range app.Daemons {
+			if state != nil && state.SameConfigDaemons != nil {
+				// There are quite frequent cases when the daemons' configurations haven't
+				// changed since last update. If that's the case, this map contains the
+				// names of these daemons. For such daemons we should safely skip processing
+				// subnets and shared networks. This saves many CPU cycles.
+				if ok := state.SameConfigDaemons[daemon.Name]; ok {
+					continue
+				}
+			}
+			detectedNetworks, detectedSubnets, err := detectDaemonNetworks(tx, daemon, app)
+			if err != nil {
+				err = errors.Wrapf(err, "unable to detect subnets and shared networks for Kea daemon %s belonging to app with id %d", daemon.Name, app.ID)
+				return err
+			}
+			networks = append(networks, detectedNetworks...)
+			subnets = append(subnets, detectedSubnets...)
+		}
+
+		activeDHCPDaemonCount := len(app.GetActiveDHCPDaemonNames())
+		updateGlobalHosts := activeDHCPDaemonCount > 0
+
+		// If we have any daemons with a configuration that hasn't changed let's see if we
+		// can potentially skip updating global hosts.
+		if updateGlobalHosts && state != nil && state.SameConfigDaemons != nil {
+			// Count the number of DHCP daemons for which configuration hasn't changed.
+			var sameConfigCount int
+			for _, name := range []string{dbmodel.DaemonNameDHCPv4, dbmodel.DaemonNameDHCPv6} {
+				if state.SameConfigDaemons[name] {
+					sameConfigCount++
+				}
+			}
+			// If the number of daemons for which configuration hasn't changed is equal
+			// to the number of DHCP daemons we can skip the update. If there is at
+			// least one daemon for which configuration has changed we do the update.
+			updateGlobalHosts = activeDHCPDaemonCount > sameConfigCount
+		}
+
+		var globalHosts []dbmodel.Host
+		if updateGlobalHosts {
+			// Go over the global reservations stored in the Kea configuration and
+			// match them with the existing global hosts.
+			globalHosts, err = detectGlobalHostsFromConfig(tx, app)
+			if err != nil {
+				err = errors.Wrapf(err, "unable to detect global host reservations for Kea app with id %d", app.ID)
+				return err
+			}
+		}
+
+		var addedDaemons, deletedDaemons []*dbmodel.Daemon
+		if app.ID == 0 {
+			// New app, insert it.
+			addedDaemons, err = dbmodel.AddApp(tx, app)
+		} else {
+			// Existing app, update it if needed.
+			addedDaemons, deletedDaemons, err = dbmodel.UpdateApp(tx, app)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		// Add events to the database.
+		addOnCommitAppEvents(app, addedDaemons, deletedDaemons, state, eventCenter)
+
+		// Associating an app with subnets is expensive operation. It involves finding
+		// local subnet id for each subnet. In order for this operation to be efficient
+		// we have to index subnets in the Kea configurations so the local subnet id
+		// can be quickly found by subnet prefix.
+		if err = dbmodel.PopulateIndexedSubnets(app); err != nil {
+			return err
+		}
+
+		// For the given app, iterate over the networks and subnets and update their
+		// global instances accordingly in the database.
+		addedSubnets, err := dbmodel.CommitNetworksIntoDB(tx, networks, subnets, app, 1)
+		if err != nil {
+			return err
+		}
+
+		// Add subnet related events to the database.
+		addOnCommitSubnetEvents(app, addedSubnets, eventCenter)
+
+		// For the given app, iterate over the global hosts and update their instances
+		// in the database or insert them into the database.
+		if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts, app, "config", 1); err != nil {
+			return err
+		}
+
+		// Detect and commit discovered services for each daemon.
+		if err = detectAndCommitServices(tx, app); err != nil {
+			return err
+		}
+
+		// Remove empty shared networks and orphaned subnets and hosts.
+		err = removeEmptyAndOrphanedObjects(tx)
+		return err
+	})
+	// Check if the transaction was successful.
+	if err != nil {
+		err = errors.Wrapf(err, "problem with commmitting updates for app %d", app.ID)
+	}
 	return err
 }

@@ -748,6 +748,75 @@ func TestDeleteLocalHostsWithOtherSeq(t *testing.T) {
 	require.Empty(t, returned)
 }
 
+// Test that app's associations with multiple hosts can be removed.
+func TestDeleteAppFromHosts(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps and hosts into the database.
+	apps := addTestSubnetApps(t, db)
+	hosts := addTestHosts(t, db)
+
+	// Associate the first app with two hosts.
+	err := AddAppToHost(db, &hosts[0], apps[0], "api", 123)
+	require.NoError(t, err)
+
+	err = AddAppToHost(db, &hosts[1], apps[0], "api", 123)
+	require.NoError(t, err)
+
+	// Associate the second app with another host.
+	err = AddAppToHost(db, &hosts[2], apps[1], "api", 123)
+	require.NoError(t, err)
+
+	// Removing associations with non-matching data source should
+	// affect no hosts.
+	count, err := DeleteAppFromHosts(db, apps[0].ID, "config")
+	require.NoError(t, err)
+	require.EqualValues(t, 0, count)
+
+	// Remove associations of the first app.
+	count, err = DeleteAppFromHosts(db, apps[0].ID, "api")
+	require.NoError(t, err)
+	require.EqualValues(t, 2, count)
+
+	// Ensure that the associations were removed for the first app.
+	returned, count, err := GetHostsByPage(db, 0, 1000, apps[0].ID, nil, nil, nil, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 0, count)
+	require.Empty(t, returned)
+
+	// The association should still exist for the second app.
+	returned, count, err = GetHostsByPage(db, 0, 1000, apps[1].ID, nil, nil, nil, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	require.Len(t, returned, 1)
+}
+
+// Test deleting hosts not assigned to any apps.
+func TestDeleteOrphanedHosts(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps and hosts into the database.
+	apps := addTestSubnetApps(t, db)
+	hosts := addTestHosts(t, db)
+
+	// Associate one of the hosts with one of the apps. The
+	// other two hosts are orphaned.
+	err := AddAppToHost(db, &hosts[0], apps[0], "api", 123)
+	require.NoError(t, err)
+
+	// Delete hosts not assigned to any apps.
+	count, err := DeleteOrphanedHosts(db)
+	require.NoError(t, err)
+	require.EqualValues(t, len(hosts)-1, count)
+
+	// There should be one host left.
+	returned, err := GetAllHosts(db, 4)
+	require.NoError(t, err)
+	require.Len(t, returned, 1)
+}
+
 // Tests that function getting next sequence number works correctly.
 func TestGetNextBulkSeq(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

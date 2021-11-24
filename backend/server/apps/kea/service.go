@@ -86,7 +86,7 @@ func daemonBelongsToHAService(daemon *dbmodel.Daemon, service *dbmodel.Service) 
 // UpdateBaseHAService function using the service returned by this function.
 // Next, AddDaemonToService() should be called to associate the daemon with the
 // service in the database. A single daemon may belong to multiple services.
-func DetectHAServices(db *dbops.PgDB, daemon *dbmodel.Daemon) (services []dbmodel.Service) {
+func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) (services []dbmodel.Service) {
 	// We only detct HA services for DHCP daemons. Other daemons do not support it.
 	if daemon.KeaDaemon == nil || daemon.KeaDaemon.KeaDHCPDaemon == nil || daemon.KeaDaemon.Config == nil {
 		return services
@@ -120,7 +120,7 @@ func DetectHAServices(db *dbops.PgDB, daemon *dbmodel.Daemon) (services []dbmode
 
 		// Next, check if there are any existing services matching this daemon.
 		index = -1
-		dbServices, _ := dbmodel.GetDetailedAllServices(db)
+		dbServices, _ := dbmodel.GetDetailedAllServices(dbi)
 		for i, service := range dbServices {
 			if (service.HAService != nil) &&
 				(service.HAService.HAType == daemon.Name) &&

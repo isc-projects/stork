@@ -89,7 +89,7 @@ func UpdateSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 // Fetches all shared networks without subnets. The family argument specifies
 // whether only IPv4 shared networks should be fetched (if 4), only IPv6 shared
 // networks should be fetched (if 6) or both otherwise.
-func GetAllSharedNetworks(db *dbops.PgDB, family int) ([]SharedNetwork, error) {
+func GetAllSharedNetworks(db dbops.DBI, family int) ([]SharedNetwork, error) {
 	networks := []SharedNetwork{}
 	q := db.Model(&networks)
 
@@ -126,9 +126,9 @@ func GetSharedNetwork(db *dbops.PgDB, networkID int64) (*SharedNetwork, error) {
 }
 
 // Fetches a shared network with the subnets it contains.
-func GetSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) (network *SharedNetwork, err error) {
+func GetSharedNetworkWithSubnets(dbi dbops.DBI, networkID int64) (network *SharedNetwork, err error) {
 	network = &SharedNetwork{}
-	err = db.Model(network).
+	err = dbi.Model(network).
 		Relation("Subnets").
 		Relation("Subnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
@@ -300,4 +300,21 @@ func UpdateUtilizationInSharedNetwork(db *pg.DB, sharedNetworkID int64, addrUtil
 			sharedNetworkID)
 	}
 	return err
+}
+
+// Deletes shared networks which include no subnets. Returns deleted shared networks
+// count and an error.
+func DeleteEmptySharedNetworks(dbi dbops.DBI) (int64, error) {
+	subquery := dbi.Model(&[]Subnet{}).
+		Column("id").
+		Limit(1).
+		Where("shared_network.id = subnet.shared_network_id")
+	result, err := dbi.Model(&[]SharedNetwork{}).
+		Where("(?) IS NULL", subquery).
+		Delete()
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "problem with deleting empty shared networks")
+		return 0, err
+	}
+	return int64(result.RowsAffected()), nil
 }

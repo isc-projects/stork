@@ -207,7 +207,7 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	defer teardown()
 
 	// Add apps to the database. They must exist to make any association between
-	// then and the subnet.
+	// them and the subnet.
 	apps := addTestSubnetApps(t, db)
 	require.Len(t, apps, 2)
 
@@ -263,6 +263,60 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet)
 	require.Len(t, returnedSubnet.LocalSubnets, 1)
+}
+
+// Test that app's associations with multiple subnets can be removed.
+func TestDeleteAppFromSubnets(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add apps to the database. They must exist to make any association between
+	// them and the subnet.
+	apps := addTestSubnetApps(t, db)
+	require.Len(t, apps, 2)
+
+	subnets := []Subnet{
+		{
+			Prefix: "192.0.2.0/24",
+		},
+		{
+			Prefix: "192.0.3.0/24",
+		},
+		{
+			Prefix: "192.0.4.0/24",
+		},
+	}
+	for i := range subnets {
+		err := AddSubnet(db, &subnets[i])
+		require.NoError(t, err)
+		require.NotZero(t, subnets[i].ID)
+	}
+
+	// Associate the first app with two subnets.
+	err := AddAppToSubnet(db, &subnets[0], apps[0])
+	require.NoError(t, err)
+
+	err = AddAppToSubnet(db, &subnets[1], apps[0])
+	require.NoError(t, err)
+
+	// Associate the second app with another subnet.
+	err = AddAppToSubnet(db, &subnets[2], apps[1])
+	require.NoError(t, err)
+
+	// Remove associations of the first app.
+	count, err := DeleteAppFromSubnets(db, apps[0].ID)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, count)
+
+	// Ensure that the associations were removed for the first app.
+	returned, err := GetSubnetsByAppID(db, apps[0].ID, 4)
+	require.NoError(t, err)
+	require.Empty(t, returned)
+
+	// The association should still exist for the second app.
+	returned, err = GetSubnetsByAppID(db, apps[1].ID, 4)
+	require.NoError(t, err)
+	require.Len(t, returned, 1)
 }
 
 // Tests that a subnet which is no longer associated with any app is deleted
@@ -759,6 +813,63 @@ func TestUpdateUtilization(t *testing.T) {
 	require.NotNil(t, returnedSubnet2)
 	require.EqualValues(t, 10, returnedSubnet2.AddrUtilization)
 	require.EqualValues(t, 20, returnedSubnet2.PdUtilization)
+}
+
+// Test deleting subnets not assigned to any apps.
+func TestDeleteOrphanedSubnets(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add apps used in the test.
+	apps := addTestSubnetApps(t, db)
+	require.Len(t, apps, 2)
+
+	// Add three subnets.
+	subnets := []Subnet{
+		{
+			Prefix: "192.0.2.0/24",
+		},
+		{
+			Prefix: "192.0.3.0/24",
+		},
+		{
+			Prefix: "192.0.4.0/24",
+		},
+	}
+	for i := range subnets {
+		err := AddSubnet(db, &subnets[i])
+		require.NoError(t, err)
+		require.NotZero(t, subnets[i].ID)
+	}
+
+	// Associate one of the subnets with one of the apps. The
+	// other two subnets are orphaned.
+	err := AddAppToSubnet(db, &subnets[0], apps[0])
+	require.NoError(t, err)
+
+	// Delete subnets not assigned to any apps.
+	count, err := DeleteOrphanedSubnets(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, count)
+
+	// Ensure that the non-orphaned subnet hasn't been deleted.
+	returned, err := GetSubnet(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+
+	// Ensure that the orphaned subnets have been deleted.
+	returned, err = GetSubnet(db, subnets[1].ID)
+	require.NoError(t, err)
+	require.Nil(t, returned)
+
+	returned, err = GetSubnet(db, subnets[2].ID)
+	require.NoError(t, err)
+	require.Nil(t, returned)
+
+	// Deleting orphaned subnets again should affect no subnets.
+	count, err = DeleteOrphanedSubnets(db)
+	require.NoError(t, err)
+	require.Zero(t, count)
 }
 
 // Benchmark measuring a time to add a single subnet.

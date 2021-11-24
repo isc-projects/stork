@@ -231,10 +231,10 @@ func GetSubnetsByLocalID(db *pg.DB, localSubnetID int64, appID int64, family int
 // Fetches all subnets associated with the given application by ID.
 // If the family is set to 0 it fetches both IPv4 and IPv6 subnets.
 // Use 4 o 6 to fetch IPv4 or IPv6 specific subnet.
-func GetSubnetsByAppID(db *pg.DB, appID int64, family int) ([]Subnet, error) {
+func GetSubnetsByAppID(dbi dbops.DBI, appID int64, family int) ([]Subnet, error) {
 	subnets := []Subnet{}
 
-	q := db.Model(&subnets).
+	q := dbi.Model(&subnets).
 		Join("INNER JOIN local_subnet AS ls ON ls.subnet_id = subnet.id").
 		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
@@ -287,9 +287,9 @@ func GetSubnetsByPrefix(db *pg.DB, prefix string) ([]Subnet, error) {
 
 // Fetches all subnets belonging to a given family. If the family is set to 0
 // it fetches both IPv4 and IPv6 subnet.
-func GetAllSubnets(db *pg.DB, family int) ([]Subnet, error) {
+func GetAllSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 	subnets := []Subnet{}
-	q := db.Model(&subnets).
+	q := dbi.Model(&subnets).
 		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
@@ -465,7 +465,7 @@ func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App) error {
 
 // Dissociates an application from the subnet having a specified id.
 // The first returned value indicates if any row was removed from the
-// daemon_to_service table.
+// local_subnet table.
 func DeleteAppFromSubnet(db *pg.DB, subnetID int64, appID int64) (bool, error) {
 	localSubnet := &LocalSubnet{
 		AppID:    appID,
@@ -478,6 +478,19 @@ func DeleteAppFromSubnet(db *pg.DB, subnetID int64, appID int64) (bool, error) {
 		return false, err
 	}
 	return rows.RowsAffected() > 0, nil
+}
+
+// Dissociates an application from the subnets. The first returned value
+// indicates if any row was removed from the local_subnet table.
+func DeleteAppFromSubnets(dbi dbops.DBI, appID int64) (int64, error) {
+	result, err := dbi.Model((*LocalSubnet)(nil)).
+		Where("app_id = ?", appID).
+		Delete()
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrapf(err, "problem with deleting an app with id %d from subnets", appID)
+		return 0, err
+	}
+	return int64(result.RowsAffected()), nil
 }
 
 // Finds and returns an app associated with a subnet having the specified id.
@@ -615,4 +628,21 @@ func (s *Subnet) UpdateUtilization(db *pg.DB, addrUtilization, pdUtilization int
 			s.ID)
 	}
 	return err
+}
+
+// Deletes subnets which are not associated with any apps. Returns deleted subnet
+// count and an error.
+func DeleteOrphanedSubnets(dbi dbops.DBI) (int64, error) {
+	subquery := dbi.Model(&[]LocalSubnet{}).
+		Column("id").
+		Limit(1).
+		Where("subnet.id = local_subnet.subnet_id")
+	result, err := dbi.Model(&[]Subnet{}).
+		Where("(?) IS NULL", subquery).
+		Delete()
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "problem with deleting orphaned subnets")
+		return 0, err
+	}
+	return int64(result.RowsAffected()), nil
 }

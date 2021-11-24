@@ -125,7 +125,7 @@ func (puller *HostsPuller) pullData() error {
 // fetches hosts from these two servers sequentially, i.e. gets all
 // hosts from one server and then gets all hosts from the other.
 type HostDetectionIterator struct {
-	db          *dbops.PgDB
+	db          dbops.DBI
 	app         *dbmodel.App
 	agents      agentcomm.ConnectedAgents
 	limit       int64
@@ -138,9 +138,9 @@ type HostDetectionIterator struct {
 }
 
 // Creates new iterator instance.
-func NewHostDetectionIterator(db *dbops.PgDB, app *dbmodel.App, agents agentcomm.ConnectedAgents, limit int64) *HostDetectionIterator {
+func NewHostDetectionIterator(dbi dbops.DBI, app *dbmodel.App, agents agentcomm.ConnectedAgents, limit int64) *HostDetectionIterator {
 	it := &HostDetectionIterator{
-		db:          db,
+		db:          dbi,
 		app:         app,
 		agents:      agents,
 		limit:       limit,
@@ -414,12 +414,12 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 // combination of the existing hosts and new hosts (if true) or only new
 // hosts are returned (if false). This function is called by mergeGlobalHosts
 // and mergeSubnetHosts.
-func mergeHosts(db *dbops.PgDB, subnetID int64, newHosts []dbmodel.Host, combineHosts bool, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
+func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineHosts bool, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
 	if len(newHosts) == 0 {
 		return hosts, err
 	}
 
-	existingHosts, err := dbmodel.GetHostsBySubnetID(db, subnetID)
+	existingHosts, err := dbmodel.GetHostsBySubnetID(dbi, subnetID)
 	if err != nil {
 		return hosts, errors.WithMessagef(err, "problem with merging hosts for subnet %d", subnetID)
 	}
@@ -474,13 +474,13 @@ func mergeHosts(db *dbops.PgDB, subnetID int64, newHosts []dbmodel.Host, combine
 // avoid duplication. As a result, the returned slice of hosts is a collection of
 // existing hosts plus the hosts from the new subnet which do not exist in the
 // database.
-func mergeSubnetHosts(db *dbops.PgDB, existingSubnet, newSubnet *dbmodel.Subnet, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
-	return mergeHosts(db, existingSubnet.ID, newSubnet.Hosts, true, app)
+func mergeSubnetHosts(dbi dbops.DBI, existingSubnet, newSubnet *dbmodel.Subnet, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
+	return mergeHosts(dbi, existingSubnet.ID, newSubnet.Hosts, true, app)
 }
 
 // For a given Kea application it detects host reservations configured in the
 // configuration file.
-func detectGlobalHostsFromConfig(db *dbops.PgDB, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
+func detectGlobalHostsFromConfig(dbi dbops.DBI, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
 	// If this is not Kea application there is nothing to do.
 	if app.Type != dbmodel.AppTypeKea {
 		return hosts, nil
@@ -511,7 +511,7 @@ func detectGlobalHostsFromConfig(db *dbops.PgDB, app *dbmodel.App) (hosts []dbmo
 		}
 	}
 	// Merge new hosts into the existing global hosts.
-	return mergeHosts(db, int64(0), hosts, false, app)
+	return mergeHosts(dbi, int64(0), hosts, false, app)
 }
 
 // Fetches all host reservations stored in the hosts backend for the particular
@@ -519,14 +519,14 @@ func detectGlobalHostsFromConfig(db *dbops.PgDB, app *dbmodel.App) (hosts []dbmo
 // uses HostDetectionIterator mechanism to fetch the hosts, which will in
 // most cases result in multiple reservation-get-page commands sent to Kea
 // instance.
-func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, app *dbmodel.App, seq int64) error {
-	tx, rollback, commit, err := dbops.Transaction(db)
+func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, app *dbmodel.App, seq int64) error {
+	tx, rollback, commit, err := dbops.Transaction(dbi)
 	if err != nil {
 		err = errors.WithMessagef(err, "problem with starting transaction for committing new hosts from host_cmds hooks library for app id %d", app.ID)
 		return err
 	}
 	defer rollback()
-	it := NewHostDetectionIterator(db, app, agents, defaultHostCmdsPageLimit)
+	it := NewHostDetectionIterator(dbi, app, agents, defaultHostCmdsPageLimit)
 	var (
 		hosts []dbmodel.Host
 		done  bool
@@ -544,7 +544,7 @@ func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, a
 		subnet := it.GetCurrentSubnet()
 		// The subnet is nil when we're dealing with the global hosts.
 		if subnet == nil {
-			mergedHosts, err := mergeHosts(db, int64(0), hosts, true, app)
+			mergedHosts, err := mergeHosts(dbi, int64(0), hosts, true, app)
 			if err != nil {
 				break
 			}
@@ -567,7 +567,7 @@ func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, a
 		// the subnet with the new hosts (fetched via the Kea API). These
 		// hosts are merged into the existing hosts for this subnet and
 		// returned as mergedHosts.
-		mergedHosts, err := mergeSubnetHosts(db, subnet, subnet, app)
+		mergedHosts, err := mergeSubnetHosts(dbi, subnet, subnet, app)
 		if err != nil {
 			break
 		}

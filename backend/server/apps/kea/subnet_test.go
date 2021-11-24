@@ -678,6 +678,291 @@ func TestCommitAppSameConfigs(t *testing.T) {
 	require.Len(t, subnets, 2)
 }
 
+// Test that moving a subnet outside of the shared network does not leave
+// old configurations in the database.
+func TestDetectNetworksMoveSubnetsAround(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fec := &storktest.FakeEventCenter{}
+
+	v4Config := `
+        {
+            "Dhcp4": {
+                "shared-networks": [
+                    {
+                        "name": "foo",
+                        "subnet4": [
+                            {
+                                "subnet": "192.0.2.0/24",
+                                "reservations": [
+                                    {
+                                        "hw-address": "01:02:03:04:05:06",
+                                        "ip-address": "192.0.2.100"
+                                     }
+                                 ]
+                            },
+                            {
+                                "subnet": "192.0.3.0/24"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }`
+	app := createAppWithSubnets(t, db, 0, v4Config, "")
+	err := CommitAppIntoDB(db, app, fec, nil)
+	require.NoError(t, err)
+
+	// Shared network should have been created along with the subnets.
+	networks, err := dbmodel.GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Len(t, networks, 1)
+
+	// Ensure that the shared network holds two subnets.
+	network, err := dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	require.NoError(t, err)
+	require.Len(t, network.Subnets, 2)
+
+	// Create new configuaration which moves one of the subnets outside of
+	// the shared network.
+	v4Config = `
+        {
+            "Dhcp4": {
+                "subnet4": [
+                    {
+                        "subnet": "192.0.2.0/24",
+                        "reservations": [
+                            {
+                                "hw-address": "01:02:03:04:05:06",
+                                "ip-address": "192.0.2.100"
+                            }
+                        ]
+                    }
+                ],
+                "shared-networks": [
+                    {
+                        "name": "foo",
+                        "subnet4": [
+                            {
+                                "subnet": "192.0.3.0/24"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }`
+	kea4Config, err := dbmodel.NewKeaConfigFromJSON(v4Config)
+	require.NoError(t, err)
+
+	app.Daemons[0].KeaDaemon.Config = kea4Config
+	err = CommitAppIntoDB(db, app, fec, nil)
+	require.NoError(t, err)
+
+	// The shared network should still be there.
+	networks, err = dbmodel.GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Len(t, networks, 1)
+
+	// Both subnets should exist in the database.
+	subnets, err := dbmodel.GetAllSubnets(db, 4)
+	require.NoError(t, err)
+	require.Len(t, subnets, 2)
+
+	// Ensure that only one subnet is now in our shared network.
+	network, err = dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	require.NoError(t, err)
+	require.Len(t, network.Subnets, 1)
+
+	// Move the second subnet outside of the shared network.
+	v4Config = `
+        {
+            "Dhcp4": {
+                "subnet4": [
+                    {
+                        "subnet": "192.0.2.0/24",
+                        "reservations": [
+                            {
+                                "hw-address": "01:02:03:04:05:06",
+                                "ip-address": "192.0.2.100"
+                            }
+                        ]
+                    },
+                    {
+                        "subnet": "192.0.3.0/24"
+                    }
+                ]
+            }
+        }`
+	kea4Config, err = dbmodel.NewKeaConfigFromJSON(v4Config)
+	require.NoError(t, err)
+
+	app.Daemons[0].KeaDaemon.Config = kea4Config
+	err = CommitAppIntoDB(db, app, fec, nil)
+	require.NoError(t, err)
+
+	// The shared network should now be gone.
+	networks, err = dbmodel.GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Empty(t, networks)
+}
+
+// Test that the subnets not assigned to any apps are removed as a
+// result of an app configuration update.
+func TestDetectNetworksRemoveOrphanedSubnets(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	fec := &storktest.FakeEventCenter{}
+	apps := make([]*dbmodel.App, 2)
+
+	// Create a configuration with a single subnet.
+	v4Config := `
+        {
+            "Dhcp4": {
+                "subnet4": [
+                    {
+                        "subnet": "192.0.2.0/24"
+                    }
+                ]
+            }
+        }`
+	// Assign the same configuration to two apps.
+	for i := 0; i < len(apps); i++ {
+		apps[i] = createAppWithSubnets(t, db, int64(i), v4Config, "")
+		err := CommitAppIntoDB(db, apps[i], fec, nil)
+		require.NoError(t, err)
+	}
+
+	// Ensure there is a single subnet instance in the database.
+	subnets, err := dbmodel.GetAllSubnets(db, 4)
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+
+	// Update the first app to use a different subnet.
+	v4Config = `
+        {
+            "Dhcp4": {
+                "subnet4": [
+                    {
+                        "subnet": "192.0.3.0/24"
+                    }
+                ]
+            }
+        }`
+	kea4Config, err := dbmodel.NewKeaConfigFromJSON(v4Config)
+	require.NoError(t, err)
+
+	apps[0].Daemons[0].KeaDaemon.Config = kea4Config
+	err = CommitAppIntoDB(db, apps[0], fec, nil)
+	require.NoError(t, err)
+
+	// There should still be two subnets in the database, each owned
+	// by a different app.
+	subnets, err = dbmodel.GetAllSubnets(db, 4)
+	require.NoError(t, err)
+	require.Len(t, subnets, 2)
+	require.Len(t, subnets[0].LocalSubnets, 1)
+	require.Len(t, subnets[1].LocalSubnets, 1)
+
+	// Update the second app to use the second subnet.
+	apps[1].Daemons[0].KeaDaemon.Config = kea4Config
+	err = CommitAppIntoDB(db, apps[1], fec, nil)
+	require.NoError(t, err)
+
+	// The first subnet should have been removed because the second
+	// subnet is now associated with both apps.
+	subnets, err = dbmodel.GetAllSubnets(db, 4)
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+	require.Len(t, subnets[0].LocalSubnets, 2)
+	require.Equal(t, "192.0.3.0/24", subnets[0].Prefix)
+}
+
+// Test that the hosts not assigned to any apps are removed as a
+// result of an app configuration update.
+func TestDetectNetworksRemoveOrphanedHosts(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	fec := &storktest.FakeEventCenter{}
+	apps := make([]*dbmodel.App, 2)
+
+	// Create a configuration with a single host reservation.
+	v4Config := `
+        {
+            "Dhcp4": {
+                "subnet4": [
+                    {
+                        "subnet": "192.0.2.0/24",
+                        "reservations": [
+                            {
+                                "hw-address": "01:02:03:04:05:06",
+                                "ip-address": "192.0.2.55"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }`
+	// Assign the same configuration to two apps.
+	for i := 0; i < len(apps); i++ {
+		apps[i] = createAppWithSubnets(t, db, int64(i), v4Config, "")
+		err := CommitAppIntoDB(db, apps[i], fec, nil)
+		require.NoError(t, err)
+	}
+
+	// Ensure there is a single host reservation instance in the database.
+	subnets, err := dbmodel.GetAllSubnets(db, 4)
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+	hosts, err := dbmodel.GetHostsBySubnetID(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.Len(t, hosts, 1)
+
+	// Update the first app to use a different reservation.
+	v4Config = `
+        {
+            "Dhcp4": {
+                "subnet4": [
+                    {
+                        "subnet": "192.0.2.0/24",
+                        "reservations": [
+                            {
+                                "hw-address": "01:02:03:04:05:07",
+                                "ip-address": "192.0.2.66"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }`
+	kea4Config, err := dbmodel.NewKeaConfigFromJSON(v4Config)
+	require.NoError(t, err)
+
+	apps[0].Daemons[0].KeaDaemon.Config = kea4Config
+	err = CommitAppIntoDB(db, apps[0], fec, nil)
+	require.NoError(t, err)
+
+	// There should be two hosts in the database, each owned by a
+	// different app.
+	hosts, err = dbmodel.GetHostsBySubnetID(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.Len(t, hosts, 2)
+
+	// Update the second app to use the second reservation.
+	apps[1].Daemons[0].KeaDaemon.Config = kea4Config
+	err = CommitAppIntoDB(db, apps[1], fec, nil)
+	require.NoError(t, err)
+
+	// The first host should have been removed because the second
+	// host is now associated with both apps.
+	subnets, err = dbmodel.GetAllSubnets(db, 4)
+	require.NoError(t, err)
+	require.Len(t, subnets, 1)
+	hosts, err = dbmodel.GetHostsBySubnetID(db, subnets[0].ID)
+	require.NoError(t, err)
+	require.Len(t, hosts, 1)
+}
+
 // Benchmark measuring performance of the findMatchingSubnet function. This
 // function checks if the given subnet belongs to the set of existing subnets.
 // It uses indexing by prefix to lookup an existing subnet.

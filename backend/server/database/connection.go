@@ -20,6 +20,13 @@ const (
 	minSupportedDatabaseServerVersionPatch  = 0
 )
 
+// Common interface for go-pg DB and Tx (transaction) objects.
+// todo: go-pg v10 introduces similar interface), so we should
+// migrate to go-pg interface after upgrade.
+type DBI interface {
+	Model(model ...interface{}) *orm.Query
+}
+
 type DBLogger struct{}
 
 // Hook run before SQL query execution.

@@ -490,6 +490,43 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string, seq 
 	return err
 }
 
+// Dissociates an application from the hosts. The dataSource designates a data
+// source from which the deleted hosts were fetched. If it is an empty value
+// the hosts from all sources are deleted. The first returned value indicates
+// if any row was removed from the local_host table.
+func DeleteAppFromHosts(dbi dbops.DBI, appID int64, dataSource string) (int64, error) {
+	q := dbi.Model((*LocalHost)(nil)).
+		Where("app_id = ?", appID)
+
+	if len(dataSource) > 0 {
+		q = q.Where("data_source = ?", dataSource)
+	}
+
+	result, err := q.Delete()
+	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+		err = pkgerrors.Wrapf(err, "problem with deleting an app with id %d from hosts", appID)
+		return 0, err
+	}
+	return int64(result.RowsAffected()), nil
+}
+
+// Deletes hosts which are not associated with any apps. Returns deleted host
+// count and an error.
+func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
+	subquery := dbi.Model(&[]LocalHost{}).
+		Column("id").
+		Limit(1).
+		Where("host.id = local_host.host_id")
+	result, err := dbi.Model(&[]Host{}).
+		Where("(?) IS NULL", subquery).
+		Delete()
+	if err != nil {
+		err = pkgerrors.Wrapf(err, "problem with deleting orphaned hosts")
+		return 0, err
+	}
+	return int64(result.RowsAffected()), nil
+}
+
 // Iterates over the list of hosts and commits them into the database. The hosts
 // can be associated with a subnet or can be made global.
 func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, source string, seq int64) (err error) {

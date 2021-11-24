@@ -348,10 +348,10 @@ func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) 
 }
 
 // Fetches all services from the database.
-func GetDetailedAllServices(db *dbops.PgDB) ([]Service, error) {
+func GetDetailedAllServices(dbi dbops.DBI) ([]Service, error) {
 	var services []Service
 
-	err := db.Model(&services).
+	err := dbi.Model(&services).
 		Relation("HAService").
 		Relation("Daemons.KeaDaemon.KeaDHCPDaemon").
 		Relation("Daemons.App").
