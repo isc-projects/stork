@@ -39,6 +39,7 @@ func TestSaverSaveEmptyDumpList(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
+	// The empty tarball always has 32 bytes (using Go TAR and GZIP implementations).
 	require.Len(t, buffer.Bytes(), 32)
 }
 
