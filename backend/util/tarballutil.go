@@ -51,7 +51,7 @@ func WalkFilesInTarball(tarball io.Reader, callback WalkCallback) error {
 				return data,
 					pkgerrors.Wrapf(
 						err,
-						"cannot read content for the tarball file (%s)",
+						"cannot read content of the tarball file (%s)",
 						header.Name,
 					)
 			}) {
