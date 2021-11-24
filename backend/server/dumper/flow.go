@@ -43,13 +43,13 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 	saver := newTarbalSaver(indentJSONSerializer, flatStructureWithTimestampNamingConvention)
 
 	// Init dump objects
-	dumps := factory.All()
+	dumps := factory.all()
 	// Perform dump process
 	summary := executeDumps(dumps)
 	// Include only successful dumps
 	// The dump summary is one of the dump artifacts too.
 	// Exact summary isn't returned to UI in the current version.
-	dumps = summary.GetSuccessfulDumps()
+	dumps = summary.getSuccessfulDumps()
 
 	// Save the results to auto-release container.
 	return saveDumpsToAutoReleaseContainer(saver, dumps)

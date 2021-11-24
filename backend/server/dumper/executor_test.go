@@ -58,8 +58,8 @@ func TestExecutionStepIsSuccess(t *testing.T) {
 	failedStep := newExecutionSummaryStep(nil, errors.New("fail"))
 
 	// Act
-	expectedSuccess := successStep.IsSuccess()
-	expectedFail := failedStep.IsSuccess()
+	expectedSuccess := successStep.isSuccess()
+	expectedFail := failedStep.isSuccess()
 
 	// Assert
 	require.True(t, expectedSuccess)
@@ -89,7 +89,7 @@ func TestGetSuccessfulDumps(t *testing.T) {
 	)
 
 	// Act
-	dumps := summary.GetSuccessfulDumps()
+	dumps := summary.getSuccessfulDumps()
 
 	// Assert
 	require.Len(t, dumps, 2)
@@ -110,7 +110,7 @@ func TestSimplifySuccessExecutionStep(t *testing.T) {
 	)
 
 	// Act
-	simplify := step.Simplify()
+	simplify := step.simplify()
 
 	// Assert
 	require.EqualValues(t, "foo", simplify.Name)
@@ -132,7 +132,7 @@ func TestSimplifyFailedExecutionStep(t *testing.T) {
 	)
 
 	// Act
-	simplify := step.Simplify()
+	simplify := step.simplify()
 
 	// Assert
 	require.EqualValues(t, "foo", simplify.Name)
@@ -156,7 +156,7 @@ func TestSimplifyExecutionSummary(t *testing.T) {
 	)
 
 	// Act
-	simplified := summary.Simplify()
+	simplified := summary.simplify()
 	actualTimestamp, err := time.Parse(time.RFC3339, simplified.Timestamp)
 
 	// Assert

@@ -51,22 +51,22 @@ func newExecutionSummary(steps ...*executionSummaryStep) *executionSummary {
 
 // Extract only successfully finished dumps. The dump has a success
 // status if no error occurs.
-func (s *executionSummary) GetSuccessfulDumps() []dump.Dump {
+func (s *executionSummary) getSuccessfulDumps() []dump.Dump {
 	dumps := make([]dump.Dump, 0)
 	for _, step := range s.Steps {
-		if step.IsSuccess() {
+		if step.isSuccess() {
 			dumps = append(dumps, step.Dump)
 		}
 	}
 	return dumps
 }
 
-// Simplify the execution summary to the serializable form.
-func (s *executionSummary) Simplify() *executionSummarySimplified {
+// simplify the execution summary to the serializable form.
+func (s *executionSummary) simplify() *executionSummarySimplified {
 	var steps []*executionSummaryStepSimplified
 
 	for _, source := range s.Steps {
-		steps = append(steps, source.Simplify())
+		steps = append(steps, source.simplify())
 	}
 
 	return &executionSummarySimplified{
@@ -87,7 +87,7 @@ func (s *executionSummary) appendSummaryDump() {
 	)
 
 	s.Steps = append(s.Steps, newExecutionSummaryStep(dumpSummary, nil))
-	dumpSummaryArtifact.SetStruct(s.Simplify())
+	dumpSummaryArtifact.SetStruct(s.simplify())
 }
 
 // Construct a new execution summary step instance.
@@ -99,12 +99,12 @@ func newExecutionSummaryStep(dump dump.Dump, err error) *executionSummaryStep {
 }
 
 // Specifies that the step has no error (the dump was executed correctly).
-func (s *executionSummaryStep) IsSuccess() bool {
+func (s *executionSummaryStep) isSuccess() bool {
 	return s.Error == nil
 }
 
-// Simplify the execution summary step to the serializable form.
-func (s *executionSummaryStep) Simplify() *executionSummaryStepSimplified {
+// simplify the execution summary step to the serializable form.
+func (s *executionSummaryStep) simplify() *executionSummaryStepSimplified {
 	var artifactNames []string
 	for i := 0; i < s.Dump.GetArtifactsNumber(); i++ {
 		artifactNames = append(artifactNames, s.Dump.GetArtifact(i).GetName())

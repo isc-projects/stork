@@ -23,7 +23,7 @@ func newFactory(db *pg.DB, m *dbmodel.Machine, agents agentcomm.ConnectedAgents)
 }
 
 // Construct all supported dumps.
-func (f *factory) All() []dump.Dump {
+func (f *factory) all() []dump.Dump {
 	return []dump.Dump{
 		dump.NewMachineDump(f.m),
 		dump.NewEventsDump(f.db, f.m),
