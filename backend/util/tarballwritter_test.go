@@ -1,6 +1,7 @@
 package storkutil
 
 import (
+	"archive/tar"
 	"bytes"
 	"io/ioutil"
 	"os"
@@ -12,6 +13,15 @@ import (
 
 // Test that the Tarball writer is properly constructed.
 func TestConstructNewTarballWriter(t *testing.T) {
+	// Act
+	writer := NewTarballWriter(bytes.NewBufferString("foo"))
+
+	// Assert
+	require.NotNil(t, writer)
+}
+
+// Test that the Tarball writer is not constructed for empty input.
+func TestConstructNewTarballWriterForEmptyData(t *testing.T) {
 	// Act
 	writer := NewTarballWriter(nil)
 
@@ -29,6 +39,7 @@ func TestTarballClose(t *testing.T) {
 	writer.Close()
 
 	// Assert
+	// The empty tarball always has 32 bytes (using Go TAR and GZIP implementations).
 	require.Len(t, buffer.Bytes(), 32)
 }
 
@@ -37,15 +48,29 @@ func TestTarballAddContent(t *testing.T) {
 	// Arrange
 	var buffer bytes.Buffer
 	writer := NewTarballWriter(&buffer)
+	content := []byte("Hello World!")
 
 	// Act
-	content := "Hello World!"
-	err := writer.AddContent("foo", []byte(content), time.Time{})
+	// We need to use the local time for test purposes because
+	// the TAR library converts the time internally from UTC to local.
+	err := writer.AddContent("foo", content, time.Date(2013, time.Month(12), 11, 10, 9, 8, 7, time.Local))
 	writer.Close()
 
 	// Assert
 	require.NoError(t, err)
-	require.NotZero(t, buffer.Len())
+	fileCount := 0
+	err = WalkFilesInTarball(bytes.NewReader(buffer.Bytes()), func(header *tar.Header, read func() ([]byte, error)) bool {
+		fileCount++
+		expectedTime := time.Date(2013, time.Month(12), 11, 10, 9, 8, 0, time.Local)
+		require.EqualValues(t, expectedTime, header.ModTime)
+		require.EqualValues(t, "foo", header.Name)
+		data, err := read()
+		require.NoError(t, err)
+		require.EqualValues(t, content, data)
+		return true
+	})
+	require.NoError(t, err)
+	require.EqualValues(t, 1, fileCount)
 }
 
 // Test that the empty content is added to the tarball.
@@ -61,7 +86,9 @@ func TestTarballAddEmptyContent(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.NotZero(t, buffer.Len())
+	data, err := SearchFileInTarball(&buffer, "foo")
+	require.NoError(t, err)
+	require.Empty(t, data)
 }
 
 // Test that the the file is added to the tarball.
@@ -81,5 +108,7 @@ func TestTarballAddFile(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.NotZero(t, buffer.Len())
+	data, err := SearchFileInTarball(&buffer, file.Name())
+	require.NoError(t, err)
+	require.EqualValues(t, []byte("Hello World!"), data)
 }
