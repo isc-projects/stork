@@ -215,9 +215,10 @@
     get:
       summary: Dump machine configuration for troubleshooting purposes.
       description: >-
-        The archive with the configuration dump can be used to diagnose service problems.
-        It's intended to easy download all necessary information from the Stork and
-        forward it to support team.
+        The archive with the configuration dump can be used to diagnose service
+        problems offline. It's intended to easily download all necessary
+        information pertaining to a monitored machine from Stork and forward
+        it to the ISC Support Team.
       operationId: getMachineDump
       parameters:
         - in: path
