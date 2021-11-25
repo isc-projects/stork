@@ -331,6 +331,12 @@ using agent token:
 * STORK_AGENT_SERVER_URL - Stork Server URL used by the agent to send REST
   commands to the server during agent registration
 
+.. warning
+
+   The Stork Server doesn't support the Stork Agents configured to use IPv6 address with
+   zone ID (e.g. `fe80::%eth0`). It means that the `STORK_AGENT_ADDRESS` variable must
+   be DNS name, IPv4 or IPv6 excluding "link-local" scope.
+
 .. _secure-server-agent:
 
 Securing Connections Between Stork Server and Stork Agents
