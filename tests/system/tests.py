@@ -768,6 +768,7 @@ def test_agent_reregistration_after_restart(agent, server):
 def test_agent_over_ip6(agent, server):
     # Setup the Stork Agent over IPv6
     agent.set_stork_agent_ip6_address()
+    agent.install_kea()
     
     # login
     r = server.api_post('/sessions', json=dict(useremail='admin', userpassword='admin'), expected_status=200)  # TODO: POST should return 201
