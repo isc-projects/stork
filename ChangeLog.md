@@ -1,3 +1,9 @@
+* 174 [bug] slawek
+
+    Ensured that the agent registration over IPv6 works correctly
+    excluding link-local scope.
+    (Gitlab #447)
+
 * 173 [build] marcin
 
     Upgraded UI to use Angular and Primeng 13.
