@@ -23,6 +23,7 @@ for Stork, can be found on ISC's `Stork project homepage
    overview
    install
    usage
+   troubleshooting
    backend-api
    devel
    demo
