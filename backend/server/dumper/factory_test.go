@@ -11,26 +11,6 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
-// Test that the factory is properly constructed.
-func TestConstructFactory(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	m := &dbmodel.Machine{}
-
-	settings := agentcomm.AgentsSettings{}
-	fec := &storktest.FakeEventCenter{}
-	agents := agentcomm.NewConnectedAgents(&settings, fec, []byte{}, []byte{}, []byte{})
-	defer agents.Shutdown()
-
-	// Act
-	factory := newFactory(db, m, agents)
-
-	// Assert
-	require.NotNil(t, factory)
-}
-
 // Test that the factory creates proper, unique dump instances.
 func TestFactoryProducesTheUniqueDumps(t *testing.T) {
 	// Arrange
