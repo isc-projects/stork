@@ -2105,7 +2105,8 @@ func TestGetMachineDumpReturnsExpectedFilename(t *testing.T) {
 	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
-	rapi, _ := NewRestAPI(&settings, dbSettings, db, fa, fec, nil)
+	fd := &storktest.FakeDispatcher{}
+	rapi, _ := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
 	ctx := context.Background()
 	// User init
 	user, _ := dbmodel.GetUserByID(rapi.DB, 1)
