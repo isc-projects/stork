@@ -126,7 +126,15 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 	var obj ResponseRaw
 	err := json.Unmarshal(b, &obj)
 	if err != nil {
-		return pkgerrors.Wrapf(err, "failed to parse responses from Kea")
+		outterError := pkgerrors.Wrapf(err, "failed to parse responses from Kea")
+		// Kea sends the error as a single item, not array,
+		var singleItem ResponseRawItem
+		err = json.Unmarshal(b, &singleItem)
+		if err != nil {
+			return outterError
+		} else {
+			return pkgerrors.Errorf("Kea error response - status: %d, message: %s", singleItem.Result, *singleItem.Text)
+		}
 	}
 
 	// Retrieve values of mixed-type arrays.
