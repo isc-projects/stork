@@ -20,7 +20,7 @@ func NewEventsDump(db *pg.DB, machine *dbmodel.Machine) *EventsDump {
 	}
 }
 
-// Executes the event dump. It fetches the latest error and warning
+// Executes the event dump. It fetches at most 1000 the latest error and warning
 // events from the database for a specific machine.
 func (d *EventsDump) Execute() error {
 	events, _, err := dbmodel.GetEventsByPage(
