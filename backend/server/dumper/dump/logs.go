@@ -18,7 +18,7 @@ type LogsDump struct {
 	logSources LogTailSource
 }
 
-// Log tail source - it corresponds to agentcomm.ConnectedlogSources interface.
+// Log tail source - it corresponds to agentcomm.ConnectedAgents interface.
 // It is needed to avoid the dependency cycle.
 type LogTailSource interface {
 	TailTextFile(ctx context.Context, agentAddress string, agentPort int64, path string, offset int64) ([]string, error)
