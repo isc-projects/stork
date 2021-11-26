@@ -90,13 +90,16 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, 
 
 				continue
 			}
+			networkForUpdate := *dbNetwork
+			networkForUpdate.Subnets = []dbmodel.Subnet{}
+
 			// Go over the configured subnets and see if they belong to that
 			// shared network already.
 			for _, s := range network.Subnets {
 				subnet := s
 				existingSubnet := findMatchingSubnet(&subnet, indexedSubnets)
 				if existingSubnet == nil {
-					dbNetwork.Subnets = append(dbNetwork.Subnets, subnet)
+					networkForUpdate.Subnets = append(networkForUpdate.Subnets, subnet)
 				} else {
 					// Subnet already exists and may contain some hosts. Let's
 					// merge the hosts from the new subnet into the existing subnet.
@@ -107,9 +110,10 @@ func detectSharedNetworks(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, 
 						continue
 					}
 					existingSubnet.Hosts = hosts
+					networkForUpdate.Subnets = append(networkForUpdate.Subnets, *existingSubnet)
 				}
 			}
-			networks = append(networks, *dbNetwork)
+			networks = append(networks, networkForUpdate)
 		} else {
 			networks = append(networks, *network)
 		}
@@ -137,7 +141,7 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, app *db
 	// it is better to get all of them because this is just a single query rather
 	// than many but in the future we should probably revise that when the number
 	// of subnets grows.
-	dbSubnets, err := dbmodel.GetAllSubnets(dbi, family)
+	dbSubnets, err := dbmodel.GetTopLevelSubnets(dbi, family)
 	if err != nil {
 		return []dbmodel.Subnet{}, err
 	}

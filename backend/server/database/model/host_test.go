@@ -658,47 +658,6 @@ func TestAddAppToHost(t *testing.T) {
 	require.NotNil(t, returnedList[0].LocalHosts[0].App)
 }
 
-// Tests that a host which is no longer associated with any app is deleted
-// from the database.
-func TestDeleteDanglingHosts(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// Insert apps and hosts into the database.
-	apps := addTestSubnetApps(t, db)
-	hosts := addTestHosts(t, db)
-
-	// Associate two apps with a host.
-	host := hosts[0]
-	err := AddAppToHost(db, &host, apps[0], "api", 1)
-	require.NoError(t, err)
-	err = AddAppToHost(db, &host, apps[1], "api", 1)
-	require.NoError(t, err)
-
-	// Delete the first app. The host is still associated with the second
-	// app so it should still exist.
-	err = DeleteApp(db, apps[0])
-	require.NoError(t, err)
-
-	// Make sure it is returned.
-	filterText := "192.0.2.4"
-	returnedList, total, err := GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, total)
-	require.Len(t, returnedList, 1)
-
-	// Delete the second app. The host is no longer associated with any
-	// app and should get deleted automatically.
-	err = DeleteApp(db, apps[1])
-	require.NoError(t, err)
-
-	// Make sure the host is no longer returned.
-	returnedList, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
-	require.NoError(t, err)
-	require.EqualValues(t, 0, total)
-	require.Empty(t, returnedList)
-}
-
 // This test verifies that it is possible to delete hosts/apps associations
 // having non-matching sequence numbers.
 func TestDeleteLocalHostsWithOtherSeq(t *testing.T) {
@@ -739,6 +698,10 @@ func TestDeleteLocalHostsWithOtherSeq(t *testing.T) {
 
 	// This time, use the non-matching sequence number.
 	err = DeleteLocalHostsWithOtherSeq(db, 234, "api")
+	require.NoError(t, err)
+
+	// Remove hosts with no associations.
+	_, err = DeleteOrphanedHosts(db)
 	require.NoError(t, err)
 
 	// The hosts should be gone because all associations of

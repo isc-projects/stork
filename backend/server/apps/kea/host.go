@@ -97,6 +97,12 @@ func (puller *HostsPuller) pullData() error {
 		log.Errorf("error occurred while deleting old hosts after update from Kea apps: %+v", err)
 	}
 
+	// Remove the hosts that no longer belong to any app.
+	_, err = dbmodel.DeleteOrphanedHosts(puller.DB)
+	if err != nil {
+		return err
+	}
+
 	log.Printf("completed pulling hosts from Kea apps: %d/%d succeeded", appsOkCnt, len(apps))
 	return lastErr
 }

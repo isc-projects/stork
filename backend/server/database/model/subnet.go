@@ -316,6 +316,37 @@ func GetAllSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 	return subnets, err
 }
 
+// Fetches all top-level subnets, i.e., subnets that do not belong to shared
+// networks. If the family is set to 0 it fetches both IPv4 and IPv6 subnet.
+func GetTopLevelSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
+	subnets := []Subnet{}
+	q := dbi.Model(&subnets).
+		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("address_pool.id ASC"), nil
+		}).
+		Relation("PrefixPools", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("prefix_pool.id ASC"), nil
+		}).
+		Relation("LocalSubnets.App.AccessPoints").
+		OrderExpr("id ASC").
+		Where("subnet.shared_network_id IS NULL")
+
+	// Let's be liberal and allow other values than 0 too. The only special
+	// ones are 4 and 6.
+	if family == 4 || family == 6 {
+		q = q.Where("family(subnet.prefix) = ?", family)
+	}
+	err := q.Select()
+	if err != nil {
+		if errors.Is(err, pg.ErrNoRows) {
+			return nil, nil
+		}
+		err = pkgerrors.Wrapf(err, "problem with getting top level subnets for family %d", family)
+		return nil, err
+	}
+	return subnets, err
+}
+
 // Fetches a collection of subnets from the database. The offset and
 // limit specify the beginning of the page and the maximum size of the
 // page. The appID is used to filter subnets to those handled by the
