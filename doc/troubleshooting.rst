@@ -41,11 +41,22 @@ There are described the solutions for some popular issues with the Stork Agent.
 
 --------------
 
-:Issue:       Incorrect agent token or certs
+:Issue:       After start the agent falls into infinite loop of messages: "loaded server cert:
+              /var/lib/stork-agent/certs/cert.pem and key: /var/lib/stork-agent/certs/key.pem"
+:Description: The Stork Agens runs correctly and the registration passed. But after the
+              "started serving Stork Agent" message the agent constantly, in 1 second interval,
+              returns one message on standard output about loading server certs. The network
+              traffic shows that the server rejects all packets from the agent (TLS HELLO handshake failed).
+:Solution:    Re-register the agent to regenerate the certificates. You can use ``stork-agent register`` command. 
+:Explanation: The /var/lib/stork-agent/certs/ca.pem file is missing or corrupted. The re-registration
+              removes old files and creates new ones.
+
 
 --------------
 
-:Issue: Missing agent token or certs
+:Issue:       The agent doesnt started, but displays ``open /var/lib/stork-agent/certs/cert.pem: no such file or directory
+              could not load cert PEM file: /var/lib/stork-agent/certs/cert.pem`` error message.
+:Solution:    Re-register the agent to regenerate the certificates. You can use ``stork-agent register`` command.             
 
 --------------
 
