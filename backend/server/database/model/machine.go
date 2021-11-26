@@ -44,16 +44,16 @@ type Machine struct {
 	Authorized      bool `pg:",use_zero"`
 }
 
-type MachineRelation int
+type MachineRelation string
 
 const (
-	MachineRelationApps MachineRelation = iota
-	MachineRelationDaemons
-	MachineRelationKeaDaemons
-	MachineRelationBind9Daemons
-	MachineRelationDaemonLogTargets
-	MachineRelationAppAccessPoints
-	MachineRelationKeaDHCPConfigs
+	MachineRelationApps             MachineRelation = "Apps"
+	MachineRelationDaemons          MachineRelation = "Apps.Daemons"
+	MachineRelationKeaDaemons       MachineRelation = "Apps.Daemons.KeaDaemon"
+	MachineRelationBind9Daemons     MachineRelation = "Apps.Daemons.Bind9Daemon"
+	MachineRelationDaemonLogTargets MachineRelation = "Apps.Daemons.LogTargets"
+	MachineRelationAppAccessPoints  MachineRelation = "Apps.AccessPoints"
+	MachineRelationKeaDHCPConfigs   MachineRelation = "Apps.Daemons.KeaDaemon.KeaDHCPDaemon"
 )
 
 // Add new machine to database.
@@ -98,37 +98,11 @@ func GetMachineByID(db *pg.DB, id int64) (*Machine, error) {
 		MachineRelationKeaDHCPConfigs)
 }
 
-// Return a table name for the specific machine relation.
-func getTableNameByMachineRelation(relation MachineRelation) string {
-	switch relation {
-	case MachineRelationApps:
-		return "Apps"
-	case MachineRelationDaemons:
-		return "Apps.Daemons"
-	case MachineRelationKeaDaemons:
-		return "Apps.Daemons.KeaDaemon"
-	case MachineRelationBind9Daemons:
-		return "Apps.Daemons.Bind9Daemon"
-	case MachineRelationDaemonLogTargets:
-		return "Apps.Daemons.LogTargets"
-	case MachineRelationAppAccessPoints:
-		return "Apps.AccessPoints"
-	case MachineRelationKeaDHCPConfigs:
-		return "Apps.Daemons.KeaDaemon.KeaDHCPDaemon"
-	default:
-		return ""
-	}
-}
-
 // Get a machine by its ID with relations.
 func GetMachineByIDWithRelations(db *pg.DB, id int64, relations ...MachineRelation) (*Machine, error) {
 	tables := make([]string, len(relations))
-	for idx, relation := range relations {
-		tableName := getTableNameByMachineRelation(relation)
-		if len(tableName) == 0 {
-			return nil, pkgerrors.Errorf("unknown relation: %d", relation)
-		}
-		tables[idx] = tableName
+	for idx, tableName := range relations {
+		tables[idx] = string(tableName)
 	}
 	return getMachineByID(db, id, tables)
 }
