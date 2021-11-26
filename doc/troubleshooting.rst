@@ -33,11 +33,12 @@ There are described the solutions for some popular issues with the Stork Agent.
 --------------
 
 :Issue:       After start the Stork Agent stucks in infinite "sleeping" loop
-:Description: The Stork Agent is running with the server support (the `--listen-prometheus-only`
-              flag isn't used). On the `try to register agent in Stork server` message in the standard output
-              follows only the infinite loop of the `sleeping for 10 seconds before next registration
-              attempt` messages.
-:Solution:    The Stork Server isn't running. First start the server service and next the Stork Agent daemon.
+:Description: The Stork Agent is running with the server support (the ``--listen-prometheus-only`
+              flag isn't used). On the ``try to register agent in Stork server`` message in the standard output
+              follows only the infinite loop of the ``sleeping for 10 seconds before next registration
+              attempt`` messages.
+:Solution 1.: The Stork Server isn't running. First start the server service and next the Stork Agent daemon.
+:Solution 2.: The provided server URL in the Stork Agent is invalid. Provide correct URL.
 
 --------------
 
@@ -59,11 +60,13 @@ There are described the solutions for some popular issues with the Stork Agent.
 :Solution:    Re-register the agent to regenerate the certificates. You can use ``stork-agent register`` command.             
 
 --------------
+
 :Issue:       The agent prints on stdout the message ``problem with connecting to dhcp daemon: unable to forward command to
-              the dhcp6 service: No such file or directory. The server is likely to be offline ``
+              the dhcp6 service: No such file or directory. The server is likely to be offline``
 :Solution:    Try to call ``systemctl start kea-dhcp4 kea-dhcp6``
 :Explanation: The ``kea-dhcp4.service`` or ``kea-dhcp6.serive`` (depending on the service type in the message) is not running.
               If above commands don't resolve the problems then see the Kea ARM for the troubleshooting.
+
 --------------
 
 :Issue:       The Stork Agent receives the "remote error: tls: certificate required" message from the Kea Control Agent.
@@ -78,32 +81,50 @@ There are described the solutions for some popular issues with the Stork Agent.
 
 --------------
 
-:Issue: KCA uses BA, but SA has no password
+:Issue:       Kea Control Agent returns ``Kea error response - status: 401, message: Unauthorized`` message.
+:Description: The Stork Agent and the Kea Control Agent are running, but connection cannot be established. 
+              The Stork Agent logs contain similar messages: ``failed to parse responses from Kea:
+              { "result": 401, "text": "Unauthorized" }`` or ``Kea error response - status: 401, message: Unauthorized``.
+:Solution:    Update the ``/etc/stork/agent-credentials.json`` file with the valid user/password credentials.
+:Explanation: The Kea Control Agent supports the Basic Auth authentication. If it is enabled then the valid
+              credentials must be provided in the Stork Agent configuration. Check if this file exists and
+              contains the valid user, password and IP address.
 
 --------------
 
-:Issue: KCA uses BA, but SA has wrong password
+:Issue:       During the registration process the Stork Agent returns the ``problem with registering machine:
+              cannot parse address`` message.
+:Description: The Stork is configured with the IPv6 address with zone ID from the "link-local" scope.
+              After start the daemon it displays the ``try to register agent in Stork server`` and next above error.
+              The application exists with the fatal status.
+:Solution:    Use the IPv6 address from the "global" scope or IPv4.
+:Explanation: The IPv6 "link-local" addresses with zone ID aren't supported by the Stork Server.
 
 --------------
 
-:Issue: KCA requires valid certs, but SA uses these ones from Server
+:Issue:       During the registration process the Stork Agent returns the ``problem with registering machine:
+              Post "/api/machines": unsupported protocol scheme ""`` message.
+:Solution:    The ``--server-url`` argument is provided in wrong format. It must be the canonical URL.
+              It should starts with protocol (``http://`` or ``https://``), next should be the host (DNS name or
+              IP address, for IPv6 escape them with the square brackets), at end should be the port delimited from
+              the host by colon. For example: ``http://storkserver:8080``.
+
+---------------
+
+:Issue:       The values in the ``/etc/stork/agent.env`` or ``/etc/stork/agent-credentials.json`` were changed
+              but it didn't affect the Stork Agent.
+:Solution:    Restart the daemon.
+:Explanation: The Stork Agent read configurations only at startup.
 
 --------------
 
-:Issue: SA uses link-local address
-
---------------
-
-:Issue: SA has invalid server address
-
---------------
-
-:Issue: SA has invalid server token
-
---------------
-
-:Issue: After provide the SA changes nothing happens
-
---------------
-
-:Issue: SA runned by hand uses wrong configuration
+:Issue:       The values in the ``/etc/stork/agent.env`` were changed and the deamon was restarted, but
+              the agent still uses the default values.
+:Description: The agent is running using the ``stork-agent`` command. It uses the parameters passed
+              from the command-line, but completely ignore the ``/etc/stork/agent.env`` file entries.
+              If the agent is running as the SystemD daemon then it uses expected values.
+:Solution:    Load the environment variables from the ``/etc/stork/agent.env`` file before running the CLI tool.
+              For example, you can call ``. /etc/stork/agent.env``.
+:Explanation: The ``/etc/stork/agent.env`` contains only the environment variables. It isn't automatically
+              loaded by the Stork Agent. It must be done manually. The default SystemD service unit is configured
+              to use this file before start the agent.
