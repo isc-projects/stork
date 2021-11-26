@@ -80,7 +80,7 @@ func (l *SubnetList) UnmarshalJSON(b []byte) error {
 		if dhcpLabelsJSON.Text != nil {
 			reason = *dhcpLabelsJSON.Text
 		}
-		return pkgerrors.Errorf("problem with content of DHCP4 labels response from kea: %s", reason)
+		return pkgerrors.Errorf("problem with content of DHCP labels response from kea: %s", reason)
 	}
 
 	// Result is OK, parse the mapping content
@@ -615,26 +615,6 @@ func (pke *PromKeaExporter) collectStats() error {
 			continue
 		}
 
-		// Fetching DHCP subnet prefixes. It may fail if Kea doesn't support
-		// required commands.
-		dhcp4Labels := NewSubnetList()
-		responseDhcp4Labels, err := pke.sendCommandToKeaCA(ctrl, requestDhcp4Labels)
-		if err == nil {
-			err = json.Unmarshal(responseDhcp4Labels, &dhcp4Labels)
-			if err != nil {
-				log.Errorf("problem with parsing DHCP4 labels from kea: %+v", err)
-			}
-		}
-
-		dhcp6Labels := NewSubnetList()
-		responseDhcp6Labels, err := pke.sendCommandToKeaCA(ctrl, requestDhcp6Labels)
-		if err == nil {
-			err = json.Unmarshal(responseDhcp6Labels, &dhcp6Labels)
-			if err != nil {
-				log.Errorf("problem with parsing DHCP6 labels from kea: %+v", err)
-			}
-		}
-
 		// Fetching statistics
 		responseData, err := pke.sendCommandToKeaCA(ctrl, requestData)
 		if err != nil {
@@ -653,10 +633,28 @@ func (pke *PromKeaExporter) collectStats() error {
 
 		// Go though responses from daemons (it can have none or some responses from dhcp4/dhcp6)
 		// and store collected stats in Prometheus structures.
+		// Fetching also DHCP subnet prefixes. It may fail if Kea doesn't support
+		// required commands.
 		if response.Dhcp4 != nil {
+			dhcp4Labels := NewSubnetList()
+			responseDhcp4Labels, err := pke.sendCommandToKeaCA(ctrl, requestDhcp4Labels)
+			if err == nil {
+				err = json.Unmarshal(responseDhcp4Labels, &dhcp4Labels)
+				if err != nil {
+					log.Errorf("problem with parsing DHCP4 labels from kea: %+v", err)
+				}
+			}
 			pke.setDaemonStats(true, response.Dhcp4, ignoredStats, dhcp4Labels)
 		}
 		if response.Dhcp6 != nil {
+			dhcp6Labels := NewSubnetList()
+			responseDhcp6Labels, err := pke.sendCommandToKeaCA(ctrl, requestDhcp6Labels)
+			if err == nil {
+				err = json.Unmarshal(responseDhcp6Labels, &dhcp6Labels)
+				if err != nil {
+					log.Errorf("problem with parsing DHCP6 labels from kea: %+v", err)
+				}
+			}
 			pke.setDaemonStats(false, response.Dhcp6, ignoredStats, dhcp6Labels)
 		}
 	}
