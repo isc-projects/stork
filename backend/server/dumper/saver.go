@@ -27,15 +27,15 @@ type saver interface {
 
 // Structure that saves the dumps to the tarball archive.
 // Each dump artifact is located in a separate file.
-type tarbalSaver struct {
+type tarballSaver struct {
 	serializer       structSerializer
 	namingConvention namingConvention
 }
 
 // To create the tarball saver you need to provide a serializer that specify the output format
 // for the struct artifacts and a naming convention used to name the artifact files.
-func newTarbalSaver(serializer structSerializer, namingConvention namingConvention) *tarbalSaver {
-	return &tarbalSaver{
+func newTarballSaver(serializer structSerializer, namingConvention namingConvention) *tarballSaver {
+	return &tarballSaver{
 		serializer:       serializer,
 		namingConvention: namingConvention,
 	}
@@ -43,7 +43,7 @@ func newTarbalSaver(serializer structSerializer, namingConvention namingConventi
 
 // Save the dumps as a tarball archive.
 // Remember that the "target" writter position is at the end after finishing this process.
-func (t *tarbalSaver) Save(target io.Writer, dumps []dump.Dump) error {
+func (t *tarballSaver) Save(target io.Writer, dumps []dump.Dump) error {
 	tarball := storkutil.NewTarballWriter(target)
 	defer tarball.Close()
 

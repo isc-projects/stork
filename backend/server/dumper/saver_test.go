@@ -16,7 +16,7 @@ import (
 // Test that the saver is properly constructed.
 func TestConstructSaver(t *testing.T) {
 	// Act
-	saver := newTarbalSaver(
+	saver := newTarballSaver(
 		json.Marshal,
 		func(dump dump.Dump, artifact dump.Artifact) string { return "" },
 	)
@@ -28,7 +28,7 @@ func TestConstructSaver(t *testing.T) {
 // Test that the saver creates the archive from the empty data.
 func TestSaverSaveEmptyDumpList(t *testing.T) {
 	// Arrange
-	saver := newTarbalSaver(
+	saver := newTarballSaver(
 		json.Marshal,
 		func(dump dump.Dump, artifact dump.Artifact) string { return "" },
 	)
@@ -46,7 +46,7 @@ func TestSaverSaveEmptyDumpList(t *testing.T) {
 // Test that the saver creates the archive from the non-empty data.
 func TestSaverSaveFilledDumpList(t *testing.T) {
 	// Arrange
-	saver := newTarbalSaver(
+	saver := newTarballSaver(
 		json.Marshal,
 		func(dump dump.Dump, artifact dump.Artifact) string {
 			return dump.GetName() + artifact.GetName()
@@ -76,7 +76,7 @@ func TestSaverSaveFilledDumpList(t *testing.T) {
 // Test that the output tarball has proper content.
 func TestSavedTarball(t *testing.T) {
 	// Arrange
-	saver := newTarbalSaver(
+	saver := newTarballSaver(
 		json.Marshal,
 		func(dump dump.Dump, artifact dump.Artifact) string {
 			return dump.GetName() + artifact.GetName()
@@ -120,7 +120,7 @@ func TestSavedTarball(t *testing.T) {
 // Test if the tarball is properly saved to file.
 func TestSavedTarballToFile(t *testing.T) {
 	// Arrange
-	saver := newTarbalSaver(
+	saver := newTarballSaver(
 		json.Marshal,
 		func(dump dump.Dump, artifact dump.Artifact) string {
 			return dump.GetName() + artifact.GetName()

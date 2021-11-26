@@ -39,7 +39,7 @@ func DumpMachine(db *pg.DB, connectedAgents agentcomm.ConnectedAgents, machineID
 	factory := newFactory(db, m, connectedAgents)
 	// Saver will save the dumps to the tarball as JSON and raw binary files
 	// It uses a flat structure - it means the output doesn't contain subfolders.
-	saver := newTarbalSaver(indentJSONSerializer, flatStructureWithTimestampNamingConvention)
+	saver := newTarballSaver(indentJSONSerializer, flatStructureWithTimestampNamingConvention)
 
 	// Init dump objects
 	dumps := factory.createAll()
