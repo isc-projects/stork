@@ -602,9 +602,9 @@ func addOnCommitSubnetEvents(app *dbmodel.App, addedSubnets []*dbmodel.Subnet, e
 // are created. Note that multiple apps can be associated with the same subnet.
 func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter, state *AppStateMeta) (err error) {
 	err = db.RunInTransaction(func(tx *pg.Tx) error {
-		networks := make(map[int64][]dbmodel.SharedNetwork)
-		subnets := make(map[int64][]dbmodel.Subnet)
-		globalHosts := make(map[int64][]dbmodel.Host)
+		networks := make(map[string][]dbmodel.SharedNetwork)
+		subnets := make(map[string][]dbmodel.Subnet)
+		globalHosts := make(map[string][]dbmodel.Host)
 
 		for _, daemon := range app.Daemons {
 			if state != nil && state.SameConfigDaemons != nil {
@@ -627,19 +627,16 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 			// and match them with the existing entries in the database. If some of
 			// the shared networks or subnets do not exist they are instantiated and
 			// returned here.
-			detectedNetworks, detectedSubnets, err := detectDaemonNetworks(tx, daemon)
+			networks[daemon.Name], subnets[daemon.Name], err = detectDaemonNetworks(tx, daemon)
 			if err != nil {
 				err = errors.Wrapf(err, "unable to detect subnets and shared networks for Kea daemon %s belonging to app with id %d", daemon.Name, app.ID)
 				return err
 			}
-			networks[daemon.ID] = append(networks[daemon.ID], detectedNetworks...)
-			subnets[daemon.ID] = append(subnets[daemon.ID], detectedSubnets...)
 
-			if !daemon.Active || state == nil || state.SameConfigDaemons == nil ||
-				!state.SameConfigDaemons[daemon.Name] {
+			if state == nil || state.SameConfigDaemons == nil || !state.SameConfigDaemons[daemon.Name] {
 				// Go over the global reservations stored in the Kea configuration and
 				// match them with the existing global hosts.
-				globalHosts[daemon.ID], err = detectGlobalHostsFromConfig(tx, daemon)
+				globalHosts[daemon.Name], err = detectGlobalHostsFromConfig(tx, daemon)
 				if err != nil {
 					err = errors.Wrapf(err, "unable to detect global host reservations for Kea daemon %d", daemon.ID)
 					return err
@@ -676,7 +673,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		for _, daemon := range app.Daemons {
 			// For the given daemon, iterate over the networks and subnets and update their
 			// global instances accordingly in the database.
-			addedSubnets, err := dbmodel.CommitNetworksIntoDB(tx, networks[daemon.ID], subnets[daemon.ID], app, daemon.ID, 1)
+			addedSubnets, err := dbmodel.CommitNetworksIntoDB(tx, networks[daemon.Name], subnets[daemon.Name], app, daemon.ID, 1)
 			if err != nil {
 				return err
 			}
@@ -684,7 +681,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 
 			// For the given app, iterate over the global hosts and update their instances
 			// in the database or insert them into the database.
-			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.ID], app, daemon.ID, "config", 1); err != nil {
+			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.Name], app, daemon.ID, "config", 1); err != nil {
 				return err
 			}
 		}
