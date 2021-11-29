@@ -132,9 +132,8 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(b, &singleItem)
 		if err != nil {
 			return outterError
-		} else {
-			return pkgerrors.Errorf("Kea error response - status: %d, message: %s", singleItem.Result, *singleItem.Text)
 		}
+		return pkgerrors.Errorf("Kea error response - status: %d, message: %s", singleItem.Result, *singleItem.Text)
 	}
 
 	// Retrieve values of mixed-type arrays.
