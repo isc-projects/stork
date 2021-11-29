@@ -1,3 +1,10 @@
+* 176 [doc] slawek
+
+    Added the troubleshooting section in the documentation.
+    It contains some hints on how to resolve the agent-related
+    issues.
+    (Gitlab #475)
+
 * 175 [doc] slawek
 
     Renamed STORK_ENABLE_METRICS server environment variable
