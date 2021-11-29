@@ -186,41 +186,38 @@ func TestGetSubnets(t *testing.T) {
 	_, err = dbmodel.AddApp(db, a46)
 	require.NoError(t, err)
 
-	appNetworks := []dbmodel.SharedNetwork{
-		{
-			Name:   "fox",
-			Family: 6,
-			Subnets: []dbmodel.Subnet{
-				{
-					Prefix: "5001:db8:1::/64",
-				},
+	appNetwork := dbmodel.SharedNetwork{
+		Name:   "fox",
+		Family: 6,
+		Subnets: []dbmodel.Subnet{
+			{
+				Prefix: "5001:db8:1::/64",
 			},
 		},
 	}
 
-	appSubnets = []dbmodel.Subnet{
-		{
-			Prefix: "192.118.0.0/24",
-			AddressPools: []dbmodel.AddressPool{
-				{
-					LowerBound: "192.118.0.1",
-					UpperBound: "192.118.0.200",
-				},
-			},
-		},
-		{
-			Prefix: "3001:db8:1::/64",
-			AddressPools: []dbmodel.AddressPool{
-				{
-					LowerBound: "3001:db8:1::",
-					UpperBound: "3001:db8:1:0:ffff::ffff",
-				},
+	v4subnet := dbmodel.Subnet{
+		Prefix: "192.118.0.0/24",
+		AddressPools: []dbmodel.AddressPool{
+			{
+				LowerBound: "192.118.0.1",
+				UpperBound: "192.118.0.200",
 			},
 		},
 	}
-	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, []dbmodel.Subnet{appSubnets[0]}, a46, a46.Daemons[0].ID, 1)
+
+	v6subnet := dbmodel.Subnet{
+		Prefix: "3001:db8:1::/64",
+		AddressPools: []dbmodel.AddressPool{
+			{
+				LowerBound: "3001:db8:1::",
+				UpperBound: "3001:db8:1:0:ffff::ffff",
+			},
+		},
+	}
+	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{}, []dbmodel.Subnet{v4subnet}, a46, a46.Daemons[0].ID, 1)
 	require.NoError(t, err)
-	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{appNetworks[0]}, []dbmodel.Subnet{appSubnets[1]}, a46, a46.Daemons[1].ID, 1)
+	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{appNetwork}, []dbmodel.Subnet{v6subnet}, a46, a46.Daemons[1].ID, 1)
 	require.NoError(t, err)
 
 	// get all subnets

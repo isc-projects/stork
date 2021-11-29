@@ -522,8 +522,8 @@ func deleteDaemonAssociations(tx *pg.Tx, daemon *dbmodel.Daemon) error {
 	return nil
 }
 
-// Removes empty shared networks and orphaned subnets and hosts.
-func removeEmptyAndOrphanedObjects(tx *pg.Tx) error {
+// Deletes empty shared networks and orphaned subnets and hosts.
+func deleteEmptyAndOrphanedObjects(tx *pg.Tx) error {
 	// Removed the hosts that no longer belong to any app.
 	_, err := dbmodel.DeleteOrphanedHosts(tx)
 	if err != nil {
@@ -695,7 +695,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		}
 
 		// Remove empty shared networks and orphaned subnets and hosts.
-		err = removeEmptyAndOrphanedObjects(tx)
+		err = deleteEmptyAndOrphanedObjects(tx)
 		return err
 	})
 	// Check if the transaction was successful.

@@ -55,8 +55,8 @@ func init() {
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
-             ALTER TABLE local_host DROP COLUMN daemon_id;
-             ALTER TABLE local_subnet DROP COLUMN daemon_id;
+             ALTER TABLE local_host DROP COLUMN IF EXISTS daemon_id;
+             ALTER TABLE local_subnet DROP COLUMN IF EXISTS daemon_id;
 
              CREATE OR REPLACE FUNCTION wipe_dangling_host()
                  RETURNS trigger

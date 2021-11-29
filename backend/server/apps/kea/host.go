@@ -449,7 +449,7 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineH
 				// or dbmodel.CommitGlobalHostsIntoDB.
 				newHost.UpdateOnCommit = true
 
-				// Check if there is already an association between this app and the
+				// Check if there is already an association between this daemon and the
 				// given host. If there is, we need to reset the sequence number for
 				// it to force of the sequence number. Otherwise, the old sequence
 				// number will remain.
