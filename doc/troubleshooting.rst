@@ -7,18 +7,18 @@ Troubleshooting
 Stork Agent
 ===========
 
-There are described the solutions for some popular issues with the Stork Agent.
+This section describes the solutions for some popular issues with the Stork Agent.
 
 --------------
 
-:Issue:       The machine is authorized in the Stork Server and shows no error, but has no application.
-:Description: User installed and ran the Stork Server and next the Stork Agent.
-              Next, it authorized the machine. Some time has passed, on the "Machines"
-              page the "Last Refreshed" column value is actual and "Error" column value
-              is empty, but "Daemons" colum is still blank. The "Application" section
-              on the specific machine page is empty too.
+:Issue:       The machine is authorized in the Stork Server and shows no error but has no application.
+:Description: The user installed and ran the Stork Server and the Stork Agent.
+              Next, it authorized the machine. After a few times, on the "Machines" page,
+              the "Last Refreshed" column value is actual, and the "Error" column value is empty,
+              but the "Daemons" column is still blank. The "Application" section on the specific
+              machine page is blank too.
 :Solution:    Check that:
-              - Kea Conrol Agent, Kea DHCP4, and/or Kea DHCP6
+              - Kea Control Agent, Kea DHCP4, or/and Kea DHCP6
               - BIND9
               daemons are running.
 :Explanation: If the "Last Refreshed" column value is actual and the "Error" column value
@@ -32,23 +32,23 @@ There are described the solutions for some popular issues with the Stork Agent.
 
 --------------
 
-:Issue:       After start the Stork Agent stucks in infinite "sleeping" loop
-:Description: The Stork Agent is running with the server support (the ``--listen-prometheus-only`
-              flag isn't used). On the ``try to register agent in Stork server`` message in the standard output
-              follows only the infinite loop of the ``sleeping for 10 seconds before next registration
-              attempt`` messages.
-:Solution 1.: The Stork Server isn't running. First start the server service and next the Stork Agent daemon.
+:Issue:       After starting, the Stork Agent stocks in an infinite "sleeping" loop.
+:Description: The Stork Agent is running with the server support (the ``--listen-prometheus-only` flag is unused).
+              First, the ``try to register agent in Stork server`` message is displayed.
+              Next, the Stork Agent prints only the ``sleeping for 10 seconds before next
+              registration attempt`` message in the loop.
+:Solution 1.: The Stork Server isn't running. First, start the server service and then the Stork Agent daemon.
 :Solution 2.: The provided server URL in the Stork Agent is invalid. Provide correct URL.
 
 --------------
 
 :Issue:       After start the agent falls into infinite loop of messages: "loaded server cert:
               /var/lib/stork-agent/certs/cert.pem and key: /var/lib/stork-agent/certs/key.pem"
-:Description: The Stork Agens runs correctly and the registration passed. But after the
-              "started serving Stork Agent" message the agent constantly, in 1 second interval,
+:Description: The Stork Agent runs correctly. The registration passed. But after the
+              "started serving Stork Agent" message, the agent constantly, in the 1-second interval,
               returns one message on standard output about loading server certs. The network
               traffic shows that the server rejects all packets from the agent (TLS HELLO handshake failed).
-:Solution:    Re-register the agent to regenerate the certificates. You can use ``stork-agent register`` command. 
+:Solution:    Re-register the agent to regenerate the certificates. You can use the ``stork-agent register`` command. 
 :Explanation: The /var/lib/stork-agent/certs/ca.pem file is missing or corrupted. The re-registration
               removes old files and creates new ones.
 
@@ -62,16 +62,16 @@ There are described the solutions for some popular issues with the Stork Agent.
 --------------
 
 :Issue:       The agent prints on stdout the message ``problem with connecting to dhcp daemon: unable to forward command to
-              the dhcp6 service: No such file or directory. The server is likely to be offline``
+              the dhcp6 service: No such file or directory. The server is likely to be offline``.
 :Solution:    Try to call ``systemctl start kea-dhcp4 kea-dhcp6``
 :Explanation: The ``kea-dhcp4.service`` or ``kea-dhcp6.serive`` (depending on the service type in the message) is not running.
-              If above commands don't resolve the problems then see the Kea ARM for the troubleshooting.
+              If the above commands don't resolve the problems, then see the Kea ARM for the troubleshooting.
 
 --------------
 
 :Issue:       The Stork Agent receives the "remote error: tls: certificate required" message from the Kea Control Agent.
 :Description: The Stork Agent and the Kea Control Agent are running, but these daemons cannot establish the connection.
-              The standard output of the Strok Agent contains the errors with above message.
+              The standard output of the Strok Agent contains the errors with the above message.
 :Solution:    Install the valid TLS certificates in the Stork Agent or set "cert-required" value in ``/etc/kea/kea-ctrl-agent.conf`` to "false".
 :Explanation: By default, the Stork Agent uses no certificates (standalone mode) or self-signed certificates (generated by
               the Stork Server). If the Kea Control Agent has set "cert-required" value to "true" then it requires
@@ -82,32 +82,30 @@ There are described the solutions for some popular issues with the Stork Agent.
 --------------
 
 :Issue:       Kea Control Agent returns ``Kea error response - status: 401, message: Unauthorized`` message.
-:Description: The Stork Agent and the Kea Control Agent are running, but connection cannot be established. 
+:Description: The Stork Agent and the Kea Control Agent are running, but a connection doesn't establish. 
               The Stork Agent logs contain similar messages: ``failed to parse responses from Kea:
               { "result": 401, "text": "Unauthorized" }`` or ``Kea error response - status: 401, message: Unauthorized``.
 :Solution:    Update the ``/etc/stork/agent-credentials.json`` file with the valid user/password credentials.
-:Explanation: The Kea Control Agent supports the Basic Auth authentication. If it is enabled then the valid
+:Explanation: The Kea Control Agent supports the Basic Auth authentication. If it is enabled, then the valid
               credentials must be provided in the Stork Agent configuration. Check if this file exists and
-              contains the valid user, password and IP address.
+              contains the valid user, password, and IP address.
 
 --------------
 
-:Issue:       During the registration process the Stork Agent returns the ``problem with registering machine:
+:Issue:       During the registration process, the Stork Agent returns the ``problem with registering machine:
               cannot parse address`` message.
 :Description: The Stork is configured with the IPv6 address with zone ID from the "link-local" scope.
-              After start the daemon it displays the ``try to register agent in Stork server`` and next above error.
+              The daemon displays the ``try to register agent in Stork server`` and then the above error.
               The application exists with the fatal status.
 :Solution:    Use the IPv6 address from the "global" scope or IPv4.
 :Explanation: The IPv6 "link-local" addresses with zone ID aren't supported by the Stork Server.
 
 --------------
 
-:Issue:       During the registration process the Stork Agent returns the ``problem with registering machine:
+:Issue:       During the registration process, the Stork Agent returns the ``problem with registering machine:
               Post "/api/machines": unsupported protocol scheme ""`` message.
-:Solution:    The ``--server-url`` argument is provided in wrong format. It must be the canonical URL.
-              It should starts with protocol (``http://`` or ``https://``), next should be the host (DNS name or
-              IP address, for IPv6 escape them with the square brackets), at end should be the port delimited from
-              the host by colon. For example: ``http://storkserver:8080``.
+:Solution:    The ``--server-url`` argument is provided in the wrong format. It must be the canonical URL.
+              It should begin with the protocol (``http://`` or ``https://``), then contain the host (DNS name or IP address - for IPv6 escape them with the square brackets), and end with the port (delimited from the host by a colon). For example: ``http://storkserver:8080``.
 
 ---------------
 
@@ -118,13 +116,12 @@ There are described the solutions for some popular issues with the Stork Agent.
 
 --------------
 
-:Issue:       The values in the ``/etc/stork/agent.env`` were changed and the deamon was restarted, but
+:Issue:       The values in the ``/etc/stork/agent.env`` were changed, and the daemon was restarted, but
               the agent still uses the default values.
 :Description: The agent is running using the ``stork-agent`` command. It uses the parameters passed
-              from the command-line, but completely ignore the ``/etc/stork/agent.env`` file entries.
+              from the command-line but completely ignores the ``/etc/stork/agent.env`` file entries.
               If the agent is running as the SystemD daemon then it uses expected values.
 :Solution:    Load the environment variables from the ``/etc/stork/agent.env`` file before running the CLI tool.
               For example, you can call ``. /etc/stork/agent.env``.
 :Explanation: The ``/etc/stork/agent.env`` contains only the environment variables. It isn't automatically
-              loaded by the Stork Agent. It must be done manually. The default SystemD service unit is configured
-              to use this file before start the agent.
+              loaded by the Stork Agent. It must be done manually. The default SystemD service unit is configured to load this file before starting the agent.
