@@ -25,6 +25,7 @@ import (
 type LocalSubnet struct {
 	AppID         int64 `pg:",pk"`
 	SubnetID      int64 `pg:",pk"`
+	DaemonID      int64
 	App           *App
 	Subnet        *Subnet
 	LocalSubnetID int64
@@ -449,7 +450,7 @@ func GetSubnetsWithLocalSubnets(db *pg.DB) ([]*Subnet, error) {
 // Internally, the association is made via the local_subnet table which holds
 // information about the subnet from the given app perspective, local subnet
 // id, statistics etc.
-func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App) error {
+func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App, daemonID int64) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
 		err = pkgerrors.WithMessagef(err, "problem with starting transaction for associating an app with id %d with the subnet %s",
@@ -468,6 +469,7 @@ func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App) error {
 	localSubnet := LocalSubnet{
 		AppID:         app.ID,
 		SubnetID:      subnet.ID,
+		DaemonID:      daemonID,
 		LocalSubnetID: localSubnetID,
 	}
 	// Try to insert. If such association already exists we could maybe do
@@ -476,13 +478,15 @@ func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App) error {
 	_, err = tx.Model(&localSubnet).
 		Column("app_id").
 		Column("subnet_id").
+		Column("daemon_id").
 		Column("local_subnet_id").
 		OnConflict("(app_id, subnet_id) DO UPDATE").
+		Set("daemon_id = EXCLUDED.daemon_id").
 		Set("local_subnet_id = EXCLUDED.local_subnet_id").
 		Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with associating the app with id %d with the subnet %s",
-			app.ID, subnet.Prefix)
+		err = pkgerrors.Wrapf(err, "problem with associating the app %d (daemon %d) with the subnet %s",
+			app.ID, daemonID, subnet.Prefix)
 		return err
 	}
 
@@ -511,14 +515,14 @@ func DeleteAppFromSubnet(db *pg.DB, subnetID int64, appID int64) (bool, error) {
 	return rows.RowsAffected() > 0, nil
 }
 
-// Dissociates an application from the subnets. The first returned value
+// Dissociates a daemon from the subnets. The first returned value
 // indicates if any row was removed from the local_subnet table.
-func DeleteAppFromSubnets(dbi dbops.DBI, appID int64) (int64, error) {
+func DeleteDaemonFromSubnets(dbi dbops.DBI, daemonID int64) (int64, error) {
 	result, err := dbi.Model((*LocalSubnet)(nil)).
-		Where("app_id = ?", appID).
+		Where("daemon_id = ?", daemonID).
 		Delete()
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem with deleting an app with id %d from subnets", appID)
+		err = pkgerrors.Wrapf(err, "problem with deleting a daemon %d from subnets", daemonID)
 		return 0, err
 	}
 	return int64(result.RowsAffected()), nil
@@ -538,7 +542,7 @@ func (s *Subnet) GetApp(appID int64) *App {
 // Iterates over the provided slice of subnets and stores them in the database
 // if they are not there yet. In addition, it associates the subnets with the
 // specified Kea application. Returns a list of added subnets.
-func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App, seq int64) (addedSubnets []*Subnet, err error) {
+func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App, daemonID int64, seq int64) (addedSubnets []*Subnet, err error) {
 	for i := range subnets {
 		subnet := &subnets[i]
 		if subnet.ID == 0 {
@@ -551,13 +555,13 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App,
 			}
 			addedSubnets = append(addedSubnets, subnet)
 		}
-		err = AddAppToSubnet(tx, subnet, app)
+		err = AddAppToSubnet(tx, subnet, app, daemonID)
 		if err != nil {
 			err = pkgerrors.WithMessagef(err, "unable to associate detected subnet %s with Kea app having id %d", subnet.Prefix, app.ID)
 			return nil, err
 		}
 
-		err = CommitSubnetHostsIntoDB(tx, subnet, app, "config", seq)
+		err = CommitSubnetHostsIntoDB(tx, subnet, app, daemonID, "config", seq)
 		if err != nil {
 			return nil, err
 		}
@@ -567,7 +571,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App,
 
 // Iterates over the shared networks, subnets and hosts and commits them to the database.
 // In addition it associates them with the specified app. Returns a list of added subnets.
-func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets []Subnet, app *App, seq int64) ([]*Subnet, error) {
+func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets []Subnet, app *App, daemonID int64, seq int64) ([]*Subnet, error) {
 	// Begin transaction.
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
@@ -591,7 +595,7 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 			}
 		}
 		// Associate subnets with the app.
-		addedSubnetsToNet, err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app, seq)
+		addedSubnetsToNet, err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app, daemonID, seq)
 		if err != nil {
 			return nil, err
 		}
@@ -600,7 +604,7 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 
 	// Finally, add top level subnets to the database and associate them with
 	// the Kea app.
-	addedSubnetsToNet, err = commitSubnetsIntoDB(tx, 0, subnets, app, seq)
+	addedSubnetsToNet, err = commitSubnetsIntoDB(tx, 0, subnets, app, daemonID, seq)
 	if err != nil {
 		return nil, err
 	}

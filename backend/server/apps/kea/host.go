@@ -289,13 +289,14 @@ func (iterator *HostDetectionIterator) GetCurrentSubnet() *dbmodel.Subnet {
 }
 
 // Returns the next chunk of host reservations. The first returned value is a slice
-// containing the next chunk of hosts. The second value, done, indicates if the
+// containing the next chunk of hosts. The second value is a pointer to the daemon
+// for which the hosts have been returned. The third value, done, indicates if the
 // returned chunk of hosts was the last available one for the given app. If this
 // value is equal to false the caller should continue calling this function to
 // fetch subsequent hosts. If this value is set to true the caller should stop
 // calling this function. Further calling this function would return the first
 // chunk of hosts again.
-func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []dbmodel.Host, done bool, err error) {
+func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []dbmodel.Host, daemon *dbmodel.Daemon, done bool, err error) {
 	retry := false
 
 	// The default behavior is that an error terminates hosts fetching from
@@ -312,13 +313,13 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 	appKea := iterator.app
 	if appKea.Type != dbmodel.AppTypeKea {
 		err = errors.Errorf("attempted to fetch host reservations for non Kea app")
-		return hosts, done, err
+		return hosts, daemon, done, err
 	}
 
 	// Count the servers we have iterated over to make sure we use the one we used
 	// previously.
 	serverIndex := 0
-	for _, d := range appKea.Daemons {
+	for j, d := range appKea.Daemons {
 		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil || !d.Active {
 			continue
 		}
@@ -349,7 +350,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 		if len(iterator.subnets) == 0 {
 			iterator.subnets, err = dbmodel.GetSubnetsByAppID(iterator.db, iterator.app.ID, family)
 			if err != nil {
-				return hosts, done, errors.WithMessagef(err, "problem with getting Kea subnets upon an attempt to detect host reservations over the host_cmds hooks library")
+				return hosts, daemon, done, errors.WithMessagef(err, "problem with getting Kea subnets upon an attempt to detect host reservations over the host_cmds hooks library")
 			}
 		}
 
@@ -362,12 +363,12 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 			returnedHosts, result, retry, err = iterator.sendReservationGetPage()
 			if err != nil {
 				err = errors.WithMessagef(err, "problem with sending reservation-get-page command upon attempt to detect host reservations over the host_cmds hooks library")
-				return hosts, done, err
+				return hosts, daemon, done, err
 			}
 
 			// If the command is not supported for this app there is nothing more to do.
 			if result == keactrl.ResponseCommandUnsupported {
-				return hosts, true, nil
+				return hosts, daemon, true, nil
 			}
 
 			// If the number of hosts returned is 0, it means that we have hit the
@@ -382,6 +383,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 			// There are some hosts for this subnet so let's convert them from
 			// Kea to Stork format.
 			hosts = iterator.convertAndAssignHosts(returnedHosts)
+			daemon = appKea.Daemons[j]
 
 			// We return one chunk of hosts for one subnet. So let's get out
 			// of this loop.
@@ -408,7 +410,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 	if len(hosts) == 0 {
 		done = true
 	}
-	return hosts, done, err
+	return hosts, daemon, done, err
 }
 
 // Merges global or subnet specific hosts and returns the slice with merged
@@ -420,7 +422,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 // combination of the existing hosts and new hosts (if true) or only new
 // hosts are returned (if false). This function is called by mergeGlobalHosts
 // and mergeSubnetHosts.
-func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineHosts bool, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
+func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineHosts bool, daemon *dbmodel.Daemon) (hosts []dbmodel.Host, err error) {
 	if len(newHosts) == 0 {
 		return hosts, err
 	}
@@ -452,7 +454,7 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineH
 				// it to force of the sequence number. Otherwise, the old sequence
 				// number will remain.
 				for j, lh := range host.LocalHosts {
-					if lh.AppID == app.ID {
+					if lh.DaemonID == daemon.ID {
 						newHost.LocalHosts[j].UpdateSeq = 0
 					}
 				}
@@ -480,48 +482,40 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineH
 // avoid duplication. As a result, the returned slice of hosts is a collection of
 // existing hosts plus the hosts from the new subnet which do not exist in the
 // database.
-func mergeSubnetHosts(dbi dbops.DBI, existingSubnet, newSubnet *dbmodel.Subnet, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
-	return mergeHosts(dbi, existingSubnet.ID, newSubnet.Hosts, true, app)
+func mergeSubnetHosts(dbi dbops.DBI, existingSubnet, newSubnet *dbmodel.Subnet, daemon *dbmodel.Daemon) (hosts []dbmodel.Host, err error) {
+	return mergeHosts(dbi, existingSubnet.ID, newSubnet.Hosts, true, daemon)
 }
 
-// For a given Kea application it detects host reservations configured in the
+// For a given Kea daemon it detects host reservations configured in the
 // configuration file.
-func detectGlobalHostsFromConfig(dbi dbops.DBI, app *dbmodel.App) (hosts []dbmodel.Host, err error) {
-	// If this is not Kea application there is nothing to do.
-	if app.Type != dbmodel.AppTypeKea {
-		return hosts, nil
+func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts []dbmodel.Host, err error) {
+	if daemon.KeaDaemon == nil || daemon.KeaDaemon.Config == nil {
+		return hosts, err
 	}
-
-	// Detect reservation for each Kea daemon.
-	for _, d := range app.Daemons {
-		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil {
-			continue
+	// Get the top level (global) reservations.
+	if reservationsList, ok := daemon.KeaDaemon.Config.GetTopLevelList("reservations"); ok {
+		if len(reservationsList) == 0 {
+			return hosts, err
 		}
-		// Get the top level (global) reservations.
-		if reservationsList, ok := d.KeaDaemon.Config.GetTopLevelList("reservations"); ok {
-			if len(reservationsList) == 0 {
-				continue
-			}
-			// Iterate over the reservations found.
-			for _, r := range reservationsList {
-				if reservationMap, ok := r.(map[string]interface{}); ok {
-					// Parse the reservation.
-					host, err := dbmodel.NewHostFromKea(&reservationMap)
-					if err != nil {
-						log.Warnf("skipping invalid host reservation: %v", reservationMap)
-						continue
-					}
-					hosts = append(hosts, *host)
+		// Iterate over the reservations found.
+		for _, r := range reservationsList {
+			if reservationMap, ok := r.(map[string]interface{}); ok {
+				// Parse the reservation.
+				host, err := dbmodel.NewHostFromKea(&reservationMap)
+				if err != nil {
+					log.Warnf("skipping invalid host reservation: %v", reservationMap)
+					return hosts, err
 				}
+				hosts = append(hosts, *host)
 			}
 		}
 	}
 	// Merge new hosts into the existing global hosts.
-	return mergeHosts(dbi, int64(0), hosts, false, app)
+	return mergeHosts(dbi, int64(0), hosts, false, daemon)
 }
 
 // Fetches all host reservations stored in the hosts backend for the particular
-// Kea app. The app must have the host_cmds hooks library loaded. The function
+// Kea daemon. The daemon must have the host_cmds hooks library loaded. The function
 // uses HostDetectionIterator mechanism to fetch the hosts, which will in
 // most cases result in multiple reservation-get-page commands sent to Kea
 // instance.
@@ -534,12 +528,13 @@ func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, ap
 	defer rollback()
 	it := NewHostDetectionIterator(dbi, app, agents, defaultHostCmdsPageLimit)
 	var (
-		hosts []dbmodel.Host
-		done  bool
+		hosts  []dbmodel.Host
+		daemon *dbmodel.Daemon
+		done   bool
 	)
 	// Fetch the hosts as long as they are returned by Kea.
 	for !done {
-		hosts, done, err = it.DetectHostsPageFromHostCmds()
+		hosts, daemon, done, err = it.DetectHostsPageFromHostCmds()
 		if err != nil {
 			break
 		}
@@ -550,11 +545,11 @@ func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, ap
 		subnet := it.GetCurrentSubnet()
 		// The subnet is nil when we're dealing with the global hosts.
 		if subnet == nil {
-			mergedHosts, err := mergeHosts(dbi, int64(0), hosts, true, app)
+			mergedHosts, err := mergeHosts(dbi, int64(0), hosts, true, daemon)
 			if err != nil {
 				break
 			}
-			err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, app, "api", seq)
+			err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, app, daemon.ID, "api", seq)
 			if err != nil {
 				break
 			}
@@ -573,7 +568,7 @@ func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, ap
 		// the subnet with the new hosts (fetched via the Kea API). These
 		// hosts are merged into the existing hosts for this subnet and
 		// returned as mergedHosts.
-		mergedHosts, err := mergeSubnetHosts(dbi, subnet, subnet, app)
+		mergedHosts, err := mergeSubnetHosts(dbi, subnet, subnet, daemon)
 		if err != nil {
 			break
 		}
@@ -581,7 +576,7 @@ func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, ap
 		// new hosts into the subnet instance and commit everything to the
 		// database.
 		subnet.Hosts = mergedHosts
-		err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, app, "api", seq)
+		err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, app, daemon.ID, "api", seq)
 		if err != nil {
 			break
 		}

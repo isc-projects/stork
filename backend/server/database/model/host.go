@@ -63,6 +63,7 @@ type Host struct {
 type LocalHost struct {
 	AppID      int64 `pg:",pk"`
 	HostID     int64 `pg:",pk"`
+	DaemonID   int64
 	App        *App
 	Host       *Host
 	DataSource string
@@ -449,7 +450,7 @@ func DeleteLocalHostsWithOtherSeq(db *pg.DB, seq int64, dataSource string) error
 // about the host from the given app perspective. The source argument
 // indicates whether the host information was fetched from the app's configuration
 // or via the command.
-func AddAppToHost(dbIface interface{}, host *Host, app *App, source string, seq int64) error {
+func AddAppToHost(dbIface interface{}, host *Host, app *App, daemonID int64, source string, seq int64) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
 		err = pkgerrors.WithMessagef(err, "problem with starting transaction for associating an app %d with the host %d",
@@ -461,12 +462,14 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string, seq 
 	localHost := LocalHost{
 		AppID:      app.ID,
 		HostID:     host.ID,
+		DaemonID:   daemonID,
 		DataSource: source,
 		UpdateSeq:  seq,
 	}
 
 	q := tx.Model(&localHost).
 		OnConflict("(app_id, host_id) DO UPDATE").
+		Set("daemon_id = EXCLUDED.daemon_id").
 		Set("data_source = EXCLUDED.data_source")
 
 	for _, lh := range host.LocalHosts {
@@ -477,8 +480,8 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string, seq 
 
 	_, err = q.Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with associating the app %d with the host %d",
-			app.ID, host.ID)
+		err = pkgerrors.Wrapf(err, "problem with associating the app %d (daemon %d) with the host %d",
+			app.ID, daemonID, host.ID)
 		return err
 	}
 
@@ -490,13 +493,13 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, source string, seq 
 	return err
 }
 
-// Dissociates an application from the hosts. The dataSource designates a data
+// Dissociates a daemon from the hosts. The dataSource designates a data
 // source from which the deleted hosts were fetched. If it is an empty value
 // the hosts from all sources are deleted. The first returned value indicates
 // if any row was removed from the local_host table.
-func DeleteAppFromHosts(dbi dbops.DBI, appID int64, dataSource string) (int64, error) {
+func DeleteDaemonFromHosts(dbi dbops.DBI, daemonID int64, dataSource string) (int64, error) {
 	q := dbi.Model((*LocalHost)(nil)).
-		Where("app_id = ?", appID)
+		Where("daemon_id = ?", daemonID)
 
 	if len(dataSource) > 0 {
 		q = q.Where("data_source = ?", dataSource)
@@ -504,7 +507,7 @@ func DeleteAppFromHosts(dbi dbops.DBI, appID int64, dataSource string) (int64, e
 
 	result, err := q.Delete()
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
-		err = pkgerrors.Wrapf(err, "problem with deleting an app with id %d from hosts", appID)
+		err = pkgerrors.Wrapf(err, "problem with deleting a daemon %d from hosts", daemonID)
 		return 0, err
 	}
 	return int64(result.RowsAffected()), nil
@@ -529,7 +532,7 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 
 // Iterates over the list of hosts and commits them into the database. The hosts
 // can be associated with a subnet or can be made global.
-func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, source string, seq int64) (err error) {
+func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, daemonID int64, source string, seq int64) (err error) {
 	for i := range hosts {
 		hosts[i].SubnetID = subnetID
 		newHost := (hosts[i].ID == 0)
@@ -547,7 +550,7 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, source
 			}
 		}
 		if newHost || hosts[i].UpdateOnCommit {
-			err = AddAppToHost(tx, &hosts[i], app, source, seq)
+			err = AddAppToHost(tx, &hosts[i], app, daemonID, source, seq)
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
 					app.ID)
@@ -559,14 +562,14 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, source
 }
 
 // Iterates over the list of hosts and commits them as global hosts.
-func CommitGlobalHostsIntoDB(tx *pg.Tx, hosts []Host, app *App, source string, seq int64) (err error) {
-	return commitHostsIntoDB(tx, hosts, 0, app, source, seq)
+func CommitGlobalHostsIntoDB(tx *pg.Tx, hosts []Host, app *App, daemonID int64, source string, seq int64) (err error) {
+	return commitHostsIntoDB(tx, hosts, 0, app, daemonID, source, seq)
 }
 
 // Iterates over the hosts belonging to the given subnet and stores them
 // or updates in the database.
-func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, source string, seq int64) (err error) {
-	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, app, source, seq)
+func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, daemonID int64, source string, seq int64) (err error) {
+	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, app, daemonID, source, seq)
 }
 
 // This function returns next value of the bulk_update_seq. The returned value

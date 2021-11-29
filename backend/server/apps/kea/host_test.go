@@ -410,9 +410,19 @@ func TestDetectHostsFromConfig(t *testing.T) {
 	require.NoError(t, err)
 	app.Machine = m
 
+	var (
+		hosts   []dbmodel.Host
+		v4hosts []dbmodel.Host
+		v6hosts []dbmodel.Host
+	)
+
 	// Detect global hosts in the configurations of the app.
-	hosts, err := detectGlobalHostsFromConfig(db, &app)
+	v4hosts, err = detectGlobalHostsFromConfig(db, app.Daemons[0])
 	require.NoError(t, err)
+	hosts = append(hosts, v4hosts...)
+	v6hosts, err = detectGlobalHostsFromConfig(db, app.Daemons[1])
+	require.NoError(t, err)
+	hosts = append(hosts, v6hosts...)
 	require.Len(t, hosts, 4)
 
 	for _, h := range hosts {
@@ -427,14 +437,20 @@ func TestDetectHostsFromConfig(t *testing.T) {
 	// Commit the hosts into the database.
 	tx, _, commit, err := dbops.Transaction(db)
 	require.NoError(t, err)
-	err = dbmodel.CommitGlobalHostsIntoDB(tx, hosts, &app, "config", 1)
+	err = dbmodel.CommitGlobalHostsIntoDB(tx, v4hosts, &app, app.Daemons[0].ID, "config", 1)
+	require.NoError(t, err)
+	err = dbmodel.CommitGlobalHostsIntoDB(tx, v6hosts, &app, app.Daemons[1].ID, "config", 1)
 	require.NoError(t, err)
 	err = commit()
 	require.NoError(t, err)
 
 	// Run the detection again.
-	hosts, err = detectGlobalHostsFromConfig(db, &app)
-	require.NoError(t, err)
+	hosts = []dbmodel.Host{}
+	for i := range app.Daemons {
+		detectedHosts, err := detectGlobalHostsFromConfig(db, app.Daemons[i])
+		require.NoError(t, err)
+		hosts = append(hosts, detectedHosts...)
+	}
 	require.Len(t, hosts, 4)
 
 	// Existing hosts should be returned.
@@ -473,14 +489,14 @@ func TestDetectHostsSameConfig(t *testing.T) {
 		AccessPoints: accessPoints,
 		Daemons: []*dbmodel.Daemon{
 			{
-				Name:   "dhcp4",
+				Name:   dbmodel.DaemonNameDHCPv4,
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv4GlobalHosts(t),
 				},
 			},
 			{
-				Name:   "dhcp6",
+				Name:   dbmodel.DaemonNameDHCPv6,
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					Config: getTestConfigWithIPv6GlobalHosts(t),
@@ -501,7 +517,7 @@ func TestDetectHostsSameConfig(t *testing.T) {
 		},
 	}
 
-	// Both configuratios are indicated to be the same so the hosts should not
+	// Both configurations are indicated to be the same so the hosts should not
 	// be committed to the database.
 	err = CommitAppIntoDB(db, &app, fec, state)
 	require.NoError(t, err)
@@ -520,10 +536,10 @@ func TestDetectHostsSameConfig(t *testing.T) {
 	err = CommitAppIntoDB(db, &app, fec, state)
 	require.NoError(t, err)
 
-	// The hosts should have been added.
+	// The hosts should have been added for the DHCPv6 daemon.
 	hosts, err = dbmodel.GetAllHosts(db, 0)
 	require.NoError(t, err)
-	require.Len(t, hosts, 4)
+	require.Len(t, hosts, 2)
 }
 
 // Tests that host reservations can be retrieved in chunks from the Kea
@@ -580,7 +596,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.NotNil(t, it)
 
 	// Should get addresses 192.0.2.10 thru 192.0.2.14
-	hosts, done, err := it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err := it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -600,7 +616,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.2.15 thru 192.0.2.19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.False(t, done)
 	require.NoError(t, err)
 	require.Len(t, hosts, 5)
@@ -620,7 +636,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.3.10 thru 192.0.3.14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -641,7 +657,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.3.15 thru 192.0.3.19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -662,7 +678,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.4.10 thru 192.0.4.14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -683,7 +699,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.4.15 thru 192.0.4.19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -704,7 +720,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.5.10 thru 192.0.5.14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -725,7 +741,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.5.15 thru 192.0.5.19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -746,7 +762,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.6.10 thru 192.0.6.14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -767,7 +783,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.6.15 thru 192.0.6.19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -788,7 +804,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:2::10 thru 2001:db8:2::14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -808,7 +824,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:2::15 thru 2001:db8:2::19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.False(t, done)
 	require.NoError(t, err)
 	require.Len(t, hosts, 5)
@@ -828,7 +844,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:3::10 thru 2001:db8:3::14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -849,7 +865,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:3::15 thru 2001:db8:3::19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -870,7 +886,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:4::10 thru 2001:db8:4::14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -891,7 +907,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:4::15 thru 2001:db8:4::19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -912,7 +928,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:5::10 thru 2001:db8:5::14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -933,7 +949,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:5::15 thru 2001:db8:5::19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -954,7 +970,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:6::10 thru 2001:db8:6::14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -975,7 +991,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:6::15 thru 2001:db8:6::19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -999,7 +1015,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	// reservations. No hosts should be returned, the done flag
 	// should indicate that we have reached the end of hosts.
 	// Finally, the state of the iterator should have been reset.
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, _, done, err = it.DetectHostsPageFromHostCmds()
 	require.NoError(t, err)
 	require.True(t, done)
 	require.Empty(t, hosts)

@@ -7,14 +7,57 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
-               DROP TRIGGER IF EXISTS trigger_wipe_dangling_subnet ON local_subnet;
-               DROP FUNCTION IF EXISTS wipe_dangling_subnet;
-               DROP TRIGGER IF EXISTS trigger_wipe_dangling_host ON local_host;
-               DROP FUNCTION IF EXISTS wipe_dangling_host;
+             -- We no longer want to automatically delete the subnets or hosts
+             -- which aren't associated with any app. Such subnets and hosts can
+             -- be explicitly deleted by the Stork server.
+             DROP TRIGGER IF EXISTS trigger_wipe_dangling_subnet ON local_subnet;
+             DROP FUNCTION IF EXISTS wipe_dangling_subnet;
+             DROP TRIGGER IF EXISTS trigger_wipe_dangling_host ON local_host;
+             DROP FUNCTION IF EXISTS wipe_dangling_host;
+
+             -- Delete subnet, host and shared_network entries from the database.
+             -- We will need to add a new column daemon_id to local_host and
+             -- local_subnet but it is quite difficult to retrieve the daemon_id
+             -- from the data currently held in the database. Therefore, we delete
+             -- the existing data and let the Stork server fetch them again
+             -- ensuring the correctness of the new daemon_id value.
+             DELETE FROM subnet;
+             DELETE FROM host;
+             DELETE FROM shared_network;
+
+             -- Force the Kea server to gather Kea server configurations and
+             --  recreate subnets, hosts and shared networks.
+             UPDATE kea_daemon SET config_hash = NULL;
+
+             -- Add new columns that link the local_subnet and local_host entries
+             -- with the daemons. Previously we used app_id but it doesn't work
+             -- in cases when we want to update local_subnet and/or local_host for
+             -- one daemon but not for the other daemon belonging to the same app.
+             ALTER TABLE local_subnet ADD COLUMN daemon_id BIGINT NOT NULL;
+             ALTER TABLE local_host ADD COLUMN daemon_id BIGINT NOT NULL;
+
+             -- Create indexes on the new columns.
+             CREATE INDEX local_subnet_daemon_id_idx ON local_subnet(daemon_id);
+             CREATE INDEX local_host_daemon_id_idx ON local_host(daemon_id);
+
+            -- Add foreign keys for the new columns.
+            ALTER TABLE local_subnet
+                ADD CONSTRAINT local_subnet_to_daemon_id FOREIGN KEY (daemon_id)
+                    REFERENCES daemon (id) MATCH SIMPLE
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE;
+            ALTER TABLE local_host
+                ADD CONSTRAINT local_host_to_daemon_id FOREIGN KEY (daemon_id)
+                    REFERENCES daemon (id) MATCH SIMPLE
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE;
         `)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
+             ALTER TABLE local_host DROP COLUMN daemon_id;
+             ALTER TABLE local_subnet DROP COLUMN daemon_id;
+
              CREATE OR REPLACE FUNCTION wipe_dangling_host()
                  RETURNS trigger
                  LANGUAGE 'plpgsql'

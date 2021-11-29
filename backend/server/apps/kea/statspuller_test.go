@@ -249,10 +249,13 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
             }
         }`
 	app := createAppWithSubnets(t, db, 0, v4Config, v6Config)
-	nets, snets, err := DetectNetworks(db, app)
-	require.NoError(t, err)
-	_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app, 1)
-	require.NoError(t, err)
+
+	for i := range app.Daemons {
+		nets, snets, err := detectDaemonNetworks(db, app.Daemons[i])
+		require.NoError(t, err)
+		_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app, app.Daemons[i].ID, 1)
+		require.NoError(t, err)
+	}
 
 	// set one setting that is needed by puller
 	setting := dbmodel.Setting{
@@ -260,7 +263,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 		ValType: dbmodel.SettingValTypeInt,
 		Value:   "60",
 	}
-	err = db.Insert(&setting)
+	err := db.Insert(&setting)
 	require.NoError(t, err)
 
 	// prepare stats puller

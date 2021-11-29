@@ -38,8 +38,17 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 			Name:         fmt.Sprintf("dhcp-server%d", i),
 			Active:       true,
 			AccessPoints: accessPoints,
+			Daemons: []*dbmodel.Daemon{
+				{
+					Name:   dbmodel.DaemonNameDHCPv4,
+					Active: true,
+				},
+				{
+					Name:   dbmodel.DaemonNameDHCPv6,
+					Active: true,
+				},
+			},
 		}
-
 		apps = append(apps, a)
 	}
 
@@ -182,9 +191,9 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
 	hosts, apps := addTestHosts(t, db)
 
-	err = dbmodel.AddAppToHost(db, &hosts[0], &apps[0], "config", 1)
+	err = dbmodel.AddAppToHost(db, &hosts[0], &apps[0], apps[0].Daemons[0].ID, "config", 1)
 	require.NoError(t, err)
-	err = dbmodel.AddAppToHost(db, &hosts[0], &apps[1], "config", 1)
+	err = dbmodel.AddAppToHost(db, &hosts[0], &apps[1], apps[1].Daemons[0].ID, "config", 1)
 	require.NoError(t, err)
 
 	params := dhcp.GetHostsParams{}

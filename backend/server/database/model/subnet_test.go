@@ -275,7 +275,7 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.NotZero(t, subnet.ID)
 
 	// Add association of the app to the subnet.
-	err = AddAppToSubnet(db, subnet, apps[0])
+	err = AddAppToSubnet(db, subnet, apps[0], apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -294,7 +294,7 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.Nil(t, returnedApp)
 
 	// Add another app to the same subnet.
-	err = AddAppToSubnet(db, subnet, apps[1])
+	err = AddAppToSubnet(db, subnet, apps[1], apps[1].Daemons[0].ID)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -348,18 +348,18 @@ func TestDeleteAppFromSubnets(t *testing.T) {
 	}
 
 	// Associate the first app with two subnets.
-	err := AddAppToSubnet(db, &subnets[0], apps[0])
+	err := AddAppToSubnet(db, &subnets[0], apps[0], apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 
-	err = AddAppToSubnet(db, &subnets[1], apps[0])
+	err = AddAppToSubnet(db, &subnets[1], apps[0], apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 
 	// Associate the second app with another subnet.
-	err = AddAppToSubnet(db, &subnets[2], apps[1])
+	err = AddAppToSubnet(db, &subnets[2], apps[1], apps[1].Daemons[0].ID)
 	require.NoError(t, err)
 
 	// Remove associations of the first app.
-	count, err := DeleteAppFromSubnets(db, apps[0].ID)
+	count, err := DeleteDaemonFromSubnets(db, apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, count)
 
@@ -392,7 +392,7 @@ func TestGetSubnetByLocalID(t *testing.T) {
 	require.NotZero(t, subnet.ID)
 
 	// Add association of the app to the subnet.
-	err = AddAppToSubnet(db, subnet, apps[0])
+	err = AddAppToSubnet(db, subnet, apps[0], apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -453,10 +453,10 @@ func TestGetSubnetsByAppID(t *testing.T) {
 		// Add association of the apps to the subnet.
 		if i < 2 {
 			// First two subnets associated with the first app.
-			err = AddAppToSubnet(db, &subnets[i], apps[0])
+			err = AddAppToSubnet(db, &subnets[i], apps[0], apps[0].Daemons[0].ID)
 		} else {
 			// Last subnet is only associated with the second app.
-			err = AddAppToSubnet(db, &subnets[i], apps[1])
+			err = AddAppToSubnet(db, &subnets[i], apps[1], apps[1].Daemons[0].ID)
 		}
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
@@ -587,7 +587,7 @@ func TestGetAppLocalSubnets(t *testing.T) {
 	require.NotZero(t, subnet.ID)
 
 	// add association of the app to the subnet - this will create LocalSubnet
-	err = AddAppToSubnet(db, subnet, apps[0])
+	err = AddAppToSubnet(db, subnet, apps[0], apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -618,7 +618,7 @@ func TestUpdateStats(t *testing.T) {
 	require.NotZero(t, subnet.ID)
 
 	// add association of the app to the subnet - this will create LocalSubnet
-	err = AddAppToSubnet(db, subnet, apps[0])
+	err = AddAppToSubnet(db, subnet, apps[0], apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -671,6 +671,12 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 		MachineID:    m.ID,
 		Type:         AppTypeKea,
 		AccessPoints: accessPoints,
+		Daemons: []*Daemon{
+			{
+				Name:   DaemonNameDHCPv4,
+				Active: true,
+			},
+		},
 	}
 	// Add the app to the database.
 	_, err = AddApp(db, &app)
@@ -724,7 +730,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 		},
 	}
 	// Attempt to create the global shared network and subnet.
-	addedSubnets, err := CommitNetworksIntoDB(db, networks, subnets, &app, 1)
+	addedSubnets, err := CommitNetworksIntoDB(db, networks, subnets, &app, app.Daemons[0].ID, 1)
 	require.NoError(t, err)
 	require.Len(t, addedSubnets, 1)
 
@@ -746,7 +752,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.EqualValues(t, app.ID, returnedHosts[0].LocalHosts[0].AppID)
 
 	// Make sure we can commit the networks again without an error.
-	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets, &app, 1)
+	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets, &app, app.Daemons[0].ID, 1)
 	require.NoError(t, err)
 	require.Len(t, addedSubnets, 0)
 }
@@ -780,7 +786,7 @@ func TestGetSubnetsWithLocalSubnets(t *testing.T) {
 	require.NotZero(t, subnet.ID)
 
 	// add association of the app to the subnet - this will create LocalSubnet
-	err = AddAppToSubnet(db, subnet, apps[0])
+	err = AddAppToSubnet(db, subnet, apps[0], apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -853,7 +859,7 @@ func TestDeleteOrphanedSubnets(t *testing.T) {
 
 	// Associate one of the subnets with one of the apps. The
 	// other two subnets are orphaned.
-	err := AddAppToSubnet(db, &subnets[0], apps[0])
+	err := AddAppToSubnet(db, &subnets[0], apps[0], apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 
 	// Delete subnets not assigned to any apps.
@@ -981,7 +987,7 @@ func BenchmarkAddAppToSubnet(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				subnetIndex := rand.Intn(len(subnets))
-				AddAppToSubnet(db, &subnets[subnetIndex], app)
+				AddAppToSubnet(db, &subnets[subnetIndex], app, app.Daemons[0].ID)
 			}
 		})
 	}
