@@ -23,7 +23,7 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 	if dbURL != "" {
 		opts, err = dbops.ParseURL(dbURL)
 		if err != nil {
-			log.Fatal("cannot parse db URL")
+			log.Fatalf("cannot parse db URL: %+v", err)
 		}
 		opts.TLSConfig = nil // ParseURL sets it automatically but we do not use TLS so reset it
 	} else {
