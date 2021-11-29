@@ -473,7 +473,7 @@ your Linux distribution:
 in place of the commands installing the server.
 
 Next, specify the required settings in the ``/etc/stork/agent.env`` file.
-The ``STORK_SERVER_URL`` should be the URL on which the server receives the
+The ``STORK_AGENT_SERVER_URL`` should be the URL on which the server receives the
 REST connections, e.g. ``http://stork-server.example.org:8080``. The
 ``STORK_AGENT_ADDRESS`` should point to the agent's address (or name), e.g.
 ``stork-agent.example.org``. Finally, a non-default agent port can be
