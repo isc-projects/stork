@@ -1,3 +1,10 @@
+* 172 [bug] marcin
+
+    Fixed a bug in the Stork server, which caused stale subnets,
+    hosts, and shared networks after reconfiguring a monitored
+    Kea server.
+    (Gitlab #473)
+
 * 171 [func] slawek
 
     Dump machine configuration to file. After pressing the button
