@@ -675,7 +675,7 @@ Start the interactive registration procedure with the following command:
 
 .. code-block:: console
 
-   $ su stork-agent -s /bin/sh -c 'stork-agent register -u http://stork.example.org'
+   $ su stork-agent -s /bin/sh -c 'stork-agent register -u http://stork.example.org:8080'
 
 where the last parameter should be the appropriate Stork server's URL.
 
