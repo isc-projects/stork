@@ -345,7 +345,7 @@ func GetTopLevelSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 		err = pkgerrors.Wrapf(err, "problem with getting top level subnets for family %d", family)
 		return nil, err
 	}
-	return subnets, err
+	return subnets, nil
 }
 
 // Fetches a collection of subnets from the database. The offset and

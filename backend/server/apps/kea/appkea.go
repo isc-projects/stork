@@ -698,9 +698,5 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		err = deleteEmptyAndOrphanedObjects(tx)
 		return err
 	})
-	// Check if the transaction was successful.
-	if err != nil {
-		err = errors.Wrapf(err, "problem with commmitting updates for app %d", app.ID)
-	}
-	return err
+	return errors.Wrapf(err, "problem with commmitting updates for app %d", app.ID)
 }
