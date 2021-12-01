@@ -515,7 +515,11 @@ def run_perfdhcp(src_cntr, dest_ip_addr, *, family=4, mac_prefix='00:00', option
     
     flags_str = " ".join(flags)
 
-    cmd = '/usr/sbin/perfdhcp -%d -r %d -R %d -p 10 %s %s' % (family, 10, 10000, flags_str, dest_ip_addr)
+    cmd = '/usr/sbin/perfdhcp -%d -r %d -R %d -p 10 %s' % (family, 10, 10000, flags_str)
+    if dest_ip_addr == 'eth0':
+        cmd += ' -l eth0'
+    else:
+        cmd += ' %s' % dest_ip_addr
     result = src_cntr.run(cmd, ignore_error=True)
     if result[0] not in [0, 3]:
         raise Exception('perfdhcp erred: %s' % str(result))
@@ -592,7 +596,7 @@ def test_get_kea_stats(agent_kea, agent_old_kea, server):
     agent_kea.run('systemctl stop isc-kea-dhcp4-server')
     agent_kea.run('systemctl stop isc-kea-dhcp6-server')
     run_perfdhcp(agent_kea, agent_old_kea.mgmt_ip)
-    run_perfdhcp(agent_kea, agent_old_kea.mgmt_ip6, family=6, duid_prefix='3001')
+    run_perfdhcp(agent_kea, agent_old_kea.interface, family=6, duid_prefix='3001')
     agent_kea.run('systemctl start isc-kea-dhcp4-server')
     agent_kea.run('systemctl start isc-kea-dhcp6-server')
 
@@ -600,7 +604,7 @@ def test_get_kea_stats(agent_kea, agent_old_kea, server):
     agent_old_kea.run('systemctl stop isc-kea-dhcp4-server')
     agent_old_kea.run('systemctl stop isc-kea-dhcp6-server')
     run_perfdhcp(agent_old_kea, agent_kea.mgmt_ip)
-    run_perfdhcp(agent_old_kea, agent_kea.mgmt_ip6, family=6, duid_prefix='3001')
+    run_perfdhcp(agent_old_kea, agent_kea.interface, family=6, duid_prefix='3001')
     agent_old_kea.run('systemctl start isc-kea-dhcp4-server')
     agent_old_kea.run('systemctl start isc-kea-dhcp6-server')
 

@@ -43,6 +43,7 @@ KEA_LATEST = KEA_1_9
 DEFAULT_STORK_DEB_VERSION = None
 DEFAULT_STORK_RPM_VERSION = None
 
+ADDR_6_LST = ["3001:db8:1::1/64"]
 
 
 def get_distro(content):
@@ -116,7 +117,9 @@ class Container:
         self.thread = None
         self.bg_exc = None
         self.mgmt_ip = None
-        self.mgmt_ip6 = None
+        self.mgmt_ip6 = ADDR_6_LST[-1]
+        ADDR_6_LST.append(f'3001:db8:1::{len(ADDR_6_LST)+1}/64')
+        self.interface = 'eth0'
 
     def start(self):
         try:
@@ -152,8 +155,10 @@ class Container:
         time.sleep(5)
 
         # find IP address of the container
+        self.run(f'ip addr add {self.mgmt_ip6} dev eth0')
         nets = self.cntr.state().network
-        # print('NETS: %s' % str(nets))
+        #print('NETS: %s' % str(nets))
+
         self.mgmt_ip = None
         self.mgmt_ip6 = None
         for ifname, net in nets.items():
@@ -165,7 +170,9 @@ class Container:
                 if addr['family'] == 'inet':
                     self.mgmt_ip = addr['address']
                 elif addr['family'] == 'inet6':
-                    self.mgmt_ip6 = addr['address']
+                    pass
+                    # for now we are configuring this address
+                    #iself.mgmt_ip6 = addr['address']
         if self.mgmt_ip is None:
             raise Exception('cannot find IPv4 management address of the container %s' % self.name)
 
