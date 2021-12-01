@@ -2,7 +2,7 @@
 require 'rake'
 
 # Tool Versions
-NODE_VER = '12.16.2'
+NODE_VER = '16.13.1'
 OPENAPI_GENERATOR_VER = '5.2.0'
 GOSWAGGER_VER = 'v0.23.0'
 GOLANGCILINT_VER = '1.33.0'
@@ -39,7 +39,7 @@ case UNAME.rstrip
     # TODO: there are no protoc built packages for FreeBSD (at least as of 3.10.0)
     PROTOC_ZIP_SUFFIX=""
     puts "WARNING: There are no protoc packages built for FreeBSD"
-    NODE_SUFFIX="node-v10.16.3.tar.xz"
+    NODE_SUFFIX="node-v16.13.1.tar.xz"
     GOLANGCILINT_SUFFIX="freebsd-amd64"
   else
     puts "ERROR: Unknown/unsupported OS: %s" % UNAME
