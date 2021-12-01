@@ -319,7 +319,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 	// Count the servers we have iterated over to make sure we use the one we used
 	// previously.
 	serverIndex := 0
-	for j, d := range appKea.Daemons {
+	for _, d := range appKea.Daemons {
 		if d.KeaDaemon == nil || d.KeaDaemon.Config == nil || !d.Active {
 			continue
 		}
@@ -383,7 +383,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 			// There are some hosts for this subnet so let's convert them from
 			// Kea to Stork format.
 			hosts = iterator.convertAndAssignHosts(returnedHosts)
-			daemon = appKea.Daemons[j]
+			daemon = d
 
 			// We return one chunk of hosts for one subnet. So let's get out
 			// of this loop.
