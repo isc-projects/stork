@@ -549,7 +549,7 @@ func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, ap
 			if err != nil {
 				break
 			}
-			err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, app, daemon.ID, "api", seq)
+			err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, app, daemon, "api", seq)
 			if err != nil {
 				break
 			}
@@ -576,7 +576,7 @@ func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, ap
 		// new hosts into the subnet instance and commit everything to the
 		// database.
 		subnet.Hosts = mergedHosts
-		err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, app, daemon.ID, "api", seq)
+		err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, app, daemon, "api", seq)
 		if err != nil {
 			break
 		}

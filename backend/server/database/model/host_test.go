@@ -978,7 +978,7 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 		},
 	}
 	// Add the hosts and their associations with the app to the database.
-	err = CommitGlobalHostsIntoDB(tx, hosts, apps[0], apps[0].Daemons[0].ID, "api", 1)
+	err = CommitGlobalHostsIntoDB(tx, hosts, apps[0], apps[0].Daemons[0], "api", 1)
 	require.NoError(t, err)
 	require.NoError(t, commit())
 

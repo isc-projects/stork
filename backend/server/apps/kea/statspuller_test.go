@@ -253,7 +253,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	for i := range app.Daemons {
 		nets, snets, err := detectDaemonNetworks(db, app.Daemons[i])
 		require.NoError(t, err)
-		_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app, app.Daemons[i].ID, 1)
+		_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app, app.Daemons[i], 1)
 		require.NoError(t, err)
 	}
 

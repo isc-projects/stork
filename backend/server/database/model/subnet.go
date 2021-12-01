@@ -450,7 +450,7 @@ func GetSubnetsWithLocalSubnets(db *pg.DB) ([]*Subnet, error) {
 // Internally, the association is made via the local_subnet table which holds
 // information about the subnet from the given app perspective, local subnet
 // id, statistics etc.
-func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App, daemonID int64) error {
+func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App, daemon *Daemon) error {
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
 		err = pkgerrors.WithMessagef(err, "problem with starting transaction for associating an app with id %d with the subnet %s",
@@ -469,7 +469,7 @@ func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App, daemonID int6
 	localSubnet := LocalSubnet{
 		AppID:         app.ID,
 		SubnetID:      subnet.ID,
-		DaemonID:      daemonID,
+		DaemonID:      daemon.ID,
 		LocalSubnetID: localSubnetID,
 	}
 	// Try to insert. If such association already exists we could maybe do
@@ -486,7 +486,7 @@ func AddAppToSubnet(dbIface interface{}, subnet *Subnet, app *App, daemonID int6
 		Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with associating the app %d (daemon %d) with the subnet %s",
-			app.ID, daemonID, subnet.Prefix)
+			app.ID, daemon.ID, subnet.Prefix)
 		return err
 	}
 
@@ -542,7 +542,7 @@ func (s *Subnet) GetApp(appID int64) *App {
 // Iterates over the provided slice of subnets and stores them in the database
 // if they are not there yet. In addition, it associates the subnets with the
 // specified Kea application. Returns a list of added subnets.
-func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App, daemonID int64, seq int64) (addedSubnets []*Subnet, err error) {
+func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App, daemon *Daemon, seq int64) (addedSubnets []*Subnet, err error) {
 	for i := range subnets {
 		subnet := &subnets[i]
 		if subnet.ID == 0 {
@@ -555,13 +555,13 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App,
 			}
 			addedSubnets = append(addedSubnets, subnet)
 		}
-		err = AddAppToSubnet(tx, subnet, app, daemonID)
+		err = AddAppToSubnet(tx, subnet, app, daemon)
 		if err != nil {
 			err = pkgerrors.WithMessagef(err, "unable to associate detected subnet %s with Kea app having id %d", subnet.Prefix, app.ID)
 			return nil, err
 		}
 
-		err = CommitSubnetHostsIntoDB(tx, subnet, app, daemonID, "config", seq)
+		err = CommitSubnetHostsIntoDB(tx, subnet, app, daemon, "config", seq)
 		if err != nil {
 			return nil, err
 		}
@@ -571,7 +571,7 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App,
 
 // Iterates over the shared networks, subnets and hosts and commits them to the database.
 // In addition it associates them with the specified app. Returns a list of added subnets.
-func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets []Subnet, app *App, daemonID int64, seq int64) ([]*Subnet, error) {
+func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets []Subnet, app *App, daemon *Daemon, seq int64) ([]*Subnet, error) {
 	// Begin transaction.
 	tx, rollback, commit, err := dbops.Transaction(dbIface)
 	if err != nil {
@@ -595,7 +595,7 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 			}
 		}
 		// Associate subnets with the app.
-		addedSubnetsToNet, err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app, daemonID, seq)
+		addedSubnetsToNet, err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app, daemon, seq)
 		if err != nil {
 			return nil, err
 		}
@@ -604,7 +604,7 @@ func CommitNetworksIntoDB(dbIface interface{}, networks []SharedNetwork, subnets
 
 	// Finally, add top level subnets to the database and associate them with
 	// the Kea app.
-	addedSubnetsToNet, err = commitSubnetsIntoDB(tx, 0, subnets, app, daemonID, seq)
+	addedSubnetsToNet, err = commitSubnetsIntoDB(tx, 0, subnets, app, daemon, seq)
 	if err != nil {
 		return nil, err
 	}

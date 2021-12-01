@@ -532,7 +532,7 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 
 // Iterates over the list of hosts and commits them into the database. The hosts
 // can be associated with a subnet or can be made global.
-func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, daemonID int64, source string, seq int64) (err error) {
+func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, daemon *Daemon, source string, seq int64) (err error) {
 	for i := range hosts {
 		hosts[i].SubnetID = subnetID
 		newHost := (hosts[i].ID == 0)
@@ -550,7 +550,7 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, daemon
 			}
 		}
 		if newHost || hosts[i].UpdateOnCommit {
-			err = AddAppToHost(tx, &hosts[i], app, daemonID, source, seq)
+			err = AddAppToHost(tx, &hosts[i], app, daemon.ID, source, seq)
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
 					app.ID)
@@ -562,14 +562,14 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, daemon
 }
 
 // Iterates over the list of hosts and commits them as global hosts.
-func CommitGlobalHostsIntoDB(tx *pg.Tx, hosts []Host, app *App, daemonID int64, source string, seq int64) (err error) {
-	return commitHostsIntoDB(tx, hosts, 0, app, daemonID, source, seq)
+func CommitGlobalHostsIntoDB(tx *pg.Tx, hosts []Host, app *App, daemon *Daemon, source string, seq int64) (err error) {
+	return commitHostsIntoDB(tx, hosts, 0, app, daemon, source, seq)
 }
 
 // Iterates over the hosts belonging to the given subnet and stores them
 // or updates in the database.
-func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, daemonID int64, source string, seq int64) (err error) {
-	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, app, daemonID, source, seq)
+func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, daemon *Daemon, source string, seq int64) (err error) {
+	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, app, daemon, source, seq)
 }
 
 // This function returns next value of the bulk_update_seq. The returned value
