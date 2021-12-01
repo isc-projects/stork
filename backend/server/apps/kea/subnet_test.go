@@ -409,7 +409,7 @@ func TestDetectNetworksMoveSubnetsAround(t *testing.T) {
 
 	// Create new configuaration which moves one of the subnets outside of
 	// the shared network.
-	v4Config = `
+	v4Config0 := `
         {
             "Dhcp4": {
                 "subnet4": [
@@ -435,10 +435,10 @@ func TestDetectNetworksMoveSubnetsAround(t *testing.T) {
                 ]
             }
         }`
-	kea4Config, err := dbmodel.NewKeaConfigFromJSON(v4Config)
+	kea4Config0, err := dbmodel.NewKeaConfigFromJSON(v4Config0)
 	require.NoError(t, err)
 
-	app.Daemons[0].KeaDaemon.Config = kea4Config
+	app.Daemons[0].KeaDaemon.Config = kea4Config0
 	err = CommitAppIntoDB(db, app, fec, nil)
 	require.NoError(t, err)
 
@@ -456,9 +456,10 @@ func TestDetectNetworksMoveSubnetsAround(t *testing.T) {
 	network, err = dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
 	require.NoError(t, err)
 	require.Len(t, network.Subnets, 1)
+	require.Equal(t, "192.0.3.0/24", network.Subnets[0].Prefix)
 
 	// Move the second subnet outside of the shared network.
-	v4Config = `
+	v4Config1 := `
         {
             "Dhcp4": {
                 "subnet4": [
@@ -477,10 +478,10 @@ func TestDetectNetworksMoveSubnetsAround(t *testing.T) {
                 ]
             }
         }`
-	kea4Config, err = dbmodel.NewKeaConfigFromJSON(v4Config)
+	kea4Config1, err := dbmodel.NewKeaConfigFromJSON(v4Config1)
 	require.NoError(t, err)
 
-	app.Daemons[0].KeaDaemon.Config = kea4Config
+	app.Daemons[0].KeaDaemon.Config = kea4Config1
 	err = CommitAppIntoDB(db, app, fec, nil)
 	require.NoError(t, err)
 
@@ -488,6 +489,22 @@ func TestDetectNetworksMoveSubnetsAround(t *testing.T) {
 	networks, err = dbmodel.GetAllSharedNetworks(db, 0)
 	require.NoError(t, err)
 	require.Empty(t, networks)
+
+	// Revert to the original config.
+	app.Daemons[0].KeaDaemon.Config = kea4Config0
+	err = CommitAppIntoDB(db, app, fec, nil)
+	require.NoError(t, err)
+
+	// The shared network should be there.
+	networks, err = dbmodel.GetAllSharedNetworks(db, 0)
+	require.NoError(t, err)
+	require.Len(t, networks, 1)
+
+	// Verify the subnet prefix within the shared network.
+	network, err = dbmodel.GetSharedNetworkWithSubnets(db, networks[0].ID)
+	require.NoError(t, err)
+	require.Len(t, network.Subnets, 1)
+	require.Equal(t, "192.0.3.0/24", network.Subnets[0].Prefix)
 }
 
 // Test that the subnets not assigned to any apps are removed as a
@@ -644,6 +661,10 @@ func TestDetectNetworksRemoveOrphanedHosts(t *testing.T) {
 	hosts, err = dbmodel.GetHostsBySubnetID(db, subnets[0].ID)
 	require.NoError(t, err)
 	require.Len(t, hosts, 1)
+
+	// Ensure that the correct host is in the database.
+	require.Len(t, hosts[0].IPReservations, 1)
+	require.Equal(t, "192.0.2.66/32", hosts[0].IPReservations[0].Address)
 }
 
 // Benchmark measuring performance of the findMatchingSubnet function. This

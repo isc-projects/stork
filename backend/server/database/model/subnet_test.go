@@ -887,6 +887,80 @@ func TestDeleteOrphanedSubnets(t *testing.T) {
 	require.Zero(t, count)
 }
 
+// Test deleting subnets belonging to a shared network not assigned to any apps.
+func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add apps used in the test.
+	apps := addTestSubnetApps(t, db)
+	require.Len(t, apps, 2)
+
+	// Add a shared network with three subnets.
+	network := &SharedNetwork{
+		Name:   "foo",
+		Family: 4,
+		Subnets: []Subnet{
+			{
+				Prefix: "192.0.2.0/24",
+			},
+			{
+				Prefix: "192.0.3.0/24",
+			},
+			{
+				Prefix: "192.0.4.0/24",
+			},
+		},
+	}
+	err := AddSharedNetwork(db, network)
+	require.NoError(t, err)
+
+	// Associate one of the subnets with one of the apps. The
+	// other two subnets are orphaned.
+	err = AddAppToSubnet(db, &network.Subnets[0], apps[0], apps[0].Daemons[0])
+	require.NoError(t, err)
+
+	// Delete subnets not assigned to any apps.
+	count, err := DeleteOrphanedSubnets(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, count)
+
+	// Ensure that the non-orphaned subnet hasn't been deleted.
+	returned, err := GetSubnet(db, network.Subnets[0].ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+
+	// Ensure that the orphaned subnets have been deleted.
+	returned, err = GetSubnet(db, network.Subnets[1].ID)
+	require.NoError(t, err)
+	require.Nil(t, returned)
+
+	returned, err = GetSubnet(db, network.Subnets[2].ID)
+	require.NoError(t, err)
+	require.Nil(t, returned)
+
+	// Delete the sole daemon from the subnet.
+	count, err = DeleteDaemonFromSubnets(db, apps[0].Daemons[0].ID)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+
+	// Delete orphaned subnet. It should leave our shared network empty.
+	count, err = DeleteOrphanedSubnets(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+
+	// Make sure the shared network still exists.
+	network, err = GetSharedNetworkWithSubnets(db, network.ID)
+	require.NoError(t, err)
+	require.NotNil(t, network)
+	require.Empty(t, network.Subnets)
+
+	// Deleting empty shared networks should remove our network.
+	count, err = DeleteEmptySharedNetworks(db)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+}
+
 // Benchmark measuring a time to add a single subnet.
 func BenchmarkAddSubnet(b *testing.B) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
