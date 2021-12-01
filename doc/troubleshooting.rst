@@ -13,24 +13,24 @@ This section describes the solutions for some common issues with the Stork Agent
 
 :Issue:       A machine is authorized in the Stork Server successfully, but it has no application.
 :Description: The user installed and started the Stork Server and the Stork Agent and authorized
-              the machine. The "Last Refreshed" column value is set on the Machines page, the
-              "Error" column value shows no error, but the "Daemons" column is still blank. The
-              "Application" section on the specific Machine page is blank too.
-:Solution:    Mqke sure that the daemons are running:
+              the machine. The "Last Refreshed" column has value on the Machines page, the
+              "Error" column value shows no error, but the "Daemons" column is still blank.
+              The "Application" section on the specific Machine page is blank too.
+:Solution:    Make sure that the daemons are running:
 
               - Kea Control Agent, Kea DHCPv4 server, or/and Kea DHCPv6 server
               - BIND9
-:Explanation: If the "Last Refreshed" column value is set and the "Error" column value has no error,
+:Explanation: If the "Last Refreshed" column has value, and the "Error" column value has no error,
               the communication between Stork Server and Stork Agent works correctly. It implies that
               the cause of the problem is between the Stork Agent and the daemons. Probably none of
               the Kea/BIND9 daemons are running. Stork Agent communicates with the BIND9 daemon
               directly. However, it communicates with the Kea DHCPv4 and Kea DHCPv6 servers via the
-              Kea Control Agent. If you see only "CA" daemon in the Stork UI, the Kea Control Agent
+              Kea Control Agent. If you see only the "CA" daemon in the Stork UI, the Kea Control Agent
               is running, but the DHCP daemons aren't.
 
 --------------
 
-:Issue:       After starting the Stork Agent, gets stuck in an infinite "sleeping" loop.
+:Issue:       After starting the Stork Agent, it gets stuck in an infinite "sleeping" loop.
 :Description: The Stork Agent is running with the server support (the ``--listen-prometheus-only` flag is unused).
               The ``try to register agent in Stork server`` message is displayed initially. Next, the agent only
               prints the recurring ``sleeping for 10 seconds before next registration attempt`` message.
@@ -41,13 +41,13 @@ This section describes the solutions for some common issues with the Stork Agent
 
 :Issue:       After starting the Stork Agent, it keeps printing the following messages: "loaded server cert:
               /var/lib/stork-agent/certs/cert.pem and key: /var/lib/stork-agent/certs/key.pem"
-:Description: The Stork Agent runs correctly, and its registration is successful. After the "started serving
-              Stork Agent" message, the agent prints the recurring message about loading server certs.
+:Description: The Stork Agent runs correctly, and its registration is successful.
+              After the "started serving Stork Agent" message, the agent prints the recurring message about loading server certs.
               The network traffic analysis to the server reveals that it rejects all packets from the agent
               (TLS HELLO handshake failed).
 :Solution:    Re-register the agent to regenerate the certificates. You can use the ``stork-agent register`` command. 
-:Explanation: The /var/lib/stork-agent/certs/ca.pem file is missing or corrupted. The re-registration
-              removes old files and creates the new ones.
+:Explanation: The /var/lib/stork-agent/certs/ca.pem file is missing or corrupted.
+              The re-registration removes old files and creates new ones.
 
 
 --------------
@@ -93,11 +93,11 @@ This section describes the solutions for some common issues with the Stork Agent
 
 :Issue:       During the registration process, the Stork Agent prints the ``problem with registering machine:
               cannot parse address`` message.
-:Description: The Stork is configured to use an IPv6 Link Local address. The agent prints the
+:Description: The Stork is configured to use an IPv6 link-local address. The agent prints the
               ``try to register agent in Stork server`` message and then the above error. The agent exists
               with the fatal status.
 :Solution:    Use a global IPv6 or an IPv4 address.
-:Explanation: The IPv6 Link Local addresses aren't supported by the Stork Server.
+:Explanation: The IPv6 link-local addresses aren't supported by the Stork Server.
 
 --------------
 
@@ -111,7 +111,7 @@ This section describes the solutions for some common issues with the Stork Agent
 
 ---------------
 
-:Issue:       The values in the ``/etc/stork/agent.env`` or ``/etc/stork/agent-credentials.json`` were changed
+:Issue:       The values in the ``/etc/stork/agent.env`` or ``/etc/stork/agent-credentials.json`` were changed,
               but it didn't affect the Stork Agent.
 :Solution:    Restart the daemon.
 :Explanation: The Stork Agent reads configurations only at startup.
@@ -122,9 +122,9 @@ This section describes the solutions for some common issues with the Stork Agent
               the agent still uses the default values.
 :Description: The agent is running using the ``stork-agent`` command. It uses the parameters passed
               from the command-line but ignores the ``/etc/stork/agent.env`` file entries.
-              If the agent is running as the SystemD daemon it uses expected values.
+              If the agent is running as the SystemD daemon, it uses expected values.
 :Solution:    Load the environment variables from the ``/etc/stork/agent.env`` file before running the CLI tool.
               For example, you can run ``. /etc/stork/agent.env``.
-:Explanation: The ``/etc/stork/agent.env`` contains the environment variables. They aren't automatically
-              loaded by the Stork Agent and it must be loaded manually. The default SystemD service unit is
-              configured to load this file before starting the agent.
+:Explanation: The ``/etc/stork/agent.env`` contains the environment variables. The Stork Agent doesn't automatically
+              load them, and it must be loaded manually. The default SystemD service unit is configured to
+              load this file before starting the agent.
