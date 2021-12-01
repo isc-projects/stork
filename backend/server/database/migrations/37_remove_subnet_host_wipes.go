@@ -51,10 +51,18 @@ func init() {
                     REFERENCES daemon (id) MATCH SIMPLE
                         ON UPDATE CASCADE
                         ON DELETE CASCADE;
+
+            -- Add a missing foreign key to host table.
+            ALTER TABLE local_host
+                ADD CONSTRAINT local_host_to_host_id FOREIGN KEY (host_id)
+                    REFERENCES host (id) MATCH SIMPLE
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE;
         `)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
+             ALTER TABLE local_host DROP CONSTRAINT IF EXISTS local_host_to_host_id;
              ALTER TABLE local_host DROP COLUMN IF EXISTS daemon_id;
              ALTER TABLE local_subnet DROP COLUMN IF EXISTS daemon_id;
 
