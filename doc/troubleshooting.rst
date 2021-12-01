@@ -52,13 +52,15 @@ This section describes the solutions for some common issues with the Stork Agent
 
 --------------
 
-:Issue:       The agent fails to start and prints ``open /var/lib/stork-agent/certs/cert.pem: no such file or directory
+:Issue:       The cert PEM file is not loaded.
+:Description: The agent fails to start and prints ``open /var/lib/stork-agent/certs/cert.pem: no such file or directory
               could not load cert PEM file: /var/lib/stork-agent/certs/cert.pem`` error message.
 :Solution:    Re-register the agent to regenerate the certificates. You can use the ``stork-agent register`` command.
 
 --------------
 
-:Issue:       The agent prints the message ``problem with connecting to dhcp daemon: unable to forward command to
+:Issue:       The connection problem to the DHCP daemon(s).
+:Description: The agent prints the message ``problem with connecting to dhcp daemon: unable to forward command to
               the dhcp6 service: No such file or directory. The server is likely to be offline``.
 :Solution:    Try to start the Kea service: ``systemctl start kea-dhcp4 kea-dhcp6``
 :Explanation: The ``kea-dhcp4.service`` or ``kea-dhcp6.serive`` (depending on the service type in the message) is not running.
@@ -99,7 +101,8 @@ This section describes the solutions for some common issues with the Stork Agent
 
 --------------
 
-:Issue:       During the registration process, the Stork Agent prints the ``problem with registering machine:
+:Issue:       Protocol problem during the agent registration.
+:Description: During the registration process, the Stork Agent prints the ``problem with registering machine:
               Post "/api/machines": unsupported protocol scheme ""`` message.
 :Solution:    The ``--server-url`` argument is provided in the wrong format. It must be a canonical URL.
               It should begin with the protocol (``http://`` or ``https://``), contain the host (DNS name or
