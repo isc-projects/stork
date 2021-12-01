@@ -765,7 +765,7 @@ def test_agent_reregistration_after_restart(agent, server):
     assert tuple(hashes_before) == tuple(hashes_after)
 
 @pytest.mark.parametrize("agent, server", [('ubuntu/18.04', 'ubuntu/18.04')])
-def test_agent_over_ip6(agent, server):
+def test_agent_over_ipv6(agent, server):
     # Setup the Stork Agent over IPv6
     agent.set_stork_agent_ip6_address()
     agent.install_kea()

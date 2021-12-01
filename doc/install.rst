@@ -333,9 +333,10 @@ using agent token:
 
 .. warning
 
-   The Stork Server doesn't support the Stork Agents configured to use IPv6 address with
-   zone ID (e.g. `fe80::%eth0`). It means that the `STORK_AGENT_ADDRESS` variable must
-   be DNS name, IPv4 or IPv6 excluding "link-local" scope.
+   Stork Server currently does not support communication with the Stork Agents
+   via an IPv6 link-local address with zone ID (e.g., `fe80::%eth0`). It means
+   that the `STORK_AGENT_ADDRESS` variable must be set to a DNS name, an IPv4
+   address, or a non-link-local IPv6 address.
 
 .. _secure-server-agent:
 
