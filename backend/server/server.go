@@ -46,7 +46,7 @@ type StorkServer struct {
 // Global server settings (called application settings in go-flags nomenclature).
 type Settings struct {
 	Version               bool `short:"v" long:"version" description:"show software version"`
-	EnableMetricsEndpoint bool `short:"m" long:"metrics" description:"enable Prometheus /metrics endpoint (no auth)" env:"STORK_REST_ENABLE_METRICS"`
+	EnableMetricsEndpoint bool `short:"m" long:"metrics" description:"enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
 }
 
 func (ss *StorkServer) ParseArgs() {

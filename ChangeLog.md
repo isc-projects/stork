@@ -1,7 +1,7 @@
 * 175 [doc] slawek
 
     Renamed STORK_ENABLE_METRICS server environment variable
-    to STORK_REST_ENABLE_METRICS.
+    to STORK_SERVER_ENABLE_METRICS.
     (Gitlab #621)
 
 * 174 [bug] slawek

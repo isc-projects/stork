@@ -189,7 +189,7 @@ The remaining settings pertain to the server's REST API configuration:
 
 The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration:
 
-* STORK_REST_ENABLE_METRICS - enable the Prometheus metrics collector and ``/metrics`` HTTP endpoint.
+* STORK_SERVER_ENABLE_METRICS - enable the Prometheus metrics collector and ``/metrics`` HTTP endpoint.
 
 .. warning::
 
@@ -934,7 +934,7 @@ command-line parameters, or the Prometheus export can be disabled altogether. Fo
 at :ref:`man-stork-agent`.
 
 The Stork Server can be optionally integrated too, but the Prometheus support is disabled by default. To enable it
-you need to run the server with the ``-m`` or ``--metrics`` flag or set the ``STORK_REST_ENABLE_METRICS`` environment variable.
+you need to run the server with the ``-m`` or ``--metrics`` flag or set the ``STORK_SERVER_ENABLE_METRICS`` environment variable.
 Next, you should update the ``prometheus.yml`` file:
 
 .. code-block:: yaml
