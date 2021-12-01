@@ -168,8 +168,8 @@ func TestGetAllSubnets(t *testing.T) {
 	require.Equal(t, subnets[3].Prefix, returnedSubnets[1].Prefix)
 }
 
-// Test that top-level subnets are fetched.
-func TestTopLevelSubnets(t *testing.T) {
+// Test that global subnets are fetched.
+func TestGlobalSubnets(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -204,8 +204,8 @@ func TestTopLevelSubnets(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// Get top-level subnets only. It should return two subnets.
-	subnets, err = GetTopLevelSubnets(db, 4)
+	// Get global subnets only. It should return two subnets.
+	subnets, err = GetGlobalSubnets(db, 4)
 	require.NoError(t, err)
 	require.Len(t, subnets, 2)
 
@@ -218,7 +218,7 @@ func TestTopLevelSubnets(t *testing.T) {
 	require.Contains(t, subnetMap, "192.0.4.0/24")
 	require.Contains(t, subnetMap, "192.0.5.0/24")
 
-	subnets, err = GetTopLevelSubnets(db, 6)
+	subnets, err = GetGlobalSubnets(db, 6)
 	require.NoError(t, err)
 	require.Empty(t, subnets)
 }

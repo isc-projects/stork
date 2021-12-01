@@ -317,9 +317,9 @@ func GetAllSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 	return subnets, err
 }
 
-// Fetches all top-level subnets, i.e., subnets that do not belong to shared
+// Fetches all global subnets, i.e., subnets that do not belong to shared
 // networks. If the family is set to 0 it fetches both IPv4 and IPv6 subnet.
-func GetTopLevelSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
+func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 	subnets := []Subnet{}
 	q := dbi.Model(&subnets).
 		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {

@@ -137,11 +137,11 @@ func detectSubnets(dbi dbops.DBI, config *dbmodel.KeaConfig, family int, daemon 
 		return subnets, err
 	}
 
-	// Fetch all top-level subnets from the database to perform matching. For now
+	// Fetch all global subnets from the database to perform matching. For now
 	// it is better to get all of them because this is just a single query rather
 	// than many but in the future we should probably revise that when the number
 	// of subnets grows.
-	dbSubnets, err := dbmodel.GetTopLevelSubnets(dbi, family)
+	dbSubnets, err := dbmodel.GetGlobalSubnets(dbi, family)
 	if err != nil {
 		return []dbmodel.Subnet{}, err
 	}
