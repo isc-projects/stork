@@ -32,7 +32,6 @@
     re-reviews the configurations whenever new configuration
     checkers are available in the new Stork releases.
     (Gitlab #609)
-
 * 169 [func] marcin
 
     Server database connection can be protected with TLS.
