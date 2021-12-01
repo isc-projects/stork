@@ -1,3 +1,9 @@
+* 175 [doc] slawek
+
+    Renamed STORK_ENABLE_METRICS server environment variable
+    to STORK_REST_ENABLE_METRICS.
+    (Gitlab #621)
+
 * 174 [bug] slawek
 
     Ensured that the agent registration over IPv6 works correctly
