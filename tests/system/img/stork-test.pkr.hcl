@@ -9,7 +9,7 @@ source "qemu" "stork-test" {
   disk_discard        = "unmap"
   disk_image          = true
   disk_interface      = "virtio-scsi"
-  disk_size           = "8G"
+  disk_size           = "16G"
   format              = "qcow2"
   http_directory      = "cloud-data"
   iso_checksum        = "file:http://cloud-images.ubuntu.com/releases/${var.ubuntu_code}/release/SHA256SUMS"
