@@ -309,7 +309,7 @@ end
 
 desc 'Run server'
 task :run_server => [:build_server, GO] do |t, args|
-  ENV['STORK_SERVER_ENABLE_METRICS'] = '1'
+  ENV['STORK_SERVER_ENABLE_METRICS'] = 'true'
   if ENV['debug'] == 'true'
     sh "cd backend/cmd/stork-server/ && dlv #{ut_dbg_headless} debug"
   else
