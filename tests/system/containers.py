@@ -43,7 +43,14 @@ KEA_LATEST = KEA_1_9
 DEFAULT_STORK_DEB_VERSION = None
 DEFAULT_STORK_RPM_VERSION = None
 
-ADDR_6_LST = ["3001:db8:1::1/64"]
+_last_ipv6_address_index = 0
+
+def get_next_ipv6_address():
+    '''The default IPv6 causes some network problems.
+    As a workaround, we manually add another address from a different pool.'''
+    global _last_ipv6_address_index
+    _last_ipv6_address_index += 1
+    return "3001:db8:1::%d/64" % _last_ipv6_address_index
 
 
 def get_distro(content):
@@ -117,8 +124,6 @@ class Container:
         self.thread = None
         self.bg_exc = None
         self.mgmt_ip = None
-        self.mgmt_ip6 = ADDR_6_LST[-1]
-        ADDR_6_LST.append(f'3001:db8:1::{len(ADDR_6_LST)+1}/64')
         self.interface = 'eth0'
 
     def start(self):
@@ -155,24 +160,23 @@ class Container:
         time.sleep(5)
 
         # find IP address of the container
-        self.run(f'ip addr add {self.mgmt_ip6} dev eth0')
+        # it seems that it doesn't work with the default IPv6 global address
+        # it adds another one from the pool used in kea-dhcp6.conf file
+        ipv6_with_mask = get_next_ipv6_address()
+        self.run(f'ip addr add {ipv6_with_mask} dev eth0')
+
         nets = self.cntr.state().network
         #print('NETS: %s' % str(nets))
 
         self.mgmt_ip = None
-        self.mgmt_ip6 = None
         for ifname, net in nets.items():
-            if ifname == 'lo':
+            if ifname != self.interface:
                 continue
             for addr in net['addresses']:
                 if addr['scope'] != 'global':
                     continue
                 if addr['family'] == 'inet':
                     self.mgmt_ip = addr['address']
-                elif addr['family'] == 'inet6':
-                    pass
-                    # for now we are configuring this address
-                    #iself.mgmt_ip6 = addr['address']
         if self.mgmt_ip is None:
             raise Exception('cannot find IPv4 management address of the container %s' % self.name)
 

@@ -487,9 +487,16 @@ def test_search_leases(agent, server):
     assert data['items'] is None
 
 
-def run_perfdhcp(src_cntr, dest_ip_addr, *, family=4, mac_prefix='00:00', option=None, duid_prefix=None):
+def run_perfdhcp(src_cntr, dest_ip_addr_or_interf, *, family=4, mac_prefix='00:00', option=None, duid_prefix=None):
     '''
     Run the perfdhcp with provided parameters.
+
+    Positional arguments:
+        - dest_ip_addr_or_interf: str
+            The IP address or interface name.
+            Use the IP address for IPv4 networks and the
+            interface name for IPv6 else this tool doesn't work
+            due to the unknown reason.
 
     Keyword arguments:
         - family: int
@@ -515,11 +522,11 @@ def run_perfdhcp(src_cntr, dest_ip_addr, *, family=4, mac_prefix='00:00', option
     
     flags_str = " ".join(flags)
 
-    cmd = '/usr/sbin/perfdhcp -%d -r %d -R %d -p 10 %s' % (family, 10, 10000, flags_str)
-    if dest_ip_addr == 'eth0':
-        cmd += ' -l eth0'
-    else:
-        cmd += ' %s' % dest_ip_addr
+    cmd = '/usr/sbin/perfdhcp -%d -r %d -R %d -p 10 %s ' % (family, 10, 10000, flags_str)
+    # Is IPv4 or IPv6?
+    if '.' not in dest_ip_addr_or_interf and ':' not in dest_ip_addr_or_interf:
+        cmd += '-l '
+    cmd += dest_ip_addr_or_interf
     result = src_cntr.run(cmd, ignore_error=True)
     if result[0] not in [0, 3]:
         raise Exception('perfdhcp erred: %s' % str(result))
