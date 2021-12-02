@@ -1,3 +1,8 @@
+* 173 [build] marcin
+
+    Upgraded UI to use Angular and Primeng 13.
+    (Gitlab #606)
+
 * 172 [bug] marcin
 
     Fixed a bug in the Stork server, which caused stale subnets,
