@@ -342,7 +342,7 @@ func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting top level subnets for family %d", family)
+		err = pkgerrors.Wrapf(err, "problem with getting global (top level) subnets for family %d", family)
 		return nil, err
 	}
 	return subnets, nil
