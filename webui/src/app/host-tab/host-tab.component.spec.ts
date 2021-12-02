@@ -132,8 +132,8 @@ describe('HostTabComponent', () => {
 
         const appLinks = appsFieldset.queryAll(By.css('a'))
         expect(appLinks.length).toBe(2)
-        expect(appLinks[0].properties.href).toBe('/apps/kea/1')
-        expect(appLinks[1].properties.href).toBe('/apps/kea/2')
+        expect(appLinks[0].attributes.href).toBe('/apps/kea/1')
+        expect(appLinks[1].attributes.href).toBe('/apps/kea/2')
 
         let configTag = appsFieldset.query(By.css('.cfg-srctag'))
         expect(configTag).toBeTruthy()

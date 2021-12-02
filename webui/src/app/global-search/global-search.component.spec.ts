@@ -63,6 +63,6 @@ describe('GlobalSearchComponent', () => {
         expect(appDiv.children.length).toBe(1)
         const appAnchor = appDiv.children[0]
         expect(appAnchor.nativeElement.innerText).toBe('dhcp-server')
-        expect(appAnchor.properties.href).toBe('/apps/kea/1')
+        expect(appAnchor.attributes.href).toBe('/apps/kea/1')
     })
 })
