@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ViewChild } from '@angular/core'
+import { Component, Input, ViewChild } from '@angular/core'
 
 import { OverlayPanel } from 'primeng/overlaypanel'
 
@@ -13,7 +13,7 @@ import { OverlayPanel } from 'primeng/overlaypanel'
     templateUrl: './help-tip.component.html',
     styleUrls: ['./help-tip.component.sass'],
 })
-export class HelpTipComponent implements OnInit {
+export class HelpTipComponent {
     @ViewChild(OverlayPanel)
     overlay: OverlayPanel
 
@@ -33,8 +33,6 @@ export class HelpTipComponent implements OnInit {
     @Input() variant = ''
 
     constructor() {}
-
-    ngOnInit() {}
 
     toggleOverlay(ev) {
         this.overlay.toggle(ev)

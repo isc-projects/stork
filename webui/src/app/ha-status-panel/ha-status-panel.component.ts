@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, Input } from '@angular/core'
 import { datetimeToLocal } from '../utils'
 
 /**
@@ -27,7 +27,7 @@ enum HAStateKind {
     templateUrl: './ha-status-panel.component.html',
     styleUrls: ['./ha-status-panel.component.sass'],
 })
-export class HaStatusPanelComponent implements OnInit {
+export class HaStatusPanelComponent {
     public StateKind = HAStateKind
 
     /**
@@ -80,13 +80,6 @@ export class HaStatusPanelComponent implements OnInit {
      * No-op constructor.
      */
     constructor() {}
-
-    /**
-     * No-op initialization.
-     *
-     * The pre-initialization is performed by the parent component.
-     */
-    ngOnInit(): void {}
 
     /**
      * Sets new status information for the server.

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core'
+import { Component, Input } from '@angular/core'
 
 /**
  * A component that presents event text. It takes raw text, looks there for entities
@@ -11,7 +11,7 @@ import { Component, OnInit, Input } from '@angular/core'
     templateUrl: './event-text.component.html',
     styleUrls: ['./event-text.component.sass'],
 })
-export class EventTextComponent implements OnInit {
+export class EventTextComponent {
     private _text: string
     textParts = []
 
@@ -22,8 +22,6 @@ export class EventTextComponent implements OnInit {
     }
 
     constructor() {}
-
-    ngOnInit(): void {}
 
     /**
      * Parse event text and look there for entities in angle brackets (e.g. <app id="12">)

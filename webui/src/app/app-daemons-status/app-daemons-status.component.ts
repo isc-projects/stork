@@ -7,12 +7,10 @@ import { daemonStatusIconName, daemonStatusIconColor, daemonStatusIconTooltip } 
     templateUrl: './app-daemons-status.component.html',
     styleUrls: ['./app-daemons-status.component.sass'],
 })
-export class AppDaemonsStatusComponent implements OnInit {
+export class AppDaemonsStatusComponent {
     @Input() app: any
 
     constructor() {}
-
-    ngOnInit(): void {}
 
     sortDaemonsByImportance(app) {
         const daemonMap = []

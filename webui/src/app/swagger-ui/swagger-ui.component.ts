@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ElementRef } from '@angular/core'
+import { Component, AfterViewInit, ElementRef } from '@angular/core'
 
 import { environment } from '../../environments/environment'
 
@@ -9,10 +9,8 @@ import { SwaggerUIBundle } from 'swagger-ui-dist'
     templateUrl: './swagger-ui.component.html',
     styleUrls: ['./swagger-ui.component.sass'],
 })
-export class SwaggerUiComponent implements OnInit, AfterViewInit {
+export class SwaggerUiComponent implements AfterViewInit {
     constructor() {}
-
-    ngOnInit() {}
 
     ngAfterViewInit() {
         const ui = SwaggerUIBundle({

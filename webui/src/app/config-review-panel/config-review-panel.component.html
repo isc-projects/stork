@@ -2,7 +2,7 @@
     <ng-template pTemplate="header">
         <div style="width: 100%; display: flex; justify-content: space-between">
             <div id="review-summary-div" *ngIf="review" class="p-text-normal">
-                <span class="p-text-bold"> {{ total || 0 }}</span> report{{ total != 1 ? 's' : '' }} generated at
+                <span class="p-text-bold"> {{ total || 0 }}</span> report{{ total !== 1 ? 's' : '' }} generated at
                 <span class="p-text-bold">{{ review.createdAt | localtime }} </span>
             </div>
             <button

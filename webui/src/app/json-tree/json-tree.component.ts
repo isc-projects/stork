@@ -271,10 +271,8 @@ export class JsonTreeComponent {
      * Arrays are ordered by index.
      * Rest of objects are ordered by key.
      */
-    private _keyValueComparator?: (
-        a: KeyValue<number | string, any>,
-        b: KeyValue<number | string, any>
-    ) => number = null
+    private _keyValueComparator?: (a: KeyValue<number | string, any>, b: KeyValue<number | string, any>) => number =
+        null
     /** Order key-value of array by index */
     private static _arrayKeyValueComparator = (a: KeyValue<number, any>, b: KeyValue<number, any>) => a.key - b.key
     /** Order key-value of object by key */

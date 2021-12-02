@@ -317,7 +317,8 @@ export class LeaseSearchPageComponent implements OnInit {
         }
 
         // Partial IPv4 address.
-        let regexp = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){1,2}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.{0,1}){0,1}$/
+        let regexp =
+            /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){1,2}((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.{0,1}){0,1}$/
         if (regexp.test(searchText)) {
             this.reportSearchTextError('Please enter the complete IPv4 address.')
             return

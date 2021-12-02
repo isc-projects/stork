@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core'
+import { Component, Input } from '@angular/core'
 
 /**
  * A component that displays given entity as a link with rounded border
@@ -14,7 +14,7 @@ import { Component, OnInit, Input } from '@angular/core'
     templateUrl: './entity-link.component.html',
     styleUrls: ['./entity-link.component.sass'],
 })
-export class EntityLinkComponent implements OnInit {
+export class EntityLinkComponent {
     /**
      * Entity name, one of: machine, app, daemon, subnet, host.
      */
@@ -36,6 +36,4 @@ export class EntityLinkComponent implements OnInit {
     @Input() styleClass: string
 
     constructor() {}
-
-    ngOnInit(): void {}
 }

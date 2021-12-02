@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, Input } from '@angular/core'
 
 import { MessageService } from 'primeng/api'
 
@@ -34,7 +34,7 @@ enum HostReservationUsage {
     templateUrl: './host-tab.component.html',
     styleUrls: ['./host-tab.component.sass'],
 })
-export class HostTabComponent implements OnInit {
+export class HostTabComponent {
     Usage = HostReservationUsage
 
     /**
@@ -90,13 +90,6 @@ export class HostTabComponent implements OnInit {
      * @param dhcpApi service used to communicate with the server over REST API.
      */
     constructor(private dhcpApi: DHCPService, private msgService: MessageService) {}
-
-    /**
-     * Lifecycle hook triggered during component initialization.
-     *
-     * Currently no-op.
-     */
-    ngOnInit(): void {}
 
     /**
      * Returns information about currently selected host.

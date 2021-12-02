@@ -23,7 +23,7 @@
                     type="button"
                     icon="fa fa-download"
                     label="Download"
-                    [disabled]="configuration == null"
+                    [disabled]="configuration === null"
                 ></button>
             </a>
 
@@ -35,7 +35,7 @@
                 icon="fa fa-sync"
                 label="Refresh"
                 (click)="onClickRefresh()"
-                [disabled]="configuration == null && !failedFetch"
+                [disabled]="configuration === null && !failedFetch"
             ></button>
 
             <!-- Collapse/expand button -->
@@ -47,7 +47,7 @@
                 label="Expand"
                 (click)="onClickToggleNodes()"
                 *ngIf="autoExpand === 'none'"
-                [disabled]="configuration == null"
+                [disabled]="configuration === null"
             ></button>
             <button
                 pButton
@@ -57,7 +57,7 @@
                 label="Collapse"
                 (click)="onClickToggleNodes()"
                 *ngIf="autoExpand === 'all'"
-                [disabled]="configuration == null"
+                [disabled]="configuration === null"
             ></button>
         </div>
     </p-header>

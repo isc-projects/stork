@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component } from '@angular/core'
 
 /**
  * This component displays HTTP Error 403 page.
@@ -12,8 +12,6 @@ import { Component, OnInit } from '@angular/core'
     templateUrl: './forbidden-page.component.html',
     styleUrls: ['./forbidden-page.component.sass'],
 })
-export class ForbiddenPageComponent implements OnInit {
+export class ForbiddenPageComponent {
     constructor() {}
-
-    ngOnInit(): void {}
 }
