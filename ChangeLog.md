@@ -1,4 +1,10 @@
-* 177 [bug] slawe
+* 178 [doc] slawek
+
+    Extended the comments in the files with environment variables.
+    Unified them with the man.
+    (Gitlab #632)
+
+* 177 [bug] slawek
 
     Stork calculates properly the subnet, shared network,
     and global utilizations. Fixed the problem with showing
@@ -52,6 +58,7 @@
     re-reviews the configurations whenever new configuration
     checkers are available in the new Stork releases.
     (Gitlab #609)
+
 * 169 [func] marcin
 
     Server database connection can be protected with TLS.
