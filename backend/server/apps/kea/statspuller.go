@@ -76,51 +76,51 @@ func (statsPuller *StatsPuller) pullStats() error {
 		return lastErr
 	}
 
-	calculator := NewUtilizationCalculator()
+	calculator := newUtilizationCalculator()
 
 	// go through all Subnets and:
 	// 1) estimate utilization per Subnet and per SharedNetwork
 	// 2) estimate global stats
 	for _, sn := range subnets {
-		su := calculator.Add(sn)
+		su := calculator.add(sn)
 		err = sn.UpdateUtilization(
 			statsPuller.DB,
-			int16(1000*su.AddressUtilization()),
-			int16(1000*su.PDUtilization()),
+			int16(1000*su.addressUtilization()),
+			int16(1000*su.pdUtilization()),
 		)
 
 		if err != nil {
 			lastErr = err
 			log.Errorf("cannot update utilization (%.3f, %.3f) in subnet %d: %s",
-				su.AddressUtilization(), su.PDUtilization(), sn.ID, err)
+				su.addressUtilization(), su.pdUtilization(), sn.ID, err)
 			continue
 		}
 	}
 
 	// shared network utilization
-	for sharedNetworkID, u := range calculator.SharedNetworks {
+	for sharedNetworkID, u := range calculator.sharedNetworks {
 		err = dbmodel.UpdateUtilizationInSharedNetwork(statsPuller.DB, sharedNetworkID,
-			int16(1000*u.AddressUtilization()),
-			int16(1000*u.PDUtilization()))
+			int16(1000*u.addressUtilization()),
+			int16(1000*u.pdUtilization()))
 
 		if err != nil {
 			lastErr = err
 			log.Errorf("cannot update utilization (%.3f, %.3f) in shared network %d: %s",
-				u.AddressUtilization(), u.PDUtilization(), sharedNetworkID, err)
+				u.addressUtilization(), u.pdUtilization(), sharedNetworkID, err)
 			continue
 		}
 	}
 
 	// global stats to collect
 	statsMap := map[string]int64{
-		"total-addresses":    calculator.Global.TotalAddresses,
-		"assigned-addresses": calculator.Global.TotalAssignedAddresses,
-		"declined-addresses": calculator.Global.TotalDeclinedAddresses,
-		"total-nas":          calculator.Global.TotalNAs,
-		"assigned-nas":       calculator.Global.TotalAssignedNAs,
-		"declined-nas":       calculator.Global.TotalDeclinedNAs,
-		"assigned-pds":       calculator.Global.TotalAssignedPDs,
-		"total-pds":          calculator.Global.TotalPDs,
+		"total-addresses":    calculator.global.totalAddresses,
+		"assigned-addresses": calculator.global.totalAssignedAddresses,
+		"declined-addresses": calculator.global.totalDeclinedAddresses,
+		"total-nas":          calculator.global.totalNAs,
+		"assigned-nas":       calculator.global.totalAssignedNAs,
+		"declined-nas":       calculator.global.totalDeclinedNAs,
+		"assigned-pds":       calculator.global.totalAssignedPDs,
+		"total-pds":          calculator.global.totalPDs,
 	}
 
 	// update global statistics in db

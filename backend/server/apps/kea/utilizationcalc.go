@@ -3,113 +3,113 @@ package kea
 import dbmodel "isc.org/stork/server/database/model"
 
 type globalStats struct {
-	TotalAddresses         int64
-	TotalAssignedAddresses int64
-	TotalDeclinedAddresses int64
-	TotalNAs               int64
-	TotalAssignedNAs       int64
-	TotalDeclinedNAs       int64
-	TotalPDs               int64
-	TotalAssignedPDs       int64
+	totalAddresses         int64
+	totalAssignedAddresses int64
+	totalDeclinedAddresses int64
+	totalNAs               int64
+	totalAssignedNAs       int64
+	totalDeclinedNAs       int64
+	totalPDs               int64
+	totalAssignedPDs       int64
 }
 
-func (g *globalStats) AddIPv4Subnet(subnet *subnetIPv4Stats) {
-	g.TotalAddresses += subnet.TotalAddresses
-	g.TotalAssignedAddresses += subnet.TotalAssignedAddresses
-	g.TotalDeclinedAddresses += subnet.TotalDeclinedAddresses
+func (g *globalStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
+	g.totalAddresses += subnet.totalAddresses
+	g.totalAssignedAddresses += subnet.totalAssignedAddresses
+	g.totalDeclinedAddresses += subnet.totalDeclinedAddresses
 }
 
-func (g *globalStats) AddIPv6Subnet(subnet *subnetIPv6Stats) {
-	g.TotalNAs += subnet.TotalNAs
-	g.TotalAssignedNAs += subnet.TotalAssignedNAs
-	g.TotalDeclinedNAs += subnet.TotalDeclinedNAs
-	g.TotalPDs += subnet.TotalPDs
-	g.TotalAssignedPDs += subnet.TotalAssignedPDs
+func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
+	g.totalNAs += subnet.totalNAs
+	g.totalAssignedNAs += subnet.totalAssignedNAs
+	g.totalDeclinedNAs += subnet.totalDeclinedNAs
+	g.totalPDs += subnet.totalPDs
+	g.totalAssignedPDs += subnet.totalAssignedPDs
 }
 
-type Utilization interface {
-	AddressUtilization() float64
-	PDUtilization() float64
+type utilization interface {
+	addressUtilization() float64
+	pdUtilization() float64
 }
 
 type sharedNetworkStats struct {
-	TotalAddresses         int64
-	TotalAssignedAddresses int64
-	TotalPDs               int64
-	TotalAssignedPDs       int64
+	totalAddresses         int64
+	totalAssignedAddresses int64
+	totalPDs               int64
+	totalAssignedPDs       int64
 }
 
-func (s *sharedNetworkStats) AddressUtilization() float64 {
+func (s *sharedNetworkStats) addressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
-	return safeFloatingDiv(s.TotalAssignedAddresses, s.TotalAddresses)
+	return safeFloatingDiv(s.totalAssignedAddresses, s.totalAddresses)
 }
 
-func (s *sharedNetworkStats) PDUtilization() float64 {
+func (s *sharedNetworkStats) pdUtilization() float64 {
 	// The assigned pds includes the declined pds that aren't reclaimed yet.
-	return safeFloatingDiv(s.TotalAssignedPDs, s.TotalPDs)
+	return safeFloatingDiv(s.totalAssignedPDs, s.totalPDs)
 }
 
-func (s *sharedNetworkStats) AddIPv4Subnet(subnet *subnetIPv4Stats) {
-	s.TotalAddresses += subnet.TotalAddresses
-	s.TotalAssignedAddresses += subnet.TotalAssignedAddresses
+func (s *sharedNetworkStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
+	s.totalAddresses += subnet.totalAddresses
+	s.totalAssignedAddresses += subnet.totalAssignedAddresses
 }
 
-func (s *sharedNetworkStats) AddIPv6Subnet(subnet *subnetIPv6Stats) {
-	s.TotalAddresses += subnet.TotalNAs
-	s.TotalAssignedAddresses += subnet.TotalAssignedNAs
-	s.TotalPDs += subnet.TotalPDs
-	s.TotalAssignedPDs += subnet.TotalAssignedPDs
+func (s *sharedNetworkStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
+	s.totalAddresses += subnet.totalNAs
+	s.totalAssignedAddresses += subnet.totalAssignedNAs
+	s.totalPDs += subnet.totalPDs
+	s.totalAssignedPDs += subnet.totalAssignedPDs
 }
 
 type subnetIPv4Stats struct {
-	TotalAddresses         int64
-	TotalAssignedAddresses int64
-	TotalDeclinedAddresses int64
+	totalAddresses         int64
+	totalAssignedAddresses int64
+	totalDeclinedAddresses int64
 }
 
-func (s *subnetIPv4Stats) AddressUtilization() float64 {
+func (s *subnetIPv4Stats) addressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
-	return safeFloatingDiv(s.TotalAssignedAddresses, s.TotalAddresses)
+	return safeFloatingDiv(s.totalAssignedAddresses, s.totalAddresses)
 }
 
-func (s *subnetIPv4Stats) PDUtilization() float64 {
+func (s *subnetIPv4Stats) pdUtilization() float64 {
 	return 0.0
 }
 
 type subnetIPv6Stats struct {
-	TotalNAs         int64
-	TotalAssignedNAs int64
-	TotalDeclinedNAs int64
-	TotalPDs         int64
-	TotalAssignedPDs int64
+	totalNAs         int64
+	totalAssignedNAs int64
+	totalDeclinedNAs int64
+	totalPDs         int64
+	totalAssignedPDs int64
 }
 
-func (s *subnetIPv6Stats) AddressUtilization() float64 {
+func (s *subnetIPv6Stats) addressUtilization() float64 {
 	// The assigned NAs include the declined nas that aren't reclaimed yet.
-	return safeFloatingDiv(s.TotalAssignedNAs, s.TotalNAs)
+	return safeFloatingDiv(s.totalAssignedNAs, s.totalNAs)
 }
 
-func (s *subnetIPv6Stats) PDUtilization() float64 {
+func (s *subnetIPv6Stats) pdUtilization() float64 {
 	// The assigned pds includes the declined pds that aren't reclaimed yet.
-	return safeFloatingDiv(s.TotalAssignedPDs, s.TotalPDs)
+	return safeFloatingDiv(s.totalAssignedPDs, s.totalPDs)
 }
 
-type UtilizationCalculator struct {
-	Global         globalStats
-	SharedNetworks map[int64]*sharedNetworkStats
+type utilizationCalculator struct {
+	global         globalStats
+	sharedNetworks map[int64]*sharedNetworkStats
 }
 
-func NewUtilizationCalculator() *UtilizationCalculator {
-	return &UtilizationCalculator{
-		SharedNetworks: make(map[int64]*sharedNetworkStats),
+func newUtilizationCalculator() *utilizationCalculator {
+	return &utilizationCalculator{
+		sharedNetworks: make(map[int64]*sharedNetworkStats),
 	}
 }
 
-func (c *UtilizationCalculator) Add(subnet *dbmodel.Subnet) Utilization {
+func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) utilization {
 	if subnet.SharedNetworkID != 0 {
-		_, ok := c.SharedNetworks[subnet.SharedNetworkID]
+		_, ok := c.sharedNetworks[subnet.SharedNetworkID]
 		if !ok {
-			c.SharedNetworks[subnet.SharedNetworkID] = &sharedNetworkStats{}
+			c.sharedNetworks[subnet.SharedNetworkID] = &sharedNetworkStats{}
 		}
 	}
 
@@ -119,36 +119,36 @@ func (c *UtilizationCalculator) Add(subnet *dbmodel.Subnet) Utilization {
 	return c.addIPv4Subnet(subnet)
 }
 
-func (c *UtilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet) *subnetIPv4Stats {
+func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet) *subnetIPv4Stats {
 	stats := &subnetIPv4Stats{
-		TotalAddresses:         sumStatLocalSubnets(subnet, "total-addresses"),
-		TotalAssignedAddresses: sumStatLocalSubnets(subnet, "assigned-addresses"),
-		TotalDeclinedAddresses: sumStatLocalSubnets(subnet, "declined-addresses"),
+		totalAddresses:         sumStatLocalSubnets(subnet, "total-addresses"),
+		totalAssignedAddresses: sumStatLocalSubnets(subnet, "assigned-addresses"),
+		totalDeclinedAddresses: sumStatLocalSubnets(subnet, "declined-addresses"),
 	}
 
 	if subnet.SharedNetworkID != 0 {
-		c.SharedNetworks[subnet.SharedNetworkID].AddIPv4Subnet(stats)
+		c.sharedNetworks[subnet.SharedNetworkID].addIPv4Subnet(stats)
 	}
 
-	c.Global.AddIPv4Subnet(stats)
+	c.global.addIPv4Subnet(stats)
 
 	return stats
 }
 
-func (c *UtilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet) *subnetIPv6Stats {
+func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		TotalNAs:         sumStatLocalSubnets(subnet, "total-nas"),
-		TotalAssignedNAs: sumStatLocalSubnets(subnet, "assigned-nas"),
-		TotalDeclinedNAs: sumStatLocalSubnets(subnet, "declined-nas"),
-		TotalPDs:         sumStatLocalSubnets(subnet, "total-pds"),
-		TotalAssignedPDs: sumStatLocalSubnets(subnet, "assigned-pds"),
+		totalNAs:         sumStatLocalSubnets(subnet, "total-nas"),
+		totalAssignedNAs: sumStatLocalSubnets(subnet, "assigned-nas"),
+		totalDeclinedNAs: sumStatLocalSubnets(subnet, "declined-nas"),
+		totalPDs:         sumStatLocalSubnets(subnet, "total-pds"),
+		totalAssignedPDs: sumStatLocalSubnets(subnet, "assigned-pds"),
 	}
 
 	if subnet.SharedNetworkID != 0 {
-		c.SharedNetworks[subnet.SharedNetworkID].AddIPv6Subnet(stats)
+		c.sharedNetworks[subnet.SharedNetworkID].addIPv6Subnet(stats)
 	}
 
-	c.Global.AddIPv6Subnet(stats)
+	c.global.addIPv6Subnet(stats)
 
 	return stats
 }

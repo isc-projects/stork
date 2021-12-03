@@ -10,18 +10,18 @@ import (
 // Test that the utilization calculator is properly constructed.
 func TestCalculatorConstruction(t *testing.T) {
 	// Act
-	calculator := NewUtilizationCalculator()
+	calculator := newUtilizationCalculator()
 
 	// Assert
-	require.EqualValues(t, 0, calculator.Global.TotalAddresses)
-	require.EqualValues(t, 0, calculator.Global.TotalAssignedAddresses)
-	require.EqualValues(t, 0, calculator.Global.TotalDeclinedAddresses)
-	require.EqualValues(t, 0, calculator.Global.TotalNAs)
-	require.EqualValues(t, 0, calculator.Global.TotalAssignedNAs)
-	require.EqualValues(t, 0, calculator.Global.TotalDeclinedNAs)
-	require.EqualValues(t, 0, calculator.Global.TotalPDs)
-	require.EqualValues(t, 0, calculator.Global.TotalAssignedPDs)
-	require.Len(t, calculator.SharedNetworks, 0)
+	require.EqualValues(t, 0, calculator.global.totalAddresses)
+	require.EqualValues(t, 0, calculator.global.totalAssignedAddresses)
+	require.EqualValues(t, 0, calculator.global.totalDeclinedAddresses)
+	require.EqualValues(t, 0, calculator.global.totalNAs)
+	require.EqualValues(t, 0, calculator.global.totalAssignedNAs)
+	require.EqualValues(t, 0, calculator.global.totalDeclinedNAs)
+	require.EqualValues(t, 0, calculator.global.totalPDs)
+	require.EqualValues(t, 0, calculator.global.totalAssignedPDs)
+	require.Len(t, calculator.sharedNetworks, 0)
 }
 
 // Test that the calculator returns utilization for IPv4 subnet with single local subnet.
@@ -41,25 +41,25 @@ func TestCalculatorAddSingleIPv4LocalSubnet(t *testing.T) {
 		},
 	}
 
-	calculator := NewUtilizationCalculator()
+	calculator := newUtilizationCalculator()
 
 	// Act
-	utilization := calculator.Add(subnet)
+	utilization := calculator.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(0.1), utilization.AddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), utilization.PDUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.1), utilization.addressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.pdUtilization(), float64(0.001))
 
-	require.EqualValues(t, 100, calculator.Global.TotalAddresses)
-	require.EqualValues(t, 10, calculator.Global.TotalAssignedAddresses)
-	require.EqualValues(t, 20, calculator.Global.TotalDeclinedAddresses)
-	require.EqualValues(t, 0, calculator.Global.TotalNAs)
-	require.EqualValues(t, 0, calculator.Global.TotalAssignedNAs)
-	require.EqualValues(t, 0, calculator.Global.TotalDeclinedNAs)
-	require.EqualValues(t, 0, calculator.Global.TotalPDs)
-	require.EqualValues(t, 0, calculator.Global.TotalAssignedPDs)
+	require.EqualValues(t, 100, calculator.global.totalAddresses)
+	require.EqualValues(t, 10, calculator.global.totalAssignedAddresses)
+	require.EqualValues(t, 20, calculator.global.totalDeclinedAddresses)
+	require.EqualValues(t, 0, calculator.global.totalNAs)
+	require.EqualValues(t, 0, calculator.global.totalAssignedNAs)
+	require.EqualValues(t, 0, calculator.global.totalDeclinedNAs)
+	require.EqualValues(t, 0, calculator.global.totalPDs)
+	require.EqualValues(t, 0, calculator.global.totalAssignedPDs)
 
-	require.Len(t, calculator.SharedNetworks, 0)
+	require.Len(t, calculator.sharedNetworks, 0)
 }
 
 // Test that the calculator returns utilization for IPv6 subnet with single local subnet.
@@ -81,25 +81,25 @@ func TestCalculatorAddSingleIPv6LocalSubnet(t *testing.T) {
 		},
 	}
 
-	calculator := NewUtilizationCalculator()
+	calculator := newUtilizationCalculator()
 
 	// Act
-	utilization := calculator.Add(subnet)
+	utilization := calculator.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(0.4), utilization.AddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.5), utilization.PDUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.4), utilization.addressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.5), utilization.pdUtilization(), float64(0.001))
 
-	require.EqualValues(t, 0, calculator.Global.TotalAddresses)
-	require.EqualValues(t, 0, calculator.Global.TotalAssignedAddresses)
-	require.EqualValues(t, 0, calculator.Global.TotalDeclinedAddresses)
-	require.EqualValues(t, 100, calculator.Global.TotalNAs)
-	require.EqualValues(t, 40, calculator.Global.TotalAssignedNAs)
-	require.EqualValues(t, 30, calculator.Global.TotalDeclinedNAs)
-	require.EqualValues(t, 20, calculator.Global.TotalPDs)
-	require.EqualValues(t, 10, calculator.Global.TotalAssignedPDs)
+	require.EqualValues(t, 0, calculator.global.totalAddresses)
+	require.EqualValues(t, 0, calculator.global.totalAssignedAddresses)
+	require.EqualValues(t, 0, calculator.global.totalDeclinedAddresses)
+	require.EqualValues(t, 100, calculator.global.totalNAs)
+	require.EqualValues(t, 40, calculator.global.totalAssignedNAs)
+	require.EqualValues(t, 30, calculator.global.totalDeclinedNAs)
+	require.EqualValues(t, 20, calculator.global.totalPDs)
+	require.EqualValues(t, 10, calculator.global.totalAssignedPDs)
 
-	require.Len(t, calculator.SharedNetworks, 0)
+	require.Len(t, calculator.sharedNetworks, 0)
 }
 
 // Test that the calculator returns the proper utilization for multiple IPv4 local subnets.
@@ -140,23 +140,23 @@ func TestCalculatorAddMultipleIPv4LocalSubnet(t *testing.T) {
 		},
 	}
 
-	calculator := NewUtilizationCalculator()
+	calculator := newUtilizationCalculator()
 
 	// Act
-	utilization := calculator.Add(subnet)
+	utilization := calculator.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(34.0/355.0), utilization.AddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), utilization.PDUtilization(), float64(0.001))
+	require.InDelta(t, float64(34.0/355.0), utilization.addressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.pdUtilization(), float64(0.001))
 
-	require.EqualValues(t, 355, calculator.Global.TotalAddresses)
-	require.EqualValues(t, 34, calculator.Global.TotalAssignedAddresses)
-	require.EqualValues(t, 63, calculator.Global.TotalDeclinedAddresses)
-	require.EqualValues(t, 0, calculator.Global.TotalNAs)
-	require.EqualValues(t, 0, calculator.Global.TotalAssignedNAs)
-	require.EqualValues(t, 0, calculator.Global.TotalDeclinedNAs)
-	require.EqualValues(t, 0, calculator.Global.TotalPDs)
-	require.EqualValues(t, 0, calculator.Global.TotalAssignedPDs)
+	require.EqualValues(t, 355, calculator.global.totalAddresses)
+	require.EqualValues(t, 34, calculator.global.totalAssignedAddresses)
+	require.EqualValues(t, 63, calculator.global.totalDeclinedAddresses)
+	require.EqualValues(t, 0, calculator.global.totalNAs)
+	require.EqualValues(t, 0, calculator.global.totalAssignedNAs)
+	require.EqualValues(t, 0, calculator.global.totalDeclinedNAs)
+	require.EqualValues(t, 0, calculator.global.totalPDs)
+	require.EqualValues(t, 0, calculator.global.totalAssignedPDs)
 }
 
 // Test that the calculator returns the proper utilization for multiple IPv6 local subnets.
@@ -205,23 +205,23 @@ func TestCalculatorAddMultipleIPv6LocalSubnet(t *testing.T) {
 		},
 	}
 
-	calculator := NewUtilizationCalculator()
+	calculator := newUtilizationCalculator()
 
 	// Act
-	utilization := calculator.Add(subnet)
+	utilization := calculator.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(34.0/355.0), utilization.AddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(44.0/243.0), utilization.PDUtilization(), float64(0.001))
+	require.InDelta(t, float64(34.0/355.0), utilization.addressUtilization(), float64(0.001))
+	require.InDelta(t, float64(44.0/243.0), utilization.pdUtilization(), float64(0.001))
 
-	require.EqualValues(t, 0, calculator.Global.TotalAddresses)
-	require.EqualValues(t, 0, calculator.Global.TotalAssignedAddresses)
-	require.EqualValues(t, 0, calculator.Global.TotalDeclinedAddresses)
-	require.EqualValues(t, 355, calculator.Global.TotalNAs)
-	require.EqualValues(t, 34, calculator.Global.TotalAssignedNAs)
-	require.EqualValues(t, 63, calculator.Global.TotalDeclinedNAs)
-	require.EqualValues(t, 243, calculator.Global.TotalPDs)
-	require.EqualValues(t, 44, calculator.Global.TotalAssignedPDs)
+	require.EqualValues(t, 0, calculator.global.totalAddresses)
+	require.EqualValues(t, 0, calculator.global.totalAssignedAddresses)
+	require.EqualValues(t, 0, calculator.global.totalDeclinedAddresses)
+	require.EqualValues(t, 355, calculator.global.totalNAs)
+	require.EqualValues(t, 34, calculator.global.totalAssignedNAs)
+	require.EqualValues(t, 63, calculator.global.totalDeclinedNAs)
+	require.EqualValues(t, 243, calculator.global.totalPDs)
+	require.EqualValues(t, 44, calculator.global.totalAssignedPDs)
 }
 
 // Test that the calculator returns the proper utilization for the shared network.
@@ -274,16 +274,16 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 	}
 
 	// Act
-	calculator := NewUtilizationCalculator()
+	calculator := newUtilizationCalculator()
 	for _, subnet := range subnets {
-		_ = calculator.Add(subnet)
+		_ = calculator.add(subnet)
 	}
 
 	// Assert
-	require.Len(t, calculator.SharedNetworks, 1)
-	utilization := calculator.SharedNetworks[1]
-	require.InDelta(t, float64(140.0/600.0), utilization.AddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(100.0/120.0), utilization.PDUtilization(), float64(0.001))
+	require.Len(t, calculator.sharedNetworks, 1)
+	utilization := calculator.sharedNetworks[1]
+	require.InDelta(t, float64(140.0/600.0), utilization.addressUtilization(), float64(0.001))
+	require.InDelta(t, float64(100.0/120.0), utilization.pdUtilization(), float64(0.001))
 }
 
 // Test that the calculator separates the shared networks during the calculations.
@@ -323,19 +323,19 @@ func TestCalculatorAddMultipleSharedNetworkSubnets(t *testing.T) {
 	}
 
 	// Act
-	calculator := NewUtilizationCalculator()
+	calculator := newUtilizationCalculator()
 	for _, subnet := range subnets {
-		_ = calculator.Add(subnet)
+		_ = calculator.add(subnet)
 	}
 
 	// Assert
-	require.Len(t, calculator.SharedNetworks, 2)
-	utilization := calculator.SharedNetworks[13]
-	require.InDelta(t, float64(10.0/100.0), utilization.AddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(30.0/40.0), utilization.PDUtilization(), float64(0.001))
-	utilization = calculator.SharedNetworks[4]
-	require.InDelta(t, float64(40.0/200.0), utilization.AddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(70.0/80.0), utilization.PDUtilization(), float64(0.001))
+	require.Len(t, calculator.sharedNetworks, 2)
+	utilization := calculator.sharedNetworks[13]
+	require.InDelta(t, float64(10.0/100.0), utilization.addressUtilization(), float64(0.001))
+	require.InDelta(t, float64(30.0/40.0), utilization.pdUtilization(), float64(0.001))
+	utilization = calculator.sharedNetworks[4]
+	require.InDelta(t, float64(40.0/200.0), utilization.addressUtilization(), float64(0.001))
+	require.InDelta(t, float64(70.0/80.0), utilization.pdUtilization(), float64(0.001))
 }
 
 // Test that the calculator works for a subnet without the local subnets.
@@ -348,13 +348,13 @@ func TestCalculatorAddEmptySubnet(t *testing.T) {
 	}
 
 	// Act
-	calculator := NewUtilizationCalculator()
-	utilization := calculator.Add(subnet)
+	calculator := newUtilizationCalculator()
+	utilization := calculator.add(subnet)
 
 	// Assert
-	require.InDelta(t, float64(0.0), utilization.AddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), utilization.PDUtilization(), float64(0.001))
-	utilization = calculator.SharedNetworks[42]
-	require.InDelta(t, float64(0.0), utilization.AddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), utilization.PDUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.addressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.pdUtilization(), float64(0.001))
+	utilization = calculator.sharedNetworks[42]
+	require.InDelta(t, float64(0.0), utilization.addressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.pdUtilization(), float64(0.001))
 }
