@@ -735,7 +735,13 @@ end
 
 desc 'Build container with Stork Agent and Kea with host reseverations in db'
 task :build_kea_premium_container do
-  sh "docker-compose -f ./docker-compose.yaml -f ./docker-compose-premium.yaml build agent-kea-premium"
+  if not ENV['cs_repo_access_token']
+    raise 'ERROR: expected cs_repo_access_token to be set'
+  end
+  if not File.exist?('build-root')
+    raise 'ERROR: build-root not found. Run "rake build_all_in_container" first.'
+  end
+  sh "docker-compose #{DOCKER_COMPOSE_FILES} build #{DOCKER_COMPOSE_PREMIUM_OPTS} agent-kea-premium"
 end
 
 desc 'Run container with Stork Agent and Kea with host reseverations in db'
