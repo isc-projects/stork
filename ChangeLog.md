@@ -1,8 +1,8 @@
 * 177 [bug] slawe
 
     Stork calculates properly the subnet, shared network,
-    and global utilizations. Fixed the problem with more
-    used addresses than available.
+    and global utilizations. Fixed the problem with showing
+    more used addresses than available.
     (Gitlab #560)
 
 * 176 [doc] slawek

@@ -25,7 +25,7 @@ func TestCalculatorConstruction(t *testing.T) {
 	require.Len(t, calculator.SharedNetworks, 0)
 }
 
-// Test that the calculator return utilization for IPv4 subnet with single local network.
+// Test that the calculator returns utilization for IPv4 subnet with single local subnet.
 func TestCalculatorAddSingleIPv4LocalSubnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
@@ -63,7 +63,7 @@ func TestCalculatorAddSingleIPv4LocalSubnet(t *testing.T) {
 	require.Len(t, calculator.SharedNetworks, 0)
 }
 
-// Test that the calculator return utilization for IPv6 subnet with single local network.
+// Test that the calculator returns utilization for IPv6 subnet with single local subnet.
 func TestCalculatorAddSingleIPv6LocalSubnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{

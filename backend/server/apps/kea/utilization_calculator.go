@@ -40,7 +40,7 @@ type sharedNetworkStats struct {
 }
 
 func (s *sharedNetworkStats) AddressUtilization() float64 {
-	// The assigned addresses includes the declined addresses that aren't reclaimed yet.
+	// The assigned addresses include the declined addresses that aren't reclaimed yet.
 	return safeFloatingDiv(s.TotalAssignedAddresses, s.TotalAddresses)
 }
 
@@ -68,7 +68,7 @@ type subnetIPv4Stats struct {
 }
 
 func (s *subnetIPv4Stats) AddressUtilization() float64 {
-	// The assigned addresses includes the declined addresses that aren't reclaimed yet.
+	// The assigned addresses include the declined addresses that aren't reclaimed yet.
 	return safeFloatingDiv(s.TotalAssignedAddresses, s.TotalAddresses)
 }
 
@@ -85,7 +85,7 @@ type subnetIPv6Stats struct {
 }
 
 func (s *subnetIPv6Stats) AddressUtilization() float64 {
-	// The assigned nas includes the declined nas that aren't reclaimed yet.
+	// The assigned NAs include the declined nas that aren't reclaimed yet.
 	return safeFloatingDiv(s.TotalAssignedNAs, s.TotalNAs)
 }
 
