@@ -53,7 +53,6 @@ func (s *sharedNetworkStats) getAddressUtilization() float64 {
 
 // PD utilization of the shared network.
 func (s *sharedNetworkStats) getPDUtilization() float64 {
-	// The assigned pds includes the declined pds that aren't reclaimed yet.
 	return safeFloatingDiv(s.totalAssignedPDs, s.totalPDs)
 }
 
@@ -107,7 +106,6 @@ func (s *subnetIPv6Stats) getAddressUtilization() float64 {
 
 // Return the PD utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) getPDUtilization() float64 {
-	// The assigned pds includes the declined pds that aren't reclaimed yet.
 	return safeFloatingDiv(s.totalAssignedPDs, s.totalPDs)
 }
 
