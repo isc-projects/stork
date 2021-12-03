@@ -1,7 +1,7 @@
 * 178 [doc] slawek
 
     Extended the comments in the files with environment variables.
-    Unified them with the man.
+    Unified them with the man pages.
     (Gitlab #632)
 
 * 177 [bug] slawek
