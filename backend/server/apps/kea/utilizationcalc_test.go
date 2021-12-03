@@ -29,7 +29,7 @@ func TestCalculatorAddSingleIPv4LocalSubnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
 		SharedNetworkID: 0,
-		Prefix:          "127.0.0.1",
+		Prefix:          "127.0.0.1/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				Stats: map[string]interface{}{
@@ -67,7 +67,7 @@ func TestCalculatorAddSingleIPv6LocalSubnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
 		SharedNetworkID: 0,
-		Prefix:          "20::",
+		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				Stats: map[string]interface{}{
@@ -107,7 +107,7 @@ func TestCalculatorAddMultipleIPv4LocalSubnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
 		SharedNetworkID: 0,
-		Prefix:          "127.0.0.1",
+		Prefix:          "127.0.0.1/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				Stats: map[string]interface{}{
@@ -164,7 +164,7 @@ func TestCalculatorAddMultipleIPv6LocalSubnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
 		SharedNetworkID: 0,
-		Prefix:          "20::",
+		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				Stats: map[string]interface{}{
@@ -230,7 +230,7 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 	subnets := []*dbmodel.Subnet{
 		{
 			SharedNetworkID: 1,
-			Prefix:          "20::",
+			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
 					Stats: map[string]interface{}{
@@ -245,7 +245,7 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 		},
 		{
 			SharedNetworkID: 1,
-			Prefix:          "20::",
+			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
 					Stats: map[string]interface{}{
@@ -260,7 +260,7 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 		},
 		{
 			SharedNetworkID: 1,
-			Prefix:          "127.0.0.1",
+			Prefix:          "127.0.0.1/24",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
 					Stats: map[string]interface{}{
@@ -292,7 +292,7 @@ func TestCalculatorAddMultipleSharedNetworkSubnets(t *testing.T) {
 	subnets := []*dbmodel.Subnet{
 		{
 			SharedNetworkID: 13,
-			Prefix:          "20::",
+			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
 					Stats: map[string]interface{}{
@@ -307,7 +307,7 @@ func TestCalculatorAddMultipleSharedNetworkSubnets(t *testing.T) {
 		},
 		{
 			SharedNetworkID: 4,
-			Prefix:          "20::",
+			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
 					Stats: map[string]interface{}{
@@ -343,7 +343,7 @@ func TestCalculatorAddEmptySubnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
 		SharedNetworkID: 42,
-		Prefix:          "20::",
+		Prefix:          "20::/64",
 		LocalSubnets:    []*dbmodel.LocalSubnet{},
 	}
 
