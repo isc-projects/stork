@@ -1,17 +1,16 @@
-package kea_test
+package kea
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"isc.org/stork/server/apps/kea"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
 // Test that the utilization calculator is properly constructed.
 func TestCalculatorConstruction(t *testing.T) {
 	// Act
-	calculator := kea.NewUtilizationCalculator()
+	calculator := NewUtilizationCalculator()
 
 	// Assert
 	require.EqualValues(t, 0, calculator.Global.TotalAddresses)
@@ -42,7 +41,7 @@ func TestCalculatorAddSingleIPv4LocalSubnet(t *testing.T) {
 		},
 	}
 
-	calculator := kea.NewUtilizationCalculator()
+	calculator := NewUtilizationCalculator()
 
 	// Act
 	utilization := calculator.Add(subnet)
@@ -82,7 +81,7 @@ func TestCalculatorAddSingleIPv6LocalSubnet(t *testing.T) {
 		},
 	}
 
-	calculator := kea.NewUtilizationCalculator()
+	calculator := NewUtilizationCalculator()
 
 	// Act
 	utilization := calculator.Add(subnet)
@@ -141,7 +140,7 @@ func TestCalculatorAddMultipleIPv4LocalSubnet(t *testing.T) {
 		},
 	}
 
-	calculator := kea.NewUtilizationCalculator()
+	calculator := NewUtilizationCalculator()
 
 	// Act
 	utilization := calculator.Add(subnet)
@@ -206,7 +205,7 @@ func TestCalculatorAddMultipleIPv6LocalSubnet(t *testing.T) {
 		},
 	}
 
-	calculator := kea.NewUtilizationCalculator()
+	calculator := NewUtilizationCalculator()
 
 	// Act
 	utilization := calculator.Add(subnet)
@@ -275,7 +274,7 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 	}
 
 	// Act
-	calculator := kea.NewUtilizationCalculator()
+	calculator := NewUtilizationCalculator()
 	for _, subnet := range subnets {
 		_ = calculator.Add(subnet)
 	}
@@ -324,7 +323,7 @@ func TestCalculatorAddMultipleSharedNetworkSubnets(t *testing.T) {
 	}
 
 	// Act
-	calculator := kea.NewUtilizationCalculator()
+	calculator := NewUtilizationCalculator()
 	for _, subnet := range subnets {
 		_ = calculator.Add(subnet)
 	}
@@ -349,7 +348,7 @@ func TestCalculatorAddEmptySubnet(t *testing.T) {
 	}
 
 	// Act
-	calculator := kea.NewUtilizationCalculator()
+	calculator := NewUtilizationCalculator()
 	utilization := calculator.Add(subnet)
 
 	// Assert
