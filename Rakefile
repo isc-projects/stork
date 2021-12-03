@@ -734,16 +734,16 @@ task :run_kea_ha_containers do
 end
 
 desc 'Build container with Stork Agent and Kea with host reseverations in db'
-task :build_kea_hosts_container do
-  sh "docker-compose #{DOCKER_COMPOSE_FILES} build #{DOCKER_COMPOSE_PREMIUM_OPTS} agent-kea-hosts"
+task :build_kea_premium_container do
+  sh "docker-compose -f ./docker-compose.yaml -f ./docker-compose-premium.yaml build agent-kea-premium"
 end
 
 desc 'Run container with Stork Agent and Kea with host reseverations in db'
-task :run_kea_hosts_container do
+task :run_kea_premium_container do
   at_exit {
-    sh "docker-compose #{DOCKER_COMPOSE_FILES} down"
+    sh "docker-compose -f ./docker-compose.yaml -f ./docker-compose-premium.yaml down"
   }
-  sh "docker-compose #{DOCKER_COMPOSE_FILES} up agent-kea-hosts hosts-db"
+  sh "docker-compose -f ./docker-compose.yaml -f ./docker-compose-premium.yaml up agent-kea-premium hosts-db"
 end
 
 desc 'Build container with Stork Agent and BIND 9'

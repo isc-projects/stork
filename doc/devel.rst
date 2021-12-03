@@ -651,38 +651,38 @@ The following ``Rake`` tasks start these containers.
    :class: longtable
    :widths: 25 75
 
-   +------------------------------------+------------------------------------------------------------+
-   | Rake Task                          | Description                                                |
-   +====================================+============================================================+
-   | ``rake build_kea_container``       | Build a container `agent-kea` with a Stork agent           |
-   |                                    | and Kea with DHCPv4.                                       |
-   +------------------------------------+------------------------------------------------------------+
-   | ``rake run_kea_container``         | Start an `agent-kea` container. Published port is 8888.    |
-   +------------------------------------+------------------------------------------------------------+
-   | ``rake build_kea6_container``      | Build an `agent-kea6` container with a Stork agent         |
-   |                                    | and Kea with DHCPv6.                                       |
-   +------------------------------------+------------------------------------------------------------+
-   | ``rake run_kea6_container``        | Start an `agent-kea6` container. Published port is 8886.   |
-   +------------------------------------+------------------------------------------------------------+
-   | ``rake build_kea_ha_containers``   | Build two containers, `agent-kea-ha1` and `agent-kea-ha2`, |
-   |                                    | that are configured to work together in `High              |
-   |                                    | Availability` mode, with Stork agents, and Kea with DHCPv4.|
-   +------------------------------------+------------------------------------------------------------+
-   | ``rake run_kea_ha_containers``     | Start the `agent-kea-ha1` and `agent-kea-ha2` containers.  |
-   |                                    | Published ports are 8881 and 8882.                         |
-   +------------------------------------+------------------------------------------------------------+
-   | ``rake build_kea_hosts_container`` | Build an `agent-kea-hosts` container with a Stork agent    |
-   |                                    | and Kea with DHCPv4 with host reservations stored in       |
-   |                                    | a database. This requires **premium** features.            |
-   +------------------------------------+------------------------------------------------------------+
-   | ``rake run_kea_hosts_container``   | Start the `agent-kea-hosts` container. This requires       |
-   |                                    | **premium** features.                                      |
-   +------------------------------------+------------------------------------------------------------+
-   | ``rake build_bind9_container``     | Build an `agent-bind9` container with a Stork agent        |
-   |                                    | and BIND 9.                                                |
-   +------------------------------------+------------------------------------------------------------+
-   | ``rake run_bind9_container``       | Start an `agent-bind9` container. Published port is 9999.  |
-   +------------------------------------+------------------------------------------------------------+
+   +----------------------------------------+---------------------------------------------------------------+
+   | Rake Task                              | Description                                                   |
+   +========================================+===============================================================+
+   | ``rake build_kea_container``           | Build a container `agent-kea` with a Stork agent              |
+   |                                        | and Kea with DHCPv4.                                          |
+   +----------------------------------------+---------------------------------------------------------------+
+   | ``rake run_kea_container``             | Start an `agent-kea` container. Published port is 8888.       |
+   +----------------------------------------+---------------------------------------------------------------+
+   | ``rake build_kea6_container``          | Build an `agent-kea6` container with a Stork agent            |
+   |                                        | and Kea with DHCPv6.                                          |
+   +----------------------------------------+---------------------------------------------------------------+
+   | ``rake run_kea6_container``            | Start an `agent-kea6` container. Published port is 8886.      |
+   +----------------------------------------+---------------------------------------------------------------+
+   | ``rake build_kea_ha_containers``       | Build two containers, `agent-kea-ha1` and `agent-kea-ha2`,    |
+   |                                        | that are configured to work together in `High                 |
+   |                                        | Availability` mode, with Stork agents, and Kea with DHCPv4.   |
+   +----------------------------------------+---------------------------------------------------------------+
+   | ``rake run_kea_ha_containers``         | Start the `agent-kea-ha1` and `agent-kea-ha2` containers.     |
+   |                                        | Published ports are 8881 and 8882.                            |
+   +----------------------------------------+---------------------------------------------------------------+
+   | ``rake build_kea_premium_container``   | Build an `agent-kea-premium` container with a Stork agent     |
+   |                                        | and Kea with DHCPv4 with host reservations stored in          |
+   |                                        | a database. This requires **premium** features.               |
+   +----------------------------------------+---------------------------------------------------------------+
+   | ``rake run_kea_premium_container``     | Start the `agent-kea-premium` container. This requires        |
+   |                                        | **premium** features.                                         |
+   +----------------------------------------+---------------------------------------------------------------+
+   | ``rake build_bind9_container``         | Build an `agent-bind9` container with a Stork agent           |
+   |                                        | and BIND 9.                                                   |
+   +----------------------------------------+---------------------------------------------------------------+
+   | ``rake run_bind9_container``           | Start an `agent-bind9` container. Published port is 9999.     |
+   +----------------------------------------+---------------------------------------------------------------+
 
 .. note::
 
