@@ -2,7 +2,7 @@ package kea
 
 import dbmodel "isc.org/stork/server/database/model"
 
-// The sum of statistict from all subnets.
+// The sum of statistics from all subnets.
 type globalStats struct {
 	totalAddresses         int64
 	totalAssignedAddresses int64
@@ -51,7 +51,7 @@ func (s *sharedNetworkStats) getAddressUtilization() float64 {
 	return safeFloatingDiv(s.totalAssignedAddresses, s.totalAddresses)
 }
 
-// PD utilization of the shared network.
+// Delegated prefix utilization of the shared network.
 func (s *sharedNetworkStats) getPDUtilization() float64 {
 	return safeFloatingDiv(s.totalAssignedPDs, s.totalPDs)
 }
@@ -83,7 +83,7 @@ func (s *subnetIPv4Stats) getAddressUtilization() float64 {
 	return safeFloatingDiv(s.totalAssignedAddresses, s.totalAddresses)
 }
 
-// Return the PD utilization for a single IPv4 subnet.
+// Return the delegated prefix utilization for a single IPv4 subnet.
 // It's always zero because the PD doesn't apply to IPv4.
 func (s *subnetIPv4Stats) getPDUtilization() float64 {
 	return 0.0
@@ -98,19 +98,20 @@ type subnetIPv6Stats struct {
 	totalAssignedPDs int64
 }
 
-// Return the NAS (address) utilization for a single IPv6 subnet.
+// Return the IPv6 address utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) getAddressUtilization() float64 {
-	// The assigned NAs include the declined nas that aren't reclaimed yet.
+	// The assigned addresses include the declined ones that aren't reclaimed yet.
 	return safeFloatingDiv(s.totalAssignedNAs, s.totalNAs)
 }
 
-// Return the PD utilization for a single IPv6 subnet.
+// Return the delegated prefix utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) getPDUtilization() float64 {
 	return safeFloatingDiv(s.totalAssignedPDs, s.totalPDs)
 }
 
-// Utilization calculator is a helper for calculate the global address/NAS/PD statistics
-// and utilization per subnet and shared network.
+// Utilization calculator is a helper for calculating the global
+// IPv4 address/NA/PD statistic and utilization per subnet and
+// shared network.
 type utilizationCalculator struct {
 	global         globalStats
 	sharedNetworks map[int64]*sharedNetworkStats
@@ -201,7 +202,7 @@ func getLocalSubnetStatValueIntOrDefault(localSubnet *dbmodel.LocalSubnet, name 
 	return int64(valueFloat)
 }
 
-// Perform the safe, floating division on the integers.
+// Perform the safe floating division on the integers.
 // "Safe" means that the dividend can equal zero.
 func safeFloatingDiv(a, b int64) float64 {
 	if b == 0.0 {
