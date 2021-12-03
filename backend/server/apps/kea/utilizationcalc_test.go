@@ -29,7 +29,7 @@ func TestCalculatorAddSingleIPv4LocalSubnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
 		SharedNetworkID: 0,
-		Prefix:          "127.0.0.1/24",
+		Prefix:          "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				Stats: map[string]interface{}{
@@ -107,7 +107,7 @@ func TestCalculatorAddMultipleIPv4LocalSubnet(t *testing.T) {
 	// Arrange
 	subnet := &dbmodel.Subnet{
 		SharedNetworkID: 0,
-		Prefix:          "127.0.0.1/24",
+		Prefix:          "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				Stats: map[string]interface{}{
@@ -260,7 +260,7 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 		},
 		{
 			SharedNetworkID: 1,
-			Prefix:          "127.0.0.1/24",
+			Prefix:          "192.0.2.0/24",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
 					Stats: map[string]interface{}{
