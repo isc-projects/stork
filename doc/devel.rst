@@ -649,7 +649,7 @@ The following ``Rake`` tasks start these containers.
 
 .. table:: Rake tasks for managing development containers.
    :class: longtable
-   :widths: 25 75
+   :widths: 26 74
 
    +----------------------------------------+---------------------------------------------------------------+
    | Rake Task                              | Description                                                   |
