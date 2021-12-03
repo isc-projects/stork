@@ -193,12 +193,12 @@ func getLocalSubnetStatValueIntOrDefault(localSubnet *dbmodel.LocalSubnet, name 
 		return 0
 	}
 
-	valueInt, ok := value.(float64)
+	valueFloat, ok := value.(float64)
 	if !ok {
 		return 0
 	}
 
-	return int64(valueInt)
+	return int64(valueFloat)
 }
 
 // Perform the safe, floating division on the integers.
