@@ -30,11 +30,11 @@ func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
 	g.totalAssignedPDs += subnet.totalAssignedPDs
 }
 
-// General subnet utilization.
-// It unifies the IPv4 and IPv6 subnet utilization.
-type utilization interface {
-	addressUtilization() float64
-	pdUtilization() float64
+// General subnet lease statistics.
+// It unifies the IPv4 and IPv6 subnet data.
+type leaseStats interface {
+	getAddressUtilization() float64
+	getPDUtilization() float64
 }
 
 // Sum of the subnet statistics from the single shared network.
@@ -46,13 +46,13 @@ type sharedNetworkStats struct {
 }
 
 // Address utilization of the shared network.
-func (s *sharedNetworkStats) addressUtilization() float64 {
+func (s *sharedNetworkStats) getAddressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
 	return safeFloatingDiv(s.totalAssignedAddresses, s.totalAddresses)
 }
 
 // PD utilization of the shared network.
-func (s *sharedNetworkStats) pdUtilization() float64 {
+func (s *sharedNetworkStats) getPDUtilization() float64 {
 	// The assigned pds includes the declined pds that aren't reclaimed yet.
 	return safeFloatingDiv(s.totalAssignedPDs, s.totalPDs)
 }
@@ -79,14 +79,14 @@ type subnetIPv4Stats struct {
 }
 
 // Return the address utilization for a single IPv4 subnet.
-func (s *subnetIPv4Stats) addressUtilization() float64 {
+func (s *subnetIPv4Stats) getAddressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
 	return safeFloatingDiv(s.totalAssignedAddresses, s.totalAddresses)
 }
 
 // Return the PD utilization for a single IPv4 subnet.
 // It's always zero because the PD doesn't apply to IPv4.
-func (s *subnetIPv4Stats) pdUtilization() float64 {
+func (s *subnetIPv4Stats) getPDUtilization() float64 {
 	return 0.0
 }
 
@@ -100,13 +100,13 @@ type subnetIPv6Stats struct {
 }
 
 // Return the NAS (address) utilization for a single IPv6 subnet.
-func (s *subnetIPv6Stats) addressUtilization() float64 {
+func (s *subnetIPv6Stats) getAddressUtilization() float64 {
 	// The assigned NAs include the declined nas that aren't reclaimed yet.
 	return safeFloatingDiv(s.totalAssignedNAs, s.totalNAs)
 }
 
 // Return the PD utilization for a single IPv6 subnet.
-func (s *subnetIPv6Stats) pdUtilization() float64 {
+func (s *subnetIPv6Stats) getPDUtilization() float64 {
 	// The assigned pds includes the declined pds that aren't reclaimed yet.
 	return safeFloatingDiv(s.totalAssignedPDs, s.totalPDs)
 }
@@ -127,7 +127,7 @@ func newUtilizationCalculator() *utilizationCalculator {
 
 // Add the subnet statistics for the current calculator state.
 // It returns the utilization of this subnet.
-func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) utilization {
+func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
 	if subnet.SharedNetworkID != 0 {
 		_, ok := c.sharedNetworks[subnet.SharedNetworkID]
 		if !ok {
