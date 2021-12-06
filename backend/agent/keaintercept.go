@@ -75,7 +75,7 @@ func (i *keaInterceptor) register(callback func(*StorkAgent, *keactrl.Response) 
 // This function should be invoked in the goroutine as it invokes the handlers
 // which can be run independently from the agent. The agent may send back the
 // response to the server while these callbacks are invoked. The result of the
-// callbacks do not affect the response forwarded to the Stork server.
+// callbacks do not affect the response forwarded to the Stork Server.
 func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaRequest, response []byte) {
 	// Parse the request to get the command name and service.
 	command, err := keactrl.NewCommandFromJSON(request.Request)

@@ -150,7 +150,7 @@ func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 // example, if the property value is 01:01:01:01, the caller should select the
 // lease4-get-by-hw-address, lease4-get-by-client-id and lease6-get-by-duid
 // commands. The specified commands are combined in a single gRPC transaction
-// to minimize the number of roundtrips between the Stork server and an agent.
+// to minimize the number of roundtrips between the Stork Server and an agent.
 func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, propertyValue string, commandNames ...string) (leases []dbmodel.Lease, warns bool, err error) {
 	var commands []*keactrl.Command
 	for _, commandName := range commandNames {
@@ -230,7 +230,7 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 
 	ctx := context.Background()
 
-	// Send all commands to Kea via Stork agent.
+	// Send all commands to Kea via Stork Agent.
 	respResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, commands, responses...)
 	if err != nil {
 		return leases, false, err

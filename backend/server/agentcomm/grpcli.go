@@ -181,7 +181,7 @@ func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, dbApp
 		},
 	}
 
-	// Send the command to the Stork agent.
+	// Send the command to the Stork Agent.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, req)
 	if err != nil {
 		if agent, agentExists := agents.AgentsMap[addrPort]; agentExists {
@@ -290,7 +290,7 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agen
 		Request: "",
 	}
 
-	// Send the commands to the Stork agent.
+	// Send the commands to the Stork Agent.
 	storkRsp, err := agents.sendAndRecvViaQueue(addrPort, storkReq)
 	if err != nil {
 		if agent, agentExists := agents.AgentsMap[addrPort]; agentExists {
@@ -399,7 +399,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbA
 		})
 	}
 
-	// Send the commands to the Stork agent.
+	// Send the commands to the Stork Agent.
 	resp, err := agents.sendAndRecvViaQueue(addrPort, fdReq)
 
 	// This should always return an agent but we make this check to be safe

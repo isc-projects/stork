@@ -204,7 +204,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	}
 	ss.RestAPI = r
 
-	ss.EventCenter.AddInfoEvent("started Stork server", "version: "+stork.Version+"\nbuild date: "+stork.BuildDate)
+	ss.EventCenter.AddInfoEvent("started Stork Server", "version: "+stork.Version+"\nbuild date: "+stork.BuildDate)
 
 	return ss, nil
 }
@@ -220,7 +220,7 @@ func (ss *StorkServer) Serve() {
 
 // Shutdown for Stork Server state.
 func (ss *StorkServer) Shutdown() {
-	ss.EventCenter.AddInfoEvent("shutting down Stork server")
+	ss.EventCenter.AddInfoEvent("shutting down Stork Server")
 	log.Println("Shutting down Stork Server")
 	ss.RestAPI.Shutdown()
 	ss.Pullers.HAStatusPuller.Shutdown()

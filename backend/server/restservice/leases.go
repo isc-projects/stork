@@ -18,7 +18,7 @@ import (
 // This call searches for leases allocated by monitored DHCP servers.
 // The text parameter may contain an IP address, delegated prefix,
 // MAC address, client identifier, hostname or the text state:declined.
-// The Stork server tries to identify the specified value type and
+// The Stork Server tries to identify the specified value type and
 // sends queries to the Kea servers to find a lease or multiple leases.
 func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) middleware.Responder {
 	leases := &models.Leases{

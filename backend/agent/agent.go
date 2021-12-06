@@ -54,7 +54,7 @@ func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor) *StorkAgent {
 	return sa
 }
 
-// Read the latest root CA cert from file for Stork server's cert verification.
+// Read the latest root CA cert from file for Stork Server's cert verification.
 func getRootCertificates(params *advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
 	certPool := x509.NewCertPool()
 	ca, err := ioutil.ReadFile(RootCAFile)
@@ -75,7 +75,7 @@ func getRootCertificates(params *advancedtls.GetRootCAsParams) (*advancedtls.Get
 	}, nil
 }
 
-// Read the latest Stork agent's cert from file for presenting its identity to the Stork server.
+// Read the latest Stork Agent's cert from file for presenting its identity to the Stork server.
 func getIdentityCertificatesForServer(info *tls.ClientHelloInfo) ([]*tls.Certificate, error) {
 	keyPEM, err := ioutil.ReadFile(KeyPEMFile)
 	if err != nil {
@@ -198,7 +198,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 	return &state, nil
 }
 
-// ForwardRndcCommand forwards one rndc command sent by the Stork server to
+// ForwardRndcCommand forwards one rndc command sent by the Stork Server to
 // the named daemon.
 func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.ForwardRndcCommandReq) (*agentapi.ForwardRndcCommandRsp, error) {
 	rndcRsp := &agentapi.RndcResponse{
@@ -293,7 +293,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 	return response, nil
 }
 
-// Forwards one or more Kea commands sent by the Stork server to the appropriate Kea instance over
+// Forwards one or more Kea commands sent by the Stork Server to the appropriate Kea instance over
 // HTTP (via Control Agent).
 func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.ForwardToKeaOverHTTPReq) (*agentapi.ForwardToKeaOverHTTPRsp, error) {
 	// prepare base response

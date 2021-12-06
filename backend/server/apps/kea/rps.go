@@ -319,7 +319,7 @@ func calculateRps(totals []*dbmodel.RpsInterval) int {
 
 // Returns the statistic value and sample time from a given row within a
 // a list of samples.  Note that rather than use the sample time in the list,
-// We use current Stork server time so interval times across Daemons are
+// We use current Stork Server time so interval times across Daemons are
 // consistent and relative to us. In other words, we don't care when Kea
 // modified the value, we care about when we got it.
 func getFirstSample(samples []interface{}) (int64, time.Time, error) {

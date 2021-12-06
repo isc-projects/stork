@@ -30,7 +30,7 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Get version of Stork server.
+// Get version of Stork Server.
 func (r *RestAPI) GetVersion(ctx context.Context, params general.GetVersionParams) middleware.Responder {
 	bd := stork.BuildDate
 	v := stork.Version

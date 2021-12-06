@@ -175,7 +175,7 @@ func generateCerts(agentAddr string, regenCerts bool) ([]byte, string, error) {
 	return csrPEM, fingerprintStr, nil
 }
 
-// Prepare agent registration request payload to Stork server in JSON format.
+// Prepare agent registration request payload to Stork Server in JSON format.
 func prepareRegistrationRequestPayload(csrPEM []byte, serverToken, agentToken, agentAddr string, agentPort int) (*bytes.Buffer, error) {
 	values := map[string]interface{}{
 		"address":     agentAddr,
@@ -191,7 +191,7 @@ func prepareRegistrationRequestPayload(csrPEM []byte, serverToken, agentToken, a
 	return bytes.NewBuffer(jsonValue), nil
 }
 
-// Register agent in Stork server under provided URL using reqPayload in request.
+// Register agent in Stork Server under provided URL using reqPayload in request.
 // If retry is true then registration is repeated until it connection to server
 // is established. This case is used when agent automatically tries to register
 // during startup.
@@ -327,7 +327,7 @@ func checkAndStoreCerts(serverCACert, agentCert string) error {
 	return nil
 }
 
-// Ping Stork agent service via Stork server. It is used during manual registration
+// Ping Stork Agent service via Stork Server. It is used during manual registration
 // to confirm that TLS connection between agent and server can be established.
 func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int64, serverToken, agentToken string) error {
 	urlSuffix := fmt.Sprintf("api/machines/%d/ping", machineID)
@@ -446,7 +446,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		log.Printf("machine will be automatically authorized using server token")
 	}
 
-	// prepare http client to connect to Stork server
+	// prepare http client to connect to Stork Server
 	client := &http.Client{}
 
 	// register new machine i.e. current agent
@@ -455,7 +455,7 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 		log.Errorln(err.Error())
 		return false
 	}
-	log.Println("try to register agent in Stork server")
+	log.Println("try to register agent in Stork Server")
 	machineID, serverCACert, agentCert, err := registerAgentInServer(client, baseSrvURL, reqPayload, retry)
 	if err != nil {
 		log.Errorln(err.Error())

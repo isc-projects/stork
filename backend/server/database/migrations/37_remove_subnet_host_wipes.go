@@ -9,7 +9,7 @@ func init() {
 		_, err := db.Exec(`
              -- We no longer want to automatically delete the subnets or hosts
              -- which aren't associated with any app. Such subnets and hosts can
-             -- be explicitly deleted by the Stork server.
+             -- be explicitly deleted by the Stork Server.
              DROP TRIGGER IF EXISTS trigger_wipe_dangling_subnet ON local_subnet;
              DROP FUNCTION IF EXISTS wipe_dangling_subnet;
              DROP TRIGGER IF EXISTS trigger_wipe_dangling_host ON local_host;
@@ -19,7 +19,7 @@ func init() {
              -- We will need to add a new column daemon_id to local_host and
              -- local_subnet but it is quite difficult to retrieve the daemon_id
              -- from the data currently held in the database. Therefore, we delete
-             -- the existing data and let the Stork server fetch them again
+             -- the existing data and let the Stork Server fetch them again
              -- ensuring the correctness of the new daemon_id value.
              DELETE FROM subnet;
              DELETE FROM host;

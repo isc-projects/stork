@@ -17,7 +17,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Set of Stork server metrics.
+// Set of Stork Server metrics.
 type metrics struct {
 	Registry *prometheus.Registry
 	db       *pg.DB

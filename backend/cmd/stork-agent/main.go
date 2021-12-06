@@ -26,7 +26,7 @@ func runAgent(settings *cli.Context) {
 	if settings.String("server-url") != "" {
 		portStr := strconv.FormatInt(settings.Int64("port"), 10)
 		if !agent.Register(settings.String("server-url"), "", settings.String("host"), portStr, false, true) {
-			log.Fatalf("problem with agent registration in Stork server, exiting")
+			log.Fatalf("problem with agent registration in Stork Server, exiting")
 		}
 	}
 
@@ -111,13 +111,13 @@ func setupApp() *cli.App {
 			&cli.StringFlag{
 				Name:    "host",
 				Value:   "0.0.0.0",
-				Usage:   "the IP or hostname to listen on for incoming Stork server connection",
+				Usage:   "the IP or hostname to listen on for incoming Stork Server connection",
 				EnvVars: []string{"STORK_AGENT_ADDRESS"},
 			},
 			&cli.IntFlag{
 				Name:    "port",
 				Value:   8080,
-				Usage:   "the TCP port to listen on for incoming Stork server connection",
+				Usage:   "the TCP port to listen on for incoming Stork Server connection",
 				EnvVars: []string{"STORK_AGENT_PORT"},
 			},
 			&cli.BoolFlag{
@@ -177,13 +177,13 @@ func setupApp() *cli.App {
 			// Registration related settings
 			&cli.StringFlag{
 				Name:    "server-url",
-				Usage:   "URL of Stork server, used in agent token based registration (optional, alternative to server token based registration)",
+				Usage:   "URL of Stork Server, used in agent token based registration (optional, alternative to server token based registration)",
 				EnvVars: []string{"STORK_AGENT_SERVER_URL"},
 			},
 		},
 		Action: func(c *cli.Context) error {
 			if c.String("server-url") != "" && c.String("host") == "0.0.0.0" {
-				log.Errorf("registration in Stork server cannot be made because agent host address is not provided")
+				log.Errorf("registration in Stork Server cannot be made because agent host address is not provided")
 				log.Fatalf("use --host option or STORK_AGENT_ADDRESS environment variable")
 			}
 
@@ -193,9 +193,9 @@ func setupApp() *cli.App {
 		Commands: []*cli.Command{
 			{
 				Name:      "register",
-				Usage:     "register this machine in Stork server indicated by <server-url>",
+				Usage:     "register this machine in Stork Server indicated by <server-url>",
 				UsageText: "stork-agent register [options]",
-				Description: `Register current agent in Stork server using provided server URL.
+				Description: `Register current agent in Stork Server using provided server URL.
 
 If server access token is provided using --server-token then the agent is automatically
 authorized (server token based registration). Otherwise, the agent requires explicit
@@ -203,13 +203,13 @@ authorization in the server using either UI or ReST API (agent token based regis
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "server-url",
-						Usage:   "URL of Stork server",
+						Usage:   "URL of Stork Server",
 						Aliases: []string{"u"},
 						EnvVars: []string{"STORK_AGENT_SERVER_URL"},
 					},
 					&cli.StringFlag{
 						Name:    "token",
-						Usage:   "access token from Stork server",
+						Usage:   "access token from Stork Server",
 						Aliases: []string{"t"},
 						EnvVars: []string{"STORK_AGENT_SERVER_TOKEN"},
 					},
