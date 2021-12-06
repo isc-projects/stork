@@ -250,7 +250,7 @@ describe('MachinesPageComponent', () => {
         await fixture.whenRenderingDone()
         fixture.detectChanges()
 
-        // Check the dunp button
+        // Check the dump button
         const dumpButton = fixture.debugElement.query(By.css('#dump-single-machine'))
         expect(dumpButton).not.toBeNull()
 

@@ -46,7 +46,7 @@ func (d DBLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Cont
 	query, err := q.FormattedQuery()
 	// FormattedQuery returns a tuple of query and error. The error in most cases is nil, and
 	// we don't want to print it. On the other hand, all logging is printed on stdout. We want
-	// to print here to stder, so it's possible to redirect just the queries to a file.
+	// to print here to stderr, so it's possible to redirect just the queries to a file.
 	if err != nil {
 		// Let's print errors as SQL comments. This will allow trying to run the export as a script.
 		fmt.Fprintf(os.Stderr, "%s -- error:%s\n", query, err)

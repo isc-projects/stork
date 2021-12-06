@@ -14,7 +14,7 @@ func TestInitializeSettings(t *testing.T) {
 
 	var settings []Setting
 
-	// check if settings are empy
+	// check if settings are empty
 	q := db.Model(&settings)
 	err := q.Select()
 	require.NoError(t, err)

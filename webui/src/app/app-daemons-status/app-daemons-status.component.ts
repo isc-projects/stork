@@ -83,7 +83,7 @@ export class AppDaemonsStatusComponent {
      * @param daemon data structure holding the information about the daemon.
      *
      * @returns ban icon if the daemon is not active, times icon if the daemon
-     *          should be active but the communication with it is borken and
+     *          should be active but the communication with it is broken and
      *          check icon if the communication with the active daemon is ok.
      */
     daemonStatusIconName(daemon) {

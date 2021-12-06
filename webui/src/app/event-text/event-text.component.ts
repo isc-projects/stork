@@ -37,7 +37,7 @@ export class EventTextComponent {
         let prevIdx = 0
         this.textParts = []
 
-        // go through all matches and put to textParts slicew ith prev part of _text,
+        // go through all matches and put to textParts slice with prev part of _text,
         // and found entity in match
         for (const m of matches) {
             this.textParts.push(['text', this._text.slice(prevIdx, m.index)])

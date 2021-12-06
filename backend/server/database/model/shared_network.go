@@ -174,7 +174,7 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 		_ = tx.Rollback()
 	}()
 
-	// Delete all subnets blonging to the shared network.
+	// Delete all subnets belonging to the shared network.
 	subnets := []Subnet{}
 	_, err = db.Model(&subnets).
 		Where("subnet.shared_network_id = ?", networkID).

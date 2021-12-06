@@ -108,7 +108,7 @@ func TestNewUserAuthenticate(t *testing.T) {
 	require.True(t, authOk)
 }
 
-// Tests that it is indicated when the user being udpdated is not found in
+// Tests that it is indicated when the user being updated is not found in
 // the database.
 func TestUpdateNoUser(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

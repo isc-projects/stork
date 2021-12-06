@@ -87,7 +87,7 @@ func daemonBelongsToHAService(daemon *dbmodel.Daemon, service *dbmodel.Service) 
 // Next, AddDaemonToService() should be called to associate the daemon with the
 // service in the database. A single daemon may belong to multiple services.
 func DetectHAServices(dbi dbops.DBI, daemon *dbmodel.Daemon) (services []dbmodel.Service) {
-	// We only detct HA services for DHCP daemons. Other daemons do not support it.
+	// We only detect HA services for DHCP daemons. Other daemons do not support it.
 	if daemon.KeaDaemon == nil || daemon.KeaDaemon.KeaDHCPDaemon == nil || daemon.KeaDaemon.Config == nil {
 		return services
 	}

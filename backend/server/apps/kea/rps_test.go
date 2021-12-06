@@ -165,10 +165,10 @@ func TestRpsWorkerValuePermutations(t *testing.T) {
 	// between 200 and 35, this simulates kea-restart, rollover, or stat reset
 	// between 35 and 35, this simulates no packets sent since last pull
 	// between 50 and 0, this simulates kea-restart, rollover, or stat reset
-	// valud of -1 is an invalid value which should be ignored, treated as 0
+	// value of -1 is an invalid value which should be ignored, treated as 0
 	statValues := []int64{100, 200, 35, 35, 50, 0, 10, -1, 17}
 
-	// Array of expected values of RpsPreivous map row
+	// Array of expected values of RpsPrevious map row
 	expectedPrevious := []int64{100, 200, 35, 35, 50, 0, 10, 0, 17}
 
 	// Array of expected RpsInterval.Responses for each interval row added

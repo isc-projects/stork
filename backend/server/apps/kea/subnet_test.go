@@ -407,7 +407,7 @@ func TestDetectNetworksMoveSubnetsAround(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, network.Subnets, 2)
 
-	// Create new configuaration which moves one of the subnets outside of
+	// Create new configuration which moves one of the subnets outside of
 	// the shared network.
 	v4Config0 := `
         {

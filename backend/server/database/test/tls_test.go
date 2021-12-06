@@ -117,14 +117,14 @@ func TestGetTLSConfigRequireCertKeyUnspecified(t *testing.T) {
 }
 
 // Test the require mode with non-existing cert file.
-func TestGetTLSConfigRequireCertDoesntExist(t *testing.T) {
+func TestGetTLSConfigRequireCertDoesNotExist(t *testing.T) {
 	tlsConfig, err := dbops.GetTLSConfig("require", "localhost", "nonexist", "", "")
 	require.Error(t, err)
 	require.Nil(t, tlsConfig)
 }
 
 // Test the require mode with non-existing key file.
-func TestGetTLSConfigRequireKeyDoesntExist(t *testing.T) {
+func TestGetTLSConfigRequireKeyDoesNotExist(t *testing.T) {
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 

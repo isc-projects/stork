@@ -24,7 +24,7 @@ const (
 // KEA
 
 // A structure reflecting Kea DHCP stats for daemon. It is stored
-// as a JSONB value in SQL and unmarshalled in this structure.
+// as a JSONB value in SQL and unmarshaled in this structure.
 type KeaDHCPDaemonStats struct {
 	RPS1            int `pg:"rps1"`
 	RPS2            int `pg:"rps2"`
@@ -166,7 +166,7 @@ type Bind9NamedStats struct {
 }
 
 // A structure reflecting BIND 9 stats for a daemon. It is stored as a JSONB
-// value in SQL and unmarshalled to this structure.
+// value in SQL and unmarshaled to this structure.
 type Bind9DaemonStats struct {
 	ZoneCount          int64
 	AutomaticZoneCount int64

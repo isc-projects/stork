@@ -176,7 +176,7 @@ func updateHAServiceStatus(status *HAServersStatus, daemon *dbmodel.Daemon, serv
 		service.SecondaryStatusCollectedAt = now
 		service.SecondaryLastScopes = status.Local.Scopes
 		service.SecondaryReachable = true
-		// The server which responded to the command was the secondary. Therfore,
+		// The server which responded to the command was the secondary. Therefore,
 		// the primary's state is given as "remote" server's state.
 		primaryLastState = status.Remote.LastState
 

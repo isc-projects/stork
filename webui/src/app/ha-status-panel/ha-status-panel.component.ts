@@ -206,7 +206,7 @@ export class HaStatusPanelComponent {
             'This is the time when the ' +
             this.serverName +
             ' server reported its state for the last time. ' +
-            'This is not neccessarily the time when the state information ' +
+            'This is not necessarily the time when the state information ' +
             'was refreshed in the UI. The presented state information is ' +
             'typically delayed by 10 to 30 seconds because it is cached by the Kea ' +
             'servers and the Stork backend. Caching minimizes the performance ' +

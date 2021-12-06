@@ -110,7 +110,7 @@ describe('JsonTreeRootComponent', () => {
         expect(jsonComponent.secretKeys).toEqual(['token'])
     })
 
-    it('should initialise the inner component with correct defaults', async () => {
+    it('should initialize the inner component with correct defaults', async () => {
         authService.logout()
         authService.login('foo', 'bar', 'baz')
         await fixture.whenStable()

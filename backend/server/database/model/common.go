@@ -15,7 +15,7 @@ const (
 )
 
 // Prepare an order expression based on table name, sortField and sortDir.
-// If sortField does not start with a table name and . then it is prepanded.
+// If sortField does not start with a table name and . then it is prepended.
 // If sortDir is DESC then NULLS LAST is added, if it is ASC then NULLS FIRST
 // is added. Without that records with NULLs in sortField would not be included
 // in the result.

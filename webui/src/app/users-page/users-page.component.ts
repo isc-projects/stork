@@ -69,7 +69,7 @@ export class UserTab {
  * @param passwordKey Name of the key under which the password value can be
  *                    found in the form.
  * @param confirmPasswordKey Name of the key under which the confirmed
- *                           password can be fiund in the form.
+ *                           password can be found in the form.
  * @returns The validator function comparing the passwords.
  */
 function matchPasswords(passwordKey: string, confirmPasswordKey: string) {

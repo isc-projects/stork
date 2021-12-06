@@ -97,7 +97,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * with host details is automatically opened in addition to the hosts list tab.
      *
      * The query parameters control hosts filtering. If they are specified during the
-     * component intitialization the hosts list will be filtered when it is first
+     * component initialization the hosts list will be filtered when it is first
      * displayed and the filters will be visible in the filtering box. This is useful
      * when a user is directed from other views after clicking on a link and wants to
      * see only selected host reservations.
