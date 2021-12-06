@@ -113,7 +113,7 @@ These are containers with 3rd-party services that are required by Stork:
 
 postgres
    This container is essential. It runs the PostgreSQL database that
-   is used by the Stork server. Without it, the Stork Server
+   is used by the Stork Server. Without it, the Stork Server
    produces error messages about an unavailable database.
 prometheus
    Prometheus, a monitoring solution (https://prometheus.io/), uses this
