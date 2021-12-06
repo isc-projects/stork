@@ -14,7 +14,9 @@ The demo installation uses `Docker` and `Docker Compose` to set up all
 - Stork Agent with Kea DHCPv6
 - Stork Agent with Kea HA-1 (high availability server 1)
 - Stork Agent with Kea HA-2 (high availability server 2)
+- Stork Agent with Kea Using Many Subnets
 - Stork Agent with BIND 9
+- Stork Agent with BIND 9-2
 - Stork Environment Simulator
 - PostgreSQL database
 - Prometheus & Grafana
@@ -55,9 +57,9 @@ Premium Features
 It is possible to run the demo with premium features enabled in Kea
 apps. It requires starting the demo with an access token to the Kea premium
 repositories. Access tokens are provided to ISC's paying customers and can be found on
-https://cloudsmith.io/~isc/repos/kea-1-7-prv/setup/#tab-formats-deb. The
+https://cloudsmith.io/~isc/repos/kea-2-0-prv/setup/#tab-formats-deb. The
 token can be found inside this URL on that page:
-``https://dl.cloudsmith.io/${ACCESS_TOKEN}/isc/kea-1-7-prv/cfg/setup/bash.deb.sh``.
+``https://dl.cloudsmith.io/${ACCESS_TOKEN}/isc/kea-2-0-prv/cfg/setup/bash.deb.sh``.
 This web page and the token are available only to paying customers of ISC.
 
 .. code-block:: console
@@ -101,7 +103,11 @@ agent-kea-ha1 and agent-kea-ha2
    other partner becomes unavailable.
 agent-kea-many-subnets
    This container runs an agent with a Kea DHCPv4 server that has many subnets defined in
-   its configuration (about 7000).
+   its configuration (nearly 7000 subnets).
+agent-kea-premium
+   This container runs an agent with a Kea DHCPv4 server connected to a MySQL
+   database containing host reservations. It is only available when
+   premium features have been enabled during the demo build.
 
 These are containers with 3rd-party services that are required by Stork:
 

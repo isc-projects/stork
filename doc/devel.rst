@@ -158,7 +158,7 @@ All these steps are accomplished by Rakefile.
 Backend Unit Tests
 ==================
 
-There are unit tests for the Stork agent and server backends, written in Go.
+There are unit tests for the Stork Agent and Server backends, written in Go.
 They can be run using Rake:
 
 .. code:: console

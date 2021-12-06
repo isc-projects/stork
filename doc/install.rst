@@ -16,13 +16,13 @@ Stork is tested on the following systems:
 
 - Ubuntu 18.04 and 20.04
 - Fedora 31 and 32
-- CentOS 7
-- MacOS 10.15*
+- CentOS 8
+- MacOS 11.3*
 
 Note that MacOS is not and will not be officially supported. Many developers on ISC's team use Macs, so the goal is to keep Stork
 buildable on this platform.
 
-The Stork server and agents are written in the Go language; the server uses a PostgreSQL database. In principle, the software can be run
+The Stork Server and agents are written in the Go language; the server uses a PostgreSQL database. In principle, the software can be run
 on any POSIX system that has a Go compiler and PostgreSQL. It is likely the software can also be built on other modern systems, but
 for the time being ISC's testing capabilities are modest. We encourage users to try running Stork on other OSes not on this list
 and report their findings to ISC.
@@ -235,7 +235,7 @@ server and how to create the suitable certificate and key files is available
 in `PostgreSQL documentation
 <https://www.postgresql.org/docs/14/ssl-tcp.html>`_.
 
-Stork server has support for secure communications with the database. The following
+Stork Server has support for secure communications with the database. The following
 configuration settings in the `server.env` file enable and configure communication
 encryption with the database server. They correspond with the SSL settings provided
 by the libpq - the native PostgreSQL client library written in C:
@@ -257,13 +257,13 @@ communication with the database. Other settings have the following meaning:
   If the root certificate exists, the behavior is the same as  in case of `verify-ca`
   mode
 * ``verify-ca`` - use secure communication and verify the server's identity by
-  checking it against the root certificate stored on the Stork server machine
+  checking it against the root certificate stored on the Stork Server machine
 * ``verify-full`` - use secure communication, verify the server's identity against
   the root certificate. In addition, check that the server hostname matches the
   name stored in the certificate.
 
 Specifying the SSL certificate and key location is optional. If they are not
-specified, the Stork server will use the ones from the current user's home
+specified, the Stork Server will use the ones from the current user's home
 directory: `~/.postgresql/postgresql.crt` and `~/.postgresql/postgresql.key`.
 If they are not present, Stork will try to find suitable keys in common system
 locations.
@@ -411,7 +411,7 @@ credentials file: `/etc/stork/agent-credentials.json`.
 By default, this file is missing, but there is `/etc/stork/agent-credentials.json.template` with example data.
 You can rename the template file by removing the `.template` suffix. Next, you can edit this file and provide
 valid credentials. You should also use the `chown` and `chmod` commands to set the proper permissions - this
-file contains the secrets and should be readable/writable only for the user running the Stork Agent and
+file contains the secrets and should be readable/writable only by the user running the Stork Agent and
 the administrators.
 
 .. warning::
@@ -437,12 +437,12 @@ For example:
    }
 
 It contains a single object with a single "basic" key. The "basic" value is a list of the Basic Auth credentials.
-All credentials must to contains the values for 4 keys:
+All credentials must contain the values for 4 keys:
 
-- "ip": IPv4 or IPv6 address of the Kea CA. It supports IPv6 abbreviations (e.g. "FF:0000::" is the same as "ff::").
-- "port": Number of the Kea CA.
-- "user": Basic Auth user-id to use in connection to specific Kea CA.
-- "password": Basic Auth password to use in connection to specific Kea CA.
+- ``ip`` - IPv4 or IPv6 address of the Kea CA. It supports IPv6 abbreviations (e.g. "FF:0000::" is the same as "ff::").
+- ``port`` - Kea Control Agent port number.
+- ``user`` - Basic Auth user-id to use in connection to specific Kea CA.
+- ``password`` - Basic Auth password to use in connection to specific Kea CA.
 
 To apply changes in the credentials file you need to restart the Stork Agent daemon.
 
@@ -685,7 +685,7 @@ Start the interactive registration procedure with the following command:
 
    $ su stork-agent -s /bin/sh -c 'stork-agent register -u http://stork.example.org:8080'
 
-where the last parameter should be the appropriate Stork server's URL.
+where the last parameter should be the appropriate Stork Server's URL.
 
 Follow the same registration steps as described in the :ref:`register-server-token-script`.
 
@@ -733,6 +733,8 @@ Further configuration and usage of the ``Stork Server`` and the
 ``Stork Agent`` are described in the :ref:`usage` chapter.
 
 
+.. _inspecting-keys-and-certificates:
+
 Inspecting Keys and Certificates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -744,12 +746,19 @@ and exported using ``Stork Tool``, e.g:
 
     $ stork-tool cert-export --db-url postgresql://user:pass@localhost/dbname -f srvcert -o srv-cert.pem
 
+The above command may fail when the database password contains the characters requiring URL
+encoding. In this case, a command line with multiple switches can be used instead:
+
+.. code-block:: console
+
+    $ stork-tool cert-export --db-user user --db-password pass --db-host localhost --db-name dbname -f srvcert -o srv-cert.pem
+
 The certificates can be inspected using openssl (e.g. ``openssl x509 -noout -text -in srv-cert.pem``).
 Similarly, the secret keys can be inspected in similar fashion (e.g. ``openssl ec -noout -text -in cakey``)
 
 For more details check ``stork-tool`` manual: :ref:`man-stork-tool`. There are five secrets that can be
 exported or imported: Certificate Authority secret key (``cakey``), Certificate Authority certificate (``cacert``),
-Stork server private key (``srvkey``), Stork server certificate (``srvcert``) and a server token (``srvtkn``).
+Stork Server private key (``srvkey``), Stork Server certificate (``srvcert``) and a server token (``srvtkn``).
 
 Using External Keys and Certificates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -760,6 +769,13 @@ to ``Stork Server`` using ``stork-tool``:
 .. code-block:: console
 
     $ stork-tool cert-import --db-url postgresql://user:pass@localhost/dbname -f srvcert -i srv-cert.pem
+
+The above command may fail when the database password contains the characters requiring URL
+encoding. In this case, a command line with multiple switches can be used instead:
+
+.. code-block:: console
+
+    $ stork-tool cert-import --db-user user --db-password pass --db-host localhost --db-name dbname -f srvcert -i srv-cert.pem
 
 Both CA key and CA certificate have to be changed at the same time as
 CA certificate depends on CA key. If they are changed then server key
@@ -820,7 +836,7 @@ To get the latest sources invoke:
 Building
 --------
 
-There are several components of ``Stork``:
+There are two ``Stork`` components:
 
 - ``Stork Agent`` - this is the binary `stork-agent`, written in Go
 - ``Stork Server`` - this is comprised of two parts:
@@ -845,7 +861,7 @@ and the server component with this command:
 
    $ rake install_server
 
-By default, all components are installed to the `root` folder in the
+By default, all components are installed in the `root` folder in the
 current directory; however, this is not useful for installation in a
 production environment. It can be customized via the ``DESTDIR``
 variable, e.g.:
@@ -854,15 +870,20 @@ variable, e.g.:
 
    $ sudo rake install_server DESTDIR=/usr
 
-Database Migration Tool (optional)
-==================================
+Stork Tool (optional)
+=====================
 
-Optional step: to initialize the database directly, the migrations
-tool must be built and used to initialize and upgrade the database to the
-latest schema. However, this is completely optional, as the database
-migration is triggered automatically upon server startup. This is
-only useful if for some reason it is desirable to set up the database
-but not yet run the server. In most cases this step can be skipped.
+To initialize the database directly, the Stork Tool must be built and
+used to initialize and upgrade the database to the latest schema.
+However, this is optional, as the database migration is triggered
+automatically upon server startup. It is only useful if, for some
+reason, it is desirable to set up the database but not yet run the
+server.
+
+Stork Tool also provides the commands to import and export TLS
+certificates in the database and should be built whenever such
+capability is needed. See `:ref:`inspecting-keys-and-certificates`
+for usage details.
 
 .. code-block:: console
 
@@ -912,9 +933,9 @@ to use Prometheus without Grafana, but using Grafana requires Prometheus.
 Prometheus Integration
 ----------------------
 
-The Stork agent, by default, makes the
+The Stork Agent, by default, makes the
 Kea (and eventually, BIND 9) statistics are available in a format understandable by Prometheus (it works as a Prometheus exporter, in Prometheus
-nomenclature). If the Prometheus server is available, it can be configured to monitor Stork agents. To enable Stork agent
+nomenclature). If the Prometheus server is available, it can be configured to monitor Stork Agents. To enable Stork Agent
 monitoring, the ``prometheus.yml`` (which is typically stored in /etc/prometheus/, but this may vary depending on the
 installation) must be edited to add the following entries there:
 
@@ -930,7 +951,7 @@ installation) must be edited to add the following entries there:
     static_configs:
       - targets: ['agent-bind9.example.org:9119', 'another-bind9.example.org:9119', ... ]
 
-By default, the Stork agent exports Kea data on TCP port 9547 (and BIND 9 data on TCP port 9119). This can be configured using
+By default, the Stork Agent exports Kea data on TCP port 9547 (and BIND 9 data on TCP port 9119). This can be configured using
 command-line parameters, or the Prometheus export can be disabled altogether. For details, see the stork-agent manual page
 at :ref:`man-stork-agent`.
 

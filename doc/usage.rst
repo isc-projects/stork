@@ -110,10 +110,10 @@ Deleting a Machine
 To stop monitoring a machine, go to the ``Machines`` list, find the
 machine to stop monitoring, click on the triple-lines button at the
 right side, and choose ``Delete``. This will terminate the connection
-between the Stork server and the agent running on the machine, and the
-server will no longer monitor that machine; however, the Stork agent process
+between the Stork Server and the agent running on the machine, and the
+server will no longer monitor that machine; however, the Stork Agent process
 will continue running. Complete shutdown of a Stork
-agent process must be done manually, e.g. by connecting to the machine
+Agent process must be done manually, e.g. by connecting to the machine
 using ssh and stopping the agent there. The preferred way to achieve that is to
 issue the ``killall stork-agent`` command.
 
@@ -132,10 +132,10 @@ selected machines with a single click.  Navigate to the ``Machines`` page (i.e.,
 the page where all monitored machines are listed), click on the ``Action`` button
 for the selected machine, and choose ``Dump Troubleshooting Data`` option. Alternatively,
 navigate to the selected machine's page and click on the ``Dump Troubleshooting Data``
-button at the bottom of the page. In both cases, the Stork server will
+button at the bottom of the page. In both cases, the Stork Server will
 automatically gather useful diagnostics information and offer it for download as a
 ``tar.gz`` file. The downloaded package contains configurations, log tails, Stork
-server settings, warning and error-level events, etc.
+Server settings, warning and error-level events, etc.
 
 ..note:
 Stork sanitizes the passwords and other sensitive information while it creates
@@ -163,17 +163,17 @@ application. Several daemons may be presented in the application
 status column, typically: DHCPv4, DHCPv6, DDNS, and CA (Kea Control
 Agent).
 
-Eventually, when support for BIND 9 is added, the Stork agent will look for ``named`` in the
+Eventually, when support for BIND 9 is added, the Stork Agent will look for ``named`` in the
 process list and parse the configuration file that is given with the
 ``-c`` argument. If the ``named`` process is started without a
-specific configuration file, the Stork agent will default to
+specific configuration file, the Stork Agent will default to
 ``/etc/bind/named.conf``.
 
 Stork uses ``rndc`` to retrieve the application status. It looks for
 the ``controls`` statement in the configuration file, and uses the
 first listed control point for monitoring the application.
 
-Furthermore, the Stork agent can be used as a Prometheus exporter.
+Furthermore, the Stork Agent can be used as a Prometheus exporter.
 Stork is able to do so if ``named`` is built with ``json-c`` because
 it gathers statistics via the JSON statistics API. The
 ``named.conf`` file must have a ``statistics-channel`` configured;
@@ -429,7 +429,8 @@ Stork periodically fetches the reservations from the host database backends
 and updates them in the local database. The default interval at which Stork
 refreshes host reservation information is set to 60 seconds. This means that
 an update in the host reservation database will not be visible in Stork until
-up to 60 seconds after it was applied. This interval is currently not configurable.
+up to 60 seconds after it was applied. This interval is configurable in the
+Stork UI.
 
 .. note::
 
@@ -644,7 +645,7 @@ Dashboard
 
 The main Stork page presents a dashboard. It contains a panel with
 information about DHCP and a panel with events observed or noticed by
-the Stork server.
+the Stork Server.
 
 DHCP Panel
 ~~~~~~~~~~
@@ -660,7 +661,7 @@ Events Panel
 ~~~~~~~~~~~~
 
 The Events panel presents the list of the most recent events captured by
-the Stork server. There are three event urgency levels: info, warning
+the Stork Server. There are three event urgency levels: info, warning
 and error. Events pertaining to the particular entities, e.g. machines
 or applications, provide a link to a web page containing the information
 about the given object.
