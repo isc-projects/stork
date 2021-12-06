@@ -1006,7 +1006,7 @@ considered:
   appear in the network or existing machines could disappear.
 - The `kea_dhcp4_addresses_assigned_total` together with `kea_dhcp4_addresses_total` can be used to
   calculate pool utilization. If the server allocates all available addresses, it won't be able to
-  handle new devices, which is one of the more common failure cases of the DHCPv4 server. Depending
+  handle new devices, which is one of the most common failure cases of the DHCPv4 server. Depending
   on the deployment specifics, a threshold when the pool utilization approaches 100% should be
   seriously considered.
 - Contrary to popular belief, DHCPv6 can also run out of resources, in particular in case of Prefix
@@ -1095,6 +1095,6 @@ are set using web interface, with flexible approach that allows custom notificat
 (possibly with some instructions what to do when receiving such alert), how to treat situations
 where received data is null or there is a timeout etc.
 
-The alerts defined are considered integral part of a dashboard. This may be a factor in a deployment
+The defined alerts are considered an integral part of a dashboard. This may be a factor in a deployment
 configuration, e.g. the dashboard could be tweaked to specific needs and then deployed to multiple
 sites.
