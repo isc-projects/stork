@@ -1,3 +1,8 @@
+* 180 [doc] tomek
+
+    Prometheus and Grafana alerting mechanisms are described briefly.
+    (Gitlab #600)
+
 * 179 [build] slawek
 
     Renamed Stork Agent configuration variable STORK_AGENT_ADDRESS
