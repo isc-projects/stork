@@ -1,3 +1,10 @@
+* 178 [build] slawek
+
+    Renamed Stork Agent configuration variable STORK_AGENT_ADDRESS
+    to STORK_AGENT_HOST. This change requires modifications in the
+    existing agent.env files.
+    (Gitlab #641)
+
 * 178 [doc] slawek
 
     Extended the comments in the files with environment variables.
