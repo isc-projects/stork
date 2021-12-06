@@ -1072,3 +1072,29 @@ The Prometheus/Grafana subnet labels depend on the installed Kea hooks.
 By default, the internal, numeric Kea IDs are used.
 But if the `subnet_cmds` hook is installed then the numeric IDs are resolved to subnet prefixes.
 It causes that the Grafana dashboard looks more human-friendly and descriptive.
+
+Alerting in Grafana
+-------------------
+
+Grafana provides an alternative alerting mechanism that can also be used with Stork. It offers
+multiple options and the user is encouraged to see the `Grafana page on alerting
+<https://grafana.com/docs/grafana/latest/alerting/?pg=docs>`_.
+
+The list of notification channels (i.e. the delivery mechanisms) looks flexible, as it supports
+email, webhook, Prometheus' alertmanager, PagerDuty, Slack, Telegram, Discord, Google Hangouts,
+Kafka REST Proxy, Microsoft Teams, OpsGenie, Pushover and more. Existing dashboards provided by
+Stork can be modified or new dashboards can be created. Grafana requires first a notification
+channel to be configured (Alerting -> Notifications Channel menu). Once configured, existing panels
+can be edited with alert rules. One caveat is that most panels in the Stork dashboards use template
+variables, which are not supported in alerting. This `stackoverflow thread
+<https://stackoverflow.com/questions/51053893/grafana-template-variables-are-not-supported-in-alert-queries>`_
+discusses several ways to overcome this limitation.
+
+Compared to Prometheus alerting, Grafana alerting seems to be a bit more user friendly as the alerts
+are set using web interface, with flexible approach that allows custom notification message
+(possibly with some instructions what to do when receiving such alert), how to treat situations
+where received data is null or there is a timeout etc.
+
+The alerts defined are considered integral part of a dashboard. This may be a factor in a deployment
+configuration, e.g. the dashboard could be tweaked to specific needs and then deployed to multiple
+sites.
