@@ -934,9 +934,9 @@ Prometheus Integration
 ----------------------
 
 The Stork Agent, by default, makes the
-Kea (and eventually, BIND 9) statistics are available in a format understandable by Prometheus (it works as a Prometheus exporter, in Prometheus
-nomenclature). If the Prometheus server is available, it can be configured to monitor Stork Agents. To enable Stork Agent
-monitoring, the ``prometheus.yml`` (which is typically stored in /etc/prometheus/, but this may vary depending on the
+Kea and some limited BIND 9 statistics available in a format understandable by Prometheus. In Prometheus nomenclature, the Stork
+Agent works as a Prometheus exporter. If the Prometheus server is available, it can be configured to monitor Stork Agents. To enable Stork Agent
+monitoring, the ``prometheus.yml`` (which is typically stored in `/etc/prometheus/`, but this may vary depending on the
 installation) must be edited to add the following entries there:
 
 .. code-block:: yaml
@@ -982,8 +982,48 @@ The Stork Server exports metrics on the assigned HTTP/HTTPS port (defined via ``
    to allow only local access or access from the Prometheus host. Please consult the NGINX example
    configuration file shipped with Stork.
 
-After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly. Kea statistics use the ``kea_`` prefix (e.g. kea_dhcp4_addresses_assigned_total); BIND 9
-statistics will eventually use the ``bind_`` prefix (e.g. bind_incoming_queries_tcp); Stork Server statistics use the ``server_`` prefix.
+After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly.
+Kea statistics use the ``kea_`` prefix (e.g. kea_dhcp4_addresses_assigned_total); BIND 9
+statistics will eventually use the ``bind_`` prefix (e.g. bind_incoming_queries_tcp); Stork Server statistics use the
+``storkserver_`` prefix.
+
+Alerting in Prometheus
+----------------------
+
+Prometheus provides capability to configure altering. A good starting point is the `Prometheus
+documentation on Alterting <https://prometheus.io/docs/alerting/latest/overview/>`_. Briefly, the
+three main steps are configure Alertingmanager, configure Prometheus to talk to the Altermanager and
+then define the alerting rules in Prometheus. There are no specific requirements or recommendations
+as these are very deployment dependant. The following is an incomplete list of ideas that could be
+considered:
+
+- The `storkserver_auth_unreachable_machine_total` is reported by the Stork server and shows the
+  number of unreachable machines. Its value under normal circumstances should be zero. Configuring
+  an alert for non-zero values may be the highest level for large scope problem, such as whole VM
+  or server becoming unavailable.
+- The `storkserver_auth_authorized_machine_total` and `storkserver_auth_unauthorized_machine_total`
+  metrics may be used to monitor situations when new machines (e.g. by automated VM cloning) may
+  appear in the network or existing machines could disappear.
+- The `kea_dhcp4_addresses_assigned_total` together with `kea_dhcp4_addresses_total` can be used to
+  calculate pool utilization. If the server allocates all available addresses, it won't be able to
+  handle new devices, which is one of the more common failure cases of the DHCPv4 server. Depending
+  on the deployment specifics, a threshold when the pool utilization approaches 100% should be
+  seriously considered.
+- Contrary to popular belief, DHCPv6 can also run out of resources, in particular in case of Prefix
+  Delegation. The `kea_dhcp6_pd_assigned_total` divided by `kea_dhcp6_pd_total` can be considered a
+  PD pool utilization. It is an important metric if PD is being used.
+
+Compared to Grafana alerting, the alerting mechanism configured in Prometheus has the relative
+advantage of not requiring additional component (Grafana). The alerting rules are defined in a text
+file using simple YAML syntax. For details, see `Prometheus documentation on alerting rules
+<https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/>`_. One potentially
+important feature is Prometheus' ability to be configured to automatically discover available
+Alertmanager instances, which may be helpful in various redundancy considerations. The Alertmanager
+provides a rich list of receivers, which are that actual notification mechanisms used: email,
+pagerduty, pushover, slack, opsgenie, webhook, wechat and more.
+
+ISC makes no specific recommendations between Prometheus or Grafana. This is a deployment
+consideration.
 
 Grafana Integration
 -------------------
