@@ -10,7 +10,7 @@
 
 .. _man-stork-agent:
 
-stork-agent - Stork agent that monitors BIND 9 and Kea services
+stork-agent - Stork Agent that monitors BIND 9 and Kea services
 ---------------------------------------------------------------
 
 Synopsis
@@ -22,22 +22,22 @@ Description
 ~~~~~~~~~~~
 
 The ``stork-agent`` is a small tool that operates on systems
-that are running BIND 9 and Kea services. The Stork server connects to
-the Stork agent and uses it to monitor services remotely.
+that are running BIND 9 and Kea services. The Stork Server connects to
+the Stork Agent and uses it to monitor services remotely.
 
 Arguments
 ~~~~~~~~~
 
 Stork does not use an explicit configuration file. Instead, its behavior can be controlled with
-command-line switches and/or variables. The Stork agent takes the following command-line switches.
+command-line switches and/or variables. The Stork Agent takes the following command-line switches.
 Equivalent environment variables are listed in square brackets, where applicable.
 
 ``--listen-stork-only``
-   listen for commands from the Stork server only, but not for Prometheus requests.
+   listen for commands from the Stork Server only, but not for Prometheus requests.
    [$STORK_AGENT_LISTEN_STORK_ONLY]
 
 ``--listen-prometheus-only``
-   listen for Prometheus requests only, but not for commands from the Stork server.
+   listen for Prometheus requests only, but not for commands from the Stork Server.
    [$STORK_AGENT_LISTEN_PROMETHEUS_ONLY]
 
 ``-v`` or ``--version``
@@ -46,10 +46,10 @@ Equivalent environment variables are listed in square brackets, where applicable
 ``Stork Server`` flags:
 
 ``--host=``
-   the IP or hostname to listen on for incoming Stork server connections. [$STORK_AGENT_ADDRESS]
+   the IP or hostname to listen on for incoming Stork Server connections. [$STORK_AGENT_ADDRESS]
 
 ``--port=``
-   the TCP port to listen on for incoming Stork server connections. (default: 8080) [$STORK_AGENT_PORT]
+   the TCP port to listen on for incoming Stork Server connections. (default: 8080) [$STORK_AGENT_PORT]
 
 ``--skip-tls-cert-verification=``
    skip TLS certificate verification when the Stork Agent connects to Kea over TLS and Kea uses self-signed certificates. (default: false) [$STORK_AGENT_SKIP_TLS_CERT_VERIFICATION]

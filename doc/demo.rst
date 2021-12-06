@@ -75,7 +75,7 @@ is stored in the ``docker-compose.yaml`` file in the Stork source code repositor
 These containers have Stork production services and components:
 
 server
-   This container is essential. It runs the Stork server,
+   This container is essential. It runs the Stork Server,
    which interacts with all the agents and the database and exposes the
    API. Without it, Stork is not able to function.
 webui
@@ -113,7 +113,7 @@ These are containers with 3rd-party services that are required by Stork:
 
 postgres
    This container is essential. It runs the PostgreSQL database that
-   is used by the Stork server. Without it, the Stork server
+   is used by the Stork server. Without it, the Stork Server
    produces error messages about an unavailable database.
 prometheus
    Prometheus, a monitoring solution (https://prometheus.io/), uses this
@@ -142,7 +142,7 @@ simulator
    instances.
 
 The PostgreSQL database schema is automatically migrated to the latest
-version required by the Stork server process.
+version required by the Stork Server process.
 
 The setup procedure assumes those images are fully under Stork's
 control. Any existing images are overwritten.

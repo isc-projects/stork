@@ -10,7 +10,7 @@
 
 .. _man-stork-server:
 
-stork-server - Main Stork server
+stork-server - Main Stork Server
 ---------------------------------
 
 Synopsis
@@ -21,8 +21,8 @@ Synopsis
 Description
 ~~~~~~~~~~~
 
-``stork-server`` provides the main Stork server capabilities. In
-every Stork deployment, there should be exactly one Stork server.
+``stork-server`` provides the main Stork Server capabilities. In
+every Stork deployment, there should be exactly one Stork Server.
 
 Arguments
 ~~~~~~~~~
@@ -109,7 +109,7 @@ Arguments
 The ``--db-sslmode`` argument can have one of the following values:
 
 ``disable``
-  disable encryption between the Stork server and the PostgreSQL database.
+  disable encryption between the Stork Server and the PostgreSQL database.
 
 ``require``
   use secure communication but do not verify the server's identity unless the
@@ -119,7 +119,7 @@ The ``--db-sslmode`` argument can have one of the following values:
 
 ``verify-ca``
   use secure communication and verify the server's identity by checking it
-  against the root certificate stored on the Stork server machine.
+  against the root certificate stored on the Stork Server machine.
 
 ``verify-full``
   use secure communication, verify the server's identity against the root

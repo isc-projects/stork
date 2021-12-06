@@ -29,7 +29,7 @@ The ``stork-tool`` operates in two areas:
 
 - Database Migration - it allows for performing database schema migrations,
   overwriting db schema version and getting its current value;
-  usually, there is no need to use this area, as the Stork server always runs
+  usually, there is no need to use this area, as the Stork Server always runs
   the migration scripts on startup
 
 
@@ -192,7 +192,7 @@ Options common for db-* and cert-* commands:
 The ``--db-sslmode`` argument can have one of the following values:
 
 ``disable``
-  disable encryption between the Stork server and the PostgreSQL database.
+  disable encryption between the Stork Server and the PostgreSQL database.
 
 ``require``
   use secure communication but do not verify the server's identity unless the
@@ -202,7 +202,7 @@ The ``--db-sslmode`` argument can have one of the following values:
 
 ``verify-ca``
   use secure communication and verify the server's identity by checking it
-  against the root certificate stored on the Stork server machine.
+  against the root certificate stored on the Stork Server machine.
 
 ``verify-full``
   use secure communication, verify the server's identity against the root
