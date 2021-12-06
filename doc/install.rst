@@ -163,7 +163,7 @@ The following steps are common for Debian-based and RPM-based distributions
 using `systemd`.
 
 Configure ``Stork Server`` settings in ``/etc/stork/server.env``. The following
-settings are required for the database connection:
+settings are required for the database connection (they have a common ``STORK_DATABASE_`` prefix):
 
 * STORK_DATABASE_HOST - the address of a PostgreSQL database; default is `localhost`
 * STORK_DATABASE_PORT - the port of a PostgreSQL database; default is `5432`
@@ -178,7 +178,7 @@ settings are required for the database connection:
    in the production environment. The `STORK_DATABASE_PASSWORD` setting must be
    adjusted accordingly.
 
-The remaining settings pertain to the server's REST API configuration:
+The remaining settings pertain to the server's REST API configuration (the ``STORK_REST_`` prefix):
 
 * STORK_REST_HOST - IP address on which the server listens
 * STORK_REST_PORT - port number on which the server listens; default is `8080`
@@ -187,7 +187,7 @@ The remaining settings pertain to the server's REST API configuration:
 * STORK_REST_TLS_CA_CERTIFICATE - a certificate authority file used for mutual TLS authentication
 * STORK_REST_STATIC_FILES_DIR - a directory with static files served in the UI
 
-The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration:
+The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint configuration (the ``STORK_SERVER_`` prefix is for general purposes):
 
 * STORK_SERVER_ENABLE_METRICS - enable the Prometheus metrics collector and ``/metrics`` HTTP endpoint.
 
@@ -288,7 +288,8 @@ Agent Configuration Settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following are the ``Stork Agent`` configuration settings available in the
-``/etc/stork/agent.env`` after installing the package.
+``/etc/stork/agent.env`` after installing the package. All these settings use
+the `STORK_AGENT_` prefix to indicate that they configure the Stork Agent.
 
 The general settings:
 
@@ -331,7 +332,7 @@ using agent token:
 * STORK_AGENT_SERVER_URL - Stork Server URL used by the agent to send REST
   commands to the server during agent registration
 
-.. warning
+.. warning::
 
    Stork Server currently does not support communication with the Stork Agents
    via an IPv6 link-local address with zone ID (e.g., `fe80::%eth0`). It means
