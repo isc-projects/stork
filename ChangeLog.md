@@ -1,4 +1,4 @@
-* 178 [build] slawek
+* 179 [build] slawek
 
     Renamed Stork Agent configuration variable STORK_AGENT_ADDRESS
     to STORK_AGENT_HOST. This change requires modifications in the
