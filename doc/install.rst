@@ -293,7 +293,7 @@ the `STORK_AGENT_` prefix to indicate that they configure the Stork Agent.
 
 The general settings:
 
-* STORK_AGENT_HOST - the IP address of the network interface which ``Stork Agent``
+* STORK_AGENT_HOST - the IP address of the network interface or DNS name which Stork Agent
   should use to receive the connections from the server;  default is `0.0.0.0`
   (i.e. listen on all interfaces)
 * STORK_AGENT_PORT - the port number the agent should use to receive the
