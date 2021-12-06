@@ -261,7 +261,7 @@ func setupApp() *cli.App {
 			{
 				Name:        "db-init",
 				Usage:       "Create schema versioning table in the database",
-				UsageText:   "stork-tool db-init [options for db connecion]",
+				UsageText:   "stork-tool db-init [options for db connection]",
 				Description: ``,
 				Flags:       dbFlags,
 				Category:    "Database Migration",
@@ -273,7 +273,7 @@ func setupApp() *cli.App {
 			{
 				Name:        "db-up",
 				Usage:       "Run all available migrations or use -t to specify version",
-				UsageText:   "stork-tool db-up [options for db connecion] [-t version]",
+				UsageText:   "stork-tool db-up [options for db connection] [-t version]",
 				Description: ``,
 				Flags:       dbVerFlags,
 				Category:    "Database Migration",
@@ -285,7 +285,7 @@ func setupApp() *cli.App {
 			{
 				Name:        "db-down",
 				Usage:       "Revert last migration or use -t to specify version to downgrade to",
-				UsageText:   "stork-tool db-down [options for db connecion] [-t version]",
+				UsageText:   "stork-tool db-down [options for db connection] [-t version]",
 				Description: ``,
 				Flags:       dbVerFlags,
 				Category:    "Database Migration",
@@ -297,7 +297,7 @@ func setupApp() *cli.App {
 			{
 				Name:        "db-reset",
 				Usage:       "Revert all migrations",
-				UsageText:   "stork-tool db-reset [options for db connecion]",
+				UsageText:   "stork-tool db-reset [options for db connection]",
 				Description: ``,
 				Flags:       dbFlags,
 				Category:    "Database Migration",
@@ -309,7 +309,7 @@ func setupApp() *cli.App {
 			{
 				Name:        "db-version",
 				Usage:       "Print current migration version",
-				UsageText:   "stork-tool db-version [options for db connecion]",
+				UsageText:   "stork-tool db-version [options for db connection]",
 				Description: ``,
 				Flags:       dbFlags,
 				Category:    "Database Migration",
@@ -321,7 +321,7 @@ func setupApp() *cli.App {
 			{
 				Name:        "db-set-version",
 				Usage:       "Set database version without running migrations",
-				UsageText:   "stork-tool db-set-version [options for db connecion] [-t version]",
+				UsageText:   "stork-tool db-set-version [options for db connection] [-t version]",
 				Description: ``,
 				Flags:       dbVerFlags,
 				Category:    "Database Migration",
@@ -334,7 +334,7 @@ func setupApp() *cli.App {
 			{
 				Name:        "cert-export",
 				Usage:       "Export certificate or other secret data",
-				UsageText:   "stork-tool cert-export [options for db connecion] [-f object] [-o filename]",
+				UsageText:   "stork-tool cert-export [options for db connection] [-f object] [-o filename]",
 				Description: ``,
 				Flags:       certExportFlags,
 				Category:    "Certificates Management",
@@ -343,7 +343,7 @@ func setupApp() *cli.App {
 			{
 				Name:        "cert-import",
 				Usage:       "Import certificate or other secret data",
-				UsageText:   "stork-tool cert-import [options for db connecion] [-f object] [-i filename]",
+				UsageText:   "stork-tool cert-import [options for db connection] [-f object] [-i filename]",
 				Description: ``,
 				Flags:       certImportFlags,
 				Category:    "Certificates Management",

@@ -45,7 +45,7 @@ func (d *BasicDump) AppendArtifact(artifact Artifact) {
 
 // Default implementation does nothing and returns no error.
 // It is good for trivial cases when the artifacts are provided
-// in the costructor, but is should be overridden for the advanced
+// in the constructor, but is should be overridden for the advanced
 // use cases.
 func (d *BasicDump) Execute() error {
 	return nil

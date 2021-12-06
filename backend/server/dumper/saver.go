@@ -42,7 +42,7 @@ func newTarballSaver(serializer structSerializer, namingConvention namingConvent
 }
 
 // Save the dumps as a tarball archive.
-// Remember that the "target" writter position is at the end after finishing this process.
+// Remember that the "target" writer position is at the end after finishing this process.
 func (t *tarballSaver) Save(target io.Writer, dumps []dump.Dump) error {
 	tarball := storkutil.NewTarballWriter(target)
 	defer tarball.Close()

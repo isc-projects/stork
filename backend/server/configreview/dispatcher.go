@@ -120,7 +120,7 @@ type dispatchGroup struct {
 }
 
 // Stringer implementation for a dispatchGroup. It lists checker names
-// as a slice. It excludes chcker function pointers making the output
+// as a slice. It excludes checker function pointers making the output
 // consistent across function runs. The dispatcher uses this function
 // to create a signature.
 func (d dispatchGroup) String() string {

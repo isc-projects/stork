@@ -171,7 +171,7 @@ export class ConfigReviewPanelComponent implements OnInit {
                         // message). The take(retries+1) will allow for handling this
                         // case and stop afterwards.
                         take(retries + 1),
-                        // Look into the error (an actual error or Accpted status).
+                        // Look into the error (an actual error or Accepted status).
                         concatMap(
                             // The retryNum is a call index. We use it to track how
                             // many retries were performed so far.

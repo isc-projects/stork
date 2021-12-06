@@ -63,7 +63,7 @@ This section describes the solutions for some common issues with the Stork Agent
 :Description: The agent prints the message ``problem with connecting to dhcp daemon: unable to forward command to
               the dhcp6 service: No such file or directory. The server is likely to be offline``.
 :Solution:    Try to start the Kea service: ``systemctl start kea-dhcp4 kea-dhcp6``
-:Explanation: The ``kea-dhcp4.service`` or ``kea-dhcp6.serive`` (depending on the service type in the message) is not running.
+:Explanation: The ``kea-dhcp4.service`` or ``kea-dhcp6.service`` (depending on the service type in the message) is not running.
               If the above commands don't resolve the problem, check the Kea ARM for troubleshooting.
 
 --------------

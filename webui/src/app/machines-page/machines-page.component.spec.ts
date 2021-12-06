@@ -239,7 +239,7 @@ describe('MachinesPageComponent', () => {
 
         // This call throws
         // ERROR: 'ERROR', TypeError: Cannot read properties of null (reading 'offsetHeight')
-        // from the PrimeNG menu code but the test pass throught.
+        // from the PrimeNG menu code but the test pass through.
         menuButton.triggerEventHandler(
             'click',
             new PointerEvent('click', {

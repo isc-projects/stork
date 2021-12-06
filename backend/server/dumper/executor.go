@@ -40,7 +40,7 @@ type executionSummaryStepSimplified struct {
 
 // Construct the execution summary object.
 // It can be created after the execution (by passing the steps to
-// this constructor) or befor the execution (append steps to
+// this constructor) or before the execution (append steps to
 // the Steps slice member).
 func newExecutionSummary(steps ...*executionSummaryStep) *executionSummary {
 	return &executionSummary{
