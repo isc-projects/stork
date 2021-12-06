@@ -104,8 +104,8 @@ The machine state can also be refreshed via the ``Action`` menu. On the
 ``Machines`` list, each machine has its own menu; click on the
 triple-lines button at the right side and choose the Refresh option.
 
-Deleting a Machine
-~~~~~~~~~~~~~~~~~~
+Disconnecting from a Machine
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To stop monitoring a machine, go to the ``Machines`` list, find the
 machine to stop monitoring, click on the triple-lines button at the
@@ -114,8 +114,18 @@ between the Stork Server and the agent running on the machine, and the
 server will no longer monitor that machine; however, the Stork Agent process
 will continue running. Complete shutdown of a Stork
 Agent process must be done manually, e.g. by connecting to the machine
-using ssh and stopping the agent there. The preferred way to achieve that is to
-issue the ``killall stork-agent`` command.
+using ssh and stopping the agent there. For example, when the Stork Agent
+has been installed from packages, run:
+
+.. code-block:: console
+
+    $ sudo systemctl stop isc-stork-agent
+
+Alternatively:
+
+.. code-block:: console
+
+    $ sudo killall -9 stork-agent
 
 Dumping Diagnostic Information into a File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
