@@ -46,7 +46,7 @@ Equivalent environment variables are listed in square brackets, where applicable
 ``Stork Server`` flags:
 
 ``--host=``
-   the IP or hostname to listen on for incoming Stork Server connections. [$STORK_AGENT_ADDRESS]
+   the IP or hostname to listen on for incoming Stork Server connections. [$STORK_AGENT_HOST]
 
 ``--port=``
    the TCP port to listen on for incoming Stork Server connections. (default: 8080) [$STORK_AGENT_PORT]

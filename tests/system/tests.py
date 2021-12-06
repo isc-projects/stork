@@ -218,7 +218,7 @@ def test_pkg_upgrade_server_token(distro_agent, distro_server):
     server_url = 'http://%s:8080' % server.mgmt_ip
     agent.run('curl -o stork-install-agent.sh %s/stork-install-agent.sh' % server_url)
     agent.run('chmod a+x stork-install-agent.sh')
-    env = {'STORK_AGENT_ADDRESS': '%s:8080' % agent.mgmt_ip,
+    env = {'STORK_AGENT_HOST': '%s:8080' % agent.mgmt_ip,
            'STORK_AGENT_SERVER_URL': server_url,
            'STORK_AGENT_SERVER_TOKEN': server_token}
     agent.run('./stork-install-agent.sh', env=env)

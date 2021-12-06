@@ -798,7 +798,7 @@ class StorkAgentContainer(Container):
 
         # setup params for agent token based authorization
         if server_ip:
-            cmd = "echo -e '\nSTORK_AGENT_ADDRESS=%s' >> /etc/stork/agent.env" % self.mgmt_ip
+            cmd = "echo -e '\nSTORK_AGENT_HOST=%s' >> /etc/stork/agent.env" % self.mgmt_ip
             self.run('bash -c "%s"' % cmd)
             cmd = "echo -e '\nSTORK_AGENT_SERVER_URL=http://%s:8080' >> /etc/stork/agent.env" % server_ip
             self.run('bash -c "%s"' % cmd)
@@ -823,7 +823,7 @@ class StorkAgentContainer(Container):
     def set_stork_agent_ip6_address(self):
         if self.mgmt_ip6 is None:
             raise Exception("IPv6 not available - check the LXD and network configuration")
-        self.run(r'sed -i -e s/STORK_AGENT_ADDRESS=.\\+/STORK_AGENT_ADDRESS=%s/g /etc/stork/agent.env' % self.mgmt_ip6)
+        self.run(r'sed -i -e s/STORK_AGENT_HOST=.\\+/STORK_AGENT_HOST=%s/g /etc/stork/agent.env' % self.mgmt_ip6)
         self.run('systemctl daemon-reload')
         self.run('systemctl restart isc-stork-agent')
         self.run('systemctl status isc-stork-agent')

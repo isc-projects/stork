@@ -112,7 +112,7 @@ func setupApp() *cli.App {
 				Name:    "host",
 				Value:   "0.0.0.0",
 				Usage:   "the IP or hostname to listen on for incoming Stork Server connection",
-				EnvVars: []string{"STORK_AGENT_ADDRESS"},
+				EnvVars: []string{"STORK_AGENT_HOST"},
 			},
 			&cli.IntFlag{
 				Name:    "port",
@@ -184,7 +184,7 @@ func setupApp() *cli.App {
 		Action: func(c *cli.Context) error {
 			if c.String("server-url") != "" && c.String("host") == "0.0.0.0" {
 				log.Errorf("registration in Stork Server cannot be made because agent host address is not provided")
-				log.Fatalf("use --host option or STORK_AGENT_ADDRESS environment variable")
+				log.Fatalf("use --host option or STORK_AGENT_HOST environment variable")
 			}
 
 			runAgent(c)
@@ -217,7 +217,7 @@ authorization in the server using either UI or ReST API (agent token based regis
 						Name:    "agent-address",
 						Usage:   "IP address or DNS name with port of current agent host, eg: 10.11.12.13:8080",
 						Aliases: []string{"a"},
-						EnvVars: []string{"STORK_AGENT_ADDRESS"},
+						EnvVars: []string{"STORK_AGENT_HOST"},
 					},
 				},
 				Action: func(c *cli.Context) error {

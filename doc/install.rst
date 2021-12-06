@@ -293,7 +293,7 @@ the `STORK_AGENT_` prefix to indicate that they configure the Stork Agent.
 
 The general settings:
 
-* STORK_AGENT_ADDRESS - the IP address of the network interface which ``Stork Agent``
+* STORK_AGENT_HOST - the IP address of the network interface which ``Stork Agent``
   should use to receive the connections from the server;  default is `0.0.0.0`
   (i.e. listen on all interfaces)
 * STORK_AGENT_PORT - the port number the agent should use to receive the
@@ -336,7 +336,7 @@ using agent token:
 
    Stork Server currently does not support communication with the Stork Agents
    via an IPv6 link-local address with zone ID (e.g., `fe80::%eth0`). It means
-   that the `STORK_AGENT_ADDRESS` variable must be set to a DNS name, an IPv4
+   that the `STORK_AGENT_HOST` variable must be set to a DNS name, an IPv4
    address, or a non-link-local IPv6 address.
 
 .. _secure-server-agent:
@@ -476,7 +476,7 @@ in place of the commands installing the server.
 Next, specify the required settings in the ``/etc/stork/agent.env`` file.
 The ``STORK_AGENT_SERVER_URL`` should be the URL on which the server receives the
 REST connections, e.g. ``http://stork-server.example.org:8080``. The
-``STORK_AGENT_ADDRESS`` should point to the agent's address (or name), e.g.
+``STORK_AGENT_HOST`` should point to the agent's address (or name), e.g.
 ``stork-agent.example.org``. Finally, a non-default agent port can be
 specified with the ``STORK_AGENT_PORT``.
 
