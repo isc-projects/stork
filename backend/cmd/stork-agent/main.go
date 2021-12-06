@@ -74,10 +74,10 @@ func runRegister(cfg *cli.Context) {
 	agentAddr := ""
 	agentPort := ""
 	var err error
-	if cfg.String("agent-address") != "" {
-		agentAddr, agentPort, err = net.SplitHostPort(cfg.String("agent-address"))
+	if cfg.String("agent-host") != "" {
+		agentAddr, agentPort, err = net.SplitHostPort(cfg.String("agent-host"))
 		if err != nil {
-			log.Fatalf("problem with parsing agent address: %s\n", err)
+			log.Fatalf("problem with parsing agent host: %s\n", err)
 		}
 	}
 
@@ -214,7 +214,7 @@ authorization in the server using either UI or ReST API (agent token based regis
 						EnvVars: []string{"STORK_AGENT_SERVER_TOKEN"},
 					},
 					&cli.StringFlag{
-						Name:    "agent-address",
+						Name:    "agent-host",
 						Usage:   "IP address or DNS name with port of current agent host, eg: 10.11.12.13:8080",
 						Aliases: []string{"a"},
 						EnvVars: []string{"STORK_AGENT_HOST"},
