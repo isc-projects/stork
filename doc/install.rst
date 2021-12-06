@@ -992,25 +992,25 @@ Alerting in Prometheus
 
 Prometheus provides capability to configure altering. A good starting point is the `Prometheus
 documentation on Alterting <https://prometheus.io/docs/alerting/latest/overview/>`_. Briefly, the
-three main steps are configure Alertingmanager, configure Prometheus to talk to the Altermanager and
+three main steps are configure Alertmanager, configure Prometheus to talk to the Alertmanager and
 then define the alerting rules in Prometheus. There are no specific requirements or recommendations
 as these are very deployment dependant. The following is an incomplete list of ideas that could be
 considered:
 
-- The `storkserver_auth_unreachable_machine_total` is reported by the Stork server and shows the
+- The ``storkserver_auth_unreachable_machine_total`` is reported by the Stork server and shows the
   number of unreachable machines. Its value under normal circumstances should be zero. Configuring
   an alert for non-zero values may be the highest level for large scope problem, such as whole VM
   or server becoming unavailable.
-- The `storkserver_auth_authorized_machine_total` and `storkserver_auth_unauthorized_machine_total`
+- The ``storkserver_auth_authorized_machine_total`` and ``storkserver_auth_unauthorized_machine_total``
   metrics may be used to monitor situations when new machines (e.g. by automated VM cloning) may
   appear in the network or existing machines could disappear.
-- The `kea_dhcp4_addresses_assigned_total` together with `kea_dhcp4_addresses_total` can be used to
+- The ``kea_dhcp4_addresses_assigned_total`` together with ``kea_dhcp4_addresses_total`` can be used to
   calculate pool utilization. If the server allocates all available addresses, it won't be able to
   handle new devices, which is one of the most common failure cases of the DHCPv4 server. Depending
   on the deployment specifics, a threshold when the pool utilization approaches 100% should be
   seriously considered.
 - Contrary to popular belief, DHCPv6 can also run out of resources, in particular in case of Prefix
-  Delegation. The `kea_dhcp6_pd_assigned_total` divided by `kea_dhcp6_pd_total` can be considered a
+  Delegation. The ``kea_dhcp6_pd_assigned_total`` divided by ``kea_dhcp6_pd_total`` can be considered a
   PD pool utilization. It is an important metric if PD is being used.
 
 Compared to Grafana alerting, the alerting mechanism configured in Prometheus has the relative
@@ -1081,7 +1081,7 @@ multiple options and the user is encouraged to see the `Grafana page on alerting
 <https://grafana.com/docs/grafana/latest/alerting/?pg=docs>`_.
 
 The list of notification channels (i.e. the delivery mechanisms) looks flexible, as it supports
-email, webhook, Prometheus' alertmanager, PagerDuty, Slack, Telegram, Discord, Google Hangouts,
+email, webhook, Prometheus' Alertmanager, PagerDuty, Slack, Telegram, Discord, Google Hangouts,
 Kafka REST Proxy, Microsoft Teams, OpsGenie, Pushover and more. Existing dashboards provided by
 Stork can be modified or new dashboards can be created. Grafana requires first a notification
 channel to be configured (Alerting -> Notifications Channel menu). Once configured, existing panels
