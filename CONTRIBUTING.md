@@ -9,9 +9,9 @@ Here's a quick list of how to contribute a patch:
 2. **open an issue** in [Stork project](https://gitlab.isc.org/isc-projects/stork/issues/new), make sure
    it describes what you want to change and **why**
 3. **ask someone from the ISC team to give you permission to fork Stork** (ask @tomek, @vicky, @ondrej
-   or @godfryd or basically anyone from the Stork dev team). You can ask
+   or @slawek or basically anyone from the Stork dev team). You can ask
    access to the project. Someone will grant you a right to fork projects.
-4. **fork Stork code**: go to Stork project page, click [Fork button](https://gitlab.isc.org/isc-projects/stork/forks/new).
+4. **fork Stork code**: go to Stork project page, click [Create Branch button]https://gitlab.isc.org/isc-projects/stork/-/branches/new).(
    If you can't, you didn't complete step 3.
 5. **Implement your fix or feature, push code** to your repo. Make sure it compiles, has unit-tests,
    is documented and does what it's supposed to do.
@@ -85,9 +85,6 @@ times. The change you made may be affected by some other change or by the code t
 written yet.
 
 
-## TODO: Describe how to run unit-tests and system tests for Stork
-
-TBD
 
 ## Submitting Merge Request (also known as sending your patch the right way)
 
@@ -97,7 +94,7 @@ repository.  The procedure is very easy and is
 is possible to provide a patch against the latest release, it makes the review process much easier
 if it is for latest code from the Git master branch.
 
-ISC uses [gitlab](https://gitlab.isc.org) to manage its source code. While we also maintain presence
+ISC uses [gitlab](https://gitlab.isc.org) to manage its source code. While we also maintain a presence
 on [github](https://github.com/isc-projects/stork), the process of syncing gitlab to github is mostly
 automated and Stork devs rarely look at github.
 
@@ -106,7 +103,7 @@ particular, new users can't fork the code on their own and it requires someone f
 grant the ability to fork projects.  Fortunately, this is easy to do and we glady do this for anyone
 who asks and provides a good reason. "I'd like to fix bug X or develop feature Y" is an excellent
 reason. The best place for asking is either stork-dev, requesting access to stork project, ro asking
-in a comment in your issue. Make sure you put a name tag (@tomek, @godfryd, @marcin, or
+in a comment in your issue. Make sure you put a name tag (@tomek, @slawek, @marcin, or
 @vicky). When you write a comment in an issue or merge request and add a name tag on it, the user is
 automatically notified.
 

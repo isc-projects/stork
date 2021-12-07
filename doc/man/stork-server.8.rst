@@ -140,8 +140,6 @@ contributors, and other advanced users. The lists are available at
 https://lists.isc.org. The community provides best-effort support
 on both of those lists.
 
-Once stork becomes more mature, ISC will provide professional support
-for Stork services.
 
 History
 ~~~~~~~

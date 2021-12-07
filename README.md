@@ -1,6 +1,7 @@
 # Stork
 
-Stork is a new project led by ISC with the aim of delivering an ISC BIND 9 and ISC Kea DHCP use and monitoring dashboard.
+Stork is an open source ISC project providing a monitoring application and dashboard for ISC BIND 9 and ISC Kea DHCP.
+
 It is intended to be a spiritual successor of the earlier attempts - Kittiwake and Anterius.
 
 It is currently in rapid development, with monthly releases with new features.
@@ -19,9 +20,7 @@ Please use the issue tracker on [ISC GitLab](https://gitlab.isc.org/isc-projects
 to report issues and submit feature requests.
 
 # Getting involved
-
-Stork is in early stages of its development, but it's getting new features rapidly. We have
-new release every month. If you'd like to get involved, feel free to subscribe to the
+We have monthly development releases. If you'd like to get involved, feel free to subscribe to the
 [stork-dev mailing list](https://lists.isc.org/mailman/listinfo/stork-dev) or look
 at [Stork project page](https://gitlab.isc.org/isc-projects/stork).
 We're also on [GitHub](https://github.com/isc-projects/stork).

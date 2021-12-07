@@ -3,7 +3,7 @@
 
 Primary developers:
 
-- Marcin Siodelski (database, server, ui, kea)
+- Marcin Siodelski (database, server, agent, ui, kea)
 - Michał Nowikowski (server, agent, ui, prometheus, release engineering)
 - Tomek Mrugalski (documentation, testing, kea, project management)
 - Vicky Risk (product management, marketing)
@@ -12,6 +12,7 @@ Primary developers:
 - Thomas Markwalder (kea)
 - Andrei Pavel (release engineering)
 - Sławek Figiel (server, agent, ui, prometheus)
+- Marcin Godzina (qa)
 
 Primary area of work mentioned in parentheses. The list is in a
 roughly chronological order.
