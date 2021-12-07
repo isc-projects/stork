@@ -97,6 +97,10 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
 
     ngOnDestroy(): void {
         this.subscriptions.unsubscribe()
+
+        if (this.eventSource) {
+            this.eventSource.close()
+        }
     }
 
     /**

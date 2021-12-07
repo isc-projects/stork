@@ -163,4 +163,11 @@ describe('EventsPanelComponent', () => {
         component.onUserSelect(event)
         itContainsSearchParam('user', '5')
     })
+
+    it('should close the connection on destroy', () => {
+        component.registerServerSentEvents()
+        expect(component.eventSource.readyState).toBe(EventSource.CONNECTING)
+        component.ngOnDestroy()
+        expect(component.eventSource.readyState).toBe(EventSource.CLOSED)
+    })
 })
