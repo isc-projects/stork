@@ -1,3 +1,5 @@
+Stork 1.0.0 released on 2021-12-08.
+
 * 180 [doc] tomek
 
     Prometheus and Grafana alerting mechanisms are described briefly.
