@@ -105,6 +105,7 @@ func setupApp() *cli.App {
 	}
 	app := &cli.App{
 		Name:     "Stork Agent",
+		Usage:    "A component required on a machine to be monitored by the Stork Server",
 		Version:  stork.Version,
 		HelpName: "stork-agent",
 		Flags: []cli.Flag{
