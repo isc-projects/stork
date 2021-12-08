@@ -11,7 +11,7 @@ Here's a quick list of how to contribute a patch:
 3. **ask someone from the ISC team to give you permission to fork Stork** (ask @tomek, @vicky, @ondrej
    or @slawek or basically anyone from the Stork dev team). You can ask
    access to the project. Someone will grant you a right to fork projects.
-4. **fork Stork code**: go to Stork project page, click [Create Branch button]https://gitlab.isc.org/isc-projects/stork/-/branches/new).(
+4. **fork Stork code**: go to Stork project page, click [Fork button](https://gitlab.isc.org/isc-projects/stork/-/forks/new).
    If you can't, you didn't complete step 3.
 5. **Implement your fix or feature, push code** to your repo. Make sure it compiles, has unit-tests,
    is documented and does what it's supposed to do.
