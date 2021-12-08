@@ -1161,7 +1161,7 @@ task :prepare_env => [GO, PROTOC, PROTOC_GEN_GO, GOSWAGGER, GOLANGCILINT, OPENAP
   Dir.chdir('backend') do
     sh "#{GO} mod download"
   end
-  sh "#{GO} get -u github.com/go-delve/delve/cmd/dlv"
+  sh "GO111MODULE=on #{GO} get -u github.com/go-delve/delve/cmd/dlv@v1.7.3"
   sh "#{GO} get -u github.com/aarzilli/gdlv"
 end
 
