@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -72,29 +73,115 @@ type RestAPI struct {
 	Port         int    // actual port for listening
 }
 
-// Do API initialization.
-func NewRestAPI(settings *RestAPISettings, dbSettings *dbops.DatabaseSettings, db *pg.DB,
-	agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter,
-	pullers *apps.Pullers, reviewDispatcher configreview.Dispatcher, collector metrics.Collector) (*RestAPI, error) {
-	// Initialize sessions with access to the database.
-	sm, err := dbsession.NewSessionMgr(&dbSettings.BaseDatabaseSettings)
+// Instantiates RestAPI structure.
+//
+// This function exposes flexible interface for passing pointers to the
+// structures required by the RestAPI to operate. The RestAPI struct
+// comprises several pointers and several interfaces initialized by a
+// caller. They are specified as variadic function arguments in no
+// particular order. The function will detect their types and assign
+// them to appropriate RestAPI fields.
+//
+// Accepted pointers:
+// - *RestAPISettings,
+// - *dbops.DatabaseSettings,
+// - *pg.DB,
+// - *apps.Pullers,
+//
+// Accepted interfaces:
+// - agentcomm.ConnectedAgents,
+// - configreview.Dispatcher
+// - eventcenter.EventCenter,
+// - metrics.Collector
+//
+// The only mandatory parameter is the *dbops.DatabaseSettings because it
+// is used to instantiate the Session Manager. Other parameters are
+// optional but, if they are not specified, it may lead to nil pointer
+// dereference issues upon using the RestAPI instance. Specifying a
+// subset of the arguments is mostly useful in the unit tests which
+// test specific RestAPI functionality.
+//
+// Upon adding new fields to the RestAPI, the function may be easily
+// extended to support them.
+func NewRestAPI(args ...interface{}) (*RestAPI, error) {
+	api := &RestAPI{}
+
+	// Iterate over the variadic arguments.
+	for i, arg := range args {
+		argType := reflect.TypeOf(arg)
+
+		// If the interface is nil the TypeOf returns nil. Move to
+		// the next argument.
+		if argType == nil {
+			continue
+		}
+
+		// Make sure that the specified argument is a pointer.
+		if argType.Kind() != reflect.Ptr {
+			return nil, pkgerrors.Errorf("non-pointer argument specified for NewRestAPI at position %d", i)
+		}
+
+		// If the value is nil, there is nothing to do. Move on.
+		if reflect.ValueOf(arg).IsNil() {
+			continue
+		}
+
+		// The underlying type must be a struct.
+		if argType.Elem().Kind() != reflect.Struct {
+			return nil, pkgerrors.Errorf("pointer to non-struct argument specified for NewRestAPI at position %d", i)
+		}
+
+		// Check if the specified argument is an interface.
+		if argType.Implements(reflect.TypeOf((*agentcomm.ConnectedAgents)(nil)).Elem()) {
+			api.Agents = arg.(agentcomm.ConnectedAgents)
+			continue
+		}
+		if argType.Implements(reflect.TypeOf((*configreview.Dispatcher)(nil)).Elem()) {
+			api.ReviewDispatcher = arg.(configreview.Dispatcher)
+			continue
+		}
+		if argType.Implements(reflect.TypeOf((*eventcenter.EventCenter)(nil)).Elem()) {
+			api.EventCenter = arg.(eventcenter.EventCenter)
+			continue
+		}
+		if argType.Implements(reflect.TypeOf((*metrics.Collector)(nil)).Elem()) {
+			api.MetricsCollector = arg.(metrics.Collector)
+			continue
+		}
+
+		// Check if the specified argument is one of our supported structures.
+		switch argType.Elem().Name() {
+		case "DatabaseSettings":
+			api.DBSettings = arg.(*dbops.DatabaseSettings)
+			continue
+		case "DB":
+			api.DB = arg.(*pg.DB)
+			continue
+		case "Pullers":
+			api.Pullers = arg.(*apps.Pullers)
+		case "RestAPISettings":
+			api.Settings = arg.(*RestAPISettings)
+			continue
+		default:
+			return nil, pkgerrors.Errorf("unknown argument type %s specified for NewRestAPI", argType.Elem().Name())
+		}
+	}
+
+	// Database settings must be specified because we need to instantiate the
+	// session manager.
+	if api.DBSettings == nil {
+		return nil, pkgerrors.Errorf("dbops.DatabaseSettings parameter is required in NewRestAPI call")
+	}
+
+	// Instantiate the session manager.
+	sm, err := dbsession.NewSessionMgr(&api.DBSettings.BaseDatabaseSettings)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "unable to establish connection to the session database")
 	}
+	api.SessionManager = sm
 
-	r := &RestAPI{
-		Settings:         settings,
-		DBSettings:       dbSettings,
-		DB:               db,
-		SessionManager:   sm,
-		Agents:           agents,
-		EventCenter:      eventCenter,
-		Pullers:          pullers,
-		ReviewDispatcher: reviewDispatcher,
-		MetricsCollector: collector,
-	}
-
-	return r, nil
+	// All ok.
+	return api, nil
 }
 
 func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
