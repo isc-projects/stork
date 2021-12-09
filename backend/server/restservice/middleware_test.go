@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbsession "isc.org/stork/server/database/session"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
@@ -51,11 +50,7 @@ func TestFileServerMiddleware(t *testing.T) {
 func TestInnerMiddleware(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	settings := RestAPISettings{}
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 	sm, err := dbsession.NewSessionMgr(&rapi.DBSettings.BaseDatabaseSettings)
 	require.NoError(t, err)

@@ -7,12 +7,10 @@ import (
 
 	"github.com/go-pg/pg/v9"
 	"github.com/stretchr/testify/require"
-	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
-	storktest "isc.org/stork/server/test"
 )
 
 // This function creates multiple hosts used in tests which fetch and
@@ -180,11 +178,7 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestAPISettings{}
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -271,11 +265,7 @@ func TestGetHostsBySubnetID(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestAPISettings{}
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -298,11 +288,7 @@ func TestGetHostsWithFiltering(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestAPISettings{}
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -325,11 +311,7 @@ func TestGetHost(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestAPISettings{}
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 	ctx := context.Background()
 

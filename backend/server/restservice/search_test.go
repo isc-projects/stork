@@ -10,7 +10,6 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/restapi/operations/search"
-	storktest "isc.org/stork/server/test"
 )
 
 // Check searching via rest api functions.
@@ -18,11 +17,8 @@ func TestSearchRecords(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 

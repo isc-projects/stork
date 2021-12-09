@@ -19,11 +19,9 @@ func TestGetDaemonConfigForKeaDaemonWithAssignedConfiguration(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -103,11 +101,9 @@ func TestGetDaemonConfigWithSecretsForSuperAdmin(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -189,11 +185,9 @@ func TestGetDaemonConfigWithoutSecretsForAdmin(t *testing.T) {
 	defer teardown()
 
 	// REST API mock
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -307,11 +301,9 @@ func TestGetDaemonConfigForKeaDaemonWithoutAssignedConfiguration(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -366,11 +358,9 @@ func TestGetDaemonConfigForBind9Daemon(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -424,11 +414,9 @@ func TestGetDaemonConfigForNonExistsDaemon(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -476,11 +464,9 @@ func TestGetDaemonConfigForNonExistsDaemon(t *testing.T) {
 func TestGetDaemonConfigForDatabaseError(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -556,11 +542,9 @@ func TestGetDaemonConfigReports(t *testing.T) {
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -709,11 +693,9 @@ func TestGetDaemonConfigReportsDatabaseError(t *testing.T) {
 	// fetching the config reports.
 	teardown()
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -764,11 +746,9 @@ func TestPutDaemonConfigReview(t *testing.T) {
 	require.Len(t, daemons, 1)
 	require.NotZero(t, daemons[0].ID)
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -803,11 +783,9 @@ func TestPutDaemonConfigReviewDatabaseError(t *testing.T) {
 	// communicating with the database
 	teardown()
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -852,11 +830,9 @@ func TestPutDaemonConfigReviewNotKeaDaemon(t *testing.T) {
 	daemons, err := dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -902,11 +878,9 @@ func TestPutDaemonConfigReviewNoConfig(t *testing.T) {
 	daemons, err := dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
 

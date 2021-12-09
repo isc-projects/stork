@@ -10,7 +10,6 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
-	storktest "isc.org/stork/server/test"
 )
 
 // Generates a success mock response to a command fetching a DHCPv4
@@ -219,11 +218,8 @@ func TestFindLeases4(t *testing.T) {
 	require.NoError(t, err)
 
 	// Setup REST API.
-	settings := RestAPISettings{}
 	agents := agentcommtest.NewFakeAgents(mockLease4Get, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, agents, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, agents)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -261,7 +257,7 @@ func TestFindLeases4(t *testing.T) {
 
 	// Test the case when the Kea server returns an error.
 	agents = agentcommtest.NewFakeAgents(mockLease4GetError, nil)
-	rapi, err = NewRestAPI(&settings, dbSettings, db, agents, fec, nil, fd, nil)
+	rapi, err = NewRestAPI(dbSettings, db, agents)
 	require.NoError(t, err)
 
 	rsp = rapi.GetLeases(ctx, params)
@@ -322,11 +318,8 @@ func TestFindLeases6(t *testing.T) {
 	require.NoError(t, err)
 
 	// Setup REST API.
-	settings := RestAPISettings{}
 	agents := agentcommtest.NewFakeAgents(mockLeases6Get, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, agents, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, agents)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -434,11 +427,8 @@ func TestFindLeasesEmptyText(t *testing.T) {
 	require.NoError(t, err)
 
 	// Setup REST API.
-	settings := RestAPISettings{}
 	agents := agentcommtest.NewFakeAgents(mockLease4Get, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, agents, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, agents)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -515,11 +505,8 @@ func TestFindDeclinedLeases(t *testing.T) {
 	require.NoError(t, err)
 
 	// Setup REST API.
-	settings := RestAPISettings{}
 	agents := agentcommtest.NewFakeAgents(mockLeasesGetDeclined, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, agents, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, agents)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -669,11 +656,8 @@ func TestFindLeasesByHostID(t *testing.T) {
 	require.NoError(t, err)
 
 	// Setup REST API.
-	settings := RestAPISettings{}
 	agents := agentcommtest.NewKeaFakeAgents(mockLease4Get, mockLease6Get)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, agents, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, agents)
 	require.NoError(t, err)
 	ctx := context.Background()
 

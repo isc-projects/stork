@@ -5,11 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/restapi/operations/events"
-	storktest "isc.org/stork/server/test"
 )
 
 // Check searching via rest api functions.
@@ -30,11 +28,7 @@ func TestEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare RestAPI
-	settings := RestAPISettings{}
-	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db)
 	require.NoError(t, err)
 	ctx := context.Background()
 

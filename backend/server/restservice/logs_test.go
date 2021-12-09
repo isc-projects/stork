@@ -11,7 +11,6 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/restapi/operations/services"
-	storktest "isc.org/stork/server/test"
 )
 
 // This test verifies that the tail of the log file can be fetched via
@@ -55,11 +54,8 @@ func TestGetLogTail(t *testing.T) {
 	require.Len(t, a.Daemons[0].LogTargets, 1)
 	require.NotZero(t, a.Daemons[0].LogTargets[0].ID)
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -130,11 +126,8 @@ func TestLogTailBadParams(t *testing.T) {
 		require.NotZero(t, a.Daemons[0].LogTargets[i].ID)
 	}
 
-	settings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
-	fec := &storktest.FakeEventCenter{}
-	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, nil, fd, nil)
+	rapi, err := NewRestAPI(dbSettings, db, fa)
 	require.NoError(t, err)
 	ctx := context.Background()
 
