@@ -40,9 +40,9 @@ func (is *IndexedSubnets) Populate() error {
 	}
 	var subnetParamName string
 	switch rootName {
-	case "Dhcp4":
+	case RootNameDHCPv4:
 		subnetParamName = "subnet4"
-	case "Dhcp6":
+	case RootNameDHCPv6:
 		subnetParamName = "subnet6"
 	default:
 		return errors.New("failed to index subnets because given configuration is not DHCP configuration")

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"net"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 )
 
@@ -112,9 +111,9 @@ func (c *Map) GetLocalSubnetID(prefix string) int64 {
 	}
 	var subnetParamName string
 	switch rootName {
-	case "Dhcp4":
+	case RootNameDHCPv4:
 		subnetParamName = "subnet4"
-	case "Dhcp6":
+	case RootNameDHCPv6:
 		subnetParamName = "subnet6"
 	default:
 		// If this is neither the DHCPv4 nor DHCPv6 server, there is nothing to do.
@@ -156,8 +155,33 @@ func (c *Map) GetLocalSubnetID(prefix string) int64 {
 // data.
 func (c *Map) DecodeSharedNetworks(decodedSharedNetworks interface{}) error {
 	if sharedNetworksList, ok := c.GetTopLevelList("shared-networks"); ok {
-		if err := mapstructure.Decode(sharedNetworksList, decodedSharedNetworks); err != nil {
+		if err := decode(sharedNetworksList, decodedSharedNetworks); err != nil {
 			return errors.Wrapf(err, "problem with parsing shared-networks")
+		}
+	}
+	return nil
+}
+
+// Parses subnet4 or subnet6 list into the specified structure. The argument
+// must be a pointer to a slice of structures reflecting the subnet
+// data.
+func (c *Map) DecodeTopLevelSubnets(decodedSubnets interface{}) error {
+	rootName, ok := c.GetRootName()
+	if !ok {
+		return errors.New("missing root node")
+	}
+	var subnetsList []interface{}
+	switch rootName {
+	case "Dhcp4":
+		subnetsList, ok = c.GetTopLevelList("subnet4")
+	case "Dhcp6":
+		subnetsList, ok = c.GetTopLevelList("subnet6")
+	default:
+		return errors.Errorf("invalid configuration root node %s", rootName)
+	}
+	if ok {
+		if err := decode(subnetsList, decodedSubnets); err != nil {
+			return errors.Wrapf(err, "problem with parsing subnets")
 		}
 	}
 	return nil

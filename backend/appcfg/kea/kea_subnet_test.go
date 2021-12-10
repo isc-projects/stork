@@ -101,7 +101,14 @@ func getTestConfigWithIPv6Subnets(t *testing.T) *Map {
                 },
                 {
                     "id": 234,
-                    "subnet": "2001:db8:2::/64"
+                    "subnet": "2001:db8:2::/64",
+                    "pd-pools": [
+                        {
+                            "prefix": "3000::/16",
+                            "prefix-len": 64,
+                            "delegated-len": 96
+                        }
+                    ]
                 },
                 {
                     "id": 345,
@@ -209,5 +216,68 @@ func TestDecodeMalformedSharedNetworks(t *testing.T) {
 		Name string
 	}{}
 	err = cfg.DecodeSharedNetworks(&networks)
+	require.Error(t, err)
+}
+
+// Test that it is possible to parse subnet4 list into a custom
+// structure.
+func TestDecodeIPv4TopLevelSubnets(t *testing.T) {
+	cfg := getTestConfigWithIPv4Subnets(t)
+
+	subnets := []struct {
+		Subnet string
+	}{}
+	err := cfg.DecodeTopLevelSubnets(&subnets)
+	require.NoError(t, err)
+	require.Len(t, subnets, 3)
+	require.Equal(t, "192.0.2.0/24", subnets[0].Subnet)
+	require.Equal(t, "192.0.3.0/24", subnets[1].Subnet)
+	require.Equal(t, "10.0.0.0/8", subnets[2].Subnet)
+}
+
+// Test that it is possible to parse subnet6 list into a custom
+// structure.
+func TestDecodeIPv6TopLevelSubnets(t *testing.T) {
+	cfg := getTestConfigWithIPv6Subnets(t)
+
+	subnets := []struct {
+		Subnet  string
+		PdPools []struct {
+			Prefix       string
+			PrefixLen    int
+			DelegatedLen int
+		}
+	}{}
+	err := cfg.DecodeTopLevelSubnets(&subnets)
+	require.NoError(t, err)
+	require.Len(t, subnets, 3)
+	require.Equal(t, "2001:db8:1::/64", subnets[0].Subnet)
+	require.Equal(t, "2001:db8:2::/64", subnets[1].Subnet)
+	require.Equal(t, "2001:db8:3::/64", subnets[2].Subnet)
+
+	require.Len(t, subnets[1].PdPools, 1)
+}
+
+// Test that an error is returned when the subnet6 list
+// is malformed, i.e., does not match the specified structure.
+func TestDecodeMalformedSubnets(t *testing.T) {
+	configStr := `{
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "subnet": 1234
+                }
+            ]
+        }
+    }`
+
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	subnets := []struct {
+		Subnet string
+	}{}
+	err = cfg.DecodeTopLevelSubnets(&subnets)
 	require.Error(t, err)
 }

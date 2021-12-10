@@ -9,7 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-const localhost string = "localhost"
+const (
+	localhost      string = "localhost"
+	RootNameDHCPv4 string = "Dhcp4"
+	RootNameDHCPv6 string = "Dhcp6"
+)
 
 // Kea daemon configuration map. It comprises a set of functions
 // which retrieve complex data structures from the configuration.

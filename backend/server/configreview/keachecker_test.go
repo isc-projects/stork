@@ -438,3 +438,327 @@ func TestSharedNetworkDispensableMultipleDHCPv6Subnets(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
+
+// Tests that the checker finding dispensable subnets finds the subnets
+// that comprise no pools and no reservations.
+func TestIPv4SubnetDispensableNoPoolsNoReservations(t *testing.T) {
+	config, err := dbmodel.NewKeaConfigFromJSON(`
+    {
+        "Dhcp4": {
+            "shared-networks": [
+                {
+                    "name": "foo",
+                    "subnet4": [
+                        {
+                            "subnet": "192.0.2.0/24"
+                        }
+                    ]
+                }
+            ],
+            "subnet4": [
+                {
+                    "subnet": "192.0.3.0/24"
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	ctx := newReviewContext(&dbmodel.Daemon{
+		ID:   1,
+		Name: dbmodel.DaemonNameDHCPv4,
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: config,
+		},
+	}, false, nil)
+	report, err := subnetDispensable(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
+}
+
+// Tests that the checker finding dispensable subnets does not generate
+// a report when host_cmds hooks library is used.
+func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
+	config, err := dbmodel.NewKeaConfigFromJSON(`
+    {
+        "Dhcp4": {
+            "shared-networks": [
+                {
+                    "name": "foo",
+                    "subnet4": [
+                        {
+                            "subnet": "192.0.2.0/24"
+                        }
+                    ]
+                }
+            ],
+            "subnet4": [
+                {
+                    "subnet": "192.0.3.0/24"
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	ctx := newReviewContext(&dbmodel.Daemon{
+		ID:   1,
+		Name: dbmodel.DaemonNameDHCPv4,
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: config,
+		},
+	}, false, nil)
+	report, err := subnetDispensable(ctx)
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker finding dispensable subnets does not generate
+// a report when pools are present.
+func TestIPv4SubnetDispensableSomePoolsNoReservations(t *testing.T) {
+	config, err := dbmodel.NewKeaConfigFromJSON(`
+    {
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "subnet": "192.0.3.0/24",
+                    "pools": [
+                        {
+                            "pool": "192.0.3.10 - 192.0.3.100"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	ctx := newReviewContext(&dbmodel.Daemon{
+		ID:   1,
+		Name: dbmodel.DaemonNameDHCPv4,
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: config,
+		},
+	}, false, nil)
+	report, err := subnetDispensable(ctx)
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker finding dispensable subnets does not generate
+// a report when reservations are present.
+func TestIPv4SubnetDispensableNoPoolsSomeReservations(t *testing.T) {
+	config, err := dbmodel.NewKeaConfigFromJSON(`
+    {
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "subnet": "192.0.3.0/24",
+                    "reservations": [
+                        {
+                            "ip-address": "192.0.3.10",
+                            "hw-address": "01:02:03:04:05:06"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	ctx := newReviewContext(&dbmodel.Daemon{
+		ID:   1,
+		Name: dbmodel.DaemonNameDHCPv4,
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: config,
+		},
+	}, false, nil)
+	report, err := subnetDispensable(ctx)
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker finding dispensable subnets finds the subnets
+// that comprise no pools and no reservations.
+func TestIPv6SubnetDispensableNoPoolsNoReservations(t *testing.T) {
+	config, err := dbmodel.NewKeaConfigFromJSON(`
+    {
+        "Dhcp6": {
+            "shared-networks": [
+                {
+                    "name": "foo",
+                    "subnet6": [
+                        {
+                            "subnet": "2001:db8:1::/64"
+                        }
+                    ]
+                }
+            ],
+            "subnet6": [
+                {
+                    "subnet": "2001:db8:2::/64"
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	ctx := newReviewContext(&dbmodel.Daemon{
+		ID:   1,
+		Name: dbmodel.DaemonNameDHCPv6,
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: config,
+		},
+	}, false, nil)
+	report, err := subnetDispensable(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
+}
+
+// Tests that the checker finding dispensable subnets does not generate
+// a report when host_cmds hooks library is used.
+func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
+	config, err := dbmodel.NewKeaConfigFromJSON(`
+    {
+        "Dhcp6": {
+            "shared-networks": [
+                {
+                    "name": "foo",
+                    "subnet6": [
+                        {
+                            "subnet": "2001:db8:1::/64"
+                        }
+                    ]
+                }
+            ],
+            "subnet6": [
+                {
+                    "subnet": "2001:db8:2::/64"
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	ctx := newReviewContext(&dbmodel.Daemon{
+		ID:   1,
+		Name: dbmodel.DaemonNameDHCPv6,
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: config,
+		},
+	}, false, nil)
+	report, err := subnetDispensable(ctx)
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker finding dispensable subnets does not generate
+// a report when pools are present.
+func TestIPv6SubnetDispensableSomePoolsNoReservations(t *testing.T) {
+	config, err := dbmodel.NewKeaConfigFromJSON(`
+    {
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "subnet": "2001:db8:1::/64",
+                    "pools": [
+                        {
+                            "pool": "2001:db8:1::5 - 2001:db8:1::15"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	ctx := newReviewContext(&dbmodel.Daemon{
+		ID:   1,
+		Name: dbmodel.DaemonNameDHCPv6,
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: config,
+		},
+	}, false, nil)
+	report, err := subnetDispensable(ctx)
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker finding dispensable subnets does not generate
+// a report when prefix delegation pools are present.
+func TestIPv6SubnetDispensableSomePdPoolsNoReservations(t *testing.T) {
+	config, err := dbmodel.NewKeaConfigFromJSON(`
+    {
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "subnet": "2001:db8:1::/64",
+                    "pd-pools": [
+                        {
+                            "prefix": "3001::/16",
+                            "prefix-len": 64,
+                            "delegated-len": 96
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	ctx := newReviewContext(&dbmodel.Daemon{
+		ID:   1,
+		Name: dbmodel.DaemonNameDHCPv6,
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: config,
+		},
+	}, false, nil)
+	report, err := subnetDispensable(ctx)
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker finding dispensable subnets does not generate
+// a report when reservations are present.
+func TestIPv6SubnetDispensableNoPoolsSomeReservations(t *testing.T) {
+	config, err := dbmodel.NewKeaConfigFromJSON(`
+    {
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "subnet": "2001:db8:1::/64",
+                    "reservations": [
+                        {
+                            "ip-addresses": [ "2001:db8:1::10" ],
+                            "hw-address": "01:02:03:06:05:06"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`)
+	require.NoError(t, err)
+
+	ctx := newReviewContext(&dbmodel.Daemon{
+		ID:   1,
+		Name: dbmodel.DaemonNameDHCPv6,
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: config,
+		},
+	}, false, nil)
+	report, err := subnetDispensable(ctx)
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
