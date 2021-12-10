@@ -5,194 +5,250 @@ import (
 	"math/big"
 )
 
-type BigNumber interface {
-	Add(other BigNumber) BigNumber
-	AddInt64(val int64) BigNumber
-	Divide(other BigNumber) float64
-	DivideSafe(other BigNumber) float64
+type BigNumber struct {
+	state kernel
+}
 
-	ToInt64() int64
-	ToInt64OrDefault(nan int64, above int64) int64
+func (n *BigNumber) clone() *BigNumber {
+	kernel := n.state.clone()
+	return newBigNumber(kernel)
+}
 
+func (n *BigNumber) Add(other *BigNumber) *BigNumber {
+	number := n.clone()
+	number.AddInPlace(other)
+	return number
+}
+
+func (n *BigNumber) AddInPlace(other *BigNumber) {
+	if !n.state.canAdd(other.state) {
+		n.state = newKernelBigInt(n.state.toBigInt())
+	}
+	n.state.addInPlace(other.state)
+}
+
+func (n *BigNumber) AddInt64(val int64) *BigNumber {
+	number := NewBigNumber(val)
+	return n.Add(number)
+}
+
+func (n *BigNumber) AddInt64InPlace(val int64) {
+	number := NewBigNumber(val)
+	n.AddInPlace(number)
+}
+
+func (n *BigNumber) Divide(other *BigNumber) float64 {
+	if n.state.canDivide(other.state) {
+		return n.state.divide(other.state)
+	}
+
+	return newKernelBigInt(n.state.toBigInt()).divide(other.state)
+}
+
+func (n *BigNumber) DivideSafe(other *BigNumber) float64 {
+	if !other.state.isNaN() && other.state.toInt64() == 0 {
+		return 0
+	}
+	return n.Divide(other)
+}
+
+func (n *BigNumber) ToInt64() int64 {
+	return n.state.toInt64()
+}
+
+func (n *BigNumber) ToInt64OrDefault(nan int64, above int64) int64 {
+	if n.state.isNaN() {
+		return nan
+	}
+	if !n.state.isIn64BitRange() {
+		return above
+	}
+	return n.state.toInt64()
+}
+
+func NewBigNumber(val int64) *BigNumber {
+	return &BigNumber{newKernelInt64(val)}
+}
+
+func newBigNumber(k kernel) *BigNumber {
+	return &BigNumber{k}
+}
+
+func NewBigNumberNaN() *BigNumber {
+	return &BigNumber{newKernelNaN()}
+}
+
+type kernel interface {
+	isIn64BitRange() bool
+	canAdd(k kernel) bool
+	addInPlace(k kernel)
+	canDivide(k kernel) bool
+	divide(k kernel) float64
+	toInt64() int64
 	isNaN() bool
-
 	toBigInt() *big.Int
 	toFloat64() float64
+	clone() kernel
 }
 
-func NewBigNumber() BigNumber {
-	return newBigNumberInt64(0)
+type kernelNaN struct{}
+
+func newKernelNaN() kernel {
+	return &kernelNaN{}
 }
 
-type BigNumberNaN struct{}
-
-func NewBigNumberNaN() BigNumber {
-	return &BigNumberNaN{}
+func (k *kernelNaN) canAdd(other kernel) bool {
+	return false
 }
 
-func (k *BigNumberNaN) isNaN() bool {
+func (k *kernelNaN) addInPlace(other kernel) {}
+
+func (k *kernelNaN) isNaN() bool {
 	return true
 }
-func (k *BigNumberNaN) Add(other BigNumber) BigNumber {
-	return k
-}
-func (k *BigNumberNaN) AddInt64(val int64) BigNumber {
-	return k
-}
-func (k *BigNumberNaN) Divide(other BigNumber) float64 {
-	return math.NaN()
-}
-func (k *BigNumberNaN) DivideSafe(other BigNumber) float64 {
-	return math.NaN()
-}
-func (k *BigNumberNaN) ToInt64() int64 {
-	return 0
-}
-func (k *BigNumberNaN) toBigInt() *big.Int {
+
+func (k *kernelNaN) toBigInt() *big.Int {
 	return big.NewInt(0)
 }
-func (k *BigNumberNaN) ToInt64OrDefault(nan int64, above int64) int64 {
-	return nan
+
+func (k *kernelNaN) toInt64() int64 {
+	return 0
 }
-func (k *BigNumberNaN) toFloat64() float64 {
+
+func (k *kernelNaN) toFloat64() float64 {
 	return math.NaN()
 }
 
-type BigNumberInt64 struct {
+func (k *kernelNaN) clone() kernel {
+	return newKernelNaN()
+}
+
+func (k *kernelNaN) isIn64BitRange() bool {
+	return true
+}
+
+func (k *kernelNaN) canDivide(other kernel) bool {
+	return true
+}
+
+func (k *kernelNaN) divide(other kernel) float64 {
+	return math.NaN()
+}
+
+type kernelInt64 struct {
 	value int64
 }
 
-func newBigNumberInt64(value int64) BigNumber {
-	return &BigNumberInt64{value}
+func newKernelInt64(val int64) kernel {
+	return &kernelInt64{value: val}
 }
 
-func (k *BigNumberInt64) isNaN() bool {
+func (k *kernelInt64) canAdd(other kernel) bool {
+	return other.toInt64() <= math.MaxInt64-k.value
+}
+
+func (k *kernelInt64) addInPlace(other kernel) {
+	k.value += other.toInt64()
+}
+
+func (k *kernelInt64) isNaN() bool {
 	return false
 }
 
-func (k *BigNumberInt64) Add(other BigNumber) BigNumber {
-	if other.isNaN() {
-		return NewBigNumberNaN()
-	}
-
-	otherValue := other.ToInt64()
-	if k.isSumAboveRange(otherValue) {
-		kBig := newBigNumberBigInt(k.toBigInt())
-		return kBig.Add(other)
-	}
-
-	return newBigNumberInt64(k.value + otherValue)
-}
-
-func (k *BigNumberInt64) AddInt64(val int64) BigNumber {
-	if k.isSumAboveRange(val) {
-		kBig := newBigNumberBigInt(k.toBigInt())
-		return kBig.AddInt64(val)
-	}
-
-	return newBigNumberInt64(k.value + val)
-}
-
-func (k *BigNumberInt64) isSumAboveRange(val int64) bool {
-	return val > math.MaxInt64-k.value
-}
-
-func (k *BigNumberInt64) Divide(other BigNumber) float64 {
-	thisValue := k.toFloat64()
-	otherValue := other.toFloat64()
-
-	return thisValue / otherValue
-}
-
-func (k *BigNumberInt64) DivideSafe(other BigNumber) float64 {
-	if other.isNaN() {
-		return 0
-	}
-
-	val := other.ToInt64()
-	if val == 0 {
-		return 0
-	}
-
-	return k.Divide(other)
-}
-
-func (k *BigNumberInt64) ToInt64() int64 {
-	return k.value
-}
-
-func (k *BigNumberInt64) ToInt64OrDefault(nan int64, above int64) int64 {
-	return k.ToInt64()
-}
-
-func (k *BigNumberInt64) toBigInt() *big.Int {
+func (k *kernelInt64) toBigInt() *big.Int {
 	return big.NewInt(k.value)
 }
 
-func (k *BigNumberInt64) toFloat64() float64 {
+func (k *kernelInt64) toInt64() int64 {
+	return k.value
+}
+
+func (k *kernelInt64) toFloat64() float64 {
 	return float64(k.value)
 }
 
-type BigNumberBigInt struct {
+func (k *kernelInt64) clone() kernel {
+	return newKernelInt64(k.value)
+}
+
+func (k *kernelInt64) isIn64BitRange() bool {
+	return true
+}
+
+func (k *kernelInt64) canDivide(other kernel) bool {
+	return other.isIn64BitRange()
+}
+
+func (k *kernelInt64) divide(other kernel) float64 {
+	return k.toFloat64() / other.toFloat64()
+}
+
+type kernelBigInt struct {
 	value *big.Int
 }
 
-func newBigNumberBigInt(val *big.Int) BigNumber {
-	return &BigNumberBigInt{
-		value: val,
-	}
+func newKernelBigInt(val *big.Int) kernel {
+	return &kernelBigInt{value: val}
 }
 
-func (k *BigNumberBigInt) isAbove64BitRange() bool {
-	return !k.value.IsInt64()
+func (k *kernelBigInt) canAdd(other kernel) bool {
+	return true
 }
 
-func (k *BigNumberBigInt) isNaN() bool {
+func (k *kernelBigInt) addInPlace(other kernel) {
+	k.value.Add(other.toBigInt(), big.NewInt(0))
+}
+
+func (k *kernelBigInt) isNaN() bool {
 	return false
 }
 
-func (k *BigNumberBigInt) Add(other BigNumber) BigNumber {
-	if other.isNaN() {
-		return NewBigNumberNaN()
-	}
-	bigInt := big.NewInt(0).Add(k.value, other.toBigInt())
-	return newBigNumberBigInt(bigInt)
-}
-
-func (k *BigNumberBigInt) AddInt64(val int64) BigNumber {
-	bigInt := big.NewInt(0).Add(k.value, big.NewInt(val))
-	return newBigNumberBigInt(bigInt)
-}
-
-func (k *BigNumberBigInt) Divide(other BigNumber) float64 {
-	return k.toFloat64() / other.toFloat64()
-}
-func (k *BigNumberBigInt) DivideSafe(other BigNumber) float64 {
-	if !other.isNaN() && other.ToInt64() == 0 {
-		return 0
-	}
-
-	return k.Divide(other)
-}
-
-func (k *BigNumberBigInt) ToInt64() int64 {
-	if k.isAbove64BitRange() {
-		return math.MaxInt64
-	}
-	return k.value.Int64()
-}
-func (k *BigNumberBigInt) toBigInt() *big.Int {
+func (k *kernelBigInt) toBigInt() *big.Int {
 	return k.value
 }
-func (k *BigNumberBigInt) ToInt64OrDefault(nan int64, above int64) int64 {
-	if k.isAbove64BitRange() {
-		return above
+
+func (k *kernelBigInt) toInt64() int64 {
+	if k.value.IsInt64() {
+		return k.value.Int64()
 	}
-	return k.value.Int64()
+	if k.value.Sign() > 0 {
+		return math.MaxInt64
+	}
+	return math.MinInt64
 }
-func (k *BigNumberBigInt) toFloat64() float64 {
-	if k.isAbove64BitRange() {
+
+func (k *kernelBigInt) toFloat64() float64 {
+	if k.value.IsInt64() {
+		return float64(k.value.Int64())
+	}
+	return math.Inf(k.value.Sign())
+}
+
+func (k *kernelBigInt) clone() kernel {
+	return newKernelBigInt(k.value)
+}
+
+func (k *kernelBigInt) isIn64BitRange() bool {
+	return k.value.IsInt64()
+}
+
+func (k *kernelBigInt) canDivide(other kernel) bool {
+	return true
+}
+
+func (k *kernelBigInt) divide(other kernel) float64 {
+	kFLoat := new(big.Float).SetInt(k.toBigInt())
+	otherFloat := new(big.Float).SetInt(other.toBigInt())
+	div := new(big.Float).Quo(kFLoat, otherFloat)
+	res, acc := div.Float64()
+
+	if acc == big.Above {
 		return math.Inf(1)
 	}
-	return float64(k.value.Int64())
+
+	if acc == big.Below {
+		return math.Inf(-1)
+	}
+
+	return res
 }

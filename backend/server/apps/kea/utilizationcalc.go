@@ -11,43 +11,43 @@ const invalidStatValue = -1
 
 // The sum of statistics from all subnets.
 type globalStats struct {
-	totalAddresses         storkutil.BigNumber
-	totalAssignedAddresses storkutil.BigNumber
-	totalDeclinedAddresses storkutil.BigNumber
-	totalNAs               storkutil.BigNumber
-	totalAssignedNAs       storkutil.BigNumber
-	totalDeclinedNAs       storkutil.BigNumber
-	totalPDs               storkutil.BigNumber
-	totalAssignedPDs       storkutil.BigNumber
+	totalAddresses         *storkutil.BigNumber
+	totalAssignedAddresses *storkutil.BigNumber
+	totalDeclinedAddresses *storkutil.BigNumber
+	totalNAs               *storkutil.BigNumber
+	totalAssignedNAs       *storkutil.BigNumber
+	totalDeclinedNAs       *storkutil.BigNumber
+	totalPDs               *storkutil.BigNumber
+	totalAssignedPDs       *storkutil.BigNumber
 }
 
 func newGlobalStats() *globalStats {
 	return &globalStats{
-		totalAddresses:         storkutil.NewBigNumber(),
-		totalAssignedAddresses: storkutil.NewBigNumber(),
-		totalDeclinedAddresses: storkutil.NewBigNumber(),
-		totalNAs:               storkutil.NewBigNumber(),
-		totalAssignedNAs:       storkutil.NewBigNumber(),
-		totalDeclinedNAs:       storkutil.NewBigNumber(),
-		totalPDs:               storkutil.NewBigNumber(),
-		totalAssignedPDs:       storkutil.NewBigNumber(),
+		totalAddresses:         storkutil.NewBigNumber(0),
+		totalAssignedAddresses: storkutil.NewBigNumber(0),
+		totalDeclinedAddresses: storkutil.NewBigNumber(0),
+		totalNAs:               storkutil.NewBigNumber(0),
+		totalAssignedNAs:       storkutil.NewBigNumber(0),
+		totalDeclinedNAs:       storkutil.NewBigNumber(0),
+		totalPDs:               storkutil.NewBigNumber(0),
+		totalAssignedPDs:       storkutil.NewBigNumber(0),
 	}
 }
 
 // Add the IPv4 subnet statistics to the global state.
 func (g *globalStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	g.totalAddresses = g.totalAddresses.Add(subnet.totalAddresses)
-	g.totalAssignedAddresses = g.totalAssignedAddresses.Add(subnet.totalAssignedAddresses)
-	g.totalDeclinedAddresses = g.totalDeclinedAddresses.Add(subnet.totalDeclinedAddresses)
+	g.totalAddresses.AddInPlace(subnet.totalAddresses)
+	g.totalAssignedAddresses.AddInPlace(subnet.totalAssignedAddresses)
+	g.totalDeclinedAddresses.AddInPlace(subnet.totalDeclinedAddresses)
 }
 
 // Add the IPv6 subnet statistics to the global state.
 func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
-	g.totalNAs = g.totalNAs.Add(subnet.totalNAs)
-	g.totalAssignedNAs = g.totalAssignedNAs.Add(subnet.totalAssignedNAs)
-	g.totalDeclinedNAs = g.totalDeclinedNAs.Add(subnet.totalDeclinedNAs)
-	g.totalPDs = g.totalPDs.Add(subnet.totalPDs)
-	g.totalAssignedPDs = g.totalAssignedPDs.Add(subnet.totalAssignedPDs)
+	g.totalNAs.AddInPlace(subnet.totalNAs)
+	g.totalAssignedNAs.AddInPlace(subnet.totalAssignedNAs)
+	g.totalDeclinedNAs.AddInPlace(subnet.totalDeclinedNAs)
+	g.totalPDs.AddInPlace(subnet.totalPDs)
+	g.totalAssignedPDs.AddInPlace(subnet.totalAssignedPDs)
 }
 
 // General subnet lease statistics.
@@ -59,18 +59,18 @@ type leaseStats interface {
 
 // Sum of the subnet statistics from the single shared network.
 type sharedNetworkStats struct {
-	totalAddresses         storkutil.BigNumber
-	totalAssignedAddresses storkutil.BigNumber
-	totalPDs               storkutil.BigNumber
-	totalAssignedPDs       storkutil.BigNumber
+	totalAddresses         *storkutil.BigNumber
+	totalAssignedAddresses *storkutil.BigNumber
+	totalPDs               *storkutil.BigNumber
+	totalAssignedPDs       *storkutil.BigNumber
 }
 
 func newSharedNetworkStats() *sharedNetworkStats {
 	return &sharedNetworkStats{
-		totalAddresses:         storkutil.NewBigNumber(),
-		totalAssignedAddresses: storkutil.NewBigNumber(),
-		totalPDs:               storkutil.NewBigNumber(),
-		totalAssignedPDs:       storkutil.NewBigNumber(),
+		totalAddresses:         storkutil.NewBigNumber(0),
+		totalAssignedAddresses: storkutil.NewBigNumber(0),
+		totalPDs:               storkutil.NewBigNumber(0),
+		totalAssignedPDs:       storkutil.NewBigNumber(0),
 	}
 }
 
@@ -87,30 +87,30 @@ func (s *sharedNetworkStats) getPDUtilization() float64 {
 
 // Add the IPv4 subnet statistics to the shared network state.
 func (s *sharedNetworkStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	s.totalAddresses = s.totalAddresses.Add(subnet.totalAddresses)
-	s.totalAssignedAddresses = s.totalAssignedAddresses.Add(subnet.totalAssignedAddresses)
+	s.totalAddresses.AddInPlace(subnet.totalAddresses)
+	s.totalAssignedAddresses.AddInPlace(subnet.totalAssignedAddresses)
 }
 
 // Add the IPv6 subnet statistics to the shared network state.
 func (s *sharedNetworkStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
-	s.totalAddresses = s.totalAddresses.Add(subnet.totalNAs)
-	s.totalAssignedAddresses = s.totalAssignedAddresses.Add(subnet.totalAssignedNAs)
-	s.totalPDs = s.totalPDs.Add(subnet.totalPDs)
-	s.totalAssignedPDs = s.totalAssignedPDs.Add(subnet.totalAssignedPDs)
+	s.totalAddresses.AddInPlace(subnet.totalNAs)
+	s.totalAssignedAddresses.AddInPlace(subnet.totalAssignedNAs)
+	s.totalPDs.AddInPlace(subnet.totalPDs)
+	s.totalAssignedPDs.AddInPlace(subnet.totalAssignedPDs)
 }
 
 // IPv4 statistics retrieved from the single subnet.
 type subnetIPv4Stats struct {
-	totalAddresses         storkutil.BigNumber
-	totalAssignedAddresses storkutil.BigNumber
-	totalDeclinedAddresses storkutil.BigNumber
+	totalAddresses         *storkutil.BigNumber
+	totalAssignedAddresses *storkutil.BigNumber
+	totalDeclinedAddresses *storkutil.BigNumber
 }
 
 func newSubnetIPv4Stats() *subnetIPv4Stats {
 	return &subnetIPv4Stats{
-		totalAddresses:         storkutil.NewBigNumber(),
-		totalAssignedAddresses: storkutil.NewBigNumber(),
-		totalDeclinedAddresses: storkutil.NewBigNumber(),
+		totalAddresses:         storkutil.NewBigNumber(0),
+		totalAssignedAddresses: storkutil.NewBigNumber(0),
+		totalDeclinedAddresses: storkutil.NewBigNumber(0),
 	}
 }
 
@@ -128,20 +128,20 @@ func (s *subnetIPv4Stats) getPDUtilization() float64 {
 
 // IPv6 statistics retrieved from the single subnet.
 type subnetIPv6Stats struct {
-	totalNAs         storkutil.BigNumber
-	totalAssignedNAs storkutil.BigNumber
-	totalDeclinedNAs storkutil.BigNumber
-	totalPDs         storkutil.BigNumber
-	totalAssignedPDs storkutil.BigNumber
+	totalNAs         *storkutil.BigNumber
+	totalAssignedNAs *storkutil.BigNumber
+	totalDeclinedNAs *storkutil.BigNumber
+	totalPDs         *storkutil.BigNumber
+	totalAssignedPDs *storkutil.BigNumber
 }
 
 func newSubnetIPv6Stats() *subnetIPv6Stats {
 	return &subnetIPv6Stats{
-		totalNAs:         storkutil.NewBigNumber(),
-		totalAssignedNAs: storkutil.NewBigNumber(),
-		totalDeclinedNAs: storkutil.NewBigNumber(),
-		totalPDs:         storkutil.NewBigNumber(),
-		totalAssignedPDs: storkutil.NewBigNumber(),
+		totalNAs:         storkutil.NewBigNumber(0),
+		totalAssignedNAs: storkutil.NewBigNumber(0),
+		totalDeclinedNAs: storkutil.NewBigNumber(0),
+		totalPDs:         storkutil.NewBigNumber(0),
+		totalAssignedPDs: storkutil.NewBigNumber(0),
 	}
 }
 
@@ -227,8 +227,8 @@ func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet) *subnetIPv
 }
 
 // Return the sum of specific statistics for each local subnet in the provided subnet.
-func sumStatLocalSubnets(subnet *dbmodel.Subnet, statName string) storkutil.BigNumber {
-	sum := storkutil.NewBigNumber()
+func sumStatLocalSubnets(subnet *dbmodel.Subnet, statName string) *storkutil.BigNumber {
+	sum := storkutil.NewBigNumber(0)
 	for _, localSubnet := range subnet.LocalSubnets {
 		stat := getLocalSubnetStatValueIntOrDefault(localSubnet, statName)
 
