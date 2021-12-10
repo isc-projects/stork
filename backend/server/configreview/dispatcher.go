@@ -583,4 +583,5 @@ func (d *dispatcherImpl) ReviewInProgress(daemonID int64) bool {
 func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "stat_cmds_presence", statCmdsPresence)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "host_cmds_presence", hostCmdsPresence)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "shared_network_dispensable", sharedNetworkDispensable)
 }

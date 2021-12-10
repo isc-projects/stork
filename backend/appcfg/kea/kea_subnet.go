@@ -1,5 +1,13 @@
 package keaconfig
 
+import (
+	"bytes"
+	"net"
+
+	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
+)
+
 // Represents host reservation within Kea configuration.
 type Reservation struct {
 	HWAddress   string   `mapstructure:"hw-address" json:"hw-address,omitempty"`
@@ -62,4 +70,95 @@ type KeaSharedNetwork struct {
 	Subnets        []map[string]interface{}
 	MachineAddress string
 	AgentPort      int64
+}
+
+// Matches the prefix of a subnet with the given IP network. If the match is
+// found the local subnet id of that subnet is returned. Otherwise, the value
+// of 0 is returned.
+func getMatchingSubnetLocalID(subnet interface{}, ipNet *net.IPNet) int64 {
+	sn := subnet.(map[string]interface{})
+
+	// Parse the prefix into a common form that can be used for comparison.
+	_, localNetwork, err := net.ParseCIDR(sn["subnet"].(string))
+	if err != nil {
+		return 0
+	}
+	// Compare the prefix of the subnet we have found and the specified prefix.
+	if (localNetwork != nil) && net.IP.Equal(ipNet.IP, localNetwork.IP) &&
+		bytes.Equal(ipNet.Mask, localNetwork.Mask) {
+		snID, ok := sn["id"]
+		if ok {
+			return int64(snID.(float64))
+		}
+		return int64(0)
+	}
+	// No match.
+	return 0
+}
+
+// Scans subnets within the Kea configuration and returns the ID of the subnet having
+// the specified prefix.
+func (c *Map) GetLocalSubnetID(prefix string) int64 {
+	_, globalNetwork, err := net.ParseCIDR(prefix)
+	if err != nil || globalNetwork == nil {
+		return 0
+	}
+
+	// Depending on the DHCP server type, we need to use different name of the list
+	// holding the subnets.
+	rootName, ok := c.GetRootName()
+	if !ok {
+		return 0
+	}
+	var subnetParamName string
+	switch rootName {
+	case "Dhcp4":
+		subnetParamName = "subnet4"
+	case "Dhcp6":
+		subnetParamName = "subnet6"
+	default:
+		// If this is neither the DHCPv4 nor DHCPv6 server, there is nothing to do.
+		return 0
+	}
+
+	// First, let's iterate over the subnets which are not associated with any
+	// shared network.
+	if subnetList, ok := c.GetTopLevelList(subnetParamName); ok {
+		for _, s := range subnetList {
+			id := getMatchingSubnetLocalID(s, globalNetwork)
+			if id > 0 {
+				return id
+			}
+		}
+	}
+
+	// No match. Let's get the subnets belonging to the shared networks.
+	if networkList, ok := c.GetTopLevelList("shared-networks"); ok {
+		for _, n := range networkList {
+			if network, ok := n.(map[string]interface{}); ok {
+				if subnetList, ok := network[subnetParamName].([]interface{}); ok {
+					for _, s := range subnetList {
+						id := getMatchingSubnetLocalID(s, globalNetwork)
+						if id > 0 {
+							return id
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return 0
+}
+
+// Parses shared-networks list into the specified structure. The argument
+// must be a pointer to a slice of structures reflecting the shared network
+// data.
+func (c *Map) DecodeSharedNetworks(decodedSharedNetworks interface{}) error {
+	if sharedNetworksList, ok := c.GetTopLevelList("shared-networks"); ok {
+		if err := mapstructure.Decode(sharedNetworksList, decodedSharedNetworks); err != nil {
+			return errors.Wrapf(err, "problem with parsing shared-networks")
+		}
+	}
+	return nil
 }

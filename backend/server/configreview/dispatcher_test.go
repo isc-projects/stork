@@ -551,6 +551,7 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	}
 	require.Contains(t, checkerNames, "stat_cmds_presence")
 	require.Contains(t, checkerNames, "host_cmds_presence")
+	require.Contains(t, checkerNames, "shared_network_dispensable")
 }
 
 // Verifies that registering new checkers and bumping up the
