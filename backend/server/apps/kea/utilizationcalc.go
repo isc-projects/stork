@@ -1,49 +1,50 @@
 package kea
 
 import (
+	"math"
+
 	dbmodel "isc.org/stork/server/database/model"
-	storkutil "isc.org/stork/util"
 )
 
 // The sum of statistics from all subnets.
 type globalStats struct {
-	totalAddresses         *storkutil.BigCounter
-	totalAssignedAddresses *storkutil.BigCounter
-	totalDeclinedAddresses *storkutil.BigCounter
-	totalNAs               *storkutil.BigCounter
-	totalAssignedNAs       *storkutil.BigCounter
-	totalDeclinedNAs       *storkutil.BigCounter
-	totalPDs               *storkutil.BigCounter
-	totalAssignedPDs       *storkutil.BigCounter
+	totalAddresses         float64
+	totalAssignedAddresses float64
+	totalDeclinedAddresses float64
+	totalNAs               float64
+	totalAssignedNAs       float64
+	totalDeclinedNAs       float64
+	totalPDs               float64
+	totalAssignedPDs       float64
 }
 
 func newGlobalStats() *globalStats {
 	return &globalStats{
-		totalAddresses:         storkutil.NewBigCounter(0),
-		totalAssignedAddresses: storkutil.NewBigCounter(0),
-		totalDeclinedAddresses: storkutil.NewBigCounter(0),
-		totalNAs:               storkutil.NewBigCounter(0),
-		totalAssignedNAs:       storkutil.NewBigCounter(0),
-		totalDeclinedNAs:       storkutil.NewBigCounter(0),
-		totalPDs:               storkutil.NewBigCounter(0),
-		totalAssignedPDs:       storkutil.NewBigCounter(0),
+		totalAddresses:         0,
+		totalAssignedAddresses: 0,
+		totalDeclinedAddresses: 0,
+		totalNAs:               0,
+		totalAssignedNAs:       0,
+		totalDeclinedNAs:       0,
+		totalPDs:               0,
+		totalAssignedPDs:       0,
 	}
 }
 
 // Add the IPv4 subnet statistics to the global state.
 func (g *globalStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	g.totalAddresses.AddInPlace(subnet.totalAddresses)
-	g.totalAssignedAddresses.AddInPlace(subnet.totalAssignedAddresses)
-	g.totalDeclinedAddresses.AddInPlace(subnet.totalDeclinedAddresses)
+	g.totalAddresses += subnet.totalAddresses
+	g.totalAssignedAddresses += subnet.totalAssignedAddresses
+	g.totalDeclinedAddresses += subnet.totalDeclinedAddresses
 }
 
 // Add the IPv6 subnet statistics to the global state.
 func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
-	g.totalNAs.AddInPlace(subnet.totalNAs)
-	g.totalAssignedNAs.AddInPlace(subnet.totalAssignedNAs)
-	g.totalDeclinedNAs.AddInPlace(subnet.totalDeclinedNAs)
-	g.totalPDs.AddInPlace(subnet.totalPDs)
-	g.totalAssignedPDs.AddInPlace(subnet.totalAssignedPDs)
+	g.totalNAs += subnet.totalNAs
+	g.totalAssignedNAs += subnet.totalAssignedNAs
+	g.totalDeclinedNAs += subnet.totalDeclinedNAs
+	g.totalPDs += subnet.totalPDs
+	g.totalAssignedPDs += subnet.totalAssignedPDs
 }
 
 // General subnet lease statistics.
@@ -55,57 +56,57 @@ type leaseStats interface {
 
 // Sum of the subnet statistics from the single shared network.
 type sharedNetworkStats struct {
-	totalAddresses         *storkutil.BigCounter
-	totalAssignedAddresses *storkutil.BigCounter
-	totalPDs               *storkutil.BigCounter
-	totalAssignedPDs       *storkutil.BigCounter
+	totalAddresses         float64
+	totalAssignedAddresses float64
+	totalPDs               float64
+	totalAssignedPDs       float64
 }
 
 func newSharedNetworkStats() *sharedNetworkStats {
 	return &sharedNetworkStats{
-		totalAddresses:         storkutil.NewBigCounter(0),
-		totalAssignedAddresses: storkutil.NewBigCounter(0),
-		totalPDs:               storkutil.NewBigCounter(0),
-		totalAssignedPDs:       storkutil.NewBigCounter(0),
+		totalAddresses:         0,
+		totalAssignedAddresses: 0,
+		totalPDs:               0,
+		totalAssignedPDs:       0,
 	}
 }
 
 // Address utilization of the shared network.
 func (s *sharedNetworkStats) getAddressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
-	return s.totalAssignedAddresses.DivideBySafe(s.totalAddresses)
+	return safeDiv(s.totalAssignedAddresses, s.totalAddresses)
 }
 
 // Delegated prefix utilization of the shared network.
 func (s *sharedNetworkStats) getPDUtilization() float64 {
-	return s.totalAssignedPDs.DivideBySafe(s.totalPDs)
+	return safeDiv(s.totalAssignedPDs, s.totalPDs)
 }
 
 // Add the IPv4 subnet statistics to the shared network state.
 func (s *sharedNetworkStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	s.totalAddresses.AddInPlace(subnet.totalAddresses)
-	s.totalAssignedAddresses.AddInPlace(subnet.totalAssignedAddresses)
+	s.totalAddresses += subnet.totalAddresses
+	s.totalAssignedAddresses += subnet.totalAssignedAddresses
 }
 
 // Add the IPv6 subnet statistics to the shared network state.
 func (s *sharedNetworkStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
-	s.totalAddresses.AddInPlace(subnet.totalNAs)
-	s.totalAssignedAddresses.AddInPlace(subnet.totalAssignedNAs)
-	s.totalPDs.AddInPlace(subnet.totalPDs)
-	s.totalAssignedPDs.AddInPlace(subnet.totalAssignedPDs)
+	s.totalAddresses += subnet.totalNAs
+	s.totalAssignedAddresses += subnet.totalAssignedNAs
+	s.totalPDs += subnet.totalPDs
+	s.totalAssignedPDs += subnet.totalAssignedPDs
 }
 
 // IPv4 statistics retrieved from the single subnet.
 type subnetIPv4Stats struct {
-	totalAddresses         *storkutil.BigCounter
-	totalAssignedAddresses *storkutil.BigCounter
-	totalDeclinedAddresses *storkutil.BigCounter
+	totalAddresses         float64
+	totalAssignedAddresses float64
+	totalDeclinedAddresses float64
 }
 
 // Return the address utilization for a single IPv4 subnet.
 func (s *subnetIPv4Stats) getAddressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
-	return s.totalAssignedAddresses.DivideBySafe(s.totalAddresses)
+	return safeDiv(s.totalAssignedAddresses, s.totalAddresses)
 }
 
 // Return the delegated prefix utilization for a single IPv4 subnet.
@@ -116,22 +117,22 @@ func (s *subnetIPv4Stats) getPDUtilization() float64 {
 
 // IPv6 statistics retrieved from the single subnet.
 type subnetIPv6Stats struct {
-	totalNAs         *storkutil.BigCounter
-	totalAssignedNAs *storkutil.BigCounter
-	totalDeclinedNAs *storkutil.BigCounter
-	totalPDs         *storkutil.BigCounter
-	totalAssignedPDs *storkutil.BigCounter
+	totalNAs         float64
+	totalAssignedNAs float64
+	totalDeclinedNAs float64
+	totalPDs         float64
+	totalAssignedPDs float64
 }
 
 // Return the IPv6 address utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) getAddressUtilization() float64 {
 	// The assigned addresses include the declined ones that aren't reclaimed yet.
-	return s.totalAssignedNAs.DivideBySafe(s.totalNAs)
+	return safeDiv(s.totalAssignedNAs, s.totalNAs)
 }
 
 // Return the delegated prefix utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) getPDUtilization() float64 {
-	return s.totalAssignedPDs.DivideBySafe(s.totalPDs)
+	return safeDiv(s.totalAssignedPDs, s.totalPDs)
 }
 
 // Utilization calculator is a helper for calculating the global
@@ -205,24 +206,24 @@ func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet) *subnetIPv
 }
 
 // Return the sum of specific statistics for each local subnet in the provided subnet.
-func sumStatLocalSubnets(subnet *dbmodel.Subnet, statName string) *storkutil.BigCounter {
-	sum := storkutil.NewBigCounter(0)
+func sumStatLocalSubnets(subnet *dbmodel.Subnet, statName string) float64 {
+	sum := 0.0
 	for _, localSubnet := range subnet.LocalSubnets {
 		stat := getLocalSubnetStatValueIntOrDefault(localSubnet, statName)
 
 		// The invalid statistic value.
 		// It is returned by Kea when the value exceed the int64/float64 range.
 		if stat == -1 {
-			return storkutil.NewBigCounterNaN()
+			return math.NaN()
 		}
 
-		sum.AddInt64InPlace(stat)
+		sum += stat
 	}
 	return sum
 }
 
 // Retrieve the statistic value from the provided local subnet or return zero value.
-func getLocalSubnetStatValueIntOrDefault(localSubnet *dbmodel.LocalSubnet, name string) int64 {
+func getLocalSubnetStatValueIntOrDefault(localSubnet *dbmodel.LocalSubnet, name string) float64 {
 	value, ok := localSubnet.Stats[name]
 	if !ok {
 		return 0
@@ -233,5 +234,13 @@ func getLocalSubnetStatValueIntOrDefault(localSubnet *dbmodel.LocalSubnet, name 
 		return 0
 	}
 
-	return int64(valueFloat)
+	return valueFloat
+}
+
+// Division that doesn't panic when divisive is 0.
+func safeDiv(a, b float64) float64 {
+	if b == 0 {
+		return 0
+	}
+	return a / b
 }
