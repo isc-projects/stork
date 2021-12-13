@@ -281,3 +281,92 @@ func TestDecodeMalformedSubnets(t *testing.T) {
 	err = cfg.DecodeTopLevelSubnets(&subnets)
 	require.Error(t, err)
 }
+
+// Test that reservation modes can be parsed at various configuration
+// levels, i.e., top-level subnet, shared network and subnet embedded
+// in a shared network.
+func TestDecodeIPv4SubnetsWithHostReservationModes(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "shared-networks": [
+                {
+                    "name": "foo",
+                    "subnet4": [
+                        {
+                            "id": 567,
+                            "subnet": "10.1.0.0/16",
+                            "reservation-mode": "global"
+                        }
+                    ],
+                    "reservations-in-subnet": true,
+                    "reservations-out-of-pool": true
+                }
+            ],
+            "subnet4": [
+                {
+                    "id": 123,
+                    "subnet": "192.0.2.0/24",
+                    "reservations-in-subnet": true
+                }
+            ]
+        }
+    }`
+
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	// Parse the top-level subnet.
+	subnets := []struct {
+		Subnet string
+		ReservationModes
+	}{}
+	err = cfg.DecodeTopLevelSubnets(&subnets)
+	require.NoError(t, err)
+
+	require.Len(t, subnets, 1)
+	val, set := subnets[0].ReservationModes.IsInSubnet()
+	require.True(t, val)
+	require.True(t, set)
+	val, set = subnets[0].ReservationModes.IsOutOfPool()
+	require.False(t, val)
+	require.False(t, set)
+	val, set = subnets[0].ReservationModes.IsGlobal()
+	require.False(t, val)
+	require.False(t, set)
+
+	// Parse the shared network.
+	networks := []struct {
+		Name    string
+		Subnet4 []struct {
+			Subnet string
+			ReservationModes
+		}
+		ReservationModes
+	}{}
+	err = cfg.DecodeSharedNetworks(&networks)
+	require.NoError(t, err)
+	require.Len(t, networks, 1)
+	val, set = networks[0].ReservationModes.IsInSubnet()
+	require.True(t, val)
+	require.True(t, set)
+	val, set = networks[0].ReservationModes.IsOutOfPool()
+	require.True(t, val)
+	require.True(t, set)
+	val, set = networks[0].ReservationModes.IsGlobal()
+	require.False(t, val)
+	require.False(t, set)
+
+	// Validate the reservation modes specified for the subnet within
+	// the shared network.
+	require.Len(t, networks[0].Subnet4, 1)
+	val, set = networks[0].Subnet4[0].ReservationModes.IsGlobal()
+	require.True(t, val)
+	require.True(t, set)
+	val, set = networks[0].Subnet4[0].ReservationModes.IsInSubnet()
+	require.False(t, val)
+	require.True(t, set)
+	val, set = networks[0].Subnet4[0].ReservationModes.IsOutOfPool()
+	require.False(t, val)
+	require.True(t, set)
+}

@@ -677,3 +677,182 @@ func TestGetAllDatabases(t *testing.T) {
 		require.Empty(t, databases.Forensic.Host)
 	})
 }
+
+// Test parsing global reservation modes when all of them
+// are explicitly set.
+func TestGetGlobalReservationModesEnableAll(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "reservations-global": true,
+            "reservations-in-subnet": true,
+            "reservations-out-of-pool": true,
+            "reservation-mode": "disabled"
+        }
+    }`
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	modes := cfg.GetGlobalReservationModes()
+	require.NotNil(t, modes)
+	// The new settings take precedence over the deprecated
+	// reservation-mode setting.
+	val, set := modes.IsGlobal()
+	require.True(t, val)
+	require.True(t, set)
+	val, set = modes.IsInSubnet()
+	require.True(t, val)
+	require.True(t, set)
+	val, set = modes.IsOutOfPool()
+	require.True(t, val)
+	require.True(t, set)
+}
+
+// Test parsing global reservation modes when all of them
+// are explicitly disabled.
+func TestGetGlobalReservationModesDisableAll(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "reservations-global": false,
+            "reservations-in-subnet": false,
+            "reservations-out-of-pool": false,
+            "reservation-mode": "out-of-pool"
+        }
+    }`
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	modes := cfg.GetGlobalReservationModes()
+	require.NotNil(t, modes)
+	// The new settings take precedence over the deprecated
+	// reservation-mode setting.
+	val, set := modes.IsGlobal()
+	require.False(t, val)
+	require.True(t, set)
+	val, set = modes.IsInSubnet()
+	require.False(t, val)
+	require.True(t, set)
+	val, set = modes.IsOutOfPool()
+	require.False(t, val)
+	require.True(t, set)
+}
+
+// Test parsing the deprecated reservation-mode set to disabled.
+func TestGetGlobalReservationModesDeprecatedDisabled(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "reservation-mode": "disabled"
+        }
+    }`
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	modes := cfg.GetGlobalReservationModes()
+	require.NotNil(t, modes)
+	val, set := modes.IsGlobal()
+	require.False(t, val)
+	require.True(t, set)
+	val, set = modes.IsInSubnet()
+	require.False(t, val)
+	require.True(t, set)
+	val, set = modes.IsOutOfPool()
+	require.False(t, val)
+	require.True(t, set)
+}
+
+// Test parsing the deprecated reservation-mode set to global.
+func TestGetGlobalReservationModesDeprecatedGlobal(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "reservation-mode": "global"
+        }
+    }`
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	modes := cfg.GetGlobalReservationModes()
+	require.NotNil(t, modes)
+	val, set := modes.IsGlobal()
+	require.True(t, val)
+	require.True(t, set)
+	val, set = modes.IsInSubnet()
+	require.False(t, val)
+	require.True(t, set)
+	val, set = modes.IsOutOfPool()
+	require.False(t, val)
+	require.True(t, set)
+}
+
+// Test parsing the deprecated reservation-mode set to out-of-pool.
+func TestGetGlobalReservationModesDeprecatedOutOfPool(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "reservation-mode": "out-of-pool"
+        }
+    }`
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	modes := cfg.GetGlobalReservationModes()
+	require.NotNil(t, modes)
+	val, set := modes.IsGlobal()
+	require.False(t, val)
+	require.True(t, set)
+	val, set = modes.IsInSubnet()
+	require.True(t, val)
+	require.True(t, set)
+	val, set = modes.IsOutOfPool()
+	require.True(t, val)
+	require.True(t, set)
+}
+
+// Test parsing the deprecated reservation-mode set to all.
+func TestGetGlobalReservationModesDeprecatedAll(t *testing.T) {
+	configStr := `{
+        "Dhcp4": {
+            "reservation-mode": "all"
+        }
+    }`
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	modes := cfg.GetGlobalReservationModes()
+	require.NotNil(t, modes)
+	val, set := modes.IsGlobal()
+	require.False(t, val)
+	require.True(t, set)
+	val, set = modes.IsInSubnet()
+	require.True(t, val)
+	require.True(t, set)
+	val, set = modes.IsOutOfPool()
+	require.False(t, val)
+	require.True(t, set)
+}
+
+// Test parsing the configuration when host reservation modes aren't
+// explicitly specified.
+func TestGetGlobalReservationModesDefaults(t *testing.T) {
+	configStr := `{
+        "Dhcp4": { }
+    }`
+	cfg, err := NewFromJSON(configStr)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	modes := cfg.GetGlobalReservationModes()
+	require.NotNil(t, modes)
+	val, set := modes.IsGlobal()
+	require.False(t, val)
+	require.False(t, set)
+	val, set = modes.IsInSubnet()
+	require.True(t, val)
+	require.False(t, set)
+	val, set = modes.IsOutOfPool()
+	require.False(t, val)
+	require.False(t, set)
+}

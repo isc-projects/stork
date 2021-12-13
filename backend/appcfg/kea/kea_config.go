@@ -95,6 +95,22 @@ type Databases struct {
 	Forensic *Database
 }
 
+// A structure comprising host reservation modes at the particular
+// configuration level. This structure can be embedded in the
+// structures for decoding subnets and shared networks. In that
+// case, the reservation modes configured at the subnet or shared
+// network lebel will be decoded into the embedded structure.
+// Do not read the decoded modes directly from the structure.
+// Call appropriate functions on this structure to test the
+// decoded modes. The Deprecated field holds the value of the
+// reservation-mode setting that was deprecated since Kea 1.9.x.
+type ReservationModes struct {
+	OutOfPool  *bool   `mapstructure:"reservations-out-of-pool,omitempty"`
+	InSubnet   *bool   `mapstructure:"reservations-in-subnet,omitempty"`
+	Global     *bool   `mapstructure:"reservations-global,omitempty"`
+	Deprecated *string `mapstructure:"reservation-mode,omitempty"`
+}
+
 // Creates new instance from the pointer to the map of interfaces.
 func New(rawCfg *map[string]interface{}) *Map {
 	newCfg := Map(*rawCfg)
@@ -336,4 +352,67 @@ func (c *Map) GetAllDatabases() (databases Databases) {
 		databases.Forensic = &database
 	}
 	return databases
+}
+
+// Checks if the global reservation mode has been enabled.
+// Returns (first parameter):
+// - reservations-global value if set OR
+// - true when reservation-mode is "global".
+// The second parameter indicates whether the returned value was set
+// explicitly (when true) or is a default value (when false).
+func (modes *ReservationModes) IsGlobal() (bool, bool) {
+	if modes.Global != nil {
+		return *modes.Global, true
+	}
+	if modes.Deprecated != nil {
+		return *modes.Deprecated == "global", true
+	}
+	return false, false
+}
+
+// Checks if the in-subnet reservation mode has been enabled.
+// Returns (first parameter):
+// - reservations-in-subnet value if set OR
+// - true when reservation-mode is set and is "all" or "out-of-pool" OR
+// - false when reservation-mode is set and configured to other values OR
+// - true when no mode is explicitly configured.
+// The second parameter indicates whether the returned value was set
+// explicitly (when true) or is a default value (when false).
+func (modes *ReservationModes) IsInSubnet() (bool, bool) {
+	if modes.InSubnet != nil {
+		return *modes.InSubnet, true
+	}
+	if modes.Deprecated != nil {
+		return *modes.Deprecated == "all" || *modes.Deprecated == "out-of-pool", true
+	}
+	return true, false
+}
+
+// Checks if the out-of-pool reservation mode has been enabled.
+// Returns (first parameter):
+// - reservations-out-of-pool value if set OR,
+// - true when reservation-mode is "out-of-pool",
+// - false otherwise.
+// The second parameter indicates whether the returned value was set
+// explicitly (when true) or is a default value (when false).
+func (modes *ReservationModes) IsOutOfPool() (bool, bool) {
+	if modes.OutOfPool != nil {
+		return *modes.OutOfPool, true
+	}
+	if modes.Deprecated != nil {
+		return *modes.Deprecated == "out-of-pool", true
+	}
+	return false, false
+}
+
+// Parses and returns top-level reservation modes.
+func (c *Map) GetGlobalReservationModes() *ReservationModes {
+	rootNode, ok := c.getRootNode()
+	if !ok {
+		return nil
+	}
+	modes := &ReservationModes{}
+	_ = decode(rootNode, modes)
+
+	return modes
 }
