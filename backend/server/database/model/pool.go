@@ -2,12 +2,11 @@ package dbmodel
 
 import (
 	"net"
-	"strings"
 	"time"
 
-	cidr "github.com/apparentlymart/go-cidr/cidr"
 	errors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
+	storkutil "isc.org/stork/util"
 )
 
 // Reflects IPv4 or IPv6 address pool.
@@ -34,65 +33,15 @@ type PrefixPool struct {
 // address range may follow two conventions, e.g. 192.0.2.1 - 192.0.3.10
 // or 192.0.2.0/24. Both IPv4 and IPv6 pools are supported by this function.
 func NewAddressPoolFromRange(addressRange string) (*AddressPool, error) {
-	// Let's try to see if the range is specified as a pair of upper
-	// and lower bound addresses.
-	s := strings.Split(addressRange, "-")
-	for i := 0; i < len(s); i++ {
-		s[i] = strings.TrimSpace(s[i])
-	}
-	pool := &AddressPool{}
-
-	// The length of 2 means that the two addresses with hyphen were specified.
-	switch len(s) {
-	case 2:
-		families := []int{}
-		for _, ipStr := range s {
-			// Check if the specified value is even an IP address.
-			ip := net.ParseIP(ipStr)
-			if ip == nil {
-				// It is not an IP address. Bail...
-				err := errors.Errorf("unable to parse the IP address %s", ipStr)
-				return nil, err
-			}
-			// It is an IP address, so let's see if it converts to IPv4 or IPv6.
-			// In both cases, remember the family.
-			if ip.To4() != nil {
-				families = append(families, 4)
-			} else {
-				families = append(families, 6)
-			}
-			// If we already checked both addresses, let's compare their families.
-			if (len(families) > 1) && (families[0] != families[1]) {
-				// IPv4 and IPv6 address given. This is unacceptable.
-				err := errors.Errorf("IP addresses in the pool range %s must belong to the same family",
-					addressRange)
-				return nil, err
-			}
+	lb, ub, err := storkutil.ParseIPRange(addressRange)
+	if err == nil {
+		pool := &AddressPool{
+			LowerBound: lb.String(),
+			UpperBound: ub.String(),
 		}
-		// Everything was good, so let's put the addresses into the pool instance.
-		// ToLower ensures that the IPv6 address digits are converted to lower case.
-		pool.LowerBound = strings.ToLower(s[0])
-		pool.UpperBound = strings.ToLower(s[1])
-
-	case 1:
-		// There is one token only, so apparently this is a range provided as a prefix.
-		_, net, err := net.ParseCIDR(s[0])
-		if err != nil {
-			err := errors.Errorf("unable to parse the pool prefix %s", s[0])
-			return nil, err
-		}
-		// For this prefix find an upper and lower bound address.
-		rb, re := cidr.AddressRange(net)
-		pool.LowerBound = rb.String()
-		pool.UpperBound = re.String()
-
-	default:
-		// No other formats for the address range are accepted.
-		err := errors.Errorf("unable to parse the pool range %s", addressRange)
-		return nil, err
+		return pool, nil
 	}
-	// We have the pool.
-	return pool, nil
+	return nil, err
 }
 
 // Creates new instance of the pool for prefix delegation from the prefix
