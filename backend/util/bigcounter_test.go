@@ -294,7 +294,7 @@ func TestBigCounterSafeDivideByZero(t *testing.T) {
 	counter2 := NewBigCounter(0)
 
 	// Act
-	res := counter1.DivideBy(counter2)
+	res := counter1.DivideBySafe(counter2)
 
 	// Assert
 	require.Zero(t, res)

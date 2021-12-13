@@ -63,7 +63,6 @@ func (n *BigCounter) AddInt64InPlace(val int64) {
 // Doesn't change the internal state.
 // If the result is above float64-range then it returns the infinity.
 // If the one of the counters is NaN then it returns NaN.
-// If the value of the other counter is 0 the it panics.
 func (n *BigCounter) DivideBy(other *BigCounter) float64 {
 	// Check if counters have the same range.
 	if n.state.canDivideBy(other.state) {
@@ -266,7 +265,6 @@ func (k *kernelInt64) canDivideBy(other kernel) bool {
 }
 
 // Casts the counting value to float64 and divide.
-// It panics if another counting value is 0.
 func (k *kernelInt64) divideBy(other kernel) float64 {
 	return k.toFloat64() / other.toFloat64()
 }
