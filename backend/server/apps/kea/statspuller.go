@@ -112,16 +112,16 @@ func (statsPuller *StatsPuller) pullStats() error {
 	}
 
 	// global stats to collect
-	statsMap := map[string]float64{}
-
-	statsMap["total-addresses"], _ = calculator.global.totalAddresses.Float64()
-	statsMap["assigned-addresses"], _ = calculator.global.totalAssignedAddresses.Float64()
-	statsMap["declined-addresses"], _ = calculator.global.totalDeclinedAddresses.Float64()
-	statsMap["total-nas"], _ = calculator.global.totalNAs.Float64()
-	statsMap["assigned-nas"], _ = calculator.global.totalAssignedNAs.Float64()
-	statsMap["declined-nas"], _ = calculator.global.totalDeclinedNAs.Float64()
-	statsMap["assigned-pds"], _ = calculator.global.totalAssignedPDs.Float64()
-	statsMap["total-pds"], _ = calculator.global.totalPDs.Float64()
+	statsMap := map[string]int64{
+		"total-addresses":    calculator.global.totalAddresses.ToInt64OrDefault(-1, -1),
+		"assigned-addresses": calculator.global.totalAssignedAddresses.ToInt64OrDefault(-1, -1),
+		"declined-addresses": calculator.global.totalDeclinedAddresses.ToInt64OrDefault(-1, -1),
+		"total-nas":          calculator.global.totalNAs.ToInt64OrDefault(-1, -1),
+		"assigned-nas":       calculator.global.totalAssignedNAs.ToInt64OrDefault(-1, -1),
+		"declined-nas":       calculator.global.totalDeclinedNAs.ToInt64OrDefault(-1, -1),
+		"assigned-pds":       calculator.global.totalAssignedPDs.ToInt64OrDefault(-1, -1),
+		"total-pds":          calculator.global.totalPDs.ToInt64OrDefault(-1, -1),
+	}
 
 	// update global statistics in db
 	err = dbmodel.SetStats(statsPuller.DB, statsMap)
