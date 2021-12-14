@@ -34,10 +34,3 @@ for Stork, can be found on ISC's `Stork project homepage
    :maxdepth: 1
 
    manpages
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
