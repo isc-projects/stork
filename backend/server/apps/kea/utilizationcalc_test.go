@@ -1,6 +1,7 @@
 package kea
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,14 +14,14 @@ func TestCalculatorConstruction(t *testing.T) {
 	calculator := newUtilizationCalculator()
 
 	// Assert
-	require.EqualValues(t, 0.0, calculator.global.totalAddresses)
-	require.EqualValues(t, 0.0, calculator.global.totalAssignedAddresses)
-	require.EqualValues(t, 0.0, calculator.global.totalDeclinedAddresses)
-	require.EqualValues(t, 0.0, calculator.global.totalNAs)
-	require.EqualValues(t, 0.0, calculator.global.totalAssignedNAs)
-	require.EqualValues(t, 0.0, calculator.global.totalDeclinedNAs)
-	require.EqualValues(t, 0.0, calculator.global.totalPDs)
-	require.EqualValues(t, 0.0, calculator.global.totalAssignedPDs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAddresses)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAssignedAddresses)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalDeclinedAddresses)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalNAs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAssignedNAs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalDeclinedNAs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalPDs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAssignedPDs)
 	require.Len(t, calculator.sharedNetworks, 0)
 }
 
@@ -50,14 +51,14 @@ func TestCalculatorAddSingleIPv4LocalSubnet(t *testing.T) {
 	require.InDelta(t, float64(0.1), utilization.getAddressUtilization(), float64(0.001))
 	require.InDelta(t, float64(0.0), utilization.getPDUtilization(), float64(0.001))
 
-	require.EqualValues(t, 100.0, calculator.global.totalAddresses)
-	require.EqualValues(t, 10.0, calculator.global.totalAssignedAddresses)
-	require.EqualValues(t, 20.0, calculator.global.totalDeclinedAddresses)
-	require.EqualValues(t, 0.0, calculator.global.totalNAs)
-	require.EqualValues(t, 0.0, calculator.global.totalAssignedNAs)
-	require.EqualValues(t, 0.0, calculator.global.totalDeclinedNAs)
-	require.EqualValues(t, 0.0, calculator.global.totalPDs)
-	require.EqualValues(t, 0.0, calculator.global.totalAssignedPDs)
+	require.EqualValues(t, big.NewFloat(100.0), calculator.global.totalAddresses)
+	require.EqualValues(t, big.NewFloat(10.0), calculator.global.totalAssignedAddresses)
+	require.EqualValues(t, big.NewFloat(20.0), calculator.global.totalDeclinedAddresses)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalNAs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAssignedNAs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalDeclinedNAs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalPDs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAssignedPDs)
 
 	require.Len(t, calculator.sharedNetworks, 0)
 }
@@ -90,14 +91,14 @@ func TestCalculatorAddSingleIPv6LocalSubnet(t *testing.T) {
 	require.InDelta(t, float64(0.4), utilization.getAddressUtilization(), float64(0.001))
 	require.InDelta(t, float64(0.5), utilization.getPDUtilization(), float64(0.001))
 
-	require.EqualValues(t, 0.0, calculator.global.totalAddresses)
-	require.EqualValues(t, 0.0, calculator.global.totalAssignedAddresses)
-	require.EqualValues(t, 0.0, calculator.global.totalDeclinedAddresses)
-	require.EqualValues(t, 100.0, calculator.global.totalNAs)
-	require.EqualValues(t, 40.0, calculator.global.totalAssignedNAs)
-	require.EqualValues(t, 30.0, calculator.global.totalDeclinedNAs)
-	require.EqualValues(t, 20.0, calculator.global.totalPDs)
-	require.EqualValues(t, 10.0, calculator.global.totalAssignedPDs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAddresses)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAssignedAddresses)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalDeclinedAddresses)
+	require.EqualValues(t, big.NewFloat(100.0), calculator.global.totalNAs)
+	require.EqualValues(t, big.NewFloat(40.0), calculator.global.totalAssignedNAs)
+	require.EqualValues(t, big.NewFloat(30.0), calculator.global.totalDeclinedNAs)
+	require.EqualValues(t, big.NewFloat(20.0), calculator.global.totalPDs)
+	require.EqualValues(t, big.NewFloat(10.0), calculator.global.totalAssignedPDs)
 
 	require.Len(t, calculator.sharedNetworks, 0)
 }
@@ -149,14 +150,14 @@ func TestCalculatorAddMultipleIPv4LocalSubnet(t *testing.T) {
 	require.InDelta(t, float64(34.0/355.0), utilization.getAddressUtilization(), float64(0.001))
 	require.InDelta(t, float64(0.0), utilization.getPDUtilization(), float64(0.001))
 
-	require.EqualValues(t, 355.0, calculator.global.totalAddresses)
-	require.EqualValues(t, 34.0, calculator.global.totalAssignedAddresses)
-	require.EqualValues(t, 63.0, calculator.global.totalDeclinedAddresses)
-	require.EqualValues(t, 0.0, calculator.global.totalNAs)
-	require.EqualValues(t, 0.0, calculator.global.totalAssignedNAs)
-	require.EqualValues(t, 0.0, calculator.global.totalDeclinedNAs)
-	require.EqualValues(t, 0.0, calculator.global.totalPDs)
-	require.EqualValues(t, 0.0, calculator.global.totalAssignedPDs)
+	require.EqualValues(t, big.NewFloat(355.0), calculator.global.totalAddresses)
+	require.EqualValues(t, big.NewFloat(34.0), calculator.global.totalAssignedAddresses)
+	require.EqualValues(t, big.NewFloat(63.0), calculator.global.totalDeclinedAddresses)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalNAs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAssignedNAs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalDeclinedNAs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalPDs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAssignedPDs)
 }
 
 // Test that the calculator returns the proper utilization for multiple IPv6 local subnets.
@@ -214,14 +215,14 @@ func TestCalculatorAddMultipleIPv6LocalSubnet(t *testing.T) {
 	require.InDelta(t, float64(34.0/355.0), utilization.getAddressUtilization(), float64(0.001))
 	require.InDelta(t, float64(44.0/243.0), utilization.getPDUtilization(), float64(0.001))
 
-	require.EqualValues(t, 0.0, calculator.global.totalAddresses)
-	require.EqualValues(t, 0.0, calculator.global.totalAssignedAddresses)
-	require.EqualValues(t, 0.0, calculator.global.totalDeclinedAddresses)
-	require.EqualValues(t, 355.0, calculator.global.totalNAs)
-	require.EqualValues(t, 34.0, calculator.global.totalAssignedNAs)
-	require.EqualValues(t, 63.0, calculator.global.totalDeclinedNAs)
-	require.EqualValues(t, 243.0, calculator.global.totalPDs)
-	require.EqualValues(t, 44.0, calculator.global.totalAssignedPDs)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAddresses)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalAssignedAddresses)
+	require.EqualValues(t, big.NewFloat(0.0), calculator.global.totalDeclinedAddresses)
+	require.EqualValues(t, big.NewFloat(355.0), calculator.global.totalNAs)
+	require.EqualValues(t, big.NewFloat(34.0), calculator.global.totalAssignedNAs)
+	require.EqualValues(t, big.NewFloat(63.0), calculator.global.totalDeclinedNAs)
+	require.EqualValues(t, big.NewFloat(243.0), calculator.global.totalPDs)
+	require.EqualValues(t, big.NewFloat(44.0), calculator.global.totalAssignedPDs)
 }
 
 // Test that the calculator returns the proper utilization for the shared network.
