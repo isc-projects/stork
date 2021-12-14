@@ -9,7 +9,7 @@ import (
 // Represents a statistic held in statistic table in the database.
 type Statistic struct {
 	Name  string `pg:",pk"`
-	Value int64
+	Value float64
 }
 
 // Initialize global statistics in db. If new statistic needs to be added then add it to statsList list
@@ -36,7 +36,7 @@ func InitializeStats(db *pg.DB) error {
 }
 
 // Get all global statistics values.
-func GetAllStats(db *pg.DB) (map[string]int64, error) {
+func GetAllStats(db *pg.DB) (map[string]float64, error) {
 	statsList := []*Statistic{}
 	q := db.Model(&statsList)
 	err := q.Select()
@@ -44,7 +44,7 @@ func GetAllStats(db *pg.DB) (map[string]int64, error) {
 		return nil, errors.Wrapf(err, "problem with getting all statistics")
 	}
 
-	statsMap := make(map[string]int64)
+	statsMap := make(map[string]float64)
 	for _, s := range statsList {
 		statsMap[s.Name] = s.Value
 	}
@@ -53,7 +53,7 @@ func GetAllStats(db *pg.DB) (map[string]int64, error) {
 }
 
 // Set a list of global statistics.
-func SetStats(db *pg.DB, statsMap map[string]int64) error {
+func SetStats(db *pg.DB, statsMap map[string]float64) error {
 	statsList := []*Statistic{}
 	for s, v := range statsMap {
 		stat := &Statistic{Name: s, Value: v}

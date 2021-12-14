@@ -230,25 +230,33 @@
     type: object
     properties:
       assignedAddresses:
-        type: integer
+        type: number
+        format: double
       totalAddresses:
-        type: integer
+        type: number
+        format: double
       declinedAddresses:
-        type: integer
+        type: number
+        format: double
 
   Dhcp6Stats:
     type: object
     properties:
       assignedNAs:
-        type: integer
+        type: number
+        format: double
       totalNAs:
-        type: integer
+        type: number
+        format: double
       assignedPDs:
-        type: integer
+        type: number
+        format: double
       totalPDs:
-        type: integer
+        type: number
+        format: double
       declinedNAs:
-        type: integer
+        type: number
+        format: double
 
   DhcpDaemon:
     type: object

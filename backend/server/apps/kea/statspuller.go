@@ -112,15 +112,15 @@ func (statsPuller *StatsPuller) pullStats() error {
 	}
 
 	// global stats to collect
-	statsMap := map[string]int64{
-		"total-addresses":    int64(calculator.global.totalAddresses),
-		"assigned-addresses": int64(calculator.global.totalAssignedAddresses),
-		"declined-addresses": int64(calculator.global.totalDeclinedAddresses),
-		"total-nas":          int64(calculator.global.totalNAs),
-		"assigned-nas":       int64(calculator.global.totalAssignedNAs),
-		"declined-nas":       int64(calculator.global.totalDeclinedNAs),
-		"assigned-pds":       int64(calculator.global.totalAssignedPDs),
-		"total-pds":          int64(calculator.global.totalPDs),
+	statsMap := map[string]float64{
+		"total-addresses":    calculator.global.totalAddresses,
+		"assigned-addresses": calculator.global.totalAssignedAddresses,
+		"declined-addresses": calculator.global.totalDeclinedAddresses,
+		"total-nas":          calculator.global.totalNAs,
+		"assigned-nas":       calculator.global.totalAssignedNAs,
+		"declined-nas":       calculator.global.totalDeclinedNAs,
+		"assigned-pds":       calculator.global.totalAssignedPDs,
+		"total-pds":          calculator.global.totalPDs,
 	}
 
 	// update global statistics in db
