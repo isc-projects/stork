@@ -416,3 +416,36 @@ func (c *Map) GetGlobalReservationModes() *ReservationModes {
 
 	return modes
 }
+
+// Convenience function used to check if a given host reservation
+// mode has been enabled at one of the levels at which the
+// reservation mode can be configured. The reservation modes specified
+// using the variadic parameters should be ordered from the lowest to
+// highest configuration level, e.g., subnet-level, shared network-level,
+// and finally global level host reservation configuration. The first
+// argument is a function implementing a condition to be checked for
+// each ReservationModes. The example condition is:
+//
+// func (modes ReservationModes) (bool, bool) {
+//     return modes.IsOutOfPool()
+// }
+//
+// The function returns true when the condition function returns
+// (true, true) for one of the N-1 reservation modes. If it doesn't,
+// it returns true when the last reservation mode returns (true, true)
+// or (true, false).
+//
+// Note that this function handles Kea configuration inheritance scheme.
+// It checks for explicitly set values at subnet and shared network levels
+// which override the global level setting. The global-level setting
+// applies regardless whether or not it is specified. If it is not
+// specified a default value is used.
+func IsInAnyReservationModes(condition func(modes ReservationModes) (bool, bool), modes ...ReservationModes) bool {
+	for i, mode := range modes {
+		cond, explicit := condition(mode)
+		if cond && (explicit || i >= len(modes)-1) {
+			return true
+		}
+	}
+	return false
+}

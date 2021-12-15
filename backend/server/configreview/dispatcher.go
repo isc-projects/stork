@@ -585,4 +585,5 @@ func RegisterDefaultCheckers(dispatcher Dispatcher) {
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "host_cmds_presence", hostCmdsPresence)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "shared_network_dispensable", sharedNetworkDispensable)
 	dispatcher.RegisterChecker(KeaDHCPDaemon, "subnet_dispensable", subnetDispensable)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "reservations_out_of_pool", reservationsOutOfPool)
 }

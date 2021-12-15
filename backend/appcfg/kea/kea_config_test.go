@@ -856,3 +856,36 @@ func TestGetGlobalReservationModesDefaults(t *testing.T) {
 	require.False(t, val)
 	require.False(t, set)
 }
+
+// Test a function implementing host reservation mode checking using
+// Kea inheritance scheme.
+func TestIsInAnyReservationModes(t *testing.T) {
+	modes := []ReservationModes{
+		{
+			OutOfPool: nil,
+		},
+		{
+			OutOfPool: new(bool),
+		},
+		{
+			OutOfPool: new(bool),
+		},
+	}
+	*modes[2].OutOfPool = true
+
+	require.True(t, IsInAnyReservationModes(func(modes ReservationModes) (bool, bool) {
+		return modes.IsOutOfPool()
+	}, modes[0], modes[1], modes[2]))
+
+	require.True(t, IsInAnyReservationModes(func(modes ReservationModes) (bool, bool) {
+		return modes.IsOutOfPool()
+	}, modes[0], modes[2], modes[1]))
+
+	require.False(t, IsInAnyReservationModes(func(modes ReservationModes) (bool, bool) {
+		return modes.IsOutOfPool()
+	}, modes[1], modes[0]))
+
+	require.False(t, IsInAnyReservationModes(func(modes ReservationModes) (bool, bool) {
+		return modes.IsOutOfPool()
+	}, modes[0], modes[0]))
+}

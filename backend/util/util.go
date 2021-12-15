@@ -321,3 +321,14 @@ func IsValidFilename(filename string) bool {
 	os.Remove(file.Name())
 	return true
 }
+
+// Returns a string comprising a count and a noun in the plural or
+// singular form, depending on the count. The third parameter is a
+// postfix making the plural form.
+func FormatNoun(count int64, noun, postfix string) string {
+	formatted := fmt.Sprintf("%d %s", count, noun)
+	if count != 1 {
+		formatted += postfix
+	}
+	return formatted
+}

@@ -393,3 +393,11 @@ func TestIsValidFilenameForInvalidFilename(t *testing.T) {
 		require.False(t, ok, filename)
 	}
 }
+
+// Test that singular and plural noun form is returned depending
+// on the count.
+func TestFormatNoun(t *testing.T) {
+	require.Equal(t, "0 subnets", FormatNoun(0, "subnet", "s"))
+	require.Equal(t, "1 shared network", FormatNoun(1, "shared network", "s"))
+	require.Equal(t, "2 parameters", FormatNoun(2, "parameter", "s"))
+}
