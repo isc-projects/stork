@@ -19,7 +19,7 @@ Stork is tested on the following systems:
 - CentOS 8
 - MacOS 11.3*
 
-*MacOS is not and will not be officially supported. However, many developers on ISC's team use Macs, so the intention is to keep Stork
+\* MacOS is not and will not be officially supported. However, many developers on ISC's team use Macs, so the intention is to keep Stork
 buildable on this platform.
 
 ``Stork Server`` and ``Stork Agent`` are written in the Go language; the server uses a PostgreSQL database. In principle, the software can be run
