@@ -73,12 +73,12 @@ func newSharedNetworkStats() *sharedNetworkStats {
 // Address utilization of the shared network.
 func (s *sharedNetworkStats) getAddressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
-	return s.totalAssignedAddresses.DivideBySafe(s.totalAddresses)
+	return s.totalAssignedAddresses.DivideSafeBy(s.totalAddresses)
 }
 
 // Delegated prefix utilization of the shared network.
 func (s *sharedNetworkStats) getPDUtilization() float64 {
-	return s.totalAssignedPDs.DivideBySafe(s.totalPDs)
+	return s.totalAssignedPDs.DivideSafeBy(s.totalPDs)
 }
 
 // Add the IPv4 subnet statistics to the shared network state.
@@ -105,7 +105,7 @@ type subnetIPv4Stats struct {
 // Return the address utilization for a single IPv4 subnet.
 func (s *subnetIPv4Stats) getAddressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
-	return s.totalAssignedAddresses.DivideBySafe(s.totalAddresses)
+	return s.totalAssignedAddresses.DivideSafeBy(s.totalAddresses)
 }
 
 // Return the delegated prefix utilization for a single IPv4 subnet.
@@ -126,12 +126,12 @@ type subnetIPv6Stats struct {
 // Return the IPv6 address utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) getAddressUtilization() float64 {
 	// The assigned addresses include the declined ones that aren't reclaimed yet.
-	return s.totalAssignedNAs.DivideBySafe(s.totalNAs)
+	return s.totalAssignedNAs.DivideSafeBy(s.totalNAs)
 }
 
 // Return the delegated prefix utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) getPDUtilization() float64 {
-	return s.totalAssignedPDs.DivideBySafe(s.totalPDs)
+	return s.totalAssignedPDs.DivideSafeBy(s.totalPDs)
 }
 
 // Utilization calculator is a helper for calculating the global
@@ -209,29 +209,26 @@ func sumStatLocalSubnets(subnet *dbmodel.Subnet, statName string) *storkutil.Big
 	sum := storkutil.NewBigCounter(0)
 	for _, localSubnet := range subnet.LocalSubnets {
 		stat := getLocalSubnetStatValueIntOrDefault(localSubnet, statName)
-
-		// The invalid statistic value.
-		// It is returned by Kea when the value exceed the int64/float64 range.
-		if stat == -1 {
-			return storkutil.NewBigCounterNaN()
-		}
-
-		sum.AddInt64InPlace(stat)
+		sum.AddUInt64InPlace(stat)
 	}
 	return sum
 }
 
 // Retrieve the statistic value from the provided local subnet or return zero value.
-func getLocalSubnetStatValueIntOrDefault(localSubnet *dbmodel.LocalSubnet, name string) int64 {
+func getLocalSubnetStatValueIntOrDefault(localSubnet *dbmodel.LocalSubnet, name string) uint64 {
 	value, ok := localSubnet.Stats[name]
 	if !ok {
 		return 0
 	}
 
-	valueFloat, ok := value.(float64)
+	valueInt, ok := value.(int64)
 	if !ok {
-		return 0
+		valueFloat, ok := value.(float64)
+		if !ok {
+			return 0
+		}
+		valueInt = int64(valueFloat)
 	}
 
-	return int64(valueFloat)
+	return uint64(valueInt)
 }

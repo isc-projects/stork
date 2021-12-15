@@ -208,22 +208,65 @@ func TestBigCounterAddInt64Shorthand(t *testing.T) {
 	require.EqualValues(t, -1, counterNan.ToInt64OrDefault(-1, -2))
 }
 
+// Test add uint64 shorthand.
+func TestBigCounterAddUInt64Shorthand(t *testing.T) {
+	// Arrange
+	expected := big.NewInt(0).Add(
+		big.NewInt(0).Add(
+			big.NewInt(0).SetUint64(math.MaxUint64),
+			big.NewInt(0).SetUint64(math.MaxUint64),
+		),
+		big.NewInt(42),
+	)
+
+	// Act
+	counter := NewBigCounter(1).AddUInt64(uint64(41)).AddUInt64(math.MaxUint64).AddUInt64(math.MaxUint64)
+	var val int64 = -1
+	counter2 := NewBigCounter(0).AddUInt64(uint64(val))
+
+	// Assert
+	require.EqualValues(t,
+		expected,
+		counter.ToBigInt())
+	require.EqualValues(t, big.NewInt(0).SetUint64(math.MaxUint64), counter2.ToBigInt())
+}
+
 // Test add in place int64 shorthand.
 func TestBigCounterAddInPlaceInt64Shorthand(t *testing.T) {
 	// Arrange
 	counter := NewBigCounter(1)
-	counterNan := NewBigCounterNaN()
 
 	// Act
 	counter.AddInt64InPlace(5)
 	counter.AddInt64InPlace(2)
 	counter.AddInt64InPlace(math.MaxInt64)
 	counter.AddInt64InPlace(34)
-	counterNan.AddInt64InPlace(1)
 
 	// Assert
 	require.EqualValues(t, big.NewInt(0).Add(big.NewInt(math.MaxInt64), big.NewInt(42)), counter.ToBigInt())
-	require.EqualValues(t, -1, counterNan.ToInt64OrDefault(-1, -2))
+}
+
+// Test add in place uint64 shorthand.
+func TestBigCounterAddInPlaceUInt64Shorthand(t *testing.T) {
+	// Arrange
+	expected := big.NewInt(0).Add(
+		big.NewInt(0).Add(
+			big.NewInt(0).SetUint64(math.MaxUint64),
+			big.NewInt(0).SetUint64(math.MaxUint64),
+		),
+		big.NewInt(42),
+	)
+
+	// Act
+	counter := NewBigCounter(1)
+	counter.AddUInt64InPlace(uint64(41))
+	counter.AddUInt64InPlace(math.MaxUint64)
+	counter.AddUInt64InPlace(math.MaxUint64)
+
+	// Assert
+	require.EqualValues(t,
+		expected,
+		counter.ToBigInt())
 }
 
 // Test divide int64 big counters.
@@ -294,7 +337,7 @@ func TestBigCounterSafeDivideByZero(t *testing.T) {
 	counter2 := NewBigCounter(0)
 
 	// Act
-	res := counter1.DivideBySafe(counter2)
+	res := counter1.DivideSafeBy(counter2)
 
 	// Assert
 	require.Zero(t, res)
@@ -307,7 +350,7 @@ func TestBigCounterDivideSafe(t *testing.T) {
 	counter2 := NewBigCounter(2)
 
 	// Act
-	res := counter1.DivideBySafe(counter2)
+	res := counter1.DivideSafeBy(counter2)
 
 	// Assert
 	require.EqualValues(t, math.MaxInt64, res)
@@ -383,4 +426,50 @@ func TestBigCounterToBigInt(t *testing.T) {
 	require.EqualValues(t, big.NewInt(math.MaxInt64), value2)
 	require.EqualValues(t, big.NewInt(0).Add(big.NewInt(math.MaxInt64), big.NewInt(1)), value3)
 	require.EqualValues(t, big.NewInt(0), value4)
+}
+
+const denominator int64 = 100000000
+
+// The big counters must be faster then standard big.Int in int64 range.
+func BenchmarkBigCounterInt64InInt64Range(b *testing.B) {
+	// Arrange
+	counter := NewBigCounter(0)
+
+	// Act
+	var factor int64 = math.MaxInt64 / denominator
+	var cumulativeSum int64 = 0
+	for cumulativeSum < math.MaxInt64-factor {
+		counter.AddInt64InPlace(factor)
+		cumulativeSum += factor
+	}
+
+	if counter.ToInt64OrDefault(-1, -1) == -1 {
+		panic(-1)
+	}
+}
+
+func BenchmarkBigCounterBigIntInInt64Range(b *testing.B) {
+	// Arrange
+	counter := big.NewInt(0)
+
+	// Act
+	var factor int64 = math.MaxInt64 / denominator
+	var cumulativeSum int64 = 0
+	for cumulativeSum < math.MaxInt64-factor {
+		counter.Add(counter, big.NewInt(factor))
+		cumulativeSum += factor
+	}
+}
+
+func BenchmarkBigCounterStandardInt64InInt64Range(b *testing.B) {
+	// Arrange
+	var counter int64 = 0
+
+	// Act
+	var factor int64 = math.MaxInt64 / denominator
+	var cumulativeSum int64 = 0
+	for cumulativeSum < math.MaxInt64-factor {
+		counter += factor
+		cumulativeSum += factor
+	}
 }

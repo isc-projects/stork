@@ -1,6 +1,7 @@
 package storkutil
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 )
@@ -52,10 +53,26 @@ func (n *BigCounter) AddInt64(val int64) *BigCounter {
 	return n.Add(number)
 }
 
+// Add the uint64 number to the counting value and return new big counter.
+// Doesn't change the internal state.
+func (n *BigCounter) AddUInt64(val uint64) *BigCounter {
+	valBig := new(big.Int).SetUint64(val)
+	number := newBigCounter(newKernelBigInt(valBig))
+	return n.Add(number)
+}
+
 // Add the int64 number to the internal counting value.
 // It modifies the internal state.
 func (n *BigCounter) AddInt64InPlace(val int64) {
 	number := NewBigCounter(val)
+	n.AddInPlace(number)
+}
+
+// Add uint64 number to the internal counting value.
+// It modifies the internal state.
+func (n *BigCounter) AddUInt64InPlace(val uint64) {
+	valBig := new(big.Int).SetUint64(val)
+	number := newBigCounter(newKernelBigInt(valBig))
 	n.AddInPlace(number)
 }
 
@@ -75,7 +92,7 @@ func (n *BigCounter) DivideBy(other *BigCounter) float64 {
 
 // Works as the Divide function but returns 0 when the value
 // of the other counter is 0.
-func (n *BigCounter) DivideBySafe(other *BigCounter) float64 {
+func (n *BigCounter) DivideSafeBy(other *BigCounter) float64 {
 	if !other.state.isNaN() && other.state.toInt64() == 0 {
 		return 0
 	}
@@ -103,6 +120,11 @@ func (n *BigCounter) ToInt64OrDefault(nan int64, above int64) int64 {
 // Returns the counting value as big int. For NaN returns 0.
 func (n *BigCounter) ToBigInt() *big.Int {
 	return n.state.toBigInt()
+}
+
+// Returns the string representation of the counting value.
+func (n *BigCounter) String() string {
+	return n.state.String()
 }
 
 // Constructs a new big counter instance
@@ -149,6 +171,8 @@ type kernel interface {
 	toFloat64() float64
 	// Returns new instance with the same counting value.
 	clone() kernel
+	// Get string representation of the value
+	String() string
 }
 
 // NaN counting value.
@@ -208,6 +232,11 @@ func (k *kernelNaN) divideBy(other kernel) float64 {
 	return math.NaN()
 }
 
+// Returns the string representation of the counting value.
+func (n *kernelNaN) String() string {
+	return "nan"
+}
+
 // The int64-based counting value.
 type kernelInt64 struct {
 	value int64
@@ -220,6 +249,9 @@ func newKernelInt64(val int64) kernel {
 
 // Return true if result of the addition is in the int64 range.
 func (k *kernelInt64) canAdd(other kernel) bool {
+	if !other.isIn64BitRange() {
+		return false
+	}
 	return other.toInt64() <= math.MaxInt64-k.value
 }
 
@@ -267,6 +299,11 @@ func (k *kernelInt64) canDivideBy(other kernel) bool {
 // Casts the counting value to float64 and divide.
 func (k *kernelInt64) divideBy(other kernel) float64 {
 	return k.toFloat64() / other.toFloat64()
+}
+
+// Returns the string representation of the counting value.
+func (n *kernelInt64) String() string {
+	return fmt.Sprint(n.value)
 }
 
 // The big int-based counting value.
@@ -351,4 +388,9 @@ func (k *kernelBigInt) divideBy(other kernel) float64 {
 	div := new(big.Float).Quo(kFLoat, otherFloat)
 	res, _ := div.Float64()
 	return res
+}
+
+// Returns the string representation of the counting value.
+func (n *kernelBigInt) String() string {
+	return fmt.Sprint(n.value)
 }
