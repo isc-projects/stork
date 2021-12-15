@@ -135,7 +135,7 @@ func (statsPuller *StatsPuller) pullStats() error {
 // Part of response for stat-lease4-get and stat-lease6-get commands.
 type ResultSetInStatLeaseGet struct {
 	Columns []string
-	Rows    [][]int
+	Rows    [][]int64
 }
 
 // Part of response for stat-lease4-get and stat-lease6-get commands.
