@@ -1,7 +1,6 @@
 package storkutil
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 )
@@ -131,14 +130,6 @@ func (n *BigCounter) ToBigInt() *big.Int {
 		return n.extended
 	}
 	return big.NewInt(n.base)
-}
-
-// Returns the string representation of the counting value.
-func (n *BigCounter) String() string {
-	if n.isExtended() {
-		return fmt.Sprint(n.extended)
-	}
-	return fmt.Sprint(n.base)
 }
 
 // Constructs a new big counter instance
