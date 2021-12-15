@@ -210,27 +210,6 @@ func TestBigCounterToInt64(t *testing.T) {
 	require.EqualValues(t, math.MaxInt64, value3)
 }
 
-// Test conversion to int64 with default above value.
-func TestBigCounterToInt64OrDefault(t *testing.T) {
-	// Arrange
-	counter0 := NewBigCounter(0)
-	counter1 := NewBigCounter(-5)
-	counter2 := NewBigCounter(math.MaxInt64)
-	counter3 := NewBigCounter(math.MaxInt64).AddUInt64(1)
-
-	// Act
-	value0 := counter0.ToInt64OrDefault(-1)
-	value1 := counter1.ToInt64OrDefault(-1)
-	value2 := counter2.ToInt64OrDefault(-1)
-	value3 := counter3.ToInt64OrDefault(-1)
-
-	// Assert
-	require.EqualValues(t, 0, value0)
-	require.EqualValues(t, -5, value1)
-	require.EqualValues(t, math.MaxInt64, value2)
-	require.EqualValues(t, -1, value3)
-}
-
 // Test the big counter can be converted to big int.
 func TestBigCounterToBigInt(t *testing.T) {
 	// Arrange
@@ -272,10 +251,6 @@ func BenchmarkBigCounterInt64InInt64Range(b *testing.B) {
 	for cumulativeSum < math.MaxInt64-factor {
 		counter.AddInt64(factor)
 		cumulativeSum += factor
-	}
-
-	if counter.ToInt64OrDefault(-1) == -1 {
-		panic(-1)
 	}
 }
 

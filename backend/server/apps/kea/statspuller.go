@@ -113,14 +113,14 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 	// global stats to collect
 	statsMap := map[string]int64{
-		"total-addresses":    calculator.global.totalAddresses.ToInt64OrDefault(-1),
-		"assigned-addresses": calculator.global.totalAssignedAddresses.ToInt64OrDefault(-1),
-		"declined-addresses": calculator.global.totalDeclinedAddresses.ToInt64OrDefault(-1),
-		"total-nas":          calculator.global.totalNAs.ToInt64OrDefault(-1),
-		"assigned-nas":       calculator.global.totalAssignedNAs.ToInt64OrDefault(-1),
-		"declined-nas":       calculator.global.totalDeclinedNAs.ToInt64OrDefault(-1),
-		"assigned-pds":       calculator.global.totalAssignedPDs.ToInt64OrDefault(-1),
-		"total-pds":          calculator.global.totalPDs.ToInt64OrDefault(-1),
+		"total-addresses":    calculator.global.totalAddresses.ToInt64(),
+		"assigned-addresses": calculator.global.totalAssignedAddresses.ToInt64(),
+		"declined-addresses": calculator.global.totalDeclinedAddresses.ToInt64(),
+		"total-nas":          calculator.global.totalNAs.ToInt64(),
+		"assigned-nas":       calculator.global.totalAssignedNAs.ToInt64(),
+		"declined-nas":       calculator.global.totalDeclinedNAs.ToInt64(),
+		"assigned-pds":       calculator.global.totalAssignedPDs.ToInt64(),
+		"total-pds":          calculator.global.totalPDs.ToInt64(),
 	}
 
 	// update global statistics in db
@@ -187,7 +187,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 		for colIdx, val := range row {
 			name := resultSet.Columns[colIdx]
 			if name == "subnet-id" {
-				lsnID = int64(val)
+				lsnID = val
 				sn = subnetsMap[localSubnetKey{lsnID, family}]
 			} else {
 				// handle inconsistency in stats naming in different kea versions

@@ -125,15 +125,6 @@ func (n *BigCounter) ToInt64() int64 {
 	return n.base
 }
 
-// Returns the counting value as int64. If the value is above the range
-// then returns the @above value.
-func (n *BigCounter) ToInt64OrDefault(above int64) int64 {
-	if !n.isExtended() {
-		return n.base
-	}
-	return above
-}
-
 // Returns the counting value as big int.
 func (n *BigCounter) ToBigInt() *big.Int {
 	if n.isExtended() {

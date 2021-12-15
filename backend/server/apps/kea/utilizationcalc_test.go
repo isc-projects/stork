@@ -363,7 +363,7 @@ func TestCalculatorAddEmptySubnet(t *testing.T) {
 	require.InDelta(t, float64(0.0), utilization.getPDUtilization(), float64(0.001))
 }
 
-// Test that int64 is cast to uint64
+// Test that int64 is cast to uint64.
 func TestCalculatorAddNegativeStatistics(t *testing.T) {
 	// Act
 	subnet := &dbmodel.Subnet{
@@ -396,7 +396,7 @@ func TestCalculatorAddNegativeStatistics(t *testing.T) {
 	require.EqualValues(t, expected.Sub(expected, one), calculator.global.totalAssignedPDs.ToBigInt())
 }
 
-// Test the calculator using real Kea response
+// Test the calculator using real Kea response.
 func TestCalculatorRealKeaResponse(t *testing.T) {
 	// Arrange
 	statLease4GetResponseRaw := `{
@@ -496,20 +496,19 @@ func TestCalculatorRealKeaResponse(t *testing.T) {
 		utilization := calculator.add(subnet)
 
 		// Assert
-		if subnet.ID == 0 {
+		switch subnet.ID {
+		case 0:
 			require.InDelta(t, float64((111.0+2034.0)/(256.0+4098.0)), utilization.getAddressUtilization(), float64(0.001))
-		} else if subnet.ID == 1 {
+		case 1:
 			require.InDelta(t, float64((2400.0+60.0)/(4096.0+256.0)), utilization.getAddressUtilization(), float64(0.001))
 			require.InDelta(t, float64((15.0)/(500.0+1048.0)), utilization.getPDUtilization(), float64(0.001))
 
 			require.EqualValues(t, int64(4096+256), calculator.global.totalNAs.ToInt64())
-		} else if subnet.ID == 2 {
+		case 2:
 			expected := big.NewInt(4096 + 256)
 			expected = expected.Add(expected, big.NewInt(0).SetUint64(math.MaxUint64))
 			require.EqualValues(t, expected, calculator.global.totalNAs.ToBigInt())
 			require.InDelta(t, float64(0.5), utilization.getAddressUtilization(), float64(0.001))
 		}
-
 	}
-
 }
