@@ -1,6 +1,8 @@
 package configreview
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -1197,4 +1199,59 @@ func TestDHCPv6ReservationsOutOfPoolNoPoolsNonIPReservations(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
+}
+
+// Benchmark measuring performance of a Kea configuration checker that detects
+// subnets in which the out-of-pool host reservation mode is recommended.
+func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
+	// Create 10.000 subnets with a pool and out of pool reservation.
+	subnets := []interface{}{}
+	for i := 0; i < 10000; i++ {
+		prefix := fmt.Sprintf("192.%d.%d", i/256, i%256)
+		subnet := map[string]interface{}{
+			"subnet": fmt.Sprintf("%s.0/24", prefix),
+			"pools": []map[string]interface{}{
+				{
+					"pool": fmt.Sprintf("%s.10 - %s.100", prefix, prefix),
+				},
+			},
+			"reservations": []map[string]interface{}{
+				{
+					"ip-address": fmt.Sprintf("%s.5", prefix),
+				},
+			},
+		}
+		subnets = append(subnets, subnet)
+	}
+
+	// Create Kea DHCPv4 configuration with the subnets.
+	configMap := map[string]interface{}{
+		"Dhcp4": map[string]interface{}{
+			"subnet4": subnets,
+		},
+	}
+	configStr, err := json.Marshal(configMap)
+	if err != nil {
+		b.Fatalf("failed to marshal configuration map: %+v", err)
+	}
+	config, err := dbmodel.NewKeaConfigFromJSON(string(configStr))
+	if err != nil {
+		b.Fatalf("failed to create new Kea configuration from JSON: %+v", err)
+	}
+
+	// The benchmark starts here.
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ctx := newReviewContext(&dbmodel.Daemon{
+			ID:   1,
+			Name: dbmodel.DaemonNameDHCPv4,
+			KeaDaemon: &dbmodel.KeaDaemon{
+				Config: config,
+			},
+		}, false, nil)
+		_, err = reservationsOutOfPool(ctx)
+		if err != nil {
+			b.Fatalf("checker failed: %+v", err)
+		}
+	}
 }
