@@ -19,7 +19,7 @@ Stork is tested on the following systems:
 - CentOS 8
 - MacOS 11.3*
 
-MacOS is not and will not be officially supported. However, many developers on ISC's team use Macs, so the intention is to keep Stork
+*MacOS is not and will not be officially supported. However, many developers on ISC's team use Macs, so the intention is to keep Stork
 buildable on this platform.
 
 ``Stork Server`` and ``Stork Agent`` are written in the Go language; the server uses a PostgreSQL database. In principle, the software can be run
@@ -173,8 +173,8 @@ if a user wants to run the migrations before starting the server, they can use t
     $ stork-tool db-init
     $ stork-tool db-up
 
-The up and down commands have an optional ``-t`` parameter that specifies the desired
-schema version. It is useful when debugging database migrations or downgrading to
+The ``up`` and ``down`` commands have an optional ``-t`` parameter that specifies the
+desired schema version. It is useful when debugging database migrations or downgrading to
 one of the earlier Stork versions.
 
 .. code-block:: console
@@ -184,16 +184,16 @@ one of the earlier Stork versions.
     $ # migrate down back to version 17
     $ stork-tool db-down -t 17
 
-Note that the server requires the latest database version to run, always
-runs the migration on its own, and will refuse to start if the migration fails
+The server requires the latest database version to run, always
+runs the migration on its own, and refuses to start if the migration fails
 for any reason. The migration tool is mostly useful for debugging
-problems with migration or migrating the database without actually running
-the service. For complete reference, see the manual page here:
+problems with migration, or for migrating the database without actually running
+the service. For the complete manual page, please see
 :ref:`man-stork-tool`.
 
 To debug migrations, another useful feature is SQL tracing using the ``--db-trace-queries`` parameter.
-It takes either "all" (trace all SQL operations, including migrations and run-time) or "run" (just
-trace run-time operations, skip migrations). If specified without any parameters, "all" is assumed. With it enabled,
+The options are either "all" (trace all SQL operations, including migrations and runtime) or "run" (only
+trace runtime operations and skip migrations). If specified without any parameters, "all" is assumed. With it enabled,
 ``stork-tool`` prints out all its SQL queries on stderr. For example, these commands can be used
 to generate an SQL script that updates the schema. Note that for some migrations, the steps are
 dependent on the contents of the database, so this is not a universal Stork schema. This parameter
@@ -306,7 +306,7 @@ The remaining settings pertain to the server's Prometheus ``/metrics`` endpoint 
 
    The Prometheus ``/metrics`` endpoint does not require authentication. Therefore, securing this endpoint
    from external access is highly recommended to prevent unauthorized parties from gathering the server's
-   metrics. One way to restrict endpoint access is by using appropriate HTTP proxy configuration
+   metrics. One way to restrict endpoint access is by using an appropriate HTTP proxy configuration
    to allow only local access or access from the Prometheus host. Please consult the NGINX example
    configuration file shipped with Stork.
 
@@ -323,7 +323,6 @@ To check the status:
 .. code-block:: console
 
    $ sudo systemctl status isc-stork-server
-
 
 .. note::
 
@@ -380,7 +379,6 @@ locations.
 
 Please consult the `libpq documentation <https://www.postgresql.org/docs/14/libpq-ssl.html>`_
 for similar ``libpq`` configuration details.
-
 
 Installing the ``Stork Agent``
 ------------------------------
@@ -634,17 +632,17 @@ should now be visible on the list of authorized machines.
 
 .. _register-server-token-script:
 
-Installation with a Script and Registration with a Server Token
+Installation With a Script and Registration With a Server Token
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This section describes installing an agent using a script and packages
-downloaded from the ``Stork Server`` and performing the agent's
-registration using a server token.
+This section describes how to install an agent using a script and packages
+downloaded from the ``Stork Server`` and register the agent
+using a server token.
 
-Open Stork in the web browser and log in as a user from the super admin group.
+Open Stork in the web browser and log in as a user from the "super admin" group.
 Select ``Services`` and then ``Machines`` from the menu. Click on the
 ``How to Install Agent on New Machine`` button to display the agent
-installation instructions. Copy-paste the commands from the displayed
+installation instructions. Copy and paste the commands from the displayed
 window into the terminal on the machine where the agent is installed.
 These commands are also provided here for convenience:
 
@@ -654,10 +652,10 @@ These commands are also provided here for convenience:
    $ chmod a+x stork-install-agent.sh
    $ sudo ./stork-install-agent.sh
 
-Please note that this document provides an example URL of the ``Stork Server``
-and it must be replaced with a server URL used in the particular deployment.
+``stork.example.org`` is an example URL for the ``Stork Server``;
+it must be replaced with a real server URL used in the particular deployment.
 
-The script downloads an OS specific agent package from the ``Stork Server``
+The script downloads an OS-specific agent package from the ``Stork Server``
 (deb or RPM), installs the package, and starts the agent's registration procedure.
 
 In the agent machine's terminal, a prompt for a server token is presented:
@@ -667,8 +665,8 @@ In the agent machine's terminal, a prompt for a server token is presented:
     >>>> Server access token (optional):
 
 The server token is available for a super admin user after clicking on the
-``How to Install Agent on New Machine`` button in the ``Services -> Machines``.
-Copy the server token from the dialog box and paste it in the prompt
+``How to Install Agent on New Machine`` button in the ``Services -> Machines`` page.
+Copy the server token from the dialog box and paste it in at the prompt
 displayed on the agent machine.
 
 The following prompt appears next:
@@ -677,7 +675,7 @@ The following prompt appears next:
 
     >>>> IP address or FQDN of the host with Stork Agent (the Stork Server will use it to connect to the Stork Agent):
 
-Specify an IP address or FQDN which the server should use to reach out to an
+Specify an IP address or fully qualified domain name (FQDN) that the server should use to reach out to an
 agent via the secure gRPC channel.
 
 When asked for the port:
@@ -687,7 +685,7 @@ When asked for the port:
    >>>> Port number that Stork Agent will use to listen on [8080]:
 
 specify the port number for the gRPC connections, or hit Enter if the
-default port 8080 matches your settings.
+default port 8080 matches the local settings.
 
 If the registration is successful, the following messages are displayed:
 
@@ -696,23 +694,22 @@ If the registration is successful, the following messages are displayed:
    machine ping over TLS: OK
    registration completed successfully
 
-
-Unlike the :ref:`register-agent-token-cloudsmith`, this registration method
-does not require approval via the web UI. The machine should be
-already listed among the authorized machines.
+Unlike with :ref:`register-agent-token-cloudsmith`, this registration method
+does not require approval via the web UI. The machine should
+already be listed among the authorized machines.
 
 .. _register-agent-token-script:
 
-Installation with a Script and Registration with an Agent Token
+Installation With a Script and Registration With an Agent Token
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This section describes installing an agent using a script and packages downloaded from
-the ``Stork Server`` and performing the agent's registration using an agent token. It
-is an interactive procedure alternative to the procedure described in
+This section describes how to install an agent using a script and packages downloaded from
+the ``Stork Server`` and perform the agent's registration using an agent token. It
+is an interactive alternative to the procedure described in
 :ref:`register-agent-token-cloudsmith`.
 
 Start the interactive registration procedure following the steps in
-the :ref:`register-server-token-script`.
+the :ref:`register-server-token-script` section.
 
 In the agent machine's terminal, a prompt for a server token is presented:
 
@@ -729,7 +726,7 @@ The following prompt appears next:
 
     >>>> IP address or FQDN of the host with Stork Agent (the Stork Server will use it to connect to the Stork Agent):
 
-Specify an IP address or FQDN which the server should use to reach out to an
+Specify an IP address or FQDN that the server should use to reach out to an
 agent via the secure gRPC channel.
 
 When asked for the port:
@@ -739,9 +736,9 @@ When asked for the port:
    >>>> Port number that Stork Agent will use to listen on [8080]:
 
 specify the port number for the gRPC connections, or hit Enter if the
-default port 8080 matches your settings.
+default port 8080 matches the local settings.
 
-You should expect the following log messages when the agent successfully
+The following log messages should be returned when the agent successfully
 sends the registration request to the server:
 
 .. code-block:: text
@@ -750,23 +747,23 @@ sends the registration request to the server:
     stored agent signed cert and CA cert
     registration completed successfully
 
-Similar to :ref:`register-agent-token-cloudsmith`, the agent's registration
+As with :ref:`register-agent-token-cloudsmith`, the agent's registration
 request must be approved in the UI to start monitoring the newly registered
 machine.
 
 .. _register-server-token-cloudsmith:
 
-Installation from Cloudsmith and Registration with a Server Token
+Installation From Cloudsmith and Registration With a Server Token
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This section describes installing an agent from the Cloudsmith repository and
-performing the agent's registration using a server token. It is an alternative to
+This section describes how to install an agent from the Cloudsmith repository and
+perform the agent's registration using a server token. It is an alternative to
 the procedure described in :ref:`register-server-token-script`.
 
 The ``Stork Agent`` installation steps are similar to the ``Stork Server``
 installation steps described in :ref:`install-server-deb` and
-:ref:`install-server-rpm`. Use one of the following commands depending on
-your Linux distribution:
+:ref:`install-server-rpm`. Use one of the following commands, depending on
+the Linux distribution:
 
 .. code-block:: console
 
@@ -775,8 +772,6 @@ your Linux distribution:
 .. code-block:: console
 
    $ sudo dnf install isc-stork-agent
-
-in place of the commands installing the server.
 
 Start the agent service:
 
@@ -797,24 +792,24 @@ Start the interactive registration procedure with the following command:
 
    $ su stork-agent -s /bin/sh -c 'stork-agent register -u http://stork.example.org:8080'
 
-where the last parameter should be the appropriate Stork Server's URL.
+The last parameter should be the appropriate ``Stork Server`` URL.
 
-Follow the same registration steps as described in the :ref:`register-server-token-script`.
+Follow the same registration steps described in :ref:`register-server-token-script`.
 
 .. _registration-methods-summary:
 
 Registration Methods Summary
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Stork supports two different agents' registration methods described above.
+Stork supports two different agent-registration methods, described above.
 Both methods can be used interchangeably, and it is often a matter of
-preference which one the administrator selects. However, it is worth
-mentioning that the agent token registration may be more suitable in
+preference which one the administrator selects. However,
+the agent token registration may be more suitable in
 some situations. This method requires a server URL, agent address
 (or name), and agent port as registration settings. If they are known
 upfront, it is possible to prepare a system (or container) image with
-the agent offline. After starting the image, the agent will send the
-registration request to the server and await authorization in the web UI.
+the agent offline. After starting the image, the agent sends the
+registration request to the server and awaits authorization in the web UI.
 
 The agent registration with the server token is always manual. It
 requires copying the token from the web UI, logging into the agent,
@@ -824,53 +819,54 @@ the machine's terminal, e.g. in Docker. On the other hand, the
 registration using the server token is more straightforward because
 it does not require unauthorized agents' approval via the web UI.
 
-If the server token leaks, it poses a risk that rogue agents register.
+If the server token leaks, it poses a risk that rogue agents might register.
 In that case, the administrator should regenerate the token to prevent
 the uncontrolled registration of new agents. Regeneration of the token
-does not affect already registered agents. The new token must be used
-for the new registrations.
+does not affect already-registered agents. The new token must be used
+for any new registrations.
 
 The server token can be regenerated in the ``How to Install Agent on New Machine``
 dialog box available after entering the ``Services -> Machines`` page.
-
 
 Agent Setup Summary
 ~~~~~~~~~~~~~~~~~~~
 
 After successful agent setup, the agent periodically tries to detect installed
-Kea DHCP or BIND 9 services on the system. If it finds them, they are
+Kea DHCP or BIND9 services on the system. If it finds them, they are
 reported to the ``Stork Server`` when it connects to the agent.
 
 Further configuration and usage of the ``Stork Server`` and the
 ``Stork Agent`` are described in the :ref:`usage` chapter.
-
 
 .. _inspecting-keys-and-certificates:
 
 Inspecting Keys and Certificates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Stork Server maintains TLS keys and certificates internally for securing
-communication between ``Stork Server`` and ``Stork Agents``. They can be inspected
-and exported using ``Stork Tool``, e.g:
+Stork Server maintains TLS keys and certificates internally to secure the
+communication between ``Stork Server`` and any agents. They can be inspected
+and exported using ``Stork Tool`` with a command such as:
 
 .. code-block:: console
 
     $ stork-tool cert-export --db-url postgresql://user:pass@localhost/dbname -f srvcert -o srv-cert.pem
 
-The above command may fail when the database password contains the characters requiring URL
+The above command may fail if the database password contains any characters requiring URL
 encoding. In this case, a command line with multiple switches can be used instead:
 
 .. code-block:: console
 
     $ stork-tool cert-export --db-user user --db-password pass --db-host localhost --db-name dbname -f srvcert -o srv-cert.pem
 
-The certificates can be inspected using openssl (e.g. ``openssl x509 -noout -text -in srv-cert.pem``).
-Similarly, the secret keys can be inspected in similar fashion (e.g. ``openssl ec -noout -text -in cakey``)
+The certificates and secret keys can be inspected using OpenSSL, using commands such as
+``openssl x509 -noout -text -in srv-cert.pem`` (for the certificates) and
+``openssl ec -noout -text -in cakey`` (for the keys).
 
-For more details check ``stork-tool`` manual: :ref:`man-stork-tool`. There are five secrets that can be
-exported or imported: Certificate Authority secret key (``cakey``), Certificate Authority certificate (``cacert``),
-Stork Server private key (``srvkey``), Stork Server certificate (``srvcert``) and a server token (``srvtkn``).
+There are five secrets that can be
+exported or imported: the Certificate Authority secret key (``cakey``), the Certificate Authority certificate (``cacert``),
+the Stork Server private key (``srvkey``), the Stork Server certificate (``srvcert``), and a server token (``srvtkn``).
+
+For more details, please see :ref:`man-stork-tool`.
 
 Using External Keys and Certificates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -882,32 +878,32 @@ to ``Stork Server`` using ``stork-tool``:
 
     $ stork-tool cert-import --db-url postgresql://user:pass@localhost/dbname -f srvcert -i srv-cert.pem
 
-The above command may fail when the database password contains the characters requiring URL
+The above command may fail if the database password contains any characters requiring URL
 encoding. In this case, a command line with multiple switches can be used instead:
 
 .. code-block:: console
 
     $ stork-tool cert-import --db-user user --db-password pass --db-host localhost --db-name dbname -f srvcert -i srv-cert.pem
 
-Both CA key and CA certificate have to be changed at the same time as
-CA certificate depends on CA key. If they are changed then server key
-and certificate also need to be changed.
+Both the Certificate Authority key and the Certificate Authority certificate must be changed at the same time, as
+the certificate depends on the key. If they are changed, then the server key
+and certificate must also be changed.
 
-The capability to use external certificates and key is considered experimental.
+The ability to use external certificates and keys is considered experimental.
 
-For more details check ``stork-tool`` manual: :ref:`man-stork-tool`.
+For more details, please see :ref:`man-stork-tool`.
 
 Upgrading
 ---------
 
-Due to the new security model introduced with TLS in Stork 0.15.0
-release, upgrades from versions 0.14.0 and earlier require registering
-the agents from scratch.
+Due to the new security model introduced with TLS in Stork 0.15.0,
+upgrades from versions 0.14.0 and earlier require the agents
+to be re-registered.
 
-Server upgrade procedure looks the same as the installation procedure.
+The server upgrade procedure is the same as the initial installation procedure.
 
-First, install the new packages on the server. Installation scripts in
-deb/RPM package will perform the required database and other migrations.
+Install the new packages on the server. Installation scripts in
+the deb/RPM package will perform the required database and other migrations.
 
 .. _installation_sources:
 
@@ -920,15 +916,15 @@ Compilation Prerequisites
 Usually, it is more convenient to install Stork using native packages. See :ref:`supported_systems` and :ref:`install-pkgs` for
 details regarding supported systems. However, the sources can also be built separately.
 
-The dependencies that need to be installed to build ``Stork`` sources are:
+The dependencies that need to be installed to build the Stork sources are:
 
  - Rake
  - Java Runtime Environment (only if building natively, not using Docker)
  - Docker (only if running in containers; this is needed to build the demo)
 
-Other dependencies are installed automatically in a local directory by Rake tasks. This does not
+Other dependencies are installed automatically in a local directory by Rake tasks, which does not
 require root privileges. If the demo environment will be run, Docker is needed but not
-Java (Docker will install Java within a container).
+Java; Docker installs Java within a container.
 
 For details about the environment, please see the Stork wiki at
 https://gitlab.isc.org/isc-projects/stork/-/wikis/Install .
@@ -936,7 +932,7 @@ https://gitlab.isc.org/isc-projects/stork/-/wikis/Install .
 Download Sources
 ----------------
 
-The Stork sources are available on the ISC GitLab instance:
+The Stork sources are available in ISC's GitLab instance:
 https://gitlab.isc.org/isc-projects/stork.
 
 To get the latest sources invoke:
@@ -948,12 +944,12 @@ To get the latest sources invoke:
 Building
 --------
 
-There are two ``Stork`` components:
+There are two Stork components:
 
-- ``Stork Agent`` - this is the binary `stork-agent`, written in Go
+- ``Stork Agent`` - this is the binary ``stork-agent``, written in Go
 - ``Stork Server`` - this is comprised of two parts:
-  - `backend service` - written in Go
-  - `frontend` - an `Angular` application written in Typescript
+  - backend service - written in Go
+  - frontend - an Angular application written in Typescript
 
 All components can be built using the following command:
 
@@ -973,7 +969,7 @@ and the server component with this command:
 
    $ rake install_server
 
-By default, all components are installed in the `root` folder in the
+By default, all components are installed in the ``root`` folder in the
 current directory; however, this is not useful for installation in a
 production environment. It can be customized via the ``DESTDIR``
 variable, e.g.:
@@ -985,7 +981,7 @@ variable, e.g.:
 Integration With Prometheus and Grafana
 =======================================
 
-Stork can optionally be integrated with `Prometheus <https://prometheus.io/>`_, an open-source monitoring and alerting toolkit,
+Stork can optionally be integrated with `Prometheus <https://prometheus.io/>`_, an open source monitoring and alerting toolkit,
 and `Grafana <https://grafana.com/>`_, an easy-to-view analytics platform for querying, visualization, and alerting. Grafana
 requires external data storage. Prometheus is currently the only environment supported by both Stork and Grafana. It is possible
 to use Prometheus without Grafana, but using Grafana requires Prometheus.
@@ -993,11 +989,12 @@ to use Prometheus without Grafana, but using Grafana requires Prometheus.
 Prometheus Integration
 ----------------------
 
-The Stork Agent, by default, makes the
-Kea and some limited BIND 9 statistics available in a format understandable by Prometheus. In Prometheus nomenclature, the Stork
-Agent works as a Prometheus exporter. If the Prometheus server is available, it can be configured to monitor Stork Agents. To enable Stork Agent
-monitoring, the ``prometheus.yml`` (which is typically stored in `/etc/prometheus/`, but this may vary depending on the
-installation) must be edited to add the following entries there:
+The ``Stork Agent``, by default, makes
+Kea statistics, as well as some BIND 9 statistics, available in a format understandable by Prometheus. In Prometheus nomenclature, the
+``Stork Agent`` works as a Prometheus exporter. If the Prometheus server is available, it can
+be configured to monitor ``Stork Agent``s. To enable ``Stork Agent``
+monitoring, the ``prometheus.yml`` file (which is typically stored in ``/etc/prometheus/``, but this may vary depending on the
+installation) must be edited to add the following entries:
 
 .. code-block:: yaml
 
@@ -1011,13 +1008,13 @@ installation) must be edited to add the following entries there:
     static_configs:
       - targets: ['agent-bind9.example.org:9119', 'another-bind9.example.org:9119', ... ]
 
-By default, the Stork Agent exports Kea data on TCP port 9547 (and BIND 9 data on TCP port 9119). This can be configured using
-command-line parameters, or the Prometheus export can be disabled altogether. For details, see the stork-agent manual page
+By default, the ``Stork Agent`` exports Kea data on TCP port 9547 and BIND 9 data on TCP port 9119. This can be configured using
+command-line parameters, or the Prometheus export can be disabled altogether. For details, see the ``Stork Agent`` manual page
 at :ref:`man-stork-agent`.
 
-The Stork Server can be optionally integrated too, but the Prometheus support is disabled by default. To enable it
-you need to run the server with the ``-m`` or ``--metrics`` flag or set the ``STORK_SERVER_ENABLE_METRICS`` environment variable.
-Next, you should update the ``prometheus.yml`` file:
+The ``Stork Server`` can also be optionally integrated, but Prometheus support for it is disabled by default. To enable it,
+run the server with the ``-m`` or ``--metrics`` flag or set the ``STORK_SERVER_ENABLE_METRICS`` environment variable.
+Next, update the ``prometheus.yml`` file:
 
 .. code-block:: yaml
 
@@ -1026,61 +1023,61 @@ Next, you should update the ``prometheus.yml`` file:
       static_configs:
          - targets: ['server.example.org:8080']
 
-The Stork Server exports metrics on the assigned HTTP/HTTPS port (defined via ``--rest-port`` flag).
+The ``Stork Server`` exports metrics on the assigned HTTP/HTTPS port (defined via the ``--rest-port`` flag).
 
 .. note::
 
-   The Prometheus client periodically collects metrics from the clients (Stork Server or Stork Agent, for example).
-   It is done via an HTTP call. By convention, the endpoint that shares the metrics has the ``/metrics`` path.
+   The Prometheus client periodically collects metrics from the clients (``Stork Server`` or ``Stork Agent``, for example),
+   via an HTTP call. By convention, the endpoint that shares the metrics has the ``/metrics`` path.
    This endpoint returns data in Prometheus-specific format.
 
 .. warning::
 
-   Prometheus ``/metrics`` endpoint doesn't require authentication. Therefore, securing this endpoint
-   from external access is highly recommended to avoid unauthorized parties gathering the server's
-   metrics. One way to restrict endpoint access is by using appropriate HTTP proxy configuration
+   The Prometheus ``/metrics`` endpoint does not require authentication. Therefore, securing this endpoint
+   from external access is highly recommended to prevent unauthorized parties from gathering the server's
+   metrics. One way to restrict endpoint access is by using an appropriate HTTP proxy configuration
    to allow only local access or access from the Prometheus host. Please consult the NGINX example
    configuration file shipped with Stork.
 
-After restarting, the Prometheus web interface can be used to inspect whether statistics are exported properly.
-Kea statistics use the ``kea_`` prefix (e.g. kea_dhcp4_addresses_assigned_total); BIND 9
-statistics will eventually use the ``bind_`` prefix (e.g. bind_incoming_queries_tcp); Stork Server statistics use the
+After restarting, the Prometheus web interface can be used to inspect whether the statistics have been exported properly.
+Kea statistics use the ``kea_`` prefix (e.g. ``kea_dhcp4_addresses_assigned_total``); BIND 9
+statistics will eventually use the ``bind_`` prefix (e.g. ``bind_incoming_queries_tcp``); and ``Stork Server`` statistics use the
 ``storkserver_`` prefix.
 
 Alerting in Prometheus
 ----------------------
 
-Prometheus provides capability to configure altering. A good starting point is the `Prometheus
-documentation on Alterting <https://prometheus.io/docs/alerting/latest/overview/>`_. Briefly, the
-three main steps are configure Alertmanager, configure Prometheus to talk to the Alertmanager and
-then define the alerting rules in Prometheus. There are no specific requirements or recommendations
-as these are very deployment dependant. The following is an incomplete list of ideas that could be
+Prometheus provides the ability to configure alerting. A good starting point is the `Prometheus
+documentation on alerting <https://prometheus.io/docs/alerting/latest/overview/>`_. Briefly, the
+three main steps are: configure the Alertmanager; configure Prometheus to talk to the Alertmanager; and
+define the alerting rules in Prometheus. There are no specific requirements or recommendations,
+as these are very deployment-dependent. The following is an incomplete list of ideas that could be
 considered:
 
-- The ``storkserver_auth_unreachable_machine_total`` is reported by the Stork server and shows the
+- The ``storkserver_auth_unreachable_machine_total`` metric is reported by the ``Stork Server`` and shows the
   number of unreachable machines. Its value under normal circumstances should be zero. Configuring
-  an alert for non-zero values may be the highest level for large scope problem, such as whole VM
+  an alert for non-zero values may be the best indicator of a large-scale problem, such as a whole VM
   or server becoming unavailable.
 - The ``storkserver_auth_authorized_machine_total`` and ``storkserver_auth_unauthorized_machine_total``
   metrics may be used to monitor situations when new machines (e.g. by automated VM cloning) may
-  appear in the network or existing machines could disappear.
-- The ``kea_dhcp4_addresses_assigned_total`` together with ``kea_dhcp4_addresses_total`` can be used to
-  calculate pool utilization. If the server allocates all available addresses, it won't be able to
+  appear in the network or existing machines may disappear.
+- The ``kea_dhcp4_addresses_assigned_total`` metric, along with ``kea_dhcp4_addresses_total``, can be used to
+  calculate pool utilization. If the server allocates all available addresses, it will not be able to
   handle new devices, which is one of the most common failure cases of the DHCPv4 server. Depending
-  on the deployment specifics, a threshold when the pool utilization approaches 100% should be
+  on the deployment specifics, a threshold alert when the pool utilization approaches 100% should be
   seriously considered.
-- Contrary to popular belief, DHCPv6 can also run out of resources, in particular in case of Prefix
-  Delegation. The ``kea_dhcp6_pd_assigned_total`` divided by ``kea_dhcp6_pd_total`` can be considered a
-  PD pool utilization. It is an important metric if PD is being used.
+- Contrary to popular belief, DHCPv6 can also run out of resources, in particular with prefix
+  delegation (PD). The ``kea_dhcp6_pd_assigned_total`` metric divided by ``kea_dhcp6_pd_total`` can be considered
+  an indicator of PD pool utilization. It is an important metric if PD is being used.
 
-Compared to Grafana alerting, the alerting mechanism configured in Prometheus has the relative
-advantage of not requiring additional component (Grafana). The alerting rules are defined in a text
-file using simple YAML syntax. For details, see `Prometheus documentation on alerting rules
+The alerting mechanism configured in Prometheus has the relative
+advantage of not requiring an additional component (Grafana). The alerting rules are defined in a text
+file using simple YAML syntax. For details, see the `Prometheus documentation on alerting rules
 <https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/>`_. One potentially
-important feature is Prometheus' ability to be configured to automatically discover available
+important feature is Prometheus' ability to automatically discover available
 Alertmanager instances, which may be helpful in various redundancy considerations. The Alertmanager
-provides a rich list of receivers, which are that actual notification mechanisms used: email,
-pagerduty, pushover, slack, opsgenie, webhook, wechat and more.
+provides a rich list of receivers, which are the actual notification mechanisms used: email,
+PagerDuty, Pushover, Slack, Opsgenie, webhook, WeChat, and more.
 
 ISC makes no specific recommendations between Prometheus or Grafana. This is a deployment
 consideration.
@@ -1088,24 +1085,24 @@ consideration.
 Grafana Integration
 -------------------
 
-Stork provides several Grafana templates that can easily be imported. Those are available in the ``grafana/`` directory of the
-Stork source code. The currently available templates are `bind9-resolver.json`, `kea-dhcp4.json` and `kea-dhcp6.json`. Grafana integration requires three steps:
+Stork provides several Grafana templates that can easily be imported, available in the ``grafana/`` directory of the
+Stork source code. The currently available templates are ``bind9-resolver.json``, ``kea-dhcp4.json``, and ``kea-dhcp6.json``. Grafana integration requires three steps:
 
-1. Prometheus must be added as a data source. This can be done in several ways, including via the user interface to edit the Grafana
+1. Prometheus must be added as a data source. This can be done in several ways, including using the user interface to edit the Grafana
 configuration files. This is the easiest method; for details, see the Grafana documentation about Prometheus integration.
 Using the Grafana user interface, select Configuration, select Data Sources, click "Add data source," and choose
-Prometheus, and then specify the necessary parameters to connect to the Prometheus instance. In test environments, the only really
+Prometheus; then specify the necessary parameters to connect to the Prometheus instance. In test environments, the only
 necessary parameter is the URL, but authentication is also desirable in most production deployments.
 
 2. Import the existing dashboard. In the Grafana UI, click Dashboards, then Manage, then Import, and select one of the templates, e.g.
-`kea-dhcp4.json`. Make sure to select the Prometheus data source added in the previous step. Once imported, the
+``kea-dhcp4.json``. Make sure to select the Prometheus data source added in the previous step. Once imported, the
 dashboard can be tweaked as needed.
 
-3. Once Grafana is configured, go to the Stork user interface, log in as super-admin, click Settings in the Configuration menu, and
-then add the URLs to Grafana and Prometheus that point to the installations. Once this is done, Stork will be able to show links
+3. Once Grafana is configured, go to the Stork user interface, log in as "super admin", click Settings in the Configuration menu, and
+then add the URLs for Grafana and Prometheus that point to the installations. Once this is done, Stork will be able to show links
 for subnets leading to specific subnets.
 
-Alternatively, a Prometheus data source can be added by editing `datasource.yaml` (typically stored in `/etc/grafana`,
+Alternatively, a Prometheus data source can be added by editing ``datasource.yaml`` (typically stored in ``/etc/grafana``,
 but this may vary depending on the installation) and adding entries similar to this one:
 
 .. code-block:: yaml
@@ -1118,43 +1115,43 @@ but this may vary depending on the installation) and adding entries similar to t
      isDefault: true
      editable: false
 
-Also, the Grafana dashboard files can be copied to `/var/lib/grafana/dashboards/` (again, this may vary depending on the
+The Grafana dashboard files can also be copied to ``/var/lib/grafana/dashboards/`` (again, the exact location may vary depending on the
 installation).
 
 Example dashboards with some live data can be seen in the `Stork screenshots gallery
 <https://gitlab.isc.org/isc-projects/stork/-/wikis/Screenshots#grafana>`_ .
 
-Subnet identification
+Subnet Identification
 ---------------------
 
-Kea CA shares subnet statistics labeled with the internal Kea IDs.
+The Kea Control Agent shares subnet statistics labeled with the internal Kea IDs.
 The Prometheus/Grafana subnet labels depend on the installed Kea hooks.
 By default, the internal, numeric Kea IDs are used.
-But if the `subnet_cmds` hook is installed then the numeric IDs are resolved to subnet prefixes.
-It causes that the Grafana dashboard looks more human-friendly and descriptive.
+However, if the ``subnet_cmds`` hook is installed, then the numeric IDs are resolved to subnet prefixes.
+This makes the Grafana dashboard more human-friendly and descriptive.
 
 Alerting in Grafana
 -------------------
 
-Grafana provides an alternative alerting mechanism that can also be used with Stork. It offers
-multiple options and the user is encouraged to see the `Grafana page on alerting
+Grafana offers multiple alerting mechanism options that can be used with Stork; users
+are encouraged to see the `Grafana page on alerting
 <https://grafana.com/docs/grafana/latest/alerting/?pg=docs>`_.
 
-The list of notification channels (i.e. the delivery mechanisms) looks flexible, as it supports
+The list of notification channels (i.e. the delivery mechanisms) is extensive, as it supports
 email, webhook, Prometheus' Alertmanager, PagerDuty, Slack, Telegram, Discord, Google Hangouts,
-Kafka REST Proxy, Microsoft Teams, OpsGenie, Pushover and more. Existing dashboards provided by
-Stork can be modified or new dashboards can be created. Grafana requires first a notification
+Kafka REST Proxy, Microsoft Teams, Opsgenie, Pushover, and more. Existing dashboards provided by
+Stork can be modified and new dashboards can be created. Grafana first requires a notification
 channel to be configured (Alerting -> Notifications Channel menu). Once configured, existing panels
 can be edited with alert rules. One caveat is that most panels in the Stork dashboards use template
 variables, which are not supported in alerting. This `stackoverflow thread
 <https://stackoverflow.com/questions/51053893/grafana-template-variables-are-not-supported-in-alert-queries>`_
 discusses several ways to overcome this limitation.
 
-Compared to Prometheus alerting, Grafana alerting seems to be a bit more user friendly as the alerts
-are set using web interface, with flexible approach that allows custom notification message
-(possibly with some instructions what to do when receiving such alert), how to treat situations
-where received data is null or there is a timeout etc.
+Compared to Prometheus alerting, Grafana alerting is a bit more user-friendly. The alerts
+are set using a web interface, with a flexible approach that allows custom notification messages, such as
+instructions on what to do when receiving an alert, information on how to treat situations
+where received data is null or there is a timeout, etc.
 
 The defined alerts are considered an integral part of a dashboard. This may be a factor in a deployment
-configuration, e.g. the dashboard could be tweaked to specific needs and then deployed to multiple
+configuration, e.g. the dashboard can be tweaked to specific needs and then deployed to multiple
 sites.
