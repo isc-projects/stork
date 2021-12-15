@@ -13,384 +13,148 @@ import (
 // the proportion between two counters.
 type BigCounter struct {
 	// Counting value wrapper.
-	state kernel
+	base     int64
+	extended *big.Int
 }
 
-// Create new instance of the big counter with the same value.
-func (n *BigCounter) clone() *BigCounter {
-	kernel := n.state.clone()
-	return newBigCounter(kernel)
+// Indicate that the int64 can be added to the base without integer overflow.
+func (n *BigCounter) canAddToBase(val int64) bool {
+	return val < math.MaxInt64-n.base
 }
 
-// Add the counting values and return new instance of the big counter.
-// Doesn't change the internal state.
-func (n *BigCounter) Add(other *BigCounter) *BigCounter {
-	number := n.clone()
-	number.AddInPlace(other)
-	return number
+// Indicate that the another counting value can be added to the internal state.
+func (n *BigCounter) canAdd(other *BigCounter) bool {
+	if n.isExtended() {
+		return true
+	}
+	if other.isExtended() {
+		return false
+	}
+	return n.canAddToBase(other.base)
+}
+
+// Indicate that this counter used int64 based counter or big-int based counter.
+func (n *BigCounter) isExtended() bool {
+	return n.extended != nil
+}
+
+// Initialize the big-int counter with current value of the int64 counter.
+// Set the int64 counter to max int64 value to ensure that the canAddToBase will return false.
+// It should be called only once per big counter.
+// It should be called only if the counting value exceeds the int64 range.
+func (n *BigCounter) initExtended() {
+	n.extended = big.NewInt(n.base)
+	n.base = math.MaxInt64
 }
 
 // Add the other big counter value to the internal counting value.
 // It modifies the internal state.
 // You should use this function to avoid too many allocations.
-func (n *BigCounter) AddInPlace(other *BigCounter) {
-	if other.state.isNaN() {
-		// If other is NaN then result is NaN too.
-		n.state = newKernelNaN()
-	} else if !n.state.canAdd(other.state) {
-		// Check if the current counter implementation can store
-		// the addition result. If no then switch to big integers.
-		n.state = newKernelBigInt(n.state.toBigInt())
+func (n *BigCounter) Add(other *BigCounter) *BigCounter {
+	if !n.canAdd(other) {
+		n.initExtended()
 	}
-	// Add the counting values.
-	n.state.addInPlace(other.state)
-}
 
-// Add the int64 number to the counting value and return new big counter.
-// Doesn't change the internal state.
-func (n *BigCounter) AddInt64(val int64) *BigCounter {
-	number := NewBigCounter(val)
-	return n.Add(number)
-}
+	if n.isExtended() {
+		n.extended.Add(n.extended, other.ToBigInt())
+	} else {
+		n.base += other.base
+	}
 
-// Add the uint64 number to the counting value and return new big counter.
-// Doesn't change the internal state.
-func (n *BigCounter) AddUInt64(val uint64) *BigCounter {
-	valBig := new(big.Int).SetUint64(val)
-	number := newBigCounter(newKernelBigInt(valBig))
-	return n.Add(number)
+	return n
 }
 
 // Add the int64 number to the internal counting value.
 // It modifies the internal state.
-func (n *BigCounter) AddInt64InPlace(val int64) {
-	number := NewBigCounter(val)
-	n.AddInPlace(number)
+func (n *BigCounter) AddInt64(val int64) *BigCounter {
+	if !n.isExtended() && !n.canAddToBase(val) {
+		n.initExtended()
+	}
+
+	if n.isExtended() {
+		n.extended.Add(n.extended, big.NewInt(val))
+	} else {
+		n.base += val
+	}
+
+	return n
 }
 
 // Add uint64 number to the internal counting value.
 // It modifies the internal state.
-func (n *BigCounter) AddUInt64InPlace(val uint64) {
+func (n *BigCounter) AddUInt64(val uint64) *BigCounter {
+	if !n.isExtended() {
+		if val <= math.MaxInt64 && n.canAddToBase(int64(val)) {
+			n.base += int64(val)
+			return n
+		}
+		n.initExtended()
+	}
 	valBig := new(big.Int).SetUint64(val)
-	number := newBigCounter(newKernelBigInt(valBig))
-	n.AddInPlace(number)
+	n.extended.Add(n.extended, valBig)
+	return n
 }
 
 // Divide the this counter by other.
 // Doesn't change the internal state.
 // If the result is above float64-range then it returns the infinity.
-// If the one of the counters is NaN then it returns NaN.
 func (n *BigCounter) DivideBy(other *BigCounter) float64 {
-	// Check if counters have the same range.
-	if n.state.canDivideBy(other.state) {
-		// If yes then they can be safety divided.
-		return n.state.divideBy(other.state)
+	if !n.isExtended() && !other.isExtended() {
+		return float64(n.base) / float64(other.base)
 	}
-	// If no then this counter must be temporarily promoted to a wider range.
-	return newKernelBigInt(n.state.toBigInt()).divideBy(other.state)
+
+	nFLoat := new(big.Float).SetInt(n.ToBigInt())
+	otherFloat := new(big.Float).SetInt(other.ToBigInt())
+	div := new(big.Float).Quo(nFLoat, otherFloat)
+	res, _ := div.Float64()
+	return res
 }
 
 // Works as the Divide function but returns 0 when the value
 // of the other counter is 0.
 func (n *BigCounter) DivideSafeBy(other *BigCounter) float64 {
-	if !other.state.isNaN() && other.state.toInt64() == 0 {
-		return 0
+	if !other.isExtended() && other.base == 0 {
+		return 0.0
 	}
 	return n.DivideBy(other)
 }
 
 // Returns the counting value as int64. If the value is above the range
-// then returns the maximum value of int64. For NaN returns 0.
+// then returns the maximum value of int64.
 func (n *BigCounter) ToInt64() int64 {
-	return n.state.toInt64()
+	return n.base
 }
 
 // Returns the counting value as int64. If the value is above the range
-// then returns the @above value. For NaN return @nan.
-func (n *BigCounter) ToInt64OrDefault(nan int64, above int64) int64 {
-	if n.state.isNaN() {
-		return nan
+// then returns the @above value.
+func (n *BigCounter) ToInt64OrDefault(above int64) int64 {
+	if !n.isExtended() {
+		return n.base
 	}
-	if !n.state.isIn64BitRange() {
-		return above
-	}
-	return n.state.toInt64()
+	return above
 }
 
-// Returns the counting value as big int. For NaN returns 0.
+// Returns the counting value as big int.
 func (n *BigCounter) ToBigInt() *big.Int {
-	return n.state.toBigInt()
+	if n.isExtended() {
+		return n.extended
+	}
+	return big.NewInt(n.base)
 }
 
 // Returns the string representation of the counting value.
 func (n *BigCounter) String() string {
-	return n.state.String()
+	if n.isExtended() {
+		return fmt.Sprint(n.extended)
+	}
+	return fmt.Sprint(n.base)
 }
 
 // Constructs a new big counter instance
 // and initialize it with the provided value.
 func NewBigCounter(val int64) *BigCounter {
-	return newBigCounter(newKernelInt64(val))
-}
-
-// Constructs the NaN counter.
-// Any operation on it causes NaN or 0.
-func NewBigCounterNaN() *BigCounter {
-	return newBigCounter(newKernelNaN())
-}
-
-// Internal constructor that uses the specific
-// counting implementation.
-func newBigCounter(k kernel) *BigCounter {
-	return &BigCounter{k}
-}
-
-// The counting implementation.
-type kernel interface {
-	// Returns true if the internal value is in range of the int64.
-	isIn64BitRange() bool
-	// Returns true if the result of the addition can be assigned to it.
-	canAdd(k kernel) bool
-	// Assigns the addition result to the internal state.
-	// It doesn't check the integer overflow.
-	addInPlace(k kernel)
-	// Returns true if both the counting values have the same range.
-	canDivideBy(k kernel) bool
-	// Divides the counting values. Returns the infinity if the result
-	// is out of float64 range or NaN is any counting value is NaN.
-	divideBy(k kernel) float64
-	// Returns the counting value as int64. If the value is above int64 range
-	// then it returns the maximum int64 value. For NaN returns 0.
-	toInt64() int64
-	// Indicates that the counting value is NaN.
-	isNaN() bool
-	// Returns the counting value as big int.
-	toBigInt() *big.Int
-	// Returns the counting value as float64. Returns an infinity if the counting
-	// value is above the float64 range.
-	toFloat64() float64
-	// Returns new instance with the same counting value.
-	clone() kernel
-	// Get string representation of the value
-	String() string
-}
-
-// NaN counting value.
-// Any operation on it causes NaN or 0.
-type kernelNaN struct{}
-
-// Constructs the NaN counting value.
-func newKernelNaN() kernel {
-	return &kernelNaN{}
-}
-
-// Always true.
-func (k *kernelNaN) canAdd(other kernel) bool {
-	return true
-}
-
-// Do nothing.
-func (k *kernelNaN) addInPlace(other kernel) {}
-
-// Always true.
-func (k *kernelNaN) isNaN() bool {
-	return true
-}
-
-// Returns 0.
-func (k *kernelNaN) toBigInt() *big.Int {
-	return big.NewInt(0)
-}
-
-// Returns 0.
-func (k *kernelNaN) toInt64() int64 {
-	return 0
-}
-
-// Returns NaN.
-func (k *kernelNaN) toFloat64() float64 {
-	return math.NaN()
-}
-
-// New NaN counting value.
-func (k *kernelNaN) clone() kernel {
-	return newKernelNaN()
-}
-
-// Always true.
-func (k *kernelNaN) isIn64BitRange() bool {
-	return true
-}
-
-// Always true.
-func (k *kernelNaN) canDivideBy(other kernel) bool {
-	return true
-}
-
-// Always NaN.
-func (k *kernelNaN) divideBy(other kernel) float64 {
-	return math.NaN()
-}
-
-// Returns the string representation of the counting value.
-func (n *kernelNaN) String() string {
-	return "nan"
-}
-
-// The int64-based counting value.
-type kernelInt64 struct {
-	value int64
-}
-
-// Construct new int64-based counting value.
-func newKernelInt64(val int64) kernel {
-	return &kernelInt64{value: val}
-}
-
-// Return true if result of the addition is in the int64 range.
-func (k *kernelInt64) canAdd(other kernel) bool {
-	if !other.isIn64BitRange() {
-		return false
+	return &BigCounter{
+		base:     val,
+		extended: nil,
 	}
-	return other.toInt64() <= math.MaxInt64-k.value
-}
-
-// Add the counting value to the internal state.
-// It may cause integer overflow.
-func (k *kernelInt64) addInPlace(other kernel) {
-	k.value += other.toInt64()
-}
-
-// Always false.
-func (k *kernelInt64) isNaN() bool {
-	return false
-}
-
-// Casts the counting value to big int.
-func (k *kernelInt64) toBigInt() *big.Int {
-	return big.NewInt(k.value)
-}
-
-// Just returns the internal counting value.
-func (k *kernelInt64) toInt64() int64 {
-	return k.value
-}
-
-// Casts the counting value to float64.
-func (k *kernelInt64) toFloat64() float64 {
-	return float64(k.value)
-}
-
-// Returns new instance with the same counting value.
-func (k *kernelInt64) clone() kernel {
-	return newKernelInt64(k.value)
-}
-
-// Always true.
-func (k *kernelInt64) isIn64BitRange() bool {
-	return true
-}
-
-// Return true if another counting value is in the int64 range.
-func (k *kernelInt64) canDivideBy(other kernel) bool {
-	return other.isIn64BitRange()
-}
-
-// Casts the counting value to float64 and divide.
-func (k *kernelInt64) divideBy(other kernel) float64 {
-	return k.toFloat64() / other.toFloat64()
-}
-
-// Returns the string representation of the counting value.
-func (n *kernelInt64) String() string {
-	return fmt.Sprint(n.value)
-}
-
-// The big int-based counting value.
-type kernelBigInt struct {
-	value *big.Int
-}
-
-// Constructs the vig int-based counting value.
-func newKernelBigInt(val *big.Int) kernel {
-	return &kernelBigInt{value: val}
-}
-
-// Always true.
-func (k *kernelBigInt) canAdd(other kernel) bool {
-	return true
-}
-
-// Add another counting value to the internal state.
-// Casts the another value to big int if necessary.
-func (k *kernelBigInt) addInPlace(other kernel) {
-	k.value.Add(k.value, other.toBigInt())
-}
-
-// Always false.
-func (k *kernelBigInt) isNaN() bool {
-	return false
-}
-
-// Just returns counting value.
-func (k *kernelBigInt) toBigInt() *big.Int {
-	return k.value
-}
-
-// If the counting value is above (or below) int64 range
-// then returns maximum (or minimum) int64 value. Otherwise returns
-// the counting value.
-func (k *kernelBigInt) toInt64() int64 {
-	if k.value.IsInt64() {
-		return k.value.Int64()
-	}
-	if k.value.Sign() > 0 {
-		return math.MaxInt64
-	}
-	return math.MinInt64
-}
-
-// If the counting value is above (or below) float64 range
-// then returns infinity (or minus infinity). Otherwise,
-// casts the counting value to float64.
-func (k *kernelBigInt) toFloat64() float64 {
-	if k.value.IsInt64() {
-		return float64(k.value.Int64())
-	}
-	return math.Inf(k.value.Sign())
-}
-
-// Creates new instance with the same counting value.
-func (k *kernelBigInt) clone() kernel {
-	newValue := new(big.Int)
-	newValue.Set(k.value)
-	return newKernelBigInt(newValue)
-}
-
-// Checks if the counting value is in the int64 range.
-func (k *kernelBigInt) isIn64BitRange() bool {
-	return k.value.IsInt64()
-}
-
-// Always true.
-func (k *kernelBigInt) canDivideBy(other kernel) bool {
-	return true
-}
-
-// If the division result is above (or below) float64 range
-// then returns infinity (or minus infinity).
-func (k *kernelBigInt) divideBy(other kernel) float64 {
-	if other.isNaN() {
-		return math.NaN()
-	}
-	kFLoat := new(big.Float).SetInt(k.toBigInt())
-	otherFloat := new(big.Float).SetInt(other.toBigInt())
-	div := new(big.Float).Quo(kFLoat, otherFloat)
-	res, _ := div.Float64()
-	return res
-}
-
-// Returns the string representation of the counting value.
-func (n *kernelBigInt) String() string {
-	return fmt.Sprint(n.value)
 }

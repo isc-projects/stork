@@ -32,18 +32,18 @@ func newGlobalStats() *globalStats {
 
 // Add the IPv4 subnet statistics to the global state.
 func (g *globalStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	g.totalAddresses.AddInPlace(subnet.totalAddresses)
-	g.totalAssignedAddresses.AddInPlace(subnet.totalAssignedAddresses)
-	g.totalDeclinedAddresses.AddInPlace(subnet.totalDeclinedAddresses)
+	g.totalAddresses.Add(subnet.totalAddresses)
+	g.totalAssignedAddresses.Add(subnet.totalAssignedAddresses)
+	g.totalDeclinedAddresses.Add(subnet.totalDeclinedAddresses)
 }
 
 // Add the IPv6 subnet statistics to the global state.
 func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
-	g.totalNAs.AddInPlace(subnet.totalNAs)
-	g.totalAssignedNAs.AddInPlace(subnet.totalAssignedNAs)
-	g.totalDeclinedNAs.AddInPlace(subnet.totalDeclinedNAs)
-	g.totalPDs.AddInPlace(subnet.totalPDs)
-	g.totalAssignedPDs.AddInPlace(subnet.totalAssignedPDs)
+	g.totalNAs.Add(subnet.totalNAs)
+	g.totalAssignedNAs.Add(subnet.totalAssignedNAs)
+	g.totalDeclinedNAs.Add(subnet.totalDeclinedNAs)
+	g.totalPDs.Add(subnet.totalPDs)
+	g.totalAssignedPDs.Add(subnet.totalAssignedPDs)
 }
 
 // General subnet lease statistics.
@@ -83,16 +83,16 @@ func (s *sharedNetworkStats) getPDUtilization() float64 {
 
 // Add the IPv4 subnet statistics to the shared network state.
 func (s *sharedNetworkStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	s.totalAddresses.AddInPlace(subnet.totalAddresses)
-	s.totalAssignedAddresses.AddInPlace(subnet.totalAssignedAddresses)
+	s.totalAddresses.Add(subnet.totalAddresses)
+	s.totalAssignedAddresses.Add(subnet.totalAssignedAddresses)
 }
 
 // Add the IPv6 subnet statistics to the shared network state.
 func (s *sharedNetworkStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
-	s.totalAddresses.AddInPlace(subnet.totalNAs)
-	s.totalAssignedAddresses.AddInPlace(subnet.totalAssignedNAs)
-	s.totalPDs.AddInPlace(subnet.totalPDs)
-	s.totalAssignedPDs.AddInPlace(subnet.totalAssignedPDs)
+	s.totalAddresses.Add(subnet.totalNAs)
+	s.totalAssignedAddresses.Add(subnet.totalAssignedNAs)
+	s.totalPDs.Add(subnet.totalPDs)
+	s.totalAssignedPDs.Add(subnet.totalAssignedPDs)
 }
 
 // IPv4 statistics retrieved from the single subnet.
@@ -209,7 +209,7 @@ func sumStatLocalSubnets(subnet *dbmodel.Subnet, statName string) *storkutil.Big
 	sum := storkutil.NewBigCounter(0)
 	for _, localSubnet := range subnet.LocalSubnets {
 		stat := getLocalSubnetStatValueIntOrDefault(localSubnet, statName)
-		sum.AddUInt64InPlace(stat)
+		sum.AddUInt64(stat)
 	}
 	return sum
 }
@@ -223,12 +223,9 @@ func getLocalSubnetStatValueIntOrDefault(localSubnet *dbmodel.LocalSubnet, name 
 
 	valueInt, ok := value.(int64)
 	if !ok {
-		valueFloat, ok := value.(float64)
-		if !ok {
-			return 0
-		}
-		valueInt = int64(valueFloat)
+		return 0
 	}
 
+	// Kea casts the value to int64 before serialize to JSON.
 	return uint64(valueInt)
 }
