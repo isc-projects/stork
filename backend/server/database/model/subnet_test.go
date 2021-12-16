@@ -1,7 +1,9 @@
 package dbmodel
 
 import (
+	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 	"testing"
 	"time"
@@ -912,6 +914,36 @@ func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 	count, err = DeleteEmptySharedNetworks(db)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, count)
+}
+
+// Test that big numbers are serialized as string to avoid losing the precision.
+func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
+	// Arrange
+	localSubnet := &LocalSubnet{
+		Stats: map[string]interface{}{
+			"maxInt64": math.MaxInt64,
+			"minInt64": math.MinInt64,
+			"untyped":  0,
+			"int16":    int16(0),
+			"int32":    int32(0),
+		},
+	}
+
+	var deserialized LocalSubnet
+
+	// Act
+	serialized, toJSONErr := json.Marshal(localSubnet)
+	fromJSONErr := json.Unmarshal(serialized, &deserialized)
+
+	// Assert
+	require.NoError(t, toJSONErr)
+	require.NoError(t, fromJSONErr)
+
+	require.IsType(t, "", deserialized.Stats["untyped"])
+	require.IsType(t, "", deserialized.Stats["maxInt64"])
+
+	require.IsType(t, float64(0), deserialized.Stats["int16"])
+	require.IsType(t, float64(0), deserialized.Stats["int32"])
 }
 
 // Benchmark measuring a time to add a single subnet.

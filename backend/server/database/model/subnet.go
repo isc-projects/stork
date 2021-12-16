@@ -2,7 +2,9 @@ package dbmodel
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -12,6 +14,34 @@ import (
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
 )
+
+// Custom statistic type to redefine JSON marshalling.
+type LocalSubnetStats map[string]interface{}
+
+// Local subnet statistics may contain the integer number from the int64
+// (or uint64) range (max value is 2^63-1 (2^64-1)). The value returned by
+// the Kea and stored in the Postgres database is exact. But when the
+// frontend fetches this data, it deserializes it using the standard JSON.parse
+// function. This function treats all number literals as floating double-precision
+// numbers. This type can exact handle integers up to (2^53 - 1); greater numbers
+// are inaccurate.
+// All the numeric statistics are serialized to string and next deserialized using
+// a custom function to avoid losing the precision.
+func (s LocalSubnetStats) MarshalJSON() ([]byte, error) {
+	toMarshal := make(map[string]interface{}, len(s))
+
+	for k, v := range s {
+		switch v.(type) {
+		// The data fetched from Kea has unspecified types.
+		case int, int64, uint64:
+			toMarshal[k] = fmt.Sprint(v)
+		default:
+			toMarshal[k] = v
+		}
+	}
+
+	return json.Marshal(toMarshal)
+}
 
 // This structure holds subnet information retrieved from an app. Multiple
 // DHCP server apps may be configured to serve leases in the same subnet.
@@ -29,7 +59,7 @@ type LocalSubnet struct {
 	Subnet        *Subnet `pg:"rel:has-one"`
 	LocalSubnetID int64
 
-	Stats            map[string]interface{}
+	Stats            LocalSubnetStats
 	StatsCollectedAt time.Time
 }
 
