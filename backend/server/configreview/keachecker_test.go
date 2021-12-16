@@ -7,11 +7,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	dbtest "isc.org/stork/server/database/test"
+	storkutil "isc.org/stork/util"
 )
 
 // Creates review context from configuration string.
-func createReviewContext(t *testing.T, configStr string) *ReviewContext {
+func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string) *ReviewContext {
 	config, err := dbmodel.NewKeaConfigFromJSON(configStr)
 	require.NoError(t, err)
 
@@ -22,7 +25,7 @@ func createReviewContext(t *testing.T, configStr string) *ReviewContext {
 		daemonName = dbmodel.DaemonNameDHCPv6
 	}
 	// Create the daemon instance and the context.
-	ctx := newReviewContext(&dbmodel.Daemon{
+	ctx := newReviewContext(db, &dbmodel.Daemon{
 		ID:   1,
 		Name: daemonName,
 		KeaDaemon: &dbmodel.KeaDaemon{
@@ -32,6 +35,76 @@ func createReviewContext(t *testing.T, configStr string) *ReviewContext {
 	require.NotNil(t, ctx)
 
 	return ctx
+}
+
+// Creates a new host with IP reservations in the database. Adding a host
+// requires a machine, app and subnet which are also added by this function.
+func createHostInDatabase(t *testing.T, db *dbops.PgDB, subnetPrefix string, reservationAddress ...string) {
+	// Detect whether we're dealing with DHCPv4 or DHCPv6.
+	daemonName := dbmodel.DaemonNameDHCPv4
+	parsedPrefix := storkutil.ParseIP(subnetPrefix)
+	if parsedPrefix != nil && parsedPrefix.Protocol == storkutil.IPv6 {
+		daemonName = dbmodel.DaemonNameDHCPv6
+	}
+	// Create the machine.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+	require.NotZero(t, machine.ID)
+
+	// Create the app.
+	app := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeKea,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:   daemonName,
+				Active: true,
+			},
+		},
+	}
+	addedDaemons, err := dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, addedDaemons, 1)
+
+	// Create the subnet.
+	subnet := dbmodel.Subnet{
+		Prefix: subnetPrefix,
+	}
+	err = dbmodel.AddSubnet(db, &subnet)
+	require.NoError(t, err)
+
+	// Associate the app with the subnet.
+	err = dbmodel.AddAppToSubnet(db, &subnet, app, app.Daemons[0])
+	require.NoError(t, err)
+
+	// Add the host for this subnet.
+	host := &dbmodel.Host{
+		SubnetID: subnet.ID,
+		HostIdentifiers: []dbmodel.HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+	}
+	// Append reserved addresses.
+	for _, a := range reservationAddress {
+		host.IPReservations = append(host.IPReservations, dbmodel.IPReservation{
+			Address: a,
+		})
+	}
+	// Add the host.
+	err = dbmodel.AddHost(db, host)
+	require.NoError(t, err)
+
+	// Associate the app with the host.
+	err = dbmodel.AddAppToHost(db, host, app, app.Daemons[0].ID, "api", 1)
+	require.NoError(t, err)
 }
 
 // Tests that the checker checking stat_cmds hooks library presence
@@ -46,7 +119,7 @@ func TestStatCmdsPresent(t *testing.T) {
             ]
         }
     }`
-	report, err := statCmdsPresence(createReviewContext(t, configStr))
+	report, err := statCmdsPresence(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -55,7 +128,7 @@ func TestStatCmdsPresent(t *testing.T) {
 // returns the report when the library is not loaded.
 func TestStatCmdsAbsent(t *testing.T) {
 	configStr := `{"Dhcp4": { }}`
-	report, err := statCmdsPresence(createReviewContext(t, configStr))
+	report, err := statCmdsPresence(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "The Kea Statistics Commands library")
@@ -79,7 +152,7 @@ func TestHostCmdsPresent(t *testing.T) {
             ]
         }
     }`
-	report, err := hostCmdsPresence(createReviewContext(t, configStr))
+	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -93,7 +166,7 @@ func TestHostCmdsBackendUnused(t *testing.T) {
 	configStr := `{
         "Dhcp4": { }
     }`
-	report, err := hostCmdsPresence(createReviewContext(t, configStr))
+	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -111,7 +184,7 @@ func TestHostCmdsAbsentHostsDatabase(t *testing.T) {
             }
         }
     }`
-	report, err := hostCmdsPresence(createReviewContext(t, configStr))
+	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "Kea can be configured")
@@ -132,7 +205,7 @@ func TestHostCmdsAbsentHostsDatabases(t *testing.T) {
             ]
         }
     }`
-	report, err := hostCmdsPresence(createReviewContext(t, configStr))
+	report, err := hostCmdsPresence(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "Kea can be configured")
@@ -161,7 +234,7 @@ func TestSharedNetworkDispensableNoDHCPv4Subnet(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "configuration comprises 1 empty shared network")
@@ -184,7 +257,7 @@ func TestSharedNetworkDispensableSingleDHCPv4Subnet(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "configuration comprises 1 shared network with only a single subnet")
@@ -233,7 +306,7 @@ func TestSharedNetworkDispensableSomeEmptySomeWithSingleSubnet(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "configuration comprises 2 empty shared networks and 2 shared networks with only a single subnet")
@@ -260,7 +333,7 @@ func TestSharedNetworkDispensableMultipleDHCPv4Subnets(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -288,7 +361,7 @@ func TestSharedNetworkDispensableNoDHCPv6Subnet(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "configuration comprises 1 empty shared network")
@@ -311,7 +384,7 @@ func TestSharedNetworkDispensableSingleDHCPv6Subnet(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "configuration comprises 1 shared network with only a single subnet")
@@ -338,7 +411,7 @@ func TestSharedNetworkDispensableMultipleDHCPv6Subnets(t *testing.T) {
             ]
         }
     }`
-	report, err := sharedNetworkDispensable(createReviewContext(t, configStr))
+	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -365,7 +438,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
@@ -398,7 +471,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -420,7 +493,7 @@ func TestIPv4SubnetDispensableSomePoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -443,7 +516,7 @@ func TestIPv4SubnetDispensableNoPoolsSomeReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -470,7 +543,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
@@ -503,7 +576,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -525,7 +598,7 @@ func TestIPv6SubnetDispensableSomePoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -549,7 +622,7 @@ func TestIPv6SubnetDispensableSomePdPoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -572,7 +645,7 @@ func TestIPv6SubnetDispensableNoPoolsSomeReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, configStr))
+	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -600,7 +673,7 @@ func TestDHCPv4ReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
@@ -633,7 +706,7 @@ func TestDHCPv4ReservationsOutOfPoolSharedNetwork(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 }
@@ -666,7 +739,7 @@ func TestDHCPv4ReservationsOutOfPoolEnabledGlobally(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -700,7 +773,7 @@ func TestDHCPv4ReservationsOutOfPoolEnabledAtSharedNetworkLevel(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -730,7 +803,7 @@ func TestDHCPv4ReservationsOutOfPoolEnabledAtSubnetLevel(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -753,7 +826,7 @@ func TestDHCPv4ReservationsOutOfPoolNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -776,7 +849,7 @@ func TestDHCPv4ReservationsOutOfPoolNoPools(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 }
@@ -794,7 +867,7 @@ func TestDHCPv4ReservationsOutOfPoolNoPoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -822,7 +895,103 @@ func TestDHCPv4ReservationsOutOfPoolNoPoolsNonIPReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker identifying subnets in which out-of-pool
+// reservation mode can be used finds these subnets in the global
+// subnets list. Hosts in the database case.
+func TestDHCPv4DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, "192.0.3.0/24", "192.0.3.5")
+
+	configStr := `{
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "id": 1,
+                    "subnet": "192.0.3.0/24",
+                    "pools": [
+                        {
+                            "pool": "192.0.3.10 - 192.0.3.100"
+                        }
+                    ]
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+                }
+            ]
+        }
+    }`
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
+}
+
+// Tests that the checker identifying subnets in which out-of-pool
+// reservation mode can be used ignores hosts specified in the
+// database when host_cmds is unused.
+func TestDHCPv4DatabaseReservationsOutOfPoolNoHostCmds(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, "192.0.3.0/24", "192.0.3.5")
+
+	configStr := `{
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "id": 1,
+                    "subnet": "192.0.3.0/24",
+                    "pools": [
+                        {
+                            "pool": "192.0.3.10 - 192.0.3.100"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker identifying subnets in which out-of-pool
+// reservation mode can be used ignores hosts lacking IP reservations.
+func TestDHCPv4DatabaseReservationsOutOfPoolNoIPReservation(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create the out-of-pool host reservation in the database without
+	// any IP reservation.
+	createHostInDatabase(t, db, "192.0.3.0/24")
+
+	configStr := `{
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "id": 1,
+                    "subnet": "192.0.3.0/24",
+                    "pools": [
+                        {
+                            "pool": "192.0.3.10 - 192.0.3.100"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -850,7 +1019,7 @@ func TestDHCPv6ReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
@@ -881,7 +1050,7 @@ func TestDHCPv6ReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
@@ -910,7 +1079,7 @@ func TestDHCPv6ReservationsOutOfPoolTopLevelSubnetInPool(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -940,7 +1109,7 @@ func TestDHCPv6ReservationsOutOfPoolTopLevelSubnetInPDPool(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -972,7 +1141,7 @@ func TestDHCPv6ReservationsOutOfPoolSharedNetwork(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 }
@@ -1006,7 +1175,7 @@ func TestDHCPv6ReservationsOutOfPDPoolSharedNetwork(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 }
@@ -1039,7 +1208,7 @@ func TestDHCPv6ReservationsOutOfPoolEnabledGlobally(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1073,7 +1242,7 @@ func TestDHCPv6ReservationsOutOfPoolEnabledAtSharedNetworkLevel(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1103,7 +1272,7 @@ func TestDHCPv6ReservationsOutOfPoolEnabledAtSubnetLevel(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1126,7 +1295,7 @@ func TestDHCPv6ReservationsOutOfPoolNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1149,7 +1318,7 @@ func TestDHCPv6ReservationsOutOfPoolNoPools(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
 }
@@ -1167,7 +1336,7 @@ func TestDHCPv6ReservationsOutOfPoolNoPoolsNoReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1196,7 +1365,213 @@ func TestDHCPv6ReservationsOutOfPoolNoPoolsNonIPReservations(t *testing.T) {
             ]
         }
     }`
-	report, err := reservationsOutOfPool(createReviewContext(t, configStr))
+	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker identifying subnets in which out-of-pool
+// reservation mode can be used finds these subnets in the global
+// subnets list. Hosts in the database case.
+func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, "2001:db8:1::/64", "2001:db8:1::5")
+
+	configStr := `{
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "id": 1,
+                    "subnet": "2001:db8:1::/64",
+                    "pools": [
+                        {
+                            "pool": "2001:db8:1::10 - 2001:db8:1::100"
+                        }
+                    ]
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+                }
+            ]
+        }
+    }`
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
+}
+
+// Tests that the checker identifying subnets in which out-of-pool
+// reservation mode can be used finds these subnets in the global
+// subnets list. Hosts in the database and prefix delegation case.
+func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, "2001:db8:1::/64", "3001::/96")
+
+	configStr := `{
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "id": 1,
+                    "subnet": "2001:db8:1::/64",
+                    "pd-pools": [
+                        {
+                            "prefix": "3000::",
+                            "prefix-len": 64,
+                            "delegated-len": 96
+                        }
+                    ]
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+                }
+            ]
+        }
+    }`
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
+}
+
+// Tests that the checker identifying subnets in which out-of-pool
+// reservation mode can be used returns no report when IP address
+// reservation is in pool.
+func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnetInPool(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, "2001:db8:1::/64", "2001:db8:1::50")
+
+	configStr := `{
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "id": 1,
+                    "subnet": "2001:db8:1::/64",
+                    "pools": [
+                        {
+                            "pool": "2001:db8:1::10 - 2001:db8:1::100"
+                        }
+                    ]
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+                }
+            ]
+        }
+    }`
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker identifying subnets in which out-of-pool
+// reservation mode can be used returns no report when delegated
+// prefix reservation is in pool.
+func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnetInPool(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, "2001:db8:1::/64", "3000::/96")
+
+	configStr := `{
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "id": 1,
+                    "subnet": "2001:db8:1::/64",
+                    "pd-pools": [
+                        {
+                            "prefix": "3000::",
+                            "prefix-len": 64,
+                            "delegated-len": 96
+                        }
+                    ]
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+                }
+            ]
+        }
+    }`
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker identifying subnets in which out-of-pool
+// reservation mode can be used ignores hosts specified in the
+// database when host_cmds is unused.
+func TestDHCPv6DatabaseReservationsOutOfPoolNoHostCmds(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, "2001:db8:1::/64", "2001:db8:1::5")
+
+	configStr := `{
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "id": 1,
+                    "subnet": "2001:db8:1::/64",
+                    "pools": [
+                        {
+                            "pool": "2001:db8:1::10 - 2001:db8:1::100"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
+	require.NoError(t, err)
+	require.Nil(t, report)
+}
+
+// Tests that the checker identifying subnets in which out-of-pool
+// reservation mode can be used ignores hosts lacking IP reservations.
+func TestDHCPv6DatabaseReservationsOutOfPoolNoIPReservation(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create the out-of-pool host reservation in the database without
+	// any IP reservation.
+	createHostInDatabase(t, db, "2001:db8:1::/64")
+
+	configStr := `{
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "id": 1,
+                    "subnet": "2001:db8:1::/64",
+                    "pools": [
+                        {
+                            "pool": "2001:db8:1::10 - 2001:db8:1::100"
+                        }
+                    ]
+                }
+            ]
+        }
+    }`
+	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -1242,7 +1617,132 @@ func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
 	// The benchmark starts here.
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ctx := newReviewContext(&dbmodel.Daemon{
+		ctx := newReviewContext(nil, &dbmodel.Daemon{
+			ID:   1,
+			Name: dbmodel.DaemonNameDHCPv4,
+			KeaDaemon: &dbmodel.KeaDaemon{
+				Config: config,
+			},
+		}, false, nil)
+		_, err = reservationsOutOfPool(ctx)
+		if err != nil {
+			b.Fatalf("checker failed: %+v", err)
+		}
+	}
+}
+
+// Benchmark measuring performance of a Kea configuration checker that detects
+// subnets in which the out-of-pool host reservation mode is recommended.
+// This benchmark stores host reservations in the database.
+func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
+	defer teardown()
+
+	// Create the machine.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	if err != nil {
+		b.Fatalf("failed to add a machine: %+v", err)
+	}
+
+	// Create the app.
+	app := &dbmodel.App{
+		MachineID: machine.ID,
+		Type:      dbmodel.AppTypeKea,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:   dbmodel.DaemonNameDHCPv4,
+				Active: true,
+			},
+		},
+	}
+	_, err = dbmodel.AddApp(db, app)
+	if err != nil {
+		b.Fatalf("failed to add an app: %+v", err)
+	}
+
+	// Create 10.000 subnets with a pool and out of pool reservation.
+	subnets := []interface{}{}
+	for i := 0; i < 10000; i++ {
+		prefix := fmt.Sprintf("192.%d.%d", i/256, i%256)
+		subnet := map[string]interface{}{
+			"subnet": fmt.Sprintf("%s.0/24", prefix),
+			"pools": []map[string]interface{}{
+				{
+					"pool": fmt.Sprintf("%s.10 - %s.100", prefix, prefix),
+				},
+			},
+			"hooks-libraries": []map[string]interface{}{
+				{
+					"library": "/usr/lib/kea/libdhcp_host_cmds.so",
+				},
+			},
+		}
+		subnets = append(subnets, subnet)
+
+		// Create the subnet in the database.
+		dbSubnet := dbmodel.Subnet{
+			Prefix: prefix,
+		}
+		err = dbmodel.AddSubnet(db, &dbSubnet)
+		if err != nil {
+			b.Fatalf("failed to add a subnet %s: %+v", dbSubnet.Prefix, err)
+		}
+		// Associate the app with the subnet.
+		err = dbmodel.AddAppToSubnet(db, &dbSubnet, app, app.Daemons[0])
+		if err != nil {
+			b.Fatalf("failed to add app to subnet %s: %+v", dbSubnet.Prefix, err)
+		}
+		// Add the host for this subnet.
+		host := &dbmodel.Host{
+			SubnetID: dbSubnet.ID,
+			HostIdentifiers: []dbmodel.HostIdentifier{
+				{
+					Type:  "hw-address",
+					Value: []byte{1, 2, 3, 4, 5, 6},
+				},
+			},
+			IPReservations: []dbmodel.IPReservation{
+				{
+					Address: fmt.Sprintf("%s.5", prefix),
+				},
+			},
+		}
+		// Add the host.
+		err = dbmodel.AddHost(db, host)
+		if err != nil {
+			b.Fatalf("failed to add app to subnet %s: %+v", dbSubnet.Prefix, err)
+		}
+		// Associate the app with the host.
+		err = dbmodel.AddAppToHost(db, host, app, app.Daemons[0].ID, "api", 1)
+		if err != nil {
+			b.Fatalf("failed to add app to host: %+v", err)
+		}
+	}
+
+	// Create Kea DHCPv4 configuration with the subnets.
+	configMap := map[string]interface{}{
+		"Dhcp4": map[string]interface{}{
+			"subnet4": subnets,
+		},
+	}
+	configStr, err := json.Marshal(configMap)
+	if err != nil {
+		b.Fatalf("failed to marshal configuration map: %+v", err)
+	}
+	config, err := dbmodel.NewKeaConfigFromJSON(string(configStr))
+	if err != nil {
+		b.Fatalf("failed to create new Kea configuration from JSON: %+v", err)
+	}
+
+	// The benchmark starts here.
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ctx := newReviewContext(db, &dbmodel.Daemon{
 			ID:   1,
 			Name: dbmodel.DaemonNameDHCPv4,
 			KeaDaemon: &dbmodel.KeaDaemon{

@@ -9,7 +9,7 @@ import (
 
 // Test creating a valid report.
 func TestCreateReport(t *testing.T) {
-	ctx := newReviewContext(&dbmodel.Daemon{
+	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 123,
 	}, false, nil)
 	referencedDaemon := &dbmodel.Daemon{
@@ -31,7 +31,7 @@ func TestCreateReport(t *testing.T) {
 // Test that an attempt to create a report with a blank content is
 // not possible.
 func TestCreateBlankReport(t *testing.T) {
-	ctx := newReviewContext(&dbmodel.Daemon{
+	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 123,
 	}, false, nil)
 	report, err := NewReport(ctx, "   ").create()
@@ -42,7 +42,7 @@ func TestCreateBlankReport(t *testing.T) {
 // Test that an attempt to create a report with subject daemon ID
 // of 0 is not possible.
 func TestCreateZeroSubjectDaemonID(t *testing.T) {
-	ctx := newReviewContext(&dbmodel.Daemon{
+	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 0,
 	}, false, nil)
 
@@ -54,7 +54,7 @@ func TestCreateZeroSubjectDaemonID(t *testing.T) {
 // Test that an attempt to create a report with referenced daemon
 // ID of 0 is not possible.
 func TestCreateZeroReferencedDaemonID(t *testing.T) {
-	ctx := newReviewContext(&dbmodel.Daemon{
+	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 123,
 	}, false, nil)
 	referencedDaemon := &dbmodel.Daemon{
@@ -80,7 +80,7 @@ func TestCreateReportRepeatedSubjectDaemon(t *testing.T) {
 			ID: 123,
 		},
 	}
-	ctx := newReviewContext(daemons[1], false, nil)
+	ctx := newReviewContext(nil, daemons[1], false, nil)
 
 	report, err := NewReport(ctx, "new report").
 		referencingDaemon(daemons[0]).

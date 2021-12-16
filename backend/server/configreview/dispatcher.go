@@ -40,6 +40,7 @@ type taggedReport struct {
 // checkers. Checkers can modify the context information (e.g. fetch
 // additional daemon configurations as necessary). The following
 // fields are available in the context:
+// - db: pointer to the database instance
 // - subjectDaemon: a daemon for which review is conducted
 // - refDaemons: daemons fetched by the checkers during the review
 // (e.g. daemons which configurations are associated with the subject
@@ -49,6 +50,7 @@ type taggedReport struct {
 // - internal: boolean flag indicating if the configuration review
 // was triggered internally by the dispatcher or by an external call.
 type ReviewContext struct {
+	db            *dbops.PgDB
 	subjectDaemon *dbmodel.Daemon
 	refDaemons    []*dbmodel.Daemon
 	reports       []taggedReport
@@ -57,8 +59,9 @@ type ReviewContext struct {
 }
 
 // Creates new review context instance.
-func newReviewContext(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) *ReviewContext {
+func newReviewContext(db *dbops.PgDB, daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) *ReviewContext {
 	ctx := &ReviewContext{
+		db:            db,
 		subjectDaemon: daemon,
 		callback:      callback,
 		internal:      internal,
@@ -191,8 +194,8 @@ type Dispatcher interface {
 // performed. The internal flag indicates if the review has been
 // initiated internally by the dispatcher. The callback is a
 // callback function invoked after the review is completed.
-func (d *dispatcherImpl) newContext(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) *ReviewContext {
-	ctx := newReviewContext(daemon, internal, callback)
+func (d *dispatcherImpl) newContext(db *dbops.PgDB, daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) *ReviewContext {
+	ctx := newReviewContext(db, daemon, internal, callback)
 	return ctx
 }
 
@@ -286,7 +289,7 @@ func (d *dispatcherImpl) awaitReports() {
 func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) {
 	defer d.reviewWg.Done()
 
-	ctx := d.newContext(daemon, internal, callback)
+	ctx := d.newContext(d.db, daemon, internal, callback)
 
 	dispatchGroupSelectors := getDispatchGroupSelectors(daemon.Name)
 

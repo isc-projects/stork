@@ -323,6 +323,38 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 	return hosts, err
 }
 
+// Fetches a collection of hosts by daemon ID and optionally filter by a
+// data source.
+func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource string) ([]Host, int64, error) {
+	hosts := []Host{}
+	q := dbi.Model(&hosts).
+		Join("INNER JOIN local_host AS lh ON host.id = lh.host_id").
+		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("host_identifier.id ASC"), nil
+		}).
+		Relation("IPReservations", func(q *orm.Query) (*orm.Query, error) {
+			return q.Order("ip_reservation.id ASC"), nil
+		}).
+		Relation("LocalHosts").
+		Relation("Subnet.LocalSubnets").
+		OrderExpr("id ASC").
+		Where("lh.daemon_id = ?", daemonID)
+
+	// Optionally filter by a data source.
+	if len(dataSource) > 0 {
+		q = q.Where("lh.data_source = ?", dataSource)
+	}
+
+	total, err := q.SelectAndCount()
+	if err != nil {
+		if errors.Is(err, pg.ErrNoRows) {
+			return nil, 0, nil
+		}
+		err = pkgerrors.Wrapf(err, "problem with getting hosts for daemon %d", daemonID)
+	}
+	return hosts, int64(total), err
+}
+
 // Fetches a collection of hosts from the database. The offset and
 // limit specify the beginning of the page and the maximum size of the
 // page. The appID, if different than 0, is used to fetch hosts whose

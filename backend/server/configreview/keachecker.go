@@ -245,6 +245,27 @@ func subnetDispensable(ctx *ReviewContext) (*Report, error) {
 	return checkSubnet6Dispensable(ctx)
 }
 
+// Fetch hosts for the tested daemon and index them by local subnet ID.
+func getDaemonHostsAndIndexBySubnet(ctx *ReviewContext) (dbHosts map[int64][]dbmodel.Host, err error) {
+	dbHosts = make(map[int64][]dbmodel.Host)
+	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); ctx.db != nil && present {
+		hosts, _, err := dbmodel.GetHostsByDaemonID(ctx.db, ctx.subjectDaemon.ID, "api")
+		if err != nil {
+			return dbHosts, err
+		}
+		for i, host := range hosts {
+			if host.Subnet != nil {
+				for _, ls := range host.Subnet.LocalSubnets {
+					if ls.DaemonID == ctx.subjectDaemon.ID && ls.SubnetID != 0 {
+						dbHosts[ls.SubnetID] = append(dbHosts[ls.SubnetID], hosts[i])
+					}
+				}
+			}
+		}
+	}
+	return dbHosts, nil
+}
+
 // Check if any of the listed addresses is within any of the address pools.
 func isAnyAddressInPools(addresses []string, pools []keaconfig.Pool) bool {
 	for _, ip := range addresses {
@@ -266,11 +287,50 @@ func isAnyAddressInPools(addresses []string, pools []keaconfig.Pool) bool {
 	return false
 }
 
+// Check if any of the listed IP reservations is within any of the address pools.
+func isAnyIPReservationInPools(reservations []dbmodel.IPReservation, pools []keaconfig.Pool) bool {
+	for _, reservation := range reservations {
+		parsedReservation := storkutil.ParseIP(reservation.Address)
+		if parsedReservation == nil || parsedReservation.Prefix {
+			continue
+		}
+		for _, pool := range pools {
+			lb, ub, err := storkutil.ParseIPRange(pool.Pool)
+			if err != nil {
+				continue
+			}
+			if parsedReservation.IsInRange(lb, ub) {
+				// We found an IP reservation that is within a pool.
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Check if any of the listed IP reservations is within any of the prefix pools.
+func isAnyIPReservationInPDPools(reservations []dbmodel.IPReservation, pdpools []keaconfig.PdPool) bool {
+	for _, reservation := range reservations {
+		parsedReservation := storkutil.ParseIP(reservation.Address)
+		if parsedReservation == nil || !parsedReservation.Prefix {
+			continue
+		}
+		for _, pdpool := range pdpools {
+			if parsedReservation.IsInPrefixRange(pdpool.Prefix, pdpool.PrefixLen, pdpool.DelegatedLen) {
+				// We found an IP reservation that is within a prefix pool.
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Implementation of a checker suggesting the use of out-of-pool host reservation
 // mode when there are IPv4 subnets with all host reservations outside of the
 // dynamic pools.
 func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	type subnet4 struct {
+		ID           int64
 		Subnet       string
 		Pools        []keaconfig.Pool
 		Reservations []struct {
@@ -307,6 +367,13 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	if globalModes == nil {
 		return nil, errors.New("problem with getting global reservation modes from Kea configuration")
 	}
+
+	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
+	dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Count the subnets for which it is feasible to enable out-of-pool
 	// reservation mode.
 	oopSubnetsCount := int64(0)
@@ -323,19 +390,39 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 			}
 			// If there are no reservations in this subnet there is nothing
 			// to do.
-			if len(subnet.Reservations) == 0 {
+			if len(subnet.Reservations) == 0 && len(dbHosts) == 0 {
 				continue
 			}
+			inPool := false
+			ipResrvExist := false
 			// Check if at least one reservation is within a pool.
 			for _, reservation := range subnet.Reservations {
-				if len(reservation.IPAddress) == 0 {
-					continue
+				if len(reservation.IPAddress) > 0 {
+					ipResrvExist = true
+					// Check if the IP address belongs to any of the pools. If
+					// it does, move to the next subnet.
+					if isAnyAddressInPools([]string{reservation.IPAddress}, subnet.Pools) {
+						inPool = true
+						break
+					}
 				}
-				// Check if the IP address belongs to any of the subnets. If
-				// it does, move to the next subnet.
-				if isAnyAddressInPools([]string{reservation.IPAddress}, subnet.Pools) {
-					break
+			}
+			// If there is no in-pool reservation in the configured reservations
+			// let's check if there are some in the host database.
+			if !inPool {
+				for _, dbHost := range dbHosts[subnet.ID] {
+					ipResrvExist = true
+					if len(dbHost.IPReservations) > 0 {
+						if isAnyIPReservationInPools(dbHost.IPReservations, subnet.Pools) {
+							inPool = true
+							break
+						}
+					}
 				}
+			}
+			// Didn't find in-pool reservations in the configuration file and in
+			// the host daabase.
+			if ipResrvExist && !inPool {
 				// No in-pool reservation.
 				oopSubnetsCount++
 			}
@@ -373,6 +460,7 @@ func isAnyPrefixInPools(prefixes []string, pools []keaconfig.PdPool) bool {
 // dynamic pools.
 func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	type subnet6 struct {
+		ID           int64
 		Subnet       string
 		Pools        []keaconfig.Pool
 		PDPools      []keaconfig.PdPool
@@ -411,6 +499,13 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	if globalModes == nil {
 		return nil, errors.New("problem with getting global reservation modes from Kea configuration")
 	}
+
+	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
+	dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Count the subnets for which it is feasible to enable out-of-pool
 	// reservation mode.
 	oopSubnetsCount := int64(0)
@@ -427,20 +522,41 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 			}
 			// If there are no reservations in this subnet there is nothing
 			// to do.
-			if len(subnet.Reservations) == 0 {
+			if len(subnet.Reservations) == 0 && len(dbHosts) == 0 {
 				continue
 			}
+			inPool := false
+			ipResrvExist := false
 			// Check if at least one reservation is within a pool.
 			for _, reservation := range subnet.Reservations {
-				if len(reservation.IPAddresses) == 0 && len(reservation.Prefixes) == 0 {
-					continue
+				if len(reservation.IPAddresses) > 0 || len(reservation.Prefixes) > 0 {
+					ipResrvExist = true
+					// Check if any of the IP addresses or delegated prefixes belong to any
+					// of the pools. If so, move to the next subnet.
+					if isAnyAddressInPools(reservation.IPAddresses, subnet.Pools) ||
+						isAnyPrefixInPools(reservation.Prefixes, subnet.PDPools) {
+						inPool = true
+						break
+					}
 				}
-				// Check if any of the IP addresses or delegated prefixes belong to any
-				// of the pools. If so, move to the next subnet.
-				if isAnyAddressInPools(reservation.IPAddresses, subnet.Pools) ||
-					isAnyPrefixInPools(reservation.Prefixes, subnet.PDPools) {
-					break
+			}
+			// If there is no in-pool reservation in the configured reservations
+			// let's check if there are some in the host database.
+			if !inPool {
+				for _, dbHost := range dbHosts[subnet.ID] {
+					ipResrvExist = true
+					if len(dbHost.IPReservations) > 0 {
+						if isAnyIPReservationInPools(dbHost.IPReservations, subnet.Pools) ||
+							isAnyIPReservationInPDPools(dbHost.IPReservations, subnet.PDPools) {
+							inPool = true
+							break
+						}
+					}
 				}
+			}
+			// Didn't find in-pool reservations in the configuration file and in
+			// the host daabase.
+			if ipResrvExist && !inPool {
 				// No in-pool reservation.
 				oopSubnetsCount++
 			}
@@ -463,10 +579,6 @@ func reservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	if ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv4 &&
 		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
-	}
-	// Skip the check if the host_cmds hooks library is loaded.
-	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); present {
-		return nil, nil
 	}
 	if ctx.subjectDaemon.Name == dbmodel.DaemonNameDHCPv4 {
 		return checkDHCPv4ReservationsOutOfPool(ctx)

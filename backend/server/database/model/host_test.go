@@ -606,6 +606,50 @@ func TestGetHostsByPageWithSorting(t *testing.T) {
 	require.EqualValues(t, 4, returned[3].ID)
 }
 
+// Test that page of the hosts can be fetched by daemon ID.
+func TestGetHostsByDaemonID(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps and hosts into the database.
+	apps := addTestSubnetApps(t, db)
+	hosts := addTestHosts(t, db)
+
+	// Associate the first host with the first app.
+	err := AddAppToHost(db, &hosts[0], apps[0], apps[0].Daemons[0].ID, "api", 1)
+	require.NoError(t, err)
+	err = AddAppToHost(db, &hosts[1], apps[0], apps[0].Daemons[0].ID, "api", 1)
+	require.NoError(t, err)
+	err = AddAppToHost(db, &hosts[2], apps[1], apps[1].Daemons[0].ID, "api", 1)
+	require.NoError(t, err)
+	err = AddAppToHost(db, &hosts[3], apps[1], apps[1].Daemons[0].ID, "api", 1)
+	require.NoError(t, err)
+
+	// Get hosts for the first deamon.
+	returned, total, err := GetHostsByDaemonID(db, apps[0].Daemons[0].ID, "api")
+	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
+	require.Len(t, returned, 2)
+	require.True(t,
+		(returned[0].ID == hosts[0].ID && returned[1].ID == hosts[1].ID) ||
+			(returned[0].ID == hosts[1].ID && returned[1].ID == hosts[0].ID))
+
+	// Get hosts for the second deamon.
+	returned, total, err = GetHostsByDaemonID(db, apps[1].Daemons[0].ID, "")
+	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
+	require.Len(t, returned, 2)
+	require.True(t,
+		(returned[0].ID == hosts[2].ID && returned[1].ID == hosts[3].ID) ||
+			(returned[0].ID == hosts[3].ID && returned[1].ID == hosts[2].ID))
+
+	// Use filtering by data source. It should return no hosts.
+	returned, total, err = GetHostsByDaemonID(db, apps[0].Daemons[0].ID, "config")
+	require.NoError(t, err)
+	require.EqualValues(t, 0, total)
+	require.Empty(t, returned)
+}
+
 // Test that the host and its identifiers and reservations can be
 // deleted.
 func TestDeleteHost(t *testing.T) {
