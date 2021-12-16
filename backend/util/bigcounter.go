@@ -16,12 +16,12 @@ type BigCounter struct {
 	extended *big.Int
 }
 
-// Indicate that the int64 can be added to the base without integer overflow.
+// Indicates that the int64 can be added to the base value without integer overflow.
 func (n *BigCounter) canAddToBase(val int64) bool {
 	return val < math.MaxInt64-n.base
 }
 
-// Indicate that the another counting value can be added to the internal state.
+// Indicates that another counting value can be added to the internal state.
 func (n *BigCounter) canAdd(other *BigCounter) bool {
 	if n.isExtended() {
 		return true
@@ -32,12 +32,12 @@ func (n *BigCounter) canAdd(other *BigCounter) bool {
 	return n.canAddToBase(other.base)
 }
 
-// Indicate that this counter used int64 based counter or big-int based counter.
+// Indicates that this counter uses int64 based counter or big-int based counter.
 func (n *BigCounter) isExtended() bool {
 	return n.extended != nil
 }
 
-// Initialize the big-int counter with current value of the int64 counter.
+// Initializes the big-int counter with current value of the int64 counter.
 // Set the int64 counter to max int64 value to ensure that the canAddToBase will return false.
 // It should be called only once per big counter.
 // It should be called only if the counting value exceeds the int64 range.
@@ -46,9 +46,8 @@ func (n *BigCounter) initExtended() {
 	n.base = math.MaxInt64
 }
 
-// Add the other big counter value to the internal counting value.
+// Adds the other big counter value to the internal counting value.
 // It modifies the internal state.
-// You should use this function to avoid too many allocations.
 func (n *BigCounter) Add(other *BigCounter) *BigCounter {
 	if !n.canAdd(other) {
 		n.initExtended()
@@ -63,7 +62,7 @@ func (n *BigCounter) Add(other *BigCounter) *BigCounter {
 	return n
 }
 
-// Add the int64 number to the internal counting value.
+// Adds the int64 number to the internal counting value.
 // It modifies the internal state.
 func (n *BigCounter) AddInt64(val int64) *BigCounter {
 	if !n.isExtended() && !n.canAddToBase(val) {
@@ -79,7 +78,7 @@ func (n *BigCounter) AddInt64(val int64) *BigCounter {
 	return n
 }
 
-// Add uint64 number to the internal counting value.
+// Adds uint64 number to the internal counting value.
 // It modifies the internal state.
 func (n *BigCounter) AddUInt64(val uint64) *BigCounter {
 	if !n.isExtended() {
@@ -94,7 +93,7 @@ func (n *BigCounter) AddUInt64(val uint64) *BigCounter {
 	return n
 }
 
-// Divide the this counter by other.
+// Divides this counter by the other.
 // Doesn't change the internal state.
 // If the result is above float64-range then it returns the infinity.
 func (n *BigCounter) DivideBy(other *BigCounter) float64 {
@@ -110,7 +109,7 @@ func (n *BigCounter) DivideBy(other *BigCounter) float64 {
 }
 
 // Works as the Divide function but returns 0 when the value
-// of the other counter is 0.
+// of the denominator counter is 0.
 func (n *BigCounter) DivideSafeBy(other *BigCounter) float64 {
 	if !other.isExtended() && other.base == 0 {
 		return 0.0
@@ -133,7 +132,7 @@ func (n *BigCounter) ToBigInt() *big.Int {
 }
 
 // Constructs a new big counter instance
-// and initialize it with the provided value.
+// and initializes it with the provided value.
 func NewBigCounter(val int64) *BigCounter {
 	return &BigCounter{
 		base:     val,

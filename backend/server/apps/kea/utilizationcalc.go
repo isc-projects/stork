@@ -226,6 +226,6 @@ func getLocalSubnetStatValueIntOrDefault(localSubnet *dbmodel.LocalSubnet, name 
 		return 0
 	}
 
-	// Kea casts the value to int64 before serialize to JSON.
+	// Kea casts the value to int64 before serializing it to JSON.
 	return uint64(valueInt)
 }
