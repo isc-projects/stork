@@ -95,7 +95,7 @@ func sharedNetworkDispensable(ctx *ReviewContext) (*Report, error) {
 			details += storkutil.FormatNoun(singleCount, "shared network", "s")
 			details += " with only a single subnet"
 		}
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration comprises %s. Using shared networks creates an overhead for a Kea server configuration and DHCP message processing, affecting its performance. It is recommended to remove the shared networks with none or a single subnet and specify these subnets at the global configuration level.", details)).
+		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration comprises %s. Shared networks create an overhead for a Kea server configuration and DHCP message processing, affecting its performance. It is recommended to remove the shared networks haing none or a single subnet and specify these subnets at the global configuration level.", details)).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -111,7 +111,7 @@ func createSubnetDispensableReport(ctx *ReviewContext, dispensableCount int64) (
 	if dispensableCount == 0 {
 		return nil, nil
 	}
-	r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration comprises %s without pools and host reservations. The DHCP server will not assign any addresses to the devices within this subnet. It is recommended to add some pools or host reservations to this subnet or remove the subnet from the configuration.", storkutil.FormatNoun(dispensableCount, "subnet", "s"))).
+	r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s without pools and host reservations. The DHCP server will not assign any addresses to the devices within this subnet. It is recommended to add some pools or host reservations to this subnet or remove the subnet from the configuration.", storkutil.FormatNoun(dispensableCount, "subnet", "s"))).
 		referencingDaemon(ctx.subjectDaemon).
 		create()
 	return r, err
@@ -156,13 +156,11 @@ func checkSubnet4Dispensable(ctx *ReviewContext) (*Report, error) {
 	*decodedSharedNetworks = append(*decodedSharedNetworks, sharedNetwork{
 		Subnet4: decodedSubnets4,
 	})
-
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	hostCmds, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	// Iterate over the shared networks and check if they contain any
 	// subnets that can be removed.
 	dispensableCount := int64(0)
@@ -221,13 +219,11 @@ func checkSubnet6Dispensable(ctx *ReviewContext) (*Report, error) {
 	*decodedSharedNetworks = append(*decodedSharedNetworks, sharedNetwork{
 		Subnet6: decodedSubnets6,
 	})
-
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	hostCmds, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	// Iterate over the shared networks and check if they contain any
 	// subnets that can be removed.
 	dispensableCount := int64(0)
@@ -380,13 +376,11 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	if globalModes == nil {
 		return nil, errors.New("problem with getting global reservation modes from Kea configuration")
 	}
-
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	// Count the subnets for which it is feasible to enable out-of-pool
 	// reservation mode.
 	oopSubnetsCount := int64(0)
@@ -443,7 +437,7 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	}
 
 	if oopSubnetsCount > 0 {
-		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration comprises %s for which it is recommended to use out-of-pool host reservation mode.  Reservations specified for these subnets appear outside the dynamic address pools. Using out-of-pool reservation mode prevents Kea from checking host reservation existence when allocating in-pool addresses, thus improving performance.", storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
+		r, err := NewReport(ctx, fmt.Sprintf("Kea {daemon} configuration includes %s for which it is recommended to use out-of-pool host reservation mode.  Reservations specified for these subnets are outside the dynamic address pools. Using out-of-pool reservation mode prevents Kea from checking host reservation existence when allocating in-pool addresses, thus improving performance.", storkutil.FormatNoun(oopSubnetsCount, "subnet", "s"))).
 			referencingDaemon(ctx.subjectDaemon).
 			create()
 		return r, err
@@ -512,13 +506,11 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	if globalModes == nil {
 		return nil, errors.New("problem with getting global reservation modes from Kea configuration")
 	}
-
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
 	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	// Count the subnets for which it is feasible to enable out-of-pool
 	// reservation mode.
 	oopSubnetsCount := int64(0)

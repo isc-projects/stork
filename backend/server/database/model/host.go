@@ -323,7 +323,7 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 	return hosts, err
 }
 
-// Fetches a collection of hosts by daemon ID and optionally filter by a
+// Fetches a collection of hosts by daemon ID and optionally filters by a
 // data source.
 func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource string) ([]Host, int64, error) {
 	hosts := []Host{}

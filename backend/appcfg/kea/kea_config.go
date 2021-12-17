@@ -99,7 +99,7 @@ type Databases struct {
 // configuration level. This structure can be embedded in the
 // structures for decoding subnets and shared networks. In that
 // case, the reservation modes configured at the subnet or shared
-// network lebel will be decoded into the embedded structure.
+// network level will be decoded into the embedded structure.
 // Do not read the decoded modes directly from the structure.
 // Call appropriate functions on this structure to test the
 // decoded modes. The Deprecated field holds the value of the
@@ -422,7 +422,7 @@ func (c *Map) GetGlobalReservationModes() *ReservationModes {
 // reservation mode can be configured. The reservation modes specified
 // using the variadic parameters should be ordered from the lowest to
 // highest configuration level, e.g., subnet-level, shared network-level,
-// and finally global level host reservation configuration. The first
+// and finally global-level host reservation configuration. The first
 // argument is a function implementing a condition to be checked for
 // each ReservationModes. The example condition is:
 //
@@ -437,7 +437,7 @@ func (c *Map) GetGlobalReservationModes() *ReservationModes {
 //
 // Note that this function handles Kea configuration inheritance scheme.
 // It checks for explicitly set values at subnet and shared network levels
-// which override the global level setting. The global-level setting
+// which override the global-level setting. The global-level setting
 // applies regardless whether or not it is specified. If it is not
 // specified a default value is used.
 func IsInAnyReservationModes(condition func(modes ReservationModes) (bool, bool), modes ...ReservationModes) bool {
