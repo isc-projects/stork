@@ -1,3 +1,14 @@
+* 184 [func] marcin
+
+    Implemented new Kea configuration checkers. The first one
+    verifies if there are any empty shared networks or networks
+    with a single subnet. The second one verifies if there are
+    subnets containing no pools and no host reservations. The
+    third one verifies if there are subnets containing only out
+    of the pool addresses and delegated prefixes, in which case
+    the out-of-pool host reservation mode can be enabled.
+    (Gitlab #672)
+
 * 183 [build] marcin
 
     Stork now uses golang 1.17 and protoc-gen-go 1.26.
