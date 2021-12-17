@@ -146,8 +146,8 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     /**
      * Get total of addresses in the network by summing up all subnets.
      */
-    getTotalAddresses(network) {
-        let total = 0
+    getTotalAddresses(network): bigint {
+        let total = BigInt(0)
         for (const sn of network.subnets) {
             if (sn.localSubnets[0].stats) {
                 total += getTotalAddresses(sn)
@@ -159,8 +159,8 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     /**
      * Get assigned of addresses in the network by summing up all subnets.
      */
-    getAssignedAddresses(network) {
-        let total = 0
+    getAssignedAddresses(network): bigint {
+        let total = BigInt(0)
         for (const sn of network.subnets) {
             if (sn.localSubnets[0].stats) {
                 total += getAssignedAddresses(sn)
@@ -179,11 +179,12 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     /**
      * Prepare count for presenting in a column that it is easy to grasp by humans.
      */
-    humanCount(count) {
-        if (isNaN(count)) {
+    humanCount(count: number | bigint) {
+        // Only NaN is NaN
+        if (isNaN(count as any)) {
             return count
         }
-        if (Math.abs(count) < 1000000) {
+        if (count < 1000000) {
             return count.toLocaleString('en-US')
         }
         return humanCount(count)

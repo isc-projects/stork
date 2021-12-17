@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing'
 
-import { getTotalAddresses, getAssignedAddresses } from './subnets'
+import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } from './subnets'
 
 describe('subnets', () => {
     beforeEach(() => TestBed.configureTestingModule({}))
@@ -11,8 +11,8 @@ describe('subnets', () => {
             localSubnets: [
                 {
                     stats: {
-                        'total-addresses': '4',
-                        'assigned-addresses': '2',
+                        'total-addresses': 4,
+                        'assigned-addresses': 2,
                     },
                 },
             ],
@@ -30,8 +30,8 @@ describe('subnets', () => {
             localSubnets: [
                 {
                     stats: {
-                        'total-nas': '4',
-                        'assigned-nas': '18446744073709551615',
+                        'total-nas': 4,
+                        'assigned-nas': BigInt('18446744073709551615'),
                     },
                 },
             ],
@@ -41,5 +41,31 @@ describe('subnets', () => {
 
         const assignedAddrs = getAssignedAddresses(subnet6)
         expect(assignedAddrs).toBe(BigInt('18446744073709551615'))
+    })
+
+    it('parse stats from string to big int', () => {
+        // Arrange
+        const subnets6 = {
+            items: [{
+                subnet: '3000::0/24',
+                localSubnets: [
+                    {
+                        stats: {
+                            'total-nas': '4',
+                            'assigned-nas': '18446744073709551615',
+                            'foo': 'bar',
+                        },
+                    },
+                ],
+            }],
+        }
+
+        // Act
+        parseSubnetsStatisticValues(subnets6)
+
+        // Assert
+        expect(subnets6.items[0].localSubnets[0].stats['total-nas']).toBe(BigInt('4') as any)
+        expect(subnets6.items[0].localSubnets[0].stats['assigned-nas']).toBe(BigInt('18446744073709551615') as any)
+        expect(subnets6.items[0].localSubnets[0].stats['foo']).toBe('bar')
     })
 })

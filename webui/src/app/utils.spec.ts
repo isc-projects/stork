@@ -1,4 +1,4 @@
-import { clamp } from './utils'
+import { clamp, humanCount } from './utils'
 
 describe('utils', () => {
     it('clamps should return return proper number', () => {
@@ -30,5 +30,22 @@ describe('utils', () => {
         expect(clamp(Number.POSITIVE_INFINITY, 0, 1)).toBe(1)
         // Floats - bounds as infinities
         expect(clamp(3, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY)).toBe(3)
+    })
+
+    it('human count should return proper string for any number', () => {
+        // Arrange
+        const int = 12345678
+        const float = 1234567890
+        const bigInt = BigInt("1234567890000000000000000000000000")
+
+        // Act
+        const strInt = humanCount(int)
+        const strFloat = humanCount(float)
+        const strBigInt = humanCount(bigInt)
+
+        // Assert
+        expect(strInt).toBe("12.3 M")
+        expect(strFloat).toBe("1.2 G")
+        expect(strBigInt).toBe("1234567890 Y")
     })
 })

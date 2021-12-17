@@ -77,14 +77,25 @@ export function durationToString(duration, short = false) {
 /**
  * Present count in human readable way ie. big numbers get unit, e.g. 102 M instead of 102342543.
  */
-export function humanCount(count) {
+export function humanCount(count: bigint | number) {
     const units = ['k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
     let u = -1
     do {
-        count /= 1000
+        if (typeof(count) === "number") {
+            count /= 1000
+        } else {
+            count /= BigInt(1000)
+        }
         ++u
-    } while (Math.abs(count) >= 1000 && u < units.length - 1)
-    return count.toFixed(1) + ' ' + units[u]
+    } while (count >= 1000 && u < units.length - 1)
+
+    let countStr = ""
+    if (typeof(count) === "number") { 
+        countStr = count.toFixed(1)
+    } else {
+        countStr = count.toString()
+    }
+    return countStr + ' ' + units[u]
 }
 
 /**

@@ -3,7 +3,7 @@
  * It is taken from DHCPv4 or DHCPv6 stats respectively.
  * In DHCPv6 if total is -1 in stats then max safe int is returned.
  */
-export function getTotalAddresses(subnet): BigInt {
+export function getTotalAddresses(subnet) {
     // DHCPv4 or DHCPv6 stats
     const statName = subnet.subnet.includes('.') ? 'total-addresses' : 'total-nas'
     return subnet.localSubnets[0].stats[statName]
@@ -13,7 +13,7 @@ export function getTotalAddresses(subnet): BigInt {
  * Get assigned number of addresses in a subnet.
  * It is taken from DHCPv4 or DHCPv6 stats respectively.
  */
-export function getAssignedAddresses(subnet): BigInt {
+export function getAssignedAddresses(subnet) {
     const statName = subnet.subnet.includes('.') ? 'assigned-addresses' : 'assigned-nas'
     return subnet.localSubnets[0].stats[statName]
 }
