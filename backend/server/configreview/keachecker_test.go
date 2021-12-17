@@ -243,7 +243,7 @@ func TestSharedNetworkDispensableNoDHCPv4Subnet(t *testing.T) {
 	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "configuration comprises 1 empty shared network")
+	require.Contains(t, report.content, "configuration includes 1 empty shared network")
 }
 
 // Tests that the checker finding dispensable shared networks finds
@@ -266,7 +266,7 @@ func TestSharedNetworkDispensableSingleDHCPv4Subnet(t *testing.T) {
 	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "configuration comprises 1 shared network with only a single subnet")
+	require.Contains(t, report.content, "configuration includes 1 shared network with only a single subnet")
 }
 
 // Tests that the checker finding dispensable shared networks finds
@@ -315,7 +315,7 @@ func TestSharedNetworkDispensableSomeEmptySomeWithSingleSubnet(t *testing.T) {
 	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "configuration comprises 2 empty shared networks and 2 shared networks with only a single subnet")
+	require.Contains(t, report.content, "configuration includes 2 empty shared networks and 2 shared networks with only a single subnet")
 }
 
 // Tests that the checker finding dispensable shared networks does not
@@ -370,7 +370,7 @@ func TestSharedNetworkDispensableNoDHCPv6Subnet(t *testing.T) {
 	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "configuration comprises 1 empty shared network")
+	require.Contains(t, report.content, "configuration includes 1 empty shared network")
 }
 
 // Tests that the checker finding dispensable shared networks finds
@@ -393,7 +393,7 @@ func TestSharedNetworkDispensableSingleDHCPv6Subnet(t *testing.T) {
 	report, err := sharedNetworkDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "configuration comprises 1 shared network with only a single subnet")
+	require.Contains(t, report.content, "configuration includes 1 shared network with only a single subnet")
 }
 
 // Tests that the checker finding dispensable shared networks does not
@@ -447,7 +447,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservations(t *testing.T) {
 	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
+	require.Contains(t, report.content, "configuration includes 2 subnets without pools and host reservations")
 }
 
 // Tests that the checker finding dispensable subnets finds the subnets
@@ -485,7 +485,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
 	report, err := subnetDispensable(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
+	require.Contains(t, report.content, "configuration includes 2 subnets without pools and host reservations")
 }
 
 // Tests that the checker finding dispensable subnets generates no report
@@ -588,7 +588,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservations(t *testing.T) {
 	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
+	require.Contains(t, report.content, "configuration includes 2 subnets without pools and host reservations")
 }
 
 // Tests that the checker finding dispensable subnets does not generate
@@ -627,7 +627,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
 	report, err := subnetDispensable(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
+	require.Contains(t, report.content, "configuration includes 2 subnets without pools and host reservations")
 }
 
 // Tests that the checker finding dispensable subnets generates no report
@@ -755,7 +755,7 @@ func TestDHCPv4ReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
+	require.Contains(t, report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
 // Tests that the checker identifying subnets in which out-of-pool
@@ -1013,7 +1013,7 @@ func TestDHCPv4DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
+	require.Contains(t, report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
 // Tests that the checker identifying subnets in which out-of-pool
@@ -1104,7 +1104,7 @@ func TestDHCPv6ReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
+	require.Contains(t, report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
 // Tests that the checker identifying subnets in which out-of-pool
@@ -1135,7 +1135,7 @@ func TestDHCPv6ReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, nil, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
+	require.Contains(t, report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
 // Tests that the checker identifying subnets in which out-of-pool
@@ -1486,7 +1486,7 @@ func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
+	require.Contains(t, report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
 // Tests that the checker identifying subnets in which out-of-pool
@@ -1525,7 +1525,7 @@ func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
-	require.Contains(t, report.content, "comprises 1 subnet for which it is recommended to use out-of-pool")
+	require.Contains(t, report.content, "includes 1 subnet for which it is recommended to use out-of-pool")
 }
 
 // Tests that the checker identifying subnets in which out-of-pool
