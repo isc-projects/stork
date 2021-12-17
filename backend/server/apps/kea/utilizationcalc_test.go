@@ -36,10 +36,10 @@ func TestCalculatorAddSingleIPv4LocalSubnet(t *testing.T) {
 		Prefix:          "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: map[string]interface{}{
-					"total-addresses":    int64(100),
-					"assigned-addresses": int64(10),
-					"declined-addresses": int64(20),
+				Stats: dbmodel.LocalSubnetStats{
+					"total-addresses":    uint64(100),
+					"assigned-addresses": uint64(10),
+					"declined-addresses": uint64(20),
 				},
 			},
 		},
@@ -74,12 +74,12 @@ func TestCalculatorAddSingleIPv6LocalSubnet(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: map[string]interface{}{
-					"total-nas":    int64(100),
-					"assigned-nas": int64(40),
-					"declined-nas": int64(30),
-					"total-pds":    int64(20),
-					"assigned-pds": int64(10),
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    uint64(100),
+					"assigned-nas": uint64(40),
+					"declined-nas": uint64(30),
+					"total-pds":    uint64(20),
+					"assigned-pds": uint64(10),
 				},
 			},
 		},
@@ -106,6 +106,46 @@ func TestCalculatorAddSingleIPv6LocalSubnet(t *testing.T) {
 	require.Len(t, calculator.sharedNetworks, 0)
 }
 
+// Test that the non-uint64 statistics aren't supported.
+func TestCalculatorAddSubnetUsingNonUint64(t *testing.T) {
+	// Arrange
+	subnet := &dbmodel.Subnet{
+		SharedNetworkID: 0,
+		Prefix:          "20::/64",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    int64(100),
+					"assigned-nas": int32(40),
+					"declined-nas": int16(30),
+					"total-pds":    int(20),
+					"assigned-pds": uint32(10),
+				},
+			},
+		},
+	}
+
+	calculator := newUtilizationCalculator()
+
+	// Act
+	utilization := calculator.add(subnet)
+
+	// Assert
+	require.InDelta(t, float64(0.0), utilization.getAddressUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.getPDUtilization(), float64(0.001))
+
+	require.EqualValues(t, 0, calculator.global.totalAddresses.ToInt64())
+	require.EqualValues(t, 0, calculator.global.totalAssignedAddresses.ToInt64())
+	require.EqualValues(t, 0, calculator.global.totalDeclinedAddresses.ToInt64())
+	require.EqualValues(t, 0, calculator.global.totalNAs.ToInt64())
+	require.EqualValues(t, 0, calculator.global.totalAssignedNAs.ToInt64())
+	require.EqualValues(t, 0, calculator.global.totalDeclinedNAs.ToInt64())
+	require.EqualValues(t, 0, calculator.global.totalPDs.ToInt64())
+	require.EqualValues(t, 0, calculator.global.totalAssignedPDs.ToInt64())
+
+	require.Len(t, calculator.sharedNetworks, 0)
+}
+
 // Test that the calculator returns the proper utilization for multiple IPv4 local subnets.
 func TestCalculatorAddMultipleIPv4LocalSubnet(t *testing.T) {
 	// Arrange
@@ -114,31 +154,31 @@ func TestCalculatorAddMultipleIPv4LocalSubnet(t *testing.T) {
 		Prefix:          "192.0.2.0/24",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: map[string]interface{}{
-					"total-addresses":    int64(100),
-					"assigned-addresses": int64(10),
-					"declined-addresses": int64(20),
+				Stats: dbmodel.LocalSubnetStats{
+					"total-addresses":    uint64(100),
+					"assigned-addresses": uint64(10),
+					"declined-addresses": uint64(20),
 				},
 			},
 			{
-				Stats: map[string]interface{}{
-					"total-addresses":    int64(200),
-					"assigned-addresses": int64(20),
-					"declined-addresses": int64(40),
+				Stats: dbmodel.LocalSubnetStats{
+					"total-addresses":    uint64(200),
+					"assigned-addresses": uint64(20),
+					"declined-addresses": uint64(40),
 				},
 			},
 			{
-				Stats: map[string]interface{}{
-					"total-addresses":    int64(5),
-					"assigned-addresses": int64(3),
-					"declined-addresses": int64(1),
+				Stats: dbmodel.LocalSubnetStats{
+					"total-addresses":    uint64(5),
+					"assigned-addresses": uint64(3),
+					"declined-addresses": uint64(1),
 				},
 			},
 			{
-				Stats: map[string]interface{}{
-					"total-addresses":    int64(50),
-					"assigned-addresses": int64(1),
-					"declined-addresses": int64(2),
+				Stats: dbmodel.LocalSubnetStats{
+					"total-addresses":    uint64(50),
+					"assigned-addresses": uint64(1),
+					"declined-addresses": uint64(2),
 				},
 			},
 		},
@@ -171,39 +211,39 @@ func TestCalculatorAddMultipleIPv6LocalSubnet(t *testing.T) {
 		Prefix:          "20::/64",
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
-				Stats: map[string]interface{}{
-					"total-nas":    int64(100),
-					"assigned-nas": int64(10),
-					"declined-nas": int64(20),
-					"total-pds":    int64(40),
-					"assigned-pds": int64(30),
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    uint64(100),
+					"assigned-nas": uint64(10),
+					"declined-nas": uint64(20),
+					"total-pds":    uint64(40),
+					"assigned-pds": uint64(30),
 				},
 			},
 			{
-				Stats: map[string]interface{}{
-					"total-nas":    int64(200),
-					"assigned-nas": int64(20),
-					"declined-nas": int64(40),
-					"total-pds":    int64(100),
-					"assigned-pds": int64(10),
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    uint64(200),
+					"assigned-nas": uint64(20),
+					"declined-nas": uint64(40),
+					"total-pds":    uint64(100),
+					"assigned-pds": uint64(10),
 				},
 			},
 			{
-				Stats: map[string]interface{}{
-					"total-nas":    int64(5),
-					"assigned-nas": int64(3),
-					"declined-nas": int64(1),
-					"total-pds":    int64(3),
-					"assigned-pds": int64(1),
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    uint64(5),
+					"assigned-nas": uint64(3),
+					"declined-nas": uint64(1),
+					"total-pds":    uint64(3),
+					"assigned-pds": uint64(1),
 				},
 			},
 			{
-				Stats: map[string]interface{}{
-					"total-nas":    int64(50),
-					"assigned-nas": int64(1),
-					"declined-nas": int64(2),
-					"total-pds":    int64(100),
-					"assigned-pds": int64(3),
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    uint64(50),
+					"assigned-nas": uint64(1),
+					"declined-nas": uint64(2),
+					"total-pds":    uint64(100),
+					"assigned-pds": uint64(3),
 				},
 			},
 		},
@@ -237,12 +277,12 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: map[string]interface{}{
-						"total-nas":    int64(100),
-						"assigned-nas": int64(10),
-						"declined-nas": int64(20),
-						"total-pds":    int64(40),
-						"assigned-pds": int64(30),
+					Stats: dbmodel.LocalSubnetStats{
+						"total-nas":    uint64(100),
+						"assigned-nas": uint64(10),
+						"declined-nas": uint64(20),
+						"total-pds":    uint64(40),
+						"assigned-pds": uint64(30),
 					},
 				},
 			},
@@ -252,12 +292,12 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: map[string]interface{}{
-						"total-nas":    int64(200),
-						"assigned-nas": int64(40),
-						"declined-nas": int64(50),
-						"total-pds":    int64(80),
-						"assigned-pds": int64(70),
+					Stats: dbmodel.LocalSubnetStats{
+						"total-nas":    uint64(200),
+						"assigned-nas": uint64(40),
+						"declined-nas": uint64(50),
+						"total-pds":    uint64(80),
+						"assigned-pds": uint64(70),
 					},
 				},
 			},
@@ -267,10 +307,10 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "192.0.2.0/24",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: map[string]interface{}{
-						"total-addresses":    int64(300),
-						"assigned-addresses": int64(90),
-						"declined-addresses": int64(100),
+					Stats: dbmodel.LocalSubnetStats{
+						"total-addresses":    uint64(300),
+						"assigned-addresses": uint64(90),
+						"declined-addresses": uint64(100),
 					},
 				},
 			},
@@ -299,12 +339,12 @@ func TestCalculatorAddMultipleSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: map[string]interface{}{
-						"total-nas":    int64(100),
-						"assigned-nas": int64(10),
-						"declined-nas": int64(20),
-						"total-pds":    int64(40),
-						"assigned-pds": int64(30),
+					Stats: dbmodel.LocalSubnetStats{
+						"total-nas":    uint64(100),
+						"assigned-nas": uint64(10),
+						"declined-nas": uint64(20),
+						"total-pds":    uint64(40),
+						"assigned-pds": uint64(30),
 					},
 				},
 			},
@@ -314,12 +354,12 @@ func TestCalculatorAddMultipleSharedNetworkSubnets(t *testing.T) {
 			Prefix:          "20::/64",
 			LocalSubnets: []*dbmodel.LocalSubnet{
 				{
-					Stats: map[string]interface{}{
-						"total-nas":    int64(200),
-						"assigned-nas": int64(40),
-						"declined-nas": int64(50),
-						"total-pds":    int64(80),
-						"assigned-pds": int64(70),
+					Stats: dbmodel.LocalSubnetStats{
+						"total-nas":    uint64(200),
+						"assigned-nas": uint64(40),
+						"declined-nas": uint64(50),
+						"total-pds":    uint64(80),
+						"assigned-pds": uint64(70),
 					},
 				},
 			},
@@ -363,39 +403,6 @@ func TestCalculatorAddEmptySubnet(t *testing.T) {
 	require.InDelta(t, float64(0.0), utilization.getPDUtilization(), float64(0.001))
 }
 
-// Test that int64 is cast to uint64.
-func TestCalculatorAddNegativeStatistics(t *testing.T) {
-	// Act
-	subnet := &dbmodel.Subnet{
-		SharedNetworkID: 13,
-		Prefix:          "20::/64",
-		LocalSubnets: []*dbmodel.LocalSubnet{
-			{
-				Stats: map[string]interface{}{
-					"total-nas":    int64(-1),
-					"assigned-nas": int64(-2),
-					"declined-nas": int64(-3),
-					"total-pds":    int64(-4),
-					"assigned-pds": int64(-5),
-				},
-			},
-		},
-	}
-
-	// Act
-	calculator := newUtilizationCalculator()
-	_ = calculator.add(subnet)
-
-	// Assert
-	expected := big.NewInt(0).SetUint64(math.MaxUint64)
-	one := big.NewInt(1)
-	require.EqualValues(t, expected, calculator.global.totalNAs.ToBigInt())
-	require.EqualValues(t, expected.Sub(expected, one), calculator.global.totalAssignedNAs.ToBigInt())
-	require.EqualValues(t, expected.Sub(expected, one), calculator.global.totalDeclinedNAs.ToBigInt())
-	require.EqualValues(t, expected.Sub(expected, one), calculator.global.totalPDs.ToBigInt())
-	require.EqualValues(t, expected.Sub(expected, one), calculator.global.totalAssignedPDs.ToBigInt())
-}
-
 // Test the calculator using real Kea response.
 func TestCalculatorRealKeaResponse(t *testing.T) {
 	// Arrange
@@ -403,18 +410,18 @@ func TestCalculatorRealKeaResponse(t *testing.T) {
 		"result": 0,
 		"text": "stat-lease4-get: 2 rows found",
 		"arguments": {
-		"result-set": {
-			"columns": [ "subnet-id",
-						"total-addresses",
-						"cumulative-assigned-addresses",
-						"assigned-addresses",
-						"declined-addresses" ],
-			"rows": [
-			[ 10, 256, 200, 111, 0 ],
-			[ 20, 4098, 5000, 2034, 4 ]
-			],
-		"timestamp": "2018-05-04 15:03:37.000000"
-		}
+			"result-set": {
+				"columns": [ "subnet-id",
+							"total-addresses",
+							"cumulative-assigned-addresses",
+							"assigned-addresses",
+							"declined-addresses" ],
+				"rows": [
+					[ 10, 256, 200, 111, 0 ],
+					[ 20, 4098, 5000, 2034, 4 ]
+				],
+				"timestamp": "2018-05-04 15:03:37.000000"
+			}
 		}
 	}`
 
@@ -471,7 +478,7 @@ func TestCalculatorRealKeaResponse(t *testing.T) {
 			stats := make(map[string]interface{})
 			for colIdx, val := range row {
 				name := resultSet.Columns[colIdx]
-				stats[name] = val
+				stats[name] = uint64(val)
 			}
 			sn := &dbmodel.LocalSubnet{
 				Stats: stats,

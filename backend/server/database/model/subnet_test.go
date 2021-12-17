@@ -920,7 +920,7 @@ func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	// Arrange
 	localSubnet := &LocalSubnet{
-		Stats: map[string]interface{}{
+		Stats: LocalSubnetStats{
 			"maxInt64":  int64(math.MaxInt64),
 			"minInt64":  int64(math.MinInt64),
 			"maxUint64": uint64(math.MaxUint64),
