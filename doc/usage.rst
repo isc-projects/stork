@@ -4,35 +4,35 @@
 Using Stork
 ***********
 
-This section describes how to use the features available in ``Stork``. To
-connect to ``Stork``, use a web browser and connect to port 8080. If
-Stork is running on a localhost, it can be reached by navigating to
+This section describes how to use the features available in Stork. To
+connect to Stork, use a web browser and connect to port 8080 on the ``Stork Server`` machine. If
+``Stork Server`` is running on a localhost, it can be reached by navigating to
 http://localhost:8080.
 
 Managing Users
 ==============
 
-A default administrator account is created upon initial installation of Stork. It can be used to
+A default administrator account is created when Stork is initially installed. It can be used to
 sign in to the system via the web UI, with the username ``admin`` and password ``admin``.
 
 To see a list of existing users, click on the ``Configuration`` menu and
-choose ``Users`` . There will be at least one user, ``admin``.
+choose ``Users``. There will be at least one user, ``admin``.
 
 To add a new user, click ``Create User Account``. A new tab opens to
 specify the new account parameters. Some fields have specific
 restrictions:
 
-- Username can consist of only letters, numbers, and an underscore
+- The ``username`` can consist of only letters, numbers, and an underscore
   (_).
-- The e-mail field is optional, but if specified, it must be a
+- The ``e-mail`` field is optional, but if specified, it must be a
   well-formed e-mail address.
-- The firstname and lastname fields are mandatory.
-- The password must only contain letters, digits, @, ., !, +, or -,
+- The ``firstname`` and ``lastname`` fields are mandatory.
+- The ``password`` must only contain letters, digits, @, ., !, +, or -,
   and must be at least eight characters long.
 
-Currently, users are associated with one of the two predefined groups
-(roles), i.e., ``super-admin`` or ``admin``, which must be selected
-when the user account is created. Both types of users can view Stork
+Currently, each user is associated with one of the two predefined groups
+(roles), which are ``super-admin`` or ``admin``; one of these must be selected
+when a user account is created. Both types of users can view Stork
 status screens, edit interval and reporting configuration settings, and
 add/remove machines for monitoring. ``super-admin`` users can also
 create and manage user accounts.
@@ -45,7 +45,7 @@ Changing a User Password
 ========================
 
 An initial password is assigned by the administrator when a user
-account is created. Each user should change the password when first
+account is created. Each user should change their password when first
 logging into the system. To change the password, click on the
 ``Profile`` menu and choose ``Settings`` to display the user profile
 information. Click on ``Change password`` in the menu bar on the left
@@ -59,10 +59,10 @@ Configuration Settings
 ======================
 
 It is possible to control some of the Stork configuration settings from
-the web UI. Click on the ``Configuration`` menu and choose ``Settings``.
-There are two classes of settings available: Intervals and Grafana & Prometheus.
+the web interface. Click on the ``Configuration`` menu and choose ``Settings``.
+There are two classes of settings available: ``Intervals`` and ``Grafana & Prometheus``.
 
-Intervals settings specify the configuration of "pullers." A puller is a
+``Intervals`` settings specify the configuration of "pullers." A puller is a
 mechanism in Stork which triggers a specific action at the
 specified interval. Each puller has its own specific action and
 interval. The puller interval is specified in seconds and designates
@@ -70,16 +70,16 @@ a time period between the completion of the previously invoked action
 and the beginning of the next invocation of this action. For example, if
 the Kea Hosts Puller Interval is set to 10 seconds and it
 takes five seconds to pull the hosts information, the time period between the
-starts of the two consecutive attempts to pull the hosts information will
-be 15 seconds.
+starts of the two consecutive attempts to pull the hosts information is
+15 seconds.
 
 The pull time varies between deployments and depends
 on the amount of information pulled, network congestion, and other factors.
 The interval setting guarantees that there is a constant idle time between
 any consecutive attempts.
 
-The Grafana & Prometheus settings currently allow for specifying the URLs
-of the Prometheus and Grafana instances used with Stork.
+The ``Grafana & Prometheus`` settings currently allow the URLs
+of the Prometheus and Grafana instances used with Stork to be specified.
 
 Connecting and Monitoring Machines
 ==================================
@@ -94,26 +94,26 @@ displayed, with multiple pages available if needed.
 A filtering mechanism that acts as an omnibox is available. Via a
 typed string, Stork can search for an address, agent version,
 hostname, OS, platform, OS version, kernel version, kernel
-architecture, virtualization system, or host-id field.
+architecture, virtualization system, or host ID field.
 
 The state of a machine can be inspected by clicking its hostname; a
 new tab opens with the machine's details. Multiple tabs can be open at
-the same time, and clicking Refresh updates the available information.
+the same time, and clicking ``Refresh`` updates the available information.
 
 The machine state can also be refreshed via the ``Action`` menu. On the
 ``Machines`` list, each machine has its own menu; click on the
-triple-lines button at the right side and choose the Refresh option.
+triple-lines button at the right side and choose the ``Refresh`` option.
 
-Disconnecting from a Machine
+Disconnecting From a Machine
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To stop monitoring a machine, go to the ``Machines`` list, find the
 machine to stop monitoring, click on the triple-lines button at the
-right side, and choose ``Delete``. This will terminate the connection
-between the Stork Server and the agent running on the machine, and the
-server will no longer monitor that machine; however, the Stork Agent process
-will continue running. Complete shutdown of a Stork
-Agent process must be done manually, e.g. by connecting to the machine
+right side, and choose ``Delete``. This terminates the connection
+between the ``Stork Server`` and the agent running on the machine, and the
+server will no longer monitor that machine; however, the ``Stork Agent`` process
+will continue running. Complete shutdown of a
+``Stork Agent`` process must be done manually, e.g. by connecting to the machine
 using ssh and stopping the agent there. For example, when the Stork Agent
 has been installed from packages, run:
 
@@ -127,34 +127,31 @@ Alternatively:
 
     $ sudo killall -9 stork-agent
 
-Dumping Diagnostic Information into a File
+Dumping Diagnostic Information Into a File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Users often seek help from other users or ISC staff when they face a monitored
-machine, application, or Stork software problem. It is sometimes difficult or
-impossible to diagnose issues from a brief description without seeing the actual
+It is sometimes difficult or
+impossible to diagnose issues without seeing the actual
 logs, database contents, and configuration files. Gathering such information can
 be challenging for a user because it requires looking into many places like
 databases, remote machine logs, etc.
 
-Stork makes it convenient for the users to gather diagnostic information from the
-selected machines with a single click.  Navigate to the ``Machines`` page (i.e.,
+Stork makes it convenient for users to gather diagnostic information from the
+selected machines with a single click. Navigate to the ``Machines`` page (i.e.,
 the page where all monitored machines are listed), click on the ``Action`` button
-for the selected machine, and choose ``Dump Troubleshooting Data`` option. Alternatively,
+for the selected machine, and choose the ``Dump Troubleshooting Data`` option. Alternatively,
 navigate to the selected machine's page and click on the ``Dump Troubleshooting Data``
 button at the bottom of the page. In both cases, the Stork Server will
 automatically gather useful diagnostics information and offer it for download as a
-``tar.gz`` file. The downloaded package contains configurations, log tails, Stork
-Server settings, warning and error-level events, etc.
+``tar.gz`` file. The downloaded package contains configurations, log tails,
+``Stork Server`` settings, warning and error-level events, etc.
 
 ..note:
-Stork sanitizes the passwords and other sensitive information while it creates
-the package.
 
-The tarball can be easily sent over the email or attached to a bug report. ISC
-Staff can ask paid customers to generate and share the tarballs while working on
-the support tickets.
+  Stork sanitizes passwords and other sensitive information when it creates
+  the package.
 
+The tarball can be easily sent via email or attached to a bug report.
 
 Monitoring Applications
 =======================
@@ -170,23 +167,17 @@ the application.
 
 The application status displays a list of daemons belonging to the
 application. Several daemons may be presented in the application
-status column, typically: DHCPv4, DHCPv6, DDNS, and CA (Kea Control
-Agent).
+status columns; typically, they include: DHCPv4, DHCPv6, DDNS, and Kea Control
+Agent (CA).
 
-Eventually, when support for BIND 9 is added, the Stork Agent will look for ``named`` in the
-process list and parse the configuration file that is given with the
-``-c`` argument. If the ``named`` process is started without a
-specific configuration file, the Stork Agent will default to
-``/etc/bind/named.conf``.
-
-Stork uses ``rndc`` to retrieve the application status. It looks for
+Stork uses ``rndc`` to retrieve the application's status. It looks for
 the ``controls`` statement in the configuration file, and uses the
 first listed control point for monitoring the application.
 
-Furthermore, the Stork Agent can be used as a Prometheus exporter.
-Stork is able to do so if ``named`` is built with ``json-c`` because
+Furthermore, the ``Stork Agent`` can be used as a Prometheus exporter
+if ``named`` is built with ``json-c``, because
 it gathers statistics via the JSON statistics API. The
-``named.conf`` file must have a ``statistics-channel`` configured;
+``named.conf`` file must have ``statistics-channel`` configured;
 the exporter queries the first listed channel. Stork is able to export the
 most metrics if ``zone-statistics`` is set to ``full`` in the
 ``named.conf`` configuration.
@@ -205,8 +196,8 @@ Friendly App Names
 
 Every app connected to Stork is assigned a default name. For example,
 if a Kea app runs on the machine ``abc.example.org``, this app's default name
-will be ``kea@abc.example.org``. Similarly, if a BIND9 app runs on the machine
-with address ``192.0.2.3``, the resulting app name will be ``bind9@192.0.2.3``.
+is ``kea@abc.example.org``. Similarly, if a BIND 9 app runs on the machine
+with the address ``192.0.2.3``, the resulting app name is ``bind9@192.0.2.3``.
 If multiple apps of a given type run on the same machine, a postfix with a
 unique identifier is appended to the duplicated names, e.g. ``bind9@192.0.2.3%56``.
 
@@ -218,9 +209,9 @@ meaningful for someone not familiar with addressing in the managed network.
 In these cases, users may prefer replacing the default app names with more
 descriptive ones.
 
-Suppose there are two DHCP servers in the network, one on the first floor,
-second on the second floor of the building. A user may assign ``Floor 1 DHCP``
-and ``Floor 2 DHCP`` names to the respective DHCP servers in this case.
+Suppose there are two DHCP servers in the network, one on the first floor of a building
+and one on the second floor. A user may assign the names ``Floor 1 DHCP``
+and ``Floor 2 DHCP`` to the respective DHCP servers in this case.
 The new names need not have the same pattern as the default names and may
 contain whitespace. The @ character is not required, but if it is present,
 the part of the name following this character (and before an optional %
@@ -239,7 +230,7 @@ icon next to the app name in the app view. In the displayed dialog box,
 type the new app name. If the specified name is valid, the ``Rename``
 button is enabled. Click this button to submit the new name. The ``Rename``
 button is disabled if the name is invalid. In this case, a hint is displayed
-informing about issues with the new name.
+to explain the issues with the new name.
 
 IPv4 and IPv6 Subnets per Kea Application
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -268,7 +259,7 @@ It is convenient to see the complete overview of all subnets
 configured in the network that are being monitored by Stork. Once at least one
 machine with the Kea application running is added to Stork, click on
 the ``DHCP`` menu and choose ``Subnets`` to see all available subnets. The
-view shows all IPv4 and IPv6 subnets with the address pools and links
+view shows all IPv4 and IPv6 subnets, with the address pools and links
 to the applications that are providing them. An example view of all
 subnets in the network is presented in the figure below.
 
@@ -277,13 +268,13 @@ subnets in the network is presented in the figure below.
 
 Stork provides filtering capabilities; it is possible to
 choose whether to see IPv4 only, IPv6 only, or both. There is also an
-omnisearch box available where users can type a search string.  Note
-that for strings of four characters or more, the filtering takes place
+omnisearch box available where users can type a search string.
+For strings of four characters or more, the filtering takes place
 automatically, while shorter strings require the user to hit
 Enter. For example, in the above example it is possible to show only
 the first (192.0.2.0/24) subnet by searching for the *0.2* string. One
 can also search for specific pools, and easily filter the subnet with
-a specific pool, by searching for part of the pool ranges,
+a specific pool, by searching for part of the pool range,
 e.g. *3.200*.
 
 Stork displays pool utilization for each subnet, with
@@ -298,7 +289,7 @@ IPv4 and IPv6 Networks
 Kea uses the concept of a shared network, which is essentially a stack
 of subnets deployed on the same physical link. Stork
 retrieves information about shared networks and aggregates it across all
-configured Kea servers. The ``Shared Networks`` view allows for the
+configured Kea servers. The ``Shared Networks`` view allows the
 inspection of networks and the subnets that belong in them. Pool
 utilization is shown for each subnet.
 
@@ -310,7 +301,7 @@ Listing Host Reservations
 
 Kea DHCP servers can be configured to assign static resources or parameters to the
 DHCP clients communicating with the servers. Most commonly these resources are the
-IP addresses or delegated prefixes. However, Kea also allows for assigning hostnames,
+IP addresses or delegated prefixes. However, Kea also allows assignment of hostnames,
 PXE boot parameters, client classes, DHCP options, and other parameters. The mechanism by which
 a given set of resources and/or parameters is associated with a given DHCP client
 is called "host reservations."
@@ -321,7 +312,7 @@ and a collection of resources and/or parameters to be returned to the
 client if the client's DHCP message is associated with the host reservation by one
 of the identifiers. Stork can detect existing host reservations specified both in
 the configuration files of the monitored Kea servers and in the host database
-backends accessed via the Kea Host Commands premium hooks library. At present, Stork
+backends accessed via the Kea Host Commands premium hook library. At present, Stork
 provides no means to update or delete host reservations.
 
 All reservations detected by Stork can be listed by selecting the ``DHCP``
@@ -359,12 +350,12 @@ each of the HA peers uses the same configuration and may allocate IP
 addresses and delegated prefixes to the same set of clients, including
 static assignments via host reservations. If HA peers are configured
 correctly, the reservations they share will have two links in the
-``App Name`` column. Next to each link there is a little label indicating
+``App Name`` column. Next to each link there is a label indicating
 whether the host reservation for the given server has been specified
 in its configuration file or a host database (via the Host Commands premium
-hooks library).
+hook library).
 
-The ``Filter hosts`` input box is located above the Hosts table. It
+The ``Filter hosts`` input box is located above the ``Hosts`` table. It
 allows the hosts to be filtered by identifier types, identifier values, IP
 reservations, and hostnames, and by globality, i.e., ``is:global`` and ``not:global``.
 When filtering by DHCP identifier values, it is not necessary to use
@@ -375,40 +366,40 @@ whether the filtering text is ``1b:bd:43`` or ``1bbd43``.
 Host Reservation Usage Status
 -----------------------------
 
-Clicking on a selected host in the host reservations list will open a new tab
-presenting host details. The tab also comprises the information about the
+Clicking on a selected host in the host reservations list opens a new tab
+that shows host details. The tab also includes information about
 reserved addresses and delegated prefixes usage. Stork needs to query Kea
 servers to gather the lease information for each address and prefix in the
 selected reservation. It may take several seconds or longer before this
 information is available. The lease information can be refreshed using the
-`Leases` button at the bottom of the tab.
+``Leases`` button at the bottom of the tab.
 
 The usage status is shown next to each IP address and delegated prefix.
 Possible statuses and their meanings are listed in the table below.
 
-.. table:: Possible IP Reservation Statuses
+.. table:: Possible IP reservation statuses
    :widths: 10 90
 
    +-----------------+---------------------------------------------------------------+
    | Status          | Meaning                                                       |
    +=================+===============================================================+
    | ``in use``      | There are valid leases assigned to the client. The client     |
-   |                 | owns the reservation, or the reservation includes ``flex-id`` |
-   |                 | or ``circuit-id`` identifier making it impossible to detect   |
-   |                 | conflicts (see note below).                                   |
+   |                 | owns the reservation, or the reservation includes the         |
+   |                 | ``flex-id`` or ``circuit-id`` identifier, making it impossible|
+   |                 | to detect conflicts (see note below).                         |
    +-----------------+---------------------------------------------------------------+
    | ``expired``     | At least one of the leases assigned to the client owning      |
    |                 | the reservation is expired.                                   |
    +-----------------+---------------------------------------------------------------+
-   | ``declined``    | The address is declined in at least one of the Kea servers.   |
+   | ``declined``    | The address is declined on at least one of the Kea servers.   |
    +-----------------+---------------------------------------------------------------+
    | ``in conflict`` | At least one of the leases for the given reservation is       |
-   |                 | assigned to a client who does not own this reservation.       |
+   |                 | assigned to a client that does not own this reservation.      |
    +-----------------+---------------------------------------------------------------+
    | ``unused``      | There are no leases for the given reservation.                |
    +-----------------+---------------------------------------------------------------+
 
-Expand selected address or delegated prefix row to view status details.
+View status details by expanding a selected address or delegated prefix row.
 Clicking on the selected address or delegated prefix navigates to the leases
 search page, where all leases associated with the address or prefix can be
 listed.
@@ -418,29 +409,28 @@ listed.
    Detecting ``in conflict`` status is currently not supported for host
    reservations with ``flex-id`` or ``circuit-id`` identifiers. If there are
    valid leases for such reservations, they are marked ``in use`` regardless
-   if the conflict exists or not.
-
+   of whether the conflict exists.
 
 Sources of Host Reservations
 ----------------------------
 
-There are two ways to configure the Kea servers to use host reservations. First,
+There are two ways to configure Kea servers to use host reservations. First,
 the host reservations can be specified within the Kea configuration files; see
 `Host Reservation in DHCPv4 <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#host-reservation-in-dhcpv4>`_
 for details. The other way is to use a host database backend, as described in
 `Storing Host Reservations in MySQL, PostgreSQL, or Cassandra <https://kea.readthedocs.io/en/latest/arm/dhcp4-srv.html#storing-host-reservations-in-mysql-postgresql-or-cassandra>`_.
 The second solution requires the given Kea server to be configured to use the
-``host_cmds`` premium hooks library. This library implements control commands used
-to store and fetch the host reservations from the host database which the Kea
-server is connected to. If the ``host_cmds`` hooks library is not loaded, Stork
+``host_cmds`` premium hook library. This library implements control commands used
+to store and fetch the host reservations from the host database to which the Kea
+server is connected. If the ``host_cmds`` hook library is not loaded, Stork
 only presents the reservations specified within the Kea configuration files.
 
 Stork periodically fetches the reservations from the host database backends
 and updates them in the local database. The default interval at which Stork
 refreshes host reservation information is set to 60 seconds. This means that
-an update in the host reservation database will not be visible in Stork until
+an update in the host reservation database is not visible in Stork until
 up to 60 seconds after it was applied. This interval is configurable in the
-Stork UI.
+Stork interface.
 
 .. note::
 
@@ -450,15 +440,15 @@ Stork UI.
 Leases Search
 ~~~~~~~~~~~~~
 
-Stork has a utility to search DHCP leases on monitored Kea servers. It is helpful
+Stork can search DHCP leases on monitored Kea servers, which is helpful
 for troubleshooting issues with a particular IP address or delegated prefix.
 It is also helpful in resolving lease allocation issues for certain DHCP clients.
 The search mechanism utilizes Kea control commands to find leases on the monitored
-servers. An operator must ensure that Kea servers on which he intends to search
-the leases have the `lease_cmds hooks library <https://kea.readthedocs.io/en/latest/arm/hooks.html#lease-cmds-lease-commands>`_ loaded. Stork does not search leases on the Kea instances without
+servers. An operator must ensure that any Kea servers on which he intends to search
+the leases have the `lease commands hook library <https://kea.readthedocs.io/en/latest/arm/hooks.html#lease-cmds-lease-commands>`_ loaded. Stork does not search leases on Kea instances without
 this library.
 
-The leases search is available via the ``DHCP -> Leases Search`` menu. Type one
+The leases search is available via the ``DHCP -> Leases Search`` menu. Enter one
 of the searched lease properties in the search box:
 
 - IPv4 address, e.g. ``192.0.2.3``
@@ -471,39 +461,39 @@ of the searched lease properties in the search box:
 All identifier types can also be specified using the notation with spaces,
 e.g. 01 02 03 04 05 06, or the notation with hexadecimal digits only, e.g. 010203040506.
 
-To search all declined leases, type ``state:declined``. Beware that this query may
-return a large result if there are many declined leases, and in this case, the query
+To search all declined leases, type ``state:declined``. Be aware that this query may
+return a large result if there are many declined leases, and thus the query
 processing time may also increase.
 
 Searching using partial text is currently unsupported. For example: searching by
 partial IPv4 address ``192.0.2`` is not accepted by the search box. Partial MAC
 address ``01:02:03`` is accepted but will return no results. Specify the complete
 MAC address instead, e.g. ``01:02:03:04:05:06``. Searching leases in states other
-than declined is also unsupported. For example, the text ``state:expired-reclaimed``
+than ``declined`` is also unsupported. For example, the text ``state:expired-reclaimed``
 is not accepted by the search box.
 
 The search utility automatically recognizes the specified lease type property and
 communicates with the Kea servers to find leases using appropriate commands. Each
-search attempt may result in several commands to multiple Kea servers. Therefore,
+search attempt may result in several commands to multiple Kea servers; therefore,
 it may take several seconds or more before Stork displays the search results.
-Suppose some Kea servers are unavailable or return an error. In that case, Stork
+If some Kea servers are unavailable or return an error, Stork
 shows leases found on the servers which returned success status, and displays a
 warning message containing the list of Kea servers that returned an error.
 
 If the same lease is found on two or more Kea servers, the results list contains
-all that lease occurrences. For example, if there is a pair of servers cooperating
-via HA hooks library, the servers exchange the lease information, and each of them
+all that lease's occurrences. For example, if there is a pair of servers cooperating
+via the High Availability hook library, the servers exchange the lease information, and each of them
 maintains a copy of the lease database. In that case, the lease search on these
 servers typically returns two occurrences of the same lease.
 
-To display the detailed lease information click the expand button (``>``) in the
+To display the detailed lease information, click the expand button (``>``) in the
 first column for the selected lease.
 
 Kea High Availability Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When viewing the details of the Kea application for which High
-Availability (HA) is enabled (via the ``libdhcp_ha.so`` hooks library), the
+Availability (HA) is enabled (via the ``libdhcp_ha.so`` hook library), the
 High Availability live status is presented and periodically refreshed
 for the DHCPv4 and/or DHCPv6 daemon configured as primary or
 secondary/standby server. The status is not displayed for the server
@@ -521,7 +511,7 @@ displayed in the Stork UI.
 The **local** server is the DHCP server (daemon) belonging to the
 application for which the status is displayed; the **remote** server is
 its active HA partner. The remote server belongs to a different
-application running on a different machine, and this machine may or
+application running on a different machine; this machine may or
 may not be monitored by Stork. The statuses of both the local and the
 remote servers are fetched by sending the `status-get
 <https://kea.readthedocs.io/en/latest/arm/hooks.html#the-status-get-command>`_
@@ -530,37 +520,36 @@ server). In the load-balancing and hot-standby modes, the local server
 periodically checks the status of its partner by sending it the
 ``ha-heartbeat`` command. Therefore, this information is not
 always up-to-date; its age depends on the heartbeat command interval
-(typically 10 seconds). The status of the remote server includes the
+(typically 10 seconds). The status of the remote server returned by Stork includes the
 age of the data displayed.
 
-The status information contains the role, state, and scopes served by
+The Stork status information contains the role, state, and scopes served by
 each HA partner. In the usual HA case, both servers are in
 load-balancing state, which means that both are serving DHCP
-clients and there is no failure. If the remote server crashes, the
-local server transitions to the partner-down state, which will be
+clients. If the remote server crashes, the
+local server transitions to the ``partner-down state``, which will be
 reflected in this view. If the local server crashes, this will
 manifest itself as a communication problem between Stork and the
 server.
 
-As of the Stork 0.8.0 release, the High Availability view may also
-contain the information about the heartbeat status between the two
-servers and the information about the failover progress. This information
-is only available while monitoring Kea version 1.7.8 and later.
+As of the Stork 0.8.0 release, the High Availability view also
+contains information about the heartbeat status between the two
+servers and information about failover progress.
 
 The failover progress information is only presented when one of the
 active servers has been unable to communicate with the partner via
 the heartbeat exchange for a time exceeding the ``max-heartbeat-delay``
 threshold. If the server is configured to monitor the DHCP traffic
 directed to the partner, to verify that the partner is not responding
-to this traffic before transitioning to the partner-down state, the
-number of unacked clients (clients which failed
-to get the lease), connecting clients (all clients currently trying
-to get the lease from the partner), and analyzed
+to this traffic before transitioning to the ``partner-down`` state, the
+number of "unacked" clients (clients which failed
+to get a lease), connecting clients (all clients currently trying
+to get a lease from the partner), and analyzed
 packets are displayed. The system administrator may use this information
 to diagnose why the failover transition has not taken place or when
 such a transition is likely to happen.
 
-More about High Availability status information provided by Kea can
+More about the High Availability status information provided by Kea can
 be found in the `Kea ARM
 <https://kea.readthedocs.io/en/latest/arm/hooks.html#the-status-get-command>`_.
 
@@ -572,13 +561,13 @@ monitored applications.
 
 .. note::
 
-   As of the Stork 0.10 release, this mechanism only supports viewing Kea log
+   This mechanism currently only supports viewing Kea log
    files; viewing BIND 9 logs is not yet supported. Monitoring other
-   logging locations such as: stdout, stderr or syslog is also not
+   logging locations such as stdout, stderr, or syslog is also not
    supported.
 
 Kea can be configured to log into multiple destinations. Different types
-of log messages may be output into different log files, syslog, stdout,
+of log messages may be output into different log files: syslog, stdout,
 or stderr. The list of log destinations used by the Kea application
 is available on the ``Kea App`` page. Click on the Kea app to view its logs.
 Next, select the Kea daemon by clicking on one of the
@@ -588,7 +577,7 @@ This section contains a table with a list of configured loggers for
 the selected daemon. For each configured logger, the logger's name,
 logging severity, and output location are presented. The possible output
 locations are: log file, stdout, stderr, or syslog. It is only possible to view
-the logs output to the log files. Therefore, for each log file there is a
+the logs' output to the log files. Therefore, for each log file there is a
 link which leads to the log viewer showing the selected file's contents.
 The loggers which output to the stdout, stderr, and syslog are also listed,
 but links to the log viewer are not available for them.
@@ -599,11 +588,11 @@ Depending on the network latency and the size of the log file, it may take
 several seconds or more before the log contents are fetched and displayed.
 
 The log viewer title bar comprises three buttons. The button with the refresh
-icon triggers log data fetch without modifying the size of the presented
+icon triggers a log-data fetch without modifying the size of the presented
 data. Clicking on the ``+`` button extends the size of the viewed log tail
 by 4000 characters and refreshes the data in the log viewer. Conversely,
 clicking on the ``-`` button reduces the amount of presented data by
-4000 characters. Every time any of these buttons is clicked, the viewer
+4000 characters. Each time any of these buttons is clicked, the viewer
 discards the currently presented data and displays the latest part of the
 log file tail.
 
@@ -611,32 +600,32 @@ Please keep in mind that extending the size of the viewed log tail may
 cause slowness of the log viewer and network congestion as
 the amount of data fetched from the monitored machine increases.
 
-Viewing the Kea Configuration as JSON Tree
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Viewing the Kea Configuration as a JSON Tree
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Kea uses JSON (JavaScript Object Notation) to represent its configuration
+Kea uses JavaScript Object Notation (JSON) to represent its configuration
 in the configuration files and the command channel. Parts of the Kea
-configuration held in the `Config Backend <https://kea.readthedocs.io/en/latest/arm/config.html#kea-configuration-backend>`_
+configuration held in the `Configuration Backend <https://kea.readthedocs.io/en/latest/arm/config.html#kea-configuration-backend>`_
 are also converted to JSON and returned over the control channel in that
-format. Diagnostics of issues with a particular server often begins by
+format. Diagnosis of issues with a particular server often begins by
 inspecting its configuration.
 
-In the ``Kea App`` view, select a tab appropriate for the daemon which
-configuration you want to inspect. Click on the ``Raw Configuration``
+In the ``Kea App`` view, select the appropriate tab for the daemon
+configuration to be inspected, and then click on the ``Raw Configuration``
 button. The displayed tree view comprises the selected daemon's
 configuration fetched using the Kea ``config-get`` command.
 
 .. note::
 
-   The ``config-get`` command returns the configuration presently used
+   The ``config-get`` command returns the configuration currently in use
    by the selected Kea server. It is a combination of the configuration
-   read from the configuration file and the Config Backend, if Kea uses
+   read from the configuration file and from the config backend, if Kea uses
    the backend. Therefore, the configuration tree presented in Stork may
    differ (sometimes significantly) from the configuration file contents.
 
 The nodes with complex data types can be individually expanded and
-collapsed. All nodes can also be expanded using the ``Expand`` button.
-Click this button again to collapse all nodes. When expanding the nodes
+collapsed. All nodes can also be expanded  or collapsed by toggling
+the ``Expand`` button. When expanding nodes
 with many sub-nodes, they may be paginated to avoid degrading browser
 performance.
 
@@ -647,7 +636,7 @@ Click ``Download`` to download the entire configuration into a text file.
 
    Some of the configuration fields may contain sensitive data (e.g. passwords
    or tokens). The content of these fields is hidden, and a placeholder is shown.
-   Configurations downloaded as JSON files by users other than super admins contain
+   Configurations downloaded as JSON files by users other than super-admins contain
    null values in place of the sensitive data.
 
 Dashboard
@@ -655,7 +644,7 @@ Dashboard
 
 The main Stork page presents a dashboard. It contains a panel with
 information about DHCP and a panel with events observed or noticed by
-the Stork Server.
+the ``Stork Server``.
 
 DHCP Panel
 ~~~~~~~~~~
@@ -663,17 +652,17 @@ DHCP Panel
 The DHCP panel includes two sections: one for DHCPv4 and one for DHCPv6.
 Each section contains three kinds of information:
 
-- a list of up to five subnets with the highest pool utilization
+- a list of up to five subnets with the highest pool utilization.
 - a list of up to five shared networks with the highest pool utilization
-- statistics about DHCP
+- statistics about DHCP.
 
 Events Panel
 ~~~~~~~~~~~~
 
 The Events panel presents the list of the most recent events captured by
-the Stork Server. There are three event urgency levels: info, warning
+the ``Stork Server``. There are three event urgency levels: info, warning,
 and error. Events pertaining to the particular entities, e.g. machines
-or applications, provide a link to a web page containing the information
+or applications, provide a link to a web page containing information
 about the given object.
 
 Events Page
@@ -684,5 +673,5 @@ to be filtered by:
 - urgency level
 - machine
 - application type (Kea, BIND 9)
-- daemon type (DHCPv4, DHCPv6, named, etc.)
-- the user who caused given event (available only to users in the ``super-admin`` group)
+- daemon type (DHCPv4, DHCPv6, ``named``, etc.)
+- the user who caused given event (available only to users in the ``super-admin`` group).
