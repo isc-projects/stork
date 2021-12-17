@@ -7,6 +7,13 @@ import (
 func init() {
 	migrations.MustRegisterTx(func(db migrations.DB) error {
 		_, err := db.Exec(`
+            -- Add a missing foreign key to host table.
+            ALTER TABLE local_host
+                ADD CONSTRAINT local_host_to_host_id FOREIGN KEY (host_id)
+                    REFERENCES host (id) MATCH SIMPLE
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE;
+
              -- We no longer want to automatically delete the subnets or hosts
              -- which aren't associated with any app. Such subnets and hosts can
              -- be explicitly deleted by the Stork Server.
@@ -51,18 +58,10 @@ func init() {
                     REFERENCES daemon (id) MATCH SIMPLE
                         ON UPDATE CASCADE
                         ON DELETE CASCADE;
-
-            -- Add a missing foreign key to host table.
-            ALTER TABLE local_host
-                ADD CONSTRAINT local_host_to_host_id FOREIGN KEY (host_id)
-                    REFERENCES host (id) MATCH SIMPLE
-                        ON UPDATE CASCADE
-                        ON DELETE CASCADE;
         `)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
-             ALTER TABLE local_host DROP CONSTRAINT IF EXISTS local_host_to_host_id;
              ALTER TABLE local_host DROP COLUMN IF EXISTS daemon_id;
              ALTER TABLE local_subnet DROP COLUMN IF EXISTS daemon_id;
 
@@ -109,6 +108,8 @@ func init() {
              EXCEPTION
                  WHEN duplicate_object THEN null;
              END $$;
+
+             ALTER TABLE local_host DROP CONSTRAINT IF EXISTS local_host_to_host_id;
         `)
 		return err
 	})
