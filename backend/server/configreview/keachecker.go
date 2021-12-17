@@ -268,8 +268,8 @@ func getDaemonHostsAndIndexBySubnet(ctx *ReviewContext) (hostCmds bool, dbHosts 
 		for i, host := range hosts {
 			if host.Subnet != nil {
 				for _, ls := range host.Subnet.LocalSubnets {
-					if ls.DaemonID == ctx.subjectDaemon.ID && ls.SubnetID != 0 {
-						dbHosts[ls.SubnetID] = append(dbHosts[ls.SubnetID], hosts[i])
+					if ls.DaemonID == ctx.subjectDaemon.ID && ls.LocalSubnetID != 0 {
+						dbHosts[ls.LocalSubnetID] = append(dbHosts[ls.LocalSubnetID], hosts[i])
 					}
 				}
 			}

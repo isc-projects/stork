@@ -39,7 +39,7 @@ func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string) *Review
 
 // Creates a new host with IP reservations in the database. Adding a host
 // requires a machine, app and subnet which are also added by this function.
-func createHostInDatabase(t *testing.T, db *dbops.PgDB, subnetPrefix string, reservationAddress ...string) {
+func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix string, reservationAddress ...string) {
 	// Detect whether we're dealing with DHCPv4 or DHCPv6.
 	daemonName := dbmodel.DaemonNameDHCPv4
 	parsedPrefix := storkutil.ParseIP(subnetPrefix)
@@ -56,6 +56,9 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, subnetPrefix string, res
 	require.NoError(t, err)
 	require.NotZero(t, machine.ID)
 
+	config, err := dbmodel.NewKeaConfigFromJSON(configStr)
+	require.NoError(t, err)
+
 	// Create the app.
 	app := &dbmodel.App{
 		MachineID: machine.ID,
@@ -64,6 +67,9 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, subnetPrefix string, res
 			{
 				Name:   daemonName,
 				Active: true,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config: config,
+				},
 			},
 		},
 	}
@@ -457,7 +463,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
                     "name": "foo",
                     "subnet4": [
                         {
-                            "id": 1,
+                            "id": 111,
                             "subnet": "192.0.2.0/24"
                         }
                     ]
@@ -465,7 +471,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
             ],
             "subnet4": [
                 {
-                    "id": 2,
+                    "id": 222,
                     "subnet": "192.0.3.0/24"
                 }
             ],
@@ -488,14 +494,11 @@ func TestIPv4SubnetDispensableSomeDatabaseReservations(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create a host in the database.
-	createHostInDatabase(t, db, "192.0.3.0/24", "192.0.3.50")
-
 	configStr := `{
         "Dhcp4": {
             "subnet4": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "192.0.3.0/24"
                 }
             ],
@@ -506,6 +509,10 @@ func TestIPv4SubnetDispensableSomeDatabaseReservations(t *testing.T) {
             ]
         }
     }`
+
+	// Create a host in the database.
+	createHostInDatabase(t, db, configStr, "192.0.3.0/24", "192.0.3.50")
+
 	report, err := subnetDispensable(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
@@ -598,7 +605,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
                     "name": "foo",
                     "subnet6": [
                         {
-                            "id": 1,
+                            "id": 111,
                             "subnet": "2001:db8:1::/64"
                         }
                     ]
@@ -606,7 +613,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
             ],
             "subnet6": [
                 {
-                    "id": 2,
+                    "id": 222,
                     "subnet": "2001:db8:2::/64"
                 }
             ],
@@ -629,14 +636,11 @@ func TestIPv6SubnetDispensableSomeDatabaseReservations(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create a host in the database.
-	createHostInDatabase(t, db, "2001:db8:1::/64", "2001:db8:1::50", "3000::/96")
-
 	configStr := `{
         "Dhcp6": {
             "subnet6": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "2001:db8:1::/64"
                 }
             ],
@@ -647,6 +651,10 @@ func TestIPv6SubnetDispensableSomeDatabaseReservations(t *testing.T) {
             ]
         }
     }`
+
+	// Create a host in the database.
+	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "2001:db8:1::50", "3000::/96")
+
 	report, err := subnetDispensable(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
@@ -978,14 +986,11 @@ func TestDHCPv4DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create the out-of-pool host reservation in the database.
-	createHostInDatabase(t, db, "192.0.3.0/24", "192.0.3.5")
-
 	configStr := `{
         "Dhcp4": {
             "subnet4": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "192.0.3.0/24",
                     "pools": [
                         {
@@ -1001,6 +1006,10 @@ func TestDHCPv4DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
             ]
         }
     }`
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, configStr, "192.0.3.0/24", "192.0.3.5")
+
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
@@ -1014,14 +1023,11 @@ func TestDHCPv4DatabaseReservationsOutOfPoolNoHostCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create the out-of-pool host reservation in the database.
-	createHostInDatabase(t, db, "192.0.3.0/24", "192.0.3.5")
-
 	configStr := `{
         "Dhcp4": {
             "subnet4": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "192.0.3.0/24",
                     "pools": [
                         {
@@ -1032,6 +1038,10 @@ func TestDHCPv4DatabaseReservationsOutOfPoolNoHostCmds(t *testing.T) {
             ]
         }
     }`
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, configStr, "192.0.3.0/24", "192.0.3.5")
+
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
@@ -1043,15 +1053,11 @@ func TestDHCPv4DatabaseReservationsOutOfPoolNoIPReservation(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create the out-of-pool host reservation in the database without
-	// any IP reservation.
-	createHostInDatabase(t, db, "192.0.3.0/24")
-
 	configStr := `{
         "Dhcp4": {
             "subnet4": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "192.0.3.0/24",
                     "pools": [
                         {
@@ -1062,6 +1068,11 @@ func TestDHCPv4DatabaseReservationsOutOfPoolNoIPReservation(t *testing.T) {
             ]
         }
     }`
+
+	// Create the out-of-pool host reservation in the database without
+	// any IP reservation.
+	createHostInDatabase(t, db, configStr, "192.0.3.0/24")
+
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
@@ -1448,14 +1459,11 @@ func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create the out-of-pool host reservation in the database.
-	createHostInDatabase(t, db, "2001:db8:1::/64", "2001:db8:1::5")
-
 	configStr := `{
         "Dhcp6": {
             "subnet6": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "2001:db8:1::/64",
                     "pools": [
                         {
@@ -1471,6 +1479,10 @@ func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnet(t *testing.T) {
             ]
         }
     }`
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "2001:db8:1::5")
+
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
@@ -1484,14 +1496,11 @@ func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create the out-of-pool host reservation in the database.
-	createHostInDatabase(t, db, "2001:db8:1::/64", "3001::/96")
-
 	configStr := `{
         "Dhcp6": {
             "subnet6": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "2001:db8:1::/64",
                     "pd-pools": [
                         {
@@ -1509,6 +1518,10 @@ func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnet(t *testing.T) {
             ]
         }
     }`
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "3001::/96")
+
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.NotNil(t, report)
@@ -1522,14 +1535,11 @@ func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnetInPool(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create the out-of-pool host reservation in the database.
-	createHostInDatabase(t, db, "2001:db8:1::/64", "2001:db8:1::50")
-
 	configStr := `{
         "Dhcp6": {
             "subnet6": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "2001:db8:1::/64",
                     "pools": [
                         {
@@ -1545,6 +1555,10 @@ func TestDHCPv6DatabaseReservationsOutOfPoolTopLevelSubnetInPool(t *testing.T) {
             ]
         }
     }`
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "2001:db8:1::50")
+
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
@@ -1557,14 +1571,11 @@ func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnetInPool(t *testing.T)
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create the out-of-pool host reservation in the database.
-	createHostInDatabase(t, db, "2001:db8:1::/64", "3000::/96")
-
 	configStr := `{
         "Dhcp6": {
             "subnet6": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "2001:db8:1::/64",
                     "pd-pools": [
                         {
@@ -1582,6 +1593,10 @@ func TestDHCPv6DatabaseReservationsOutOfPDPoolTopLevelSubnetInPool(t *testing.T)
             ]
         }
     }`
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "3000::/96")
+
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
@@ -1594,14 +1609,11 @@ func TestDHCPv6DatabaseReservationsOutOfPoolNoHostCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create the out-of-pool host reservation in the database.
-	createHostInDatabase(t, db, "2001:db8:1::/64", "2001:db8:1::5")
-
 	configStr := `{
         "Dhcp6": {
             "subnet6": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "2001:db8:1::/64",
                     "pools": [
                         {
@@ -1612,6 +1624,10 @@ func TestDHCPv6DatabaseReservationsOutOfPoolNoHostCmds(t *testing.T) {
             ]
         }
     }`
+
+	// Create the out-of-pool host reservation in the database.
+	createHostInDatabase(t, db, configStr, "2001:db8:1::/64", "2001:db8:1::5")
+
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
@@ -1623,15 +1639,11 @@ func TestDHCPv6DatabaseReservationsOutOfPoolNoIPReservation(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// Create the out-of-pool host reservation in the database without
-	// any IP reservation.
-	createHostInDatabase(t, db, "2001:db8:1::/64")
-
 	configStr := `{
         "Dhcp6": {
             "subnet6": [
                 {
-                    "id": 1,
+                    "id": 111,
                     "subnet": "2001:db8:1::/64",
                     "pools": [
                         {
@@ -1642,6 +1654,11 @@ func TestDHCPv6DatabaseReservationsOutOfPoolNoIPReservation(t *testing.T) {
             ]
         }
     }`
+
+	// Create the out-of-pool host reservation in the database without
+	// any IP reservation.
+	createHostInDatabase(t, db, configStr, "2001:db8:1::/64")
+
 	report, err := reservationsOutOfPool(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
