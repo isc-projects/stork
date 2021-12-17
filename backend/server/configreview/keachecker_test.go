@@ -444,9 +444,12 @@ func TestIPv4SubnetDispensableNoPoolsNoReservations(t *testing.T) {
 	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
 }
 
-// Tests that the checker finding dispensable subnets does not generate
-// a report when host_cmds hooks library is used.
+// Tests that the checker finding dispensable subnets finds the subnets
+// that have no reservations in the database.
 func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
 	configStr := `{
         "Dhcp4": {
             "shared-networks": [
@@ -454,6 +457,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
                     "name": "foo",
                     "subnet4": [
                         {
+                            "id": 1,
                             "subnet": "192.0.2.0/24"
                         }
                     ]
@@ -461,6 +465,7 @@ func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
             ],
             "subnet4": [
                 {
+                    "id": 2,
                     "subnet": "192.0.3.0/24"
                 }
             ],
@@ -471,7 +476,37 @@ func TestIPv4SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
+	report, err := subnetDispensable(createReviewContext(t, db, configStr))
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
+}
+
+// Tests that the checker finding dispensable subnets generates no report
+// when there are host reservations for these subnets in the database.
+func TestIPv4SubnetDispensableSomeDatabaseReservations(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a host in the database.
+	createHostInDatabase(t, db, "192.0.3.0/24", "192.0.3.50")
+
+	configStr := `{
+        "Dhcp4": {
+            "subnet4": [
+                {
+                    "id": 1,
+                    "subnet": "192.0.3.0/24"
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+                }
+            ]
+        }
+    }`
+	report, err := subnetDispensable(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }
@@ -550,8 +585,12 @@ func TestIPv6SubnetDispensableNoPoolsNoReservations(t *testing.T) {
 }
 
 // Tests that the checker finding dispensable subnets does not generate
-// a report when host_cmds hooks library is used.
+// a report when host_cmds hooks library is used and the database
+// has no reservations.
 func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
 	configStr := `{
         "Dhcp6": {
             "shared-networks": [
@@ -559,6 +598,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
                     "name": "foo",
                     "subnet6": [
                         {
+                            "id": 1,
                             "subnet": "2001:db8:1::/64"
                         }
                     ]
@@ -566,6 +606,7 @@ func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
             ],
             "subnet6": [
                 {
+                    "id": 2,
                     "subnet": "2001:db8:2::/64"
                 }
             ],
@@ -576,7 +617,37 @@ func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
             ]
         }
     }`
-	report, err := subnetDispensable(createReviewContext(t, nil, configStr))
+	report, err := subnetDispensable(createReviewContext(t, db, configStr))
+	require.NoError(t, err)
+	require.NotNil(t, report)
+	require.Contains(t, report.content, "configuration comprises 2 subnets without pools and host reservations")
+}
+
+// Tests that the checker finding dispensable subnets generates no report
+// when there are host reservations for these subnets in the database.
+func TestIPv6SubnetDispensableSomeDatabaseReservations(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a host in the database.
+	createHostInDatabase(t, db, "2001:db8:1::/64", "2001:db8:1::50", "3000::/96")
+
+	configStr := `{
+        "Dhcp6": {
+            "subnet6": [
+                {
+                    "id": 1,
+                    "subnet": "2001:db8:1::/64"
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "/usr/lib/kea/libdhcp_host_cmds.so"
+                }
+            ]
+        }
+    }`
+	report, err := subnetDispensable(createReviewContext(t, db, configStr))
 	require.NoError(t, err)
 	require.Nil(t, report)
 }

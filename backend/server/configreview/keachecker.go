@@ -121,6 +121,7 @@ func createSubnetDispensableReport(ctx *ReviewContext, dispensableCount int64) (
 // because it includes no pools and no reservations.
 func checkSubnet4Dispensable(ctx *ReviewContext) (*Report, error) {
 	type subnet4 struct {
+		ID     int64
 		Subnet string
 		Pools  []struct {
 			Pool string
@@ -156,12 +157,19 @@ func checkSubnet4Dispensable(ctx *ReviewContext) (*Report, error) {
 		Subnet4: decodedSubnets4,
 	})
 
+	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
+	hostCmds, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Iterate over the shared networks and check if they contain any
 	// subnets that can be removed.
 	dispensableCount := int64(0)
 	for _, net := range *decodedSharedNetworks {
 		for _, subnet := range net.Subnet4 {
-			if len(subnet.Pools) == 0 && len(subnet.Reservations) == 0 {
+			if len(subnet.Pools) == 0 && len(subnet.Reservations) == 0 &&
+				(!hostCmds || len(dbHosts[subnet.ID]) == 0) {
 				dispensableCount++
 			}
 		}
@@ -173,6 +181,7 @@ func checkSubnet4Dispensable(ctx *ReviewContext) (*Report, error) {
 // because it includes no pools, no prefix delegation pools and no reservations.
 func checkSubnet6Dispensable(ctx *ReviewContext) (*Report, error) {
 	type subnet6 struct {
+		ID     int64
 		Subnet string
 		Pools  []struct {
 			Pool string
@@ -213,12 +222,19 @@ func checkSubnet6Dispensable(ctx *ReviewContext) (*Report, error) {
 		Subnet6: decodedSubnets6,
 	})
 
+	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
+	hostCmds, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Iterate over the shared networks and check if they contain any
 	// subnets that can be removed.
 	dispensableCount := int64(0)
 	for _, net := range *decodedSharedNetworks {
 		for _, subnet := range net.Subnet6 {
-			if len(subnet.Pools) == 0 && len(subnet.PDPools) == 0 && len(subnet.Reservations) == 0 {
+			if len(subnet.Pools) == 0 && len(subnet.PDPools) == 0 && len(subnet.Reservations) == 0 &&
+				(!hostCmds || len(dbHosts[subnet.ID]) == 0) {
 				dispensableCount++
 			}
 		}
@@ -235,10 +251,6 @@ func subnetDispensable(ctx *ReviewContext) (*Report, error) {
 		ctx.subjectDaemon.Name != dbmodel.DaemonNameDHCPv6 {
 		return nil, errors.Errorf("unsupported daemon %s", ctx.subjectDaemon.Name)
 	}
-	// Skip the check if the host_cmds hooks library is loaded.
-	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); present {
-		return nil, nil
-	}
 	if ctx.subjectDaemon.Name == dbmodel.DaemonNameDHCPv4 {
 		return checkSubnet4Dispensable(ctx)
 	}
@@ -246,12 +258,12 @@ func subnetDispensable(ctx *ReviewContext) (*Report, error) {
 }
 
 // Fetch hosts for the tested daemon and index them by local subnet ID.
-func getDaemonHostsAndIndexBySubnet(ctx *ReviewContext) (dbHosts map[int64][]dbmodel.Host, err error) {
+func getDaemonHostsAndIndexBySubnet(ctx *ReviewContext) (hostCmds bool, dbHosts map[int64][]dbmodel.Host, err error) {
 	dbHosts = make(map[int64][]dbmodel.Host)
 	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); ctx.db != nil && present {
 		hosts, _, err := dbmodel.GetHostsByDaemonID(ctx.db, ctx.subjectDaemon.ID, "api")
 		if err != nil {
-			return dbHosts, err
+			return present, dbHosts, err
 		}
 		for i, host := range hosts {
 			if host.Subnet != nil {
@@ -262,8 +274,9 @@ func getDaemonHostsAndIndexBySubnet(ctx *ReviewContext) (dbHosts map[int64][]dbm
 				}
 			}
 		}
+		return present, dbHosts, nil
 	}
-	return dbHosts, nil
+	return false, dbHosts, nil
 }
 
 // Check if any of the listed addresses is within any of the address pools.
@@ -369,7 +382,7 @@ func checkDHCPv4ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	}
 
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
-	dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
+	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -501,7 +514,7 @@ func checkDHCPv6ReservationsOutOfPool(ctx *ReviewContext) (*Report, error) {
 	}
 
 	// Get hosts from the database when libdhcp_host_cmds hooks library is used.
-	dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
+	_, dbHosts, err := getDaemonHostsAndIndexBySubnet(ctx)
 	if err != nil {
 		return nil, err
 	}
