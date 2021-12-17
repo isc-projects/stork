@@ -5,8 +5,9 @@ import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 import { humanCount, extractKeyValsAndPrepareQueryParams } from '../utils'
-import { getTotalAddresses, getAssignedAddresses } from '../subnets'
+import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } from '../subnets'
 import { Subscription } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 /**
  * Component for presenting shared networks in a table.
@@ -97,6 +98,14 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
         const params = this.queryParams
         this.dhcpApi
             .getSharedNetworks(event.first, event.rows, params.appId, params.dhcpVersion, params.text)
+            .pipe(
+                map((sharedNetworks) => {
+                    sharedNetworks.items.forEach((sharedNetwork) => {
+                        parseSubnetsStatisticValues(sharedNetwork.subnets)
+                    })
+                    return sharedNetworks
+                })
+            )
             .subscribe(
                 (data) => {
                     this.networks = data.items

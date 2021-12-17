@@ -5,9 +5,10 @@ import { Table } from 'primeng/table'
 
 import { DHCPService } from '../backend/api/api'
 import { humanCount, getGrafanaUrl, extractKeyValsAndPrepareQueryParams, getGrafanaSubnetTooltip } from '../utils'
-import { getTotalAddresses, getAssignedAddresses } from '../subnets'
+import { getTotalAddresses, getAssignedAddresses, parseSubnetsStatisticValues } from '../subnets'
 import { SettingService } from '../setting.service'
 import { Subscription } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 /**
  * Component for presenting DHCP subnets.
@@ -119,6 +120,13 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
 
         this.dhcpApi
             .getSubnets(event.first, event.rows, params.appId, params.dhcpVersion, params.text)
+            // Custom parsing for statistics
+            .pipe(
+                map((subnets) => {
+                    parseSubnetsStatisticValues(subnets)
+                    return subnets
+                })
+            )
             .toPromise()
             .then((data) => {
                 this.subnets = data.items

@@ -11,8 +11,8 @@ describe('subnets', () => {
             localSubnets: [
                 {
                     stats: {
-                        'total-addresses': 4,
-                        'assigned-addresses': 2,
+                        'total-addresses': '4',
+                        'assigned-addresses': '2',
                     },
                 },
             ],
@@ -30,8 +30,8 @@ describe('subnets', () => {
             localSubnets: [
                 {
                     stats: {
-                        'total-nas': 4,
-                        'assigned-nas': 2,
+                        'total-nas': '4',
+                        'assigned-nas': '18446744073709551615',
                     },
                 },
             ],
@@ -40,6 +40,6 @@ describe('subnets', () => {
         expect(totalAddrs).toBe(4)
 
         const assignedAddrs = getAssignedAddresses(subnet6)
-        expect(assignedAddrs).toBe(2)
+        expect(assignedAddrs).toBe(BigInt('18446744073709551615'))
     })
 })
