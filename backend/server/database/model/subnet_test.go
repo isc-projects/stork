@@ -921,11 +921,13 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	// Arrange
 	localSubnet := &LocalSubnet{
 		Stats: map[string]interface{}{
-			"maxInt64": math.MaxInt64,
-			"minInt64": math.MinInt64,
-			"untyped":  0,
-			"int16":    int16(0),
-			"int32":    int32(0),
+			"maxInt64":  int64(math.MaxInt64),
+			"minInt64":  int64(math.MinInt64),
+			"maxUint64": uint64(math.MaxUint64),
+			"minUint64": uint64(0),
+			"untyped":   0,
+			"int16":     int16(0),
+			"int32":     int32(0),
 		},
 	}
 
@@ -939,9 +941,13 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	require.NoError(t, toJSONErr)
 	require.NoError(t, fromJSONErr)
 
-	require.IsType(t, "", deserialized.Stats["untyped"])
-	require.IsType(t, "", deserialized.Stats["maxInt64"])
+	// Deserializer loses the original types (!)
+	require.IsType(t, uint64(0), deserialized.Stats["maxInt64"])
+	require.IsType(t, int64(0), deserialized.Stats["minInt64"])
+	require.IsType(t, uint64(0), deserialized.Stats["maxUint64"])
+	require.IsType(t, uint64(0), deserialized.Stats["minUint64"])
 
+	require.IsType(t, float64(0), deserialized.Stats["untyped"])
 	require.IsType(t, float64(0), deserialized.Stats["int16"])
 	require.IsType(t, float64(0), deserialized.Stats["int32"])
 }

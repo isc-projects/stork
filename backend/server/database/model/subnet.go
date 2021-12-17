@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,13 +28,17 @@ type LocalSubnetStats map[string]interface{}
 // are inaccurate.
 // All the numeric statistics are serialized to string and next deserialized using
 // a custom function to avoid losing the precision.
+//
+// It doesn't use the pointer to receiver type for compatibility with gopg serialization
+// during inserting to the database.
 func (s LocalSubnetStats) MarshalJSON() ([]byte, error) {
 	toMarshal := make(map[string]interface{}, len(s))
 
 	for k, v := range s {
 		switch v.(type) {
-		// The data fetched from Kea has unspecified types.
-		case int, int64, uint64:
+		case int64:
+			toMarshal[k] = fmt.Sprint(v)
+		case uint64:
 			toMarshal[k] = fmt.Sprint(v)
 		default:
 			toMarshal[k] = v
@@ -41,6 +46,47 @@ func (s LocalSubnetStats) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(toMarshal)
+}
+
+// Deserialize statistics and convert back the strings to int64 or uint64.
+// I assume that the statistics will always contain numeric data, no string
+// that look like integers.
+// During the serialization we lost the original data type of the number.
+// We assume that strings with positive numbers are uint64 and negative numbers are int64.
+func (s *LocalSubnetStats) UnmarshalJSON(data []byte) error {
+	toUnmarshal := make(map[string]interface{})
+	err := json.Unmarshal(data, &toUnmarshal)
+	if err != nil {
+		return err
+	}
+
+	if *s == nil {
+		*s = LocalSubnetStats{}
+	}
+
+	for k, v := range toUnmarshal {
+		vStr, ok := v.(string)
+		if !ok {
+			(*s)[k] = v
+			continue
+		}
+
+		vUint64, err := strconv.ParseUint(vStr, 10, 64)
+		if err == nil {
+			(*s)[k] = vUint64
+			continue
+		}
+
+		vInt64, err := strconv.ParseInt(vStr, 10, 64)
+		if err == nil {
+			(*s)[k] = vInt64
+			continue
+		}
+
+		(*s)[k] = v
+	}
+
+	return nil
 }
 
 // This structure holds subnet information retrieved from an app. Multiple
@@ -606,7 +652,7 @@ func GetAppLocalSubnets(dbi dbops.DBI, appID int64) ([]*LocalSubnet, error) {
 }
 
 // Update stats pulled for given local subnet.
-func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats map[string]interface{}) error {
+func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats LocalSubnetStats) error {
 	lsn.Stats = stats
 	lsn.StatsCollectedAt = storkutil.UTCNow()
 	q := dbi.Model(lsn)

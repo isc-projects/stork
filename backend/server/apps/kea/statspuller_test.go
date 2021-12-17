@@ -2,6 +2,7 @@ package kea
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -210,7 +211,8 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
                                    "rows": [
                                        [ 30, 4096, 2400, 3, 0, 0],
                                        [ 40, 0, 0, 0, 1048, 233 ],
-                                       [ 50, 256, 60, 0, 1048, 15 ]
+                                       [ 50, 256, 60, 0, 1048, 15 ],
+									   [ 60, -1, 9223372036854775807, 0, -2, -3 ]
                                    ],
                                    "timestamp": "2018-05-04 15:03:37.000000"
                                }
@@ -282,6 +284,10 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 										"ip-address": "2001:db8:3::23"
 									}
 								]
+							},
+							{
+								"id": 60,
+								"subnet": "2001:db8:4::/64"
 							}
 						]
 					}
@@ -327,38 +333,45 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	for _, sn := range subnets {
 		switch sn.LocalSubnetID {
 		case 10:
-			require.Equal(t, 111.0, sn.Stats["assigned-addresses"])
-			require.Equal(t, 0.0, sn.Stats["declined-addresses"])
-			require.Equal(t, 256.0, sn.Stats["total-addresses"])
+			require.Equal(t, uint64(111), sn.Stats["assigned-addresses"])
+			require.Equal(t, uint64(0), sn.Stats["declined-addresses"])
+			require.Equal(t, uint64(256), sn.Stats["total-addresses"])
 			snCnt++
 		case 20:
-			require.Equal(t, 2034.0, sn.Stats["assigned-addresses"])
-			require.Equal(t, 4.0, sn.Stats["declined-addresses"])
-			require.Equal(t, 4098.0, sn.Stats["total-addresses"])
+			require.Equal(t, uint64(2034), sn.Stats["assigned-addresses"])
+			require.Equal(t, uint64(4), sn.Stats["declined-addresses"])
+			require.Equal(t, uint64(4098), sn.Stats["total-addresses"])
 			snCnt++
 		case 30:
-			require.Equal(t, 2400.0, sn.Stats["assigned-nas"])
-			require.Equal(t, 0.0, sn.Stats["assigned-pds"])
-			require.Equal(t, 3.0, sn.Stats["declined-nas"])
-			require.Equal(t, 0.0, sn.Stats["total-pds"])
+			require.Equal(t, uint64(2400), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(0), sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(3), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(0), sn.Stats["total-pds"])
 			snCnt++
 		case 40:
-			require.Equal(t, 0.0, sn.Stats["assigned-nas"])
-			require.Equal(t, 233.0, sn.Stats["assigned-pds"])
-			require.Equal(t, 0.0, sn.Stats["declined-nas"])
-			require.Equal(t, 0.0, sn.Stats["total-nas"])
-			require.Equal(t, 1048.0, sn.Stats["total-pds"])
+			require.Equal(t, uint64(0), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(233), sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(0), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(0), sn.Stats["total-nas"])
+			require.Equal(t, uint64(1048), sn.Stats["total-pds"])
 			snCnt++
 		case 50:
-			require.Equal(t, 60.0, sn.Stats["assigned-nas"])
-			require.Equal(t, 15.0, sn.Stats["assigned-pds"])
-			require.Equal(t, 0.0, sn.Stats["declined-nas"])
-			require.Equal(t, 256.0, sn.Stats["total-nas"])
-			require.Equal(t, 1048.0, sn.Stats["total-pds"])
+			require.Equal(t, uint64(60), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(15), sn.Stats["assigned-pds"])
+			require.Equal(t, uint64(0), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(256), sn.Stats["total-nas"])
+			require.Equal(t, uint64(1048), sn.Stats["total-pds"])
+			snCnt++
+		case 60:
+			require.Equal(t, uint64(math.MaxUint64), sn.Stats["total-nas"])
+			require.Equal(t, uint64(math.MaxInt64), sn.Stats["assigned-nas"])
+			require.Equal(t, uint64(0), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(math.MaxUint64)-1, sn.Stats["total-pds"])
+			require.Equal(t, uint64(math.MaxUint64)-2, sn.Stats["assigned-pds"])
 			snCnt++
 		}
 	}
-	require.Equal(t, 5, snCnt)
+	require.Equal(t, 6, snCnt)
 	// We should have two rows in RpsWorker.PreviousRps map one for each daemon
 	require.Equal(t, 2, len(sp.RpsWorker.PreviousRps))
 

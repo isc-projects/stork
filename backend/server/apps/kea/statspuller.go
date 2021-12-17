@@ -2,6 +2,7 @@ package kea
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
@@ -181,7 +182,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 	}
 
 	for _, row := range resultSet.Rows {
-		stats := make(map[string]interface{})
+		stats := dbmodel.LocalSubnetStats{}
 		var sn *dbmodel.LocalSubnet
 		var lsnID int64
 		for colIdx, val := range row {
@@ -191,16 +192,17 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 				sn = subnetsMap[localSubnetKey{lsnID, family}]
 			} else {
 				// handle inconsistency in stats naming in different kea versions
+				name = strings.Replace(name, "addreses", "addresses", 1)
+
+				// Cast the value to a proper type
 				switch name {
-				case "total-addreses":
-					name = "total-addresses"
-				case "assigned-addreses":
-					name = "assigned-addresses"
-				case "declined-addreses":
-					name = "declined-addresses"
+				case "total-addresses", "assigned-addresses", "declined-addresses",
+					"total-nas", "assigned-nas", "declined-nas",
+					"total-pds", "assigned-pds":
+					stats[name] = uint64(val)
 				default:
+					stats[name] = val
 				}
-				stats[name] = val
 			}
 		}
 		if sn == nil {
