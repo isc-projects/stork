@@ -1,3 +1,10 @@
+* 181 [build] marcin
+
+    Corrected an issue in the database migrations which caused the
+    Stork 1.0.0 server to fail to start when the database contained
+    host reservations.
+    (Gitlab #676)
+
 Stork 1.0.0 released on 2021-12-08.
 
 * 180 [doc] tomek
