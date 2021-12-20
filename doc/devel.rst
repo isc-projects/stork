@@ -15,11 +15,11 @@ Rakefile
 ========
 
 Rakefile is a script for performing many development tasks, like
-building source code, running linters, running unit tests, and running
+building source code, running linters and unit tests, and running
 Stork services directly or in Docker containers.
 
 There are several other Rake targets. For a complete list of available
-tasks, use `rake -T`.  Also see the Stork `wiki
+tasks, use ``rake -T``. Also see the Stork `wiki
 <https://gitlab.isc.org/isc-projects/stork/-/wikis/Processes/development-Environment#building-testing-and-running-stork>`_
 for detailed instructions.
 
@@ -42,7 +42,7 @@ First, PostgreSQL must be installed. This is OS-specific, so please
 follow the instructions from the :ref:`installation` chapter.
 
 Once the database environment is set up, the next step is to build all
-the tools. Note that the first command below downloads some missing dependencies
+the tools. The first command below downloads some missing dependencies
 and installs them in a local directory. This is done only once
 and is not needed for future rebuilds, although it is safe to rerun
 the command.
@@ -71,7 +71,7 @@ Once all three processes are running, connect to http://localhost:8080
 via a web browser. See :ref:`usage` for information on initial password creation
 or addition of new machines to the server.
 
-The `run_agent` runs the agent directly on the current operating
+The ``run_agent`` runs the agent directly on the current operating
 system, natively; the exposed port of the agent is 8888.
 
 There are other Rake tasks for running preconfigured agents in Docker
@@ -93,7 +93,7 @@ to the ``.git/hooks`` directory.
 Agent API
 =========
 
-The connection between the Stork Server and the agents is established using
+The connection between the ``Stork Server`` and the agents is established using
 gRPC over http/2. The agent API definition is kept in the
 ``backend/api/agent.proto`` file. For debugging purposes, it is
 possible to connect to the agent using the `grpcurl
@@ -133,11 +133,11 @@ state, use the following command:
       "hostID": "c41337a1-0ec3-3896-a954-a1f85e849d53"
     }
 
-REST API
-========
+RESTful API
+===========
 
-The primary user of the REST API is the Stork UI in a web browser. The
-definition of the REST API is located in the ``api`` folder and is
+The primary user of the RESTful API is the Stork UI in a web browser. The
+definition of the RESTful API is located in the ``api`` folder and is
 described in Swagger 2.0 format.
 
 The description in Swagger is split into multiple files. Two files
@@ -147,7 +147,7 @@ comprise a tag group:
 * \*-defs.yaml - contains entity definitions
 
 All these files are combined by the ``yamlinc`` tool into a single
-Swagger file, ``swagger.yaml``.  Then ``swagger.yaml`` generates code
+Swagger file, ``swagger.yaml``, which then generates code
 for:
 
 * the UI fronted by swagger-codegen
@@ -158,7 +158,7 @@ All these steps are accomplished by Rakefile.
 Backend Unit Tests
 ==================
 
-There are unit tests for the Stork Agent and Server backends, written in Go.
+There are unit tests for the Stork agent and server backends, written in Go.
 They can be run using Rake:
 
 .. code:: console
@@ -173,7 +173,7 @@ which is automatically created when running the following Rake task:
 
           $ rake unittest_backend_db
 
-This task spawns a container with PostgreSQL in the background which
+This task spawns a container with PostgreSQL in the background, which
 then runs unit tests. When the tests are completed, the database is
 shut down and removed.
 
@@ -201,7 +201,7 @@ environment variable, e.g.:
 By default it points to ``localhost:5432``.
 
 Similarly, if the database setup requires a password other than the default
-``storktest``,  the STORK_DATABASE_PASSWORD variable can be used by issuing
+``storktest``,  the ``STORK_DATABASE_PASSWORD`` variable can be used by issuing
 the following command:
 
 .. code:: console
@@ -221,7 +221,7 @@ raised.
 Benchmarks
 ----------
 
-Benchmarks are part of the backend unit tests. They are implemented using the
+Benchmarks are part of backend unit tests. They are implemented using the
 golang "testing" library and they test performance-sensitive parts of the
 backend. Unlike unit tests, the benchmarks do not return pass/fail status.
 They measure average execution time of functions and print the results to
@@ -247,15 +247,15 @@ bottlenecks. When working on improving the performance of a function, examining 
 benchmark result before and after the changes is a good practice to ensure
 that the goals of the changes are achieved.
 
-Similarly, adding a new logic to a function often causes performance
+Similarly, adding new logic to a function often causes performance
 degradation, and careful examination of the benchmark result drop for that
-function may be a driver for improving efficiency of the new code.
+function may drive improved efficiency of the new code.
 
 Short Testing Mode
 ------------------
 
-It is possible to filter out long running unit tests. Set the ``short``
-variable to `true` on the command line:
+It is possible to filter out long-running unit tests, by setting the ``short``
+variable to ``true`` on the command line:
 
 .. code:: console
 
@@ -265,7 +265,7 @@ variable to `true` on the command line:
 Web UI Unit Tests
 =================
 
-Stork offers web UI tests, to take advantage of the unit-tests generated automatically
+Stork offers web UI tests, to take advantage of the unit tests generated automatically
 by Angular. The simplest way to run these tests is by using Rake tasks:
 
 .. code:: console
@@ -273,11 +273,10 @@ by Angular. The simplest way to run these tests is by using Rake tasks:
    rake build_ui
    rake ng_test
 
-
-The tests require the Chromium (on Linux) or Chrome (on Mac) browser. The `rake ng_test`
+The tests require the Chromium (on Linux) or Chrome (on Mac) browser. The ``rake ng_test``
 task attempts to locate the browser binary and launch it automatically. If the
 browser binary is not found in the default location, the Rake task returns an
-error. It is possible to set the location manually by setting the `CHROME_BIN`
+error. It is possible to set the location manually by setting the ``CHROME_BIN``
 environment variable; for example:
 
 .. code:: console
@@ -285,12 +284,11 @@ environment variable; for example:
    export CHROME_BIN=/usr/local/bin/chromium-browser
    rake ng_test
 
-
 By default, the tests launch the browser in headless mode, in which test results
 and any possible errors are printed in the console. However, in some situations it
 is useful to run the browser in non-headless mode because it provides debugging features
 in Chrome's graphical interface. It also allows for selectively running the tests.
-Run the tests in non-headless mode using the `debug` variable appended to the `rake`
+Run the tests in non-headless mode using the ``debug`` variable appended to the ``rake``
 command:
 
 .. code:: console
@@ -300,21 +298,21 @@ command:
 That command causes a new browser window to open; the tests run there automatically.
 
 The tests are run in random order by default, which can make it difficult
-to chase the individual errors. To make debugging easier by always running the tests
-in the same order, click Debug in the new Chrome window, then click
-Options and unset the "run tests in random order" button. A specific test can
+to chase individual errors. To make debugging easier by always running the tests
+in the same order, click "Debug" in the new Chrome window, then click
+"Options" and unset the "run tests in random order" button. A specific test can
 be run by clicking on its name.
 
 .. code:: console
 
     test=src/app/ha-status-panel/ha-status-panel.component.spec.ts rake ng_test
 
-By default, all tests are executed. You may want to run only a specific test file.
-In this case, you can set the "test" environment variable to a relative path to any ".spec.ts"
-file (relative from project directory).
+By default, all tests are executed. To run only a specific test file,
+set the "test" environment variable to a relative path to any ``.spec.ts``
+file (relative from the bproject directory).
 
-When adding a new component or service with `ng generate component|service ...`, the Angular framework
-adds a .spec.ts file with boilerplate code. In most cases, the first step in
+When adding a new component or service with ``ng generate component|service ...``, the Angular framework
+adds a ``.spec.ts`` file with boilerplate code. In most cases, the first step in
 running those tests is to add the necessary Stork imports. If in doubt, refer to the commits on
 https://gitlab.isc.org/isc-projects/stork/-/merge_requests/97. There are many examples of ways to fix
 failing tests.
@@ -323,13 +321,13 @@ System Tests
 ============
 
 System tests for Stork are designed to test the software in a distributed environment.
-They allow for testing several Stork Servers and Agents running at the same time
-in one test case, inside ``LXD`` containers. It is possible to set up
-Kea (and eventually, BIND 9) services along with Stork Agents. The framework enables experimenting
-in containers so custom Kea configurations can be deployed or specific Kea daemons
+They allow several ``Stork Servers`` and agents running at the same time
+to be tested in one test case, inside ``LXD`` containers. It is possible to set up
+Kea services along with Stork agents. The framework enables experimentation
+in containers, so custom Kea configurations can be deployed or specific Kea daemons
 can be stopped.
 
-The tests can use the Stork Server REST API directly or the Stork web UI via Selenium.
+The tests can use the Stork Server RESTful API directly or the Stork web UI via Selenium.
 
 Dependencies
 ------------
@@ -362,15 +360,15 @@ Then install ``LXD``:
 
                 $ sudo snap install lxd
 
-And then add the user to ``lxd`` group:
+And then add the user to the ``lxd`` group:
 
 .. code-block:: console
 
                 $ sudo usermod -a -G lxd $USER
 
-Now log in again to make the user's presence in ``lxd`` group visible in the shell session.
+Log in again to make the user's presence in the ``lxd`` group visible in the shell session.
 
-After installing ``LXD``, it requires initialization. Run:
+After installing ``LXD``, initialize it by running:
 
 .. code-block:: console
 
@@ -383,35 +381,34 @@ and then for each question press **Enter**, i.e., use the default values::
    Name of the new storage pool [default=default]: **Enter**
    Name of the storage backend to use (dir, btrfs) [default=btrfs]: **Enter**
    Would you like to create a new btrfs subvolume under /var/snap/lxd/common/lxd? (yes/no) [default=yes]: **Enter**
-   Would you like to connect to a MAAS server? (yes/no) [default=no]:  **Enter**
-   Would you like to create a new local network bridge? (yes/no) [default=yes]:  **Enter**
-   What should the new bridge be called? [default=lxdbr0]:  **Enter**
-   What IPv4 address should be used? (CIDR subnet notation, "auto" or "none") [default=auto]:  **Enter**
-   What IPv6 address should be used? (CIDR subnet notation, "auto" or "none") [default=auto]:  **Enter**
-   Would you like LXD to be available over the network? (yes/no) [default=no]:  **Enter**
-   Would you like stale cached images to be updated automatically? (yes/no) [default=yes]  **Enter**
-   Would you like a YAML "lxd init" preseed to be printed? (yes/no) [default=no]:  **Enter**
+   Would you like to connect to a MAAS server? (yes/no) [default=no]: **Enter**
+   Would you like to create a new local network bridge? (yes/no) [default=yes]: **Enter**
+   What should the new bridge be called? [default=lxdbr0]: **Enter**
+   What IPv4 address should be used? (CIDR subnet notation, "auto" or "none") [default=auto]: **Enter**
+   What IPv6 address should be used? (CIDR subnet notation, "auto" or "none") [default=auto]: **Enter**
+   Would you like LXD to be available over the network? (yes/no) [default=no]: **Enter**
+   Would you like stale cached images to be updated automatically? (yes/no) [default=yes] **Enter**
+   Would you like a YAML "lxd init" preseed to be printed? (yes/no) [default=no]: **Enter**
 
 More details can be found at: https://linuxcontainers.org/lxd/getting-started-cli/
 
-The subvolume is stored in /var/snap/lxd/common/lxd, and
+The subvolume is stored in ``/var/snap/lxd/common/lxd``, and
 is used to store images and containers. If the space is exhausted,
 it is not possible to create new containers. This is not connected with total disk
 space but rather with the space in this subvolume. To free space, remove stale images
-or stopped containers. Basic usage of ``LXD`` is presented at:
+or stopped containers. Basic usage of ``LXD`` is explained at:
 https://linuxcontainers.org/lxd/getting-started-cli/#lxd-client
 
-
-LXD troubleshooting on Arch
+LXD Troubleshooting on Arch
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Problem**: After running `lxd init` you get this message
+**Problem**: After running ``lxd init``, an error message is returned:
 
 .. code-block:: console
 
     Error: Failed to connect to local LXD: Get "http://unix.socket/1.0": dial unix /var/lib/lxd/unix.socket: connect: no such file or directory
 
-**Solution**: You should restart `lxd` daemon:
+**Solution**: Restart the ``lxd`` daemon:
 
 .. code-block:: console
 
@@ -419,7 +416,7 @@ LXD troubleshooting on Arch
 
 --------------
 
-**Problem**: After running `rake system_tests` you get these message (tail):
+**Problem**: After running ``rake system_tests``, a message is displayed that ends in:
 
 .. code-block:: console
 
@@ -428,18 +425,18 @@ LXD troubleshooting on Arch
     stork-agent-ubuntu-18-04-gw0: {'fg': 'yellow', 'style': ''}
     stork-server-centos-7-gw0: {'fg': 'red', 'style': 'bold'}
 
-and nothing more happens, CPU and RAM usage by lxd are ~0%.
+But nothing else happens, and CPU and RAM usage by ``lxd`` are ~0%.
 
-**Solution**: `original post <https://discuss.linuxcontainers.org/t/solved-arch-linux-containers-only-run-when-security-privileged-true/4006/5>`_
+**Solution**: `See this original post <https://discuss.linuxcontainers.org/t/solved-arch-linux-containers-only-run-when-security-privileged-true/4006/5>`_
 
-1. Create `/etc/subuid` file with content:
+1. Create an ``/etc/subuid`` file with content:
 
 .. code-block:: console
 
     root:1000000:65536
 
-1. Create `/etc/subgid` with the same content
-2. Add these lines to `/etc/default/lxc`:
+1. Create ``/etc/subgid`` with the same content.
+2. Add these lines to ``/etc/default/lxc``:
 
 .. code-block:: console
 
@@ -450,8 +447,8 @@ and nothing more happens, CPU and RAM usage by lxd are ~0%.
 Running System Tests
 --------------------
 
-After preparing all the dependencies, it is possible to start tests.
-But first, the RPM and deb Stork packages need to be prepared. This can
+After preparing all the dependencies, the tests can be started;
+however, the RPM and deb Stork packages need to be prepared first. This can
 be done with this Rake task:
 
 .. code-block:: console
@@ -480,7 +477,7 @@ must be changed to ``tests/system``:
 
 The switches passed to ``pytest`` are:
 
-- ``--tb=long``: in case of failures, present long format of traceback
+- ``--tb=long``: in case of failures, present the traceback in long format
 - ``-l``: show values of local variables in tracebacks
 - ``-r ap``: at the end of execution, print a report that includes (p)assed and (a)ll except passed (p)
 
@@ -496,7 +493,7 @@ To get a list of tests without actually running them, the following command can 
 
     $ ./venv/bin/pytest --collect-only tests.py
 
-The names of all available tests are printed as `<Function name_of_the_test>`.
+The names of all available tests are printed as ``<Function name_of_the_test>``.
 
 A single test case can be run using a ``rake`` task with the test variable set to the test name:
 
@@ -508,13 +505,13 @@ A single test case can be run using a ``rake`` task with the test variable set t
 Developing System Tests
 -----------------------
 
-System tests are defined in tests.py and other files that start with `test_`.
+System tests are defined in ``tests.py`` and other files that start with ``test_``.
 There are two other files that define the framework for Stork system tests:
 
-- conftest.py - defines hooks for ``pytests``
-- containers.py - handles LXD containers: starting/stopping; communication, such as
-  invoking commands; uploading/downloading files; installing and preparing Stork
-  Agent/Server and Kea; and other dependencies that they require.
+- ``conftest.py`` - defines hooks for ``pytests``
+- ``containers.py`` - handles LXD containers: starting/stopping; communication, such as
+  invoking commands; uploading/downloading files; and installing and preparing Stork
+  Agent/Server and Kea and other dependencies that they require.
 
 Most tests are constructed as follows:
 
@@ -567,8 +564,8 @@ for testing:
         ('centos/7', 'ubuntu/18.04')
     ]
 
-The first set indicates that for the Stork Agent ``Ubuntu 18.04`` should be used
-in the LXD container, and for the Stork Server ``CentOS 7``. The second set is the opposite
+The first set indicates that for the ``Stork Agent`` ``Ubuntu 18.04`` should be used
+in the LXD container, and for the ``Stork Server`` ``CentOS 7``. The second set is the opposite
 of the first one.
 
 The next line:
@@ -590,7 +587,7 @@ Besides substituting the ``agent`` and ``server`` arguments, the hook intercepts
 any argument that starts with ``agent`` or ``server``. This allows
 multiple agents in the test, e.g. ``agent1``, ``agent_kea``, or ``agent_bind9``.
 
-Next, log into the Stork Server using its REST API:
+Next, log into the ``Stork Server`` using its REST API:
 
 .. code-block:: python
 
@@ -600,7 +597,7 @@ Next, log into the Stork Server using its REST API:
                             expected_status=200)
         assert r.json()['login'] == 'admin'
 
-Then, add a machine with a Stork Agent to the Stork Server:
+Then, add a machine with a ``Stork Agent`` to the ``Stork Server``:
 
 .. code-block:: python
 
@@ -613,8 +610,8 @@ Then, add a machine with a Stork Agent to the Stork Server:
 
 A check then verifies the returned address of the machine.
 
-After a few seconds, the Stork Agent detects the Kea application and reports it
-to the Stork Server. The server is periodically polled for updated
+After a few seconds, the ``Stork Agent`` detects the Kea application and reports it
+to the ``Stork Server``. The server is periodically polled for updated
 information about the Kea application.
 
 .. code-block:: python
@@ -647,47 +644,47 @@ described in the :ref:`Demo` chapter.
 
 The following ``Rake`` tasks start these containers.
 
-.. table:: Rake tasks for managing development containers.
+.. table:: Rake tasks for managing development containers
    :class: longtable
    :widths: 26 74
 
    +----------------------------------------+---------------------------------------------------------------+
    | Rake Task                              | Description                                                   |
    +========================================+===============================================================+
-   | ``rake build_kea_container``           | Build a container `agent-kea` with a Stork Agent              |
+   | ``rake build_kea_container``           | Build a container ``agent-kea`` with a Stork Agent            |
    |                                        | and Kea with DHCPv4.                                          |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_kea_container``             | Start an `agent-kea` container. Published port is 8888.       |
+   | ``rake run_kea_container``             | Start an ``agent-kea`` container. Published port is 8888.     |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_kea6_container``          | Build an `agent-kea6` container with a Stork Agent            |
+   | ``rake build_kea6_container``          | Build an ``agent-kea6`` container with a Stork Agent          |
    |                                        | and Kea with DHCPv6.                                          |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_kea6_container``            | Start an `agent-kea6` container. Published port is 8886.      |
+   | ``rake run_kea6_container``            | Start an ``agent-kea6`` container. Published port is 8886.    |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_kea_ha_containers``       | Build two containers, `agent-kea-ha1` and `agent-kea-ha2`,    |
-   |                                        | that are configured to work together in `High                 |
-   |                                        | Availability` mode, with Stork Agents, and Kea with DHCPv4.   |
+   | ``rake build_kea_ha_containers``       | Build two containers, ``agent-kea-ha1`` and ``agent-kea-ha2``,|
+   |                                        | that are configured to work together in High                  |
+   |                                        | Availability mode, with Stork Agents, and Kea with DHCPv4.    |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_kea_ha_containers``         | Start the `agent-kea-ha1` and `agent-kea-ha2` containers.     |
+   | ``rake run_kea_ha_containers``         | Start the ``agent-kea-ha1`` and ``agent-kea-ha2 ` containers. |
    |                                        | Published ports are 8881 and 8882.                            |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_kea_premium_container``   | Build an `agent-kea-premium` container with a Stork Agent     |
+   | ``rake build_kea_premium_container``   | Build an ``agent-kea-premium`` container with a Stork Agent   |
    |                                        | and Kea with DHCPv4 with host reservations stored in          |
    |                                        | a database. This requires **premium** features.               |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_kea_premium_container``     | Start the `agent-kea-premium` container. This requires        |
+   | ``rake run_kea_premium_container``     | Start the ``agent-kea-premium`` container. This requires      |
    |                                        | **premium** features.                                         |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_bind9_container``         | Build an `agent-bind9` container with a Stork Agent           |
+   | ``rake build_bind9_container``         | Build an ``agent-bind9`` container with a Stork Agent         |
    |                                        | and BIND 9.                                                   |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_bind9_container``           | Start an `agent-bind9` container. Published port is 9999.     |
+   | ``rake run_bind9_container``           | Start an ``agent-bind9`` container. Published port is 9999.   |
    +----------------------------------------+---------------------------------------------------------------+
 
 .. note::
 
-    It is recommended that these commands are run using a user account without
-    superuser privileges. This may require some previous steps to set up. On
+    It is recommended that these commands be run using a user account without
+    superuser privileges, which may require some previous steps to set up. On
     most systems, adding the account to the ``docker`` group should be enough.
     On most Linux systems, this is done with:
 
@@ -710,18 +707,17 @@ is built on the latest Ubuntu LTS.
 There are two packages built for each system: a server and an agent.
 
 Rake tasks can perform the entire build procedure in a
-Docker container: `build_rpms_in_docker` and
-`build_debs_in_docker`. It is also possible to build packages directly
-in the current operating system; this is provided by the `deb_agent`,
-`rpm_agent`, `deb_server`, and `rpm_server` Rake tasks.
+Docker container: ``build_rpms_in_docker`` and
+``build_debs_in_docker``. It is also possible to build packages directly
+in the current operating system; this is provided by the ``deb_agent``,
+``rpm_agent``, ``deb_server``, and ``rpm_server`` Rake tasks.
 
 Internally, these packages are built by FPM
 (https://fpm.readthedocs.io/). The containers that are used to build
 packages are prebuilt with all dependencies required, using the
-`build_fpm_containers` Rake task. The definitions
-of these containers are placed in `docker/pkgs/centos-8.txt` and
-`docker/pkgs/ubuntu-18-04.txt`.
-
+``build_fpm_containers`` Rake task. The definitions
+of these containers are placed in ``docker/pkgs/centos-8.txt`` and
+``docker/pkgs/ubuntu-18-04.txt``.
 
 Implementation details
 ======================
@@ -731,15 +727,14 @@ Agent Registration Process
 
 The diagram below shows a flowchart of the agent registration process in Stork.
 It merely demonstrates the successful registration path.
-First Certificate Signing Request (CSR) is generated using an existing or new
+The first Certificate Signing Request (CSR) is generated using an existing or new
 private key and agent token.
-The CSR, server token (optional), and agent token are sent to the Stork Server.
+The CSR, server token (optional), and agent token are sent to the ``Stork Server``.
 A successful server response contains a signed agent certificate, a server CA
 certificate, and an assigned Machine ID.
 If the agent was already registered with the provided agent token, only the assigned
 machine ID is returned without new certificates.
 The agent uses the returned machine ID to verify that the registration was successful.
-
 
 .. figure:: uml/registration-agent.*
 
