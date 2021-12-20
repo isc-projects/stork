@@ -1,4 +1,11 @@
-* 181 [build] marcin
+* 182 [bug] marcin
+
+    Fixed a bug in the host reservation database model. The bug caused
+    issues with updating a host reservation when it contained no IP
+    addresses.
+    (Gitlab #677)
+
+* 181 [bug] marcin
 
     Corrected an issue in the database migrations which caused the
     Stork 1.0.0 server to fail to start when the database contained
