@@ -665,7 +665,7 @@ The following ``Rake`` tasks start these containers.
    |                                        | that are configured to work together in High                  |
    |                                        | Availability mode, with Stork Agents, and Kea with DHCPv4.    |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_kea_ha_containers``         | Start the ``agent-kea-ha1`` and ``agent-kea-ha2 ` containers. |
+   | ``rake run_kea_ha_containers``         | Start the ``agent-kea-ha1`` and ``agent-kea-ha2`` containers. |
    |                                        | Published ports are 8881 and 8882.                            |
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake build_kea_premium_container``   | Build an ``agent-kea-premium`` container with a Stork Agent   |
