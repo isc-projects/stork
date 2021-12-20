@@ -578,7 +578,7 @@ func TestConfiguredDaemonNames(t *testing.T) {
 func TestGetLocalIPv4SubnetID(t *testing.T) {
 	cfg := getTestConfigWithIPv4Subnets(t)
 
-	require.EqualValues(t, 567, cfg.GetLocalSubnetID("10.1.0.000/16"))
+	require.EqualValues(t, 567, cfg.GetLocalSubnetID("10.1.0.0/16"))
 	require.EqualValues(t, 678, cfg.GetLocalSubnetID("10.2.0.1/16"))
 	require.EqualValues(t, 123, cfg.GetLocalSubnetID("192.0.2.0/24"))
 	require.EqualValues(t, 234, cfg.GetLocalSubnetID("192.0.3.0/24"))

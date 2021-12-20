@@ -6,7 +6,7 @@ NODE_VER = '14.18.2'
 OPENAPI_GENERATOR_VER = '5.2.0'
 GOSWAGGER_VER = 'v0.23.0'
 GOLANGCILINT_VER = '1.33.0'
-GO_VER = '1.15.5'
+GO_VER = '1.17.5'
 PROTOC_VER = '3.11.2'
 PROTOC_GEN_GO_VER = 'v1.3.3'
 
@@ -1161,8 +1161,8 @@ task :prepare_env => [GO, PROTOC, PROTOC_GEN_GO, GOSWAGGER, GOLANGCILINT, OPENAP
   Dir.chdir('backend') do
     sh "#{GO} mod download"
   end
-  sh "GO111MODULE=on #{GO} get -u github.com/go-delve/delve/cmd/dlv@v1.7.3"
-  sh "#{GO} get -u github.com/aarzilli/gdlv"
+  sh "#{GO} install github.com/go-delve/delve/cmd/dlv@v1.7.3"
+  sh "#{GO} install github.com/aarzilli/gdlv@v1.7.0"
 end
 
 desc 'Generate ctags for Emacs'
