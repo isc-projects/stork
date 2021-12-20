@@ -1,7 +1,7 @@
 package certs
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -85,7 +85,7 @@ func TestExportSecret(t *testing.T) {
 	require.NoError(t, err)
 	err = ExportSecret(db, dbmodel.SecretServerCert, serverCertPEMFile)
 	require.NoError(t, err)
-	serverCertPEM2, err := ioutil.ReadFile(serverCertPEMFile)
+	serverCertPEM2, err := os.ReadFile(serverCertPEMFile)
 	require.NoError(t, err)
 	require.EqualValues(t, serverCertPEM, serverCertPEM2)
 
@@ -97,7 +97,7 @@ func TestExportSecret(t *testing.T) {
 	require.NoError(t, err)
 	err = ExportSecret(db, dbmodel.SecretServerKey, serverKeyPEMFile)
 	require.NoError(t, err)
-	serverKeyPEM2, err := ioutil.ReadFile(serverKeyPEMFile)
+	serverKeyPEM2, err := os.ReadFile(serverKeyPEMFile)
 	require.NoError(t, err)
 	require.EqualValues(t, serverKeyPEM, serverKeyPEM2)
 
@@ -109,7 +109,7 @@ func TestExportSecret(t *testing.T) {
 	require.NoError(t, err)
 	err = ExportSecret(db, dbmodel.SecretCACert, rootCertPEMFile)
 	require.NoError(t, err)
-	rootCertPEM2, err := ioutil.ReadFile(rootCertPEMFile)
+	rootCertPEM2, err := os.ReadFile(rootCertPEMFile)
 	require.NoError(t, err)
 	require.EqualValues(t, rootCertPEM, rootCertPEM2)
 
@@ -121,7 +121,7 @@ func TestExportSecret(t *testing.T) {
 	require.NoError(t, err)
 	err = ExportSecret(db, dbmodel.SecretCAKey, rootKeyPEMFile)
 	require.NoError(t, err)
-	rootKeyPEM2, err := ioutil.ReadFile(rootKeyPEMFile)
+	rootKeyPEM2, err := os.ReadFile(rootKeyPEMFile)
 	require.NoError(t, err)
 	rootKeyPEM, err := dbmodel.GetSecret(db, dbmodel.SecretCAKey)
 	require.NoError(t, err)
@@ -135,7 +135,7 @@ func TestExportSecret(t *testing.T) {
 	require.NoError(t, err)
 	err = ExportSecret(db, dbmodel.SecretServerToken, serverTokenFile)
 	require.NoError(t, err)
-	serverToken2, err := ioutil.ReadFile(serverTokenFile)
+	serverToken2, err := os.ReadFile(serverTokenFile)
 	require.NoError(t, err)
 	serverToken, err := dbmodel.GetSecret(db, dbmodel.SecretServerToken)
 	require.NoError(t, err)

@@ -7,7 +7,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -207,7 +207,7 @@ func doGunzip(data []byte) string {
 	if err != nil {
 		panic("problem with gunzip: NewReader")
 	}
-	unpackedResp, err := ioutil.ReadAll(zr)
+	unpackedResp, err := io.ReadAll(zr)
 	if err != nil {
 		panic("problem with gunzip: ReadAll")
 	}
@@ -650,7 +650,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 	// Read the contents of the man page
 	file, err := os.Open(AgentMan)
 	require.NoError(t, err)
-	man, err := ioutil.ReadAll(file)
+	man, err := io.ReadAll(file)
 	require.NoError(t, err)
 
 	// And check that all expected switches are mentioned there.
@@ -708,7 +708,7 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 	params := &advancedtls.GetRootCAsParams{}
 
 	// prepare temp dir for cert files
-	tmpDir, err := ioutil.TempDir("", "reg")
+	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
@@ -723,7 +723,7 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 			tmpDir, tmpDir))
 
 	// store bad cert
-	err = ioutil.WriteFile(RootCAFile, []byte("CACertPEM"), 0600)
+	err = os.WriteFile(RootCAFile, []byte("CACertPEM"), 0600)
 	require.NoError(t, err)
 	_, err = getRootCertificates(params)
 	require.EqualError(t, err, "failed to append client certs")
@@ -750,7 +750,7 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 	info := &tls.ClientHelloInfo{}
 
 	// prepare temp dir for cert files
-	tmpDir, err := ioutil.TempDir("", "reg")
+	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
@@ -766,9 +766,9 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 		fmt.Sprintf("could not load key PEM file: %s/certs/key.pem: open %s/certs/key.pem: no such file or directory", tmpDir, tmpDir))
 
 	// store bad content to files
-	err = ioutil.WriteFile(KeyPEMFile, []byte("KeyPEMFile"), 0600)
+	err = os.WriteFile(KeyPEMFile, []byte("KeyPEMFile"), 0600)
 	require.NoError(t, err)
-	err = ioutil.WriteFile(CertPEMFile, []byte("CertPEMFile"), 0600)
+	err = os.WriteFile(CertPEMFile, []byte("CertPEMFile"), 0600)
 	require.NoError(t, err)
 	_, err = getIdentityCertificatesForServer(info)
 	require.EqualError(t, err, "could not setup TLS key pair: tls: failed to find any PEM data in certificate input")

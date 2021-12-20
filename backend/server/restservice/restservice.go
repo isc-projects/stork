@@ -5,9 +5,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -134,7 +134,7 @@ func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
 
 	if s.TLSCACertificate != "" {
 		// include specified CA certificate
-		caCert, caCertErr := ioutil.ReadFile(string(s.TLSCACertificate))
+		caCert, caCertErr := os.ReadFile(string(s.TLSCACertificate))
 		if caCertErr != nil {
 			return pkgerrors.Wrap(caCertErr, "problem with setting up certificates")
 		}

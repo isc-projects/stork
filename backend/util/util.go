@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -275,7 +274,7 @@ func ReadFileWithIncludes(path string) (string, error) {
 
 // Recursive function to read a file and resolve all include statements.
 func readFileWithIncludes(path string, parentPaths map[string]bool) (string, error) {
-	raw, err := ioutil.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		log.Warnf("cannot read file: %+v", err)
 		err = errors.Wrap(err, "cannot read file")
@@ -412,7 +411,7 @@ func IsValidFilename(filename string) bool {
 	if strings.ContainsAny(filename, "*") {
 		return false
 	}
-	file, err := ioutil.TempFile("", filename+"*")
+	file, err := os.CreateTemp("", filename+"*")
 	if err != nil {
 		return false
 	}

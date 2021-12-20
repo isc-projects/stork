@@ -2,7 +2,7 @@ package agent
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"path"
 	"regexp"
 	"strconv"
@@ -42,7 +42,7 @@ func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) e
 	}
 
 	// Read the response.
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
 		return errors.WithMessagef(err, "failed to read Kea response body received from %s", caURL)

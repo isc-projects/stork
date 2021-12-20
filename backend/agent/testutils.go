@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -32,7 +31,7 @@ func RememberPaths() func() {
 // the files with the same content.
 func GenerateSelfSignedCerts() (func(), error) {
 	restoreCerts := RememberPaths()
-	tmpDir, err := ioutil.TempDir("", "reg")
+	tmpDir, err := os.MkdirTemp("", "reg")
 	if err != nil {
 		return nil, err
 	}
@@ -59,19 +58,19 @@ func GenerateSelfSignedCerts() (func(), error) {
 	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
 
 	// store proper content
-	err = ioutil.WriteFile(KeyPEMFile, testutil.GetKeyPEMContent(), 0600)
+	err = os.WriteFile(KeyPEMFile, testutil.GetKeyPEMContent(), 0600)
 	if err != nil {
 		cleanup()
 		return nil, err
 	}
 
-	err = ioutil.WriteFile(CertPEMFile, testutil.GetCertPEMContent(), 0600)
+	err = os.WriteFile(CertPEMFile, testutil.GetCertPEMContent(), 0600)
 	if err != nil {
 		cleanup()
 		return nil, err
 	}
 
-	err = ioutil.WriteFile(RootCAFile, testutil.GetCACertPEMContent(), 0600)
+	err = os.WriteFile(RootCAFile, testutil.GetCACertPEMContent(), 0600)
 	if err != nil {
 		cleanup()
 		return nil, err

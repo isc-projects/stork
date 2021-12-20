@@ -2,7 +2,7 @@ package eventcenter
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -43,7 +43,7 @@ func TestSSEBroker(t *testing.T) {
 
 	ec.ServeHTTP(w, req)
 	resp := w.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	require.Equal(t, 200, resp.StatusCode)
 	require.Equal(t, "data: {\"ID\":0,\"CreatedAt\":\"0001-01-01T00:00:00Z\",\"Text\":\"some text\",\"Level\":0,\"Relations\":null,\"Details\":\"\"}\n\n", string(body))

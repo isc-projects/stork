@@ -3,7 +3,6 @@ package agent
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"sync"
@@ -109,7 +108,7 @@ func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
 
 func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 	// prepare kea conf file
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
+	tmpFile, err := os.CreateTemp(os.TempDir(), "prefix-")
 	require.NoError(t, err)
 
 	defer os.Remove(tmpFile.Name())
@@ -131,7 +130,7 @@ func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 
 func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
 	// prepare kea conf file
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
+	tmpFile, err := os.CreateTemp(os.TempDir(), "prefix-")
 	require.NoError(t, err)
 
 	defer os.Remove(tmpFile.Name())
@@ -152,7 +151,7 @@ func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
 
 func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
 	// prepare kea conf file
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
+	tmpFile, err := os.CreateTemp(os.TempDir(), "prefix-")
 	require.NoError(t, err)
 
 	defer os.Remove(tmpFile.Name())
@@ -175,7 +174,7 @@ func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
 
 func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
 	// prepare kea conf file
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix-")
+	tmpFile, err := os.CreateTemp(os.TempDir(), "prefix-")
 	require.NoError(t, err)
 
 	defer os.Remove(tmpFile.Name())
@@ -299,7 +298,7 @@ func TestDetectBind9AppRelativePath(t *testing.T) {
 // Caller is responsible for remove the file.
 func makeKeaConfFile() (*os.File, error) {
 	// prepare kea conf file
-	file, err := ioutil.TempFile(os.TempDir(), "prefix-")
+	file, err := os.CreateTemp(os.TempDir(), "prefix-")
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "Cannot create temporary file")
 	}
@@ -320,13 +319,13 @@ func makeKeaConfFile() (*os.File, error) {
 // Caller is responsible for removing the files.
 func makeKeaConfFileWithInclude() (parentConfig *os.File, childConfig *os.File, err error) {
 	// prepare kea conf file
-	parentConfig, err = ioutil.TempFile(os.TempDir(), "prefix-*.json")
+	parentConfig, err = os.CreateTemp(os.TempDir(), "prefix-*.json")
 
 	if err != nil {
 		return nil, nil, pkgerrors.Wrap(err, "Cannot create temporary file for parent config")
 	}
 
-	childConfig, err = ioutil.TempFile(os.TempDir(), "prefix-*.json")
+	childConfig, err = os.CreateTemp(os.TempDir(), "prefix-*.json")
 	if err != nil {
 		return nil, nil, pkgerrors.Wrap(err, "Cannot create temporary file for child config")
 	}

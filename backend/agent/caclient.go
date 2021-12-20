@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -108,7 +107,7 @@ func (c *HTTPClient) Call(url string, payload *bytes.Buffer) (*http.Response, er
 func readTLSCredentials() (*x509.CertPool, []tls.Certificate, error) {
 	// Certificates
 	certPool := x509.NewCertPool()
-	ca, err := ioutil.ReadFile(RootCAFile)
+	ca, err := os.ReadFile(RootCAFile)
 	if err != nil {
 		err = errors.Wrapf(err, "could not read CA certificate: %s", RootCAFile)
 		log.Errorf("%+v", err)

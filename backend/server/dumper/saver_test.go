@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -126,7 +126,7 @@ func TestSavedTarballToFile(t *testing.T) {
 			return dump.GetName() + artifact.GetName()
 		},
 	)
-	file, _ := ioutil.TempFile("", "*")
+	file, _ := os.CreateTemp("", "*")
 	bufferWriter := bufio.NewWriter(file)
 
 	// Act

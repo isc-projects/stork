@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"strconv"
@@ -55,7 +55,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 	// Read the contents of the man page
 	file, err := os.Open("../../../doc/man/stork-tool.8.rst")
 	require.NoError(t, err)
-	man, err := ioutil.ReadAll(file)
+	man, err := io.ReadAll(file)
 	require.NoError(t, err)
 
 	// And check that all expected switches are mentioned there.

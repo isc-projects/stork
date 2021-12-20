@@ -3,7 +3,7 @@ package agent
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,7 +19,7 @@ import (
 // Check if registration works in basic situation.
 func TestRegisterBasic(t *testing.T) {
 	// prepare temp dir for cert files
-	tmpDir, err := ioutil.TempDir("", "reg")
+	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
@@ -45,7 +45,7 @@ func TestRegisterBasic(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("URL: %v\n", r.URL.Path)
 
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		fmt.Printf("BODY: %v\n", string(body))
 		var req map[string]interface{}
@@ -114,7 +114,7 @@ func TestRegisterBasic(t *testing.T) {
 // Check if registration works when server returns bad response.
 func TestRegisterBadServer(t *testing.T) {
 	// prepare temp dir for cert files
-	tmpDir, err := ioutil.TempDir("", "reg")
+	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
@@ -152,7 +152,7 @@ func TestRegisterBadServer(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("URL: %v\n", r.URL.Path)
 
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		fmt.Printf("BODY: %v\n", string(body))
 		var req map[string]interface{}
@@ -261,7 +261,7 @@ func TestRegisterBadServer(t *testing.T) {
 // Check Register response to bad arguments or how it behaves in bad environment.
 func TestRegisterNegative(t *testing.T) {
 	// prepare temp dir for cert files
-	tmpDir, err := ioutil.TempDir("", "reg")
+	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
@@ -314,7 +314,7 @@ func TestRegisterNegative(t *testing.T) {
 // and value of regenCerts flag.
 func TestGenerateCerts(t *testing.T) {
 	// prepare temp dir for cert files
-	tmpDir, err := ioutil.TempDir("", "reg")
+	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
@@ -336,7 +336,7 @@ func TestGenerateCerts(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, csrPEM1)
 	require.NotEmpty(t, agentToken1)
-	privKeyPEM1, err := ioutil.ReadFile(KeyPEMFile)
+	privKeyPEM1, err := os.ReadFile(KeyPEMFile)
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM1)
 
@@ -349,7 +349,7 @@ func TestGenerateCerts(t *testing.T) {
 	require.NotEqualValues(t, csrPEM1, csrPEM2)
 	require.EqualValues(t, agentToken1, agentToken2)
 	// but key in the file is the same
-	privKeyPEM2, err := ioutil.ReadFile(KeyPEMFile)
+	privKeyPEM2, err := os.ReadFile(KeyPEMFile)
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM2)
 	require.EqualValues(t, privKeyPEM1, privKeyPEM2)
@@ -364,7 +364,7 @@ func TestGenerateCerts(t *testing.T) {
 	require.NotEqualValues(t, csrPEM2, csrPEM3)
 	require.NotEqualValues(t, agentToken1, agentToken3)
 	// but this time key in the file is different (regenerated)
-	privKeyPEM3, err := ioutil.ReadFile(KeyPEMFile)
+	privKeyPEM3, err := os.ReadFile(KeyPEMFile)
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM3)
 	require.NotEqualValues(t, privKeyPEM2, privKeyPEM3)
@@ -374,7 +374,7 @@ func TestGenerateCerts(t *testing.T) {
 // matches a value received by server.
 func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 	// prepare temp dir for cert files
-	tmpDir, err := ioutil.TempDir("", "reg")
+	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
@@ -403,7 +403,7 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 	// internal http server for testing
 	require.NoError(t, err)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		var req map[string]interface{}
 		err = json.Unmarshal(body, &req)
@@ -460,7 +460,7 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 	require.NotEmpty(t, lastPingAgentToken)
 	require.Equal(t, lastPingAgentToken, lastRegisterAgentToken)
 
-	agentTokenFromFileRaw, err := ioutil.ReadFile(AgentTokenFile)
+	agentTokenFromFileRaw, err := os.ReadFile(AgentTokenFile)
 	agentTokenFromFile := storkutil.BytesToHex(agentTokenFromFileRaw)
 	require.NoError(t, err)
 	require.NotEmpty(t, agentTokenFromFile)
@@ -471,7 +471,7 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 // for an already registered agent until the agent doesn't force regenerating certs.
 func TestRepeatRegister(t *testing.T) {
 	// prepare temp dir for cert files
-	tmpDir, err := ioutil.TempDir("", "reg")
+	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
@@ -501,7 +501,7 @@ func TestRepeatRegister(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("URL: %v\n", r.URL.Path)
 
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		fmt.Printf("BODY: %v\n", string(body))
 		var req map[string]interface{}
@@ -570,13 +570,13 @@ func TestRepeatRegister(t *testing.T) {
 	res := Register(serverURL, serverToken, agentAddr, agentPortStr, regenCerts, retry)
 	require.True(t, res)
 
-	privKeyPEM1, err := ioutil.ReadFile(KeyPEMFile)
+	privKeyPEM1, err := os.ReadFile(KeyPEMFile)
 	require.NoError(t, err)
-	agentToken1, err := ioutil.ReadFile(AgentTokenFile)
+	agentToken1, err := os.ReadFile(AgentTokenFile)
 	require.NoError(t, err)
-	certPEM1, err := ioutil.ReadFile(CertPEMFile)
+	certPEM1, err := os.ReadFile(CertPEMFile)
 	require.NoError(t, err)
-	rootCA1, err := ioutil.ReadFile(RootCAFile)
+	rootCA1, err := os.ReadFile(RootCAFile)
 	require.NoError(t, err)
 
 	// re-register with the same agent token
@@ -584,13 +584,13 @@ func TestRepeatRegister(t *testing.T) {
 	res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenCerts, retry)
 	require.True(t, res)
 
-	privKeyPEM2, err := ioutil.ReadFile(KeyPEMFile)
+	privKeyPEM2, err := os.ReadFile(KeyPEMFile)
 	require.NoError(t, err)
-	agentToken2, err := ioutil.ReadFile(AgentTokenFile)
+	agentToken2, err := os.ReadFile(AgentTokenFile)
 	require.NoError(t, err)
-	certPEM2, err := ioutil.ReadFile(CertPEMFile)
+	certPEM2, err := os.ReadFile(CertPEMFile)
 	require.NoError(t, err)
-	rootCA2, err := ioutil.ReadFile(RootCAFile)
+	rootCA2, err := os.ReadFile(RootCAFile)
 	require.NoError(t, err)
 
 	require.Equal(t, privKeyPEM1, privKeyPEM2)
@@ -604,13 +604,13 @@ func TestRepeatRegister(t *testing.T) {
 	res = Register(serverURL, serverToken, agentAddr, agentPortStr, regenCerts, retry)
 	require.True(t, res)
 
-	privKeyPEM3, err := ioutil.ReadFile(KeyPEMFile)
+	privKeyPEM3, err := os.ReadFile(KeyPEMFile)
 	require.NoError(t, err)
-	agentToken3, err := ioutil.ReadFile(AgentTokenFile)
+	agentToken3, err := os.ReadFile(AgentTokenFile)
 	require.NoError(t, err)
-	certPEM3, err := ioutil.ReadFile(CertPEMFile)
+	certPEM3, err := os.ReadFile(CertPEMFile)
 	require.NoError(t, err)
-	rootCA3, err := ioutil.ReadFile(RootCAFile)
+	rootCA3, err := os.ReadFile(RootCAFile)
 	require.NoError(t, err)
 
 	require.NotEqual(t, privKeyPEM1, privKeyPEM3)

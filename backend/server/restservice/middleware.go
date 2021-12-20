@@ -2,7 +2,6 @@ package restservice
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -155,7 +154,7 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u http://{{.ServerAddress}}'
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/stork-install-agent.sh") {
 			pkgsDir := path.Join(staticFilesDir, "assets/pkgs")
-			files, err := ioutil.ReadDir(pkgsDir)
+			files, err := os.ReadDir(pkgsDir)
 			if err != nil {
 				msg := fmt.Sprintf("problem with reading '%s' directory with packages: %s\n", pkgsDir, err)
 				log.Errorf(msg)

@@ -12,7 +12,6 @@ package agent
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 
 	"github.com/pkg/errors"
 	storkutil "isc.org/stork/util"
@@ -108,7 +107,7 @@ func (cs *CredentialsStore) RemoveBasicAuth(address string, port int64) {
 // The file may contain IP addresses in the different forms,
 // they will be converted to canonical forms.
 func (cs *CredentialsStore) Read(reader io.Reader) error {
-	rawContent, err := ioutil.ReadAll(reader)
+	rawContent, err := io.ReadAll(reader)
 	if err != nil {
 		return errors.Wrap(err, "cannot read the credentials")
 	}

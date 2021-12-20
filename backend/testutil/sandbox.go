@@ -1,7 +1,6 @@
 package testutil
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -22,7 +21,7 @@ type Sandbox struct {
 // Create a new sandbox. The sandbox is located in a temporary
 // directory.
 func NewSandbox() *Sandbox {
-	dir, err := ioutil.TempDir("", "stork_ut_*")
+	dir, err := os.MkdirTemp("", "stork_ut_*")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -85,7 +84,7 @@ func (sb *Sandbox) Write(name string, content string) (string, error) {
 		return "", err
 	}
 
-	err = ioutil.WriteFile(fpath, []byte(content), 0o600)
+	err = os.WriteFile(fpath, []byte(content), 0o600)
 	if err != nil {
 		log.Fatal(err)
 		return "", err

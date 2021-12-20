@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -92,7 +92,7 @@ func writeAgentFile(path string, content []byte) error {
 		}
 	}
 
-	err = ioutil.WriteFile(path, content, 0600)
+	err = os.WriteFile(path, content, 0600)
 	if err != nil {
 		return err
 	}
@@ -151,12 +151,12 @@ func generateCerts(agentAddr string, regenCerts bool) ([]byte, string, error) {
 		log.Printf("agent key, agent token and CSR (re)generated")
 	} else {
 		// generate CSR using existing private key and agent token
-		privKeyPEM, err = ioutil.ReadFile(KeyPEMFile)
+		privKeyPEM, err = os.ReadFile(KeyPEMFile)
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "could not load key PEM file: %s", KeyPEMFile)
 		}
 
-		agentToken, err = ioutil.ReadFile(AgentTokenFile)
+		agentToken, err = os.ReadFile(AgentTokenFile)
 		if err != nil {
 			msg := "could not load agent token from file: %s, try to force the certs regeneration"
 			return nil, "", errors.Wrapf(err, msg, AgentTokenFile)
@@ -223,7 +223,7 @@ func registerAgentInServer(client *http.Client, baseSrvURL *url.URL, reqPayload 
 			return 0, "", "", errors.Wrapf(err, "problem with registering machine")
 		}
 	}
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		return 0, "", "", errors.Wrapf(err, "problem with reading server's response while registering the machine")
@@ -349,7 +349,7 @@ func pingAgentViaServer(client *http.Client, baseSrvURL *url.URL, machineID int6
 	if err != nil {
 		return errors.Wrapf(err, "problem with pinging machine")
 	}
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		return errors.Wrapf(err, "problem with reading server's response while pinging machine")

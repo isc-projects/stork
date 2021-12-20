@@ -1,7 +1,7 @@
 package restservice
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -99,7 +99,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		requestReceived = true
 	})
 
-	tmpDir, err := ioutil.TempDir("", "mdlw")
+	tmpDir, err := os.MkdirTemp("", "mdlw")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	handler := agentInstallerMiddleware(nextHandler, tmpDir)
@@ -160,7 +160,7 @@ func TestMetricsMiddlewarePlaceholder(t *testing.T) {
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
-	content, err := ioutil.ReadAll(resp.Body)
+	content, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
 	// Assert

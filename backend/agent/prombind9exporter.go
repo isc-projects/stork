@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math"
 	"net"
 	"net/http"
@@ -1190,7 +1190,7 @@ func (pbe *PromBind9Exporter) collectStats() (bind9Pid int32, lastErr error) {
 			log.Errorf("problem with getting stats from BIND 9: %+v", err)
 			continue
 		}
-		body, err := ioutil.ReadAll(httpRsp.Body)
+		body, err := io.ReadAll(httpRsp.Body)
 		httpRsp.Body.Close()
 		if err != nil {
 			lastErr = err

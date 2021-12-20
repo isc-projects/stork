@@ -1,7 +1,6 @@
 package testutil
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,7 +56,7 @@ func TestSandboxWrite(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, fpath, "abc")
 
-	content, err := ioutil.ReadFile(fpath)
+	content, err := os.ReadFile(fpath)
 	require.NoError(t, err)
 	require.EqualValues(t, "def", content)
 }

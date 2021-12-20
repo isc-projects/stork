@@ -3,7 +3,6 @@ package storkutil
 import (
 	"archive/tar"
 	"bytes"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -96,7 +95,7 @@ func TestTarballAddFile(t *testing.T) {
 	// Arrange
 	var buffer bytes.Buffer
 	writer := NewTarballWriter(&buffer)
-	file, _ := ioutil.TempFile("", "*")
+	file, _ := os.CreateTemp("", "*")
 	defer os.Remove(file.Name())
 	defer file.Close()
 	file.WriteString("Hello World!")

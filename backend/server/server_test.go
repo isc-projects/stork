@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -57,7 +57,7 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 	// Read the contents of the man page
 	file, err := os.Open(AgentMan)
 	require.NoError(t, err)
-	man, err := ioutil.ReadAll(file)
+	man, err := io.ReadAll(file)
 	require.NoError(t, err)
 
 	// And check that all expected switches are mentioned there.

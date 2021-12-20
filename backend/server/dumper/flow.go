@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 	"time"
 
@@ -64,7 +63,7 @@ func saveDumpsToAutoReleaseContainer(saver saver, dumps []dump.Dump) (io.ReadClo
 	if err != nil {
 		return nil, err
 	}
-	return ioutil.NopCloser(bytes.NewReader(buffer.Bytes())), nil
+	return io.NopCloser(bytes.NewReader(buffer.Bytes())), nil
 }
 
 // Naming convention rules:

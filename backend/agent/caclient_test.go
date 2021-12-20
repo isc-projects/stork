@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -85,7 +84,7 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 	defer restorePaths()
 
 	// Create temp dir
-	tmpDir, err := ioutil.TempDir("", "reg")
+	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
@@ -121,7 +120,7 @@ func TestAddAuthorizationHeaderWhenBasicAuthCredentialsExist(t *testing.T) {
 			}
 		]
 	}`, serverIP, serverPort)
-	err = ioutil.WriteFile(CredentialsFile, []byte(content), 0600)
+	err = os.WriteFile(CredentialsFile, []byte(content), 0600)
 	require.NoError(t, err)
 
 	// Create HTTP Client

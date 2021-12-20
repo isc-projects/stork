@@ -7,8 +7,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -57,7 +58,7 @@ func NewStorkAgent(settings *cli.Context, appMonitor AppMonitor) *StorkAgent {
 // Read the latest root CA cert from file for Stork Server's cert verification.
 func getRootCertificates(params *advancedtls.GetRootCAsParams) (*advancedtls.GetRootCAsResults, error) {
 	certPool := x509.NewCertPool()
-	ca, err := ioutil.ReadFile(RootCAFile)
+	ca, err := os.ReadFile(RootCAFile)
 	if err != nil {
 		err = errors.Wrapf(err, "could not read CA certificate: %s", RootCAFile)
 		log.Errorf("%+v", err)
@@ -77,13 +78,13 @@ func getRootCertificates(params *advancedtls.GetRootCAsParams) (*advancedtls.Get
 
 // Read the latest Stork Agent's cert from file for presenting its identity to the Stork server.
 func getIdentityCertificatesForServer(info *tls.ClientHelloInfo) ([]*tls.Certificate, error) {
-	keyPEM, err := ioutil.ReadFile(KeyPEMFile)
+	keyPEM, err := os.ReadFile(KeyPEMFile)
 	if err != nil {
 		err = errors.Wrapf(err, "could not load key PEM file: %s", KeyPEMFile)
 		log.Errorf("%+v", err)
 		return nil, err
 	}
-	certPEM, err := ioutil.ReadFile(CertPEMFile)
+	certPEM, err := os.ReadFile(CertPEMFile)
 	if err != nil {
 		err = errors.Wrapf(err, "could not load cert PEM file: %s", CertPEMFile)
 		log.Errorf("%+v", err)
@@ -274,7 +275,7 @@ func (sa *StorkAgent) ForwardToNamedStats(ctx context.Context, in *agentapi.Forw
 	}
 
 	// Read the response body.
-	body, err := ioutil.ReadAll(namedRsp.Body)
+	body, err := io.ReadAll(namedRsp.Body)
 	namedRsp.Body.Close()
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -331,7 +332,7 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 		}
 
 		// Read the response body.
-		body, err := ioutil.ReadAll(keaRsp.Body)
+		body, err := io.ReadAll(keaRsp.Body)
 		keaRsp.Body.Close()
 		if err != nil {
 			log.WithFields(log.Fields{

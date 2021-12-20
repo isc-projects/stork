@@ -3,7 +3,6 @@ package dbops
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -150,7 +149,7 @@ func setCertificateAuthority(tlsConfig *tls.Config, sslRootCert string) error {
 	if len(sslRootCert) > 0 {
 		tlsConfig.RootCAs = x509.NewCertPool()
 
-		rootCert, err := ioutil.ReadFile(sslRootCert)
+		rootCert, err := os.ReadFile(sslRootCert)
 		if err != nil {
 			return pkgerrors.Wrapf(err, "failed to read root CA certificate file %s", sslRootCert)
 		}

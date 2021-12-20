@@ -4,7 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net"
 	"os"
@@ -225,7 +225,7 @@ func ExportSecret(db *pg.DB, object string, filename string) error {
 		return errors.Wrapf(err, "problem with getting '%s' from database", objDisplayName)
 	}
 	if filename != "" {
-		err := ioutil.WriteFile(filename, content, 0600)
+		err := os.WriteFile(filename, content, 0600)
 		if err != nil {
 			return err
 		}
@@ -258,14 +258,14 @@ func ImportSecret(db *pg.DB, object string, filename string) error {
 	var content []byte
 	var err error
 	if filename != "" {
-		content, err = ioutil.ReadFile(filename)
+		content, err = os.ReadFile(filename)
 		if err != nil {
 			return err
 		}
 		log.Printf("%s loaded from %s file, length %d", objDisplayName, filename, len(content))
 	} else {
 		log.Printf("reading %s from stdin", objDisplayName)
-		content, err = ioutil.ReadAll(os.Stdin)
+		content, err = io.ReadAll(os.Stdin)
 		if err != nil {
 			return err
 		}

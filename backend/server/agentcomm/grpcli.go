@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"reflect"
 	"strconv"
@@ -492,7 +492,7 @@ func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, dbA
 			caErrorStr += "\n" + fmt.Sprintf("%+v", err)
 			continue
 		}
-		unpackedResp, err := ioutil.ReadAll(zr)
+		unpackedResp, err := io.ReadAll(zr)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to parse Kea response from %s, response was: %s", caURL, rsp)
 			result.CmdsErrors = append(result.CmdsErrors, err)

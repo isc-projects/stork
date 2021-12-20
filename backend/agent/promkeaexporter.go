@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"regexp"
@@ -675,7 +675,7 @@ func (pke *PromKeaExporter) sendCommandToKeaCA(ctrl *AccessPoint, request string
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "problem with getting stats from kea")
 	}
-	body, err := ioutil.ReadAll(httpRsp.Body)
+	body, err := io.ReadAll(httpRsp.Body)
 	httpRsp.Body.Close()
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "problem with reading stats response from kea")
