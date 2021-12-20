@@ -36,7 +36,7 @@ describe('utils', () => {
         // Arrange
         const int = 12345678
         const float = 1234567890
-        const bigInt = BigInt("1234567890000000000000000000000000")
+        const bigInt = BigInt('1234567890000000000000000000000000')
 
         // Act
         const strInt = humanCount(int)
@@ -44,8 +44,8 @@ describe('utils', () => {
         const strBigInt = humanCount(bigInt)
 
         // Assert
-        expect(strInt).toBe("12.3 M")
-        expect(strFloat).toBe("1.2 G")
-        expect(strBigInt).toBe("1234567890 Y")
+        expect(strInt).toBe('12.3 M')
+        expect(strFloat).toBe('1.2 G')
+        expect(strBigInt).toBe('1234567890 Y')
     })
 })
