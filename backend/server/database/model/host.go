@@ -154,17 +154,20 @@ func UpdateHost(dbIface interface{}, host *Host) error {
 	}
 	defer rollback()
 
-	// Collect updated set of identifiers.
+	// Collect updated identifiers.
 	hostIDTypes := []string{}
 	for _, hostID := range host.HostIdentifiers {
 		hostIDTypes = append(hostIDTypes, hostID.Type)
 	}
-	// Delete all existing identifiers for the host which are not present in
-	// the new set of identifiers.
-	_, err = tx.Model((*HostIdentifier)(nil)).
-		Where("host_identifier.host_id = ?", host.ID).
-		Where("host_identifier.type NOT IN (?)", pg.In(hostIDTypes)).
-		Delete()
+	q := tx.Model((*HostIdentifier)(nil)).
+		Where("host_identifier.host_id = ?", host.ID)
+	// If the new reservation has any host identifiers exclude them from
+	// the deleted ones. Otherwise, delete all reservations belonging to
+	// the old host version.
+	if len(hostIDTypes) > 0 {
+		q = q.Where("host_identifier.type NOT IN (?)", pg.In(hostIDTypes))
+	}
+	_, err = q.Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting host identifiers for host %d", host.ID)
 		return err
@@ -175,18 +178,21 @@ func UpdateHost(dbIface interface{}, host *Host) error {
 		return pkgerrors.WithMessagef(err, "problem with updating host with id %d", host.ID)
 	}
 
-	// Delete all existing reservations for the host which are not present in
-	// the new set of reservations.
+	// Collect updated identifiers.
 	ipAddresses := []string{}
 	for _, resrv := range host.IPReservations {
 		ipAddresses = append(ipAddresses, resrv.Address)
 	}
-	// Delete all existing reservations for the host which are not present in
-	// the new set of reservations.
-	_, err = tx.Model((*IPReservation)(nil)).
-		Where("ip_reservation.host_id = ?", host.ID).
-		Where("ip_reservation.address NOT IN (?)", pg.In(ipAddresses)).
-		Delete()
+	q = tx.Model((*IPReservation)(nil)).
+		Where("ip_reservation.host_id = ?", host.ID)
+	// If the new reservation has some reserved IP addresses exclude them
+	// from the deleted ones. Otherwise, delete all IP addresses belonging
+	// to the old host version.
+	if len(ipAddresses) > 0 {
+		q = q.Where("ip_reservation.address NOT IN (?)", pg.In(ipAddresses))
+	}
+	_, err = q.Delete()
+
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting IP reservations for host %d", host.ID)
 		return err

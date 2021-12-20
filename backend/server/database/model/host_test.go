@@ -286,6 +286,37 @@ func TestUpdateHostShrink(t *testing.T) {
 	require.Equal(t, []byte{1, 2, 3, 4, 5, 6}, returned.HostIdentifiers[0].Value)
 
 	require.Equal(t, "2001:db8:1::4/128", returned.IPReservations[0].Address)
+
+	// Remove the IP reservation and add the reserved hostname instead.
+	host.IPReservations = []IPReservation{}
+	host.Hostname = "host.example.org."
+	err = UpdateHost(db, host)
+	require.NoError(t, err)
+
+	// Get the updated host.
+	returned, err = GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.Empty(t, returned.IPReservations)
+	require.Len(t, returned.HostIdentifiers, 1)
+	require.Equal(t, "host.example.org.", returned.Hostname)
+
+	// Remove the host identifiers.
+	host.HostIdentifiers = []HostIdentifier{}
+	err = UpdateHost(db, host)
+	require.NoError(t, err)
+
+	// Get the updated host.
+	returned, err = GetHost(db, host.ID)
+	require.NoError(t, err)
+	require.NotNil(t, returned)
+	require.Empty(t, returned.IPReservations)
+	require.Empty(t, returned.HostIdentifiers)
+	require.Equal(t, "host.example.org.", returned.Hostname)
+
+	require.Empty(t, returned.IPReservations)
+	require.Empty(t, host.HostIdentifiers)
+	require.Equal(t, "host.example.org.", returned.Hostname)
 }
 
 // Test that all hosts or all hosts having IP reservations of specified family
