@@ -327,7 +327,7 @@ func IsValidFilename(filename string) bool {
 // postfix making the plural form.
 func FormatNoun(count int64, noun, postfix string) string {
 	formatted := fmt.Sprintf("%d %s", count, noun)
-	if count != 1 {
+	if count != 1 && count != -1 {
 		formatted += postfix
 	}
 	return formatted
