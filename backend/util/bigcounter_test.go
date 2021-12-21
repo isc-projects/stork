@@ -210,6 +210,27 @@ func TestBigCounterToInt64(t *testing.T) {
 	require.EqualValues(t, math.MaxInt64, value3)
 }
 
+// Test conversion to uint64.
+func TestBigCounterToUint64(t *testing.T) {
+	// Arrange
+	counter0 := NewBigCounter(0)
+	counter1 := NewBigCounter(-5)
+	counter2 := NewBigCounter(0).AddUInt64(math.MaxUint64)
+	counter3 := NewBigCounter(math.MaxInt64).AddUInt64(1)
+
+	// Act
+	value0 := counter0.ToUint64()
+	value1 := counter1.ToUint64()
+	value2 := counter2.ToUint64()
+	value3 := counter3.ToUint64()
+
+	// Assert
+	require.EqualValues(t, 0, value0)
+	require.EqualValues(t, 0, value1)
+	require.EqualValues(t, uint64(math.MaxUint64), value2)
+	require.EqualValues(t, uint64(math.MaxInt64)+1, value3)
+}
+
 // Test the big counter can be converted to big int.
 func TestBigCounterToBigInt(t *testing.T) {
 	// Arrange

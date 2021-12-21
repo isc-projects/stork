@@ -139,10 +139,16 @@
                             <td>Addresses</td>
                             <td>
                                 {{
-                                    overview.dhcp4Stats.assignedAddresses ? overview.dhcp4Stats.assignedAddresses : '0'
+                                    overview.dhcp4Stats.assignedAddresses
+                                        ? humanCount(overview.dhcp4Stats.assignedAddresses)
+                                        : '0'
                                 }}
                                 /
-                                {{ overview.dhcp4Stats.totalAddresses ? overview.dhcp4Stats.totalAddresses : '0' }}
+                                {{
+                                    overview.dhcp4Stats.totalAddresses
+                                        ? humanCount(overview.dhcp4Stats.totalAddresses)
+                                        : '0'
+                                }}
                                 ({{
                                     getPercent(
                                         overview.dhcp4Stats.assignedAddresses,
@@ -155,7 +161,9 @@
                             <td>Declined</td>
                             <td>
                                 {{
-                                    overview.dhcp4Stats.declinedAddresses ? overview.dhcp4Stats.declinedAddresses : '0'
+                                    overview.dhcp4Stats.declinedAddresses
+                                        ? humanCount(overview.dhcp4Stats.declinedAddresses)
+                                        : '0'
                                 }}
                             </td>
                         </tr>
@@ -238,7 +246,9 @@
                         <tr>
                             <td>Addresses</td>
                             <td>
-                                {{ overview.dhcp6Stats.assignedNAs ? overview.dhcp6Stats.assignedNAs : '0' }}
+                                {{
+                                    overview.dhcp6Stats.assignedNAs ? humanCount(overview.dhcp6Stats.assignedNAs) : '0'
+                                }}
                                 /
                                 {{ overview.dhcp6Stats.totalNAs ? humanCount(overview.dhcp6Stats.totalNAs) : '0' }}
                                 ({{ getPercent(overview.dhcp6Stats.assignedNAs, overview.dhcp6Stats.totalNAs) }}% used)
@@ -247,7 +257,9 @@
                         <tr>
                             <td>Prefixes</td>
                             <td>
-                                {{ overview.dhcp6Stats.assignedPDs ? overview.dhcp6Stats.assignedPDs : '0' }}
+                                {{
+                                    overview.dhcp6Stats.assignedPDs ? humanCount(overview.dhcp6Stats.assignedPDs) : '0'
+                                }}
                                 /
                                 {{ overview.dhcp6Stats.totalPDs ? humanCount(overview.dhcp6Stats.totalPDs) : '0' }}
                                 ({{ getPercent(overview.dhcp6Stats.assignedPDs, overview.dhcp6Stats.totalPDs) }}% used)
@@ -257,7 +269,9 @@
                             <td>Declined</td>
                             <td>
                                 {{
-                                    overview.dhcp6Stats.declinedAddresses ? overview.dhcp6Stats.declinedAddresses : '0'
+                                    overview.dhcp6Stats.declinedAddresses
+                                        ? humanCount(overview.dhcp6Stats.declinedAddresses)
+                                        : '0'
                                 }}
                             </td>
                         </tr>

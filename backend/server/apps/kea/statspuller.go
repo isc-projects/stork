@@ -114,14 +114,15 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 	// global stats to collect
 	statsMap := map[string]int64{
-		"total-addresses":    calculator.global.totalAddresses.ToInt64(),
-		"assigned-addresses": calculator.global.totalAssignedAddresses.ToInt64(),
-		"declined-addresses": calculator.global.totalDeclinedAddresses.ToInt64(),
-		"total-nas":          calculator.global.totalNAs.ToInt64(),
-		"assigned-nas":       calculator.global.totalAssignedNAs.ToInt64(),
-		"declined-nas":       calculator.global.totalDeclinedNAs.ToInt64(),
-		"assigned-pds":       calculator.global.totalAssignedPDs.ToInt64(),
-		"total-pds":          calculator.global.totalPDs.ToInt64(),
+		// Integer overflow
+		"total-addresses":    int64(calculator.global.totalAddresses.ToUint64()),
+		"assigned-addresses": int64(calculator.global.totalAssignedAddresses.ToUint64()),
+		"declined-addresses": int64(calculator.global.totalDeclinedAddresses.ToUint64()),
+		"total-nas":          int64(calculator.global.totalNAs.ToUint64()),
+		"assigned-nas":       int64(calculator.global.totalAssignedNAs.ToUint64()),
+		"declined-nas":       int64(calculator.global.totalDeclinedNAs.ToUint64()),
+		"assigned-pds":       int64(calculator.global.totalAssignedPDs.ToUint64()),
+		"total-pds":          int64(calculator.global.totalPDs.ToUint64()),
 	}
 
 	// update global statistics in db

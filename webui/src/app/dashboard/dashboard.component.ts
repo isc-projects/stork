@@ -17,6 +17,8 @@ import {
 import { SettingService } from '../setting.service'
 import { ServerDataService } from '../server-data.service'
 import { Subscription } from 'rxjs'
+import { map } from 'rxjs/operators'
+import { parseSubnetsStatisticValues } from '../subnets'
 
 /**
  * Component presenting dashboard with DHCP and DNS overview.
@@ -102,6 +104,44 @@ export class DashboardComponent implements OnInit, OnDestroy {
     refreshDhcpOverview() {
         this.dhcpApi
             .getDhcpOverview()
+            .pipe(
+                map((v) => {
+                    // Convert strings to bigints in statistics
+                    // DHCPv4 global statistics
+                    if (v.dhcp4Stats) {
+                        for (const stat of Object.keys(v.dhcp4Stats)) {
+                            try {
+                                v.dhcp4Stats[stat] = BigInt(v.dhcp4Stats[stat])
+                            } catch {
+                                continue
+                            }
+                        }
+                    }
+
+                    // DHCPv6 global statistics
+                    if (v.dhcp6Stats) {
+                        for (const stat of Object.keys(v.dhcp6Stats)) {
+                            try {
+                                v.dhcp6Stats[stat] = BigInt(v.dhcp6Stats[stat])
+                            } catch {
+                                continue
+                            }
+                        }
+                    }
+
+                    // IPv4 subnets statistics
+                    if (v.subnets4) {
+                        parseSubnetsStatisticValues(v.subnets4)
+                    }
+
+                    // IPv6 subnets statistics
+                    if (v.subnets6) {
+                        parseSubnetsStatisticValues(v.subnets6)
+                    }
+
+                    return v
+                })
+            )
             .toPromise()
             .then((data) => {
                 this.overview = data
@@ -123,13 +163,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
     /**
      * Estimate percent based on numerator and denominator.
      */
-    getPercent(numerator, denominator) {
-        if (denominator === undefined) {
+    getPercent(numerator: number | bigint | null, denominator: number | bigint | null) {
+        // Denominator or numerator is undefined, null or zero.
+        if (!denominator || !numerator) {
             return 0
         }
-        if (numerator === undefined) {
-            numerator = 0
+
+        if (typeof numerator === 'bigint' || typeof denominator === 'bigint') {
+            return Number((BigInt(100) * BigInt(numerator)) / BigInt(denominator))
         }
+
         const percent = (100 * numerator) / denominator
         return Math.floor(percent)
     }

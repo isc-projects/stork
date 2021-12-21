@@ -1343,16 +1343,16 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	}
 
 	dhcp4Stats := &models.Dhcp4Stats{
-		AssignedAddresses: stats["assigned-addresses"],
-		TotalAddresses:    stats["total-addresses"],
-		DeclinedAddresses: stats["declined-addresses"],
+		AssignedAddresses: fmt.Sprint(uint64(stats["assigned-addresses"])),
+		TotalAddresses:    fmt.Sprint(uint64(stats["total-addresses"])),
+		DeclinedAddresses: fmt.Sprint(uint64(stats["declined-addresses"])),
 	}
 	dhcp6Stats := &models.Dhcp6Stats{
-		AssignedNAs: stats["assigned-nas"],
-		TotalNAs:    stats["total-nas"],
-		AssignedPDs: stats["assigned-pds"],
-		TotalPDs:    stats["total-pds"],
-		DeclinedNAs: stats["declined-nas"],
+		AssignedNAs: fmt.Sprint(uint64(stats["assigned-nas"])),
+		TotalNAs:    fmt.Sprint(uint64(stats["total-nas"])),
+		AssignedPDs: fmt.Sprint(uint64(stats["assigned-pds"])),
+		TotalPDs:    fmt.Sprint(uint64(stats["total-pds"])),
+		DeclinedNAs: fmt.Sprint(uint64(stats["declined-nas"])),
 	}
 
 	// get kea apps and daemons statuses

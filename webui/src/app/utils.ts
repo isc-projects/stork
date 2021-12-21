@@ -78,6 +78,10 @@ export function durationToString(duration, short = false) {
  * Present count in human readable way ie. big numbers get unit, e.g. 102 M instead of 102342543.
  */
 export function humanCount(count: bigint | number) {
+    if (!count) {
+        return '0.0'
+    }
+
     const units = ['k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
     let u = -1
     do {

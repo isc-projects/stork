@@ -123,6 +123,24 @@ func (n *BigCounter) ToInt64() int64 {
 	return n.base
 }
 
+// Returns the counting value as uint64. If the value is above the range
+// then returns the maximum value of uint64. If the value is below the range
+// then returns 0.
+func (n *BigCounter) ToUint64() uint64 {
+	if n.isExtended() {
+		if n.extended.IsUint64() {
+			return n.extended.Uint64()
+		}
+		return math.MaxUint64
+	}
+
+	if n.base >= 0 {
+		return uint64(n.base)
+	}
+
+	return 0
+}
+
 // Returns the counting value as big int.
 func (n *BigCounter) ToBigInt() *big.Int {
 	if n.isExtended() {
