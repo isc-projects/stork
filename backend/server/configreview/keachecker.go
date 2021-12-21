@@ -256,7 +256,10 @@ func subnetDispensable(ctx *ReviewContext) (*Report, error) {
 // Fetch hosts for the tested daemon and index them by local subnet ID.
 func getDaemonHostsAndIndexBySubnet(ctx *ReviewContext) (hostCmds bool, dbHosts map[int64][]dbmodel.Host, err error) {
 	dbHosts = make(map[int64][]dbmodel.Host)
-	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); ctx.db != nil && present {
+	if ctx.db == nil {
+		return false, dbHosts, nil
+	}
+	if _, _, present := ctx.subjectDaemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); present {
 		hosts, _, err := dbmodel.GetHostsByDaemonID(ctx.db, ctx.subjectDaemon.ID, "api")
 		if err != nil {
 			return present, dbHosts, err
