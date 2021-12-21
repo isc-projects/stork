@@ -199,7 +199,7 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 				switch name {
 				case "total-addresses", "assigned-addresses", "declined-addresses",
 					"total-nas", "assigned-nas", "declined-nas",
-					"total-pds", "assigned-pds":
+					"total-pds", "assigned-pds", "cumulative-assigned-addresses":
 					stats[name] = uint64(val)
 				default:
 					stats[name] = val

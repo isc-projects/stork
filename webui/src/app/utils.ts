@@ -84,14 +84,14 @@ export function humanCount(count: bigint | number) {
 
     const units = ['k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
     let u = -1
-    do {
+    while (count >= 1000 && u < units.length - 1) {
         if (typeof count === 'number') {
             count /= 1000
         } else {
             count /= BigInt(1000)
         }
         ++u
-    } while (count >= 1000 && u < units.length - 1)
+    }
 
     let countStr = ''
     if (typeof count === 'number') {
@@ -99,7 +99,7 @@ export function humanCount(count: bigint | number) {
     } else {
         countStr = count.toString()
     }
-    return countStr + ' ' + units[u]
+    return countStr + (u >= 0 ? ' ' + units[u] : '')
 }
 
 /**
