@@ -36,6 +36,8 @@ type StorkAgent struct {
 	server         *grpc.Server
 	logTailer      *logTailer
 	keaInterceptor *keaInterceptor
+
+	agentapi.UnimplementedAgentServer
 }
 
 // API exposed to Stork Server.

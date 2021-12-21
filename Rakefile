@@ -7,8 +7,11 @@ OPENAPI_GENERATOR_VER = '5.2.0'
 GOSWAGGER_VER = 'v0.23.0'
 GOLANGCILINT_VER = '1.33.0'
 GO_VER = '1.17.5'
-PROTOC_VER = '3.11.2'
-PROTOC_GEN_GO_VER = 'v1.3.3'
+PROTOC_VER = '3.19.1'
+PROTOC_GEN_GO_VER = 'v1.26.0'
+PROTOC_GEN_GO_GRPC_VER = 'v1.1.0'
+DLV_VER = 'v1.7.3'
+GDLV_VER = 'v1.7.0'
 
 # Check host OS
 UNAME=`uname -s`
@@ -51,12 +54,15 @@ GOSWAGGER_URL = "https://github.com/go-swagger/go-swagger/releases/download/#{GO
 GOLANGCILINT_URL = "https://github.com/golangci/golangci-lint/releases/download/v#{GOLANGCILINT_VER}/golangci-lint-#{GOLANGCILINT_VER}-#{GOLANGCILINT_SUFFIX}.tar.gz"
 GO_URL = "https://dl.google.com/go/go#{GO_VER}.#{GO_SUFFIX}.tar.gz"
 PROTOC_URL = "https://github.com/protocolbuffers/protobuf/releases/download/v#{PROTOC_VER}/protoc-#{PROTOC_VER}-#{PROTOC_ZIP_SUFFIX}.zip"
-PROTOC_GEN_GO_URL = 'github.com/golang/protobuf/protoc-gen-go'
+PROTOC_GEN_GO_URL = 'google.golang.org/protobuf/cmd/protoc-gen-go'
+PROTOC_GEN_GO_GRPC_URL = 'google.golang.org/grpc/cmd/protoc-gen-go-grpc'
 OPENAPI_GENERATOR_URL = "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/#{OPENAPI_GENERATOR_VER}/openapi-generator-cli-#{OPENAPI_GENERATOR_VER}.jar"
 NODE_URL = "https://nodejs.org/dist/v#{NODE_VER}/node-v#{NODE_VER}-#{NODE_SUFFIX}.tar.xz"
 MOCKERY_URL = 'github.com/vektra/mockery/.../@v1.0.0'
 MOCKGEN_URL = 'github.com/golang/mock/mockgen'
 RICHGO_URL = 'github.com/kyoh86/richgo'
+DLV_URL = 'github.com/go-delve/delve/cmd/dlv'
+GDLV_URL = 'github.com/aarzilli/gdlv'
 
 # Tools and Other Paths
 TOOLS_DIR = File.expand_path('tools')
@@ -76,10 +82,13 @@ GO = "#{GO_DIR}/go/bin/go"
 GOLANGCILINT = "#{TOOLS_DIR}/golangci-lint-#{GOLANGCILINT_VER}-#{GOLANGCILINT_SUFFIX}/golangci-lint"
 PROTOC_DIR = "#{TOOLS_DIR}/#{PROTOC_VER}"
 PROTOC = "#{PROTOC_DIR}/bin/protoc"
-PROTOC_GEN_GO = "#{GOBIN}/protoc-gen-go-#{PROTOC_GEN_GO_VER}"
+PROTOC_GEN_GO = "#{GOBIN}/protoc-gen-go"
+PROTOC_GEN_GO_GRPC = "#{GOBIN}/protoc-gen-go-grpc"
 MOCKERY = "#{GOBIN}/mockery"
 MOCKGEN = "#{GOBIN}/mockgen"
 RICHGO = "#{GOBIN}/richgo"
+DLV = "#{GOBIN}/dlv"
+GDLV = "#{GOBIN}/gdlv"
 
 # wget
 if system("wget --version > /dev/null").nil?
@@ -253,10 +262,11 @@ file PROTOC do
 end
 
 file PROTOC_GEN_GO do
-  sh "#{GO} get -d -u #{PROTOC_GEN_GO_URL}"
-  sh "git -C \"$(#{GO} env GOPATH)\"/src/github.com/golang/protobuf checkout #{PROTOC_GEN_GO_VER}"
-  sh "#{GO} install github.com/golang/protobuf/protoc-gen-go"
-  sh "cp #{GOBIN}/protoc-gen-go #{PROTOC_GEN_GO}"
+  sh "#{GO} install #{PROTOC_GEN_GO_URL}@#{PROTOC_GEN_GO_VER}"
+end
+
+file PROTOC_GEN_GO_GRPC do
+  sh "#{GO} install #{PROTOC_GEN_GO_GRPC_URL}@#{PROTOC_GEN_GO_GRPC_VER}"
 end
 
 file MOCKERY do
@@ -273,10 +283,18 @@ file RICHGO do
   sh "#{GO} get -u #{RICHGO_URL}"
 end
 
-file AGENT_PB_GO_FILE => [GO, PROTOC, PROTOC_GEN_GO, AGENT_PROTO_FILE] do
+file AGENT_PB_GO_FILE => [GO, PROTOC, PROTOC_GEN_GO_GRPC, PROTOC_GEN_GO, AGENT_PROTO_FILE] do
   Dir.chdir('backend') do
-    sh "#{PROTOC} -I api api/agent.proto --go_out=plugins=grpc:api"
+    sh "#{PROTOC} --proto_path=./api --go_out=api --go-grpc_out=api api/agent.proto"
   end
+end
+
+file DLV do
+  sh "#{GO} install #{DLV_URL}@#{DLV_VER}"
+end
+
+file GDLV do
+  sh "#{GO} install #{GDLV_URL}@#{GDLV_VER}"
 end
 
 # prepare args for dlv debugger
@@ -1157,12 +1175,10 @@ task :clean do
 end
 
 desc 'Download all dependencies'
-task :prepare_env => [GO, PROTOC, PROTOC_GEN_GO, GOSWAGGER, GOLANGCILINT, OPENAPI_GENERATOR, NPX] do
+task :prepare_env => [GO, PROTOC, PROTOC_GEN_GO_GRPC, PROTOC_GEN_GO, GOSWAGGER, GOLANGCILINT, OPENAPI_GENERATOR, NPX, DLV, GDLV] do
   Dir.chdir('backend') do
     sh "#{GO} mod download"
   end
-  sh "#{GO} install github.com/go-delve/delve/cmd/dlv@v1.7.3"
-  sh "#{GO} install github.com/aarzilli/gdlv@v1.7.0"
 end
 
 desc 'Generate ctags for Emacs'

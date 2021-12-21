@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package agentapi;
 
+option go_package = "./;api";
+
 // This package defines API exposed by Stork Agent to Stork Server.
 
 service Agent {
