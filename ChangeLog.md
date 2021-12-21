@@ -1,3 +1,8 @@
+* 183 [build] marcin
+
+    Stork now uses golang 1.17 and protoc-gen-go 1.26.
+    (Gitlab #652)
+
 * 182 [bug] marcin
 
     Fixed a bug in the host reservation database model. The bug caused
