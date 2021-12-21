@@ -170,14 +170,14 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
             return count
         }
 
-        if (typeof(count) !== "number" && typeof(count) !== "bigint") {
+        if (typeof count !== 'number' && typeof count !== 'bigint') {
             return count.toString()
         }
 
         if (Number.isNaN(count)) {
             return count.toString()
         }
-    
+
         if (count < 1000001) {
             return count.toLocaleString('en-US')
         }
