@@ -591,9 +591,8 @@ func TestIPv6SubnetDispensableNoPoolsNoReservations(t *testing.T) {
 	require.Contains(t, report.content, "configuration includes 2 subnets without pools and host reservations")
 }
 
-// Tests that the checker finding dispensable subnets does not generate
-// a report when host_cmds hooks library is used and the database
-// has no reservations.
+// Tests that the checker finding dispensable subnets finds the subnets
+// that comprise no reservations in the host database.
 func TestIPv6SubnetDispensableNoPoolsNoReservationsHostCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
