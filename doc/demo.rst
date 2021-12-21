@@ -3,11 +3,11 @@
 Demo
 ====
 
-A sample installation of ``Stork`` can be used to demonstrate ``Stork``
+A sample installation of Stork can be used to demonstrate its
 capabilities, and can also be used for its development.
 
-The demo installation uses `Docker` and `Docker Compose` to set up all
-`Stork` services. It contains:
+The demo installation uses Docker and Docker Compose to set up all
+Stork services. It contains:
 
 - Stork Server
 - Stork Agent with Kea DHCPv4
@@ -26,10 +26,10 @@ These services allow observation of many Stork features.
 Requirements
 ------------
 
-Running the ``Stork Demo`` requires the same dependencies as building
+Running the Stork demo requires the same dependencies as building
 Stork, which are described in the :ref:`installation_sources` chapter.
 
-Besides the standard dependencies, the ``Stork Demo`` requires:
+Besides the standard dependencies, the Stork demo requires:
 
 - Docker
 - Docker Compose
@@ -40,8 +40,8 @@ https://gitlab.isc.org/isc-projects/stork/-/wikis/Processes/development-Environm
 Setup Steps
 -----------
 
-The following command retrieves all required software (go, goswagger,
-nodejs, Angular dependencies, etc.) to the local directory. No root
+The following command retrieves all required software (Go, go-swagger,
+Node.js, Angular dependencies, etc.) to the local directory. No root
 password is necessary. It then prepares Docker images and starts them.
 
 .. code-block:: console
@@ -54,13 +54,12 @@ http://localhost:8080/. Use any browser to connect.
 Premium Features
 ~~~~~~~~~~~~~~~~
 
-It is possible to run the demo with premium features enabled in Kea
-apps. It requires starting the demo with an access token to the Kea premium
-repositories. Access tokens are provided to ISC's paying customers and can be found on
-https://cloudsmith.io/~isc/repos/kea-2-0-prv/setup/#tab-formats-deb. The
-token can be found inside this URL on that page:
-``https://dl.cloudsmith.io/${ACCESS_TOKEN}/isc/kea-2-0-prv/cfg/setup/bash.deb.sh``.
-This web page and the token are available only to paying customers of ISC.
+It is possible to run the demo with premium features enabled in the Kea
+apps; it requires the demo to be started with an access token for the Kea premium
+repositories. Access tokens are provided to ISC's paid support customers and
+format-specific setup instructions can be found on
+https://cloudsmith.io/~isc/repos/kea-2-0-prv/setup/#tab-formats-deb. ISC paid support
+customers should feel free to open a ticket for assistance if needed.
 
 .. code-block:: console
 
@@ -75,7 +74,7 @@ is stored in the ``docker-compose.yaml`` file in the Stork source code repositor
 These containers have Stork production services and components:
 
 server
-   This container is essential. It runs the Stork Server,
+   This container is essential. It runs the ``Stork Server``,
    which interacts with all the agents and the database and exposes the
    API. Without it, Stork is not able to function.
 webui
@@ -98,27 +97,27 @@ agent-kea6
 agent-kea-ha1 and agent-kea-ha2
    These two containers should, in general, be run together. They each
    have a Kea DHCPv4 server instance configured in an HA pair. With
-   both running and registered as machines in Stork, users can observe
+   both instances running and registered as machines in Stork, users can observe
    certain HA mechanisms, such as one partner taking over the traffic if the
    other partner becomes unavailable.
 agent-kea-many-subnets
-   This container runs an agent with a Kea DHCPv4 server that has many subnets defined in
-   its configuration (nearly 7000 subnets).
+   This container runs an agent with a Kea DHCPv4 server that has many (nearly
+   7000) subnets defined in its configuration.
 agent-kea-premium
    This container runs an agent with a Kea DHCPv4 server connected to a MySQL
    database containing host reservations. It is only available when
    premium features have been enabled during the demo build.
 
-These are containers with 3rd-party services that are required by Stork:
+These are containers with third-party services that are required by Stork:
 
 postgres
    This container is essential. It runs the PostgreSQL database that
-   is used by the Stork Server. Without it, the Stork Server
+   is used by the ``Stork Server``. Without it, the ``Stork Server``
    produces error messages about an unavailable database.
 prometheus
    Prometheus, a monitoring solution (https://prometheus.io/), uses this
-   container to monitor applications.  It is preconfigured
-   to monitor Kea and BIND 9 containers.
+   container to monitor applications. It is preconfigured
+   to monitor the Kea and BIND 9 containers.
 grafana
    This is a container with Grafana (https://grafana.com/), a
    dashboard for Prometheus. It is preconfigured to pull data from a
@@ -142,7 +141,7 @@ simulator
    instances.
 
 The PostgreSQL database schema is automatically migrated to the latest
-version required by the Stork Server process.
+version required by the ``Stork Server`` process.
 
 The setup procedure assumes those images are fully under Stork's
 control. Any existing images are overwritten.
@@ -165,26 +164,26 @@ Initialization
 Stork Environment Simulator
 ---------------------------
 
-Stork Environment Simulator allows:
+The Stork Environment Simulator demonstrates how Stork:
 
-- sending DHCP traffic to Kea applications
-- sending DNS requests to BIND 9 applications
-- stopping and starting Stork Agents, and the Kea and BIND 9 daemons
+- sends DHCP traffic to Kea applications
+- sends DNS requests to BIND 9 applications
+- stops and starts Stork agents and the Kea and BIND 9 daemons
 
-Stork Environment Simulator allows DHCP traffic to be sent to selected
+The Stork Environment Simulator allows DHCP traffic to be sent to selected
 subnets pre-configured in Kea instances, with a limitation: it is
 possible to send traffic to only one subnet from a given shared
 network.
 
-Stork Environment Simulator also allows sending DNS traffic to
-selected DNS servers.
+The Stork Environment Simulator also allows demonstration DNS traffic to
+be sent selected DNS servers.
 
-Stork Environment Simulator can add all the machines available in the
-demo setup. It can stop and start selected Stork Agents, and the Kea and
+The Stork Environment Simulator can add all the machines available in the
+demo setup. It can stop and start selected Stork agents and the Kea and
 BIND 9 applications. This is useful to simulate communication problems
-between applications, Stork Agents, and the Stork Server.
+between applications, Stork agents, and the ``Stork Server``.
 
-The Stork Environment Simulator can be found at: http://localhost:5000/ .
+The Stork Environment Simulator can be found at: http://localhost:5000/.
 
 For development purposes, the simulator can be started directly with the command:
 
@@ -192,24 +191,23 @@ For development purposes, the simulator can be started directly with the command
 
    $ rake run_sim
 
-
 Prometheus
 ----------
 
-The Prometheus instance is preconfigured and pulls statistics from:
+The Prometheus instance is preconfigured in the Stork demo and pulls statistics from:
 
-- node exporters: agent-kea:9100, agent-bind9:9100, agent-bind9:9100
-- Kea exporters embedded in stork-agent: agent-kea:9547,
-  agent-kea6:9547, agent-kea-ha1:9547, agent-kea-ha2:9547
-- BIND exporters embedded in stork-agent: agent-bind9:9119,
-  agent-bind9-2:9119
+- the node exporters: ``agent-kea:9100``, ``agent-bind9:9100``, ``agent-bind9:9100``
+- the Kea exporters embedded in ``stork-agent``: ``agent-kea:9547``,
+  ``agent-kea6:9547``, ``agent-kea-ha1:9547``, ``agent-kea-ha2:9547``
+- the BIND exporters embedded in ``stork-agent``: ``agent-bind9:9119``,
+  ``agent-bind9-2:9119``
 
 The Prometheus web page can be found at: http://localhost:9090/ .
 
 Grafana
 -------
 
-The Grafana instance is also preconfigured. It pulls data from
+The Grafana instance is also preconfigured in the Stork demo. It pulls data from
 Prometheus and loads dashboards from the Stork repository, in the
 Grafana folder.
 
