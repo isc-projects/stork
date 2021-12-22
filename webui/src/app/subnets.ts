@@ -24,11 +24,7 @@ export function getAssignedAddresses(subnet) {
  * JSON parser converts them to double precision number. It causes losing precision.
  */
 export function parseSubnetsStatisticValues(subnets): void {
-    if (subnets.items == null) {
-        return
-    }
-
-    subnets.items.forEach((s) => {
+    subnets.forEach((s) => {
         if (s.localSubnets == null) {
             return
         }

@@ -130,13 +130,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
                     }
 
                     // IPv4 subnets statistics
-                    if (v.subnets4) {
-                        parseSubnetsStatisticValues(v.subnets4)
+                    if (v.subnets4 && v.subnets4.items) {
+                        parseSubnetsStatisticValues(v.subnets4.items)
                     }
 
                     // IPv6 subnets statistics
-                    if (v.subnets6) {
-                        parseSubnetsStatisticValues(v.subnets6)
+                    if (v.subnets6 && v.subnets6.items) {
+                        parseSubnetsStatisticValues(v.subnets6.items)
                     }
 
                     return v

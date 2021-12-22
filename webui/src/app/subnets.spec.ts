@@ -45,22 +45,20 @@ describe('subnets', () => {
 
     it('parse stats from string to big int', () => {
         // Arrange
-        const subnets6 = {
-            items: [
-                {
-                    subnet: '3000::0/24',
-                    localSubnets: [
-                        {
-                            stats: {
-                                'total-nas': '4',
-                                'assigned-nas': '18446744073709551615',
-                                foo: 'bar',
-                            },
+        const subnets6 = [
+            {
+                subnet: '3000::0/24',
+                localSubnets: [
+                    {
+                        stats: {
+                            'total-nas': '4',
+                            'assigned-nas': '18446744073709551615',
+                            foo: 'bar',
                         },
-                    ],
-                },
-            ],
-        }
+                    },
+                ],
+            },
+        ]
 
         // Act
         parseSubnetsStatisticValues(subnets6)

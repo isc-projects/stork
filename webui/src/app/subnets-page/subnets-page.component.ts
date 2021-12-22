@@ -123,7 +123,9 @@ export class SubnetsPageComponent implements OnInit, OnDestroy {
             // Custom parsing for statistics
             .pipe(
                 map((subnets) => {
-                    parseSubnetsStatisticValues(subnets)
+                    if (subnets.items) {
+                        parseSubnetsStatisticValues(subnets.items)
+                    }
                     return subnets
                 })
             )
