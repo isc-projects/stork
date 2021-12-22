@@ -5,9 +5,9 @@
 Stork Administrator Reference Manual
 ####################################
 
-``Stork`` is an open source monitoring application and dashboard for 
-`ISC Kea DHCP`, and eventually for `ISC BIND 9`. It is the spiritual 
-successor of the earlier projects `Kittiwake` and `Anterius`.
+Stork is an open source monitoring application and dashboard for 
+ISC's Kea DHCP, and eventually for ISC's BIND 9. It is the spiritual 
+successor of the earlier projects Kittiwake and Anterius.
 
 This is the reference guide for Stork version |release|. Links to the
 most up-to-date version of this document, along with other documents
