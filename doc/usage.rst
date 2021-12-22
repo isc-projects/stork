@@ -5,8 +5,8 @@ Using Stork
 ***********
 
 This section describes how to use the features available in Stork. To
-connect to Stork, use a web browser and connect to port 8080 on the ``Stork Server`` machine. If
-``Stork Server`` is running on a localhost, it can be reached by navigating to
+connect to Stork, use a web browser and connect to port 8080 on the Stork server machine. If
+``stork-server`` is running on a localhost, it can be reached by navigating to
 http://localhost:8080.
 
 Managing Users
@@ -110,10 +110,10 @@ Disconnecting From a Machine
 To stop monitoring a machine, go to the ``Machines`` list, find the
 machine to stop monitoring, click on the triple-lines button at the
 right side, and choose ``Delete``. This terminates the connection
-between the ``Stork Server`` and the agent running on the machine, and the
-server will no longer monitor that machine; however, the ``Stork Agent`` process
+between the Stork server and the agent running on the machine, and the
+server will no longer monitor that machine; however, the ``stork-agent`` process
 will continue running. Complete shutdown of a
-``Stork Agent`` process must be done manually, e.g. by connecting to the machine
+``stork-agent`` process must be done manually, e.g. by connecting to the machine
 using ssh and stopping the agent there. For example, when the Stork Agent
 has been installed from packages, run:
 
@@ -141,10 +141,10 @@ selected machines with a single click. Navigate to the ``Machines`` page (i.e.,
 the page where all monitored machines are listed), click on the ``Action`` button
 for the selected machine, and choose the ``Dump Troubleshooting Data`` option. Alternatively,
 navigate to the selected machine's page and click on the ``Dump Troubleshooting Data``
-button at the bottom of the page. In both cases, the Stork Server will
+button at the bottom of the page. In both cases, the Stork server will
 automatically gather useful diagnostics information and offer it for download as a
 ``tar.gz`` file. The downloaded package contains configurations, log tails,
-``Stork Server`` settings, warning and error-level events, etc.
+``stork-server`` settings, warning and error-level events, etc.
 
 ..note:
 
@@ -174,7 +174,7 @@ Stork uses ``rndc`` to retrieve the application's status. It looks for
 the ``controls`` statement in the configuration file, and uses the
 first listed control point for monitoring the application.
 
-Furthermore, the ``Stork Agent`` can be used as a Prometheus exporter
+Furthermore, the Stork agent can be used as a Prometheus exporter
 if ``named`` is built with ``json-c``, because
 it gathers statistics via the JSON statistics API. The
 ``named.conf`` file must have ``statistics-channel`` configured;
@@ -644,7 +644,7 @@ Dashboard
 
 The main Stork page presents a dashboard. It contains a panel with
 information about DHCP and a panel with events observed or noticed by
-the ``Stork Server``.
+the Stork server.
 
 DHCP Panel
 ~~~~~~~~~~
@@ -660,7 +660,7 @@ Events Panel
 ~~~~~~~~~~~~
 
 The Events panel presents the list of the most recent events captured by
-the ``Stork Server``. There are three event urgency levels: info, warning,
+the Stork server. There are three event urgency levels: info, warning,
 and error. Events pertaining to the particular entities, e.g. machines
 or applications, provide a link to a web page containing information
 about the given object.
