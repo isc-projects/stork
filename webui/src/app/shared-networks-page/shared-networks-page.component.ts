@@ -179,14 +179,23 @@ export class SharedNetworksPageComponent implements OnInit, OnDestroy {
     /**
      * Prepare count for presenting in a column that it is easy to grasp by humans.
      */
-    humanCount(count: number | bigint) {
-        // Only NaN is NaN
-        if (isNaN(count as any)) {
+    humanCount(count) {
+        if (count == null) {
             return count
         }
-        if (count < 1000000) {
+
+        if (typeof count !== 'number' && typeof count !== 'bigint') {
+            return count.toString()
+        }
+
+        if (Number.isNaN(count)) {
+            return count.toString()
+        }
+
+        if (count < 1000001) {
             return count.toLocaleString('en-US')
         }
+
         return humanCount(count)
     }
 
