@@ -64,8 +64,8 @@ describe('subnets', () => {
         parseSubnetsStatisticValues(subnets6)
 
         // Assert
-        expect(subnets6.items[0].localSubnets[0].stats['total-nas']).toBe(BigInt('4') as any)
-        expect(subnets6.items[0].localSubnets[0].stats['assigned-nas']).toBe(BigInt('18446744073709551615') as any)
-        expect(subnets6.items[0].localSubnets[0].stats['foo']).toBe('bar')
+        expect(subnets6[0].localSubnets[0].stats['total-nas']).toBe(BigInt('4') as any)
+        expect(subnets6[0].localSubnets[0].stats['assigned-nas']).toBe(BigInt('18446744073709551615') as any)
+        expect(subnets6[0].localSubnets[0].stats['foo']).toBe('bar')
     })
 })
