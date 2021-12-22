@@ -74,7 +74,7 @@ is stored in the ``docker-compose.yaml`` file in the Stork source code repositor
 These containers have Stork production services and components:
 
 server
-   This container is essential. It runs the ``Stork Server``,
+   This container is essential. It runs ``stork-server``,
    which interacts with all the agents and the database and exposes the
    API. Without it, Stork is not able to function.
 webui
@@ -112,7 +112,7 @@ These are containers with third-party services that are required by Stork:
 
 postgres
    This container is essential. It runs the PostgreSQL database that
-   is used by the ``Stork Server``. Without it, the ``Stork Server``
+   is used by ``stork-server``. Without it, ``stork-server``
    produces error messages about an unavailable database.
 prometheus
    Prometheus, a monitoring solution (https://prometheus.io/), uses this
@@ -141,7 +141,7 @@ simulator
    instances.
 
 The PostgreSQL database schema is automatically migrated to the latest
-version required by the ``Stork Server`` process.
+version required by the ``stork-server`` process.
 
 The setup procedure assumes those images are fully under Stork's
 control. Any existing images are overwritten.
@@ -149,7 +149,7 @@ control. Any existing images are overwritten.
 Initialization
 --------------
 
-``Stork Server`` requires some initial information:
+``stork-server`` requires some initial information:
 
 #. Go to http://localhost:8080/machines/all
 #. Add new machines (leave the default port):
@@ -181,7 +181,7 @@ be sent selected DNS servers.
 The Stork Environment Simulator can add all the machines available in the
 demo setup. It can stop and start selected Stork agents and the Kea and
 BIND 9 applications. This is useful to simulate communication problems
-between applications, Stork agents, and the ``Stork Server``.
+between applications, Stork agents, and the Stork server.
 
 The Stork Environment Simulator can be found at: http://localhost:5000/.
 
