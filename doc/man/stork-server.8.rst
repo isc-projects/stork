@@ -124,7 +124,7 @@ Arguments
 ``--rest-static-files-dir``
    Specifies the directory with static files for the UI. ``[$STORK_REST_STATIC_FILES_DIR]``
 
-Note that there is no argument for database password, as the command-line arguments can sometimes be seen
+Note that there is no argument for the database password, as the command-line arguments can sometimes be seen
 by other users. It can be passed using the ``STORK_DATABASE_PASSWORD`` variable.
 
 Mailing Lists and Support
