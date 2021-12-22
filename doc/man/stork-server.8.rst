@@ -10,125 +10,122 @@
 
 .. _man-stork-server:
 
-stork-server - Main Stork Server
----------------------------------
+``stork-server`` - Main Stork Server
+------------------------------------
 
 Synopsis
 ~~~~~~~~
 
-:program:`stork-server`
+:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-static-files-dir**]
 
 Description
 ~~~~~~~~~~~
 
-``stork-server`` provides the main Stork Server capabilities. In
-every Stork deployment, there should be exactly one Stork Server.
+``stork-server`` provides the main Stork server capabilities. In
+every Stork deployment, there should be exactly one Stork server.
 
 Arguments
 ~~~~~~~~~
 
 ``stork-server`` takes the following arguments:
 
-``-h`` or ``--help``
-   the list of available parameters.
+``-h|--help``
+   Returns the list of available parameters.
 
-``-v`` or ``--version``
-   the ``stork-server`` version.
+``-v|--version``
+   Returns the ``stork-server`` version.
 
-``-m`` or ``--metrics``
-   enable the periodic metrics collector and /metrics HTTP endpoint for Prometheus. This endpoint requires no authentication and it is recommended to restrict external access to it (e.g. using the HTTP proxy). (default: disabled) [$STORK_SERVER_ENABLE_METRICS]
+``-m|--metrics``
+   Enables the periodic metrics collector and /metrics HTTP endpoint for Prometheus. This endpoint requires no authentication; it is recommended to restrict external access to it (e.g. using the HTTP proxy). It is disabled by default. [$STORK_SERVER_ENABLE_METRICS]
 
-``-u`` or ``--db-user``
-   the user name to be used for database connections. (default: stork) [$STORK_DATABASE_USER_NAME]
+``-u|--db-user``
+   Specifies the user name to be used for database connections. The default is ``stork``. [$STORK_DATABASE_USER_NAME]
 
 ``--db-host``
-   the name of the host where the database is available. (default: localhost) [$STORK_DATABASE_HOST]
+   Specifies the name of the host where the database is available. The default is ``localhost``. [$STORK_DATABASE_HOST]
 
-``-p`` or ``--db-port``
-   the port on which the database is available. (default: 5432) [$STORK_DATABASE_PORT]
+``-p|--db-port``
+   Specifies the port on which the database is available. The default is 5432. [$STORK_DATABASE_PORT]
 
-``-d`` or ``--db-name=``
-   the name of the database to connect to. (default: stork) [$STORK_DATABASE_NAME]
+``-d|--db-name=``
+   Specifies the name of the database to connect to. The default is ``stork``. [$STORK_DATABASE_NAME]
 
 ``--db-sslmode``
-   the SSL mode for connecting to the database (i.e., disable, require, verify-ca or verify-full). (default: disable) [$STORK_DATABASE_SSLMODE]
+   Specifies the SSL mode for connecting to the database; possible values are ``disable``, ``require``, ``verify-ca`` or ``verify-full``. The default is ``disable``. [$STORK_DATABASE_SSLMODE] Acceptable values are:
+
+   ``disable``
+   Disables encryption between the Stork server and the PostgreSQL database.
+
+   ``require``
+   Uses secure communication but does not verify the server's identity, unless the
+   root certificate location is specified and that certificate exists.
+   If the root certificate exists, the behavior is the same as  in case of ``verify-ca``
+   mode.
+
+   ``verify-ca``
+   Uses secure communication and verifies the server's identity by checking it
+   against the root certificate stored on the Stork server machine.
+
+   ``verify-full``
+   Uses secure communication and verifies the server's identity against the root
+   certificate. In addition, checks that the server hostname matches the
+   name stored in the certificate.
 
 ``--db-sslcert``
-   the location of the SSL certificate used by the server to connect to the database. [$STORK_DATABASE_SSLCERT]
+   Specifies the location of the SSL certificate used by the server to connect to the database. [$STORK_DATABASE_SSLCERT]
 
 ``--db-sslkey``
-   the location of the SSL key used by the server to connect to the database. [$STORK_DATABASE_SSLKEY]
+   Specifies the location of the SSL key used by the server to connect to the database. [$STORK_DATABASE_SSLKEY]
 
 ``--db-sslrootcert``
-   the location of the root certificate file used to verify the database server's certificate. [$STORK_DATABASE_SSLROOTCERT]
+   Specifies the location of the root certificate file used to verify the database server's certificate. [$STORK_DATABASE_SSLROOTCERT]
 
 ``--db-trace-queries=``
-   enable tracing SQL queries: "run" - only run-time, without migrations), "all" - migrations and run-time.
+   Enables tracing of SQL queries. Possible values are ``run`` - only runtime, without migrations, or ``all`` - both migrations and runtime.
    [$STORK_DATABASE_TRACE]
 
 ``--rest-cleanup-timeout``
-   the period to wait before killing idle connections. (default: 10s)
+   Specifies the period to wait, in seconds, before killing idle connections. The default is 10.
 
 ``--rest-graceful-timeout``
-   the period to wait before shutting down the server. (default: 15s)
+   Specifies the period to wait, in seconds, before shutting down the server. The default is 15.
 
 ``--rest-max-header-size``
-   the maximum number of bytes the server reads parsing the request header's keys and
-   values, including the request line. It does not limit the size of the request body. (default: 1MiB)
+   Specifies the maximum number of bytes the server reads when parsing the request header's keys and
+   values, including the request line. It does not limit the size of the request body. The default is 1024 (1MB).
 
 ``--rest-host``
-   the IP to listen on for connections over the REST API. [$STORK_REST_HOST]
+   Specifies the IP address to listen on for connections over the RESTful API. [$STORK_REST_HOST]
 
 ``--rest-port``
-   the port to listen on for connections over the REST API. (default: 8080) [$STORK_REST_PORT]
+   Specifies the port to listen on for connections over the RESTful API. The default is 8080. [$STORK_REST_PORT]
 
 ``--rest-listen-limit``
-   the maximum number of outstanding requests.
+   Specifies the maximum number of outstanding requests.
 
 ``--rest-keep-alive``
-   the TCP keep-alive timeout on accepted connections. It prunes dead TCP connections ( e.g. closing laptop mid-download). (default: 3m)
+   Specifies the TCP keep-alive timeout, in minutes, on accepted connections. After this period, the server prunes dead TCP connections (e.g. when a laptop is closed mid-download). The default is 3.
 
 ``--rest-read-timeout``
-   the maximum duration before timing out a read of the request. (default: 30s)
+   Specifies the maximum duration, in seconds, before timing out a read of the request. The default is 30.
 
 ``--rest-write-timeout``
-   the maximum duration before timing out a write of the response. (default: 60s)
+   Specifies the maximum duration, in seconds, before timing out a write of the response. The default is 60.
 
 ``--rest-tls-certificate``
-   the certificate to use for secure connections. [$STORK_REST_TLS_CERTIFICATE]
+   Specifies the certificate to use for secure connections. [$STORK_REST_TLS_CERTIFICATE]
 
 ``--rest-tls-key``
-   the private key to use for secure connections. [$STORK_REST_TLS_PRIVATE_KEY]
+   Specifies the private key to use for secure connections. [$STORK_REST_TLS_PRIVATE_KEY]
 
 ``--rest-tls-ca``
-   the certificate authority file to be used with a mutual TLS authority. [$STORK_REST_TLS_CA_CERTIFICATE]
+   Specifies the certificate authority file to be used with a mutual TLS authority. [$STORK_REST_TLS_CA_CERTIFICATE]
 
 ``--rest-static-files-dir``
-   the directory with static files for the UI. [$STORK_REST_STATIC_FILES_DIR]
-
-The ``--db-sslmode`` argument can have one of the following values:
-
-``disable``
-  disable encryption between the Stork Server and the PostgreSQL database.
-
-``require``
-  use secure communication but do not verify the server's identity unless the
-  root certificate location is specified and that certificate exists
-  If the root certificate exists, the behavior is the same as  in case of `verify-ca`
-  mode.
-
-``verify-ca``
-  use secure communication and verify the server's identity by checking it
-  against the root certificate stored on the Stork Server machine.
-
-``verify-full``
-  use secure communication, verify the server's identity against the root
-  certificate. In addition, check that the server hostname matches the
-  name stored in the certificate.
+   Specifies the directory with static files for the UI. [$STORK_REST_STATIC_FILES_DIR]
 
 Note that there is no argument for database password, as the command-line arguments can sometimes be seen
 by other users. It can be passed using the STORK_DATABASE_PASSWORD variable.
-
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -137,9 +134,8 @@ There are public mailing lists available for the Stork project. **stork-users**
 (stork-users at lists.isc.org) is intended for Stork users. **stork-dev**
 (stork-dev at lists.isc.org) is intended for Stork developers, prospective
 contributors, and other advanced users. The lists are available at
-https://lists.isc.org. The community provides best-effort support
+https://www.isc.org/mailinglists/. The community provides best-effort support
 on both of those lists.
-
 
 History
 ~~~~~~~
