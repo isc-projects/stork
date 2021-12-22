@@ -10,85 +10,76 @@
 
 .. _man-stork-agent:
 
-stork-agent - Stork Agent that monitors BIND 9 and Kea services
----------------------------------------------------------------
+``stork-agent`` - Stork Agent to Monitor BIND 9 and Kea services
+----------------------------------------------------------------
 
 Synopsis
 ~~~~~~~~
 
-:program:`stork-agent` [**--host**] [**--port**]
+:program:`stork-agent` [**--listen-stork-only**] [**--listen-prometheus-only**] [**-v**] [**--host=**] [**--port=**] [**--skip-tls-cert-verification=**] [**--prometheus-kea-exporter-address=**] [**--prometheus-kea-exporter-port=**] [**--prometheus-kea-exporter-interval=**] [**-h**]
 
 Description
 ~~~~~~~~~~~
 
 The ``stork-agent`` is a small tool that operates on systems
-that are running BIND 9 and Kea services. The Stork Server connects to
-the Stork Agent and uses it to monitor services remotely.
+that are running BIND 9 or Kea services. The Stork server connects to
+the Stork agent and uses it to monitor services remotely.
 
 Arguments
 ~~~~~~~~~
 
 Stork does not use an explicit configuration file. Instead, its behavior can be controlled with
-command-line switches and/or variables. The Stork Agent takes the following command-line switches.
+command-line switches and/or variables. The Stork agent takes the following command-line switches.
 Equivalent environment variables are listed in square brackets, where applicable.
 
 ``--listen-stork-only``
-   listen for commands from the Stork Server only, but not for Prometheus requests.
-   [$STORK_AGENT_LISTEN_STORK_ONLY]
+   Instructs ``stork-agent`` to listen for commands from the Stork server, but not for Prometheus requests. ``[$STORK_AGENT_LISTEN_STORK_ONLY]``
 
 ``--listen-prometheus-only``
-   listen for Prometheus requests only, but not for commands from the Stork Server.
-   [$STORK_AGENT_LISTEN_PROMETHEUS_ONLY]
+   Instructs ``stork-agent`` to listen for Prometheus requests, but not for commands from the Stork server. ``[$STORK_AGENT_LISTEN_PROMETHEUS_ONLY]``
 
-``-v`` or ``--version``
-   show software version.
+``-v|--version``
+   Returns the software version.
 
-``Stork Server`` flags:
+Stork server flags:
 
 ``--host=``
-   the IP or hostname to listen on for incoming Stork Server connections. [$STORK_AGENT_HOST]
+   Specifies the IP address or hostname to listen on for incoming Stork server connections. ``[$STORK_AGENT_HOST]``
 
 ``--port=``
-   the TCP port to listen on for incoming Stork Server connections. (default: 8080) [$STORK_AGENT_PORT]
+   Specifies the TCP port to listen on for incoming Stork server connections. The default is 8080. ``[$STORK_AGENT_PORT]``
 
 ``--skip-tls-cert-verification=``
-   skip TLS certificate verification when the Stork Agent connects to Kea over TLS and Kea uses self-signed certificates. (default: false) [$STORK_AGENT_SKIP_TLS_CERT_VERIFICATION]
+   Indicates that TLS certificate verification should be skipped when the Stork agent connects to Kea over TLS and Kea uses self-signed certificates. The default is ``false``. ``[$STORK_AGENT_SKIP_TLS_CERT_VERIFICATION]``
 
-``Prometheus Kea Exporter`` flags:
+Prometheus Kea Exporter flags:
 
 ``--prometheus-kea-exporter-address=``
-   the IP or hostname on which the agent exports Kea statistics to Prometheus. (default: 0.0.0.0)
-   [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS]
+   Specifies the IP address or hostname on which the agent exports Kea statistics to Prometheus. The default is 0.0.0.0. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_ADDRESS]``
 
 ``--prometheus-kea-exporter-port=``
-   the port on which the agent exports Kea statistics to Prometheus. (default: 9547)
-   [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT]
+   Specifies the port on which the agent exports Kea statistics to Prometheus. The default is 9547. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PORT]``
 
 ``--prometheus-kea-exporter-interval=``
-   how often the agent collects stats from Kea, in seconds. (default: 10)
-   [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL]
+   Specifies how often the agent collects statistics from Kea, in seconds. The default is 10. ``[$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL]``
 
-`` --prometheus-kea-exporter-per-subnet-stats=``
+``--prometheus-kea-exporter-per-subnet-stats=``
   enable or disable collecting per subnet stats from Kea; (default: true)
   [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS]
 
 ``Prometheus BIND 9 Exporter`` flags:
 
 ``--prometheus-bind9-exporter-address=``
-   the IP or hostname on which the agent exports BIND9 statistics to Prometheus. (default: 0.0.0.0)
-   [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS]
+   Specifies the IP address or hostname on which the agent exports BIND 9 statistics to Prometheus. The default is 0.0.0.0. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS]``
 
 ``--prometheus-bind9-exporter-port=``
-   the port on which the agent exports BIND9 statistics to Prometheus. (default: 9119)
-   [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT]
+   Specifies the port on which the agent exports BIND 9 statistics to Prometheus. The default is 9119. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_PORT]``
 
 ``--prometheus-bind9-exporter-interval=``
-   how often the agent collects stats from BIND 9, in seconds. (default: 10)
-   [$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL]
+   Specifies how often the agent collects statistics from BIND 9, in seconds. The default is 10. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_INTERVAL]``
 
 ``-h`` or ``--help``
-   the list of available parameters.
-
+   Returns the list of available parameters.
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,14 +88,13 @@ There are public mailing lists available for the Stork project. **stork-users**
 (stork-users at lists.isc.org) is intended for Stork users. **stork-dev**
 (stork-dev at lists.isc.org) is intended for Stork developers, prospective
 contributors, and other advanced users. The lists are available at
-https://lists.isc.org. The community provides best-effort support
+https://www.isc.org/mailinglists. The community provides best-effort support
 on both of those lists.
-
 
 History
 ~~~~~~~
 
-The ``stork-agent`` was first coded in November 2019 by Michal Nowikowski.
+``stork-agent`` was first coded in November 2019 by Michal Nowikowski.
 
 See Also
 ~~~~~~~~
