@@ -77,7 +77,7 @@ system, natively; the exposed port of the agent is 8888.
 There are other Rake tasks for running preconfigured agents in Docker
 containers. They are exposed to the host on specific ports.
 
-When these agents are added as machines in the ``Stork Server`` UI,
+When these agents are added as machines in the Stork server UI,
 both a localhost address and a port specific to a given container must
 be specified. The list of containers can be found in the
 :ref:`docker_containers_for_development` section.
@@ -93,7 +93,7 @@ to the ``.git/hooks`` directory.
 Agent API
 =========
 
-The connection between the ``Stork Server`` and the agents is established using
+The connection between ``stork-server`` and the agents is established using
 gRPC over http/2. The agent API definition is kept in the
 ``backend/api/agent.proto`` file. For debugging purposes, it is
 possible to connect to the agent using the `grpcurl
@@ -321,13 +321,13 @@ System Tests
 ============
 
 System tests for Stork are designed to test the software in a distributed environment.
-They allow several ``Stork Servers`` and agents running at the same time
+They allow several Stork servers and agents running at the same time
 to be tested in one test case, inside ``LXD`` containers. It is possible to set up
 Kea services along with Stork agents. The framework enables experimentation
 in containers, so custom Kea configurations can be deployed or specific Kea daemons
 can be stopped.
 
-The tests can use the Stork Server RESTful API directly or the Stork web UI via Selenium.
+The tests can use the Stork server RESTful API directly or the Stork web UI via Selenium.
 
 Dependencies
 ------------
@@ -510,8 +510,8 @@ There are two other files that define the framework for Stork system tests:
 
 - ``conftest.py`` - defines hooks for ``pytests``
 - ``containers.py`` - handles LXD containers: starting/stopping; communication, such as
-  invoking commands; uploading/downloading files; and installing and preparing Stork
-  Agent/Server and Kea and other dependencies that they require.
+  invoking commands; uploading/downloading files; and installing and preparing the Stork
+  agent/server and Kea and other dependencies that they require.
 
 Most tests are constructed as follows:
 
@@ -564,8 +564,8 @@ for testing:
         ('centos/7', 'ubuntu/18.04')
     ]
 
-The first set indicates that for the ``Stork Agent`` ``Ubuntu 18.04`` should be used
-in the LXD container, and for the ``Stork Server`` ``CentOS 7``. The second set is the opposite
+The first set indicates that for the Stork agent, ``Ubuntu 18.04`` should be used
+in the LXD container, and for the Stork server, ``CentOS 7``. The second set is the opposite
 of the first one.
 
 The next line:
@@ -587,7 +587,7 @@ Besides substituting the ``agent`` and ``server`` arguments, the hook intercepts
 any argument that starts with ``agent`` or ``server``. This allows
 multiple agents in the test, e.g. ``agent1``, ``agent_kea``, or ``agent_bind9``.
 
-Next, log into the ``Stork Server`` using its REST API:
+Next, log into the Stork server using its REST API:
 
 .. code-block:: python
 
@@ -597,7 +597,7 @@ Next, log into the ``Stork Server`` using its REST API:
                             expected_status=200)
         assert r.json()['login'] == 'admin'
 
-Then, add a machine with a ``Stork Agent`` to the ``Stork Server``:
+Then, add a machine with a Stork agent to the Stork server:
 
 .. code-block:: python
 
@@ -610,8 +610,8 @@ Then, add a machine with a ``Stork Agent`` to the ``Stork Server``:
 
 A check then verifies the returned address of the machine.
 
-After a few seconds, the ``Stork Agent`` detects the Kea application and reports it
-to the ``Stork Server``. The server is periodically polled for updated
+After a few seconds, ``stork-agent`` detects the Kea application and reports it
+to ``stork-server``. The server is periodically polled for updated
 information about the Kea application.
 
 .. code-block:: python
@@ -651,31 +651,31 @@ The following ``Rake`` tasks start these containers.
    +----------------------------------------+---------------------------------------------------------------+
    | Rake Task                              | Description                                                   |
    +========================================+===============================================================+
-   | ``rake build_kea_container``           | Build a container ``agent-kea`` with a Stork Agent            |
+   | ``rake build_kea_container``           | Build a container ``agent-kea`` with a Stork agent            |
    |                                        | and Kea with DHCPv4.                                          |
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake run_kea_container``             | Start an ``agent-kea`` container. Published port is 8888.     |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_kea6_container``          | Build an ``agent-kea6`` container with a Stork Agent          |
+   | ``rake build_kea6_container``          | Build an ``agent-kea6`` container with a Stork agent          |
    |                                        | and Kea with DHCPv6.                                          |
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake run_kea6_container``            | Start an ``agent-kea6`` container. Published port is 8886.    |
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake build_kea_ha_containers``       | Build two containers, ``agent-kea-ha1`` and ``agent-kea-ha2``,|
    |                                        | that are configured to work together in High                  |
-   |                                        | Availability mode, with Stork Agents, and Kea with DHCPv4.    |
+   |                                        | Availability mode, with Stork agents, and Kea with DHCPv4.    |
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake run_kea_ha_containers``         | Start the ``agent-kea-ha1`` and ``agent-kea-ha2`` containers. |
    |                                        | Published ports are 8881 and 8882.                            |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_kea_premium_container``   | Build an ``agent-kea-premium`` container with a Stork Agent   |
+   | ``rake build_kea_premium_container``   | Build an ``agent-kea-premium`` container with a Stork agent   |
    |                                        | and Kea with DHCPv4 with host reservations stored in          |
    |                                        | a database. This requires **premium** features.               |
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake run_kea_premium_container``     | Start the ``agent-kea-premium`` container. This requires      |
    |                                        | **premium** features.                                         |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_bind9_container``         | Build an ``agent-bind9`` container with a Stork Agent         |
+   | ``rake build_bind9_container``         | Build an ``agent-bind9`` container with a Stork agent         |
    |                                        | and BIND 9.                                                   |
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake run_bind9_container``           | Start an ``agent-bind9`` container. Published port is 9999.   |
@@ -729,7 +729,7 @@ The diagram below shows a flowchart of the agent registration process in Stork.
 It merely demonstrates the successful registration path.
 The first Certificate Signing Request (CSR) is generated using an existing or new
 private key and agent token.
-The CSR, server token (optional), and agent token are sent to the ``Stork Server``.
+The CSR, server token (optional), and agent token are sent to the Stork server.
 A successful server response contains a signed agent certificate, a server CA
 certificate, and an assigned Machine ID.
 If the agent was already registered with the provided agent token, only the assigned
