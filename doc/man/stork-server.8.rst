@@ -119,7 +119,7 @@ Arguments
    Specifies the private key to use for secure connections. ``[$STORK_REST_TLS_PRIVATE_KEY]``
 
 ``--rest-tls-ca``
-   Specifies the certificate authority file to be used with a mutual TLS authority. ``[$STORK_REST_TLS_CA_CERTIFICATE]``
+   Specifies the Certificate Authority file to be used with a mutual TLS authority. ``[$STORK_REST_TLS_CA_CERTIFICATE]``
 
 ``--rest-static-files-dir``
    Specifies the directory with static files for the UI. ``[$STORK_REST_STATIC_FILES_DIR]``
