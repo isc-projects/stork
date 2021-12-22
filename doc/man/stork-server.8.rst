@@ -36,22 +36,22 @@ Arguments
    Returns the ``stork-server`` version.
 
 ``-m|--metrics``
-   Enables the periodic metrics collector and /metrics HTTP endpoint for Prometheus. This endpoint requires no authentication; it is recommended to restrict external access to it (e.g. using the HTTP proxy). It is disabled by default. [$STORK_SERVER_ENABLE_METRICS]
+   Enables the periodic metrics collector and /metrics HTTP endpoint for Prometheus. This endpoint requires no authentication; it is recommended to restrict external access to it (e.g. using the HTTP proxy). It is disabled by default. ``[$STORK_SERVER_ENABLE_METRICS]``
 
 ``-u|--db-user``
-   Specifies the user name to be used for database connections. The default is ``stork``. [$STORK_DATABASE_USER_NAME]
+   Specifies the user name to be used for database connections. The default is ``stork``. ``[$STORK_DATABASE_USER_NAME]``
 
 ``--db-host``
-   Specifies the name of the host where the database is available. The default is ``localhost``. [$STORK_DATABASE_HOST]
+   Specifies the name of the host where the database is available. The default is ``localhost``. ``[$STORK_DATABASE_HOST]``
 
 ``-p|--db-port``
-   Specifies the port on which the database is available. The default is 5432. [$STORK_DATABASE_PORT]
+   Specifies the port on which the database is available. The default is 5432. ``[$STORK_DATABASE_PORT]``
 
 ``-d|--db-name=``
-   Specifies the name of the database to connect to. The default is ``stork``. [$STORK_DATABASE_NAME]
+   Specifies the name of the database to connect to. The default is ``stork``. ``[$STORK_DATABASE_NAME]``
 
 ``--db-sslmode``
-   Specifies the SSL mode for connecting to the database; possible values are ``disable``, ``require``, ``verify-ca`` or ``verify-full``. The default is ``disable``. [$STORK_DATABASE_SSLMODE] Acceptable values are:
+   Specifies the SSL mode for connecting to the database; possible values are ``disable``, ``require``, ``verify-ca`` or ``verify-full``. The default is ``disable``. ``[$STORK_DATABASE_SSLMODE]`` Acceptable values are:
 
    ``disable``
    Disables encryption between the Stork server and the PostgreSQL database.
@@ -72,17 +72,17 @@ Arguments
    name stored in the certificate.
 
 ``--db-sslcert``
-   Specifies the location of the SSL certificate used by the server to connect to the database. [$STORK_DATABASE_SSLCERT]
+   Specifies the location of the SSL certificate used by the server to connect to the database. ``[$STORK_DATABASE_SSLCERT]``
 
 ``--db-sslkey``
-   Specifies the location of the SSL key used by the server to connect to the database. [$STORK_DATABASE_SSLKEY]
+   Specifies the location of the SSL key used by the server to connect to the database. ``[$STORK_DATABASE_SSLKEY]``
 
 ``--db-sslrootcert``
-   Specifies the location of the root certificate file used to verify the database server's certificate. [$STORK_DATABASE_SSLROOTCERT]
+   Specifies the location of the root certificate file used to verify the database server's certificate. ``[$STORK_DATABASE_SSLROOTCERT]``
 
 ``--db-trace-queries=``
    Enables tracing of SQL queries. Possible values are ``run`` - only runtime, without migrations, or ``all`` - both migrations and runtime.
-   [$STORK_DATABASE_TRACE]
+   ``[$STORK_DATABASE_TRACE]``
 
 ``--rest-cleanup-timeout``
    Specifies the period to wait, in seconds, before killing idle connections. The default is 10.
@@ -95,10 +95,10 @@ Arguments
    values, including the request line. It does not limit the size of the request body. The default is 1024 (1MB).
 
 ``--rest-host``
-   Specifies the IP address to listen on for connections over the RESTful API. [$STORK_REST_HOST]
+   Specifies the IP address to listen on for connections over the RESTful API. ``[$STORK_REST_HOST]``
 
 ``--rest-port``
-   Specifies the port to listen on for connections over the RESTful API. The default is 8080. [$STORK_REST_PORT]
+   Specifies the port to listen on for connections over the RESTful API. The default is 8080. ``[$STORK_REST_PORT]``
 
 ``--rest-listen-limit``
    Specifies the maximum number of outstanding requests.
@@ -113,19 +113,19 @@ Arguments
    Specifies the maximum duration, in seconds, before timing out a write of the response. The default is 60.
 
 ``--rest-tls-certificate``
-   Specifies the certificate to use for secure connections. [$STORK_REST_TLS_CERTIFICATE]
+   Specifies the certificate to use for secure connections. ``[$STORK_REST_TLS_CERTIFICATE]``
 
 ``--rest-tls-key``
-   Specifies the private key to use for secure connections. [$STORK_REST_TLS_PRIVATE_KEY]
+   Specifies the private key to use for secure connections. ``[$STORK_REST_TLS_PRIVATE_KEY]``
 
 ``--rest-tls-ca``
-   Specifies the certificate authority file to be used with a mutual TLS authority. [$STORK_REST_TLS_CA_CERTIFICATE]
+   Specifies the certificate authority file to be used with a mutual TLS authority. ``[$STORK_REST_TLS_CA_CERTIFICATE]``
 
 ``--rest-static-files-dir``
-   Specifies the directory with static files for the UI. [$STORK_REST_STATIC_FILES_DIR]
+   Specifies the directory with static files for the UI. ``[$STORK_REST_STATIC_FILES_DIR]``
 
 Note that there is no argument for database password, as the command-line arguments can sometimes be seen
-by other users. It can be passed using the STORK_DATABASE_PASSWORD variable.
+by other users. It can be passed using the ``STORK_DATABASE_PASSWORD`` variable.
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
