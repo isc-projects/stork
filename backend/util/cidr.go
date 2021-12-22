@@ -110,7 +110,7 @@ func ParseIP(address string) *ParsedIP {
 // Returns lower and upper bound addresses of the address range. The address
 // range may follow two conventions, e.g., 192.0.2.1 - 192.0.3.10
 // or 192.0.2.0/24. Both IPv4 and IPv6 ranges are supported by this function.
-func ParseIPRange(ipRange string) (lb net.IP, ub net.IP, err error) {
+func ParseIPRange(ipRange string) (net.IP, net.IP, error) {
 	// Let's try to see if the range is specified as a pair of upper
 	// and lower bound addresses.
 	s := strings.Split(ipRange, "-")
@@ -127,8 +127,8 @@ func ParseIPRange(ipRange string) (lb net.IP, ub net.IP, err error) {
 			ip := net.ParseIP(ipStr)
 			if ip == nil {
 				// It is not an IP address. Bail...
-				err = errors.Errorf("unable to parse the IP address %s", ipStr)
-				return lb, ub, err
+				err := errors.Errorf("unable to parse the IP address %s", ipStr)
+				return nil, nil, err
 			}
 			// It is an IP address, so let's see if it converts to IPv4 or IPv6.
 			// In both cases, remember the family.
@@ -142,33 +142,29 @@ func ParseIPRange(ipRange string) (lb net.IP, ub net.IP, err error) {
 			// If we already checked both addresses, let's compare their families.
 			if (len(families) > 1) && (families[0] != families[1]) {
 				// IPv4 and IPv6 address given. This is unacceptable.
-				err = errors.Errorf("IP addresses in the IP range %s must belong to the same family",
+				err := errors.Errorf("IP addresses in the IP range %s must belong to the same family",
 					ipRange)
-				return lb, ub, err
+				return nil, nil, err
 			}
 		}
-		lb = ips[0]
-		ub = ips[1]
+		return ips[0], ips[1], nil
 
 	case 1:
 		// There is one token only, so apparently this is a range provided as a prefix.
 		_, net, err := net.ParseCIDR(s[0])
 		if err != nil {
 			err = errors.Errorf("unable to parse the pool prefix %s", s[0])
-			return lb, ub, err
+			return nil, nil, err
 		}
 		// For this prefix find an upper and lower bound address.
-		rb, re := cidr.AddressRange(net)
-		lb = rb
-		ub = re
+		lb, ub := cidr.AddressRange(net)
+		return lb, ub, nil
 
 	default:
 		// No other formats for the address range are accepted.
-		err = errors.Errorf("unable to parse the IP range %s", ipRange)
-		return lb, ub, err
+		err := errors.Errorf("unable to parse the IP range %s", ipRange)
+		return nil, nil, err
 	}
-	// Success.
-	return lb, ub, err
 }
 
 // Checks if an IP address is within the range of addresses between the
