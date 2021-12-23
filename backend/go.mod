@@ -78,4 +78,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	mellium.im/sasl v0.2.1 // indirect
+	muzzammil.xyz/jsonc v0.0.0-20201229145248-615b0916ca38 // indirect
 )
