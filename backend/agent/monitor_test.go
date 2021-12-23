@@ -135,7 +135,10 @@ func TestGetCtrlAddressFromKeaConfigOk(t *testing.T) {
 
 	defer os.Remove(tmpFile.Name())
 
-	text := []byte(string("\"http-host\": \"host.example.org\", \"http-port\": 1234"))
+	text := []byte(`{ "Control-agent": {
+		"http-host": "host.example.org",
+		"http-port": 1234
+	} }`)
 	_, err = tmpFile.Write(text)
 	require.NoError(t, err)
 
@@ -156,7 +159,10 @@ func TestGetCtrlAddressFromKeaConfigAddress0000(t *testing.T) {
 
 	defer os.Remove(tmpFile.Name())
 
-	text := []byte(string("\"http-host\": \"0.0.0.0\", \"http-port\": 1234"))
+	text := []byte(`{ "Control-agent": {
+		"http-host": "0.0.0.0",
+		"http-port": 1234
+	} }`)
 	_, err = tmpFile.Write(text)
 	require.NoError(t, err)
 
@@ -179,7 +185,10 @@ func TestGetCtrlAddressFromKeaConfigAddressColons(t *testing.T) {
 
 	defer os.Remove(tmpFile.Name())
 
-	text := []byte(string("\"http-host\": \"::\", \"http-port\": 1234"))
+	text := []byte(`{ "Control-agent": {
+		"http-host": "::",
+		"http-port": 1234
+	} }`)
 	_, err = tmpFile.Write(text)
 	require.NoError(t, err)
 
@@ -303,7 +312,10 @@ func makeKeaConfFile() (*os.File, error) {
 		return nil, pkgerrors.Wrap(err, "Cannot create temporary file")
 	}
 
-	text := []byte("\"http-host\": \"localhost\", \"http-port\": 45634")
+	text := []byte(`{ "Control-agent": {
+		"http-host": "localhost",
+		"http-port": 45634
+	} }`)
 	if _, err = file.Write(text); err != nil {
 		return nil, pkgerrors.Wrap(err, "Failed to write to temporary file")
 	}
@@ -330,7 +342,11 @@ func makeKeaConfFileWithInclude() (parentConfig *os.File, childConfig *os.File, 
 		return nil, nil, pkgerrors.Wrap(err, "Cannot create temporary file for child config")
 	}
 
-	text := []byte("{ \"http-host\": \"localhost\", \"http-port\": 45634 }")
+	text := []byte(`{
+		"http-host": "localhost",
+		"http-port": 45634
+	}`)
+
 	if _, err = childConfig.Write(text); err != nil {
 		return nil, nil, pkgerrors.Wrap(err, "Failed to write to temporary file")
 	}
@@ -338,7 +354,7 @@ func makeKeaConfFileWithInclude() (parentConfig *os.File, childConfig *os.File, 
 		return nil, nil, pkgerrors.Wrap(err, "Failed to close to temporary file")
 	}
 
-	text = []byte(fmt.Sprintf("{ \"Dhcp4\": <?include \"%s\"?> }", childConfig.Name()))
+	text = []byte(fmt.Sprintf("{ \"Control-agent\": <?include \"%s\"?> }", childConfig.Name()))
 	if _, err = parentConfig.Write(text); err != nil {
 		return nil, nil, pkgerrors.Wrap(err, "Failed to write to temporary file")
 	}
