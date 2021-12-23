@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -25,22 +26,13 @@ type SharedNetwork struct {
 	PdUtilization   int16
 }
 
-// Adds new shared network to the database.
-func AddSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with starting transaction for adding new shared network with name %s",
-			network.Name)
-		return err
-	}
-	defer rollback()
-
-	_, err = tx.Model(network).Insert()
+// Adds new shared network to the database in a transaction.
+func addSharedNetwork(tx *pg.Tx, network *SharedNetwork) error {
+	_, err := tx.Model(network).Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with adding new shared network %s into the database", network.Name)
 		return err
 	}
-
 	for i, s := range network.Subnets {
 		subnet := s
 		subnet.SharedNetworkID = network.ID
@@ -51,50 +43,52 @@ func AddSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 		}
 		network.Subnets[i] = subnet
 	}
-
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with committing new shared network with name %s into the database",
-			network.Name)
-	}
-
-	return err
+	return nil
 }
 
-// Updates shared network in the database. It neither adds nor modifies associations
-// with the subnets it contains.
-func UpdateSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with starting transaction for updating shared network with name %s",
-			network.Name)
-		return err
+// Adds new shared network to the database. It begins a new transaction
+// when dbi has a *pg.DB type or uses an existing transaction when dbi
+// has a *pg.Tx type.
+func AddSharedNetwork(dbi dbops.DBI, network *SharedNetwork) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return addSharedNetwork(tx, network)
+		})
 	}
-	defer rollback()
+	return addSharedNetwork(dbi.(*pg.Tx), network)
+}
 
+// Updates shared network in the database in a transaction. It neither adds
+// nor modifies associations with the subnets it contains.
+func updateSharedNetwork(tx *pg.Tx, network *SharedNetwork) error {
 	result, err := tx.Model(network).WherePK().Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating the shared network with id %d", network.ID)
-		return err
 	} else if result.RowsAffected() <= 0 {
 		err = pkgerrors.Wrapf(ErrNotExists, "shared network with id %d does not exist", network.ID)
-		return err
-	}
-
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with committing updates to shared network with name %s into the database",
-			network.Name)
 	}
 	return err
+}
+
+// Updates shared network in the database. It neither adds nor modifies
+// associations with the subnets it contains. It begins a new transaction
+// when dbi has a *pg.DB type or uses an existing transaction when dbi
+// has a *pg.Tx type.
+func UpdateSharedNetwork(dbi dbops.DBI, network *SharedNetwork) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return updateSharedNetwork(tx, network)
+		})
+	}
+	return updateSharedNetwork(dbi.(*pg.Tx), network)
 }
 
 // Fetches all shared networks without subnets. The family argument specifies
 // whether only IPv4 shared networks should be fetched (if 4), only IPv6 shared
 // networks should be fetched (if 6) or both otherwise.
-func GetAllSharedNetworks(db dbops.DBI, family int) ([]SharedNetwork, error) {
+func GetAllSharedNetworks(dbi dbops.DBI, family int) ([]SharedNetwork, error) {
 	networks := []SharedNetwork{}
-	q := db.Model(&networks)
+	q := dbi.Model(&networks)
 
 	if family == 4 || family == 6 {
 		q = q.Where("inet_family = ?", family)
@@ -113,9 +107,9 @@ func GetAllSharedNetworks(db dbops.DBI, family int) ([]SharedNetwork, error) {
 }
 
 // Fetches the information about the selected shared network.
-func GetSharedNetwork(db *dbops.PgDB, networkID int64) (*SharedNetwork, error) {
+func GetSharedNetwork(dbi dbops.DBI, networkID int64) (*SharedNetwork, error) {
 	network := &SharedNetwork{}
-	err := db.Model(network).
+	err := dbi.Model(network).
 		Where("shared_network.id = ?", networkID).
 		Select()
 	if err != nil {
@@ -154,11 +148,11 @@ func GetSharedNetworkWithSubnets(dbi dbops.DBI, networkID int64) (network *Share
 }
 
 // Deletes the selected shared network from the database.
-func DeleteSharedNetwork(db *dbops.PgDB, networkID int64) error {
+func DeleteSharedNetwork(dbi dbops.DBI, networkID int64) error {
 	network := &SharedNetwork{
 		ID: networkID,
 	}
-	result, err := db.Model(network).WherePK().Delete()
+	result, err := dbi.Model(network).WherePK().Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting the shared network with id %d", networkID)
 	} else if result.RowsAffected() <= 0 {
@@ -224,9 +218,9 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 // empty then id is used for sorting.  in SortDirAny is used then ASC
 // order is used. This function returns a collection of shared
 // networks, the total number of shared networks and error.
-func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SharedNetwork, int64, error) {
+func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SharedNetwork, int64, error) {
 	networks := []SharedNetwork{}
-	q := db.Model(&networks)
+	q := dbi.Model(&networks)
 
 	// prepare distinct on expression to include sort field, otherwise distinct on will fail
 	distingOnFields := "shared_network.id"
@@ -293,13 +287,13 @@ func GetSharedNetworksByPage(db *pg.DB, offset, limit, appID, family int64, filt
 }
 
 // Update utilization of addresses and delegated prefixes in a SharedNetwork.
-func UpdateUtilizationInSharedNetwork(db *pg.DB, sharedNetworkID int64, addrUtilization, pdUtilization int16) error {
+func UpdateUtilizationInSharedNetwork(dbi dbops.DBI, sharedNetworkID int64, addrUtilization, pdUtilization int16) error {
 	net := &SharedNetwork{
 		ID:              sharedNetworkID,
 		AddrUtilization: addrUtilization,
 		PdUtilization:   pdUtilization,
 	}
-	q := db.Model(net)
+	q := dbi.Model(net)
 	q = q.Column("addr_utilization", "pd_utilization")
 	q = q.WherePK()
 	result, err := q.Update()

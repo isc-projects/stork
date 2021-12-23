@@ -29,34 +29,26 @@ type ConfigReview struct {
 }
 
 // Upserts the configuration review entry for a daemon.
-func AddConfigReview(dbIface interface{}, configReview *ConfigReview) error {
-	// Start transaction if it hasn't been started yet.
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return err
-	}
-	defer rollback()
-
+func AddConfigReview(dbi dbops.DBI, configReview *ConfigReview) error {
 	// Insert the config_review entry. If the entry exists for the daemon,
 	// replace it with a new entry.
-	_, err = tx.Model(configReview).
+	_, err := dbi.Model(configReview).
 		OnConflict("(daemon_id) DO UPDATE").
 		Set("created_at = EXCLUDED.created_at").
 		Set("config_hash = EXCLUDED.config_hash").
 		Set("signature = EXCLUDED.signature").
 		Insert()
 	if err != nil {
-		return pkgerrors.Wrapf(err, "problem with upserting the configuration review entry for daemon %d",
+		err = pkgerrors.Wrapf(err, "problem with upserting the configuration review entry for daemon %d",
 			configReview.DaemonID)
 	}
-	err = commit()
 	return err
 }
 
 // Fetches configuration review information by daemon id.
-func GetConfigReviewByDaemonID(db *pg.DB, daemonID int64) (*ConfigReview, error) {
+func GetConfigReviewByDaemonID(dbi dbops.DBI, daemonID int64) (*ConfigReview, error) {
 	configReview := &ConfigReview{}
-	err := db.Model(configReview).
+	err := dbi.Model(configReview).
 		Relation("Daemon.KeaDaemon").
 		Where("config_review.daemon_id = ?", daemonID).
 		Select()

@@ -519,14 +519,16 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts [
 // uses HostDetectionIterator mechanism to fetch the hosts, which will in
 // most cases result in multiple reservation-get-page commands sent to Kea
 // instance.
-func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, app *dbmodel.App, seq int64) error {
-	tx, rollback, commit, err := dbops.Transaction(dbi)
+func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, app *dbmodel.App, seq int64) error {
+	tx, err := db.Begin()
 	if err != nil {
 		err = errors.WithMessagef(err, "problem with starting transaction for committing new hosts from host_cmds hooks library for app id %d", app.ID)
 		return err
 	}
-	defer rollback()
-	it := NewHostDetectionIterator(dbi, app, agents, defaultHostCmdsPageLimit)
+	defer func() {
+		_ = tx.Rollback()
+	}()
+	it := NewHostDetectionIterator(db, app, agents, defaultHostCmdsPageLimit)
 	var (
 		hosts  []dbmodel.Host
 		daemon *dbmodel.Daemon
@@ -545,7 +547,7 @@ func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, ap
 		subnet := it.GetCurrentSubnet()
 		// The subnet is nil when we're dealing with the global hosts.
 		if subnet == nil {
-			mergedHosts, err := mergeHosts(dbi, int64(0), hosts, true, daemon)
+			mergedHosts, err := mergeHosts(db, int64(0), hosts, true, daemon)
 			if err != nil {
 				break
 			}
@@ -568,7 +570,7 @@ func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, ap
 		// the subnet with the new hosts (fetched via the Kea API). These
 		// hosts are merged into the existing hosts for this subnet and
 		// returned as mergedHosts.
-		mergedHosts, err := mergeSubnetHosts(dbi, subnet, subnet, daemon)
+		mergedHosts, err := mergeSubnetHosts(db, subnet, subnet, daemon)
 		if err != nil {
 			break
 		}
@@ -583,7 +585,7 @@ func updateHostsFromHostCmds(dbi dbops.DBI, agents agentcomm.ConnectedAgents, ap
 	}
 
 	if err == nil {
-		err = commit()
+		err = tx.Commit()
 		if err != nil {
 			err = errors.WithMessagef(err, "problem with committing transaction adding new hosts from host_cmds hooks library for app id %d", app.ID)
 		}

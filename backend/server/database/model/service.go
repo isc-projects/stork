@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -84,22 +85,14 @@ type Service struct {
 	HAService *BaseHAService `pg:"rel:belongs-to"`
 }
 
-// Associates daemons with a service in the database. The dbIface parameter
-// can be of pg.DB or pg.Tx type. In the first case, this function will
-// start new transaction for adding all association. In the second case
-// the already started transaction will be used.
-func addServiceDaemons(dbIface interface{}, service *BaseService) (err error) {
+// Associates daemons with a service in the database. The first parameter
+// is a pointer to the current transaction.
+func addServiceDaemons(tx *pg.Tx, service *BaseService) (err error) {
 	if len(service.Daemons) == 0 {
 		return nil
 	}
 
 	var assocs []DaemonToService
-
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		err = pkgerrors.WithMessage(err, "problem with starting transaction for adding daemons to a service")
-	}
-	defer rollback()
 
 	// If there are any daemons to be associated with the service, let's iterate over them
 	// and insert into the daemon_to_service table.
@@ -112,54 +105,44 @@ func addServiceDaemons(dbIface interface{}, service *BaseService) (err error) {
 
 	_, err = tx.Model(&assocs).OnConflict("DO NOTHING").Insert()
 
-	// If we have started the transaction in this function we also have to commit the
-	// changes.
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessage(err, "problem with committing associations of daemon with the service")
-	}
-
 	return err
 }
 
-// Associate a daemon with the service having a specified id.
-func AddDaemonToService(dbIface interface{}, serviceID int64, daemon *Daemon) error {
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with starting transaction for associating a daemon %d with the service %d",
-			daemon.ID, serviceID)
-		return err
-	}
-	defer rollback()
-
+// Associate a daemon with the service in a transaction.
+func addDaemonToService(tx *pg.Tx, serviceID int64, daemon *Daemon) error {
 	service := &BaseService{
 		ID: serviceID,
 	}
 	service.Daemons = append(service.Daemons, daemon)
-	err = addServiceDaemons(tx, service)
+	err := addServiceDaemons(tx, service)
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with associating a daemon having id %d with service %d",
 			daemon.ID, serviceID)
-		return err
-	}
-
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with committing transaction associating daemon %d with the service %d",
-			daemon.ID, service.ID)
 	}
 	return err
+}
+
+// Associate a daemon with the service. It begins a new transaction when
+// dbi has a *pg.DB type or uses an existing transaction when dbi has a
+// *pg.Tx type.
+func AddDaemonToService(dbi dbops.DBI, serviceID int64, daemon *Daemon) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return addDaemonToService(tx, serviceID, daemon)
+		})
+	}
+	return addDaemonToService(dbi.(*pg.Tx), serviceID, daemon)
 }
 
 // Dissociate a daemon from the service having a specified id.
 // The first returned value indicates if any row was removed from the
 // daemon_to_service table.
-func DeleteDaemonFromService(db *pg.DB, serviceID, daemonID int64) (bool, error) {
+func DeleteDaemonFromService(dbi dbops.DBI, serviceID, daemonID int64) (bool, error) {
 	as := &DaemonToService{
 		DaemonID:  daemonID,
 		ServiceID: serviceID,
 	}
-	rows, err := db.Model(as).WherePK().Delete()
+	rows, err := dbi.Model(as).WherePK().Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting a daemon with id %d from the service %d",
 			daemonID, serviceID)
@@ -168,19 +151,11 @@ func DeleteDaemonFromService(db *pg.DB, serviceID, daemonID int64) (bool, error)
 	return rows.RowsAffected() > 0, nil
 }
 
-// Adds new service to the database and associates the daemons with it.
-// This operation is performed in a transaction. There are several SQL tables
-// involved in this operation: service, daemon_to_service and optionally ha_service.
-func AddService(dbIface interface{}, service *Service) error {
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with starting transaction for adding new service")
-		return err
-	}
-	defer rollback()
-
+// Adds new service to the database and associates the daemons with it
+// in a transaction.
+func addService(tx *pg.Tx, service *Service) error {
 	// Insert generic information into the service table.
-	_, err = tx.Model(service).Insert()
+	_, err := tx.Model(service).Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with adding new service")
 		return err
@@ -201,105 +176,66 @@ func AddService(dbIface interface{}, service *Service) error {
 			return err
 		}
 	}
-
-	// All ok, let's commit the changes.
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessage(err, "problem with committing new service into the database")
-	}
-
-	return err
+	return nil
 }
 
-// Adds information about HA service and associate it with the given service ID.
-func AddHAService(dbIface interface{}, serviceID int64, haService *BaseHAService) error {
-	haService.ServiceID = serviceID
-
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return err
+// Adds new service to the database and associates the daemons with it.
+// It begins a new transaction when dbi has a *pg.DB type or uses an
+// existing transaction when dbi has a *pg.Tx type. There are several SQL
+// tables involved in this operation: service, daemon_to_service and
+// optionally ha_service.
+func AddService(dbi dbops.DBI, service *Service) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return addService(tx, service)
+		})
 	}
-	defer rollback()
+	return addService(dbi.(*pg.Tx), service)
+}
 
-	_, err = tx.Model(haService).Insert()
+// Adds information about HA service and associates it with the given service ID.
+func AddHAService(dbi dbops.DBI, serviceID int64, haService *BaseHAService) error {
+	haService.ServiceID = serviceID
+	_, err := dbi.Model(haService).Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with adding new HA service to the database")
-		return err
-	}
-
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessage(err, "problem with committing new HA service into the database")
 	}
 	return err
 }
 
 // Updates basic information about the service. It only affects the contents of the
 // service table in the database.
-func UpdateBaseService(dbIface interface{}, service *BaseService) error {
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return err
-	}
-	defer rollback()
-
-	result, err := tx.Model(service).WherePK().Update()
+func UpdateBaseService(dbi dbops.DBI, service *BaseService) error {
+	result, err := dbi.Model(service).WherePK().Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating base service with id %d", service.ID)
-		return err
 	} else if result.RowsAffected() <= 0 {
 		err = pkgerrors.Wrapf(ErrNotExists, "service with id %d does not exist", service.ID)
-		return err
-	}
-
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with committing base service %d information after update",
-			service.ID)
 	}
 	return err
 }
 
 // Updates HA specific information for a service. It only affects the contents of
 // the ha_service table.
-func UpdateBaseHAService(dbIface interface{}, service *BaseHAService) error {
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return err
-	}
-	defer rollback()
-
-	result, err := tx.Model(service).WherePK().Update()
+func UpdateBaseHAService(dbi dbops.DBI, service *BaseHAService) error {
+	result, err := dbi.Model(service).WherePK().Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating the HA information for service with id %d",
 			service.ServiceID)
 		return err
 	} else if result.RowsAffected() <= 0 {
 		err = pkgerrors.Wrapf(ErrNotExists, "service with id %d does not exist", service.ServiceID)
-		return err
-	}
-
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with committing HA information for service with id %d after update",
-			service.ServiceID)
 	}
 	return err
 }
 
-// Updates basic and detailed information about the service.
-func UpdateService(dbIface interface{}, service *Service) error {
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
+// Updates basic and detailed information about the service in a
+// transaction.
+func updateService(tx *pg.Tx, service *Service) error {
+	err := UpdateBaseService(tx, &service.BaseService)
 	if err != nil {
 		return err
 	}
-	defer rollback()
-
-	err = UpdateBaseService(tx, &service.BaseService)
-	if err != nil {
-		return err
-	}
-
 	if service.HAService != nil {
 		if service.HAService.ID == 0 {
 			err = AddHAService(tx, service.ID, service.HAService)
@@ -310,18 +246,25 @@ func UpdateService(dbIface interface{}, service *Service) error {
 			return err
 		}
 	}
+	return nil
+}
 
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with committing service with id %d after update", service.ID)
+// Updates basic and detailed information about the service. It begins a new
+// transaction when dbi has a *pg.DB type or uses an existing transaction when
+// dbi has a *pg.Tx type.
+func UpdateService(dbi dbops.DBI, service *Service) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return updateService(tx, service)
+		})
 	}
-	return err
+	return updateService(dbi.(*pg.Tx), service)
 }
 
 // Fetches a service from the database for a given service id.
-func GetDetailedService(db *dbops.PgDB, serviceID int64) (*Service, error) {
+func GetDetailedService(dbi dbops.DBI, serviceID int64) (*Service, error) {
 	service := &Service{}
-	err := db.Model(service).
+	err := dbi.Model(service).
 		Relation("HAService").
 		Relation("Daemons.KeaDaemon.KeaDHCPDaemon").
 		Relation("Daemons.App").
@@ -338,10 +281,10 @@ func GetDetailedService(db *dbops.PgDB, serviceID int64) (*Service, error) {
 }
 
 // Fetches all services to which the given app belongs.
-func GetDetailedServicesByAppID(db *dbops.PgDB, appID int64) ([]Service, error) {
+func GetDetailedServicesByAppID(dbi dbops.DBI, appID int64) ([]Service, error) {
 	var services []Service
 
-	err := db.Model(&services).
+	err := dbi.Model(&services).
 		Join("INNER JOIN daemon_to_service AS dtos ON dtos.service_id = service.id").
 		Join("INNER JOIN daemon AS d ON d.id = dtos.daemon_id").
 		Join("INNER JOIN app AS a ON d.app_id = a.ID").
@@ -381,13 +324,13 @@ func GetDetailedAllServices(dbi dbops.DBI) ([]Service, error) {
 
 // Deletes the service and all associations of this service with the
 // applications. The applications are not removed.
-func DeleteService(db *dbops.PgDB, serviceID int64) error {
+func DeleteService(dbi dbops.DBI, serviceID int64) error {
 	service := &Service{
 		BaseService: BaseService{
 			ID: serviceID,
 		},
 	}
-	result, err := db.Model(service).WherePK().Delete()
+	result, err := dbi.Model(service).WherePK().Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting the service having id %d", serviceID)
 	} else if result.RowsAffected() <= 0 {
@@ -397,15 +340,9 @@ func DeleteService(db *dbops.PgDB, serviceID int64) error {
 }
 
 // Iterates over the services and commits them to the database. It also associates them
-// with the specified daemon.
-func CommitServicesIntoDB(dbIface interface{}, services []Service, daemon *Daemon) error {
-	// Begin transaction.
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return err
-	}
-	defer rollback()
-
+// with the specified daemon. The services are committed in a transaction.
+func commitServicesIntoDB(tx *pg.Tx, services []Service, daemon *Daemon) error {
+	var err error
 	for i := range services {
 		if services[i].ID == 0 {
 			err = AddService(tx, &services[i])
@@ -425,12 +362,19 @@ func CommitServicesIntoDB(dbIface interface{}, services []Service, daemon *Daemo
 			return err
 		}
 	}
+	return nil
+}
 
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessage(err, "problem with committing services into the database")
+// Iterates over the services and commits them to the database. It also associates them
+// with the specified daemon. It begins a new transaction when dbi has a *pg.DB type
+// or uses an existing transaction when dbi has a *pg.Tx type.
+func CommitServicesIntoDB(dbi dbops.DBI, services []Service, daemon *Daemon) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return commitServicesIntoDB(tx, services, daemon)
+		})
 	}
-	return err
+	return commitServicesIntoDB(dbi.(*pg.Tx), services, daemon)
 }
 
 // Checks if the service is new, i.e. hasn't yet been inserted into

@@ -30,8 +30,8 @@ type SystemUser struct {
 }
 
 type SystemUserToGroup struct {
-	UserID  int `pg:",pk,not_null,on_delete:CASCADE"`
-	GroupID int `pg:",pk,not_null,on_delete:CASCADE"`
+	UserID  int `pg:",pk,notnull,on_delete:CASCADE"`
+	GroupID int `pg:",pk,notnull,on_delete:CASCADE"`
 }
 
 // Returns user's identity for logging purposes. It includes login, email or both.

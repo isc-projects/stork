@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"errors"
 	"strings"
@@ -107,53 +108,43 @@ func addIPReservations(tx *pg.Tx, host *Host) error {
 	return nil
 }
 
-// Adds new host, its reservations and identifiers into the database.
-func AddHost(dbIface interface{}, host *Host) error {
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with starting transaction for adding new host")
-		return err
-	}
-	defer rollback()
-
+// Adds new host, its reservations and identifiers into the database in
+// a transaction.
+func addHost(tx *pg.Tx, host *Host) error {
 	// Add the host and fetch its id.
-	_, err = tx.Model(host).Insert()
+	_, err := tx.Model(host).Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with adding new host")
 		return err
 	}
-
 	// Associate the host with the given id with its identifiers.
 	err = addHostIdentifiers(tx, host)
 	if err != nil {
 		return err
 	}
-
 	// Associate the host with the given id with its reservations.
 	err = addIPReservations(tx, host)
 	if err != nil {
 		return err
 	}
-
-	// Everything is fine, commit the changes.
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with committing new host")
-	}
-
-	return err
+	return nil
 }
 
-// Updates a host, its reservations and identifiers in the database.
-func UpdateHost(dbIface interface{}, host *Host) error {
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with starting transaction for updating host with id %d",
-			host.ID)
-		return err
+// Adds new host, its reservations and identifiers into the database.
+// It begins a new transaction when dbi has a *pg.DB type or uses an
+// existing transaction when dbi has a *pg.Tx type.
+func AddHost(dbi dbops.DBI, host *Host) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return addHost(tx, host)
+		})
 	}
-	defer rollback()
+	return addHost(dbi.(*pg.Tx), host)
+}
 
+// Updates a host, its reservations and identifiers in the database
+// in a transaction.
+func updateHost(tx *pg.Tx, host *Host) error {
 	// Collect updated identifiers.
 	hostIDTypes := []string{}
 	for _, hostID := range host.HostIdentifiers {
@@ -167,7 +158,7 @@ func UpdateHost(dbIface interface{}, host *Host) error {
 	if len(hostIDTypes) > 0 {
 		q = q.Where("host_identifier.type NOT IN (?)", pg.In(hostIDTypes))
 	}
-	_, err = q.Delete()
+	_, err := q.Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting host identifiers for host %d", host.ID)
 		return err
@@ -207,25 +198,26 @@ func UpdateHost(dbIface interface{}, host *Host) error {
 	result, err := tx.Model(host).WherePK().Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating host with id %d", host.ID)
-		return err
 	} else if result.RowsAffected() <= 0 {
 		err = pkgerrors.Wrapf(ErrNotExists, "host with id %d does not exist", host.ID)
-		return err
 	}
-
-	// Everything is fine. Commit the changes.
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with committing updated host with id %d", host.ID)
-	}
-
 	return err
 }
 
+// Updates a host, its reservations and identifiers in the database.
+func UpdateHost(dbi pg.DBI, host *Host) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return updateHost(tx, host)
+		})
+	}
+	return updateHost(dbi.(*pg.Tx), host)
+}
+
 // Fetch the host by ID.
-func GetHost(db *pg.DB, hostID int64) (*Host, error) {
+func GetHost(dbi dbops.DBI, hostID int64) (*Host, error) {
 	host := &Host{}
-	err := db.Model(host).
+	err := dbi.Model(host).
 		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("host_identifier.id ASC"), nil
 		}).
@@ -248,9 +240,9 @@ func GetHost(db *pg.DB, hostID int64) (*Host, error) {
 
 // Fetch all hosts having address reservations belonging to a specific family
 // or all reservations regardless of the family.
-func GetAllHosts(db *pg.DB, family int) ([]Host, error) {
+func GetAllHosts(dbi dbops.DBI, family int) ([]Host, error) {
 	hosts := []Host{}
-	q := db.Model(&hosts).DistinctOn("id")
+	q := dbi.Model(&hosts).DistinctOn("id")
 
 	// Let's be liberal and allow other values than 0 too. The only special
 	// ones are 4 and 6.
@@ -284,17 +276,9 @@ func GetAllHosts(db *pg.DB, family int) ([]Host, error) {
 // Fetches a collection of hosts by subnet ID. This function may be sometimes
 // used within a transaction. In particular, when we're synchronizing hosts
 // fetched from the Kea hosts backend in multiple chunks.`.
-func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
+func GetHostsBySubnetID(dbi dbops.DBI, subnetID int64) ([]Host, error) {
 	hosts := []Host{}
-
-	tx, rollback, _, err := dbops.Transaction(dbIface)
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with starting transaction for getting hosts for subnet with id %d", subnetID)
-		return hosts, err
-	}
-	defer rollback()
-
-	q := tx.Model(&hosts).
+	q := dbi.Model(&hosts).
 		Relation("HostIdentifiers", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("host_identifier.id ASC"), nil
 		}).
@@ -315,7 +299,7 @@ func GetHostsBySubnetID(dbIface interface{}, subnetID int64) ([]Host, error) {
 		q = q.Where("host.subnet_id = ?", subnetID)
 	}
 
-	err = q.Select()
+	err := q.Select()
 	if err != nil {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
@@ -374,9 +358,9 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource string) ([]Hos
 // database and sortDir allows selection the order of sorting. If
 // sortField is empty then id is used for sorting. If SortDirAny is
 // used then ASC order is used.
-func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64, filterText *string, global *bool, sortField string, sortDir SortDirEnum) ([]Host, int64, error) {
+func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *int64, filterText *string, global *bool, sortField string, sortDir SortDirEnum) ([]Host, int64, error) {
 	hosts := []Host{}
-	q := db.Model(&hosts)
+	q := dbi.Model(&hosts)
 
 	// prepare distinct on expression to include sort field, otherwise distinct on will fail
 	distingOnFields := "host.id"
@@ -458,11 +442,11 @@ func GetHostsByPage(db *pg.DB, offset, limit int64, appID int64, subnetID *int64
 }
 
 // Delete host, host identifiers and reservations by id.
-func DeleteHost(db *pg.DB, hostID int64) error {
+func DeleteHost(dbi dbops.DBI, hostID int64) error {
 	host := &Host{
 		ID: hostID,
 	}
-	result, err := db.Model(host).WherePK().Delete()
+	result, err := dbi.Model(host).WherePK().Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting a host with id %d", hostID)
 	} else if result.RowsAffected() <= 0 {
@@ -475,8 +459,8 @@ func DeleteHost(db *pg.DB, hostID int64) error {
 // different than the specified sequence number. These are usually hosts which
 // are no longer present in any of the apps monitored by Stork. The dataSource
 // is optional and it indicates the sources of hosts to be removed.
-func DeleteLocalHostsWithOtherSeq(db *pg.DB, seq int64, dataSource string) error {
-	q := db.Model(&LocalHost{}).
+func DeleteLocalHostsWithOtherSeq(dbi dbops.DBI, seq int64, dataSource string) error {
+	q := dbi.Model(&LocalHost{}).
 		Where("local_host.update_seq != ?", seq)
 	if len(dataSource) > 0 {
 		q = q.Where("local_host.data_source = ?", dataSource)
@@ -488,20 +472,13 @@ func DeleteLocalHostsWithOtherSeq(db *pg.DB, seq int64, dataSource string) error
 	return err
 }
 
-// Associates an application with the host having a specified ID. Internally,
-// the association is made via the local_host table which holds information
-// about the host from the given app perspective. The source argument
-// indicates whether the host information was fetched from the app's configuration
-// or via the command.
-func AddAppToHost(dbIface interface{}, host *Host, app *App, daemonID int64, source string, seq int64) error {
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with starting transaction for associating an app %d with the host %d",
-			app.ID, host.ID)
-		return err
-	}
-	defer rollback()
-
+// Associates an application with the host having a specified ID in a
+// transaction. Internally, the association is made via the local_host
+// table which holds information about the host from the given app
+// perspective. The source argument indicates whether the host
+// information was fetched from the app's configuration or via the
+// command.
+func addAppToHost(tx *pg.Tx, host *Host, app *App, daemonID int64, source string, seq int64) error {
 	localHost := LocalHost{
 		AppID:      app.ID,
 		HostID:     host.ID,
@@ -509,7 +486,6 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, daemonID int64, sou
 		DataSource: source,
 		UpdateSeq:  seq,
 	}
-
 	q := tx.Model(&localHost).
 		OnConflict("(app_id, host_id) DO UPDATE").
 		Set("daemon_id = EXCLUDED.daemon_id").
@@ -520,20 +496,24 @@ func AddAppToHost(dbIface interface{}, host *Host, app *App, daemonID int64, sou
 			q = q.Set("update_seq = EXCLUDED.update_seq")
 		}
 	}
-
-	_, err = q.Insert()
+	_, err := q.Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with associating the app %d (daemon %d) with the host %d",
 			app.ID, daemonID, host.ID)
-		return err
-	}
-
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with committing transaction associating the app %d with the host %d",
-			app.ID, host.ID)
 	}
 	return err
+}
+
+// Associates an application with the host having a specified ID.
+// It begins a new transaction when dbi has a *pg.DB type or uses an
+// existing transaction when dbi has a *pg.Tx type.
+func AddAppToHost(dbi dbops.DBI, host *Host, app *App, daemonID int64, source string, seq int64) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return addAppToHost(tx, host, app, daemonID, source, seq)
+		})
+	}
+	return addAppToHost(dbi.(*pg.Tx), host, app, daemonID, source, seq)
 }
 
 // Dissociates a daemon from the hosts. The dataSource designates a data
@@ -623,8 +603,8 @@ func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, daemon *Daemon
 // updated. In such case, they can be removed.
 // todo: This function may be used to a separate file. For now it is here, because
 // the only supported use case is for hosts.
-func GetNextBulkUpdateSeq(db *dbops.PgDB) (seq int64, err error) {
-	_, err = db.QueryOne(pg.Scan(&seq), "SELECT nextval('bulk_update_seq')")
+func GetNextBulkUpdateSeq(dbi dbops.DBI) (seq int64, err error) {
+	_, err = dbi.QueryOne(pg.Scan(&seq), "SELECT nextval('bulk_update_seq')")
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with getting next bulk update sequence number")
 	}

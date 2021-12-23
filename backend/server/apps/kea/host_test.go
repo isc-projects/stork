@@ -10,7 +10,6 @@ import (
 	require "github.com/stretchr/testify/require"
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
-	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
@@ -435,13 +434,13 @@ func TestDetectHostsFromConfig(t *testing.T) {
 	}
 
 	// Commit the hosts into the database.
-	tx, _, commit, err := dbops.Transaction(db)
+	tx, err := db.Begin()
 	require.NoError(t, err)
 	err = dbmodel.CommitGlobalHostsIntoDB(tx, v4hosts, &app, app.Daemons[0], "config", 1)
 	require.NoError(t, err)
 	err = dbmodel.CommitGlobalHostsIntoDB(tx, v6hosts, &app, app.Daemons[1], "config", 1)
 	require.NoError(t, err)
-	err = commit()
+	err = tx.Commit()
 	require.NoError(t, err)
 
 	// Run the detection again.

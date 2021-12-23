@@ -375,18 +375,9 @@ func GetKeaDaemonsForUpdate(tx *pg.Tx, daemonsToSelect []*Daemon) ([]*Daemon, er
 	return daemons, nil
 }
 
-// Updates a daemon, including dependent Daemon, KeaDaemon, KeaDHCPDaemon
-// and Bind9Daemon if they are not nil.
-func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
-	// Start transaction if it hasn't been started yet.
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return err
-	}
-	// Always rollback when this function ends. If the changes get committed
-	// first this is no-op.
-	defer rollback()
-
+// Updates a daemon in a transaction, including dependent Daemon,
+// KeaDaemon, KeaDHCPDaemon and Bind9Daemon if they are not nil.
+func updateDaemon(tx *pg.Tx, daemon *Daemon) error {
 	// Update common daemon instance.
 	result, err := tx.Model(daemon).WherePK().Update()
 	if err != nil {
@@ -430,13 +421,18 @@ func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
 			return pkgerrors.Wrapf(ErrNotExists, "BIND9 daemon with id %d does not exist", daemon.Bind9Daemon.ID)
 		}
 	}
+	return nil
+}
 
-	err = commit()
-	if err != nil {
-		err = pkgerrors.WithMessagef(err, "problem with committing daemon %d after update", daemon.ID)
+// Updates a daemon, including dependent Daemon, KeaDaemon, KeaDHCPDaemon
+// and Bind9Daemon if they are not nil.
+func UpdateDaemon(dbi dbops.DBI, daemon *Daemon) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return updateDaemon(tx, daemon)
+		})
 	}
-
-	return err
+	return updateDaemon(dbi.(*pg.Tx), daemon)
 }
 
 // This is a hook to go-pg that is called just after reading rows from database.

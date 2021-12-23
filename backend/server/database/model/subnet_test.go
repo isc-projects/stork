@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
-	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -966,8 +965,8 @@ func BenchmarkAddSubnet(b *testing.B) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
 	defer teardown()
 
-	tx, rollback, commit, _ := dbops.Transaction(db)
-	defer rollback()
+	tx, _ := db.Begin()
+	defer tx.Rollback()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -983,7 +982,7 @@ func BenchmarkAddSubnet(b *testing.B) {
 		}
 		AddSubnet(tx, subnet)
 	}
-	commit()
+	tx.Commit()
 }
 
 // Benchmark measuring a time to associate a subnet with an app. This requires
@@ -1002,8 +1001,7 @@ func BenchmarkAddAppToSubnet(b *testing.B) {
 			db, _, teardown := dbtest.SetupDatabaseTestCase(b)
 			defer teardown()
 
-			tx, rollback, commit, _ := dbops.Transaction(db)
-			defer rollback()
+			tx, _ := db.Begin()
 
 			// Add many subnets to the database.
 			subnets := []Subnet{}
@@ -1021,7 +1019,7 @@ func BenchmarkAddAppToSubnet(b *testing.B) {
 				subnets = append(subnets, subnet)
 				keaSubnets = append(keaSubnets, keaSubnet)
 			}
-			commit()
+			tx.Commit()
 
 			// Also create the configuration including these subnets for the app.
 			rawConfig := &map[string]interface{}{

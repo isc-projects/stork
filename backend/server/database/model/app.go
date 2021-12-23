@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -198,25 +199,12 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 	return addedDaemons, deletedDaemons, nil
 }
 
-// Adds application into the database. The dbIface object may either
-// be a pg.DB object or pg.Tx. In the latter case this function uses
-// existing transaction to add an app. Returns a list of added daemons
-// and error if occurred.
-func AddApp(dbIface interface{}, app *App) ([]*Daemon, error) {
-	// Start transaction if it hasn't been started yet.
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return nil, err
-	}
-	// Always rollback when this function ends. If the changes get committed
-	// first this is no-op.
-	defer rollback()
-
-	_, err = tx.Model(app).Insert()
+// Adds application into the database in a transaction.
+func addApp(tx *pg.Tx, app *App) ([]*Daemon, error) {
+	_, err := tx.Model(app).Insert()
 	if err != nil {
 		return nil, pkgerrors.Wrapf(err, "problem with inserting app %v", app)
 	}
-
 	addedDaemons, deletedDaemons, err := updateAppDaemons(tx, app)
 	if err != nil {
 		return nil, pkgerrors.WithMessage(err, "problem with inserting daemons for a new app")
@@ -224,67 +212,68 @@ func AddApp(dbIface interface{}, app *App) ([]*Daemon, error) {
 	if len(deletedDaemons) > 0 {
 		return nil, pkgerrors.Errorf("problem with deleting daemons for a new app")
 	}
-
 	// Add access points.
 	err = updateAppAccessPoints(tx, app, false)
 	if err != nil {
 		return nil, pkgerrors.WithMessagef(err, "problem with adding access points to app: %+v", app)
 	}
-
-	// Commit the changes if necessary.
-	err = commit()
-	if err != nil {
-		return nil, err
-	}
-
 	return addedDaemons, nil
 }
 
-// Updates application in the database. An error is returned if the
-// app does not exist. The dbIface object may either be a pg.DB object
-// or pg.Tx. In the latter case this function uses existing
-// transaction to add an app. Returns a list of added daemons, deleted
-// daemons and error if occurred.
-func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
-	// Start transaction if it hasn't been started yet.
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return nil, nil, err
+// Adds application into the database. It begins a new transaction when
+// dbi has a *pg.DB type or uses an existing transaction when dbi has
+// a *pg.Tx type.
+func AddApp(dbi dbops.DBI, app *App) (addedDaemons []*Daemon, err error) {
+	if db, ok := dbi.(*pg.DB); ok {
+		err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			addedDaemons, err = addApp(tx, app)
+			return err
+		})
+		return
 	}
-	// Always rollback when this function ends. If the changes get committed
-	// first this is no-op.
-	defer rollback()
+	addedDaemons, err = addApp(dbi.(*pg.Tx), app)
+	return
+}
 
+// Updates application in the database in a transaction.
+func updateApp(tx *pg.Tx, app *App) (addedDaemons []*Daemon, deletedDaemons []*Daemon, err error) {
 	result, err := tx.Model(app).WherePK().Update()
 	if err != nil {
 		return nil, nil, pkgerrors.Wrapf(err, "problem with updating app %v", app)
 	} else if result.RowsAffected() <= 0 {
 		return nil, nil, pkgerrors.Wrapf(ErrNotExists, "app with id %d does not exist", app.ID)
 	}
-
-	addedDaemons, deletedDaemons, err := updateAppDaemons(tx, app)
+	addedDaemons, deletedDaemons, err = updateAppDaemons(tx, app)
 	if err != nil {
-		return nil, nil, pkgerrors.WithMessagef(err, "problem with updating daemons for app %d", app.ID)
+		err = pkgerrors.WithMessagef(err, "problem with updating daemons for app %d", app.ID)
+		return
 	}
-
 	// Update access points.
 	err = updateAppAccessPoints(tx, app, true)
 	if err != nil {
-		return nil, nil, pkgerrors.WithMessagef(err, "problem with updating access points to app: %+v", app)
+		err = pkgerrors.WithMessagef(err, "problem with updating access points to app: %+v", app)
 	}
+	return
+}
 
-	// Commit the changes if necessary.
-	err = commit()
-	if err != nil {
-		return nil, nil, err
+// Updates application in the database. It begins a new transaction when
+// dbi has a *pg.DB type or uses an existing transaction when dbi has
+// a *pg.Tx type.
+func UpdateApp(dbi dbops.DBI, app *App) (addedDaemons []*Daemon, deletedDaemons []*Daemon, err error) {
+	if db, ok := dbi.(*pg.DB); ok {
+		err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			addedDaemons, deletedDaemons, err = updateApp(tx, app)
+			return err
+		})
+		return
 	}
-
-	return addedDaemons, deletedDaemons, nil
+	addedDaemons, deletedDaemons, err = updateApp(dbi.(*pg.Tx), app)
+	return
 }
 
 // Updates specified app's name. It returns app instance with old name and possibly
 // an error. If an error occurs, a nil app is returned.
-func RenameApp(db *pg.DB, id int64, newName string) (*App, error) {
+func RenameApp(dbi dbops.DBI, id int64, newName string) (*App, error) {
 	app := &App{
 		ID:   id,
 		Name: newName,
@@ -301,12 +290,12 @@ func RenameApp(db *pg.DB, id int64, newName string) (*App, error) {
 	// the update. The idea for this query was taken from the PostgreSQL
 	// documentation: https://www.postgresql.org/docs/9.1/queries-with.html
 
-	updateQuery := db.Model(app).
+	updateQuery := dbi.Model(app).
 		Column("name").
 		WherePK().
 		Returning("name")
 
-	err := db.Model(app).
+	err := dbi.Model(app).
 		WithUpdate("rename", updateQuery).
 		WherePK().
 		Select()
@@ -317,9 +306,9 @@ func RenameApp(db *pg.DB, id int64, newName string) (*App, error) {
 	return app, nil
 }
 
-func GetAppByID(db *pg.DB, id int64) (*App, error) {
+func GetAppByID(dbi dbops.DBI, id int64) (*App, error) {
 	app := App{}
-	q := db.Model(&app)
+	q := dbi.Model(&app)
 	q = q.Relation("Machine")
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
@@ -335,10 +324,10 @@ func GetAppByID(db *pg.DB, id int64) (*App, error) {
 	return &app, nil
 }
 
-func GetAppsByMachine(db *pg.DB, machineID int64) ([]*App, error) {
+func GetAppsByMachine(dbi dbops.DBI, machineID int64) ([]*App, error) {
 	var apps []*App
 
-	q := db.Model(&apps)
+	q := dbi.Model(&apps)
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
 	q = q.Relation("Daemons.Bind9Daemon")
@@ -354,10 +343,10 @@ func GetAppsByMachine(db *pg.DB, machineID int64) ([]*App, error) {
 }
 
 // Fetches all apps by type including the corresponding services.
-func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
+func GetAppsByType(dbi dbops.DBI, appType string) ([]App, error) {
 	var apps []App
 
-	q := db.Model(&apps)
+	q := dbi.Model(&apps)
 	q = q.Where("type = ?", appType)
 	q = q.Relation("Machine")
 	q = q.Relation("AccessPoints")
@@ -386,14 +375,14 @@ func GetAppsByType(db *pg.DB, appType string) ([]App, error) {
 // sortDir allows selection the order of sorting. If sortField is
 // empty then id is used for sorting. If SortDirAny is used then ASC
 // order is used.
-func GetAppsByPage(db *pg.DB, offset int64, limit int64, filterText *string, appType string, sortField string, sortDir SortDirEnum) ([]App, int64, error) {
+func GetAppsByPage(dbi dbops.DBI, offset int64, limit int64, filterText *string, appType string, sortField string, sortDir SortDirEnum) ([]App, int64, error) {
 	if limit == 0 {
 		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}
 	var apps []App
 
 	// prepare query
-	q := db.Model(&apps)
+	q := dbi.Model(&apps)
 	q = q.Relation("AccessPoints")
 	q = q.Relation("Machine")
 	q = q.Relation("Daemons.KeaDaemon.KeaDHCPDaemon")
@@ -434,11 +423,11 @@ func GetAppsByPage(db *pg.DB, offset int64, limit int64, filterText *string, app
 // the app information must be returned with relations, i.e. with daemons,
 // access points and machines information. If it is set to false, only
 // the data belonging to the app table are returned.
-func GetAllApps(db *pg.DB, withRelations bool) ([]App, error) {
+func GetAllApps(dbi dbops.DBI, withRelations bool) ([]App, error) {
 	var apps []App
 
 	// prepare query
-	q := db.Model(&apps)
+	q := dbi.Model(&apps)
 
 	if withRelations {
 		q = q.Relation("AccessPoints")
@@ -457,8 +446,8 @@ func GetAllApps(db *pg.DB, withRelations bool) ([]App, error) {
 	return apps, nil
 }
 
-func DeleteApp(db *pg.DB, app *App) error {
-	result, err := db.Model(app).WherePK().Delete()
+func DeleteApp(dbi dbops.DBI, app *App) error {
+	result, err := dbi.Model(app).WherePK().Delete()
 	if err != nil {
 		return pkgerrors.Wrapf(err, "problem with deleting app %v", app.ID)
 	} else if result.RowsAffected() <= 0 {

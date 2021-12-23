@@ -8,7 +8,6 @@ import (
 	"github.com/go-pg/pg/v10"
 	require "github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
-	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -285,7 +284,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 	defer teardown()
 
 	// Get non-existing daemons.
-	tx, _, commit, err := dbops.Transaction(db)
+	tx, err := db.Begin()
 	require.NoError(t, err)
 
 	daemons, err := GetDaemonsForUpdate(tx, []*Daemon{
@@ -298,7 +297,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Empty(t, daemons)
-	err = commit()
+	err = tx.Commit()
 	require.NoError(t, err)
 
 	// Create a machine.
@@ -330,7 +329,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 	require.NotZero(t, app.Daemons[0].ID)
 
 	// Start new transaction.
-	tx, _, commit, err = dbops.Transaction(db)
+	tx, err = db.Begin()
 	require.NoError(t, err)
 
 	// An attempt to select no particular daemon for update should result
@@ -390,7 +389,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Commit the transaction which should cause the goroutine to complete.
-	err = commit()
+	err = tx.Commit()
 	require.NoError(t, err)
 
 	// Wait for the goroutine to complete.
@@ -409,7 +408,7 @@ func TestGetKeaDaemonsForUpdate(t *testing.T) {
 	defer teardown()
 
 	// Get non-existing daemons.
-	tx, _, commit, err := dbops.Transaction(db)
+	tx, err := db.Begin()
 	require.NoError(t, err)
 
 	daemons, err := GetKeaDaemonsForUpdate(tx, []*Daemon{
@@ -422,7 +421,7 @@ func TestGetKeaDaemonsForUpdate(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Empty(t, daemons)
-	err = commit()
+	err = tx.Commit()
 	require.NoError(t, err)
 
 	// Create a machine.
@@ -473,7 +472,7 @@ func TestGetKeaDaemonsForUpdate(t *testing.T) {
 	require.NotZero(t, app.Daemons[1].ID)
 
 	// Start new transaction.
-	tx, _, commit, err = dbops.Transaction(db)
+	tx, err = db.Begin()
 	require.NoError(t, err)
 
 	// An attempt to select no particular daemon for update should result
@@ -539,7 +538,7 @@ func TestGetKeaDaemonsForUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Commit the transaction which should cause the goroutine to complete.
-	err = commit()
+	err = tx.Commit()
 	require.NoError(t, err)
 
 	// Wait for the goroutine to complete.

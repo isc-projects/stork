@@ -42,17 +42,10 @@ type DaemonToConfigReport struct {
 }
 
 // Adds a single configuration report and its relationships with the
-// daemons to the database.
-func AddConfigReport(dbIface interface{}, configReport *ConfigReport) error {
-	// Start transaction if it hasn't been started yet.
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return err
-	}
-	defer rollback()
-
+// daemons to the database in a transaction.
+func addConfigReport(tx *pg.Tx, configReport *ConfigReport) error {
 	// Insert the config_report entry.
-	_, err = tx.Model(configReport).Insert()
+	_, err := tx.Model(configReport).Insert()
 
 	if err == nil {
 		// Insert associations between the configuration report and
@@ -90,13 +83,18 @@ func AddConfigReport(dbIface interface{}, configReport *ConfigReport) error {
 		return err
 	}
 
-	// All done.
-	err = commit()
-	if err != nil {
-		return err
-	}
-
 	return nil
+}
+
+// Adds a single configuration report and its relationships with the
+// daemons to the database.
+func AddConfigReport(dbi dbops.DBI, configReport *ConfigReport) error {
+	if db, ok := dbi.(*pg.DB); ok {
+		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return addConfigReport(tx, configReport)
+		})
+	}
+	return addConfigReport(dbi.(*pg.Tx), configReport)
 }
 
 // Select all or a range of the config reports for the specified daemon.
@@ -132,29 +130,16 @@ func GetConfigReportsByDaemonID(db *pg.DB, offset, limit int64, daemonID int64) 
 }
 
 // Delete all config reports for the specified daemon.
-func DeleteConfigReportsByDaemonID(dbIface interface{}, daemonID int64) error {
-	// Start transaction if it hasn't been started yet.
-	tx, rollback, commit, err := dbops.Transaction(dbIface)
-	if err != nil {
-		return err
-	}
-	defer rollback()
-
-	_, err = tx.Model((*ConfigReport)(nil)).
+func DeleteConfigReportsByDaemonID(dbi dbops.DBI, daemonID int64) error {
+	_, err := dbi.Model((*ConfigReport)(nil)).
 		Where("daemon_id = ?", daemonID).
 		Delete()
 
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
 		err = pkgerrors.Wrapf(err, "problem with deleting config reports for daemon %d", daemonID)
-		return err
 	}
 
-	err = commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // A go-pg hook executed after selecting the config reports. It fills the

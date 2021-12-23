@@ -358,11 +358,13 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 	daemons := append([]*dbmodel.Daemon{ctx.subjectDaemon}, ctx.refDaemons...)
 
 	// Begin a new transaction for inserting the reports.
-	tx, rollback, commit, err := dbops.Transaction(d.db)
+	tx, err := d.db.Begin()
 	if err != nil {
 		return err
 	}
-	defer rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// The following calls serve two purposes. Firstly, they lock the daemons
 	// and other information in the database, so no other transaction can
@@ -454,7 +456,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 		}
 	}
 
-	err = commit()
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}

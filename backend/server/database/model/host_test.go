@@ -1,11 +1,11 @@
 package dbmodel
 
 import (
+	"context"
 	"testing"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
-	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"
 )
 
@@ -1018,8 +1018,6 @@ func TestHostIdentifierToHex(t *testing.T) {
 func TestCommitGlobalHostsIntoDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
-	tx, _, commit, err := dbops.Transaction(db)
-	require.NoError(t, err)
 
 	apps := addTestSubnetApps(t, db)
 
@@ -1053,9 +1051,10 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 		},
 	}
 	// Add the hosts and their associations with the app to the database.
-	err = CommitGlobalHostsIntoDB(tx, hosts, apps[0], apps[0].Daemons[0], "api", 1)
+	err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+		return CommitGlobalHostsIntoDB(tx, hosts, apps[0], apps[0].Daemons[0], "api", 1)
+	})
 	require.NoError(t, err)
-	require.NoError(t, commit())
 
 	// Fetch global hosts.
 	returned, err := GetHostsBySubnetID(db, 0)
