@@ -1,4 +1,6 @@
 # coding: utf-8
+
+require 'date'
 require 'rake'
 
 # Tool Versions
@@ -988,56 +990,61 @@ task :build_fpm_containers do
 #  sh 'docker build -f docker/pkgs/cloudsmith.txt -t registry.gitlab.isc.org/isc-projects/stork/pkgs-cloudsmith:latest docker/pkgs/'
 end
 
+desc 'Generic task for bumping up version'
+task :bump, [:version] do |t, args|
+  # Replace version in all files. Use specific patterns for each for stricter matching.
+  for i in [
+      ['api/swagger.in.yaml', "version: #{STORK_VERSION}", "version: #{args[:version]}"],
+      ['backend/version.go', "const Version = \"#{STORK_VERSION}\"", "const Version = \"#{args[:version]}\""],
+      ['webui/package.json', "\"version\": \"#{STORK_VERSION}\"", "\"version\": \"#{args[:version]}\""],
+      ['webui/package-lock.json', "\"version\": \"#{STORK_VERSION}\"", "\"version\": \"#{args[:version]}\""],
+  ] do
+    File.open(i[0], 'r') do |file_r|
+      contents = file_r.read
+      contents.sub!(i[1], i[2])
+      File.open(i[0], 'w') do |file_w|
+        file_w.write(contents)
+      end
+    end
+  end
+
+  # Announce release in ChangeLog.
+  days_to_add = (3 + 7 - Date.today.wday) % 7
+  next_wednesday = Date.today + days_to_add
+  File.open('ChangeLog.md', 'r') do |file_r|
+    contents = file_r.read
+    contents = "Stork #{args[:version]} released on #{next_wednesday}.\n\n" + contents
+    File.open('ChangeLog.md', 'w') do |file_w|
+      file_w.write(contents)
+    end
+  end
+
+  # Put out an informative message that the bump was successful.
+  puts "Version succesfully bumped to #{args[:version]}."
+end
+
 desc 'Bump up major version'
 task :bump_major do
-  sh "
-    version=$(cat ./api/swagger.in.yaml | grep -E 'version: [0-9]+\.[0-9]+\.[0-9]+' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
-    major=$(printf '%s' \"${version}\" | cut -d '.' -f 1)
-    new_major=$((major + 1))
-    new_version=\"${new_major}.0.0\"
-    sed -i \"0,/version: ${version}/s//version: ${new_version}/\" ./api/swagger.in.yaml
-    sed -i \"0,/const Version = \\\"${version}\\\"/s//const Version = \\\"${new_version}\\\"/\" ./backend/version.go
-    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package.json
-    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package-lock.json
-    printf 'Stork %s released on %s.\n\n' \"${new_version}\" \"$(date -dwednesday +%Y-%m-%d)\" | cat - ./ChangeLog.md > /tmp/stork-changelog && mv /tmp/stork-changelog ./ChangeLog.md
-    printf 'Version bumped to %s.\n' \"${new_version}\"
-
-  "
+  major = STORK_VERSION.split('.')[0]
+  major = Integer(major) + 1
+  Rake::Task['bump'].invoke("#{major}.0.0")
 end
 
 desc 'Bump up minor version'
 task :bump_minor do
-  sh "
-    version=$(cat ./api/swagger.in.yaml | grep -E 'version: [0-9]+\.[0-9]+\.[0-9]+' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
-    major=$(printf '%s' \"${version}\" | cut -d '.' -f 1)
-    minor=$(printf '%s' \"${version}\" | cut -d '.' -f 2)
-    new_minor=$((minor + 1))
-    new_version=\"${major}.${new_minor}.0\"
-    sed -i \"0,/version: ${version}/s//version: ${new_version}/\" ./api/swagger.in.yaml
-    sed -i \"0,/const Version = \\\"${version}\\\"/s//const Version = \\\"${new_version}\\\"/\" ./backend/version.go
-    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package.json
-    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package-lock.json
-    printf 'Stork %s released on %s.\n\n' \"${new_version}\" \"$(date -dwednesday +%Y-%m-%d)\" | cat - ./ChangeLog.md > /tmp/stork-changelog && mv /tmp/stork-changelog ./ChangeLog.md
-    printf 'Version bumped to %s.\n' \"${new_version}\"
-  "
+  major = STORK_VERSION.split('.')[0]
+  minor = STORK_VERSION.split('.')[1]
+  minor = Integer(minor) + 1
+  Rake::Task['bump'].invoke("#{major}.#{minor}.0")
 end
 
 desc 'Bump up patch version'
 task :bump_patch do
-  sh "
-    version=$(cat ./api/swagger.in.yaml | grep -E 'version: [0-9]+\.[0-9]+\.[0-9]+' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
-    major=$(printf '%s' \"${version}\" | cut -d '.' -f 1)
-    minor=$(printf '%s' \"${version}\" | cut -d '.' -f 2)
-    patch=$(printf '%s' \"${version}\" | cut -d '.' -f 3)
-    new_patch=$((patch + 1))
-    new_version=\"${major}.${minor}.${new_patch}\"
-    sed -i \"0,/version: ${version}/s//version: ${new_version}/\" ./api/swagger.in.yaml
-    sed -i \"0,/const Version = \\\"${version}\\\"/s//const Version = \\\"${new_version}\\\"/\" ./backend/version.go
-    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package.json
-    sed -i \"0,/\\\"version\\\": \\\"${version}\\\"/s//\\\"version\\\": \\\"${new_version}\\\"/\" ./webui/package-lock.json
-    printf 'Stork %s released on %s.\n\n' \"${new_version}\" \"$(date -dwednesday +%Y-%m-%d)\" | cat - ./ChangeLog.md > /tmp/stork-changelog && mv /tmp/stork-changelog ./ChangeLog.md
-    printf 'Version bumped to %s.\n' \"${new_version}\"
-  "
+  major = STORK_VERSION.split('.')[0]
+  minor = STORK_VERSION.split('.')[1]
+  patch = STORK_VERSION.split('.')[2]
+  patch = Integer(patch) + 1
+  Rake::Task['bump'].invoke("#{major}.#{minor}.#{patch}")
 end
 
 
