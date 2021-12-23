@@ -17,7 +17,7 @@ import (
 	"github.com/Showmax/go-fqdn"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 
 	"isc.org/stork/pki"
 	storkutil "isc.org/stork/util"
@@ -37,7 +37,7 @@ var (
 // string is returned.
 func promptUserForServerToken() (string, error) {
 	fmt.Printf(">>>> Server access token (optional): ")
-	serverToken, err := terminal.ReadPassword(0)
+	serverToken, err := term.ReadPassword(0)
 	fmt.Print("\n")
 	if err != nil {
 		return "", err

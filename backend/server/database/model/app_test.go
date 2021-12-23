@@ -544,7 +544,7 @@ func TestDeleteApp(t *testing.T) {
 		ID: 123,
 	}
 	err := DeleteApp(db, s0)
-	require.Contains(t, err.Error(), "no rows in result")
+	require.Contains(t, err.Error(), "database entry not found")
 
 	// add first machine, should be no error
 	m := &Machine{
@@ -639,7 +639,7 @@ func TestAutoAppName(t *testing.T) {
 	// Modify the machine address. We expect that this will affect the apps'
 	// names.
 	machine.Address = "machine-floor2"
-	err = db.Update(machine)
+	_, err = db.Model(machine).WherePK().Update()
 	require.NoError(t, err)
 
 	// The first apps' name should be changed to reflect that it now runs
@@ -727,7 +727,7 @@ func TestEditAppName(t *testing.T) {
 
 	// Update machine address. It should only affect the second app.
 	machine.Address = "machine-floor2"
-	err = db.Update(machine)
+	_, err = db.Model(machine).WherePK().Update()
 	require.NoError(t, err)
 
 	// The first app's name should remain the same.

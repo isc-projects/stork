@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
@@ -26,15 +26,15 @@ type App struct {
 	ID        int64
 	CreatedAt time.Time
 	MachineID int64
-	Machine   *Machine
-	Type      string // currently supported types are: "kea" and "bind9"
+	Machine   *Machine `pg:"rel:has-one"`
+	Type      string   // currently supported types are: "kea" and "bind9"
 	Active    bool
 	Meta      AppMeta
 	Name      string
 
-	AccessPoints []*AccessPoint
+	AccessPoints []*AccessPoint `pg:"rel:has-many"`
 
-	Daemons []*Daemon
+	Daemons []*Daemon `pg:"rel:has-many"`
 }
 
 // updateAppAccessPoints updates the associated application access points into
@@ -111,11 +111,16 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 			// Add the new entry to the daemon table.
 			_, err = tx.Model(daemon).Insert()
 			addedDaemons = append(addedDaemons, daemon)
+			if err != nil {
+				return nil, nil, pkgerrors.Wrapf(err, "problem with inserting daemon to app %d: %v", app.ID, daemon)
+			}
 		} else {
-			_, err = tx.Model(daemon).WherePK().Update()
-		}
-		if err != nil {
-			return nil, nil, pkgerrors.Wrapf(err, "problem with upserting daemon to app %d: %v", app.ID, daemon)
+			result, err := tx.Model(daemon).WherePK().Update()
+			if err != nil {
+				return nil, nil, pkgerrors.Wrapf(err, "problem with updating daemon in app %d: %v", app.ID, daemon)
+			} else if result.RowsAffected() <= 0 {
+				return nil, nil, pkgerrors.Wrapf(ErrNotExists, "daemon with id %d does not exist", daemon.ID)
+			}
 		}
 
 		if daemon.KeaDaemon != nil {
@@ -139,11 +144,7 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 		} else if daemon.Bind9Daemon != nil {
 			// Make sure that the bind9_daemon references the daemon.
 			daemon.Bind9Daemon.DaemonID = daemon.ID
-			if daemon.Bind9Daemon.ID == 0 {
-				_, err = tx.Model(daemon.Bind9Daemon).Insert()
-			} else {
-				_, err = tx.Model(daemon.Bind9Daemon).WherePK().Update()
-			}
+			err = upsertInTransaction(tx, daemon.Bind9Daemon.ID, daemon.Bind9Daemon)
 			if err != nil {
 				return nil, nil, pkgerrors.Wrapf(err, "problem with upserting BIND9 daemon to app %d: %v",
 					app.ID, daemon.Bind9Daemon)
@@ -178,12 +179,19 @@ func updateAppDaemons(tx *pg.Tx, app *App) ([]*Daemon, []*Daemon, error) {
 				// daemon.
 				daemon.LogTargets[i].DaemonID = daemon.ID
 				_, err = tx.Model(daemon.LogTargets[i]).Insert()
+				if err != nil {
+					return nil, nil, pkgerrors.Wrapf(err, "problem with inserting log target %s to daemon %d: %v",
+						daemon.LogTargets[i].Output, daemon.ID, daemon)
+				}
 			} else {
-				_, err = tx.Model(daemon.LogTargets[i]).WherePK().Update()
-			}
-			if err != nil {
-				return nil, nil, pkgerrors.Wrapf(err, "problem with upserting log target %s to daemon %d: %v",
-					daemon.LogTargets[i].Output, daemon.ID, daemon)
+				result, err := tx.Model(daemon.LogTargets[i]).WherePK().Update()
+				if err != nil {
+					return nil, nil, pkgerrors.Wrapf(err, "problem with updating log target %s in daemon %d: %v",
+						daemon.LogTargets[i].Output, daemon.ID, daemon)
+				} else if result.RowsAffected() <= 0 {
+					return nil, nil, pkgerrors.Wrapf(ErrNotExists, "log target with id %d does not exist",
+						daemon.LogTargets[i].ID)
+				}
 			}
 		}
 	}
@@ -204,7 +212,7 @@ func AddApp(dbIface interface{}, app *App) ([]*Daemon, error) {
 	// first this is no-op.
 	defer rollback()
 
-	err = tx.Insert(app)
+	_, err = tx.Model(app).Insert()
 	if err != nil {
 		return nil, pkgerrors.Wrapf(err, "problem with inserting app %v", app)
 	}
@@ -247,9 +255,11 @@ func UpdateApp(dbIface interface{}, app *App) ([]*Daemon, []*Daemon, error) {
 	// first this is no-op.
 	defer rollback()
 
-	err = tx.Update(app)
+	result, err := tx.Model(app).WherePK().Update()
 	if err != nil {
 		return nil, nil, pkgerrors.Wrapf(err, "problem with updating app %v", app)
+	} else if result.RowsAffected() <= 0 {
+		return nil, nil, pkgerrors.Wrapf(ErrNotExists, "app with id %d does not exist", app.ID)
 	}
 
 	addedDaemons, deletedDaemons, err := updateAppDaemons(tx, app)
@@ -448,9 +458,11 @@ func GetAllApps(db *pg.DB, withRelations bool) ([]App, error) {
 }
 
 func DeleteApp(db *pg.DB, app *App) error {
-	err := db.Delete(app)
+	result, err := db.Model(app).WherePK().Delete()
 	if err != nil {
 		return pkgerrors.Wrapf(err, "problem with deleting app %v", app.ID)
+	} else if result.RowsAffected() <= 0 {
+		return pkgerrors.Wrapf(ErrNotExists, "app with id %d does not exist", app.ID)
 	}
 	return nil
 }

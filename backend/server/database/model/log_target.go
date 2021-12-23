@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 )
 
@@ -17,7 +17,7 @@ type LogTarget struct {
 	CreatedAt time.Time
 
 	DaemonID int64
-	Daemon   *Daemon
+	Daemon   *Daemon `pg:"rel:has-one"`
 }
 
 // Retrieves log target from the database by id.

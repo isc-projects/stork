@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 )
 
@@ -198,9 +198,11 @@ func SetSettingInt(db *pg.DB, name string, value int64) error {
 		return err
 	}
 	s.Value = strconv.FormatInt(value, 10)
-	err = db.Update(s)
+	result, err := db.Model(s).WherePK().Update()
 	if err != nil {
 		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
+	} else if result.RowsAffected() <= 0 {
+		return pkgerrors.Wrapf(ErrNotExists, "configuration setting %s does not exist", name)
 	}
 	return nil
 }
@@ -212,9 +214,11 @@ func SetSettingBool(db *pg.DB, name string, value bool) error {
 		return err
 	}
 	s.Value = strconv.FormatBool(value)
-	err = db.Update(s)
+	result, err := db.Model(s).WherePK().Update()
 	if err != nil {
 		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
+	} else if result.RowsAffected() <= 0 {
+		return pkgerrors.Wrapf(ErrNotExists, "configuration setting %s does not exist", name)
 	}
 	return nil
 }
@@ -226,9 +230,11 @@ func SetSettingStr(db *pg.DB, name string, value string) error {
 		return err
 	}
 	s.Value = value
-	err = db.Update(s)
+	result, err := db.Model(s).WherePK().Update()
 	if err != nil {
 		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
+	} else if result.RowsAffected() <= 0 {
+		return pkgerrors.Wrapf(ErrNotExists, "configuration setting %s does not exist", name)
 	}
 	return nil
 }
@@ -240,9 +246,11 @@ func SetSettingPasswd(db *pg.DB, name string, value string) error {
 		return err
 	}
 	s.Value = value
-	err = db.Update(s)
+	result, err := db.Model(s).WherePK().Update()
 	if err != nil {
 		return pkgerrors.Wrapf(err, "problem with updating setting %s", name)
+	} else if result.RowsAffected() <= 0 {
+		return pkgerrors.Wrapf(ErrNotExists, "configuration setting %s does not exist", name)
 	}
 	return nil
 }

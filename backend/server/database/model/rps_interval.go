@@ -3,7 +3,7 @@ package dbmodel
 import (
 	"time"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	errors "github.com/pkg/errors"
 )
 
@@ -53,7 +53,7 @@ func GetTotalRpsOverIntervalForDaemon(db *pg.DB, startTime time.Time, endTime ti
 
 // Add an interval to the database.
 func AddRpsInterval(db *pg.DB, rpsInterval *RpsInterval) error {
-	err := db.Insert(rpsInterval)
+	_, err := db.Model(rpsInterval).Insert()
 	if err != nil {
 		err = errors.Wrapf(err, "problem with inserting rpsInterval %+v", rpsInterval)
 	}

@@ -3,7 +3,7 @@ package metrics
 import (
 	"net/http"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	dbmodel "isc.org/stork/server/database/model"

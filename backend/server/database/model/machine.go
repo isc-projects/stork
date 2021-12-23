@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 )
 
@@ -38,7 +38,7 @@ type Machine struct {
 	LastVisitedAt   time.Time
 	Error           string
 	State           MachineState
-	Apps            []*App
+	Apps            []*App `pg:"rel:has-many"`
 	AgentToken      string
 	CertFingerprint [32]byte
 	Authorized      bool `pg:",use_zero"`
@@ -58,7 +58,7 @@ const (
 
 // Add new machine to database.
 func AddMachine(db *pg.DB, machine *Machine) error {
-	err := db.Insert(machine)
+	_, err := db.Model(machine).Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with inserting machine %+v", machine)
 	}
@@ -67,9 +67,11 @@ func AddMachine(db *pg.DB, machine *Machine) error {
 
 // Update a machine in database.
 func UpdateMachine(db *pg.DB, machine *Machine) error {
-	err := db.Update(machine)
+	result, err := db.Model(machine).WherePK().Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating machine %+v", machine)
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "machine with id %d does not exist", machine.ID)
 	}
 	return err
 }
@@ -234,9 +236,11 @@ func GetAllMachines(db *pg.DB, authorized *bool) ([]Machine, error) {
 
 // Delete a machine from database.
 func DeleteMachine(db *pg.DB, machine *Machine) error {
-	err := db.Delete(machine)
+	result, err := db.Model(machine).WherePK().Delete()
 	if err != nil {
 		return pkgerrors.Wrapf(err, "problem with deleting machine %v", machine.ID)
+	} else if result.RowsAffected() <= 0 {
+		return pkgerrors.Wrapf(ErrNotExists, "machine with id %d does not exist", machine.ID)
 	}
 	return nil
 }

@@ -4,10 +4,18 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
+
+var _ = registerServiceTables()
+
+func registerServiceTables() struct{} {
+	orm.RegisterTable((*DaemonToService)(nil))
+	return struct{}{}
+}
 
 // A structure reflecting service SQL table. This table holds
 // generic information about the service such as ID, service name
@@ -19,7 +27,7 @@ type BaseService struct {
 	ServiceType string
 	CreatedAt   time.Time
 
-	Daemons []*Daemon `pg:"many2many:daemon_to_service,fk:service_id,joinFK:daemon_id"`
+	Daemons []*Daemon `pg:"many2many:daemon_to_service,fk:service_id,join_fk:daemon_id"`
 }
 
 // A structure reflecting a daemon_to_service SQL table which associates
@@ -73,7 +81,7 @@ type BaseHAService struct {
 // structures as more service types are defined.
 type Service struct {
 	BaseService
-	HAService *BaseHAService
+	HAService *BaseHAService `pg:"rel:belongs-to"`
 }
 
 // Associates daemons with a service in the database. The dbIface parameter
@@ -152,7 +160,7 @@ func DeleteDaemonFromService(db *pg.DB, serviceID, daemonID int64) (bool, error)
 		ServiceID: serviceID,
 	}
 	rows, err := db.Model(as).WherePK().Delete()
-	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting a daemon with id %d from the service %d",
 			daemonID, serviceID)
 		return false, err
@@ -235,9 +243,12 @@ func UpdateBaseService(dbIface interface{}, service *BaseService) error {
 	}
 	defer rollback()
 
-	err = tx.Update(service)
+	result, err := tx.Model(service).WherePK().Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating base service with id %d", service.ID)
+		return err
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "service with id %d does not exist", service.ID)
 		return err
 	}
 
@@ -258,10 +269,13 @@ func UpdateBaseHAService(dbIface interface{}, service *BaseHAService) error {
 	}
 	defer rollback()
 
-	err = tx.Update(service)
+	result, err := tx.Model(service).WherePK().Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating the HA information for service with id %d",
 			service.ServiceID)
+		return err
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "service with id %d does not exist", service.ServiceID)
 		return err
 	}
 
@@ -373,9 +387,11 @@ func DeleteService(db *dbops.PgDB, serviceID int64) error {
 			ID: serviceID,
 		},
 	}
-	_, err := db.Model(service).WherePK().Delete()
+	result, err := db.Model(service).WherePK().Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting the service having id %d", serviceID)
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "service with id %d does not exist", serviceID)
 	}
 	return err
 }

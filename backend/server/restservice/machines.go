@@ -572,7 +572,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 	dbMachine.AgentPort = params.Machine.AgentPort
 	prevAuthorized := dbMachine.Authorized
 	dbMachine.Authorized = params.Machine.Authorized
-	err = r.DB.Update(dbMachine)
+	_, err = r.DB.Model(dbMachine).WherePK().Update()
 	if err != nil {
 		log.Errorf("cannot update machine: %s", err)
 		msg := fmt.Sprintf("cannot update machine with id %d in db", params.ID)

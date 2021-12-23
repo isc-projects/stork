@@ -3,7 +3,7 @@ package bind9
 import (
 	"context"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	log "github.com/sirupsen/logrus"
 	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"

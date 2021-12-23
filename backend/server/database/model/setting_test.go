@@ -97,7 +97,7 @@ func TestSettingsSetAndGet(t *testing.T) {
 	// add these settings to db
 	for _, sTmp := range settings {
 		s := sTmp
-		err := db.Insert(&s)
+		_, err := db.Model(&s).Insert()
 		require.NoError(t, err)
 	}
 

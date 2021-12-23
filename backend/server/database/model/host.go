@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
@@ -41,14 +41,14 @@ type Host struct {
 	ID        int64 `pg:",pk"`
 	CreatedAt time.Time
 	SubnetID  int64
-	Subnet    *Subnet
+	Subnet    *Subnet `pg:"rel:has-one"`
 
 	Hostname string
 
-	HostIdentifiers []HostIdentifier
-	IPReservations  []IPReservation
+	HostIdentifiers []HostIdentifier `pg:"rel:has-many"`
+	IPReservations  []IPReservation  `pg:"rel:has-many"`
 
-	LocalHosts []LocalHost
+	LocalHosts []LocalHost `pg:"rel:has-many"`
 
 	// This flag is used to indicate that some changes have been applied to
 	// the Host instance locally and that these changes should be applied in
@@ -64,8 +64,8 @@ type LocalHost struct {
 	AppID      int64 `pg:",pk"`
 	HostID     int64 `pg:",pk"`
 	DaemonID   int64
-	App        *App
-	Host       *Host
+	App        *App  `pg:"rel:has-one"`
+	Host       *Host `pg:"rel:has-one"`
 	DataSource string
 	UpdateSeq  int64
 }
@@ -204,9 +204,12 @@ func UpdateHost(dbIface interface{}, host *Host) error {
 	}
 
 	// Update the host information.
-	_, err = tx.Model(host).WherePK().Update()
+	result, err := tx.Model(host).WherePK().Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating host with id %d", host.ID)
+		return err
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "host with id %d does not exist", host.ID)
 		return err
 	}
 
@@ -459,9 +462,11 @@ func DeleteHost(db *pg.DB, hostID int64) error {
 	host := &Host{
 		ID: hostID,
 	}
-	_, err := db.Model(host).WherePK().Delete()
+	result, err := db.Model(host).WherePK().Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting a host with id %d", hostID)
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "host with id %d does not exist", hostID)
 	}
 	return err
 }

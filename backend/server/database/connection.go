@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -36,7 +36,7 @@ func (d DBLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Cont
 	if model, ok := q.Model.(orm.TableModel); ok {
 		if model != nil {
 			table := model.Table()
-			if table != nil && table.Name == "system_user" {
+			if table != nil && table.SQLName == "system_user" {
 				// Query on the system_user table. Don't print the actual data.
 				fmt.Println(q.UnformattedQuery())
 				return c, nil

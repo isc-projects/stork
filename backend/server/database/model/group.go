@@ -3,8 +3,8 @@ package dbmodel
 import (
 	"errors"
 
-	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
@@ -20,7 +20,7 @@ type SystemGroup struct {
 	Name        string
 	Description string
 
-	Users []*SystemUser `pg:"many2many:system_user_to_group,fk:group_id,joinFK:user_id"`
+	Users []*SystemUser `pg:"many2many:system_user_to_group,fk:group_id,join_fk:user_id"`
 }
 
 // Fetches a collection of groups from the database. The offset and

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	log "github.com/sirupsen/logrus"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"

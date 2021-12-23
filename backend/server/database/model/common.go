@@ -3,7 +3,7 @@ package dbmodel
 import (
 	"strings"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 )
 
 type SortDirEnum int
@@ -43,10 +43,14 @@ func prepareOrderExpr(tableName string, sortField string, sortDir SortDirEnum) s
 // examining a value of the id parameter. The id is equal to 0 if this is
 // a new entry.
 func upsertInTransaction(tx *pg.Tx, id int64, model interface{}) (err error) {
+	var result pg.Result
 	if id == 0 {
 		_, err = tx.Model(model).Insert()
 	} else {
-		_, err = tx.Model(model).WherePK().Update()
+		result, err = tx.Model(model).WherePK().Update()
+		if err == nil && result.RowsAffected() <= 0 {
+			err = ErrNotExists
+		}
 	}
 
 	return err

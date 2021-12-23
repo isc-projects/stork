@@ -11,7 +11,7 @@ package metrics
 import (
 	"reflect"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	dbmodel "isc.org/stork/server/database/model"

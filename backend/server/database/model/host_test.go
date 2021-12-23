@@ -3,7 +3,7 @@ package dbmodel
 import (
 	"testing"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
 	dbtest "isc.org/stork/server/database/test"

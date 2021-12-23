@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
@@ -26,8 +26,8 @@ type LocalSubnet struct {
 	AppID         int64 `pg:",pk"`
 	SubnetID      int64 `pg:",pk"`
 	DaemonID      int64
-	App           *App
-	Subnet        *Subnet
+	App           *App    `pg:"rel:has-one"`
+	Subnet        *Subnet `pg:"rel:has-one"`
 	LocalSubnetID int64
 
 	Stats            map[string]interface{}
@@ -42,14 +42,14 @@ type Subnet struct {
 	ClientClass string
 
 	SharedNetworkID int64
-	SharedNetwork   *SharedNetwork
+	SharedNetwork   *SharedNetwork `pg:"rel:has-one"`
 
-	AddressPools []AddressPool
-	PrefixPools  []PrefixPool
+	AddressPools []AddressPool `pg:"rel:has-many"`
+	PrefixPools  []PrefixPool  `pg:"rel:has-many"`
 
-	LocalSubnets []*LocalSubnet
+	LocalSubnets []*LocalSubnet `pg:"rel:has-many"`
 
-	Hosts []Host
+	Hosts []Host `pg:"rel:has-many"`
 
 	AddrUtilization int16
 	PdUtilization   int16
@@ -507,7 +507,7 @@ func DeleteAppFromSubnet(db *pg.DB, subnetID int64, appID int64) (bool, error) {
 		SubnetID: subnetID,
 	}
 	rows, err := db.Model(localSubnet).WherePK().Delete()
-	if err != nil && !errors.Is(err, pg.ErrNoRows) {
+	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting an app with id %d from the subnet with %d",
 			appID, subnetID)
 		return false, err
@@ -642,9 +642,12 @@ func (lsn *LocalSubnet) UpdateStats(db *pg.DB, stats map[string]interface{}) err
 	q := db.Model(lsn)
 	q = q.Column("stats", "stats_collected_at")
 	q = q.WherePK()
-	_, err := q.Update()
+	result, err := q.Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating stats in local subnet: [app:%d, subnet:%d, local subnet:%d]",
+			lsn.AppID, lsn.SubnetID, lsn.LocalSubnetID)
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "local subnet: [app:%d, subnet:%d, local subnet:%d] does not exist",
 			lsn.AppID, lsn.SubnetID, lsn.LocalSubnetID)
 	}
 	return err
@@ -657,10 +660,12 @@ func (s *Subnet) UpdateUtilization(db *pg.DB, addrUtilization, pdUtilization int
 	q := db.Model(s)
 	q = q.Column("addr_utilization", "pd_utilization")
 	q = q.WherePK()
-	_, err := q.Update()
+	result, err := q.Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating utilization in the subnet: %d",
 			s.ID)
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "subnet with id %d does not exist", s.ID)
 	}
 	return err
 }

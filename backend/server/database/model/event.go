@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 )
 
@@ -36,7 +36,7 @@ type Event struct {
 
 // Add given event to the database.
 func AddEvent(db *pg.DB, event *Event) error {
-	err := db.Insert(event)
+	_, err := db.Model(event).Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with inserting event %+v", event)
 	}

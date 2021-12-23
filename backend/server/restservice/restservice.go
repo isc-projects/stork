@@ -14,7 +14,7 @@ import (
 
 	"github.com/go-openapi/runtime/flagext"
 	"github.com/go-openapi/swag"
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	flags "github.com/jessevdk/go-flags"
 	pkgerrors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"

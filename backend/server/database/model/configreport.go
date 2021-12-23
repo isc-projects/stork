@@ -7,11 +7,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
+
+var _ = registerConfigReportTables()
+
+func registerConfigReportTables() struct{} {
+	orm.RegisterTable((*DaemonToConfigReport)(nil))
+	return struct{}{}
+}
 
 // Structure representing a single config report generated during
 // the daemons configuration review.
@@ -23,7 +30,7 @@ type ConfigReport struct {
 
 	DaemonID int64
 
-	RefDaemons []*Daemon `pg:"many2many:daemon_to_config_report,fk:config_report_id,joinFK:daemon_id"`
+	RefDaemons []*Daemon `pg:"many2many:daemon_to_config_report,fk:config_report_id,join_fk:daemon_id"`
 }
 
 // Structure representing a many-to-many relationship between daemons

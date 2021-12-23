@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	keactrl "isc.org/stork/appctrl/kea"
@@ -601,7 +601,7 @@ func addOnCommitSubnetEvents(app *dbmodel.App, addedSubnets []*dbmodel.Subnet, e
 // subnets and pools. Finally, the relations between the subnets and the Kea app
 // are created. Note that multiple apps can be associated with the same subnet.
 func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.EventCenter, state *AppStateMeta) (err error) {
-	err = db.RunInTransaction(func(tx *pg.Tx) error {
+	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 		networks := make(map[string][]dbmodel.SharedNetwork)
 		subnets := make(map[string][]dbmodel.Subnet)
 		globalHosts := make(map[string][]dbmodel.Host)

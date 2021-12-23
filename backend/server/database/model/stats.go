@@ -1,7 +1,7 @@
 package dbmodel
 
 import (
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )

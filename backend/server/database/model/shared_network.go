@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
@@ -19,7 +19,7 @@ type SharedNetwork struct {
 	Name      string
 	Family    int `pg:"inet_family"`
 
-	Subnets []Subnet
+	Subnets []Subnet `pg:"rel:has-many"`
 
 	AddrUtilization int16
 	PdUtilization   int16
@@ -35,7 +35,7 @@ func AddSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 	}
 	defer rollback()
 
-	err = tx.Insert(network)
+	_, err = tx.Model(network).Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with adding new shared network %s into the database", network.Name)
 		return err
@@ -72,9 +72,12 @@ func UpdateSharedNetwork(dbIface interface{}, network *SharedNetwork) error {
 	}
 	defer rollback()
 
-	err = tx.Update(network)
+	result, err := tx.Model(network).WherePK().Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating the shared network with id %d", network.ID)
+		return err
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "shared network with id %d does not exist", network.ID)
 		return err
 	}
 
@@ -155,9 +158,11 @@ func DeleteSharedNetwork(db *dbops.PgDB, networkID int64) error {
 	network := &SharedNetwork{
 		ID: networkID,
 	}
-	_, err := db.Model(network).WherePK().Delete()
+	result, err := db.Model(network).WherePK().Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting the shared network with id %d", networkID)
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "shared network with id %d does not exist", networkID)
 	}
 	return err
 }
@@ -189,9 +194,12 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 	network := &SharedNetwork{
 		ID: networkID,
 	}
-	_, err = db.Model(network).WherePK().Delete()
+	result, err := db.Model(network).WherePK().Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting the shared network with id %d", networkID)
+		return err
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "shared network with id %d does not exist", networkID)
 		return err
 	}
 
@@ -294,10 +302,12 @@ func UpdateUtilizationInSharedNetwork(db *pg.DB, sharedNetworkID int64, addrUtil
 	q := db.Model(net)
 	q = q.Column("addr_utilization", "pd_utilization")
 	q = q.WherePK()
-	_, err := q.Update()
+	result, err := q.Update()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with updating utilization in the shared network: %d",
 			sharedNetworkID)
+	} else if result.RowsAffected() <= 0 {
+		err = pkgerrors.Wrapf(ErrNotExists, "shared network with id %d does not exist", sharedNetworkID)
 	}
 	return err
 }

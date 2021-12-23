@@ -3,7 +3,7 @@ package kea
 import (
 	"time"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	keactrl "isc.org/stork/appctrl/kea"

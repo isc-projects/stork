@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
@@ -54,7 +54,7 @@ type KeaDaemon struct {
 	ConfigHash string
 	DaemonID   int64
 
-	KeaDHCPDaemon *KeaDHCPDaemon
+	KeaDHCPDaemon *KeaDHCPDaemon `pg:"rel:belongs-to"`
 }
 
 // BIND 9
@@ -200,16 +200,16 @@ type Daemon struct {
 	ReloadedAt      time.Time
 
 	AppID int64
-	App   *App
+	App   *App `pg:"rel:has-one"`
 
-	Services []*Service `pg:"many2many:daemon_to_service,fk:daemon_id,joinFK:service_id"`
+	Services []*Service `pg:"many2many:daemon_to_service,fk:daemon_id,join_fk:service_id"`
 
-	LogTargets []*LogTarget
+	LogTargets []*LogTarget `pg:"rel:has-many"`
 
-	KeaDaemon   *KeaDaemon
-	Bind9Daemon *Bind9Daemon
+	KeaDaemon   *KeaDaemon   `pg:"rel:belongs-to"`
+	Bind9Daemon *Bind9Daemon `pg:"rel:belongs-to"`
 
-	ConfigReview *ConfigReview
+	ConfigReview *ConfigReview `pg:"rel:belongs-to"`
 }
 
 // Structure representing HA service information displayed for the daemon
@@ -388,37 +388,46 @@ func UpdateDaemon(dbIface interface{}, daemon *Daemon) error {
 	defer rollback()
 
 	// Update common daemon instance.
-	_, err = tx.Model(daemon).WherePK().Update()
+	result, err := tx.Model(daemon).WherePK().Update()
 	if err != nil {
 		return pkgerrors.Wrapf(err, "problem with updating daemon %d", daemon.ID)
+	} else if result.RowsAffected() <= 0 {
+		return pkgerrors.Wrapf(ErrNotExists, "daemon with id %d does not exist", daemon.ID)
 	}
 
 	// If this is a Kea daemon, we have to update Kea specific tables too.
 	if daemon.KeaDaemon != nil && daemon.KeaDaemon.ID != 0 {
 		// Make sure that the KeaDaemon points to the Daemon.
 		daemon.KeaDaemon.DaemonID = daemon.ID
-		_, err = tx.Model(daemon.KeaDaemon).WherePK().Update()
+		result, err := tx.Model(daemon.KeaDaemon).WherePK().Update()
 		if err != nil {
 			return pkgerrors.Wrapf(err, "problem with updating general Kea specific information for daemon %d",
 				daemon.ID)
+		} else if result.RowsAffected() <= 0 {
+			return pkgerrors.Wrapf(ErrNotExists, "Kea daemon with id %d does not exist", daemon.KeaDaemon.ID)
 		}
 
 		// If this is Kea DHCP daemon, there is one more table to update.
 		if daemon.KeaDaemon.KeaDHCPDaemon != nil && daemon.KeaDaemon.KeaDHCPDaemon.ID != 0 {
 			daemon.KeaDaemon.KeaDHCPDaemon.KeaDaemonID = daemon.KeaDaemon.ID
-			_, err = tx.Model(daemon.KeaDaemon.KeaDHCPDaemon).WherePK().Update()
+			result, err := tx.Model(daemon.KeaDaemon.KeaDHCPDaemon).WherePK().Update()
 			if err != nil {
 				return pkgerrors.Wrapf(err, "problem with updating general Kea DHCP information for daemon %d",
 					daemon.ID)
+			} else if result.RowsAffected() <= 0 {
+				return pkgerrors.Wrapf(ErrNotExists, "Kea DHCP daemon with id %d does not exist",
+					daemon.KeaDaemon.KeaDHCPDaemon.ID)
 			}
 		}
 	} else if daemon.Bind9Daemon != nil && daemon.Bind9Daemon.ID != 0 {
 		// This is Bind9 daemon. Update the Bind9 specific table.
 		daemon.Bind9Daemon.DaemonID = daemon.ID
-		_, err = tx.Model(daemon.Bind9Daemon).WherePK().Update()
+		result, err := tx.Model(daemon.Bind9Daemon).WherePK().Update()
 		if err != nil {
-			return pkgerrors.Wrapf(err, "problem with updating Bind9 specific information for daemon %d",
+			return pkgerrors.Wrapf(err, "problem with updating BIND9 specific information for daemon %d",
 				daemon.ID)
+		} else if result.RowsAffected() <= 0 {
+			return pkgerrors.Wrapf(ErrNotExists, "BIND9 daemon with id %d does not exist", daemon.Bind9Daemon.ID)
 		}
 	}
 

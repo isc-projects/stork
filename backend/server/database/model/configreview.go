@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
@@ -25,7 +25,7 @@ type ConfigReview struct {
 	Signature  string
 
 	DaemonID int64
-	Daemon   *Daemon
+	Daemon   *Daemon `pg:"rel:has-one"`
 }
 
 // Upserts the configuration review entry for a daemon.

@@ -16,7 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 func UTCNow() time.Time {
@@ -159,7 +159,7 @@ func HexToBytes(hexString string) []byte {
 func GetSecretInTerminal(prompt string) string {
 	// Prompt the user for a secret
 	fmt.Print(prompt)
-	pass, err := terminal.ReadPassword(0)
+	pass, err := term.ReadPassword(0)
 	fmt.Print("\n")
 
 	if err != nil {

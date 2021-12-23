@@ -92,7 +92,7 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 	dbMachine.State.HostID = m.HostID
 	dbMachine.LastVisitedAt = m.LastVisitedAt
 	dbMachine.Error = m.Error
-	err := db.Update(dbMachine)
+	err := dbmodel.UpdateMachine(db, dbMachine)
 	if err != nil {
 		return errors.Wrapf(err, "problem with updating machine %+v", dbMachine)
 	}
@@ -242,7 +242,7 @@ func GetMachineAndAppsState(ctx context.Context, db *dbops.PgDB, dbMachine *dbmo
 	if err != nil {
 		log.Warn(err)
 		dbMachine.Error = "cannot get state of machine"
-		err = db.Update(dbMachine)
+		err = dbmodel.UpdateMachine(db, dbMachine)
 		if err != nil {
 			log.Error(err)
 			return "problem with updating record in database"

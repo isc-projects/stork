@@ -1,8 +1,8 @@
 package dbmigs
 
 import (
-	"github.com/go-pg/migrations/v7"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/migrations/v8"
+	"github.com/go-pg/pg/v10/orm"
 )
 
 // This migration adds system_group table with two default groups: super-admin

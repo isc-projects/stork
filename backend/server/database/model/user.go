@@ -4,11 +4,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
 	dbops "isc.org/stork/server/database"
 )
+
+var _ = registerUserTables()
+
+func registerUserTables() struct{} {
+	orm.RegisterTable((*SystemUserToGroup)(nil))
+	return struct{}{}
+}
 
 // Represents a user held in system_user table in the database.
 type SystemUser struct {
@@ -19,7 +26,7 @@ type SystemUser struct {
 	Name     string
 	Password string `pg:"password_hash"`
 
-	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,joinFK:group_id"`
+	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,join_fk:group_id"`
 }
 
 type SystemUserToGroup struct {
@@ -82,7 +89,7 @@ func CreateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 		_ = tx.Rollback()
 	}()
 
-	err = db.Insert(user)
+	_, err = db.Model(user).Insert()
 
 	// If insert was successful, create associations of the user with groups.
 	if err == nil {
@@ -118,10 +125,14 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 		_ = tx.Rollback()
 	}()
 
-	err = db.Update(user)
-
-	// Delete existing associations of the user with groups.
+	result, err := db.Model(user).WherePK().Update()
 	if err == nil {
+		if result.RowsAffected() <= 0 {
+			conflict = true
+			err = pkgerrors.Wrapf(ErrNotExists, "user with id %s does not exist", user.Identity())
+			return
+		}
+		// Delete existing associations of the user with groups.
 		_, err = db.Model(&SystemUserToGroup{}).Where("user_id = ?", user.ID).Delete()
 	}
 
@@ -131,15 +142,10 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	}
 
 	if err != nil {
-		if errors.Is(err, pg.ErrNoRows) {
-			conflict = true
-		} else {
-			var pgError pg.Error
-			if errors.As(err, &pgError) {
-				conflict = pgError.IntegrityViolation()
-			}
+		var pgError pg.Error
+		if errors.As(err, &pgError) {
+			conflict = pgError.IntegrityViolation()
 		}
-
 		err = pkgerrors.Wrapf(err, "database operation error while trying to update user %s", user.Identity())
 	}
 
@@ -162,7 +168,7 @@ func SetPassword(db *pg.DB, id int, password string) (err error) {
 		err = pkgerrors.Wrapf(err, "database operation error while trying to set new password for the user id %d",
 			id)
 	} else if result.RowsAffected() == 0 {
-		err = pkgerrors.Errorf("failed to update password for non existing user with id %d", id)
+		err = pkgerrors.Wrapf(ErrNotExists, "failed to update password for non existing user with id %d", id)
 	}
 
 	return err

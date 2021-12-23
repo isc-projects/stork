@@ -16,7 +16,7 @@ type AddressPool struct {
 	LowerBound string
 	UpperBound string
 	SubnetID   int64
-	Subnet     *Subnet
+	Subnet     *Subnet `pg:"rel:has-one"`
 }
 
 // Reflects IPv6 address pool.
@@ -26,7 +26,7 @@ type PrefixPool struct {
 	Prefix       string
 	DelegatedLen int
 	SubnetID     int64
-	Subnet       *Subnet
+	Subnet       *Subnet `pg:"rel:has-one"`
 }
 
 // Creates new instance of the address pool from the address range. The
@@ -113,9 +113,11 @@ func DeleteAddressPool(db *dbops.PgDB, poolID int64) error {
 	pool := &AddressPool{
 		ID: poolID,
 	}
-	_, err := db.Model(pool).WherePK().Delete()
+	result, err := db.Model(pool).WherePK().Delete()
 	if err != nil {
 		err = errors.Wrapf(err, "problem with deleting the address pool with id %d", poolID)
+	} else if result.RowsAffected() <= 0 {
+		err = errors.Wrapf(ErrNotExists, "pool with id %d does not exist", poolID)
 	}
 	return err
 }
@@ -125,9 +127,11 @@ func DeletePrefixPool(db *dbops.PgDB, poolID int64) error {
 	pool := &PrefixPool{
 		ID: poolID,
 	}
-	_, err := db.Model(pool).WherePK().Delete()
+	result, err := db.Model(pool).WherePK().Delete()
 	if err != nil {
 		err = errors.Wrapf(err, "problem with deleting the prefix pool with id %d", poolID)
+	} else if result.RowsAffected() <= 0 {
+		err = errors.Wrapf(ErrNotExists, "pool with id %d does not exist", poolID)
 	}
 	return err
 }

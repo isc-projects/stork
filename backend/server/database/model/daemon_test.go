@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	require "github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbops "isc.org/stork/server/database"
@@ -356,7 +356,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 	// transaction can modify the daemon until the current transaction is
 	// committed or rolled back. We will now run a goroutine which will
 	// attempt such a modification.
-	var err2 error
+	var result pg.Result
 	mutex := &sync.Mutex{}
 	mutex.Lock()
 	cond := sync.NewCond(mutex)
@@ -372,7 +372,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 		// Attempt to delete the app while the main transaction is in progress
 		// and the daemons are locked for update. This should block until the
 		// main transaction is committed or rolled back.
-		err2 = db.Delete(app)
+		result, _ = db.Model(app).WherePK().Delete()
 	}()
 
 	// Wait for the goroutine to begin.
@@ -386,7 +386,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	// It should take precedence over the db.Delete() invoked from the goroutine.
 	// Thus, there should be no error.
-	err = tx.Delete(app)
+	_, err = tx.Model(app).WherePK().Delete()
 	require.NoError(t, err)
 
 	// Commit the transaction which should cause the goroutine to complete.
@@ -399,7 +399,7 @@ func TestGetBind9DaemonsForUpdate(t *testing.T) {
 	// Ensure that the goroutine deleted no data because the data was already
 	// deleted by the main thread. It tests that the locking mechanism works
 	// as expected.
-	require.ErrorIs(t, err2, pg.ErrNoRows)
+	require.Zero(t, result.RowsAffected())
 }
 
 // Test selecting Kea daemons by IDs for update which should result in locking
@@ -505,7 +505,7 @@ func TestGetKeaDaemonsForUpdate(t *testing.T) {
 	// transaction can modify the daemons until the current transaction is
 	// committed or rolled back. We will now run a goroutine which will
 	// attempt such a modification.
-	var err2 error
+	var result pg.Result
 	mutex := &sync.Mutex{}
 	mutex.Lock()
 	cond := sync.NewCond(mutex)
@@ -521,7 +521,7 @@ func TestGetKeaDaemonsForUpdate(t *testing.T) {
 		// Attempt to delete the app while the main transaction is in progress
 		// and the daemons are locked for update. This should block until the
 		// main transaction is committed or rolled back.
-		err2 = db.Delete(app)
+		result, _ = db.Model(app).WherePK().Delete()
 	}()
 
 	// Wait for the goroutine to begin.
@@ -535,7 +535,7 @@ func TestGetKeaDaemonsForUpdate(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	// It should take precedence over the db.Delete() invoked from the goroutine.
 	// Thus, there should be no error.
-	err = tx.Delete(app)
+	_, err = tx.Model(app).WherePK().Delete()
 	require.NoError(t, err)
 
 	// Commit the transaction which should cause the goroutine to complete.
@@ -548,7 +548,7 @@ func TestGetKeaDaemonsForUpdate(t *testing.T) {
 	// Ensure that the goroutine deleted no data because the data was already
 	// deleted by the main thread. It tests that the locking mechanism works
 	// as expected.
-	require.ErrorIs(t, err2, pg.ErrNoRows)
+	require.Zero(t, result.RowsAffected())
 }
 
 // Tests that Kea logging configuration information is correctly populated within

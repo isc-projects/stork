@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/go-pg/migrations/v7"
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/migrations/v8"
+	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 
 	// TODO: document why it is blank imported.

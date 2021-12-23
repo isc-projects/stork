@@ -23,7 +23,7 @@ func TestStatsPullerBasic(t *testing.T) {
 		ValType: dbmodel.SettingValTypeInt,
 		Value:   "60",
 	}
-	err := db.Insert(&setting)
+	_, err := db.Model(&setting).Insert()
 	require.NoError(t, err)
 
 	// prepare fake agents
@@ -132,7 +132,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 		ValType: dbmodel.SettingValTypeInt,
 		Value:   "60",
 	}
-	err = db.Insert(&setting)
+	_, err = db.Model(&setting).Insert()
 	require.NoError(t, err)
 
 	// prepare stats puller
@@ -301,7 +301,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 		ValType: dbmodel.SettingValTypeInt,
 		Value:   "60",
 	}
-	err := db.Insert(&setting)
+	_, err := db.Model(&setting).Insert()
 	require.NoError(t, err)
 
 	// prepare stats puller

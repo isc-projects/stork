@@ -510,7 +510,7 @@ func TestDeleteMachineOnly(t *testing.T) {
 		AgentPort: 123,
 	}
 	err = DeleteMachine(db, m2)
-	require.Contains(t, err.Error(), "no rows in result")
+	require.Contains(t, err.Error(), "database entry not found")
 }
 
 // Check if deleting machine and its apps works.

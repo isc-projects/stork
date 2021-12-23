@@ -9,7 +9,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"isc.org/stork/pki"
