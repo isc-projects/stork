@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"io"
 	"path"
-	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"muzzammil.xyz/jsonc"
 
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
@@ -54,6 +53,21 @@ func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) e
 		return errors.WithMessagef(err, "failed to parse Kea response body received from %s", caURL)
 	}
 	return nil
+}
+
+// Kea Control Agent JSON configuration - root wrapper.
+type keaControlAgentJSON struct {
+	ControlAgent keaControlAgentJSONRoot `mapstructure:"Control-agent" json:"Control-agent"`
+}
+
+// Kea Control Agent JSON configuration - root node.
+type keaControlAgentJSONRoot struct {
+	HTTPHost     string `mapstructure:"http-host" json:"http-host,omitempty"`
+	HTTPPort     int64  `mapstructure:"http-port" json:"http-port"`
+	TrustAnchor  string `mapstructure:"trust-anchor" json:"trust-anchor,omitempty"`
+	CertFile     string `mapstructure:"cert-file" json:"cert-file,omitempty"`
+	KeyFile      string `mapstructure:"key-file" json:"key-file,omitempty"`
+	CertRequired bool   `mapstructure:"cert-required" json:"cert-required,omitempty"`
 }
 
 // Collect the list of log files which can be viewed by the Stork user
@@ -195,47 +209,32 @@ func getCtrlTargetFromKeaConfig(path string) (string, int64, bool) {
 		return "", 0, false
 	}
 
-	// Port
-	ptrn := regexp.MustCompile(`"http-port"\s*:\s*([0-9]+)`)
-	m := ptrn.FindStringSubmatch(text)
-	if len(m) == 0 {
-		log.Warnf("cannot parse http-port: %+v", err)
+	var config keaControlAgentJSON
+	err = jsonc.Unmarshal([]byte(text), &config)
+	if err != nil {
 		return "", 0, false
 	}
 
-	port, err := strconv.Atoi(m[1])
-	if err != nil {
-		log.Warnf("cannot parse http-port: %+v", err)
-		return "", 0, false
-	}
+	// Port
+	port := config.ControlAgent.HTTPPort
 
 	// Address
-	ptrn = regexp.MustCompile(`"http-host"\s*:\s*\"(\S+)\"\s*,`)
-	m = ptrn.FindStringSubmatch(text)
-	address := "localhost"
-	if len(m) == 0 {
-		log.Warnf("cannot parse http-host: %+v", err)
-	} else {
-		address = m[1]
-		if address == "0.0.0.0" {
-			address = "127.0.0.1"
-		} else if address == "::" {
-			address = "::1"
-		}
+	address := config.ControlAgent.HTTPHost
+	switch address {
+	case "0.0.0.0", "":
+		address = "127.0.0.1"
+	case "::":
+		address = "::1"
 	}
 
 	// Secure protocol
-	anchorPtrn := regexp.MustCompile(`"trust-anchor"\s*:\s*".*?"`)
-	certPtrn := regexp.MustCompile(`"cert-file"\s*:\s*".*?"`)
-	keyPtrn := regexp.MustCompile(`"key-file"\s*:\s*".*?"`)
-
-	hasAnchor := anchorPtrn.MatchString(text)
-	hasCert := certPtrn.MatchString(text)
-	hasKey := keyPtrn.MatchString(text)
+	hasAnchor := len(config.ControlAgent.TrustAnchor) != 0
+	hasCert := len(config.ControlAgent.CertFile) != 0
+	hasKey := len(config.ControlAgent.KeyFile) != 0
 
 	useSecureProtocol := hasAnchor && hasCert && hasKey
 
-	return address, int64(port), useSecureProtocol
+	return address, port, useSecureProtocol
 }
 
 func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {
