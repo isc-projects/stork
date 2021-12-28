@@ -150,21 +150,23 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 		}
 
 		// Check if the specified argument is one of our supported structures.
-		switch argType.Elem().Name() {
-		case "DatabaseSettings":
+		if argType.AssignableTo(reflect.TypeOf((*dbops.DatabaseSettings)(nil))) {
 			api.DBSettings = arg.(*dbops.DatabaseSettings)
 			continue
-		case "DB":
+		}
+		if argType.AssignableTo(reflect.TypeOf((*pg.DB)(nil))) {
 			api.DB = arg.(*pg.DB)
 			continue
-		case "Pullers":
+		}
+		if argType.AssignableTo(reflect.TypeOf((*apps.Pullers)(nil))) {
 			api.Pullers = arg.(*apps.Pullers)
-		case "RestAPISettings":
+			continue
+		}
+		if argType.AssignableTo(reflect.TypeOf((*RestAPISettings)(nil))) {
 			api.Settings = arg.(*RestAPISettings)
 			continue
-		default:
-			return nil, pkgerrors.Errorf("unknown argument type %s specified for NewRestAPI", argType.Elem().Name())
 		}
+		return nil, pkgerrors.Errorf("unknown argument type %s specified for NewRestAPI", argType.Elem().Name())
 	}
 
 	// Database settings must be specified because we need to instantiate the
