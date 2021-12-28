@@ -1,3 +1,8 @@
+* 185 [build] marcin
+
+    Upgraded go-pg package from version 9 to version 10.
+    (Gitlab #678)
+
 * 184 [func] marcin
 
     Implemented new Kea configuration checkers. The first one
