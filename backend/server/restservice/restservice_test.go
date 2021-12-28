@@ -94,4 +94,10 @@ func TestNewRestAPI(t *testing.T) {
 	api, err = NewRestAPI(dbs, &testStruct)
 	require.Error(t, err)
 	require.Nil(t, api)
+
+	// No arguments should cause an error because settings aren't
+	// specified.
+	api, err = NewRestAPI()
+	require.Error(t, err)
+	require.Nil(t, api)
 }
