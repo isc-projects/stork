@@ -346,7 +346,7 @@ func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, internal bool, call
 }
 
 // Inserts new config review reports into the database.
-func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
+func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 	// Ensure that the state indicates that the review is no longer
 	// in progress when this function returns.
 	defer func() {
@@ -360,10 +360,16 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 	// Begin a new transaction for inserting the reports.
 	tx, err := d.db.Begin()
 	if err != nil {
-		return err
+		return
 	}
 	defer func() {
-		_ = tx.Rollback()
+		// If something went wrong anywhere in this function, let's make sure
+		// the transaction is rolled back.
+		if err != nil {
+			// Ignore (unlikely) rollback error. We want to make sure the
+			// original error is captured.
+			_ = tx.Rollback()
+		}
 	}()
 
 	// The following calls serve two purposes. Firstly, they lock the daemons
@@ -381,12 +387,13 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 		dbDaemons, err = dbmodel.GetKeaDaemonsForUpdate(tx, daemons)
 	}
 	if err != nil {
-		return err
+		return
 	}
 
 	// Ensure that all daemons were in the database.
 	if len(dbDaemons) != len(daemons) {
-		return pkgerrors.New("some daemons with reviewed configuration are missing in the database")
+		err = pkgerrors.New("some daemons with reviewed configuration are missing in the database")
+		return
 	}
 
 	// Check if the configuration of any of the daemons has changed.
@@ -395,7 +402,8 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 			if daemon.ID == dbDaemon.ID {
 				if daemon.KeaDaemon != nil && dbDaemon.KeaDaemon != nil &&
 					daemon.KeaDaemon.ConfigHash != dbDaemon.KeaDaemon.ConfigHash {
-					return pkgerrors.Errorf("Kea daemon %d configuration has changed since the config review began", daemon.ID)
+					err = pkgerrors.Errorf("Kea daemon %d configuration has changed since the config review began", daemon.ID)
+					return
 				}
 			}
 		}
@@ -415,7 +423,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 			if i == 0 || daemon.ID != ctx.subjectDaemon.ID {
 				err = dbmodel.DeleteConfigReportsByDaemonID(tx, daemon.ID)
 				if err != nil {
-					return err
+					return
 				}
 			}
 		}
@@ -437,7 +445,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 		}
 		err = dbmodel.AddConfigReport(tx, cr)
 		if err != nil {
-			return err
+			return
 		}
 	}
 
@@ -452,13 +460,13 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 		}
 		err = dbmodel.AddConfigReview(tx, configReview)
 		if err != nil {
-			return err
+			return
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return err
+		return
 	}
 
 	if !ctx.internal {
@@ -474,7 +482,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) error {
 		}
 	}
 
-	return nil
+	return err
 }
 
 // Creates new dispatcher instance.

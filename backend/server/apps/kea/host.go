@@ -519,15 +519,22 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts [
 // uses HostDetectionIterator mechanism to fetch the hosts, which will in
 // most cases result in multiple reservation-get-page commands sent to Kea
 // instance.
-func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, app *dbmodel.App, seq int64) error {
+func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, app *dbmodel.App, seq int64) (err error) {
 	tx, err := db.Begin()
 	if err != nil {
 		err = errors.WithMessagef(err, "problem with starting transaction for committing new hosts from host_cmds hooks library for app id %d", app.ID)
 		return err
 	}
 	defer func() {
-		_ = tx.Rollback()
+		// If something went wrong anywhere in this function, let's make sure
+		// the transaction is rolled back.
+		if err != nil {
+			// Ignore (unlikely) rollback error. We want to make sure the
+			// original error is captured.
+			_ = tx.Rollback()
+		}
 	}()
+
 	it := NewHostDetectionIterator(db, app, agents, defaultHostCmdsPageLimit)
 	var (
 		hosts  []dbmodel.Host
