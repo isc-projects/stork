@@ -212,6 +212,7 @@ func getCtrlTargetFromKeaConfig(path string) (string, int64, bool) {
 	var config keaControlAgentJSON
 	err = jsonc.Unmarshal([]byte(text), &config)
 	if err != nil {
+		log.Warnf("cannot parse Kea config file: %+v", err)
 		return "", 0, false
 	}
 
