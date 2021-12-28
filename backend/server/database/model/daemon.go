@@ -527,6 +527,40 @@ func (d *Daemon) SetConfigFromJSON(config string) error {
 	return nil
 }
 
+// Returns local subnet ID for a given subnet prefix. If subnets have been indexed,
+// this function will use the index to find a subnet with the matching prefix. This
+// is much faster, but requires that the caller first builds a collection of
+// indexed subnets and associates it with appropriate KeaDHCPDaemon instances.
+// If the indexes are not built, this function will simply iterate over the
+// subnets within the configuration. This is generally much slower and should
+// be only used for sporadic calls to GetLocalSubnetID().
+// If the matching subnet is not found, the 0 value is returned.
+func (d *Daemon) GetLocalSubnetID(prefix string) int64 {
+	if d.KeaDaemon == nil {
+		return 0
+	}
+	// If subnets happen to be indexed, use the index to locate the subnet because
+	// it is a lot faster than full scan.
+	if d.KeaDaemon.KeaDHCPDaemon != nil && d.KeaDaemon.KeaDHCPDaemon.IndexedSubnets != nil {
+		is := d.KeaDaemon.KeaDHCPDaemon.IndexedSubnets
+		if subnet, ok := is.ByPrefix[prefix]; ok {
+			if id, ok := subnet["id"].(float64); ok {
+				return int64(id)
+			}
+		}
+
+		return 0
+	}
+
+	// No index for subnets for this daemon. We have to do full subnets scan.
+	if d.KeaDaemon.Config != nil {
+		if id := d.KeaDaemon.Config.GetLocalSubnetID(prefix); id > 0 {
+			return id
+		}
+	}
+	return 0
+}
+
 // Creates shallow copy of KeaDaemon, i.e. copies Daemon structure and
 // nested KeaDaemon structure. The new instance of KeaDaemon is created
 // but the pointers under KeaDaemon are inherited from the source.

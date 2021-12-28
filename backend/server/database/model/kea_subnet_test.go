@@ -134,7 +134,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		},
 	}
 
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4, a4.Daemons[0], 1)
+	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4.Daemons[0], 1)
 	require.NoError(t, err)
 
 	// Add Kea app with DHCPv6 subnets, one global and one within a shared network.
@@ -188,7 +188,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 			Prefix: "2001:db8:1::/64",
 		},
 	}
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6, a6.Daemons[0], 1)
+	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6.Daemons[0], 1)
 	require.NoError(t, err)
 
 	// Kea app with DHCPv4 and DHCPv6 subnets.
@@ -257,7 +257,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 		},
 	}
 	for i := range a46.Daemons {
-		_, err = CommitNetworksIntoDB(db, []SharedNetwork{}, []Subnet{appSubnets[i]}, a46, a46.Daemons[i], 1)
+		_, err = CommitNetworksIntoDB(db, []SharedNetwork{}, []Subnet{appSubnets[i]}, a46.Daemons[i], 1)
 		require.NoError(t, err)
 	}
 
@@ -297,10 +297,10 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	for _, s := range subnets {
 		require.Len(t, s.LocalSubnets, 1)
 	}
-	// Subnets should be associated with appropriate apps.
-	require.EqualValues(t, a4.ID, subnets[0].LocalSubnets[0].AppID)
-	require.EqualValues(t, a4.ID, subnets[1].LocalSubnets[0].AppID)
-	require.EqualValues(t, a4.ID, subnets[2].LocalSubnets[0].AppID)
+	// Subnets should be associated with appropriate daemons.
+	require.EqualValues(t, a4.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, a4.Daemons[0].ID, subnets[1].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, a4.Daemons[0].ID, subnets[2].LocalSubnets[0].DaemonID)
 	// And local subnet ids should be set.
 	for _, s := range subnets {
 		require.Contains(t, []int64{1, 11, 12}, s.LocalSubnets[0].LocalSubnetID)
@@ -360,7 +360,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
 	require.Len(t, subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a46.ID, subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, a46.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get subnets by text '0.150-192.168'
@@ -370,7 +370,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
 	require.Len(t, subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a4.ID, subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, a4.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 1, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get subnets by text '200' and app a46
@@ -380,7 +380,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
 	require.Len(t, subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a46.ID, subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, a46.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get v4 subnets by text '200' and app a46
@@ -390,7 +390,7 @@ func TestGetSubnetsByPageBasic(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, subnets, 1)
 	require.Len(t, subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a46.ID, subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, a46.Daemons[0].ID, subnets[0].LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 3, subnets[0].LocalSubnets[0].LocalSubnetID)
 
 	// get subnets sorted by id ascending
@@ -554,7 +554,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			Prefix: "192.168.0.0/24",
 		},
 	}
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4, a4.Daemons[0], 1)
+	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a4.Daemons[0], 1)
 	require.NoError(t, err)
 
 	// add app kea with dhcp6 to machine
@@ -615,7 +615,7 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 			Prefix: "2001:db8:1::/64",
 		},
 	}
-	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6, a6.Daemons[0], 1)
+	_, err = CommitNetworksIntoDB(db, appNetworks, appSubnets, a6.Daemons[0], 1)
 	require.NoError(t, err)
 
 	// Get all shared networks.
@@ -644,12 +644,12 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 
 	require.Len(t, networks[0].Subnets, 1)
 	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a4.ID, networks[0].Subnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, a4.Daemons[0].ID, networks[0].Subnets[0].LocalSubnets[0].DaemonID)
 
 	require.Len(t, networks[1].Subnets, 2)
 	require.Len(t, networks[1].Subnets[0].LocalSubnets, 1)
-	require.EqualValues(t, a4.ID, networks[1].Subnets[0].LocalSubnets[0].AppID)
-	require.EqualValues(t, a4.ID, networks[1].Subnets[1].LocalSubnets[0].AppID)
+	require.EqualValues(t, a4.Daemons[0].ID, networks[1].Subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, a4.Daemons[0].ID, networks[1].Subnets[1].LocalSubnets[0].DaemonID)
 
 	require.ElementsMatch(t, []string{"frog", "mouse"}, []string{networks[0].Name, networks[1].Name})
 
@@ -661,8 +661,8 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	require.Len(t, networks[0].Subnets, 2)
 	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
 	require.Len(t, networks[0].Subnets[1].LocalSubnets, 1)
-	require.EqualValues(t, a6.ID, networks[0].Subnets[0].LocalSubnets[0].AppID)
-	require.EqualValues(t, a6.ID, networks[0].Subnets[1].LocalSubnets[0].AppID)
+	require.EqualValues(t, a6.Daemons[0].ID, networks[0].Subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, a6.Daemons[0].ID, networks[0].Subnets[1].LocalSubnets[0].DaemonID)
 	require.Equal(t, "fox", networks[0].Name)
 
 	// Get networks by text "mous".
@@ -674,8 +674,8 @@ func TestGetSharedNetworksByPageBasic(t *testing.T) {
 	require.Len(t, networks[0].Subnets, 2)
 	require.Len(t, networks[0].Subnets[0].LocalSubnets, 1)
 	require.Len(t, networks[0].Subnets[1].LocalSubnets, 1)
-	require.EqualValues(t, a4.ID, networks[0].Subnets[0].LocalSubnets[0].AppID)
-	require.EqualValues(t, a4.ID, networks[0].Subnets[1].LocalSubnets[0].AppID)
+	require.EqualValues(t, a4.Daemons[0].ID, networks[0].Subnets[0].LocalSubnets[0].DaemonID)
+	require.EqualValues(t, a4.Daemons[0].ID, networks[0].Subnets[1].LocalSubnets[0].DaemonID)
 	require.Equal(t, "mouse", networks[0].Name)
 
 	// check sorting by id asc

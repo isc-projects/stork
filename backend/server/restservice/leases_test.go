@@ -646,7 +646,7 @@ func TestFindLeasesByHostID(t *testing.T) {
 		},
 		LocalHosts: []dbmodel.LocalHost{
 			{
-				AppID:      app.ID,
+				DaemonID:   app.Daemons[0].ID,
 				DataSource: "config",
 				UpdateSeq:  1,
 			},

@@ -481,45 +481,6 @@ func (app *App) GetDaemonByName(name string) *Daemon {
 	return nil
 }
 
-// Returns local subnet ID for a given subnet prefix. If subnets have been indexed,
-// this function will use the index to find a subnet with the matching prefix. This
-// is much faster, but requires that the caller first builds a collection of
-// indexed subnets and associates it with appropriate KeaDHCPDaemon instances.
-// If the indexes are not built, this function will simply iterate over the
-// subnets within the configuration. This is generally much slower and should
-// be only used for sporadic calls to GetLocalSubnetID().
-// If the matching subnet is not found, the 0 value is returned.
-func (app *App) GetLocalSubnetID(prefix string) int64 {
-	if app.Type != AppTypeKea {
-		return 0
-	}
-	for _, d := range app.Daemons {
-		if d.KeaDaemon == nil {
-			continue
-		}
-		// If subnets happen to be indexed, use the index to locate the subnet because
-		// it is a lot faster than full scan.
-		if d.KeaDaemon.KeaDHCPDaemon != nil && d.KeaDaemon.KeaDHCPDaemon.IndexedSubnets != nil {
-			is := d.KeaDaemon.KeaDHCPDaemon.IndexedSubnets
-			if subnet, ok := is.ByPrefix[prefix]; ok {
-				if id, ok := subnet["id"].(float64); ok {
-					return int64(id)
-				}
-			}
-
-			continue
-		}
-
-		// No index for subnets for this daemon. We have to do full subnets scan.
-		if d.KeaDaemon.Config != nil {
-			if id := d.KeaDaemon.Config.GetLocalSubnetID(prefix); id > 0 {
-				return id
-			}
-		}
-	}
-	return 0
-}
-
 // GetAccessPoint returns the access point of the given app and given access
 // point type.
 func (app *App) GetAccessPoint(accessPointType string) (ap *AccessPoint, err error) {

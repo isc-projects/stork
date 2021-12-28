@@ -84,8 +84,8 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix 
 	err = dbmodel.AddSubnet(db, &subnet)
 	require.NoError(t, err)
 
-	// Associate the app with the subnet.
-	err = dbmodel.AddAppToSubnet(db, &subnet, app, app.Daemons[0])
+	// Associate the daemon with the subnet.
+	err = dbmodel.AddDaemonToSubnet(db, &subnet, app.Daemons[0])
 	require.NoError(t, err)
 
 	// Add the host for this subnet.
@@ -108,8 +108,8 @@ func createHostInDatabase(t *testing.T, db *dbops.PgDB, configStr, subnetPrefix 
 	err = dbmodel.AddHost(db, host)
 	require.NoError(t, err)
 
-	// Associate the app with the host.
-	err = dbmodel.AddAppToHost(db, host, app, app.Daemons[0].ID, "api", 1)
+	// Associate the daemon with the host.
+	err = dbmodel.AddDaemonToHost(db, host, app.Daemons[0].ID, "api", 1)
 	require.NoError(t, err)
 }
 
@@ -1779,8 +1779,8 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 		if err != nil {
 			b.Fatalf("failed to add a subnet %s: %+v", dbSubnet.Prefix, err)
 		}
-		// Associate the app with the subnet.
-		err = dbmodel.AddAppToSubnet(db, &dbSubnet, app, app.Daemons[0])
+		// Associate the daemon with the subnet.
+		err = dbmodel.AddDaemonToSubnet(db, &dbSubnet, app.Daemons[0])
 		if err != nil {
 			b.Fatalf("failed to add app to subnet %s: %+v", dbSubnet.Prefix, err)
 		}
@@ -1804,8 +1804,8 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 		if err != nil {
 			b.Fatalf("failed to add app to subnet %s: %+v", dbSubnet.Prefix, err)
 		}
-		// Associate the app with the host.
-		err = dbmodel.AddAppToHost(db, host, app, app.Daemons[0].ID, "api", 1)
+		// Associate the daemon with the host.
+		err = dbmodel.AddDaemonToHost(db, host, app.Daemons[0].ID, "api", 1)
 		if err != nil {
 			b.Fatalf("failed to add app to host: %+v", err)
 		}

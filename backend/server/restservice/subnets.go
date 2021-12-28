@@ -32,11 +32,11 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 
 	for _, lsn := range sn.LocalSubnets {
 		localSubnet := &models.LocalSubnet{
-			AppID:            lsn.App.ID,
-			AppName:          lsn.App.Name,
+			AppID:            lsn.Daemon.App.ID,
+			AppName:          lsn.Daemon.App.Name,
 			ID:               lsn.LocalSubnetID,
-			MachineAddress:   lsn.App.Machine.Address,
-			MachineHostname:  lsn.App.Machine.State.Hostname,
+			MachineAddress:   lsn.Daemon.App.Machine.Address,
+			MachineHostname:  lsn.Daemon.App.Machine.State.Hostname,
 			Stats:            lsn.Stats,
 			StatsCollectedAt: strfmt.DateTime(lsn.StatsCollectedAt),
 		}

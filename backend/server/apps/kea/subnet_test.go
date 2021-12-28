@@ -149,7 +149,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	require.Len(t, reservations, 1)
 	require.EqualValues(t, subnets[0].ID, reservations[0].SubnetID)
 	require.Len(t, reservations[0].LocalHosts, 1)
-	require.EqualValues(t, app.ID, reservations[0].LocalHosts[0].AppID)
+	require.EqualValues(t, app.Daemons[0].ID, reservations[0].LocalHosts[0].DaemonID)
 	// The second subnet should have no reservations.
 	reservations, err = dbmodel.GetHostsBySubnetID(db, subnets[1].ID)
 	require.NoError(t, err)
@@ -170,7 +170,7 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 	require.Len(t, reservations, 1)
 	require.EqualValues(t, subnets[1].ID, reservations[0].SubnetID)
 	require.Len(t, reservations[0].LocalHosts, 1)
-	require.EqualValues(t, app.ID, reservations[0].LocalHosts[0].AppID)
+	require.EqualValues(t, app.Daemons[1].ID, reservations[0].LocalHosts[0].DaemonID)
 
 	// Create another Kea app which introduces a shared network and for
 	// which the subnets partially overlaps.
@@ -243,13 +243,13 @@ func TestDetectNetworksWhenAppCommitted(t *testing.T) {
 		require.NotZero(t, h.ID)
 		require.EqualValues(t, subnets[0].ID, h.SubnetID)
 	}
-	// The first host belongs to two apps.
+	// The first host belongs to two daemons.
 	require.Len(t, hosts[0].LocalHosts, 2)
-	require.NotEqual(t, hosts[0].LocalHosts[0].AppID, app.ID)
-	require.Equal(t, app.ID, hosts[0].LocalHosts[1].AppID)
-	// The second host belongs to one app.
+	require.NotEqual(t, hosts[0].LocalHosts[0].DaemonID, app.Daemons[0].ID)
+	require.Equal(t, app.Daemons[0].ID, hosts[0].LocalHosts[1].DaemonID)
+	// The second host belongs to one daemon.
 	require.Len(t, hosts[1].LocalHosts, 1)
-	require.Equal(t, app.ID, hosts[1].LocalHosts[0].AppID)
+	require.Equal(t, app.Daemons[0].ID, hosts[1].LocalHosts[0].DaemonID)
 
 	// Let's add another app with the same shared network and new subnet in it.
 	v4Config = `

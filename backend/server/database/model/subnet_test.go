@@ -274,7 +274,7 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.NotZero(t, subnet.ID)
 
 	// Add association of the app to the subnet.
-	err = AddAppToSubnet(db, subnet, apps[0], apps[0].Daemons[0])
+	err = AddDaemonToSubnet(db, subnet, apps[0].Daemons[0])
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -284,7 +284,8 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.NotNil(t, returnedSubnet)
 	require.Len(t, returnedSubnet.LocalSubnets, 1)
 	require.EqualValues(t, 123, returnedSubnet.LocalSubnets[0].LocalSubnetID)
-	require.NotNil(t, returnedSubnet.LocalSubnets[0].App)
+	require.NotNil(t, returnedSubnet.LocalSubnets[0].Daemon)
+	require.NotNil(t, returnedSubnet.LocalSubnets[0].Daemon.App)
 
 	// Also make sure that the app can be retrieved using the GetApp function.
 	returnedApp := returnedSubnet.GetApp(apps[0].ID)
@@ -293,7 +294,7 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.Nil(t, returnedApp)
 
 	// Add another app to the same subnet.
-	err = AddAppToSubnet(db, subnet, apps[1], apps[1].Daemons[0])
+	err = AddDaemonToSubnet(db, subnet, apps[1].Daemons[0])
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -303,16 +304,18 @@ func TestAddDeleteAppToSubnet(t *testing.T) {
 	require.NotNil(t, returnedSubnet)
 	require.Len(t, returnedSubnet.LocalSubnets, 2)
 	require.EqualValues(t, 123, returnedSubnet.LocalSubnets[0].LocalSubnetID)
-	require.NotNil(t, returnedSubnet.LocalSubnets[0].App)
+	require.NotNil(t, returnedSubnet.LocalSubnets[0].Daemon)
+	require.NotNil(t, returnedSubnet.LocalSubnets[0].Daemon.App)
 	require.EqualValues(t, 123, returnedSubnet.LocalSubnets[1].LocalSubnetID)
-	require.NotNil(t, returnedSubnet.LocalSubnets[1].App)
+	require.NotNil(t, returnedSubnet.LocalSubnets[1].Daemon)
+	require.NotNil(t, returnedSubnet.LocalSubnets[1].Daemon.App)
 
-	// Remove the association of the first app with the subnet.
-	ok, err := DeleteAppFromSubnet(db, subnet.ID, returnedSubnet.LocalSubnets[0].App.ID)
+	// Remove the association of the first daemon with the subnet.
+	ok, err := DeleteDaemonFromSubnet(db, subnet.ID, returnedSubnet.LocalSubnets[0].DaemonID)
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	// Check again that only one app is returned.
+	// Check again that only one daemon is returned.
 	returnedSubnet, err = GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet)
@@ -347,14 +350,14 @@ func TestDeleteAppFromSubnets(t *testing.T) {
 	}
 
 	// Associate the first app with two subnets.
-	err := AddAppToSubnet(db, &subnets[0], apps[0], apps[0].Daemons[0])
+	err := AddDaemonToSubnet(db, &subnets[0], apps[0].Daemons[0])
 	require.NoError(t, err)
 
-	err = AddAppToSubnet(db, &subnets[1], apps[0], apps[0].Daemons[0])
+	err = AddDaemonToSubnet(db, &subnets[1], apps[0].Daemons[0])
 	require.NoError(t, err)
 
 	// Associate the second app with another subnet.
-	err = AddAppToSubnet(db, &subnets[2], apps[1], apps[1].Daemons[0])
+	err = AddDaemonToSubnet(db, &subnets[2], apps[1].Daemons[0])
 	require.NoError(t, err)
 
 	// Remove associations of the first app.
@@ -371,55 +374,6 @@ func TestDeleteAppFromSubnets(t *testing.T) {
 	returned, err = GetSubnetsByAppID(db, apps[1].ID, 4)
 	require.NoError(t, err)
 	require.Len(t, returned, 1)
-}
-
-// Test that the subnet can be fetched by local ID and app ID.
-func TestGetSubnetByLocalID(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// Add apps to the database. They must exist to make any association between
-	// then and the subnet.
-	apps := addTestSubnetApps(t, db)
-	require.Len(t, apps, 2)
-
-	subnet := &Subnet{
-		Prefix: "192.0.2.0/24",
-	}
-	err := AddSubnet(db, subnet)
-	require.NoError(t, err)
-	require.NotZero(t, subnet.ID)
-
-	// Add association of the app to the subnet.
-	err = AddAppToSubnet(db, subnet, apps[0], apps[0].Daemons[0])
-	require.NoError(t, err)
-	require.NotZero(t, subnet.ID)
-
-	// The subnet should be returned for local subnet ID of 123 and for
-	// the app we have added.
-	returnedSubnets, err := GetSubnetsByLocalID(db, 123, apps[0].ID, 0)
-	require.NoError(t, err)
-	require.Len(t, returnedSubnets, 1)
-
-	// It should be also returned among IPv4 subnets.
-	returnedSubnets, err = GetSubnetsByLocalID(db, 123, apps[0].ID, 4)
-	require.NoError(t, err)
-	require.Len(t, returnedSubnets, 1)
-
-	// If the local subnet ID is not matching no subnet should be returned.
-	returnedSubnets, err = GetSubnetsByLocalID(db, 234, apps[0].ID, 0)
-	require.NoError(t, err)
-	require.Empty(t, returnedSubnets)
-
-	// If the app id is not matching the subnet should not be returned.
-	returnedSubnets, err = GetSubnetsByLocalID(db, 123, apps[0].ID+1, 0)
-	require.NoError(t, err)
-	require.Empty(t, returnedSubnets)
-
-	// The IPv6 subnet does not exist.
-	returnedSubnets, err = GetSubnetsByLocalID(db, 123, apps[0].ID, 6)
-	require.NoError(t, err)
-	require.Empty(t, returnedSubnets)
 }
 
 // Test that subnets can be fetched by app ID.
@@ -452,10 +406,10 @@ func TestGetSubnetsByAppID(t *testing.T) {
 		// Add association of the apps to the subnet.
 		if i < 2 {
 			// First two subnets associated with the first app.
-			err = AddAppToSubnet(db, &subnets[i], apps[0], apps[0].Daemons[0])
+			err = AddDaemonToSubnet(db, &subnets[i], apps[0].Daemons[0])
 		} else {
 			// Last subnet is only associated with the second app.
-			err = AddAppToSubnet(db, &subnets[i], apps[1], apps[1].Daemons[0])
+			err = AddDaemonToSubnet(db, &subnets[i], apps[1].Daemons[0])
 		}
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
@@ -468,11 +422,11 @@ func TestGetSubnetsByAppID(t *testing.T) {
 
 	require.Len(t, returnedSubnets[0].LocalSubnets, 1)
 	require.EqualValues(t, 123, returnedSubnets[0].LocalSubnets[0].LocalSubnetID)
-	require.EqualValues(t, apps[0].ID, returnedSubnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, apps[0].Daemons[0].ID, returnedSubnets[0].LocalSubnets[0].DaemonID)
 
 	require.Len(t, returnedSubnets[1].LocalSubnets, 1)
 	require.EqualValues(t, 234, returnedSubnets[1].LocalSubnets[0].LocalSubnetID)
-	require.EqualValues(t, apps[0].ID, returnedSubnets[1].LocalSubnets[0].AppID)
+	require.EqualValues(t, apps[0].Daemons[0].ID, returnedSubnets[1].LocalSubnets[0].DaemonID)
 
 	// Get all IPv4 subnets for the second app.
 	returnedSubnets, err = GetSubnetsByAppID(db, apps[1].ID, 4)
@@ -481,7 +435,7 @@ func TestGetSubnetsByAppID(t *testing.T) {
 
 	require.Len(t, returnedSubnets[0].LocalSubnets, 1)
 	require.EqualValues(t, 345, returnedSubnets[0].LocalSubnets[0].LocalSubnetID)
-	require.EqualValues(t, apps[1].ID, returnedSubnets[0].LocalSubnets[0].AppID)
+	require.EqualValues(t, apps[1].Daemons[0].ID, returnedSubnets[0].LocalSubnets[0].DaemonID)
 
 	// Get all subnets for the first app.
 	returnedSubnets, err = GetSubnetsByAppID(db, apps[0].ID, 0)
@@ -586,7 +540,7 @@ func TestGetAppLocalSubnets(t *testing.T) {
 	require.NotZero(t, subnet.ID)
 
 	// add association of the app to the subnet - this will create LocalSubnet
-	err = AddAppToSubnet(db, subnet, apps[0], apps[0].Daemons[0])
+	err = AddDaemonToSubnet(db, subnet, apps[0].Daemons[0])
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -617,7 +571,7 @@ func TestUpdateStats(t *testing.T) {
 	require.NotZero(t, subnet.ID)
 
 	// add association of the app to the subnet - this will create LocalSubnet
-	err = AddAppToSubnet(db, subnet, apps[0], apps[0].Daemons[0])
+	err = AddDaemonToSubnet(db, subnet, apps[0].Daemons[0])
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -628,7 +582,7 @@ func TestUpdateStats(t *testing.T) {
 
 	// check updating stats
 	lsn := subnets[0]
-	lsn.AppID = apps[0].ID
+	lsn.DaemonID = apps[0].Daemons[0].ID
 	lsn.SubnetID = subnet.ID
 	stats := make(map[string]interface{})
 	stats["hakuna-matata"] = 123
@@ -729,7 +683,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 		},
 	}
 	// Attempt to create the global shared network and subnet.
-	addedSubnets, err := CommitNetworksIntoDB(db, networks, subnets, &app, app.Daemons[0], 1)
+	addedSubnets, err := CommitNetworksIntoDB(db, networks, subnets, app.Daemons[0], 1)
 	require.NoError(t, err)
 	require.Len(t, addedSubnets, 1)
 
@@ -742,16 +696,16 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, returnedHosts, 1)
 	require.Len(t, returnedHosts[0].LocalHosts, 1)
-	require.EqualValues(t, app.ID, returnedHosts[0].LocalHosts[0].AppID)
+	require.EqualValues(t, app.Daemons[0].ID, returnedHosts[0].LocalHosts[0].DaemonID)
 
 	returnedHosts, err = GetHostsBySubnetID(db, returnedSubnets[1].ID)
 	require.NoError(t, err)
 	require.Len(t, returnedHosts, 1)
 	require.Len(t, returnedHosts[0].LocalHosts, 1)
-	require.EqualValues(t, app.ID, returnedHosts[0].LocalHosts[0].AppID)
+	require.EqualValues(t, app.Daemons[0].ID, returnedHosts[0].LocalHosts[0].DaemonID)
 
 	// Make sure we can commit the networks again without an error.
-	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets, &app, app.Daemons[0], 1)
+	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets, app.Daemons[0], 1)
 	require.NoError(t, err)
 	require.Len(t, addedSubnets, 0)
 }
@@ -785,7 +739,7 @@ func TestGetSubnetsWithLocalSubnets(t *testing.T) {
 	require.NotZero(t, subnet.ID)
 
 	// add association of the app to the subnet - this will create LocalSubnet
-	err = AddAppToSubnet(db, subnet, apps[0], apps[0].Daemons[0])
+	err = AddDaemonToSubnet(db, subnet, apps[0].Daemons[0])
 	require.NoError(t, err)
 	require.NotZero(t, subnet.ID)
 
@@ -858,7 +812,7 @@ func TestDeleteOrphanedSubnets(t *testing.T) {
 
 	// Associate one of the subnets with one of the apps. The
 	// other two subnets are orphaned.
-	err := AddAppToSubnet(db, &subnets[0], apps[0], apps[0].Daemons[0])
+	err := AddDaemonToSubnet(db, &subnets[0], apps[0].Daemons[0])
 	require.NoError(t, err)
 
 	// Delete subnets not assigned to any apps.
@@ -916,7 +870,7 @@ func TestDeleteOrphanedSharedNetworkSubnets(t *testing.T) {
 
 	// Associate one of the subnets with one of the apps. The
 	// other two subnets are orphaned.
-	err = AddAppToSubnet(db, &network.Subnets[0], apps[0], apps[0].Daemons[0])
+	err = AddDaemonToSubnet(db, &network.Subnets[0], apps[0].Daemons[0])
 	require.NoError(t, err)
 
 	// Delete subnets not assigned to any apps.
@@ -985,13 +939,13 @@ func BenchmarkAddSubnet(b *testing.B) {
 	tx.Commit()
 }
 
-// Benchmark measuring a time to associate a subnet with an app. This requires
+// Benchmark measuring a time to associate a subnet with a daemon. This requires
 // finding local subnet ID within the app configuration by subnet prefix.
 // In order to find a subnet in the app configuration it is possible to use
 // indexed and unindexed subnets. Thus, this benchmark contains two test cases,
 // one checking performance of the function with indexing and without indexing.
 // The function execution time should be significantly longer without indexing.
-func BenchmarkAddAppToSubnet(b *testing.B) {
+func BenchmarkAddDaemonToSubnet(b *testing.B) {
 	testCases := []string{"without indexing", "with indexing"}
 
 	// Run sub tests.
@@ -1059,7 +1013,7 @@ func BenchmarkAddAppToSubnet(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				subnetIndex := rand.Intn(len(subnets))
-				AddAppToSubnet(db, &subnets[subnetIndex], app, app.Daemons[0])
+				AddDaemonToSubnet(db, &subnets[subnetIndex], app.Daemons[0])
 			}
 		})
 	}

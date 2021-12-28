@@ -1249,12 +1249,12 @@ func TestFindLeasesByHostID(t *testing.T) {
 		},
 		LocalHosts: []dbmodel.LocalHost{
 			{
-				AppID:      app1.ID,
+				DaemonID:   app1.Daemons[0].ID,
 				DataSource: "config",
 				UpdateSeq:  1,
 			},
 			{
-				AppID:      app2.ID,
+				DaemonID:   app2.Daemons[1].ID,
 				DataSource: "config",
 				UpdateSeq:  1,
 			},

@@ -436,9 +436,9 @@ func TestDetectHostsFromConfig(t *testing.T) {
 	// Commit the hosts into the database.
 	tx, err := db.Begin()
 	require.NoError(t, err)
-	err = dbmodel.CommitGlobalHostsIntoDB(tx, v4hosts, &app, app.Daemons[0], "config", 1)
+	err = dbmodel.CommitGlobalHostsIntoDB(tx, v4hosts, app.Daemons[0], "config", 1)
 	require.NoError(t, err)
-	err = dbmodel.CommitGlobalHostsIntoDB(tx, v6hosts, &app, app.Daemons[1], "config", 1)
+	err = dbmodel.CommitGlobalHostsIntoDB(tx, v6hosts, app.Daemons[1], "config", 1)
 	require.NoError(t, err)
 	err = tx.Commit()
 	require.NoError(t, err)
@@ -458,7 +458,7 @@ func TestDetectHostsFromConfig(t *testing.T) {
 		require.Len(t, h.HostIdentifiers, 1)
 		// The hosts should have been already associated with our app.
 		require.Len(t, h.LocalHosts, 1)
-		require.Equal(t, app.ID, h.LocalHosts[0].AppID)
+		require.Contains(t, []int64{app.Daemons[0].ID, app.Daemons[1].ID}, h.LocalHosts[0].DaemonID)
 	}
 }
 

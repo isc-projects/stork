@@ -291,7 +291,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	for i := range app.Daemons {
 		nets, snets, err := detectDaemonNetworks(db, app.Daemons[i])
 		require.NoError(t, err)
-		_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app, app.Daemons[i], 1)
+		_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app.Daemons[i], 1)
 		require.NoError(t, err)
 	}
 
@@ -319,7 +319,8 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	subnets := []*dbmodel.LocalSubnet{}
 	q := db.Model(&subnets)
 	q = q.Column("local_subnet_id", "stats", "stats_collected_at")
-	q = q.Where("local_subnet.app_id = ?", app.ID)
+	q = q.Join("INNER JOIN daemon ON local_subnet.daemon_id = daemon.id")
+	q = q.Where("daemon.app_id = ?", app.ID)
 	err = q.Select()
 	require.NoError(t, err)
 	snCnt := 0

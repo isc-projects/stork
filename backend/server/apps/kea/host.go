@@ -205,7 +205,7 @@ func (iterator *HostDetectionIterator) sendReservationGetPage() (hosts []dbmodel
 	// The returned subnet will be nil if we're fetching global host reservations.
 	if subnet != nil {
 		for _, ls := range subnet.LocalSubnets {
-			if ls.AppID == iterator.app.ID {
+			if ls.Daemon != nil && ls.Daemon.App != nil && ls.Daemon.App.ID == iterator.app.ID {
 				subnetID = ls.LocalSubnetID
 				break
 			}
@@ -550,7 +550,7 @@ func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, a
 			if err != nil {
 				break
 			}
-			err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, app, daemon, "api", seq)
+			err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, daemon, "api", seq)
 			if err != nil {
 				break
 			}
@@ -577,7 +577,7 @@ func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, a
 		// new hosts into the subnet instance and commit everything to the
 		// database.
 		subnet.Hosts = mergedHosts
-		err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, app, daemon, "api", seq)
+		err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, daemon, "api", seq)
 		if err != nil {
 			break
 		}

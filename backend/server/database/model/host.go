@@ -58,15 +58,14 @@ type Host struct {
 	UpdateOnCommit bool `pg:"-"`
 }
 
-// This structure links a host entry stored in the database with an app from
+// This structure links a host entry stored in the database with a daemon from
 // which it has been retrieved. It provides M:N relationship between hosts
-// and apps.
+// and daemons.
 type LocalHost struct {
-	AppID      int64 `pg:",pk"`
-	HostID     int64 `pg:",pk"`
-	DaemonID   int64
-	App        *App  `pg:"rel:has-one"`
-	Host       *Host `pg:"rel:has-one"`
+	HostID     int64   `pg:",pk"`
+	DaemonID   int64   `pg:",pk"`
+	Daemon     *Daemon `pg:"rel:has-one"`
+	Host       *Host   `pg:"rel:has-one"`
 	DataSource string
 	UpdateSeq  int64
 }
@@ -225,7 +224,7 @@ func GetHost(dbi dbops.DBI, hostID int64) (*Host, error) {
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
 		Relation("Subnet").
-		Relation("LocalHosts.App").
+		Relation("LocalHosts.Daemon.App").
 		Where("host.id = ?", hostID).
 		Select()
 	if err != nil {
@@ -373,7 +372,8 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *i
 	// application identifier.
 	if appID != 0 {
 		q = q.Join("INNER JOIN local_host AS lh ON host.id = lh.host_id")
-		q = q.Where("lh.app_id = ?", appID)
+		q = q.Join("INNER JOIN daemon AS d ON lh.daemon_id = d.id")
+		q = q.Where("d.app_id = ?", appID)
 	}
 
 	// filter by subnet id
@@ -415,9 +415,9 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *i
 			return q.Order("ip_reservation.id ASC"), nil
 		}).
 		Relation("LocalHosts").
-		Relation("LocalHosts.App").
-		Relation("LocalHosts.App.Machine").
-		Relation("LocalHosts.App.AccessPoints")
+		Relation("LocalHosts.Daemon.App").
+		Relation("LocalHosts.Daemon.App.Machine").
+		Relation("LocalHosts.Daemon.App.AccessPoints")
 
 	// Only join the subnet if querying all hosts or hosts belonging to a
 	// given subnet.
@@ -472,48 +472,47 @@ func DeleteLocalHostsWithOtherSeq(dbi dbops.DBI, seq int64, dataSource string) e
 	return err
 }
 
-// Associates an application with the host having a specified ID in a
+// Associates a daemon with the host having a specified ID in a
 // transaction. Internally, the association is made via the local_host
-// table which holds information about the host from the given app
+// table which holds information about the host from the given daemon
 // perspective. The source argument indicates whether the host
-// information was fetched from the app's configuration or via the
+// information was fetched from the daemon's configuration or via the
 // command.
-func addAppToHost(tx *pg.Tx, host *Host, app *App, daemonID int64, source string, seq int64) error {
+func addDaemonToHost(tx *pg.Tx, host *Host, daemonID int64, source string, seq int64) error {
 	localHost := LocalHost{
-		AppID:      app.ID,
 		HostID:     host.ID,
 		DaemonID:   daemonID,
 		DataSource: source,
 		UpdateSeq:  seq,
 	}
 	q := tx.Model(&localHost).
-		OnConflict("(app_id, host_id) DO UPDATE").
+		OnConflict("(daemon_id, host_id) DO UPDATE").
 		Set("daemon_id = EXCLUDED.daemon_id").
 		Set("data_source = EXCLUDED.data_source")
 
 	for _, lh := range host.LocalHosts {
-		if lh.AppID == app.ID && lh.UpdateSeq == 0 {
+		if lh.DaemonID == daemonID && lh.UpdateSeq == 0 {
 			q = q.Set("update_seq = EXCLUDED.update_seq")
 		}
 	}
 	_, err := q.Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with associating the app %d (daemon %d) with the host %d",
-			app.ID, daemonID, host.ID)
+		err = pkgerrors.Wrapf(err, "problem with associating the daemon %d with the host %d",
+			daemonID, host.ID)
 	}
 	return err
 }
 
-// Associates an application with the host having a specified ID.
+// Associates a daemon with the host having a specified ID.
 // It begins a new transaction when dbi has a *pg.DB type or uses an
 // existing transaction when dbi has a *pg.Tx type.
-func AddAppToHost(dbi dbops.DBI, host *Host, app *App, daemonID int64, source string, seq int64) error {
+func AddDaemonToHost(dbi dbops.DBI, host *Host, daemonID int64, source string, seq int64) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return addAppToHost(tx, host, app, daemonID, source, seq)
+			return addDaemonToHost(tx, host, daemonID, source, seq)
 		})
 	}
-	return addAppToHost(dbi.(*pg.Tx), host, app, daemonID, source, seq)
+	return addDaemonToHost(dbi.(*pg.Tx), host, daemonID, source, seq)
 }
 
 // Dissociates a daemon from the hosts. The dataSource designates a data
@@ -555,7 +554,7 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 
 // Iterates over the list of hosts and commits them into the database. The hosts
 // can be associated with a subnet or can be made global.
-func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, daemon *Daemon, source string, seq int64) (err error) {
+func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, daemon *Daemon, source string, seq int64) (err error) {
 	for i := range hosts {
 		hosts[i].SubnetID = subnetID
 		newHost := (hosts[i].ID == 0)
@@ -573,10 +572,10 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, daemon
 			}
 		}
 		if newHost || hosts[i].UpdateOnCommit {
-			err = AddAppToHost(tx, &hosts[i], app, daemon.ID, source, seq)
+			err = AddDaemonToHost(tx, &hosts[i], daemon.ID, source, seq)
 			if err != nil {
-				err = pkgerrors.WithMessagef(err, "unable to associate detected host with Kea app having id %d",
-					app.ID)
+				err = pkgerrors.WithMessagef(err, "unable to associate detected host with Kea daemon having id %d",
+					daemon.ID)
 				return err
 			}
 		}
@@ -585,14 +584,14 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, app *App, daemon
 }
 
 // Iterates over the list of hosts and commits them as global hosts.
-func CommitGlobalHostsIntoDB(tx *pg.Tx, hosts []Host, app *App, daemon *Daemon, source string, seq int64) (err error) {
-	return commitHostsIntoDB(tx, hosts, 0, app, daemon, source, seq)
+func CommitGlobalHostsIntoDB(tx *pg.Tx, hosts []Host, daemon *Daemon, source string, seq int64) (err error) {
+	return commitHostsIntoDB(tx, hosts, 0, daemon, source, seq)
 }
 
 // Iterates over the hosts belonging to the given subnet and stores them
 // or updates in the database.
-func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, app *App, daemon *Daemon, source string, seq int64) (err error) {
-	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, app, daemon, source, seq)
+func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, daemon *Daemon, source string, seq int64) (err error) {
+	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, daemon, source, seq)
 }
 
 // This function returns next value of the bulk_update_seq. The returned value

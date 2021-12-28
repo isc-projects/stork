@@ -53,8 +53,8 @@ func hostToRestAPI(dbHost *dbmodel.Host) *models.Host {
 	// apps.
 	for _, dbLocalHost := range dbHost.LocalHosts {
 		localHost := models.LocalHost{
-			AppID:      dbLocalHost.AppID,
-			AppName:    dbLocalHost.App.Name,
+			AppID:      dbLocalHost.Daemon.AppID,
+			AppName:    dbLocalHost.Daemon.App.Name,
 			DataSource: dbLocalHost.DataSource,
 		}
 		host.LocalHosts = append(host.LocalHosts, &localHost)

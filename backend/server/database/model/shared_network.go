@@ -133,7 +133,7 @@ func GetSharedNetworkWithSubnets(dbi dbops.DBI, networkID int64) (network *Share
 		Relation("Subnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("Subnets.LocalSubnets.App.AccessPoints").
+		Relation("Subnets.LocalSubnets.Daemon.App.AccessPoints").
 		Where("shared_network.id = ?", networkID).
 		Select()
 
@@ -232,10 +232,11 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 	if appID != 0 || family != 0 || filterText != nil {
 		q = q.Join("INNER JOIN subnet AS s ON shared_network.id = s.shared_network_id")
 	}
-	// When filtering by appID we also need the local_subnet table as it holds the
-	// application identifier.
+	// When filtering by appID we also need the daemon table (via joined local_subnet)
+	// as it holds the app identifier.
 	if appID != 0 {
 		q = q.Join("INNER JOIN local_subnet AS ls ON s.id = ls.subnet_id")
+		q = q.Join("INNER JOIN daemon AS d ON d.id = ls.daemon_id")
 	}
 	// Include address pools, prefix pools and the local subnet info in the results.
 	q = q.Relation("Subnets.AddressPools", func(q *orm.Query) (*orm.Query, error) {
@@ -244,8 +245,8 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 		Relation("Subnets.PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("Subnets.LocalSubnets.App.AccessPoints").
-		Relation("Subnets.LocalSubnets.App.Machine")
+		Relation("Subnets.LocalSubnets.Daemon.App.AccessPoints").
+		Relation("Subnets.LocalSubnets.Daemon.App.Machine")
 
 	// Let's be liberal and allow other values than 0 too. The only special
 	// ones are 4 and 6.
@@ -255,7 +256,7 @@ func GetSharedNetworksByPage(dbi dbops.DBI, offset, limit, appID, family int64, 
 
 	// Filter by appID.
 	if appID != 0 {
-		q = q.Where("ls.app_id = ?", appID)
+		q = q.Where("d.app_id = ?", appID)
 	}
 
 	// Quick filtering by shared network name or subnet prefix.

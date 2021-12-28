@@ -20,13 +20,12 @@ import (
 // different local subnet id between different apos there will also be
 // other information stored here, e.g. statistics for the particular
 // subnet retrieved from the given app. Multiple local subnets can be
-// associated with a single global subnet depending on how many apps serve
-// the same subnet.
+// associated with a single global subnet depending on how many daemons
+// serve the same subnet.
 type LocalSubnet struct {
-	AppID         int64 `pg:",pk"`
-	SubnetID      int64 `pg:",pk"`
-	DaemonID      int64
-	App           *App    `pg:"rel:has-one"`
+	SubnetID      int64   `pg:",pk"`
+	DaemonID      int64   `pg:",pk"`
+	Daemon        *Daemon `pg:"rel:has-one"`
 	Subnet        *Subnet `pg:"rel:has-one"`
 	LocalSubnetID int64
 
@@ -149,7 +148,7 @@ func GetSubnet(dbi dbops.DBI, subnetID int64) (*Subnet, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets.App.AccessPoints").
+		Relation("LocalSubnets.Daemon.App.AccessPoints").
 		Where("subnet.id = ?", subnetID).
 		Select()
 	if err != nil {
@@ -162,39 +161,6 @@ func GetSubnet(dbi dbops.DBI, subnetID int64) (*Subnet, error) {
 	return subnet, err
 }
 
-// Fetches the subnet and its pools by local subnet ID and application ID.
-// Applications may use their own numbering scheme for subnets. Therefore,
-// the local subnet ID must be accompanied by the app ID.
-// If the family is set to 0 it fetches both IPv4 and IPv6 subnets.
-// Use 4 o 6 to fetch IPv4 or IPv6 specific subnet.
-func GetSubnetsByLocalID(dbi dbops.DBI, localSubnetID int64, appID int64, family int) ([]Subnet, error) {
-	subnets := []Subnet{}
-	q := dbi.Model(&subnets).
-		Join("INNER JOIN local_subnet AS ls ON ls.local_subnet_id = ? AND ls.app_id = ?", localSubnetID, appID).
-		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
-			return q.Order("address_pool.id ASC"), nil
-		}).
-		Relation("PrefixPools", func(q *orm.Query) (*orm.Query, error) {
-			return q.Order("prefix_pool.id ASC"), nil
-		}).
-		Relation("SharedNetwork").
-		Relation("LocalSubnets.App.AccessPoints")
-
-	// Optionally filter by IPv4 or IPv6 subnets.
-	if family == 4 || family == 6 {
-		q = q.Where("family(subnet.prefix) = ?", family)
-	}
-	err := q.Select()
-	if err != nil {
-		if errors.Is(err, pg.ErrNoRows) {
-			return nil, nil
-		}
-		err = pkgerrors.Wrapf(err, "problem with getting subnets by local subnet id %d and app id %d", localSubnetID, appID)
-		return nil, err
-	}
-	return subnets, err
-}
-
 // Fetches all subnets associated with the given application by ID.
 // If the family is set to 0 it fetches both IPv4 and IPv6 subnets.
 // Use 4 o 6 to fetch IPv4 or IPv6 specific subnet.
@@ -203,6 +169,7 @@ func GetSubnetsByAppID(dbi dbops.DBI, appID int64, family int) ([]Subnet, error)
 
 	q := dbi.Model(&subnets).
 		Join("INNER JOIN local_subnet AS ls ON ls.subnet_id = subnet.id").
+		Join("INNER JOIN daemon ON ls.daemon_id = daemon.id").
 		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
@@ -210,8 +177,8 @@ func GetSubnetsByAppID(dbi dbops.DBI, appID int64, family int) ([]Subnet, error)
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets.App.AccessPoints").
-		Where("ls.app_id = ?", appID)
+		Relation("LocalSubnets.Daemon.App.AccessPoints").
+		Where("daemon.app_id = ?", appID)
 
 	// Optionally filter by IPv4 or IPv6 subnets.
 	if family == 4 || family == 6 {
@@ -239,7 +206,7 @@ func GetSubnetsByPrefix(dbi dbops.DBI, prefix string) ([]Subnet, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets.App.AccessPoints").
+		Relation("LocalSubnets.Daemon.App.AccessPoints").
 		Where("subnet.prefix = ?", prefix).
 		Select()
 	if err != nil {
@@ -264,7 +231,7 @@ func GetAllSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets.App.AccessPoints").
+		Relation("LocalSubnets.Daemon.App.AccessPoints").
 		OrderExpr("id ASC")
 
 	// Let's be liberal and allow other values than 0 too. The only special
@@ -294,7 +261,7 @@ func GetGlobalSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 		Relation("PrefixPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
-		Relation("LocalSubnets.App.AccessPoints").
+		Relation("LocalSubnets.Daemon.App.AccessPoints").
 		OrderExpr("id ASC").
 		Where("subnet.shared_network_id IS NULL")
 
@@ -334,6 +301,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit, appID, family int64, filterT
 	// application identifier.
 	if appID != 0 {
 		q = q.Join("INNER JOIN local_subnet AS ls ON subnet.id = ls.subnet_id")
+		q = q.Join("INNER JOIN daemon AS d ON ls.daemon_id = d.id")
 	}
 	// Pools are also required when trying to filter by text.
 	if filterText != nil {
@@ -348,8 +316,8 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit, appID, family int64, filterT
 			return q.Order("prefix_pool.id ASC"), nil
 		}).
 		Relation("SharedNetwork").
-		Relation("LocalSubnets.App.AccessPoints").
-		Relation("LocalSubnets.App.Machine")
+		Relation("LocalSubnets.Daemon.App.AccessPoints").
+		Relation("LocalSubnets.Daemon.App.Machine")
 
 	// Let's be liberal and allow other values than 0 too. The only special
 	// ones are 4 and 6.
@@ -359,7 +327,7 @@ func GetSubnetsByPage(dbi dbops.DBI, offset, limit, appID, family int64, filterT
 
 	// Filter by appID.
 	if appID != 0 {
-		q = q.Where("ls.app_id = ?", appID)
+		q = q.Where("d.app_id = ?", appID)
 	}
 
 	// Quick filtering by subnet prefix, pool ranges or shared network name.
@@ -412,20 +380,19 @@ func GetSubnetsWithLocalSubnets(dbi dbops.DBI) ([]*Subnet, error) {
 	return subnets, nil
 }
 
-// Associates an application with the subnet having a specified ID and prefix
+// Associates a daemon with the subnet having a specified ID and prefix
 // in a transaction. Internally, the association is made via the local_subnet
-// table which holds the information about the subnet from the given app
+// table which holds the information about the subnet from the given daemon
 // perspective, local subnet id, statistics etc.
-func addAppToSubnet(tx *pg.Tx, subnet *Subnet, app *App, daemon *Daemon) error {
+func addDaemonToSubnet(tx *pg.Tx, subnet *Subnet, daemon *Daemon) error {
 	localSubnetID := int64(0)
 	// If the prefix is available we should try to match the subnet prefix
 	// with the app's configuration and retrieve the local subnet id from
 	// there.
 	if len(subnet.Prefix) > 0 {
-		localSubnetID = app.GetLocalSubnetID(subnet.Prefix)
+		localSubnetID = daemon.GetLocalSubnetID(subnet.Prefix)
 	}
 	localSubnet := LocalSubnet{
-		AppID:         app.ID,
 		SubnetID:      subnet.ID,
 		DaemonID:      daemon.ID,
 		LocalSubnetID: localSubnetID,
@@ -434,45 +401,44 @@ func addAppToSubnet(tx *pg.Tx, subnet *Subnet, app *App, daemon *Daemon) error {
 	// nothing, but we do update instead to force setting the new value
 	// of the local_subnet_id if it has changed.
 	_, err := tx.Model(&localSubnet).
-		Column("app_id").
 		Column("subnet_id").
 		Column("daemon_id").
 		Column("local_subnet_id").
-		OnConflict("(app_id, subnet_id) DO UPDATE").
+		OnConflict("(daemon_id, subnet_id) DO UPDATE").
 		Set("daemon_id = EXCLUDED.daemon_id").
 		Set("local_subnet_id = EXCLUDED.local_subnet_id").
 		Insert()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with associating the app %d (daemon %d) with the subnet %s",
-			app.ID, daemon.ID, subnet.Prefix)
+		err = pkgerrors.Wrapf(err, "problem with associating the daemon %d with the subnet %s",
+			daemon.ID, subnet.Prefix)
 	}
 	return err
 }
 
-// Associates an application with the subnet having a specified ID and prefix.
+// Associates a daemon with the subnet having a specified ID and prefix.
 // It begins a new transaction when dbi has a *pg.DB type or uses an existing
 // transaction when dbi has a *pg.Tx type.
-func AddAppToSubnet(dbi dbops.DBI, subnet *Subnet, app *App, daemon *Daemon) error {
+func AddDaemonToSubnet(dbi dbops.DBI, subnet *Subnet, daemon *Daemon) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return addAppToSubnet(tx, subnet, app, daemon)
+			return addDaemonToSubnet(tx, subnet, daemon)
 		})
 	}
-	return addAppToSubnet(dbi.(*pg.Tx), subnet, app, daemon)
+	return addDaemonToSubnet(dbi.(*pg.Tx), subnet, daemon)
 }
 
-// Dissociates an application from the subnet having a specified id.
+// Dissociates a daemon from the subnet having a specified id.
 // The first returned value indicates if any row was removed from the
 // local_subnet table.
-func DeleteAppFromSubnet(dbi dbops.DBI, subnetID int64, appID int64) (bool, error) {
+func DeleteDaemonFromSubnet(dbi dbops.DBI, subnetID int64, daemonID int64) (bool, error) {
 	localSubnet := &LocalSubnet{
-		AppID:    appID,
+		DaemonID: daemonID,
 		SubnetID: subnetID,
 	}
 	rows, err := dbi.Model(localSubnet).WherePK().Delete()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with deleting an app with id %d from the subnet with %d",
-			appID, subnetID)
+		err = pkgerrors.Wrapf(err, "problem with deleting a daemon with id %d from the subnet with %d",
+			daemonID, subnetID)
 		return false, err
 	}
 	return rows.RowsAffected() > 0, nil
@@ -494,9 +460,9 @@ func DeleteDaemonFromSubnets(dbi dbops.DBI, daemonID int64) (int64, error) {
 // Finds and returns an app associated with a subnet having the specified id.
 func (s *Subnet) GetApp(appID int64) *App {
 	for _, s := range s.LocalSubnets {
-		app := s.App
-		if app.ID == appID {
-			return app
+		daemon := s.Daemon
+		if daemon.App != nil && daemon.App.ID == appID {
+			return daemon.App
 		}
 	}
 	return nil
@@ -505,7 +471,7 @@ func (s *Subnet) GetApp(appID int64) *App {
 // Iterates over the provided slice of subnets and stores them in the database
 // if they are not there yet. In addition, it associates the subnets with the
 // specified Kea application. Returns a list of added subnets.
-func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App, daemon *Daemon, seq int64) (addedSubnets []*Subnet, err error) {
+func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, daemon *Daemon, seq int64) (addedSubnets []*Subnet, err error) {
 	for i := range subnets {
 		subnet := &subnets[i]
 		if subnet.ID == 0 {
@@ -518,13 +484,13 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App,
 			}
 			addedSubnets = append(addedSubnets, subnet)
 		}
-		err = AddAppToSubnet(tx, subnet, app, daemon)
+		err = AddDaemonToSubnet(tx, subnet, daemon)
 		if err != nil {
-			err = pkgerrors.WithMessagef(err, "unable to associate detected subnet %s with Kea app having id %d", subnet.Prefix, app.ID)
+			err = pkgerrors.WithMessagef(err, "unable to associate detected subnet %s with Kea daemon having id %d", subnet.Prefix, daemon.ID)
 			return nil, err
 		}
 
-		err = CommitSubnetHostsIntoDB(tx, subnet, app, daemon, "config", seq)
+		err = CommitSubnetHostsIntoDB(tx, subnet, daemon, "config", seq)
 		if err != nil {
 			return nil, err
 		}
@@ -535,14 +501,14 @@ func commitSubnetsIntoDB(tx *pg.Tx, networkID int64, subnets []Subnet, app *App,
 // Iterates over the shared networks, subnets and hosts and commits them to the database.
 // In addition it associates them with the specified app. Returns a list of added subnets.
 // This function runs all database operations in a transaction.
-func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet, app *App, daemon *Daemon, seq int64) ([]*Subnet, error) {
+func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet, daemon *Daemon, seq int64) ([]*Subnet, error) {
 	var (
 		addedSubnets      []*Subnet
 		addedSubnetsToNet []*Subnet
 		err               error
 	)
 
-	// Go over the networks that the Kea app belongs to.
+	// Go over the networks that the Kea daemon belongs to.
 	for i := range networks {
 		network := &networks[i]
 		if network.ID == 0 {
@@ -554,8 +520,8 @@ func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet,
 				return nil, err
 			}
 		}
-		// Associate subnets with the app.
-		addedSubnetsToNet, err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, app, daemon, seq)
+		// Associate subnets with the daemon.
+		addedSubnetsToNet, err = commitSubnetsIntoDB(tx, network.ID, network.Subnets, daemon, seq)
 		if err != nil {
 			return nil, err
 		}
@@ -563,8 +529,8 @@ func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet,
 	}
 
 	// Finally, add top level subnets to the database and associate them with
-	// the Kea app.
-	addedSubnetsToNet, err = commitSubnetsIntoDB(tx, 0, subnets, app, daemon, seq)
+	// the Kea daemon.
+	addedSubnetsToNet, err = commitSubnetsIntoDB(tx, 0, subnets, daemon, seq)
 	if err != nil {
 		return nil, err
 	}
@@ -574,16 +540,16 @@ func commitNetworksIntoDB(tx *pg.Tx, networks []SharedNetwork, subnets []Subnet,
 }
 
 // Iterates over the shared networks, subnets and hosts and commits them to the database.
-// In addition it associates them with the specified app. Returns a list of added subnets.
-func CommitNetworksIntoDB(dbi dbops.DBI, networks []SharedNetwork, subnets []Subnet, app *App, daemon *Daemon, seq int64) (addedSubnets []*Subnet, err error) {
+// In addition it associates them with the specified daemon. Returns a list of added subnets.
+func CommitNetworksIntoDB(dbi dbops.DBI, networks []SharedNetwork, subnets []Subnet, daemon *Daemon, seq int64) (addedSubnets []*Subnet, err error) {
 	if db, ok := dbi.(*pg.DB); ok {
 		err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			addedSubnets, err = commitNetworksIntoDB(tx, networks, subnets, app, daemon, seq)
+			addedSubnets, err = commitNetworksIntoDB(tx, networks, subnets, daemon, seq)
 			return err
 		})
 		return
 	}
-	addedSubnets, err = commitNetworksIntoDB(dbi.(*pg.Tx), networks, subnets, app, daemon, seq)
+	addedSubnets, err = commitNetworksIntoDB(dbi.(*pg.Tx), networks, subnets, daemon, seq)
 	return
 }
 
@@ -591,10 +557,12 @@ func CommitNetworksIntoDB(dbi dbops.DBI, networks []SharedNetwork, subnets []Sub
 func GetAppLocalSubnets(dbi dbops.DBI, appID int64) ([]*LocalSubnet, error) {
 	subnets := []*LocalSubnet{}
 	q := dbi.Model(&subnets)
+	q = q.Join("INNER JOIN daemon AS d ON local_subnet.daemon_id = d.id")
 	// only selected columns are returned while stats columns are skipped for performance reasons (they are pretty big json fields)
-	q = q.Column("app_id", "subnet_id", "local_subnet_id")
+	q = q.Column("daemon_id", "subnet_id", "local_subnet_id")
 	q = q.Relation("Subnet")
-	q = q.Where("local_subnet.app_id = ?", appID)
+	q = q.Relation("Daemon.App")
+	q = q.Where("d.app_id = ?", appID)
 
 	err := q.Select()
 	if err != nil {
@@ -616,11 +584,11 @@ func (lsn *LocalSubnet) UpdateStats(dbi dbops.DBI, stats map[string]interface{})
 	q = q.WherePK()
 	result, err := q.Update()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with updating stats in local subnet: [app:%d, subnet:%d, local subnet:%d]",
-			lsn.AppID, lsn.SubnetID, lsn.LocalSubnetID)
+		err = pkgerrors.Wrapf(err, "problem with updating stats in local subnet: [daemon:%d, subnet:%d, local subnet:%d]",
+			lsn.DaemonID, lsn.SubnetID, lsn.LocalSubnetID)
 	} else if result.RowsAffected() <= 0 {
-		err = pkgerrors.Wrapf(ErrNotExists, "local subnet: [app:%d, subnet:%d, local subnet:%d] does not exist",
-			lsn.AppID, lsn.SubnetID, lsn.LocalSubnetID)
+		err = pkgerrors.Wrapf(ErrNotExists, "local subnet: [daemon:%d, subnet:%d, local subnet:%d] does not exist",
+			lsn.DaemonID, lsn.SubnetID, lsn.LocalSubnetID)
 	}
 	return err
 }

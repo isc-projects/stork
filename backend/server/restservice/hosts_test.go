@@ -185,9 +185,9 @@ func TestGetHostsNoFiltering(t *testing.T) {
 	// Add four hosts. Two with IPv4 and two with IPv6 reservations.
 	hosts, apps := addTestHosts(t, db)
 
-	err = dbmodel.AddAppToHost(db, &hosts[0], &apps[0], apps[0].Daemons[0].ID, "config", 1)
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "config", 1)
 	require.NoError(t, err)
-	err = dbmodel.AddAppToHost(db, &hosts[0], &apps[1], apps[1].Daemons[0].ID, "config", 1)
+	err = dbmodel.AddDaemonToHost(db, &hosts[0], apps[1].Daemons[0].ID, "config", 1)
 	require.NoError(t, err)
 
 	params := dhcp.GetHostsParams{}
