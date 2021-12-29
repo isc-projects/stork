@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 )
 
 // Decodes a map into structure with ignoring hyphens. Hyphens are
@@ -22,5 +23,5 @@ func decode(input interface{}, output interface{}) error {
 		Result: output,
 	}
 	decoder, _ := mapstructure.NewDecoder(&decoderConfig)
-	return decoder.Decode(input)
+	return errors.Wrap(decoder.Decode(input), "cannot decode the input map to output structure")
 }

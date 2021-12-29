@@ -156,7 +156,7 @@ func (c *Map) GetLocalSubnetID(prefix string) int64 {
 func (c *Map) DecodeSharedNetworks(decodedSharedNetworks interface{}) error {
 	if sharedNetworksList, ok := c.GetTopLevelList("shared-networks"); ok {
 		if err := decode(sharedNetworksList, decodedSharedNetworks); err != nil {
-			return errors.Wrapf(err, "problem with parsing shared-networks")
+			return errors.WithMessage(err, "problem with parsing shared-networks")
 		}
 	}
 	return nil
@@ -181,7 +181,7 @@ func (c *Map) DecodeTopLevelSubnets(decodedSubnets interface{}) error {
 	}
 	if ok {
 		if err := decode(subnetsList, decodedSubnets); err != nil {
-			return errors.Wrapf(err, "problem with parsing subnets")
+			return errors.WithMessage(err, "problem with parsing subnets")
 		}
 	}
 	return nil
