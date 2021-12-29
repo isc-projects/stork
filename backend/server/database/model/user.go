@@ -10,11 +10,9 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
-var _ = registerUserTables()
-
-func registerUserTables() struct{} {
+// Registers M:N SQL relations defined in this file.
+func init() {
 	orm.RegisterTable((*SystemUserToGroup)(nil))
-	return struct{}{}
 }
 
 // Represents a user held in system_user table in the database.

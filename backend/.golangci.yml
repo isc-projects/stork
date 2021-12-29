@@ -109,6 +109,10 @@ issues:
       linters:
         - gochecknoglobals
 
+    - path: server/database/model/
+      linters:
+        - gochecknoinits
+
     - path: server/database/settings.go
       linters:
         - gochecknoinits

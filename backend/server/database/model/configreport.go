@@ -13,11 +13,9 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
-var _ = registerConfigReportTables()
-
-func registerConfigReportTables() struct{} {
+// Registers M:N SQL relations defined in this file.
+func init() {
 	orm.RegisterTable((*DaemonToConfigReport)(nil))
-	return struct{}{}
 }
 
 // Structure representing a single config report generated during

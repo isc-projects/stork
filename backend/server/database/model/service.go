@@ -11,11 +11,9 @@ import (
 	dbops "isc.org/stork/server/database"
 )
 
-var _ = registerServiceTables()
-
-func registerServiceTables() struct{} {
+// Registers M:N SQL relations defined in this file.
+func init() {
 	orm.RegisterTable((*DaemonToService)(nil))
-	return struct{}{}
 }
 
 // A structure reflecting service SQL table. This table holds
