@@ -117,7 +117,7 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to update user %s", user.Identity())
 		return false, err
 	}
-	dbops.RollbackOnError(tx, &err)
+	defer dbops.RollbackOnError(tx, &err)
 
 	result, err := db.Model(user).WherePK().Update()
 	if err == nil {
