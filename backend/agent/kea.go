@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"muzzammil.xyz/jsonc"
 
 	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
@@ -53,21 +52,6 @@ func (ka *KeaApp) sendCommand(command *keactrl.Command, responses interface{}) e
 		return errors.WithMessagef(err, "failed to parse Kea response body received from %s", caURL)
 	}
 	return nil
-}
-
-// Kea Control Agent JSON configuration - root wrapper.
-type keaControlAgentJSON struct {
-	ControlAgent keaControlAgentJSONRoot `mapstructure:"Control-agent" json:"Control-agent"`
-}
-
-// Kea Control Agent JSON configuration - root node.
-type keaControlAgentJSONRoot struct {
-	HTTPHost     string `mapstructure:"http-host" json:"http-host,omitempty"`
-	HTTPPort     int64  `mapstructure:"http-port" json:"http-port"`
-	TrustAnchor  string `mapstructure:"trust-anchor" json:"trust-anchor,omitempty"`
-	CertFile     string `mapstructure:"cert-file" json:"cert-file,omitempty"`
-	KeyFile      string `mapstructure:"key-file" json:"key-file,omitempty"`
-	CertRequired bool   `mapstructure:"cert-required" json:"cert-required,omitempty"`
 }
 
 // Collect the list of log files which can be viewed by the Stork user
@@ -209,18 +193,17 @@ func getCtrlTargetFromKeaConfig(path string) (string, int64, bool) {
 		return "", 0, false
 	}
 
-	var config keaControlAgentJSON
-	err = jsonc.Unmarshal([]byte(text), &config)
+	config, err := keaconfig.NewKeaControlAgentFromJSON([]byte(text))
 	if err != nil {
 		log.Warnf("cannot parse Kea config file: %+v", err)
 		return "", 0, false
 	}
 
 	// Port
-	port := config.ControlAgent.HTTPPort
+	port := config.HTTPPort
 
 	// Address
-	address := config.ControlAgent.HTTPHost
+	address := config.HTTPHost
 	switch address {
 	case "0.0.0.0", "":
 		address = "127.0.0.1"
@@ -229,9 +212,9 @@ func getCtrlTargetFromKeaConfig(path string) (string, int64, bool) {
 	}
 
 	// Secure protocol
-	hasAnchor := len(config.ControlAgent.TrustAnchor) != 0
-	hasCert := len(config.ControlAgent.CertFile) != 0
-	hasKey := len(config.ControlAgent.KeyFile) != 0
+	hasAnchor := len(config.TrustAnchor) != 0
+	hasCert := len(config.CertFile) != 0
+	hasKey := len(config.KeyFile) != 0
 
 	useSecureProtocol := hasAnchor && hasCert && hasKey
 
