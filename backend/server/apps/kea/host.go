@@ -525,15 +525,7 @@ func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, a
 		err = errors.WithMessagef(err, "problem with starting transaction for committing new hosts from host_cmds hooks library for app id %d", app.ID)
 		return err
 	}
-	defer func() {
-		// If something went wrong anywhere in this function, let's make sure
-		// the transaction is rolled back.
-		if err != nil {
-			// Ignore (unlikely) rollback error. We want to make sure the
-			// original error is captured.
-			_ = tx.Rollback()
-		}
-	}()
+	defer dbops.RollbackOnError(tx, &err)
 
 	it := NewHostDetectionIterator(db, app, agents, defaultHostCmdsPageLimit)
 	var (

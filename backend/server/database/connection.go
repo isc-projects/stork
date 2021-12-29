@@ -23,6 +23,12 @@ const (
 // Common interface for go-pg DB and Tx (transaction) objects.
 type DBI = pg.DBI
 
+// Interface to a transaction used in the RollbackOnError function.
+// Using this interface makes it easier to unit test this function.
+type txi interface {
+	Rollback() error
+}
+
 type DBLogger struct{}
 
 // Hook run before SQL query execution.
@@ -158,4 +164,13 @@ func GetDatabaseServerVersion(db *PgDB) (int, error) {
 		return 0, err
 	}
 	return version, nil
+}
+
+// Rollback transaction if an error has occurred. This function is typically
+// called using a defer statement to rollback a transaction if an error
+// occurs during a transaction or the commit operation.
+func RollbackOnError(tx txi, err *error) {
+	if err != nil && *err != nil {
+		_ = tx.Rollback()
+	}
 }

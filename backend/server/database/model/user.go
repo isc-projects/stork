@@ -85,9 +85,7 @@ func CreateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to create user %s", user.Identity())
 		return false, err
 	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	defer dbops.RollbackOnError(tx, &err)
 
 	_, err = db.Model(user).Insert()
 
@@ -121,9 +119,7 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to update user %s", user.Identity())
 		return false, err
 	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	dbops.RollbackOnError(tx, &err)
 
 	result, err := db.Model(user).WherePK().Update()
 	if err == nil {

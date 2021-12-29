@@ -162,16 +162,14 @@ func DeleteSharedNetwork(dbi dbops.DBI, networkID int64) error {
 }
 
 // Deletes a shared network and along with its subnets.
-func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
+func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) (err error) {
 	tx, err := db.Begin()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with starting transaction for deleting shared network with id %d and its subnets",
 			networkID)
-		return err
+		return
 	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
+	defer dbops.RollbackOnError(tx, &err)
 
 	// Delete all subnets belonging to the shared network.
 	subnets := []Subnet{}
@@ -191,10 +189,10 @@ func DeleteSharedNetworkWithSubnets(db *dbops.PgDB, networkID int64) error {
 	result, err := db.Model(network).WherePK().Delete()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with deleting the shared network with id %d", networkID)
-		return err
+		return
 	} else if result.RowsAffected() <= 0 {
 		err = pkgerrors.Wrapf(ErrNotExists, "shared network with id %d does not exist", networkID)
-		return err
+		return
 	}
 
 	err = tx.Commit()

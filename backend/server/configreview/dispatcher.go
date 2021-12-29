@@ -362,15 +362,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 	if err != nil {
 		return
 	}
-	defer func() {
-		// If something went wrong anywhere in this function, let's make sure
-		// the transaction is rolled back.
-		if err != nil {
-			// Ignore (unlikely) rollback error. We want to make sure the
-			// original error is captured.
-			_ = tx.Rollback()
-		}
-	}()
+	defer dbops.RollbackOnError(tx, &err)
 
 	// The following calls serve two purposes. Firstly, they lock the daemons
 	// and other information in the database, so no other transaction can
