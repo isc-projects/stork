@@ -26,7 +26,7 @@ func TestNewKeaControlAgentConfigurationFromJSON(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, "192.168.100.1", config.HTTPHost)
-	require.EqualValues(t, int64(8001), config.HTTPPort)
+	require.EqualValues(t, 8001, config.HTTPPort)
 	require.EqualValues(t, "/home/user/stork-certs/kea.crt", config.CertFile)
 	require.EqualValues(t, "/home/user/stork-certs/kea.key", config.KeyFile)
 	require.EqualValues(t, "/home/user/stork-certs/CA", config.TrustAnchor)
@@ -61,7 +61,7 @@ func TestNewKeaControlAgentConfigurationFromJSONWithCStyleComments(t *testing.T)
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, "192.168.100.1", config.HTTPHost)
-	require.EqualValues(t, int64(8001), config.HTTPPort)
+	require.EqualValues(t, 8001, config.HTTPPort)
 	require.EqualValues(t, "/home/user/stork-certs/kea.crt", config.CertFile)
 	require.EqualValues(t, "/home/user/stork-certs/kea.key", config.KeyFile)
 	require.EqualValues(t, "/home/user/stork-certs/CA", config.TrustAnchor)
@@ -93,7 +93,7 @@ func TestNewKeaControlAgentConfigurationFromJSONWithHashComments(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, "192.168.100.1", config.HTTPHost)
-	require.EqualValues(t, int64(8001), config.HTTPPort)
+	require.EqualValues(t, 8001, config.HTTPPort)
 	require.EqualValues(t, "/home/user/stork-certs/kea.crt", config.CertFile)
 	require.EqualValues(t, "/home/user/stork-certs/kea.key", config.KeyFile)
 	require.EqualValues(t, "/home/user/stork-certs/CA", config.TrustAnchor)
@@ -113,7 +113,7 @@ func TestNewKeaControlAgentConfigurationFromMinimalJSON(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, "", config.HTTPHost)
-	require.EqualValues(t, int64(0), config.HTTPPort)
+	require.EqualValues(t, 0, config.HTTPPort)
 	require.EqualValues(t, "", config.CertFile)
 	require.EqualValues(t, "", config.KeyFile)
 	require.EqualValues(t, "", config.TrustAnchor)
@@ -280,7 +280,7 @@ func TestNewKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.EqualValues(t, "192.168.100.1", config.HTTPHost)
-	require.EqualValues(t, int64(8001), config.HTTPPort)
+	require.EqualValues(t, 8001, config.HTTPPort)
 	require.EqualValues(t, "/home/user/stork-certs/kea.crt", config.CertFile)
 	require.EqualValues(t, "/home/user/stork-certs/kea.key", config.KeyFile)
 	require.EqualValues(t, "/home/user/stork-certs/CA", config.TrustAnchor)
