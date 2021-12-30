@@ -1,3 +1,11 @@
+* 186 [func] slawek
+
+    Implemented the support for Kea and Kea CA configuration
+    with comments. Stork (Server or Agent) can parse the JSONs
+    with C-Style single-line and block comments, and single-line
+    comments started with hash.
+    (Gitlab #264)
+
 * 185 [build] marcin
 
     Upgraded go-pg package from version 9 to version 10.
