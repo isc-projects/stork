@@ -112,7 +112,7 @@ func TestHandlerResponse(t *testing.T) {
 	// Assert
 	require.EqualValues(t, 200, resp.StatusCode)
 	require.NoError(t, err)
-	require.EqualValues(t, 0, authorizedCount)
+	require.Zero(t, authorizedCount)
 }
 
 // Test that the metrics are updated periodically.

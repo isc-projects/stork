@@ -109,7 +109,7 @@ func TestSandboxJoinDir(t *testing.T) {
 	require.EqualValues(t, 4, dirCount)
 
 	// 0 files expected
-	require.EqualValues(t, 0, fileCount)
+	require.Zero(t, fileCount)
 }
 
 // Check if Sandbox Close works.

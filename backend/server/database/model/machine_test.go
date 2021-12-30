@@ -305,7 +305,7 @@ func TestGetMachinesByPageBasic(t *testing.T) {
 	// no machines yet but try to get some
 	ms, total, err := GetMachinesByPage(db, 0, 10, nil, nil, "", SortDirAny)
 	require.Nil(t, err)
-	require.EqualValues(t, 0, total)
+	require.Zero(t, total)
 	require.Len(t, ms, 0)
 
 	// add 10 machines

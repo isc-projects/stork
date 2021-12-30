@@ -31,7 +31,7 @@ func TestGetSubnets(t *testing.T) {
 	require.IsType(t, &dhcp.GetSubnetsOK{}, rsp)
 	okRsp := rsp.(*dhcp.GetSubnetsOK)
 	require.Len(t, okRsp.Payload.Items, 0)
-	require.EqualValues(t, 0, okRsp.Payload.Total)
+	require.Zero(t, okRsp.Payload.Total)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -354,7 +354,7 @@ func TestGetSharedNetworks(t *testing.T) {
 	require.IsType(t, &dhcp.GetSharedNetworksOK{}, rsp)
 	okRsp := rsp.(*dhcp.GetSharedNetworksOK)
 	require.Len(t, okRsp.Payload.Items, 0)
-	require.EqualValues(t, 0, okRsp.Payload.Total)
+	require.Zero(t, okRsp.Payload.Total)
 
 	// add machine
 	m := &dbmodel.Machine{

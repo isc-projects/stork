@@ -14,7 +14,7 @@ func TestBasicDump(t *testing.T) {
 
 	// Assert
 	require.EqualValues(t, "foo", dump.GetName())
-	require.EqualValues(t, 0, dump.GetArtifactsNumber())
+	require.Zero(t, dump.GetArtifactsNumber())
 	require.NoError(t, dump.Execute())
 }
 

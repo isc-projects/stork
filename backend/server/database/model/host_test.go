@@ -646,7 +646,7 @@ func TestGetHostsByDaemonID(t *testing.T) {
 	// Use filtering by data source. It should return no hosts.
 	returned, total, err = GetHostsByDaemonID(db, apps[0].Daemons[0].ID, "config")
 	require.NoError(t, err)
-	require.EqualValues(t, 0, total)
+	require.Zero(t, total)
 	require.Empty(t, returned)
 }
 
@@ -812,7 +812,7 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 	// affect no hosts.
 	count, err := DeleteDaemonFromHosts(db, apps[0].Daemons[0].ID, "config")
 	require.NoError(t, err)
-	require.EqualValues(t, 0, count)
+	require.Zero(t, count)
 
 	// Remove associations of the first app.
 	count, err = DeleteDaemonFromHosts(db, apps[0].Daemons[0].ID, "api")
@@ -822,7 +822,7 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 	// Ensure that the associations were removed for the first app.
 	returned, count, err := GetHostsByPage(db, 0, 1000, apps[0].ID, nil, nil, nil, "", SortDirAny)
 	require.NoError(t, err)
-	require.EqualValues(t, 0, count)
+	require.Zero(t, count)
 	require.Empty(t, returned)
 
 	// The association should still exist for the second app.

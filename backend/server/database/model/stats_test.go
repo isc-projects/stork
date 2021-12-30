@@ -19,7 +19,7 @@ func TestStats(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, stats, 8)
 	require.Contains(t, stats, "assigned-addresses")
-	require.EqualValues(t, 0, stats["assigned-addresses"])
+	require.Zero(t, stats["assigned-addresses"])
 
 	// modify one stats and store it in db
 	stats["assigned-addresses"] = 10

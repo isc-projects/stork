@@ -769,8 +769,8 @@ func TestUpdateUtilization(t *testing.T) {
 	returnedSubnet, err := GetSubnet(db, subnet.ID)
 	require.NoError(t, err)
 	require.NotNil(t, returnedSubnet)
-	require.EqualValues(t, 0, returnedSubnet.AddrUtilization)
-	require.EqualValues(t, 0, returnedSubnet.PdUtilization)
+	require.Zero(t, returnedSubnet.AddrUtilization)
+	require.Zero(t, returnedSubnet.PdUtilization)
 
 	// update utilization in subnet
 	returnedSubnet.UpdateUtilization(db, 10, 20)

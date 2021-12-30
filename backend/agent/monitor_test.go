@@ -101,7 +101,7 @@ func TestGetCtrlAddressFromKeaConfigNonExisting(t *testing.T) {
 	// check reading from non existing file
 	path := "/tmp/non-existing-path"
 	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(path)
-	require.EqualValues(t, 0, port)
+	require.Zero(t, port)
 	require.Empty(t, address)
 	require.False(t, useSecureProtocol)
 }
@@ -123,7 +123,7 @@ func TestGetCtrlFromKeaConfigBadContent(t *testing.T) {
 	// check reading from prepared file with bad content
 	// so 0 should be returned as port
 	address, port, useSecureProtocol := getCtrlTargetFromKeaConfig(tmpFile.Name())
-	require.EqualValues(t, 0, port)
+	require.Zero(t, port)
 	require.Empty(t, address)
 	require.False(t, useSecureProtocol)
 }

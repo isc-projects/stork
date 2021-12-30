@@ -1000,7 +1000,7 @@ func TestRestGetApps(t *testing.T) {
 	rsp := rapi.GetApps(ctx, params)
 	require.IsType(t, &services.GetAppsOK{}, rsp)
 	okRsp := rsp.(*services.GetAppsOK)
-	require.EqualValues(t, 0, okRsp.Payload.Total)
+	require.Zero(t, okRsp.Payload.Total)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -1477,8 +1477,8 @@ func TestRestGetAppsStats(t *testing.T) {
 	rsp := rapi.GetAppsStats(ctx, params)
 	require.IsType(t, &services.GetAppsStatsOK{}, rsp)
 	okRsp := rsp.(*services.GetAppsStatsOK)
-	require.EqualValues(t, 0, okRsp.Payload.KeaAppsTotal)
-	require.EqualValues(t, 0, okRsp.Payload.KeaAppsNotOk)
+	require.Zero(t, okRsp.Payload.KeaAppsTotal)
+	require.Zero(t, okRsp.Payload.KeaAppsNotOk)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -1522,7 +1522,7 @@ func TestRestGetAppsStats(t *testing.T) {
 	require.IsType(t, &services.GetAppsStatsOK{}, rsp)
 	okRsp = rsp.(*services.GetAppsStatsOK)
 	require.EqualValues(t, 1, okRsp.Payload.KeaAppsTotal)
-	require.EqualValues(t, 0, okRsp.Payload.KeaAppsNotOk)
+	require.Zero(t, okRsp.Payload.KeaAppsNotOk)
 	require.EqualValues(t, 1, okRsp.Payload.Bind9AppsTotal)
 	require.EqualValues(t, 1, okRsp.Payload.Bind9AppsNotOk)
 }

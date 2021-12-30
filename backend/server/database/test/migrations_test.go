@@ -73,7 +73,7 @@ func TestInitMigrateToLatest(t *testing.T) {
 
 	o, n, err := dbops.MigrateToLatest(db)
 	require.NoError(t, err)
-	require.EqualValues(t, 0, o)
+	require.Zero(t, o)
 	require.GreaterOrEqual(t, n, int64(18))
 }
 

@@ -40,7 +40,7 @@ func TestWalkEmptyTarball(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, 0, callbackCallCount)
+	require.Zero(t, callbackCallCount)
 }
 
 // Test that all files are visited by the walk function.

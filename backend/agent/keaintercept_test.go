@@ -69,7 +69,7 @@ func TestKeaInterceptorHandle(t *testing.T) {
 	// one for DHCPv6.
 	require.Len(t, capturedResponses, 2)
 	// Check that the callback received the response correctly.
-	require.EqualValues(t, 0, capturedResponses[0].Result)
+	require.Zero(t, capturedResponses[0].Result)
 	require.Equal(t, "invoked successfully", capturedResponses[0].Text)
 	require.Equal(t, "dhcp4", capturedResponses[0].Daemon)
 	require.EqualValues(t, 1, capturedResponses[1].Result)

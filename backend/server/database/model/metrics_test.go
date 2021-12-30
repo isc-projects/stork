@@ -18,9 +18,9 @@ func TestEmptyDatabaseMetrics(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, 0, metrics.AuthorizedMachines)
-	require.EqualValues(t, 0, metrics.UnauthorizedMachines)
-	require.EqualValues(t, 0, metrics.UnreachableMachines)
+	require.Zero(t, metrics.AuthorizedMachines)
+	require.Zero(t, metrics.UnauthorizedMachines)
+	require.Zero(t, metrics.UnreachableMachines)
 }
 
 // Metrics based on the machines should be properly calculated.
@@ -92,8 +92,8 @@ func TestFilledSubnetsDatabaseMetrics(t *testing.T) {
 	require.EqualValues(t, 25, metrics.SubnetMetrics[1].PdUtilization)
 
 	require.EqualValues(t, "192.168.2.1/32", metrics.SubnetMetrics[2].Label)
-	require.EqualValues(t, 0, metrics.SubnetMetrics[2].AddrUtilization)
-	require.EqualValues(t, 0, metrics.SubnetMetrics[2].PdUtilization)
+	require.Zero(t, metrics.SubnetMetrics[2].AddrUtilization)
+	require.Zero(t, metrics.SubnetMetrics[2].PdUtilization)
 }
 
 // Metrics per shared network should be properly calculated.
@@ -134,6 +134,6 @@ func TestFilledSharedNetworksDatabaseMetrics(t *testing.T) {
 	require.EqualValues(t, 25, metrics.SharedNetworkMetrics[1].PdUtilization)
 
 	require.EqualValues(t, "eva", metrics.SharedNetworkMetrics[2].Label)
-	require.EqualValues(t, 0, metrics.SharedNetworkMetrics[2].AddrUtilization)
-	require.EqualValues(t, 0, metrics.SharedNetworkMetrics[2].PdUtilization)
+	require.Zero(t, metrics.SharedNetworkMetrics[2].AddrUtilization)
+	require.Zero(t, metrics.SharedNetworkMetrics[2].PdUtilization)
 }
