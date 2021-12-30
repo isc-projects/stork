@@ -112,11 +112,11 @@ func TestNewKeaControlAgentConfigurationFromMinimalJSON(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, "", config.HTTPHost)
+	require.Empty(t, config.HTTPHost)
 	require.Zero(t, config.HTTPPort)
-	require.EqualValues(t, "", config.CertFile)
-	require.EqualValues(t, "", config.KeyFile)
-	require.EqualValues(t, "", config.TrustAnchor)
+	require.Empty(t, config.CertFile)
+	require.Empty(t, config.KeyFile)
+	require.Empty(t, config.TrustAnchor)
 	require.False(t, config.CertRequired)
 }
 

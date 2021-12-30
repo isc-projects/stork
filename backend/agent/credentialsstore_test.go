@@ -70,8 +70,8 @@ func TestAddBasicAuthEmptyCredentials(t *testing.T) {
 	fetchedCredentials, ok := store.GetBasicAuth("127.0.0.1", 1)
 	require.True(t, ok)
 	require.NotNil(t, fetchedCredentials)
-	require.EqualValues(t, "", fetchedCredentials.User)
-	require.EqualValues(t, "", fetchedCredentials.Password)
+	require.Empty(t, fetchedCredentials.User)
+	require.Empty(t, fetchedCredentials.Password)
 }
 
 // Test that the Basic Auth credentials are updated correctly.

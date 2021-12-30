@@ -37,7 +37,7 @@ func TestSettings(t *testing.T) {
 	require.IsType(t, &settings.GetSettingsOK{}, rsp)
 	okRsp := rsp.(*settings.GetSettingsOK)
 	require.EqualValues(t, 60, okRsp.Payload.Bind9StatsPullerInterval)
-	require.EqualValues(t, "", okRsp.Payload.GrafanaURL)
+	require.Empty(t, okRsp.Payload.GrafanaURL)
 
 	// update settings
 	paramsUS := settings.UpdateSettingsParams{
