@@ -468,7 +468,7 @@ func TestGetMachinesByPageFilteredByAuthorized(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, ms, 1)
 	require.EqualValues(t, "unauthorized", ms[0].Address)
-	require.EqualValues(t, false, ms[0].Authorized)
+	require.False(t, ms[0].Authorized)
 
 	// get authorized machines
 	authorized = true
@@ -477,7 +477,7 @@ func TestGetMachinesByPageFilteredByAuthorized(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, ms, 1)
 	require.EqualValues(t, "authorized", ms[0].Address)
-	require.EqualValues(t, true, ms[0].Authorized)
+	require.True(t, ms[0].Authorized)
 
 	// get all machines
 	ms, total, err = GetMachinesByPage(db, 0, 10, nil, nil, "", SortDirAny)

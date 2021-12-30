@@ -30,7 +30,7 @@ func TestNewKeaControlAgentConfigurationFromJSON(t *testing.T) {
 	require.EqualValues(t, "/home/user/stork-certs/kea.crt", config.CertFile)
 	require.EqualValues(t, "/home/user/stork-certs/kea.key", config.KeyFile)
 	require.EqualValues(t, "/home/user/stork-certs/CA", config.TrustAnchor)
-	require.EqualValues(t, false, config.CertRequired)
+	require.False(t, config.CertRequired)
 }
 
 // Test that the Kea Control Agent configuration with C style comments is parsed.
@@ -65,7 +65,7 @@ func TestNewKeaControlAgentConfigurationFromJSONWithCStyleComments(t *testing.T)
 	require.EqualValues(t, "/home/user/stork-certs/kea.crt", config.CertFile)
 	require.EqualValues(t, "/home/user/stork-certs/kea.key", config.KeyFile)
 	require.EqualValues(t, "/home/user/stork-certs/CA", config.TrustAnchor)
-	require.EqualValues(t, false, config.CertRequired)
+	require.False(t, config.CertRequired)
 }
 
 // Test that the Kea Control Agent configuration with hash comments is parsed.
@@ -97,7 +97,7 @@ func TestNewKeaControlAgentConfigurationFromJSONWithHashComments(t *testing.T) {
 	require.EqualValues(t, "/home/user/stork-certs/kea.crt", config.CertFile)
 	require.EqualValues(t, "/home/user/stork-certs/kea.key", config.KeyFile)
 	require.EqualValues(t, "/home/user/stork-certs/CA", config.TrustAnchor)
-	require.EqualValues(t, false, config.CertRequired)
+	require.False(t, config.CertRequired)
 }
 
 // Test that the Kea Control Agent configuration with minimal number of fields is parsed.
@@ -117,7 +117,7 @@ func TestNewKeaControlAgentConfigurationFromMinimalJSON(t *testing.T) {
 	require.EqualValues(t, "", config.CertFile)
 	require.EqualValues(t, "", config.KeyFile)
 	require.EqualValues(t, "", config.TrustAnchor)
-	require.EqualValues(t, false, config.CertRequired)
+	require.False(t, config.CertRequired)
 }
 
 // Test that the empty string parsing returns an error.
@@ -284,5 +284,5 @@ func TestNewKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 	require.EqualValues(t, "/home/user/stork-certs/kea.crt", config.CertFile)
 	require.EqualValues(t, "/home/user/stork-certs/kea.key", config.KeyFile)
 	require.EqualValues(t, "/home/user/stork-certs/CA", config.TrustAnchor)
-	require.EqualValues(t, false, config.CertRequired)
+	require.False(t, config.CertRequired)
 }

@@ -116,21 +116,21 @@ func TestSettingsSetAndGet(t *testing.T) {
 	// check setting and getting bool
 	boolVal, err := GetSettingBool(db, "bool_setting")
 	require.NoError(t, err)
-	require.EqualValues(t, true, boolVal)
+	require.True(t, boolVal)
 
 	err = SetSettingBool(db, "bool_setting", false)
 	require.NoError(t, err)
 
 	boolVal, err = GetSettingBool(db, "bool_setting")
 	require.NoError(t, err)
-	require.EqualValues(t, false, boolVal)
+	require.False(t, boolVal)
 
 	err = SetSettingBool(db, "bool_setting", true)
 	require.NoError(t, err)
 
 	boolVal, err = GetSettingBool(db, "bool_setting")
 	require.NoError(t, err)
-	require.EqualValues(t, true, boolVal)
+	require.True(t, boolVal)
 
 	// check setting and getting string
 	strVal, err := GetSettingStr(db, "str_setting")
