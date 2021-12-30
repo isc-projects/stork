@@ -186,24 +186,29 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	return paths, nil
 }
 
-func getCtrlTargetFromKeaConfig(path string) (string, int64, bool) {
+func getCtrlTargetFromKeaConfig(path string) (address string, port int64, useSecureProtocol bool) {
 	text, err := storkutil.ReadFileWithIncludes(path)
 	if err != nil {
 		log.Warnf("cannot read Kea config file: %+v", err)
-		return "", 0, false
+		return
 	}
 
-	config, err := keaconfig.NewKeaControlAgentFromJSON([]byte(text))
+	config, err := keaconfig.NewFromJSON(text)
 	if err != nil {
-		log.Warnf("cannot parse Kea config file: %+v", err)
-		return "", 0, false
+		log.Warnf("cannot parse Kea Control Agent config file: %+v", err)
+		return
 	}
 
 	// Port
-	port := config.HTTPPort
+	port, ok := config.GetHTTPPort()
+	if !ok {
+		log.Warn("cannot parse the port")
+		return
+	}
 
 	// Address
-	address := config.HTTPHost
+	address, _ = config.GetHTTPHost()
+
 	switch address {
 	case "0.0.0.0", "":
 		address = "127.0.0.1"
@@ -212,13 +217,15 @@ func getCtrlTargetFromKeaConfig(path string) (string, int64, bool) {
 	}
 
 	// Secure protocol
-	hasAnchor := len(config.TrustAnchor) != 0
-	hasCert := len(config.CertFile) != 0
-	hasKey := len(config.KeyFile) != 0
+	trustAnchor, ok := config.GetTrustAnchor()
+	hasAnchor := ok && len(trustAnchor) != 0
+	certFile, ok := config.GetCertFile()
+	hasCert := ok && len(certFile) != 0
+	keyFile, ok := config.GetKeyFile()
+	hasKey := ok && len(keyFile) != 0
 
-	useSecureProtocol := hasAnchor && hasCert && hasKey
-
-	return address, port, useSecureProtocol
+	useSecureProtocol = hasAnchor && hasCert && hasKey
+	return
 }
 
 func detectKeaApp(match []string, cwd string, httpClient *HTTPClient) App {

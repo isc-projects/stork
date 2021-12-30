@@ -1,12 +1,12 @@
 package keaconfig
 
 import (
-	"encoding/json"
 	"reflect"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	"muzzammil.xyz/jsonc"
 )
 
 const (
@@ -120,7 +120,7 @@ func New(rawCfg *map[string]interface{}) *Map {
 // Create new instance from the configuration provided as JSON text.
 func NewFromJSON(rawCfg string) (*Map, error) {
 	var cfg Map
-	err := json.Unmarshal([]byte(rawCfg), &cfg)
+	err := jsonc.Unmarshal([]byte(rawCfg), &cfg)
 	if err != nil {
 		err := errors.Wrapf(err, "problem with parsing JSON text: %s", rawCfg)
 		return nil, err
@@ -155,28 +155,39 @@ func (c *Map) getRootNode() (rootNode map[string]interface{}, ok bool) {
 	return rootNode, ok
 }
 
+// Returns a entry found at the top level of the configuration under a
+// given name. If the given parameter does not exist, the ok value
+// returned is set to false.
+func (c *Map) getTopLevelEntry(entryName string) (interface{}, bool) {
+	root, ok := c.getRootNode()
+	if !ok {
+		return nil, false
+	}
+
+	raw, ok := root[entryName]
+	return raw, ok
+}
+
 // Returns a list found at the top level of the configuration under
 // a given name. If the given parameter does not exist or it is
 // not a list, the ok value returned is set to false.
 func (c *Map) GetTopLevelList(name string) (list []interface{}, ok bool) {
-	if rootNode, ok := c.getRootNode(); ok {
-		if listNode, ok := rootNode[name].([]interface{}); ok {
-			return listNode, ok
-		}
+	node, ok := c.getTopLevelEntry(name)
+	if ok {
+		list, ok = node.([]interface{})
 	}
-	return list, ok
+	return
 }
 
 // Returns a map found at the top level of the configuration under a
 // given name. If the given parameter does not exist or it is not
 // a map, the ok value returned is set to false.
 func (c *Map) GetTopLevelMap(name string) (m map[string]interface{}, ok bool) {
-	if rootNode, ok := c.getRootNode(); ok {
-		if mapNode, ok := rootNode[name].(map[string]interface{}); ok {
-			return mapNode, ok
-		}
+	node, ok := c.getTopLevelEntry(name)
+	if ok {
+		m, ok = node.(map[string]interface{})
 	}
-	return m, false
+	return
 }
 
 // Returns a list of all hooks libraries found in the configuration.
