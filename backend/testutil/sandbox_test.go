@@ -71,7 +71,7 @@ func TestSandboxWriteFail(t *testing.T) {
 	// Now we ask the code to write path with illegal character. It should fail.
 	fpath, err := sb.Write("/", "abc")
 	require.Error(t, err)
-	require.EqualValues(t, "", fpath)
+	require.Empty(t, fpath)
 }
 
 // Check if Sandbox JoinDir works.
