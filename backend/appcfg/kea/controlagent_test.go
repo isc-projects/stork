@@ -109,7 +109,7 @@ func TestNewKeaControlAgentConfigurationFromJSONWithHashComments(t *testing.T) {
 			"cert-file": "/home/user/stork-certs/kea.crt",
 			#"cert-file": "/home/user2/stork-certs/kea.crt",
 			"key-file": "/home/user/stork-certs/kea.key",
-			"cert-required": false,
+			"cert-required": false
 		}
 	}`
 
