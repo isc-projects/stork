@@ -1,3 +1,9 @@
+* 187 [func] marcin
+
+    Config reviews are scheduled automatically after getting updated
+    host reservations via the host_cmds hooks library.
+    (Gitlab #680)
+
 * 186 [func] slawek
 
     Implemented the support for Kea and Kea CA configuration
