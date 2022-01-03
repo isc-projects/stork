@@ -407,8 +407,9 @@ func TestKeaControlAgentConfigurationDoNotUseSecureProtocol(t *testing.T) {
 
 	for i, data := range noSecure {
 		name := fmt.Sprintf("case-%d", i)
+		testData := data // Fix 'scopelint' linter issue
 		t.Run(name, func(t *testing.T) {
-			config, _ := NewFromJSON(data)
+			config, _ := NewFromJSON(testData)
 			// Act
 			useSecure := config.UseSecureProtocol()
 
