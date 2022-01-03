@@ -9,7 +9,7 @@ func (c *Map) IsControlAgent() bool {
 	return name == "Control-agent"
 }
 
-// Returns an string found at the top level of the configuration under a
+// Returns a string found at the top level of the configuration under a
 // given name. If the given parameter does not exist, the string is empty, and
 // the ok value returned is set to false.
 func (c *Map) getTopLevelEntryString(entryName string) (out string, ok bool) {
@@ -20,7 +20,7 @@ func (c *Map) getTopLevelEntryString(entryName string) (out string, ok bool) {
 	return
 }
 
-// Returns a HTTP host at the top level of the configuration.
+// Returns an HTTP host at the top level of the configuration.
 // Some values are normalized to valid IP addresses.
 // If the given parameter does not exist, the host is localhost, and
 // the ok value returned is set to false.
@@ -41,7 +41,7 @@ func (c *Map) GetHTTPHost() (address string, ok bool) {
 	return
 }
 
-// Returns a HTTP port at the top level of the configuration.
+// Returns an HTTP port at the top level of the configuration.
 // If the given parameter does not exist, the port is zero, and
 // the ok value returned is set to false.
 func (c *Map) GetHTTPPort() (out int64, ok bool) {
