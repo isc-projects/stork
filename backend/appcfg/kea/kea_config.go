@@ -190,6 +190,17 @@ func (c *Map) GetTopLevelMap(name string) (m map[string]interface{}, ok bool) {
 	return
 }
 
+// Returns a string found at the top level of the configuration under a
+// given name. If the given parameter does not exist, the string is empty, and
+// the ok value returned is set to false.
+func (c *Map) getTopLevelEntryString(entryName string) (out string, ok bool) {
+	raw, ok := c.getTopLevelEntry(entryName)
+	if ok {
+		out, ok = raw.(string)
+	}
+	return
+}
+
 // Returns a list of all hooks libraries found in the configuration.
 func (c *Map) GetHooksLibraries() (parsedLibraries []HooksLibrary) {
 	if hooksLibrariesList, ok := c.GetTopLevelList("hooks-libraries"); ok {

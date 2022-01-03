@@ -9,17 +9,6 @@ func (c *Map) IsControlAgent() bool {
 	return name == "Control-agent"
 }
 
-// Returns a string found at the top level of the configuration under a
-// given name. If the given parameter does not exist, the string is empty, and
-// the ok value returned is set to false.
-func (c *Map) getTopLevelEntryString(entryName string) (out string, ok bool) {
-	raw, ok := c.getTopLevelEntry(entryName)
-	if ok {
-		out, ok = raw.(string)
-	}
-	return
-}
-
 // Returns an HTTP host at the top level of the configuration.
 // Some values are normalized to valid IP addresses.
 // If the given parameter does not exist, the host is localhost, and
