@@ -1,6 +1,7 @@
 package keaconfig
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -382,4 +383,57 @@ func TestKeaControlAgentConfigurationResolveHost(t *testing.T) {
 	require.EqualValues(t, "127.0.0.1", hostZeroHost)
 	require.True(t, okColonHost)
 	require.EqualValues(t, "::1", hostColonHost)
+}
+
+// Test that the secure protocol isn't detected when HTTPS configuration
+// isn't complete.
+func TestKeaControlAgentConfigurationDoNotUseSecureProtocol(t *testing.T) {
+	// Arrange
+	noSecure := []string{
+		// Empty JSON
+		`{ "Control-agent": { } }`,
+		// Empty entries
+		`{ "Control-agent": { "trust-anchor": "" } }`,
+		`{ "Control-agent": { "cert-file": "" } }`,
+		`{ "Control-agent": { "key-file": "" } }`,
+		`{ "Control-agent": { "trust-anchor": "", "cert-file": "", "key-file": ""  } }`,
+		// Filled single entries
+		`{ "Control-agent": { "trust-anchor": "/path" } }`,
+		`{ "Control-agent": { "cert-file": "/path" } }`,
+		`{ "Control-agent": { "key-file": "/path" } }`,
+		// Filled all entries except one
+		`{ "Control-agent": { "trust-anchor": "/path", "cert-file": "/path", "key-file": ""  } }`,
+	}
+
+	for i, data := range noSecure {
+		name := fmt.Sprintf("case-%d", i)
+		t.Run(name, func(t *testing.T) {
+			config, _ := NewFromJSON(data)
+			// Act
+			useSecure := config.UseSecureProtocol()
+
+			// Assert
+			require.False(t, useSecure)
+		})
+	}
+}
+
+// Test that the secure protocol is detected.
+func TestKeaControlAgentConfigurationUseSecureProtocol(t *testing.T) {
+	// Arrange
+	data := `{
+		"Control-agent": {
+			"trust-anchor": "/foo",
+			"cert-file": "/bar",
+			"key-file": "/baz"
+		}
+	}`
+
+	config, _ := NewFromJSON(data)
+
+	// Act
+	useSecure := config.UseSecureProtocol()
+
+	// Assert
+	require.True(t, useSecure)
 }
