@@ -37,6 +37,11 @@ func getTestConfigWithIPv4Subnets(t *testing.T) *dbmodel.KeaConfig {
                     "id": 678,
                     "subnet": "192.0.6.0/24"
                 }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_host_cmds.so"
+                }
             ]
         }
     }`
@@ -88,6 +93,11 @@ func getTestConfigWithIPv6Subnets(t *testing.T) *dbmodel.KeaConfig {
                 {
                     "id": 678,
                     "subnet": "2001:db8:6::/64"
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_host_cmds.so"
                 }
             ]
         }

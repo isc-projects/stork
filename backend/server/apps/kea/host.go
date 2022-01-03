@@ -599,7 +599,9 @@ func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, r
 	for _, daemon := range app.Daemons {
 		if daemon.KeaDaemon != nil && daemon.KeaDaemon.KeaDHCPDaemon != nil &&
 			daemon.KeaDaemon.Config != nil {
-			_ = reviewDispatcher.BeginReview(daemon, configreview.DBHostsModified, nil)
+			if _, _, ok := daemon.KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); ok {
+				_ = reviewDispatcher.BeginReview(daemon, configreview.DBHostsModified, nil)
+			}
 		}
 	}
 
