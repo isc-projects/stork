@@ -155,7 +155,7 @@ func (c *Map) getRootNode() (rootNode map[string]interface{}, ok bool) {
 	return rootNode, ok
 }
 
-// Returns a entry found at the top level of the configuration under a
+// Returns an entry found at the top level of the configuration under a
 // given name. If the given parameter does not exist, the ok value
 // returned is set to false.
 func (c *Map) getTopLevelEntry(entryName string) (interface{}, bool) {

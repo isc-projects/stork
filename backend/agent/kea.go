@@ -209,22 +209,8 @@ func getCtrlTargetFromKeaConfig(path string) (address string, port int64, useSec
 	// Address
 	address, _ = config.GetHTTPHost()
 
-	switch address {
-	case "0.0.0.0", "":
-		address = "127.0.0.1"
-	case "::":
-		address = "::1"
-	}
-
 	// Secure protocol
-	trustAnchor, ok := config.GetTrustAnchor()
-	hasAnchor := ok && len(trustAnchor) != 0
-	certFile, ok := config.GetCertFile()
-	hasCert := ok && len(certFile) != 0
-	keyFile, ok := config.GetKeyFile()
-	hasKey := ok && len(keyFile) != 0
-
-	useSecureProtocol = hasAnchor && hasCert && hasKey
+	useSecureProtocol = config.UseSecureProtocol()
 	return
 }
 

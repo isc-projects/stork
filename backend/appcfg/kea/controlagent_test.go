@@ -7,7 +7,7 @@ import (
 )
 
 // Test that the Kea Control Agent configuration without comments is parsed.
-func TestNewKeaControlAgentConfigurationFromJSON(t *testing.T) {
+func TestKeaControlAgentConfigurationFromJSON(t *testing.T) {
 	// Arrange
 	data := `{
 		"Control-agent": {
@@ -47,7 +47,7 @@ func TestNewKeaControlAgentConfigurationFromJSON(t *testing.T) {
 }
 
 // Test that the Kea Control Agent configuration with C style comments is parsed.
-func TestNewKeaControlAgentConfigurationFromJSONWithCStyleComments(t *testing.T) {
+func TestKeaControlAgentConfigurationFromJSONWithCStyleComments(t *testing.T) {
 	data := `{
 		"Control-agent": { /*
 			"http-host": "192.168.200.1",
@@ -95,7 +95,7 @@ func TestNewKeaControlAgentConfigurationFromJSONWithCStyleComments(t *testing.T)
 }
 
 // Test that the Kea Control Agent configuration with hash comments is parsed.
-func TestNewKeaControlAgentConfigurationFromJSONWithHashComments(t *testing.T) {
+func TestKeaControlAgentConfigurationFromJSONWithHashComments(t *testing.T) {
 	// Arrange
 	data := `{
 		"Control-agent": {
@@ -140,7 +140,7 @@ func TestNewKeaControlAgentConfigurationFromJSONWithHashComments(t *testing.T) {
 }
 
 // Test that the Kea Control Agent configuration with minimal number of fields is parsed.
-func TestNewKeaControlAgentConfigurationFromMinimalJSON(t *testing.T) {
+func TestKeaControlAgentConfigurationFromMinimalJSON(t *testing.T) {
 	// Arrange
 	data := `{
 		"Control-agent": { }
@@ -154,7 +154,7 @@ func TestNewKeaControlAgentConfigurationFromMinimalJSON(t *testing.T) {
 	require.True(t, config.IsControlAgent())
 	host, ok := config.GetHTTPHost()
 	require.False(t, ok)
-	require.Empty(t, host)
+	require.EqualValues(t, "127.0.0.1", host)
 	port, ok := config.GetHTTPPort()
 	require.False(t, ok)
 	require.Zero(t, port)
@@ -172,7 +172,7 @@ func TestNewKeaControlAgentConfigurationFromMinimalJSON(t *testing.T) {
 }
 
 // Test that the empty string parsing returns an error.
-func TestNewKeaControlAgentConfigurationFromEmptyString(t *testing.T) {
+func TestKeaControlAgentConfigurationFromEmptyString(t *testing.T) {
 	// Arrange
 	data := ""
 
@@ -185,7 +185,7 @@ func TestNewKeaControlAgentConfigurationFromEmptyString(t *testing.T) {
 }
 
 // Test that the invalid JSON parsing returns an error.
-func TestNewKeaControlAgentConfigurationFromInvalidJSON(t *testing.T) {
+func TestKeaControlAgentConfigurationFromInvalidJSON(t *testing.T) {
 	// Arrange
 	data := `{
 		"Foo-Bar": {
@@ -205,7 +205,7 @@ func TestNewKeaControlAgentConfigurationFromInvalidJSON(t *testing.T) {
 }
 
 // Test that the real Kea Control Agent configuration is parsed.
-func TestNewKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
+func TestKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 	// Arrange
 	data := `
 		// This is a basic configuration for the Kea Control Agent.
@@ -352,4 +352,34 @@ func TestNewKeaControlAgentConfigurationFromFullJSON(t *testing.T) {
 	certRequired, ok := config.GetCertRequired()
 	require.True(t, ok)
 	require.False(t, certRequired)
+}
+
+// Test that the HTTP host is resolved to IP address.
+func TestKeaControlAgentConfigurationResolveHost(t *testing.T) {
+	// Arrange
+	jsonNoHost := `{ "Control-agent": { } }`
+	jsonEmptyHost := `{ "Control-agent": { "http-host": "" } }`
+	jsonZeroHost := `{ "Control-agent": { "http-host": "0.0.0.0" } }`
+	jsonColonHost := `{ "Control-agent": { "http-host": "::" } }`
+
+	configNoHost, _ := NewFromJSON(jsonNoHost)
+	configEmptyHost, _ := NewFromJSON(jsonEmptyHost)
+	configZeroHost, _ := NewFromJSON(jsonZeroHost)
+	configColonHost, _ := NewFromJSON(jsonColonHost)
+
+	// Act
+	hostNoHost, okNoHost := configNoHost.GetHTTPHost()
+	hostEmptyHost, okEmptyHost := configEmptyHost.GetHTTPHost()
+	hostZeroHost, okZeroHost := configZeroHost.GetHTTPHost()
+	hostColonHost, okColonHost := configColonHost.GetHTTPHost()
+
+	// Assert
+	require.False(t, okNoHost)
+	require.EqualValues(t, "127.0.0.1", hostNoHost)
+	require.True(t, okEmptyHost)
+	require.EqualValues(t, "127.0.0.1", hostEmptyHost)
+	require.True(t, okZeroHost)
+	require.EqualValues(t, "127.0.0.1", hostZeroHost)
+	require.True(t, okColonHost)
+	require.EqualValues(t, "::1", hostColonHost)
 }
