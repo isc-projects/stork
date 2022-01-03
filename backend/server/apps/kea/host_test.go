@@ -1096,11 +1096,12 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 	require.NoError(t, err)
 
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
+	fd := &storktest.FakeDispatcher{}
 
 	// Detect hosts two times in the row. This simulates periodic
 	// pull of the hosts for the given app.
 	for i := 0; i < 2; i++ {
-		err = updateHostsFromHostCmds(db, fa, &app, 1)
+		err = updateHostsFromHostCmds(db, fa, fd, &app, 1)
 		require.NoError(t, err)
 
 		hosts, err := dbmodel.GetAllHosts(db, 4)
@@ -1127,7 +1128,8 @@ func TestNewHostsPuller(t *testing.T) {
 	err := dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
-	puller, err := NewHostsPuller(db, nil)
+	fd := &storktest.FakeDispatcher{}
+	puller, err := NewHostsPuller(db, nil, fd)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 	puller.Shutdown()
@@ -1161,14 +1163,16 @@ func TestPullHostsIntoDB(t *testing.T) {
 				Name:   "dhcp4",
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getTestConfigWithIPv4Subnets(t),
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+					Config:        getTestConfigWithIPv4Subnets(t),
 				},
 			},
 			{
 				Name:   "dhcp6",
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: getTestConfigWithIPv6Subnets(t),
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+					Config:        getTestConfigWithIPv6Subnets(t),
 				},
 			},
 		},
@@ -1189,11 +1193,12 @@ func TestPullHostsIntoDB(t *testing.T) {
 
 	// Create the puller. It is configured to fetch the data every 60 seconds
 	// so we'd rather call it periodically.
-	puller, err := NewHostsPuller(db, fa)
+	fd := &storktest.FakeDispatcher{}
+	puller, err := NewHostsPuller(db, fa, fd)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
-	// Detect hosts to times in the row. This simulates periodic
+	// Detect hosts two times in the row. This simulates periodic
 	// pull of the hosts for the given app.
 	for i := 0; i < 2; i++ {
 		err = puller.pullData()
@@ -1210,6 +1215,13 @@ func TestPullHostsIntoDB(t *testing.T) {
 		// Reset server state so it should send the same set of responses
 		// the second time.
 		fa.CallNo = 0
+	}
+
+	// Ensure that the config reviews have been scheduled after updating
+	// the hosts.
+	require.Len(t, fd.CallLog, 4)
+	for _, call := range fd.CallLog {
+		require.Equal(t, "BeginReview", call)
 	}
 }
 
@@ -1263,7 +1275,8 @@ func TestReduceHostsIntoDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create the puller instance.
-	puller, err := NewHostsPuller(db, fa)
+	fd := &storktest.FakeDispatcher{}
+	puller, err := NewHostsPuller(db, fa, fd)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
@@ -1277,7 +1290,7 @@ func TestReduceHostsIntoDB(t *testing.T) {
 	require.Len(t, hosts, 2)
 
 	// Repeat the same test, but this time only one host should be returned.
-	puller, err = NewHostsPuller(db, fa)
+	puller, err = NewHostsPuller(db, fa, fd)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 

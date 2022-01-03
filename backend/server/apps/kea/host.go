@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
+	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 )
@@ -42,12 +43,15 @@ type ReservationGetPageResponse struct {
 // the Kea apps.
 type HostsPuller struct {
 	*agentcomm.PeriodicPuller
+	ReviewDispatcher configreview.Dispatcher
 }
 
 // Create an instance of the puller which periodically fetches host reservations
 // from monitored Kea apps via control channel.
-func NewHostsPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents) (*HostsPuller, error) {
-	hostsPuller := &HostsPuller{}
+func NewHostsPuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents, reviewDispatcher configreview.Dispatcher) (*HostsPuller, error) {
+	hostsPuller := &HostsPuller{
+		ReviewDispatcher: reviewDispatcher,
+	}
 	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "Kea Hosts puller", "kea_hosts_puller_interval",
 		hostsPuller.pullData)
 	if err != nil {
@@ -81,7 +85,7 @@ func (puller *HostsPuller) pullData() error {
 	var lastErr error
 	appsOkCnt := 0
 	for i := range apps {
-		err := updateHostsFromHostCmds(puller.DB, puller.Agents, &apps[i], seq)
+		err := updateHostsFromHostCmds(puller.DB, puller.Agents, puller.ReviewDispatcher, &apps[i], seq)
 		if err != nil {
 			lastErr = err
 			log.Errorf("error occurred while fetching hosts from app %d: %+v", apps[i].ID, err)
@@ -519,7 +523,7 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts [
 // uses HostDetectionIterator mechanism to fetch the hosts, which will in
 // most cases result in multiple reservation-get-page commands sent to Kea
 // instance.
-func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, app *dbmodel.App, seq int64) (err error) {
+func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, reviewDispatcher configreview.Dispatcher, app *dbmodel.App, seq int64) (err error) {
 	tx, err := db.Begin()
 	if err != nil {
 		err = errors.WithMessagef(err, "problem with starting transaction for committing new hosts from host_cmds hooks library for app id %d", app.ID)
@@ -589,5 +593,15 @@ func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, a
 			err = errors.WithMessagef(err, "problem with committing transaction adding new hosts from host_cmds hooks library for app id %d", app.ID)
 		}
 	}
+
+	// Schedule configuration reviews for the DHCP daemons because our host
+	// reservations could have changed.
+	for _, daemon := range app.Daemons {
+		if daemon.KeaDaemon != nil && daemon.KeaDaemon.KeaDHCPDaemon != nil &&
+			daemon.KeaDaemon.Config != nil {
+			_ = reviewDispatcher.BeginReview(daemon, configreview.DBHostsModified, nil)
+		}
+	}
+
 	return err
 }

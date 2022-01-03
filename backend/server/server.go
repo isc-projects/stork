@@ -164,7 +164,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	}
 
 	// Setup Kea hosts puller.
-	ss.Pullers.KeaHostsPuller, err = kea.NewHostsPuller(ss.DB, ss.Agents)
+	ss.Pullers.KeaHostsPuller, err = kea.NewHostsPuller(ss.DB, ss.Agents, ss.ReviewDispatcher)
 	if err != nil {
 		return nil, err
 	}
