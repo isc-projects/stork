@@ -5,43 +5,50 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
+// Represents a single call to FakeDispatcher.
+type FakeDispatcherCall struct {
+	CallName string
+	DaemonID int64
+	Trigger  configreview.Trigger
+}
+
 // Mock implementation of the configuration review dispatcher.
 // It substitutes the default dispatcher implementation in the
 // unit tests.
 type FakeDispatcher struct {
-	CallLog    []string
+	CallLog    []FakeDispatcherCall
 	Signature  string
 	InProgress bool
 }
 
 func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSelector, checkerName string, triggers configreview.Triggers, checkFn func(*configreview.ReviewContext) (*configreview.Report, error)) {
-	d.CallLog = append(d.CallLog, "RegisterChecker")
+	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "RegisterChecker"})
 }
 
 func (d *FakeDispatcher) UnregisterChecker(selector configreview.DispatchGroupSelector, checkerName string) bool {
-	d.CallLog = append(d.CallLog, "UnregisterChecker")
+	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "UnregisterChecker"})
 	return true
 }
 
 func (d *FakeDispatcher) GetSignature() string {
-	d.CallLog = append(d.CallLog, "GetSignature")
+	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "GetSignature"})
 	return d.Signature
 }
 
 func (d *FakeDispatcher) Start() {
-	d.CallLog = append(d.CallLog, "Start")
+	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "Start"})
 }
 
 func (d *FakeDispatcher) Shutdown() {
-	d.CallLog = append(d.CallLog, "Shutdown")
+	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "Shutdown"})
 }
 
 func (d *FakeDispatcher) BeginReview(daemon *dbmodel.Daemon, trigger configreview.Trigger, callback configreview.CallbackFunc) bool {
-	d.CallLog = append(d.CallLog, "BeginReview")
+	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "BeginReview", DaemonID: daemon.ID, Trigger: trigger})
 	return true
 }
 
 func (d *FakeDispatcher) ReviewInProgress(daemonID int64) bool {
-	d.CallLog = append(d.CallLog, "ReviewInProgress")
+	d.CallLog = append(d.CallLog, FakeDispatcherCall{CallName: "ReviewInProgress", DaemonID: daemonID})
 	return d.InProgress
 }

@@ -10,6 +10,7 @@ import (
 	require "github.com/stretchr/testify/require"
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
+	"isc.org/stork/server/configreview"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
@@ -1220,8 +1221,11 @@ func TestPullHostsIntoDB(t *testing.T) {
 	// Ensure that the config reviews have been scheduled after updating
 	// the hosts.
 	require.Len(t, fd.CallLog, 4)
-	for _, call := range fd.CallLog {
-		require.Equal(t, "BeginReview", call)
+	for i, call := range fd.CallLog {
+		require.Equal(t, "BeginReview", call.CallName)
+		// Even calls for the first daemon, odd calls for the second one.
+		require.Equal(t, app.Daemons[i%2].ID, call.DaemonID)
+		require.Equal(t, configreview.DBHostsModified, call.Trigger)
 	}
 }
 

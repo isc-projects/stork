@@ -763,7 +763,7 @@ func TestPutDaemonConfigReview(t *testing.T) {
 
 	// Ensure that the review has been started.
 	require.Len(t, fd.CallLog, 1)
-	require.Equal(t, "BeginReview", fd.CallLog[0])
+	require.Equal(t, "BeginReview", fd.CallLog[0].CallName)
 
 	// Try to create a new review for a non-existing daemon.
 	params.ID++

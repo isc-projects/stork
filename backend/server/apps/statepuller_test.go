@@ -137,7 +137,7 @@ func TestStatePullerPullData(t *testing.T) {
 
 	// Ensure that the puller initiated configuration review for the Kea daemon.
 	require.Len(t, fd.CallLog, 1)
-	require.Equal(t, "BeginReview", fd.CallLog[0])
+	require.Equal(t, "BeginReview", fd.CallLog[0].CallName)
 }
 
 // Check appCompare.
@@ -191,26 +191,26 @@ func TestConditionallyBeginKeaConfigReviews(t *testing.T) {
 	// New daemon. The review should be initiated.
 	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
 	require.Len(t, dispatcher.CallLog, 1)
-	require.Equal(t, "BeginReview", dispatcher.CallLog[0])
+	require.Equal(t, "BeginReview", dispatcher.CallLog[0].CallName)
 
 	// There are no "same daemons". The review should be
 	// performed again.
 	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
 	require.Len(t, dispatcher.CallLog, 2)
-	require.Equal(t, "BeginReview", dispatcher.CallLog[1])
+	require.Equal(t, "BeginReview", dispatcher.CallLog[1].CallName)
 
 	// Neither daemon's configuration nor dispatcher's signature
 	// have changed. The review should not be performed.
 	state.SameConfigDaemons["dhcp4"] = true
 	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
 	require.Len(t, dispatcher.CallLog, 3)
-	require.Equal(t, "GetSignature", dispatcher.CallLog[2])
+	require.Equal(t, "GetSignature", dispatcher.CallLog[2].CallName)
 
 	// Modify the dispatcher's signature. It should result in
 	// another config review.
 	dispatcher.Signature = "new signature"
 	conditionallyBeginKeaConfigReviews(app, state, dispatcher)
 	require.Len(t, dispatcher.CallLog, 5)
-	require.Equal(t, "GetSignature", dispatcher.CallLog[3])
-	require.Equal(t, "BeginReview", dispatcher.CallLog[4])
+	require.Equal(t, "GetSignature", dispatcher.CallLog[3].CallName)
+	require.Equal(t, "BeginReview", dispatcher.CallLog[4].CallName)
 }
