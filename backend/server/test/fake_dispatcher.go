@@ -14,7 +14,7 @@ type FakeDispatcher struct {
 	InProgress bool
 }
 
-func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSelector, checkerName string, checkFn func(*configreview.ReviewContext) (*configreview.Report, error)) {
+func (d *FakeDispatcher) RegisterChecker(selector configreview.DispatchGroupSelector, checkerName string, triggers configreview.Triggers, checkFn func(*configreview.ReviewContext) (*configreview.Report, error)) {
 	d.CallLog = append(d.CallLog, "RegisterChecker")
 }
 
@@ -36,7 +36,7 @@ func (d *FakeDispatcher) Shutdown() {
 	d.CallLog = append(d.CallLog, "Shutdown")
 }
 
-func (d *FakeDispatcher) BeginReview(daemon *dbmodel.Daemon, callback configreview.CallbackFunc) bool {
+func (d *FakeDispatcher) BeginReview(daemon *dbmodel.Daemon, trigger configreview.Trigger, callback configreview.CallbackFunc) bool {
 	d.CallLog = append(d.CallLog, "BeginReview")
 	return true
 }

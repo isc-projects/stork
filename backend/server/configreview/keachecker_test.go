@@ -31,7 +31,7 @@ func createReviewContext(t *testing.T, db *dbops.PgDB, configStr string) *Review
 		KeaDaemon: &dbmodel.KeaDaemon{
 			Config: config,
 		},
-	}, false, nil)
+	}, ManualRun, nil)
 	require.NotNil(t, ctx)
 
 	return ctx
@@ -1710,7 +1710,7 @@ func BenchmarkReservationsOutOfPoolConfig(b *testing.B) {
 			KeaDaemon: &dbmodel.KeaDaemon{
 				Config: config,
 			},
-		}, false, nil)
+		}, ManualRun, nil)
 		_, err = reservationsOutOfPool(ctx)
 		if err != nil {
 			b.Fatalf("checker failed: %+v", err)
@@ -1835,7 +1835,7 @@ func BenchmarkReservationsOutOfPoolDatabase(b *testing.B) {
 			KeaDaemon: &dbmodel.KeaDaemon{
 				Config: config,
 			},
-		}, false, nil)
+		}, ManualRun, nil)
 		_, err = reservationsOutOfPool(ctx)
 		if err != nil {
 			b.Fatalf("checker failed: %+v", err)

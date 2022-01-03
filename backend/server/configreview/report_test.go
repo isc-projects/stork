@@ -11,7 +11,7 @@ import (
 func TestCreateReport(t *testing.T) {
 	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 123,
-	}, false, nil)
+	}, ConfigModified, nil)
 	referencedDaemon := &dbmodel.Daemon{
 		ID: 567,
 	}
@@ -33,7 +33,7 @@ func TestCreateReport(t *testing.T) {
 func TestCreateBlankReport(t *testing.T) {
 	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 123,
-	}, false, nil)
+	}, ConfigModified, nil)
 	report, err := NewReport(ctx, "   ").create()
 	require.Error(t, err)
 	require.Nil(t, report)
@@ -44,7 +44,7 @@ func TestCreateBlankReport(t *testing.T) {
 func TestCreateZeroSubjectDaemonID(t *testing.T) {
 	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 0,
-	}, false, nil)
+	}, ConfigModified, nil)
 
 	report, err := NewReport(ctx, "new report").create()
 	require.Error(t, err)
@@ -56,7 +56,7 @@ func TestCreateZeroSubjectDaemonID(t *testing.T) {
 func TestCreateZeroReferencedDaemonID(t *testing.T) {
 	ctx := newReviewContext(nil, &dbmodel.Daemon{
 		ID: 123,
-	}, false, nil)
+	}, ConfigModified, nil)
 	referencedDaemon := &dbmodel.Daemon{
 		ID: 0,
 	}
@@ -80,7 +80,7 @@ func TestCreateReportRepeatedSubjectDaemon(t *testing.T) {
 			ID: 123,
 		},
 	}
-	ctx := newReviewContext(nil, daemons[1], false, nil)
+	ctx := newReviewContext(nil, daemons[1], ConfigModified, nil)
 
 	report, err := NewReport(ctx, "new report").
 		referencingDaemon(daemons[0]).

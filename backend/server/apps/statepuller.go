@@ -316,6 +316,6 @@ func conditionallyBeginKeaConfigReviews(dbApp *dbmodel.App, state *kea.AppStateM
 				}
 			}
 		}
-		_ = reviewDispatcher.BeginReview(dbApp.Daemons[i], nil)
+		_ = reviewDispatcher.BeginReview(dbApp.Daemons[i], configreview.ConfigModified, nil)
 	}
 }

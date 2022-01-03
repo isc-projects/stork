@@ -61,7 +61,7 @@ func TestGracefulShutdown(t *testing.T) {
 	for i := 0; i < len(selectors); i++ {
 		continueChan := make(chan bool)
 		channels[i] = continueChan
-		dispatcher.RegisterChecker(selectors[i], "test_checker", func(ctx *ReviewContext) (*Report, error) {
+		dispatcher.RegisterChecker(selectors[i], "test_checker", GetDefaultTriggers(), func(ctx *ReviewContext) (*Report, error) {
 			// The checker waits here until the test gives it a green light
 			// to proceed. It allows for controlling the concurrency of the
 			// reviews.
@@ -84,7 +84,7 @@ func TestGracefulShutdown(t *testing.T) {
 			ID:   int64(i),
 			Name: daemonNames[i],
 		}
-		ok := dispatcher.BeginReview(daemon, nil)
+		ok := dispatcher.BeginReview(daemon, ConfigModified, nil)
 		require.True(t, ok)
 	}
 
@@ -168,12 +168,12 @@ func TestPopulateKeaReports(t *testing.T) {
 	require.NotNil(t, dispatcher)
 
 	// Register a different checker for each daemon.
-	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "dhcp4_test_checker", func(ctx *ReviewContext) (*Report, error) {
+	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "dhcp4_test_checker", GetDefaultTriggers(), func(ctx *ReviewContext) (*Report, error) {
 		report, err := NewReport(ctx, "DHCPv4 test output").create()
 		return report, err
 	})
 
-	dispatcher.RegisterChecker(KeaDHCPv6Daemon, "dhcp6_test_checker", func(ctx *ReviewContext) (*Report, error) {
+	dispatcher.RegisterChecker(KeaDHCPv6Daemon, "dhcp6_test_checker", GetDefaultTriggers(), func(ctx *ReviewContext) (*Report, error) {
 		report, err := NewReport(ctx, "DHCPv6 test output").create()
 		return report, err
 	})
@@ -194,13 +194,13 @@ func TestPopulateKeaReports(t *testing.T) {
 	wg.Add(2)
 
 	// Begin the reviews for both daemons.
-	ok := dispatcher.BeginReview(daemons[0], func(daemonID int64, err error) {
+	ok := dispatcher.BeginReview(daemons[0], ConfigModified, func(daemonID int64, err error) {
 		defer wg.Done()
 		innerErrors[0] = err
 	})
 	require.True(t, ok)
 
-	ok = dispatcher.BeginReview(daemons[1], func(daemonID int64, err error) {
+	ok = dispatcher.BeginReview(daemons[1], ConfigModified, func(daemonID int64, err error) {
 		defer wg.Done()
 		innerErrors[1] = err
 	})
@@ -273,7 +273,7 @@ func TestPopulateBind9Reports(t *testing.T) {
 	require.NotNil(t, dispatcher)
 
 	// Register a test checker for the BIND9 daemon.
-	dispatcher.RegisterChecker(Bind9Daemon, "test_checker", func(ctx *ReviewContext) (*Report, error) {
+	dispatcher.RegisterChecker(Bind9Daemon, "test_checker", GetDefaultTriggers(), func(ctx *ReviewContext) (*Report, error) {
 		report, err := NewReport(ctx, "Bind9 test output").create()
 		return report, err
 	})
@@ -287,7 +287,7 @@ func TestPopulateBind9Reports(t *testing.T) {
 	wg.Add(1)
 
 	// Begin the review.
-	ok := dispatcher.BeginReview(daemons[0], func(daemonID int64, err error) {
+	ok := dispatcher.BeginReview(daemons[0], ConfigModified, func(daemonID int64, err error) {
 		defer wg.Done()
 		innerError = err
 	})
@@ -346,7 +346,7 @@ func TestReviewInProgress(t *testing.T) {
 	// over the continueChan or when doneCtx is cancelled.
 	continueChan := make(chan bool)
 	doneCtx, cancel := context.WithCancel(context.Background())
-	dispatcher.RegisterChecker(Bind9Daemon, "test_checker", func(ctx *ReviewContext) (*Report, error) {
+	dispatcher.RegisterChecker(Bind9Daemon, "test_checker", GetDefaultTriggers(), func(ctx *ReviewContext) (*Report, error) {
 		report, err := NewReport(ctx, "Bind9 test output").create()
 		for {
 			select {
@@ -366,7 +366,7 @@ func TestReviewInProgress(t *testing.T) {
 	wg.Add(1)
 
 	// Begin first review.
-	ok := dispatcher.BeginReview(daemons[0], func(daemonID int64, err error) {
+	ok := dispatcher.BeginReview(daemons[0], ConfigModified, func(daemonID int64, err error) {
 		defer wg.Done()
 	})
 	require.True(t, ok)
@@ -378,7 +378,7 @@ func TestReviewInProgress(t *testing.T) {
 	require.True(t, dispatcher.ReviewInProgress(daemons[0].ID))
 
 	// Try to begin another review for the same daemon.
-	ok = dispatcher.BeginReview(daemons[0], nil)
+	ok = dispatcher.BeginReview(daemons[0], ConfigModified, nil)
 
 	// Unblock the first review.
 	continueChan <- true
@@ -457,7 +457,7 @@ func TestCascadeReview(t *testing.T) {
 
 	// Register a checker for the first daemon. It fetches the configuration of
 	// the other daemon besides the reviewed configuration.
-	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "dhcp4_test_checker", func(ctx *ReviewContext) (*Report, error) {
+	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "dhcp4_test_checker", GetDefaultTriggers(), func(ctx *ReviewContext) (*Report, error) {
 		ctx.refDaemons = append(ctx.refDaemons, daemons[1])
 		report, err := NewReport(ctx, "DHCPv4 test output").
 			referencingDaemon(ctx.refDaemons[0]).
@@ -468,7 +468,7 @@ func TestCascadeReview(t *testing.T) {
 
 	// Register a checker for the second daemon. It fetches the configuration of
 	// the other daemon besides the reviewed configuration.
-	dispatcher.RegisterChecker(KeaCADaemon, "ca_test_checker", func(ctx *ReviewContext) (*Report, error) {
+	dispatcher.RegisterChecker(KeaCADaemon, "ca_test_checker", GetDefaultTriggers(), func(ctx *ReviewContext) (*Report, error) {
 		ctx.refDaemons = append(ctx.refDaemons, daemons[0])
 		report, _ := NewReport(ctx, "CA test output").
 			referencingDaemon(ctx.refDaemons[0]).
@@ -485,7 +485,7 @@ func TestCascadeReview(t *testing.T) {
 	wg.Add(2)
 
 	// Begin first the review for the first daemon.
-	ok := dispatcher.BeginReview(daemons[0], func(daemonID int64, err error) {
+	ok := dispatcher.BeginReview(daemons[0], ConfigModified, func(daemonID int64, err error) {
 		defer wg.Done()
 	})
 	require.True(t, ok)
@@ -513,7 +513,7 @@ func TestCascadeReview(t *testing.T) {
 	// Now, start the review for the second daemon. It should result in the
 	// cascaded review as well.
 	wg.Add(2)
-	ok = dispatcher.BeginReview(daemons[1], func(daemonID int64, err error) {
+	ok = dispatcher.BeginReview(daemons[1], ConfigModified, func(daemonID int64, err error) {
 		defer wg.Done()
 	})
 	require.True(t, ok)
@@ -531,6 +531,105 @@ func TestCascadeReview(t *testing.T) {
 	require.EqualValues(t, 1, total)
 	require.Len(t, reports, 1)
 	require.Equal(t, "CA test output", reports[0].Content)
+}
+
+// Test that the dispatcher accepts different trigger types and schedules
+// the reviews depending on whether appropriate config checkers have been
+// registered.
+func TestTriggers(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Create the configs for daemons.
+	config1, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp4": { }}`)
+	require.NoError(t, err)
+	config2, err := dbmodel.NewKeaConfigFromJSON(`{"Dhcp6": { }}`)
+	require.NoError(t, err)
+
+	// Add an app with two daemons.
+	app := &dbmodel.App{
+		Type:      dbmodel.AppTypeKea,
+		MachineID: machine.ID,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:   "dhcp4",
+				Active: true,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config:     config1,
+					ConfigHash: "1234",
+				},
+			},
+			{
+				Name:   "dhcp6",
+				Active: true,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					Config:     config2,
+					ConfigHash: "2345",
+				},
+			},
+		},
+	}
+	daemons, err := dbmodel.AddApp(db, app)
+	require.NoError(t, err)
+	require.Len(t, daemons, 2)
+
+	dispatcher := NewDispatcher(db).(*dispatcherImpl)
+	require.NotNil(t, dispatcher)
+
+	// Register two test checkers setting the two boolean values declared
+	// below to true.
+	var dhcp4CheckComplete, dhcp6CheckComplete bool
+	mutex := &sync.Mutex{}
+	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "dhcp4_test_checker", GetDefaultTriggers(), func(ctx *ReviewContext) (*Report, error) {
+		mutex.Lock()
+		defer mutex.Unlock()
+		dhcp4CheckComplete = true
+		return nil, nil
+	})
+	dispatcher.RegisterChecker(KeaDHCPv6Daemon, "dhcp6_test_checker", Triggers{ManualRun}, func(ctx *ReviewContext) (*Report, error) {
+		mutex.Lock()
+		defer mutex.Unlock()
+		dhcp6CheckComplete = true
+		return nil, nil
+	})
+
+	// Scheduling the review using the internalRun trigger is not allowed.
+	ok := dispatcher.BeginReview(daemons[0], internalRun, nil)
+	require.False(t, ok)
+
+	// Schedule a review for the first daemon using the trigger associated
+	// with the first checker. Wait until the review is completed.
+	ok = dispatcher.BeginReview(daemons[0], ConfigModified, nil)
+	require.True(t, ok)
+	require.Eventually(t, func() bool {
+		mutex.Lock()
+		defer mutex.Unlock()
+		return dhcp4CheckComplete
+	}, 5*time.Second, 100*time.Millisecond)
+
+	// A review using the same trigger for the second daemon should not
+	// be launched because the checker has been registered for the
+	// ManualRun only.
+	ok = dispatcher.BeginReview(daemons[1], ConfigModified, nil)
+	require.False(t, ok)
+
+	// Finally, try the review for the second daemon using the ManualRun
+	// trigger. It should be launched. Wait for the review to complete.
+	ok = dispatcher.BeginReview(daemons[1], ManualRun, nil)
+	require.True(t, ok)
+	require.Eventually(t, func() bool {
+		mutex.Lock()
+		defer mutex.Unlock()
+		return dhcp6CheckComplete
+	}, 5*time.Second, 100*time.Millisecond)
 }
 
 // Tests that default checkers are registered.
@@ -554,6 +653,16 @@ func TestRegisterDefaultCheckers(t *testing.T) {
 	require.Contains(t, checkerNames, "shared_network_dispensable")
 	require.Contains(t, checkerNames, "subnet_dispensable")
 	require.Contains(t, checkerNames, "reservations_out_of_pool")
+
+	// Ensure that the appropriate triggers were registered for the
+	// default checkers.
+	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, ManualRun)
+	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, ConfigModified)
+	require.Contains(t, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts, DBHostsModified)
+
+	require.EqualValues(t, 5, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ManualRun])
+	require.EqualValues(t, 5, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[ConfigModified])
+	require.EqualValues(t, 2, dispatcher.groups[KeaDHCPDaemon].triggerRefCounts[DBHostsModified])
 }
 
 // Verifies that registering new checkers and bumping up the
@@ -571,16 +680,16 @@ func TestGetSignature(t *testing.T) {
 	signatures[0] = dispatcher.GetSignature()
 
 	// Register checkers and record the signatures.
-	dispatcher.RegisterChecker(EachDaemon, "checker1", nil)
+	dispatcher.RegisterChecker(EachDaemon, "checker1", GetDefaultTriggers(), nil)
 	signatures[1] = dispatcher.GetSignature()
 	require.NotEqual(t, signatures[0], signatures[1])
 
-	dispatcher.RegisterChecker(EachDaemon, "checker2", nil)
+	dispatcher.RegisterChecker(EachDaemon, "checker2", GetDefaultTriggers(), nil)
 	signatures[2] = dispatcher.GetSignature()
 	require.NotEqual(t, signatures[0], signatures[2])
 	require.NotEqual(t, signatures[1], signatures[2])
 
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "checker3", nil)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "checker3", GetDefaultTriggers(), nil)
 	signatures[3] = dispatcher.GetSignature()
 	require.NotEqual(t, signatures[0], signatures[3])
 	require.NotEqual(t, signatures[1], signatures[3])
@@ -595,7 +704,7 @@ func TestGetSignature(t *testing.T) {
 
 	// Register this checker but for a different dispatch group.
 	// The new signature should be different than previously.
-	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "checker3", nil)
+	dispatcher.RegisterChecker(KeaDHCPv4Daemon, "checker3", GetDefaultTriggers(), nil)
 	signatures[5] = dispatcher.GetSignature()
 	require.NotEqual(t, signatures[0], signatures[5])
 	require.NotEqual(t, signatures[1], signatures[5])
@@ -610,7 +719,7 @@ func TestGetSignature(t *testing.T) {
 	// Re-register it. Make sure that the signature is affected
 	// and that it is equal to the signature from before
 	// unregistering the checker2.
-	dispatcher.RegisterChecker(EachDaemon, "checker2", nil)
+	dispatcher.RegisterChecker(EachDaemon, "checker2", GetDefaultTriggers(), nil)
 	signatures[7] = dispatcher.GetSignature()
 	require.Equal(t, signatures[5], signatures[7])
 	require.NotEqual(t, signatures[6], signatures[7])

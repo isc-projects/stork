@@ -26,6 +26,39 @@ const enforceDispatchSeq = 1
 // error which occurred during the review or nil.
 type CallbackFunc func(int64, error)
 
+// A type of an event triggering config review.
+type Trigger string
+
+// Collection of triggers.
+type Triggers []Trigger
+
+// Types of events triggering config review. Typically, a review is
+// triggered when daemon configuration change has been detected.
+// However, some config checkers also use other source of data that,
+// if modified, should also trigger config reviews. Another way to
+// trigger new config review is a manual run from the the UI. The
+// special type, internal run, is used internally by the dispatcher.
+const (
+	internalRun     Trigger = "internal"
+	ManualRun       Trigger = "manual"
+	ConfigModified  Trigger = "config change"
+	DBHostsModified Trigger = "host reservations change"
+)
+
+// Returns default config review triggers. They are by default used by
+// all configuration checkers:
+// - ManualRun
+// - ConfigModified.
+func GetDefaultTriggers() Triggers {
+	return Triggers{ManualRun, ConfigModified}
+}
+
+// Convenience function returning a combination of default triggers and
+// the triggers specified as the function arguments.
+func ExtendDefaultTriggers(triggers ...Trigger) Triggers {
+	return append(GetDefaultTriggers(), triggers...)
+}
+
 // A wrapper around the config report returned by a checker. It
 // supplies additional information to the report (i.e., name of
 // the checker that generated the report).
@@ -47,24 +80,23 @@ type taggedReport struct {
 // daemon configuration),
 // - reports: configuration reports produced so far,
 // - callback: user callback to invoke after the review,
-// - internal: boolean flag indicating if the configuration review
-// was triggered internally by the dispatcher or by an external call.
+// - trigger: a trigger that started the current review.
 type ReviewContext struct {
 	db            *dbops.PgDB
 	subjectDaemon *dbmodel.Daemon
 	refDaemons    []*dbmodel.Daemon
 	reports       []taggedReport
 	callback      CallbackFunc
-	internal      bool
+	trigger       Trigger
 }
 
 // Creates new review context instance.
-func newReviewContext(db *dbops.PgDB, daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) *ReviewContext {
+func newReviewContext(db *dbops.PgDB, daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) *ReviewContext {
 	ctx := &ReviewContext{
 		db:            db,
 		subjectDaemon: daemon,
 		callback:      callback,
-		internal:      internal,
+		trigger:       trigger,
 	}
 	return ctx
 }
@@ -72,6 +104,9 @@ func newReviewContext(db *dbops.PgDB, daemon *dbmodel.Daemon, internal bool, cal
 // Dispatch group selector is used to segregate different configuration
 // review checkers by daemon types.
 type DispatchGroupSelector int
+
+// A slice of the DispatchGroupSelector values.
+type DispatchGroupSelectors []DispatchGroupSelector
 
 // Enumeration listing supported configuration review checker groups.
 // For instance, checkers belonging to the KeaDHCPDaemon group are
@@ -94,24 +129,24 @@ const (
 // KeaDaemon, KeaDHCPDaemon and KeaDHCPv4Daemon selector for the "dhcp4"
 // daemon. The corresponding checkers will be used to review the
 // daemon configuration.
-func getDispatchGroupSelectors(daemonName string) []DispatchGroupSelector {
+func getDispatchGroupSelectors(daemonName string) DispatchGroupSelectors {
 	switch daemonName {
 	case "dhcp4":
-		return []DispatchGroupSelector{EachDaemon, KeaDaemon, KeaDHCPDaemon, KeaDHCPv4Daemon}
+		return DispatchGroupSelectors{EachDaemon, KeaDaemon, KeaDHCPDaemon, KeaDHCPv4Daemon}
 	case "dhcp6":
-		return []DispatchGroupSelector{EachDaemon, KeaDaemon, KeaDHCPDaemon, KeaDHCPv6Daemon}
+		return DispatchGroupSelectors{EachDaemon, KeaDaemon, KeaDHCPDaemon, KeaDHCPv6Daemon}
 	case "ca":
-		return []DispatchGroupSelector{EachDaemon, KeaDaemon, KeaCADaemon}
+		return DispatchGroupSelectors{EachDaemon, KeaDaemon, KeaCADaemon}
 	case "d2":
-		return []DispatchGroupSelector{EachDaemon, KeaDaemon, KeaD2Daemon}
+		return DispatchGroupSelectors{EachDaemon, KeaDaemon, KeaD2Daemon}
 	case "bind9":
-		return []DispatchGroupSelector{EachDaemon, Bind9Daemon}
+		return DispatchGroupSelectors{EachDaemon, Bind9Daemon}
 	}
 	log.WithFields(log.Fields{
 		"daemon_name": daemonName,
 	}).Warn("Config review dispatcher was unable to recognize the daemon by name and assign any suitable dispatch groups. Please consult this issue with the ISC Stork Development Team.")
 
-	return []DispatchGroupSelector{}
+	return DispatchGroupSelectors{}
 }
 
 // Dispatch group is a group of checkers registered for the particular
@@ -120,18 +155,29 @@ func getDispatchGroupSelectors(daemonName string) []DispatchGroupSelector {
 // a single configuration.
 type dispatchGroup struct {
 	checkers []*checker
+	// A map of triggers to the counts of checkers using them.
+	triggerRefCounts map[Trigger]int64
 }
 
 // Stringer implementation for a dispatchGroup. It lists checker names
 // as a slice. It excludes checker function pointers making the output
 // consistent across function runs. The dispatcher uses this function
 // to create a signature.
-func (d dispatchGroup) String() string {
+func (g dispatchGroup) String() string {
 	names := []string{}
-	for _, checker := range d.checkers {
+	for _, checker := range g.checkers {
 		names = append(names, checker.name)
 	}
 	return fmt.Sprintf("%+v", names)
+}
+
+// Checks if the dispatch group has checkers registered that are launched
+// for the specified trigger.
+func (g *dispatchGroup) hasCheckersForTrigger(trigger Trigger) bool {
+	if _, ok := g.triggerRefCounts[trigger]; ok {
+		return g.triggerRefCounts[trigger] > 0
+	}
+	return false
 }
 
 // The dispatcher coordinates configuration reviews of all daemons.
@@ -180,22 +226,22 @@ type dispatcherImpl struct {
 // Dispatcher interface. The interface is used in the unit tests that
 // require replacing the default implementation with a mock dispatcher.
 type Dispatcher interface {
-	RegisterChecker(selector DispatchGroupSelector, checkerName string, checkFn func(*ReviewContext) (*Report, error))
+	RegisterChecker(selector DispatchGroupSelector, checkerName string, triggers Triggers, checkFn func(*ReviewContext) (*Report, error))
 	UnregisterChecker(selector DispatchGroupSelector, checkerName string) bool
 	GetSignature() string
 	Start()
 	Shutdown()
-	BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool
+	BeginReview(daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) bool
 	ReviewInProgress(daemonID int64) bool
 }
 
 // Creates new context instance when a review is scheduled. The daemon
 // is a pointer to a daemon instance for which the review is
-// performed. The internal flag indicates if the review has been
-// initiated internally by the dispatcher. The callback is a
-// callback function invoked after the review is completed.
-func (d *dispatcherImpl) newContext(db *dbops.PgDB, daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) *ReviewContext {
-	ctx := newReviewContext(db, daemon, internal, callback)
+// performed. The trigger as a trigger that started the current
+// review. The callback is a callback function invoked after the
+// review is completed.
+func (d *dispatcherImpl) newContext(db *dbops.PgDB, daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) *ReviewContext {
+	ctx := newReviewContext(db, daemon, trigger, callback)
 	return ctx
 }
 
@@ -286,15 +332,15 @@ func (d *dispatcherImpl) awaitReports() {
 }
 
 // Goroutine performing configuration review for a daemon.
-func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) {
+func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) {
 	defer d.reviewWg.Done()
 
-	ctx := d.newContext(d.db, daemon, internal, callback)
+	ctx := d.newContext(d.db, daemon, trigger, callback)
 
 	dispatchGroupSelectors := getDispatchGroupSelectors(daemon.Name)
 
 	for _, selector := range dispatchGroupSelectors {
-		if group, ok := d.groups[selector]; ok {
+		if group := d.getGroup(selector); group != nil {
 			for i := range group.checkers {
 				report, err := group.checkers[i].checkFn(ctx)
 				if err != nil {
@@ -313,13 +359,39 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, internal bool, cal
 	d.reviewDoneChan <- ctx
 }
 
-// Internal function scheduling a new review. Comparing to the exported function, BeginReview,
-// it accepts the additional "internal" parameter. It allows for marking the review as
-// scheduled internally by the dispatcher. In that case the populateReports function
-// takes slightly different path when it inserts new reports to the database. The
-// BeginReview function internally calls the beginReview function with this flag set to
-// false.
-func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, internal bool, callback CallbackFunc) bool {
+// Internal function scheduling a new review. Comparing to the exported function,
+// BeginReview, it also accepts "internalRun" trigger value. In that case the
+// populateReports function takes slightly different path when it inserts new
+// reports to the database.
+func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) bool {
+	// The specified trigger indicates why the review is scheduled. The internally
+	// scheduled review is unconditional. In some cases the review may be skipped
+	// when none of the current config checkers are activated for this trigger.
+	shouldRun := (trigger == internalRun)
+	if !shouldRun {
+		// Not an internal run. See if there are any checkers for this trigger.
+		dispatchGroupSelectors := getDispatchGroupSelectors(daemon.Name)
+		for _, selector := range dispatchGroupSelectors {
+			if group := d.getGroup(selector); group != nil {
+				if group.hasCheckersForTrigger(trigger) {
+					shouldRun = true
+					break
+				}
+			}
+		}
+	}
+	if !shouldRun {
+		return false
+	}
+
+	if trigger != internalRun {
+		log.WithFields(log.Fields{
+			"daemon_id": daemon.ID,
+			"name":      daemon.Name,
+			"trigger":   trigger,
+		}).Info("scheduling a new configuration review")
+	}
+
 	// Check if another review for this daemon has been already scheduled. Do not
 	// schedule new review if one is already in progress.
 	d.mutex.RLock()
@@ -341,7 +413,7 @@ func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, internal bool, call
 
 	d.reviewWg.Add(1)
 	// Run the review in the background.
-	go d.runForDaemon(daemon, internal, callback)
+	go d.runForDaemon(daemon, trigger, callback)
 	return true
 }
 
@@ -401,7 +473,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 		}
 	}
 
-	if !ctx.internal {
+	if ctx.trigger != internalRun {
 		// Delete configuration reports for all daemons involved in our review.
 		// It includes the reports for daemons only referenced in the review
 		// (e.g., a HA peer's configuration). For those daemons, we will have to
@@ -461,7 +533,7 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 		return
 	}
 
-	if !ctx.internal {
+	if ctx.trigger != internalRun {
 		// If the review was scheduled externally, and we deleted configuration
 		// reports for referenced daemons, we have to rebuild the reports for
 		// those daemons. Let's schedule internal reviews for each of them.
@@ -469,12 +541,21 @@ func (d *dispatcherImpl) populateReports(ctx *ReviewContext) (err error) {
 			// Do not schedule the review for the subject daemon because we're
 			// now doing its review.
 			if ctx.refDaemons[i].ID != ctx.subjectDaemon.ID {
-				_ = d.beginReview(ctx.refDaemons[i], true, ctx.callback)
+				_ = d.beginReview(ctx.refDaemons[i], internalRun, ctx.callback)
 			}
 		}
 	}
 
 	return err
+}
+
+// Returns dispatch group indicated by the selector or nil when such group
+// does not exist.
+func (d *dispatcherImpl) getGroup(selector DispatchGroupSelector) *dispatchGroup {
+	if g, ok := d.groups[selector]; ok {
+		return g
+	}
+	return nil
 }
 
 // Creates new dispatcher instance.
@@ -500,30 +581,50 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 // if it finds issues. It should return nil when no issues were found.
 // Each checker is assigned a unique name so it will be possible to
 // list available checkers and/or selectively disable them.
-func (d *dispatcherImpl) RegisterChecker(selector DispatchGroupSelector, checkerName string, checkFn func(*ReviewContext) (*Report, error)) {
-	if _, ok := d.groups[selector]; !ok {
-		d.groups[selector] = &dispatchGroup{}
+func (d *dispatcherImpl) RegisterChecker(selector DispatchGroupSelector, checkerName string, triggers Triggers, checkFn func(*ReviewContext) (*Report, error)) {
+	if group := d.getGroup(selector); group == nil {
+		d.groups[selector] = &dispatchGroup{
+			triggerRefCounts: make(map[Trigger]int64),
+		}
 		d.groups[selector].checkers = []*checker{}
 	}
 	d.groups[selector].checkers = append(d.groups[selector].checkers,
 		&checker{
-			name:    checkerName,
-			checkFn: checkFn,
+			name:     checkerName,
+			triggers: triggers,
+			checkFn:  checkFn,
 		},
 	)
+	for _, trigger := range triggers {
+		if _, ok := d.groups[selector].triggerRefCounts[trigger]; !ok {
+			d.groups[selector].triggerRefCounts[trigger] = 0
+		}
+		d.groups[selector].triggerRefCounts[trigger]++
+	}
 }
 
 // Unregisters a checker from a dispatch group. It returns a boolean
 // value indicating if the matching checker was found and removed (if true).
 func (d *dispatcherImpl) UnregisterChecker(selector DispatchGroupSelector, checkerName string) bool {
-	if _, ok := d.groups[selector]; ok {
-		for i := range d.groups[selector].checkers {
-			if d.groups[selector].checkers[i].name == checkerName {
-				newGroups := make([]*checker, 0)
-				newGroups = append(newGroups, d.groups[selector].checkers[:i]...)
-				newGroups = append(newGroups, d.groups[selector].checkers[i+1:]...)
-				d.groups[selector].checkers = newGroups
-				if len(d.groups[selector].checkers) == 0 {
+	if group := d.getGroup(selector); group != nil {
+		for i := range group.checkers {
+			if group.checkers[i].name == checkerName {
+				// When we're removing a checker we should decrease the appropriate
+				// reference counters of the triggers it was using. If the reference
+				// counter becomes 0, the dispatcher no longer runs reviews for
+				// these triggers.
+				for _, trigger := range group.checkers[i].triggers {
+					if _, ok := group.triggerRefCounts[trigger]; ok {
+						if group.triggerRefCounts[trigger] > 0 {
+							group.triggerRefCounts[trigger]--
+						}
+					}
+				}
+				newCheckers := make([]*checker, 0)
+				newCheckers = append(newCheckers, group.checkers[:i]...)
+				newCheckers = append(newCheckers, group.checkers[i+1:]...)
+				group.checkers = newCheckers
+				if len(group.checkers) == 0 {
 					delete(d.groups, selector)
 				}
 				return true
@@ -566,13 +667,13 @@ func (d *dispatcherImpl) Shutdown() {
 // nil, the callback is invoked when the review is completed. The
 // returned boolean value indicates whether or not the review has
 // been scheduled. It is not scheduled when there is another review
-// for the daemon already in progress.
-func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, callback CallbackFunc) bool {
-	log.WithFields(log.Fields{
-		"daemon_id": daemon.ID,
-		"name":      daemon.Name,
-	}).Info("scheduling a new configuration review")
-	return d.beginReview(daemon, false, callback)
+// for the daemon already in progress, there are no checkers activated
+// for the given trigger or the trigger is set to "internalRun".
+func (d *dispatcherImpl) BeginReview(daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) bool {
+	if trigger == internalRun {
+		return false
+	}
+	return d.beginReview(daemon, trigger, callback)
 }
 
 // Checks if the review for the specified daemon is in progress.
@@ -586,9 +687,9 @@ func (d *dispatcherImpl) ReviewInProgress(daemonID int64) bool {
 // Registers default checkers in this package. When new checker is
 // implemented it should be included in this function.
 func RegisterDefaultCheckers(dispatcher Dispatcher) {
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "stat_cmds_presence", statCmdsPresence)
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "host_cmds_presence", hostCmdsPresence)
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "shared_network_dispensable", sharedNetworkDispensable)
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "subnet_dispensable", subnetDispensable)
-	dispatcher.RegisterChecker(KeaDHCPDaemon, "reservations_out_of_pool", reservationsOutOfPool)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "stat_cmds_presence", GetDefaultTriggers(), statCmdsPresence)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "host_cmds_presence", GetDefaultTriggers(), hostCmdsPresence)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "shared_network_dispensable", GetDefaultTriggers(), sharedNetworkDispensable)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "subnet_dispensable", ExtendDefaultTriggers(DBHostsModified), subnetDispensable)
+	dispatcher.RegisterChecker(KeaDHCPDaemon, "reservations_out_of_pool", ExtendDefaultTriggers(DBHostsModified), reservationsOutOfPool)
 }
