@@ -23,5 +23,6 @@ func decode(input interface{}, output interface{}) error {
 		Result: output,
 	}
 	decoder, _ := mapstructure.NewDecoder(&decoderConfig)
-	return errors.Wrap(decoder.Decode(input), "cannot decode the input map to output structure")
+	err := errors.WithStack(decoder.Decode(input))
+	return err
 }
