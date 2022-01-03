@@ -332,14 +332,21 @@ func (d *dispatcherImpl) awaitReports() {
 }
 
 // Goroutine performing configuration review for a daemon.
-func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) {
+func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, dispatchGroupSelectors DispatchGroupSelectors, callback CallbackFunc) {
 	defer d.reviewWg.Done()
 
 	ctx := d.newContext(d.db, daemon, trigger, callback)
 
-	dispatchGroupSelectors := getDispatchGroupSelectors(daemon.Name)
+	// If this is an internal run, the dispatch group selectors haven't
+	// been determined in the beginReview function.
+	var selectors DispatchGroupSelectors
+	if trigger == internalRun {
+		selectors = getDispatchGroupSelectors(daemon.Name)
+	} else {
+		selectors = dispatchGroupSelectors
+	}
 
-	for _, selector := range dispatchGroupSelectors {
+	for _, selector := range selectors {
 		if group := d.getGroup(selector); group != nil {
 			for i := range group.checkers {
 				report, err := group.checkers[i].checkFn(ctx)
@@ -364,13 +371,15 @@ func (d *dispatcherImpl) runForDaemon(daemon *dbmodel.Daemon, trigger Trigger, c
 // populateReports function takes slightly different path when it inserts new
 // reports to the database.
 func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, trigger Trigger, callback CallbackFunc) bool {
+	var dispatchGroupSelectors DispatchGroupSelectors
+
 	// The specified trigger indicates why the review is scheduled. The internally
 	// scheduled review is unconditional. In some cases the review may be skipped
 	// when none of the current config checkers are activated for this trigger.
 	shouldRun := (trigger == internalRun)
 	if !shouldRun {
 		// Not an internal run. See if there are any checkers for this trigger.
-		dispatchGroupSelectors := getDispatchGroupSelectors(daemon.Name)
+		dispatchGroupSelectors = getDispatchGroupSelectors(daemon.Name)
 		for _, selector := range dispatchGroupSelectors {
 			if group := d.getGroup(selector); group != nil {
 				if group.hasCheckersForTrigger(trigger) {
@@ -413,7 +422,7 @@ func (d *dispatcherImpl) beginReview(daemon *dbmodel.Daemon, trigger Trigger, ca
 
 	d.reviewWg.Add(1)
 	// Run the review in the background.
-	go d.runForDaemon(daemon, trigger, callback)
+	go d.runForDaemon(daemon, trigger, dispatchGroupSelectors, callback)
 	return true
 }
 
