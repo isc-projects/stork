@@ -14,6 +14,8 @@ import { DHCPService } from '../backend'
 import { HostTabComponent } from './host-tab.component'
 import { RouterModule } from '@angular/router'
 import { RouterTestingModule } from '@angular/router/testing'
+import { ToggleButtonModule } from 'primeng/togglebutton'
+import { IdentifierComponent } from '../identifier/identifier.component'
 
 describe('HostTabComponent', () => {
     let component: HostTabComponent
@@ -33,8 +35,9 @@ describe('HostTabComponent', () => {
                     TableModule,
                     RouterModule,
                     RouterTestingModule,
+                    ToggleButtonModule,
                 ],
-                declarations: [HostTabComponent],
+                declarations: [HostTabComponent, IdentifierComponent],
             }).compileComponents()
         })
     )
@@ -57,11 +60,11 @@ describe('HostTabComponent', () => {
             hostIdentifiers: [
                 {
                     idType: 'duid',
-                    idHexValue: '01:02:03:04',
+                    idHexValue: '51:52:53:54',
                 },
                 {
                     idType: 'hw-address',
-                    idHexValue: 'f1:f2:f3:f4:f5:f6',
+                    idHexValue: '51:52:53:54:55:56',
                 },
             ],
             addressReservations: [
@@ -124,8 +127,10 @@ describe('HostTabComponent', () => {
         expect(hostIdsFieldset).toBeTruthy()
         expect(hostIdsFieldset.nativeElement.textContent).toContain('duid')
         expect(hostIdsFieldset.nativeElement.textContent).toContain('hw-address')
-        expect(hostIdsFieldset.nativeElement.textContent).toContain('01:02:03:04')
-        expect(hostIdsFieldset.nativeElement.textContent).toContain('f1:f2:f3:f4:f5:f6')
+        // DUID should be converted to textual form.
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('QRST')
+        // HW address should remain in hexadecimal form.
+        expect(hostIdsFieldset.nativeElement.textContent).toContain('51:52:53:54:55:56')
 
         const appsFieldset = fixture.debugElement.query(By.css('#apps-fieldset'))
         expect(appsFieldset).toBeTruthy()

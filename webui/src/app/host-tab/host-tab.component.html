@@ -130,7 +130,12 @@
                         <ng-template pTemplate="body" let-i>
                             <tr>
                                 <td style="border: none; width: 8rem">{{ i.idType }}</td>
-                                <td style="border: none">{{ i.idHexValue }}</td>
+                                <td style="border: none">
+                                    <app-identifier
+                                        [hexValue]="i.idHexValue"
+                                        [defaultHexFormat]="i.idType === 'hw-address'"
+                                    ></app-identifier>
+                                </td>
                             </tr>
                         </ng-template>
                     </p-table>

@@ -1,0 +1,16 @@
+<span style="display: block" [class]="styleClass">
+    <ng-container *ngIf="link.length !== 0; else noLinkBlock">
+        <a routerLink="{{ link }}"> {{ displayedText }} </a>
+    </ng-container>
+    <ng-template #noLinkBlock> {{ displayedText }} </ng-template>
+    <p-toggleButton
+        *ngIf="convertible"
+        onLabel="text"
+        offLabel="hex"
+        styleClass="p-badge"
+        [(ngModel)]="hexFormat"
+        ngDefaultControl
+        (onChange)="toggle($event)"
+    >
+    </p-toggleButton>
+</span>

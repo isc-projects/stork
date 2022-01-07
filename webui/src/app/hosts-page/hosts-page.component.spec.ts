@@ -21,6 +21,8 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { TooltipModule } from 'primeng/tooltip'
 import { FieldsetModule } from 'primeng/fieldset'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { ToggleButtonModule } from 'primeng/togglebutton'
+import { IdentifierComponent } from '../identifier/identifier.component'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -66,6 +68,7 @@ describe('HostsPageComponent', () => {
                     FormsModule,
                     FieldsetModule,
                     ProgressSpinnerModule,
+                    ToggleButtonModule,
                 ],
                 declarations: [
                     EntityLinkComponent,
@@ -73,6 +76,7 @@ describe('HostsPageComponent', () => {
                     BreadcrumbsComponent,
                     HelpTipComponent,
                     HostTabComponent,
+                    IdentifierComponent,
                 ],
             }).compileComponents()
         })
@@ -320,5 +324,103 @@ describe('HostsPageComponent', () => {
             id: 1,
         }
         expect(component.getHostLabel(host4)).toBe('[1]')
+    })
+
+    it('should display well formatted host identifiers', () => {
+        // Create a list with three hosts. One host uses a duid convertible
+        // to a textual format. Another host uses a hw-address which is
+        // by default displayed in the hex format. Third host uses a
+        // flex-id which is not convertible to a textual format.
+        component.hosts = [
+            {
+                id: 1,
+                hostIdentifiers: [
+                    {
+                        idType: 'duid',
+                        idHexValue: '61:62:63:64',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.1',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 1,
+                        appName: 'frog',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+            {
+                id: 2,
+                hostIdentifiers: [
+                    {
+                        idType: 'hw-address',
+                        idHexValue: '51:52:53:54:55:56',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.2',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 2,
+                        appName: 'mouse',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+            {
+                id: 3,
+                hostIdentifiers: [
+                    {
+                        idType: 'flex-id',
+                        idHexValue: '10:20:30:40:50',
+                    },
+                ],
+                addressReservations: [
+                    {
+                        address: '192.0.2.2',
+                    },
+                ],
+                localHosts: [
+                    {
+                        appId: 3,
+                        appName: 'lion',
+                        dataSource: 'config',
+                    },
+                ],
+            },
+        ]
+        fixture.detectChanges()
+
+        // There should be 3 hosts listed.
+        const identifierEl = fixture.debugElement.queryAll(By.css('app-identifier'))
+        expect(identifierEl.length).toBe(3)
+
+        // Each host identifier should be a link.
+        const firstIdEl = identifierEl[0].query(By.css('a'))
+        expect(firstIdEl).toBeTruthy()
+        // The DUID is convertible to text.
+        expect(firstIdEl.nativeElement.textContent).toContain('duid=(abcd)')
+        expect(firstIdEl.attributes.href).toBe('/dhcp/hosts/1')
+
+        const secondIdEl = identifierEl[1].query(By.css('a'))
+        console.info(secondIdEl)
+        expect(secondIdEl).toBeTruthy()
+        // The HW address is convertible but by default should be in hex format.
+        expect(secondIdEl.nativeElement.textContent).toContain('hw-address=(51:52:53:54:55:56)')
+        expect(secondIdEl.attributes.href).toBe('/dhcp/hosts/2')
+
+        const thirdIdEl = identifierEl[2].query(By.css('a'))
+        console.info(thirdIdEl)
+        expect(thirdIdEl).toBeTruthy()
+        // The flex-id is not convertible to text so should be in hex format.
+        expect(thirdIdEl.nativeElement.textContent).toContain('flex-id=(10:20:30:40:50)')
+        expect(thirdIdEl.attributes.href).toBe('/dhcp/hosts/3')
     })
 })

@@ -125,19 +125,29 @@
                                         <tr *ngIf="lease.hwAddress">
                                             <td style="width: 10rem">MAC address:</td>
                                             <td>
-                                                <i>{{ lease.hwAddress }}</i>
+                                                <app-identifier
+                                                    [hexValue]="lease.hwAddress"
+                                                    [defaultHexFormat]="true"
+                                                    styleClass="p-text-italic"
+                                                ></app-identifier>
                                             </td>
                                         </tr>
                                         <tr *ngIf="lease.clientId">
                                             <td style="width: 10rem">Client Identifier:</td>
                                             <td>
-                                                <i>{{ lease.clientId }}</i>
+                                                <app-identifier
+                                                    [hexValue]="lease.clientId"
+                                                    styleClass="p-text-italic"
+                                                ></app-identifier>
                                             </td>
                                         </tr>
                                         <tr *ngIf="lease.duid">
                                             <td style="width: 10rem">DUID:</td>
                                             <td>
-                                                <i>{{ lease.duid }}</i>
+                                                <app-identifier
+                                                    [hexValue]="lease.duid"
+                                                    styleClass="p-text-italic"
+                                                ></app-identifier>
                                             </td>
                                         </tr>
                                     </table>

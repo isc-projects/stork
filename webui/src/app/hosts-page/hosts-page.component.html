@@ -113,12 +113,14 @@
             <ng-template pTemplate="body" let-h>
                 <tr id="host-row-{{ h.id }}" class="alternate-list">
                     <td>
-                        <app-entity-link
+                        <app-identifier
                             *ngFor="let i of h.hostIdentifiers"
-                            entity="host"
-                            [showEntityName]="false"
-                            [attrs]="{ id: h.id, label: i.idType + '=' + i.idHexValue }"
-                        ></app-entity-link>
+                            [label]="i.idType"
+                            [hexValue]="i.idHexValue"
+                            [defaultHexFormat]="i.idType === 'hw-address'"
+                            link="/dhcp/hosts/{{ h.id }}"
+                        >
+                        </app-identifier>
                     </td>
                     <td>
                         <app-entity-link

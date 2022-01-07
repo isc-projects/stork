@@ -22,6 +22,8 @@ import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
 import { BreadcrumbModule } from 'primeng/breadcrumb'
 import { MessagesModule } from 'primeng/messages'
+import { ToggleButtonModule } from 'primeng/togglebutton'
+import { IdentifierComponent } from '../identifier/identifier.component'
 
 describe('LeaseSearchPageComponent', () => {
     let component: LeaseSearchPageComponent
@@ -52,8 +54,15 @@ describe('LeaseSearchPageComponent', () => {
                     NoopAnimationsModule,
                     BreadcrumbModule,
                     MessagesModule,
+                    ToggleButtonModule,
                 ],
-                declarations: [LeaseSearchPageComponent, LocaltimePipe, BreadcrumbsComponent, HelpTipComponent],
+                declarations: [
+                    LeaseSearchPageComponent,
+                    LocaltimePipe,
+                    BreadcrumbsComponent,
+                    HelpTipComponent,
+                    IdentifierComponent,
+                ],
             }).compileComponents()
         })
     )
@@ -159,7 +168,7 @@ describe('LeaseSearchPageComponent', () => {
                 appId: 1,
                 appName: 'kea@frog',
                 hwAddress: '01:02:03:04:05:06',
-                clientId: '01:02:03:04',
+                clientId: '51:52:53:54',
                 hostname: 'faq.example.org',
                 fqdnFwd: false,
                 fqdnRev: true,
@@ -206,7 +215,7 @@ describe('LeaseSearchPageComponent', () => {
         const expectedLeaseData: any = [
             [
                 ['MAC address', '01:02:03:04:05:06'],
-                ['Client Identifier', '01:02:03:04'],
+                ['Client Identifier', 'QRST'],
             ],
             [
                 ['Subnet Identifier', '123'],
@@ -233,7 +242,7 @@ describe('LeaseSearchPageComponent', () => {
             for (const row of rows) {
                 expect(row.children.length).toBe(2)
                 expect(row.children[0].nativeElement.innerText).toBe(expectedDataGroup[i][0] + ':')
-                expect(row.children[1].nativeElement.innerText).toBe(expectedDataGroup[i][1])
+                expect(row.children[1].nativeElement.innerText).toContain(expectedDataGroup[i][1])
                 i++
             }
             tableIndex++
@@ -443,7 +452,7 @@ describe('LeaseSearchPageComponent', () => {
             for (const row of rows) {
                 expect(row.children.length).toBe(2)
                 expect(row.children[0].nativeElement.innerText).toBe(expectedDataGroup[i][0] + ':')
-                expect(row.children[1].nativeElement.innerText).toBe(expectedDataGroup[i][1])
+                expect(row.children[1].nativeElement.innerText).toContain(expectedDataGroup[i][1])
                 i++
             }
             tableIndex++

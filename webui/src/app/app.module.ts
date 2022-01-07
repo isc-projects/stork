@@ -38,6 +38,7 @@ import { PaginatorModule } from 'primeng/paginator'
 import { SelectButtonModule } from 'primeng/selectbutton'
 import { DividerModule } from 'primeng/divider'
 import { TagModule } from 'primeng/tag'
+import { ToggleButtonModule } from 'primeng/togglebutton'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -85,6 +86,7 @@ import { JsonTreeRootComponent } from './json-tree-root/json-tree-root.component
 import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-page/kea-daemon-configuration-page.component'
 import { HostTabComponent } from './host-tab/host-tab.component'
 import { ConfigReviewPanelComponent } from './config-review-panel/config-review-panel.component'
+import { IdentifierComponent } from './identifier/identifier.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -134,6 +136,7 @@ export function cfgFactory() {
         KeaDaemonConfigurationPageComponent,
         HostTabComponent,
         ConfigReviewPanelComponent,
+        IdentifierComponent,
     ],
     imports: [
         BrowserModule,
@@ -175,6 +178,7 @@ export function cfgFactory() {
         SelectButtonModule,
         DividerModule,
         TagModule,
+        ToggleButtonModule,
     ],
     providers: [
         {
