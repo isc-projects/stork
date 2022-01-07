@@ -94,6 +94,10 @@ func addTestHosts(t *testing.T, db *pg.DB) []Host {
 					Type:  "duid",
 					Value: []byte{1, 2, 3, 4},
 				},
+				{
+					Type:  "flex-id",
+					Value: []byte{0x51, 0x52, 0x53, 0x54},
+				},
 			},
 			IPReservations: []IPReservation{
 				{
@@ -536,6 +540,22 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	returned[1].Subnet = nil
 	require.Contains(t, returned, hosts[0])
 	require.Contains(t, returned, hosts[2])
+
+	// Filter by partial flex-id using textual format.
+	filterText = "QRS"
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, returned, 1)
+	require.Contains(t, returned, hosts[3])
+
+	// The same host should be returned for the filter text in hex format.
+	filterText = "51:52:53"
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, returned, 1)
+	require.Contains(t, returned, hosts[3])
 }
 
 // Test that page of the hosts can be global/not global hosts.

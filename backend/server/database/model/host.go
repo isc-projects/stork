@@ -349,12 +349,12 @@ func GetHostsByDaemonID(dbi dbops.DBI, daemonID int64, dataSource string) ([]Hos
 // this value is set to nil all subnets are returned.  The value of 0
 // indicates that only global hosts are to be returned. Filtering text
 // allows for searching hosts by reserved IP addresses, host identifiers
-// specified using hexadecimal digits and hostnames. It is allowed to
-// specify colons while searching for hosts by host identifiers. If
-// global flag is true then only hosts from the global scope are returned
-// (i.e. not assigned to any subnet), if false then only hosts from
-// subnets are returned. sortField allows indicating sort column in
-// database and sortDir allows selection the order of sorting. If
+// (using hexadecimal digits or a textual format) and hostnames. It is
+// allowed to specify colons while searching for hosts by host identifiers.
+// If global flag is true then only hosts from the global scope are
+// returned (i.e. not assigned to any subnet), if false then only hosts
+// from subnets are returned. sortField allows indicating sort column
+// in database and sortDir allows selection the order of sorting. If
 // sortField is empty then id is used for sorting. If SortDirAny is
 // used then ASC order is used.
 func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *int64, filterText *string, global *bool, sortField string, sortDir SortDirEnum) ([]Host, int64, error) {
@@ -402,6 +402,7 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *i
 			q = q.WhereOr("text(r.address) LIKE ?", "%"+*filterText+"%").
 				WhereOr("i.type::text LIKE ?", "%"+*filterText+"%").
 				WhereOr("encode(i.value, 'hex') LIKE ?", "%"+colonlessFilterText+"%").
+				WhereOr("encode(i.value, 'escape') LIKE ?", "%"+*filterText+"%").
 				WhereOr("host.hostname LIKE ?", "%"+*filterText+"%")
 			return q, nil
 		})
