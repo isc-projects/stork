@@ -6,12 +6,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-ce
 ARG CS_REPO_ACCESS_TOKEN
 RUN curl -1sLf "https://dl.cloudsmith.io/${CS_REPO_ACCESS_TOKEN}/isc/kea-2-0-prv/cfg/setup/bash.deb.sh" | bash
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        isc-kea-dhcp4-server=2.0.0-isc20210927143053 \
-        isc-kea-ctrl-agent=2.0.0-isc20210927143053 \
-        isc-kea-admin=2.0.0-isc20210927143053 \
-        isc-kea-premium-host-cmds=2.0.0-isc20210927143053 \
-        isc-kea-premium-forensic-log=2.0.0-isc20210927143053 \
-        isc-kea-common=2.0.0-isc20210927143053 \
+        isc-kea-dhcp4-server=2.0.1-isc20211214132435 \
+        isc-kea-ctrl-agent=2.0.1-isc20211214132435 \
+        isc-kea-admin=2.0.1-isc20211214132435 \
+        isc-kea-premium-host-cmds=2.0.1-isc20211214132435 \
+        isc-kea-premium-forensic-log=2.0.1-isc20211214132435 \
+        isc-kea-common=2.0.1-isc20211214132435 \
         && mkdir -p /var/run/kea/
 # Tell CA to listen on all interfaces.
 RUN perl -pi -e 's/127\.0\.0\.1/0\.0\.0\.0/g' /etc/kea/kea-ctrl-agent.conf
