@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core'
 
-import { datetimeToLocal } from '../utils'
+import { clamp, datetimeToLocal } from '../utils'
 
 /**
  * Component that presents subnet as a bar with a sub-bar that shows utilizations in %.
@@ -22,14 +22,18 @@ export class SubnetBarComponent {
     set subnet(subnet) {
         this._subnet = subnet
 
-        const util = subnet.addrUtilization ? subnet.addrUtilization : 0
-        const util2 = Math.floor(util)
+        const util: number = subnet.addrUtilization ? subnet.addrUtilization : 0
 
         const style = {
-            width: util + '%',
+            // In some cases the utilization may be incorrect - less than
+            // zero or greater than 100%. We need to truncate the value
+            // to avoid a subnet bar overlapping other elements.
+            width: clamp(util, 0, 100) + '%',
         }
 
-        if (util > 90) {
+        if (util > 100) {
+            style['background-color'] = '#7C9FDE' // blue-ish
+        } else if (util > 90) {
             style['background-color'] = '#faa' // red-ish
         } else if (util > 80) {
             style['background-color'] = '#ffcf76' // orange-ish

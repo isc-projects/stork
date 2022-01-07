@@ -340,3 +340,10 @@ export function copyToClipboard(textEl) {
     document.execCommand('copy')
     textEl.setSelectionRange(0, 0)
 }
+
+/**
+ * Clamps number within the inclusive lower and upper bounds.
+ */
+export function clamp(value: number, lower: number, upper: number): number {
+    return Math.min(upper, Math.max(value, lower))
+}
