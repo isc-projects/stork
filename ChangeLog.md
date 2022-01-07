@@ -1,8 +1,16 @@
+* 188 [bug] slawek
+
+    Fixed the UI overlapping when subnet utilization is greater than 100%.
+    It improves the usability of the dashboard until the utilization
+    problems are finally resolved.
+    (Gitlab #560)
+
 * 187 [func] marcin
 
     Config reviews are scheduled automatically after getting updated
     host reservations via the host_cmds hooks library.
     (Gitlab #680)
+
 
 * 186 [func] slawek
 
