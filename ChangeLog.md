@@ -1,3 +1,11 @@
+* 189 [func] marcin
+
+    Various DHCP client identifiers (e.g. flex-id, circuit-id) can
+    be displayed in a textual format and toggled between this and
+    the hexadecimal format. It is now also possible to search host
+    reservations by an identifier using the textual format.
+    (Gitlab #639)
+
 * 188 [bug] slawek
 
     Fixed the UI overlapping when subnet utilization is greater than 100%.
