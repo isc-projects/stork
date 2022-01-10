@@ -348,6 +348,8 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 		DoneCollector: make(chan bool),
 		Wg:            &sync.WaitGroup{},
 		Registry:      prometheus.NewRegistry(),
+		Adr4StatsMap:  nil,
+		Adr6StatsMap:  nil,
 	}
 
 	factory := promauto.With(pke.Registry)
@@ -435,105 +437,108 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 	pktStatsMap["pkt6-dhcpv4-query-received"] = statDescr{Stat: packets4o6ReceivedTotal, Operation: "query"}
 	pktStatsMap["pkt6-dhcpv4-response-received"] = statDescr{Stat: packets4o6ReceivedTotal, Operation: "response"}
 
-	// addresses dhcp4
-	adr4StatsMap := make(map[string]*prometheus.GaugeVec)
-	adr4StatsMap["assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp4",
-		Name:      "addresses_assigned_total",
-		Help:      "Assigned addresses",
-	}, []string{"subnet"})
-	adr4StatsMap["declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp4",
-		Name:      "addresses_declined_total",
-		Help:      "Declined counts",
-	}, []string{"subnet"})
-	adr4StatsMap["reclaimed-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp4",
-		Name:      "addresses_declined_reclaimed_total",
-		Help:      "Declined addresses that were reclaimed",
-	}, []string{"subnet"})
-	adr4StatsMap["reclaimed-leases"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp4",
-		Name:      "addresses_reclaimed_total",
-		Help:      "Expired addresses that were reclaimed",
-	}, []string{"subnet"})
-	adr4StatsMap["total-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp4",
-		Name:      "addresses_total",
-		Help:      "Size of subnet address pool",
-	}, []string{"subnet"})
-	adr4StatsMap["cumulative-assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp4",
-		Name:      "cumulative_addresses_assigned_total",
-		Help:      "Cumulative number of assigned addresses since server startup",
-	}, []string{"subnet"})
-
-	// addresses dhcp6
-	adr6StatsMap := make(map[string]*prometheus.GaugeVec)
-	adr6StatsMap["total-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp6",
-		Name:      "na_total",
-		Help:      "'Size of non-temporary address pool",
-	}, []string{"subnet"})
-	adr6StatsMap["assigned-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp6",
-		Name:      "na_assigned_total",
-		Help:      "Assigned non-temporary addresses (IA_NA)",
-	}, []string{"subnet"})
-	adr6StatsMap["total-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp6",
-		Name:      "pd_total",
-		Help:      "Size of prefix delegation pool",
-	}, []string{"subnet"})
-	adr6StatsMap["assigned-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp6",
-		Name:      "pd_assigned_total",
-		Help:      "Assigned prefix delegations (IA_PD)",
-	}, []string{"subnet"})
-	adr6StatsMap["reclaimed-leases"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp6",
-		Name:      "addresses_reclaimed_total",
-		Help:      "Expired addresses that were reclaimed",
-	}, []string{"subnet"})
-	adr6StatsMap["declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp6",
-		Name:      "addresses_declined_total",
-		Help:      "Declined counts",
-	}, []string{"subnet"})
-	adr6StatsMap["reclaimed-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp6",
-		Name:      "addresses_declined_reclaimed_total",
-		Help:      "Declined addresses that were reclaimed",
-	}, []string{"subnet"})
-	adr6StatsMap["cumulative-assigned-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp6",
-		Name:      "cumulative_nas_assigned_total",
-		Help:      "Cumulative number of assigned NA addresses since server startup",
-	}, []string{"subnet"})
-	adr6StatsMap["cumulative-assigned-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: AppTypeKea,
-		Subsystem: "dhcp6",
-		Name:      "cumulative_pds_assigned_total",
-		Help:      "Cumulative number of assigned PD prefixes since server startup",
-	}, []string{"subnet"})
-
 	pke.PktStatsMap = pktStatsMap
-	pke.Adr4StatsMap = adr4StatsMap
-	pke.Adr6StatsMap = adr6StatsMap
+
+	if settings.Bool("prometheus-kea-exporter-per-subnet-stats") {
+		// addresses dhcp4
+		adr4StatsMap := make(map[string]*prometheus.GaugeVec)
+		adr4StatsMap["assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp4",
+			Name:      "addresses_assigned_total",
+			Help:      "Assigned addresses",
+		}, []string{"subnet"})
+		adr4StatsMap["declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp4",
+			Name:      "addresses_declined_total",
+			Help:      "Declined counts",
+		}, []string{"subnet"})
+		adr4StatsMap["reclaimed-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp4",
+			Name:      "addresses_declined_reclaimed_total",
+			Help:      "Declined addresses that were reclaimed",
+		}, []string{"subnet"})
+		adr4StatsMap["reclaimed-leases"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp4",
+			Name:      "addresses_reclaimed_total",
+			Help:      "Expired addresses that were reclaimed",
+		}, []string{"subnet"})
+		adr4StatsMap["total-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp4",
+			Name:      "addresses_total",
+			Help:      "Size of subnet address pool",
+		}, []string{"subnet"})
+		adr4StatsMap["cumulative-assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp4",
+			Name:      "cumulative_addresses_assigned_total",
+			Help:      "Cumulative number of assigned addresses since server startup",
+		}, []string{"subnet"})
+
+		// addresses dhcp6
+		adr6StatsMap := make(map[string]*prometheus.GaugeVec)
+		adr6StatsMap["total-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "na_total",
+			Help:      "'Size of non-temporary address pool",
+		}, []string{"subnet"})
+		adr6StatsMap["assigned-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "na_assigned_total",
+			Help:      "Assigned non-temporary addresses (IA_NA)",
+		}, []string{"subnet"})
+		adr6StatsMap["total-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "pd_total",
+			Help:      "Size of prefix delegation pool",
+		}, []string{"subnet"})
+		adr6StatsMap["assigned-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "pd_assigned_total",
+			Help:      "Assigned prefix delegations (IA_PD)",
+		}, []string{"subnet"})
+		adr6StatsMap["reclaimed-leases"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "addresses_reclaimed_total",
+			Help:      "Expired addresses that were reclaimed",
+		}, []string{"subnet"})
+		adr6StatsMap["declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "addresses_declined_total",
+			Help:      "Declined counts",
+		}, []string{"subnet"})
+		adr6StatsMap["reclaimed-declined-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "addresses_declined_reclaimed_total",
+			Help:      "Declined addresses that were reclaimed",
+		}, []string{"subnet"})
+		adr6StatsMap["cumulative-assigned-nas"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "cumulative_nas_assigned_total",
+			Help:      "Cumulative number of assigned NA addresses since server startup",
+		}, []string{"subnet"})
+		adr6StatsMap["cumulative-assigned-pds"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: AppTypeKea,
+			Subsystem: "dhcp6",
+			Name:      "cumulative_pds_assigned_total",
+			Help:      "Cumulative number of assigned PD prefixes since server startup",
+		}, []string{"subnet"})
+
+		pke.Adr4StatsMap = adr4StatsMap
+		pke.Adr6StatsMap = adr6StatsMap
+	}
 
 	// prepare http handler
 	mux := http.NewServeMux()
@@ -648,7 +653,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 			} else {
 				log.Printf("encountered unsupported stat: %s", statName)
 			}
-		case strings.HasPrefix(statName, "subnet["):
+		case dhcpStatMap != nil && strings.HasPrefix(statName, "subnet["):
 			// if this is address per subnet stat
 			re := regexp.MustCompile(`subnet\[(\d+)\]\.(.+)`)
 			matches := re.FindStringSubmatch(statName)
