@@ -102,6 +102,9 @@ describe('SubnetBarComponent', () => {
         expect(component.tooltip).toContain('3')
     }),
         it('subnet bar cannot extend beyond the container', async () => {
+            // Returns a IPv6 subnet mock with given utilization. The utilization
+            // should be a percentage value (from 0% to 100%) of ratio assigned NAs/PDs
+            // and total NAs/PDs.
             function getSubnet(utilization: number) {
                 return {
                     addrUtilization: utilization,
@@ -141,18 +144,25 @@ describe('SubnetBarComponent', () => {
                 return false
             }
 
+            // Utilization below 100%, usually situation.
             component.subnet = getSubnet(50)
             fixture.detectChanges()
             expect(extendBeyond()).toBeFalse()
 
+            // Utilization equals to 100%, the subnet bar should
+            // have a maximal width as allowed by the container.
             component.subnet = getSubnet(100)
             fixture.detectChanges()
             expect(extendBeyond()).toBeFalse()
 
+            // Utilization above 100%, unusual case, but it shouldn't
+            // cause UI glitches.
             component.subnet = getSubnet(150)
             fixture.detectChanges()
             expect(extendBeyond()).toBeFalse()
 
+            // Utilization below 0%, invalid or buggy utilization.
+            // Anyway, UI shouldn't be broken.
             component.subnet = getSubnet(-50)
             fixture.detectChanges()
             expect(extendBeyond()).toBeFalse()

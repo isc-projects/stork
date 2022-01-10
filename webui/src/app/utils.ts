@@ -343,6 +343,8 @@ export function copyToClipboard(textEl) {
 
 /**
  * Clamps number within the inclusive lower and upper bounds.
+ * @value is a number to clamp. If the value is between @lower and @upper
+ * then the function returns @value as is. Otherwise, it returns the nearest from @lower and @upper .
  */
 export function clamp(value: number, lower: number, upper: number): number {
     return Math.min(upper, Math.max(value, lower))
