@@ -194,13 +194,9 @@ export class IdentifierComponent implements OnInit {
      * @return Optional label and an identifier displayed by the component.
      */
     get displayedText(): string {
-        let text = ''
+        let text = this._currentId
         if (this.label != '') {
-            text = this.label + '=('
-        }
-        text += this._currentId
-        if (this.label != '') {
-            text += ')'
+            text = `${this.label}=(${text})`
         }
         return text
     }
