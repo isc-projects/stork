@@ -634,9 +634,7 @@ func (d *dispatcherImpl) UnregisterChecker(selector DispatchGroupSelector, check
 				// these triggers.
 				for _, trigger := range group.checkers[i].triggers {
 					if _, ok := group.triggerRefCounts[trigger]; ok {
-						if group.triggerRefCounts[trigger] > 0 {
-							group.triggerRefCounts[trigger]--
-						}
+						group.triggerRefCounts[trigger]--
 					}
 				}
 				group.checkers = append(group.checkers[:i], group.checkers[i+1:]...)
