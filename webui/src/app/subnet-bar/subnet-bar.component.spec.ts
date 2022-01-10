@@ -120,7 +120,7 @@ describe('SubnetBarComponent', () => {
                 }
             }
 
-            // Check if the br extend beyond the container.
+            // Check if the bar extends beyond the container.
             function extendBeyond(): boolean {
                 const parent = fixture.debugElement.query(By.css('.utilization'))
                 const parentElement = parent.nativeElement as Element
