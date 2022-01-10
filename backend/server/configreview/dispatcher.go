@@ -165,6 +165,13 @@ type dispatchGroup struct {
 	triggerRefCounts map[Trigger]int64
 }
 
+// Creates new dispatch group instance.
+func newDispatchGroup() *dispatchGroup {
+	return &dispatchGroup{
+		triggerRefCounts: make(map[Trigger]int64),
+	}
+}
+
 // Stringer implementation for a dispatchGroup. It lists checker names
 // as a slice. It excludes checker function pointers making the output
 // consistent across function runs. The dispatcher uses this function
@@ -598,10 +605,7 @@ func NewDispatcher(db *dbops.PgDB) Dispatcher {
 // list available checkers and/or selectively disable them.
 func (d *dispatcherImpl) RegisterChecker(selector DispatchGroupSelector, checkerName string, triggers Triggers, checkFn func(*ReviewContext) (*Report, error)) {
 	if group := d.getGroup(selector); group == nil {
-		d.groups[selector] = &dispatchGroup{
-			triggerRefCounts: make(map[Trigger]int64),
-		}
-		d.groups[selector].checkers = []*checker{}
+		d.groups[selector] = newDispatchGroup()
 	}
 	d.groups[selector].checkers = append(d.groups[selector].checkers,
 		&checker{
