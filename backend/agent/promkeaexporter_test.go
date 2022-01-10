@@ -312,7 +312,7 @@ func newFakeKeaCASender() *FakeKeaCASender {
 
 // Increment call counter and return fixed data.
 func (s *FakeKeaCASender) sendCommandToKeaCA(ctrl *AccessPoint, request string) ([]byte, error) {
-	s.callCount += 1
+	s.callCount++
 	return s.payload, s.err
 }
 

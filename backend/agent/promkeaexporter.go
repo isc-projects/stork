@@ -298,7 +298,7 @@ func (l *lazySubnetNameLookup) getName(subnetID int) (string, bool) {
 		return "", false
 	}
 
-	name, ok := names[int(subnetID)]
+	name, ok := names[subnetID]
 	return name, ok
 }
 
