@@ -68,6 +68,10 @@ Equivalent environment variables are listed in square brackets, where applicable
    how often the agent collects stats from Kea, in seconds. (default: 10)
    [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL]
 
+`` --prometheus-kea-exporter-per-subnet-stats=``
+  enable or disable collecting per subnet stats from Kea; (default: true)
+  [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS]
+
 ``Prometheus BIND 9 Exporter`` flags:
 
 ``--prometheus-bind9-exporter-address=``

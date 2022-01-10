@@ -150,6 +150,12 @@ func setupApp() *cli.App {
 				Usage:   "specifies how often the agent collects stats from Kea, in seconds",
 				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL"},
 			},
+			&cli.BoolFlag{
+				Name:    "prometheus-kea-exporter-per-subnet-stats",
+				Value:   true,
+				Usage:   "enable or disable collecting per subnet stats from Kea",
+				EnvVars: []string{"STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS"},
+			},
 			// Prometheus Bind 9 exporter settings
 			&cli.StringFlag{
 				Name:    "prometheus-bind9-exporter-address",
