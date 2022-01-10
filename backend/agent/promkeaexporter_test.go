@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	log "github.com/sirupsen/logrus"
@@ -276,4 +277,137 @@ func TestSubnetPrefixInPrometheusMetrics(t *testing.T) {
 
 	// Assert
 	require.Equal(t, 13.0, testutil.ToFloat64(metric))
+}
+
+// Fake Kea CA request sender.
+type FakeKeaCASender struct {
+	payload   []byte
+	err       error
+	callCount int64
+}
+
+func newFakeKeaCASender() *FakeKeaCASender {
+	defaultResponse := []subnetListJSON{
+		{
+			Result: 0,
+			Text:   nil,
+			Arguments: &subnetListJSONArguments{
+				Subnets: []subnetListJSONArgumentsSubnet{
+					{
+						ID:     1,
+						Subnet: "foo",
+					},
+					{
+						ID:     42,
+						Subnet: "bar",
+					},
+				},
+			},
+		},
+	}
+	data, _ := json.Marshal(defaultResponse)
+
+	return &FakeKeaCASender{data, nil, 0}
+}
+
+// Increment call counter and return fixed data.
+func (s *FakeKeaCASender) sendCommandToKeaCA(ctrl *AccessPoint, request string) ([]byte, error) {
+	s.callCount += 1
+	return s.payload, s.err
+}
+
+// Test that the lazy subnet name lookup is constructed properly.
+func TestNewLazySubnetNameLookup(t *testing.T) {
+	// Arrange
+	sender := newFakeKeaCASender()
+	accessPoint := &AccessPoint{Address: "foo"}
+
+	// Act
+	lookup := newLazySubnetNameLookup(sender, accessPoint)
+
+	// Assert
+	require.NotNil(t, lookup)
+	require.Zero(t, sender.callCount)
+}
+
+// Test that the subnet names are retrivied.
+func TestLazySubnetNameLookupFetchesNames(t *testing.T) {
+	// Arrange
+	sender := newFakeKeaCASender()
+	accessPoint := &AccessPoint{Address: "foo"}
+	lookup := newLazySubnetNameLookup(sender, accessPoint)
+
+	// Act
+	name1, ok1 := lookup.getName(1)
+	name42, ok42 := lookup.getName(42)
+	name0, ok0 := lookup.getName(0)
+	nameMinus1, okMinus1 := lookup.getName(-1)
+
+	// Assert
+	require.True(t, ok1)
+	require.EqualValues(t, "foo", name1)
+
+	require.True(t, ok42)
+	require.EqualValues(t, "bar", name42)
+
+	require.False(t, ok0)
+	require.Empty(t, name0)
+
+	require.False(t, okMinus1)
+	require.Empty(t, nameMinus1)
+}
+
+// Test that subnet names are fetched only once.
+func TestLazySubnetNameLookupFetchesOnlyOnce(t *testing.T) {
+	// Arrange
+	sender := newFakeKeaCASender()
+	accessPoint := &AccessPoint{Address: "foo"}
+	lookup := newLazySubnetNameLookup(sender, accessPoint)
+
+	// Act
+	_, _ = lookup.getName(1)
+	_, _ = lookup.getName(1)
+	_, _ = lookup.getName(1)
+	_, _ = lookup.getName(42)
+	_, _ = lookup.getName(100)
+
+	// Assert
+	require.EqualValues(t, 1, sender.callCount)
+}
+
+// Test that subnet names are fetched only once even if an error occurs.
+func TestLazySubnetNameLookupFetchesOnlyOnceEvenIfError(t *testing.T) {
+	// Arrange
+	sender := newFakeKeaCASender()
+	sender.payload = nil
+	sender.err = errors.New("baz")
+	accessPoint := &AccessPoint{Address: "foo"}
+	lookup := newLazySubnetNameLookup(sender, accessPoint)
+
+	for _, subnetID := range []int{1, 1, 1, 42, 100} {
+		// Act
+		_, ok := lookup.getName(subnetID)
+		// Assert
+		require.False(t, ok)
+	}
+	require.EqualValues(t, 1, sender.callCount)
+}
+
+// Test that subnet names are fetched again after change the family.
+func TestLazySubnetNameLookupFetchesAgainWhenFamilyChanged(t *testing.T) {
+	// Arrange
+	sender := newFakeKeaCASender()
+	accessPoint := &AccessPoint{Address: "foo"}
+	lookup := newLazySubnetNameLookup(sender, accessPoint)
+
+	// Act
+	_, _ = lookup.getName(1)
+	lookup.setFamily(6)
+	sender.payload = nil
+	name, ok := lookup.getName(1)
+
+	// Asset
+	require.False(t, ok)
+	require.Empty(t, name)
+	require.EqualValues(t, 2, sender.callCount)
 }

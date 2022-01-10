@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -32,32 +33,32 @@ func NewSubnetList() SubnetList {
 	return make(SubnetList)
 }
 
+// JSON structures of Kea `subnet4-list` and `subnet6-list` response.
+type subnetListJSONArgumentsSubnet struct {
+	ID     int
+	Subnet string
+}
+
+type subnetListJSONArguments struct {
+	Subnets []subnetListJSONArgumentsSubnet
+}
+
+type subnetListJSON struct {
+	Result    int
+	Text      *string
+	Arguments *subnetListJSONArguments
+}
+
 // UnmarshalJSON implements json.Unmarshaler. It unpacks the Kea response
 // to map.
 func (l *SubnetList) UnmarshalJSON(b []byte) error {
-	// JSON structures of Kea `subnet4-list` and `subnet6-list` response.
-	type SubnetListJSONArgumentsSubnet struct {
-		ID     int
-		Subnet string
-	}
-
-	type SubnetListJSONArguments struct {
-		Subnets []SubnetListJSONArgumentsSubnet
-	}
-
-	type SubnetListJSON struct {
-		Result    int
-		Text      *string
-		Arguments *SubnetListJSONArguments
-	}
-
 	// Unmarshal must be called with existing instance.
-	if l == nil {
-		return pkgerrors.New("receiver is nil")
+	if *l == nil {
+		*l = NewSubnetList()
 	}
 
 	// Standard unmarshal
-	var dhcpLabelsJSONs []SubnetListJSON
+	var dhcpLabelsJSONs []subnetListJSON
 	err := json.Unmarshal(b, &dhcpLabelsJSONs)
 	// Parse JSON content
 	if err != nil {
@@ -208,6 +209,113 @@ func (r *GetAllStatisticsResponse) UnmarshalJSON(b []byte) error {
 type statDescr struct {
 	Stat      *prometheus.GaugeVec
 	Operation string
+}
+
+// subnetNameLookup is the interface that wraps the subnet name lookup methods.
+type subnetNameLookup interface {
+	// Returns the subnet name based on the subnet ID and IP family.
+	// If the name isn't available returns the empty string and false value.
+	getName(subnetID int) (string, bool)
+	// Returns the subnet name based on the subnet ID and IP family.
+	// If the name isn't available returns default name.
+	getNameOrDefault(subnetID int) string
+	// Sets the IP family to use during lookup (4 or 6).
+	setFamily(int8)
+}
+
+// An object that implements this interface can send requests to the Kea CA.
+type keaCommandSender interface {
+	sendCommandToKeaCA(ctrl *AccessPoint, request string) ([]byte, error)
+}
+
+// Subnet name lookup that fetches the subnet names only if necessary.
+// The request is executed on the first occurrence of a name from an IP family.
+// The results are cached; no more requests are made until change IP family.
+// Therefore, the lifetime of instances should be short to avoid out-of-date names in a cache.
+type lazySubnetNameLookup struct {
+	sender      keaCommandSender
+	accessPoint *AccessPoint
+	// Key is family - 4 or 6. If a value for a specific family doesn't exist it means
+	// that the data aren't fetched yet. If the value is nil it means that data were
+	// requested, but are unavailable.
+	cachedFamily SubnetList
+	// Indicates that the family names was requested.
+	cached bool
+	// Family to use during lookups.
+	family int8
+}
+
+// Constructs the lazySubnetNameLookup instance. It accepts the Kea CA request sender
+// and specific access point.
+func newLazySubnetNameLookup(sender keaCommandSender, ap *AccessPoint) subnetNameLookup {
+	return &lazySubnetNameLookup{sender, ap, nil, false, 4}
+}
+
+// Fetches the names from Kea CA and stores the response in a cache.
+// If any error occurs or names are unavailable then the cache for specific family
+// is set to nil. Returns fetched subnet names.
+// Family should be 4 or 6.
+func (l *lazySubnetNameLookup) fetchAndCacheNames() SubnetList {
+	// Request to subnet labels. The above query returns only sequential, numeric IDs that aren't human-friendly.
+	var request string
+	if l.family == 4 {
+		request = `{
+			"command":"subnet4-list",
+			"service":["dhcp4"],
+			"arguments": {}
+		}`
+	} else {
+		request = `{
+			"command":"subnet6-list",
+			"service":["dhcp6"],
+			"arguments": {}
+		}`
+	}
+
+	response, err := l.sender.sendCommandToKeaCA(l.accessPoint, request)
+	var target SubnetList
+	if err == nil {
+		err = json.Unmarshal(response, &target)
+		if err != nil {
+			log.Errorf("problem with parsing DHCP%d labels from kea: %+v", l.family, err)
+		}
+	}
+
+	// Cache results
+	l.cachedFamily = target
+	l.cached = true
+	return target
+}
+
+// Returns the subnet name for specific subnet ID and IP family (4 or 6).
+// If the name is unavailable then it returns empty string and false.
+func (l *lazySubnetNameLookup) getName(subnetID int) (string, bool) {
+	names := l.cachedFamily
+	if !l.cached {
+		names = l.fetchAndCacheNames()
+	}
+	if names == nil {
+		return "", false
+	}
+
+	name, ok := names[int(subnetID)]
+	return name, ok
+}
+
+// Returns the subnet name if available or subnet ID as string.
+func (l *lazySubnetNameLookup) getNameOrDefault(subnetID int) string {
+	name, ok := l.getName(subnetID)
+	if ok {
+		return name
+	}
+
+	return fmt.Sprint(subnetID)
+}
+
+// Sets the familly used during name lookups.
+func (l *lazySubnetNameLookup) setFamily(family int8) {
+	l.family = family
+	l.cached = false
 }
 
 // Main structure for Prometheus Kea Exporter. It holds its settings,
@@ -523,7 +631,7 @@ func (pke *PromKeaExporter) statsCollectorLoop() {
 }
 
 // setDaemonStats stores the stat values from a daemon in the proper prometheus object.
-func (pke *PromKeaExporter) setDaemonStats(isDhcp4 bool, response map[string]GetAllStatisticResponseItemValue, ignoredStats map[string]bool, subnetLabelMap map[int]string) {
+func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.GaugeVec, response map[string]GetAllStatisticResponseItemValue, ignoredStats map[string]bool, nameLookup subnetNameLookup) {
 	for statName, statEntry := range response {
 		// skip ignored stats
 		if ignoredStats[statName] {
@@ -550,21 +658,10 @@ func (pke *PromKeaExporter) setDaemonStats(isDhcp4 bool, response map[string]Get
 			subnetID, err := strconv.Atoi(subnetIDRaw)
 			subnetName := subnetIDRaw
 			if err == nil {
-				label, ok := subnetLabelMap[subnetID]
-				if ok {
-					subnetName = label
-				}
+				subnetName = nameLookup.getNameOrDefault(subnetID)
 			}
 
-			var stat *prometheus.GaugeVec
-			var ok bool
-			if isDhcp4 {
-				stat, ok = pke.Adr4StatsMap[metricName]
-			} else {
-				stat, ok = pke.Adr6StatsMap[metricName]
-			}
-
-			if ok {
+			if stat, ok := (*dhcpStatMap)[metricName]; ok {
 				stat.With(prometheus.Labels{"subnet": subnetName}).Set(statEntry.Value)
 			} else {
 				log.Printf("encountered unsupported stat: %s", metricName)
@@ -594,18 +691,6 @@ func (pke *PromKeaExporter) collectStats() error {
              "arguments": {}
         }`
 
-	// Request to subnet labels. The above query returns only sequential, numeric IDs that aren't human-friendly.
-	requestDhcp4Labels := `{
-			"command":"subnet4-list",
-			"service":["dhcp4"],
-			"arguments": {}
-		}`
-	requestDhcp6Labels := `{
-		"command":"subnet6-list",
-		"service":["dhcp6"],
-		"arguments": {}
-	}`
-
 	// go through all kea apps discovered by monitor and query them for stats
 	apps := pke.AppMonitor.GetApps()
 	for _, app := range apps {
@@ -629,7 +714,7 @@ func (pke *PromKeaExporter) collectStats() error {
 			continue
 		}
 
-		// parse response
+		// Parse response
 		var response GetAllStatisticsResponse
 		err = json.Unmarshal(responseData, &response)
 		if err != nil {
@@ -638,31 +723,20 @@ func (pke *PromKeaExporter) collectStats() error {
 			continue
 		}
 
+		// Prepare subnet name lookup
+		subnetNameLookup := newLazySubnetNameLookup(pke, ctrl)
+
 		// Go though responses from daemons (it can have none or some responses from dhcp4/dhcp6)
 		// and store collected stats in Prometheus structures.
 		// Fetching also DHCP subnet prefixes. It may fail if Kea doesn't support
 		// required commands.
 		if response.Dhcp4 != nil {
-			dhcp4Labels := NewSubnetList()
-			responseDhcp4Labels, err := pke.sendCommandToKeaCA(ctrl, requestDhcp4Labels)
-			if err == nil {
-				err = json.Unmarshal(responseDhcp4Labels, &dhcp4Labels)
-				if err != nil {
-					log.Errorf("problem with parsing DHCP4 labels from kea: %+v", err)
-				}
-			}
-			pke.setDaemonStats(true, response.Dhcp4, ignoredStats, dhcp4Labels)
+			subnetNameLookup.setFamily(4)
+			pke.setDaemonStats(&pke.Adr4StatsMap, response.Dhcp4, ignoredStats, subnetNameLookup)
 		}
 		if response.Dhcp6 != nil {
-			dhcp6Labels := NewSubnetList()
-			responseDhcp6Labels, err := pke.sendCommandToKeaCA(ctrl, requestDhcp6Labels)
-			if err == nil {
-				err = json.Unmarshal(responseDhcp6Labels, &dhcp6Labels)
-				if err != nil {
-					log.Errorf("problem with parsing DHCP6 labels from kea: %+v", err)
-				}
-			}
-			pke.setDaemonStats(false, response.Dhcp6, ignoredStats, dhcp6Labels)
+			subnetNameLookup.setFamily(6)
+			pke.setDaemonStats(&pke.Adr6StatsMap, response.Dhcp6, ignoredStats, subnetNameLookup)
 		}
 	}
 	return lastErr
