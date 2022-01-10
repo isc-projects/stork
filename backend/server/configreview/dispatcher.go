@@ -174,8 +174,8 @@ func (g dispatchGroup) String() string {
 // Checks if the dispatch group has checkers registered that are launched
 // for the specified trigger.
 func (g *dispatchGroup) hasCheckersForTrigger(trigger Trigger) bool {
-	if _, ok := g.triggerRefCounts[trigger]; ok {
-		return g.triggerRefCounts[trigger] > 0
+	if count, ok := g.triggerRefCounts[trigger]; ok {
+		return count > 0
 	}
 	return false
 }
