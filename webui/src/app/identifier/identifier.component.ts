@@ -171,8 +171,7 @@ export class IdentifierComponent implements OnInit {
                 return null
             }
             if (charCode < 32 || charCode > 126) {
-                outputValue = value
-                break
+                return value
             }
             outputValue += String.fromCharCode(charCode)
         }
