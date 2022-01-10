@@ -399,11 +399,11 @@ func GetHostsByPage(dbi dbops.DBI, offset, limit int64, appID int64, subnetID *i
 		q = q.Join("INNER JOIN ip_reservation AS r ON r.host_id = host.id")
 		q = q.Join("INNER JOIN host_identifier AS i ON i.host_id = host.id")
 		q = q.WhereGroup(func(q *orm.Query) (*orm.Query, error) {
-			q = q.WhereOr("text(r.address) LIKE ?", "%"+*filterText+"%").
-				WhereOr("i.type::text LIKE ?", "%"+*filterText+"%").
-				WhereOr("encode(i.value, 'hex') LIKE ?", "%"+colonlessFilterText+"%").
-				WhereOr("encode(i.value, 'escape') LIKE ?", "%"+*filterText+"%").
-				WhereOr("host.hostname LIKE ?", "%"+*filterText+"%")
+			q = q.WhereOr("text(r.address) ILIKE ?", "%"+*filterText+"%").
+				WhereOr("i.type::text ILIKE ?", "%"+*filterText+"%").
+				WhereOr("encode(i.value, 'hex') ILIKE ?", "%"+colonlessFilterText+"%").
+				WhereOr("encode(i.value, 'escape') ILIKE ?", "%"+*filterText+"%").
+				WhereOr("host.hostname ILIKE ?", "%"+*filterText+"%")
 			return q, nil
 		})
 	}

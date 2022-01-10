@@ -9,6 +9,16 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
+// Convenience function checking if the slice of hosts returned from
+// the database contains the given host. It excludes the Subnet value
+// in the returned hosts from the comparison.
+func hostsContain(t *testing.T, returned []Host, host Host) {
+	for i := range returned {
+		returned[i].Subnet = nil
+	}
+	require.Contains(t, returned, host)
+}
+
 // This function creates multiple hosts used in tests which fetch and
 // filter hosts.
 func addTestHosts(t *testing.T, db *pg.DB) []Host {
@@ -40,7 +50,7 @@ func addTestHosts(t *testing.T, db *pg.DB) []Host {
 				},
 				{
 					Type:  "circuit-id",
-					Value: []byte{1, 2, 3, 4},
+					Value: []byte{0xf1, 0xf2, 0xf3, 0xf4},
 				},
 			},
 			IPReservations: []IPReservation{
@@ -482,10 +492,7 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	require.Len(t, returned, 1)
 	require.NotNil(t, returned[0].Subnet)
 	require.Equal(t, "192.0.2.0/24", returned[0].Subnet.Prefix)
-	// Reset subnet, so as we can use Contain function to compare the rest of the
-	// host information.
-	returned[0].Subnet = nil
-	require.Contains(t, returned, hosts[0])
+	hostsContain(t, returned, hosts[0])
 
 	filterText = "192.0.2"
 	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
@@ -495,11 +502,8 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	require.NotNil(t, returned[0].Subnet)
 	require.Equal(t, "192.0.2.0/24", returned[0].Subnet.Prefix)
 	require.Nil(t, returned[1].Subnet)
-	// Reset subnet, so as we can use Contain function to compare the rest of the
-	// host information.
-	returned[0].Subnet = nil
-	require.Contains(t, returned, hosts[0])
-	require.Contains(t, returned, hosts[1])
+	hostsContain(t, returned, hosts[0])
+	hostsContain(t, returned, hosts[1])
 
 	filterText = "0"
 	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
@@ -513,41 +517,57 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 
 	require.ElementsMatch(t, returned, hosts)
 
+	// Case insensitive address matching.
+	filterText = "2001:Db8:1"
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
+	require.Len(t, returned, 2)
+	hostsContain(t, returned, hosts[2])
+	hostsContain(t, returned, hosts[3])
+
 	// Filter by identifier value.
 	filterText = "01:02:03"
 	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 3, total)
 	require.Len(t, returned, 3)
+	hostsContain(t, returned, hosts[0])
+	hostsContain(t, returned, hosts[2])
+	hostsContain(t, returned, hosts[3])
 
-	// Filter by identifier type.
-	filterText = "dui"
+	// Case insensitive identifier matching.
+	filterText = "F1:f2:F3"
 	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
-	require.Contains(t, returned, hosts[3])
+	hostsContain(t, returned, hosts[0])
 
-	// Filter by hostname.
-	filterText = "example"
+	// Case insensitive identifier type matching.
+	filterText = "DuI"
+	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, returned, 1)
+	hostsContain(t, returned, hosts[3])
+
+	// Case insensitive hostname matching.
+	filterText = "ExamplE"
 	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 2, total)
 	require.Len(t, returned, 2)
-	// Reset subnet, so as we can use Contain function to compare the rest of the
-	// host information.
-	returned[0].Subnet = nil
-	returned[1].Subnet = nil
-	require.Contains(t, returned, hosts[0])
-	require.Contains(t, returned, hosts[2])
+	hostsContain(t, returned, hosts[0])
+	hostsContain(t, returned, hosts[2])
 
-	// Filter by partial flex-id using textual format.
-	filterText = "QRS"
+	// Filter by partial flex-id using textual format (case insensitive).
+	filterText = "qRs"
 	returned, total, err = GetHostsByPage(db, 0, 10, 0, nil, &filterText, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
-	require.Contains(t, returned, hosts[3])
+	hostsContain(t, returned, hosts[3])
 
 	// The same host should be returned for the filter text in hex format.
 	filterText = "51:52:53"
@@ -555,7 +575,7 @@ func TestGetHostsByPageFilteringText(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 1, total)
 	require.Len(t, returned, 1)
-	require.Contains(t, returned, hosts[3])
+	hostsContain(t, returned, hosts[3])
 }
 
 // Test that page of the hosts can be global/not global hosts.
