@@ -635,10 +635,7 @@ func (d *dispatcherImpl) UnregisterChecker(selector DispatchGroupSelector, check
 						}
 					}
 				}
-				newCheckers := make([]*checker, 0)
-				newCheckers = append(newCheckers, group.checkers[:i]...)
-				newCheckers = append(newCheckers, group.checkers[i+1:]...)
-				group.checkers = newCheckers
+				group.checkers = append(group.checkers[:i], group.checkers[i+1:]...)
 				if len(group.checkers) == 0 {
 					delete(d.groups, selector)
 				}
