@@ -101,11 +101,6 @@ export class IdentifierComponent implements OnInit {
     hexFormat = false
 
     /**
-     * No-op constructor.
-     */
-    constructor() {}
-
-    /**
      * A hook invoked during the component initialization.
      *
      * It attempts to parse the input hexValue. If the value is empty or
@@ -117,38 +112,38 @@ export class IdentifierComponent implements OnInit {
     ngOnInit() {
         // Attempt to parse the specified identifier.
         const parsedValue = this._parse(this.hexValue)
-        if (parsedValue === '') {
+        if (parsedValue === null) {
             // The identifier was invalid or empty. Display an error message.
             // It is unlikely because the server should return properly
             // formatted values.
             this._currentId = 'unrecognized hex string'
+            return
+        }
+
+        // If the identifier was parsed correctly we can use it as the
+        // valid identifier in hex format.
+        this._hexId = this.hexValue
+        // The input value is returned when the identifier is valid but
+        // it is not convertible to a textual format.
+        if (parsedValue === this.hexValue) {
+            // In that case switch to the hex format and do not assign
+            // the textual value.
+            this.hexFormat = true
+            this._currentId = this._hexId
         } else {
-            // If the identifier was parsed correctly we can use it as the
-            // valid identifier in hex format.
-            this._hexId = this.hexValue
-            // The input value is returned when the identifier is valid but
-            // it is not convertible to a textual format.
-            if (parsedValue === this.hexValue) {
-                // In that case switch to the hex format and do not assign
-                // the textual value.
+            // The identifier is convertible to a textual format. Mark the
+            // value as convertible to enable the toggle button.
+            this._textId = parsedValue
+            this.convertible = true
+            if (this.defaultHexFormat) {
+                // Use the hex format by default when externally requested
+                // by a caller.
                 this.hexFormat = true
                 this._currentId = this._hexId
             } else {
-                // The identifier is convertible to a textual format. Mark the
-                // value as convertible to enable the toggle button.
-                this._textId = parsedValue
-                this.convertible = true
-                console.info(this.defaultHexFormat)
-                if (this.defaultHexFormat) {
-                    // Use the hex format by default when externally requested
-                    // by a caller.
-                    this.hexFormat = true
-                    this._currentId = this._hexId
-                } else {
-                    // Caller did not request the hex format, so show the textual
-                    // format by default.
-                    this._currentId = this._textId
-                }
+                // Caller did not request the hex format, so show the textual
+                // format by default.
+                this._currentId = this._textId
             }
         }
     }
@@ -160,20 +155,20 @@ export class IdentifierComponent implements OnInit {
      * There must be an even number of digits in the string.
      *
      * @param value input string holding an identifier in the hex format.
-     * @return An empty string when the specified identifier is invalid or
-     * empty; an input string when the identifier is not convertible to a
-     * textual format; otherwise, an identifier converted to a textual format.
+     * @return null if the specified identifier is invalid or empty;
+     * an input string when the identifier is not convertible to a textual
+     * format; otherwise, an identifier converted to a textual format.
      */
-    private _parse(value: string): string {
+    private _parse(value: string): string | null {
         const inputValue = value.replace(/\:|\s/g, '')
         if (inputValue.length === 0 || inputValue.length % 2 !== 0) {
-            return ''
+            return null
         }
         let outputValue = ''
         for (let n = 0; n < inputValue.length; n += 2) {
             const charCode = parseInt(inputValue.substr(n, 2), 16)
             if (isNaN(charCode)) {
-                return ''
+                return null
             }
             if (charCode < 32 || charCode > 126) {
                 outputValue = value
