@@ -39,9 +39,15 @@ type Triggers []Trigger
 // trigger new config review is a manual run from the the UI. The
 // special type, internal run, is used internally by the dispatcher.
 const (
-	internalRun     Trigger = "internal"
-	ManualRun       Trigger = "manual"
-	ConfigModified  Trigger = "config change"
+	// Config review is triggered internally by the dispatcher.
+	internalRun Trigger = "internal"
+	// Config review is triggered manually by a user over REST API.
+	ManualRun Trigger = "manual"
+	// Config review is triggered as a result of the configuration
+	// change.
+	ConfigModified Trigger = "config change"
+	// Config review is triggered as a result of the hosts modifications
+	// in the host database.
 	DBHostsModified Trigger = "host reservations change"
 )
 
