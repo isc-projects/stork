@@ -244,15 +244,12 @@ func GetSubnet(dbi dbops.DBI, subnetID int64) (*Subnet, error) {
 	return subnet, err
 }
 
-// Fetches all subnets associated with the given application by ID.
-// If the family is set to 0 it fetches both IPv4 and IPv6 subnets.
-// Use 4 o 6 to fetch IPv4 or IPv6 specific subnet.
-func GetSubnetsByAppID(dbi dbops.DBI, appID int64, family int) ([]Subnet, error) {
+// Fetches all subnets associated with the given daemon by ID.
+func GetSubnetsByDaemonID(dbi dbops.DBI, daemonID int64) ([]Subnet, error) {
 	subnets := []Subnet{}
 
 	q := dbi.Model(&subnets).
 		Join("INNER JOIN local_subnet AS ls ON ls.subnet_id = subnet.id").
-		Join("INNER JOIN daemon ON ls.daemon_id = daemon.id").
 		Relation("AddressPools", func(q *orm.Query) (*orm.Query, error) {
 			return q.Order("address_pool.id ASC"), nil
 		}).
@@ -261,18 +258,14 @@ func GetSubnetsByAppID(dbi dbops.DBI, appID int64, family int) ([]Subnet, error)
 		}).
 		Relation("SharedNetwork").
 		Relation("LocalSubnets.Daemon.App.AccessPoints").
-		Where("daemon.app_id = ?", appID)
+		Where("ls.daemon_id = ?", daemonID)
 
-	// Optionally filter by IPv4 or IPv6 subnets.
-	if family == 4 || family == 6 {
-		q = q.Where("family(subnet.prefix) = ?", family)
-	}
 	err := q.Select()
 	if err != nil {
 		if errors.Is(err, pg.ErrNoRows) {
 			return nil, nil
 		}
-		err = pkgerrors.Wrapf(err, "problem with getting subnets by app id %d", appID)
+		err = pkgerrors.Wrapf(err, "problem with getting subnets by daemon id %d", daemonID)
 		return nil, err
 	}
 	return subnets, err

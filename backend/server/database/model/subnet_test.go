@@ -369,18 +369,18 @@ func TestDeleteAppFromSubnets(t *testing.T) {
 	require.EqualValues(t, 2, count)
 
 	// Ensure that the associations were removed for the first app.
-	returned, err := GetSubnetsByAppID(db, apps[0].ID, 4)
+	returned, err := GetSubnetsByDaemonID(db, apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 	require.Empty(t, returned)
 
 	// The association should still exist for the second app.
-	returned, err = GetSubnetsByAppID(db, apps[1].ID, 4)
+	returned, err = GetSubnetsByDaemonID(db, apps[1].Daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, returned, 1)
 }
 
-// Test that subnets can be fetched by app ID.
-func TestGetSubnetsByAppID(t *testing.T) {
+// Test that subnets can be fetched by daemon ID.
+func TestGetSubnetsByDaemonID(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -406,20 +406,20 @@ func TestGetSubnetsByAppID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 
-		// Add association of the apps to the subnet.
+		// Add association of the daemons to the subnets.
 		if i < 2 {
-			// First two subnets associated with the first app.
+			// First two subnets associated with the first daemon.
 			err = AddDaemonToSubnet(db, &subnets[i], apps[0].Daemons[0])
 		} else {
-			// Last subnet is only associated with the second app.
+			// Last subnet is only associated with the second daemon.
 			err = AddDaemonToSubnet(db, &subnets[i], apps[1].Daemons[0])
 		}
 		require.NoError(t, err)
 		require.NotZero(t, subnets[i].ID)
 	}
 
-	// Get all IPv4 subnets for this app.
-	returnedSubnets, err := GetSubnetsByAppID(db, apps[0].ID, 4)
+	// Get all IPv4 subnets for the first app.
+	returnedSubnets, err := GetSubnetsByDaemonID(db, apps[0].Daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, returnedSubnets, 2)
 
@@ -432,23 +432,13 @@ func TestGetSubnetsByAppID(t *testing.T) {
 	require.EqualValues(t, apps[0].Daemons[0].ID, returnedSubnets[1].LocalSubnets[0].DaemonID)
 
 	// Get all IPv4 subnets for the second app.
-	returnedSubnets, err = GetSubnetsByAppID(db, apps[1].ID, 4)
+	returnedSubnets, err = GetSubnetsByDaemonID(db, apps[1].Daemons[0].ID)
 	require.NoError(t, err)
 	require.Len(t, returnedSubnets, 1)
 
 	require.Len(t, returnedSubnets[0].LocalSubnets, 1)
 	require.EqualValues(t, 345, returnedSubnets[0].LocalSubnets[0].LocalSubnetID)
 	require.EqualValues(t, apps[1].Daemons[0].ID, returnedSubnets[0].LocalSubnets[0].DaemonID)
-
-	// Get all subnets for the first app.
-	returnedSubnets, err = GetSubnetsByAppID(db, apps[0].ID, 0)
-	require.NoError(t, err)
-	require.Len(t, returnedSubnets, 2)
-
-	// Get IPv6 subnets. They should not exist.
-	returnedSubnets, err = GetSubnetsByAppID(db, apps[0].ID, 6)
-	require.NoError(t, err)
-	require.Empty(t, returnedSubnets)
 }
 
 // This test verifies that subnets can be filtered by search text.

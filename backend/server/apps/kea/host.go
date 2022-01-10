@@ -352,7 +352,7 @@ func (iterator *HostDetectionIterator) DetectHostsPageFromHostCmds() (hosts []db
 		// If this is the first time we're getting hosts for this server we should
 		// first get all corresponding subnets.
 		if len(iterator.subnets) == 0 {
-			iterator.subnets, err = dbmodel.GetSubnetsByAppID(iterator.db, iterator.app.ID, family)
+			iterator.subnets, err = dbmodel.GetSubnetsByDaemonID(iterator.db, d.ID)
 			if err != nil {
 				return hosts, daemon, done, errors.WithMessagef(err, "problem with getting Kea subnets upon an attempt to detect host reservations over the host_cmds hooks library")
 			}
