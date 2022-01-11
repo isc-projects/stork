@@ -11,8 +11,8 @@ import (
 // It has better performance than raw big int objects in the uint64
 // range (7-9x faster than big int, 3-4x slower than raw uint64) and almost
 // the same performance outside this range (7-9% slower). It improves the
-// performance in more cases (IPv4 and small IPv6 networks) and handles
-// the large networks.
+// overall performance because in most cases (IPv4 and small IPv6 networks)
+// we won't need big numbers.
 // Additionally, it calculates the proportion between two counters.
 type BigCounter struct {
 	// Counting value wrapper.
