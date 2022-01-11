@@ -101,61 +101,62 @@ describe('SubnetBarComponent', () => {
         expect(component.tooltip).toContain('6')
         expect(component.tooltip).toContain('3')
     }),
-
-    it('subnet bar cannot extend beyond the container', async () => {
-        function getSubnet(utilization: number) {
-            return {
-                addrUtilization: utilization,
-                subnet: '3000::0/24',
-                localSubnets: [
-                    {
-                        stats: {
-                            'total-nas': 100.0,
-                            'assigned-nas': 100.0 * utilization / 100.0,
-                            'declined-nas': 0,
-                            'total-pds': 200.0,
-                            'assigned-pds': 200.0 * utilization / 100.0,
+        it('subnet bar cannot extend beyond the container', async () => {
+            function getSubnet(utilization: number) {
+                return {
+                    addrUtilization: utilization,
+                    subnet: '3000::0/24',
+                    localSubnets: [
+                        {
+                            stats: {
+                                'total-nas': 100.0,
+                                'assigned-nas': (100.0 * utilization) / 100.0,
+                                'declined-nas': 0,
+                                'total-pds': 200.0,
+                                'assigned-pds': (200.0 * utilization) / 100.0,
+                            },
                         },
-                    },
-                ],
+                    ],
+                }
             }
-        }
 
-        // Check if the br extend beyond the container.
-        function extendBeyond(): boolean {
-            const parent = fixture.debugElement.query(By.css('.utilization'))
-            const parentElement = (parent.nativeElement as Element)
-            const parentRect = parentElement.getBoundingClientRect()
-            const bar = fixture.debugElement.query(By.css('.bar'))
-            const barElement = bar.nativeElement as Element
-            const barRect = barElement.getBoundingClientRect()
-            
-            if (barRect.top < parentRect.top ||
-                barRect.bottom > parentRect.bottom ||
-                barRect.left < parentRect.left ||
-                barRect.right > parentRect.right) {
+            // Check if the br extend beyond the container.
+            function extendBeyond(): boolean {
+                const parent = fixture.debugElement.query(By.css('.utilization'))
+                const parentElement = parent.nativeElement as Element
+                const parentRect = parentElement.getBoundingClientRect()
+                const bar = fixture.debugElement.query(By.css('.bar'))
+                const barElement = bar.nativeElement as Element
+                const barRect = barElement.getBoundingClientRect()
+
+                if (
+                    barRect.top < parentRect.top ||
+                    barRect.bottom > parentRect.bottom ||
+                    barRect.left < parentRect.left ||
+                    barRect.right > parentRect.right
+                ) {
                     return true
+                }
+
+                return false
             }
-            
-            return false
-        }
 
-        component.subnet = getSubnet(50)
-        fixture.detectChanges()
-        expect(extendBeyond()).toBeFalse()
+            component.subnet = getSubnet(50)
+            fixture.detectChanges()
+            expect(extendBeyond()).toBeFalse()
 
-        component.subnet = getSubnet(100)
-        fixture.detectChanges()
-        expect(extendBeyond()).toBeFalse()
+            component.subnet = getSubnet(100)
+            fixture.detectChanges()
+            expect(extendBeyond()).toBeFalse()
 
-        component.subnet = getSubnet(150)
-        fixture.detectChanges()
-        expect(extendBeyond()).toBeFalse()
+            component.subnet = getSubnet(150)
+            fixture.detectChanges()
+            expect(extendBeyond()).toBeFalse()
 
-        component.subnet = getSubnet(-50)
-        fixture.detectChanges()
-        expect(extendBeyond()).toBeFalse()
-    })
+            component.subnet = getSubnet(-50)
+            fixture.detectChanges()
+            expect(extendBeyond()).toBeFalse()
+        })
     it('subnet bar cannot extend beyond the container', async () => {
         // Returns an IPv6 subnet mock with given utilization. The utilization
         // should be a ratio (from 0% to 100%) of assigned to total NAs/PDs.

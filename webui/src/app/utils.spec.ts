@@ -60,7 +60,7 @@ describe('utils', () => {
         expect(clamp(2, 0, 2)).toBe(2)
         // Integers - above upper bound
         expect(clamp(3, 0, 2)).toBe(2)
-        
+
         // Floats - in range
         expect(clamp(1.5, 0.4, 2.22)).toBe(1.5)
         // Floats - on lower bound
