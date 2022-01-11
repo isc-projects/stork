@@ -411,3 +411,44 @@ func TestLazySubnetNameLookupFetchesAgainWhenFamilyChanged(t *testing.T) {
 	require.Empty(t, name)
 	require.EqualValues(t, 2, sender.callCount)
 }
+
+// Test that is possible to disable per-subnet stats collecting.
+func TestDisablePerSubnetStatsCollecting(t *testing.T) {
+	// Arrange
+	defer gock.Off()
+	gock.New("http://0.1.2.3:1234/").
+		Post("/").
+		Persist().
+		Reply(200).
+		BodyString(`[{"result":0, "arguments": {
+                    "subnet[7].assigned-addresses": [ [ 13, "2019-07-30 10:04:28.386740" ] ],
+                    "pkt4-nak-received": [ [ 19, "2019-07-30 10:04:28.386733" ] ]
+                }}]`)
+
+	fam := &PromFakeAppMonitor{}
+
+	flags := flag.NewFlagSet("test", 0)
+	flags.Int("prometheus-kea-exporter-port", 9547, "usage")
+	flags.Int("prometheus-kea-exporter-interval", 10, "usage")
+	flags.Bool("prometheus-kea-exporter-per-subnet-stats", true, "usage")
+
+	settings := cli.NewContext(nil, flags, nil)
+	settings.Set("prometheus-kea-exporter-port", "1234")
+	settings.Set("prometheus-kea-exporter-interval", "1")
+
+	// Act
+	settings.Set("prometheus-kea-exporter-per-subnet-stats", "false")
+	pke := NewPromKeaExporter(settings, fam)
+	defer pke.Shutdown()
+	gock.InterceptClient(pke.HTTPClient.client)
+	pke.Start()
+	// wait 1.5 seconds that collecting is invoked at least once
+	time.Sleep(1500 * time.Millisecond)
+
+	// Assert
+	require.Nil(t, pke.Adr4StatsMap)
+
+	// check if pkt4-nak-received is 19
+	metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
+	require.Equal(t, 19.0, testutil.ToFloat64(metric))
+}
