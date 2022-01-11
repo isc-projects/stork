@@ -90,9 +90,9 @@ func (n *BigCounter) DivideBy(other *BigCounter) float64 {
 		return float64(n.base) / float64(other.base)
 	}
 
-	nFLoat := new(big.Float).SetInt(n.ToBigInt())
+	nFloat := new(big.Float).SetInt(n.ToBigInt())
 	otherFloat := new(big.Float).SetInt(other.ToBigInt())
-	div := new(big.Float).Quo(nFLoat, otherFloat)
+	div := new(big.Float).Quo(nFloat, otherFloat)
 	res, _ := div.Float64()
 	return res
 }
