@@ -9,8 +9,8 @@ import (
 // It scales internally with the counting value - starts from
 // uint64-based counter and switches to bigInt only if necessary.
 // It has better performance than raw big int objects in the uint64
-// range (7-9x faster than big int, 3-4x slower than raw uint64) and almost
-// the same performance outside this range (7-9% slower). It improves the
+// range (9-10x faster than big int, 10-12x slower than raw uint64) and almost
+// the same performance outside this range (7% slower). It improves the
 // overall performance because in most cases (IPv4 and small IPv6 networks)
 // we won't need big numbers.
 // Additionally, it calculates the proportion between two counters.

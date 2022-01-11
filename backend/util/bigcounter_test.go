@@ -229,70 +229,46 @@ func TestBigCounterToBigInt(t *testing.T) {
 // Benchmarks.
 // The below benchmark measure the big counter performance.
 
-// Common maxUint64 denominator for all benchmarks.
-// It is used to increase the operations in the benchmark function.
-const denominator uint64 = 1000000
-
 // Benchmark the addition to the big counter in uint64 range.
 func BenchmarkBigCounterInUint64Range(b *testing.B) {
-	// Arrange
 	counter := NewBigCounter(0)
 
-	// Act
-	factor := math.MaxUint64 / denominator
-	cumulativeSum := uint64(0)
-	for cumulativeSum < math.MaxUint64-factor {
-		counter.AddUint64(factor)
-		cumulativeSum += factor
+	for i := 0; i < b.N; i++ {
+		counter.AddUint64(1)
 	}
 }
 
 // Benchmark the addition to the big counter out of uint64 range.
 func BenchmarkBigCounterOutUint64Range(b *testing.B) {
-	// Arrange
-	counter := NewBigCounter(0)
-
-	// Act
-	for i := uint64(0); i < denominator; i++ {
-		counter.AddUint64(math.MaxUint64)
+	counter := NewBigCounter(math.MaxUint64)
+	for i := 0; i < b.N; i++ {
+		counter.AddUint64(1)
 	}
 }
 
 // Benchmark the addition to the big int in uint64 range.
 func BenchmarkBigIntInUint64Range(b *testing.B) {
-	// Arrange
 	counter := big.NewInt(0)
 
-	// Act
-	factor := math.MaxUint64 / denominator
-	cumulativeSum := uint64(0)
-	for cumulativeSum < math.MaxUint64-factor {
-		counter.Add(counter, big.NewInt(0).SetUint64(factor))
-		cumulativeSum += factor
+	for i := 0; i < b.N; i++ {
+		counter.Add(counter, big.NewInt(1))
 	}
 }
 
 // Benchmark the addition to the big int out of uint64 range.
 func BenchmarkBigIntOutUint64Range(b *testing.B) {
-	// Arrange
-	counter := big.NewInt(0)
+	counter := big.NewInt(0).SetUint64(math.MaxUint64)
 
-	// Act
-	for i := uint64(0); i < denominator; i++ {
-		counter.Add(counter, big.NewInt(0).SetUint64(math.MaxUint64))
+	for i := 0; i < b.N; i++ {
+		counter.Add(counter, big.NewInt(1))
 	}
 }
 
 // Benchmark the addition to the uint64 in uint64 range.
 func BenchmarkStandardUint64InUint64Range(b *testing.B) {
-	// Arrange
 	counter := uint64(0)
 
-	// Act
-	factor := math.MaxUint64 / denominator
-	cumulativeSum := uint64(0)
-	for cumulativeSum < math.MaxUint64-factor {
-		counter += factor
-		cumulativeSum += factor
+	for i := 0; i < b.N; i++ {
+		counter++
 	}
 }
