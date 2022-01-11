@@ -40,7 +40,7 @@ export class IdentifierComponent implements OnInit {
     @Input() hexValue = ''
 
     /**
-     * Optional identifier label, e.g. hw-address.
+     * Optional identifier label, e.g., hw-address.
      */
     @Input() label = ''
 
@@ -72,25 +72,12 @@ export class IdentifierComponent implements OnInit {
     /**
      * Holds the identifier in the hex format.
      */
-    private _hexId = ''
+    hexId: string = null
 
     /**
      * Holds the identifier in the textual format if available.
      */
-    private _textId = ''
-
-    /**
-     * Holds the currently displayed identifier.
-     *
-     * It is set to one of the values: _hexId or _textId.
-     */
-    private _currentId = ''
-
-    /**
-     * Boolean value indicating if the identifier is convertible to
-     * a textual form.
-     */
-    convertible = false
+    textId: string = null
 
     /**
      * Boolean value indicating if the currently displayed value is
@@ -98,7 +85,7 @@ export class IdentifierComponent implements OnInit {
      *
      * This value is bound to a toggle button to track its current state.
      */
-    hexFormat = false
+    hexFormat = true
 
     /**
      * A hook invoked during the component initialization.
@@ -112,40 +99,20 @@ export class IdentifierComponent implements OnInit {
     ngOnInit() {
         // Attempt to parse the specified identifier.
         const parsedValue = this._parse(this.hexValue)
-        if (parsedValue === null) {
-            // The identifier was invalid or empty. Display an error message.
-            // It is unlikely because the server should return properly
-            // formatted values.
-            this._currentId = 'unrecognized hex string'
+        // If there was an error parsing the input value or the input
+        // value is not convertible to text, let's use the output from
+        // parsing and assign it to hexId. If the hexId becomes null,
+        // an error will be displayed instead of the identifier.
+        if (parsedValue === null || parsedValue === this.hexValue) {
+            this.hexId = parsedValue
             return
         }
-
-        // If the identifier was parsed correctly we can use it as the
-        // valid identifier in hex format.
-        this._hexId = this.hexValue
-        // The input value is returned when the identifier is valid but
-        // it is not convertible to a textual format.
-        if (parsedValue === this.hexValue) {
-            // In that case switch to the hex format and do not assign
-            // the textual value.
-            this.hexFormat = true
-            this._currentId = this._hexId
-        } else {
-            // The identifier is convertible to a textual format. Mark the
-            // value as convertible to enable the toggle button.
-            this._textId = parsedValue
-            this.convertible = true
-            if (this.defaultHexFormat) {
-                // Use the hex format by default when externally requested
-                // by a caller.
-                this.hexFormat = true
-                this._currentId = this._hexId
-            } else {
-                // Caller did not request the hex format, so show the textual
-                // format by default.
-                this._currentId = this._textId
-            }
-        }
+        // Set the identifiers in hex and text formats.
+        this.hexId = this.hexValue
+        this.textId = parsedValue
+        // Typically, the text format is the default but it can be overridden
+        // by the caller, e.g., for MAC addresses.
+        this.hexFormat = this.defaultHexFormat
     }
 
     /**
@@ -179,28 +146,20 @@ export class IdentifierComponent implements OnInit {
     }
 
     /**
-     * Returns a text displayed by the component.
+     * Conditionally wraps the specified string value with label and parens.
      *
-     * If a label was specified, it returns the label and an identifier in
-     * the following format: <label>=(<identifier>). Otherwise, it returns
-     * the identifier without parens.
+     * If a label is specified, it returns the label and the specified text
+     * value in the following format: <label>=(<value>). Otherwise, it returns
+     * the value (i.e., identifier or an error text) without parens.
      *
-     * @return Optional label and an identifier displayed by the component.
+     * @return Optional label and value that can be an identifier or an error
+     * text.
      */
-    get displayedText(): string {
-        let text = this._currentId
+    condWrap(value: string): string {
+        let text = value
         if (this.label != '') {
             text = `${this.label}=(${text})`
         }
         return text
-    }
-
-    /**
-     * Toggles between the identifier formats.
-     *
-     * @param e event emitted as a result of pressing the toggle button.
-     */
-    toggle(e) {
-        this._currentId = e.checked ? this._hexId : this._textId
     }
 }

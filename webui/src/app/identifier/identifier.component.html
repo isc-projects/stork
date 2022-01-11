@@ -1,16 +1,22 @@
 <span style="display: block" [class]="styleClass">
-    <ng-container *ngIf="link.length !== 0; else noLinkBlock">
-        <a routerLink="{{ link }}"> {{ displayedText }} </a>
-    </ng-container>
-    <ng-template #noLinkBlock> {{ displayedText }} </ng-template>
+    <a *ngIf="link.length !== 0; else identifierTemplate" routerLink="{{ link }}">
+        <ng-container *ngTemplateOutlet="identifierTemplate"></ng-container>
+    </a>
+    <ng-template #identifierTemplate>
+        <ng-container *ngIf="hexId === null; else identifierTextTemplate">
+            {{ condWrap('unrecognized hex string') }}
+        </ng-container>
+        <ng-template #identifierTextTemplate>
+            {{ hexFormat ? condWrap(hexId) : condWrap(textId) }}
+        </ng-template>
+    </ng-template>
     <p-toggleButton
-        *ngIf="convertible"
+        *ngIf="textId !== null"
         onLabel="text"
         offLabel="hex"
         styleClass="p-badge"
         [(ngModel)]="hexFormat"
         ngDefaultControl
-        (onChange)="toggle($event)"
     >
     </p-toggleButton>
 </span>

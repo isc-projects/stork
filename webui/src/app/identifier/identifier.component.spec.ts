@@ -129,24 +129,40 @@ describe('IdentifierComponent', () => {
     it('should parse identifier with spaces', () => {
         component.hexValue = '73 30 6d 45 56 61 4c 75 65'
         component.ngOnInit()
-        expect(component.displayedText).toBe('s0mEVaLue')
+        fixture.detectChanges()
+
+        let identifierEl = fixture.debugElement.query(By.css('span'))
+        expect(identifierEl).toBeTruthy()
+        expect(identifierEl.nativeElement.textContent.trim()).toContain('s0mEVaLue')
     })
 
     it('should parse identifier without separators', () => {
         component.hexValue = '73306d4556614c7565'
         component.ngOnInit()
-        expect(component.displayedText).toBe('s0mEVaLue')
+        fixture.detectChanges()
+
+        let identifierEl = fixture.debugElement.query(By.css('span'))
+        expect(identifierEl).toBeTruthy()
+        expect(identifierEl.nativeElement.textContent.trim()).toContain('s0mEVaLue')
     })
 
     it('should not parse identifier with odd length', () => {
         component.hexValue = '73:3'
         component.ngOnInit()
-        expect(component.displayedText).toBe('unrecognized hex string')
+        fixture.detectChanges()
+
+        let identifierEl = fixture.debugElement.query(By.css('span'))
+        expect(identifierEl).toBeTruthy()
+        expect(identifierEl.nativeElement.textContent.trim()).toContain('unrecognized hex string')
     })
 
     it('should not parse blank identifier', () => {
         component.hexValue = '   '
         component.ngOnInit()
-        expect(component.displayedText).toBe('unrecognized hex string')
+        fixture.detectChanges()
+
+        let identifierEl = fixture.debugElement.query(By.css('span'))
+        expect(identifierEl).toBeTruthy()
+        expect(identifierEl.nativeElement.textContent.trim()).toContain('unrecognized hex string')
     })
 })
