@@ -317,7 +317,8 @@ The following settings are specific to the Prometheus exporters:
 * STORK_AGENT_PROMETHEUS_KEA_EXPORTER_INTERVAL - specifies how often
   the agent collects stats from Kea, in seconds; default is `10`
 * STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS - enable or disable
-  collecting per subnet stats from Kea; default is `true` (collecting enabled)
+  collecting per subnet stats from Kea; default is `true` (collecting enabled).
+  You can use this option to limit the data passed to Prometheus/Grafana in large networks.
 * STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS - the IP address or hostname the
   agent should use to receive the connections from Prometheus fetching BIND9
   statistics; default is `0.0.0.0`
