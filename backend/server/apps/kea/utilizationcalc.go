@@ -213,7 +213,7 @@ func sumStatLocalSubnets(subnet *dbmodel.Subnet, statName string) *storkutil.Big
 	sum := storkutil.NewBigCounter(0)
 	for _, localSubnet := range subnet.LocalSubnets {
 		stat := getLocalSubnetStatValueIntOrDefault(localSubnet, statName)
-		sum.AddUInt64(stat)
+		sum.AddUint64(stat)
 	}
 	return sum
 }
