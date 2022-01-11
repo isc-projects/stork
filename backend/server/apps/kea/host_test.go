@@ -17,7 +17,7 @@ import (
 )
 
 // Returns test Kea configuration including multiple IPv4 subnets.
-func getTestConfigWithIPv4Subnets(t *testing.T) *dbmodel.KeaConfig {
+func getTestConfigWithIPv4Subnets(t *testing.T, hostCmds bool) *dbmodel.KeaConfig {
 	configStr := `{
         "Dhcp4": {
             "subnet4": [
@@ -37,14 +37,19 @@ func getTestConfigWithIPv4Subnets(t *testing.T) *dbmodel.KeaConfig {
                     "id": 678,
                     "subnet": "192.0.6.0/24"
                 }
-            ],
-            "hooks-libraries": [
-                {
-                    "library": "libdhcp_host_cmds.so"
-                }
-            ]
+            ]%s
         }
     }`
+	if hostCmds {
+		hooks := `, "hooks-libraries": [
+            {
+                "library": "libdhcp_host_cmds.so"
+            }
+        ]`
+		configStr = fmt.Sprintf(configStr, hooks)
+	} else {
+		configStr = fmt.Sprintf(configStr, "")
+	}
 
 	cfg, err := dbmodel.NewKeaConfigFromJSON(configStr)
 	require.NoError(t, err)
@@ -62,6 +67,11 @@ func getTestConfigWithOneIPv4Subnet(t *testing.T) *dbmodel.KeaConfig {
                     "id": 123,
                     "subnet": "192.0.2.0/24"
                 }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_host_cmds.so"
+                }
             ]
         }
     }`
@@ -74,7 +84,7 @@ func getTestConfigWithOneIPv4Subnet(t *testing.T) *dbmodel.KeaConfig {
 }
 
 // Returns test Kea configuration including multiple IPv6 subnets.
-func getTestConfigWithIPv6Subnets(t *testing.T) *dbmodel.KeaConfig {
+func getTestConfigWithIPv6Subnets(t *testing.T, hostCmds bool) *dbmodel.KeaConfig {
 	configStr := `{
         "Dhcp6": {
             "subnet6": [
@@ -94,14 +104,20 @@ func getTestConfigWithIPv6Subnets(t *testing.T) *dbmodel.KeaConfig {
                     "id": 678,
                     "subnet": "2001:db8:6::/64"
                 }
-            ],
-            "hooks-libraries": [
-                {
-                    "library": "libdhcp_host_cmds.so"
-                }
-            ]
+            ]%s
         }
     }`
+
+	if hostCmds {
+		hooks := `, "hooks-libraries": [
+            {
+                "library": "libdhcp_host_cmds.so"
+            }
+        ]`
+		configStr = fmt.Sprintf(configStr, hooks)
+	} else {
+		configStr = fmt.Sprintf(configStr, "")
+	}
 
 	cfg, err := dbmodel.NewKeaConfigFromJSON(configStr)
 	require.NoError(t, err)
@@ -124,6 +140,11 @@ func getTestConfigWithIPv4GlobalHosts(t *testing.T) *dbmodel.KeaConfig {
                     "hw-address": "ff:ff:ff:ff:ff:ff",
                     "ip-address": "192.0.2.11",
                     "hostname": "foo.example.org"
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_host_cmds.so"
                 }
             ]
         }
@@ -152,6 +173,11 @@ func getTestConfigWithIPv6GlobalHosts(t *testing.T) *dbmodel.KeaConfig {
                     "ip-addresses": [ "2001:db8:1::11" ],
                     "prefixes": [ "3001::/64" ],
                     "hostname": "foo.example.org"
+                }
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_host_cmds.so"
                 }
             ]
         }
@@ -574,7 +600,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-					Config:        getTestConfigWithIPv4Subnets(t),
+					Config:        getTestConfigWithIPv4Subnets(t, true),
 				},
 			},
 			{
@@ -582,7 +608,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-					Config:        getTestConfigWithIPv6Subnets(t),
+					Config:        getTestConfigWithIPv6Subnets(t, true),
 				},
 			},
 		},
@@ -1081,7 +1107,7 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-					Config:        getTestConfigWithIPv4Subnets(t),
+					Config:        getTestConfigWithIPv4Subnets(t, true),
 				},
 			},
 			{
@@ -1089,7 +1115,7 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-					Config:        getTestConfigWithIPv6Subnets(t),
+					Config:        getTestConfigWithIPv6Subnets(t, true),
 				},
 			},
 		},
@@ -1171,7 +1197,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-					Config:        getTestConfigWithIPv4Subnets(t),
+					Config:        getTestConfigWithIPv4Subnets(t, true),
 				},
 			},
 			{
@@ -1179,7 +1205,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-					Config:        getTestConfigWithIPv6Subnets(t),
+					Config:        getTestConfigWithIPv6Subnets(t, true),
 				},
 			},
 		},
@@ -1312,4 +1338,80 @@ func TestReduceHostsIntoDB(t *testing.T) {
 	hosts, err = dbmodel.GetAllHosts(db, 4)
 	require.NoError(t, err)
 	require.Len(t, hosts, 1)
+}
+
+// This test verifies that host reservations are not fetched when the
+// libdhcp_host_cmds hooks library is not loaded.
+func TestPullHostsIntoDBNoHostCmds(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	fec := &storktest.FakeEventCenter{}
+
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Create an app with DHCP configurations lacking the libdhcp_host_cmds
+	// hooks library.
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, true)
+	app := dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:   "dhcp4",
+				Active: true,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+					Config:        getTestConfigWithIPv4Subnets(t, false),
+				},
+			},
+			{
+				Name:   "dhcp6",
+				Active: true,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+					Config:        getTestConfigWithIPv6Subnets(t, false),
+				},
+			},
+		},
+	}
+	// Add the app to the database.
+	_, err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+	app.Machine = m
+
+	err = CommitAppIntoDB(db, &app, fec, nil)
+	require.NoError(t, err)
+
+	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
+
+	// The puller requires fetch interval to be present in the database.
+	err = dbmodel.InitializeSettings(db)
+	require.NoError(t, err)
+
+	puller, err := NewHostsPuller(db, fa)
+	require.NoError(t, err)
+	require.NotNil(t, puller)
+
+	err = puller.pullData()
+	require.NoError(t, err)
+
+	// Make sure that the hosts were not added to the database. That's
+	// because the libdhcp_host_cmds hooks library is missing in the
+	// configurations.
+	hosts, err := dbmodel.GetAllHosts(db, 4)
+	require.NoError(t, err)
+	require.Empty(t, hosts)
+
+	hosts, err = dbmodel.GetAllHosts(db, 6)
+	require.NoError(t, err)
+	require.Empty(t, hosts)
 }

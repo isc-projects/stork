@@ -467,9 +467,17 @@ func updateHostsFromHostCmds(db *dbops.PgDB, agents agentcomm.ConnectedAgents, r
 	defer dbops.RollbackOnError(tx, &err)
 
 	for _, daemon := range app.Daemons {
-		if daemon.KeaDaemon == nil || daemon.KeaDaemon.KeaDHCPDaemon == nil {
+		if daemon.KeaDaemon == nil || daemon.KeaDaemon.KeaDHCPDaemon == nil || daemon.KeaDaemon.Config == nil {
 			continue
 		}
+		// Ensure that the daemon has host_cmds hooks library loaded. Otherwise,
+		// we're unable to get the hosts from this daemon.
+		config := daemon.KeaDaemon.Config
+		if _, _, ok := config.GetHooksLibrary("libdhcp_host_cmds"); !ok {
+			log.Warnf("skipping host reservations for daemon %d because it lacks host_cmds hook", daemon.ID)
+			continue
+		}
+
 		it := NewHostDetectionIterator(db, app, daemon, agents, defaultHostCmdsPageLimit)
 		var (
 			hosts []dbmodel.Host
