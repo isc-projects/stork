@@ -203,7 +203,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 		daemons, _ = keactrl.NewDaemons("dhcp6")
 		command, _ = keactrl.NewCommand("stat-lease6-get", daemons, nil)
 		// Kea casts the unsigned int64 integers to signed int64. It means that the maximum
-		// value of unsigned int64 wil be -1 after casting.
+		// value of unsigned int64 is -1 after casting.
 		json = `[{
                            "result": 0,
                            "text": "Everything is fine",
