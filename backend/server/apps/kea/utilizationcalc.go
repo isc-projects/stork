@@ -34,9 +34,9 @@ func newGlobalStats() *globalStats {
 
 // Add the IPv4 subnet statistics to the global state.
 func (g *globalStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	g.totalAddresses.Add(subnet.totalAddresses)
-	g.totalAssignedAddresses.Add(subnet.totalAssignedAddresses)
-	g.totalDeclinedAddresses.Add(subnet.totalDeclinedAddresses)
+	g.totalAddresses.AddUint64(subnet.totalAddresses)
+	g.totalAssignedAddresses.AddUint64(subnet.totalAssignedAddresses)
+	g.totalDeclinedAddresses.AddUint64(subnet.totalDeclinedAddresses)
 }
 
 // Add the IPv6 subnet statistics to the global state.
@@ -87,8 +87,8 @@ func (s *sharedNetworkStats) getPDUtilization() float64 {
 
 // Add the IPv4 subnet statistics to the shared network state.
 func (s *sharedNetworkStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	s.totalAddresses.Add(subnet.totalAddresses)
-	s.totalAssignedAddresses.Add(subnet.totalAssignedAddresses)
+	s.totalAddresses.AddUint64(subnet.totalAddresses)
+	s.totalAssignedAddresses.AddUint64(subnet.totalAssignedAddresses)
 }
 
 // Add the IPv6 subnet statistics to the shared network state.
@@ -101,15 +101,18 @@ func (s *sharedNetworkStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
 
 // IPv4 statistics retrieved from the single subnet.
 type subnetIPv4Stats struct {
-	totalAddresses         *storkutil.BigCounter
-	totalAssignedAddresses *storkutil.BigCounter
-	totalDeclinedAddresses *storkutil.BigCounter
+	totalAddresses         uint64
+	totalAssignedAddresses uint64
+	totalDeclinedAddresses uint64
 }
 
 // Return the address utilization for a single IPv4 subnet.
 func (s *subnetIPv4Stats) getAddressUtilization() float64 {
 	// The assigned addresses include the declined addresses that aren't reclaimed yet.
-	return s.totalAssignedAddresses.DivideSafeBy(s.totalAddresses)
+	if s.totalAddresses == 0 {
+		return 0
+	}
+	return float64(s.totalAssignedAddresses) / float64(s.totalAddresses)
 }
 
 // Return the delegated prefix utilization for a single IPv4 subnet.
@@ -174,9 +177,9 @@ func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
 // It shouldn't be called outside the calculator.
 func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet) *subnetIPv4Stats {
 	stats := &subnetIPv4Stats{
-		totalAddresses:         sumStatLocalSubnets(subnet, "total-addresses"),
-		totalAssignedAddresses: sumStatLocalSubnets(subnet, "assigned-addresses"),
-		totalDeclinedAddresses: sumStatLocalSubnets(subnet, "declined-addresses"),
+		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses"),
+		totalAssignedAddresses: sumStatLocalSubnetsIPv4(subnet, "assigned-addresses"),
+		totalDeclinedAddresses: sumStatLocalSubnetsIPv4(subnet, "declined-addresses"),
 	}
 
 	if subnet.SharedNetworkID != 0 {
@@ -192,11 +195,11 @@ func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet) *subnetIPv
 // It shouldn't be called outside the calculator.
 func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		totalNAs:         sumStatLocalSubnets(subnet, "total-nas"),
-		totalAssignedNAs: sumStatLocalSubnets(subnet, "assigned-nas"),
-		totalDeclinedNAs: sumStatLocalSubnets(subnet, "declined-nas"),
-		totalPDs:         sumStatLocalSubnets(subnet, "total-pds"),
-		totalAssignedPDs: sumStatLocalSubnets(subnet, "assigned-pds"),
+		totalNAs:         sumStatLocalSubnetsIPv6(subnet, "total-nas"),
+		totalAssignedNAs: sumStatLocalSubnetsIPv6(subnet, "assigned-nas"),
+		totalDeclinedNAs: sumStatLocalSubnetsIPv6(subnet, "declined-nas"),
+		totalPDs:         sumStatLocalSubnetsIPv6(subnet, "total-pds"),
+		totalAssignedPDs: sumStatLocalSubnetsIPv6(subnet, "assigned-pds"),
 	}
 
 	if subnet.SharedNetworkID != 0 {
@@ -209,11 +212,23 @@ func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet) *subnetIPv
 }
 
 // Return the sum of specific statistics for each local subnet in the provided subnet.
-func sumStatLocalSubnets(subnet *dbmodel.Subnet, statName string) *storkutil.BigCounter {
+// It expects that the counting value may exceed uint64 range.
+func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string) *storkutil.BigCounter {
 	sum := storkutil.NewBigCounter(0)
 	for _, localSubnet := range subnet.LocalSubnets {
 		stat := getLocalSubnetStatValueIntOrDefault(localSubnet, statName)
 		sum.AddUint64(stat)
+	}
+	return sum
+}
+
+// Return the sum of specific statistics for each local subnet in the provided subnet.
+// It assumes that the counting value not exceed uint64 range.
+func sumStatLocalSubnetsIPv4(subnet *dbmodel.Subnet, statName string) uint64 {
+	sum := uint64(0)
+	for _, localSubnet := range subnet.LocalSubnets {
+		stat := getLocalSubnetStatValueIntOrDefault(localSubnet, statName)
+		sum += stat
 	}
 	return sum
 }
