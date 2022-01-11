@@ -439,7 +439,9 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 
 	pke.PktStatsMap = pktStatsMap
 
-	if settings.Bool("prometheus-kea-exporter-per-subnet-stats") {
+	// Collecting per subnet stats is enabled by default. It must be explicit disabled.
+	enablePerSubnetStatsFlag := "prometheus-kea-exporter-per-subnet-stats"
+	if !settings.IsSet(enablePerSubnetStatsFlag) || settings.Bool(enablePerSubnetStatsFlag) {
 		// addresses dhcp4
 		adr4StatsMap := make(map[string]*prometheus.GaugeVec)
 		adr4StatsMap["assigned-addresses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
