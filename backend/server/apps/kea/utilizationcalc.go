@@ -17,6 +17,8 @@ type globalStats struct {
 	totalAssignedPDs       *storkutil.BigCounter
 }
 
+// Constructor of the global statistic struct with all
+// counters set to zero.
 func newGlobalStats() *globalStats {
 	return &globalStats{
 		totalAddresses:         storkutil.NewBigCounter(0),
@@ -61,6 +63,8 @@ type sharedNetworkStats struct {
 	totalAssignedPDs       *storkutil.BigCounter
 }
 
+// Constructor of the sharedNetworkStats struct with
+// all counters set to zero.
 func newSharedNetworkStats() *sharedNetworkStats {
 	return &sharedNetworkStats{
 		totalAddresses:         storkutil.NewBigCounter(0),
