@@ -19,8 +19,8 @@ export function getAssignedAddresses(subnet) {
 }
 
 /**
- * Helper that converts parse the statistic values from string to big integer.
- * It necessary because the statistics can store large numbers and standard
+ * Helper that converts the statistic values from string to big integer.
+ * It is necessary because the statistics can store large numbers and standard
  * JSON parser converts them to double precision number. It causes losing precision.
  */
 export function parseSubnetsStatisticValues(subnets): void {
