@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	require "github.com/stretchr/testify/require"
+	keaconfig "isc.org/stork/appcfg/kea"
 	keactrl "isc.org/stork/appctrl/kea"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/configreview"
@@ -84,7 +85,7 @@ func getTestConfigWithOneIPv4Subnet(t *testing.T) *dbmodel.KeaConfig {
 }
 
 // Returns test Kea configuration including multiple IPv6 subnets.
-func getTestConfigWithIPv6Subnets(t *testing.T, hostCmds bool) *dbmodel.KeaConfig {
+func getTestConfigWithIPv6Subnets(t *testing.T) *dbmodel.KeaConfig {
 	configStr := `{
         "Dhcp6": {
             "subnet6": [
@@ -104,20 +105,14 @@ func getTestConfigWithIPv6Subnets(t *testing.T, hostCmds bool) *dbmodel.KeaConfi
                     "id": 678,
                     "subnet": "2001:db8:6::/64"
                 }
-            ]%s
+            ],
+            "hooks-libraries": [
+                {
+                    "library": "libdhcp_host_cmds.so"
+                }
+            ]
         }
     }`
-
-	if hostCmds {
-		hooks := `, "hooks-libraries": [
-            {
-                "library": "libdhcp_host_cmds.so"
-            }
-        ]`
-		configStr = fmt.Sprintf(configStr, hooks)
-	} else {
-		configStr = fmt.Sprintf(configStr, "")
-	}
 
 	cfg, err := dbmodel.NewKeaConfigFromJSON(configStr)
 	require.NoError(t, err)
@@ -226,13 +221,13 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
 
 	// By default return no hosts.
 	hostsAsJSON := []byte("[ ]")
-	hosts := []dbmodel.KeaConfigReservation{}
+	hosts := []keaconfig.Reservation{}
 
 	if nonEmptyResponse {
 		// Fill in the response with 5 host reservations belonging to a given
 		// subnet.
 		for i := 0; i < 5; i++ {
-			host := dbmodel.KeaConfigReservation{
+			host := keaconfig.Reservation{
 				HWAddress: fmt.Sprintf("01:02:03:04:05:%02d", callNo*5+i),
 				Hostname:  fmt.Sprintf("host%02d", callNo*5+i),
 			}
@@ -353,9 +348,122 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
 }
 
+// This function mocks the response of the Kea server to the reservation-get-page
+// command. It is used to test the case when host reservations returned in the
+// first response to the reservation-get-page hasn't changed but the reservations
+// in the second response have changed.
+func mockReservationGetPagePartialChange(callNo int, cmdResponses []interface{}) {
+	var json string
+	switch callNo {
+	// No global hosts, third response returns empty response terminating the
+	// process of fetching the hosts. The same for the second iteration.
+	case 0, 3, 4, 7:
+		json = `[
+            {
+                "result": 0,
+                "text": "Hosts found",
+                "arguments": {
+                    "count": 0,
+                    "hosts": [ ],
+                    "next": {
+                        "from": 0,
+                        "source-index": 1
+                    }
+                }
+            }
+        ]`
+	// Two hosts in the first response that don't change in the second
+	// iteration.
+	case 1, 5:
+		json = `[
+            {
+                "result": 0,
+                "text": "Hosts found",
+                "arguments": {
+                    "count": 2,
+                    "hosts": [
+                        {
+                            "hw-address": "01:02:03:04:05:06",
+                            "ip-address": "192.0.2.10"
+                        },
+                        {
+                            "hw-address": "01:02:03:04:05:07",
+                            "ip-address": "192.0.2.11"
+                        }
+                    ],
+                    "next": {
+                        "from": 2,
+                        "source-index": 1
+                    }
+                }
+            }
+        ]`
+	// One host in the second response that changes in the next iteration.
+	case 2:
+		json = `[
+            {
+                "result": 0,
+                "text": "Hosts found",
+                "arguments": {
+                    "count": 1,
+                    "hosts": [
+                        {
+                            "hw-address": "01:02:03:04:05:08",
+                            "ip-address": "192.0.2.12"
+                        }
+                    ],
+                    "next": {
+                        "from": 3,
+                        "source-index": 1
+                    }
+                }
+            }
+        ]`
+	// One host in the second response in the second iteration.
+	case 6:
+		json = `[
+            {
+                "result": 0,
+                "text": "Hosts found",
+                "arguments": {
+                    "count": 1,
+                    "hosts": [
+                        {
+                            "hw-address": "01:02:03:04:05:09",
+                            "ip-address": "192.0.2.13"
+                        }
+                    ],
+                    "next": {
+                        "from": 3,
+                        "source-index": 1
+                    }
+                }
+            }
+        ]`
+	}
+
+	daemons, _ := keactrl.NewDaemons("dhcp4")
+	command, _ := keactrl.NewCommand("reservation-get-page", daemons, nil)
+
+	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
+	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
+}
+
 // Verifies that the specified host contains the specified host identifier and
 // reserved IP address.
-func testHost(t *testing.T, host dbmodel.Host, identifier string, address string) {
+func testHost(t *testing.T, reservation interface{}, identifier string, address string) {
+	var (
+		host *dbmodel.Host
+		err  error
+	)
+	if r, ok := reservation.(keaconfig.Reservation); ok {
+		host, err = dbmodel.NewHostFromKeaConfigReservation(r)
+		require.NoError(t, err)
+	} else {
+		h := reservation.(dbmodel.Host)
+		host = &h
+	}
+	require.NotNil(t, host)
 	require.Len(t, host.IPReservations, 1)
 	require.Equal(t, address, host.IPReservations[0].Address)
 	require.Len(t, host.HostIdentifiers, 1)
@@ -366,12 +474,11 @@ func testHost(t *testing.T, host dbmodel.Host, identifier string, address string
 	identifierBytes, err := hex.DecodeString(identifier)
 	require.NoError(t, err)
 	require.Equal(t, identifierBytes, host.HostIdentifiers[0].Value)
-	require.NotEmpty(t, host.Hostname)
 }
 
 // Tests that valid reservation-get-page received command was received by
 // the fake agents.
-func testReservationGetPageReceived(t *testing.T, iterator *HostDetectionIterator) {
+func testReservationGetPageReceived(t *testing.T, iterator *hostIterator) {
 	agents, ok := iterator.agents.(*agentcommtest.FakeAgents)
 	require.True(t, ok)
 	// This function is not called before first command is sent.
@@ -573,7 +680,7 @@ func TestDetectHostsSameConfig(t *testing.T) {
 
 // Tests that host reservations can be retrieved in chunks from the Kea
 // DHCPv4 and DHCPv6 servers.
-func TestDetectHostsPageFromHostCmds(t *testing.T) {
+func TestGetPageFromHostCmds(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -608,7 +715,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-					Config:        getTestConfigWithIPv6Subnets(t, true),
+					Config:        getTestConfigWithIPv6Subnets(t),
 				},
 			},
 		},
@@ -623,11 +730,11 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
 
-	it := NewHostDetectionIterator(db, &app, app.Daemons[0], fa, 5)
+	it := newHostIterator(db, &app, app.Daemons[0], fa, 5)
 	require.NotNil(t, it)
 
 	// Should get addresses 192.0.2.10 thru 192.0.2.14
-	hosts, done, err := it.DetectHostsPageFromHostCmds()
+	hosts, done, err := it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -635,7 +742,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, -1, it.subnetIndex)
-	require.Nil(t, it.GetCurrentSubnet())
+	require.Nil(t, it.getCurrentSubnet())
+	require.EqualValues(t, 1, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:00", "192.0.2.10")
 	testHost(t, hosts[1], "01:02:03:04:05:01", "192.0.2.11")
 	testHost(t, hosts[2], "01:02:03:04:05:02", "192.0.2.12")
@@ -647,7 +755,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.2.15 thru 192.0.2.19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.False(t, done)
 	require.NoError(t, err)
 	require.Len(t, hosts, 5)
@@ -655,7 +763,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, -1, it.subnetIndex)
-	require.Nil(t, it.GetCurrentSubnet())
+	require.Nil(t, it.getCurrentSubnet())
+	require.EqualValues(t, 2, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:05", "192.0.2.15")
 	testHost(t, hosts[1], "01:02:03:04:05:06", "192.0.2.16")
 	testHost(t, hosts[2], "01:02:03:04:05:07", "192.0.2.17")
@@ -667,7 +776,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.3.10 thru 192.0.3.14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -675,8 +784,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.Zero(t, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "192.0.3.0/24", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "192.0.3.0/24", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 3, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:15", "192.0.3.10")
 	testHost(t, hosts[1], "01:02:03:04:05:16", "192.0.3.11")
 	testHost(t, hosts[2], "01:02:03:04:05:17", "192.0.3.12")
@@ -688,7 +798,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.3.15 thru 192.0.3.19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -696,8 +806,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.Zero(t, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "192.0.3.0/24", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "192.0.3.0/24", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 4, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:20", "192.0.3.15")
 	testHost(t, hosts[1], "01:02:03:04:05:21", "192.0.3.16")
 	testHost(t, hosts[2], "01:02:03:04:05:22", "192.0.3.17")
@@ -709,7 +820,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.4.10 thru 192.0.4.14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -717,8 +828,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 1, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "192.0.4.0/24", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "192.0.4.0/24", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 5, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:30", "192.0.4.10")
 	testHost(t, hosts[1], "01:02:03:04:05:31", "192.0.4.11")
 	testHost(t, hosts[2], "01:02:03:04:05:32", "192.0.4.12")
@@ -730,7 +842,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.4.15 thru 192.0.4.19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -738,8 +850,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 1, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "192.0.4.0/24", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "192.0.4.0/24", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 6, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:35", "192.0.4.15")
 	testHost(t, hosts[1], "01:02:03:04:05:36", "192.0.4.16")
 	testHost(t, hosts[2], "01:02:03:04:05:37", "192.0.4.17")
@@ -751,7 +864,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.5.10 thru 192.0.5.14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -759,8 +872,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 2, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 2, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "192.0.5.0/24", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "192.0.5.0/24", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 7, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:45", "192.0.5.10")
 	testHost(t, hosts[1], "01:02:03:04:05:46", "192.0.5.11")
 	testHost(t, hosts[2], "01:02:03:04:05:47", "192.0.5.12")
@@ -772,7 +886,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.5.15 thru 192.0.5.19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -780,8 +894,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 2, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 2, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "192.0.5.0/24", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "192.0.5.0/24", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 8, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:50", "192.0.5.15")
 	testHost(t, hosts[1], "01:02:03:04:05:51", "192.0.5.16")
 	testHost(t, hosts[2], "01:02:03:04:05:52", "192.0.5.17")
@@ -793,7 +908,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.6.10 thru 192.0.6.14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -801,8 +916,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 2, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 3, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "192.0.6.0/24", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "192.0.6.0/24", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 9, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:60", "192.0.6.10")
 	testHost(t, hosts[1], "01:02:03:04:05:61", "192.0.6.11")
 	testHost(t, hosts[2], "01:02:03:04:05:62", "192.0.6.12")
@@ -814,7 +930,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 192.0.6.15 thru 192.0.6.19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -822,8 +938,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 2, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 3, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "192.0.6.0/24", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "192.0.6.0/24", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 10, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:65", "192.0.6.15")
 	testHost(t, hosts[1], "01:02:03:04:05:66", "192.0.6.16")
 	testHost(t, hosts[2], "01:02:03:04:05:67", "192.0.6.17")
@@ -837,24 +954,19 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	// We have iterated over all subnets already and fetched all
 	// reservations. No hosts should be returned, the done flag
 	// should indicate that we have reached the end of hosts.
-	// Finally, the state of the iterator should have been reset.
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.True(t, done)
 	require.Empty(t, hosts)
-	require.Zero(t, it.from)
-	require.EqualValues(t, 1, it.sourceIndex)
-	require.Empty(t, it.subnets)
-	require.EqualValues(t, -1, it.subnetIndex)
-	require.Nil(t, it.GetCurrentSubnet())
+	require.EqualValues(t, 10, it.trace.getResponseCount())
 	testReservationGetPageReceived(t, it)
 	require.EqualValues(t, 678, (*fa.GetLastCommand().Arguments)["subnet-id"])
 
-	it = NewHostDetectionIterator(db, &app, app.Daemons[1], fa, 5)
+	it = newHostIterator(db, &app, app.Daemons[1], fa, 5)
 	require.NotNil(t, it)
 
 	// Should get addresses 2001:db8:2::10 thru 2001:db8:2::14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -862,7 +974,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, -1, it.subnetIndex)
-	require.Nil(t, it.GetCurrentSubnet())
+	require.Nil(t, it.getCurrentSubnet())
+	require.EqualValues(t, 1, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:00", "2001:db8:2::10")
 	testHost(t, hosts[1], "01:02:03:04:05:01", "2001:db8:2::11")
 	testHost(t, hosts[2], "01:02:03:04:05:02", "2001:db8:2::12")
@@ -874,7 +987,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:2::15 thru 2001:db8:2::19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.False(t, done)
 	require.NoError(t, err)
 	require.Len(t, hosts, 5)
@@ -882,7 +995,8 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, -1, it.subnetIndex)
-	require.Nil(t, it.GetCurrentSubnet())
+	require.Nil(t, it.getCurrentSubnet())
+	require.EqualValues(t, 2, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:05", "2001:db8:2::15")
 	testHost(t, hosts[1], "01:02:03:04:05:06", "2001:db8:2::16")
 	testHost(t, hosts[2], "01:02:03:04:05:07", "2001:db8:2::17")
@@ -894,7 +1008,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:3::10 thru 2001:db8:3::14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -902,8 +1016,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.Zero(t, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "2001:db8:3::/64", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "2001:db8:3::/64", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 3, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:15", "2001:db8:3::10")
 	testHost(t, hosts[1], "01:02:03:04:05:16", "2001:db8:3::11")
 	testHost(t, hosts[2], "01:02:03:04:05:17", "2001:db8:3::12")
@@ -915,7 +1030,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:3::15 thru 2001:db8:3::19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -923,8 +1038,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.Zero(t, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "2001:db8:3::/64", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "2001:db8:3::/64", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 4, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:20", "2001:db8:3::15")
 	testHost(t, hosts[1], "01:02:03:04:05:21", "2001:db8:3::16")
 	testHost(t, hosts[2], "01:02:03:04:05:22", "2001:db8:3::17")
@@ -936,7 +1052,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:4::10 thru 2001:db8:4::14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -944,8 +1060,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 1, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "2001:db8:4::/64", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "2001:db8:4::/64", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 5, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:30", "2001:db8:4::10")
 	testHost(t, hosts[1], "01:02:03:04:05:31", "2001:db8:4::11")
 	testHost(t, hosts[2], "01:02:03:04:05:32", "2001:db8:4::12")
@@ -957,7 +1074,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:4::15 thru 2001:db8:4::19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -965,8 +1082,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 1, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 1, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "2001:db8:4::/64", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "2001:db8:4::/64", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 6, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:35", "2001:db8:4::15")
 	testHost(t, hosts[1], "01:02:03:04:05:36", "2001:db8:4::16")
 	testHost(t, hosts[2], "01:02:03:04:05:37", "2001:db8:4::17")
@@ -978,7 +1096,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:5::10 thru 2001:db8:5::14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -986,8 +1104,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 2, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 2, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "2001:db8:5::/64", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "2001:db8:5::/64", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 7, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:45", "2001:db8:5::10")
 	testHost(t, hosts[1], "01:02:03:04:05:46", "2001:db8:5::11")
 	testHost(t, hosts[2], "01:02:03:04:05:47", "2001:db8:5::12")
@@ -999,7 +1118,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:5::15 thru 2001:db8:5::19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -1007,8 +1126,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 2, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 2, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "2001:db8:5::/64", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "2001:db8:5::/64", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 8, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:50", "2001:db8:5::15")
 	testHost(t, hosts[1], "01:02:03:04:05:51", "2001:db8:5::16")
 	testHost(t, hosts[2], "01:02:03:04:05:52", "2001:db8:5::17")
@@ -1020,7 +1140,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:6::10 thru 2001:db8:6::14
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -1028,8 +1148,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 2, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 3, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "2001:db8:6::/64", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "2001:db8:6::/64", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 9, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:60", "2001:db8:6::10")
 	testHost(t, hosts[1], "01:02:03:04:05:61", "2001:db8:6::11")
 	testHost(t, hosts[2], "01:02:03:04:05:62", "2001:db8:6::12")
@@ -1041,7 +1162,7 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.Contains(t, *fa.GetLastCommand().Arguments, "source-index")
 
 	// Should get addresses 2001:db8:6::15 thru 2001:db8:6::19
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.False(t, done)
 	require.Len(t, hosts, 5)
@@ -1049,8 +1170,9 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	require.EqualValues(t, 2, it.sourceIndex)
 	require.Len(t, it.subnets, 4)
 	require.EqualValues(t, 3, it.subnetIndex)
-	require.NotNil(t, it.GetCurrentSubnet())
-	require.Equal(t, "2001:db8:6::/64", it.GetCurrentSubnet().Prefix)
+	require.NotNil(t, it.getCurrentSubnet())
+	require.Equal(t, "2001:db8:6::/64", it.getCurrentSubnet().Prefix)
+	require.EqualValues(t, 10, it.trace.getResponseCount())
 	testHost(t, hosts[0], "01:02:03:04:05:65", "2001:db8:6::15")
 	testHost(t, hosts[1], "01:02:03:04:05:66", "2001:db8:6::16")
 	testHost(t, hosts[2], "01:02:03:04:05:67", "2001:db8:6::17")
@@ -1064,16 +1186,11 @@ func TestDetectHostsPageFromHostCmds(t *testing.T) {
 	// We have iterated over all subnets already and fetched all
 	// reservations. No hosts should be returned, the done flag
 	// should indicate that we have reached the end of hosts.
-	// Finally, the state of the iterator should have been reset.
-	hosts, done, err = it.DetectHostsPageFromHostCmds()
+	hosts, done, err = it.getPageFromHostCmds()
 	require.NoError(t, err)
 	require.True(t, done)
 	require.Empty(t, hosts)
-	require.Zero(t, it.from)
-	require.EqualValues(t, 1, it.sourceIndex)
-	require.Empty(t, it.subnets)
-	require.EqualValues(t, -1, it.subnetIndex)
-	require.Nil(t, it.GetCurrentSubnet())
+	require.EqualValues(t, 10, it.trace.getResponseCount())
 	testReservationGetPageReceived(t, it)
 	require.EqualValues(t, 678, (*fa.GetLastCommand().Arguments)["subnet-id"])
 }
@@ -1115,7 +1232,7 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-					Config:        getTestConfigWithIPv6Subnets(t, true),
+					Config:        getTestConfigWithIPv6Subnets(t),
 				},
 			},
 		},
@@ -1131,10 +1248,19 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockReservationGetPage, nil)
 	fd := &storktest.FakeDispatcher{}
 
+	// The puller requires fetch interval to be present in the database.
+	err = dbmodel.InitializeSettings(db)
+	require.NoError(t, err)
+
+	// Create the puller.
+	puller, err := NewHostsPuller(db, fa, fd)
+	require.NoError(t, err)
+	require.NotNil(t, puller)
+
 	// Detect hosts two times in the row. This simulates periodic
 	// pull of the hosts for the given app.
 	for i := 0; i < 2; i++ {
-		err = updateHostsFromHostCmds(db, fa, fd, &app, 1)
+		err = puller.pull()
 		require.NoError(t, err)
 
 		hosts, err := dbmodel.GetAllHosts(db, 4)
@@ -1144,6 +1270,24 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 		hosts, err = dbmodel.GetAllHosts(db, 6)
 		require.NoError(t, err)
 		require.Len(t, hosts, 50)
+
+		// Ensure that the traces have been created.
+		require.Contains(t, puller.traces, app.Daemons[0].ID)
+		require.EqualValues(t, 10, puller.traces[app.Daemons[0].ID].getResponseCount())
+		require.Contains(t, puller.traces, app.Daemons[1].ID)
+		require.EqualValues(t, 10, puller.traces[app.Daemons[1].ID].getResponseCount())
+
+		// The hosts should be committed during the first iteration and should not
+		// be committed during the second iteration because the puller should
+		// detect that the hosts haven't changed.
+		switch i {
+		case 0:
+			require.True(t, puller.traces[app.Daemons[0].ID].isCommitted())
+			require.True(t, puller.traces[app.Daemons[1].ID].isCommitted())
+		case 1:
+			require.False(t, puller.traces[app.Daemons[0].ID].isCommitted())
+			require.False(t, puller.traces[app.Daemons[1].ID].isCommitted())
+		}
 
 		// Reset server state so it should send the same set of responses
 		// the second time.
@@ -1205,7 +1349,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 				Active: true,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-					Config:        getTestConfigWithIPv6Subnets(t, true),
+					Config:        getTestConfigWithIPv6Subnets(t),
 				},
 			},
 		},
@@ -1234,7 +1378,7 @@ func TestPullHostsIntoDB(t *testing.T) {
 	// Detect hosts two times in the row. This simulates periodic
 	// pull of the hosts for the given app.
 	for i := 0; i < 2; i++ {
-		err = puller.pullData()
+		err = puller.pull()
 		require.NoError(t, err)
 
 		hosts, err := dbmodel.GetAllHosts(db, 4)
@@ -1250,12 +1394,10 @@ func TestPullHostsIntoDB(t *testing.T) {
 		fa.CallNo = 0
 	}
 
-	// Ensure that the config reviews have been scheduled after updating
-	// the hosts.
-	require.Len(t, fd.CallLog, 4)
+	// Ensure that the config review was scheduled after updating the hosts.
+	require.Len(t, fd.CallLog, 2)
 	for i, call := range fd.CallLog {
 		require.Equal(t, "BeginReview", call.CallName)
-		// Even calls for the first daemon, odd calls for the second one.
 		require.Equal(t, app.Daemons[i%2].ID, call.DaemonID)
 		require.Equal(t, configreview.DBHostsModified, call.Trigger)
 	}
@@ -1319,7 +1461,7 @@ func TestReduceHostsIntoDB(t *testing.T) {
 
 	// Get the hosts from Kea. This should result in having two hosts
 	// within the database.
-	err = puller.pullData()
+	err = puller.pull()
 	require.NoError(t, err)
 
 	hosts, err := dbmodel.GetAllHosts(db, 4)
@@ -1331,7 +1473,7 @@ func TestReduceHostsIntoDB(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
-	err = puller.pullData()
+	err = puller.pull()
 	require.NoError(t, err)
 
 	// The second host should have been removed from the database.
@@ -1340,9 +1482,101 @@ func TestReduceHostsIntoDB(t *testing.T) {
 	require.Len(t, hosts, 1)
 }
 
+// Test the case when the puller first fetches the reservations in two
+// chunks and then pulls again. During the second pull, the first page
+// contains the same host as in the first pull. The second page contains
+// a different host than the second page in the first pull. The server
+// should ensure that the hosts are properly updated even though they
+// are not updated when the first page is received during the second
+// run.
+func TestPartialHostsChange(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Creates new app with provided configurations.
+	accessPoints := []*dbmodel.AccessPoint{}
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "localhost", "", 8000, false)
+	app := dbmodel.App{
+		MachineID:    m.ID,
+		Type:         dbmodel.AppTypeKea,
+		AccessPoints: accessPoints,
+		Daemons: []*dbmodel.Daemon{
+			{
+				Name:   "dhcp4",
+				Active: true,
+				KeaDaemon: &dbmodel.KeaDaemon{
+					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
+					Config:        getTestConfigWithOneIPv4Subnet(t),
+				},
+			},
+		},
+	}
+	// Add the app to the database.
+	_, err = dbmodel.AddApp(db, &app)
+	require.NoError(t, err)
+	app.Machine = m
+
+	fec := &storktest.FakeEventCenter{}
+	err = CommitAppIntoDB(db, &app, fec, nil)
+	require.NoError(t, err)
+
+	fa := agentcommtest.NewFakeAgents(mockReservationGetPagePartialChange, nil)
+
+	// The puller requires fetch interval to be present in the database.
+	err = dbmodel.InitializeSettings(db)
+	require.NoError(t, err)
+
+	// Create the puller instance.
+	fd := &storktest.FakeDispatcher{}
+	puller, err := NewHostsPuller(db, fa, fd)
+	require.NoError(t, err)
+	require.NotNil(t, puller)
+
+	// Get the hosts from Kea. There should be three returned in two chunks.
+	err = puller.pull()
+	require.NoError(t, err)
+
+	hosts, err := dbmodel.GetAllHosts(db, 4)
+	require.NoError(t, err)
+	require.Len(t, hosts, 3)
+	require.Len(t, hosts, 3)
+	testHost(t, hosts[0], "01:02:03:04:05:06", "192.0.2.10/32")
+	testHost(t, hosts[1], "01:02:03:04:05:07", "192.0.2.11/32")
+	testHost(t, hosts[2], "01:02:03:04:05:08", "192.0.2.12/32")
+
+	for _, host := range hosts {
+		require.Len(t, host.LocalHosts, 1)
+	}
+
+	// Second iteration.
+	err = puller.pull()
+	require.NoError(t, err)
+
+	// The third host should have been replaced with a new one.
+	hosts, err = dbmodel.GetAllHosts(db, 4)
+	require.NoError(t, err)
+	require.Len(t, hosts, 3)
+	testHost(t, hosts[0], "01:02:03:04:05:06", "192.0.2.10/32")
+	testHost(t, hosts[1], "01:02:03:04:05:07", "192.0.2.11/32")
+	testHost(t, hosts[2], "01:02:03:04:05:09", "192.0.2.13/32")
+
+	for _, host := range hosts {
+		require.Len(t, host.LocalHosts, 1)
+	}
+}
+
 // This test verifies that host reservations are not fetched when the
-// libdhcp_host_cmds hooks library is not loaded.
-func TestPullHostsIntoDBNoHostCmds(t *testing.T) {
+// libdhcp_host_cmds hooks library is not loaded or when the daemon
+// is inactive.
+func TestSkipPullingHostsIntoDB(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1375,10 +1609,10 @@ func TestPullHostsIntoDBNoHostCmds(t *testing.T) {
 			},
 			{
 				Name:   "dhcp6",
-				Active: true,
+				Active: false,
 				KeaDaemon: &dbmodel.KeaDaemon{
 					KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-					Config:        getTestConfigWithIPv6Subnets(t, false),
+					Config:        getTestConfigWithIPv6Subnets(t),
 				},
 			},
 		},
@@ -1397,16 +1631,15 @@ func TestPullHostsIntoDBNoHostCmds(t *testing.T) {
 	err = dbmodel.InitializeSettings(db)
 	require.NoError(t, err)
 
-	puller, err := NewHostsPuller(db, fa)
+	fd := &storktest.FakeDispatcher{}
+	puller, err := NewHostsPuller(db, fa, fd)
 	require.NoError(t, err)
 	require.NotNil(t, puller)
 
-	err = puller.pullData()
+	err = puller.pull()
 	require.NoError(t, err)
 
-	// Make sure that the hosts were not added to the database. That's
-	// because the libdhcp_host_cmds hooks library is missing in the
-	// configurations.
+	// Make sure that the hosts were not added to the database.
 	hosts, err := dbmodel.GetAllHosts(db, 4)
 	require.NoError(t, err)
 	require.Empty(t, hosts)
@@ -1414,4 +1647,44 @@ func TestPullHostsIntoDBNoHostCmds(t *testing.T) {
 	hosts, err = dbmodel.GetAllHosts(db, 6)
 	require.NoError(t, err)
 	require.Empty(t, hosts)
+}
+
+// Test that host hash tracing works fine.
+func TestHostIteratorTrace(t *testing.T) {
+	// Create new traces.
+	trace0 := newHostIteratorTrace()
+	require.NotNil(t, trace0)
+	trace1 := newHostIteratorTrace()
+	require.NotNil(t, trace1)
+	trace2 := newHostIteratorTrace()
+	require.NotNil(t, trace1)
+
+	hosts := []keaconfig.Reservation{}
+
+	trace0.addResponse("1234", 0, hosts)
+	require.EqualValues(t, 1, trace0.getResponseCount())
+	trace0.addResponse("2345", 0, hosts)
+	require.EqualValues(t, 2, trace0.getResponseCount())
+
+	// trace1 has no hashes. Comparing them with trace1 hashes should
+	// always pass.
+	require.True(t, trace1.hasEqualHashes(trace0))
+	// Comparing the other way around should fail because hashes from
+	// trace0 are missing in trace1.
+	require.False(t, trace0.hasEqualHashes(trace1))
+
+	// Add a matching hash.
+	trace1.addResponse("1234", 0, hosts)
+	require.True(t, trace1.hasEqualHashes(trace0))
+	// Add non matching hash.
+	trace1.addResponse("5678", 0, hosts)
+	require.False(t, trace1.hasEqualHashes(trace0))
+
+	// First add matching hashes, followed by a non-matching one.
+	trace2.addResponse("1234", 0, hosts)
+	require.True(t, trace2.hasEqualHashes(trace0))
+	trace2.addResponse("2345", 0, hosts)
+	require.True(t, trace2.hasEqualHashes(trace0))
+	trace2.addResponse("3456", 0, hosts)
+	require.False(t, trace2.hasEqualHashes(trace0))
 }

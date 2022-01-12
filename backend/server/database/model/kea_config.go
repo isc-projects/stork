@@ -123,7 +123,7 @@ func NewSubnetFromKea(rawSubnet *map[string]interface{}) (*Subnet, error) {
 
 // Creates new host instance from the host reservation extracted from the
 // Kea configuration.
-func NewHostFromKeaConfigReservation(reservation KeaConfigReservation) (*Host, error) {
+func NewHostFromKeaConfigReservation(reservation keaconfig.Reservation) (*Host, error) {
 	var host Host
 	host.Hostname = reservation.Hostname
 	structType := reflect.TypeOf(reservation)
@@ -179,7 +179,7 @@ func NewHostFromKeaConfigReservation(reservation KeaConfigReservation) (*Host, e
 
 // Creates new host instance from the pointer to the map of interfaces.
 func NewHostFromKea(rawHost *map[string]interface{}) (*Host, error) {
-	var parsedHost KeaConfigReservation
+	var parsedHost keaconfig.Reservation
 	_ = mapstructure.Decode(rawHost, &parsedHost)
 	return NewHostFromKeaConfigReservation(parsedHost)
 }

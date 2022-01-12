@@ -51,9 +51,9 @@ func (d DBLogger) BeforeQuery(c context.Context, q *pg.QueryEvent) (context.Cont
 	// to print here to stderr, so it's possible to redirect just the queries to a file.
 	if err != nil {
 		// Let's print errors as SQL comments. This will allow trying to run the export as a script.
-		fmt.Fprintf(os.Stderr, "%s -- error:%s\n", query, err)
+		fmt.Fprintf(os.Stderr, "%s -- error:%s\n", string(query), err)
 	} else {
-		fmt.Fprintln(os.Stderr, query)
+		fmt.Fprintln(os.Stderr, string(query))
 	}
 	return c, nil
 }

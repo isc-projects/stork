@@ -1,17 +1,6 @@
 package dbmodel
 
-// Represents host reservation within Kea configuration.
-type KeaConfigReservation struct {
-	HWAddress   string   `mapstructure:"hw-address" json:"hw-address,omitempty"`
-	DUID        string   `mapstructure:"duid" json:"duid,omitempty"`
-	CircuitID   string   `mapstructure:"circuit-id" json:"circuit-id,omitempty"`
-	ClientID    string   `mapstructure:"client-id" json:"client-id,omitempty"`
-	FlexID      string   `mapstructure:"flex-id" json:"flex-id,omitempty"`
-	IPAddress   string   `mapstructure:"ip-address" json:"ip-address,omitempty"`
-	IPAddresses []string `mapstructure:"ip-addresses" json:"ip-addresses,omitempty"`
-	Prefixes    []string `mapstructure:"prefixes" json:"prefixes,omitempty"`
-	Hostname    string   `mapstructure:"hostname" json:"hostname,omitempty"`
-}
+import keaconfig "isc.org/stork/appcfg/kea"
 
 // Represents address pool structure within Kea configuration.
 type KeaConfigPool struct {
@@ -32,7 +21,7 @@ type KeaConfigSubnet struct {
 	ClientClass  string `mapstructure:"client-class"`
 	Pools        []KeaConfigPool
 	PdPools      []KeaConfigPdPool `mapstructure:"pd-pools"`
-	Reservations []KeaConfigReservation
+	Reservations []keaconfig.Reservation
 }
 
 // Represents a shared network with subnets within Kea configuration.
