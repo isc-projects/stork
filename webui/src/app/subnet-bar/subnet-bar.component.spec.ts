@@ -100,7 +100,7 @@ describe('SubnetBarComponent', () => {
         expect(component.tooltip).toContain('1')
         expect(component.tooltip).toContain('6')
         expect(component.tooltip).toContain('3')
-    }),
+    })
     it('subnet bar cannot extend beyond the container', async () => {
         // Returns an IPv6 subnet mock with given utilization. The utilization
         // should be a ratio (from 0% to 100%) of assigned to total NAs/PDs.
