@@ -101,69 +101,90 @@ describe('SubnetBarComponent', () => {
         expect(component.tooltip).toContain('6')
         expect(component.tooltip).toContain('3')
     }),
-        it('subnet bar cannot extend beyond the container', async () => {
-            // Returns an IPv6 subnet mock with given utilization. The utilization
-            // should be a ratio (from 0% to 100%) of assigned to total NAs/PDs.
-            function getSubnet(utilization: number) {
-                return {
-                    addrUtilization: utilization,
-                    subnet: '3000::0/24',
-                    localSubnets: [
-                        {
-                            stats: {
-                                'total-nas': 100.0,
-                                'assigned-nas': (100.0 * utilization) / 100.0,
-                                'declined-nas': 0,
-                                'total-pds': 200.0,
-                                'assigned-pds': (200.0 * utilization) / 100.0,
-                            },
+    it('subnet bar cannot extend beyond the container', async () => {
+        // Returns an IPv6 subnet mock with given utilization. The utilization
+        // should be a ratio (from 0% to 100%) of assigned to total NAs/PDs.
+        function getSubnet(utilization: number) {
+            return {
+                addrUtilization: utilization,
+                subnet: '3000::0/24',
+                localSubnets: [
+                    {
+                        stats: {
+                            'total-nas': 100.0,
+                            'assigned-nas': (100.0 * utilization) / 100.0,
+                            'declined-nas': 0,
+                            'total-pds': 200.0,
+                            'assigned-pds': (200.0 * utilization) / 100.0,
                         },
-                    ],
-                }
+                    },
+                ],
+            }
+        }
+
+        // Check if the bar extends beyond the container.
+        function extendBeyond(): boolean {
+            const parent = fixture.debugElement.query(By.css('.utilization'))
+            const parentElement = parent.nativeElement as Element
+            const parentRect = parentElement.getBoundingClientRect()
+            const bar = fixture.debugElement.query(By.css('.bar'))
+            const barElement = bar.nativeElement as Element
+            const barRect = barElement.getBoundingClientRect()
+
+            if (
+                barRect.top < parentRect.top ||
+                barRect.bottom > parentRect.bottom ||
+                barRect.left < parentRect.left ||
+                barRect.right > parentRect.right
+            ) {
+                return true
             }
 
-            // Check if the bar extends beyond the container.
-            function extendBeyond(): boolean {
-                const parent = fixture.debugElement.query(By.css('.utilization'))
-                const parentElement = parent.nativeElement as Element
-                const parentRect = parentElement.getBoundingClientRect()
-                const bar = fixture.debugElement.query(By.css('.bar'))
-                const barElement = bar.nativeElement as Element
-                const barRect = barElement.getBoundingClientRect()
+            return false
+        }
 
-                if (
-                    barRect.top < parentRect.top ||
-                    barRect.bottom > parentRect.bottom ||
-                    barRect.left < parentRect.left ||
-                    barRect.right > parentRect.right
-                ) {
-                    return true
-                }
+        // Utilization below 100%, usual situation.
+        component.subnet = getSubnet(50)
+        fixture.detectChanges()
+        expect(extendBeyond()).toBeFalse()
 
-                return false
-            }
+        // Utilization equals to 100%, the subnet bar should
+        // have a maximal width as allowed by the container.
+        component.subnet = getSubnet(100)
+        fixture.detectChanges()
+        expect(extendBeyond()).toBeFalse()
 
-            // Utilization below 100%, usual situation.
-            component.subnet = getSubnet(50)
-            fixture.detectChanges()
-            expect(extendBeyond()).toBeFalse()
+        // Utilization above 100%, unusual case, but it shouldn't
+        // cause UI glitches.
+        component.subnet = getSubnet(150)
+        fixture.detectChanges()
+        expect(extendBeyond()).toBeFalse()
 
-            // Utilization equals to 100%, the subnet bar should
-            // have a maximal width as allowed by the container.
-            component.subnet = getSubnet(100)
-            fixture.detectChanges()
-            expect(extendBeyond()).toBeFalse()
+        // Utilization below 0%, invalid or buggy utilization.
+        // Anyway, UI shouldn't be broken.
+        component.subnet = getSubnet(-50)
+        fixture.detectChanges()
+        expect(extendBeyond()).toBeFalse()
+    })
 
-            // Utilization above 100%, unusual case, but it shouldn't
-            // cause UI glitches.
-            component.subnet = getSubnet(150)
-            fixture.detectChanges()
-            expect(extendBeyond()).toBeFalse()
+    it('has warning tooltip when utilization is greater than 100%', () => {
+        component.subnet = {
+            addrUtilization: 101,
+            subnet: '3000::0/24',
+            localSubnets: [
+                {
+                    stats: {
+                        'total-nas': 100.0,
+                        'assigned-nas': 101.0,
+                        'declined-nas': 0,
+                        'total-pds': 200.0,
+                        'assigned-pds': 202.0,
+                    },
+                },
+            ],
+        }
 
-            // Utilization below 0%, invalid or buggy utilization.
-            // Anyway, UI shouldn't be broken.
-            component.subnet = getSubnet(-50)
-            fixture.detectChanges()
-            expect(extendBeyond()).toBeFalse()
-        })
+        fixture.detectChanges()
+        expect(component.tooltip).toContain('Data are unreliable')
+    })
 })

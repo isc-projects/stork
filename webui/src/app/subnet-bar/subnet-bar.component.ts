@@ -46,6 +46,12 @@ export class SubnetBarComponent {
         if (this._subnet.localSubnets[0].stats) {
             const stats = this._subnet.localSubnets[0].stats
             const lines = []
+            if (util > 100) {
+                lines.push("Warning! Utilization is greater than 100%. Data are unreliable.")
+                lines.push("Problem is caused by Kea limitation - addresses/NAS/PDs are included only in assigned counters (not in total).")
+                lines.push("You should manually check that your pool has free addresses and follow up on Kea and Stork updates.  We're on it.")
+                lines.push("")
+            }
             if (this._subnet.subnet.includes('.')) {
                 // DHCPv4 stats
                 lines.push('Total: ' + stats['total-addresses'].toLocaleString('en-US'))
