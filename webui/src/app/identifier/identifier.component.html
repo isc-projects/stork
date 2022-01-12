@@ -1,4 +1,4 @@
-<span style="display: block" [class]="styleClass">
+<span class="p-d-flex p-ai-center p-flex-wrap" [ngClass]="styleClass">
     <a *ngIf="link.length !== 0; else identifierTemplate" routerLink="{{ link }}">
         <ng-container *ngTemplateOutlet="identifierTemplate"></ng-container>
     </a>
@@ -14,6 +14,7 @@
         *ngIf="textId !== null"
         onLabel="text"
         offLabel="hex"
+        class="p-ml-1"
         styleClass="p-badge"
         [(ngModel)]="hexFormat"
         ngDefaultControl
