@@ -13,7 +13,8 @@ func TestStats(t *testing.T) {
 	defer teardown()
 
 	// initialize stats to 0
-	InitializeStats(db)
+	err := InitializeStats(db)
+	require.NoError(t, err)
 
 	// get all stats and check some values
 	stats, err := GetAllStats(db)

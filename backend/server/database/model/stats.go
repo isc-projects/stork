@@ -19,7 +19,7 @@ type Decimal struct {
 var _ types.ValueAppender = (*Decimal)(nil)
 
 // Custom big.Int serializing to the database record.
-func (d Decimal) AppendValue(b []byte, quote int) []byte {
+func (d *Decimal) AppendValue(b []byte, quote int) []byte {
 	if quote == 1 {
 		b = append(b, '\'')
 	}
@@ -76,7 +76,7 @@ type Statistic struct {
 	// Machine ID has an int64 data type, but Stork uses only positive values. In practice the range
 	// is the same as for uint32. It is 10^10 unique values.
 	// Then we need up to 59 digits to save the capacity of all subnets handled by Stork at the same time.
-	Value *Decimal `pg:"type:decimal(60,0)"`
+	Value Decimal `pg:"type:decimal(60,0)"`
 }
 
 // Initialize global statistics in db. If new statistic needs to be added then add it to statsList list
@@ -123,7 +123,7 @@ func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
 func SetStats(db *pg.DB, statsMap map[string]*big.Int) error {
 	statsList := []*Statistic{}
 	for s, v := range statsMap {
-		stat := &Statistic{Name: s, Value: &Decimal{Int: *v}}
+		stat := &Statistic{Name: s, Value: Decimal{Int: *v}}
 		statsList = append(statsList, stat)
 	}
 
