@@ -1,10 +1,11 @@
 package dbmodel
 
 import (
-	"github.com/go-pg/pg/v10"
 	"math/big"
 
-	"github.com/go-pg/pg/types"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/types"
+
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,16 +20,16 @@ type Decimal struct {
 var _ types.ValueAppender = (*Decimal)(nil)
 
 // Custom big.Int serializing to the database record.
-func (d *Decimal) AppendValue(b []byte, quote int) []byte {
+func (d Decimal) AppendValue(b []byte, quote int) ([]byte, error) {
 	if quote == 1 {
 		b = append(b, '\'')
 	}
-	// ToDo: Support negative values
-	b = append(b, d.Bytes()...)
+
+	b = append(b, []byte(d.String())...)
 	if quote == 1 {
 		b = append(b, '\'')
 	}
-	return b
+	return b, nil
 }
 
 // Type guard for deserialization.

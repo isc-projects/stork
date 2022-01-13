@@ -1,8 +1,6 @@
 package dbmigs
 
-import (
-	"github.com/go-pg/migrations/v7"
-)
+import "github.com/go-pg/migrations/v8"
 
 func init() {
 	// Stork shouldn't exceed the 60 decimal places in any statistic, even if fully loaded.
