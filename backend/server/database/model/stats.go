@@ -2,14 +2,81 @@ package dbmodel
 
 import (
 	"github.com/go-pg/pg/v10"
+	"math/big"
+
+	"github.com/go-pg/pg/types"
 	errors "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
+// Custom support for decimal/numeric in Go-PG.
+// See: https://github.com/go-pg/pg/blob/v10/example_custom_test.go
+type Decimal struct {
+	big.Int
+}
+
+// Type guard for serialization.
+var _ types.ValueAppender = (*Decimal)(nil)
+
+// Custom big.Int serializing to the database record.
+func (d Decimal) AppendValue(b []byte, quote int) []byte {
+	if quote == 1 {
+		b = append(b, '\'')
+	}
+	// ToDo: Support negative values
+	b = append(b, d.Bytes()...)
+	if quote == 1 {
+		b = append(b, '\'')
+	}
+	return b
+}
+
+// Type guard for deserialization.
+var _ types.ValueScanner = (*Decimal)(nil)
+
+// Custom decimal/numeric parsing to big.Int.
+func (d *Decimal) ScanValue(rd types.Reader, n int) error {
+	if n <= 0 {
+		d.Int = *big.NewInt(0)
+		return nil
+	}
+
+	tmp, err := rd.ReadFullTemp()
+	if err != nil {
+		return err
+	}
+
+	_, ok := d.Int.SetString(string(tmp), 10)
+	if !ok {
+		return errors.New("invalid decimal")
+	}
+
+	return nil
+}
+
 // Represents a statistic held in statistic table in the database.
 type Statistic struct {
-	Name  string `pg:",pk"`
-	Value int64
+	Name string `pg:",pk"`
+	// The maximal IPv6 prefix is 128.
+	// How many decimal digits we need to store the total number of available addresses?
+	// 2^128 = 10^x
+	// 10 = 2^y
+	// y = log2 10
+	// 2^128 = 2^(x*y)
+	// x*y = 128
+	// x = 128 / y
+	// x = 38.53 = 39
+	// We need up to 39 digits to save the capacity of single StorkIPv6 network.
+	//
+	// But how many subnets may be handled by a single Kea instance?
+	// Kea stores the subnet ID in uint32. It is 2^32 = 10^10 unique values.
+	// Then we need up to 49 digits to save the capacity of all networks from a single Kea instance.
+	//
+	// But how many Kea instances may be handled by a single Stork instance?
+	// Machine ID has an int64 data type, but Stork uses only positive values. In practice the range
+	// is the same as for uint32. It is 10^10 unique values.
+	// Then we need up to 59 digits to save the capacity of all subnets handled by Stork at the same time.
+	Value *Decimal `pg:"type:decimal(60,0)"`
 }
 
 // Initialize global statistics in db. If new statistic needs to be added then add it to statsList list
@@ -36,7 +103,7 @@ func InitializeStats(db *pg.DB) error {
 }
 
 // Get all global statistics values.
-func GetAllStats(db *pg.DB) (map[string]int64, error) {
+func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
 	statsList := []*Statistic{}
 	q := db.Model(&statsList)
 	err := q.Select()
@@ -44,19 +111,19 @@ func GetAllStats(db *pg.DB) (map[string]int64, error) {
 		return nil, errors.Wrapf(err, "problem with getting all statistics")
 	}
 
-	statsMap := make(map[string]int64)
+	statsMap := make(map[string]*big.Int)
 	for _, s := range statsList {
-		statsMap[s.Name] = s.Value
+		statsMap[s.Name] = &s.Value.Int
 	}
 
 	return statsMap, nil
 }
 
 // Set a list of global statistics.
-func SetStats(db *pg.DB, statsMap map[string]int64) error {
+func SetStats(db *pg.DB, statsMap map[string]*big.Int) error {
 	statsList := []*Statistic{}
 	for s, v := range statsMap {
-		stat := &Statistic{Name: s, Value: v}
+		stat := &Statistic{Name: s, Value: &Decimal{Int: *v}}
 		statsList = append(statsList, stat)
 	}
 

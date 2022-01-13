@@ -1343,16 +1343,16 @@ func (r *RestAPI) GetDhcpOverview(ctx context.Context, params dhcp.GetDhcpOvervi
 	}
 
 	dhcp4Stats := &models.Dhcp4Stats{
-		AssignedAddresses: fmt.Sprint(uint64(stats["assigned-addresses"])),
-		TotalAddresses:    fmt.Sprint(uint64(stats["total-addresses"])),
-		DeclinedAddresses: fmt.Sprint(uint64(stats["declined-addresses"])),
+		AssignedAddresses: fmt.Sprint(stats["assigned-addresses"]),
+		TotalAddresses:    fmt.Sprint(stats["total-addresses"]),
+		DeclinedAddresses: fmt.Sprint(stats["declined-addresses"]),
 	}
 	dhcp6Stats := &models.Dhcp6Stats{
-		AssignedNAs: fmt.Sprint(uint64(stats["assigned-nas"])),
-		TotalNAs:    fmt.Sprint(uint64(stats["total-nas"])),
-		AssignedPDs: fmt.Sprint(uint64(stats["assigned-pds"])),
-		TotalPDs:    fmt.Sprint(uint64(stats["total-pds"])),
-		DeclinedNAs: fmt.Sprint(uint64(stats["declined-nas"])),
+		AssignedNAs: fmt.Sprint(stats["assigned-nas"]),
+		TotalNAs:    fmt.Sprint(stats["total-nas"]),
+		AssignedPDs: fmt.Sprint(stats["assigned-pds"]),
+		TotalPDs:    fmt.Sprint(stats["total-pds"]),
+		DeclinedNAs: fmt.Sprint(stats["declined-nas"]),
 	}
 
 	// get kea apps and daemons statuses

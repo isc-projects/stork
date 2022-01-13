@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"math/big"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
@@ -19,10 +20,10 @@ func TestStats(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, stats, 8)
 	require.Contains(t, stats, "assigned-addresses")
-	require.Zero(t, stats["assigned-addresses"])
+	require.EqualValues(t, big.NewInt(0), stats["assigned-addresses"])
 
 	// modify one stats and store it in db
-	stats["assigned-addresses"] = 10
+	stats["assigned-addresses"] = big.NewInt(10)
 	err = SetStats(db, stats)
 	require.NoError(t, err)
 
@@ -31,5 +32,5 @@ func TestStats(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, stats, 8)
 	require.Contains(t, stats, "assigned-addresses")
-	require.EqualValues(t, 10, stats["assigned-addresses"])
+	require.EqualValues(t, big.NewInt(10), stats["assigned-addresses"])
 }
