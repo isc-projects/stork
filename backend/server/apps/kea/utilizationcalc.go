@@ -1,6 +1,8 @@
 package kea
 
 import (
+	"math/big"
+
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -216,8 +218,21 @@ func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet) *subnetIPv
 func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string) *storkutil.BigCounter {
 	sum := storkutil.NewBigCounter(0)
 	for _, localSubnet := range subnet.LocalSubnets {
-		stat := getLocalSubnetStatValueIntOrDefault(localSubnet, statName)
-		sum.AddUint64(stat)
+		value, ok := localSubnet.Stats[statName]
+		if !ok {
+			continue
+		}
+
+		valueUint, ok := value.(uint64)
+		if ok {
+			sum.AddUint64(valueUint)
+			continue
+		}
+
+		valueBigInt, ok := value.(*big.Int)
+		if ok {
+			sum.AddBigInt(valueBigInt)
+		}
 	}
 	return sum
 }
@@ -227,24 +242,17 @@ func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string) *storkutil
 func sumStatLocalSubnetsIPv4(subnet *dbmodel.Subnet, statName string) uint64 {
 	sum := uint64(0)
 	for _, localSubnet := range subnet.LocalSubnets {
-		stat := getLocalSubnetStatValueIntOrDefault(localSubnet, statName)
-		sum += stat
+		value, ok := localSubnet.Stats[statName]
+		if !ok {
+			continue
+		}
+
+		valueUint, ok := value.(uint64)
+		if !ok {
+			continue
+		}
+
+		sum += valueUint
 	}
 	return sum
-}
-
-// Retrieve the statistic value from the provided local subnet or return zero value.
-func getLocalSubnetStatValueIntOrDefault(localSubnet *dbmodel.LocalSubnet, name string) uint64 {
-	value, ok := localSubnet.Stats[name]
-	if !ok {
-		return 0
-	}
-
-	valueInt, ok := value.(uint64)
-	if !ok {
-		return 0
-	}
-
-	// Kea casts the value to int64 before serializing it to JSON.
-	return valueInt
 }

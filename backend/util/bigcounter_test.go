@@ -107,6 +107,45 @@ func TestBigCounterAddUint64Shorthand(t *testing.T) {
 	require.EqualValues(t, big.NewInt(0).SetUint64(math.MaxUint64), counter2.ToBigInt())
 }
 
+// Test add in place big.Int shorthand.
+func TestBigCounterAddBigIntshorthand(t *testing.T) {
+	// Arrage
+	expected := big.NewInt(0).Add(
+		big.NewInt(0).Add(
+			big.NewInt(111),
+			big.NewInt(0).SetUint64(math.MaxUint64),
+		),
+		big.NewInt(0).SetUint64(math.MaxUint64),
+	)
+	// Act
+	counter := NewBigCounter(1).
+		AddBigInt(big.NewInt(10)).
+		AddBigInt(big.NewInt(100)).
+		AddBigInt(
+			big.NewInt(0).Add(
+				big.NewInt(0).SetUint64(math.MaxUint64),
+				big.NewInt(0).SetUint64(math.MaxUint64),
+			),
+		)
+	// Assert
+	require.EqualValues(t, expected, counter.ToBigInt())
+}
+
+// Test that add in place big.Int ignores the negative numbers.
+func TestBigCounterAddBigIntshorthandIgnoreNegatives(t *testing.T) {
+	// Act
+	counter := NewBigCounter(42).
+		AddBigInt(big.NewInt(-1)).
+		AddBigInt(big.NewInt(-2)).
+		AddBigInt(big.NewInt(math.MinInt64)).
+		AddBigInt(big.NewInt(0).Add(
+			big.NewInt(math.MinInt64),
+			big.NewInt(math.MinInt64),
+		))
+	// Assert
+	require.EqualValues(t, big.NewInt(42), counter.ToBigInt())
+}
+
 // Test divide uint64 big counters.
 func TestBigCounterDivideInt64(t *testing.T) {
 	// Arrange

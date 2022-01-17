@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 	"math/rand"
 	"testing"
 	"time"
@@ -921,13 +922,22 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	// Arrange
 	localSubnet := &LocalSubnet{
 		Stats: LocalSubnetStats{
-			"maxInt64":  int64(math.MaxInt64),
-			"minInt64":  int64(math.MinInt64),
-			"maxUint64": uint64(math.MaxUint64),
-			"minUint64": uint64(0),
-			"untyped":   0,
-			"int16":     int16(0),
-			"int32":     int32(0),
+			"maxInt64":             int64(math.MaxInt64),
+			"minInt64":             int64(math.MinInt64),
+			"maxUint64":            uint64(math.MaxUint64),
+			"minUint64":            uint64(0),
+			"untyped":              42,
+			"int16":                int16(16),
+			"int32":                int32(32),
+			"bigIntInUint64Bounds": big.NewInt(42),
+			"bigIntInInt64Bounds":  big.NewInt(-42),
+			"bigIntAboveUint64Bounds": big.NewInt(0).Add(
+				big.NewInt(0).SetUint64(math.MaxUint64),
+				big.NewInt(0).SetUint64(math.MaxUint64),
+			),
+			"bigIntBelowInt64Bounds": big.NewInt(0).Add(
+				big.NewInt(math.MinInt64), big.NewInt(math.MinInt64),
+			),
 		},
 	}
 
@@ -942,14 +952,24 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	require.NoError(t, fromJSONErr)
 
 	// Deserializer loses the original types (!)
-	require.IsType(t, uint64(0), deserialized.Stats["maxInt64"])
-	require.IsType(t, int64(0), deserialized.Stats["minInt64"])
-	require.IsType(t, uint64(0), deserialized.Stats["maxUint64"])
-	require.IsType(t, uint64(0), deserialized.Stats["minUint64"])
+	require.Equal(t, uint64(math.MaxInt64), deserialized.Stats["maxInt64"])
+	require.Equal(t, int64(math.MinInt64), deserialized.Stats["minInt64"])
+	require.Equal(t, uint64(math.MaxUint64), deserialized.Stats["maxUint64"])
+	require.Equal(t, uint64(0), deserialized.Stats["minUint64"])
 
-	require.IsType(t, float64(0), deserialized.Stats["untyped"])
-	require.IsType(t, float64(0), deserialized.Stats["int16"])
-	require.IsType(t, float64(0), deserialized.Stats["int32"])
+	require.Equal(t, float64(42), deserialized.Stats["untyped"])
+	require.Equal(t, float64(16), deserialized.Stats["int16"])
+	require.Equal(t, float64(32), deserialized.Stats["int32"])
+
+	require.Equal(t, uint64(42), deserialized.Stats["bigIntInUint64Bounds"])
+	require.Equal(t, int64(-42), deserialized.Stats["bigIntInInt64Bounds"])
+	require.Equal(t, big.NewInt(0).Add(
+		big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(0).SetUint64(math.MaxUint64),
+	), deserialized.Stats["bigIntAboveUint64Bounds"])
+	require.Equal(t, big.NewInt(0).Add(
+		big.NewInt(math.MinInt64), big.NewInt(math.MinInt64),
+	), deserialized.Stats["bigIntBelowInt64Bounds"])
 }
 
 // Benchmark measuring a time to add a single subnet.

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,8 @@ func (s LocalSubnetStats) MarshalJSON() ([]byte, error) {
 
 	for k, v := range s {
 		switch v.(type) {
+		case *big.Int:
+			toMarshal[k] = v.(*big.Int).String()
 		case int64, uint64:
 			toMarshal[k] = fmt.Sprint(v)
 		default:
@@ -78,6 +81,12 @@ func (s *LocalSubnetStats) UnmarshalJSON(data []byte) error {
 		vInt64, err := strconv.ParseInt(vStr, 10, 64)
 		if err == nil {
 			(*s)[k] = vInt64
+			continue
+		}
+
+		vBigInt, ok := new(big.Int).SetString(vStr, 10)
+		if ok {
+			(*s)[k] = vBigInt
 			continue
 		}
 

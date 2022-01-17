@@ -82,6 +82,23 @@ func (n *BigCounter) AddUint64(val uint64) *BigCounter {
 	return n
 }
 
+// Adds big.Int number to the internal counting value.
+// It modifies the internal state. Only positive integer are allowed.
+func (n *BigCounter) AddBigInt(val *big.Int) *BigCounter {
+	if val.IsUint64() {
+		return n.AddUint64(val.Uint64())
+	}
+	// Ignore negative numbers
+	if val.Cmp(big.NewInt(0)) == -1 {
+		return n
+	}
+	if !n.isExtended() {
+		n.initExtended()
+	}
+	n.extended.Add(n.extended, val)
+	return n
+}
+
 // Divides this counter by the other.
 // Doesn't change the internal state.
 // If the result is above float64-range then it returns the infinity.
