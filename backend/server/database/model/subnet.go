@@ -36,13 +36,13 @@ func (s LocalSubnetStats) MarshalJSON() ([]byte, error) {
 	toMarshal := make(map[string]interface{}, len(s))
 
 	for k, v := range s {
-		switch v.(type) {
+		switch value := v.(type) {
 		case *big.Int:
-			toMarshal[k] = v.(*big.Int).String()
+			toMarshal[k] = value.String()
 		case int64, uint64:
-			toMarshal[k] = fmt.Sprint(v)
+			toMarshal[k] = fmt.Sprint(value)
 		default:
-			toMarshal[k] = v
+			toMarshal[k] = value
 		}
 	}
 
