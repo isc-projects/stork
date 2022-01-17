@@ -67,7 +67,6 @@ type LocalHost struct {
 	Daemon     *Daemon `pg:"rel:has-one"`
 	Host       *Host   `pg:"rel:has-one"`
 	DataSource string
-	UpdateSeq  int64
 }
 
 // Associates a host with DHCP with host identifiers.
@@ -456,46 +455,23 @@ func DeleteHost(dbi dbops.DBI, hostID int64) error {
 	return err
 }
 
-// Delete associations of the apps with hosts for which the sequence number is
-// different than the specified sequence number. These are usually hosts which
-// are no longer present in any of the apps monitored by Stork. The dataSource
-// is optional and it indicates the sources of hosts to be removed.
-func DeleteLocalHostsWithOtherSeq(dbi dbops.DBI, seq int64, dataSource string) error {
-	q := dbi.Model(&LocalHost{}).
-		Where("local_host.update_seq != ?", seq)
-	if len(dataSource) > 0 {
-		q = q.Where("local_host.data_source = ?", dataSource)
-	}
-	_, err := q.Delete()
-	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with deleting associations between apps and hosts for sequence number %d and data source type %s", seq, dataSource)
-	}
-	return err
-}
-
 // Associates a daemon with the host having a specified ID in a
 // transaction. Internally, the association is made via the local_host
 // table which holds information about the host from the given daemon
 // perspective. The source argument indicates whether the host
 // information was fetched from the daemon's configuration or via the
 // command.
-func addDaemonToHost(tx *pg.Tx, host *Host, daemonID int64, source string, seq int64) error {
+func addDaemonToHost(tx *pg.Tx, host *Host, daemonID int64, source string) error {
 	localHost := LocalHost{
 		HostID:     host.ID,
 		DaemonID:   daemonID,
 		DataSource: source,
-		UpdateSeq:  seq,
 	}
 	q := tx.Model(&localHost).
 		OnConflict("(daemon_id, host_id) DO UPDATE").
 		Set("daemon_id = EXCLUDED.daemon_id").
 		Set("data_source = EXCLUDED.data_source")
 
-	for _, lh := range host.LocalHosts {
-		if lh.DaemonID == daemonID && lh.UpdateSeq == 0 {
-			q = q.Set("update_seq = EXCLUDED.update_seq")
-		}
-	}
 	_, err := q.Insert()
 	if err != nil {
 		err = pkgerrors.Wrapf(err, "problem with associating the daemon %d with the host %d",
@@ -507,13 +483,13 @@ func addDaemonToHost(tx *pg.Tx, host *Host, daemonID int64, source string, seq i
 // Associates a daemon with the host having a specified ID.
 // It begins a new transaction when dbi has a *pg.DB type or uses an
 // existing transaction when dbi has a *pg.Tx type.
-func AddDaemonToHost(dbi dbops.DBI, host *Host, daemonID int64, source string, seq int64) error {
+func AddDaemonToHost(dbi dbops.DBI, host *Host, daemonID int64, source string) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return addDaemonToHost(tx, host, daemonID, source, seq)
+			return addDaemonToHost(tx, host, daemonID, source)
 		})
 	}
-	return addDaemonToHost(dbi.(*pg.Tx), host, daemonID, source, seq)
+	return addDaemonToHost(dbi.(*pg.Tx), host, daemonID, source)
 }
 
 // Dissociates a daemon from the hosts. The dataSource designates a data
@@ -555,7 +531,7 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 
 // Iterates over the list of hosts and commits them into the database. The hosts
 // can be associated with a subnet or can be made global.
-func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, daemon *Daemon, source string, seq int64) (err error) {
+func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, daemon *Daemon, source string) (err error) {
 	for i := range hosts {
 		hosts[i].SubnetID = subnetID
 		newHost := (hosts[i].ID == 0)
@@ -573,7 +549,7 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, daemon *Daemon, 
 			}
 		}
 		if newHost || hosts[i].UpdateOnCommit {
-			err = AddDaemonToHost(tx, &hosts[i], daemon.ID, source, seq)
+			err = AddDaemonToHost(tx, &hosts[i], daemon.ID, source)
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to associate detected host with Kea daemon having id %d",
 					daemon.ID)
@@ -585,30 +561,14 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, daemon *Daemon, 
 }
 
 // Iterates over the list of hosts and commits them as global hosts.
-func CommitGlobalHostsIntoDB(tx *pg.Tx, hosts []Host, daemon *Daemon, source string, seq int64) (err error) {
-	return commitHostsIntoDB(tx, hosts, 0, daemon, source, seq)
+func CommitGlobalHostsIntoDB(tx *pg.Tx, hosts []Host, daemon *Daemon, source string) (err error) {
+	return commitHostsIntoDB(tx, hosts, 0, daemon, source)
 }
 
 // Iterates over the hosts belonging to the given subnet and stores them
 // or updates in the database.
-func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, daemon *Daemon, source string, seq int64) (err error) {
-	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, daemon, source, seq)
-}
-
-// This function returns next value of the bulk_update_seq. The returned value
-// is used during bulk updates of data within a database. For example, when
-// inserting or updating many host reservations, sequence value for all host
-// reservations tha have been inserted or updated must be set to the same
-// sequence value. This allows for distinguishing the hosts that haven't been
-// updated. In such case, they can be removed.
-// todo: This function may be used to a separate file. For now it is here, because
-// the only supported use case is for hosts.
-func GetNextBulkUpdateSeq(dbi dbops.DBI) (seq int64, err error) {
-	_, err = dbi.QueryOne(pg.Scan(&seq), "SELECT nextval('bulk_update_seq')")
-	if err != nil {
-		err = pkgerrors.Wrapf(err, "problem with getting next bulk update sequence number")
-	}
-	return seq, err
+func CommitSubnetHostsIntoDB(tx *pg.Tx, subnet *Subnet, daemon *Daemon, source string) (err error) {
+	return commitHostsIntoDB(tx, subnet.Hosts, subnet.ID, daemon, source)
 }
 
 // This function checks if the given host includes a reservation for the

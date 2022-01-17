@@ -80,13 +80,6 @@ func (puller *HostsPuller) pull() error {
 		return err
 	}
 
-	// Get sequence number to be associated with updated and inserted hosts.
-	seq, err := dbmodel.GetNextBulkUpdateSeq(puller.DB)
-	if err != nil {
-		err = errors.WithMessagef(err, "problem with getting next bulk update sequence number fetching hosts from Kea apps")
-		return err
-	}
-
 	var (
 		successCount int
 		skippedCount int
@@ -97,7 +90,7 @@ func (puller *HostsPuller) pull() error {
 	// from them via the host_cmds hooks library. Next, update the
 	// hosts in the Stork database.
 	for i := range apps {
-		succ, skip, e := puller.pullFromApp(&apps[i], seq)
+		succ, skip, e := puller.pullFromApp(&apps[i])
 		successCount += succ
 		skippedCount += skip
 		erredCount += e
@@ -121,12 +114,12 @@ func (puller *HostsPuller) pull() error {
 // Pulls all host reservations stored in the hosts backend for the particular
 // Kea app. The returned values are the daemon counters for which the pull
 // was successful, skipped and/or erred. They are used for logging purposes.
-func (puller *HostsPuller) pullFromApp(app *dbmodel.App, seq int64) (successCount, skippedCount, erredCount int) {
+func (puller *HostsPuller) pullFromApp(app *dbmodel.App) (successCount, skippedCount, erredCount int) {
 	for _, daemon := range app.Daemons {
 		if daemon.KeaDaemon.KeaDHCPDaemon == nil {
 			continue
 		}
-		pulled, err := puller.pullFromDaemon(app, daemon, seq)
+		pulled, err := puller.pullFromDaemon(app, daemon)
 		if err != nil {
 			erredCount++
 			log.Errorf("problem with pulling Kea hosts from daemon %d: %+v", daemon.ID, err)
@@ -147,7 +140,7 @@ func (puller *HostsPuller) pullFromApp(app *dbmodel.App, seq int64) (successCoun
 // the daemon and the daemon is active). The function uses the iterator mechanism
 // to pull the hosts. It can result in sending multiple reservation-get-page
 // commands to each Kea instance.
-func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daemon, seq int64) (bool, error) {
+func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daemon) (bool, error) {
 	// Hosts update is performed in a transaction but we don't begin the
 	// transaction until we detect that there were some changes in the
 	// host reservations.
@@ -224,13 +217,13 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 			// responses to add the associations with the hosts that haven't
 			// changed.
 			for _, traceResponse := range it.trace.responses {
-				if err = convertAndUpdateHosts(tx, daemon, it.getSubnet(traceResponse.subnetIndex), traceResponse.hosts, seq); err != nil {
+				if err = convertAndUpdateHosts(tx, daemon, it.getSubnet(traceResponse.subnetIndex), traceResponse.hosts); err != nil {
 					return true, err
 				}
 			}
 		}
 		// Add the host reservations from the current response.
-		if err = convertAndUpdateHosts(tx, daemon, it.getCurrentSubnet(), reservations, seq); err != nil {
+		if err = convertAndUpdateHosts(tx, daemon, it.getCurrentSubnet(), reservations); err != nil {
 			return true, err
 		}
 	}
@@ -540,7 +533,7 @@ func (iterator *hostIterator) getPageFromHostCmds() (hosts []keaconfig.Reservati
 // to the host format in Stork. It also associates the hosts with their
 // subnets. The converted hosts are merged into the existing hosts and
 // stored in the database.
-func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Subnet, reservations []keaconfig.Reservation, seq int64) (err error) {
+func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Subnet, reservations []keaconfig.Reservation) (err error) {
 	var hosts []dbmodel.Host
 	for _, reservation := range reservations {
 		host, err := dbmodel.NewHostFromKeaConfigReservation(reservation)
@@ -557,10 +550,10 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 	var mergedHosts []dbmodel.Host
 	// The subnet is nil when we're dealing with the global hosts.
 	if subnet == nil {
-		if mergedHosts, err = mergeHosts(tx, int64(0), hosts, true, daemon); err != nil {
+		if mergedHosts, err = mergeHosts(tx, int64(0), hosts, true); err != nil {
 			return
 		}
-		if err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, daemon, "api", seq); err != nil {
+		if err = dbmodel.CommitGlobalHostsIntoDB(tx, mergedHosts, daemon, "api"); err != nil {
 			return
 		}
 		// We're done with global hosts, so let's get the next chunk of
@@ -578,14 +571,14 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 	// the subnet with the new hosts (fetched via the Kea API). These
 	// hosts are merged into the existing hosts for this subnet and
 	// returned as mergedHosts.
-	if mergedHosts, err = mergeSubnetHosts(tx, subnet, subnet, daemon); err != nil {
+	if mergedHosts, err = mergeSubnetHosts(tx, subnet, subnet); err != nil {
 		return
 	}
 	// Now we have to assign the combined set of existing hosts and
 	// new hosts into the subnet instance and commit everything to the
 	// database.
 	subnet.Hosts = mergedHosts
-	if err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, daemon, "api", seq); err != nil {
+	if err = dbmodel.CommitSubnetHostsIntoDB(tx, subnet, daemon, "api"); err != nil {
 		return
 	}
 	return nil
@@ -600,7 +593,7 @@ func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Su
 // combination of the existing hosts and new hosts (if true) or only new
 // hosts are returned (if false). This function is called by mergeGlobalHosts
 // and mergeSubnetHosts.
-func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineHosts bool, daemon *dbmodel.Daemon) (hosts []dbmodel.Host, err error) {
+func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineHosts bool) (hosts []dbmodel.Host, err error) {
 	// If there are no new hosts there is nothing to do.
 	if len(newHosts) == 0 {
 		return
@@ -628,15 +621,6 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineH
 				// or dbmodel.CommitGlobalHostsIntoDB.
 				newHost.UpdateOnCommit = true
 
-				// Check if there is already an association between this daemon and the
-				// given host. If there is, we need to reset the sequence number for
-				// it to force of the sequence number. Otherwise, the old sequence
-				// number will remain.
-				for j, lh := range host.LocalHosts {
-					if lh.DaemonID == daemon.ID {
-						newHost.LocalHosts[j].UpdateSeq = 0
-					}
-				}
 				break
 			}
 		}
@@ -661,8 +645,8 @@ func mergeHosts(dbi dbops.DBI, subnetID int64, newHosts []dbmodel.Host, combineH
 // avoid duplication. As a result, the returned slice of hosts is a collection of
 // existing hosts plus the hosts from the new subnet which do not exist in the
 // database.
-func mergeSubnetHosts(dbi dbops.DBI, existingSubnet, newSubnet *dbmodel.Subnet, daemon *dbmodel.Daemon) (hosts []dbmodel.Host, err error) {
-	return mergeHosts(dbi, existingSubnet.ID, newSubnet.Hosts, true, daemon)
+func mergeSubnetHosts(dbi dbops.DBI, existingSubnet, newSubnet *dbmodel.Subnet) (hosts []dbmodel.Host, err error) {
+	return mergeHosts(dbi, existingSubnet.ID, newSubnet.Hosts, true)
 }
 
 // For a given Kea daemon it detects host reservations configured in the
@@ -690,5 +674,5 @@ func detectGlobalHostsFromConfig(dbi dbops.DBI, daemon *dbmodel.Daemon) (hosts [
 		}
 	}
 	// Merge new hosts into the existing global hosts.
-	return mergeHosts(dbi, int64(0), hosts, false, daemon)
+	return mergeHosts(dbi, int64(0), hosts, false)
 }

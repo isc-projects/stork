@@ -673,7 +673,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 		for _, daemon := range app.Daemons {
 			// For the given daemon, iterate over the networks and subnets and update their
 			// global instances accordingly in the database.
-			addedSubnets, err := dbmodel.CommitNetworksIntoDB(tx, networks[daemon.Name], subnets[daemon.Name], daemon, 1)
+			addedSubnets, err := dbmodel.CommitNetworksIntoDB(tx, networks[daemon.Name], subnets[daemon.Name], daemon)
 			if err != nil {
 				return err
 			}
@@ -681,7 +681,7 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 
 			// For the given app, iterate over the global hosts and update their instances
 			// in the database or insert them into the database.
-			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.Name], daemon, "config", 1); err != nil {
+			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.Name], daemon, "config"); err != nil {
 				return err
 			}
 		}

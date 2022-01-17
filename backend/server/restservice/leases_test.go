@@ -648,7 +648,6 @@ func TestFindLeasesByHostID(t *testing.T) {
 			{
 				DaemonID:   app.Daemons[0].ID,
 				DataSource: "config",
-				UpdateSeq:  1,
 			},
 		},
 	}

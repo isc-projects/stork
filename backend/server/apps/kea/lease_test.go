@@ -1251,12 +1251,10 @@ func TestFindLeasesByHostID(t *testing.T) {
 			{
 				DaemonID:   app1.Daemons[0].ID,
 				DataSource: "config",
-				UpdateSeq:  1,
 			},
 			{
 				DaemonID:   app2.Daemons[1].ID,
 				DataSource: "config",
-				UpdateSeq:  1,
 			},
 		},
 	}

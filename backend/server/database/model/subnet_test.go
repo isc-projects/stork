@@ -676,7 +676,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 		},
 	}
 	// Attempt to create the global shared network and subnet.
-	addedSubnets, err := CommitNetworksIntoDB(db, networks, subnets, app.Daemons[0], 1)
+	addedSubnets, err := CommitNetworksIntoDB(db, networks, subnets, app.Daemons[0])
 	require.NoError(t, err)
 	require.Len(t, addedSubnets, 1)
 
@@ -698,7 +698,7 @@ func TestCommitNetworksIntoDB(t *testing.T) {
 	require.EqualValues(t, app.Daemons[0].ID, returnedHosts[0].LocalHosts[0].DaemonID)
 
 	// Make sure we can commit the networks again without an error.
-	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets, app.Daemons[0], 1)
+	addedSubnets, err = CommitNetworksIntoDB(db, networks, subnets, app.Daemons[0])
 	require.NoError(t, err)
 	require.Len(t, addedSubnets, 0)
 }

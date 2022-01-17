@@ -457,13 +457,13 @@ func TestGetHostsByPageApp(t *testing.T) {
 	hosts := addTestHosts(t, db)
 
 	// Associate the first host with the first app.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api", 1)
+	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, "api", 1)
+	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, "api", 1)
+	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, "api")
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, "api", 1)
+	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, "api")
 	require.NoError(t, err)
 
 	// Get global hosts only.
@@ -656,13 +656,13 @@ func TestGetHostsByDaemonID(t *testing.T) {
 	hosts := addTestHosts(t, db)
 
 	// Associate the first host with the first app.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api", 1)
+	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, "api", 1)
+	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, "api", 1)
+	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, "api")
 	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, "api", 1)
+	err = AddDaemonToHost(db, &hosts[3], apps[1].Daemons[0].ID, "api")
 	require.NoError(t, err)
 
 	// Get hosts for the first deamon.
@@ -732,7 +732,7 @@ func TestAddDaemonToHost(t *testing.T) {
 
 	// Associate the first host with the first app.
 	host := hosts[0]
-	err := AddDaemonToHost(db, &host, apps[0].Daemons[0].ID, "api", 1)
+	err := AddDaemonToHost(db, &host, apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)
 
 	// Fetch the host from the database.
@@ -775,59 +775,6 @@ func TestAddDaemonToHost(t *testing.T) {
 	require.NotNil(t, returnedList[0].LocalHosts[0].Daemon.App)
 }
 
-// This test verifies that it is possible to delete hosts/apps associations
-// having non-matching sequence numbers.
-func TestDeleteLocalHostsWithOtherSeq(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// Insert apps and hosts into the database.
-	apps := addTestSubnetApps(t, db)
-	hosts := addTestHosts(t, db)
-
-	returned, err := GetAllHosts(db, 4)
-	require.NoError(t, err)
-	require.Len(t, returned, 2)
-
-	// Insert association of the daemons with hosts and give them a sequence number
-	// of 123.
-	err = AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api", 123)
-	require.NoError(t, err)
-	err = AddDaemonToHost(db, &hosts[1], apps[1].Daemons[0].ID, "api", 123)
-	require.NoError(t, err)
-
-	// Use matching sequence number.
-	err = DeleteLocalHostsWithOtherSeq(db, 123, "api")
-	require.NoError(t, err)
-
-	// The hosts should still be there.
-	returned, err = GetAllHosts(db, 4)
-	require.NoError(t, err)
-	require.Len(t, returned, 2)
-
-	// The same result of the data source is not matching.
-	err = DeleteLocalHostsWithOtherSeq(db, 234, "config")
-	require.NoError(t, err)
-
-	returned, err = GetAllHosts(db, 4)
-	require.NoError(t, err)
-	require.Len(t, returned, 2)
-
-	// This time, use the non-matching sequence number.
-	err = DeleteLocalHostsWithOtherSeq(db, 234, "api")
-	require.NoError(t, err)
-
-	// Remove hosts with no associations.
-	_, err = DeleteOrphanedHosts(db)
-	require.NoError(t, err)
-
-	// The hosts should be gone because all associations of
-	// these hosts with apps were removed.
-	returned, err = GetAllHosts(db, 4)
-	require.NoError(t, err)
-	require.Empty(t, returned)
-}
-
 // Test that daemon's associations with multiple hosts can be removed.
 func TestDeleteDaemonFromHosts(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -838,14 +785,14 @@ func TestDeleteDaemonFromHosts(t *testing.T) {
 	hosts := addTestHosts(t, db)
 
 	// Associate the first app with two hosts.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api", 123)
+	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)
 
-	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, "api", 123)
+	err = AddDaemonToHost(db, &hosts[1], apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)
 
 	// Associate the second app with another host.
-	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, "api", 123)
+	err = AddDaemonToHost(db, &hosts[2], apps[1].Daemons[0].ID, "api")
 	require.NoError(t, err)
 
 	// Removing associations with non-matching data source should
@@ -883,7 +830,7 @@ func TestDeleteOrphanedHosts(t *testing.T) {
 
 	// Associate one of the hosts with one of the daemons. The
 	// other two hosts are orphaned.
-	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api", 123)
+	err := AddDaemonToHost(db, &hosts[0], apps[0].Daemons[0].ID, "api")
 	require.NoError(t, err)
 
 	// Delete hosts not assigned to any apps.
@@ -895,18 +842,6 @@ func TestDeleteOrphanedHosts(t *testing.T) {
 	returned, err := GetAllHosts(db, 4)
 	require.NoError(t, err)
 	require.Len(t, returned, 1)
-}
-
-// Tests that function getting next sequence number works correctly.
-func TestGetNextBulkSeq(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	for i := 0; i < 10; i++ {
-		seq, err := GetNextBulkUpdateSeq(db)
-		require.NoError(t, err)
-		require.EqualValues(t, i+2, seq)
-	}
 }
 
 // Tests the function checking if the host includes a reservation for the
@@ -1094,7 +1029,7 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 	}
 	// Add the hosts and their associations with the daemon to the database.
 	err := db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-		return CommitGlobalHostsIntoDB(tx, hosts, apps[0].Daemons[0], "api", 1)
+		return CommitGlobalHostsIntoDB(tx, hosts, apps[0].Daemons[0], "api")
 	})
 	require.NoError(t, err)
 
