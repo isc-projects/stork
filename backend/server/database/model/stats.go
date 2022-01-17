@@ -11,16 +11,18 @@ import (
 )
 
 // Custom support for decimal/numeric in Go-PG.
+// It is dedicated for store integer-only numbers. The Postgres decimal/numeric
+// type must be defined with scale equals to 0, e.g.: pg:"type:decimal(60,0)".
 // See: https://github.com/go-pg/pg/blob/v10/example_custom_test.go
-type Decimal struct {
+type IntegerDecimal struct {
 	big.Int
 }
 
 // Type guard for serialization.
-var _ types.ValueAppender = (*Decimal)(nil)
+var _ types.ValueAppender = (*IntegerDecimal)(nil)
 
 // Custom big.Int serializing to the database record.
-func (d Decimal) AppendValue(b []byte, quote int) ([]byte, error) {
+func (d IntegerDecimal) AppendValue(b []byte, quote int) ([]byte, error) {
 	if quote == 1 {
 		b = append(b, '\'')
 	}
@@ -33,10 +35,10 @@ func (d Decimal) AppendValue(b []byte, quote int) ([]byte, error) {
 }
 
 // Type guard for deserialization.
-var _ types.ValueScanner = (*Decimal)(nil)
+var _ types.ValueScanner = (*IntegerDecimal)(nil)
 
 // Custom decimal/numeric parsing to big.Int.
-func (d *Decimal) ScanValue(rd types.Reader, n int) error {
+func (d *IntegerDecimal) ScanValue(rd types.Reader, n int) error {
 	if n <= 0 {
 		d.Int = *big.NewInt(0)
 		return nil
@@ -77,7 +79,7 @@ type Statistic struct {
 	// Machine ID has an int64 data type, but Stork uses only positive values. In practice the range
 	// is the same as for uint32. It is 10^10 unique values.
 	// Then we need up to 59 digits to save the capacity of all subnets handled by Stork at the same time.
-	Value Decimal `pg:"type:decimal(60,0)"`
+	Value IntegerDecimal `pg:"type:decimal(60,0)"`
 }
 
 // Initialize global statistics in db. If new statistic needs to be added then add it to statsList list
@@ -124,7 +126,7 @@ func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
 func SetStats(db *pg.DB, statsMap map[string]*big.Int) error {
 	statsList := []*Statistic{}
 	for s, v := range statsMap {
-		stat := &Statistic{Name: s, Value: Decimal{Int: *v}}
+		stat := &Statistic{Name: s, Value: IntegerDecimal{Int: *v}}
 		statsList = append(statsList, stat)
 	}
 
