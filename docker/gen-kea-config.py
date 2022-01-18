@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
 
+import argparse
+from ast import parse
 import sys
 import json
 import copy
 import random
+
+
+class ParseKwargs(argparse.Action):
+    '''Parse ey-value pairs from CMD. Source: https://sumit-ghosh.com/articles/parsing-dictionary-key-value-pairs-kwargs-argparse-python/'''
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, dict())
+        for value in values:
+            key, value = value.split('=')
+            getattr(namespace, self.dest)[key] = value
+
 
 #TODO add entire set of v4 options
 optiondata4 = [{"code": 2,"data": "50", "name": "time-offset", "space": "dhcp4"},
@@ -359,12 +371,21 @@ def generate_v4_subnet(range_of_outer_scope, range_of_inner_scope, mac_selector,
 #     # print(json.dumps(generate_reservations(6, 1200, KEA1.get_mac_for_reservation),
 #     #                  sort_keys=True, indent=2, separators=(',', ': ')))
 
-def main(n):
-    #conf = {"Dhcp4": {"control-socket": {"socket-name": "/tmp/control_socket", "socket-type": "unix"},
-    #                  "renew-timer": 340000, "rebind-timer": 350000, "valid-lifetime": 360000,
-    #                  "lease-database": {"type": "memfile"},
-    #                  "shared-networks": [{"name": "one-network"}]}}
+def cmd():
+    parser = argparse.ArgumentParser("Kea config generator")
+    parser.add_argument("n", type=int, help="Number of subnets")
+    parser.add_argument("-s", "--start-id", type=int, default=1, help="Start subnet index")
+    parser.add_argument("-r", "--reservations", type=int, default=0, help="Number of reservations in subnet")
+    parser.add_argument("-k", "--kwargs", nargs="*", action=ParseKwargs, default={}, help="Key-value pairs")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--use-hooks", action="store_true", default=True, help="Enable hook libraries", dest="use_hooks")
+    group.add_argument("--no-use-hooks", action="store_false", help="Disable hook libraries", dest="use_hooks")
+    parser.add_argument("-i", "--interface", nargs=1, type=str, default=None, help="Interface name")
 
+    args = parser.parse_args()
+
+    n = args.n
+    
     if n // 256 > 0:
         inner = 255
         outer = n // 256
@@ -373,11 +394,21 @@ def main(n):
         outer = n
 
     conf = copy.deepcopy(KEA_BASE_CONFIG)
-    conf["Dhcp4"].update(generate_v4_subnet(outer, inner, my_mac_selector))
+
+    if not args.use_hooks:
+        conf["Dhcp4"]["hooks-libraries"] = []
+    if args.interface is not None:
+        conf["Dhcp4"]["interfaces-config"]["interfaces"] = args.interface
+
+
+    conf["Dhcp4"].update(generate_v4_subnet(
+        outer, inner, my_mac_selector, args.reservations,
+        args.start_id, **args.kwargs
+    ))
 
     conf_json = json.dumps(conf)
     print(conf_json)
 
 
 if __name__ == '__main__':
-    main(int(sys.argv[1]))
+    cmd()
