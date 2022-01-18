@@ -1081,9 +1081,12 @@ if ENV['CHROME_BIN']
   elsif out.include? '94.'
     CHROME_DRV_VERSION = '94.0.4606.61'
   else
-    CHROME_DRV_VERSION = ""
-    puts "Cannot match Chrome browser version and chromedriver version"
-    puts out
+    CHROME_DRV_VERSION = `chromedriver --version | cut -d " " -f2`
+    if !CHROME_DRV_VERSION 
+      CHROME_DRV_VERSION = ""
+      puts "Cannot match Chrome browser version and chromedriver version"
+      puts out
+    end
   end
   if CHROME_DRV_VERSION
     CHROME_DRV = "#{SELENIUM_DIR}/chromedriver-#{CHROME_DRV_VERSION}"
