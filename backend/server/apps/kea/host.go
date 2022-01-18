@@ -238,6 +238,11 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 		_ = puller.ReviewDispatcher.BeginReview(daemon, configreview.DBHostsModified, nil)
 	}
 
+	// We no longer need the hosts.
+	for i := range it.trace.responses {
+		it.trace.responses[i].hosts = nil
+	}
+
 	// Remember the current trace.
 	puller.traces[daemon.ID] = it.trace
 
