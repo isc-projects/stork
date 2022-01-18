@@ -1,3 +1,12 @@
+* 196 [func] marcin
+
+    Improved Stork Server performance while it gathers host reservations
+    from the Kea servers. The server only updates the host reservations
+    in its database when it detects at least one change in the gathered
+    reservations. Moreover, it runs Kea configuration reviews only when
+    it detects at least one host reservation change.
+    (Gitlab #681)
+
 * 195 [bug] marcin
 
     Renamed --token command line flag of the stork-agent to --server-token.
