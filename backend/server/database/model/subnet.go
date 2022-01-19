@@ -704,7 +704,7 @@ func DeleteOrphanedSubnets(dbi dbops.DBI) (int64, error) {
 }
 
 // Calculate out-of-pool addresses and NAs for all subnets.
-func CalculateOutOfPoolCounters(dbi dbops.DBI) (map[int8]map[uint32]int64, error) {
+func CalculateOutOfPoolCounters(dbi dbops.DBI) (map[int8]map[int64]int64, error) {
 	var res []struct {
 		SubnetID int
 		Oop      int
@@ -729,12 +729,12 @@ func CalculateOutOfPoolCounters(dbi dbops.DBI) (map[int8]map[uint32]int64, error
 		return nil, err
 	}
 
-	subnetCountsPerFamily := make(map[int8]map[uint32]int64)
-	subnetCountsPerFamily[4] = make(map[uint32]int64)
-	subnetCountsPerFamily[6] = make(map[uint32]int64)
+	subnetCountsPerFamily := make(map[int8]map[int64]int64)
+	subnetCountsPerFamily[4] = make(map[int64]int64)
+	subnetCountsPerFamily[6] = make(map[int64]int64)
 
 	for _, row := range res {
-		subnetCountsPerFamily[int8(row.Family)][uint32(row.SubnetID)] = int64(row.Oop)
+		subnetCountsPerFamily[int8(row.Family)][int64(row.SubnetID)] = int64(row.Oop)
 	}
 
 	return subnetCountsPerFamily, nil

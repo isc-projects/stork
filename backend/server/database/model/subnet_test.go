@@ -962,16 +962,115 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	), deserialized.Stats["bigIntBelowInt64Bounds"])
 }
 
+// Test calculating out-of-pool reservations for IPv4 and IPv6 networks.
 func TestCalculateOutOfPoolCounters(t *testing.T) {
+	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_ = addTestSubnetApps(t, db)
+	// IPv4
+	subnetIPv4 := &Subnet{
+		Prefix: "192.0.2.0/24",
+		AddressPools: []AddressPool{
+			{
+				LowerBound: "192.0.2.1",
+				UpperBound: "192.0.2.10",
+			},
+			{
+				LowerBound: "192.0.2.21",
+				UpperBound: "192.0.2.30",
+			},
+		},
+	}
+	_ = AddSubnet(db, subnetIPv4)
+
+	host := &Host{
+		CreatedAt: time.Now(),
+		SubnetID:  subnetIPv4.ID,
+		Hostname:  "foo",
+		IPReservations: []IPReservation{
+			{
+				// In pool
+				Address: "192.0.2.5",
+			},
+			{
+				// In pool
+				Address: "192.0.2.10",
+			},
+			{
+				// Out of pool
+				Address: "192.0.2.15",
+			},
+		},
+	}
+	_ = AddHost(db, host)
+
+	host = &Host{
+		CreatedAt: time.Now(),
+		SubnetID:  subnetIPv4.ID,
+		Hostname:  "bar",
+		IPReservations: []IPReservation{
+			{
+				// In pool
+				Address: "192.0.2.21",
+			},
+			{
+				// In pool
+				Address: "192.0.2.25",
+			},
+			{
+				// Out of pool
+				Address: "192.0.2.40",
+			},
+		},
+	}
+	_ = AddHost(db, host)
+
+	// IPv6
+	subnetIPv6 := &Subnet{
+		Prefix: "fe80::/64",
+		AddressPools: []AddressPool{
+			{
+				LowerBound: "fe80::1",
+				UpperBound: "fe80::10",
+			},
+			{
+				LowerBound: "fe80::21",
+				UpperBound: "fe80::30",
+			},
+		},
+	}
+	_ = AddSubnet(db, subnetIPv6)
+
+	host = &Host{
+		CreatedAt: time.Now(),
+		SubnetID:  subnetIPv6.ID,
+		Hostname:  "baz",
+		IPReservations: []IPReservation{
+			{
+				// In pool
+				Address: "fe80::5",
+			},
+			{
+				// In pool
+				Address: "fe80::10",
+			},
+			{
+				// Out of pool
+				Address: "fe80::15",
+			},
+		},
+	}
+	_ = AddHost(db, host)
+
+	// Act
 	counters, err := CalculateOutOfPoolCounters(db)
 
+	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, counters)
-
+	require.EqualValues(t, 2, counters[4][subnetIPv4.ID])
+	require.EqualValues(t, 1, counters[6][subnetIPv6.ID])
 }
 
 // Benchmark measuring a time to add a single subnet.
