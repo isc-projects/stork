@@ -962,6 +962,18 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	), deserialized.Stats["bigIntBelowInt64Bounds"])
 }
 
+func TestCalculateOutOfPoolCounters(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = addTestSubnetApps(t, db)
+	counters, err := CalculateOutOfPoolCounters(db)
+
+	require.NoError(t, err)
+	require.NotNil(t, counters)
+
+}
+
 // Benchmark measuring a time to add a single subnet.
 func BenchmarkAddSubnet(b *testing.B) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(b)

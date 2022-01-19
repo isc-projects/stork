@@ -725,7 +725,6 @@ func CalculateOutOfPoolCounters(dbi dbops.DBI) (map[int8]map[uint32]int64, error
 		Where("NOT EXISTS (?)", inAnyPoolSubquery).
 		GroupExpr("?, family(?)", pg.Ident("host.subnet_id"), pg.Ident("ip_reservation.address")).
 		Select(&res)
-
 	if err != nil {
 		return nil, err
 	}
