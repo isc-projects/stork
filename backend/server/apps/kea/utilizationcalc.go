@@ -161,8 +161,11 @@ func newUtilizationCalculator() *utilizationCalculator {
 }
 
 // Add the subnet statistics for the current calculator state.
+// The total counter (total addresses or NAs) will be increased by
+// extraTotal value.
 // It returns the utilization of this subnet.
-func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
+//nolint:unparam
+func (c *utilizationCalculator) add(subnet *dbmodel.Subnet, extraTotal uint64) leaseStats {
 	if subnet.SharedNetworkID != 0 {
 		_, ok := c.sharedNetworks[subnet.SharedNetworkID]
 		if !ok {
@@ -171,16 +174,18 @@ func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
 	}
 
 	if subnet.GetFamily() == 6 {
-		return c.addIPv6Subnet(subnet)
+		return c.addIPv6Subnet(subnet, extraTotal)
 	}
-	return c.addIPv4Subnet(subnet)
+	return c.addIPv4Subnet(subnet, extraTotal)
 }
 
 // Add the IPv4 subnet statistics for the current calculator state.
+// Total addresses counter will be increased by the extraTotal value.
 // It shouldn't be called outside the calculator.
-func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet) *subnetIPv4Stats {
+//nolint:unparam
+func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, extraTotal uint64) *subnetIPv4Stats {
 	stats := &subnetIPv4Stats{
-		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses"),
+		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses") + extraTotal,
 		totalAssignedAddresses: sumStatLocalSubnetsIPv4(subnet, "assigned-addresses"),
 		totalDeclinedAddresses: sumStatLocalSubnetsIPv4(subnet, "declined-addresses"),
 	}
@@ -195,10 +200,11 @@ func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet) *subnetIPv
 }
 
 // Add the IPv6 subnet statistics for the current calculator state.
+// The total NAS counter will be increased by the extraTotal value.
 // It shouldn't be called outside the calculator.
-func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet) *subnetIPv6Stats {
+func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, extraTotal uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		totalNAs:         sumStatLocalSubnetsIPv6(subnet, "total-nas"),
+		totalNAs:         sumStatLocalSubnetsIPv6(subnet, "total-nas").AddUint64(extraTotal),
 		totalAssignedNAs: sumStatLocalSubnetsIPv6(subnet, "assigned-nas"),
 		totalDeclinedNAs: sumStatLocalSubnetsIPv6(subnet, "declined-nas"),
 		totalPDs:         sumStatLocalSubnetsIPv6(subnet, "total-pds"),

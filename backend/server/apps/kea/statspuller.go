@@ -84,7 +84,7 @@ func (statsPuller *StatsPuller) pullStats() error {
 	// 1) estimate utilization per Subnet and per SharedNetwork
 	// 2) estimate global stats
 	for _, sn := range subnets {
-		su := calculator.add(sn)
+		su := calculator.add(sn, 0)
 		err = sn.UpdateUtilization(
 			statsPuller.DB,
 			int16(1000*su.getAddressUtilization()),

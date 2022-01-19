@@ -1069,8 +1069,8 @@ func TestCalculateOutOfPoolCounters(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, counters)
-	require.EqualValues(t, 2, counters[4][subnetIPv4.ID])
-	require.EqualValues(t, 1, counters[6][subnetIPv6.ID])
+	require.EqualValues(t, 2, counters[subnetIPv4.ID])
+	require.EqualValues(t, 1, counters[subnetIPv6.ID])
 }
 
 // Benchmark measuring a time to add a single subnet.
