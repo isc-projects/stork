@@ -702,3 +702,41 @@ func DeleteOrphanedSubnets(dbi dbops.DBI) (int64, error) {
 	}
 	return int64(result.RowsAffected()), nil
 }
+
+// Calculate out-of-pool addresses and NAs for all subnets.
+func CalculateOutOfPoolCounters(dbi dbops.DBI) (map[int8]map[uint32]int64, error) {
+	var res []struct {
+		SubnetID int
+		Oop      int
+		Family   int
+	}
+
+	inAnyPoolSubquery := dbi.Model((*AddressPool)(nil)).
+		ColumnExpr("1").
+		Where("address_pool.subnet_id = host.subnet_id").
+		Where("ip_reservation.address BETWEEN address_pool.lower_bound AND address_pool.upper_bound").
+		Limit(1)
+
+	err := dbi.Model((*IPReservation)(nil)).
+		Column("host.subnet_id").
+		ColumnExpr("COUNT(*) AS oop").
+		ColumnExpr("family(?) AS family", pg.Ident("ip_reservation.address")).
+		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		Where("NOT EXISTS (?)", inAnyPoolSubquery).
+		GroupExpr("?, family(?)", pg.Ident("host.subnet_id"), pg.Ident("ip_reservation.address")).
+		Select(&res)
+
+	if err != nil {
+		return nil, err
+	}
+
+	subnetCountsPerFamily := make(map[int8]map[uint32]int64)
+	subnetCountsPerFamily[4] = make(map[uint32]int64)
+	subnetCountsPerFamily[6] = make(map[uint32]int64)
+
+	for _, row := range res {
+		subnetCountsPerFamily[int8(row.Family)][uint32(row.SubnetID)] = int64(row.Oop)
+	}
+
+	return subnetCountsPerFamily, nil
+}
