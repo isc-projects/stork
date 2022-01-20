@@ -1064,7 +1064,7 @@ func TestCalculateOutOfPoolCounters(t *testing.T) {
 	_ = AddHost(db, host)
 
 	// Act
-	counters, err := CalculateOutOfPoolCounters(db)
+	counters, err := CalculateOutOfPoolAddressReservations(db)
 
 	// Assert
 	require.NoError(t, err)

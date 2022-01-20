@@ -704,30 +704,49 @@ func DeleteOrphanedSubnets(dbi dbops.DBI) (int64, error) {
 }
 
 // Calculate out-of-pool addresses and NAs for all subnets.
-func CalculateOutOfPoolCounters(dbi dbops.DBI) (map[int64]int64, error) {
+func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	var res []struct {
 		SubnetID int64
-		Oop      int64
+		Oop      uint64
 	}
 
+	// Check if IP reservation address is in any subnet pool
 	inAnyPoolSubquery := dbi.Model((*AddressPool)(nil)).
+		// We don't need any data from this query, we check only row existence
 		ColumnExpr("1").
 		Where("address_pool.subnet_id = host.subnet_id").
+		// Is it in a pool? - from lower to upper bands inclusively
 		Where("ip_reservation.address BETWEEN address_pool.lower_bound AND address_pool.upper_bound").
+		// We want to know if the address is in at least one pool
 		Limit(1)
 
+	// Find out-of-pool host reservations.
 	err := dbi.Model((*IPReservation)(nil)).
 		Column("host.subnet_id").
 		ColumnExpr("COUNT(*) AS oop").
 		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		// The IP reservation table contains the address and prefix reservations both.
+		// In this query, we check out-of-pool address/NA reservations.
+		// We need to exclude prefix reservations. We take into account
+		// only IPv4 reservations (as IPv4 has no prefix concept) and
+		// single IPv6 hosts - entries with 128 mask length (128 mask length
+		// implies that is's IPv6 address).
+		WhereGroup(func(q *pg.Query) (*pg.Query, error) {
+			return q.
+				Where("family(ip_reservation.address) = 4").
+				WhereOr("masklen(ip_reservation.address) = 128"), nil
+		}).
+		// Is it out of all pools? - Is it not in any pool?
 		Where("NOT EXISTS (?)", inAnyPoolSubquery).
+		// Group out-of-pool reservations per subnet
+		// and count them (in SELECT)
 		GroupExpr("?", pg.Ident("host.subnet_id")).
 		Select(&res)
 	if err != nil {
 		return nil, err
 	}
 
-	countsPerSubnet := make(map[int64]int64)
+	countsPerSubnet := make(map[int64]uint64)
 
 	for _, row := range res {
 		countsPerSubnet[row.SubnetID] = row.Oop

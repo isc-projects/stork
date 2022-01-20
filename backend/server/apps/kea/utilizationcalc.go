@@ -164,7 +164,6 @@ func newUtilizationCalculator() *utilizationCalculator {
 // The total counter (total addresses or NAs) will be increased by
 // extraTotal value.
 // It returns the utilization of this subnet.
-//nolint:unparam
 func (c *utilizationCalculator) add(subnet *dbmodel.Subnet, extraTotal uint64) leaseStats {
 	if subnet.SharedNetworkID != 0 {
 		_, ok := c.sharedNetworks[subnet.SharedNetworkID]
@@ -182,7 +181,6 @@ func (c *utilizationCalculator) add(subnet *dbmodel.Subnet, extraTotal uint64) l
 // Add the IPv4 subnet statistics for the current calculator state.
 // Total addresses counter will be increased by the extraTotal value.
 // It shouldn't be called outside the calculator.
-//nolint:unparam
 func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, extraTotal uint64) *subnetIPv4Stats {
 	stats := &subnetIPv4Stats{
 		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses") + extraTotal,
