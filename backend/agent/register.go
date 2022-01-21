@@ -441,9 +441,12 @@ func Register(serverURL, serverToken, agentAddr, agentPort string, regenCerts bo
 	log.Println("=============================================================================")
 
 	if serverToken2 == "" {
-		log.Printf("authorize machine in Stork web UI")
+		log.Println("authorize the machine in the Stork web UI")
 	} else {
-		log.Printf("machine will be automatically authorized using server token")
+		log.Println("machine will be automatically registered using the server token")
+		log.Println("agent token is printed above for informational purposes only")
+		log.Println("the user does not need to copy or verify the agent token during the registration using the server token")
+		log.Println("it will be sent to the server but it is not directly used in this type of the machine registration")
 	}
 
 	// prepare http client to connect to Stork Server
