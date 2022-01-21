@@ -91,7 +91,7 @@ func runRegister(cfg *cli.Context) {
 	}
 
 	// run Register
-	if agent.Register(cfg.String("server-url"), cfg.String("token"), agentAddr, agentPort, true, false) {
+	if agent.Register(cfg.String("server-url"), cfg.String("server-token"), agentAddr, agentPort, true, false) {
 		log.Println("registration completed successfully")
 	} else {
 		log.Fatalf("registration failed")
@@ -215,7 +215,7 @@ authorization in the server using either UI or ReST API (agent token based regis
 						EnvVars: []string{"STORK_AGENT_SERVER_URL"},
 					},
 					&cli.StringFlag{
-						Name:    "token",
+						Name:    "server-token",
 						Usage:   "access token from Stork Server",
 						Aliases: []string{"t"},
 						EnvVars: []string{"STORK_AGENT_SERVER_TOKEN"},
