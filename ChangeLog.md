@@ -1,3 +1,8 @@
+* 195 [bug] marcin
+
+    Renamed --token command line flag of the stork-agent to --server-token.
+    (Gitlab #625)
+
 * 194 [func] marcin
 
     Display Kea and Bind access points in the app tab.
