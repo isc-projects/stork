@@ -545,12 +545,84 @@ func TestCalculatorAddIgnoreNegativeNumbers(t *testing.T) {
 	// Assert
 	require.Zero(t, utilization.getAddressUtilization())
 	require.Zero(t, utilization.getPDUtilization())
-	require.Zero(t, 0, calculator.global.totalAddresses.ToInt64())
-	require.Zero(t, 0, calculator.global.totalAssignedAddresses.ToInt64())
-	require.Zero(t, 0, calculator.global.totalDeclinedAddresses.ToInt64())
-	require.Zero(t, 0, calculator.global.totalNAs.ToInt64())
-	require.Zero(t, 0, calculator.global.totalAssignedNAs.ToInt64())
-	require.Zero(t, 0, calculator.global.totalDeclinedNAs.ToInt64())
-	require.Zero(t, 0, calculator.global.totalPDs.ToInt64())
-	require.Zero(t, 0, calculator.global.totalAssignedPDs.ToInt64())
+	require.Zero(t, calculator.global.totalAddresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedAddresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedAddresses.ToInt64())
+	require.Zero(t, calculator.global.totalNAs.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedNAs.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedNAs.ToInt64())
+	require.Zero(t, calculator.global.totalPDs.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedPDs.ToInt64())
+}
+
+// Test that the calculator add extra addresses, NAs and prefixes.
+func TestCalculatorAddExtraToTotalCounters(t *testing.T) {
+	// Arrange
+	subnets := []dbmodel.Subnet{
+		{
+			ID:     1,
+			Prefix: "20::/64",
+			LocalSubnets: []*dbmodel.LocalSubnet{
+				{
+					Stats: map[string]interface{}{
+						"total-nas":    uint64(90),
+						"assigned-nas": uint64(50),
+						"declined-nas": uint64(40),
+						"total-pds":    uint64(60),
+						"assigned-pds": uint64(9),
+					},
+				},
+			},
+			SharedNetworkID: 42,
+		},
+		{
+			ID:     2,
+			Prefix: "10.0.0.0/16",
+			LocalSubnets: []*dbmodel.LocalSubnet{
+				{
+					Stats: map[string]interface{}{
+						"total-addresses":    uint64(60),
+						"assigned-addresses": uint64(20),
+						"declined-addresses": uint64(30),
+					},
+				},
+			},
+			SharedNetworkID: 42,
+		},
+	}
+
+	extraAddresses := map[int64]uint64{
+		1: 10,
+		2: 20,
+	}
+
+	extraPrefixes := map[int64]uint64{
+		1: 30,
+		// Bug - IPv4 has no prefixes, but the calculator should keep working correctly.
+		2: 40,
+	}
+
+	// Act
+	calculator := newUtilizationCalculator()
+	calculator.setExtraTotalAddresses(extraAddresses)
+	calculator.setExtraTotalPrefixes(extraPrefixes)
+
+	utilization1 := calculator.add(&subnets[0])
+	utilization2 := calculator.add(&subnets[1])
+
+	// Assert
+	require.EqualValues(t, uint64(80), calculator.global.totalAddresses.ToUint64())
+	require.EqualValues(t, uint64(20), calculator.global.totalAssignedAddresses.ToUint64())
+	require.EqualValues(t, uint64(30), calculator.global.totalDeclinedAddresses.ToUint64())
+	require.EqualValues(t, uint64(100), calculator.global.totalNAs.ToUint64())
+	require.EqualValues(t, uint64(50), calculator.global.totalAssignedNAs.ToUint64())
+	require.EqualValues(t, uint64(40), calculator.global.totalDeclinedNAs.ToUint64())
+	require.EqualValues(t, uint64(90), calculator.global.totalPDs.ToUint64())
+	require.EqualValues(t, uint64(9), calculator.global.totalAssignedPDs.ToUint64())
+	require.Len(t, calculator.sharedNetworks, 1)
+
+	require.EqualValues(t, 0.5, utilization1.getAddressUtilization())
+	require.EqualValues(t, 0.1, utilization1.getPDUtilization())
+	require.EqualValues(t, 0.25, utilization2.getAddressUtilization())
+	require.EqualValues(t, 0.0, utilization2.getPDUtilization())
 }

@@ -705,6 +705,8 @@ func DeleteOrphanedSubnets(dbi dbops.DBI) (int64, error) {
 
 // Calculate out-of-pool addresses and NAs for all subnets.
 func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) {
+	// Output row.
+	// Out-of-pool count per subnet.
 	var res []struct {
 		SubnetID int64
 		Oop      uint64
@@ -758,6 +760,8 @@ func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, err
 
 // Calculate out-of-pool prefixes for all subnets.
 func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
+	// Output row.
+	// Out-of-pool count per subnet.
 	var res []struct {
 		SubnetID int64
 		Oop      uint64
