@@ -1039,6 +1039,16 @@ func TestCalculateOutOfPoolCounters(t *testing.T) {
 				UpperBound: "fe80::30",
 			},
 		},
+		PrefixPools: []PrefixPool{
+			{
+				Prefix:       "3001:1::/48",
+				DelegatedLen: 64,
+			},
+			{
+				Prefix:       "3001:2::/64",
+				DelegatedLen: 80,
+			},
+		},
 	}
 	_ = AddSubnet(db, subnetIPv6)
 
@@ -1047,6 +1057,7 @@ func TestCalculateOutOfPoolCounters(t *testing.T) {
 		SubnetID:  subnetIPv6.ID,
 		Hostname:  "baz",
 		IPReservations: []IPReservation{
+			// Addresses
 			{
 				// In pool
 				Address: "fe80::5",
@@ -1059,18 +1070,54 @@ func TestCalculateOutOfPoolCounters(t *testing.T) {
 				// Out of pool
 				Address: "fe80::15",
 			},
+			// Prefixes
+			{
+				// Out of pool - different prefix
+				Address: "3001:3::/96",
+			},
+			{
+				// Out of pool - prefix contains the pool prefix
+				Address: "3001::/16",
+			},
+			{
+				// Out of pool - mask length less than the length of the pool prefix
+				Address: "3001:1::/32",
+			},
+			{
+				// Out of pool - mask length between the length of the pool prefix and
+				// the delegation length
+				Address: "3001:1::/58",
+			},
+			{
+				// Out of prefix pool, but in the subnet
+				Address: "fe80::/80",
+			},
+			{
+				// In pool, mask length equals to the delegation length
+				Address: "3001:1:0:10::/64",
+			},
+			{
+				// In pool, mask length greater than the delegation length
+				Address: "3001:1:0:10:20::/80",
+			},
 		},
 	}
 	_ = AddHost(db, host)
 
 	// Act
-	counters, err := CalculateOutOfPoolAddressReservations(db)
+	addressCounters, errAddresses := CalculateOutOfPoolAddressReservations(db)
+	prefixCounters, errPrefixes := CalculateOutOfPoolPrefixReservations(db)
 
 	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, counters)
-	require.EqualValues(t, 2, counters[subnetIPv4.ID])
-	require.EqualValues(t, 1, counters[subnetIPv6.ID])
+	require.NoError(t, errAddresses)
+	require.NoError(t, errPrefixes)
+
+	require.EqualValues(t, 2, addressCounters[subnetIPv4.ID])
+	require.EqualValues(t, 1, addressCounters[subnetIPv6.ID])
+	require.Len(t, addressCounters, 2)
+
+	require.EqualValues(t, 5, prefixCounters[subnetIPv6.ID])
+	require.Len(t, prefixCounters, 1)
 }
 
 // Benchmark measuring a time to add a single subnet.

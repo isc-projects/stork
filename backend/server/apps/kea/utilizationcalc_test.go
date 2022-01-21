@@ -48,7 +48,7 @@ func TestCalculatorAddSingleIPv4LocalSubnet(t *testing.T) {
 	calculator := newUtilizationCalculator()
 
 	// Act
-	utilization := calculator.add(subnet, 0)
+	utilization := calculator.add(subnet)
 
 	// Assert
 	require.InDelta(t, float64(0.1), utilization.getAddressUtilization(), float64(0.001))
@@ -88,7 +88,7 @@ func TestCalculatorAddSingleIPv6LocalSubnet(t *testing.T) {
 	calculator := newUtilizationCalculator()
 
 	// Act
-	utilization := calculator.add(subnet, 0)
+	utilization := calculator.add(subnet)
 
 	// Assert
 	require.InDelta(t, float64(0.4), utilization.getAddressUtilization(), float64(0.001))
@@ -128,7 +128,7 @@ func TestCalculatorAddSubnetUsingNonUint64(t *testing.T) {
 	calculator := newUtilizationCalculator()
 
 	// Act
-	utilization := calculator.add(subnet, 0)
+	utilization := calculator.add(subnet)
 
 	// Assert
 	require.InDelta(t, float64(0.0), utilization.getAddressUtilization(), float64(0.001))
@@ -187,7 +187,7 @@ func TestCalculatorAddMultipleIPv4LocalSubnet(t *testing.T) {
 	calculator := newUtilizationCalculator()
 
 	// Act
-	utilization := calculator.add(subnet, 0)
+	utilization := calculator.add(subnet)
 
 	// Assert
 	require.InDelta(t, float64(34.0/355.0), utilization.getAddressUtilization(), float64(0.001))
@@ -252,7 +252,7 @@ func TestCalculatorAddMultipleIPv6LocalSubnet(t *testing.T) {
 	calculator := newUtilizationCalculator()
 
 	// Act
-	utilization := calculator.add(subnet, 0)
+	utilization := calculator.add(subnet)
 
 	// Assert
 	require.InDelta(t, float64(34.0/355.0), utilization.getAddressUtilization(), float64(0.001))
@@ -320,7 +320,7 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 	// Act
 	calculator := newUtilizationCalculator()
 	for _, subnet := range subnets {
-		_ = calculator.add(subnet, 0)
+		_ = calculator.add(subnet)
 	}
 
 	// Assert
@@ -369,7 +369,7 @@ func TestCalculatorAddMultipleSharedNetworkSubnets(t *testing.T) {
 	// Act
 	calculator := newUtilizationCalculator()
 	for _, subnet := range subnets {
-		_ = calculator.add(subnet, 0)
+		_ = calculator.add(subnet)
 	}
 
 	// Assert
@@ -393,7 +393,7 @@ func TestCalculatorAddEmptySubnet(t *testing.T) {
 
 	// Act
 	calculator := newUtilizationCalculator()
-	utilization := calculator.add(subnet, 0)
+	utilization := calculator.add(subnet)
 
 	// Assert
 	require.InDelta(t, float64(0.0), utilization.getAddressUtilization(), float64(0.001))
@@ -500,7 +500,7 @@ func TestCalculatorRealKeaResponse(t *testing.T) {
 
 	for _, subnet := range subnets {
 		// Act
-		utilization := calculator.add(subnet, 0)
+		utilization := calculator.add(subnet)
 
 		// Assert
 		switch subnet.ID {
@@ -540,7 +540,7 @@ func TestCalculatorAddIgnoreNegativeNumbers(t *testing.T) {
 	}
 	// Act
 	calculator := newUtilizationCalculator()
-	utilization := calculator.add(subnet, 0)
+	utilization := calculator.add(subnet)
 
 	// Assert
 	require.Zero(t, utilization.getAddressUtilization())

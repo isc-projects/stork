@@ -148,23 +148,45 @@ func (s *subnetIPv6Stats) getPDUtilization() float64 {
 // IPv4 address/NA/PD statistic and utilization per subnet and
 // shared network.
 type utilizationCalculator struct {
-	global         *globalStats
-	sharedNetworks map[int64]*sharedNetworkStats
+	global              *globalStats
+	sharedNetworks      map[int64]*sharedNetworkStats
+	extraTotalAddresses map[int64]uint64
+	extraTotalPrefixes  map[int64]uint64
 }
 
 // Constructor of the utilization calculator.
 func newUtilizationCalculator() *utilizationCalculator {
 	return &utilizationCalculator{
-		sharedNetworks: make(map[int64]*sharedNetworkStats),
-		global:         newGlobalStats(),
+		sharedNetworks:      make(map[int64]*sharedNetworkStats),
+		global:              newGlobalStats(),
+		extraTotalAddresses: make(map[int64]uint64),
+		extraTotalPrefixes:  make(map[int64]uint64),
 	}
+}
+
+// The total addresses and NAs statistics from the Kea don't contain
+// out-of-address-pool reservations. It causes that the utilization is incorrect.
+// The out-of-pool reservations can be calculated from the database and used
+// to correct the total addresses/NAs counter.
+// It accepts the mapping between subnet ID and the value to add to the total counters.
+func (c *utilizationCalculator) setExtraTotalAddresses(extraTotalAddressesPerSubnet map[int64]uint64) {
+	c.extraTotalAddresses = extraTotalAddressesPerSubnet
+}
+
+// The total prefix statistics from the Kea don't contain
+// out-of-prefix-pool reservations. It causes that the utilization is incorrect.
+// The out-of-pool reservations can be calculated from the database and used
+// to correct the total prefix counter.
+// It accepts the mapping between subnet ID and the value to add to the total counter.
+func (c *utilizationCalculator) setExtraTotalPrefixes(extraTotalPrefixesPerSubnet map[int64]uint64) {
+	c.extraTotalPrefixes = extraTotalPrefixesPerSubnet
 }
 
 // Add the subnet statistics for the current calculator state.
 // The total counter (total addresses or NAs) will be increased by
 // extraTotal value.
 // It returns the utilization of this subnet.
-func (c *utilizationCalculator) add(subnet *dbmodel.Subnet, extraTotal uint64) leaseStats {
+func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
 	if subnet.SharedNetworkID != 0 {
 		_, ok := c.sharedNetworks[subnet.SharedNetworkID]
 		if !ok {
@@ -172,10 +194,21 @@ func (c *utilizationCalculator) add(subnet *dbmodel.Subnet, extraTotal uint64) l
 		}
 	}
 
-	if subnet.GetFamily() == 6 {
-		return c.addIPv6Subnet(subnet, extraTotal)
+	extraTotalAddresses, ok := c.extraTotalAddresses[subnet.ID]
+	if !ok {
+		extraTotalAddresses = 0
 	}
-	return c.addIPv4Subnet(subnet, extraTotal)
+
+	if subnet.GetFamily() == 4 {
+		return c.addIPv4Subnet(subnet, extraTotalAddresses)
+	}
+
+	extraTotalPrefixes, ok := c.extraTotalPrefixes[subnet.ID]
+	if !ok {
+		extraTotalPrefixes = 0
+	}
+
+	return c.addIPv6Subnet(subnet, extraTotalAddresses, extraTotalPrefixes)
 }
 
 // Add the IPv4 subnet statistics for the current calculator state.
@@ -200,12 +233,12 @@ func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, extraTotal
 // Add the IPv6 subnet statistics for the current calculator state.
 // The total NAS counter will be increased by the extraTotal value.
 // It shouldn't be called outside the calculator.
-func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, extraTotal uint64) *subnetIPv6Stats {
+func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, extraTotalNAs, extraTotalPDs uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		totalNAs:         sumStatLocalSubnetsIPv6(subnet, "total-nas").AddUint64(extraTotal),
+		totalNAs:         sumStatLocalSubnetsIPv6(subnet, "total-nas").AddUint64(extraTotalNAs),
 		totalAssignedNAs: sumStatLocalSubnetsIPv6(subnet, "assigned-nas"),
 		totalDeclinedNAs: sumStatLocalSubnetsIPv6(subnet, "declined-nas"),
-		totalPDs:         sumStatLocalSubnetsIPv6(subnet, "total-pds"),
+		totalPDs:         sumStatLocalSubnetsIPv6(subnet, "total-pds").AddUint64(extraTotalPDs),
 		totalAssignedPDs: sumStatLocalSubnetsIPv6(subnet, "assigned-pds"),
 	}
 

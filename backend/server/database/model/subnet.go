@@ -725,6 +725,7 @@ func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, err
 		Column("host.subnet_id").
 		ColumnExpr("COUNT(*) AS oop").
 		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
 		// In this query, we check out-of-pool address/NA reservations.
 		// We need to exclude prefix reservations. We take into account
@@ -738,6 +739,63 @@ func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, err
 		}).
 		// Is it out of all pools? - Is it not in any pool?
 		Where("NOT EXISTS (?)", inAnyPoolSubquery).
+		// Group out-of-pool reservations per subnet
+		// and count them (in SELECT)
+		GroupExpr("?", pg.Ident("host.subnet_id")).
+		Select(&res)
+	if err != nil {
+		return nil, err
+	}
+
+	countsPerSubnet := make(map[int64]uint64)
+
+	for _, row := range res {
+		countsPerSubnet[row.SubnetID] = row.Oop
+	}
+
+	return countsPerSubnet, nil
+}
+
+// Calculate out-of-pool prefixes for all subnets.
+func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
+	var res []struct {
+		SubnetID int64
+		Oop      uint64
+	}
+
+	// Check if prefix reservation is in any prefix pool
+	inAnyPrefixPoolSubquery := dbi.Model((*PrefixPool)(nil)).
+		// We don't need any data from this query, we check only row existence
+		ColumnExpr("1").
+		Where("prefix_pool.subnet_id = host.subnet_id").
+		// Reserved prefix is in prefix pool if it is contained by the prefix of the pool
+		// and if the reserved prefix length is narrower than the delegation length.
+		// For example for pool 3001::/48 and delegation length equals to 64:
+		// - Prefix 3001:42::/80 is not in the pool, because it has different prefix.
+		// - Prefixes 3001::/48 and 3001::/62 are not in the pool. They are in an expected network
+		// (has the same 48 starting bits), but the mask lengths are less then 64.
+		// - Prefixes 3001::/64 and 3001::/80 are in the pool. They are in an expected network
+		// and the mask lengths are greater or equals 64.
+		Where("ip_reservation.address <<= prefix_pool.prefix AND masklen(ip_reservation.address) >= prefix_pool.delegated_len").
+		// We want to know if the address is in at least one pool
+		Limit(1)
+
+	// Find out-of-pool host reservations.
+	err := dbi.Model((*IPReservation)(nil)).
+		Column("host.subnet_id").
+		ColumnExpr("COUNT(*) AS oop").
+		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		Where("host.subnet_id IS NOT NULL").
+		// The IP reservation table contains the address and prefix reservations both.
+		// In this query, we check out-of-pool prefix reservations.
+		// We need to exclude NA and address reservations. We take into account
+		// only IPv6 reservations (as only IPv6 has prefix concept) and
+		// non single IPv6 hosts - entries with mask length less then 128 (128 mask length
+		// implies that is's IPv6 address).
+		Where("family(ip_reservation.address) = 6").
+		Where("masklen(ip_reservation.address) != 128").
+		// Is it out of all pools? - Is it not in any pool?
+		Where("NOT EXISTS (?)", inAnyPrefixPoolSubquery).
 		// Group out-of-pool reservations per subnet
 		// and count them (in SELECT)
 		GroupExpr("?", pg.Ident("host.subnet_id")).

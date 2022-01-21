@@ -78,22 +78,25 @@ func (statsPuller *StatsPuller) pullStats() error {
 		return lastErr
 	}
 
+	calculator := newUtilizationCalculator()
+
 	extraTotalCounters, err := dbmodel.CalculateOutOfPoolAddressReservations(statsPuller.DB)
 	if err != nil {
-		extraTotalCounters = make(map[int64]uint64)
+		return err
 	}
+	calculator.setExtraTotalAddresses(extraTotalCounters)
 
-	calculator := newUtilizationCalculator()
+	extraTotalCounters, err = dbmodel.CalculateOutOfPoolPrefixReservations(statsPuller.DB)
+	if err != nil {
+		return err
+	}
+	calculator.setExtraTotalPrefixes(extraTotalCounters)
 
 	// go through all Subnets and:
 	// 1) estimate utilization per Subnet and per SharedNetwork
 	// 2) estimate global stats
 	for _, sn := range subnets {
-		extraTotal, ok := extraTotalCounters[sn.ID]
-		if !ok {
-			extraTotal = 0
-		}
-		su := calculator.add(sn, extraTotal)
+		su := calculator.add(sn)
 		err = sn.UpdateUtilization(
 			statsPuller.DB,
 			int16(1000*su.getAddressUtilization()),
