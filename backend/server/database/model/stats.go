@@ -18,7 +18,7 @@ type IntegerDecimal struct {
 	big.Int
 }
 
-// Type guard for serialization.
+// Interface check for serialization.
 var _ types.ValueAppender = (*IntegerDecimal)(nil)
 
 // Custom big.Int serializing to the database record.
@@ -34,7 +34,7 @@ func (d IntegerDecimal) AppendValue(b []byte, quote int) ([]byte, error) {
 	return b, nil
 }
 
-// Type guard for deserialization.
+// Interface check for deserialization.
 var _ types.ValueScanner = (*IntegerDecimal)(nil)
 
 // Custom decimal/numeric parsing to big.Int.
