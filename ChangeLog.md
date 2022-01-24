@@ -1,3 +1,12 @@
+* 192 [func] slawek
+
+    Support for the large statistic values. It handles
+    address/NA/PD counters for IPv6 subnets, large shared
+    networks, and globals. It fixed the problem when these
+    counters exceeded the int64 range. Prepared the Stork
+    for large statistic values from Kea.
+    (Gitlab #670)
+
 * 191 [func] marcin
 
     stork-tool facilitates db-create and db-password-gen commands
