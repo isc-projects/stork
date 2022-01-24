@@ -229,8 +229,8 @@ type keaCommandSender interface {
 }
 
 // Subnet name lookup that fetches the subnet names only if necessary.
-// The request is executed on the first occurrence of a name from an IP family.
-// The results are cached; no more requests are made until change IP family.
+// The subnet names are fetched on the first call to getName() for an IP family.
+// The results are cached; no more requests are made until IP family change.
 // Therefore, the lifetime of instances should be short to avoid out-of-date names in a cache.
 type lazySubnetNameLookup struct {
 	sender      keaCommandSender
@@ -239,7 +239,7 @@ type lazySubnetNameLookup struct {
 	// that the data aren't fetched yet. If the value is nil it means that data were
 	// requested, but are unavailable.
 	cachedFamily SubnetList
-	// Indicates that the family names was requested.
+	// Indicates that the subnet names were fetched for current family.
 	cached bool
 	// Family to use during lookups.
 	family int8
@@ -277,7 +277,7 @@ func (l *lazySubnetNameLookup) fetchAndCacheNames() SubnetList {
 	if err == nil {
 		err = json.Unmarshal(response, &target)
 		if err != nil {
-			log.Errorf("problem with parsing DHCP%d labels from kea: %+v", l.family, err)
+			log.Errorf("problem with parsing DHCPv%d labels from kea: %+v", l.family, err)
 		}
 	}
 
@@ -312,7 +312,7 @@ func (l *lazySubnetNameLookup) getNameOrDefault(subnetID int) string {
 	return fmt.Sprint(subnetID)
 }
 
-// Sets the familly used during name lookups.
+// Sets the family used during name lookups.
 func (l *lazySubnetNameLookup) setFamily(family int8) {
 	l.family = family
 	l.cached = false
@@ -439,7 +439,7 @@ func NewPromKeaExporter(settings *cli.Context, appMonitor AppMonitor) *PromKeaEx
 
 	pke.PktStatsMap = pktStatsMap
 
-	// Collecting per subnet stats is enabled by default. It must be explicit disabled.
+	// Collecting per subnet stats is enabled by default. It can be explicitly disabled.
 	enablePerSubnetStatsFlag := "prometheus-kea-exporter-per-subnet-stats"
 	if !settings.IsSet(enablePerSubnetStatsFlag) || settings.Bool(enablePerSubnetStatsFlag) {
 		// addresses dhcp4

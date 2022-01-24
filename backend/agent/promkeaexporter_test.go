@@ -393,7 +393,7 @@ func TestLazySubnetNameLookupFetchesOnlyOnceEvenIfError(t *testing.T) {
 	require.EqualValues(t, 1, sender.callCount)
 }
 
-// Test that subnet names are fetched again after change the family.
+// Test that subnet names are fetched again after changing the family.
 func TestLazySubnetNameLookupFetchesAgainWhenFamilyChanged(t *testing.T) {
 	// Arrange
 	sender := newFakeKeaCASender()
@@ -406,7 +406,7 @@ func TestLazySubnetNameLookupFetchesAgainWhenFamilyChanged(t *testing.T) {
 	sender.payload = nil
 	name, ok := lookup.getName(1)
 
-	// Asset
+	// Assert
 	require.False(t, ok)
 	require.Empty(t, name)
 	require.EqualValues(t, 2, sender.callCount)
