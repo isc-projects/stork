@@ -286,6 +286,7 @@ type FakeKeaCASender struct {
 	callCount int64
 }
 
+// Construct the fake Kea CA sender with default response.
 func newFakeKeaCASender() *FakeKeaCASender {
 	defaultResponse := []subnetListJSON{
 		{
