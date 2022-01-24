@@ -26,6 +26,7 @@ class MockParamMap {
 describe('SubnetsPageComponent', () => {
     let component: SubnetsPageComponent
     let fixture: ComponentFixture<SubnetsPageComponent>
+    let dhcpService: DHCPService
 
     beforeEach(
         waitForAsync(() => {
@@ -59,11 +60,42 @@ describe('SubnetsPageComponent', () => {
                     NoopAnimationsModule,
                 ],
                 declarations: [SubnetsPageComponent, SubnetBarComponent, BreadcrumbsComponent, HelpTipComponent],
-            }).compileComponents()
+            })
+            dhcpService = TestBed.inject(DHCPService)
         })
     )
 
     beforeEach(() => {
+        const fakeResponse: any = {
+            items: [
+                {
+                    clientClass: 'class-00-00',
+                    id: 5,
+                    localSubnets: [
+                        {
+                            appId: 27,
+                            appName: 'kea@localhost',
+                            id: 1,
+                            machineAddress: 'localhost',
+                            machineHostname: 'lv-pc',
+                            stats: {
+                                'assigned-addresses':
+                                    '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                                'total-addresses':
+                                    '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                                'declined-addresses': '-2',
+                            },
+                            statsCollectedAt: '2022-01-19T12:10:22.513Z',
+                        },
+                    ],
+                    pools: ['1.0.0.4-1.0.255.254'],
+                    subnet: '1.0.0.0/16',
+                },
+            ],
+            total: 10496,
+        }
+        spyOn(dhcpService, 'getSubnets').and.returnValue(of(fakeResponse))
+
         fixture = TestBed.createComponent(SubnetsPageComponent)
         component = fixture.componentInstance
         fixture.detectChanges()
@@ -71,5 +103,23 @@ describe('SubnetsPageComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy()
+    })
+
+    it('should convert statistics to big integers', async () => {
+        // Act
+        component.loadSubnets({})
+        await fixture.whenStable()
+
+        // Assert
+        const stats: { [key: string]: BigInt } = component.subnets[0].localSubnets[0].stats
+        expect(stats['assigned-addresses']).toBe(
+            BigInt('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
+        )
+        expect(stats['total-addresses']).toBe(
+            BigInt(
+                '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890'
+            )
+        )
+        expect(stats['declined-addresses']).toBe(BigInt('-2'))
     })
 })
