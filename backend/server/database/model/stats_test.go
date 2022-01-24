@@ -34,6 +34,18 @@ func TestStats(t *testing.T) {
 	require.Len(t, stats, 8)
 	require.Contains(t, stats, "assigned-addresses")
 	require.EqualValues(t, big.NewInt(10), stats["assigned-addresses"])
+
+	// add very large stat value - 40 digits
+	largeValue, ok := big.NewInt(0).SetString("123456789012345678901234567890123456789012345678901234567890", 10)
+	require.True(t, ok)
+	stats["assigned-addresses"] = largeValue
+	err = SetStats(db, stats)
+	require.NoError(t, err)
+	stats, err = GetAllStats(db)
+	require.NoError(t, err)
+	require.Len(t, stats, 8)
+	require.Contains(t, stats, "assigned-addresses")
+	require.EqualValues(t, largeValue, stats["assigned-addresses"])
 }
 
 // The statistic value cannot be nil.
