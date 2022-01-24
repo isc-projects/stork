@@ -235,10 +235,8 @@ type keaCommandSender interface {
 type lazySubnetNameLookup struct {
 	sender      keaCommandSender
 	accessPoint *AccessPoint
-	// Key is family - 4 or 6. If a value for a specific family doesn't exist it means
-	// that the data aren't fetched yet. If the value is nil it means that data were
-	// requested, but are unavailable.
-	cachedFamily SubnetList
+	// Cached subnet names from current family.
+	cachedNames SubnetList
 	// Indicates that the subnet names were fetched for current family.
 	cached bool
 	// Family to use during lookups.
@@ -282,7 +280,7 @@ func (l *lazySubnetNameLookup) fetchAndCacheNames() SubnetList {
 	}
 
 	// Cache results
-	l.cachedFamily = target
+	l.cachedNames = target
 	l.cached = true
 	return target
 }
@@ -290,7 +288,7 @@ func (l *lazySubnetNameLookup) fetchAndCacheNames() SubnetList {
 // Returns the subnet name for specific subnet ID and IP family (4 or 6).
 // If the name is unavailable then it returns empty string and false.
 func (l *lazySubnetNameLookup) getName(subnetID int) (string, bool) {
-	names := l.cachedFamily
+	names := l.cachedNames
 	if !l.cached {
 		names = l.fetchAndCacheNames()
 	}
