@@ -11,7 +11,7 @@ import (
 )
 
 // Custom support for decimal/numeric in Go-PG.
-// It is dedicated for store integer-only numbers. The Postgres decimal/numeric
+// It is dedicated to store integer-only numbers. The Postgres decimal/numeric
 // type must be defined with scale equals to 0, e.g.: pg:"type:decimal(60,0)".
 // See: https://github.com/go-pg/pg/blob/v10/example_custom_test.go
 type IntegerDecimal struct {

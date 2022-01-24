@@ -238,7 +238,7 @@ func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string) *storkutil
 }
 
 // Return the sum of specific statistics for each local subnet in the provided subnet.
-// It assumes that the counting value not exceed uint64 range.
+// It assumes that the counting value does not exceed uint64 range.
 func sumStatLocalSubnetsIPv4(subnet *dbmodel.Subnet, statName string) uint64 {
 	sum := uint64(0)
 	for _, localSubnet := range subnet.LocalSubnets {
