@@ -54,7 +54,6 @@ describe('subnets', () => {
                             'total-nas': '4',
                             'assigned-nas': '18446744073709551615',
                             'total-pds': '',
-
                         },
                     },
                 ],
@@ -82,7 +81,7 @@ describe('subnets', () => {
                             'total-nas': true,
                             'assigned-nas': 42,
                             'declined-nas': obj,
-                            'assigned-pds': null
+                            'assigned-pds': null,
                         },
                     },
                 ],
@@ -114,10 +113,10 @@ describe('subnets', () => {
                 ],
             },
         ]
-    
+
         // Act
         parseSubnetsStatisticValues(subnets6)
-    
+
         // Assert
         expect(subnets6[0].localSubnets[0].stats['total-nas']).toBe('abc')
         expect(subnets6[0].localSubnets[0].stats['assigned-nas']).toBe('FF')
@@ -130,10 +129,10 @@ describe('subnets', () => {
                 subnet: '3000::0/24',
             },
         ]
-    
+
         // Act
         parseSubnetsStatisticValues(subnets6)
-    
+
         // Assert
         // No throw
     })
