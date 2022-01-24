@@ -35,3 +35,20 @@ func TestStats(t *testing.T) {
 	require.Contains(t, stats, "assigned-addresses")
 	require.EqualValues(t, big.NewInt(10), stats["assigned-addresses"])
 }
+
+// The statistic value cannot be nil.
+func TestStatisticNilValueIsError(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	stats := map[string]*big.Int{
+		"foo": nil,
+	}
+
+	// Act
+	err := SetStats(db, stats)
+
+	// Assert
+	require.Error(t, err)
+}

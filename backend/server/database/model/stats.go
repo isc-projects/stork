@@ -126,6 +126,9 @@ func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
 func SetStats(db *pg.DB, statsMap map[string]*big.Int) error {
 	statsList := []*Statistic{}
 	for s, v := range statsMap {
+		if v == nil {
+			return errors.New("statistic value cannot be nil")
+		}
 		stat := &Statistic{Name: s, Value: IntegerDecimal{Int: *v}}
 		statsList = append(statsList, stat)
 	}
