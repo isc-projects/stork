@@ -53,7 +53,8 @@ describe('subnets', () => {
                         stats: {
                             'total-nas': '4',
                             'assigned-nas': '18446744073709551615',
-                            foo: 'bar',
+                            'total-pds': '',
+
                         },
                     },
                 ],
@@ -66,6 +67,74 @@ describe('subnets', () => {
         // Assert
         expect(subnets6[0].localSubnets[0].stats['total-nas']).toBe(BigInt('4') as any)
         expect(subnets6[0].localSubnets[0].stats['assigned-nas']).toBe(BigInt('18446744073709551615') as any)
-        expect(subnets6[0].localSubnets[0].stats['foo']).toBe('bar')
+        expect(subnets6[0].localSubnets[0].stats['total-pds']).toBe(BigInt(0) as any)
+    })
+
+    it('parse stats from non-string to big int', () => {
+        // Arrange
+        const obj = new Date()
+        const subnets6 = [
+            {
+                subnet: '3000::0/24',
+                localSubnets: [
+                    {
+                        stats: {
+                            'total-nas': true,
+                            'assigned-nas': 42,
+                            'declined-nas': obj,
+                            'assigned-pds': null
+                        },
+                    },
+                ],
+            },
+        ]
+
+        // Act
+        parseSubnetsStatisticValues(subnets6)
+
+        // Assert
+        expect(subnets6[0].localSubnets[0].stats['total-nas']).toBe(true)
+        expect(subnets6[0].localSubnets[0].stats['assigned-nas']).toBe(42)
+        expect(subnets6[0].localSubnets[0].stats['declined-nas']).toBe(obj)
+        expect(subnets6[0].localSubnets[0].stats['assigned-pds']).toBe(null)
+    })
+
+    it('parse stats from non-numeric string to big int', () => {
+        // Arrange
+        const subnets6 = [
+            {
+                subnet: '3000::0/24',
+                localSubnets: [
+                    {
+                        stats: {
+                            'total-nas': 'abc',
+                            'assigned-nas': 'FF',
+                        },
+                    },
+                ],
+            },
+        ]
+    
+        // Act
+        parseSubnetsStatisticValues(subnets6)
+    
+        // Assert
+        expect(subnets6[0].localSubnets[0].stats['total-nas']).toBe('abc')
+        expect(subnets6[0].localSubnets[0].stats['assigned-nas']).toBe('FF')
+    })
+
+    it('parse stats for missing local subnets', () => {
+        // Arrange
+        const subnets6 = [
+            {
+                subnet: '3000::0/24',
+            },
+        ]
+    
+        // Act
+        parseSubnetsStatisticValues(subnets6)
+    
+        // Assert
+        // No throw
     })
 })
