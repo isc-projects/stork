@@ -78,16 +78,8 @@ export function durationToString(duration, short = false) {
  * Present count in human readable way ie. big numbers get unit, e.g. 102 M instead of 102342543.
  */
 export function humanCount(count: string | bigint | number) {
-    if (!count) {
-        return '0.0'
-    }
-
-    if (typeof count !== 'number' && typeof count !== 'bigint') {
-        return count.toString()
-    }
-
-    if (Number.isNaN(count)) {
-        return count.toString()
+    if (count == null || (typeof count !== 'number' && typeof count !== 'bigint') || Number.isNaN(count)) {
+        return count + '' // Casting to string safe for null and undefined
     }
 
     const units = ['k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
