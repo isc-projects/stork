@@ -1,3 +1,10 @@
+* 190 [func] slawek
+
+    Added a flag to the Stork Agent to disable collecting
+    per subnet stats from Kea. It allows limiting data shared
+    with Prometheus/Grafana.
+    (Gitlab #614)
+
 * 189 [func] marcin
 
     Various DHCP client identifiers (e.g. flex-id, circuit-id) can
@@ -18,7 +25,6 @@
     Config reviews are scheduled automatically after getting updated
     host reservations via the host_cmds hooks library.
     (Gitlab #680)
-
 
 * 186 [func] slawek
 
