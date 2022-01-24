@@ -3,6 +3,7 @@ package kea
 import (
 	"math/big"
 
+	log "github.com/sirupsen/logrus"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
@@ -217,6 +218,7 @@ func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet) *subnetIPv
 // It expects that the counting value may exceed uint64 range.
 func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string) *storkutil.BigCounter {
 	sum := storkutil.NewBigCounter(0)
+	hasNegativeStatistic := false
 	for _, localSubnet := range subnet.LocalSubnets {
 		value, ok := localSubnet.Stats[statName]
 		if !ok {
@@ -231,8 +233,13 @@ func sumStatLocalSubnetsIPv6(subnet *dbmodel.Subnet, statName string) *storkutil
 
 		valueBigInt, ok := value.(*big.Int)
 		if ok {
-			sum.AddBigInt(valueBigInt)
+			_, ok = sum.AddBigInt(valueBigInt)
+			hasNegativeStatistic = hasNegativeStatistic || ok
 		}
+	}
+
+	if hasNegativeStatistic {
+		log.Warnf("Subnet %d contains negative value for statistic: %s", subnet.ID, statName)
 	}
 	return sum
 }

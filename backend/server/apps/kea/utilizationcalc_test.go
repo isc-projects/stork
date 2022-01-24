@@ -519,3 +519,38 @@ func TestCalculatorRealKeaResponse(t *testing.T) {
 		}
 	}
 }
+
+// Test that the negative statistic value is ignored.
+func TestCalculatorAddIgnoreNegativeNumbers(t *testing.T) {
+	// Arrange
+	subnet := &dbmodel.Subnet{
+		SharedNetworkID: 13,
+		Prefix:          "20::/64",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-nas":    big.NewInt(-1),
+					"assigned-nas": big.NewInt(math.MinInt64),
+					"declined-nas": big.NewInt(0).Mul(big.NewInt(0).SetUint64(math.MaxUint64), big.NewInt(-1)),
+					"total-pds":    big.NewInt(-2),
+					"assigned-pds": big.NewInt(-3),
+				},
+			},
+		},
+	}
+	// Act
+	calculator := newUtilizationCalculator()
+	utilization := calculator.add(subnet)
+
+	// Assert
+	require.Zero(t, utilization.getAddressUtilization())
+	require.Zero(t, utilization.getPDUtilization())
+	require.Zero(t, 0, calculator.global.totalAddresses.ToInt64())
+	require.Zero(t, 0, calculator.global.totalAssignedAddresses.ToInt64())
+	require.Zero(t, 0, calculator.global.totalDeclinedAddresses.ToInt64())
+	require.Zero(t, 0, calculator.global.totalNAs.ToInt64())
+	require.Zero(t, 0, calculator.global.totalAssignedNAs.ToInt64())
+	require.Zero(t, 0, calculator.global.totalDeclinedNAs.ToInt64())
+	require.Zero(t, 0, calculator.global.totalPDs.ToInt64())
+	require.Zero(t, 0, calculator.global.totalAssignedPDs.ToInt64())
+}
