@@ -76,6 +76,7 @@ describe('HaStatusPanelComponent', () => {
     )
 
     beforeEach(() => {
+        jasmine.clock().mockDate(new Date(2022, 1, 24, 19, 43))
         fixture = TestBed.createComponent(HaStatusPanelComponent)
         component = fixture.componentInstance
     })
