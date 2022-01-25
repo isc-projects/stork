@@ -1,8 +1,11 @@
 package dbtest
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
 	dbops "isc.org/stork/server/database"
 )
@@ -108,4 +111,53 @@ func TestCurrentVersion(t *testing.T) {
 	testMigrateAction(t, db, 0, 1, "up", "1")
 	// Check that the current version is now set to 1.
 	testCurrentVersion(t, db, 1)
+}
+
+// Test creating the server database and the user with access to
+// this database using generated password.
+func TestCreateDatabase(t *testing.T) {
+	// Connect to the database with full privileges.
+	db, _, teardown := SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a database and the user with the same name.
+	dbName := fmt.Sprintf("storktest%d", rand.Int63())
+	password, err := dbops.CreateDatabase(db, dbName, dbName, true, true)
+	require.NoError(t, err)
+	require.NotEmpty(t, password)
+
+	// Try to connect to this database using the user name and the
+	// generated password.
+	opts := &pg.Options{
+		User:      dbName,
+		Password:  password,
+		Database:  dbName,
+		Addr:      db.Options().Addr,
+		TLSConfig: db.Options().TLSConfig,
+	}
+	db2, err := dbops.NewPgDBConn(opts, false)
+	require.NoError(t, err)
+	require.NotNil(t, db2)
+	db2.Close()
+
+	// Try to create the database again with the force flag.
+	password, err = dbops.CreateDatabase(db, dbName, dbName, true, true)
+	require.NoError(t, err)
+	require.NotEmpty(t, password)
+
+	// Attempt go create the database without the force flag should
+	// fail because the database already exists.
+	_, err = dbops.CreateDatabase(db, dbName, dbName, false, true)
+	require.Error(t, err)
+
+	// Connect to the database again using the new password.
+	opts.Password = password
+	db2, err = dbops.NewPgDBConn(opts, false)
+	require.NoError(t, err)
+	require.NotNil(t, db2)
+	defer db2.Close()
+
+	// Try to create the pgcrypto extension.
+	err = dbops.CreateExtension(db2, "pgcrypto")
+	require.NoError(t, err)
 }

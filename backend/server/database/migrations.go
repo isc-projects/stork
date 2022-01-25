@@ -1,6 +1,7 @@
 package dbops
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -10,6 +11,7 @@ import (
 
 	// TODO: document why it is blank imported.
 	_ "isc.org/stork/server/database/migrations"
+	storkutil "isc.org/stork/util"
 )
 
 // Checks if the migrations table exists, i.e. the 'init' command was called.
@@ -108,4 +110,74 @@ func AvailableVersion() int64 {
 // Returns current schema version.
 func CurrentVersion(db *PgDB) (int64, error) {
 	return migrations.Version(db)
+}
+
+// Prepares new database for the Stork server. This function must be called with
+// a pointer to the database connection using database admin credentials (typically
+// postgres user and postgres database). The dbName and userName denote the new
+// database name and the new user name created. The force flag indicates whether
+// or not the function should drop an existing database and/or user before
+// re-creating them. Finally, the genPassword flag indicates whether or not this
+// function should generate a random password for the database.
+func CreateDatabase(db *PgDB, dbName, userName string, force, genPassword bool) (password string, err error) {
+	if genPassword {
+		// Generate random password for the database.
+		password, err = storkutil.Base64Random(24)
+		if err != nil {
+			return
+		}
+	}
+
+	if force {
+		// Drop an existing database if it exists.
+		if _, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)); err != nil {
+			err = errors.Wrapf(err, `problem with dropping the database "%s"`, dbName)
+			return
+		}
+	}
+	// Re-create the database. Note that the database creation cannot
+	// be done in a transaction.
+	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbName))
+	if err != nil {
+		err = errors.Wrapf(err, `problem with creating the database "%s"`, dbName)
+		return
+	}
+
+	// Other things can be done in a transaction.
+	err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) (err error) {
+		if force {
+			// Drop an existing user if it exists.
+			if _, err = tx.Exec(fmt.Sprintf("DROP USER IF EXISTS %s;", userName)); err != nil {
+				err = errors.Wrapf(err, `problem with dropping the user "%s"`, userName)
+				return
+			}
+		}
+		// Re-create the user.
+		if _, err = tx.Exec(fmt.Sprintf("CREATE USER %s;", userName)); err != nil {
+			err = errors.Wrapf(err, `problem with creating the user "%s"`, userName)
+			return
+		}
+		// Grant the user full control over the database.
+		if _, err = tx.Exec(fmt.Sprintf("GRANT ALL PRIVILEGES ON DATABASE %s TO %s;", dbName, userName)); err != nil {
+			err = errors.Wrapf(err, `problem with granting privileges on database "%s" to user "%s"`, dbName, userName)
+			return
+		}
+		// If the password has been generated assign it to the user.
+		if password != "" {
+			if _, err = tx.Exec(fmt.Sprintf("ALTER USER %s WITH PASSWORD '%s'", userName, password)); err != nil {
+				err = errors.Wrapf(err, `problem with setting generated password for user "%s"`, userName)
+				return
+			}
+		}
+		return nil
+	})
+	return password, err
+}
+
+// Creates database extension. This function must be called with a pointer to the
+// database connection using database admin credentials (typically postgres user).
+// It must be a connection to the database where the extension should be created.
+func CreateExtension(db *PgDB, extName string) (err error) {
+	_, err = db.Exec(fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS %s", extName))
+	return
 }

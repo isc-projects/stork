@@ -14,6 +14,52 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Establish connection to a database using admin credentials.
+// The database name to connect to is specified as the function
+// argument. Specifying db-url is not supported. The user and
+// password are specified with db-admin-user and db-admin-password
+// settings.
+func getAdminDBConn(settings *cli.Context, dbName string) *dbops.PgDB {
+	if !settings.IsSet("db-admin-password") {
+		// If password is missing then prompt for it.
+		passwd := storkutil.GetSecretInTerminal("admin password: ")
+		_ = settings.Set("db-admin-password", passwd)
+	}
+
+	addrPort := net.JoinHostPort(settings.String("db-host"), settings.String("db-port"))
+
+	// TLS configuration.
+	tlsConfig, err := dbops.GetTLSConfig(settings.String("db-sslmode"),
+		settings.String("db-host"),
+		settings.String("db-sslcert"),
+		settings.String("db-sslkey"),
+		settings.String("db-sslrootcert"))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	// Use the provided credentials to connect to the database.
+	opts := &dbops.PgOptions{
+		User:      settings.String("db-admin-user"),
+		Password:  settings.String("db-admin-password"),
+		Database:  dbName,
+		Addr:      addrPort,
+		TLSConfig: tlsConfig,
+	}
+
+	db, err := dbops.NewPgDBConn(opts, settings.String("db-trace-queries") != "")
+	if err != nil {
+		log.Fatalf("unexpected error: %+v", err)
+	}
+
+	// Theoretically, it should not happen but let's make sure in case someone
+	// modifies the NewPgDB function.
+	if db == nil {
+		log.Fatal("unable to create database instance")
+	}
+	return db
+}
+
 // Establish connection to a database with opts from command line.
 func getDBConn(settings *cli.Context) *dbops.PgDB {
 	var opts *dbops.PgOptions
@@ -31,7 +77,7 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 		if settings.IsSet("db-password") {
 			passwd = settings.String("db-password")
 		} else {
-			// if password is missing then prompt for it
+			// If password is missing then prompt for it.
 			passwd = storkutil.GetSecretInTerminal("database password: ")
 		}
 
@@ -68,6 +114,35 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 		log.Fatal("unable to create database instance")
 	}
 	return db
+}
+
+// Execute db-create command. It prepares new database for the Stork
+// server. It also creates a user that can access this database using
+// a generated password.
+func runDBCreate(settings *cli.Context) {
+	// Connect to the postgres database using admin credentials.
+	db := getAdminDBConn(settings, "postgres")
+
+	// Try to create the database, the user with access to the database using
+	// a generated password.
+	password, err := dbops.CreateDatabase(db, settings.String("db-name"), settings.String("db-user"), settings.Bool("force"), true)
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
+
+	// Connect to the created database and create pgcrypto extension.
+	db = getAdminDBConn(settings, settings.String("db-name"))
+	err = dbops.CreateExtension(db, "pgcrypto")
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
+
+	// Database setup successful.
+	log.WithFields(log.Fields{
+		"database_name": settings.String("db-name"),
+		"user":          settings.String("db-user"),
+		"password":      password,
+	}).Info("created database and user for the server with the following credentials")
 }
 
 // Execute DB migration command.
@@ -137,6 +212,36 @@ func setupApp() *cli.App {
 		fmt.Println(c.App.Version)
 	}
 
+	dbTLSFlags := []cli.Flag{
+		&cli.StringFlag{
+			Name:    "db-sslmode",
+			Usage:   "The SSL mode for connecting to the database (i.e., disable, require, verify-ca or verify-full).",
+			Value:   "disable",
+			EnvVars: []string{"STORK_DATABASE_SSLMODE"},
+		},
+		&cli.StringFlag{
+			Name:    "db-sslcert",
+			Usage:   "The location of the SSL certificate used by the server to connect to the database.",
+			EnvVars: []string{"STORK_DATABASE_SSLCERT"},
+		},
+		&cli.StringFlag{
+			Name:    "db-sslkey",
+			Usage:   "The location of the SSL key used by the server to connect to the database.",
+			EnvVars: []string{"STORK_DATABASE_SSLKEY"},
+		},
+		&cli.StringFlag{
+			Name:    "db-sslrootcert",
+			Usage:   "The location of the root certificate file used to verify the database server's certificate.",
+			EnvVars: []string{"STORK_DATABASE_SSLROOTCERT"},
+		},
+		&cli.StringFlag{
+			Name:    "db-trace-queries",
+			Usage:   "Enable tracing SQL queries: \"run\" - only run-time, without migrations, \"all\" - migrations and run-time.",
+			Value:   "",
+			EnvVars: []string{"STORK_DATABASE_TRACE_QUERIES"},
+		},
+	}
+
 	dbFlags := []cli.Flag{
 		&cli.StringFlag{
 			Name:    "db-url",
@@ -175,34 +280,58 @@ func setupApp() *cli.App {
 			Value:   "stork",
 			EnvVars: []string{"STORK_DATABASE_NAME"},
 		},
+	}
+
+	dbFlags = append(dbFlags, dbTLSFlags...)
+
+	dbCreateFlags := []cli.Flag{
 		&cli.StringFlag{
-			Name:    "db-sslmode",
-			Usage:   "The SSL mode for connecting to the database (i.e., disable, require, verify-ca or verify-full).",
-			Value:   "disable",
-			EnvVars: []string{"STORK_DATABASE_SSLMODE"},
+			Name:    "db-admin-user",
+			Usage:   "The Postgres database administrator user name, typically postgres.",
+			Aliases: []string{"a"},
+			Value:   "postgres",
+			EnvVars: []string{"STORK_DATABASE_ADMIN_USER_NAME"},
 		},
 		&cli.StringFlag{
-			Name:    "db-sslcert",
-			Usage:   "The location of the SSL certificate used by the server to connect to the database.",
-			EnvVars: []string{"STORK_DATABASE_SSLCERT"},
+			Name:    "db-admin-password",
+			Usage:   "The Postgres database administrator password.",
+			EnvVars: []string{"STORK_DATABASE_ADMIN_PASSWORD"},
 		},
 		&cli.StringFlag{
-			Name:    "db-sslkey",
-			Usage:   "The location of the SSL key used by the server to connect to the database.",
-			EnvVars: []string{"STORK_DATABASE_SSLKEY"},
+			Name:    "db-host",
+			Usage:   "The name of the host where the database is available.",
+			Value:   "localhost",
+			EnvVars: []string{"STORK_DATABASE_HOST"},
 		},
 		&cli.StringFlag{
-			Name:    "db-sslrootcert",
-			Usage:   "The location of the root certificate file used to verify the database server's certificate.",
-			EnvVars: []string{"STORK_DATABASE_SSLROOTCERT"},
+			Name:    "db-port",
+			Usage:   "The port on which the database is available.",
+			Aliases: []string{"p"},
+			Value:   "5432",
+			EnvVars: []string{"STORK_DATABASE_PORT"},
 		},
 		&cli.StringFlag{
-			Name:    "db-trace-queries",
-			Usage:   "Enable tracing SQL queries: \"run\" - only run-time, without migrations, \"all\" - migrations and run-time.",
-			Value:   "",
-			EnvVars: []string{"STORK_DATABASE_TRACE_QUERIES"},
+			Name:    "db-name",
+			Usage:   "The name of the database to create.",
+			Aliases: []string{"d"},
+			Value:   "stork",
+			EnvVars: []string{"STORK_DATABASE_NAME"},
+		},
+		&cli.StringFlag{
+			Name:    "db-user",
+			Usage:   "The name of the user to be created and granted privileges to the new database.",
+			Aliases: []string{"u"},
+			Value:   "stork",
+			EnvVars: []string{"STORK_DATABASE_USER_NAME"},
 		},
 	}
+
+	dbCreateFlags = append(dbCreateFlags, dbTLSFlags...)
+	dbCreateFlags = append(dbCreateFlags, &cli.BoolFlag{
+		Name:    "force",
+		Usage:   "Recreate the database and the user if they exist.",
+		Aliases: []string{"f"},
+	})
 
 	dbVerFlags := append(dbFlags,
 		&cli.StringFlag{
@@ -246,17 +375,33 @@ func setupApp() *cli.App {
 		Name: "Stork Tool",
 		Usage: `A tool for managing Stork Server
 
-   The tool operates in two areas:
+   The tool operates in three areas:
 
    - Certificates Management - it allows for exporting Stork Server keys, certificates
      and token that are used for securing communication between Stork Server
      and Stork Agents
+
+   - Database Creation - it allows for creating a new database for the server,
+     and a user that can access this database with a generated password.
 
    - Database Migration - it allows for performing database schema migrations,
      overwriting db schema version and getting its current value`,
 		Version:  stork.Version,
 		HelpName: "stork-tool",
 		Commands: []*cli.Command{
+			// DATABASE CREATION COMMAND
+			{
+				Name:        "db-create",
+				Usage:       "Create new Stork database",
+				UsageText:   "stork-tool db-create [options for db creation] -f",
+				Description: ``,
+				Flags:       dbCreateFlags,
+				Category:    "Database Creation",
+				Action: func(c *cli.Context) error {
+					runDBCreate(c)
+					return nil
+				},
+			},
 			// DATABASE MIGRATION COMMANDS
 			{
 				Name:        "db-init",
