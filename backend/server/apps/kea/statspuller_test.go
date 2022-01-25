@@ -251,7 +251,17 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 							{
 								"id": 20,
 								"subnet": "192.0.3.0/24",
+								// 1 in-pool, 2 out-of-pool host reservations
+								"pools": [
+									{
+										"pool": "192.0.3.1 - 192.0.3.10"
+									}
+								],
 								"reservations": [
+									{
+										"hw-address": "00:00:00:00:00:21",
+										"ip-address": "192.0.3.2"
+									},
 									{
 										"hw-address": "00:00:00:00:00:22",
 										"ip-address": "192.0.2.22"
@@ -279,10 +289,30 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 							{
 								"id": 50,
 								"subnet": "2001:db8:3::/64",
+								"pools": [
+									{
+										"pool": "2001:db8:3::100-2001:db8:3::ffff"
+									}
+								],
+								"pd-pools": [
+									{
+										"prefix": "2001:db8:3:8000::",
+										"prefix-len": 48,
+										"delegated-len": 64
+									}
+								],
+								// 2 out-of-pool, 1 in-pool host reservations
+								// 1 out-of-pool, 1 in-pool prefix reservations
 								"reservations": [
 									{
+										"hw-address": "00:00:00:00:01:23",
+										"ip-address": "2001:db8:3::101",
+										"prefixes": [ "2001:db8:3:8000::/64" ]
+									},
+									{
 										"hw-address": "00:00:00:00:01:22",
-										"ip-address": "2001:db8:3::21"
+										"ip-address": "2001:db8:3::21",
+										"prefixes": [ "2001:db8:2:abcd::/80" ]
 									},
 									{
 										"hw-address": "00:00:00:00:01:23",
@@ -410,7 +440,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 			require.InDelta(t, 233.0/1048.0, float64(sn.PdUtilization)/1000.0, 0.001)
 		case 50:
 			require.InDelta(t, 60.0/(256.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
-			require.InDelta(t, 15.0/1048.0, float64(sn.PdUtilization)/1000.0, 0.001)
+			require.InDelta(t, 15.0/(1048.0+1), float64(sn.PdUtilization)/1000.0, 0.001)
 		}
 	}
 
@@ -428,7 +458,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	), globals["assigned-nas"])
 	require.EqualValues(t, big.NewInt(3), globals["declined-nas"])
 	require.EqualValues(t, big.NewInt(0).Add(
-		big.NewInt(2095), big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(2096), big.NewInt(0).SetUint64(math.MaxUint64),
 	), globals["total-pds"])
 	require.EqualValues(t, big.NewInt(0).Add(
 		big.NewInt(246), big.NewInt(0).SetUint64(math.MaxUint64),
