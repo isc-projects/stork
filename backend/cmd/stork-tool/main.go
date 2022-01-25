@@ -393,8 +393,8 @@ func setupApp() *cli.App {
      and token that are used for securing communication between Stork Server
      and Stork Agents
 
-   - Database Creation - it allows for creating a new database for the server,
-     and a user that can access this database with a generated password.
+   - Database Creation - it facilitates creating a new database for the Stork Server,
+     and a user that can access this database with a generated password
 
    - Database Migration - it allows for performing database schema migrations,
      overwriting db schema version and getting its current value`,

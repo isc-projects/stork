@@ -21,11 +21,14 @@ Synopsis
 Description
 ~~~~~~~~~~~
 
-The ``stork-tool`` operates in two areas:
+The ``stork-tool`` operates in three areas:
 
 - Certificates Management - it allows for exporting Stork Server keys, certificates
   and token that are used for securing communication between Stork Server
   and Stork Agents
+
+- Database Creation - it facilitates creating a new database for the Stork Server,
+  and a user that can access this database with a generated password
 
 - Database Migration - it allows for performing database schema migrations,
   overwriting db schema version and getting its current value;
@@ -104,6 +107,44 @@ Import server certificate from a file:
     $ stork-tool cert-import --db-url postgresql://user:pass@localhost/dbname -f srvcert -i srv.cert
     INFO[2021-08-11 15:22:28]       connection.go:59    checking connection to database
     INFO[2021-08-11 15:22:28]            certs.go:257   server cert loaded from srv.cert file, length 14
+
+Database Creation
+~~~~~~~~~~~~~~~~~
+
+``stork-tool`` offers the following commands for creating the database for the Stork Server:
+
+- ``db-create``       Create new database
+
+- ``db-password-gen`` Generate random database password
+
+Options specific to ``db-create`` command:
+
+``-a``, ``--db-admin-user``
+   database administrator user name, typically postgres. (default: "postgres")
+
+``--db-admin-password``
+   database administrator password.
+
+``-f``, ``--force``
+   recreate the database and the user if they exist. (default false)
+
+Examples
+........
+
+Create a new database ``stork`` with user ``stork`` and a generated password:
+
+.. code-block:: console
+
+    $ stork-tool db-create --db-admin-user postgres --db-name stork --db-user stork
+    INFO[2022-01-25 17:04:56]             main.go:145   created database and user for the server with the following credentials  database_name=stork password=L82B+kJEOyhDoMnZf9qPAGyKjH5Qo/Xb user=stork
+
+When a database is created using ``psql`` tool, it is sometimes useful to generate
+a hard-to-guess password for this database:
+
+.. code-block:: console
+
+    $ stork-tool db-password-gen
+    INFO[2022-01-25 17:56:31]             main.go:157   generated new database password               password=znYDfWzvMhWRZyJJuu3EvUxH5KMi1SmJ
 
 Database Migration
 ~~~~~~~~~~~~~~~~~~
