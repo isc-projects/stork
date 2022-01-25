@@ -709,7 +709,9 @@ func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, err
 	// Out-of-pool count per subnet.
 	var res []struct {
 		SubnetID int64
-		Oop      uint64
+		// Stork uses the int64 data type for the host reservation ID.
+		// It means that we expect at most 2^64 out-of-pool reservations.
+		Oop uint64
 	}
 
 	// Check if IP reservation address is in any subnet pool
@@ -743,7 +745,7 @@ func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, err
 		Where("NOT EXISTS (?)", inAnyPoolSubquery).
 		// Group out-of-pool reservations per subnet
 		// and count them (in SELECT)
-		GroupExpr("?", pg.Ident("host.subnet_id")).
+		Group("host.subnet_id").
 		Select(&res)
 	if err != nil {
 		return nil, err
@@ -764,7 +766,9 @@ func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, erro
 	// Out-of-pool count per subnet.
 	var res []struct {
 		SubnetID int64
-		Oop      uint64
+		// Stork uses the int64 data type for the host reservation ID.
+		// It means that we expect at most 2^64 out-of-pool reservations.
+		Oop uint64
 	}
 
 	// Check if prefix reservation is in any prefix pool
@@ -803,7 +807,7 @@ func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, erro
 		Where("NOT EXISTS (?)", inAnyPrefixPoolSubquery).
 		// Group out-of-pool reservations per subnet
 		// and count them (in SELECT)
-		GroupExpr("?", pg.Ident("host.subnet_id")).
+		Group("host.subnet_id").
 		Select(&res)
 	if err != nil {
 		return nil, err
