@@ -3,6 +3,7 @@ package kea
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -166,6 +167,8 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	_ = dbmodel.InitializeStats(db)
+
 	// prepare fake agents
 	keaMock := func(callNo int, cmdResponses []interface{}) {
 		// DHCPv4
@@ -324,15 +327,15 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	require.NoError(t, err)
 
 	// check collected stats
-	subnets := []*dbmodel.LocalSubnet{}
-	q := db.Model(&subnets)
+	localSubnets := []*dbmodel.LocalSubnet{}
+	q := db.Model(&localSubnets)
 	q = q.Column("local_subnet_id", "stats", "stats_collected_at")
 	q = q.Join("INNER JOIN daemon ON local_subnet.daemon_id = daemon.id")
 	q = q.Where("daemon.app_id = ?", app.ID)
 	err = q.Select()
 	require.NoError(t, err)
 	snCnt := 0
-	for _, sn := range subnets {
+	for _, sn := range localSubnets {
 		switch sn.LocalSubnetID {
 		case 10:
 			require.Equal(t, uint64(111), sn.Stats["assigned-addresses"])
@@ -348,6 +351,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 			require.Equal(t, uint64(2400), sn.Stats["assigned-nas"])
 			require.Equal(t, uint64(0), sn.Stats["assigned-pds"])
 			require.Equal(t, uint64(3), sn.Stats["declined-nas"])
+			require.Equal(t, uint64(4096), sn.Stats["total-nas"])
 			require.Equal(t, uint64(0), sn.Stats["total-pds"])
 			snCnt++
 		case 40:
@@ -386,6 +390,49 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	previous = sp.RpsWorker.PreviousRps[2]
 	require.NotEqual(t, nil, previous)
 	require.EqualValues(t, 66, previous.Value)
+
+	// Check out-of-pool addresses/NAs/PDs utilization
+	subnets, _ := dbmodel.GetAllSubnets(db, 0)
+
+	for _, sn := range subnets {
+		switch sn.LocalSubnets[0].LocalSubnetID {
+		case 10:
+			require.InDelta(t, 111.0/256.0, float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.Zero(t, sn.PdUtilization)
+		case 20:
+			require.InDelta(t, 2034.0/(4098.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.Zero(t, sn.PdUtilization)
+		case 30:
+			require.InDelta(t, 2400.0/4096.0, float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.Zero(t, sn.PdUtilization)
+		case 40:
+			require.Zero(t, sn.AddrUtilization)
+			require.InDelta(t, 233.0/1048.0, float64(sn.PdUtilization)/1000.0, 0.001)
+		case 50:
+			require.InDelta(t, 60.0/(256.0+2), float64(sn.AddrUtilization)/1000.0, 0.001)
+			require.InDelta(t, 15.0/1048.0, float64(sn.PdUtilization)/1000.0, 0.001)
+		}
+	}
+
+	// Check global statistics
+	globals, err := dbmodel.GetAllStats(db)
+	require.NoError(t, err)
+	require.EqualValues(t, big.NewInt(4356), globals["total-addresses"])
+	require.EqualValues(t, big.NewInt(2145), globals["assigned-addresses"])
+	require.EqualValues(t, big.NewInt(4), globals["declined-addresses"])
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(4354), big.NewInt(0).SetUint64(math.MaxUint64),
+	), globals["total-nas"])
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(2460), big.NewInt(math.MaxInt64),
+	), globals["assigned-nas"])
+	require.EqualValues(t, big.NewInt(3), globals["declined-nas"])
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(2095), big.NewInt(0).SetUint64(math.MaxUint64),
+	), globals["total-pds"])
+	require.EqualValues(t, big.NewInt(0).Add(
+		big.NewInt(246), big.NewInt(0).SetUint64(math.MaxUint64),
+	), globals["assigned-pds"])
 }
 
 func TestStatsPullerPullStatsKea16Format(t *testing.T) {
