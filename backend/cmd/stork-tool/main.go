@@ -145,6 +145,18 @@ func runDBCreate(settings *cli.Context) {
 	}).Info("created database and user for the server with the following credentials")
 }
 
+// Execute db-password-gen command. It generates random password that can be
+// used for securing Stork database.
+func runDBPasswordGen() {
+	password, err := storkutil.Base64Random(24)
+	if err != nil {
+		log.Fatalf("failed to generate random database password")
+	}
+	log.WithFields(log.Fields{
+		"password": password,
+	}).Info("generated new database password")
+}
+
 // Execute DB migration command.
 func runDBMigrate(settings *cli.Context, command, version string) {
 	// The up and down commands require special treatment. If the target version is specified
@@ -389,7 +401,7 @@ func setupApp() *cli.App {
 		Version:  stork.Version,
 		HelpName: "stork-tool",
 		Commands: []*cli.Command{
-			// DATABASE CREATION COMMAND
+			// DATABASE CREATION COMMANDS
 			{
 				Name:        "db-create",
 				Usage:       "Create new Stork database",
@@ -399,6 +411,18 @@ func setupApp() *cli.App {
 				Category:    "Database Creation",
 				Action: func(c *cli.Context) error {
 					runDBCreate(c)
+					return nil
+				},
+			},
+			{
+				Name:        "db-password-gen",
+				Usage:       "Generate random Stork database password",
+				UsageText:   "stork-tool db-password-gen",
+				Description: ``,
+				Flags:       []cli.Flag{},
+				Category:    "Database Creation",
+				Action: func(c *cli.Context) error {
+					runDBPasswordGen()
 					return nil
 				},
 			},
