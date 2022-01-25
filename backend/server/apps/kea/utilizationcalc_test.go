@@ -625,4 +625,13 @@ func TestCalculatorAddExtraToTotalCounters(t *testing.T) {
 	require.EqualValues(t, 0.1, utilization1.getPDUtilization())
 	require.EqualValues(t, 0.25, utilization2.getAddressUtilization())
 	require.EqualValues(t, 0.0, utilization2.getPDUtilization())
+
+	sharedNetwork := calculator.sharedNetworks[42]
+	require.EqualValues(t, 180, sharedNetwork.totalAddresses)
+	require.EqualValues(t, 70, sharedNetwork.totalAssignedAddresses)
+	require.EqualValues(t, 9, sharedNetwork.totalAssignedPDs)
+	require.EqualValues(t, 90, sharedNetwork.totalPDs)
+
+	require.InDelta(t, 7.0/18.0, sharedNetwork.getAddressUtilization(), 0.001)
+	require.EqualValues(t, 0.1, sharedNetwork.getPDUtilization())
 }
