@@ -53,14 +53,72 @@ correctly. The general installation procedure for PostgreSQL is OS-specific and 
 here. However, please note that Stork uses pgcrypto extensions, which often come in a separate package. For
 example, a postgresql-crypto package is required on Fedora and postgresql12-contrib is needed on RHEL and CentOS.
 
-These instructions prepare a database for use with the ``Stork
-Server``, with the `stork` database user and `stork` password.  Next,
-a database called `stork` is created and the `pgcrypto` extension is
-enabled in the database.
 
-First, connect to PostgreSQL using `psql` and the `postgres`
-administration user. Depending on the system's configuration, this may require
-switching to the user `postgres` first, using the `su postgres` command.
+.. _stork-tool:
+
+Stork Tool
+==========
+
+The ``Stork Tool`` is a program installed with the ``Stork Server``, providing commands
+to set up server's database and manage TLS certificates. Using this tool is facultative
+because the server runs the database migrations and creates suitable certificates at
+startup on its own. However,  the tool provides useful commands for inspecting
+the current database schema version and downgrading to one of the previous versions.
+In addition, in the :ref:`setup-server-database` section it is described how the tool can be
+conveniently used to create a new database and its credentials without a need to run
+SQL commands directly using the ``psql`` program.
+
+The :ref:`inspecting-keys-and-certificates` section describes how to use the tool for TLS
+certificates management.
+
+Further sections describe different methods for installing the Stork Server from packages.
+See: :ref:`install-server-deb` and :ref:`install-server-rpm`. The ``stork-tool`` program
+is installed from the packages together with the server. Alternatively, the tool can be
+built from sources:
+
+.. code-block:: console
+
+    $ rake build_tool
+
+Please refer to the manual page for usage details: :ref:`man-stork-tool`.
+
+.. _setup-server-database:
+
+Preparing Stork Server Database
+===============================
+
+Before running ``Stork Server``, a PostgreSQL database and the user with suitable privileges
+must be created. Using the ``stork-tool`` is the most convenient way to set up the database.
+
+The following command creates a new database ``stork`` and a user ``stork`` with all privileges
+in this database. It also installs the ``pgcrypto`` extension required by the Stork Server.
+
+.. code-block:: console
+
+    $ stork-tool db-create --db-name stork --db-user stork
+    created database and user for the server with the following credentials  database_name=stork password=L82B+kJEOyhDoMnZf9qPAGyKjH5Qo/Xb user=stork
+
+By default, ``stork-tool`` connects to the database as user ``postgres``, a default admin role
+in many PostgreSQL installations. If an installation uses a different administrator name, it can
+be specified with the ``--db-admin-user`` option. For example:
+
+.. code-block:: console
+
+    $ stork-tool db-create --db-admin-user thomson --db-name stork --db-user stork
+    created database and user for the server with the following credentials  database_name=stork password=L82B+kJEOyhDoMnZf9qPAGyKjH5Qo/Xb user=stork
+
+The ``stork-tool`` generates a random password to the created database. This password needs
+to be copied into the server environment file or used in the ``stork-server`` command line
+to configure the server to use this password while connecting to the database. Use the
+``--db-password`` option with the ``db-create`` command to create a user with a specified
+password.
+
+
+It is also possible to create the database manually (i.e., using the ``psql`` tool).
+
+First, connect to PostgreSQL using ``psql`` and the ``postgres``
+administration user. Depending on the system's configuration, it may require
+switching to the user ``postgres`` first, using the ``su postgres`` command.
 
 .. code-block:: console
 
@@ -80,7 +138,7 @@ Then, prepare the database:
     postgres=# GRANT ALL PRIVILEGES ON DATABASE stork TO stork;
     GRANT
     postgres=# \c stork
-    You are now connected to database "stork" as user "thomson".
+    You are now connected to database "stork" as user "postgres".
     stork=# create extension pgcrypto;
     CREATE EXTENSION
 
@@ -90,7 +148,59 @@ Then, prepare the database:
    Using default passwords is a security risk. Stork puts no restrictions on the
    characters used in the database passwords nor on their length. In particular,
    it accepts passwords containing spaces, quotes, double quotes, and other
-   special characters.
+   special characters. Please also consider using the ``stork-tool`` to generate
+   a random password.
+
+To generate a random password run:
+
+.. code-block:: console
+
+    $ stork-tool db-password-gen
+    generated new database password               password=1qWVzmLKy/j40/FVsvjM2ylcFdaFfNxh
+
+
+The newly created database is not ready for use until necessary database migrations
+are executed. The migrations create tables, indexes, triggers, and functions required
+by the ``Stork Server``. As mentioned above, the server can automatically run the
+migrations at startup, bringing up the database schema to the latest version. However,
+if a user wants to run the migrations before starting the server, they can use the
+``stork-tool``:
+
+.. code-block:: console
+
+    $ stork-tool db-init
+    $ stork-tool db-up
+
+The up and down commands have an optional ``-t`` parameter that specifies the desired
+schema version. It is useful when debugging database migrations or downgrading to
+one of the earlier Stork versions.
+
+.. code-block:: console
+
+    $ # migrate up version 25
+    $ stork-tool db-up -t 25
+    $ # migrate down back to version 17
+    $ stork-tool db-down -t 17
+
+Note that the server requires the latest database version to run, always
+runs the migration on its own, and will refuse to start if the migration fails
+for any reason. The migration tool is mostly useful for debugging
+problems with migration or migrating the database without actually running
+the service. For complete reference, see the manual page here:
+:ref:`man-stork-tool`.
+
+To debug migrations, another useful feature is SQL tracing using the ``--db-trace-queries`` parameter.
+It takes either "all" (trace all SQL operations, including migrations and run-time) or "run" (just
+trace run-time operations, skip migrations). If specified without any parameters, "all" is assumed. With it enabled,
+``stork-tool`` prints out all its SQL queries on stderr. For example, these commands can be used
+to generate an SQL script that updates the schema. Note that for some migrations, the steps are
+dependent on the contents of the database, so this is not a universal Stork schema. This parameter
+is also supported by the ``Stork Server``.
+
+.. code-block:: console
+
+   $ stork-tool db-down -t 0
+   $ stork-tool db-up --db-trace-queries 2> stork-schema.txt
 
 .. _install-pkgs:
 
@@ -872,58 +982,6 @@ variable, e.g.:
 .. code-block:: console
 
    $ sudo rake install_server DESTDIR=/usr
-
-Stork Tool (optional)
-=====================
-
-To initialize the database directly, the Stork Tool must be built and
-used to initialize and upgrade the database to the latest schema.
-However, this is optional, as the database migration is triggered
-automatically upon server startup. It is only useful if, for some
-reason, it is desirable to set up the database but not yet run the
-server.
-
-Stork Tool also provides the commands to import and export TLS
-certificates in the database and should be built whenever such
-capability is needed. See `:ref:`inspecting-keys-and-certificates`
-for usage details.
-
-.. code-block:: console
-
-    $ rake build_tool
-    $ backend/cmd/stork-tool/stork-tool db-init
-    $ backend/cmd/stork-tool/stork-tool db-up
-
-The up and down commands have an optional `-t` parameter that specifies the desired
-schema version. This is only useful when debugging database migrations.
-
-.. code-block:: console
-
-    $ # migrate up version 25
-    $ backend/cmd/stork-tool/stork-tool db-up -t 25
-    $ # migrate down back to version 17
-    $ backend/cmd/stork-tool/stork-tool db-down -t 17
-
-Note that the server requires the latest database version to run, always
-runs the migration on its own, and will refuse to start if the migration fails
-for any reason. The migration tool is mostly useful for debugging
-problems with migration or migrating the database without actually running
-the service. For complete reference, see the manual page here:
-:ref:`man-stork-tool`.
-
-To debug migrations, another useful feature is SQL tracing using the `--db-trace-queries` parameter.
-It takes either "all" (trace all SQL operations, including migrations and run-time) or "run" (just
-trace run-time operations, skip migrations). If specified without any parameters, "all" is assumed. With it enabled,
-`stork-tool` prints out all its SQL queries on stderr. For example, these commands can be used
-to generate an SQL script that updates the schema. Note that for some migrations, the steps are
-dependent on the contents of the database, so this is not a universal Stork schema. This parameter
-is also supported by the ``Stork Server``.
-
-.. code-block:: console
-
-   $ backend/cmd/stork-tool/stork-tool db-down -t 0
-   $ backend/cmd/stork-tool/stork-tool db-up --db-trace-queries 2> stork-schema.txt
-
 
 Integration With Prometheus and Grafana
 =======================================
