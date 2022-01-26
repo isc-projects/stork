@@ -2,10 +2,11 @@ package certs
 
 import (
 	"crypto/ecdsa"
+	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
 	"io"
-	"math/rand"
+	"math/big"
 	"net"
 	"os"
 
@@ -25,13 +26,18 @@ const (
 )
 
 // Generate server token and store it in database.  It is used during
-// manual agent registration.  This function uses random numbers
-// generator so it is expected that it is seeded prior its use.
+// manual agent registration. This function uses crypto random numbers
+// generator.
 func GenerateServerToken(db *pg.DB) ([]byte, error) {
 	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 	serverToken := make([]byte, 32)
 	for i := range serverToken {
-		serverToken[i] = chars[rand.Intn(len(chars))] // #nosec G404
+		maxValue := big.NewInt(int64(len(chars)))
+		r, err := rand.Int(rand.Reader, maxValue)
+		if err != nil {
+			return nil, err
+		}
+		serverToken[i] = chars[r.Uint64()]
 	}
 	err := dbmodel.SetSecret(db, dbmodel.SecretServerToken, serverToken)
 	if err != nil {

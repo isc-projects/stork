@@ -4,6 +4,7 @@ package storktestgen
 import (
 	"fmt"
 	"math/rand"
+	"time"
 )
 
 // Generate Kea configuration with specific number of subnets.
@@ -153,6 +154,8 @@ func GenerateKeaV4Config(n int) map[string]interface{} {
 // It accepts two arguments that specify the number of created outer and inner networks.
 // Subnets have random option data and subsequent ID.
 func generateV4Subnet(rangeOfOuterScope int, rangeOfInnerScope int) interface{} {
+	rand.Seed(time.Now().UnixNano())
+
 	var subnets []interface{}
 	netmask := 8
 	if rangeOfInnerScope != 0 {

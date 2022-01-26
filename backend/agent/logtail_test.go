@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -35,6 +36,7 @@ func TestAllow(t *testing.T) {
 func TestTailForbidden(t *testing.T) {
 	// Crate the test file to make sure that the lack of file is not
 	// the reason for an error.
+	rand.Seed(time.Now().UnixNano())
 	filename := fmt.Sprintf("test%d.log", rand.Int63())
 	f, err := os.Create(filename)
 	require.NoError(t, err)

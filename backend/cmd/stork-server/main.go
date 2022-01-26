@@ -1,11 +1,9 @@
 package main
 
 import (
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -15,9 +13,6 @@ import (
 )
 
 func main() {
-	// Initialize random numbers generator. It is used by pki and certs modules.
-	rand.Seed(time.Now().UnixNano())
-
 	// Setup logging
 	storkutil.SetupLogging()
 
