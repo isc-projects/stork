@@ -1,3 +1,9 @@
+* 191 [func] marcin
+
+    stork-tool facilitates db-create and db-password-gen commands
+    to conveniently create PostgreSQL database for the Stork Server.
+    (Gitlab #620)
+
 * 190 [func] slawek
 
     Added a flag to the Stork Agent to disable collecting
