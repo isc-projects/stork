@@ -119,10 +119,11 @@ func CurrentVersion(db *PgDB) (int64, error) {
 // or not the function should drop an existing database and/or user before
 // re-creating them. Finally, the genPassword flag indicates whether or not this
 // function should generate a random password for the database.
-func CreateDatabase(db *PgDB, dbName, userName string, force, genPassword bool) (password string, err error) {
+func CreateDatabase(db *PgDB, dbName, userName, password string, force, genPassword bool) (actualPassword string, err error) {
+	actualPassword = password
 	if genPassword {
 		// Generate random password for the database.
-		password, err = storkutil.Base64Random(24)
+		actualPassword, err = storkutil.Base64Random(24)
 		if err != nil {
 			return
 		}
@@ -163,15 +164,15 @@ func CreateDatabase(db *PgDB, dbName, userName string, force, genPassword bool) 
 			return
 		}
 		// If the password has been generated assign it to the user.
-		if password != "" {
-			if _, err = tx.Exec(fmt.Sprintf("ALTER USER %s WITH PASSWORD '%s'", userName, password)); err != nil {
+		if actualPassword != "" {
+			if _, err = tx.Exec(fmt.Sprintf("ALTER USER %s WITH PASSWORD '%s'", userName, actualPassword)); err != nil {
 				err = errors.Wrapf(err, `problem with setting generated password for user "%s"`, userName)
 				return
 			}
 		}
 		return nil
 	})
-	return password, err
+	return actualPassword, err
 }
 
 // Creates database extension. This function must be called with a pointer to the

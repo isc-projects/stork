@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strconv"
@@ -188,6 +189,35 @@ func TestRunCertImport(t *testing.T) {
 		"--db-port", strconv.Itoa(dbOpts.Port),
 		"-f", "srvtkn",
 		"-i", srvTknFile,
+	}
+	main()
+}
+
+// Check if db-create command can be invoked.
+func TestRunDBCreate(t *testing.T) {
+	_, gOpts, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	dbOpts := gOpts.BaseDatabaseSettings
+
+	// Generate unique database name and use the same name for the user.
+	dbName := fmt.Sprintf("storktest%d", rand.Int63())
+	os.Args = []string{
+		"stork-tool", "db-create",
+		"--db-admin-user", "storktest",
+		"--db-admin-password", "storktest",
+		"--db-name", dbName,
+		"--db-user", dbName,
+		"--db-password", dbOpts.Password,
+		"--db-host", dbOpts.Host,
+		"--db-port", strconv.Itoa(dbOpts.Port),
+	}
+	main()
+}
+
+// Check if db-password-gen command can be invoked.
+func TestRunDBGenPassword(*testing.T) {
+	os.Args = []string{
+		"stork-tool", "db-password-gen",
 	}
 	main()
 }

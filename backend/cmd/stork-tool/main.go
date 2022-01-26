@@ -125,7 +125,8 @@ func runDBCreate(settings *cli.Context) {
 
 	// Try to create the database, the user with access to the database using
 	// a generated password.
-	password, err := dbops.CreateDatabase(db, settings.String("db-name"), settings.String("db-user"), settings.Bool("force"), true)
+	password, err := dbops.CreateDatabase(db, settings.String("db-name"), settings.String("db-user"),
+		settings.String("db-password"), settings.Bool("force"), len(settings.String("db-password")) == 0)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
@@ -335,6 +336,10 @@ func setupApp() *cli.App {
 			Aliases: []string{"u"},
 			Value:   "stork",
 			EnvVars: []string{"STORK_DATABASE_USER_NAME"},
+		},
+		&cli.StringFlag{
+			Name:  "db-password",
+			Usage: "The user password to the created database; if not specified, a random password is generated.",
 		},
 	}
 

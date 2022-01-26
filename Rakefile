@@ -401,11 +401,17 @@ task :fmt_go => [GO, :gen_agent, :gen_server] do
   end
 end
 
-def remove_remaining_databases(pgsql_host, pgsql_port)
+def remove_remaining_databases_and_users(pgsql_host, pgsql_port)
     sh %{
-       for db in $(psql -t -h #{pgsql_host} -p #{pgsql_port} -U storktest -c \"select datname from pg_database where datname ~ 'storktest.*'\"); do
+       for db in $(psql -t -h #{pgsql_host} -p #{pgsql_port} -U storktest -c \"select datname from pg_database where datname ~ 'storktest.+'\"); do
          dropdb -h #{pgsql_host} -p #{pgsql_port} -U storktest $db
        done
+
+       for u in $(psql -t -h #{pgsql_host} -p #{pgsql_port} -U storktest -c \"select usename from pg_user where usename ~ 'storktest.+'\"); do
+         dropuser -h #{pgsql_host} -p #{pgsql_port} -U storktest $u
+       done
+
+       dropdb -h #{pgsql_host} -p #{pgsql_port} --if-exists -U storktest storktest
     }
 end
 
@@ -463,7 +469,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
   # prepare database for unit tests: clear any remainings from previous runs, prepare up-to-date template db
   if ENV['POSTGRES_IN_DOCKER'] != 'yes'
     ENV['PGPASSWORD'] = ENV['STORK_DATABASE_PASSWORD']
-    remove_remaining_databases(pgsql_host, pgsql_port)
+    remove_remaining_databases_and_users(pgsql_host, pgsql_port)
     sh "createdb -h #{pgsql_host} -p #{pgsql_port} -U storktest -O storktest storktest"
   end
 
@@ -487,7 +493,7 @@ task :unittest_backend => [GO, RICHGO, MOCKERY, MOCKGEN, :build_server, :build_a
     # drop test databases
     if ENV['POSTGRES_IN_DOCKER'] != 'yes'
       ENV['PGPASSWORD'] = ENV['STORK_DATABASE_PASSWORD']
-      remove_remaining_databases(pgsql_host, pgsql_port)
+      remove_remaining_databases_and_users(pgsql_host, pgsql_port)
     end
 
     # check coverage level (run it only for full tests scope)

@@ -122,7 +122,7 @@ func TestCreateDatabase(t *testing.T) {
 
 	// Create a database and the user with the same name.
 	dbName := fmt.Sprintf("storktest%d", rand.Int63())
-	password, err := dbops.CreateDatabase(db, dbName, dbName, true, true)
+	password, err := dbops.CreateDatabase(db, dbName, dbName, "", true, true)
 	require.NoError(t, err)
 	require.NotEmpty(t, password)
 
@@ -141,13 +141,13 @@ func TestCreateDatabase(t *testing.T) {
 	db2.Close()
 
 	// Try to create the database again with the force flag.
-	password, err = dbops.CreateDatabase(db, dbName, dbName, true, true)
+	password, err = dbops.CreateDatabase(db, dbName, dbName, "pass", true, false)
 	require.NoError(t, err)
-	require.NotEmpty(t, password)
+	require.Equal(t, "pass", password)
 
 	// Attempt go create the database without the force flag should
 	// fail because the database already exists.
-	_, err = dbops.CreateDatabase(db, dbName, dbName, false, true)
+	_, err = dbops.CreateDatabase(db, dbName, dbName, "", false, true)
 	require.Error(t, err)
 
 	// Connect to the database again using the new password.
@@ -156,8 +156,15 @@ func TestCreateDatabase(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, db2)
 	defer db2.Close()
+}
+
+// Test creating the pgcrypto extension if not exists.
+func TestCreateExtension(t *testing.T) {
+	// Connect to the database with full privileges.
+	db, _, teardown := SetupDatabaseTestCase(t)
+	defer teardown()
 
 	// Try to create the pgcrypto extension.
-	err = dbops.CreateExtension(db2, "pgcrypto")
+	err := dbops.CreateExtension(db, "pgcrypto")
 	require.NoError(t, err)
 }
