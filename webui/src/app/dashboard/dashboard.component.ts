@@ -102,7 +102,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
      * Get or refresh DHCP overview data from the server
      */
     refreshDhcpOverview() {
-        this.dhcpApi
+        return this.dhcpApi
             .getDhcpOverview()
             .pipe(
                 map((v) => {

@@ -99,7 +99,7 @@ export function humanCount(count: string | bigint | number) {
     } else {
         countStr = count.toString()
     }
-    return countStr + (u >= 0 ? ' ' + units[u] : '')
+    return countStr + (u >= 0 ? units[u] : '')
 }
 
 /**

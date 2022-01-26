@@ -52,9 +52,9 @@ describe('utils', () => {
         const nullStr = humanCount(nullValue)
 
         // Assert
-        expect(strInt).toBe('12.3 M')
-        expect(strFloat).toBe('1.2 G')
-        expect(strBigInt).toBe('1234567890 Y')
+        expect(strInt).toBe('12.3M')
+        expect(strFloat).toBe('1.2G')
+        expect(strBigInt).toBe('1234567890Y')
         expect(strStr).toBe('foo')
         expect(nanStr).toBe('NaN')
         expect(boolStr).toBe('true')

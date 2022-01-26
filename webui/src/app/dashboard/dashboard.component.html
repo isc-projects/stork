@@ -48,9 +48,13 @@
             </p-header>
 
             <h1 class="section-heading">DHCPv4</h1>
-            <div style="display: flex; flex-wrap: wrap; justify-content: space-between">
-                <div>
-                    <h2 class="section-heading">
+            <div
+                style="display: flex; flex-wrap: wrap; justify-content: space-between"
+                class="dashboard-dhcp"
+                id="dashboard-dhcp4"
+            >
+                <div class="dashboard-dhcp__subnets dashboard-section">
+                    <h2 class="section-heading dashboard-section__header">
                         Subnets: {{ overview.subnets4.total ? overview.subnets4.total : '0' }}
                         <app-help-tip title="subnets listed" id="subnets4-help-button">
                             <p>
@@ -59,11 +63,11 @@
                             </p>
                         </app-help-tip>
                     </h2>
-                    <table>
-                        <tr *ngFor="let sn of overview.subnets4.items">
-                            <td>[{{ sn.id }}]</td>
-                            <td><app-subnet-bar [subnet]="sn"></app-subnet-bar></td>
-                            <td style="padding-left: 1em">
+                    <table class="dashboard-section__data">
+                        <tr *ngFor="let sn of overview.subnets4.items" class="utilization-row">
+                            <td class="utilization-row__id">[{{ sn.id }}]</td>
+                            <td class="utilization-row__bar"><app-subnet-bar [subnet]="sn"></app-subnet-bar></td>
+                            <td style="padding-left: 1em" class="utilization-row__value">
                                 {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
                                 <i
                                     *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
@@ -105,8 +109,8 @@
                         </tr>
                     </table>
                 </div>
-                <div>
-                    <h2 class="section-heading">
+                <div class="dashboard-dhcp__shared-networks dashboard-section">
+                    <h2 class="section-heading dashboard-section__header">
                         Shared Networks: {{ overview.sharedNetworks4.total ? overview.sharedNetworks4.total : '0' }}
                         <app-help-tip title="networks listed" id="networks4-help-button">
                             <p>
@@ -116,11 +120,11 @@
                             </p>
                         </app-help-tip>
                     </h2>
-                    <table>
-                        <tr *ngFor="let net of overview.sharedNetworks4.items">
-                            <td>{{ net.name }}</td>
-                            <td>{{ net.subnets.length }} subnets</td>
-                            <td style="padding-left: 1em">
+                    <table class="dashboard-section__data">
+                        <tr *ngFor="let net of overview.sharedNetworks4.items" class="utilization-row">
+                            <td class="utilization-row__name">{{ net.name }}</td>
+                            <td class="utilization-row__count">{{ net.subnets.length }} subnets</td>
+                            <td style="padding-left: 1em" class="utilization-row__value">
                                 {{ net.addrUtilization ? net.addrUtilization : '0' }}% used
                             </td>
                         </tr>
@@ -132,12 +136,12 @@
                         </tr>
                     </table>
                 </div>
-                <div>
-                    <h2 class="section-heading">Statistics</h2>
-                    <table>
-                        <tr>
-                            <td>Addresses</td>
-                            <td>
+                <div class="dashboard-dhcp__globals dashboard-section">
+                    <h2 class="section-heading dashboard-section__header">Statistics</h2>
+                    <table class="dashboard-section__data">
+                        <tr class="statistics-row">
+                            <td class="statistics-row__label">Addresses</td>
+                            <td class="statistics-row__value">
                                 {{
                                     overview.dhcp4Stats.assignedAddresses
                                         ? humanCount(overview.dhcp4Stats.assignedAddresses)
@@ -157,9 +161,9 @@
                                 }}% used)
                             </td>
                         </tr>
-                        <tr>
-                            <td>Declined</td>
-                            <td>
+                        <tr class="statistics-row">
+                            <td class="statistics-row__label">Declined</td>
+                            <td class="statistics-row__value">
                                 {{
                                     overview.dhcp4Stats.declinedAddresses
                                         ? humanCount(overview.dhcp4Stats.declinedAddresses)
@@ -176,9 +180,13 @@
             </div>
 
             <h1 class="section-heading">DHCPv6</h1>
-            <div style="display: flex; flex-wrap: wrap; justify-content: space-between">
-                <div>
-                    <h2 class="section-heading">
+            <div
+                style="display: flex; flex-wrap: wrap; justify-content: space-between"
+                class="dashboard-dhcp"
+                id="dashboard-dhcp6"
+            >
+                <div class="dashboard-dhcp__subnets dashboard-section">
+                    <h2 class="section-heading" class="dashboard-section__header">
                         Subnets: {{ overview.subnets6.total ? overview.subnets6.total : '0' }}
                         <app-help-tip title="subnets listed" id="subnets6-help-button">
                             <p>
@@ -187,11 +195,11 @@
                             </p>
                         </app-help-tip>
                     </h2>
-                    <table>
-                        <tr *ngFor="let sn of overview.subnets6.items">
-                            <td>[{{ sn.id }}]</td>
-                            <td><app-subnet-bar [subnet]="sn"></app-subnet-bar></td>
-                            <td style="padding-left: 1em">
+                    <table class="dashboard-section__data">
+                        <tr *ngFor="let sn of overview.subnets6.items" class="utilization-row">
+                            <td class="utilization-row__id">[{{ sn.id }}]</td>
+                            <td class="utilization-row__bar"><app-subnet-bar [subnet]="sn"></app-subnet-bar></td>
+                            <td class="utilization-row__value" style="padding-left: 1em">
                                 {{ sn.addrUtilization ? sn.addrUtilization : '0' }}% used
                                 <i
                                     *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
@@ -213,8 +221,8 @@
                         </tr>
                     </table>
                 </div>
-                <div>
-                    <h2 class="section-heading">
+                <div class="dashboard-dhcp__shared-networks dashboard-section">
+                    <h2 class="section-heading dashboard-section__header">
                         Shared Networks: {{ overview.sharedNetworks6.total ? overview.sharedNetworks6.total : '0' }}
                         <app-help-tip title="networks listed" id="networks6-help-button">
                             <p>
@@ -224,11 +232,11 @@
                             </p>
                         </app-help-tip>
                     </h2>
-                    <table>
-                        <tr *ngFor="let net of overview.sharedNetworks6.items">
-                            <td>{{ net.name }}</td>
-                            <td>{{ net.subnets.length }} subnets</td>
-                            <td style="padding-left: 1em">
+                    <table class="dashboard-section__data">
+                        <tr *ngFor="let net of overview.sharedNetworks6.items" class="utilization-row">
+                            <td class="utilization-row__name">{{ net.name }}</td>
+                            <td class="utilization-row__count">{{ net.subnets.length }} subnets</td>
+                            <td class="utilization-row__value" style="padding-left: 1em">
                                 {{ net.addrUtilization ? net.addrUtilization : '0' }}% used
                             </td>
                         </tr>
@@ -240,12 +248,12 @@
                         </tr>
                     </table>
                 </div>
-                <div>
-                    <h2 class="section-heading">Statistics</h2>
-                    <table>
-                        <tr>
-                            <td>Addresses</td>
-                            <td>
+                <div class="dashboard-dhcp__globals dashboard-section">
+                    <h2 class="section-heading dashboard-section__header">Statistics</h2>
+                    <table class="dashboard-section__data">
+                        <tr class="statistics-row">
+                            <td class="statistics-row__label">Addresses</td>
+                            <td class="statistics-row__value">
                                 {{
                                     overview.dhcp6Stats.assignedNAs ? humanCount(overview.dhcp6Stats.assignedNAs) : '0'
                                 }}
@@ -254,9 +262,9 @@
                                 ({{ getPercent(overview.dhcp6Stats.assignedNAs, overview.dhcp6Stats.totalNAs) }}% used)
                             </td>
                         </tr>
-                        <tr>
-                            <td>Prefixes</td>
-                            <td>
+                        <tr class="statistics-row">
+                            <td class="statistics-row__label">Prefixes</td>
+                            <td class="statistics-row__value">
                                 {{
                                     overview.dhcp6Stats.assignedPDs ? humanCount(overview.dhcp6Stats.assignedPDs) : '0'
                                 }}
@@ -265,13 +273,11 @@
                                 ({{ getPercent(overview.dhcp6Stats.assignedPDs, overview.dhcp6Stats.totalPDs) }}% used)
                             </td>
                         </tr>
-                        <tr>
-                            <td>Declined</td>
-                            <td>
+                        <tr class="statistics-row">
+                            <td class="statistics-row__label">Declined</td>
+                            <td class="statistics-row__value">
                                 {{
-                                    overview.dhcp6Stats.declinedAddresses
-                                        ? humanCount(overview.dhcp6Stats.declinedAddresses)
-                                        : '0'
+                                    overview.dhcp6Stats.declinedNAs ? humanCount(overview.dhcp6Stats.declinedNAs) : '0'
                                 }}
                             </td>
                         </tr>
