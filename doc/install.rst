@@ -100,12 +100,16 @@ in this database. It also installs the ``pgcrypto`` extension required by the St
 
 By default, ``stork-tool`` connects to the database as user ``postgres``, a default admin role
 in many PostgreSQL installations. If an installation uses a different administrator name, it can
-be specified with the ``--db-admin-user`` option. For example:
+be specified with the ``--db-maintenance-user`` option. For example:
 
 .. code-block:: console
 
-    $ stork-tool db-create --db-admin-user thomson --db-name stork --db-user stork
+    $ stork-tool db-create --db-maintenance-user thomson --db-name stork --db-user stork
     created database and user for the server with the following credentials  database_name=stork password=L82B+kJEOyhDoMnZf9qPAGyKjH5Qo/Xb user=stork
+
+Similarly, a ``postgres`` database should often exist in a PostgreSQL installation.
+However, a different maintenance database can be selected with the ``--db-maintenance-name``
+option.
 
 The ``stork-tool`` generates a random password to the created database. This password needs
 to be copied into the server environment file or used in the ``stork-server`` command line

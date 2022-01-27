@@ -14,16 +14,18 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Random hash size in the generated password.
+const passwordGenRandomLength = 24
+
 // Establish connection to a database using admin credentials.
-// The database name to connect to is specified as the function
-// argument. Specifying db-url is not supported. The user and
-// password are specified with db-admin-user and db-admin-password
-// settings.
-func getAdminDBConn(settings *cli.Context, dbName string) *dbops.PgDB {
-	if !settings.IsSet("db-admin-password") {
+// Specifying db-url is not supported. The maintenance database name,
+// user and password are specified with db-maintenance-name,
+// db-maintenance-user and db-maintenance-password settings.
+func getAdminDBConn(settings *cli.Context) *dbops.PgDB {
+	if !settings.IsSet("db-maintenance-password") {
 		// If password is missing then prompt for it.
 		passwd := storkutil.GetSecretInTerminal("admin password: ")
-		_ = settings.Set("db-admin-password", passwd)
+		_ = settings.Set("db-maintenance-password", passwd)
 	}
 
 	addrPort := net.JoinHostPort(settings.String("db-host"), settings.String("db-port"))
@@ -40,9 +42,9 @@ func getAdminDBConn(settings *cli.Context, dbName string) *dbops.PgDB {
 
 	// Use the provided credentials to connect to the database.
 	opts := &dbops.PgOptions{
-		User:      settings.String("db-admin-user"),
-		Password:  settings.String("db-admin-password"),
-		Database:  dbName,
+		User:      settings.String("db-maintenance-user"),
+		Password:  settings.String("db-maintenance-password"),
+		Database:  settings.String("db-maintenance-name"),
 		Addr:      addrPort,
 		TLSConfig: tlsConfig,
 	}
@@ -118,40 +120,49 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 
 // Execute db-create command. It prepares new database for the Stork
 // server. It also creates a user that can access this database using
-// a generated password.
+// a generated or user-specified password.
 func runDBCreate(settings *cli.Context) {
-	// Connect to the postgres database using admin credentials.
-	db := getAdminDBConn(settings, "postgres")
+	var err error
 
-	// Try to create the database, the user with access to the database using
-	// a generated password.
-	password, err := dbops.CreateDatabase(db, settings.String("db-name"), settings.String("db-user"),
-		settings.String("db-password"), settings.Bool("force"), len(settings.String("db-password")) == 0)
-	if err != nil {
-		log.Fatalf("%s", err)
+	// Check if the password has been specified explicitly. Otherwise,
+	// generate the password.
+	password := settings.String("db-password")
+	if len(password) == 0 {
+		password, err = storkutil.Base64Random(passwordGenRandomLength)
+		if err != nil {
+			log.Fatalf("failed to generate random database password: %s", err)
+		}
 	}
 
-	// Connect to the created database and create pgcrypto extension.
-	db = getAdminDBConn(settings, settings.String("db-name"))
-	err = dbops.CreateExtension(db, "pgcrypto")
+	// Connect to the postgres database using admin credentials.
+	db := getAdminDBConn(settings)
+
+	// Try to create the database and the user with access using
+	// specified password.
+	err = dbops.CreateDatabase(db, settings.String("db-name"), settings.String("db-user"), password, settings.Bool("force"))
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
 
 	// Database setup successful.
-	log.WithFields(log.Fields{
+	logFields := log.Fields{
 		"database_name": settings.String("db-name"),
 		"user":          settings.String("db-user"),
-		"password":      password,
-	}).Info("created database and user for the server with the following credentials")
+	}
+	// Only log the password if it has been generated. Otherwise, the
+	// user should know the password.
+	if !settings.IsSet("db-password") {
+		logFields["password"] = password
+	}
+	log.WithFields(logFields).Info("created database and user for the server with the following credentials")
 }
 
 // Execute db-password-gen command. It generates random password that can be
 // used for securing Stork database.
 func runDBPasswordGen() {
-	password, err := storkutil.Base64Random(24)
+	password, err := storkutil.Base64Random(passwordGenRandomLength)
 	if err != nil {
-		log.Fatalf("failed to generate random database password")
+		log.Fatalf("failed to generate random database password: %s", err)
 	}
 	log.WithFields(log.Fields{
 		"password": password,
@@ -299,16 +310,23 @@ func setupApp() *cli.App {
 
 	dbCreateFlags := []cli.Flag{
 		&cli.StringFlag{
-			Name:    "db-admin-user",
-			Usage:   "The Postgres database administrator user name, typically postgres.",
-			Aliases: []string{"a"},
+			Name:    "db-maintenance-name",
+			Usage:   "The existing maintenance database name.",
+			Aliases: []string{"m"},
 			Value:   "postgres",
-			EnvVars: []string{"STORK_DATABASE_ADMIN_USER_NAME"},
+			EnvVars: []string{"STORK_DATABASE_MAINTENANCE_NAME"},
 		},
 		&cli.StringFlag{
-			Name:    "db-admin-password",
-			Usage:   "The Postgres database administrator password.",
-			EnvVars: []string{"STORK_DATABASE_ADMIN_PASSWORD"},
+			Name:    "db-maintenance-user",
+			Usage:   "The Postgres database administrator user name.",
+			Aliases: []string{"a"},
+			Value:   "postgres",
+			EnvVars: []string{"STORK_DATABASE_MAINTENANCE_USER_NAME"},
+		},
+		&cli.StringFlag{
+			Name:    "db-maintenance-password",
+			Usage:   "The Postgres database administrator password; if not specified, the user will be prompted for the password.",
+			EnvVars: []string{"STORK_DATABASE_MAINTENANCE_PASSWORD"},
 		},
 		&cli.StringFlag{
 			Name:    "db-host",

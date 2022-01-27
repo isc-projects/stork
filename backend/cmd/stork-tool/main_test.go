@@ -203,8 +203,9 @@ func TestRunDBCreate(t *testing.T) {
 	dbName := fmt.Sprintf("storktest%d", rand.Int63())
 	os.Args = []string{
 		"stork-tool", "db-create",
-		"--db-admin-user", "storktest",
-		"--db-admin-password", "storktest",
+		"--db-maintenance-name", "storktest",
+		"--db-maintenance-user", "storktest",
+		"--db-maintenance-password", "storktest",
 		"--db-name", dbName,
 		"--db-user", dbName,
 		"--db-password", dbOpts.Password,

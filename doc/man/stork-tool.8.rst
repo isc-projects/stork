@@ -119,11 +119,14 @@ Database Creation
 
 Options specific to ``db-create`` command:
 
-``-a``, ``--db-admin-user``
-   database administrator user name, typically postgres. (default: "postgres")
+``-m``, ``--db-maintenance-name``
+   existing maintenance database name. (default: "postgres") [$STORK_DATABASE_MAINTENANCE_NAME]
 
-``--db-admin-password``
-   database administrator password.
+``-a``, ``--db-maintenance-user``
+   database administrator user name. (default: "postgres") [$STORK_DATABASE_MAINTENANCE_USER_NAME]
+
+``--db-maintenance-password``
+   database administrator password; if not specified, the user will be prompted for the password.
 
 ``-f``, ``--force``
    recreate the database and the user if they exist. (default false)
@@ -135,7 +138,7 @@ Create a new database ``stork`` with user ``stork`` and a generated password:
 
 .. code-block:: console
 
-    $ stork-tool db-create --db-admin-user postgres --db-name stork --db-user stork
+    $ stork-tool db-create --db-maintenance-user postgres --db-name stork --db-user stork
     INFO[2022-01-25 17:04:56]             main.go:145   created database and user for the server with the following credentials  database_name=stork password=L82B+kJEOyhDoMnZf9qPAGyKjH5Qo/Xb user=stork
 
 When a database is created using ``psql`` tool, it is sometimes useful to generate

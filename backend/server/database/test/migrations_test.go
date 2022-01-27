@@ -122,15 +122,13 @@ func TestCreateDatabase(t *testing.T) {
 
 	// Create a database and the user with the same name.
 	dbName := fmt.Sprintf("storktest%d", rand.Int63())
-	password, err := dbops.CreateDatabase(db, dbName, dbName, "", true, true)
+	err := dbops.CreateDatabase(db, dbName, dbName, "pass", true)
 	require.NoError(t, err)
-	require.NotEmpty(t, password)
 
-	// Try to connect to this database using the user name and the
-	// generated password.
+	// Try to connect to this database using the user name.
 	opts := &pg.Options{
 		User:      dbName,
-		Password:  password,
+		Password:  "pass",
 		Database:  dbName,
 		Addr:      db.Options().Addr,
 		TLSConfig: db.Options().TLSConfig,
@@ -140,31 +138,20 @@ func TestCreateDatabase(t *testing.T) {
 	require.NotNil(t, db2)
 	db2.Close()
 
-	// Try to create the database again with the force flag.
-	password, err = dbops.CreateDatabase(db, dbName, dbName, "pass", true, false)
+	// Try to create the database again with the force flag and a different
+	// password.
+	err = dbops.CreateDatabase(db, dbName, dbName, "pass2", true)
 	require.NoError(t, err)
-	require.Equal(t, "pass", password)
 
 	// Attempt go create the database without the force flag should
 	// fail because the database already exists.
-	_, err = dbops.CreateDatabase(db, dbName, dbName, "", false, true)
+	err = dbops.CreateDatabase(db, dbName, dbName, "pass", false)
 	require.Error(t, err)
 
-	// Connect to the database again using the new password.
-	opts.Password = password
+	// Connect to the database again using the second password.
+	opts.Password = "pass2"
 	db2, err = dbops.NewPgDBConn(opts, false)
 	require.NoError(t, err)
 	require.NotNil(t, db2)
-	defer db2.Close()
-}
-
-// Test creating the pgcrypto extension if not exists.
-func TestCreateExtension(t *testing.T) {
-	// Connect to the database with full privileges.
-	db, _, teardown := SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// Try to create the pgcrypto extension.
-	err := dbops.CreateExtension(db, "pgcrypto")
-	require.NoError(t, err)
+	db2.Close()
 }

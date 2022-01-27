@@ -11,7 +11,6 @@ import (
 
 	// TODO: document why it is blank imported.
 	_ "isc.org/stork/server/database/migrations"
-	storkutil "isc.org/stork/util"
 )
 
 // Checks if the migrations table exists, i.e. the 'init' command was called.
@@ -117,18 +116,8 @@ func CurrentVersion(db *PgDB) (int64, error) {
 // postgres user and postgres database). The dbName and userName denote the new
 // database name and the new user name created. The force flag indicates whether
 // or not the function should drop an existing database and/or user before
-// re-creating them. Finally, the genPassword flag indicates whether or not this
-// function should generate a random password for the database.
-func CreateDatabase(db *PgDB, dbName, userName, password string, force, genPassword bool) (actualPassword string, err error) {
-	actualPassword = password
-	if genPassword {
-		// Generate random password for the database.
-		actualPassword, err = storkutil.Base64Random(24)
-		if err != nil {
-			return
-		}
-	}
-
+// re-creating them.
+func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (err error) {
 	if force {
 		// Drop an existing database if it exists.
 		if _, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)); err != nil {
@@ -164,21 +153,13 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force, genPassw
 			return
 		}
 		// If the password has been generated assign it to the user.
-		if actualPassword != "" {
-			if _, err = tx.Exec(fmt.Sprintf("ALTER USER %s WITH PASSWORD '%s'", userName, actualPassword)); err != nil {
+		if password != "" {
+			if _, err = tx.Exec(fmt.Sprintf("ALTER USER %s WITH PASSWORD '%s'", userName, password)); err != nil {
 				err = errors.Wrapf(err, `problem with setting generated password for user "%s"`, userName)
 				return
 			}
 		}
 		return nil
 	})
-	return actualPassword, err
-}
-
-// Creates database extension. This function must be called with a pointer to the
-// database connection using database admin credentials (typically postgres user).
-// It must be a connection to the database where the extension should be created.
-func CreateExtension(db *PgDB, extName string) (err error) {
-	_, err = db.Exec(fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS %s", extName))
-	return
+	return err
 }
