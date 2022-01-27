@@ -168,12 +168,18 @@ func TestMigration39DecimalToBigint(t *testing.T) {
 	dbops.Migrate(db, "down", "38")
 	_, _ = db.Exec(`INSERT INTO statistic VALUES ('foo', NULL), ('bar', 42);`)
 
-	expectedBigInt39, _ := big.NewInt(0).SetString("12345678901234567890123456789012345678901234567890", 10)
+	expectedBigInt39, _ := big.NewInt(0).SetString(
+		"12345678901234567890123456789012345678901234567890", 10,
+	)
 	expectedBigInt39Negative := big.NewInt(0).Mul(expectedBigInt39, big.NewInt(-1))
 
 	// Act
 	_, _, errUp := dbops.Migrate(db, "up", "39")
-	_, errQuery := db.Exec(`INSERT INTO statistic VALUES ('boz', '12345678901234567890123456789012345678901234567890'), ('biz', '-12345678901234567890123456789012345678901234567890');`) // 50 digits
+	_, errQuery := db.Exec(`
+		INSERT INTO statistic VALUES
+		('boz', '12345678901234567890123456789012345678901234567890'),
+		('biz', '-12345678901234567890123456789012345678901234567890');
+	`) // 50 digits
 	stats39, errGet39 := dbmodel.GetAllStats(db)
 	_, _, errDown := dbops.Migrate(db, "down", "38")
 	stats38, errGet38 := dbmodel.GetAllStats(db)
@@ -185,12 +191,12 @@ func TestMigration39DecimalToBigint(t *testing.T) {
 	require.NoError(t, errDown)
 	require.NoError(t, errGet38)
 
-	require.EqualValues(t, big.NewInt(0), stats39["foo"])
+	require.Nil(t, stats39["foo"])
 	require.EqualValues(t, big.NewInt(42), stats39["bar"])
 	require.EqualValues(t, expectedBigInt39, stats39["boz"])
 	require.EqualValues(t, expectedBigInt39Negative, stats39["biz"])
 
-	require.EqualValues(t, big.NewInt(0), stats38["foo"])
+	require.Nil(t, stats38["foo"])
 	require.EqualValues(t, big.NewInt(42), stats38["bar"])
 	require.EqualValues(t, big.NewInt(math.MaxInt64), stats38["boz"])
 	require.EqualValues(t, big.NewInt(math.MinInt64), stats38["biz"])

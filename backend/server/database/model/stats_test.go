@@ -49,7 +49,7 @@ func TestStats(t *testing.T) {
 }
 
 // The statistic value cannot be nil.
-func TestStatisticNilValueIsError(t *testing.T) {
+func TestStatisticNilValueIsNotError(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -59,8 +59,12 @@ func TestStatisticNilValueIsError(t *testing.T) {
 	}
 
 	// Act
-	err := SetStats(db, stats)
+	errSet := SetStats(db, stats)
+	stats, errGet := GetAllStats(db)
 
 	// Assert
-	require.Error(t, err)
+	require.NoError(t, errSet)
+	require.NoError(t, errGet)
+
+	require.Nil(t, stats["foo"])
 }

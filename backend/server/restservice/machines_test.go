@@ -3,6 +3,7 @@ package restservice
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"net"
 	"net/http"
 	"regexp"
@@ -1662,6 +1663,29 @@ func TestHAInDhcpOverview(t *testing.T) {
 	require.True(t, okRsp.Payload.DhcpDaemons[0].HaEnabled)
 	require.Equal(t, "load-balancing", okRsp.Payload.DhcpDaemons[0].HaState)
 	require.NotEmpty(t, okRsp.Payload.DhcpDaemons[0].HaFailureAt.String())
+}
+
+// Test that the DHCP Overview is properly generated when the statistic
+// table contains the NULL values.
+func TestGetDhcpOverviewWithNullStatistics(t *testing.T) {
+	// Arrange
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeStats(db)
+
+	rapi, _ := NewRestAPI(db, dbSettings)
+	ctx := context.Background()
+	params := dhcp.GetDhcpOverviewParams{}
+
+	// Act
+	_ = dbmodel.SetStats(db, map[string]*big.Int{"total-addresses": nil})
+	rsp := rapi.GetDhcpOverview(ctx, params)
+
+	// Assert
+	require.IsType(t, &dhcp.GetDhcpOverviewOK{}, rsp)
+	okRsp := rsp.(*dhcp.GetDhcpOverviewOK)
+	require.EqualValues(t, "<nil>", okRsp.Payload.Dhcp4Stats.TotalAddresses)
 }
 
 // Test updating daemon.

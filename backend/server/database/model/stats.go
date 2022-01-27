@@ -30,7 +30,7 @@ type Statistic struct {
 	// Machine ID has an int64 data type, but Stork uses only positive values. In practice the range
 	// is the same as for uint32. It is 10^10 unique values.
 	// Then we need up to 59 digits to save the capacity of all subnets handled by Stork at the same time.
-	Value IntegerDecimal `pg:"type:decimal(60,0)"`
+	Value *integerDecimal `pg:"type:decimal(60,0)"`
 }
 
 // Initialize global statistics in db. If new statistic needs to be added then add it to statsList list
@@ -38,14 +38,14 @@ type Statistic struct {
 func InitializeStats(db *pg.DB) error {
 	// list of all stork global statistics
 	statsList := []Statistic{
-		{Name: "assigned-addresses"},
-		{Name: "total-addresses"},
-		{Name: "declined-addresses"},
-		{Name: "assigned-nas"},
-		{Name: "total-nas"},
-		{Name: "assigned-pds"},
-		{Name: "total-pds"},
-		{Name: "declined-nas"},
+		{Name: "assigned-addresses", Value: newIntegerDecimalZero()},
+		{Name: "total-addresses", Value: newIntegerDecimalZero()},
+		{Name: "declined-addresses", Value: newIntegerDecimalZero()},
+		{Name: "assigned-nas", Value: newIntegerDecimalZero()},
+		{Name: "total-nas", Value: newIntegerDecimalZero()},
+		{Name: "assigned-pds", Value: newIntegerDecimalZero()},
+		{Name: "total-pds", Value: newIntegerDecimalZero()},
+		{Name: "declined-nas", Value: newIntegerDecimalZero()},
 	}
 
 	// Check if there are new statistics vs existing ones. Add new ones to DB.
@@ -67,7 +67,11 @@ func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
 
 	statsMap := make(map[string]*big.Int)
 	for _, s := range statsList {
-		statsMap[s.Name] = &s.Value.Int
+		var value *big.Int = nil
+		if s.Value != nil {
+			value = &s.Value.Int
+		}
+		statsMap[s.Name] = value
 	}
 
 	return statsMap, nil
@@ -77,10 +81,7 @@ func GetAllStats(db *pg.DB) (map[string]*big.Int, error) {
 func SetStats(db *pg.DB, statsMap map[string]*big.Int) error {
 	statsList := []*Statistic{}
 	for s, v := range statsMap {
-		if v == nil {
-			return errors.New("statistic value cannot be nil")
-		}
-		stat := &Statistic{Name: s, Value: IntegerDecimal{Int: *v}}
+		stat := &Statistic{Name: s, Value: newIntegerDecimal(v)}
 		statsList = append(statsList, stat)
 	}
 

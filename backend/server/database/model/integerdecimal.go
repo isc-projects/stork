@@ -11,15 +11,28 @@ import (
 // It is dedicated to store integer-only numbers. The Postgres decimal/numeric
 // type must be defined with scale equals to 0, e.g.: pg:"type:decimal(60,0)".
 // See: https://github.com/go-pg/pg/blob/v10/example_custom_test.go
-type IntegerDecimal struct {
+type integerDecimal struct {
 	big.Int
 }
 
+// Constructor of the integerDecimal struct.
+func newIntegerDecimal(val *big.Int) *integerDecimal {
+	if val == nil {
+		return nil
+	}
+	return &integerDecimal{Int: *val}
+}
+
+// Constructor of the integerDecimal struct with zero value.
+func newIntegerDecimalZero() *integerDecimal {
+	return newIntegerDecimal(big.NewInt(0))
+}
+
 // Interface check for serialization.
-var _ types.ValueAppender = (*IntegerDecimal)(nil)
+var _ types.ValueAppender = (*integerDecimal)(nil)
 
 // Custom big.Int serializing to the database record.
-func (d IntegerDecimal) AppendValue(b []byte, quote int) ([]byte, error) {
+func (d integerDecimal) AppendValue(b []byte, quote int) ([]byte, error) {
 	if quote == 1 {
 		b = append(b, '\'')
 	}
@@ -32,10 +45,10 @@ func (d IntegerDecimal) AppendValue(b []byte, quote int) ([]byte, error) {
 }
 
 // Interface check for deserialization.
-var _ types.ValueScanner = (*IntegerDecimal)(nil)
+var _ types.ValueScanner = (*integerDecimal)(nil)
 
 // Custom decimal/numeric parsing to big.Int.
-func (d *IntegerDecimal) ScanValue(rd types.Reader, n int) error {
+func (d *integerDecimal) ScanValue(rd types.Reader, n int) error {
 	if n <= 0 {
 		d.Int = *big.NewInt(0)
 		return nil

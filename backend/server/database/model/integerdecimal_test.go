@@ -8,10 +8,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Test construct the integer decimal.
+func TestConstructIntegerDecimal(t *testing.T) {
+	// Act
+	integerDecimal := newIntegerDecimal(big.NewInt(42))
+	nilIntegerDecimal := newIntegerDecimal(nil)
+	zeroIntegerDecimal := newIntegerDecimalZero()
+
+	// Assert
+	require.EqualValues(t, big.NewInt(42), &integerDecimal.Int)
+	require.Nil(t, nilIntegerDecimal)
+	require.EqualValues(t, big.NewInt(0), &zeroIntegerDecimal.Int)
+}
+
 // Test that the zero big interger is serialized to bytes.
 func TestAppendValueBigIntZero(t *testing.T) {
 	// Arrange
-	integerDecimal := IntegerDecimal{*big.NewInt(0)}
+	integerDecimal := newIntegerDecimalZero()
 
 	// Act
 	bytes, err := integerDecimal.AppendValue([]byte{}, 0)
@@ -24,7 +37,7 @@ func TestAppendValueBigIntZero(t *testing.T) {
 // Test that the zero big interger is serialized to bytes with quotes.
 func TestAppendValueBigIntZeroWithQuotes(t *testing.T) {
 	// Arrange
-	integerDecimal := IntegerDecimal{*big.NewInt(0)}
+	integerDecimal := newIntegerDecimalZero()
 
 	// Act
 	bytes, err := integerDecimal.AppendValue([]byte{}, 1)
@@ -39,7 +52,7 @@ func TestAppendValueVeryBigInt(t *testing.T) {
 	// Arrange
 	str := "1234567801234567801234567890123456789012345678901234567801234567890"
 	bigInt, _ := big.NewInt(0).SetString(str, 10)
-	integerDecimal := IntegerDecimal{*bigInt}
+	integerDecimal := newIntegerDecimal(bigInt)
 
 	// Act
 	bytes, err := integerDecimal.AppendValue([]byte{}, 0)
@@ -52,7 +65,7 @@ func TestAppendValueVeryBigInt(t *testing.T) {
 // Test that the negative big interger is serialized to bytes.
 func TestAppendValueNegativeBigInt(t *testing.T) {
 	// Arrange
-	integerDecimal := IntegerDecimal{*big.NewInt(-1)}
+	integerDecimal := newIntegerDecimal(big.NewInt(-1))
 
 	// Act
 	bytes, err := integerDecimal.AppendValue([]byte{}, 0)
@@ -107,15 +120,15 @@ func (r *poolReaderMock) ReadFullTemp() ([]byte, error) {
 // Test that the zero big integers is deserialized from bytes.
 func TestScanValueZeroBigInt(t *testing.T) {
 	// Arrange
-	reader := &poolReaderMock{[]byte("0"), nil}
-	integerDecimal := IntegerDecimal{}
+	reader := &poolReaderMock{[]byte("1"), nil}
+	integerDecimal := newIntegerDecimalZero()
 
 	// Act
 	err := integerDecimal.ScanValue(reader, 1)
 
 	// Assert
 	require.NoError(t, err)
-	require.EqualValues(t, big.NewInt(0), &integerDecimal.Int)
+	require.EqualValues(t, big.NewInt(1), &integerDecimal.Int)
 }
 
 // Test that the very big integers is deserialized from bytes.
@@ -123,7 +136,7 @@ func TestScanValueVeryBigInt(t *testing.T) {
 	// Arrange
 	str := "1234567801234567801234567890123456789012345678901234567801234567890"
 	reader := &poolReaderMock{[]byte(str), nil}
-	integerDecimal := IntegerDecimal{}
+	integerDecimal := newIntegerDecimalZero()
 	expectedBigInt, _ := big.NewInt(0).SetString(str, 10)
 
 	// Act
@@ -138,7 +151,7 @@ func TestScanValueVeryBigInt(t *testing.T) {
 func TestScanValueNegativeBigInt(t *testing.T) {
 	// Arrange
 	reader := &poolReaderMock{[]byte("-1"), nil}
-	integerDecimal := IntegerDecimal{}
+	integerDecimal := newIntegerDecimalZero()
 
 	// Act
 	err := integerDecimal.ScanValue(reader, 2)
@@ -152,7 +165,7 @@ func TestScanValueNegativeBigInt(t *testing.T) {
 func TestScanValueEmptyBuffer(t *testing.T) {
 	// Arrange
 	reader := &poolReaderMock{[]byte(""), nil}
-	integerDecimal := IntegerDecimal{*big.NewInt(42)}
+	integerDecimal := newIntegerDecimal(big.NewInt(42))
 
 	// Act
 	err := integerDecimal.ScanValue(reader, 0)
@@ -166,7 +179,7 @@ func TestScanValueEmptyBuffer(t *testing.T) {
 func TestScanValueFailOnScannerError(t *testing.T) {
 	// Arrange
 	reader := &poolReaderMock{[]byte("foo"), errors.Errorf("bar")}
-	integerDecimal := IntegerDecimal{}
+	integerDecimal := newIntegerDecimalZero()
 
 	// Act
 	err := integerDecimal.ScanValue(reader, 3)
