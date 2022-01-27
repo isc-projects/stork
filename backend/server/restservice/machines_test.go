@@ -1679,10 +1679,11 @@ func TestGetDhcpOverviewWithNullStatistics(t *testing.T) {
 	params := dhcp.GetDhcpOverviewParams{}
 
 	// Act
-	_ = dbmodel.SetStats(db, map[string]*big.Int{"total-addresses": nil})
+	err := dbmodel.SetStats(db, map[string]*big.Int{"total-addresses": nil})
 	rsp := rapi.GetDhcpOverview(ctx, params)
 
 	// Assert
+	require.NoError(t, err)
 	require.IsType(t, &dhcp.GetDhcpOverviewOK{}, rsp)
 	okRsp := rsp.(*dhcp.GetDhcpOverviewOK)
 	require.EqualValues(t, "<nil>", okRsp.Payload.Dhcp4Stats.TotalAddresses)
