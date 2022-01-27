@@ -784,7 +784,7 @@ func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, erro
 		// (has the same 48 starting bits), but the mask lengths are less then 64.
 		// - Prefixes 3001::/64 and 3001::/80 are in the pool. They are in an expected network
 		// and the mask lengths are greater or equals 64.
-		// The `<<=` is an operator that check if the left CIDR is contained withing right CIDR.
+		// The `<<=` is an operator that check if the left CIDR is contained within right CIDR.
 		Where("ip_reservation.address <<= prefix_pool.prefix AND masklen(ip_reservation.address) >= prefix_pool.delegated_len").
 		// We want only to know if the address is in at least one pool
 		Limit(1)
