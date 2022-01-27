@@ -124,6 +124,12 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 func runDBCreate(settings *cli.Context) {
 	var err error
 
+	// Prepare logging fields.
+	logFields := log.Fields{
+		"database_name": settings.String("db-name"),
+		"user":          settings.String("db-user"),
+	}
+
 	// Check if the password has been specified explicitly. Otherwise,
 	// generate the password.
 	password := settings.String("db-password")
@@ -132,6 +138,9 @@ func runDBCreate(settings *cli.Context) {
 		if err != nil {
 			log.Fatalf("failed to generate random database password: %s", err)
 		}
+		// Only log the password if it has been generated. Otherwise, the
+		// user should know the password.
+		logFields["password"] = password
 	}
 
 	// Connect to the postgres database using admin credentials.
@@ -145,15 +154,6 @@ func runDBCreate(settings *cli.Context) {
 	}
 
 	// Database setup successful.
-	logFields := log.Fields{
-		"database_name": settings.String("db-name"),
-		"user":          settings.String("db-user"),
-	}
-	// Only log the password if it has been generated. Otherwise, the
-	// user should know the password.
-	if !settings.IsSet("db-password") {
-		logFields["password"] = password
-	}
 	log.WithFields(logFields).Info("created database and user for the server with the following credentials")
 }
 
