@@ -32,7 +32,7 @@ func newIntegerDecimalZero() *integerDecimal {
 var _ types.ValueAppender = (*integerDecimal)(nil)
 
 // Custom big.Int serializing to the database record.
-func (d integerDecimal) AppendValue(b []byte, quote int) ([]byte, error) {
+func (d *integerDecimal) AppendValue(b []byte, quote int) ([]byte, error) {
 	if quote == 1 {
 		b = append(b, '\'')
 	}
