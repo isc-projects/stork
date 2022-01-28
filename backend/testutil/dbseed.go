@@ -42,19 +42,28 @@ type SeedConfig struct {
 // This function returns false if the generated entries will be for sure invalid.
 // But true output doesn't guarantee that results are valid.
 // Be careful with huge generation inputs.
-func (c *SeedConfig) validate() bool {
-	if c.HostReservationsInPool > 100 || c.HostReservationsOutOfPool > 155 {
-		return false
+func (c *SeedConfig) validate() (string, bool) {
+	if c.HostReservationsInPool > 100 {
+		return "too many in-pool host reservations", false
 	}
-	if c.PrefixReservationsInPool > 255 || c.PrefixReservationsOutOfPool > 255 {
-		return false
+
+	if c.HostReservationsOutOfPool > 155 {
+		return "too many out-of-pool host reservations", false
+	}
+
+	if c.PrefixReservationsInPool > 255 {
+		return "too many in-pool prefix reservations", false
+	}
+
+	if c.PrefixReservationsOutOfPool > 255 {
+		return "too many out-of-pool prefix reservations", false
 	}
 
 	if c.Machines*c.Apps*int(math.Max(float64(c.SubnetsV4), float64(c.SubnetsV6))) > 255*255 {
-		return false
+		return "too many total subnets", false
 	}
 
-	return true
+	return "", true
 }
 
 // Helper structure to store index of the iteration.
@@ -82,8 +91,8 @@ func (i *index) combine(other *index) *index {
 // Generate fake data and save them into database.
 // Helper function to perform performance tests.
 func Seed(db *pg.DB, config *SeedConfig) error {
-	if !config.validate() {
-		return errors.Errorf("Configuration exceed the generator limitations")
+	if msg, ok := config.validate(); !ok {
+		return errors.Errorf("Configuration exceed the generator limitations: %s", msg)
 	}
 	for machineI := 0; machineI < config.Machines; machineI++ {
 		machine := dbmodel.Machine{

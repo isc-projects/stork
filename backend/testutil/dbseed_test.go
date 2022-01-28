@@ -161,3 +161,36 @@ func TestSeedGenerateHostReservations(t *testing.T) {
 	}
 	require.EqualValues(t, 2*20, totalOutOfPoolHostReservations)
 }
+
+// Benchmark the queries with huge data
+func BenchmarkOutOfPoolReservations(b *testing.B) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
+	defer teardown()
+
+	config := &SeedConfig{
+		Machines:                  1,
+		Apps:                      10,
+		SubnetsV4:                 1000,
+		SubnetsV6:                 1000,
+		Daemons:                   0,
+		HostReservationsInPool:    50,
+		HostReservationsOutOfPool: 80,
+		// HostReservationsGlobalInPool:      0,
+		// HostReservationsGlobalOutOfPool:   0,
+		PrefixReservationsInPool:    50,
+		PrefixReservationsOutOfPool: 80,
+		// PrefixReservationsGlobalInPool:    0,
+		// PrefixReservationsGlobalOutOfPool: 0,
+	}
+
+	// Act
+	err := Seed(db, config)
+	counts, err2 := dbmodel.CalculateOutOfPoolAddressReservations(db)
+
+	// Assert
+	require.NoError(b, err)
+	require.NoError(b, err2)
+	require.NotNil(b, counts)
+
+}
