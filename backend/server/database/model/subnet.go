@@ -708,10 +708,11 @@ func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, err
 	// Output row.
 	// Out-of-pool count per subnet.
 	var res []struct {
-		SubnetID int64
+		SubnetID *int64
 		// Stork uses the int64 data type for the host reservation ID.
 		// It means that we expect at most 2^64 out-of-pool reservations.
 		Oop uint64
+		Family int16
 	}
 
 	// Check if IP reservation address is in any subnet pool
@@ -728,8 +729,8 @@ func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, err
 	err := dbi.Model((*IPReservation)(nil)).
 		Column("host.subnet_id").
 		ColumnExpr("COUNT(*) AS oop").
+		ColumnExpr("family(ip_reservation.address) AS family").
 		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
-		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
 		// In this query, we check out-of-pool address/NA reservations.
 		// We need to exclude prefix reservations. We take into account
@@ -746,6 +747,7 @@ func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, err
 		// Group out-of-pool reservations per subnet
 		// and count them (in SELECT)
 		Group("host.subnet_id").
+		GroupExpr("family(ip_reservation.address)").
 		Select(&res)
 	if err != nil {
 		return nil, err
@@ -754,7 +756,16 @@ func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, err
 	countsPerSubnet := make(map[int64]uint64)
 
 	for _, row := range res {
-		countsPerSubnet[row.SubnetID] = row.Oop
+		var subnetID int64
+		if row.SubnetID != nil {
+			subnetID = *row.SubnetID
+		} else if row.Family == 4 {
+			subnetID = -1
+		} else {
+			subnetID = -2
+		}
+
+		countsPerSubnet[subnetID] = row.Oop
 	}
 
 	return countsPerSubnet, nil
@@ -765,10 +776,11 @@ func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, erro
 	// Output row.
 	// Out-of-pool count per subnet.
 	var res []struct {
-		SubnetID int64
+		SubnetID *int64
 		// Stork uses the int64 data type for the host reservation ID.
 		// It means that we expect at most 2^64 out-of-pool reservations.
 		Oop uint64
+		Family int16
 	}
 
 	// Check if prefix reservation is in any prefix pool
@@ -793,8 +805,8 @@ func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, erro
 	err := dbi.Model((*IPReservation)(nil)).
 		Column("host.subnet_id").
 		ColumnExpr("COUNT(*) AS oop").
+		ColumnExpr("family(ip_reservation.address) AS family").
 		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
-		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
 		// In this query, we check out-of-pool prefix reservations.
 		// We need to exclude NA and address reservations. We take into account
@@ -808,6 +820,7 @@ func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, erro
 		// Group out-of-pool reservations per subnet
 		// and count them (in SELECT)
 		Group("host.subnet_id").
+		GroupExpr("family(ip_reservation.address)").
 		Select(&res)
 	if err != nil {
 		return nil, err
@@ -816,7 +829,16 @@ func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, erro
 	countsPerSubnet := make(map[int64]uint64)
 
 	for _, row := range res {
-		countsPerSubnet[row.SubnetID] = row.Oop
+		var subnetID int64
+		if row.SubnetID != nil {
+			subnetID = *row.SubnetID
+		} else if row.Family == 4 {
+			subnetID = -1
+		} else {
+			subnetID = -2
+		}
+
+		countsPerSubnet[subnetID] = row.Oop
 	}
 
 	return countsPerSubnet, nil
