@@ -34,6 +34,21 @@ type IPReservation struct {
 	HostID  int64
 }
 
+// Checks if reservation represents a prefix reservations.
+func (r *IPReservation) IsPrefixReservation() bool {
+	if !strings.Contains(r.Address, "/") {
+		return false
+	}
+	// IPv4
+	singleSuffix := "/32"
+	if strings.Contains(r.Address, ":") {
+		// IPv6
+		singleSuffix = "/128"
+	}
+	// IPv6
+	return !strings.HasSuffix(r.Address, singleSuffix)
+}
+
 // This structure reflects a row in the host table. The host may be associated
 // with zero, one or multiple IP reservations. It may also be associated with
 // one or more identifiers which are used for matching DHCP clients with the

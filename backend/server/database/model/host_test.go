@@ -1046,3 +1046,52 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 		require.Zero(t, h.SubnetID)
 	}
 }
+
+// Test that the prefix reservations are properly recognized.
+func TestIsPrefixReservationForPrefix(t *testing.T) {
+	// Arrange
+	prefixes := []string{
+		"30::/16",
+		"AA:BB:CC:DD::/64",
+		"31:00:00:01:02::/80",
+	}
+
+	// Act
+	for _, prefix := range prefixes {
+		reservation := &IPReservation{
+			Address: prefix,
+		}
+
+		// Assert
+		require.True(t, reservation.IsPrefixReservation())
+	}
+}
+
+// Test that the address reservations are not recognized as prefixes.
+func TestIsPrefixReservationForAddress(t *testing.T) {
+	// Arrange
+	addresses := []string{
+		"10.0.0.0",
+		"10.0.0.0/32",
+		"88.33.153.144/32",
+		"192.168.0.1",
+		"192.168.0.1/32",
+		"30::",
+		"30::/128",
+		"AA:BB:CC:DD::EE:FF",
+		"AA:BB:CC:DD::EE:FF/128",
+		"01:02:03:04:05:06:07:08:09:10:11:12:13:14:15:16",
+		"01:02:03:04:05:06:07:08:09:10:11:12:13:14:15:16/128",
+		"",
+	}
+
+	// Act
+	for _, address := range addresses {
+		reservation := &IPReservation{
+			Address: address,
+		}
+
+		// Assert
+		require.False(t, reservation.IsPrefixReservation())
+	}
+}
