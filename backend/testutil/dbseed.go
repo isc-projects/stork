@@ -171,26 +171,13 @@ func Seed(db *pg.DB, config *SeedConfig) error {
 					return err
 				}
 
-				var reservations []dbmodel.IPReservation
-
-				for reservationIdx := 0; reservationIdx < config.HostReservationsInPool; reservationIdx++ {
-					reservation := dbmodel.IPReservation{
-						Address: fmt.Sprintf("%s.%d", subnetPrefix, reservationIdx+1),
-					}
-					reservations = append(reservations, reservation)
-				}
-
-				for reservationIdx := 0; reservationIdx < config.HostReservationsOutOfPool; reservationIdx++ {
-					reservation := dbmodel.IPReservation{
-						Address: fmt.Sprintf("%s.%d", subnetPrefix, 102+reservationIdx),
-					}
-					reservations = append(reservations, reservation)
-				}
-
 				host := &dbmodel.Host{
-					SubnetID:       subnet.ID,
-					Hostname:       fmt.Sprintf("host-v4-%d", subnetIdx.item),
-					IPReservations: reservations,
+					SubnetID: subnet.ID,
+					Hostname: fmt.Sprintf("host-v4-%d", subnetIdx.item),
+					IPReservations: generateSubnetReservationsIPv4(
+						subnetPrefix,
+						config.HostReservationsInPool,
+						config.HostReservationsOutOfPool),
 				}
 
 				if err := dbmodel.AddHost(db, host); err != nil {
@@ -223,40 +210,16 @@ func Seed(db *pg.DB, config *SeedConfig) error {
 					return err
 				}
 
-				var reservations []dbmodel.IPReservation
-
-				for reservationIdx := 0; reservationIdx < config.HostReservationsInPool; reservationIdx++ {
-					reservation := dbmodel.IPReservation{
-						Address: fmt.Sprintf("%s::%d", subnetPrefix, reservationIdx+1),
-					}
-					reservations = append(reservations, reservation)
-				}
-
-				for reservationIdx := 0; reservationIdx < config.HostReservationsOutOfPool; reservationIdx++ {
-					reservation := dbmodel.IPReservation{
-						Address: fmt.Sprintf("%s::%d", subnetPrefix, 102+reservationIdx),
-					}
-					reservations = append(reservations, reservation)
-				}
-
-				for reservationIdx := 0; reservationIdx < config.PrefixReservationsInPool; reservationIdx++ {
-					reservation := dbmodel.IPReservation{
-						Address: fmt.Sprintf("%s:FF:%02d::/80", subnetPrefix, reservationIdx+1),
-					}
-					reservations = append(reservations, reservation)
-				}
-
-				for reservationIdx := 0; reservationIdx < config.PrefixReservationsOutOfPool; reservationIdx++ {
-					reservation := dbmodel.IPReservation{
-						Address: fmt.Sprintf("%s:EE:%02d::/80", subnetPrefix, reservationIdx+1),
-					}
-					reservations = append(reservations, reservation)
-				}
-
 				host := &dbmodel.Host{
-					SubnetID:       subnet.ID,
-					Hostname:       fmt.Sprintf("host-v6-%d", subnetIdx.item),
-					IPReservations: reservations,
+					SubnetID: subnet.ID,
+					Hostname: fmt.Sprintf("host-v6-%d", subnetIdx.item),
+					IPReservations: generateSubnetReservationsIPv6(
+						subnetPrefix,
+						config.HostReservationsInPool,
+						config.HostReservationsOutOfPool,
+						config.PrefixReservationsInPool,
+						config.PrefixReservationsOutOfPool,
+					),
 				}
 
 				if err := dbmodel.AddHost(db, host); err != nil {
@@ -264,40 +227,102 @@ func Seed(db *pg.DB, config *SeedConfig) error {
 				}
 			}
 
-			var globalReservations []dbmodel.IPReservation
-
-			for reservationI := 0; reservationI < config.HostReservationsGlobal; reservationI++ {
-				var address string
-				if reservationI%2 == 0 {
-					address = fmt.Sprintf("33.1.%02d.%d", appIdx.item, reservationI)
-				} else {
-					address = fmt.Sprintf("99:1:%02x::%d", appIdx.item, reservationI)
-				}
-
-				reservation := dbmodel.IPReservation{
-					Address: address,
-				}
-				globalReservations = append(globalReservations, reservation)
-			}
-
-			for reservationI := 0; reservationI < config.PrefixReservationsGlobal; reservationI++ {
-				reservation := dbmodel.IPReservation{
-					Address: fmt.Sprintf("98:1:%02x:%d::/64", appIdx.item, reservationI),
-				}
-				globalReservations = append(globalReservations, reservation)
-			}
-
-			globalHost := &dbmodel.Host{
-				SubnetID:       0,
-				Hostname:       "host-global",
-				IPReservations: globalReservations,
-			}
-
-			if err := dbmodel.AddHost(db, globalHost); err != nil {
+			err = insertGlobalReservations(db, appIdx, config.HostReservationsGlobal, config.PrefixReservationsGlobal)
+			if err != nil {
 				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+// Generate the IPv4 subnet reservations.
+func generateSubnetReservationsIPv4(subnetPrefix string, hostsInPool, hostsOutOfPool int) []dbmodel.IPReservation {
+	var reservations []dbmodel.IPReservation
+
+	for reservationIdx := 0; reservationIdx < hostsInPool; reservationIdx++ {
+		reservation := dbmodel.IPReservation{
+			Address: fmt.Sprintf("%s.%d", subnetPrefix, reservationIdx+1),
+		}
+		reservations = append(reservations, reservation)
+	}
+
+	for reservationIdx := 0; reservationIdx < hostsOutOfPool; reservationIdx++ {
+		reservation := dbmodel.IPReservation{
+			Address: fmt.Sprintf("%s.%d", subnetPrefix, 102+reservationIdx),
+		}
+		reservations = append(reservations, reservation)
+	}
+
+	return reservations
+}
+
+// Generate the IPv6 subnet reservations.
+func generateSubnetReservationsIPv6(subnetPrefix string, hostsInPool, hostsOutOfPool, prefixesInPool, prefixesOutOfPool int) []dbmodel.IPReservation {
+	var reservations []dbmodel.IPReservation
+
+	for reservationIdx := 0; reservationIdx < hostsInPool; reservationIdx++ {
+		reservation := dbmodel.IPReservation{
+			Address: fmt.Sprintf("%s::%d", subnetPrefix, reservationIdx+1),
+		}
+		reservations = append(reservations, reservation)
+	}
+
+	for reservationIdx := 0; reservationIdx < hostsOutOfPool; reservationIdx++ {
+		reservation := dbmodel.IPReservation{
+			Address: fmt.Sprintf("%s::%d", subnetPrefix, 102+reservationIdx),
+		}
+		reservations = append(reservations, reservation)
+	}
+
+	for reservationIdx := 0; reservationIdx < prefixesInPool; reservationIdx++ {
+		reservation := dbmodel.IPReservation{
+			Address: fmt.Sprintf("%s:FF:%02d::/80", subnetPrefix, reservationIdx+1),
+		}
+		reservations = append(reservations, reservation)
+	}
+
+	for reservationIdx := 0; reservationIdx < prefixesOutOfPool; reservationIdx++ {
+		reservation := dbmodel.IPReservation{
+			Address: fmt.Sprintf("%s:EE:%02d::/80", subnetPrefix, reservationIdx+1),
+		}
+		reservations = append(reservations, reservation)
+	}
+
+	return reservations
+}
+
+// Generate and insert the global reservations.
+func insertGlobalReservations(db *pg.DB, parentIdx *index, hosts, prefixes int) error {
+	var globalReservations []dbmodel.IPReservation
+
+	for reservationI := 0; reservationI < hosts; reservationI++ {
+		var address string
+		if reservationI%2 == 0 {
+			address = fmt.Sprintf("33.1.%02d.%d", parentIdx.item, reservationI)
+		} else {
+			address = fmt.Sprintf("99:1:%02x::%d", parentIdx.item, reservationI)
+		}
+
+		reservation := dbmodel.IPReservation{
+			Address: address,
+		}
+		globalReservations = append(globalReservations, reservation)
+	}
+
+	for reservationI := 0; reservationI < prefixes; reservationI++ {
+		reservation := dbmodel.IPReservation{
+			Address: fmt.Sprintf("98:1:%02x:%d::/64", parentIdx.item, reservationI),
+		}
+		globalReservations = append(globalReservations, reservation)
+	}
+
+	globalHost := &dbmodel.Host{
+		SubnetID:       0,
+		Hostname:       "host-global",
+		IPReservations: globalReservations,
+	}
+
+	return dbmodel.AddHost(db, globalHost)
 }
