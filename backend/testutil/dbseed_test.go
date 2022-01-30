@@ -8,24 +8,28 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 )
 
-// Test that multiple indexes can be combinet into one.
+// Test that multiple indexes can be combined into one.
 func TestIndexCombination(t *testing.T) {
 	// Picture
+	// The data are indexed using schema: layer, row, column.
+	// The inner values indicate the unique index from a
+	// combination of these three data.
+	//
 	// Layer 0
 	//      Columns
 	//       0  1  2  3  4
 	// R 0   0  1  2  3  4
-	// O 1   5  6  7  8  9
-	// W 2  10 11 12 13 14
-	// S 3  15 16 17 18 19
+	// o 1   5  6  7  8  9
+	// w 2  10 11 12 13 14
+	// s 3  15 16 17 18 19
 	//
 	// Layer 1
 	//      Columns
 	//       0  1  2  3  4
 	// R 0  20 21 22 23 24
-	// O 1  25 26 27 28 29
-	// W 2  30 31 32 33 34
-	// S 3  35 36 37 38 39
+	// o 1  25 26 27 28 29
+	// w 2  30 31 32 33 34
+	// s 3  35 36 37 38 39
 
 	// Arrange
 	columns := 5

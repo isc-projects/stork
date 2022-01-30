@@ -37,10 +37,10 @@ type SeedConfig struct {
 	// PrefixReservationsGlobalOutOfPool int
 }
 
-// The generator is simple and for is only for development use.
+// The generator is simple and only for development use.
 // It means that it has some limitations.
 // This function returns false if the generated entries will be for sure invalid.
-// But true output doesn't guarantee that results are valid.
+// But true output doesn't guarantee that the results are valid.
 // Be careful with huge generation inputs.
 func (c *SeedConfig) validate() (string, bool) {
 	if c.HostReservationsInPool > 100 {
