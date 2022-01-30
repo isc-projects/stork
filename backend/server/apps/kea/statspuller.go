@@ -80,20 +80,20 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 	calculator := newUtilizationCalculator()
 
-	extraTotalCounters, err := dbmodel.CalculateOutOfPoolAddressReservations(statsPuller.DB)
+	extraTotalCounters, err := dbmodel.CountOutOfPoolAddressReservations(statsPuller.DB)
 	if err != nil {
 		return err
 	}
 	calculator.setExtraTotalAddresses(extraTotalCounters)
 
-	extraTotalCounters, err = dbmodel.CalculateOutOfPoolPrefixReservations(statsPuller.DB)
+	extraTotalCounters, err = dbmodel.CountOutOfPoolPrefixReservations(statsPuller.DB)
 	if err != nil {
 		return err
 	}
 	calculator.setExtraTotalPrefixes(extraTotalCounters)
 
-	// Assumption that all global reservations are out-of-pool for all subnets.
-	extraGlobalAddresses, extraGlobalNAs, extraGlobalPDs, err := dbmodel.CalculateGlobalReservations(statsPuller.DB)
+	// Assume that all global reservations are out-of-pool for all subnets.
+	extraGlobalAddresses, extraGlobalNAs, extraGlobalPDs, err := dbmodel.CountGlobalReservations(statsPuller.DB)
 	if err != nil {
 		return err
 	}

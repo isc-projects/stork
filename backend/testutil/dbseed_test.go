@@ -111,14 +111,14 @@ func TestSeedExecute(t *testing.T) {
 	require.EqualValues(t, 2*3*(4+5)*(7+8), totalHostReservations)
 	require.EqualValues(t, 2*3*5*(11+12), totalPrefixReservations)
 
-	outOfPoolAddressCounts, _ := dbmodel.CalculateOutOfPoolAddressReservations(db)
+	outOfPoolAddressCounts, _ := dbmodel.CountOutOfPoolAddressReservations(db)
 	totalOutOfPoolAddressReservations := uint64(0)
 	for _, count := range outOfPoolAddressCounts {
 		totalOutOfPoolAddressReservations += count
 	}
 	require.EqualValues(t, 2*3*(4+5)*8, totalOutOfPoolAddressReservations)
 
-	outOfPoolPrefixCounts, _ := dbmodel.CalculateOutOfPoolPrefixReservations(db)
+	outOfPoolPrefixCounts, _ := dbmodel.CountOutOfPoolPrefixReservations(db)
 	totalOutOfPoolPrefixReservations := uint64(0)
 	for _, count := range outOfPoolPrefixCounts {
 		totalOutOfPoolPrefixReservations += count
@@ -154,7 +154,7 @@ func TestSeedGenerateHostReservations(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 
-	outOfPoolCounts, _ := dbmodel.CalculateOutOfPoolAddressReservations(db)
+	outOfPoolCounts, _ := dbmodel.CountOutOfPoolAddressReservations(db)
 	totalOutOfPoolHostReservations := uint64(0)
 	for _, count := range outOfPoolCounts {
 		totalOutOfPoolHostReservations += count
@@ -186,7 +186,7 @@ func BenchmarkOutOfPoolReservations(b *testing.B) {
 
 	// Act
 	err := Seed(db, config)
-	counts, err2 := dbmodel.CalculateOutOfPoolAddressReservations(db)
+	counts, err2 := dbmodel.CountOutOfPoolAddressReservations(db)
 
 	// Assert
 	require.NoError(b, err)
