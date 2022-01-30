@@ -24,17 +24,15 @@ type SeedConfig struct {
 	HostReservationsInPool int
 	// Number of out-of-pool host reservations per subnet
 	HostReservationsOutOfPool int
-
-	// HostReservationsGlobalInPool      int
-	// HostReservationsGlobalOutOfPool   int
-
+	// Number of (out-of-pool) global host reservations
+	// Half of them is IPv4 and half IPv6
+	HostReservationsGlobal int
 	// Number of in-pool prefix reservations per IPv6 subnet
 	PrefixReservationsInPool int
 	// Number of out-of-pool prefix reservations per IPv6 subnet
 	PrefixReservationsOutOfPool int
-
-	// PrefixReservationsGlobalInPool    int
-	// PrefixReservationsGlobalOutOfPool int
+	// Number of (out-of-pool) global prefix reservations
+	PrefixReservationsGlobal int
 }
 
 // The generator is simple and only for development use.
@@ -61,6 +59,18 @@ func (c *SeedConfig) validate() (string, bool) {
 
 	if c.Machines*c.Apps*int(math.Max(float64(c.SubnetsV4), float64(c.SubnetsV6))) > 255*255 {
 		return "too many total subnets", false
+	}
+
+	if c.HostReservationsGlobal > 255 {
+		return "too many global host reservations", false
+	}
+
+	if c.PrefixReservationsGlobal > 255 {
+		return "too many global prefix reservations", false
+	}
+
+	if c.Machines*c.Apps > 255 {
+		return "too many machines or apps", false
 	}
 
 	return "", true
@@ -252,6 +262,39 @@ func Seed(db *pg.DB, config *SeedConfig) error {
 				if err := dbmodel.AddHost(db, host); err != nil {
 					return err
 				}
+			}
+
+			var globalReservations []dbmodel.IPReservation
+
+			for reservationI := 0; reservationI < config.HostReservationsGlobal; reservationI++ {
+				var address string
+				if reservationI%2 == 0 {
+					address = fmt.Sprintf("33.1.%02d.%d", appIdx.item, reservationI)
+				} else {
+					address = fmt.Sprintf("99:1:%02x::%d", appIdx.item, reservationI)
+				}
+
+				reservation := dbmodel.IPReservation{
+					Address: address,
+				}
+				globalReservations = append(globalReservations, reservation)
+			}
+
+			for reservationI := 0; reservationI < config.PrefixReservationsGlobal; reservationI++ {
+				reservation := dbmodel.IPReservation{
+					Address: fmt.Sprintf("98:1:%02x:%d::/64", appIdx.item, reservationI),
+				}
+				globalReservations = append(globalReservations, reservation)
+			}
+
+			globalHost := &dbmodel.Host{
+				SubnetID:       0,
+				Hostname:       "host-global",
+				IPReservations: globalReservations,
+			}
+
+			if err := dbmodel.AddHost(db, globalHost); err != nil {
+				return err
 			}
 		}
 	}

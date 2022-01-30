@@ -63,19 +63,17 @@ func TestSeedExecute(t *testing.T) {
 	defer teardown()
 
 	config := &SeedConfig{
-		Machines:                  2,
-		Apps:                      3,
-		SubnetsV4:                 4,
-		SubnetsV6:                 5,
-		Daemons:                   6,
-		HostReservationsInPool:    7,
-		HostReservationsOutOfPool: 8,
-		// HostReservationsGlobalInPool:      9,
-		// HostReservationsGlobalOutOfPool:   10,
+		Machines:                    2,
+		Apps:                        3,
+		SubnetsV4:                   4,
+		SubnetsV6:                   5,
+		Daemons:                     6,
+		HostReservationsInPool:      7,
+		HostReservationsOutOfPool:   8,
+		HostReservationsGlobal:      9,
 		PrefixReservationsInPool:    11,
 		PrefixReservationsOutOfPool: 12,
-		// PrefixReservationsGlobalInPool:    13,
-		// PrefixReservationsGlobalOutOfPool: 14,
+		PrefixReservationsGlobal:    13,
 	}
 
 	// Act
@@ -93,7 +91,7 @@ func TestSeedExecute(t *testing.T) {
 	subnetsV6, _ := dbmodel.GetAllSubnets(db, 6)
 	require.Len(t, subnetsV6, 2*3*5)
 	hosts, _ := dbmodel.GetAllHosts(db, 0)
-	require.Len(t, hosts, 2*3*4+2*3*5)
+	require.Len(t, hosts, 2*3*(4+5+1))
 
 	for _, app := range apps {
 		require.Len(t, app.Daemons, 6)
@@ -112,8 +110,8 @@ func TestSeedExecute(t *testing.T) {
 		}
 	}
 
-	require.EqualValues(t, 2*3*(4+5)*(7+8), totalHostReservations)
-	require.EqualValues(t, 2*3*5*(11+12), totalPrefixReservations)
+	require.EqualValues(t, 2*3*(4+5)*(7+8)+2*3*9, totalHostReservations)
+	require.EqualValues(t, 2*3*5*(11+12)+2*3*13, totalPrefixReservations)
 
 	outOfPoolAddressCounts, _ := dbmodel.CountOutOfPoolAddressReservations(db)
 	totalOutOfPoolAddressReservations := uint64(0)
@@ -128,6 +126,11 @@ func TestSeedExecute(t *testing.T) {
 		totalOutOfPoolPrefixReservations += count
 	}
 	require.EqualValues(t, 2*3*(5)*12, totalOutOfPoolPrefixReservations)
+
+	globalAddresses, globalNAs, globalPDs, _ := dbmodel.CountGlobalReservations(db)
+	require.EqualValues(t, 2*3*5, globalAddresses)
+	require.EqualValues(t, 2*3*4, globalNAs)
+	require.EqualValues(t, 2*3*13, globalPDs)
 }
 
 // Test that the seed function generates expected number of out-of-pool reservations.
@@ -173,19 +176,17 @@ func BenchmarkOutOfPoolReservations(b *testing.B) {
 	defer teardown()
 
 	config := &SeedConfig{
-		Machines:                  1,
-		Apps:                      10,
-		SubnetsV4:                 1000,
-		SubnetsV6:                 1000,
-		Daemons:                   0,
-		HostReservationsInPool:    50,
-		HostReservationsOutOfPool: 80,
-		// HostReservationsGlobalInPool:      0,
-		// HostReservationsGlobalOutOfPool:   0,
+		Machines:                    1,
+		Apps:                        10,
+		SubnetsV4:                   1000,
+		SubnetsV6:                   1000,
+		Daemons:                     0,
+		HostReservationsInPool:      50,
+		HostReservationsOutOfPool:   80,
+		HostReservationsGlobal:      200,
 		PrefixReservationsInPool:    50,
 		PrefixReservationsOutOfPool: 80,
-		// PrefixReservationsGlobalInPool:    0,
-		// PrefixReservationsGlobalOutOfPool: 0,
+		PrefixReservationsGlobal:    200,
 	}
 
 	// Act
