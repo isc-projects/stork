@@ -704,6 +704,10 @@ func DeleteOrphanedSubnets(dbi dbops.DBI) (int64, error) {
 }
 
 // Calculate out-of-pool addresses and NAs for all subnets.
+// The function assumes that the reservation can be only in
+// the subnet in which it is defined. If it is outside this
+// subnet then it is outside all subnets.
+// This assumption is necessary because without it the execution time is 900x longer.
 func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	// Output row.
 	// Out-of-pool count per subnet.
@@ -761,6 +765,10 @@ func CalculateOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, err
 }
 
 // Calculate out-of-pool prefixes for all subnets.
+// The function assumes that the reservation can be only in
+// the subnet in which it is defined. If it is outside this
+// subnet then it is outside all subnets.
+// This assumption is necessary because without it the execution time is 900x longer.
 func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	// Output row.
 	// Out-of-pool count per subnet.
@@ -820,4 +828,31 @@ func CalculateOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, erro
 	}
 
 	return countsPerSubnet, nil
+}
+
+// Calculate global reservations of addresses, NAs and prefixes.
+// We assume that all global reservations are out-of-pool for any subnet.
+// It's possible to define in-pool global reservation, but it's not recommended.
+// The query without this assumption is very inefficient.
+func CalculateGlobalReservations(dbi dbops.DBI) (addresses, nas, prefixes uint64, err error) {
+	// Output row.
+	var res struct {
+		Addresses uint64
+		Nas       uint64
+		Pds       uint64
+	}
+
+	err = dbi.Model((*IPReservation)(nil)).
+		// Window functions aren't supported well by Go-PG
+		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 4) AS addresses").
+		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) = 128) AS nas").
+		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) != 128) AS pds").
+		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		Where("host.subnet_id IS NULL").
+		Select(&res)
+
+	addresses = res.Addresses
+	nas = res.Nas
+	prefixes = res.Pds
+	return
 }

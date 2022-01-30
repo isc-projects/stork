@@ -546,25 +546,25 @@ func DeleteOrphanedHosts(dbi dbops.DBI) (int64, error) {
 
 // Iterates over the list of hosts and commits them into the database. The hosts
 // can be associated with a subnet or can be made global.
-func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, daemon *Daemon, source string) (err error) {
+func commitHostsIntoDB(dbi dbops.DBI, hosts []Host, subnetID int64, daemon *Daemon, source string) (err error) {
 	for i := range hosts {
 		hosts[i].SubnetID = subnetID
 		newHost := (hosts[i].ID == 0)
 		if newHost {
-			err = AddHost(tx, &hosts[i])
+			err = AddHost(dbi, &hosts[i])
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to add detected host to the database")
 				return err
 			}
 		} else if hosts[i].UpdateOnCommit {
-			err = UpdateHost(tx, &hosts[i])
+			err = UpdateHost(dbi, &hosts[i])
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to update detected host in the database")
 				return err
 			}
 		}
 		if newHost || hosts[i].UpdateOnCommit {
-			err = AddDaemonToHost(tx, &hosts[i], daemon.ID, source)
+			err = AddDaemonToHost(dbi, &hosts[i], daemon.ID, source)
 			if err != nil {
 				err = pkgerrors.WithMessagef(err, "unable to associate detected host with Kea daemon having id %d",
 					daemon.ID)
@@ -576,8 +576,14 @@ func commitHostsIntoDB(tx *pg.Tx, hosts []Host, subnetID int64, daemon *Daemon, 
 }
 
 // Iterates over the list of hosts and commits them as global hosts.
-func CommitGlobalHostsIntoDB(tx *pg.Tx, hosts []Host, daemon *Daemon, source string) (err error) {
-	return commitHostsIntoDB(tx, hosts, 0, daemon, source)
+func CommitGlobalHostsIntoDB(dbi dbops.DBI, hosts []Host, daemon *Daemon, source string) (err error) {
+	if db, ok := dbi.(*pg.DB); ok {
+		err = db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
+			return commitHostsIntoDB(dbi, hosts, 0, daemon, source)
+		})
+		return
+	}
+	return commitHostsIntoDB(dbi, hosts, 0, daemon, source)
 }
 
 // Iterates over the hosts belonging to the given subnet and stores them

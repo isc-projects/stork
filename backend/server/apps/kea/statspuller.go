@@ -92,6 +92,12 @@ func (statsPuller *StatsPuller) pullStats() error {
 	}
 	calculator.setExtraTotalPrefixes(extraTotalCounters)
 
+	// Assumption that all global reservations are out-of-pool for all subnets.
+	extraGlobalAddresses, extraGlobalNAs, extraGlobalPDs, err := dbmodel.CalculateGlobalReservations(statsPuller.DB)
+	if err != nil {
+		return err
+	}
+
 	// go through all Subnets and:
 	// 1) estimate utilization per Subnet and per SharedNetwork
 	// 2) estimate global stats
@@ -127,15 +133,14 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 	// global stats to collect
 	statsMap := map[string]*big.Int{
-		// Integer overflow
-		"total-addresses":    calculator.global.totalAddresses.ToBigInt(),
+		"total-addresses":    calculator.global.totalAddresses.AddUint64(extraGlobalAddresses).ToBigInt(),
 		"assigned-addresses": calculator.global.totalAssignedAddresses.ToBigInt(),
 		"declined-addresses": calculator.global.totalDeclinedAddresses.ToBigInt(),
-		"total-nas":          calculator.global.totalNAs.ToBigInt(),
+		"total-nas":          calculator.global.totalNAs.AddUint64(extraGlobalNAs).ToBigInt(),
 		"assigned-nas":       calculator.global.totalAssignedNAs.ToBigInt(),
 		"declined-nas":       calculator.global.totalDeclinedNAs.ToBigInt(),
+		"total-pds":          calculator.global.totalPDs.AddUint64(extraGlobalPDs).ToBigInt(),
 		"assigned-pds":       calculator.global.totalAssignedPDs.ToBigInt(),
-		"total-pds":          calculator.global.totalPDs.ToBigInt(),
 	}
 
 	// update global statistics in db

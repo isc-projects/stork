@@ -240,9 +240,18 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	fa := agentcommtest.NewFakeAgents(keaMock, nil)
 
 	// prepare apps with subnets and local subnets
-	// the host reservations shouldn't affect the statistics
 	v4Config := `{
 					"Dhcp4": {
+						"reservations": [
+							{
+								"hw-address": "01:bb:cc:dd:ee:ff",
+								"ip-address": "192.12.0.1"
+							},
+							{
+								"hw-address": "02:bb:cc:dd:ee:ff",
+								"ip-address": "192.12.0.2"
+							}
+						],
 						"subnet4": [
 							{
 								"id": 10,
@@ -277,6 +286,16 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 				}`
 	v6Config := `{
 					"Dhcp6": {
+						"reservations": [
+							{
+								"hw-address": "03:bb:cc:dd:ee:ff",
+								"ip-address": "80:80::1"
+							},
+							{
+								"hw-address": "04:bb:cc:dd:ee:ff",
+								"ip-address": "80:90::/64"
+							}
+						],
 						"subnet6": [
 							{
 								"id": 30,
@@ -333,6 +352,10 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 		nets, snets, err := detectDaemonNetworks(db, app.Daemons[i])
 		require.NoError(t, err)
 		_, err = dbmodel.CommitNetworksIntoDB(db, nets, snets, app.Daemons[i])
+		require.NoError(t, err)
+		hosts, err := detectGlobalHostsFromConfig(db, app.Daemons[i])
+		require.NoError(t, err)
+		err = dbmodel.CommitGlobalHostsIntoDB(db, hosts, app.Daemons[i], "config")
 		require.NoError(t, err)
 	}
 
@@ -447,18 +470,18 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	// Check global statistics
 	globals, err := dbmodel.GetAllStats(db)
 	require.NoError(t, err)
-	require.EqualValues(t, big.NewInt(4356), globals["total-addresses"])
+	require.EqualValues(t, big.NewInt(4358), globals["total-addresses"])
 	require.EqualValues(t, big.NewInt(2145), globals["assigned-addresses"])
 	require.EqualValues(t, big.NewInt(4), globals["declined-addresses"])
 	require.EqualValues(t, big.NewInt(0).Add(
-		big.NewInt(4354), big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(4355), big.NewInt(0).SetUint64(math.MaxUint64),
 	), globals["total-nas"])
 	require.EqualValues(t, big.NewInt(0).Add(
 		big.NewInt(2460), big.NewInt(math.MaxInt64),
 	), globals["assigned-nas"])
 	require.EqualValues(t, big.NewInt(3), globals["declined-nas"])
 	require.EqualValues(t, big.NewInt(0).Add(
-		big.NewInt(2096), big.NewInt(0).SetUint64(math.MaxUint64),
+		big.NewInt(2097), big.NewInt(0).SetUint64(math.MaxUint64),
 	), globals["total-pds"])
 	require.EqualValues(t, big.NewInt(0).Add(
 		big.NewInt(246), big.NewInt(0).SetUint64(math.MaxUint64),

@@ -101,9 +101,9 @@ func TestSeedExecute(t *testing.T) {
 	for _, host := range hosts {
 		for _, reservation := range host.IPReservations {
 			if reservation.IsPrefixReservation() {
-				totalPrefixReservations += 1
+				totalPrefixReservations++
 			} else {
-				totalHostReservations += 1
+				totalHostReservations++
 			}
 		}
 	}
@@ -112,14 +112,14 @@ func TestSeedExecute(t *testing.T) {
 	require.EqualValues(t, 2*3*5*(11+12), totalPrefixReservations)
 
 	outOfPoolAddressCounts, _ := dbmodel.CalculateOutOfPoolAddressReservations(db)
-	totalOutOfPoolAddressReservations := int64(0)
+	totalOutOfPoolAddressReservations := uint64(0)
 	for _, count := range outOfPoolAddressCounts {
 		totalOutOfPoolAddressReservations += count
 	}
 	require.EqualValues(t, 2*3*(4+5)*8, totalOutOfPoolAddressReservations)
 
 	outOfPoolPrefixCounts, _ := dbmodel.CalculateOutOfPoolPrefixReservations(db)
-	totalOutOfPoolPrefixReservations := int64(0)
+	totalOutOfPoolPrefixReservations := uint64(0)
 	for _, count := range outOfPoolPrefixCounts {
 		totalOutOfPoolPrefixReservations += count
 	}
@@ -155,14 +155,14 @@ func TestSeedGenerateHostReservations(t *testing.T) {
 	require.NoError(t, err)
 
 	outOfPoolCounts, _ := dbmodel.CalculateOutOfPoolAddressReservations(db)
-	totalOutOfPoolHostReservations := int64(0)
+	totalOutOfPoolHostReservations := uint64(0)
 	for _, count := range outOfPoolCounts {
 		totalOutOfPoolHostReservations += count
 	}
 	require.EqualValues(t, 2*20, totalOutOfPoolHostReservations)
 }
 
-// Benchmark the queries with huge data
+// Benchmark the queries with huge data.
 func BenchmarkOutOfPoolReservations(b *testing.B) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(b)
@@ -192,5 +192,4 @@ func BenchmarkOutOfPoolReservations(b *testing.B) {
 	require.NoError(b, err)
 	require.NoError(b, err2)
 	require.NotNil(b, counts)
-
 }

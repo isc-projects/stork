@@ -1104,13 +1104,55 @@ func TestCalculateOutOfPoolCounters(t *testing.T) {
 	}
 	_ = AddHost(db, host)
 
+	// Global reservations
+	host = &Host{
+		CreatedAt: time.Now(),
+		SubnetID:  0,
+		Hostname:  "biz",
+		IPReservations: []IPReservation{
+			// Addresses
+			{
+				Address: "10.42.0.1",
+			},
+			{
+				Address: "10.42.0.2",
+			},
+			{
+				Address: "10.42.0.3",
+			},
+			{
+				Address: "EC::1",
+			},
+			{
+				Address: "EC::2",
+			},
+			// Prefixes
+			{
+				Address: "DD:1::/64",
+			},
+			{
+				Address: "DD:2::/64",
+			},
+			{
+				Address: "DD:3::/64",
+			},
+			{
+				Address: "DD:4::/64",
+			},
+		},
+	}
+
+	_ = AddHost(db, host)
+
 	// Act
 	addressCounters, errAddresses := CalculateOutOfPoolAddressReservations(db)
 	prefixCounters, errPrefixes := CalculateOutOfPoolPrefixReservations(db)
+	globalAddresses, globalNAs, globalPDs, errGlobal := CalculateGlobalReservations(db)
 
 	// Assert
 	require.NoError(t, errAddresses)
 	require.NoError(t, errPrefixes)
+	require.NoError(t, errGlobal)
 
 	require.EqualValues(t, 2, addressCounters[subnetIPv4.ID])
 	require.EqualValues(t, 1, addressCounters[subnetIPv6.ID])
@@ -1118,6 +1160,10 @@ func TestCalculateOutOfPoolCounters(t *testing.T) {
 
 	require.EqualValues(t, 5, prefixCounters[subnetIPv6.ID])
 	require.Len(t, prefixCounters, 1)
+
+	require.EqualValues(t, 3, globalAddresses)
+	require.EqualValues(t, 2, globalNAs)
+	require.EqualValues(t, 4, globalPDs)
 }
 
 // Benchmark measuring a time to add a single subnet.
