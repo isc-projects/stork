@@ -410,14 +410,12 @@ describe('HostsPageComponent', () => {
         expect(firstIdEl.attributes.href).toBe('/dhcp/hosts/1')
 
         const secondIdEl = identifierEl[1].query(By.css('a'))
-        console.info(secondIdEl)
         expect(secondIdEl).toBeTruthy()
         // The HW address is convertible but by default should be in hex format.
         expect(secondIdEl.nativeElement.textContent).toContain('hw-address=(51:52:53:54:55:56)')
         expect(secondIdEl.attributes.href).toBe('/dhcp/hosts/2')
 
         const thirdIdEl = identifierEl[2].query(By.css('a'))
-        console.info(thirdIdEl)
         expect(thirdIdEl).toBeTruthy()
         // The flex-id is not convertible to text so should be in hex format.
         expect(thirdIdEl.nativeElement.textContent).toContain('flex-id=(10:20:30:40:50)')

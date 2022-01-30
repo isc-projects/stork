@@ -28,6 +28,7 @@ import { FormsModule } from '@angular/forms'
 import { OverlayPanelModule } from 'primeng/overlaypanel'
 import { ConfigReviewPanelComponent } from '../config-review-panel/config-review-panel.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { AppOverviewComponent } from '../app-overview/app-overview.component'
 
 class Details {
     daemons: any = [
@@ -110,6 +111,7 @@ describe('KeaAppTabComponent', () => {
                     EventsPanelComponent,
                     ConfigReviewPanelComponent,
                     HelpTipComponent,
+                    AppOverviewComponent,
                 ],
             }).compileComponents()
         })

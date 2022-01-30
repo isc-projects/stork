@@ -87,6 +87,7 @@ import { KeaDaemonConfigurationPageComponent } from './kea-daemon-configuration-
 import { HostTabComponent } from './host-tab/host-tab.component'
 import { ConfigReviewPanelComponent } from './config-review-panel/config-review-panel.component'
 import { IdentifierComponent } from './identifier/identifier.component'
+import { AppOverviewComponent } from './app-overview/app-overview.component'
 
 export function cfgFactory() {
     const params: ConfigurationParameters = {
@@ -137,6 +138,7 @@ export function cfgFactory() {
         HostTabComponent,
         ConfigReviewPanelComponent,
         IdentifierComponent,
+        AppOverviewComponent,
     ],
     imports: [
         BrowserModule,

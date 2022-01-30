@@ -17,6 +17,8 @@ import { RenameAppDialogComponent } from '../rename-app-dialog/rename-app-dialog
 import { DialogModule } from 'primeng/dialog'
 import { FormsModule } from '@angular/forms'
 import { NoopAnimationsModule } from '@angular/platform-browser/animations'
+import { AppOverviewComponent } from '../app-overview/app-overview.component'
+import { PanelModule } from 'primeng/panel'
 
 class Daemon {
     name = 'bind9'
@@ -59,8 +61,9 @@ describe('Bind9AppTabComponent', () => {
                     TabViewModule,
                     DialogModule,
                     NoopAnimationsModule,
+                    PanelModule,
                 ],
-                declarations: [Bind9AppTabComponent, LocaltimePipe, RenameAppDialogComponent],
+                declarations: [Bind9AppTabComponent, LocaltimePipe, RenameAppDialogComponent, AppOverviewComponent],
             }).compileComponents()
         })
     )

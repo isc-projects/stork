@@ -1,0 +1,26 @@
+<table *ngIf="app" style="width: 100%">
+    <tr>
+        <td style="width: 12rem">Hosted on machine:</td>
+        <td>
+            <a routerLink="/machines/{{ app.machine.id }}">{{ app.machine.address }}</a>
+        </td>
+    </tr>
+    <tr *ngFor="let ap of app.accessPoints">
+        <td class="p-capitalize-first" style="width: 12rem">{{ ap.type }} access point:</td>
+        <td>
+            {{ ap.address }}:{{ ap.port }}
+            <span
+                *ngIf="ap.useSecureProtocol"
+                style="color: #00a800"
+                class="pi pi-lock"
+                pTooltip="secured connection"
+            ></span>
+            <span
+                *ngIf="!ap.useSecureProtocol"
+                style="color: #f11"
+                class="pi pi-lock-open"
+                pTooltip="unsecured connection"
+            ></span>
+        </td>
+    </tr>
+</table>

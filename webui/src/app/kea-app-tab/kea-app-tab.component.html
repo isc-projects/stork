@@ -9,38 +9,41 @@
         (hidden)="handleRenameDialogHidden()"
     >
     </app-rename-app-dialog>
-    <div class="p-col-12" style="display: flex; justify-content: space-between">
-        <div style="font-size: 1.7em; font-weight: bold; color: #007ad9">
-            <i class="fa fa-server" style="padding-right: 10px"></i> {{ appTab.app.name }}
-            <i
-                *ngIf="!showRenameDialogClicked"
-                class="pi pi-pencil"
-                id="rename-app-icon"
-                style="vertical-align: text-top; margin-left: 0.25em; color: #aaa; cursor: pointer"
-                (click)="showRenameAppDialog()"
-            ></i>
-            <p-progressSpinner
-                *ngIf="showRenameDialogClicked"
-                [style]="{ width: '25px', height: '25px' }"
-                styleClass="app-rename-spinner"
-                fill="#FFFFFF"
-                strokeWidth="6"
-            ></p-progressSpinner>
-        </div>
-        <button
-            type="button"
-            pButton
-            label="Refresh App"
-            id="refresh-app-button"
-            icon="pi pi-refresh"
-            (click)="refreshAppState()"
-        ></button>
+    <div class="p-pl-0 p-pr-0 p-pb-4 p-col-12">
+        <p-panel>
+            <p-header>
+                <div style="width: 100%; display: flex; justify-content: space-between">
+                    <div style="font-size: 1.5em; font-weight: bold; color: #007ad9">
+                        <i class="fa fa-server" style="padding-right: 10px"></i> {{ appTab.app.name }}
+                        <i
+                            *ngIf="!showRenameDialogClicked"
+                            class="pi pi-pencil"
+                            id="rename-app-icon"
+                            style="vertical-align: text-top; margin-left: 0.25em; color: #aaa; cursor: pointer"
+                            (click)="showRenameAppDialog()"
+                        ></i>
+                        <p-progressSpinner
+                            *ngIf="showRenameDialogClicked"
+                            [style]="{ width: '25px', height: '25px' }"
+                            styleClass="app-rename-spinner"
+                            fill="#FFFFFF"
+                            strokeWidth="6"
+                        ></p-progressSpinner>
+                    </div>
+                    <button
+                        type="button"
+                        pButton
+                        label="Refresh App"
+                        id="refresh-app-button"
+                        icon="pi pi-refresh"
+                        (click)="refreshAppState()"
+                    ></button>
+                </div>
+            </p-header>
+            <app-app-overview [app]="appTab.app"></app-app-overview>
+        </p-panel>
     </div>
-    <div class="p-col-12" style="font-size: 1.1em; display: flex; align-items: center">
-        The application is hosted on the machine:&nbsp;
-        <a routerLink="/machines/{{ appTab.app.machine.id }}">{{ appTab.app.machine.address }}</a>
-    </div>
-    <div class="p-col-12" style="padding: 0">
+    <div class="p-p-0 p-col-12">
         <p-tabView [activeIndex]="activeTabIndex" styleClass="daemon-tabs" class="daemon-tabs" ngClass="daemon-tabs">
             <p-tabPanel
                 *ngFor="let daemon of daemons; let i = index"
