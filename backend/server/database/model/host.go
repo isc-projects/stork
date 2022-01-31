@@ -732,7 +732,7 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 		Group("host.subnet_id").
 		Select(&res)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "cannot count out-of-pool addresses")
 	}
 
 	countsPerSubnet := make(map[int64]uint64)
@@ -801,7 +801,7 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 		Group("host.subnet_id").
 		Select(&res)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "cannot count out-of-pool prefixes")
 	}
 
 	countsPerSubnet := make(map[int64]uint64)
@@ -834,6 +834,7 @@ func CountGlobalReservations(dbi dbops.DBI) (addresses, nas, prefixes uint64, er
 		// Include only global reservations
 		Where("host.subnet_id IS NULL").
 		Select(&res)
+	err = pkgerrors.Wrap(err, "cannot count global out-of-pool reservations")
 
 	addresses = res.Addresses
 	nas = res.Nas
