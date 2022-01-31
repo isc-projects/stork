@@ -686,6 +686,7 @@ func (id HostIdentifier) ToHex(separator string) string {
 }
 
 // Count out-of-pool addresses and NAs for all subnets.
+// Output is a mapping between subnet ID and count.
 // The function assumes that the reservation can be only in
 // the subnet in which it is defined. If it is outside this
 // subnet then it is outside all subnets.
@@ -704,6 +705,8 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 	inAnyPoolSubquery := dbi.Model((*AddressPool)(nil)).
 		// We don't need any data from this query, we check only row existence
 		ColumnExpr("1").
+		// We assume that the reservation can be only in
+		// the subnet in which it is defined
 		Where("address_pool.subnet_id = host.subnet_id").
 		// Is it in a pool? - from lower to upper bands inclusively
 		Where("ip_reservation.address BETWEEN address_pool.lower_bound AND address_pool.upper_bound").
@@ -715,6 +718,7 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 		Column("host.subnet_id").
 		ColumnExpr("COUNT(*) AS oop").
 		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		// Exclude global reservations
 		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
 		// In this query, we check out-of-pool address/NA reservations.
@@ -747,6 +751,7 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 }
 
 // Count out-of-pool prefixes for all subnets.
+// Output is a mapping between subnet ID and count.
 // The function assumes that the reservation can be only in
 // the subnet in which it is defined. If it is outside this
 // subnet then it is outside all subnets.
@@ -765,6 +770,8 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	inAnyPrefixPoolSubquery := dbi.Model((*PrefixPool)(nil)).
 		// We don't need any data from this query, we check only row existence
 		ColumnExpr("1").
+		// We assume that the reservation can be only in
+		// the subnet in which it is defined
 		Where("prefix_pool.subnet_id = host.subnet_id").
 		// Reserved prefix is in prefix pool if it is contained by the prefix of the pool
 		// and if the reserved prefix length is narrower than the delegation length.
@@ -784,6 +791,7 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 		Column("host.subnet_id").
 		ColumnExpr("COUNT(*) AS oop").
 		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		// Exclude global reservations
 		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
 		// In this query, we check out-of-pool prefix reservations.
@@ -830,6 +838,7 @@ func CountGlobalReservations(dbi dbops.DBI) (addresses, nas, prefixes uint64, er
 		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) = 128) AS nas").
 		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) != 128) AS pds").
 		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
+		// Include only global reservations
 		Where("host.subnet_id IS NULL").
 		Select(&res)
 
