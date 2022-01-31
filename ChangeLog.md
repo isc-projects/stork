@@ -1,3 +1,11 @@
+* 197 [bug] slawek
+
+    Fix the utilization calculations using Kea total
+    addresses/NAs/PDs counters that ignore out-of-pool
+    reservations. The missing data are fetched from the
+    Stork database and included during statistic pulling.
+    (Gitlab #560)
+
 * 196 [func] marcin
 
     Improved Stork Server performance while it gathers host reservations
