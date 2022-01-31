@@ -98,6 +98,10 @@ func (statsPuller *StatsPuller) pullStats() error {
 		return err
 	}
 
+	calculator.global.totalAddresses.AddUint64(extraGlobalAddresses)
+	calculator.global.totalNAs.AddUint64(extraGlobalNAs)
+	calculator.global.totalPDs.AddUint64(extraGlobalPDs)
+
 	// go through all Subnets and:
 	// 1) estimate utilization per Subnet and per SharedNetwork
 	// 2) estimate global stats
@@ -133,13 +137,13 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 	// global stats to collect
 	statsMap := map[string]*big.Int{
-		"total-addresses":    calculator.global.totalAddresses.AddUint64(extraGlobalAddresses).ToBigInt(),
+		"total-addresses":    calculator.global.totalAddresses.ToBigInt(),
 		"assigned-addresses": calculator.global.totalAssignedAddresses.ToBigInt(),
 		"declined-addresses": calculator.global.totalDeclinedAddresses.ToBigInt(),
-		"total-nas":          calculator.global.totalNAs.AddUint64(extraGlobalNAs).ToBigInt(),
+		"total-nas":          calculator.global.totalNAs.ToBigInt(),
 		"assigned-nas":       calculator.global.totalAssignedNAs.ToBigInt(),
 		"declined-nas":       calculator.global.totalDeclinedNAs.ToBigInt(),
-		"total-pds":          calculator.global.totalPDs.AddUint64(extraGlobalPDs).ToBigInt(),
+		"total-pds":          calculator.global.totalPDs.ToBigInt(),
 		"assigned-pds":       calculator.global.totalAssignedPDs.ToBigInt(),
 	}
 
