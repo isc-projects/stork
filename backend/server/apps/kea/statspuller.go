@@ -80,27 +80,27 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 	calculator := newUtilizationCalculator()
 
-	extraTotalCounters, err := dbmodel.CountOutOfPoolAddressReservations(statsPuller.DB)
+	outOfPoolCounters, err := dbmodel.CountOutOfPoolAddressReservations(statsPuller.DB)
 	if err != nil {
 		return err
 	}
-	calculator.setExtraTotalAddresses(extraTotalCounters)
+	calculator.setOutOfPoolAddresses(outOfPoolCounters)
 
-	extraTotalCounters, err = dbmodel.CountOutOfPoolPrefixReservations(statsPuller.DB)
+	outOfPoolCounters, err = dbmodel.CountOutOfPoolPrefixReservations(statsPuller.DB)
 	if err != nil {
 		return err
 	}
-	calculator.setExtraTotalPrefixes(extraTotalCounters)
+	calculator.setOutOfPoolPrefixes(outOfPoolCounters)
 
 	// Assume that all global reservations are out-of-pool for all subnets.
-	extraGlobalAddresses, extraGlobalNAs, extraGlobalPDs, err := dbmodel.CountGlobalReservations(statsPuller.DB)
+	outOfPoolGlobalAddresses, outOfPoolGlobalNAs, outOfPoolGlobalPDs, err := dbmodel.CountGlobalReservations(statsPuller.DB)
 	if err != nil {
 		return err
 	}
 
-	calculator.global.totalAddresses.AddUint64(extraGlobalAddresses)
-	calculator.global.totalNAs.AddUint64(extraGlobalNAs)
-	calculator.global.totalPDs.AddUint64(extraGlobalPDs)
+	calculator.global.totalAddresses.AddUint64(outOfPoolGlobalAddresses)
+	calculator.global.totalNAs.AddUint64(outOfPoolGlobalNAs)
+	calculator.global.totalPDs.AddUint64(outOfPoolGlobalPDs)
 
 	// go through all Subnets and:
 	// 1) estimate utilization per Subnet and per SharedNetwork

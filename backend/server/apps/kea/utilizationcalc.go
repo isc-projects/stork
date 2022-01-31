@@ -148,19 +148,19 @@ func (s *subnetIPv6Stats) getPDUtilization() float64 {
 // IPv4 address/NA/PD statistic and utilization per subnet and
 // shared network.
 type utilizationCalculator struct {
-	global              *globalStats
-	sharedNetworks      map[int64]*sharedNetworkStats
-	extraTotalAddresses map[int64]uint64
-	extraTotalPrefixes  map[int64]uint64
+	global             *globalStats
+	sharedNetworks     map[int64]*sharedNetworkStats
+	outOfPoolAddresses map[int64]uint64
+	outOfPoolPrefixes  map[int64]uint64
 }
 
 // Constructor of the utilization calculator.
 func newUtilizationCalculator() *utilizationCalculator {
 	return &utilizationCalculator{
-		sharedNetworks:      make(map[int64]*sharedNetworkStats),
-		global:              newGlobalStats(),
-		extraTotalAddresses: make(map[int64]uint64),
-		extraTotalPrefixes:  make(map[int64]uint64),
+		sharedNetworks:     make(map[int64]*sharedNetworkStats),
+		global:             newGlobalStats(),
+		outOfPoolAddresses: make(map[int64]uint64),
+		outOfPoolPrefixes:  make(map[int64]uint64),
 	}
 }
 
@@ -169,8 +169,8 @@ func newUtilizationCalculator() *utilizationCalculator {
 // The out-of-pool reservations can be calculated from the database and used
 // to correct the total addresses/NAs counter.
 // It accepts the mapping between subnet ID and the value to add to the total counters.
-func (c *utilizationCalculator) setExtraTotalAddresses(extraTotalAddressesPerSubnet map[int64]uint64) {
-	c.extraTotalAddresses = extraTotalAddressesPerSubnet
+func (c *utilizationCalculator) setOutOfPoolAddresses(outOfPoolAddressesPerSubnet map[int64]uint64) {
+	c.outOfPoolAddresses = outOfPoolAddressesPerSubnet
 }
 
 // The total prefix statistics from the Kea don't contain
@@ -178,13 +178,13 @@ func (c *utilizationCalculator) setExtraTotalAddresses(extraTotalAddressesPerSub
 // The out-of-pool reservations can be calculated from the database and used
 // to correct the total prefix counter.
 // It accepts the mapping between subnet ID and the value to add to the total counter.
-func (c *utilizationCalculator) setExtraTotalPrefixes(extraTotalPrefixesPerSubnet map[int64]uint64) {
-	c.extraTotalPrefixes = extraTotalPrefixesPerSubnet
+func (c *utilizationCalculator) setOutOfPoolPrefixes(outOfPoolPrefixesPerSubnet map[int64]uint64) {
+	c.outOfPoolPrefixes = outOfPoolPrefixesPerSubnet
 }
 
 // Add the subnet statistics for the current calculator state.
 // The total counter (total addresses or NAs) will be increased by
-// extraTotal value.
+// outOfPool value.
 // It returns the utilization of this subnet.
 func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
 	if subnet.SharedNetworkID != 0 {
@@ -194,29 +194,29 @@ func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
 		}
 	}
 
-	extraTotalAddresses, ok := c.extraTotalAddresses[subnet.ID]
+	outOfPoolAddresses, ok := c.outOfPoolAddresses[subnet.ID]
 	if !ok {
-		extraTotalAddresses = 0
+		outOfPoolAddresses = 0
 	}
 
 	if subnet.GetFamily() == 4 {
-		return c.addIPv4Subnet(subnet, extraTotalAddresses)
+		return c.addIPv4Subnet(subnet, outOfPoolAddresses)
 	}
 
-	extraTotalPrefixes, ok := c.extraTotalPrefixes[subnet.ID]
+	outOfPoolPrefixes, ok := c.outOfPoolPrefixes[subnet.ID]
 	if !ok {
-		extraTotalPrefixes = 0
+		outOfPoolPrefixes = 0
 	}
 
-	return c.addIPv6Subnet(subnet, extraTotalAddresses, extraTotalPrefixes)
+	return c.addIPv6Subnet(subnet, outOfPoolAddresses, outOfPoolPrefixes)
 }
 
 // Add the IPv4 subnet statistics for the current calculator state.
-// Total addresses counter will be increased by the extraTotal value.
+// Total addresses counter will be increased by the outOfPool value.
 // It shouldn't be called outside the calculator.
-func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, extraTotal uint64) *subnetIPv4Stats {
+func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool uint64) *subnetIPv4Stats {
 	stats := &subnetIPv4Stats{
-		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses") + extraTotal,
+		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses") + outOfPool,
 		totalAssignedAddresses: sumStatLocalSubnetsIPv4(subnet, "assigned-addresses"),
 		totalDeclinedAddresses: sumStatLocalSubnetsIPv4(subnet, "declined-addresses"),
 	}
@@ -231,14 +231,14 @@ func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, extraTotal
 }
 
 // Add the IPv6 subnet statistics for the current calculator state.
-// The total NAS counter will be increased by the extraTotal value.
+// The total NAS counter will be increased by the outOfPool value.
 // It shouldn't be called outside the calculator.
-func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, extraTotalNAs, extraTotalPDs uint64) *subnetIPv6Stats {
+func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolNAs, outOfPoolPDs uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		totalNAs:         sumStatLocalSubnetsIPv6(subnet, "total-nas").AddUint64(extraTotalNAs),
+		totalNAs:         sumStatLocalSubnetsIPv6(subnet, "total-nas").AddUint64(outOfPoolNAs),
 		totalAssignedNAs: sumStatLocalSubnetsIPv6(subnet, "assigned-nas"),
 		totalDeclinedNAs: sumStatLocalSubnetsIPv6(subnet, "declined-nas"),
-		totalPDs:         sumStatLocalSubnetsIPv6(subnet, "total-pds").AddUint64(extraTotalPDs),
+		totalPDs:         sumStatLocalSubnetsIPv6(subnet, "total-pds").AddUint64(outOfPoolPDs),
 		totalAssignedPDs: sumStatLocalSubnetsIPv6(subnet, "assigned-pds"),
 	}
 

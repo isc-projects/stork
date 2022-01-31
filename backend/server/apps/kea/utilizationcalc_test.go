@@ -604,8 +604,8 @@ func TestCalculatorAddExtraToTotalCounters(t *testing.T) {
 
 	// Act
 	calculator := newUtilizationCalculator()
-	calculator.setExtraTotalAddresses(extraAddresses)
-	calculator.setExtraTotalPrefixes(extraPrefixes)
+	calculator.setOutOfPoolAddresses(extraAddresses)
+	calculator.setOutOfPoolPrefixes(extraPrefixes)
 
 	utilization1 := calculator.add(&subnets[0])
 	utilization2 := calculator.add(&subnets[1])
