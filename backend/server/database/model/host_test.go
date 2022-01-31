@@ -1049,7 +1049,7 @@ func TestCommitGlobalHostsIntoDB(t *testing.T) {
 }
 
 // Test that the prefix reservations are properly recognized.
-func TestIsPrefixReservationForPrefix(t *testing.T) {
+func TestIsPrefixForPrefix(t *testing.T) {
 	// Arrange
 	prefixes := []string{
 		"30::/16",
@@ -1064,12 +1064,12 @@ func TestIsPrefixReservationForPrefix(t *testing.T) {
 		}
 
 		// Assert
-		require.True(t, reservation.IsPrefixReservation())
+		require.True(t, reservation.IsPrefix())
 	}
 }
 
 // Test that the address reservations are not recognized as prefixes.
-func TestIsPrefixReservationForAddress(t *testing.T) {
+func TestIsPrefixForAddress(t *testing.T) {
 	// Arrange
 	addresses := []string{
 		"10.0.0.0",
@@ -1093,7 +1093,7 @@ func TestIsPrefixReservationForAddress(t *testing.T) {
 		}
 
 		// Assert
-		require.False(t, reservation.IsPrefixReservation())
+		require.False(t, reservation.IsPrefix())
 	}
 }
 
