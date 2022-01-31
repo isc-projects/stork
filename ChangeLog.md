@@ -1,3 +1,8 @@
+* 194 [func] marcin
+
+    Display Kea and Bind access points in the app tab.
+    (Gitlab #586)
+
 * 193 [doc] sgoldust
     Stork documentation review.
     (Gitlab #646)
