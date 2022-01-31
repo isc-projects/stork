@@ -34,8 +34,8 @@ type IPReservation struct {
 	HostID  int64
 }
 
-// Checks if reservation represents a prefix reservations.
-func (r *IPReservation) IsPrefixReservation() bool {
+// Checks if reservation is a delagated prefix.
+func (r *IPReservation) IsPrefix() bool {
 	if !strings.Contains(r.Address, "/") {
 		return false
 	}
@@ -689,7 +689,8 @@ func (id HostIdentifier) ToHex(separator string) string {
 // Output is a mapping between subnet ID and count.
 // The function assumes that the reservation can be only in
 // the subnet in which it is defined. If it is outside this
-// subnet then it is outside all subnets.
+// subnet it is considered out-of-pool, even if it happens to overlap
+// with another subnet.
 // This assumption is necessary because without it the execution time is 900x longer.
 func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	// Output row.
@@ -725,7 +726,7 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 		// We need to exclude prefix reservations. We take into account
 		// only IPv4 reservations (as IPv4 has no prefix concept) and
 		// single IPv6 hosts - entries with 128 mask length (128 mask length
-		// implies that is's IPv6 address).
+		// implies that it's an IPv6 address).
 		WhereGroup(func(q *pg.Query) (*pg.Query, error) {
 			return q.
 				Where("family(ip_reservation.address) = 4").
@@ -821,7 +822,7 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 }
 
 // Count global reservations of addresses, NAs and prefixes.
-// We assume that all global reservations are out-of-pool for any subnet.
+// We assume that global reservations are always out-of-pool.
 // It's possible to define in-pool global reservation, but it's not recommended.
 // The query without this assumption is very inefficient.
 func CountGlobalReservations(dbi dbops.DBI) (addresses, nas, prefixes uint64, err error) {
