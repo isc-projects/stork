@@ -1,3 +1,7 @@
+* 193 [doc] sgoldust
+    Stork documentation review.
+    (Gitlab #646)
+
 * 192 [func] slawek
 
     Support for the large statistic values. It handles
