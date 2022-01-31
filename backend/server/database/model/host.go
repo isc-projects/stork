@@ -36,17 +36,11 @@ type IPReservation struct {
 
 // Checks if reservation is a delagated prefix.
 func (r *IPReservation) IsPrefix() bool {
-	if !strings.Contains(r.Address, "/") {
+	ip := storkutil.ParseIP(r.Address)
+	if ip == nil {
 		return false
 	}
-	// IPv4
-	singleSuffix := "/32"
-	if strings.Contains(r.Address, ":") {
-		// IPv6
-		singleSuffix = "/128"
-	}
-	// IPv6
-	return !strings.HasSuffix(r.Address, singleSuffix)
+	return ip.Prefix
 }
 
 // This structure reflects a row in the host table. The host may be associated
