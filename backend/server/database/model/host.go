@@ -685,7 +685,6 @@ func (id HostIdentifier) ToHex(separator string) string {
 // the subnet in which it is defined. If it is outside this
 // subnet it is considered out-of-pool, even if it happens to overlap
 // with another subnet.
-// This assumption is necessary because without it the execution time is 900x longer.
 func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	// Output row.
 	// Out-of-pool count per subnet.
@@ -750,7 +749,6 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 // The function assumes that the reservation can be only in
 // the subnet in which it is defined. If it is outside this
 // subnet then it is outside all subnets.
-// This assumption is necessary because without it the execution time is 900x longer.
 func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	// Output row.
 	// Out-of-pool count per subnet.

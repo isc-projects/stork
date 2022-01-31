@@ -164,20 +164,20 @@ func newUtilizationCalculator() *utilizationCalculator {
 	}
 }
 
-// The total addresses and NAs statistics from the Kea don't contain
-// out-of-address-pool reservations. It causes that the utilization is incorrect.
-// The out-of-pool reservations can be calculated from the database and used
-// to correct the total addresses/NAs counter.
-// It accepts the mapping between subnet ID and the value to add to the total counters.
+// The total IPv4 and IPv6 addresses statistics returned by Kea exclude
+// out-of-pool reservations, yielding possibly incorrect utilization.
+// The utilization can be corrected by including the out-of-pool
+// reservation counts from the Stork database. The argument is a subnet
+// ID mapping to the total out-of-pool addresses for the subnet.
 func (c *utilizationCalculator) setOutOfPoolAddresses(outOfPoolAddressesPerSubnet map[int64]uint64) {
 	c.outOfPoolAddresses = outOfPoolAddressesPerSubnet
 }
 
-// The total prefix statistics from the Kea don't contain
-// out-of-prefix-pool reservations. It causes that the utilization is incorrect.
-// The out-of-pool reservations can be calculated from the database and used
-// to correct the total prefix counter.
-// It accepts the mapping between subnet ID and the value to add to the total counter.
+// The total prefix addresses statistics returned by Kea exclude
+// out-of-pool reservations, yielding possibly incorrect utilization.
+// The utilization can be corrected by including the out-of-pool
+// reservation counts from the Stork database. The argument is a subnet
+// ID mapping to the total out-of-pool prefixes for the subnet.
 func (c *utilizationCalculator) setOutOfPoolPrefixes(outOfPoolPrefixesPerSubnet map[int64]uint64) {
 	c.outOfPoolPrefixes = outOfPoolPrefixesPerSubnet
 }
@@ -211,9 +211,9 @@ func (c *utilizationCalculator) add(subnet *dbmodel.Subnet) leaseStats {
 	return c.addIPv6Subnet(subnet, outOfPoolAddresses, outOfPoolPrefixes)
 }
 
-// Add the IPv4 subnet statistics for the current calculator state.
-// Total addresses counter will be increased by the outOfPool value.
-// It shouldn't be called outside the calculator.
+// The resulting addresses counter will be a sum of the addresses returned by Kea for this
+// subnet and the outOfPool counter holding the number of the out-of-pool reservations
+// that Kea does not include in its statistics.
 func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool uint64) *subnetIPv4Stats {
 	stats := &subnetIPv4Stats{
 		totalAddresses:         sumStatLocalSubnetsIPv4(subnet, "total-addresses") + outOfPool,
@@ -230,9 +230,9 @@ func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool 
 	return stats
 }
 
-// Add the IPv6 subnet statistics for the current calculator state.
-// The total NAS counter will be increased by the outOfPool value.
-// It shouldn't be called outside the calculator.
+// The resulting addresses counter will be a sum of the addresses returned by Kea for this
+// subnet and the outOfPool counter holding the number of the out-of-pool reservations
+// that Kea does not include in its statistics.
 func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolNAs, outOfPoolPDs uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
 		totalNAs:         sumStatLocalSubnetsIPv6(subnet, "total-nas").AddUint64(outOfPoolNAs),
