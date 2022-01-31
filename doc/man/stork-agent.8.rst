@@ -67,7 +67,7 @@ Prometheus Kea Exporter flags:
   enable or disable collecting per subnet stats from Kea; (default: true)
   [$STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS]
 
-``Prometheus BIND 9 Exporter`` flags:
+Prometheus BIND 9 Exporter flags:
 
 ``--prometheus-bind9-exporter-address=``
    Specifies the IP address or hostname on which the agent exports BIND 9 statistics to Prometheus. The default is 0.0.0.0. ``[$STORK_AGENT_PROMETHEUS_BIND9_EXPORTER_ADDRESS]``
