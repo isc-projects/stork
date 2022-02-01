@@ -192,9 +192,6 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 				continue
 			}
 		}
-		// Change detected.
-		it.trace.setCommitted()
-
 		// If we have detected host changes right now, there is no transaction yet.
 		// Begin new transaction.
 		if tx == nil {
@@ -256,12 +253,9 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 // attempts to fetch hosts, without making a detailed comparison of the
 // responses. If the current hashes match the hashes from the previous
 // iteration, there is no need to update the hosts in the database,
-// perform config reviews etc. The committed flag indicates whether or
-// not the reservations have been committed to the database during the
-// iteration when this trace was created.
+// perform config reviews etc.
 type hostIteratorTrace struct {
 	responses []hostIteratorTraceResponse
-	committed bool
 }
 
 // A structure representing a single hosts page returned by Kea. It
@@ -306,19 +300,6 @@ func (trace *hostIteratorTrace) hasEqualHashes(other *hostIteratorTrace) bool {
 		}
 	}
 	return true
-}
-
-// Mark that the hosts fetched while this trace was created have
-// been committed to the database.
-func (trace *hostIteratorTrace) setCommitted() {
-	trace.committed = true
-}
-
-// Convenience function checking whether or not the fetched host
-// reservations have been committed to the database during the
-// iteration when this trace was created.
-func (trace *hostIteratorTrace) isCommitted() bool {
-	return trace.committed
 }
 
 // Structure reflecting a state of fetching host reservations from Kea

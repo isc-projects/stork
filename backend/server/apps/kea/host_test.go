@@ -1272,22 +1272,16 @@ func TestUpdateHostsFromHostCmds(t *testing.T) {
 		require.Len(t, hosts, 50)
 
 		// Ensure that the traces have been created.
-		require.Contains(t, puller.traces, app.Daemons[0].ID)
-		require.EqualValues(t, 10, puller.traces[app.Daemons[0].ID].getResponseCount())
-		require.Contains(t, puller.traces, app.Daemons[1].ID)
-		require.EqualValues(t, 10, puller.traces[app.Daemons[1].ID].getResponseCount())
+		traces := puller.traces
+		require.Contains(t, traces, app.Daemons[0].ID)
+		require.EqualValues(t, 10, traces[app.Daemons[0].ID].getResponseCount())
+		require.Contains(t, traces, app.Daemons[1].ID)
+		require.EqualValues(t, 10, traces[app.Daemons[1].ID].getResponseCount())
 
-		// The hosts should be committed during the first iteration and should not
-		// be committed during the second iteration because the puller should
-		// detect that the hosts haven't changed.
-		switch i {
-		case 0:
-			require.True(t, puller.traces[app.Daemons[0].ID].isCommitted())
-			require.True(t, puller.traces[app.Daemons[1].ID].isCommitted())
-		case 1:
-			require.False(t, puller.traces[app.Daemons[0].ID].isCommitted())
-			require.False(t, puller.traces[app.Daemons[1].ID].isCommitted())
-		}
+		// Here, we test indirectly that hosts update was detected in the first
+		// iteration and that it was not detected in the second iteration. The
+		// config reviews are only scheduled when some hosts were updated.
+		require.Len(t, fd.CallLog, 2)
 
 		// Reset server state so it should send the same set of responses
 		// the second time.
