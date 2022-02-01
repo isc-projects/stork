@@ -17,14 +17,14 @@ func TestCalculatorConstruction(t *testing.T) {
 	calculator := newUtilizationCalculator()
 
 	// Assert
-	require.EqualValues(t, 0, calculator.global.totalAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalDeclinedAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalDeclinedNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalPDs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedPDs.ToInt64())
+	require.Zero(t, calculator.global.totalIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDelegatedPrefixes.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedDelegatedPrefixes.ToInt64())
 	require.Len(t, calculator.sharedNetworks, 0)
 }
 
@@ -52,16 +52,16 @@ func TestCalculatorAddSingleIPv4LocalSubnet(t *testing.T) {
 
 	// Assert
 	require.InDelta(t, float64(0.1), utilization.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), utilization.getPDUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 
-	require.EqualValues(t, 100, calculator.global.totalAddresses.ToInt64())
-	require.EqualValues(t, 10, calculator.global.totalAssignedAddresses.ToInt64())
-	require.EqualValues(t, 20, calculator.global.totalDeclinedAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalDeclinedNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalPDs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedPDs.ToInt64())
+	require.EqualValues(t, 100, calculator.global.totalIPv4Addresses.ToInt64())
+	require.EqualValues(t, 10, calculator.global.totalAssignedIPv4Addresses.ToInt64())
+	require.EqualValues(t, 20, calculator.global.totalDeclinedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDelegatedPrefixes.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedDelegatedPrefixes.ToInt64())
 
 	require.Len(t, calculator.sharedNetworks, 0)
 }
@@ -92,16 +92,16 @@ func TestCalculatorAddSingleIPv6LocalSubnet(t *testing.T) {
 
 	// Assert
 	require.InDelta(t, float64(0.4), utilization.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.5), utilization.getPDUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.5), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 
-	require.EqualValues(t, 0, calculator.global.totalAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalDeclinedAddresses.ToInt64())
-	require.EqualValues(t, 100, calculator.global.totalNAs.ToInt64())
-	require.EqualValues(t, 40, calculator.global.totalAssignedNAs.ToInt64())
-	require.EqualValues(t, 30, calculator.global.totalDeclinedNAs.ToInt64())
-	require.EqualValues(t, 20, calculator.global.totalPDs.ToInt64())
-	require.EqualValues(t, 10, calculator.global.totalAssignedPDs.ToInt64())
+	require.Zero(t, calculator.global.totalIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv4Addresses.ToInt64())
+	require.EqualValues(t, 100, calculator.global.totalIPv6Addresses.ToInt64())
+	require.EqualValues(t, 40, calculator.global.totalAssignedIPv6Addresses.ToInt64())
+	require.EqualValues(t, 30, calculator.global.totalDeclinedIPv6Addresses.ToInt64())
+	require.EqualValues(t, 20, calculator.global.totalDelegatedPrefixes.ToInt64())
+	require.EqualValues(t, 10, calculator.global.totalAssignedDelegatedPrefixes.ToInt64())
 
 	require.Len(t, calculator.sharedNetworks, 0)
 }
@@ -132,16 +132,16 @@ func TestCalculatorAddSubnetUsingNonUint64(t *testing.T) {
 
 	// Assert
 	require.InDelta(t, float64(0.0), utilization.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), utilization.getPDUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 
-	require.EqualValues(t, 0, calculator.global.totalAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalDeclinedAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalDeclinedNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalPDs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedPDs.ToInt64())
+	require.Zero(t, calculator.global.totalIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDelegatedPrefixes.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedDelegatedPrefixes.ToInt64())
 
 	require.Len(t, calculator.sharedNetworks, 0)
 }
@@ -191,16 +191,16 @@ func TestCalculatorAddMultipleIPv4LocalSubnet(t *testing.T) {
 
 	// Assert
 	require.InDelta(t, float64(34.0/355.0), utilization.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), utilization.getPDUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 
-	require.EqualValues(t, 355, calculator.global.totalAddresses.ToInt64())
-	require.EqualValues(t, 34, calculator.global.totalAssignedAddresses.ToInt64())
-	require.EqualValues(t, 63, calculator.global.totalDeclinedAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalDeclinedNAs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalPDs.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedPDs.ToInt64())
+	require.EqualValues(t, 355, calculator.global.totalIPv4Addresses.ToInt64())
+	require.EqualValues(t, 34, calculator.global.totalAssignedIPv4Addresses.ToInt64())
+	require.EqualValues(t, 63, calculator.global.totalDeclinedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDelegatedPrefixes.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedDelegatedPrefixes.ToInt64())
 }
 
 // Test that the calculator returns the proper utilization for multiple IPv6 local subnets.
@@ -256,16 +256,16 @@ func TestCalculatorAddMultipleIPv6LocalSubnet(t *testing.T) {
 
 	// Assert
 	require.InDelta(t, float64(34.0/355.0), utilization.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(44.0/243.0), utilization.getPDUtilization(), float64(0.001))
+	require.InDelta(t, float64(44.0/243.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 
-	require.EqualValues(t, 0, calculator.global.totalAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalAssignedAddresses.ToInt64())
-	require.EqualValues(t, 0, calculator.global.totalDeclinedAddresses.ToInt64())
-	require.EqualValues(t, 355, calculator.global.totalNAs.ToInt64())
-	require.EqualValues(t, 34, calculator.global.totalAssignedNAs.ToInt64())
-	require.EqualValues(t, 63, calculator.global.totalDeclinedNAs.ToInt64())
-	require.EqualValues(t, 243, calculator.global.totalPDs.ToInt64())
-	require.EqualValues(t, 44, calculator.global.totalAssignedPDs.ToInt64())
+	require.Zero(t, calculator.global.totalIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv4Addresses.ToInt64())
+	require.EqualValues(t, 355, calculator.global.totalIPv6Addresses.ToInt64())
+	require.EqualValues(t, 34, calculator.global.totalAssignedIPv6Addresses.ToInt64())
+	require.EqualValues(t, 63, calculator.global.totalDeclinedIPv6Addresses.ToInt64())
+	require.EqualValues(t, 243, calculator.global.totalDelegatedPrefixes.ToInt64())
+	require.EqualValues(t, 44, calculator.global.totalAssignedDelegatedPrefixes.ToInt64())
 }
 
 // Test that the calculator returns the proper utilization for the shared network.
@@ -327,7 +327,7 @@ func TestCalculatorAddSharedNetworkSubnets(t *testing.T) {
 	require.Len(t, calculator.sharedNetworks, 1)
 	utilization := calculator.sharedNetworks[1]
 	require.InDelta(t, float64(140.0/600.0), utilization.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(100.0/120.0), utilization.getPDUtilization(), float64(0.001))
+	require.InDelta(t, float64(100.0/120.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 }
 
 // Test that the calculator separates the shared networks during the calculations.
@@ -376,10 +376,10 @@ func TestCalculatorAddMultipleSharedNetworkSubnets(t *testing.T) {
 	require.Len(t, calculator.sharedNetworks, 2)
 	utilization := calculator.sharedNetworks[13]
 	require.InDelta(t, float64(10.0/100.0), utilization.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(30.0/40.0), utilization.getPDUtilization(), float64(0.001))
+	require.InDelta(t, float64(30.0/40.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 	utilization = calculator.sharedNetworks[4]
 	require.InDelta(t, float64(40.0/200.0), utilization.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(70.0/80.0), utilization.getPDUtilization(), float64(0.001))
+	require.InDelta(t, float64(70.0/80.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 }
 
 // Test that the calculator works for a subnet without the local subnets.
@@ -397,13 +397,13 @@ func TestCalculatorAddEmptySubnet(t *testing.T) {
 
 	// Assert
 	require.InDelta(t, float64(0.0), utilization.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), utilization.getPDUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 	utilization = calculator.sharedNetworks[42]
 	require.InDelta(t, float64(0.0), utilization.getAddressUtilization(), float64(0.001))
-	require.InDelta(t, float64(0.0), utilization.getPDUtilization(), float64(0.001))
+	require.InDelta(t, float64(0.0), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 }
 
-// Test the calculator using real Kea response.
+// Test that the calculator add extra IPv4 and IPv6 addresses, and delegated prefixes.
 func TestCalculatorRealKeaResponse(t *testing.T) {
 	// Arrange
 	statLease4GetResponseRaw := `{
@@ -508,13 +508,13 @@ func TestCalculatorRealKeaResponse(t *testing.T) {
 			require.InDelta(t, float64((111.0+2034.0)/(256.0+4098.0)), utilization.getAddressUtilization(), float64(0.001))
 		case 1:
 			require.InDelta(t, float64((2400.0+60.0)/(4096.0+256.0)), utilization.getAddressUtilization(), float64(0.001))
-			require.InDelta(t, float64((15.0)/(500.0+1048.0)), utilization.getPDUtilization(), float64(0.001))
+			require.InDelta(t, float64((15.0)/(500.0+1048.0)), utilization.getDelegatedPrefixUtilization(), float64(0.001))
 
-			require.EqualValues(t, int64(4096+256), calculator.global.totalNAs.ToInt64())
+			require.EqualValues(t, int64(4096+256), calculator.global.totalIPv6Addresses.ToInt64())
 		case 2:
 			expected := big.NewInt(4096 + 256)
 			expected = expected.Add(expected, big.NewInt(0).SetUint64(math.MaxUint64))
-			require.EqualValues(t, expected, calculator.global.totalNAs.ToBigInt())
+			require.EqualValues(t, expected, calculator.global.totalIPv6Addresses.ToBigInt())
 			require.InDelta(t, float64(0.5), utilization.getAddressUtilization(), float64(0.001))
 		}
 	}
@@ -544,18 +544,17 @@ func TestCalculatorAddIgnoreNegativeNumbers(t *testing.T) {
 
 	// Assert
 	require.Zero(t, utilization.getAddressUtilization())
-	require.Zero(t, utilization.getPDUtilization())
-	require.Zero(t, calculator.global.totalAddresses.ToInt64())
-	require.Zero(t, calculator.global.totalAssignedAddresses.ToInt64())
-	require.Zero(t, calculator.global.totalDeclinedAddresses.ToInt64())
-	require.Zero(t, calculator.global.totalNAs.ToInt64())
-	require.Zero(t, calculator.global.totalAssignedNAs.ToInt64())
-	require.Zero(t, calculator.global.totalDeclinedNAs.ToInt64())
-	require.Zero(t, calculator.global.totalPDs.ToInt64())
-	require.Zero(t, calculator.global.totalAssignedPDs.ToInt64())
+	require.Zero(t, utilization.getDelegatedPrefixUtilization())
+	require.Zero(t, calculator.global.totalIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv4Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDeclinedIPv6Addresses.ToInt64())
+	require.Zero(t, calculator.global.totalDelegatedPrefixes.ToInt64())
+	require.Zero(t, calculator.global.totalAssignedDelegatedPrefixes.ToInt64())
 }
 
-// Test that the calculator add extra addresses, NAs and prefixes.
 func TestCalculatorAddExtraToTotalCounters(t *testing.T) {
 	// Arrange
 	subnets := []dbmodel.Subnet{
@@ -591,12 +590,12 @@ func TestCalculatorAddExtraToTotalCounters(t *testing.T) {
 		},
 	}
 
-	extraAddresses := map[int64]uint64{
+	outOfPoolAddresses := map[int64]uint64{
 		1: 10,
 		2: 20,
 	}
 
-	extraPrefixes := map[int64]uint64{
+	outOfPoolPrefixes := map[int64]uint64{
 		1: 30,
 		// Bug - IPv4 has no prefixes, but the calculator should keep working correctly.
 		2: 40,
@@ -604,34 +603,34 @@ func TestCalculatorAddExtraToTotalCounters(t *testing.T) {
 
 	// Act
 	calculator := newUtilizationCalculator()
-	calculator.setOutOfPoolAddresses(extraAddresses)
-	calculator.setOutOfPoolPrefixes(extraPrefixes)
+	calculator.setOutOfPoolAddresses(outOfPoolAddresses)
+	calculator.setOutOfPoolPrefixes(outOfPoolPrefixes)
 
 	utilization1 := calculator.add(&subnets[0])
 	utilization2 := calculator.add(&subnets[1])
 
 	// Assert
-	require.EqualValues(t, uint64(80), calculator.global.totalAddresses.ToUint64())
-	require.EqualValues(t, uint64(20), calculator.global.totalAssignedAddresses.ToUint64())
-	require.EqualValues(t, uint64(30), calculator.global.totalDeclinedAddresses.ToUint64())
-	require.EqualValues(t, uint64(100), calculator.global.totalNAs.ToUint64())
-	require.EqualValues(t, uint64(50), calculator.global.totalAssignedNAs.ToUint64())
-	require.EqualValues(t, uint64(40), calculator.global.totalDeclinedNAs.ToUint64())
-	require.EqualValues(t, uint64(90), calculator.global.totalPDs.ToUint64())
-	require.EqualValues(t, uint64(9), calculator.global.totalAssignedPDs.ToUint64())
+	require.EqualValues(t, uint64(80), calculator.global.totalIPv4Addresses.ToUint64())
+	require.EqualValues(t, uint64(20), calculator.global.totalAssignedIPv4Addresses.ToUint64())
+	require.EqualValues(t, uint64(30), calculator.global.totalDeclinedIPv4Addresses.ToUint64())
+	require.EqualValues(t, uint64(100), calculator.global.totalIPv6Addresses.ToUint64())
+	require.EqualValues(t, uint64(50), calculator.global.totalAssignedIPv6Addresses.ToUint64())
+	require.EqualValues(t, uint64(40), calculator.global.totalDeclinedIPv6Addresses.ToUint64())
+	require.EqualValues(t, uint64(90), calculator.global.totalDelegatedPrefixes.ToUint64())
+	require.EqualValues(t, uint64(9), calculator.global.totalAssignedDelegatedPrefixes.ToUint64())
 	require.Len(t, calculator.sharedNetworks, 1)
 
 	require.EqualValues(t, 0.5, utilization1.getAddressUtilization())
-	require.EqualValues(t, 0.1, utilization1.getPDUtilization())
+	require.EqualValues(t, 0.1, utilization1.getDelegatedPrefixUtilization())
 	require.EqualValues(t, 0.25, utilization2.getAddressUtilization())
-	require.EqualValues(t, 0.0, utilization2.getPDUtilization())
+	require.EqualValues(t, 0.0, utilization2.getDelegatedPrefixUtilization())
 
 	sharedNetwork := calculator.sharedNetworks[42]
 	require.EqualValues(t, 180, sharedNetwork.totalAddresses.ToUint64())
 	require.EqualValues(t, 70, sharedNetwork.totalAssignedAddresses.ToUint64())
-	require.EqualValues(t, 9, sharedNetwork.totalAssignedPDs.ToUint64())
-	require.EqualValues(t, 90, sharedNetwork.totalPDs.ToUint64())
+	require.EqualValues(t, 9, sharedNetwork.totalAssignedDelegatedPrefixes.ToUint64())
+	require.EqualValues(t, 90, sharedNetwork.totalDelegatedPrefixes.ToUint64())
 
 	require.InDelta(t, 7.0/18.0, sharedNetwork.getAddressUtilization(), 0.001)
-	require.EqualValues(t, 0.1, sharedNetwork.getPDUtilization())
+	require.EqualValues(t, 0.1, sharedNetwork.getDelegatedPrefixUtilization())
 }

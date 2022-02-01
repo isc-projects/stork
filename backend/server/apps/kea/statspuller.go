@@ -93,14 +93,14 @@ func (statsPuller *StatsPuller) pullStats() error {
 	calculator.setOutOfPoolPrefixes(outOfPoolCounters)
 
 	// Assume that all global reservations are out-of-pool for all subnets.
-	outOfPoolGlobalAddresses, outOfPoolGlobalNAs, outOfPoolGlobalPDs, err := dbmodel.CountGlobalReservations(statsPuller.DB)
+	outOfPoolGlobalIPv4Addresses, outOfPoolGlobalIPv6Addresses, outOfPoolGlobalDelegatedPrefixes, err := dbmodel.CountGlobalReservations(statsPuller.DB)
 	if err != nil {
 		return err
 	}
 
-	calculator.global.totalAddresses.AddUint64(outOfPoolGlobalAddresses)
-	calculator.global.totalNAs.AddUint64(outOfPoolGlobalNAs)
-	calculator.global.totalPDs.AddUint64(outOfPoolGlobalPDs)
+	calculator.global.totalIPv4Addresses.AddUint64(outOfPoolGlobalIPv4Addresses)
+	calculator.global.totalIPv6Addresses.AddUint64(outOfPoolGlobalIPv6Addresses)
+	calculator.global.totalDelegatedPrefixes.AddUint64(outOfPoolGlobalDelegatedPrefixes)
 
 	// go through all Subnets and:
 	// 1) estimate utilization per Subnet and per SharedNetwork
@@ -110,13 +110,13 @@ func (statsPuller *StatsPuller) pullStats() error {
 		err = sn.UpdateUtilization(
 			statsPuller.DB,
 			int16(1000*su.getAddressUtilization()),
-			int16(1000*su.getPDUtilization()),
+			int16(1000*su.getDelegatedPrefixUtilization()),
 		)
 
 		if err != nil {
 			lastErr = err
 			log.Errorf("cannot update utilization (%.3f, %.3f) in subnet %d: %s",
-				su.getAddressUtilization(), su.getPDUtilization(), sn.ID, err)
+				su.getAddressUtilization(), su.getDelegatedPrefixUtilization(), sn.ID, err)
 			continue
 		}
 	}
@@ -125,26 +125,26 @@ func (statsPuller *StatsPuller) pullStats() error {
 	for sharedNetworkID, u := range calculator.sharedNetworks {
 		err = dbmodel.UpdateUtilizationInSharedNetwork(statsPuller.DB, sharedNetworkID,
 			int16(1000*u.getAddressUtilization()),
-			int16(1000*u.getPDUtilization()))
+			int16(1000*u.getDelegatedPrefixUtilization()))
 
 		if err != nil {
 			lastErr = err
 			log.Errorf("cannot update utilization (%.3f, %.3f) in shared network %d: %s",
-				u.getAddressUtilization(), u.getPDUtilization(), sharedNetworkID, err)
+				u.getAddressUtilization(), u.getDelegatedPrefixUtilization(), sharedNetworkID, err)
 			continue
 		}
 	}
 
 	// global stats to collect
 	statsMap := map[string]*big.Int{
-		"total-addresses":    calculator.global.totalAddresses.ToBigInt(),
-		"assigned-addresses": calculator.global.totalAssignedAddresses.ToBigInt(),
-		"declined-addresses": calculator.global.totalDeclinedAddresses.ToBigInt(),
-		"total-nas":          calculator.global.totalNAs.ToBigInt(),
-		"assigned-nas":       calculator.global.totalAssignedNAs.ToBigInt(),
-		"declined-nas":       calculator.global.totalDeclinedNAs.ToBigInt(),
-		"total-pds":          calculator.global.totalPDs.ToBigInt(),
-		"assigned-pds":       calculator.global.totalAssignedPDs.ToBigInt(),
+		"total-addresses":    calculator.global.totalIPv4Addresses.ToBigInt(),
+		"assigned-addresses": calculator.global.totalAssignedIPv4Addresses.ToBigInt(),
+		"declined-addresses": calculator.global.totalDeclinedIPv4Addresses.ToBigInt(),
+		"total-nas":          calculator.global.totalIPv6Addresses.ToBigInt(),
+		"assigned-nas":       calculator.global.totalAssignedIPv6Addresses.ToBigInt(),
+		"declined-nas":       calculator.global.totalDeclinedIPv6Addresses.ToBigInt(),
+		"assigned-pds":       calculator.global.totalAssignedDelegatedPrefixes.ToBigInt(),
+		"total-pds":          calculator.global.totalDelegatedPrefixes.ToBigInt(),
 	}
 
 	// update global statistics in db

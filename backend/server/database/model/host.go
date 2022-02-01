@@ -679,7 +679,7 @@ func (id HostIdentifier) ToHex(separator string) string {
 	return separated
 }
 
-// Count out-of-pool addresses and NAs for all subnets.
+// Count out-of-pool IPv4 and IPv6 addresses for all subnets.
 // Output is a mapping between subnet ID and count.
 // The function assumes that the reservation can be only in
 // the subnet in which it is defined. If it is outside this
@@ -715,7 +715,7 @@ func CountOutOfPoolAddressReservations(dbi dbops.DBI) (map[int64]uint64, error) 
 		// Exclude global reservations
 		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
-		// In this query, we check out-of-pool address/NA reservations.
+		// In this query, we check out-of-pool address reservations.
 		// We need to exclude prefix reservations. We take into account
 		// only IPv4 reservations (as IPv4 has no prefix concept) and
 		// single IPv6 hosts - entries with 128 mask length (128 mask length
@@ -788,7 +788,7 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 		Where("host.subnet_id IS NOT NULL").
 		// The IP reservation table contains the address and prefix reservations both.
 		// In this query, we check out-of-pool prefix reservations.
-		// We need to exclude NA and address reservations. We take into account
+		// We need to exclude address reservations. We take into account
 		// only IPv6 reservations (as only IPv6 has prefix concept) and
 		// non single IPv6 hosts - entries with mask length less then 128 (128 mask length
 		// implies that is's IPv6 address).
@@ -813,31 +813,31 @@ func CountOutOfPoolPrefixReservations(dbi dbops.DBI) (map[int64]uint64, error) {
 	return countsPerSubnet, nil
 }
 
-// Count global reservations of addresses, NAs and prefixes.
+// Count global reservations of IPv4 and IPv6 addresses and delegated prefixes.
 // We assume that global reservations are always out-of-pool.
 // It's possible to define in-pool global reservation, but it's not recommended.
 // The query without this assumption is very inefficient.
-func CountGlobalReservations(dbi dbops.DBI) (addresses, nas, prefixes uint64, err error) {
+func CountGlobalReservations(dbi dbops.DBI) (ipv4Addresses, ipv6Addresses, prefixes uint64, err error) {
 	// Output row.
 	var res struct {
-		Addresses uint64
-		Nas       uint64
-		Pds       uint64
+		Ipv4Addresses uint64
+		Ipv6Addresses uint64
+		Prefixes      uint64
 	}
 
 	err = dbi.Model((*IPReservation)(nil)).
 		// Window functions aren't supported well by Go-PG
-		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 4) AS addresses").
-		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) = 128) AS nas").
-		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) != 128) AS pds").
+		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 4) AS ipv4_addresses").
+		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) = 128) AS ipv6_addresses").
+		ColumnExpr("COUNT(ip_reservation.id) FILTER (WHERE family(ip_reservation.address) = 6 AND masklen(ip_reservation.address) != 128) AS prefixes").
 		Join("LEFT JOIN host").JoinOn("ip_reservation.host_id = host.id").
 		// Include only global reservations
 		Where("host.subnet_id IS NULL").
 		Select(&res)
 	err = pkgerrors.Wrap(err, "cannot count global out-of-pool reservations")
 
-	addresses = res.Addresses
-	nas = res.Nas
-	prefixes = res.Pds
+	ipv4Addresses = res.Ipv4Addresses
+	ipv6Addresses = res.Ipv6Addresses
+	prefixes = res.Prefixes
 	return
 }

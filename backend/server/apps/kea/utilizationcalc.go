@@ -10,70 +10,70 @@ import (
 
 // The sum of statistics from all subnets.
 type globalStats struct {
-	totalAddresses         *storkutil.BigCounter
-	totalAssignedAddresses *storkutil.BigCounter
-	totalDeclinedAddresses *storkutil.BigCounter
-	totalNAs               *storkutil.BigCounter
-	totalAssignedNAs       *storkutil.BigCounter
-	totalDeclinedNAs       *storkutil.BigCounter
-	totalPDs               *storkutil.BigCounter
-	totalAssignedPDs       *storkutil.BigCounter
+	totalIPv4Addresses             *storkutil.BigCounter
+	totalAssignedIPv4Addresses     *storkutil.BigCounter
+	totalDeclinedIPv4Addresses     *storkutil.BigCounter
+	totalIPv6Addresses             *storkutil.BigCounter
+	totalAssignedIPv6Addresses     *storkutil.BigCounter
+	totalDeclinedIPv6Addresses     *storkutil.BigCounter
+	totalDelegatedPrefixes         *storkutil.BigCounter
+	totalAssignedDelegatedPrefixes *storkutil.BigCounter
 }
 
 // Constructor of the global statistic struct with all
 // counters set to zero.
 func newGlobalStats() *globalStats {
 	return &globalStats{
-		totalAddresses:         storkutil.NewBigCounter(0),
-		totalAssignedAddresses: storkutil.NewBigCounter(0),
-		totalDeclinedAddresses: storkutil.NewBigCounter(0),
-		totalNAs:               storkutil.NewBigCounter(0),
-		totalAssignedNAs:       storkutil.NewBigCounter(0),
-		totalDeclinedNAs:       storkutil.NewBigCounter(0),
-		totalPDs:               storkutil.NewBigCounter(0),
-		totalAssignedPDs:       storkutil.NewBigCounter(0),
+		totalIPv4Addresses:             storkutil.NewBigCounter(0),
+		totalAssignedIPv4Addresses:     storkutil.NewBigCounter(0),
+		totalDeclinedIPv4Addresses:     storkutil.NewBigCounter(0),
+		totalIPv6Addresses:             storkutil.NewBigCounter(0),
+		totalAssignedIPv6Addresses:     storkutil.NewBigCounter(0),
+		totalDeclinedIPv6Addresses:     storkutil.NewBigCounter(0),
+		totalDelegatedPrefixes:         storkutil.NewBigCounter(0),
+		totalAssignedDelegatedPrefixes: storkutil.NewBigCounter(0),
 	}
 }
 
 // Add the IPv4 subnet statistics to the global state.
 func (g *globalStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
-	g.totalAddresses.AddUint64(subnet.totalAddresses)
-	g.totalAssignedAddresses.AddUint64(subnet.totalAssignedAddresses)
-	g.totalDeclinedAddresses.AddUint64(subnet.totalDeclinedAddresses)
+	g.totalIPv4Addresses.AddUint64(subnet.totalAddresses)
+	g.totalAssignedIPv4Addresses.AddUint64(subnet.totalAssignedAddresses)
+	g.totalDeclinedIPv4Addresses.AddUint64(subnet.totalDeclinedAddresses)
 }
 
 // Add the IPv6 subnet statistics to the global state.
 func (g *globalStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
-	g.totalNAs.Add(subnet.totalNAs)
-	g.totalAssignedNAs.Add(subnet.totalAssignedNAs)
-	g.totalDeclinedNAs.Add(subnet.totalDeclinedNAs)
-	g.totalPDs.Add(subnet.totalPDs)
-	g.totalAssignedPDs.Add(subnet.totalAssignedPDs)
+	g.totalIPv6Addresses.Add(subnet.totalAddresses)
+	g.totalAssignedIPv6Addresses.Add(subnet.totalAssignedAddresses)
+	g.totalDeclinedIPv6Addresses.Add(subnet.totalDeclinedAddresses)
+	g.totalDelegatedPrefixes.Add(subnet.totalDelegatedPrefixes)
+	g.totalAssignedDelegatedPrefixes.Add(subnet.totalAssignedDelegatedPrefixes)
 }
 
 // General subnet lease statistics.
 // It unifies the IPv4 and IPv6 subnet data.
 type leaseStats interface {
 	getAddressUtilization() float64
-	getPDUtilization() float64
+	getDelegatedPrefixUtilization() float64
 }
 
 // Sum of the subnet statistics from the single shared network.
 type sharedNetworkStats struct {
-	totalAddresses         *storkutil.BigCounter
-	totalAssignedAddresses *storkutil.BigCounter
-	totalPDs               *storkutil.BigCounter
-	totalAssignedPDs       *storkutil.BigCounter
+	totalAddresses                 *storkutil.BigCounter
+	totalAssignedAddresses         *storkutil.BigCounter
+	totalDelegatedPrefixes         *storkutil.BigCounter
+	totalAssignedDelegatedPrefixes *storkutil.BigCounter
 }
 
 // Constructor of the sharedNetworkStats struct with
 // all counters set to zero.
 func newSharedNetworkStats() *sharedNetworkStats {
 	return &sharedNetworkStats{
-		totalAddresses:         storkutil.NewBigCounter(0),
-		totalAssignedAddresses: storkutil.NewBigCounter(0),
-		totalPDs:               storkutil.NewBigCounter(0),
-		totalAssignedPDs:       storkutil.NewBigCounter(0),
+		totalAddresses:                 storkutil.NewBigCounter(0),
+		totalAssignedAddresses:         storkutil.NewBigCounter(0),
+		totalDelegatedPrefixes:         storkutil.NewBigCounter(0),
+		totalAssignedDelegatedPrefixes: storkutil.NewBigCounter(0),
 	}
 }
 
@@ -84,8 +84,8 @@ func (s *sharedNetworkStats) getAddressUtilization() float64 {
 }
 
 // Delegated prefix utilization of the shared network.
-func (s *sharedNetworkStats) getPDUtilization() float64 {
-	return s.totalAssignedPDs.DivideSafeBy(s.totalPDs)
+func (s *sharedNetworkStats) getDelegatedPrefixUtilization() float64 {
+	return s.totalAssignedDelegatedPrefixes.DivideSafeBy(s.totalDelegatedPrefixes)
 }
 
 // Add the IPv4 subnet statistics to the shared network state.
@@ -96,10 +96,10 @@ func (s *sharedNetworkStats) addIPv4Subnet(subnet *subnetIPv4Stats) {
 
 // Add the IPv6 subnet statistics to the shared network state.
 func (s *sharedNetworkStats) addIPv6Subnet(subnet *subnetIPv6Stats) {
-	s.totalAddresses.Add(subnet.totalNAs)
-	s.totalAssignedAddresses.Add(subnet.totalAssignedNAs)
-	s.totalPDs.Add(subnet.totalPDs)
-	s.totalAssignedPDs.Add(subnet.totalAssignedPDs)
+	s.totalAddresses.Add(subnet.totalAddresses)
+	s.totalAssignedAddresses.Add(subnet.totalAssignedAddresses)
+	s.totalDelegatedPrefixes.Add(subnet.totalDelegatedPrefixes)
+	s.totalAssignedDelegatedPrefixes.Add(subnet.totalAssignedDelegatedPrefixes)
 }
 
 // IPv4 statistics retrieved from the single subnet.
@@ -119,34 +119,34 @@ func (s *subnetIPv4Stats) getAddressUtilization() float64 {
 }
 
 // Return the delegated prefix utilization for a single IPv4 subnet.
-// It's always zero because the PD doesn't apply to IPv4.
-func (s *subnetIPv4Stats) getPDUtilization() float64 {
+// It's always zero because the delegated prefix doesn't apply to IPv4.
+func (s *subnetIPv4Stats) getDelegatedPrefixUtilization() float64 {
 	return 0.0
 }
 
 // IPv6 statistics retrieved from the single subnet.
 type subnetIPv6Stats struct {
-	totalNAs         *storkutil.BigCounter
-	totalAssignedNAs *storkutil.BigCounter
-	totalDeclinedNAs *storkutil.BigCounter
-	totalPDs         *storkutil.BigCounter
-	totalAssignedPDs *storkutil.BigCounter
+	totalAddresses                 *storkutil.BigCounter
+	totalAssignedAddresses         *storkutil.BigCounter
+	totalDeclinedAddresses         *storkutil.BigCounter
+	totalDelegatedPrefixes         *storkutil.BigCounter
+	totalAssignedDelegatedPrefixes *storkutil.BigCounter
 }
 
 // Return the IPv6 address utilization for a single IPv6 subnet.
 func (s *subnetIPv6Stats) getAddressUtilization() float64 {
 	// The assigned addresses include the declined ones that aren't reclaimed yet.
-	return s.totalAssignedNAs.DivideSafeBy(s.totalNAs)
+	return s.totalAssignedAddresses.DivideSafeBy(s.totalAddresses)
 }
 
 // Return the delegated prefix utilization for a single IPv6 subnet.
-func (s *subnetIPv6Stats) getPDUtilization() float64 {
-	return s.totalAssignedPDs.DivideSafeBy(s.totalPDs)
+func (s *subnetIPv6Stats) getDelegatedPrefixUtilization() float64 {
+	return s.totalAssignedDelegatedPrefixes.DivideSafeBy(s.totalDelegatedPrefixes)
 }
 
 // Utilization calculator is a helper for calculating the global
-// IPv4 address/NA/PD statistic and utilization per subnet and
-// shared network.
+// IPv4 and IPv6 address, and delegated prefix statistic and utilization
+// per subnet and shared network.
 type utilizationCalculator struct {
 	global             *globalStats
 	sharedNetworks     map[int64]*sharedNetworkStats
@@ -233,13 +233,13 @@ func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool 
 // The resulting addresses counter will be a sum of the addresses returned by Kea for this
 // subnet and the outOfPool counter holding the number of the out-of-pool reservations
 // that Kea does not include in its statistics.
-func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolNAs, outOfPoolPDs uint64) *subnetIPv6Stats {
+func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolTotalAddresses, outOfPoolDelegatedPrefixes uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
-		totalNAs:         sumStatLocalSubnetsIPv6(subnet, "total-nas").AddUint64(outOfPoolNAs),
-		totalAssignedNAs: sumStatLocalSubnetsIPv6(subnet, "assigned-nas"),
-		totalDeclinedNAs: sumStatLocalSubnetsIPv6(subnet, "declined-nas"),
-		totalPDs:         sumStatLocalSubnetsIPv6(subnet, "total-pds").AddUint64(outOfPoolPDs),
-		totalAssignedPDs: sumStatLocalSubnetsIPv6(subnet, "assigned-pds"),
+		totalAddresses:                 sumStatLocalSubnetsIPv6(subnet, "total-nas").AddUint64(outOfPoolTotalAddresses),
+		totalAssignedAddresses:         sumStatLocalSubnetsIPv6(subnet, "assigned-nas"),
+		totalDeclinedAddresses:         sumStatLocalSubnetsIPv6(subnet, "declined-nas"),
+		totalDelegatedPrefixes:         sumStatLocalSubnetsIPv6(subnet, "total-pds").AddUint64(outOfPoolDelegatedPrefixes),
+		totalAssignedDelegatedPrefixes: sumStatLocalSubnetsIPv6(subnet, "assigned-pds"),
 	}
 
 	if subnet.SharedNetworkID != 0 {

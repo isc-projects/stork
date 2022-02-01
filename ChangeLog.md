@@ -1,9 +1,10 @@
 * 197 [bug] slawek
 
-    Fix the utilization calculations using Kea total
-    addresses/NAs/PDs counters that ignore out-of-pool
-    reservations. The missing data are fetched from the
-    Stork database and included during statistic pulling.
+    Fix the utilization calculations for address and delegated
+    prefix statistics returned by the Kea DHCP servers. Stork
+    corrects the calculations by taking into account the
+    out-of-pool reservations that are not returned by the
+    DHCP servers in the statistics.
     (Gitlab #560)
 
 * 196 [func] marcin

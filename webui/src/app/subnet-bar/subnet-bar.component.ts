@@ -63,7 +63,7 @@ export class SubnetBarComponent {
                 lines.push('Declined: ' + stats['declined-addresses'].toLocaleString('en-US'))
             } else {
                 // DHCPv6 stats
-                // NAs
+                // IPv6 addresses
                 if (stats['total-nas'] !== undefined) {
                     let total = stats['total-nas']
                     if (total === -1) {
