@@ -1,6 +1,6 @@
 * 198 [bug] slawek
 
-    Removed the underline on hover the big logo on login page.
+    Removed the underline on hover the Stork logo on the login page.
     (Gitlab #669)
 
 * 197 [bug] slawek
