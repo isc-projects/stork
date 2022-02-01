@@ -370,12 +370,12 @@ func newHostIterator(dbi dbops.DBI, app *dbmodel.App, daemon *dbmodel.Daemon, ag
 // Sends the reservation-get-page command to Kea daemon. If there is an error
 // it is returned. Otherwise, the "from" and "source-index" are updated in the
 // iterator's state. Finally the list of hosts is retrieved and returned.
-func (iterator *hostIterator) sendReservationGetPage() (hosts []keaconfig.Reservation, result int, err error) {
+func (iterator *hostIterator) sendReservationGetPage() ([]keaconfig.Reservation, int, error) {
 	// Depending on the family we should set the service parameter to
 	// dhcp4 or dhcp6.
 	daemons, err := keactrl.NewDaemons(iterator.daemon.Name)
 	if err != nil {
-		return hosts, keactrl.ResponseError, err
+		return []keaconfig.Reservation{}, keactrl.ResponseError, err
 	}
 	// We need to set subnet-id. It requires extracting the local subnet-id
 	// for the given app.
@@ -406,7 +406,7 @@ func (iterator *hostIterator) sendReservationGetPage() (hosts []keaconfig.Reserv
 	// Prepare the command.
 	command, err := keactrl.NewCommand("reservation-get-page", daemons, &arguments)
 	if err != nil {
-		return hosts, keactrl.ResponseError, err
+		return []keaconfig.Reservation{}, keactrl.ResponseError, err
 	}
 
 	commands := []*keactrl.Command{command}
@@ -414,34 +414,34 @@ func (iterator *hostIterator) sendReservationGetPage() (hosts []keaconfig.Reserv
 	ctx := context.Background()
 	respResult, err := iterator.agents.ForwardToKeaOverHTTP(ctx, iterator.app, commands, &response)
 	if err != nil {
-		return hosts, keactrl.ResponseError, err
+		return []keaconfig.Reservation{}, keactrl.ResponseError, err
 	}
 
 	if respResult.Error != nil {
-		return hosts, keactrl.ResponseError, respResult.Error
+		return []keaconfig.Reservation{}, keactrl.ResponseError, respResult.Error
 	}
 
 	if len(respResult.CmdsErrors) > 0 && respResult.CmdsErrors[0] != nil {
-		return hosts, keactrl.ResponseError, respResult.CmdsErrors[0]
+		return []keaconfig.Reservation{}, keactrl.ResponseError, respResult.CmdsErrors[0]
 	}
 
 	if len(response) == 0 {
-		return hosts, keactrl.ResponseError, errors.Errorf("invalid response to reservation-get-page command received")
+		return []keaconfig.Reservation{}, keactrl.ResponseError, errors.Errorf("invalid response to reservation-get-page command received")
 	}
 
 	// An error is likely to be a communication problem between Kea Control
 	// Agent and some other daemon.
 	if response[0].Result == keactrl.ResponseError {
-		return hosts, response[0].Result, errors.Errorf("error returned by Kea in response to reservation-get-page command: %s", response[0].Text)
+		return []keaconfig.Reservation{}, response[0].Result, errors.Errorf("error returned by Kea in response to reservation-get-page command: %s", response[0].Text)
 	}
 
 	// If the command is not supported by this Kea server, simply stop.
 	if response[0].Result == keactrl.ResponseCommandUnsupported {
-		return hosts, response[0].Result, nil
+		return []keaconfig.Reservation{}, response[0].Result, nil
 	}
 
 	if response[0].Arguments == nil {
-		return hosts, response[0].Result, errors.Errorf("response to reservation-get-page command lacks arguments")
+		return []keaconfig.Reservation{}, response[0].Result, errors.Errorf("response to reservation-get-page command lacks arguments")
 	}
 
 	// Response received, update the iterator's state.
@@ -449,8 +449,7 @@ func (iterator *hostIterator) sendReservationGetPage() (hosts []keaconfig.Reserv
 	iterator.sourceIndex = response[0].Arguments.Next.SourceIndex
 
 	// Return hosts to the caller.
-	hosts = response[0].Arguments.Hosts
-	return hosts, response[0].Result, nil
+	return response[0].Arguments.Hosts, response[0].Result, nil
 }
 
 // Returns a pointer to the subnet at the specified position index in the iterator.
