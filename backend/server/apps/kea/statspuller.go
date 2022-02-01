@@ -80,6 +80,10 @@ func (statsPuller *StatsPuller) pullStats() error {
 
 	calculator := newUtilizationCalculator()
 
+	// The total IPv4 and IPv6 addresses statistics returned by Kea exclude
+	// out-of-pool reservations, yielding possibly incorrect utilization.
+	// The utilization can be corrected by including the out-of-pool
+	// reservation counts from the Stork database.
 	outOfPoolCounters, err := dbmodel.CountOutOfPoolAddressReservations(statsPuller.DB)
 	if err != nil {
 		return err
