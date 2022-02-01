@@ -536,7 +536,8 @@ func (iterator *hostIterator) getPageFromHostCmds() (hosts []keaconfig.Reservati
 // Iterates over the reservations pulled from the Kea server and converts them
 // to the host format in Stork. It also associates the hosts with their
 // subnets. The converted hosts are merged into the existing hosts and
-// stored in the database.
+// stored in the database. Note that the function modifies the subnet
+// specified in this function (modifies its host reservations).
 func convertAndUpdateHosts(tx *pg.Tx, daemon *dbmodel.Daemon, subnet *dbmodel.Subnet, reservations []keaconfig.Reservation) (err error) {
 	var hosts []dbmodel.Host
 	for _, reservation := range reservations {
