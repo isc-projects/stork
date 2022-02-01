@@ -173,7 +173,7 @@ func (c *utilizationCalculator) setOutOfPoolAddresses(outOfPoolAddressesPerSubne
 	c.outOfPoolAddresses = outOfPoolAddressesPerSubnet
 }
 
-// The total prefix addresses statistics returned by Kea exclude
+// The total delegated prefixes statistics returned by Kea exclude
 // out-of-pool reservations, yielding possibly incorrect utilization.
 // The utilization can be corrected by including the out-of-pool
 // reservation counts from the Stork database. The argument is a subnet
@@ -232,7 +232,8 @@ func (c *utilizationCalculator) addIPv4Subnet(subnet *dbmodel.Subnet, outOfPool 
 
 // The resulting addresses counter will be a sum of the addresses returned by Kea for this
 // subnet and the outOfPool counter holding the number of the out-of-pool reservations
-// that Kea does not include in its statistics.
+// that Kea does not include in its statistics. The delegated prefixes counter will be
+// calculated similarly.
 func (c *utilizationCalculator) addIPv6Subnet(subnet *dbmodel.Subnet, outOfPoolTotalAddresses, outOfPoolDelegatedPrefixes uint64) *subnetIPv6Stats {
 	stats := &subnetIPv6Stats{
 		totalAddresses:                 sumStatLocalSubnetsIPv6(subnet, "total-nas").AddUint64(outOfPoolTotalAddresses),
