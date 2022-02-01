@@ -1,3 +1,8 @@
+* 198 [bug] slawek
+
+    Removed the underline on hover the big logo on login page.
+    (Gitlab #669)
+
 * 197 [bug] slawek
 
     Fix the utilization calculations for address and delegated
