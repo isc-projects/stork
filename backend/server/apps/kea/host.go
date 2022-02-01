@@ -199,7 +199,7 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 		// Begin new transaction.
 		if tx == nil {
 			if tx, err = puller.DB.Begin(); err != nil {
-				err = errors.WithMessagef(err, "problem with starting transaction for adding hosts from host_cmds hooks library for daemon %d", daemon.ID)
+				err = errors.Wrapf(err, "problem with starting transaction for adding hosts from host_cmds hooks library for daemon %d", daemon.ID)
 				return true, err
 			}
 			defer dbops.RollbackOnError(tx, &err)
@@ -232,7 +232,7 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 	// detected host changes.
 	if tx != nil {
 		if err = tx.Commit(); err != nil {
-			err = errors.WithMessagef(err, "problem with committing transaction adding new hosts from host_cmds hooks library for daemon %d", daemon.ID)
+			err = errors.Wrapf(err, "problem with committing transaction adding new hosts from host_cmds hooks library for daemon %d", daemon.ID)
 			return true, err
 		}
 		_ = puller.ReviewDispatcher.BeginReview(daemon, configreview.DBHostsModified, nil)
