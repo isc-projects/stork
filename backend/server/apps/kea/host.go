@@ -183,12 +183,12 @@ func (puller *HostsPuller) pullFromDaemon(app *dbmodel.App, daemon *dbmodel.Daem
 		// The puller holds traces from the previous attempts to fetch the host
 		// reservations. The traces don't exist when this is the first time
 		// we pull the reservations.
-		if _, ok := puller.traces[daemon.ID]; ok {
+		if trace, ok := puller.traces[daemon.ID]; ok {
 			// Compare the hash created from the received reservations with the
 			// corresponding hash in the saved trace. If they are equal it means
 			// that there was no change in the host reservations since the last
 			// pull.
-			if it.trace.hasEqualHashes(puller.traces[daemon.ID]) {
+			if it.trace.hasEqualHashes(trace) {
 				continue
 			}
 		}
