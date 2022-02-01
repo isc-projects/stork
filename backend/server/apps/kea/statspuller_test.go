@@ -167,7 +167,8 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_ = dbmodel.InitializeStats(db)
+	err := dbmodel.InitializeStats(db)
+	require.NoError(t, err)
 
 	// prepare fake agents
 	keaMock := func(callNo int, cmdResponses []interface{}) {
@@ -365,7 +366,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 		ValType: dbmodel.SettingValTypeInt,
 		Value:   "60",
 	}
-	_, err := db.Model(&setting).Insert()
+	_, err = db.Model(&setting).Insert()
 	require.NoError(t, err)
 
 	// prepare stats puller
