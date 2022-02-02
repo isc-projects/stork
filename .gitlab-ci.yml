@@ -293,7 +293,7 @@ deploy_demo:
     - ssh jenkins@stork.lab.isc.org docker login -u stork-ci -p "${STORK_CI_TOKEN_FOR_PREMIUM_REGISTRY}" "${CI_REGISTRY}"
     - ssh jenkins@stork.lab.isc.org REGISTRY='registry.gitlab.isc.org/isc-private/stork' docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml pull
     # and start demo in the background
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml up -d --no-build
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org REGISTRY='registry.gitlab.isc.org/isc-private/stork' docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml up -d --no-build
     # Restart nginx to make sure it is running.
     - ssh jenkins@stork.lab.isc.org sudo systemctl restart nginx
 
