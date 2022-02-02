@@ -33,6 +33,10 @@ type LocalSubnetStats map[string]interface{}
 // It doesn't use the pointer to receiver type for compatibility with gopg serialization
 // during inserting to the database.
 func (s LocalSubnetStats) MarshalJSON() ([]byte, error) {
+	if s == nil {
+		return json.Marshal(nil)
+	}
+
 	toMarshal := make(map[string]interface{}, len(s))
 
 	for k, v := range s {
@@ -59,6 +63,11 @@ func (s *LocalSubnetStats) UnmarshalJSON(data []byte) error {
 	err := json.Unmarshal(data, &toUnmarshal)
 	if err != nil {
 		return err
+	}
+
+	if toUnmarshal == nil {
+		*s = nil
+		return nil
 	}
 
 	if *s == nil {
