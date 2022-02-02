@@ -1567,13 +1567,29 @@ func TestGetDhcpOverview(t *testing.T) {
 	_, err = dbmodel.AddApp(db, app)
 	require.NoError(t, err)
 
+	err = dbmodel.AddSubnet(db, &dbmodel.Subnet{
+		Prefix: "3001:fed8::/64",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				Stats: nil,
+			},
+			{
+				Stats: dbmodel.LocalSubnetStats{
+					"total-addresses": 0,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
 	// get overview, generally it should be empty
 	params := dhcp.GetDhcpOverviewParams{}
 	rsp := rapi.GetDhcpOverview(ctx, params)
 	require.IsType(t, &dhcp.GetDhcpOverviewOK{}, rsp)
 	okRsp := rsp.(*dhcp.GetDhcpOverviewOK)
 	require.Len(t, okRsp.Payload.Subnets4.Items, 0)
-	require.Len(t, okRsp.Payload.Subnets6.Items, 0)
+	require.Len(t, okRsp.Payload.Subnets6.Items, 1)
+	require.Nil(t, okRsp.Payload.Subnets6.Items[0].LocalSubnets)
 	require.Len(t, okRsp.Payload.SharedNetworks4.Items, 0)
 	require.Len(t, okRsp.Payload.SharedNetworks6.Items, 0)
 	require.Len(t, okRsp.Payload.DhcpDaemons, 1)

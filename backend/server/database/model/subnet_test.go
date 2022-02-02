@@ -962,6 +962,26 @@ func TestSerializeLocalSubnetWithLargeNumbersInStatisticsToJSON(t *testing.T) {
 	), deserialized.Stats["bigIntBelowInt64Bounds"])
 }
 
+// Test that the none stats are serialized as nil.
+func TestSerializeLocalSubnetWithNoneStatsToJSON(t *testing.T) {
+	// Arrange
+	localSubnet := &LocalSubnet{
+		Stats: nil,
+	}
+
+	var deserialized LocalSubnet
+
+	// Act
+	serialized, toJSONErr := json.Marshal(localSubnet)
+	fromJSONErr := json.Unmarshal(serialized, &deserialized)
+
+	// Assert
+	require.NoError(t, toJSONErr)
+	require.NoError(t, fromJSONErr)
+
+	require.Nil(t, deserialized.Stats)
+}
+
 // Benchmark measuring a time to add a single subnet.
 func BenchmarkAddSubnet(b *testing.B) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(b)

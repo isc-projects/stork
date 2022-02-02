@@ -318,6 +318,7 @@ func TestGetSubnets(t *testing.T) {
 	require.Equal(t, a46.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
 	// checking if returned subnet-ids have expected values
 	require.EqualValues(t, 3, okRsp.Payload.Items[0].LocalSubnets[0].ID)
+	require.Nil(t, okRsp.Payload.Items[0].LocalSubnets[0].Stats)
 
 	// get subnets by text '0.150-192.168'
 	text = "0.150-192.168"
@@ -516,5 +517,6 @@ func TestGetSharedNetworks(t *testing.T) {
 	require.Equal(t, a4.Name, okRsp.Payload.Items[0].Subnets[0].LocalSubnets[0].AppName)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].AppID)
 	require.Equal(t, a4.Name, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].AppName)
+	require.Nil(t, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].Stats)
 	require.ElementsMatch(t, []string{"mouse", "frog"}, []string{okRsp.Payload.Items[0].Name, okRsp.Payload.Items[1].Name})
 }

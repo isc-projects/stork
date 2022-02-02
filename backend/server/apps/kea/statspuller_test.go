@@ -343,6 +343,10 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 							{
 								"id": 60,
 								"subnet": "2001:db8:4::/64"
+							},
+							{
+								"id": 70,
+								"subnet": "2001:db8:5::/64"
 							}
 						]
 					}
@@ -429,6 +433,8 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 			require.Equal(t, uint64(math.MaxUint64)-1, sn.Stats["total-pds"])
 			require.Equal(t, uint64(math.MaxUint64)-2, sn.Stats["assigned-pds"])
 			snCnt++
+		case 70:
+			require.Nil(t, sn.Stats)
 		}
 	}
 	require.Equal(t, 6, snCnt)
