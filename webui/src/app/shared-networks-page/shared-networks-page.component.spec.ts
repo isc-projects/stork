@@ -46,40 +46,73 @@ describe('SharedNetworksPageComponent', () => {
     )
 
     beforeEach(() => {
-        const fakeResponse: any = {
-            items: [
-                {
-                    name: 'frog',
-                    subnets: [
-                        {
-                            clientClass: 'class-00-00',
-                            id: 5,
-                            localSubnets: [
-                                {
-                                    appId: 27,
-                                    appName: 'kea@localhost',
-                                    id: 1,
-                                    machineAddress: 'localhost',
-                                    machineHostname: 'lv-pc',
-                                    stats: {
-                                        'assigned-addresses':
-                                            '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
-                                        'total-addresses':
-                                            '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890',
-                                        'declined-addresses': '-2',
+        const fakeResponses: any = [
+            {
+                items: [
+                    {
+                        name: 'frog',
+                        subnets: [
+                            {
+                                clientClass: 'class-00-00',
+                                id: 5,
+                                localSubnets: [
+                                    {
+                                        appId: 27,
+                                        appName: 'kea@localhost',
+                                        id: 1,
+                                        machineAddress: 'localhost',
+                                        machineHostname: 'lv-pc',
+                                        stats: {
+                                            'assigned-addresses':
+                                                '12345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                                            'total-addresses':
+                                                '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890',
+                                            'declined-addresses': '-2',
+                                        },
+                                        statsCollectedAt: '2022-01-19T12:10:22.513Z',
                                     },
-                                    statsCollectedAt: '2022-01-19T12:10:22.513Z',
-                                },
-                            ],
-                            pools: ['1.0.0.4-1.0.255.254'],
-                            subnet: '1.0.0.0/16',
-                        },
-                    ],
-                },
-            ],
-            total: 10496,
-        }
-        spyOn(dhcpService, 'getSharedNetworks').and.returnValue(of(fakeResponse))
+                                ],
+                                pools: ['1.0.0.4-1.0.255.254'],
+                                subnet: '1.0.0.0/16',
+                            },
+                        ],
+                    },
+                ],
+                total: 10496,
+            },
+            {
+                items: [
+                    {
+                        name: 'frog',
+                        subnets: [
+                            {
+                                clientClass: 'class-00-00',
+                                id: 5,
+                                localSubnets: [
+                                    {
+                                        appId: 27,
+                                        appName: 'kea@localhost',
+                                        id: 1,
+                                        machineAddress: 'localhost',
+                                        machineHostname: 'lv-pc',
+                                        statsCollectedAt: '1970-01-01T12:00:00.0Z',
+                                    },
+                                ],
+                                pools: ['1.0.0.4-1.0.255.254'],
+                                subnet: '1.0.0.0/16',
+                            },
+                        ],
+                    },
+                ],
+                total: 10496,
+            }
+        ]
+        spyOn(dhcpService, 'getSharedNetworks').and.returnValues(
+            // The shared networks are fetched twice before the unit test starts.
+            of(fakeResponses[0]),
+            of(fakeResponses[0]),
+            of(fakeResponses[1])
+        )
 
         fixture = TestBed.createComponent(SharedNetworksPageComponent)
         component = fixture.componentInstance
@@ -92,7 +125,6 @@ describe('SharedNetworksPageComponent', () => {
 
     it('should convert statistics to big integers', async () => {
         // Act
-        component.loadNetworks({})
         await fixture.whenStable()
 
         // Assert
@@ -106,5 +138,15 @@ describe('SharedNetworksPageComponent', () => {
             )
         )
         expect(stats['declined-addresses']).toBe(BigInt('-2'))
+    })
+
+    it('should not fail on empty statistics', async () => {
+        // Act
+        component.loadNetworks({})
+        await fixture.whenStable()
+
+        // Assert
+        expect(component.networks[0].subnets[0].localSubnets[0].stats).toBeUndefined()
+        // No throw
     })
 })
