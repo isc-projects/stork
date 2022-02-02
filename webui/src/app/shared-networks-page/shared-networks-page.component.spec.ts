@@ -105,7 +105,7 @@ describe('SharedNetworksPageComponent', () => {
                     },
                 ],
                 total: 10496,
-            }
+            },
         ]
         spyOn(dhcpService, 'getSharedNetworks').and.returnValues(
             // The shared networks are fetched twice before the unit test starts.
