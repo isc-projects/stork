@@ -13,7 +13,6 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/services"
-	storkutil "isc.org/stork/util"
 )
 
 // Get daemon config. Only Kea daemon supported.
@@ -52,7 +51,7 @@ func (r *RestAPI) GetDaemonConfig(ctx context.Context, params services.GetDaemon
 
 	_, dbUser := r.SessionManager.Logged(ctx)
 	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
-		storkutil.HideSensitiveData((*map[string]interface{})(dbDaemon.KeaDaemon.Config))
+		dbDaemon.KeaDaemon.Config.HideSensitiveData()
 	}
 
 	rsp := services.NewGetDaemonConfigOK().WithPayload(dbDaemon.KeaDaemon.Config)

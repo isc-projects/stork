@@ -1,11 +1,29 @@
 package dbmodel
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/go-pg/pg/v10"
 	require "github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
+	dbtest "isc.org/stork/server/database/test"
 )
+
+// Test that KeaConfig is constructed properly.
+func TestNewKeaConfig(t *testing.T) {
+	// Act
+	configNil := NewKeaConfig(nil)
+	configEmpty := NewKeaConfig(&map[string]interface{}{})
+	configFilled := NewKeaConfig(&map[string]interface{}{"Dhcp4": "foo"})
+	root, ok := configFilled.GetRootName()
+
+	// Assert
+	require.Nil(t, configNil)
+	require.EqualValues(t, map[string]interface{}{}, *configEmpty.Map)
+	require.True(t, ok)
+	require.EqualValues(t, "Dhcp4", root)
+}
 
 // Verifies that the shared network instance can be created by parsing
 // Kea configuration.
@@ -222,4 +240,236 @@ func TestPopulateIndexedSubnetsForApp(t *testing.T) {
 	require.Len(t, indexedSubnets.ByPrefix, 2)
 	require.Contains(t, indexedSubnets.ByPrefix, "192.0.2.0/24")
 	require.Contains(t, indexedSubnets.ByPrefix, "10.0.0.0/8")
+}
+
+// Test that KeaConfig and keaconfig.Map are parsed the same for empty string.
+func TestKeaConfigIsAsKeaConfigMapForEmptyString(t *testing.T) {
+	// Arrange
+	json := ""
+
+	// Act
+	keaMap, errMap := keaconfig.NewFromJSON(json)
+	keaConfig, errConfig := NewKeaConfigFromJSON(json)
+
+	// Assert
+	require.Error(t, errMap)
+	require.Error(t, errConfig)
+
+	require.Nil(t, keaMap)
+	require.Nil(t, keaConfig)
+}
+
+// Test that KeaConfig and keaconfig.Map are parsed the same for empty JSON.
+func TestKeaConfigIsAsKeaConfigMapForEmptyJSON(t *testing.T) {
+	// Arrange
+	json := "{}"
+
+	// Act
+	keaMap, errMap := keaconfig.NewFromJSON(json)
+	keaConfig, errConfig := NewKeaConfigFromJSON(json)
+
+	// Assert
+	require.NoError(t, errMap)
+	require.NoError(t, errConfig)
+
+	require.EqualValues(t, keaMap, keaConfig.Map)
+}
+
+// Test that KeaConfig and keaconfig.Map are parsed the same for non-map JSON.
+func TestKeaConfigIsAsKeaConfigMapNonMapJSON(t *testing.T) {
+	// Arrange
+	json := "foo"
+
+	// Act
+	keaMap, errMap := keaconfig.NewFromJSON(json)
+	keaConfig, errConfig := NewKeaConfigFromJSON(json)
+
+	// Assert
+	require.Error(t, errMap)
+	require.Error(t, errConfig)
+
+	require.Nil(t, keaMap)
+	require.Nil(t, keaConfig)
+}
+
+// Test that KeaConfig and keaconfig.Map are parsed the same for NULL from database.
+func TestKeaConfigIsAsKeaConfigMapForNullFromDatabase(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	var resMap struct {
+		Config *keaconfig.Map
+	}
+
+	var resConfig struct {
+		Config *KeaConfig
+	}
+
+	query := "SELECT NULL::jsonb AS config"
+
+	// Act
+	_, errMap := db.Query(&resMap, query)
+	_, errConfig := db.Query(&resConfig, query)
+
+	// Assert
+	require.NoError(t, errMap)
+	require.NoError(t, errConfig)
+
+	require.Nil(t, resMap.Config)
+	require.Nil(t, resConfig.Config)
+}
+
+// Test that KeaConfig and keaconfig.Map are parsed the same for NULL from database.
+func TestKeaConfigIsAsKeaConfigMapForEmptyStringFromDatabase(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	var resMap struct {
+		Config *keaconfig.Map
+	}
+
+	var resConfig struct {
+		Config *KeaConfig
+	}
+
+	query := "SELECT ''::jsonb AS config"
+
+	// Act
+	_, errMap := db.Query(&resMap, query)
+	_, errConfig := db.Query(&resConfig, query)
+
+	// Assert
+	var pgErrMap pg.Error
+	var pgErrConfig pg.Error
+
+	require.ErrorAs(t, errMap, &pgErrMap)
+	require.ErrorAs(t, errConfig, &pgErrConfig)
+
+	// 22P02 - invalid input syntax for type json
+	require.EqualValues(t, "22P02", pgErrMap.Field('C'))
+	require.EqualValues(t, "22P02", pgErrConfig.Field('C'))
+}
+
+// Test that KeaConfig and keaconfig.Map are parsed the same for empty JSON from database.
+func TestKeaConfigIsAsKeaConfigMapForEmptyJSONFromDatabase(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	var resMap struct {
+		Config *keaconfig.Map
+	}
+
+	var resConfig struct {
+		Config *KeaConfig
+	}
+
+	query := "SELECT '{}'::jsonb AS config"
+
+	// Act
+	_, errMap := db.Query(&resMap, query)
+	_, errConfig := db.Query(&resConfig, query)
+
+	// Assert
+	require.NoError(t, errMap)
+	require.NoError(t, errConfig)
+	require.EqualValues(t, resMap.Config, resConfig.Config.Map)
+}
+
+// Test that KeaConfig and keaconfig.Map are parsed the same for JSON
+// from a database containing single quote in value.
+func TestKeaConfigIsAsKeaConfigMapForJSONWithSingleQuoteFromDatabase(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	var resMap struct {
+		Config *keaconfig.Map
+	}
+
+	var resConfig struct {
+		Config *KeaConfig
+	}
+
+	query := `SELECT '{ "foo": "b''r" }'::jsonb AS config`
+
+	// Act
+	_, errMap := db.Query(&resMap, query)
+	_, errConfig := db.Query(&resConfig, query)
+
+	// Assert
+	require.NoError(t, errMap)
+	require.NoError(t, errConfig)
+	require.EqualValues(t, resMap.Config, resConfig.Config.Map)
+	rawConfig := *(*map[string]interface{})(resMap.Config)
+	require.EqualValues(t, "b'r", rawConfig["foo"])
+}
+
+// Test that KeaConfig and keaconfig.Map are storing nil in the database as NULL.
+func TestKeaConfigIsAsKeaConfigMapForStoringNilInDatabase(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_, err := db.Exec("CREATE TABLE jsons (id serial PRIMARY KEY, config jsonb)")
+	require.NoError(t, err)
+
+	var resMap struct {
+		Config *keaconfig.Map
+	}
+
+	var resConfig struct {
+		Config *KeaConfig
+	}
+
+	var resCount struct {
+		Count int64
+	}
+
+	query := `SELECT COUNT(*) FROM jsons GROUP BY config LIMIT 1`
+
+	// Act
+	_, errInsertMap := db.Model(&resMap).Table("jsons").Insert()
+	_, errInsertConfig := db.Model(&resConfig).Table("jsons").Insert()
+	_, errCount := db.QueryOne(&resCount, query)
+
+	// Assert
+	require.NoError(t, errInsertMap)
+	require.NoError(t, errInsertConfig)
+	require.NoError(t, errCount)
+
+	require.Nil(t, resMap.Config)
+	require.Nil(t, resConfig.Config)
+	require.EqualValues(t, 2, resCount.Count)
+}
+
+// Test store a huge Kea configuration in the database.
+func TestStoreHugeKeaConfigInDatabase(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// 50MB
+	hugeValue := strings.Repeat("a", 50*1024*1024)
+	rawConfig := map[string]interface{}{"Dhcp4": hugeValue}
+	keaConfig := NewKeaConfig(&rawConfig)
+
+	machine := &Machine{
+		Address:   "localhost",
+		AgentPort: 3000,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	daemon := NewKeaDaemon("dhcp4", true)
+	err = daemon.SetConfig(keaConfig)
+	require.NoError(t, err)
+
+	_, err = AddApp(db, &App{
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Daemons:   []*Daemon{daemon},
+	})
+	require.NoError(t, err)
 }

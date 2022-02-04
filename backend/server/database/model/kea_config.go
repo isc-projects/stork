@@ -1,26 +1,129 @@
 package dbmodel
 
 import (
+	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
 
+	"github.com/go-pg/pg/v10/types"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	keaconfig "isc.org/stork/appcfg/kea"
 )
 
-type KeaConfig = keaconfig.Map
+// Workaround wrapper for go-pg limitations with huge  JSONs.
+// The go-pg 10 stores the serialized JSONs in buffers from
+// github.com/vmihailenco/bufpool library. This library has a
+// limitation for buffer size up to 32MB. Kea Daemon Configuration
+// with 10758 subnets and 10 reservations per each exceed this limit.
+//
+// It isn't possible to replace or patch this mechanism, because
+// it is used deeply in the internal part of Go-PG. But it is possible
+// to workaround. This wrapper implements a custom serializer for Kea
+// Config. It uses a standard JSON parser as the go-pg, but avoid using
+// a bufpool.
+//
+// The behavior of this type should be the same as keaconfig.Map.
+// It means that the constructors accept the same arguments and
+// return the same output. All methods are defined for keaconfig.Map
+// works for KeaConfig. The only difference is that the KeaConfig
+// cannot be cast directly to map[string]interface{}. The recommended
+// way is to avoid casting these types and use the methods and polymorphism
+// power.
+//
+// Note that the bun library doesn't use bufpool. After migration to bun
+// the KeaConfig structure should be replaced with alias to keaconfig.Map.
+type KeaConfig struct {
+	*keaconfig.Map
+}
+
+// KeaConfig doesn't implement a custom JSON marshaler but only calls
+// the marshaling on the internal keaconfig.Map.
+var _ json.Marshaler = (*KeaConfig)(nil)
+
+// KeaConfig doesn't implement a custom JSON unmarshaler but only calls
+// the unmarshaling on the internal keaconfig.Map.
+var _ json.Unmarshaler = (*KeaConfig)(nil)
+
+// The database serializer that workarounds the bufpool.
+// Serialize the Kea config to JSON using standard JSON
+// marshaler and escape the single quotes.
+var _ types.ValueAppender = (*KeaConfig)(nil)
+
+// The database deserializer that workarounds the bufpool.
+// Deserialize the Kea config to JSON using standard JSON
+// unmarshaler and unescape the single quotes.
+var _ types.ValueScanner = (*KeaConfig)(nil)
+
+// Marshal the internal map to JSON.
+func (c *KeaConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.Map)
+}
+
+// Unmarshal the internal map from JSON.
+func (c *KeaConfig) UnmarshalJSON(bytes []byte) error {
+	if c.Map == nil {
+		c.Map = keaconfig.New(&map[string]interface{}{})
+	}
+	return json.Unmarshal(bytes, c.Map)
+}
+
+// Implements the go-pg serializer. It marshals the config
+// to JSON and escapes all single quotes.
+func (c *KeaConfig) AppendValue(b []byte, quote int) ([]byte, error) {
+	if quote == 1 {
+		b = append(b, '\'')
+	}
+
+	jsonBytes, err := json.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonBytes = bytes.ReplaceAll(jsonBytes, []byte{'\''}, []byte{'\'', '\''})
+
+	b = append(b, jsonBytes...)
+	if quote == 1 {
+		b = append(b, '\'')
+	}
+	return b, nil
+}
+
+// Implements the go-pg deserializer. It unescapes all single
+// quotes unmarshals the config from JSON.
+func (c *KeaConfig) ScanValue(rd types.Reader, n int) error {
+	if n <= 0 {
+		return nil
+	}
+
+	jsonBytes, err := rd.ReadFullTemp()
+	if err != nil {
+		return err
+	}
+
+	jsonBytes = bytes.ReplaceAll(jsonBytes, []byte{'\'', '\''}, []byte{'\''})
+
+	return json.Unmarshal(jsonBytes, c)
+}
 
 // Creates new instance from the pointer to the map of interfaces.
 func NewKeaConfig(rawCfg *map[string]interface{}) *KeaConfig {
-	return keaconfig.New(rawCfg)
+	if rawCfg == nil {
+		return nil
+	}
+	return &KeaConfig{Map: keaconfig.New(rawCfg)}
 }
 
 // Create new instance from the configuration provided as JSON text.
 func NewKeaConfigFromJSON(rawCfg string) (*KeaConfig, error) {
-	return keaconfig.NewFromJSON(rawCfg)
+	keaConfigMap, err := keaconfig.NewFromJSON(rawCfg)
+	if err != nil {
+		return nil, err
+	}
+	return &KeaConfig{Map: keaConfigMap}, nil
 }
 
 // Converts a structure holding subnet in Kea format to Stork representation

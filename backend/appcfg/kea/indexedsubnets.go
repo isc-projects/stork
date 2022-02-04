@@ -2,6 +2,7 @@ package keaconfig
 
 import (
 	errors "github.com/pkg/errors"
+	storkutil "isc.org/stork/util"
 )
 
 // Structure representing a container for subnets. The container allows
@@ -10,20 +11,20 @@ import (
 // subnets are stored as a slice. New indexes can be added as needed
 // in the future.
 type IndexedSubnets struct {
-	Config   *Map
+	Config   TopConfigReader
 	ByPrefix map[string]map[string]interface{}
 }
 
 // Creates new instance of the IndexedSubnets structure. It takes a raw
 // Kea configuration as an input, iterates over the shared networks and
 // global subnets and builds appropriate indexes.
-func NewIndexedSubnets(rawConfig *Map) *IndexedSubnets {
-	if rawConfig == nil {
+func NewIndexedSubnets(config TopConfigReader) *IndexedSubnets {
+	if storkutil.IsNilInterface(config) {
 		panic("provided DHCP configuration must not be nil when indexing subnets")
 	}
 
 	return &IndexedSubnets{
-		Config: rawConfig,
+		Config: config,
 	}
 }
 

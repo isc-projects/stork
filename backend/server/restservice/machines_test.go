@@ -20,6 +20,7 @@ import (
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/certs"
+	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
@@ -1970,6 +1971,26 @@ func TestGetKeaStorages(t *testing.T) {
 			require.Equal(t, "localhost", d.Host)
 		}
 	}
+}
+
+// Test that converting app with nil Kea config doesn't cause panic.
+func TestAppToRestAPIForNilKeaConfig(t *testing.T) {
+	// Arrange
+	app := &dbmodel.App{
+		MachineID: 1,
+		Type:      dbmodel.AppTypeKea,
+		Daemons: []*dbmodel.Daemon{
+			dbmodel.NewKeaDaemon("dhcp4", true),
+		},
+	}
+	rapi, err := NewRestAPI(&dbops.DatabaseSettings{})
+	require.NoError(t, err)
+
+	// Act
+	restApp := rapi.appToRestAPI(app)
+
+	// Assert
+	require.NotNil(t, restApp)
 }
 
 // This test verifies that the lease database configuration storing the

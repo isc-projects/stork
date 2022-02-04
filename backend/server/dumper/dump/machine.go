@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	dbmodel "isc.org/stork/server/database/model"
-	storkutil "isc.org/stork/util"
 )
 
 // The dump of the machine database entry.
@@ -34,7 +33,7 @@ func (d *MachineDump) Execute() error {
 	for _, app := range d.machine.Apps {
 		for _, daemon := range app.Daemons {
 			if daemon.KeaDaemon != nil && daemon.KeaDaemon.Config != nil {
-				storkutil.HideSensitiveData((*map[string]interface{})(daemon.KeaDaemon.Config))
+				daemon.KeaDaemon.Config.HideSensitiveData()
 			}
 		}
 	}

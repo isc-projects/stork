@@ -713,7 +713,7 @@ func TestSetConfig(t *testing.T) {
 	config := `{
         "Dhcp4": {}
     }`
-	parsedConfig, err := keaconfig.NewFromJSON(config)
+	parsedConfig, err := NewKeaConfigFromJSON(config)
 	require.NoError(t, err)
 
 	err = daemon.SetConfig(parsedConfig)

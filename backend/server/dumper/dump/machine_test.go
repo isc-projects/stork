@@ -138,7 +138,7 @@ func TestMachineDumpExecuteHideSecrets(t *testing.T) {
 	// Assert
 	app := machine.Apps[0]
 	daemon := app.Daemons[0]
-	config := *(*map[string]interface{})(daemon.KeaDaemon.Config)
+	config := *(*map[string]interface{})(daemon.KeaDaemon.Config.Map)
 	secret := (config["Dhcp4"]).(map[string]interface{})["secret"]
 	require.Nil(t, secret)
 	require.Empty(t, machine.AgentToken)

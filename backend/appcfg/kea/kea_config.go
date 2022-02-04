@@ -6,6 +6,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	storkutil "isc.org/stork/util"
 	"muzzammil.xyz/jsonc"
 )
 
@@ -18,6 +19,27 @@ const (
 // Kea daemon configuration map. It comprises a set of functions
 // which retrieve complex data structures from the configuration.
 type Map map[string]interface{}
+
+// Groups the functions used to read data from the top Kea config.
+type TopConfigReader interface {
+	// Returns name of the root configuration node, e.g. Dhcp4.
+	// The second returned value designates whether the root node
+	// name was successfully found or not.
+	GetRootName() (string, bool)
+	// Returns a list found at the top level of the configuration under
+	// a given name. If the given parameter does not exist or it is
+	// not a list, the ok value returned is set to false.
+	GetTopLevelList(name string) (list []interface{}, ok bool)
+	// Returns a map found at the top level of the configuration under a
+	// given name. If the given parameter does not exist or it is not
+	// a map, the ok value returned is set to false.
+	GetTopLevelMap(name string) (m map[string]interface{}, ok bool)
+}
+
+// Reads the databases from the configuration.
+type DatabaseReader interface {
+	GetAllDatabases() Databases
+}
 
 // Structure representing a configuration of the single hooks library.
 type HooksLibrary struct {
@@ -344,7 +366,7 @@ func getDatabases(scope map[string]interface{}, name string) (databases []Databa
 func (c *Map) GetAllDatabases() (databases Databases) {
 	rootNode, ok := c.getRootNode()
 	if !ok {
-		return databases
+		return
 	}
 	// lease-database
 	databases.Lease = getDatabase(rootNode, "lease-database")
@@ -437,6 +459,11 @@ func (c *Map) GetGlobalReservationModes() *ReservationModes {
 	_ = decode(rootNode, modes)
 
 	return modes
+}
+
+// Hide any sensitive data in the config.
+func (c *Map) HideSensitiveData() {
+	storkutil.HideSensitiveData((*map[string]interface{})(c))
 }
 
 // Convenience function used to check if a given host reservation

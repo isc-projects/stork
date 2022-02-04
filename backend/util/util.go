@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -331,4 +332,10 @@ func FormatNoun(count int64, noun, postfix string) string {
 		formatted += postfix
 	}
 	return formatted
+}
+
+// Check if the interface is nil - (*T)(nil).
+// Source: https://stackoverflow.com/a/50487104 .
+func IsNilInterface(obj interface{}) bool {
+	return obj == nil || reflect.ValueOf(obj).Kind() == reflect.Ptr && reflect.ValueOf(obj).IsNil()
 }
