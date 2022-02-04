@@ -1,3 +1,8 @@
+* 199 [build] marcin
+
+    Updated Angular to version 13.2.2.
+    (Gitlab #690)
+
 Stork 1.1.0 released on 2022-02-02.
 
 * 198 [bug] slawek
