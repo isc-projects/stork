@@ -30,7 +30,6 @@ export class LoadingService {
         }
         this.counter -= 1
         if (this.counter < 0) {
-            console.info('negative counter', this.counter)
             this.counter = 0
         }
 

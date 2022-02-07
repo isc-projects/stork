@@ -145,7 +145,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                     for (let idx = 0; idx < this.openedApps.length; idx++) {
                         const s = this.openedApps[idx].app
                         if (s.id === appId) {
-                            console.info('found opened app', idx)
                             this.switchToTab(idx + 1)
                             found = true
                         }
@@ -156,7 +155,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
                     if (!found) {
                         for (const s of this.apps) {
                             if (s.id === appId) {
-                                console.info('found app in the list, opening it')
                                 this.addAppTab(s)
                                 this.switchToTab(this.tabs.length - 1)
                                 found = true

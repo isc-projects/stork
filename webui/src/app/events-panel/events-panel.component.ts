@@ -317,7 +317,6 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
             'message',
             (ev) => {
                 const data = JSON.parse(ev.data)
-                console.info('sse data', data)
                 this.eventHandler(data)
                 // when events are coming then reset error counter
                 this.errorCnt = 0

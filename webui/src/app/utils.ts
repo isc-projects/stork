@@ -111,9 +111,7 @@ export function getGrafanaUrl(grafanaBaseUrl, name, subnet, instance) {
         if (instance) {
             instance += ':9547'
         }
-        console.info('grafanaBaseUrl', grafanaBaseUrl)
         const b = grafanaBaseUrl.replace(/\/+$/, '')
-        console.info(b)
         url = new URL('/d/hRf18FvWz/', b)
     } else {
         return ''
