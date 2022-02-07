@@ -1,6 +1,6 @@
 * 199 [build] marcin
 
-    Updated Angular to version 13.2.2.
+    Updated Angular to version 13.2.2 and PrimeNG to version 13.1.0.
     (Gitlab #690)
 
 Stork 1.1.0 released on 2022-02-02.
