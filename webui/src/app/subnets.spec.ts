@@ -135,5 +135,6 @@ describe('subnets', () => {
 
         // Assert
         // No throw
+        expect().nothing()
     })
 })

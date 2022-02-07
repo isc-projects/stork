@@ -52,7 +52,7 @@ describe('GlobalSearchComponent', () => {
         }
 
         // Show search result box, by default it is hidden
-        component.searchResultsBox.show({})
+        component.searchResultsBox.show(new Event('click'), fixture.nativeElement)
         await fixture.whenRenderingDone()
         fixture.detectChanges()
 

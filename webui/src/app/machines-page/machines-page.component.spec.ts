@@ -237,15 +237,7 @@ describe('MachinesPageComponent', () => {
         const menuButton = fixture.debugElement.query(By.css('#show-machines-menu'))
         expect(menuButton).not.toBeNull()
 
-        // This call throws
-        // ERROR: 'ERROR', TypeError: Cannot read properties of null (reading 'offsetHeight')
-        // from the PrimeNG menu code but the test pass through.
-        menuButton.triggerEventHandler(
-            'click',
-            new PointerEvent('click', {
-                relatedTarget: menuButton.nativeElement,
-            })
-        )
+        menuButton.triggerEventHandler('click', { currentTarget: menuButton.nativeElement })
         await fixture.whenStable()
         await fixture.whenRenderingDone()
         fixture.detectChanges()
