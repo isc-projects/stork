@@ -167,7 +167,6 @@ export class AppsPageComponent implements OnInit, OnDestroy {
 
                     // if app is not loaded in list fetch it individually
                     if (!found) {
-                        console.info('fetching app')
                         this.servicesApi
                             .getApp(appId)
                             .toPromise()

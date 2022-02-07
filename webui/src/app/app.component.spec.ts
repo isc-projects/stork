@@ -84,10 +84,8 @@ describe('AppComponent', () => {
 
             // Check if the menu is hidden or visible. See the expHiddenItems list above.
             if (expHiddenItems.includes(name)) {
-                console.log('Checking existence of ' + name + ' hidden menu item:' + m.visible)
                 expect(m.visible === true).toBeFalsy()
             } else {
-                console.log('Checking existence of ' + name + ' visible menu item:' + m.visible)
                 // If defined, it must be visible. If not defined, the default is it's visible.
                 if ('visible' in m) {
                     expect(m.visible === true).toBeTruthy()
