@@ -98,7 +98,7 @@ func (c *KeaConfig) AppendValue(b []byte, quote int) ([]byte, error) {
 }
 
 // Implements the go-pg deserializer. It unescapes all single
-// quotes unmarshals the config from JSON.
+// quotes and unmarshals the config from JSON.
 func (c *KeaConfig) ScanValue(rd types.Reader, n int) error {
 	if n <= 0 {
 		return nil
