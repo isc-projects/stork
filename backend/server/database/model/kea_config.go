@@ -74,6 +74,11 @@ func (c *KeaConfig) UnmarshalJSON(bytes []byte) error {
 // Implements the go-pg serializer. It marshals the config
 // to JSON and escapes all single quotes.
 func (c *KeaConfig) AppendValue(b []byte, quote int) ([]byte, error) {
+	if c == nil {
+		b = append(b, []byte("NULL")...)
+		return b, nil
+	}
+
 	if quote == 1 {
 		b = append(b, '\'')
 	}

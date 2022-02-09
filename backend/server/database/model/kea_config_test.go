@@ -8,6 +8,7 @@ import (
 	require "github.com/stretchr/testify/require"
 	keaconfig "isc.org/stork/appcfg/kea"
 	dbtest "isc.org/stork/server/database/test"
+	storktest "isc.org/stork/server/test"
 )
 
 // Test that KeaConfig is constructed properly.
@@ -242,6 +243,60 @@ func TestPopulateIndexedSubnetsForApp(t *testing.T) {
 	require.Contains(t, indexedSubnets.ByPrefix, "10.0.0.0/8")
 }
 
+// Test that appended value is properly scanned.
+func TestKeaConfigAppendAndScanValue(t *testing.T) {
+	// Arrange
+	testCases := []struct {
+		label string
+		value map[string]interface{}
+	}{
+		{
+			label: "nil",
+			value: nil,
+		},
+		{
+			label: "empty map",
+			value: map[string]interface{}{},
+		},
+		{
+			label: "flat map",
+			value: map[string]interface{}{
+				"foo": "foo",
+				"bar": float64(42),
+				"baz": true,
+			},
+		},
+		{
+			label: "nested map",
+			value: map[string]interface{}{
+				"foo": map[string]interface{}{
+					"bar": map[string]interface{}{
+						"baz": map[string]interface{}{},
+					},
+				},
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.label, func(t *testing.T) {
+			inputConfig := NewKeaConfig(&testCase.value)
+			var outputConfig KeaConfig
+			// Act
+			bytes, appendErr := inputConfig.AppendValue([]byte{}, 0)
+			scanErr := outputConfig.ScanValue(
+				storktest.NewPoolReaderMock(bytes, appendErr),
+				len(bytes),
+			)
+
+			// Assert
+			require.NoError(t, appendErr)
+			require.NoError(t, scanErr)
+			require.EqualValues(t, inputConfig.Map, outputConfig.Map)
+		})
+	}
+}
+
 // Test that KeaConfig and keaconfig.Map are parsed the same for empty string.
 func TestKeaConfigIsAsKeaConfigMapForEmptyString(t *testing.T) {
 	// Arrange
@@ -320,7 +375,7 @@ func TestKeaConfigIsAsKeaConfigMapForNullFromDatabase(t *testing.T) {
 	require.Nil(t, resConfig.Config)
 }
 
-// Test that KeaConfig and keaconfig.Map are parsed the same for NULL from database.
+// Test that KeaConfig and keaconfig.Map are parsed the same for empty string from the database.
 func TestKeaConfigIsAsKeaConfigMapForEmptyStringFromDatabase(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -352,7 +407,7 @@ func TestKeaConfigIsAsKeaConfigMapForEmptyStringFromDatabase(t *testing.T) {
 	require.EqualValues(t, "22P02", pgErrConfig.Field('C'))
 }
 
-// Test that KeaConfig and keaconfig.Map are parsed the same for empty JSON from database.
+// Test that KeaConfig and keaconfig.Map are parsed the same for empty JSON from the database.
 func TestKeaConfigIsAsKeaConfigMapForEmptyJSONFromDatabase(t *testing.T) {
 	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -407,44 +462,6 @@ func TestKeaConfigIsAsKeaConfigMapForJSONWithSingleQuoteFromDatabase(t *testing.
 	require.EqualValues(t, "b'r", rawConfig["foo"])
 }
 
-// Test that KeaConfig and keaconfig.Map are storing nil in the database as NULL.
-func TestKeaConfigIsAsKeaConfigMapForStoringNilInDatabase(t *testing.T) {
-	// Arrange
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	_, err := db.Exec("CREATE TABLE jsons (id serial PRIMARY KEY, config jsonb)")
-	require.NoError(t, err)
-
-	var resMap struct {
-		Config *keaconfig.Map
-	}
-
-	var resConfig struct {
-		Config *KeaConfig
-	}
-
-	var resCount struct {
-		Count int64
-	}
-
-	query := `SELECT COUNT(*) FROM jsons GROUP BY config LIMIT 1`
-
-	// Act
-	_, errInsertMap := db.Model(&resMap).Table("jsons").Insert()
-	_, errInsertConfig := db.Model(&resConfig).Table("jsons").Insert()
-	_, errCount := db.QueryOne(&resCount, query)
-
-	// Assert
-	require.NoError(t, errInsertMap)
-	require.NoError(t, errInsertConfig)
-	require.NoError(t, errCount)
-
-	require.Nil(t, resMap.Config)
-	require.Nil(t, resConfig.Config)
-	require.EqualValues(t, 2, resCount.Count)
-}
-
 // Test store a huge Kea configuration in the database.
 func TestStoreHugeKeaConfigInDatabase(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -472,4 +489,32 @@ func TestStoreHugeKeaConfigInDatabase(t *testing.T) {
 		Daemons:   []*Daemon{daemon},
 	})
 	require.NoError(t, err)
+}
+
+// Test that nil value is stored as a database NULL (not JSON null) in the database.
+func TestStoreNilValueInDatabase(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		Address:   "localhost",
+		AgentPort: 3000,
+	}
+	_ = AddMachine(db, machine)
+	daemon := NewKeaDaemon("dhcp4", true)
+	daemon.KeaDaemon.Config = nil
+
+	_, _ = AddApp(db, &App{
+		MachineID: machine.ID,
+		Type:      AppTypeKea,
+		Daemons:   []*Daemon{daemon},
+	})
+
+	// Act
+	dbDaemon, err := GetDaemonByID(db, daemon.ID)
+
+	// Assert
+	require.NoError(t, err)
+	require.Nil(t, dbDaemon.KeaDaemon.Config)
 }
