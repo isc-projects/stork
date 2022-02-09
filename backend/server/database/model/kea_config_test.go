@@ -484,12 +484,17 @@ func TestStoreHugeKeaConfigInDatabase(t *testing.T) {
 	err = daemon.SetConfig(keaConfig)
 	require.NoError(t, err)
 
-	_, err = AddApp(db, &App{
+	addedDaemons, err := AddApp(db, &App{
 		MachineID: machine.ID,
 		Type:      AppTypeKea,
 		Daemons:   []*Daemon{daemon},
 	})
 	require.NoError(t, err)
+
+	addedDaemonID := addedDaemons[0].ID
+	addedDaemon, err := GetDaemonByID(db, addedDaemonID)
+	require.NoError(t, err)
+	require.EqualValues(t, keaConfig.Map, addedDaemon.KeaDaemon.Config.Map)
 }
 
 // Test that nil value is stored as a database NULL (not JSON null) in the database.
