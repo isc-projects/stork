@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	storktest "isc.org/stork/server/test"
 )
 
 // Test construct the integer decimal.
@@ -75,52 +76,10 @@ func TestAppendValueNegativeBigInt(t *testing.T) {
 	require.EqualValues(t, []byte("-1"), bytes)
 }
 
-// Go-PG reader mock.
-type poolReaderMock struct {
-	bytes []byte
-	err   error
-}
-
-func (r *poolReaderMock) Buffered() int {
-	panic("not implemented")
-}
-
-func (r *poolReaderMock) Bytes() []byte {
-	panic("not implemented")
-}
-
-func (r *poolReaderMock) Read([]byte) (int, error) {
-	panic("not implemented")
-}
-
-func (r *poolReaderMock) ReadByte() (byte, error) {
-	panic("not implemented")
-}
-
-func (r *poolReaderMock) UnreadByte() error {
-	panic("not implemented")
-}
-
-func (r *poolReaderMock) ReadSlice(byte) ([]byte, error) {
-	panic("not implemented")
-}
-
-func (r *poolReaderMock) Discard(int) (int, error) {
-	panic("not implemented")
-}
-
-func (r *poolReaderMock) ReadFull() ([]byte, error) {
-	panic("not implemented")
-}
-
-func (r *poolReaderMock) ReadFullTemp() ([]byte, error) {
-	return r.bytes, r.err
-}
-
 // Test that the zero big integers is deserialized from bytes.
 func TestScanValueZeroBigInt(t *testing.T) {
 	// Arrange
-	reader := &poolReaderMock{[]byte("1"), nil}
+	reader := storktest.NewPoolReaderMock([]byte("1"), nil)
 	integerDecimal := newIntegerDecimalZero()
 
 	// Act
@@ -135,7 +94,7 @@ func TestScanValueZeroBigInt(t *testing.T) {
 func TestScanValueVeryBigInt(t *testing.T) {
 	// Arrange
 	str := "1234567801234567801234567890123456789012345678901234567801234567890"
-	reader := &poolReaderMock{[]byte(str), nil}
+	reader := storktest.NewPoolReaderMock([]byte(str), nil)
 	integerDecimal := newIntegerDecimalZero()
 	expectedBigInt, _ := big.NewInt(0).SetString(str, 10)
 
@@ -150,7 +109,7 @@ func TestScanValueVeryBigInt(t *testing.T) {
 // Test that the negative big integers is deserialized from bytes.
 func TestScanValueNegativeBigInt(t *testing.T) {
 	// Arrange
-	reader := &poolReaderMock{[]byte("-1"), nil}
+	reader := storktest.NewPoolReaderMock([]byte("-1"), nil)
 	integerDecimal := newIntegerDecimalZero()
 
 	// Act
@@ -164,7 +123,7 @@ func TestScanValueNegativeBigInt(t *testing.T) {
 // Test that the empty buffer is not deserialized.
 func TestScanValueEmptyBuffer(t *testing.T) {
 	// Arrange
-	reader := &poolReaderMock{[]byte(""), nil}
+	reader := storktest.NewPoolReaderMock([]byte(""), nil)
 	integerDecimal := newIntegerDecimal(big.NewInt(42))
 
 	// Act
@@ -178,7 +137,7 @@ func TestScanValueEmptyBuffer(t *testing.T) {
 // Test that the deserialization fails if error occurs.
 func TestScanValueFailOnScannerError(t *testing.T) {
 	// Arrange
-	reader := &poolReaderMock{[]byte("foo"), errors.Errorf("bar")}
+	reader := storktest.NewPoolReaderMock([]byte("foo"), errors.Errorf("bar"))
 	integerDecimal := newIntegerDecimalZero()
 
 	// Act
