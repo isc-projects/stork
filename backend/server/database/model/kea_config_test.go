@@ -278,7 +278,8 @@ func TestKeaConfigAppendAndScanValue(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
+	for _, item := range testCases {
+		testCase := item
 		t.Run(testCase.label, func(t *testing.T) {
 			inputConfig := NewKeaConfig(&testCase.value)
 			var outputConfig KeaConfig
