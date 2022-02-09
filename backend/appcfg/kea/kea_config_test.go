@@ -889,3 +889,51 @@ func TestIsInAnyReservationModes(t *testing.T) {
 		return modes.IsOutOfPool()
 	}, modes[0], modes[0]))
 }
+
+// Test that the sensitive data are hidden.
+func TestHideSensitiveData(t *testing.T) {
+	// Arrange
+	input := map[string]interface{}{
+		"foo":      "bar",
+		"password": "xxx",
+		"token":    "",
+		"secret":   "aaa",
+		"first": map[string]interface{}{
+			"foo":      "baz",
+			"Password": 42,
+			"Token":    nil,
+			"Secret":   "bbb",
+			"second": map[string]interface{}{
+				"foo":      "biz",
+				"passworD": true,
+				"tokeN":    "yyy",
+				"secreT":   "ccc",
+			},
+		},
+	}
+
+	keaMap := New(&input)
+
+	// Act
+	keaMap.HideSensitiveData()
+	data := *keaMap
+
+	// Assert
+	// Top level
+	require.EqualValues(t, "bar", data["foo"])
+	require.EqualValues(t, nil, data["password"])
+	require.EqualValues(t, nil, data["token"])
+	require.EqualValues(t, nil, data["secret"])
+	// First level of the nesting
+	first := data["first"].(map[string]interface{})
+	require.EqualValues(t, "baz", first["foo"])
+	require.EqualValues(t, nil, first["Password"])
+	require.EqualValues(t, nil, first["Token"])
+	require.EqualValues(t, nil, first["Secret"])
+	// Second level of the nesting
+	second := first["second"].(map[string]interface{})
+	require.EqualValues(t, "biz", second["foo"])
+	require.EqualValues(t, nil, second["passworD"])
+	require.EqualValues(t, nil, second["tokeN"])
+	require.EqualValues(t, nil, second["secreT"])
+}
