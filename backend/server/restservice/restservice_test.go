@@ -8,6 +8,7 @@ import (
 	apps "isc.org/stork/server/apps"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
+	storktestdbmodel "isc.org/stork/server/test/dbmodel"
 )
 
 // Tests instantiating RestAPI.
@@ -19,8 +20,8 @@ func TestNewRestAPI(t *testing.T) {
 	// under test.
 	settings := &RestAPISettings{}
 	agents := agentcommtest.NewFakeAgents(nil, nil)
-	eventcenter := &storktest.FakeEventCenter{}
-	dispatcher := &storktest.FakeDispatcher{}
+	eventcenter := &storktestdbmodel.FakeEventCenter{}
+	dispatcher := &storktestdbmodel.FakeDispatcher{}
 	pullers := &apps.Pullers{}
 	collector := storktest.NewFakeMetricsCollector()
 

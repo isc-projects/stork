@@ -11,7 +11,7 @@ import (
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
 	dbmodel "isc.org/stork/server/database/model"
-	storktest "isc.org/stork/server/test"
+	storktest "isc.org/stork/server/test/dbmodel"
 )
 
 // makeAccessPoint is an utility to make single element app access point slice.

@@ -1,4 +1,4 @@
-package storktest
+package storktestdbmodel
 
 import (
 	"net/http"

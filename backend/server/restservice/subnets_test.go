@@ -9,7 +9,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
-	storktest "isc.org/stork/server/test"
+	storktest "isc.org/stork/server/test/dbmodel"
 )
 
 // Check getting subnets via rest api functions.

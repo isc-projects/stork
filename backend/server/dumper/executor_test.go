@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"isc.org/stork/server/dumper/dump"
-	storktest "isc.org/stork/server/test"
+	storktest "isc.org/stork/server/test/dbmodel"
 )
 
 // Test that the execution summary is properly constructed.

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	storktest "isc.org/stork/server/test"
+	storktest "isc.org/stork/server/test/dbmodel"
 )
 
 // nolint:gochecknoglobals

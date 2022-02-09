@@ -12,6 +12,7 @@ import (
 	dbsession "isc.org/stork/server/database/session"
 	dbtest "isc.org/stork/server/database/test"
 	storktest "isc.org/stork/server/test"
+	storktestdbmodel "isc.org/stork/server/test/dbmodel"
 )
 
 // Check if fileServerMiddleware works and handles requests correctly.
@@ -67,7 +68,7 @@ func TestSSEMiddleware(t *testing.T) {
 		requestReceived = true
 	})
 
-	fec := &storktest.FakeEventCenter{}
+	fec := &storktestdbmodel.FakeEventCenter{}
 
 	handler := sseMiddleware(nextHandler, fec)
 

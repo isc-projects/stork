@@ -27,7 +27,7 @@ import (
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	"isc.org/stork/server/gen/restapi/operations/general"
 	"isc.org/stork/server/gen/restapi/operations/services"
-	storktest "isc.org/stork/server/test"
+	storktest "isc.org/stork/server/test/dbmodel"
 	storkutil "isc.org/stork/util"
 )
 

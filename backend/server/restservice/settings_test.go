@@ -10,7 +10,7 @@ import (
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	"isc.org/stork/server/gen/restapi/operations/settings"
-	storktest "isc.org/stork/server/test"
+	storktest "isc.org/stork/server/test/dbmodel"
 )
 
 // Check getting and setting global settings via rest api functions.
