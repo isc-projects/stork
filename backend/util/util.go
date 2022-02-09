@@ -334,8 +334,26 @@ func FormatNoun(count int64, noun, postfix string) string {
 	return formatted
 }
 
-// Check if the interface is nil - (*T)(nil).
+// Check if the interface is nil - (*T)(nil). It is helpful
+// in the functions that accept an interface type. If the real
+// type is a pointer to a struct that implements the interface,
+// then standard nil checking (with == operator) always returns
+// false even if the pointer is nil. It isn't a big problem in
+// most cases because you can call the interface methods on the
+// nil interface (the receiver will be nil). It's dangerous if
+// you use the type composition. If you don't override the methods
+// in derived types, then all calls are piped to the base type.
+// But if you try to do this on nil interface, then GO panics.
+// You cannot prevent it by standard nil checking in the functions
+// that use the interface as an argument type. You have to use this
+// helper function. Very confusing.
+//
+// Warning! If you need to use this function, then probably
+// your code is inconsistent. It would be best if you didn't
+// allow that nil pointers will be cast to interface{}.
+//
 // Source: https://stackoverflow.com/a/50487104 .
+// See: https://groups.google.com/g/golang-nuts/c/wnH302gBa4I
 func IsNilInterface(obj interface{}) bool {
 	return obj == nil || reflect.ValueOf(obj).Kind() == reflect.Ptr && reflect.ValueOf(obj).IsNil()
 }
