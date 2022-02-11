@@ -1,0 +1,322 @@
+package apps
+
+import (
+	"context"
+	"crypto/rand"
+	"math"
+	"math/big"
+	"time"
+
+	"github.com/go-pg/pg/v10"
+	pkgerrors "github.com/pkg/errors"
+	"isc.org/stork/server/apps/kea"
+	"isc.org/stork/server/config"
+	dbmodel "isc.org/stork/server/database/model"
+)
+
+// Represents a configuration lock for a user.
+type configLock struct {
+	key    config.LockKey
+	userID int64
+}
+
+// Configuration manager implementation. The manager is responsible
+// for coordinating configuration changes of the monitored daemons.
+// It allows for applying the configuration changes instantly or
+// scheduling the configuration changes to execute at the specified
+// time.
+type configManagerImpl struct {
+	// Database handle used to schedule configuration changes.
+	db *pg.DB
+	// Holds contexts for present transactions. The unique context
+	// identifier exchanged between the server and the client is a
+	// key of this map.
+	contexts map[int64]context.Context
+	// A map holding acquired locks for daemons. The map key is an
+	// ID of the daemon for which the lock has been acquired.
+	locks map[int64]configLock
+	// Last generated lock key.
+	key config.LockKey
+	// An interface to the Kea module commit function that the manager
+	// calls to commit the changes in the Kea servers.
+	keaCommit config.KeaModuleCommit
+	// An interface to the configuration manager's module responsible
+	// for managing Kea configuration.
+	kea config.KeaModule
+}
+
+// Generates a key for a newly acquired lock. It is called internally
+// by the Lock() function.
+func (manager *configManagerImpl) generateKey() config.LockKey {
+	manager.key++
+	return manager.key
+}
+
+// Generates new context ID. This ID is returned to the client when the
+// client begins a new configuration change, e.g. editing daemon
+// configuration. The client must use this ID in its REST calls to
+// identify the configuration change transaction. To avoid possible
+// spoofing, the ID is randomized.
+func (manager *configManagerImpl) generateContextID() (int64, error) {
+	for i := 0; i < 10; i++ {
+		r, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+		if err != nil {
+			return 0, pkgerrors.Wrapf(err, "failed to generate new context id")
+		}
+		if _, ok := manager.contexts[r.Int64()]; !ok {
+			return r.Int64(), err
+		}
+	}
+	return 0, pkgerrors.Errorf("failed to generate a unique context ID after several attempts")
+}
+
+// Checks if the confguration of the specified daemon is already locked
+// for updates. The first returned parameter is an ID of the user who
+// owns the lock. It is equal to 0 when the lock is not present.
+func (manager *configManagerImpl) isLocked(daemonID int64) (int64, bool) {
+	if lock, ok := manager.locks[daemonID]; ok {
+		return lock.userID, true
+	}
+	return 0, false
+}
+
+// Attempts to acquire a lock on the specified daemon's configuration.
+// It returns an error if the lock exists already. This function is
+// called internally from the Lock() function.
+func (manager *configManagerImpl) lock(ctx context.Context, daemonID int64) error {
+	// Check if the daemon configuration has been locked already.
+	if userID, locked := manager.isLocked(daemonID); locked {
+		return pkgerrors.Errorf("configuration for daemon %d is locked for updates by user %d", daemonID, userID)
+	}
+	// The lock key should have been created in the Lock() function.
+	lockKey, ok := ctx.Value(config.LockContextKey).(config.LockKey)
+	if !ok {
+		return pkgerrors.Errorf("context lacks lock key")
+	}
+	// The user id should have been set in the CreateContext() function.
+	userID, ok := ctx.Value(config.UserContextKey).(int64)
+	if !ok {
+		return pkgerrors.Errorf("context lacks user key")
+	}
+	// Acquire the lock on the daemon's configuration.
+	manager.locks[daemonID] = configLock{
+		key:    lockKey,
+		userID: userID,
+	}
+	return nil
+}
+
+// Unlocks daemon's configuration if the lock stored in the context matches.
+func (manager *configManagerImpl) unlock(ctx context.Context, daemonID int64) {
+	// The lock key is required.
+	lockKey, ok := ctx.Value(config.LockContextKey).(config.LockKey)
+	if !ok {
+		return
+	}
+	// If the configuration is locked and the lock key matches then unlock.
+	if _, locked := manager.isLocked(daemonID); locked {
+		if manager.locks[daemonID].key == lockKey {
+			delete(manager.locks, daemonID)
+			// Unlocked.
+			return
+		}
+	}
+	// Didn't unlock.
+}
+
+// Creates new configuration manager instance.
+func NewManager(db *pg.DB) config.Manager {
+	manager := &configManagerImpl{
+		db:       db,
+		locks:    make(map[int64]configLock),
+		contexts: make(map[int64]context.Context),
+	}
+	keaConfigModule := kea.NewConfigModule(manager)
+	manager.kea = keaConfigModule
+	manager.keaCommit = keaConfigModule
+	return manager
+}
+
+// Returns the database handle instance. It is used by the configuration
+// modules to access the database.
+func (manager *configManagerImpl) GetDB() *pg.DB {
+	return manager.db
+}
+
+// Returns Kea configuration module of the configuration manager.
+func (manager *configManagerImpl) GetKeaModule() config.KeaModule {
+	return manager.kea.(config.KeaModule)
+}
+
+// Creates the context for use with the configuration manager. It sets the
+// unique context ID and a user identifier used to associate the context
+// and the configuration change transaction with a user applying the
+// configuration change.
+func (manager *configManagerImpl) CreateContext(userID int64) (context.Context, error) {
+	id, err := manager.generateContextID()
+	if err != nil {
+		return nil, err
+	}
+	ctx := context.WithValue(context.Background(), config.ContextIDKey, id)
+	ctx = context.WithValue(ctx, config.UserContextKey, userID)
+	return ctx, nil
+}
+
+// Stores the context in the manager for later use. If the context exists
+// for the given context ID and the user ID matches, the context is replaced.
+// If the user ID doesn't match, an error is returned.
+func (manager *configManagerImpl) RememberContext(ctx context.Context) error {
+	var (
+		contextID int64
+		userID    int64
+		ok        bool
+	)
+	// Retrieve context id from the context. It will be used as a key to access
+	// the stored context.
+	if contextID, ok = ctx.Value(config.ContextIDKey).(int64); !ok {
+		return pkgerrors.New("context lacks context ID")
+	}
+	// Retrieve the user ID from the context. First, the user id is mandatory in
+	// the stored context. Also, we have to compare the user id with the corresponding
+	// user id in the already stored context.
+	if userID, ok = ctx.Value(config.UserContextKey).(int64); !ok {
+		return pkgerrors.New("context lacks user ID")
+	}
+	// Check if the context has been already stored under this context id.
+	if existingCtx, ok := manager.contexts[contextID]; ok {
+		existingUserID, ok := existingCtx.Value(config.UserContextKey).(int64)
+		if !ok || existingUserID != userID {
+			return pkgerrors.New("unable to remember the context because user ID is mismatched")
+		}
+	}
+	manager.contexts[contextID] = ctx
+	return nil
+}
+
+// Returns a stored context for a given context ID and user ID. The user ID
+// should come from the current user session.
+func (manager *configManagerImpl) RecoverContext(contextID, userID int64) context.Context {
+	if ctx, ok := manager.contexts[contextID]; ok {
+		if existingUserID, ok := ctx.Value(config.UserContextKey).(int64); ok {
+			if existingUserID == userID {
+				return ctx
+			}
+		}
+	}
+	return nil
+}
+
+// Attempts to lock configurations of the specified daemons for update.
+// Internally it generates a new lock key and stores it in the context.
+// If an attempt to lock any of the configurations fails, it will remove
+// already acquired locks and return an error.
+func (manager *configManagerImpl) Lock(ctx context.Context, daemonIDs ...int64) (context.Context, error) {
+	// Generate a new lock key.
+	ctx = context.WithValue(ctx, config.LockContextKey, manager.generateKey())
+	for _, id := range daemonIDs {
+		// Try to acquire a lock for each daemon.
+		if err := manager.lock(ctx, id); err != nil {
+			// Locking failed. Remove the applied locks.
+			for _, uid := range daemonIDs {
+				if uid == id {
+					break
+				}
+				manager.unlock(ctx, uid)
+			}
+			return ctx, err
+		}
+	}
+	ctx = context.WithValue(ctx, config.DaemonsContextKey, daemonIDs)
+	return ctx, nil
+}
+
+// Removes locks from the specified daemons' configurations if the
+// key stored in the context matches.
+func (manager *configManagerImpl) Unlock(ctx context.Context) {
+	if daemonIDs, ok := ctx.Value(config.DaemonsContextKey).([]int64); ok {
+		for _, id := range daemonIDs {
+			manager.unlock(ctx, id)
+		}
+	}
+}
+
+// Sends the configuration updates queued in the context to one or multiple daemons
+// right away.
+func (manager *configManagerImpl) Commit(ctx context.Context) (context.Context, error) {
+	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
+	if !ok {
+		return ctx, pkgerrors.Errorf("context lacks state")
+	}
+	var err error
+	for _, pu := range state.Updates {
+		switch pu.Target {
+		case "kea":
+			// Kea configuration update. Route the call to Kea module.
+			ctx, err = manager.keaCommit.Commit(ctx)
+		default:
+			err = pkgerrors.Errorf("unknown configured module name %s", pu.Target)
+		}
+		if err != nil {
+			return ctx, err
+		}
+	}
+	return ctx, err
+}
+
+// Commit all configuration changes in the database which are due, i.e. for which
+// the deadline_at time expired.
+func (manager *configManagerImpl) CommitDue() error {
+	// Get due configuration changes.
+	changes, err := dbmodel.GetDueConfigChanges(manager.GetDB())
+	if err != nil {
+		return err
+	}
+	// Nothing to do.
+	if len(changes) == 0 {
+		return nil
+	}
+	// Iterate over the changes.
+	for _, change := range changes {
+		// Re-create the transaction state from the serialized data stored in
+		// the database.
+		state := config.TransactionState{
+			Scheduled: true,
+			Updates:   change.Updates,
+		}
+		// Re-create the context.
+		ctx, err := manager.CreateContext(change.UserID)
+		if err != nil {
+			return err
+		}
+		ctx = context.WithValue(ctx, config.StateContextKey, state)
+		// Commit the changes in the monitored daemons.
+		_, err = manager.Commit(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Schedules sending the changes queued in the context to one or multiple daemons.
+// The deadline parameter specifies the time when the changes should be committed.
+func (manager *configManagerImpl) Schedule(ctx context.Context, deadline time.Time) (context.Context, error) {
+	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
+	if !ok {
+		return ctx, pkgerrors.Errorf("context lacks state")
+	}
+	userID, ok := ctx.Value(config.UserContextKey).(int64)
+	if !ok {
+		return ctx, pkgerrors.Errorf("context lacks user key")
+	}
+	// Create the config change entry in the database.
+	scc := &dbmodel.ScheduledConfigChange{
+		DeadlineAt: deadline,
+		UserID:     userID,
+		Updates:    state.Updates,
+	}
+	if err := dbmodel.AddScheduledConfigChange(manager.db, scc); err != nil {
+		return ctx, err
+	}
+	return ctx, nil
+}
