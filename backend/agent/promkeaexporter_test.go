@@ -3,6 +3,7 @@ package agent
 import (
 	"encoding/json"
 	"flag"
+	"io"
 	"testing"
 	"time"
 
@@ -61,6 +62,11 @@ func TestNewPromKeaExporterBasic(t *testing.T) {
 func TestPromKeaExporterStart(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "statistic-get-all",
+			"service":   []string{"dhcp4", "dhcp6"},
+			"arguments": map[string]string{},
+		}).
 		Post("/").
 		Persist().
 		Reply(200).
@@ -95,6 +101,19 @@ func TestPromKeaExporterStart(t *testing.T) {
 	// check if pkt4-nak-received is 19
 	metric, _ = pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
 	require.Equal(t, 19.0, testutil.ToFloat64(metric))
+
+	require.True(t, gock.HasUnmatchedRequest())
+	unmatchedRequests := gock.GetUnmatchedRequests()
+	require.Len(t, unmatchedRequests, 1)
+	unmatchedRequest := unmatchedRequests[0]
+	require.NotNil(t, unmatchedRequest)
+	body, err := io.ReadAll(unmatchedRequest.Body)
+	require.NoError(t, err)
+	var request map[string]interface{}
+	err = json.Unmarshal(body, &request)
+	require.NoError(t, err)
+	require.Contains(t, request, "command")
+	require.EqualValues(t, "subnet4-list", request["command"])
 }
 
 // Test if the Kea JSON get-all-stats response is unmarshal correctly.
@@ -418,6 +437,11 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 	// Arrange
 	defer gock.Off()
 	gock.New("http://0.1.2.3:1234/").
+		JSON(map[string]interface{}{
+			"command":   "statistic-get-all",
+			"service":   []string{"dhcp4", "dhcp6"},
+			"arguments": map[string]string{},
+		}).
 		Post("/").
 		Persist().
 		Reply(200).
@@ -452,4 +476,6 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 	// check if pkt4-nak-received is 19
 	metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
 	require.Equal(t, 19.0, testutil.ToFloat64(metric))
+
+	require.False(t, gock.HasUnmatchedRequest())
 }
