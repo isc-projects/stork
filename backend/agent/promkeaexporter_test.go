@@ -61,6 +61,7 @@ func TestNewPromKeaExporterBasic(t *testing.T) {
 // Check starting PromKeaExporter and collecting stats.
 func TestPromKeaExporterStart(t *testing.T) {
 	defer gock.Off()
+	gock.CleanUnmatchedRequest()
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
 			"command":   "statistic-get-all",
@@ -114,6 +115,7 @@ func TestPromKeaExporterStart(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, request, "command")
 	require.EqualValues(t, "subnet4-list", request["command"])
+	gock.CleanUnmatchedRequest()
 }
 
 // Test if the Kea JSON get-all-stats response is unmarshal correctly.
@@ -436,6 +438,7 @@ func TestLazySubnetNameLookupFetchesAgainWhenFamilyChanged(t *testing.T) {
 func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 	// Arrange
 	defer gock.Off()
+	gock.CleanUnmatchedRequest()
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
 			"command":   "statistic-get-all",
