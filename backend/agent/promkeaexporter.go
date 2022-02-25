@@ -653,7 +653,7 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 			} else {
 				log.Printf("encountered unsupported stat: %s", statName)
 			}
-		case dhcpStatMap != nil && strings.HasPrefix(statName, "subnet["):
+		case *dhcpStatMap != nil && strings.HasPrefix(statName, "subnet["):
 			// if this is address per subnet stat
 			re := regexp.MustCompile(`subnet\[(\d+)\]\.(.+)`)
 			matches := re.FindStringSubmatch(statName)

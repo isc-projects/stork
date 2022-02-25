@@ -477,5 +477,6 @@ func TestDisablePerSubnetStatsCollecting(t *testing.T) {
 	metric, _ := pke.PktStatsMap["pkt4-nak-received"].Stat.GetMetricWith(prometheus.Labels{"operation": "nak"})
 	require.Equal(t, 19.0, testutil.ToFloat64(metric))
 
+	// Has no unecessary calls
 	require.False(t, gock.HasUnmatchedRequest())
 }
