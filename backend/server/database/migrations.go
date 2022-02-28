@@ -163,3 +163,11 @@ func CreateDatabase(db *PgDB, dbName, userName, password string, force bool) (er
 	})
 	return err
 }
+
+// Creates a database extension if it does not exist yet.
+func CreateExtension(db *PgDB, extension string) (err error) {
+	if _, err = db.Exec(fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS %s", extension)); err != nil {
+		err = errors.Wrapf(err, `problem with creating database extension "%s"`, extension)
+	}
+	return
+}

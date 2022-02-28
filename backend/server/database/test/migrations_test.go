@@ -159,6 +159,47 @@ func TestCreateDatabase(t *testing.T) {
 	db2.Close()
 }
 
+// Test that the pgcrypto database extension is successfully created.
+func TestCreateCryptoExtension(t *testing.T) {
+	// Connect to the database with full privileges.
+	db, _, teardown := SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a database and the user with the same name.
+	dbName := fmt.Sprintf("storktest%d", rand.Int63())
+	err := dbops.CreateDatabase(db, dbName, dbName, "pass", true)
+	require.NoError(t, err)
+
+	// Try to connect to this database using the user name.
+	opts := &pg.Options{
+		User:      dbName,
+		Password:  "pass",
+		Database:  dbName,
+		Addr:      db.Options().Addr,
+		TLSConfig: db.Options().TLSConfig,
+	}
+	db2, err := dbops.NewPgDBConn(opts, false)
+	require.NoError(t, err)
+	require.NotNil(t, db2)
+
+	// The new database should initially lack pgcrypto extension.
+	_, err = db2.ExecOne("SELECT 1 from pg_extension WHERE extname = 'pgcrypto'")
+	require.Error(t, err)
+	require.ErrorIs(t, err, pg.ErrNoRows)
+
+	// Create the pgcrypto extension.
+	err = dbops.CreateExtension(db2, "pgcrypto")
+	require.NoError(t, err)
+
+	// Make sure the extension is now present.
+	_, err = db2.ExecOne("SELECT 1 from pg_extension WHERE extname = 'pgcrypto'")
+	require.NoError(t, err)
+
+	// An attempt to create an unknown extension should fail.
+	err = dbops.CreateExtension(db2, "unknown")
+	require.Error(t, err)
+}
+
 // Test that the 39 migration convert decimals to bigints as back.
 func TestMigration39DecimalToBigint(t *testing.T) {
 	// Arrange

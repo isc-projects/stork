@@ -120,7 +120,7 @@ func getDBConn(settings *cli.Context) *dbops.PgDB {
 
 // Execute db-create command. It prepares new database for the Stork
 // server. It also creates a user that can access this database using
-// a generated or user-specified password.
+// a generated or user-specified password and the pgcrypto extension.
 func runDBCreate(settings *cli.Context) {
 	var err error
 
@@ -149,6 +149,20 @@ func runDBCreate(settings *cli.Context) {
 	// Try to create the database and the user with access using
 	// specified password.
 	err = dbops.CreateDatabase(db, settings.String("db-name"), settings.String("db-user"), password, settings.Bool("force"))
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
+
+	// Close the current connection. We will have to connect to the
+	// newly created database instead to create the pgcrypto extension.
+	db.Close()
+
+	// Re-use all admin credentials but connect to the new database.
+	_ = settings.Set("db-maintenance-name", settings.String("db-name"))
+	db = getAdminDBConn(settings)
+
+	// Try to create the pgcrypto extension.
+	err = dbops.CreateExtension(db, "pgcrypto")
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
