@@ -11,14 +11,14 @@ import (
 // subnets are stored as a slice. New indexes can be added as needed
 // in the future.
 type IndexedSubnets struct {
-	Config   TopConfigReader
+	Config   TopConfig
 	ByPrefix map[string]map[string]interface{}
 }
 
 // Creates new instance of the IndexedSubnets structure. It takes a raw
 // Kea configuration as an input, iterates over the shared networks and
 // global subnets and builds appropriate indexes.
-func NewIndexedSubnets(config TopConfigReader) *IndexedSubnets {
+func NewIndexedSubnets(config TopConfig) *IndexedSubnets {
 	if storkutil.IsNilPtr(config) {
 		panic("provided DHCP configuration must not be nil when indexing subnets")
 	}

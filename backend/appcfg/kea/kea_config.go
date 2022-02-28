@@ -20,7 +20,7 @@ const (
 type Map map[string]interface{}
 
 // Groups the functions used to read data from the top Kea config.
-type TopConfigReader interface {
+type TopConfig interface {
 	// Returns name of the root configuration node, e.g. Dhcp4.
 	// The second returned value designates whether the root node
 	// name was successfully found or not.
