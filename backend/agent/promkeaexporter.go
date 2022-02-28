@@ -654,6 +654,11 @@ func (pke *PromKeaExporter) setDaemonStats(dhcpStatMap *map[string]*prometheus.G
 				log.Printf("encountered unsupported stat: %s", statName)
 			}
 		case strings.HasPrefix(statName, "subnet["):
+			// Check if collecting the per-subnet metrics is enabled.
+			// Processing subnet metrics for the Kea instance with
+			// thousands of subnets causes a significant CPU overhead.
+			// It's possible to disable collecting these metrics to limit
+			// CPU consumption.
 			if *dhcpStatMap == nil {
 				continue
 			}
