@@ -1,3 +1,9 @@
+* 201 [bug] slawek
+
+    Prevent issues with parsing and storing large Kea
+    configurations in the Stork database
+    (Gitlab #682)
+
 * 200 [bug] marcin
 
     stork-tool db-create command creates the pgcrypto extension.
