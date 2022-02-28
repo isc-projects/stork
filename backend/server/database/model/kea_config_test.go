@@ -11,17 +11,31 @@ import (
 	storktest "isc.org/stork/server/test"
 )
 
-// Test that KeaConfig is constructed properly.
-func TestNewKeaConfig(t *testing.T) {
+// Test that KeaConfig isn't constructed from nil.
+func TestNewKeaConfigFromNil(t *testing.T) {
 	// Act
 	configNil := NewKeaConfig(nil)
+
+	// Assert
+	require.Nil(t, configNil)
+}
+
+// Test that KeaConfig is constructed from an empty map.
+func TestNewKeaConfigFromEmptyMap(t *testing.T) {
+	// Act
 	configEmpty := NewKeaConfig(&map[string]interface{}{})
+
+	// Assert
+	require.EqualValues(t, map[string]interface{}{}, *configEmpty.Map)
+}
+
+// Test that KeaConfig is constructed from a filled map.
+func TestNewKeaConfigFromFilledMap(t *testing.T) {
+	// Act
 	configFilled := NewKeaConfig(&map[string]interface{}{"Dhcp4": "foo"})
 	root, ok := configFilled.GetRootName()
 
 	// Assert
-	require.Nil(t, configNil)
-	require.EqualValues(t, map[string]interface{}{}, *configEmpty.Map)
 	require.True(t, ok)
 	require.EqualValues(t, "Dhcp4", root)
 }
