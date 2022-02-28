@@ -476,8 +476,12 @@ func (d *Daemon) GetHAOverview() (overviews []DaemonServiceOverview) {
 // it extracts some configuration information and populates to the daemon structures,
 // e.g. logging configuration. The config should be a pointer to the KeaConfig
 // structure. The config_hash is a hash created from the specified configuration.
-func (d *Daemon) SetConfigWithHash(parsedConfig *KeaConfig, configHash string) error {
+func (d *Daemon) SetConfigWithHash(config interface{}, configHash string) error {
 	if d.KeaDaemon != nil {
+		parsedConfig, ok := config.(*KeaConfig)
+		if !ok {
+			return pkgerrors.Errorf("error setting non Kea config for Kea daemon %s", d.Name)
+		}
 		existingLogTargets := d.LogTargets
 		d.LogTargets = []*LogTarget{}
 		loggers := parsedConfig.GetLoggers()
@@ -505,7 +509,7 @@ func (d *Daemon) SetConfigWithHash(parsedConfig *KeaConfig, configHash string) e
 }
 
 // Sets new configuration of the daemon with empty hash.
-func (d *Daemon) SetConfig(config *KeaConfig) error {
+func (d *Daemon) SetConfig(config interface{}) error {
 	return d.SetConfigWithHash(config, "")
 }
 
