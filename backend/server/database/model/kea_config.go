@@ -14,7 +14,7 @@ import (
 	keaconfig "isc.org/stork/appcfg/kea"
 )
 
-// Workaround wrapper for go-pg limitations with huge  JSONs.
+// Workaround wrapper for go-pg limitations with large JSONs.
 // The go-pg 10 stores the serialized JSONs in buffers from
 // github.com/vmihailenco/bufpool library. This library has a
 // limitation for buffer size up to 32MB. Kea Daemon Configuration
@@ -23,15 +23,15 @@ import (
 // It isn't possible to replace or patch this mechanism, because
 // it is used deeply in the internal part of Go-PG. But it is possible
 // to workaround. This wrapper implements a custom serializer for Kea
-// Config. It uses a standard JSON parser as the go-pg, but avoid using
+// Config. It uses a standard JSON parser as the go-pg, but avoids using
 // a bufpool.
 //
 // The behavior of this type should be the same as keaconfig.Map.
 // It means that the constructors accept the same arguments and
-// return the same output. All methods are defined for keaconfig.Map
-// works for KeaConfig. The only difference is that the KeaConfig
-// cannot be cast directly to map[string]interface{}. The recommended
-// way is to avoid casting these types and use the methods and polymorphism
+// return the same output. All methods defined for keaconfig.Map
+// work for KeaConfig. The only difference is that the KeaConfig
+// cannot be cast directly to map[string]interface{}. It is recommended
+// to avoid casting these types and use the methods and polymorphism
 // power.
 //
 // Note that the bun library doesn't use bufpool. After migration to bun

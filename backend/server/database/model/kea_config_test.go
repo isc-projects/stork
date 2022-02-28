@@ -463,7 +463,7 @@ func TestKeaConfigIsAsKeaConfigMapForJSONWithSingleQuoteFromDatabase(t *testing.
 	require.EqualValues(t, "b'r", rawConfig["foo"])
 }
 
-// Test store a huge Kea configuration in the database.
+// Test storing a huge Kea configuration in the database.
 func TestStoreHugeKeaConfigInDatabase(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
