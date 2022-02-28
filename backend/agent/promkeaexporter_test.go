@@ -62,6 +62,7 @@ func TestNewPromKeaExporterBasic(t *testing.T) {
 func TestPromKeaExporterStart(t *testing.T) {
 	defer gock.Off()
 	gock.CleanUnmatchedRequest()
+	defer gock.CleanUnmatchedRequest()
 	gock.New("http://0.1.2.3:1234/").
 		JSON(map[string]interface{}{
 			"command":   "statistic-get-all",
@@ -115,7 +116,6 @@ func TestPromKeaExporterStart(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, request, "command")
 	require.EqualValues(t, "subnet4-list", request["command"])
-	gock.CleanUnmatchedRequest()
 }
 
 // Test if the Kea JSON get-all-stats response is unmarshal correctly.
