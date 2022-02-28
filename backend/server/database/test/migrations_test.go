@@ -172,8 +172,8 @@ func TestCreateCryptoExtension(t *testing.T) {
 
 	// Try to connect to this database using the user name.
 	opts := &pg.Options{
-		User:      dbName,
-		Password:  "pass",
+		User:      db.Options().User,
+		Password:  db.Options().Password,
 		Database:  dbName,
 		Addr:      db.Options().Addr,
 		TLSConfig: db.Options().TLSConfig,
