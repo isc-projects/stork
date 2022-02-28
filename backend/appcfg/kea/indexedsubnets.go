@@ -19,7 +19,7 @@ type IndexedSubnets struct {
 // Kea configuration as an input, iterates over the shared networks and
 // global subnets and builds appropriate indexes.
 func NewIndexedSubnets(config TopConfigReader) *IndexedSubnets {
-	if storkutil.IsNilInterface(config) {
+	if storkutil.IsNilPtr(config) {
 		panic("provided DHCP configuration must not be nil when indexing subnets")
 	}
 

@@ -364,7 +364,7 @@ func TestFormatNoun(t *testing.T) {
 // Test that a nil pointer assigned to an interface is correctly
 // recognized as nil. It compares the helper function and standard
 // nil checking.
-func TestIsNilInterface(t *testing.T) {
+func TestIsNilPtr(t *testing.T) {
 	// Arrange
 	var iface io.Reader
 	nilPtr := (*bytes.Reader)(nil)
@@ -375,7 +375,7 @@ func TestIsNilInterface(t *testing.T) {
 	// Assert
 	require.Nil(t, nilPtr)
 	require.NotEqualValues(t, iface, nil)
-	require.True(t, IsNilInterface(iface))
+	require.True(t, IsNilPtr(iface))
 }
 
 // Test that a not-nil pointer assigned to an interface is correctly
@@ -383,7 +383,7 @@ func TestIsNilInterface(t *testing.T) {
 func TestIsNotNilInterface(t *testing.T) {
 	// Arrange
 	var iface io.Reader
-	ptr := (*bytes.Reader)(bytes.NewReader([]byte{}))
+	ptr := bytes.NewReader([]byte{})
 
 	// Act
 	iface = ptr
@@ -391,5 +391,5 @@ func TestIsNotNilInterface(t *testing.T) {
 	// Assert
 	require.NotNil(t, ptr)
 	require.NotEqualValues(t, iface, nil)
-	require.False(t, IsNilInterface(iface))
+	require.False(t, IsNilPtr(iface))
 }

@@ -305,7 +305,7 @@ func FormatNoun(count int64, noun, postfix string) string {
 	return formatted
 }
 
-// Check if the interface is nil - (*T)(nil). It is helpful
+// Check if the interface is nil pointer - (*T)(nil). It is helpful
 // in the functions that accept an interface type. If the real
 // type is a pointer to a struct that implements the interface,
 // then standard nil checking (with == operator) always returns
@@ -325,6 +325,6 @@ func FormatNoun(count int64, noun, postfix string) string {
 //
 // Source: https://stackoverflow.com/a/50487104 .
 // See: https://groups.google.com/g/golang-nuts/c/wnH302gBa4I
-func IsNilInterface(obj interface{}) bool {
+func IsNilPtr(obj interface{}) bool {
 	return obj == nil || reflect.ValueOf(obj).Kind() == reflect.Ptr && reflect.ValueOf(obj).IsNil()
 }
