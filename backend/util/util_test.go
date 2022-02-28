@@ -380,7 +380,7 @@ func TestIsNilPtr(t *testing.T) {
 
 // Test that a not-nil pointer assigned to an interface is correctly
 // recognized as not nil.
-func TestIsNotNilInterface(t *testing.T) {
+func TestIsNotNilPtr(t *testing.T) {
 	// Arrange
 	var iface io.Reader
 	ptr := bytes.NewReader([]byte{})
