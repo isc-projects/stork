@@ -1,3 +1,8 @@
+* 200 [bug] marcin
+
+    stork-tool db-create command creates the pgcrypto extension.
+    (Gitlab #701)
+
 * 199 [build] marcin
 
     Updated Angular to version 13.2.2 and PrimeNG to version 13.1.0.
