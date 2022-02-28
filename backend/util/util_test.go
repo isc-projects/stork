@@ -361,31 +361,35 @@ func TestFormatNoun(t *testing.T) {
 	require.Equal(t, "-1 subnet", FormatNoun(-1, "subnet", "s"))
 }
 
-// Test that a nil pointer is correctly recognized in the function that
-// accepts an interface type. It compares the helper function and standard
+// Test that a nil pointer assigned to an interface is correctly
+// recognized as nil. It compares the helper function and standard
 // nil checking.
 func TestIsNilInterface(t *testing.T) {
 	// Arrange
-	// Function that accepts the interface type
-	// and checks the nil value.
-	checker := func(obj io.Reader) (isNil bool, isNilInterface bool) {
-		isNil = obj == nil
-		isNilInterface = IsNilInterface(obj)
-		return
-	}
-
-	// Nil pointer to struct that implements the interface.
+	var iface io.Reader
 	nilPtr := (*bytes.Reader)(nil)
 
 	// Act
-	isNil, isNilInterface := checker(nilPtr)
+	iface = nilPtr
 
 	// Assert
-	// Standard nil checking for the known type. It works as expected.
 	require.Nil(t, nilPtr)
-	// Standard nil checking for the interface type. Confusing.
-	require.False(t, isNil)
-	// Nil checking with the utility function. It works, but the design
-	// should be re-analyzed.
-	require.True(t, isNilInterface)
+	require.NotEqualValues(t, iface, nil)
+	require.True(t, IsNilInterface(iface))
+}
+
+// Test that a not-nil pointer assigned to an interface is correctly
+// recognized as not nil.
+func TestIsNotNilInterface(t *testing.T) {
+	// Arrange
+	var iface io.Reader
+	ptr := (*bytes.Reader)(bytes.NewReader([]byte{}))
+
+	// Act
+	iface = ptr
+
+	// Assert
+	require.NotNil(t, ptr)
+	require.NotEqualValues(t, iface, nil)
+	require.False(t, IsNilInterface(iface))
 }
