@@ -759,7 +759,7 @@ func mergeKeaDatabase(keaDatabase *keaconfig.Database, dataType string, existing
 // information about database connections in use. The first structure contains
 // files used by Memfile lease database backend and Forensic Logging hooks library.
 // If neither of them is used, this structure is empty.
-func getKeaStorages(config keaconfig.DatabaseReader) (files []*models.File, databases []*models.KeaDaemonDatabase) {
+func getKeaStorages(config keaconfig.DatabaseConfig) (files []*models.File, databases []*models.KeaDaemonDatabase) {
 	foundDatabases := make(map[string]*models.KeaDaemonDatabase)
 	keaDatabases := config.GetAllDatabases()
 	// Leases.

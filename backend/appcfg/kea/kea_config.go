@@ -35,8 +35,8 @@ type TopConfigReader interface {
 	GetTopLevelMap(name string) (m map[string]interface{}, ok bool)
 }
 
-// Reads the databases from the configuration.
-type DatabaseReader interface {
+// Get the database sections from the configuration.
+type DatabaseConfig interface {
 	GetAllDatabases() Databases
 }
 
