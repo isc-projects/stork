@@ -2,7 +2,7 @@ package storktest
 
 import "github.com/go-pg/pg/v10/types"
 
-// Go-PG reader mock.
+// Mock for an internal Go-PG Pool Reader structure.
 type poolReaderMock struct {
 	bytes []byte
 	err   error
