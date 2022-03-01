@@ -1,3 +1,5 @@
+Stork 1.2.0 released on 2022-03-02.
+
 * 201 [bug] slawek
 
     Prevent issues with parsing and storing large Kea
