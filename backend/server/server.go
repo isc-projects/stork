@@ -3,7 +3,6 @@ package server
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	flags "github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
@@ -49,7 +48,10 @@ type Settings struct {
 	EnableMetricsEndpoint bool `short:"m" long:"metrics" description:"enable Prometheus /metrics endpoint (no auth)" env:"STORK_SERVER_ENABLE_METRICS"`
 }
 
-func (ss *StorkServer) ParseArgs() {
+// Parse the command line arguments into GO structures.
+// Returns done as true if the command is already handled (i.e. version or help)
+// and parsing is not necessary.
+func (ss *StorkServer) ParseArgs() (done bool, err error) {
 	// Process command line flags.
 	var serverSettings Settings
 	parser := flags.NewParser(&serverSettings, flags.Default)
@@ -57,33 +59,32 @@ func (ss *StorkServer) ParseArgs() {
 	parser.LongDescription = "Stork Server is a Kea and BIND 9 Dashboard"
 
 	// Process Database specific args.
-	_, err := parser.AddGroup("Database ConnectionFlags", "", &ss.DBSettings)
+	_, err = parser.AddGroup("Database ConnectionFlags", "", &ss.DBSettings)
 	if err != nil {
-		log.Fatalf("FATAL error: %+v", err)
+		return
 	}
 
 	// Process ReST API specific args.
 	_, err = parser.AddGroup("ReST Server Flags", "", &ss.RestAPISettings)
 	if err != nil {
-		log.Fatalf("FATAL error: %+v", err)
+		return
 	}
 
 	// Process agent comm specific args.
 	_, err = parser.AddGroup("Agents Communication Flags", "", &ss.AgentsSettings)
 	if err != nil {
-		log.Fatalf("FATAL error: %+v", err)
+		return
 	}
 
 	// Do args parsing.
 	if _, err := parser.Parse(); err != nil {
-		code := 1
 		var flagsError *flags.Error
 		if errors.As(err, &flagsError) {
 			if flagsError.Type == flags.ErrHelp {
-				code = 0
+				return true, nil
 			}
 		}
-		os.Exit(code)
+		return false, err
 	}
 
 	ss.EnableMetricsEndpoint = serverSettings.EnableMetricsEndpoint
@@ -91,14 +92,21 @@ func (ss *StorkServer) ParseArgs() {
 	if serverSettings.Version {
 		// If user specified --version or -v, print the version and quit.
 		fmt.Printf("%s\n", stork.Version)
-		os.Exit(0)
+		return true, nil
 	}
+	return false, nil
 }
 
 // Init for Stork Server state.
 func NewStorkServer() (ss *StorkServer, err error) {
 	ss = &StorkServer{}
-	ss.ParseArgs()
+	done, err := ss.ParseArgs()
+	if err != nil {
+		return nil, err
+	}
+	if done {
+		return nil, nil
+	}
 
 	// setup database connection
 	ss.DB, err = dbops.NewPgDB(&ss.DBSettings)

@@ -10,9 +10,7 @@ import (
 	"io"
 	"math/rand"
 	"os"
-	"os/exec"
 	"path"
-	"strings"
 	"testing"
 	"time"
 
@@ -605,102 +603,6 @@ func TestTailTextFile(t *testing.T) {
 	require.Equal(t, "This is a file", rsp.Lines[0])
 	require.Equal(t, "which is used", rsp.Lines[1])
 	require.Equal(t, "in testing TailTextFile", rsp.Lines[2])
-}
-
-// Aux function checks if a list of expected strings is present in the string.
-func checkOutput(output string, exp []string, reason string) bool {
-	for _, x := range exp {
-		fmt.Printf("Checking if %s exists in %s.\n", x, reason)
-		if !strings.Contains(output, x) {
-			fmt.Printf("ERROR: Expected string [%s] not found in %s.\n", x, reason)
-			return false
-		}
-	}
-	return true
-}
-
-// This is the list of all parameters we expect to be supported by stork-agent.
-func getExpectedSwitches() []string {
-	return []string{
-		"-v", "--version", "--listen-prometheus-only", "--listen-stork-only",
-		"--host", "--port", "--prometheus-kea-exporter-address", "--prometheus-kea-exporter-port",
-		"--prometheus-kea-exporter-interval", "--prometheus-bind9-exporter-address",
-		"--prometheus-bind9-exporter-port", "--prometheus-bind9-exporter-interval",
-	}
-}
-
-// Location of the stork-agent binary.
-const AgentBin = "../cmd/stork-agent/stork-agent"
-
-// Location of the stork-agent man page.
-const AgentMan = "../../doc/man/stork-agent.8.rst"
-
-// This test checks if stork-agent -h reports all expected command-line switches.
-func TestCommandLineSwitches(t *testing.T) {
-	// Run the --help version and get its output.
-	agentCmd := exec.Command(AgentBin, "-h")
-	output, err := agentCmd.Output()
-	require.NoError(t, err)
-
-	// Now check that all expected command-line switches are really there.
-	require.True(t, checkOutput(string(output), getExpectedSwitches(), "stork-agent -h output"))
-}
-
-// This test checks if all expected command-line switches are documented in the man page.
-func TestCommandLineSwitchesDoc(t *testing.T) {
-	// Read the contents of the man page
-	file, err := os.Open(AgentMan)
-	require.NoError(t, err)
-	man, err := io.ReadAll(file)
-	require.NoError(t, err)
-
-	// And check that all expected switches are mentioned there.
-	require.True(t, checkOutput(string(man), getExpectedSwitches(), "stork-agent.8.rst"))
-}
-
-// This test checks if stork-agent --version (and -v) report expected version.
-func TestCommandLineVersion(t *testing.T) {
-	// Let's repeat the test twice (for -v and then for --version)
-	for _, opt := range []string{"-v", "--version"} {
-		fmt.Printf("Checking %s\n", opt)
-
-		// Run the agent with specific switch.
-		agentCmd := exec.Command(AgentBin, opt)
-		output, err := agentCmd.Output()
-		require.NoError(t, err)
-
-		// Clean up the output (remove end of line)
-		ver := strings.TrimSpace(string(output))
-
-		// Check if it equals expected version.
-		require.Equal(t, ver, stork.Version)
-	}
-}
-
-// Check if stork-agent uses --host parameter.
-func TestHostParam(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Run agent with '--host 127.1.2.3'
-	agentCmd := exec.CommandContext(ctx, AgentBin, "--host", "127.1.2.3")
-	out, _ := agentCmd.Output()
-
-	// Check if in the output there is 127.1.2.3.
-	require.Contains(t, string(out), "127.1.2.3")
-}
-
-// Check if stork-agent uses --port parameter.
-func TestPortParam(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Run agent with '--port 9876'
-	agentCmd := exec.CommandContext(ctx, AgentBin, "--port", "9876")
-	out, _ := agentCmd.Output()
-
-	// Check if in the output there is 9876.
-	require.Contains(t, string(out), "9876")
 }
 
 // Checks if getRootCertificates:

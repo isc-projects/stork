@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"isc.org/stork"
+	"isc.org/stork/testutil"
 )
 
 // Aux function checks if a list of expected strings is present in the string.
@@ -35,27 +35,34 @@ func getExpectedSwitches() []string {
 	}
 }
 
-// Location of the stork-server binary.
-const ServerBin = "../cmd/stork-server/stork-server"
-
 // Location of the stork-server man page.
-const AgentMan = "../../doc/man/stork-server.8.rst"
+const Man = "../../doc/man/stork-server.8.rst"
 
 // This test checks if stork-agent -h reports all expected command-line switches.
 func TestCommandLineSwitches(t *testing.T) {
-	// Run the --help version and get its output.
-	agentCmd := exec.Command(ServerBin, "-h")
-	output, err := agentCmd.Output()
-	require.NoError(t, err)
+	// Arrange
+	os.Args = make([]string, 2)
+	os.Args[1] = "-h"
 
+	// Act
+	ss := &StorkServer{}
+	var done bool
+	var err error
+	stdout, _, _ := testutil.CaptureOutput(func() {
+		done, err = ss.ParseArgs()
+	})
+
+	// Assert
+	require.True(t, done)
+	require.NoError(t, err)
 	// Now check that all expected command-line switches are really there.
-	require.True(t, checkOutput(string(output), getExpectedSwitches(), "stork-agent -h output"))
+	require.True(t, checkOutput(string(stdout), getExpectedSwitches(), "stork-agent -h output"))
 }
 
 // This test checks if all expected command-line switches are documented.
 func TestCommandLineSwitchesDoc(t *testing.T) {
 	// Read the contents of the man page
-	file, err := os.Open(AgentMan)
+	file, err := os.Open(Man)
 	require.NoError(t, err)
 	man, err := io.ReadAll(file)
 	require.NoError(t, err)
@@ -68,17 +75,28 @@ func TestCommandLineSwitchesDoc(t *testing.T) {
 func TestCommandLineVersion(t *testing.T) {
 	// Let's repeat the test twice (for -v and then for --version)
 	for _, opt := range []string{"-v", "--version"} {
-		fmt.Printf("Checking %s\n", opt)
+		arg := opt
+		t.Run(arg, func(t *testing.T) {
+			// Arrange
+			os.Args = make([]string, 2)
+			os.Args[1] = arg
 
-		// Run the agent with specific switch.
-		agentCmd := exec.Command(ServerBin, opt)
-		output, err := agentCmd.Output()
-		require.NoError(t, err)
+			// Act
+			ss := &StorkServer{}
+			var done bool
+			var err error
+			stdout, _, _ := testutil.CaptureOutput(func() {
+				done, err = ss.ParseArgs()
+			})
 
-		// Clean up the output (remove end of line)
-		ver := strings.TrimSpace(string(output))
+			// Assert
+			require.NoError(t, err)
+			require.True(t, done)
+			// Clean up the output (remove end of line)
+			ver := strings.TrimSpace(string(stdout))
 
-		// Check if it equals expected version.
-		require.Equal(t, ver, stork.Version)
+			// Check if it equals expected version.
+			require.Equal(t, ver, stork.Version)
+		})
 	}
 }

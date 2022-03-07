@@ -21,6 +21,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("unexpected error: %+v", err)
 	}
+	if storkServer == nil {
+		return
+	}
 
 	log.Printf("Starting Stork Server, version %s, build date %s", stork.Version, stork.BuildDate)
 
