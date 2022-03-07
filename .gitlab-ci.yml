@@ -11,7 +11,7 @@ variables:
   POSTGRES_DB: storktest
   POSTGRES_USER: storktest
   POSTGRES_PASSWORD: storktest
-  POSTGRES_IN_DOCKER: 'yes'
+  OLD_CI: "true"
 
 # this is used to build docker images of stork (using DIND)
   DOCKER_DRIVER: overlay2
@@ -46,6 +46,23 @@ cache:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - apt-get update
+    - apt-get install -y ruby-dev make
+    - rake prepare_env
+
+.base_build_centos:
+  stage: build
+  rules:
+    - when: always
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest
+  tags:
+    - linux
+    - amd64
+    - ssd
+  before_script:
+    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+    - rm -rf tools/ruby
+    - gem uninstall fpm bundler
     - rake prepare_env
 
 lint_go:
@@ -63,10 +80,15 @@ unittest_backend:
     - chmod 600 ~/.pgpass
     - rake unittest_backend
 
-ci_ui:
+lint_ui:
   extends: .base_build
   script:
-    - rake ci_ui
+    - rake lint_ui
+
+unittest_ui:
+  extends: .base_build
+  script:
+    - rake unittest_ui
 
 build_webui:
   extends: .base_build
@@ -91,6 +113,7 @@ build_backend:
       - backend/cmd/stork-db-migrate/stork-db-migrate
 
 danger:
+  extends: .base_build
   stage: build
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -99,7 +122,6 @@ danger:
     - linux
     - amd64
     - ssd
-  image: registry.gitlab.isc.org/isc-projects/stork/ci-danger
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
     - export CI_PROJECT_PATH=$CI_PROJECT_ID #some version of gitlab has problems with searching by project path
@@ -108,8 +130,7 @@ danger:
   script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-    - gem install danger-commit_lint
-    - danger --fail-on-errors=true --new-comment
+    - rake lint_git
 
 tarball:
   stage: build
@@ -129,31 +150,41 @@ tarball:
 
 ### build rpm & deb packages ###
 
+build_debs:
+  extends: .base_build
+  script:
+    - rake build_agent_pkg
+    - rake build_server_pkg
+    - cp dist/pkgs/*.deb ./
+  artifacts:
+    paths:
+      - isc-stork-*.deb
+    expire_in: 1 hour
+
+build_rpms:
+  extends: .base_build_centos
+  script:
+    - rake build_agent_pkg
+    - rake build_server_pkg
+    - cp dist/pkgs/*.rpm ./
+  artifacts:
+    paths:
+      - isc-stork-*.rpm
+    expire_in: 1 hour
+
 debs_and_rpms:
   stage: build
   rules:
     - when: always
-  image: stork-tests-ubuntu-20.04-x86_64
-  tags:
-    - libvirt
-    - amd64
-  before_script:
-    - sysctl -w net.ipv6.conf.all.disable_ipv6=1
-    - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-    - apt-get update
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ruby ruby-dev rubygems build-essential git wget unzip apt-transport-https ca-certificates curl gnupg-agent software-properties-common
-    - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-    - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-    - apt-get update
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io
+  needs:
+    - build_debs
+    - build_rpms
   script:
-    - docker info
-    - rake build_pkgs_in_docker
+    - :
   artifacts:
     paths:
       - isc-stork-*
     expire_in: 1 week
-
 
 ### system testing ###
 
