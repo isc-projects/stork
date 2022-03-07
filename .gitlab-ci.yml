@@ -11,11 +11,11 @@ variables:
   POSTGRES_DB: storktest
   POSTGRES_USER: storktest
   POSTGRES_PASSWORD: storktest
-  OLD_CI: "true"
 
 # this is used to build docker images of stork (using DIND)
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""  # this is workaround for TLS problem https://about.gitlab.com/blog/2019/07/31/docker-in-docker-with-docker-19-dot-03/
+  OLD_CI: "yes"
 
 # stages order
 stages:
@@ -25,7 +25,7 @@ stages:
 
 # cache
 cache:
-  key: one-shared-key-2
+  key: one-shared-key
   paths:
   - webui/node_modules/
   - tools/
@@ -175,12 +175,12 @@ build_rpms:
 debs_and_rpms:
   stage: build
   rules:
-    - when: always
+    - when: on_success
   needs:
     - build_debs
     - build_rpms
   script:
-    - :
+    - ":"
   artifacts:
     paths:
       - isc-stork-*

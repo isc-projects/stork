@@ -3,6 +3,8 @@
 ### Commands in this file aren't refactored yet! ###
 ####################################################
 
+CLEAN.append *FileList["buid-root/**/*"], "build-root"
+
 # premium support
 if ENV['cs_repo_access_token']
     ENV['premium'] = 'true'
@@ -37,7 +39,6 @@ task :build_all_in_container do
   # The workaround added --ulimit memlock=512 to docker build and --privileged to docker run.
   sh "docker build --ulimit memlock=512 -f docker/docker-builder.txt -t stork-builder ."
   sh "docker", "run",
-      "--privileged",
       "-v", "#{ENV["PWD"]}:/repo",
       "--rm", "stork-builder",
       "rake", "build_all_copy_in_subdir"
@@ -58,7 +59,7 @@ task :build_all_copy_in_subdir do
         "--exclude=*~",
         "--delete", "api", "backend", "doc", "etc", "grafana", "webui",
         "Rakefile", "rakelib", "./build-root"
-  sh "GOPATH=/repo/build-root/go rake install_server[build-root/root] install_agent[build-root/root]"
+  sh "rake install_server[build-root/root] install_agent[build-root/root]"
 end
 
 desc 'Shut down all containers'

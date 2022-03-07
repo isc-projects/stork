@@ -24,6 +24,7 @@ file ARM_DIRECTORY => DOC_CODEBASE + [SPHINX_BUILD] do
     sh SPHINX_BUILD, "-M", "html", "doc/", "doc/_build", "-v", "-E", "-a", "-W", "-j", "2"
     sh "touch", ARM_DIRECTORY
 end
+CLEAN.append *FileList[ARM_DIRECTORY + "/**/*"], ARM_DIRECTORY
 
 TOOL_MAN_FILE = "doc/man/stork-tool.8"
 file TOOL_MAN_FILE => DOC_CODEBASE + [SPHINX_BUILD] do
@@ -38,6 +39,7 @@ SERVER_MAN_FILE = "doc/man/stork-server.8"
 file SERVER_MAN_FILE => [TOOL_MAN_FILE]
 
 man_files = FileList[SERVER_MAN_FILE, AGENT_MAN_FILE, TOOL_MAN_FILE]
+CLEAN.append *man_files
 
 ################
 ### Frontend ###
@@ -63,6 +65,9 @@ file WEBUI_DEBUG_DIRECTORY => WEBUI_CODEBASE + [NPX] do
     end
 end
 
+CLEAN.append *FileList["webui/dist/**/*"], "webui/dist"
+CLOBBER.append "webui/.angular"
+
 ###############
 ### Backend ###
 ###############
@@ -74,6 +79,7 @@ file AGENT_BINARY_FILE => GO_AGENT_CODEBASE + [GO] do
     end
     puts "Stork Agent build date: #{build_date} (timestamp: #{TIMESTAMP})"
 end
+CLEAN.append AGENT_BINARY_FILE
 
 SERVER_BINARY_FILE = "backend/cmd/stork-server/stork-server"
 file SERVER_BINARY_FILE => GO_SERVER_CODEBASE + [GO] do
@@ -83,6 +89,7 @@ file SERVER_BINARY_FILE => GO_SERVER_CODEBASE + [GO] do
     end
     puts "Stork Server build date: #{build_date} (timestamp: #{TIMESTAMP})"
 end
+CLEAN.append SERVER_BINARY_FILE
 
 TOOL_BINARY_FILE = "backend/cmd/stork-tool/stork-tool"
 file TOOL_BINARY_FILE => GO_TOOL_CODEBASE + [GO] do
@@ -91,6 +98,7 @@ file TOOL_BINARY_FILE => GO_TOOL_CODEBASE + [GO] do
     end
     puts "Stork Tool build date: #{build_date} (timestamp: #{TIMESTAMP})"
 end
+CLEAN.append TOOL_BINARY_FILE
 
 #############
 ### Tasks ###

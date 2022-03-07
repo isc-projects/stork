@@ -1,4 +1,5 @@
 # coding: utf-8
+require 'open3'
 
 # Cross-platform way of finding an executable in the $PATH.
 # Source: https://stackoverflow.com/a/5471032
@@ -145,12 +146,27 @@ directory ruby_tools_dir
 ruby_tools_bin_dir = File.join(ruby_tools_dir, "bin")
 directory ruby_tools_bin_dir
 
-# Automatically created directories by tools
 python_tools_dir = File.join(tools_dir, "python")
+directory python_tools_dir
+
+# Automatically created directories by tools
 ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
 node_bin_dir = File.join(node_dir, "bin")
 goroot = File.join(go_tools_dir, "go")
 gobin = File.join(goroot, "bin")
+
+# pip install "--target" option doesn't include bin
+# directory for Python < 3.9 version.
+# To workaround this problem, the "--prefix" option
+# is used, but it causes the library path to contain
+# the Python version.
+pythonpath = nil
+python_version_out, _, status = Open3.capture3 "python3", "--version"
+if status == 0
+    python_version = (python_version_out.split)[1]
+    python_major_minor = python_version.split(".")[0,2].join(".")
+    pythonpath = File.join(python_tools_dir, "lib", "python" + python_major_minor, "site-packages")
+end
 
 # Environment variables
 ENV["GEM_HOME"] = ruby_tools_dir
@@ -158,6 +174,7 @@ ENV["GOROOT"] = goroot
 ENV["GOPATH"] = gopath
 ENV["GOBIN"] = gobin
 ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
+ENV["PYTHONPATH"] = pythonpath
 
 # Toolkits
 FPM = File.join(ruby_tools_bin_dir, "fpm")
@@ -199,7 +216,7 @@ file danger_gitlab_dir => [ruby_tools_dir, ruby_tools_bin_dir] do
         "--minimal-deps",
         "--no-document",
         "--install-dir", ruby_tools_dir,
-        "danger:#{danger_ver}"
+        "danger:#{danger_ver}",
         "danger-gitlab:#{danger_gitlab_ver}"
     sh "touch", danger_gitlab_dir
 end
@@ -242,10 +259,14 @@ end
 
 YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", "bin", "yamlinc")
 file YAMLINC => [NPM] do
+    ci_opts = []
+    if ENV["CI"] == "true"
+        ci_opts += ["--no-audit", "--no-progress"]
+    end
+
     sh NPM, "install",
             "-g",
-            "--no-audit",
-            "--no-progress",
+            *ci_opts,
             "--prefix", "#{node_dir}/node_modules",
             "yamlinc@#{yamlinc_ver}"
     sh "touch", YAMLINC
@@ -377,40 +398,49 @@ file GDLV => [GO] do
     end
 end
 
-PYTHON = File.join(python_tools_dir, "bin", "python3")
-file PYTHON => [tools_dir] do
-    if ENV["OLD_CI"] != "true"
-        sh "python3", "-m", "venv", python_tools_dir
-    else
-        # Workaround for old CI
-        python_location = which("python3")
-        if python_location == nil
-            puts "Missing python3 executable"
-            fail
-        end
-        python_bin_dir = File.dirname(python_location)
-        sh "mkdir", "-p", python_tools_dir
-        sh "ln", "-s", python_bin_dir, File.join(python_tools_dir, "bin")
-    end
-
-    sh PYTHON, "--version"
+sphinx_path = File.expand_path("tools/python/bin/sphinx-build")
+if ENV["OLD_CI"] == "yes"
+    python_location = which("python3")
+    python_bin_dir = File.dirname(python_location)
+    sphinx_path = File.join(python_bin_dir, "sphinx-build")
 end
-
 sphinx_requirements_file = File.expand_path("init_debs/sphinx.txt", __dir__)
-SPHINX_BUILD = File.expand_path("tools/python/bin/sphinx-build")
-file SPHINX_BUILD => [PYTHON, sphinx_requirements_file] do
-    if ENV["OLD_CI"] == "true"
-        # We assume that Sphinx is installed manually
+SPHINX_BUILD = sphinx_path
+file SPHINX_BUILD => [python_tools_dir, sphinx_requirements_file] do
+    if ENV["OLD_CI"] == "yes"
+        sh "touch", "-c", SPHINX_BUILD
         next
     end
+    Rake::Task["pip_install"].invoke(sphinx_requirements_file)
+    sh SPHINX_BUILD, "--version"
+end
 
+######################
+### Internal tasks ###
+######################
+
+task :pip_install, [:requirements_file] => [python_tools_dir] do |t, args|
     ci_opts = []
     if ENV["CI"] == "true"
         ci_opts += ["--no-cache-dir"]
     end
-    sh PYTHON, "-m", "pip", "install", *ci_opts, "--force-reinstall", "-r", sphinx_requirements_file
-    sh SPHINX_BUILD, "--version"
+    # Fix for Keyring error with pip. https://github.com/pypa/pip/issues/7883
+    ENV["PYTHON_KEYRING_BACKEND"] = "keyring.backends.null.Keyring"
+    sh "pip3", "install",
+            *ci_opts,
+            "--force-reinstall",
+            "--upgrade",
+            "--no-input",
+            "--no-deps",
+            # In Python 3.9 ang higher the target option can be used
+            "--prefix", python_tools_dir,
+            # "--target", python_tools_dir
+            "-r", args.requirements_file
 end
+
+#############
+### Tasks ###
+#############
 
 desc 'Check that the system-level dependencies are available (install nothing)'
 task :check_env => [] do
@@ -418,6 +448,7 @@ task :check_env => [] do
     sh "java", "--version"
     sh "rake", "--version"
     sh "python3", "--version"
+    sh "pip3", "--version"
     if which("entr") == nil
         puts "Missing entr"
         fail
@@ -429,7 +460,6 @@ task :check_env => [] do
     sh "psql", "--version"
     sh "dropdb", "--version"
 
-    sh PYTHON, "--version"
     sh ENV['CHROME_BIN'], "--version"
     sh "chromedriver", "--version"
 
@@ -455,6 +485,6 @@ task :check_env => [] do
 end
 
 desc 'Install system-level dependencies'
-task :prepare_env => [PYTHON, SPHINX_BUILD, FPM, DANGER, BUNDLER, NPM, NPX, YAMLINC, OPENAPI_GENERATOR, GO, GOSWAGGER, CHROME_DRV, PROTOC, GOLANGCILINT, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, RICHGO, MOCKERY, MOCKGEN, DLV, GDLV] do
+task :prepare_env => [SPHINX_BUILD, FPM, DANGER, BUNDLER, NPM, NPX, YAMLINC, OPENAPI_GENERATOR, GO, GOSWAGGER, PROTOC, GOLANGCILINT, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, RICHGO, MOCKERY, MOCKGEN, DLV, GDLV] do
     puts "Preparing complete!"
 end

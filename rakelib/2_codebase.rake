@@ -1,4 +1,5 @@
 # coding: utf-8
+require 'rake/clean'
 
 ###############
 ### Swagger ###
@@ -9,6 +10,7 @@ swagger_api_files = FileList['api/*.yaml'].exclude(swagger_file)
 file swagger_file => swagger_api_files + [YAMLINC] do
     sh YAMLINC, "-o", swagger_file, "api/swagger.in.yaml"
 end
+CLEAN.append swagger_file
 
 ###############
 ### Backend ###
@@ -29,6 +31,7 @@ file swagger_server_dir => [swagger_file, GOSWAGGER] do
     end
     sh "touch", swagger_server_dir
 end
+CLEAN.append *FileList[swagger_server_dir + "/**/*"], swagger_server_dir
 
 agent_proto_file = "backend/api/agent.proto"
 agent_pb_go_file = "backend/api/agent.pb.go"
@@ -39,6 +42,7 @@ file agent_pb_go_file => [agent_proto_file, PROTOC, PROTOC_GEN_GO, PROTOC_GEN_GO
     end
 end
 file agent_grpc_pb_go_file => [agent_pb_go_file]
+CLEAN.append agent_pb_go_file, agent_grpc_pb_go_file
 
 go_dependencies_dir = File.join(ENV["GOPATH"], "pkg")
 file go_dependencies_dir => [GO, "backend/go.mod", "backend/go.sum"] do
@@ -47,6 +51,7 @@ file go_dependencies_dir => [GO, "backend/go.mod", "backend/go.sum"] do
     end
     sh "touch", go_dependencies_dir
 end
+CLOBBER.append go_dependencies_dir
 
 go_server_codebase = FileList[
     "backend/server",
@@ -55,7 +60,6 @@ go_server_codebase = FileList[
     "backend/cmd/stork-server/*",
     swagger_server_dir
 ]
-
 
 go_agent_codebase = FileList[
     "backend/agent",
@@ -95,12 +99,12 @@ GO_TOOL_CODEBASE = go_tool_codebase
         .exclude("backend/cmd/stork-tool/stork-tool")
 
 file GO_SERVER_API_MOCK => [GO, MOCKERY, MOCKGEN] + GO_SERVER_CODEBASE do
-
     Dir.chdir("backend") do
         sh GO, "generate", "-v", "./..."
     end
     sh "touch", GO_SERVER_API_MOCK
 end
+CLEAN.append GO_SERVER_API_MOCK
     
 #####################
 ### Documentation ###
@@ -126,6 +130,7 @@ file open_api_generator_webui_dir => [swagger_file, OPENAPI_GENERATOR] do
     "--additional-properties", "snapshot=true,ngVersion=10.1.5,modelPropertyNaming=camelCase"
     sh "touch", open_api_generator_webui_dir
 end
+CLEAN.append *FileList[open_api_generator_webui_dir + "/**/*"], open_api_generator_webui_dir
 
 node_module_dir = "webui/node_modules"
 file node_module_dir => [NPM, "webui/package.json", "webui/package-lock.json"] do
@@ -138,6 +143,7 @@ file node_module_dir => [NPM, "webui/package.json", "webui/package-lock.json"] d
     end
     sh "touch", node_module_dir
 end
+CLOBBER.append node_module_dir
 
 WEBUI_CODEBASE = FileList["webui", "webui/**/*"]
     .exclude("webui/.angular")

@@ -28,6 +28,8 @@ end
 pkgs_dir = "dist/pkgs"
 directory pkgs_dir
 
+CLEAN.append *FileList["dist/**/*"], "dist"
+
 ##############
 ### Agent ###
 ##############

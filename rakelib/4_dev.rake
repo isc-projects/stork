@@ -1,5 +1,3 @@
-require 'open3'
-
 ###############
 ### Backend ###
 ###############
@@ -267,8 +265,15 @@ end
 
 flask_requirements_file = "tests/sim/requirements.txt"
 flask = File.expand_path("tools/python/bin/flask")
-file flask => [PYTHON, flask_requirements_file] do
-    sh PYTHON, "-m", "pip", "install", "-r", flask_requirements_file
+file flask => [flask_requirements_file] do
+    sh "pip3", "install",
+            *ci_opts,
+            "--force-reinstall",
+            "--upgrade",
+            "--no-input",
+            "--no-deps",
+            "--target", ENV["PYTHONPATH"],
+            "-r", flask_requirements_file
 end
 
 task :run_sim => [flask] do

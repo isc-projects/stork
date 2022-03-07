@@ -16,6 +16,7 @@ task :tarball do
         "--prefix", "stork-#{STORK_VERSION}/",
         "-o", "stork-#{STORK_VERSION}.tar.gz", "HEAD"
 end
+CLEAN.append *FileList["stork-*.tar.gz"]
 
 desc 'Generic task for bumping up version'
 task :bump, [:version] do |t, args|
