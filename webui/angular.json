@@ -17,7 +17,7 @@
                 "build": {
                     "builder": "@angular-devkit/build-angular:browser",
                     "options": {
-                        "outputPath": "dist/stork",
+                        "outputPath": "dist/stork-debug",
                         "index": "src/index.html",
                         "main": "src/main.ts",
                         "polyfills": "src/polyfills.ts",
@@ -45,6 +45,7 @@
                     },
                     "configurations": {
                         "production": {
+                            "outputPath": "dist/stork",
                             "fileReplacements": [
                                 {
                                     "replace": "src/environments/environment.ts",
