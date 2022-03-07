@@ -49,9 +49,10 @@ TAGS
 /webui/src/assets/arm/
 /webui/src/assets/pkgs/
 
-# build stuff when performing build all in a container
+# build stuff
 /build-root
 /.pkgs-build
+/dist
 
 # generated files for docker containers
 /docker/kea-dhcp4-many-subnets.conf

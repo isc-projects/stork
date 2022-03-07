@@ -2,5 +2,12 @@
 tools/
 webui/node_modules/
 webui/dist
+webui/.angular
+webui/src/app/backend
+webui/src/assets/arm
 build-root/
 !build-root/root
+backend/server/gen
+doc/doctrees
+doc/_build
+doc/man/*.8
