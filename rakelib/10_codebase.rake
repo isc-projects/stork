@@ -210,3 +210,9 @@ desc 'Check the external dependencies related to the codebase'
 task :check_env_codebase do
     check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
 end
+
+desc 'Trig the backend (GO) dependencies installation.'
+task :prepare_backend_deps => [go_dependencies_dir]
+
+desc 'Trig the frontend (UI) dependencies installation.'
+task :prepare_ui_deps => [node_module_dir]
