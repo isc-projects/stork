@@ -156,24 +156,14 @@ directory ruby_tools_bin_dir
 python_tools_dir = File.join(tools_dir, "python")
 directory python_tools_dir
 
+pythonpath = File.join(python_tools_dir, "lib")
+directory pythonpath
+
 # Automatically created directories by tools
 ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
 node_bin_dir = File.join(node_dir, "bin")
 goroot = File.join(go_tools_dir, "go")
 gobin = File.join(goroot, "bin")
-
-# pip install "--target" option doesn't include bin
-# directory for Python < 3.9 version.
-# To workaround this problem, the "--prefix" option
-# is used, but it causes the library path to contain
-# the Python version.
-pythonpath = nil
-python_version_out, _, status = Open3.capture3 "python3", "--version"
-if status == 0
-    python_version = (python_version_out.split)[1]
-    python_major_minor = python_version.split(".")[0,2].join(".")
-    pythonpath = File.join(python_tools_dir, "lib", "python" + python_major_minor, "site-packages")
-end
 
 # Environment variables
 ENV["GEM_HOME"] = ruby_tools_dir
@@ -426,7 +416,7 @@ end
 ### Internal tasks ###
 ######################
 
-task :pip_install, [:requirements_file] => [python_tools_dir] do |t, args|
+task :pip_install, [:requirements_file] => [python_tools_dir, pythonpath] do |t, args|
     ci_opts = []
     if ENV["CI"] == "true"
         ci_opts += ["--no-cache-dir"]
@@ -443,6 +433,18 @@ task :pip_install, [:requirements_file] => [python_tools_dir] do |t, args|
             "--prefix", python_tools_dir,
             # "--target", python_tools_dir
             "-r", args.requirements_file
+
+    # pip install "--target" option doesn't include bin
+    # directory for Python < 3.9 version.
+    # To workaround this problem, the "--prefix" option
+    # is used, but it causes the library path to contain
+    # the Python version.
+    python_version_out = `python3 --version`
+    python_version = (python_version_out.split)[1]
+    python_major_minor = python_version.split(".")[0,2].join(".")
+    site_packages_dir = File.join(python_tools_dir, "lib", "python" + python_major_minor, "site-packages")
+    sh "cp", "-a", site_packages_dir + "/.", pythonpath
+    sh "rm", "-rf", site_packages_dir
 end
 
 #############
