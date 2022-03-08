@@ -148,3 +148,9 @@ task :build_and_push_demo_images => :build_all_in_container do
   # push built images to docker registry
   sh "docker-compose #{DOCKER_COMPOSE_FILES} push"
 end
+
+desc 'Prepare containers that are using in GitLab CI processes'
+task :build_ci_containers do
+  sh 'docker build --no-cache -f docker/docker-ci-base.txt -t registry.gitlab.isc.org/isc-projects/stork/ci-base:latest docker/'
+  #sh 'docker push registry.gitlab.isc.org/isc-projects/stork/ci-base:latest'
+end
