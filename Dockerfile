@@ -54,4 +54,4 @@ WORKDIR /app/webui
 COPY --from=nodemodules-prepare /app/webui/node_modules ./
 WORKDIR /app
 COPY . ./
-RUN rake build_all
+RUN rake build_server_dist build_agent_dist

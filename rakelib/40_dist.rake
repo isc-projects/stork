@@ -257,6 +257,9 @@ task :install_agent => [agent_dist_dir] do
     sh "cp", "-a", "-f", File.join(agent_dist_dir, "."), ENV["DEST"]
 end
 
+desc "Build agent distribution directory"
+task :build_agent_dist => [agent_dist_dir]
+
 ## Server & Tool
 
 desc "Build server package"
@@ -287,3 +290,6 @@ desc 'Check the external dependencies related to the distribution'
 task :check_env_dist do
     check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
 end
+
+desc "Build server distribution directory"
+task :build_server_dist => [server_dist_dir]
