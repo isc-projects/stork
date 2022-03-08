@@ -1,4 +1,7 @@
-# establish Stork version
+# Release
+# This file contains the release-stage tasks.
+
+# Establish Stork version
 stork_version = '0.0.0'
 version_file = 'backend/version.go'
 text = File.open(version_file).read

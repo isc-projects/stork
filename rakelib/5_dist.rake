@@ -1,3 +1,7 @@
+# Distribution
+# This file builds the distribution packages
+# and install the application.
+
 ##############
 ### Common ###
 ##############

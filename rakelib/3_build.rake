@@ -1,5 +1,9 @@
 # coding: utf-8
 
+# Build 
+# This file is responsible for building (compiling)
+# the binaries and other artifacts (docs, bundles). 
+
 ############
 ### Date ###
 ############

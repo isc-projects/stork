@@ -1,7 +1,7 @@
-####################################################
-### Warning!                                     ###
-### Commands in this file aren't refactored yet! ###
-####################################################
+# Demo
+# Run the demo containers in Docker
+# Warning!
+# Commands in this file aren't refactored yet! ###
 
 CLEAN.append *FileList["buid-root/**/*"], "build-root"
 

@@ -1,4 +1,11 @@
 # coding: utf-8
+
+# Codebase
+# This file contains definitions of the source files
+# including generated ones. It defines convenient file
+# lists to use as pre-requirements in the next stages.
+# It installs the source code dependencies too.
+
 require 'rake/clean'
 
 ###############

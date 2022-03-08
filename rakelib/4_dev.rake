@@ -1,3 +1,7 @@
+# Development
+# This file defines development-stage tasks,
+# e.g., unit testing, lining, or debugging.
+
 ###############
 ### Backend ###
 ###############
@@ -340,7 +344,7 @@ task :db_migrate, [:dbname, :dbhost, :dbport, :dbuser, :dbpass, :dbtrace] => [TO
         "-p", dbport
 end
 
-desc "Remove remaing_test_databases_and_users"
+desc "Remove remaing test databases and users"
 task :db_remove_remaining, [:dbname, :dbhost, :dbport, :dbuser, :dbpass] do |t, args|
     args.with_defaults(
         :dbname => ENV["POSTGRES_DB"] || "storktest",
