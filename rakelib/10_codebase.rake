@@ -158,12 +158,16 @@ CLEAN.append open_api_generator_webui_dir
 
 node_module_dir = "webui/node_modules"
 file node_module_dir => [NPM, "webui/package.json", "webui/package-lock.json"] do
+    ci_opts = []
+    if ENV["CI"] == "true"
+        ci_opts += ["--no-audit", "--no-progress"]
+    end
+
     Dir.chdir("webui") do
         ENV["NG_CLI_ANALYTICS"] = "false"
         sh NPM, "ci",
                 "--prefer-offline",
-                "--no-audit",
-                "--no-progress"
+                *ci_opts
     end
     sh "touch", node_module_dir
 end

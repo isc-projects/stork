@@ -329,7 +329,7 @@ end
 
 desc "Run danger commit linter"
 task :lint_git => [DANGER] do
-    if ENV["CI"] == nil
+    if ENV["CI"] != "true"
         puts "Warning! You cannot run this command locally."
     end
     sh DANGER, "--fail-on-errors=true", "--new-comment"
