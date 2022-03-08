@@ -1,6 +1,7 @@
 ARG DEBIAN_VER=11.2-slim
 
 FROM debian:${DEBIAN_VER} AS debian-base
+ENV CI=true
 
 FROM debian-base AS prepare
 ENV DEBIAN_FRONTEND=noninteractive
@@ -51,4 +52,6 @@ WORKDIR /tools/golang
 COPY --from=gopath-prepare /app/tools/golang/gopath ./
 WORKDIR /app/webui
 COPY --from=nodemodules-prepare /app/webui/node_modules ./
+WORKDIR /app
+COPY . ./
 RUN rake build_all
