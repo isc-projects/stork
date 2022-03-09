@@ -85,9 +85,15 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, agent_dist_dir, pkgs_dir] + agent_hooks do
 
     agent_dist_dir_abs = File.expand_path(agent_dist_dir)
 
-    sh "ls", "-l", FPM, agent_dist_dir_abs, "etc"
-
+    
     Dir.chdir(pkgs_dir) do
+        sh "ls", "-l", FPM,
+                        agent_dist_dir_abs,
+                        "../../etc/isc-stork-agent.postinst",
+                        "../../etc/isc-stork-agent.postrm",
+                        "../../etc/isc-stork-agent.prerm",
+                        "etc/stork/agent.env",
+                        "etc/stork/agent-credentials.json.template"
         sh FPM,
             "-C", agent_dist_dir_abs,
             "-n", "isc-stork-agent",
