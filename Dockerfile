@@ -35,7 +35,6 @@ WORKDIR /app
 COPY Rakefile ./
 RUN rake prepare_env
 WORKDIR /app/rakelib
-ARG X=2
 COPY rakelib/2_codebase.rake ./
 
 FROM prepare AS gopath-prepare
@@ -56,3 +55,11 @@ COPY --from=nodemodules-prepare /app/webui .
 WORKDIR /app
 COPY . .
 RUN rake build_server_dist build_agent_dist
+
+FROM debian-base as agent
+COPY --from=builder /app/dist/agent /
+ENTRYPOINT [ "/usr/bin/stork-agent" ]
+
+FROM debian-base AS server
+COPY --from=builder /app/dist/server /
+ENTRYPOINT [ "/usr/bin/stork-server" ]
