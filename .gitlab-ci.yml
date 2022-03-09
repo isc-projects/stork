@@ -31,7 +31,6 @@ cache:
   - webui/node_modules/
   - tools/
 
-
 ### build jobs ###
 
 # common parts used in build jobs
