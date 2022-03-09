@@ -53,6 +53,11 @@ cache:
   stage: build
   rules:
     - when: always
+  cache:
+    key: one-shared-key-rpm-1
+    paths:
+    - webui/node_modules/
+    - tools/
   image: registry.gitlab.isc.org/isc-projects/stork/pkgs-centos-8:latest
   tags:
     - linux
