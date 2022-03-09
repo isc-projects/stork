@@ -86,14 +86,7 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, agent_dist_dir, pkgs_dir] + agent_hooks do
     agent_dist_dir_abs = File.expand_path(agent_dist_dir)
 
     Dir.chdir(pkgs_dir) do
-        sh "ls", "-l", FPM, agent_dist_dir_abs,
-            "../../etc/isc-stork-agent.postinst",
-            "../../etc/isc-stork-agent.postrm",
-            "../../etc/isc-stork-agent.prerm",
-            File.join(agent_dist_dir_abs, "etc/stork/agent.env"),
-            File.join(agent_dist_dir_abs, "etc/stork/agent-credentials.json.template")
-
-        sh FPM,
+        _, stderr, status = Open3.capture3 FPM,
             "-C", agent_dist_dir_abs,
             "-n", "isc-stork-agent",
             "-s", "dir",
@@ -108,6 +101,10 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, agent_dist_dir, pkgs_dir] + agent_hooks do
             "--license", "MPL 2.0",
             "--url", "https://gitlab.isc.org/isc-projects/stork/",
             "--vendor", "Internet Systems Consortium, Inc."
+        if status != 0
+            puts stderr
+            fail
+        end
     end
     sh "touch", AGENT_PACKAGE_STUB_FILE
 end
