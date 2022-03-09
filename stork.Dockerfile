@@ -22,7 +22,6 @@ RUN apt-get update \
                 xz-utils=5.2.5-2 \
                 libc6-dev=2.31-13+deb11u2 \
                 ruby-rubygems=3.2.5-2 \
-                # binutils=2.35.2-2 \
                 openjdk-11-jre-headless=11.0.14+9-1~deb11u1 \
                 chromium=99.0.4844.51-1~deb11u1 \
                 git=1:2.30.2-1 \
