@@ -35,6 +35,7 @@ WORKDIR /app
 COPY Rakefile ./
 RUN rake prepare_env
 WORKDIR /app/rakelib
+ARG X=2
 COPY rakelib/2_codebase.rake ./
 
 FROM prepare AS gopath-prepare
@@ -48,10 +49,10 @@ COPY webui/package.json webui/package-lock.json ./
 RUN rake prepare_ui_deps
 
 FROM prepare AS builder
-WORKDIR /tools/golang
-COPY --from=gopath-prepare /app/tools/golang/gopath ./
+WORKDIR /app/tools/golang
+COPY --from=gopath-prepare /app/tools/golang .
 WORKDIR /app/webui
-COPY --from=nodemodules-prepare /app/webui/node_modules ./
+COPY --from=nodemodules-prepare /app/webui .
 WORKDIR /app
-COPY . ./
+COPY . .
 RUN rake build_server_dist build_agent_dist

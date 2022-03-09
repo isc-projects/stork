@@ -65,14 +65,9 @@ end
 file agent_grpc_pb_go_file => [agent_pb_go_file]
 CLEAN.append agent_pb_go_file, agent_grpc_pb_go_file
 
-go_dependencies_dir = File.join(ENV["GOPATH"], "pkg")
-file go_dependencies_dir => [GO, "backend/go.mod", "backend/go.sum"] do
-    Dir.chdir("backend") do
-        sh GO, "mod", "download"
-    end
-    sh "touch", go_dependencies_dir
-end
-CLOBBER.append go_dependencies_dir
+# Go dependencies are installed automatically during build
+# or can be triggered manually.
+CLOBBER.append File.join(ENV["GOPATH"], "pkg")
 
 go_server_codebase = FileList[
     "backend/server",
@@ -103,7 +98,6 @@ go_common_codebase = FileList["backend/**/*"]
     .exclude(go_server_codebase)
     .exclude(go_agent_codebase)
     .exclude(go_tool_codebase)
-    .include(go_dependencies_dir)
     .include(agent_pb_go_file)
     .include(agent_grpc_pb_go_file)
 
@@ -216,7 +210,14 @@ task :check_env_codebase do
 end
 
 desc 'Trig the backend (GO) dependencies installation.'
-task :prepare_backend_deps => [go_dependencies_dir]
+task :prepare_backend_deps do
+    Dir.chdir("backend") do
+        sh GO, "mod", "download"
+    end
+end
 
 desc 'Trig the frontend (UI) dependencies installation.'
 task :prepare_ui_deps => [node_module_dir]
+
+desc 'Trig the frontend (UI) and backend (GO) dependencies installation.'
+task :prepare_deps => [:prepare_ui_deps, :prepare_backend_deps]
