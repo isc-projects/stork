@@ -3,7 +3,8 @@ ARG DEBIAN_VER=11.2-slim
 FROM debian:${DEBIAN_VER} AS debian-base
 ENV CI=true
 
-FROM debian-base AS prepare
+# Install system-wide dependencies
+FROM debian-base AS base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
         # System-wise dependencies
@@ -27,6 +28,9 @@ RUN apt-get update \
                 git=1:2.30.2-1 \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
+
+# Install main dependencies
+FROM base AS prepare 
 WORKDIR /app/rakelib
 COPY rakelib/1_init.rake ./
 WORKDIR /app/rakelib/init_debs
@@ -34,32 +38,44 @@ COPY rakelib/init_debs ./
 WORKDIR /app
 COPY Rakefile ./
 RUN rake prepare_env
+
+# Backend dependencies installation
+FROM prepare AS gopath-prepare
 WORKDIR /app/rakelib
 COPY rakelib/2_codebase.rake ./
-
-FROM prepare AS gopath-prepare
 WORKDIR /app/backend
 COPY backend/go.mod backend/go.sum ./
 RUN rake prepare_backend_deps
 
+# Frontend dependencies installation
 FROM prepare AS nodemodules-prepare
+WORKDIR /app/rakelib
+COPY rakelib/2_codebase.rake ./
 WORKDIR /app/webui
 COPY webui/package.json webui/package-lock.json ./
 RUN rake prepare_ui_deps
 
-FROM prepare AS builder
+# General-purpose stage for tasks: building, testing, linting, etc.
+# It contains the codebase with dependencies
+FROM prepare AS codebase
 WORKDIR /app/tools/golang
 COPY --from=gopath-prepare /app/tools/golang .
 WORKDIR /app/webui
 COPY --from=nodemodules-prepare /app/webui .
 WORKDIR /app
 COPY . .
+
+# Build the Stork binaries
+# It builds all components at once.
+FROM codebase AS builder
 RUN rake build_server_dist build_agent_dist
 
+# Minimal agent container
 FROM debian-base as agent
 COPY --from=builder /app/dist/agent /
 ENTRYPOINT [ "/usr/bin/stork-agent" ]
 
+# Minimal server container
 FROM debian-base AS server
 COPY --from=builder /app/dist/server /
 ENTRYPOINT [ "/usr/bin/stork-server" ]

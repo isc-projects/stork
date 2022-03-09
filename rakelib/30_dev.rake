@@ -301,16 +301,10 @@ end
 flask_requirements_file = "tests/sim/requirements.txt"
 flask = File.expand_path("tools/python/bin/flask")
 file flask => [flask_requirements_file] do
-    sh "pip3", "install",
-            *ci_opts,
-            "--force-reinstall",
-            "--upgrade",
-            "--no-input",
-            "--no-deps",
-            "--target", ENV["PYTHONPATH"],
-            "-r", flask_requirements_file
+    Rake::Task["pip_install"].invoke(flask_requirements_file)
 end
 
+desc 'Run simulator'
 task :run_sim => [flask] do
     ENV["STORK_SERVER_URL"] = "http://localhost:8080"
     ENV["FLASK_ENV"] = "development"

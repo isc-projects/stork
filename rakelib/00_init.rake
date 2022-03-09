@@ -558,6 +558,7 @@ task :pip_install, [:requirements_file] => [python_tools_dir, pythonpath] do |t,
             "--no-deps",
             # In Python 3.9 ang higher the target option can be used
             "--prefix", python_tools_dir,
+            "--ignore-installed",
             # "--target", python_tools_dir
             "-r", args.requirements_file
 
