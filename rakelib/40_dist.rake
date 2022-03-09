@@ -85,6 +85,8 @@ file AGENT_PACKAGE_STUB_FILE => [FPM, agent_dist_dir, pkgs_dir] + agent_hooks do
 
     agent_dist_dir_abs = File.expand_path(agent_dist_dir)
 
+    sh "ls", "-l", FPM, agent_dist_dir_abs, "etc"
+
     Dir.chdir(pkgs_dir) do
         sh FPM,
             "-C", agent_dist_dir_abs,
