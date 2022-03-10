@@ -1,0 +1,94 @@
+version: '2.1'
+
+services:
+  server:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/2/images/stork.Dockerfile
+      target: server
+    # Explicitly add entries to /etc/hosts for the hosts which are connected
+    # to more than two networks. These explicit entries should be added at the
+    # beginning of the /etc/hosts file enforcing that the connections by hostname
+    # are established with the IP addresses belonging to the storknet network.
+    # Before this change, agents sometimes listened on IP addresses dedicated for
+    # DHCP communication instead.
+    extra_hosts:
+      - "agent-kea:172.20.0.100"
+      - "agent-kea6:172.20.0.106"
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/server:latest"
+    networks:
+      - storknet
+    expose:
+      - "8080"
+    ports:
+      - "8088:8080"
+    environment:
+      STORK_DATABASE_HOST: postgres
+      STORK_DATABASE_PORT: 5432
+      STORK_DATABASE_USER_NAME: stork
+      STORK_DATABASE_PASSWORD: stork123
+      STORK_DATABASE_NAME: stork
+      STORK_SERVER_ENABLE_METRICS: 1
+    depends_on:
+      - postgres
+
+  webui:
+    build:
+      context: .
+      dockerfile: docker/2/images/stork.Dockerfile
+      target: webui
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/webui:latest"
+    networks:
+      - storknet
+    ports:
+      - "8080:80"
+    environment:
+      API_HOST: server
+      API_PORT: 8080
+    depends_on:
+      - server
+
+  postgres:
+    image: postgres:11
+    networks:
+      - storknet
+    environment:
+      POSTGRES_USER: stork
+      POSTGRES_PASSWORD: stork123
+      POSTGRES_DB: stork
+    ports:
+      - "5678:5432"
+
+networks:
+  storknet:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+        - subnet: 3009:db8:1::/64
+  subnet-00:
+    ipam:
+      config:
+        - subnet: 172.100.0.0/24
+  subnet-01:
+    ipam:
+      config:
+        - subnet: 172.101.0.0/24
+  subnet-02:
+    ipam:
+      config:
+        - subnet: 172.102.0.0/24
+  subnet6-00:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 3000:db8:1::/64
+  subnet6-01:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 3001:db8:1::/64

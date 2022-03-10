@@ -121,10 +121,10 @@ ENV CI=true
 COPY --from=builder /app/dist/server/usr/share/stork/www /usr/share/nginx/html
 COPY webui/nginx.conf /tmp/nginx.conf.tpl
 ENV DOLLAR=$
-RUN envsubst < /tmp/nginx.conf.tpl > /etc/nginx/conf.d/default.conf
 ENV API_HOST localhost
 ENV API_PORT 5000
-ENTRYPOINT [ "nginx", "-g", "daemon off;" ]
+ENTRYPOINT [ "/bin/sh", "-c", \
+        "envsubst < /tmp/nginx.conf.tpl > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'" ]
 EXPOSE 80
 
 # Minimal server with webui container
