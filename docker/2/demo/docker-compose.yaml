@@ -27,7 +27,7 @@ services:
       STORK_DATABASE_HOST: postgres
       STORK_DATABASE_PORT: 5432
       STORK_DATABASE_USER_NAME: stork
-      STORK_DATABASE_PASSWORD: stork123
+      STORK_DATABASE_PASSWORD: stork
       STORK_DATABASE_NAME: stork
       STORK_SERVER_ENABLE_METRICS: 1
     depends_on:
@@ -87,6 +87,7 @@ services:
       DB_HOST: mariadb
       DB_USER: agent_kea
       DB_PASSWORD: agent_kea
+      DB_ROOT_USER: root
       DB_ROOT_PASSWORD: root
       DB_NAME: agent_kea
       STORK_AGENT_SERVER_URL: http://server:8080
@@ -99,13 +100,60 @@ services:
       - mariadb
       - server
 
+  agent-kea6:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/2/images/stork.Dockerfile
+      target: kea
+    # Explicitly add entries to /etc/hosts for the hosts which are connected
+    # to more than two networks. These explicit entries should be added at the
+    # beginning of the /etc/hosts file enforcing that the connections by hostname
+    # are established with the IP addresses belonging to the storknet network.
+    # Before this change, agents sometimes listened on IP addresses dedicated for
+    # DHCP communication instead.
+    extra_hosts:
+      - "agent-kea6:172.20.0.106"
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea6:latest"
+    hostname: agent-kea6
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.106
+      subnet6-00:
+        ipv6_address: 3000:db8:1::100
+      subnet6-01:
+        ipv6_address: 3001:db8:1::100
+    expose:
+      - "8080"  # stork server to agent
+      - "9547"  # kea_exporter for prometheus
+    ports:
+      # publish ports for development purposes
+      - "8886:8080"  # port to agent
+    environment:
+      DB_TYPE: pgsql
+      DB_NAME: agent_kea6
+      DB_USER: agent_kea6
+      DB_PASSWORD: agent_kea6
+      DB_HOST: postgres
+      DB_ROOT_USER: stork
+      DB_ROOT_PASSWORD: stork
+      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_HOST: agent-kea6
+    volumes:
+      - ${PWD}/docker/2/demo/config/agent-kea6/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ${PWD}/docker/2/demo/config/agent-kea6/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
+      - ${PWD}/docker/2/demo/config/agent-kea6/supervisor.conf:/etc/supervisor/supervisord.conf
+    depends_on:
+      - postgres
+      - server
+
   postgres:
     image: postgres:11
     networks:
       - storknet
     environment:
       POSTGRES_USER: stork
-      POSTGRES_PASSWORD: stork123
+      POSTGRES_PASSWORD: stork
       POSTGRES_DB: stork
 
   mariadb:
@@ -114,9 +162,6 @@ services:
       - storknet
     environment:
       MARIADB_ROOT_PASSWORD: root
-      MARIADB_DATABASE: stork
-      MARIADB_USER: stork
-      MARIADB_PASSWORD: stork123
 
 networks:
   storknet:
