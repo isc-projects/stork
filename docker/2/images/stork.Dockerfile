@@ -137,6 +137,14 @@ EXPOSE 8080
 ### Kea / Bind + Stork Agent ###
 ################################
 
+# Kea config generator
+FROM base AS kea-config-generator
+WORKDIR /app/docker
+RUN mkdir -p /etc/kea && touch /etc/kea/kea-dhcp4.conf
+COPY docker/gen-kea-config.py .
+ENTRYPOINT [ "python3", "/app/docker/gen-kea-config.py", "-o", "/etc/kea/kea-dhcp4.conf" ]
+CMD [ "7000" ]
+
 # Minimal Kea with Stork Agent container
 FROM debian-base AS kea
 # Install Kea dependencies

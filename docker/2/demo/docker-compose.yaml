@@ -200,6 +200,42 @@ services:
     depends_on:
       - server
 
+  agent-kea-many-subnets:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/2/images/stork.Dockerfile
+      target: kea
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-many-subnets:latest"
+    hostname: agent-kea-many-subnets
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.102
+    expose:
+      - "8002"
+      - "9547"  # kea_exporter for prometheus
+    ports:
+      - "8882:8080"  # publish ports for development purposes
+    environment:
+      DB_TYPE: none
+      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_HOST: agent-kea-many-subnets
+    volumes:
+      - ${PWD}/docker/2/demo/config/agent-kea-many-subnets/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ${PWD}/docker/2/demo/config/agent-kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ${PWD}/docker/2/demo/config/agent-kea-many-subnets/supervisor.conf:/etc/supervisor/supervisord.conf
+    depends_on:
+      - server
+      - kea-config-generator
+
+  kea-config-generator:
+    build:
+      context: .
+      dockerfile: docker/2/images/stork.Dockerfile
+      target: kea-config-generator
+    volumes:
+      - ${PWD}/docker/2/demo/config/agent-kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+
   postgres:
     image: postgres:11
     networks:

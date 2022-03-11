@@ -381,6 +381,7 @@ def cmd():
     group.add_argument("--use-hooks", action="store_true", default=True, help="Enable hook libraries", dest="use_hooks")
     group.add_argument("--no-use-hooks", action="store_false", help="Disable hook libraries", dest="use_hooks")
     parser.add_argument("-i", "--interface", nargs=1, type=str, default=None, help="Interface name")
+    parser.add_argument("-o", "--output", type=argparse.FileType('w'), default=sys.stdout, help="Output target")
 
     args = parser.parse_args()
 
@@ -400,14 +401,13 @@ def cmd():
     if args.interface is not None:
         conf["Dhcp4"]["interfaces-config"]["interfaces"] = args.interface
 
-
     conf["Dhcp4"].update(generate_v4_subnet(
         outer, inner, my_mac_selector, args.reservations,
         args.start_id, **args.kwargs
     ))
 
     conf_json = json.dumps(conf)
-    print(conf_json)
+    args.output.write(conf_json)
 
 
 if __name__ == '__main__':
