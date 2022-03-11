@@ -171,7 +171,7 @@ RUN wget -q -O- https://dl.cloudsmith.io/public/isc/kea-1-8/cfg/setup/bash.deb.s
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/
 # Install agent    
-COPY --from=builder /app/dist/server /
+COPY --from=builder /app/dist/agent /
 # Database
 WORKDIR /var/lib/db
 COPY docker/2/init/init_db.sh docker/2/init/init_query.sql ./
@@ -183,18 +183,17 @@ ENV DB_USER=kea
 ENV DB_PASSWORD=kea
 ENV DB_NAME=kea
 ENTRYPOINT [ "/bin/bash", "-c", \
-        "/var/lib/db/init_db.sh && supervisord", "-c /etc/supervisor.conf" ]
+        "/var/lib/db/init_db.sh && supervisord -c /etc/supervisor/supervisord.conf" ]
 # Incoming port
 EXPOSE 8080
 # Prometheus Kea port
 EXPOSE 9547
-# Prometheus Bing9 port
-EXPOSE 9119
 # Configuration files:
 # Database seed: /var/lib/db/init_query.sql
-# Supervisor: /etc/supervisor.conf
+# Supervisor: /etc/supervisor/supervisord.conf
 # Kea DHCPv4: /etc/kea/kea-dhcp4.conf
 # Kea DHCPv6: /etc/kea/kea-dhcp6.conf
+# Kea Control Agent: /etc/kea/kea-ctrl-agent.conf
 # Stork Agent files: /etc/stork
 
 # Minimal Bind with Stork Agent container
@@ -228,8 +227,6 @@ COPY --from=builder /app/dist/server /
 ENTRYPOINT ["supervisord", "-c", "/etc/supervisor.conf"]
 # Incoming port
 EXPOSE 8080
-# Prometheus Kea port
-EXPOSE 9547
 # Prometheus Bing9 port
 EXPOSE 9119
 # Configuration files:

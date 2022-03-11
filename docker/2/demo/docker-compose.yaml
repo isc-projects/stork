@@ -49,6 +49,56 @@ services:
     depends_on:
       - server
 
+  agent-kea:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/2/images/stork.Dockerfile
+      target: kea
+    # Explicitly add entries to /etc/hosts for the hosts which are connected
+    # to more than two networks. These explicit entries should be added at the
+    # beginning of the /etc/hosts file enforcing that the connections by hostname
+    # are established with the IP addresses belonging to the storknet network.
+    # Before this change, agents sometimes listened on IP addresses dedicated for
+    # DHCP communication instead.
+    extra_hosts:
+      - "agent-kea:172.20.0.100"
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea:latest"
+    hostname: agent-kea
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.100
+      subnet-00:
+        ipv4_address: 172.100.0.100
+      subnet-01:
+        ipv4_address: 172.101.0.100
+      subnet-02:
+        ipv4_address: 172.102.0.100
+    expose:
+      - "8080"  # stork server to agent
+      - "9100"  # node_exporter for prometheus
+      - "9547"  # kea_exporter for prometheus
+    ports:
+      # publish ports for development purposes
+      - "8888:8080"  # port to agent
+      - "9001:9001"  # port to supervisor xml-rpc
+    environment:
+      DB_TYPE: mysql
+      DB_HOST: mariadb
+      DB_USER: agent_kea
+      DB_PASSWORD: agent_kea
+      DB_ROOT_PASSWORD: root
+      DB_NAME: agent_kea
+      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_HOST: agent-kea
+    volumes:
+      - ${PWD}/docker/2/demo/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ${PWD}/docker/2/demo/config/agent-kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ${PWD}/docker/2/demo/config/agent-kea/supervisor.conf:/etc/supervisor/supervisord.conf
+    depends_on:
+      - mariadb
+      - server
+
   postgres:
     image: postgres:11
     networks:
@@ -57,8 +107,16 @@ services:
       POSTGRES_USER: stork
       POSTGRES_PASSWORD: stork123
       POSTGRES_DB: stork
-    ports:
-      - "5678:5432"
+
+  mariadb:
+    image: mariadb:10.7
+    networks:
+      - storknet
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: stork
+      MARIADB_USER: stork
+      MARIADB_PASSWORD: stork123
 
 networks:
   storknet:

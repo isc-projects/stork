@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -92,6 +93,11 @@ func writeAgentFile(path string, content []byte) error {
 		}
 	}
 
+	directory := filepath.Dir(path)
+	err = os.MkdirAll(directory, os.ModePerm)
+	if err != nil {
+		return err
+	}
 	err = os.WriteFile(path, content, 0600)
 	if err != nil {
 		return err

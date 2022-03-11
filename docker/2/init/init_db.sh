@@ -1,33 +1,84 @@
 #!/bin/bash
-
+set -x
 echo "Database type: ${DB_TYPE}"
-echo "Checking if the database exists"
-exist_query = "select * from schema_version;"
+
+echo "CREATE USER"
+create_user_query="CREATE USER IF NOT EXISTS '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';"
 if [ ${DB_TYPE} = 'mysql' ]; then
     mysql \
-        --user=${DB_USER} \
-        --password=${DB_PASSWORD} \
+        --user=root \
+        --password=${DB_ROOT_PASSWORD} \
         --host=${DB_HOST} \
-        ${DB_NAME} \
-        -e ${exist_query}
+        -e "$create_user_query"
+else
+    PGPASSWORD=${DB_PASSWORD} psql \
+        -U ${DB_USER} \
+        -h ${DB_HOST} \
+        -d ${DB_NAME} \
+        -c "$create_user_query"
+fi
+
+echo "Checking if the database exists"
+exist_query="select * from schema_version;"
+if [ ${DB_TYPE} = 'mysql' ]; then
+    mysql \
+        --user=root \
+        --password=${DB_ROOT_PASSWORD} \
+        --host=${DB_HOST} \
+        -e "$exist_query" \
+        ${DB_NAME}
 elif [ ${DB_TYPE} = 'pgsql']; then
     PGPASSWORD=${DB_PASSWORD} psql \
         -U ${DB_USER} \
         -h ${DB_HOST} \
         -d ${DB_NAME} \
-        -c ${exist_query}
+        -c "$exist_query"
 else
     echo "Unsupported DB_TYPE, choose mysql or pgsql"
     exit 1
 fi
 
-if [ $? -eq 0 ]
+has_db=$?
+set -e
+
+if [ $has_db -ne 0 ]
 then
-    echo "Database apparently exists"
-    exit 0
+echo "Create the database"
+    create_db_query="CREATE DATABASE IF NOT EXISTS ${DB_NAME};"
+    if [ ${DB_TYPE} = 'mysql' ]; then
+        mysql \
+            --user=root \
+            --password=${DB_ROOT_PASSWORD} \
+            --host=${DB_HOST} \
+            -e "$create_db_query"
+    else
+        PGPASSWORD=${DB_PASSWORD} psql \
+            -U ${DB_USER} \
+            -h ${DB_HOST} \
+            -d ${DB_NAME} \
+            -c "$create_db_query"
+    fi
 fi
 
-set -e
+grant_query="GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'%';"
+if [ ${DB_TYPE} = 'mysql' ]; then
+    mysql \
+        --user=root \
+        --password=${DB_ROOT_PASSWORD} \
+        --host=${DB_HOST} \
+        -e "$grant_query"
+else
+    PGPASSWORD=${DB_PASSWORD} psql \
+        -U ${DB_USER} \
+        -h ${DB_HOST} \
+        -d ${DB_NAME} \
+        -c "$grant_query"
+fi
+
+if [ $has_db -eq 0 ]
+then
+    exit 0
+fi
 
 echo "Initializing the database"
 kea-admin db-init ${DB_TYPE} \
@@ -37,16 +88,16 @@ kea-admin db-init ${DB_TYPE} \
     -h ${DB_HOST}
 
 echo "Seed database"
-seed_file = "${BASH_SOURCE%/*}/init_query.sql"
+seed_file="${BASH_SOURCE%/*}/init_query.sql"
 if [ ${DB_TYPE} = 'mysql' ]; then
     mysql \
-        --user=${DB_USER} \
-        --password=${DB_PASSWORD} \
+        --user=root \
+        --password=${DB_ROOT_PASSWORD} \
         --host=${DB_HOST} \
-        ${DB_NAME} < cat ${seed_file}
+        ${DB_NAME} < $seed_file
 else
     PGPASSWORD=${DB_PASSWORD} psql \
         -U ${DB_USER} \
         -h ${DB_HOST} \
-        -d ${DB_NAME} < cat ${seed_file}
+        -d ${DB_NAME} < cat $seed_file
 fi
