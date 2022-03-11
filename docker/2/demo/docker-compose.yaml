@@ -147,6 +147,59 @@ services:
       - postgres
       - server
 
+  agent-kea-ha1:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/2/images/stork.Dockerfile
+      target: kea
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-ha1:latest"
+    hostname: agent-kea-ha1
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.101
+    expose:
+      - "8001"
+      - "9547"  # kea_exporter for prometheus
+    ports:
+      - "8881:8080"  # publish ports for development purposes
+    environment:
+      DB_TYPE: none
+      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_HOST: agent-kea-ha1
+    volumes:
+      - ${PWD}/docker/2/demo/config/agent-kea-ha1/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ${PWD}/docker/2/demo/config/agent-kea-ha1/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ${PWD}/docker/2/demo/config/agent-kea-ha1/supervisor.conf:/etc/supervisor/supervisord.conf
+    depends_on:
+      - server
+
+  agent-kea-ha2:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/2/images/stork.Dockerfile
+      target: kea
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-ha2:latest"
+    hostname: agent-kea-ha2
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.110
+    expose:
+      - "8080"
+    ports:
+      - "8110:8080"  # publish ports for development purposes
+    environment:
+      DB_TYPE: none
+      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_HOST: agent-kea-ha2
+    volumes:
+      - ${PWD}/docker/2/demo/config/agent-kea-ha2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ${PWD}/docker/2/demo/config/agent-kea-ha2/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ${PWD}/docker/2/demo/config/agent-kea-ha2/supervisor.conf:/etc/supervisor/supervisord.conf
+    depends_on:
+      - server
+
   postgres:
     image: postgres:11
     networks:

@@ -4,15 +4,18 @@ echo "Database type: ${DB_TYPE}"
 if [ ${DB_TYPE} = 'mysql' ]; then
     until mysqladmin ping -h"${DB_HOST}" --silent;
     do
-    echo "Waiting for database connection..."
-    # wait for 5 seconds before check again
-    sleep 5
+        echo "Waiting for database connection..."
+        sleep 5
     done
 elif [ ${DB_TYPE} = 'pgsql' ]; then
-    db_port=5432
+    until PGPASSWORD=${DB_ROOT_PASSWORD} psql -h ${DB_HOST} -U ${DB_ROOT_USER} -c "SELECT 1" > /dev/null 2>&1;
+    do
+        echo "Waiting for database connection..."
+        sleep 5
+    done
 else
-    echo "Unsupported DB_TYPE, choose mysql or pgsql"
-    exit 1
+    echo "No database selected"
+    exit 0
 fi
 
 
