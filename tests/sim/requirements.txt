@@ -14,12 +14,16 @@ flask==2.0.3
     # via -r tests/sim/requirements.in
 idna==3.3
     # via requests
-itsdangerous==2.1.0
-    # via flask
+itsdangerous==2.0.1
+    # via
+    #   -r tests/sim/requirements.in
+    #   flask
 jinja2==3.0.3
     # via flask
-markupsafe==2.1.0
-    # via jinja2
+markupsafe==2.0.1
+    # via
+    #   -r tests/sim/requirements.in
+    #   jinja2
 requests==2.27.1
     # via -r tests/sim/requirements.in
 urllib3==1.26.8

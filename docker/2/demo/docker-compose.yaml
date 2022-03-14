@@ -229,6 +229,7 @@ services:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: http://server:8080
       STORK_AGENT_HOST: agent-kea-many-subnets
+      STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS: "false"
     volumes:
       - ${PWD}/docker/2/demo/config/agent-kea-many-subnets/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ${PWD}/docker/2/demo/config/agent-kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
@@ -284,8 +285,43 @@ services:
     volumes:
       - ${PWD}/docker/2/demo/config/agent-kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
+  simulator:
+    build:
+      context: .
+      dockerfile: docker/2/images/simulator.Dockerfile
+    # Explicitly add entries to /etc/hosts for the hosts which are connected
+    # to more than two networks. These explicit entries should be added at the
+    # beginning of the /etc/hosts file enforcing that the connections by hostname
+    # are established with the IP addresses belonging to the storknet network.
+    # Before this change, agents sometimes listened on IP addresses dedicated for
+    # DHCP communication instead.
+    extra_hosts:
+      - "agent-kea:172.20.0.100"
+      - "agent-kea6:172.20.0.106"
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/dhcp-traffic:latest"
+    hostname: simulator
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.200
+      subnet-00:
+        ipv4_address: 172.100.0.200
+      subnet-01:
+        ipv4_address: 172.101.0.200
+      subnet-02:
+        ipv4_address: 172.102.0.200
+      subnet6-00:
+        ipv6_address: 3000:db8:1::200
+      subnet6-01:
+        ipv6_address: 3001:db8:1::200
+    ports:
+      - "5000:5000"
+    environment:
+      STORK_SERVER_URL: http://server:8080
+    depends_on:
+      - server
+
   prometheus:
-    image: prom/prometheus:v2.16.0
+    image: prom/prometheus:v2.32.1
     networks:
       - storknet
     ports:
@@ -294,7 +330,7 @@ services:
        - ${PWD}/docker/2/demo/config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
-    image: grafana/grafana:6.5.3
+    image: grafana/grafana:8.3.7
     networks:
       - storknet
     ports:

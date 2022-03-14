@@ -1,2 +1,5 @@
 Flask
 requests
+# Backward compatibility for Ubuntu 18.04
+itsdangerous==2.0.1
+markupsafe==2.0.1
