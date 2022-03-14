@@ -269,6 +269,7 @@ services:
   agent-bind9-2:
     extends:
       service: agent-bind9
+    hostname: agent-bind9-2
     networks:
       storknet:
         ipv4_address: 172.20.0.54
@@ -282,6 +283,31 @@ services:
       target: kea-config-generator
     volumes:
       - ${PWD}/docker/2/demo/config/agent-kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+
+  prometheus:
+    image: prom/prometheus:v2.16.0
+    networks:
+      - storknet
+    ports:
+      - "9090:9090"
+    volumes:
+       - ${PWD}/docker/2/demo/config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:6.5.3
+    networks:
+      - storknet
+    ports:
+      - "3000:3000"
+    volumes:
+       - ${PWD}/docker/2/demo/config/grafana/grafana.ini:/etc/grafana/grafana.ini
+       - ${PWD}/docker/2/demo/config/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+       - ${PWD}/docker/2/demo/config/grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+       - ./grafana/kea-dhcp4.json:/var/lib/grafana/dashboards/kea-dhcp4.json
+       - ./grafana/kea-dhcp6.json:/var/lib/grafana/dashboards/kea-dhcp6.json
+       - ./grafana/bind9-resolver.json:/var/lib/grafana/dashboards/bind9-resolver.json
+    depends_on:
+      - prometheus
 
   postgres:
     image: postgres:11

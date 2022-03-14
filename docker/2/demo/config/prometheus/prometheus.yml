@@ -1,0 +1,25 @@
+global:
+  scrape_interval:     5s
+  evaluation_interval: 5s
+
+
+scrape_configs:
+  # basic node exports exposing machine health
+  - job_name: 'node'
+    static_configs:
+      - targets: ['agent-kea:9100', 'agent-bind9:9100', 'agent-bind9-2:9100']
+
+  # statistics from Kea
+  - job_name: 'kea'
+    static_configs:
+      - targets: ['agent-kea:9547', 'agent-kea6:9547', 'agent-kea-ha1:9547', 'agent-kea-ha2:9547']
+
+  # statistics from bind9, requires bind-exporter
+  - job_name: 'bind9'
+    static_configs:
+      - targets: ['agent-bind9:9119', 'agent-bind9-2:9119']
+
+  # statistics from Stork Server
+  - job_name: 'storkserver'
+    static_configs:
+        - targets: ['server:8080']
