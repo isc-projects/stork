@@ -238,7 +238,7 @@ EXPOSE 8080
 # Prometheus Bing9 port
 EXPOSE 9119
 # Configuration files:
-# Supervisor: /etc/supervisor.conf
+# Supervisor: /etc/supervisor/supervisord.conf
 # Stork Agent: /etc/stork
 # Bind9 config: /etc/bind/named.conf
 # Bind9 database: /etc/bind/db.test
