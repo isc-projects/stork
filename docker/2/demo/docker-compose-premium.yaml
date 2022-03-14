@@ -1,0 +1,42 @@
+version: '2.1'
+
+services:
+  agent-kea-premium:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/2/images/stork.Dockerfile
+      target: kea
+      args:
+        KEA_REPO: ${CS_REPO_ACCESS_TOKEN}/isc/kea-2-0-prv
+        KEA_PREMIUM: "premium"
+    image: registry.gitlab.isc.org/isc-private/stork/agent-kea-premium:latest
+    hostname: agent-kea-premium
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.103
+    expose:
+      - "8080"  # stork server to agent
+    ports:
+      - "8838:8080"  # publish ports for development purposes
+    environment:
+      DB_TYPE: mysql
+      DB_HOST: mariadb
+      DB_USER: agent_kea_premium
+      DB_PASSWORD: agent_kea_premium
+      DB_ROOT_USER: root
+      DB_ROOT_PASSWORD: root
+      DB_NAME: agent_kea_premium
+      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_HOST: agent-kea-premium
+    volumes:
+      - ${PWD}/docker/2/demo/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ${PWD}/docker/2/demo/config/agent-kea-premium/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ${PWD}/docker/2/demo/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
+      - ${PWD}/docker/2/demo/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
+      - ${PWD}/docker/2/demo/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
+      - ${PWD}/docker/2/demo/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
+      - ${PWD}/docker/2/demo/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
+    depends_on:
+      - mariadb
+      - server

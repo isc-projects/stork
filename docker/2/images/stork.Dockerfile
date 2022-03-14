@@ -146,7 +146,7 @@ ENTRYPOINT [ "python3", "/app/docker/gen-kea-config.py", "-o", "/etc/kea/kea-dhc
 CMD [ "7000" ]
 
 # Minimal Kea with Stork Agent container
-FROM debian-base AS kea
+FROM debian-base AS kea-base
 # Install Kea dependencies
 RUN apt-get update \
         && apt-get install \
@@ -163,9 +163,9 @@ RUN apt-get update \
         && rm -rf /var/lib/apt/lists/*
 # Install Kea from Cloudsmith
 SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
+ARG KEA_REPO=public/isc/kea-2-0
 ARG KEA_VER=2.0.2-isc20220227221539
-RUN wget -q -O- https://dl.cloudsmith.io/public/isc/kea-1-8/cfg/setup/bash.deb.sh | bash \
-        && wget -q -O- https://dl.cloudsmith.io/public/isc/kea-2-0/cfg/setup/bash.deb.sh | bash \
+RUN wget -q -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
                 --no-install-recommends \
@@ -178,6 +178,22 @@ RUN wget -q -O- https://dl.cloudsmith.io/public/isc/kea-1-8/cfg/setup/bash.deb.s
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/
+ARG KEA_PREMIUM=""
+
+FROM kea-base AS keapremium-base
+# Execute only if the premium is enabled
+RUN [ "${KEA_PREMIUM}" != "premium" ] && : || \
+        apt-get update \
+        && apt-get install \
+                --no-install-recommends \
+                -y \
+                isc-kea-premium-host-cmds=${KEA_VER} \
+                isc-kea-premium-forensic-log=${KEA_VER} \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* \
+        && mkdir -p /var/run/kea/
+
+FROM kea${KEA_PREMIUM}-base AS kea
 # Install agent    
 COPY --from=builder /app/dist/agent /
 # Database
