@@ -71,13 +71,15 @@ type Manager interface {
 	// Creates new context for applying configuration changes.
 	CreateContext(int64) (context.Context, error)
 	// Stores the context in the manager for later use.
-	RememberContext(context.Context) error
+	RememberContext(context.Context, time.Duration) error
 	// Returns stored context for a given context and user ID.
-	RecoverContext(int64, int64) context.Context
+	RecoverContext(int64, int64) (context.Context, context.CancelFunc)
 	// Locks the daemons' configurations for update.
 	Lock(context.Context, ...int64) (context.Context, error)
 	// Unlocks the daemons' configurations.
 	Unlock(context.Context)
+	// Cancels the config update transaction.
+	Done(context.Context)
 	// Sends configuration changes to the daemons.
 	Commit(context.Context) (context.Context, error)
 	// Sends scheduled configuration changes to the daemons.

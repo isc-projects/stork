@@ -111,12 +111,14 @@ func TestRememberRecoverContext(t *testing.T) {
 	require.True(t, ok)
 
 	// Store the context.
-	err = manager.RememberContext(ctx1)
+	err = manager.RememberContext(ctx1, time.Minute*10)
 	require.NoError(t, err)
+	defer manager.Done(ctx1)
 
 	// Try to recover the context by retrieved ID and user ID.
-	recovered1 := manager.RecoverContext(id1, 123)
+	recovered1, cancel1 := manager.RecoverContext(id1, 123)
 	require.NotNil(t, recovered1)
+	require.NotNil(t, cancel1)
 
 	// The context ID and user ID should be present in the recovered context.
 	_, ok = recovered1.Value(config.ContextIDKey).(int64)
@@ -141,11 +143,13 @@ func TestRememberRecoverContext(t *testing.T) {
 	id2, ok := ctx2.Value(config.ContextIDKey).(int64)
 	require.True(t, ok)
 
-	err = manager.RememberContext(ctx2)
+	err = manager.RememberContext(ctx2, time.Minute*10)
 	require.NoError(t, err)
+	defer manager.Done(ctx2)
 
-	recovered2 := manager.RecoverContext(id2, 234)
+	recovered2, cancel2 := manager.RecoverContext(id2, 234)
 	require.NotNil(t, recovered2)
+	require.NotNil(t, cancel2)
 
 	_, ok = recovered2.Value(config.ContextIDKey).(int64)
 	require.True(t, ok)
@@ -156,6 +160,90 @@ func TestRememberRecoverContext(t *testing.T) {
 	bar, ok := recovered2.Value(key).(string)
 	require.True(t, ok)
 	require.Equal(t, "baz", bar)
+}
+
+// Test the case when a timeout occurs during config update.
+func TestContextTimeout(t *testing.T) {
+	manager := NewManager(nil)
+	require.NotNil(t, manager)
+
+	ctx, err := manager.CreateContext(int64(123))
+	require.NoError(t, err)
+	require.NotNil(t, ctx)
+
+	contextID, ok := ctx.Value(config.ContextIDKey).(int64)
+	require.True(t, ok)
+
+	// Remember the context.
+	err = manager.RememberContext(ctx, time.Second*10)
+	require.NoError(t, err)
+
+	// Use the context to lock the daemon 1.
+	ctx, err = manager.Lock(ctx, 1)
+	require.NoError(t, err)
+	defer manager.Unlock(ctx)
+
+	// Remember the context again. It specifies a very short timeout
+	// overriding the previous timeout of 10s.
+	err = manager.RememberContext(ctx, time.Microsecond)
+	require.NoError(t, err)
+
+	// Wait for a timeout. When the timeout elapses, an attempt to recover
+	// the context should return nil because the context should be removed
+	// after the timeout.
+	require.Eventually(t, func() bool {
+		ctx, _ := manager.RecoverContext(contextID, 123)
+		return ctx == nil
+	}, time.Second, time.Millisecond)
+
+	// Try to lock the configuration on daemon 1. It should succeed because
+	// the configuration should have been unlocked after the timeout.
+	ctxLock, err := manager.CreateContext(int64(234))
+	require.NoError(t, err)
+	require.NotNil(t, ctxLock)
+	require.Eventually(t, func() bool {
+		ctxLock, err = manager.Lock(ctxLock, 1)
+		defer manager.Unlock(ctxLock)
+		return err == nil
+	}, time.Second, time.Millisecond)
+}
+
+// Test that calling Done() function results in removing the context and
+// unlocking the configuration.
+func TestDone(t *testing.T) {
+	manager := NewManager(nil)
+	require.NotNil(t, manager)
+
+	ctx, err := manager.CreateContext(int64(123))
+	require.NoError(t, err)
+	require.NotNil(t, ctx)
+
+	contextID, ok := ctx.Value(config.ContextIDKey).(int64)
+	require.True(t, ok)
+
+	ctx, err = manager.Lock(ctx, 1)
+	require.NoError(t, err)
+	defer manager.Unlock(ctx)
+
+	err = manager.RememberContext(ctx, time.Second*10)
+	require.NoError(t, err)
+
+	manager.Done(ctx)
+
+	// An attempt to recover the context should return nil.
+	ctx, cancel := manager.RecoverContext(contextID, 123)
+	require.Nil(t, ctx)
+	require.Nil(t, cancel)
+
+	// An attempt to lock the daemon configuration should succeed
+	// because the previous lock should have been removed as a result
+	// of calling Done().
+	ctxLock, err := manager.CreateContext(int64(234))
+	require.NoError(t, err)
+	require.NotNil(t, ctxLock)
+	_, err = manager.Lock(ctxLock, 1)
+	require.NoError(t, err)
+	manager.Unlock(ctxLock)
 }
 
 // Test that that an error is returned upon an attempt to remember the context
@@ -170,7 +258,7 @@ func TestRememberContextWithMismatchedUserID(t *testing.T) {
 	require.NotNil(t, ctx)
 
 	// Remember the context.
-	err = manager.RememberContext(ctx)
+	err = manager.RememberContext(ctx, time.Minute*10)
 	require.NoError(t, err)
 
 	// Retrieve the context ID. We are going to use this ID instead of the
@@ -185,7 +273,7 @@ func TestRememberContextWithMismatchedUserID(t *testing.T) {
 		id++
 	}
 	ctx = context.WithValue(ctx, config.UserContextKey, id)
-	err = manager.RememberContext(ctx)
+	err = manager.RememberContext(ctx, time.Minute*10)
 	require.Error(t, err)
 }
 
@@ -201,7 +289,7 @@ func TestRecoverContextMismatch(t *testing.T) {
 	require.NotNil(t, ctx1)
 	id1, ok := ctx1.Value(config.ContextIDKey).(int64)
 	require.True(t, ok)
-	err = manager.RememberContext(ctx1)
+	err = manager.RememberContext(ctx1, time.Minute*10)
 	require.NoError(t, err)
 
 	// Create second context with user ID 234.
@@ -210,14 +298,20 @@ func TestRecoverContextMismatch(t *testing.T) {
 	require.NotNil(t, ctx2)
 	id2, ok := ctx2.Value(config.ContextIDKey).(int64)
 	require.True(t, ok)
-	err = manager.RememberContext(ctx2)
+	err = manager.RememberContext(ctx2, time.Minute*10)
 	require.NoError(t, err)
 
 	// When a user ID or context ID doesn't match the nil context
 	// should be returned.
-	require.Nil(t, err, manager.RecoverContext(id1, 234))
-	require.Nil(t, err, manager.RecoverContext(id2, 123))
-	require.Nil(t, err, manager.RecoverContext(111, 111))
+	recovered, cancel := manager.RecoverContext(id1, 234)
+	require.Nil(t, recovered)
+	require.Nil(t, cancel)
+	recovered, cancel = manager.RecoverContext(id2, 123)
+	require.Nil(t, recovered)
+	require.Nil(t, cancel)
+	recovered, cancel = manager.RecoverContext(111, 111)
+	require.Nil(t, recovered)
+	require.Nil(t, cancel)
 }
 
 // Test that daemon configurations can be locked for updates and then

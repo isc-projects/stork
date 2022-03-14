@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"math"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -20,6 +21,12 @@ type configLock struct {
 	userID int64
 }
 
+// Holds a pair of a context and its cancel function.
+type contextPair struct {
+	context context.Context
+	cancel  context.CancelFunc
+}
+
 // Configuration manager implementation. The manager is responsible
 // for coordinating configuration changes of the monitored daemons.
 // It allows for applying the configuration changes instantly or
@@ -31,12 +38,14 @@ type configManagerImpl struct {
 	// Holds contexts for present transactions. The unique context
 	// identifier exchanged between the server and the client is a
 	// key of this map.
-	contexts map[int64]context.Context
+	contexts map[int64]contextPair
 	// A map holding acquired locks for daemons. The map key is an
 	// ID of the daemon for which the lock has been acquired.
 	locks map[int64]configLock
 	// Last generated lock key.
 	key config.LockKey
+	// Config manager main mutex.
+	mutex *sync.RWMutex
 	// An interface to the Kea module commit function that the manager
 	// calls to commit the changes in the Kea servers.
 	keaCommit config.KeaModuleCommit
@@ -107,7 +116,7 @@ func (manager *configManagerImpl) lock(ctx context.Context, daemonID int64) erro
 }
 
 // Unlocks daemon's configuration if the lock stored in the context matches.
-func (manager *configManagerImpl) unlock(ctx context.Context, daemonID int64) {
+func (manager *configManagerImpl) unlockDaemon(ctx context.Context, daemonID int64) {
 	// The lock key is required.
 	lockKey, ok := ctx.Value(config.LockContextKey).(config.LockKey)
 	if !ok {
@@ -124,12 +133,23 @@ func (manager *configManagerImpl) unlock(ctx context.Context, daemonID int64) {
 	// Didn't unlock.
 }
 
+// Removes locks from the specified daemons' configurations if the
+// key stored in the context matches.
+func (manager *configManagerImpl) unlock(ctx context.Context) {
+	if daemonIDs, ok := ctx.Value(config.DaemonsContextKey).([]int64); ok {
+		for _, id := range daemonIDs {
+			manager.unlockDaemon(ctx, id)
+		}
+	}
+}
+
 // Creates new configuration manager instance.
 func NewManager(db *pg.DB) config.Manager {
 	manager := &configManagerImpl{
 		db:       db,
+		contexts: make(map[int64]contextPair),
 		locks:    make(map[int64]configLock),
-		contexts: make(map[int64]context.Context),
+		mutex:    &sync.RWMutex{},
 	}
 	keaConfigModule := kea.NewConfigModule(manager)
 	manager.kea = keaConfigModule
@@ -165,11 +185,12 @@ func (manager *configManagerImpl) CreateContext(userID int64) (context.Context, 
 // Stores the context in the manager for later use. If the context exists
 // for the given context ID and the user ID matches, the context is replaced.
 // If the user ID doesn't match, an error is returned.
-func (manager *configManagerImpl) RememberContext(ctx context.Context) error {
+func (manager *configManagerImpl) RememberContext(ctx context.Context, timeout time.Duration) error {
 	var (
-		contextID int64
-		userID    int64
-		ok        bool
+		contextID   int64
+		userID      int64
+		existingCtx contextPair
+		ok          bool
 	)
 	// Retrieve context id from the context. It will be used as a key to access
 	// the stored context.
@@ -182,28 +203,54 @@ func (manager *configManagerImpl) RememberContext(ctx context.Context) error {
 	if userID, ok = ctx.Value(config.UserContextKey).(int64); !ok {
 		return pkgerrors.New("context lacks user ID")
 	}
+	manager.mutex.RLock()
 	// Check if the context has been already stored under this context id.
-	if existingCtx, ok := manager.contexts[contextID]; ok {
-		existingUserID, ok := existingCtx.Value(config.UserContextKey).(int64)
+	existingCtx, ok = manager.contexts[contextID]
+	manager.mutex.RUnlock()
+	if ok {
+		existingUserID, ok := existingCtx.context.Value(config.UserContextKey).(int64)
 		if !ok || existingUserID != userID {
 			return pkgerrors.New("unable to remember the context because user ID is mismatched")
 		}
+		existingCtx.cancel()
 	}
-	manager.contexts[contextID] = ctx
+	// User is still actively working on the configuration. Push the
+	// the timeout forward.
+	ctx, cancel := context.WithCancel(ctx)
+	manager.mutex.Lock()
+	manager.contexts[contextID] = contextPair{
+		context: ctx,
+		cancel:  cancel,
+	}
+	manager.mutex.Unlock()
+	// Run the goroutine watching for a timeout that may occur when
+	// a user is inactive.
+	go func(ctx context.Context, timeout time.Duration) {
+		select {
+		case <-ctx.Done():
+			// Canceled the context to push the timeout forward.
+		case <-time.After(timeout):
+			// Timeout occurred because the user has been inactive.
+			// Remove the context causing the user to start over.
+			manager.Done(ctx)
+		}
+	}(ctx, timeout)
 	return nil
 }
 
 // Returns a stored context for a given context ID and user ID. The user ID
 // should come from the current user session.
-func (manager *configManagerImpl) RecoverContext(contextID, userID int64) context.Context {
+func (manager *configManagerImpl) RecoverContext(contextID, userID int64) (context.Context, context.CancelFunc) {
+	manager.mutex.RLock()
+	defer manager.mutex.RUnlock()
 	if ctx, ok := manager.contexts[contextID]; ok {
-		if existingUserID, ok := ctx.Value(config.UserContextKey).(int64); ok {
+		if existingUserID, ok := ctx.context.Value(config.UserContextKey).(int64); ok {
 			if existingUserID == userID {
-				return ctx
+				return ctx.context, ctx.cancel
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // Attempts to lock configurations of the specified daemons for update.
@@ -213,6 +260,8 @@ func (manager *configManagerImpl) RecoverContext(contextID, userID int64) contex
 func (manager *configManagerImpl) Lock(ctx context.Context, daemonIDs ...int64) (context.Context, error) {
 	// Generate a new lock key.
 	ctx = context.WithValue(ctx, config.LockContextKey, manager.generateKey())
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
 	for _, id := range daemonIDs {
 		// Try to acquire a lock for each daemon.
 		if err := manager.lock(ctx, id); err != nil {
@@ -221,7 +270,7 @@ func (manager *configManagerImpl) Lock(ctx context.Context, daemonIDs ...int64) 
 				if uid == id {
 					break
 				}
-				manager.unlock(ctx, uid)
+				manager.unlockDaemon(ctx, uid)
 			}
 			return ctx, err
 		}
@@ -233,11 +282,25 @@ func (manager *configManagerImpl) Lock(ctx context.Context, daemonIDs ...int64) 
 // Removes locks from the specified daemons' configurations if the
 // key stored in the context matches.
 func (manager *configManagerImpl) Unlock(ctx context.Context) {
-	if daemonIDs, ok := ctx.Value(config.DaemonsContextKey).([]int64); ok {
-		for _, id := range daemonIDs {
-			manager.unlock(ctx, id)
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
+	manager.unlock(ctx)
+}
+
+// Cancels the context and removes it from the storage of remembered contexts.
+// Finally, it unlocks the daemons locked with this context.
+func (manager *configManagerImpl) Done(ctx context.Context) {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
+	if contextID, ok := ctx.Value(config.ContextIDKey).(int64); ok {
+		if contextPair, ok := manager.contexts[contextID]; ok {
+			if contextPair.cancel != nil {
+				contextPair.cancel()
+			}
+			delete(manager.contexts, contextID)
 		}
 	}
+	manager.unlock(ctx)
 }
 
 // Sends the configuration updates queued in the context to one or multiple daemons
