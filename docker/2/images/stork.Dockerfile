@@ -219,20 +219,20 @@ RUN apt-get update \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*
 # Install Bind
-ARG BIND_VER=""
+ARG BIND_VER="1:9.16.22-1~deb11u1"
 RUN apt-get update \
         && apt-get install \
                 -y \
                 --no-install-recommends \
-                bind9 \
+                bind9=${BIND_VER} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && chown root:bind /etc/bind/rndc.key \
         && chmod 640 /etc/bind/rndc.key \
         && touch /etc/bind/db.test
 # Install agent    
-COPY --from=builder /app/dist/server /
-ENTRYPOINT ["supervisord", "-c", "/etc/supervisor.conf"]
+COPY --from=builder /app/dist/agent /
+ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 # Incoming port
 EXPOSE 8080
 # Prometheus Bing9 port

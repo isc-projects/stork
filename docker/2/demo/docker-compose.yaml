@@ -98,7 +98,6 @@ services:
       - ${PWD}/docker/2/demo/config/agent-kea/supervisor.conf:/etc/supervisor/supervisord.conf
     depends_on:
       - mariadb
-      - server
 
   agent-kea6:
     restart: always
@@ -145,7 +144,6 @@ services:
       - ${PWD}/docker/2/demo/config/agent-kea6/supervisor.conf:/etc/supervisor/supervisord.conf
     depends_on:
       - postgres
-      - server
 
   agent-kea-ha1:
     restart: always
@@ -171,8 +169,6 @@ services:
       - ${PWD}/docker/2/demo/config/agent-kea-ha1/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ${PWD}/docker/2/demo/config/agent-kea-ha1/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
       - ${PWD}/docker/2/demo/config/agent-kea-ha1/supervisor.conf:/etc/supervisor/supervisord.conf
-    depends_on:
-      - server
 
   agent-kea-ha2:
     restart: always
@@ -197,8 +193,6 @@ services:
       - ${PWD}/docker/2/demo/config/agent-kea-ha2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ${PWD}/docker/2/demo/config/agent-kea-ha2/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
       - ${PWD}/docker/2/demo/config/agent-kea-ha2/supervisor.conf:/etc/supervisor/supervisord.conf
-    depends_on:
-      - server
 
   agent-kea-many-subnets:
     restart: always
@@ -225,8 +219,39 @@ services:
       - ${PWD}/docker/2/demo/config/agent-kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
       - ${PWD}/docker/2/demo/config/agent-kea-many-subnets/supervisor.conf:/etc/supervisor/supervisord.conf
     depends_on:
-      - server
       - kea-config-generator
+
+  agent-bind9:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/2/images/stork.Dockerfile
+      target: bind
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-bind9:latest"
+    hostname: agent-bind9
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.53
+    environment:
+      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_HOST: agent-bind9
+    expose:
+      - "8080"
+      - "9100"  # node_exporter for prometheus
+      - "9119"  # bind_exporter for prometheus
+    volumes:
+      - ${PWD}/docker/2/demo/config/agent-bind9/db.test:/etc/bind/db.test
+      - ${PWD}/docker/2/demo/config/agent-bind9/named.conf:/etc/bind/named.conf
+      - ${PWD}/docker/2/demo/config/agent-bind9/supervisor.conf:/etc/supervisor/supervisord.conf
+
+  agent-bind9-2:
+    extends:
+      service: agent-bind9
+    networks:
+      storknet:
+        ipv4_address: 172.20.0.54
+    environment:
+      STORK_AGENT_HOST: agent-bind9-2
 
   kea-config-generator:
     build:

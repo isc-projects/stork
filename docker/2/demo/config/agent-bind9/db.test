@@ -1,0 +1,4 @@
+test.	604800	IN	SOA	test. root.test. 1 604800 86400 2419200 604800
+test.	604800	IN	NS	test.
+test.	604800	IN	A	127.0.0.1
+test.	604800	IN	AAAA	::1
