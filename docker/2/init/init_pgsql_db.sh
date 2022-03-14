@@ -1,0 +1,67 @@
+echo "Database type: ${DB_TYPE}"
+
+until PGPASSWORD=${DB_ROOT_PASSWORD} psql -h ${DB_HOST} -U ${DB_ROOT_USER} -c "SELECT 1" > /dev/null 2>&1;
+do
+    echo "Waiting for database connection..."
+    sleep 5
+done
+
+echo "CREATE USER"
+
+create_user_query="CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';"
+psql \
+    -U ${DB_ROOT_USER} \
+    PGPASSWORD=${DB_ROOT_PASSWORD} \
+    -h ${DB_HOST} \
+    -c "$create_user_query"
+
+echo "Checking if the database exists"
+
+psql \
+        -U ${DB_ROOT_USER} \
+        PGPASSWORD=${DB_ROOT_PASSWORD} \
+        -h ${DB_HOST} \
+        -d ${DB_NAME} \
+        -c "$exist_query"
+
+has_db=$?
+set -e
+
+if [ $hhas_dbas_db -ne 0 ]
+then
+    echo "Create the database"
+    create_db_query="CREATE DATABASE ${DB_NAME};"
+    psql \
+        -U ${DB_ROOT_USER} \
+        PGPASSWORD=${DB_ROOT_PASSWORD} \
+        -h ${DB_HOST} \
+        -c "$create_db_query"
+fi
+
+grant_query="GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
+psql \
+    -U ${DB_ROOT_USER} \
+    PGPASSWORD=${DB_ROOT_PASSWORD} \
+    -h ${DB_HOST} \
+    -c "$grant_query"
+
+if [ $has_db -eq 0 ]
+then
+    exit 0
+fi
+
+echo "Initializing the database"
+kea-admin db-init ${DB_TYPE} \
+    -u ${DB_USER} \
+    -p ${DB_PASSWORD} \
+    -n ${DB_NAME} \
+    -h ${DB_HOST}
+
+echo "Seed database"
+seed_file="${BASH_SOURCE%/*}/init_query.sql"
+
+psql \
+    -U ${DB_ROOT_USER} \
+    PGPASSWORD=${DB_ROOT_PASSWORD} \
+    -h ${DB_HOST} \
+    -d ${DB_NAME} < $seed_file

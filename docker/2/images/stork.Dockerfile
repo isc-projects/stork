@@ -182,7 +182,7 @@ RUN wget -q -O- https://dl.cloudsmith.io/public/isc/kea-1-8/cfg/setup/bash.deb.s
 COPY --from=builder /app/dist/agent /
 # Database
 WORKDIR /var/lib/db
-COPY docker/2/init/init_db.sh docker/2/init/init_query.sql ./
+COPY docker/2/init/init_*_db.sh docker/2/init/init_query.sql ./
 # Run
 WORKDIR /root
 ENV DB_TYPE=mysql
@@ -191,7 +191,7 @@ ENV DB_USER=kea
 ENV DB_PASSWORD=kea
 ENV DB_NAME=kea
 ENTRYPOINT [ "/bin/bash", "-c", \
-        "/var/lib/db/init_db.sh && supervisord -c /etc/supervisor/supervisord.conf" ]
+        "/var/lib/db/init_${DB_TYPE}_db.sh && supervisord -c /etc/supervisor/supervisord.conf" ]
 # Incoming port
 EXPOSE 8080
 # Prometheus Kea port
