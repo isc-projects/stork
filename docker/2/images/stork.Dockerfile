@@ -182,7 +182,7 @@ ARG KEA_PREMIUM=""
 
 FROM kea-base AS keapremium-base
 # Execute only if the premium is enabled
-RUN [ "${KEA_PREMIUM}" != "premium" ] && : || \
+RUN [ "${KEA_PREMIUM}" != "premium" ] && : || ( \
         apt-get update \
         && apt-get install \
                 --no-install-recommends \
@@ -191,7 +191,8 @@ RUN [ "${KEA_PREMIUM}" != "premium" ] && : || \
                 isc-kea-premium-forensic-log=${KEA_VER} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
-        && mkdir -p /var/run/kea/
+        && mkdir -p /var/run/kea/ \
+)
 
 FROM kea${KEA_PREMIUM}-base AS kea
 # Install agent    
