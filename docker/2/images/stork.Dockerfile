@@ -1,3 +1,13 @@
+#################
+### Arguments ###
+#################
+
+ARG KEA_REPO=public/isc/kea-2-0
+ARG KEA_VER=2.0.2-isc20220227221539
+# Indicate if the premium packages should be installed.
+# Valid values: "premium" or empty.
+ARG KEA_PREMIUM=""
+
 ###################
 ### Base images ###
 ###################
@@ -163,8 +173,8 @@ RUN apt-get update \
         && rm -rf /var/lib/apt/lists/*
 # Install Kea from Cloudsmith
 SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
-ARG KEA_REPO=public/isc/kea-2-0
-ARG KEA_VER=2.0.2-isc20220227221539
+ARG KEA_REPO
+ARG KEA_VER
 RUN wget -q -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bash \
         && apt-get update \
         && apt-get install \
@@ -178,9 +188,10 @@ RUN wget -q -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bas
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
         && mkdir -p /var/run/kea/
-ARG KEA_PREMIUM=""
 
 FROM kea-base AS keapremium-base
+ARG KEA_PREMIUM
+ARG KEA_VER
 # Execute only if the premium is enabled
 RUN [ "${KEA_PREMIUM}" != "premium" ] && : || ( \
         apt-get update \
@@ -199,7 +210,7 @@ FROM kea${KEA_PREMIUM}-base AS kea
 COPY --from=builder /app/dist/agent /
 # Database
 WORKDIR /var/lib/db
-COPY docker/2/init/init_*_db.sh docker/2/init/init_query.sql ./
+COPY docker/2/init/init_db.sh docker/2/init/init_*_db.sh docker/2/init/init_query.sql ./
 # Run
 WORKDIR /root
 ENV DB_TYPE=mysql
@@ -208,7 +219,7 @@ ENV DB_USER=kea
 ENV DB_PASSWORD=kea
 ENV DB_NAME=kea
 ENTRYPOINT [ "/bin/bash", "-c", \
-        "/var/lib/db/init_${DB_TYPE}_db.sh && supervisord -c /etc/supervisor/supervisord.conf" ]
+        "/var/lib/db/init_db.sh && supervisord -c /etc/supervisor/supervisord.conf" ]
 # Incoming port
 EXPOSE 8080
 # Prometheus Kea port

@@ -9,17 +9,17 @@ done
 echo "CREATE USER"
 
 create_user_query="CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';"
+PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
     -U ${DB_ROOT_USER} \
-    PGPASSWORD=${DB_ROOT_PASSWORD} \
     -h ${DB_HOST} \
     -c "$create_user_query"
 
 echo "Checking if the database exists"
 
+PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
         -U ${DB_ROOT_USER} \
-        PGPASSWORD=${DB_ROOT_PASSWORD} \
         -h ${DB_HOST} \
         -d ${DB_NAME} \
         -c "$exist_query"
@@ -27,21 +27,21 @@ psql \
 has_db=$?
 set -e
 
-if [ $hhas_dbas_db -ne 0 ]
+if [ $has_db -ne 0 ]
 then
     echo "Create the database"
     create_db_query="CREATE DATABASE ${DB_NAME};"
+    PGPASSWORD=${DB_ROOT_PASSWORD} \
     psql \
         -U ${DB_ROOT_USER} \
-        PGPASSWORD=${DB_ROOT_PASSWORD} \
         -h ${DB_HOST} \
         -c "$create_db_query"
 fi
 
 grant_query="GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
+PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
     -U ${DB_ROOT_USER} \
-    PGPASSWORD=${DB_ROOT_PASSWORD} \
     -h ${DB_HOST} \
     -c "$grant_query"
 
@@ -60,8 +60,8 @@ kea-admin db-init ${DB_TYPE} \
 echo "Seed database"
 seed_file="${BASH_SOURCE%/*}/init_query.sql"
 
+PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \
     -U ${DB_ROOT_USER} \
-    PGPASSWORD=${DB_ROOT_PASSWORD} \
     -h ${DB_HOST} \
     -d ${DB_NAME} < $seed_file

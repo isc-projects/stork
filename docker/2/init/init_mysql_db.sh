@@ -27,7 +27,7 @@ mysql \
 has_db=$?
 set -e
 
-if [ $hhas_dbas_db -ne 0 ]
+if [ $has_db -ne 0 ]
 then
     echo "Create the database"
     create_db_query="CREATE DATABASE ${DB_NAME};"

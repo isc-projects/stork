@@ -90,7 +90,7 @@ services:
       DB_ROOT_USER: root
       DB_ROOT_PASSWORD: root
       DB_NAME: agent_kea
-      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea
     volumes:
       - ${PWD}/docker/2/demo/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
@@ -140,7 +140,7 @@ services:
       DB_HOST: postgres
       DB_ROOT_USER: stork
       DB_ROOT_PASSWORD: stork
-      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea6
     volumes:
       - ${PWD}/docker/2/demo/config/agent-kea6/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
@@ -170,7 +170,7 @@ services:
       - "8881:8080"  # publish ports for development purposes
     environment:
       DB_TYPE: none
-      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha1
     volumes:
       - ${PWD}/docker/2/demo/config/agent-kea-ha1/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
@@ -198,7 +198,7 @@ services:
       - "8110:8080"  # publish ports for development purposes
     environment:
       DB_TYPE: none
-      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-ha2
     volumes:
       - ${PWD}/docker/2/demo/config/agent-kea-ha2/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
@@ -227,7 +227,7 @@ services:
       - "8882:8080"  # publish ports for development purposes
     environment:
       DB_TYPE: none
-      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-many-subnets
       STORK_AGENT_PROMETHEUS_KEA_EXPORTER_PER_SUBNET_STATS: "false"
     volumes:
@@ -253,7 +253,7 @@ services:
       storknet:
         ipv4_address: 172.20.0.53
     environment:
-      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-bind9
     expose:
       - "8080"
@@ -267,15 +267,15 @@ services:
       - ${PWD}/docker/2/demo/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
       - ${PWD}/docker/2/demo/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
 
-  agent-bind9-2:
-    extends:
-      service: agent-bind9
-    hostname: agent-bind9-2
-    networks:
-      storknet:
-        ipv4_address: 172.20.0.54
-    environment:
-      STORK_AGENT_HOST: agent-bind9-2
+  # agent-bind9-2:
+  #   extends:
+  #     service: agent-bind9
+  #   hostname: agent-bind9-2
+  #   networks:
+  #     storknet:
+  #       ipv4_address: 172.20.0.54
+  #   environment:
+  #     STORK_AGENT_HOST: agent-bind9-2
 
   kea-config-generator:
     build:
@@ -316,7 +316,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      STORK_SERVER_URL: http://server:8080
+      STORK_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
     depends_on:
       - server
 
@@ -353,6 +353,8 @@ services:
       POSTGRES_USER: stork
       POSTGRES_PASSWORD: stork
       POSTGRES_DB: stork
+    ports:
+      - "5678:5432"
 
   mariadb:
     image: mariadb:10.7
