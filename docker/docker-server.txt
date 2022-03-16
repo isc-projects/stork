@@ -1,4 +1,0 @@
-FROM ubuntu:18.04
-WORKDIR /server
-COPY build-root/root/usr/bin/stork-server /server/
-CMD /server/stork-server

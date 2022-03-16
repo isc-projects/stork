@@ -241,7 +241,7 @@ def test_add_kea_with_many_subnets(agent, server):
 
     # prepare kea config with many subnets and upload it to the agent
     banner("UPLOAD KEA CONFIG WITH MANY SUBNETS")
-    subprocess.run('../../docker/gen-kea-config.py 7000 > kea-dhcp4-many-subnets.conf', shell=True, check=True)
+    subprocess.run('../../docker/tools/gen-kea-config.py 7000 > kea-dhcp4-many-subnets.conf', shell=True, check=True)
     agent.upload('kea-dhcp4-many-subnets.conf', '/etc/kea/kea-dhcp4.conf')
     subprocess.run('rm -f kea-dhcp4-many-subnets.conf', shell=True)
     agent.run('systemctl restart isc-kea-dhcp4-server')

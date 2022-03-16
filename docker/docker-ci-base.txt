@@ -1,5 +1,0 @@
-FROM ubuntu:18.04
-
-RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates chromium-browser gcc g++ git openssh-client python3 python3-pytest python3-sphinx python3-sphinx-rtd-theme openjdk-11-jre-headless postgresql-client-common rake unzip wget xz-utils
-RUN rm -rf /var/lib/apt/lists/*

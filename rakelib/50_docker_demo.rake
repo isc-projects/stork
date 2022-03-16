@@ -10,11 +10,11 @@ namespace :docker do
   def get_docker_opts(server, cache, services)
     opts = [
       "--project-directory", ".",
-      "-f", "docker/2/demo/docker-compose.yaml"
+      "-f", "docker/docker-compose.yaml"
     ]
 
     if ENV['CS_REPO_ACCESS_TOKEN']
-      opts += ["-f", "docker/2/demo/docker-compose-premium.yaml"]
+      opts += ["-f", "docker/docker-compose-premium.yaml"]
     end
 
     cache_opts = []
@@ -55,7 +55,7 @@ namespace :docker do
     end
 
     if (services + additional_services).include? "dns-proxy-server"
-      opts += ["-f", "docker/2/demo/docker-compose-dev.yaml"]
+      opts += ["-f", "docker/docker-compose-dev.yaml"]
     end
 
     return opts, cache_opts, up_opts, additional_services
@@ -144,8 +144,8 @@ namespace :docker do
   task :build_ci_containers do
     sh "docker build",
         "--no-cache",
-        "-f", "docker/2/images/ci/ubuntu-18.04.Dockerfile",
-        "-t", "registry.gitlab.isc.org/isc-projects/stork/ci-base:latest docker/2/"
+        "-f", "docker/images/ci/ubuntu-18.04.Dockerfile",
+        "-t", "registry.gitlab.isc.org/isc-projects/stork/ci-base:latest docker/"
     #sh 'docker push registry.gitlab.isc.org/isc-projects/stork/ci-base:latest'
   end
 end
