@@ -21,7 +21,7 @@ namespace :docker do
     up_opts = [
       "--attach-dependencies",
       "--remove-orphans",
-      # Warining! Don't use here "--renew-anon-volumes" options. It causes conflicts between running containers. 
+      # Warning! Don't use here "--renew-anon-volumes" options. It causes conflicts between running containers. 
     ]
     additional_services = []
 
@@ -113,8 +113,8 @@ namespace :docker do
     docker_up_services("default", false, "dns-proxy-server")
   end
 
-  desc 'Stop all containers'
-  task :stop_all do
+  desc 'Down all containers and remove all volumes'
+  task :down_all do
     ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
     opts, _, _, _ = get_docker_opts(nil, false, [])
     sh "docker-compose", *opts, "down",
