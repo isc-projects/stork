@@ -46,8 +46,7 @@ func TestKeaInterceptorHandle(t *testing.T) {
 	// server.
 	daemons, err := keactrl.NewDaemons("dhcp4", "dhcp6")
 	require.NoError(t, err)
-	command, err := keactrl.NewCommand("config-get", daemons, nil)
-	require.NoError(t, err)
+	command := keactrl.NewCommand("config-get", daemons, nil)
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
@@ -78,8 +77,7 @@ func TestKeaInterceptorHandle(t *testing.T) {
 
 	// Make sure that we can invoke different callback when using different
 	// command.
-	command, err = keactrl.NewCommand("subnet4-get", daemons, nil)
-	require.NoError(t, err)
+	command = keactrl.NewCommand("subnet4-get", daemons, nil)
 	request = &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
@@ -99,8 +97,7 @@ func TestKeaInterceptorHandleControlAgent(t *testing.T) {
 	}, "config-get")
 
 	// Simulate sending command to the Control Agent.
-	command, err := keactrl.NewCommand("config-get", nil, nil)
-	require.NoError(t, err)
+	command := keactrl.NewCommand("config-get", nil, nil)
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
@@ -141,8 +138,7 @@ func TestKeaInterceptorMultipleHandlers(t *testing.T) {
 	}, "config-get")
 
 	// Send the command matching the handlers.
-	command, err := keactrl.NewCommand("config-get", nil, nil)
-	require.NoError(t, err)
+	command := keactrl.NewCommand("config-get", nil, nil)
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}

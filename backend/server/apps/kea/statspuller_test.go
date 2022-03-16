@@ -48,7 +48,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 	keaMock := func(callNo int, cmdResponses []interface{}) {
 		// DHCPv4
 		daemons, _ := keactrl.NewDaemons("dhcp4")
-		command, _ := keactrl.NewCommand("stat-lease4-get", daemons, nil)
+		command := keactrl.NewCommand("stat-lease4-get", daemons, nil)
 		// simulate empty response
 		json := `[{
                             "result": 0,
@@ -69,7 +69,7 @@ func TestStatsPullerEmptyResponse(t *testing.T) {
 
 		// DHCPv6
 		daemons, _ = keactrl.NewDaemons("dhcp6")
-		command, _ = keactrl.NewCommand("stat-lease6-get", daemons, nil)
+		command = keactrl.NewCommand("stat-lease6-get", daemons, nil)
 		// simulate not loaded stat plugin in kea
 		json = `[{
                            "result": 2,
@@ -174,7 +174,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 	keaMock := func(callNo int, cmdResponses []interface{}) {
 		// DHCPv4
 		daemons, _ := keactrl.NewDaemons("dhcp4")
-		command, _ := keactrl.NewCommand("stat-lease4-get", daemons, nil)
+		command := keactrl.NewCommand("stat-lease4-get", daemons, nil)
 		json := fmt.Sprintf(`[{
                             "result": 0,
                             "text": "Everything is fine",
@@ -205,7 +205,7 @@ func checkStatsPullerPullStats(t *testing.T, statsFormat string) {
 
 		// DHCPv6
 		daemons, _ = keactrl.NewDaemons("dhcp6")
-		command, _ = keactrl.NewCommand("stat-lease6-get", daemons, nil)
+		command = keactrl.NewCommand("stat-lease6-get", daemons, nil)
 		// Kea casts the unsigned int64 integers to signed int64. It means that the maximum
 		// value of unsigned int64 is -1 after casting.
 		json = `[{

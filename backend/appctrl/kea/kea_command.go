@@ -17,6 +17,13 @@ const (
 	ResponseEmpty              = 3
 )
 
+// Interface to a Kea command that can be marshalled and sent.
+type SerializableCommand interface {
+	GetCommand() string
+	GetDaemonsList() []string
+	Marshal() string
+}
+
 // Map holding names of daemons to which the command is sent. This is
 // stored in the map rather than a list to guarantee uniqueness of the
 // daemons' names. Not that daemons are called services in the Kea terms,
@@ -145,9 +152,9 @@ func (v *hasherValue) UnmarshalJSON(b []byte) error {
 }
 
 // Creates new Kea command from specified command name, daemons list and arguments.
-func NewCommand(command string, daemons *Daemons, arguments *map[string]interface{}) (*Command, error) {
+func NewCommand(command string, daemons *Daemons, arguments *map[string]interface{}) *Command {
 	if len(command) == 0 {
-		return nil, errors.Errorf("command name must not be empty")
+		return nil
 	}
 
 	cmd := &Command{
@@ -155,7 +162,7 @@ func NewCommand(command string, daemons *Daemons, arguments *map[string]interfac
 		Daemons:   daemons,
 		Arguments: arguments,
 	}
-	return cmd, nil
+	return cmd
 }
 
 func NewCommandFromJSON(jsonCommand string) (*Command, error) {
@@ -175,9 +182,22 @@ func (c *Command) Marshal() string {
 	return string(bytes)
 }
 
+// Returns command name.
+func (c *Command) GetCommand() string {
+	return c.Command
+}
+
+// Returns daemon names specified within the command.
+func (c *Command) GetDaemonsList() (list []string) {
+	if c.Daemons != nil {
+		list = c.Daemons.List()
+	}
+	return
+}
+
 // Parses response received from the Kea Control Agent. The "parsed" argument
 // should be a slice of Response, HashedResponse or similar structures.
-func UnmarshalResponseList(request *Command, response []byte, parsed interface{}) error {
+func UnmarshalResponseList(request SerializableCommand, response []byte, parsed interface{}) error {
 	err := json.Unmarshal(response, parsed)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to parse responses from Kea: %s", response)
@@ -188,8 +208,8 @@ func UnmarshalResponseList(request *Command, response []byte, parsed interface{}
 	// the service names.
 	parsedList := reflect.ValueOf(parsed).Elem()
 
-	if (request.Daemons != nil) && (len(*request.Daemons) > 0) && (parsedList.Len() > 0) {
-		daemonNames := request.Daemons.List()
+	daemonNames := request.GetDaemonsList()
+	if (len(daemonNames) > 0) && (parsedList.Len() > 0) {
 		for i, daemon := range daemonNames {
 			if i+1 > parsedList.Len() {
 				break

@@ -360,7 +360,7 @@ func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	daemons, _ := keactrl.NewDaemons(dbApp.GetActiveDHCPDaemonNames()...)
 
 	// It takes no arguments, thus the last parameter is nil.
-	cmd, _ := keactrl.NewCommand("status-get", daemons, nil)
+	cmd := keactrl.NewCommand("status-get", daemons, nil)
 
 	// todo: hardcoding 2s timeout is a temporary solution. We need better
 	// control over the timeouts.
@@ -371,7 +371,7 @@ func getDHCPStatus(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp 
 	response := []StatusGetResponse{}
 
 	// Send the command and receive the response.
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*keactrl.Command{cmd}, &response)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{cmd}, &response)
 	if err != nil {
 		return nil, err
 	}

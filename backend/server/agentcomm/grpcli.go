@@ -384,7 +384,7 @@ type KeaCmdsResult struct {
 // Forwards a Kea command via the Stork Agent and Kea Control Agent and then
 // parses the response. caAddress and caPort are used to construct the URL
 // of the Kea Control Agent to which the command should be sent.
-func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []*keactrl.Command, cmdResponses ...interface{}) (*KeaCmdsResult, error) {
+func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error) {
 	agentAddress := app.GetMachineTag().GetAddress()
 	agentPort := app.GetMachinePort()
 

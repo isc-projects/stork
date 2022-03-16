@@ -385,12 +385,8 @@ func (iterator *hostIterator) sendReservationGetPage() ([]keaconfig.Reservation,
 		arguments["source-index"] = iterator.sourceIndex
 	}
 	// Prepare the command.
-	command, err := keactrl.NewCommand("reservation-get-page", daemons, &arguments)
-	if err != nil {
-		return []keaconfig.Reservation{}, keactrl.ResponseError, err
-	}
-
-	commands := []*keactrl.Command{command}
+	command := keactrl.NewCommand("reservation-get-page", daemons, &arguments)
+	commands := []keactrl.SerializableCommand{command}
 	response := make([]ReservationGetPageResponse, 1)
 	ctx := context.Background()
 	respResult, err := iterator.agents.ForwardToKeaOverHTTP(ctx, iterator.app, commands, &response)

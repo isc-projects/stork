@@ -35,7 +35,7 @@ func mockLease4Get(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("lease4-get", daemons, nil)
+	command := keactrl.NewCommand("lease4-get", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -54,7 +54,7 @@ func mockLease4GetFirstCallError(callNo int, responses []interface{}) {
             }
         ]`)
 		daemons, _ := keactrl.NewDaemons("dhcp4")
-		command, _ := keactrl.NewCommand("lease4-get", daemons, nil)
+		command := keactrl.NewCommand("lease4-get", daemons, nil)
 		_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 		return
 	}
@@ -78,7 +78,7 @@ func mockLease4GetFirstCallError(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("lease4-get", daemons, nil)
+	command := keactrl.NewCommand("lease4-get", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -107,7 +107,7 @@ func mockLease6GetByIPAddress(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("lease4-get", daemons, nil)
+	command := keactrl.NewCommand("lease4-get", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -136,7 +136,7 @@ func mockLease6GetByPrefix(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp6")
-	command, _ := keactrl.NewCommand("lease6-get", daemons, nil)
+	command := keactrl.NewCommand("lease6-get", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -166,7 +166,7 @@ func mockLeases4Get(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
+	command := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
 
 	for i := range responses {
 		_ = keactrl.UnmarshalResponseList(command, json, responses[i])
@@ -201,7 +201,7 @@ func mockLeases4GetSecondError(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
+	command := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 
 	// Response to lease4-get-by-client-id.
@@ -213,7 +213,7 @@ func mockLeases4GetSecondError(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ = keactrl.NewDaemons("dhcp4")
-	command, _ = keactrl.NewCommand("lease4-get-by-client-id", daemons, nil)
+	command = keactrl.NewCommand("lease4-get-by-client-id", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
 }
 
@@ -226,7 +226,7 @@ func mockLeases4GetEmpty(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("lease4-get", daemons, nil)
+	command := keactrl.NewCommand("lease4-get", daemons, nil)
 	for i := range responses {
 		_ = keactrl.UnmarshalResponseList(command, json, responses[i])
 	}
@@ -241,7 +241,7 @@ func mockLeases6GetEmpty(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp6")
-	command, _ := keactrl.NewCommand("lease6-get", daemons, nil)
+	command := keactrl.NewCommand("lease6-get", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -289,7 +289,7 @@ func mockLeases6Get(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp6")
-	command, _ := keactrl.NewCommand("lease6-get-by-duid", daemons, nil)
+	command := keactrl.NewCommand("lease6-get-by-duid", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -325,7 +325,7 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
+	command := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 
 	json = []byte(`[
@@ -363,7 +363,7 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ = keactrl.NewDaemons("dhcp6")
-	command, _ = keactrl.NewCommand("lease6-get-by-duid", daemons, nil)
+	command = keactrl.NewCommand("lease6-get-by-duid", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
 }
 
@@ -375,7 +375,7 @@ func mockLeasesGetDeclinedErrors(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
+	command := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 
 	json = []byte(`[
@@ -401,7 +401,7 @@ func mockLeasesGetDeclinedErrors(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ = keactrl.NewDaemons("dhcp6")
-	command, _ = keactrl.NewCommand("lease6-get-by-duid", daemons, nil)
+	command = keactrl.NewCommand("lease6-get-by-duid", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[1])
 }
 
@@ -415,7 +415,7 @@ func mockLease6GetError(callNo int, responses []interface{}) {
         }
     ]`)
 	daemons, _ := keactrl.NewDaemons("dhcp6")
-	command, _ := keactrl.NewCommand("lease6-get", daemons, nil)
+	command := keactrl.NewCommand("lease6-get", daemons, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -697,7 +697,7 @@ func TestGetLeases4Empty(t *testing.T) {
 	require.Empty(t, leases)
 
 	// Ensure that MAC address was converted to the format expected by Kea.
-	arguments := agents.RecordedCommands[0].Arguments
+	arguments := agents.RecordedCommands[0].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
 	require.Contains(t, *arguments, "hw-address")
 	require.Equal(t, "00:00:00:00:00:00", (*arguments)["hw-address"])
@@ -901,8 +901,8 @@ func TestFindLeases(t *testing.T) {
 
 	// It should have sent lease4-get command to first and second Kea.
 	require.Len(t, agents.RecordedCommands, 2)
-	require.Equal(t, "lease4-get", agents.RecordedCommands[0].Command)
-	require.Equal(t, "lease4-get", agents.RecordedCommands[1].Command)
+	require.Equal(t, "lease4-get", agents.RecordedCommands[0].GetCommand())
+	require.Equal(t, "lease4-get", agents.RecordedCommands[1].GetCommand())
 
 	agents = agentcommtest.NewFakeAgents(mockLease4GetFirstCallError, nil)
 
@@ -915,8 +915,8 @@ func TestFindLeases(t *testing.T) {
 
 	// It should have sent lease4-get command to first and second Kea.
 	require.Len(t, agents.RecordedCommands, 2)
-	require.Equal(t, "lease4-get", agents.RecordedCommands[0].Command)
-	require.Equal(t, "lease4-get", agents.RecordedCommands[1].Command)
+	require.Equal(t, "lease4-get", agents.RecordedCommands[0].GetCommand())
+	require.Equal(t, "lease4-get", agents.RecordedCommands[1].GetCommand())
 
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
@@ -929,10 +929,10 @@ func TestFindLeases(t *testing.T) {
 	// The commands are duplicated because we need to send one for
 	// an address and one for prefix.
 	require.Len(t, agents.RecordedCommands, 4)
-	require.Equal(t, "lease6-get", agents.RecordedCommands[0].Command)
-	require.Equal(t, "lease6-get", agents.RecordedCommands[1].Command)
-	require.Equal(t, "lease6-get", agents.RecordedCommands[2].Command)
-	require.Equal(t, "lease6-get", agents.RecordedCommands[3].Command)
+	require.Equal(t, "lease6-get", agents.RecordedCommands[0].GetCommand())
+	require.Equal(t, "lease6-get", agents.RecordedCommands[1].GetCommand())
+	require.Equal(t, "lease6-get", agents.RecordedCommands[2].GetCommand())
+	require.Equal(t, "lease6-get", agents.RecordedCommands[3].GetCommand())
 
 	agents = agentcommtest.NewFakeAgents(mockLeases4GetEmpty, nil)
 
@@ -945,16 +945,16 @@ func TestFindLeases(t *testing.T) {
 	// id to first two servers, and a command to fetch a lease by DUID to two
 	// DHCPv6 servers.
 	require.Len(t, agents.RecordedCommands, 6)
-	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[0].Command)
-	require.Equal(t, "lease4-get-by-client-id", agents.RecordedCommands[1].Command)
-	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[2].Command)
-	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[3].Command)
-	require.Equal(t, "lease4-get-by-client-id", agents.RecordedCommands[4].Command)
-	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[5].Command)
+	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[0].GetCommand())
+	require.Equal(t, "lease4-get-by-client-id", agents.RecordedCommands[1].GetCommand())
+	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[2].GetCommand())
+	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[3].GetCommand())
+	require.Equal(t, "lease4-get-by-client-id", agents.RecordedCommands[4].GetCommand())
+	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[5].GetCommand())
 
 	// In addition, ensure that the HW address was converted to the format
 	// expected by Kea.
-	arguments := agents.RecordedCommands[0].Arguments
+	arguments := agents.RecordedCommands[0].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
 	require.Contains(t, *arguments, "hw-address")
 	require.Equal(t, "01:02:03:04:05:06", (*arguments)["hw-address"])
@@ -969,10 +969,10 @@ func TestFindLeases(t *testing.T) {
 	// It should have sent a command to fetch a lease by hostname to both DHCPv4
 	// and DHCPv6 servers.
 	require.Len(t, agents.RecordedCommands, 4)
-	require.Equal(t, "lease4-get-by-hostname", agents.RecordedCommands[0].Command)
-	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[1].Command)
-	require.Equal(t, "lease4-get-by-hostname", agents.RecordedCommands[2].Command)
-	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[3].Command)
+	require.Equal(t, "lease4-get-by-hostname", agents.RecordedCommands[0].GetCommand())
+	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[1].GetCommand())
+	require.Equal(t, "lease4-get-by-hostname", agents.RecordedCommands[2].GetCommand())
+	require.Equal(t, "lease6-get-by-hostname", agents.RecordedCommands[3].GetCommand())
 }
 
 // Test declined leases search mechanism. It verifies a positive scenario in which
@@ -1058,17 +1058,17 @@ func TestFindDeclinedLeases(t *testing.T) {
 	// Ensure that Stork has sent two commands, one to the DHCPv4 server and one
 	// to the DHCPv6 server.
 	require.Len(t, agents.RecordedCommands, 2)
-	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[0].Command)
-	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[1].Command)
+	require.Equal(t, "lease4-get-by-hw-address", agents.RecordedCommands[0].GetCommand())
+	require.Equal(t, "lease6-get-by-duid", agents.RecordedCommands[1].GetCommand())
 
 	// Ensure that the hw-address sent in the first command is empty.
-	arguments := agents.RecordedCommands[0].Arguments
+	arguments := agents.RecordedCommands[0].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
 	require.Contains(t, *arguments, "hw-address")
 	require.Empty(t, (*arguments)["hw-address"])
 
 	// Ensure that the DUID sent in the second command is empty.
-	arguments = agents.RecordedCommands[1].Arguments
+	arguments = agents.RecordedCommands[1].(*keactrl.Command).Arguments
 	require.NotNil(t, arguments)
 	require.Contains(t, *arguments, "duid")
 	require.Equal(t, "0", (*arguments)["duid"])

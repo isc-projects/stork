@@ -321,7 +321,11 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 	// forward commands to kea
 	ctx := context.Background()
 
-	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp, cmds, responses...)
+	var serialCmds []keactrl.SerializableCommand
+	for _, cmd := range cmds {
+		serialCmds = append(serialCmds, cmd)
+	}
+	cmdsResult, err := statsPuller.Agents.ForwardToKeaOverHTTP(ctx, dbApp, serialCmds, responses...)
 	if err != nil {
 		return err
 	}

@@ -24,8 +24,7 @@ func TestSendCommand(t *testing.T) {
 		Reply(200).
 		JSON([]map[string]int{{"result": 0}})
 
-	command, err := keactrl.NewCommand("list-commands", nil, nil)
-	require.NoError(t, err)
+	command := keactrl.NewCommand("list-commands", nil, nil)
 
 	ka := &KeaApp{
 		BaseApp: BaseApp{
@@ -35,7 +34,7 @@ func TestSendCommand(t *testing.T) {
 		HTTPClient: httpClient,
 	}
 	responses := keactrl.ResponseList{}
-	err = ka.sendCommand(command, &responses)
+	err := ka.sendCommand(command, &responses)
 	require.NoError(t, err)
 
 	require.Len(t, responses, 1)
@@ -55,8 +54,7 @@ func TestSendCommandInvalidResponse(t *testing.T) {
 		Reply(200).
 		JSON([]map[string]int{{"result": 0, "arguments": 1}})
 
-	command, err := keactrl.NewCommand("list-commands", nil, nil)
-	require.NoError(t, err)
+	command := keactrl.NewCommand("list-commands", nil, nil)
 
 	ka := &KeaApp{
 		BaseApp: BaseApp{
@@ -66,15 +64,13 @@ func TestSendCommandInvalidResponse(t *testing.T) {
 		HTTPClient: httpClient,
 	}
 	responses := keactrl.ResponseList{}
-	err = ka.sendCommand(command, &responses)
+	err := ka.sendCommand(command, &responses)
 	require.Error(t, err)
 }
 
 // Test the case when Kea server is unreachable.
 func TestSendCommandNoKea(t *testing.T) {
-	command, err := keactrl.NewCommand("list-commands", nil, nil)
-	require.NoError(t, err)
-
+	command := keactrl.NewCommand("list-commands", nil, nil)
 	ka := &KeaApp{
 		BaseApp: BaseApp{
 			Type:         AppTypeKea,
@@ -83,7 +79,7 @@ func TestSendCommandNoKea(t *testing.T) {
 		HTTPClient: NewHTTPClient(false),
 	}
 	responses := keactrl.ResponseList{}
-	err = ka.sendCommand(command, &responses)
+	err := ka.sendCommand(command, &responses)
 	require.Error(t, err)
 }
 

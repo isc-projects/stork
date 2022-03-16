@@ -47,10 +47,9 @@ func TestNewCommand(t *testing.T) {
 	require.NotNil(t, daemons)
 	require.NoError(t, err)
 
-	cmd, err := NewCommand("values-set", daemons,
+	cmd := NewCommand("values-set", daemons,
 		&map[string]interface{}{"value-a": 1, "value-b": 2, "value-c": []int{1, 2, 3}})
 
-	require.NoError(t, err)
 	require.NotNil(t, cmd)
 	require.NotNil(t, cmd.Daemons)
 	require.NotNil(t, cmd.Arguments)
@@ -71,8 +70,7 @@ func TestNewCommandEmptyName(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, daemons)
 
-	cmd, err := NewCommand("", daemons, &map[string]interface{}{"value-a": 1})
-	require.Error(t, err)
+	cmd := NewCommand("", daemons, &map[string]interface{}{"value-a": 1})
 	require.Nil(t, cmd)
 }
 
@@ -118,9 +116,8 @@ func TestKeaCommandMarshal(t *testing.T) {
 	require.NotNil(t, daemons)
 	require.NoError(t, err)
 
-	cmd, err := NewCommand("values-set", daemons,
+	cmd := NewCommand("values-set", daemons,
 		&map[string]interface{}{"value-a": 1, "value-b": 2, "value-c": []int{1, 2, 3}})
-	require.NoError(t, err)
 	require.NotNil(t, cmd)
 
 	marshaled := cmd.Marshal()
@@ -143,8 +140,7 @@ func TestKeaCommandMarshalEmptyDaemonsArguments(t *testing.T) {
 	require.NotNil(t, daemons)
 	require.NoError(t, err)
 
-	cmd, err := NewCommand("values-set", daemons, &map[string]interface{}{})
-	require.NoError(t, err)
+	cmd := NewCommand("values-set", daemons, &map[string]interface{}{})
 	require.NotNil(t, cmd)
 
 	marshaled := cmd.Marshal()
@@ -164,8 +160,7 @@ func TestKeaCommandMarshalCommandOnly(t *testing.T) {
 	require.NotNil(t, daemons)
 	require.NoError(t, err)
 
-	cmd, err := NewCommand("list-commands", nil, nil)
-	require.NoError(t, err)
+	cmd := NewCommand("list-commands", nil, nil)
 	require.NotNil(t, cmd)
 
 	marshaled := cmd.Marshal()
@@ -179,7 +174,7 @@ func TestKeaCommandMarshalCommandOnly(t *testing.T) {
 // Test that well formed list of Kea responses can be parsed.
 func TestUnmarshalResponseList(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4", "dhcp6")
-	request, _ := NewCommand("list-subnets", daemons, nil)
+	request := NewCommand("list-subnets", daemons, nil)
 
 	response := []byte(`[
         {
@@ -232,7 +227,7 @@ func TestUnmarshalResponseList(t *testing.T) {
 // are computed from the arguments.
 func TestUnmarshalHashedResponseList(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4", "dhcp6")
-	request, _ := NewCommand("list-subnets", daemons, nil)
+	request := NewCommand("list-subnets", daemons, nil)
 
 	response := []byte(`[
         {
@@ -288,7 +283,7 @@ func TestUnmarshalHashedResponseList(t *testing.T) {
 // Test that it is possible to parse Kea response to a custom structure.
 func TestUnmarshalCustomResponse(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
-	request, _ := NewCommand("list-subnets", daemons, nil)
+	request := NewCommand("list-subnets", daemons, nil)
 
 	response := []byte(`[
         {
@@ -328,7 +323,7 @@ func TestUnmarshalCustomResponse(t *testing.T) {
 // Test that custom response without arguments is parsed correctly.
 func TestUnmarshalCustomResponseNoArgs(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
-	request, _ := NewCommand("list-subnets", daemons, nil)
+	request := NewCommand("list-subnets", daemons, nil)
 
 	response := []byte(`[
         {
@@ -357,7 +352,7 @@ func TestUnmarshalCustomResponseNoArgs(t *testing.T) {
 // Test that the Kea response containing invalid result value is rejected.
 func TestUnmarshalResponseListMalformedResult(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
-	request, _ := NewCommand("list-commands", daemons, nil)
+	request := NewCommand("list-commands", daemons, nil)
 
 	response := []byte(`[
         {
@@ -372,7 +367,7 @@ func TestUnmarshalResponseListMalformedResult(t *testing.T) {
 // Test that the Kea response containing invalid text value is rejected.
 func TestUnmarshalResponseListMalformedText(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
-	request, _ := NewCommand("list-commands", daemons, nil)
+	request := NewCommand("list-commands", daemons, nil)
 
 	response := []byte(`[
         {
@@ -389,7 +384,7 @@ func TestUnmarshalResponseListMalformedText(t *testing.T) {
 // rather than a map) is rejected.
 func TestUnmarshalResponseListMalformedArguments(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
-	request, _ := NewCommand("list-commands", daemons, nil)
+	request := NewCommand("list-commands", daemons, nil)
 
 	response := []byte(`[
         {
@@ -405,7 +400,7 @@ func TestUnmarshalResponseListMalformedArguments(t *testing.T) {
 // Test that the Kea response not being a list is rejected.
 func TestUnmarshalResponseNotList(t *testing.T) {
 	daemons, _ := NewDaemons("dhcp4")
-	request, _ := NewCommand("list-commands", daemons, nil)
+	request := NewCommand("list-commands", daemons, nil)
 
 	response := []byte(`
         {
@@ -417,11 +412,18 @@ func TestUnmarshalResponseNotList(t *testing.T) {
 	require.Error(t, err)
 }
 
+// Test that GetCommand() function returns the command name.
+func TestGetCommand(t *testing.T) {
+	command := NewCommand("list-commands", nil, nil)
+	require.NotNil(t, command)
+	require.Equal(t, "list-commands", command.GetCommand())
+}
+
 // Runs two benchmarks checking performance of Kea response unmarshalling
 // with and without hashing the response arguments.
 func BenchmarkUnmarshalHashedResponseList(b *testing.B) {
 	daemons, _ := NewDaemons("dhcp4")
-	request, _ := NewCommand("list-subnets", daemons, nil)
+	request := NewCommand("list-subnets", daemons, nil)
 
 	// Create a large response with 10000 subnet items.
 	argumentsMap := map[string]interface{}{

@@ -81,13 +81,9 @@ func copyOrCreateActiveKeaDaemon(dbApp *dbmodel.App, daemonName string) *dbmodel
 // - list of DHCP daemons (dhcpv4 and/or dhcpv6).
 func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, daemonsErrors map[string]string) (keactrl.Daemons, keactrl.Daemons, error) {
 	// prepare the command to get config and version from CA
-	cmds := []*keactrl.Command{
-		{
-			Command: "version-get",
-		},
-		{
-			Command: "config-get",
-		},
+	cmds := []keactrl.SerializableCommand{
+		keactrl.NewCommand("version-get", nil, nil),
+		keactrl.NewCommand("config-get", nil, nil),
 	}
 
 	// get version and config from CA
@@ -181,19 +177,10 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 	now := storkutil.UTCNow()
 
 	// issue 3 commands to Kea daemons at once to get their state
-	cmds := []*keactrl.Command{
-		{
-			Command: "version-get",
-			Daemons: &allDaemons,
-		},
-		{
-			Command: "status-get",
-			Daemons: &dhcpDaemons,
-		},
-		{
-			Command: "config-get",
-			Daemons: &allDaemons,
-		},
+	cmds := []keactrl.SerializableCommand{
+		keactrl.NewCommand("version-get", &allDaemons, nil),
+		keactrl.NewCommand("status-get", &dhcpDaemons, nil),
+		keactrl.NewCommand("config-get", &allDaemons, nil),
 	}
 
 	versionGetResp := []VersionGetResponse{}

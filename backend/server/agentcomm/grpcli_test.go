@@ -144,7 +144,7 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 
 	ctx := context.Background()
 	daemons, _ := keactrl.NewDaemons("dhcp4", "dhcp6")
-	command, _ := keactrl.NewCommand("test-command", daemons, nil)
+	command := keactrl.NewCommand("test-command", daemons, nil)
 	actualResponse := keactrl.ResponseList{}
 	dbApp := &dbmodel.App{
 		Machine: &dbmodel.Machine{
@@ -158,7 +158,7 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 			Key:     "",
 		}},
 	}
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*keactrl.Command{command}, &actualResponse)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command}, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse)
 	require.NoError(t, cmdsResult.Error)
@@ -239,8 +239,8 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 
 	ctx := context.Background()
 	daemons, _ := keactrl.NewDaemons("dhcp4", "dhcp6")
-	command1, _ := keactrl.NewCommand("test-command", daemons, nil)
-	command2, _ := keactrl.NewCommand("test-command", daemons, nil)
+	command1 := keactrl.NewCommand("test-command", daemons, nil)
+	command2 := keactrl.NewCommand("test-command", daemons, nil)
 	actualResponse1 := keactrl.ResponseList{}
 	actualResponse2 := keactrl.ResponseList{}
 	dbApp := &dbmodel.App{
@@ -255,7 +255,7 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 			Key:     "",
 		}},
 	}
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*keactrl.Command{command1, command2}, &actualResponse1, &actualResponse2)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command1, command2}, &actualResponse1, &actualResponse2)
 	require.NoError(t, err)
 	require.NotNil(t, actualResponse1)
 	require.NotNil(t, actualResponse2)
@@ -325,7 +325,7 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 		Return(&rsp, nil)
 
 	ctx := context.Background()
-	command, _ := keactrl.NewCommand("test-command", nil, nil)
+	command := keactrl.NewCommand("test-command", nil, nil)
 	actualResponse := keactrl.ResponseList{}
 	dbApp := &dbmodel.App{
 		Machine: &dbmodel.Machine{
@@ -339,7 +339,7 @@ func TestForwardToKeaOverHTTPInvalidResponse(t *testing.T) {
 			Key:     "",
 		}},
 	}
-	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*keactrl.Command{command}, &actualResponse)
+	cmdsResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command}, &actualResponse)
 	require.NoError(t, err)
 	require.NotNil(t, cmdsResult)
 	require.NoError(t, cmdsResult.Error)

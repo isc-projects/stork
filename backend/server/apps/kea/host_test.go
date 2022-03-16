@@ -269,7 +269,7 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
     ]`, len(hosts), string(hostsAsJSON), fromValue, sourceIndex))
 
 	daemons, _ := keactrl.NewDaemons(fmt.Sprintf("dhcp%d", family))
-	command, _ := keactrl.NewCommand("reservation-get-page", daemons, nil)
+	command := keactrl.NewCommand("reservation-get-page", daemons, nil)
 
 	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 }
@@ -342,7 +342,7 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
 	}
 
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("reservation-get-page", daemons, nil)
+	command := keactrl.NewCommand("reservation-get-page", daemons, nil)
 
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
@@ -443,7 +443,7 @@ func mockReservationGetPagePartialChange(callNo int, cmdResponses []interface{})
 	}
 
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("reservation-get-page", daemons, nil)
+	command := keactrl.NewCommand("reservation-get-page", daemons, nil)
 
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
@@ -483,9 +483,9 @@ func testReservationGetPageReceived(t *testing.T, iterator *hostIterator) {
 	require.True(t, ok)
 	// This function is not called before first command is sent.
 	require.GreaterOrEqual(t, len(agents.RecordedCommands), 1)
-	recordedCommand := *agents.GetLastCommand()
+	recordedCommand := agents.GetLastCommand()
 	// Check that the correct command name was sent.
-	require.Equal(t, "reservation-get-page", recordedCommand.Command)
+	require.Equal(t, "reservation-get-page", recordedCommand.GetCommand())
 	// This command must always include some arguments.
 	require.NotNil(t, recordedCommand.Arguments)
 	recordedArguments := *recordedCommand.Arguments

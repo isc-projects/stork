@@ -73,13 +73,10 @@ func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 	arguments := map[string]interface{}{
 		"ip-address": ipaddress,
 	}
-	command, err := keactrl.NewCommand("lease4-get", daemons, &arguments)
-	if err != nil {
-		return lease, err
-	}
+	command := keactrl.NewCommand("lease4-get", daemons, &arguments)
 	response := make([]Lease4GetResponse, 1)
 	ctx := context.Background()
-	respResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*keactrl.Command{command}, &response)
+	respResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command}, &response)
 	if err != nil {
 		return lease, err
 	}
@@ -114,13 +111,10 @@ func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 		"ip-address": ipaddress,
 		"type":       leaseType,
 	}
-	command, err := keactrl.NewCommand("lease6-get", daemons, &arguments)
-	if err != nil {
-		return lease, err
-	}
+	command := keactrl.NewCommand("lease6-get", daemons, &arguments)
 	response := make([]Lease6GetResponse, 1)
 	ctx := context.Background()
-	respResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []*keactrl.Command{command}, &response)
+	respResult, err := agents.ForwardToKeaOverHTTP(ctx, dbApp, []keactrl.SerializableCommand{command}, &response)
 	if err != nil {
 		return lease, err
 	}
@@ -152,7 +146,7 @@ func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 // commands. The specified commands are combined in a single gRPC transaction
 // to minimize the number of roundtrips between the Stork Server and an agent.
 func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, propertyValue string, commandNames ...string) (leases []dbmodel.Lease, warns bool, err error) {
-	var commands []*keactrl.Command
+	var commands []keactrl.SerializableCommand
 	for _, commandName := range commandNames {
 		var daemons *keactrl.Daemons
 		var propertyName string
@@ -209,10 +203,7 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 		arguments := map[string]interface{}{
 			propertyName: sentPropertyValue,
 		}
-		command, err := keactrl.NewCommand(commandName, daemons, &arguments)
-		if err != nil {
-			return leases, false, err
-		}
+		command := keactrl.NewCommand(commandName, daemons, &arguments)
 		commands = append(commands, command)
 	}
 
@@ -247,12 +238,12 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 		// This is rather an impossible condition, so if it occurs something is
 		// heavily broken, so let's bail.
 		if len(*response) == 0 {
-			return []dbmodel.Lease{}, false, errors.Errorf("invalid response received from Kea to the %s command", commands[i].Command)
+			return []dbmodel.Lease{}, false, errors.Errorf("invalid response received from Kea to the %s command", commands[i].GetCommand())
 		}
 		// Ignore empty response. It is valid but there are no leases,
 		// so there is nothing more to do.
 		if (*response)[0].Result != keactrl.ResponseEmpty {
-			if err = validateGetLeasesResponse(commands[i].Command, (*response)[0].Result, (*response)[0].Arguments); err != nil {
+			if err = validateGetLeasesResponse(commands[i].GetCommand(), (*response)[0].Result, (*response)[0].Arguments); err != nil {
 				// Log an error and continue. Maybe there is a communication problem
 				// with one daemon, but the other one is still operational.
 				log.Warn(err)

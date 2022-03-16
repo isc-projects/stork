@@ -16,7 +16,7 @@ import (
 // structures, one for DHCPv4 and one for DHCPv6.
 func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
 	daemons, _ := keactrl.NewDaemons("dhcp4", "dhcp6")
-	command, _ := keactrl.NewCommand("status-get", daemons, nil)
+	command := keactrl.NewCommand("status-get", daemons, nil)
 	var json string
 	switch callNo {
 	case 0:
@@ -106,7 +106,7 @@ func mockGetStatusWithHA(callNo int, cmdResponses []interface{}) {
 // Kea 1.7.8 onwards.
 func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
 	daemons, _ := keactrl.NewDaemons("dhcp4", "dhcp6")
-	command, _ := keactrl.NewCommand("status-get", daemons, nil)
+	command := keactrl.NewCommand("status-get", daemons, nil)
 	var json string
 	switch callNo {
 	case 0:
@@ -222,7 +222,7 @@ func mockGetStatusWithHA178(callNo int, cmdResponses []interface{}) {
 // HA pair doing load balancing.
 func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("status-get", daemons, nil)
+	command := keactrl.NewCommand("status-get", daemons, nil)
 	json := `[
         {
             "result": 0,
@@ -256,7 +256,7 @@ func mockGetStatusLoadBalancing(callNo int, cmdResponses []interface{}) {
 // HA pair doing load balancing. Format supported by Kea 1.7.8 onwards.
 func mockGetStatusLoadBalancing178(callNo int, cmdResponses []interface{}) {
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("status-get", daemons, nil)
+	command := keactrl.NewCommand("status-get", daemons, nil)
 	json := `[
         {
             "result": 0,
@@ -300,7 +300,7 @@ func mockGetStatusLoadBalancing178(callNo int, cmdResponses []interface{}) {
 // HA pair.
 func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("status-get", daemons, nil)
+	command := keactrl.NewCommand("status-get", daemons, nil)
 	json := `[
         {
             "result": 0,
@@ -319,7 +319,7 @@ func mockGetStatusNoHA(callNo int, cmdResponses []interface{}) {
 // lacking arguments.
 func mockGetStatusError(callNo int, cmdResponses []interface{}) {
 	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command, _ := keactrl.NewCommand("status-get", daemons, nil)
+	command := keactrl.NewCommand("status-get", daemons, nil)
 	json := `[
         {
             "result": 1,

@@ -104,14 +104,10 @@ func collectKeaAllowedLogs(response *keactrl.Response) []string {
 // been started and the running Kea apps have been detected.
 func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	// Prepare config-get command to be sent to Kea Control Agent.
-	command, err := keactrl.NewCommand("config-get", nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
+	command := keactrl.NewCommand("config-get", nil, nil)
 	// Send the command to Kea.
 	responses := keactrl.ResponseList{}
-	err = ka.sendCommand(command, &responses)
+	err := ka.sendCommand(command, &responses)
 	if err != nil {
 		return nil, err
 	}
@@ -160,10 +156,7 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	command, err = keactrl.NewCommand("config-get", daemons, nil)
-	if err != nil {
-		return nil, err
-	}
+	command = keactrl.NewCommand("config-get", daemons, nil)
 
 	// Send config-get to the daemons behind CA.
 	responses = keactrl.ResponseList{}

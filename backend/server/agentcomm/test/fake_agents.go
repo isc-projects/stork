@@ -11,7 +11,7 @@ import (
 // Helper struct to mock Agents behavior.
 type FakeAgents struct {
 	RecordedURL      string
-	RecordedCommands []keactrl.Command
+	RecordedCommands []keactrl.SerializableCommand
 	mockKeaFunc      []func(int, []interface{})
 	CallNo           int
 
@@ -122,7 +122,7 @@ func (fa *FakeAgents) GetLastCommand() *keactrl.Command {
 	if len(fa.RecordedCommands) == 0 {
 		return nil
 	}
-	return &fa.RecordedCommands[len(fa.RecordedCommands)-1]
+	return fa.RecordedCommands[len(fa.RecordedCommands)-1].(*keactrl.Command)
 }
 
 // FakeAgents specific implementation of the function to forward a command
@@ -130,14 +130,14 @@ func (fa *FakeAgents) GetLastCommand() *keactrl.Command {
 // function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents or NewKeaFakeAgents.
-func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, app agentcomm.ControlledApp, commands []*keactrl.Command, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
+func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, app agentcomm.ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
 	caAddress, caPort, _, caUseSecureProtocol, _ := app.GetControlAccessPoint()
 	caURL := storkutil.HostWithPortURL(caAddress, caPort, caUseSecureProtocol)
 
 	fa.RecordedURL = caURL
 	result := &agentcomm.KeaCmdsResult{}
 	for _, cmd := range commands {
-		fa.RecordedCommands = append(fa.RecordedCommands, *cmd)
+		fa.RecordedCommands = append(fa.RecordedCommands, cmd)
 		result.CmdsErrors = append(result.CmdsErrors, nil)
 	}
 	// Generate response.
