@@ -55,6 +55,10 @@ namespace :docker do
 
   def docker_up_services(server, cache, *services)
     opts, build_opts, up_opts, additional_services = get_docker_opts(server, cache, services)
+    # We don't use the BuildKit features in our Dockerfiles (yet).
+    # But we turn on the BuildKit to build the Docker stages concurrently and skip unnecessary stages.  
+    ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
+    ENV["DOCKER_BUILDKIT"] = "1"
     sh "docker-compose", *opts, *build_opts, "build", *services, *additional_services
     sh "docker-compose", *opts, "up", *up_opts, *services, *additional_services
   end
