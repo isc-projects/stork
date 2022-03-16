@@ -366,11 +366,8 @@ func TestCommitKeaModule(t *testing.T) {
 
 	// Create a new transaction with Kea.
 	state := config.TransactionState{
-		Updates: []config.Update{
-			{
-				Target:    "kea",
-				Operation: "host_add",
-			},
+		Updates: []*config.Update{
+			config.NewUpdate("kea", "host_add"),
 		},
 	}
 	ctx = context.WithValue(ctx, config.StateContextKey, state)
@@ -394,11 +391,8 @@ func TestCommitUnknownTarget(t *testing.T) {
 
 	// Create a new transaction with unknown target.
 	state := config.TransactionState{
-		Updates: []config.Update{
-			{
-				Target:    "unknown",
-				Operation: "host_add",
-			},
+		Updates: []*config.Update{
+			config.NewUpdate("unknown", "host_add"),
 		},
 	}
 	ctx = context.WithValue(ctx, config.StateContextKey, state)
@@ -440,31 +434,22 @@ func TestCommitDue(t *testing.T) {
 		{
 			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
 			UserID:     int64(user.ID),
-			Updates: []dbmodel.ConfigUpdate{
-				{
-					Target:    "kea",
-					Operation: "host_add",
-				},
+			Updates: []*dbmodel.ConfigUpdate{
+				dbmodel.NewConfigUpdate("kea", "host_add"),
 			},
 		},
 		{
 			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 100),
 			UserID:     int64(user.ID),
-			Updates: []dbmodel.ConfigUpdate{
-				{
-					Target:    "kea",
-					Operation: "config_edit",
-				},
+			Updates: []*dbmodel.ConfigUpdate{
+				dbmodel.NewConfigUpdate("kea", "config_edit"),
 			},
 		},
 		{
 			DeadlineAt: storkutil.UTCNow().Add(time.Second * 100),
 			UserID:     int64(user.ID),
-			Updates: []dbmodel.ConfigUpdate{
-				{
-					Target:    "kea",
-					Operation: "host_edit",
-				},
+			Updates: []*dbmodel.ConfigUpdate{
+				dbmodel.NewConfigUpdate("kea", "host_edit"),
 			},
 		},
 	}
@@ -528,14 +513,57 @@ func TestSchedule(t *testing.T) {
 	ctx, err := manager.CreateContext(1)
 	require.NoError(t, err)
 
-	state := config.TransactionState{
-		Updates: []config.Update{
+	// Simulate adding an app to the database and then storing the app information
+	// as part of the scheduled config change.
+	machine := &dbmodel.Machine{
+		ID:        1,
+		Address:   "localhost",
+		AgentPort: 8080,
+		State: dbmodel.MachineState{
+			Hostname: "cool.example.org",
+		},
+	}
+
+	var accessPoints []*dbmodel.AccessPoint
+	accessPoints = dbmodel.AppendAccessPoint(accessPoints, dbmodel.AccessPointControl, "cool.example.org", "", 1234, true)
+	app := &dbmodel.App{
+		ID:           1,
+		Name:         "foo",
+		MachineID:    machine.ID,
+		Machine:      machine,
+		Type:         dbmodel.AppTypeKea,
+		Active:       true,
+		AccessPoints: accessPoints,
+		Meta: dbmodel.AppMeta{
+			Version: "2.0.1",
+		},
+		Daemons: []*dbmodel.Daemon{
 			{
-				Target:    "kea",
-				Operation: "host_add",
+				ID:      1,
+				AppID:   1,
+				Name:    "dhcp4",
+				Version: "2.0.1",
+				Active:  true,
+			},
+			{
+				ID:      2,
+				AppID:   1,
+				Name:    "ca",
+				Version: "2.0.1",
+				Active:  true,
 			},
 		},
 	}
+
+	// Create the state.
+	state := config.TransactionState{
+		Updates: []*config.Update{
+			config.NewUpdate("kea", "host_add"),
+		},
+	}
+	// Store the app in the state/context.
+	state.Updates[0].Recipe["app"] = app
+
 	ctx = context.WithValue(ctx, config.StateContextKey, state)
 
 	// Schedule the change.
@@ -549,4 +577,37 @@ func TestSchedule(t *testing.T) {
 	require.Len(t, changes[0].Updates, 1)
 	require.Equal(t, "kea", changes[0].Updates[0].Target)
 	require.Equal(t, "host_add", changes[0].Updates[0].Operation)
+	require.NotNil(t, changes[0].Updates[0].Recipe)
+
+	// Make sure the app information was retrieved.
+	require.Contains(t, changes[0].Updates[0].Recipe, "app")
+	appReturned := changes[0].Updates[0].Recipe["app"]
+
+	// Convert app information to a structure.
+	parsedApp := config.App{}
+	err = config.DecodeContextData(appReturned, &parsedApp)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, parsedApp.GetID())
+	require.Equal(t, "foo", parsedApp.GetName())
+	require.Equal(t, dbmodel.AppTypeKea, parsedApp.GetType())
+	require.Equal(t, "2.0.1", parsedApp.GetVersion())
+	require.EqualValues(t, 8080, parsedApp.GetMachinePort())
+
+	parsedMachine := parsedApp.GetMachineTag()
+	require.EqualValues(t, 1, parsedMachine.GetID())
+	require.Equal(t, "localhost", parsedMachine.GetAddress())
+	require.Equal(t, "cool.example.org", parsedMachine.GetHostname())
+
+	tags := parsedApp.GetDaemonTags()
+	require.Len(t, tags, 2)
+
+	require.EqualValues(t, 1, tags[0].GetID())
+	require.Equal(t, "dhcp4", tags[0].GetName())
+	require.EqualValues(t, 1, tags[0].GetAppID())
+	require.Equal(t, dbmodel.AppTypeKea, tags[0].GetAppType())
+
+	require.EqualValues(t, 2, tags[1].GetID())
+	require.Equal(t, "ca", tags[1].GetName())
+	require.EqualValues(t, 1, tags[1].GetAppID())
+	require.Equal(t, dbmodel.AppTypeKea, tags[1].GetAppType())
 }

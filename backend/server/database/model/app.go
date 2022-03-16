@@ -38,6 +38,15 @@ type App struct {
 	Daemons []*Daemon `pg:"rel:has-many"`
 }
 
+// AppTag is an interface implemented by the dbmodel.App exposing functions
+// to create events referencing apps.
+type AppTag interface {
+	GetID() int64
+	GetName() string
+	GetType() string
+	GetVersion() string
+}
+
 // updateAppAccessPoints updates the associated application access points into
 // the database.
 func updateAppAccessPoints(tx *pg.Tx, app *App, update bool) (err error) {
@@ -490,4 +499,60 @@ func (app *App) GetAccessPoint(accessPointType string) (ap *AccessPoint, err err
 		}
 	}
 	return nil, pkgerrors.Errorf("no access point of type %s found for app id %d", accessPointType, app.ID)
+}
+
+// AppTag implemenation.
+
+// Returns app ID.
+func (app App) GetID() int64 {
+	return app.ID
+}
+
+// Returns app name.
+func (app App) GetName() string {
+	return app.Name
+}
+
+// Returns app type.
+func (app App) GetType() string {
+	return app.Type
+}
+
+// Returns app version.
+func (app App) GetVersion() string {
+	return app.Meta.Version
+}
+
+// Remaining functions for the agentcomm.ControlledApp implementation.
+
+// Returns machine port.
+func (app App) GetMachinePort() int64 {
+	return app.Machine.AgentPort
+}
+
+// Returns app control access point including control address, port and
+// the flag indicating if the connection is secure.
+func (app App) GetControlAccessPoint() (address string, port int64, key string, secure bool, err error) {
+	var ap *AccessPoint
+	ap, err = app.GetAccessPoint(AccessPointControl)
+	if err == nil {
+		address = ap.Address
+		port = ap.Port
+		key = ap.Key
+		secure = ap.UseSecureProtocol
+	}
+	return
+}
+
+// Returns MachineTag interface to the machine owning the app.
+func (app App) GetMachineTag() MachineTag {
+	return app.Machine
+}
+
+// Returns DaemonTag interfaces to the daemons owned by the app.
+func (app App) GetDaemonTags() (tags []DaemonTag) {
+	for i := range app.Daemons {
+		tags = append(tags, *app.Daemons[i])
+	}
+	return
 }

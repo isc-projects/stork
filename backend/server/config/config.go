@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-pg/pg/v10"
+	"github.com/mitchellh/mapstructure"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
@@ -31,11 +32,6 @@ const (
 // to multiple daemons.
 type Update = dbmodel.ConfigUpdate
 
-// A structure describing the recipe for running a configuration update. The
-// recipe is specific to certain config update operation, e.g. adding a host,
-// editing a config, updating a subnet etc.
-type UpdateRecipe = dbmodel.ConfigUpdateRecipe
-
 // A structure describing a single configuration change. It includes one or more
 // configuration updates.
 type TransactionState struct {
@@ -43,7 +39,7 @@ type TransactionState struct {
 	// stored in the database (scheduled configuration change).
 	Scheduled bool
 	// Configuration updates belonging to the transaction.
-	Updates []Update
+	Updates []*Update
 }
 
 // A type representing a configuration lock key.
@@ -86,4 +82,14 @@ type Manager interface {
 	CommitDue() error
 	// Schedules configuration changes to apply them in the future.
 	Schedule(context.Context, time.Time) (context.Context, error)
+}
+
+// Creates new config update instance.
+func NewUpdate(target, operation string, daemonIDs ...int64) *Update {
+	return dbmodel.NewConfigUpdate(target, operation, daemonIDs...)
+}
+
+// Decodes data stored as a map in the context/transaction into a custom structure.
+func DecodeContextData(input interface{}, output interface{}) error {
+	return mapstructure.Decode(input, output)
 }

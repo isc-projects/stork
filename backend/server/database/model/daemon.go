@@ -219,6 +219,15 @@ type DaemonServiceOverview struct {
 	LastFailureAt time.Time
 }
 
+// DaemonTag is an interface implemented by the dbmodel.Daemon exposing functions
+// to create events referencing machines.
+type DaemonTag interface {
+	GetID() int64
+	GetName() string
+	GetAppID() int64
+	GetAppType() string
+}
+
 // Creates an instance of a Kea daemon. If the daemon name is dhcp4 or
 // dhcp6, the instance of the KeaDHCPDaemon is also created.
 func NewKeaDaemon(name string, active bool) *Daemon {
@@ -572,4 +581,34 @@ func ShallowCopyKeaDaemon(daemon *Daemon) *Daemon {
 		*copied.KeaDaemon = *daemon.KeaDaemon
 	}
 	return copied
+}
+
+// DaemonTag implementation.
+
+// Returns daemon ID.
+func (d Daemon) GetID() int64 {
+	return d.ID
+}
+
+// Returns daemon name.
+func (d Daemon) GetName() string {
+	return d.Name
+}
+
+// Returns ID of an app owning the daemon.
+func (d Daemon) GetAppID() int64 {
+	return d.AppID
+}
+
+// Returns type of an app owning the daemon.
+func (d Daemon) GetAppType() (apptype string) {
+	switch {
+	case d.App != nil:
+		apptype = d.App.Type
+	case d.KeaDaemon != nil:
+		apptype = AppTypeKea
+	case d.Bind9Daemon != nil:
+		apptype = AppTypeBind9
+	}
+	return
 }

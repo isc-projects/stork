@@ -50,16 +50,13 @@ func TestCommitHostAdd(t *testing.T) {
 
 	ctx := context.Background()
 
-	host := &dbmodel.Host{}
 	state := config.TransactionState{
-		Updates: []config.Update{
-			{
-				Recipe: config.UpdateRecipe{
-					Host: host,
-				},
-			},
+		Updates: []*config.Update{
+			config.NewUpdate("kea", "host_add"),
 		},
 	}
+	host := &dbmodel.Host{}
+	state.Updates[0].Recipe["host"] = host
 	ctx = context.WithValue(ctx, config.StateContextKey, state)
 
 	_, err := module.CommitHostAdd(ctx)

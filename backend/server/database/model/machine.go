@@ -56,6 +56,14 @@ const (
 	MachineRelationKeaDHCPConfigs   MachineRelation = "Apps.Daemons.KeaDaemon.KeaDHCPDaemon"
 )
 
+// MachineTag is an interface implemented by the dbmodel.Machine exposing functions
+// to create events referencing machines.
+type MachineTag interface {
+	GetID() int64
+	GetAddress() string
+	GetHostname() string
+}
+
 // Add new machine to database.
 func AddMachine(db *pg.DB, machine *Machine) error {
 	_, err := db.Model(machine).Insert()
@@ -243,4 +251,21 @@ func DeleteMachine(db *pg.DB, machine *Machine) error {
 		return pkgerrors.Wrapf(ErrNotExists, "machine with id %d does not exist", machine.ID)
 	}
 	return nil
+}
+
+// MachineTag interface implementation.
+
+// Returns machine ID.
+func (machine *Machine) GetID() int64 {
+	return machine.ID
+}
+
+// Returns machine address.
+func (machine *Machine) GetAddress() string {
+	return machine.Address
+}
+
+// Returns hostname.
+func (machine *Machine) GetHostname() string {
+	return machine.State.Hostname
 }

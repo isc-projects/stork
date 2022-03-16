@@ -25,7 +25,7 @@ type ScheduledConfigChange struct {
 	UserID int64
 	User   *SystemUser `pg:"rel:has-one"`
 
-	Updates []ConfigUpdate
+	Updates []*ConfigUpdate
 }
 
 // Represents a single config update belonging to a config change.
@@ -41,13 +41,17 @@ type ConfigUpdate struct {
 	// commands to be sent to the configured server, information to be
 	// inserted into the database etc. The contents of this field are
 	// specific to the performed operation.
-	Recipe ConfigUpdateRecipe
+	Recipe map[string]interface{}
 }
 
-// Operation specific information required to commit the config update.
-type ConfigUpdateRecipe struct {
-	Map  map[string]interface{}
-	Host *Host
+// Creates new config update instance.
+func NewConfigUpdate(target, operation string, daemonIDs ...int64) *ConfigUpdate {
+	return &ConfigUpdate{
+		Target:    target,
+		Operation: operation,
+		DaemonIDs: daemonIDs,
+		Recipe:    make(map[string]interface{}),
+	}
 }
 
 // Inserts scheduled config change into the database in the transaction.

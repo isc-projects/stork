@@ -10,6 +10,18 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Test creation of new config update instance.
+func TestNewConfigUpdate(t *testing.T) {
+	cu := NewConfigUpdate("kea", "host_add", 1, 2, 3)
+	require.NotNil(t, cu)
+	require.Equal(t, "kea", cu.Target)
+	require.Equal(t, "host_add", cu.Operation)
+	require.Len(t, cu.DaemonIDs, 3)
+	require.Contains(t, cu.DaemonIDs, int64(1))
+	require.Contains(t, cu.DaemonIDs, int64(2))
+	require.Contains(t, cu.DaemonIDs, int64(3))
+}
+
 // Test adding and getting scheduled config changes with ordering by deadline.
 func TestAddScheduledConfigChange(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -31,17 +43,9 @@ func TestAddScheduledConfigChange(t *testing.T) {
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
 		UserID:     int64(user.ID),
-		Updates: []ConfigUpdate{
-			{
-				Target:    "kea",
-				Operation: "host_add",
-				DaemonIDs: []int64{1, 2, 3},
-			},
-			{
-				Target:    "kea",
-				Operation: "host_update",
-				DaemonIDs: []int64{3},
-			},
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_add", 1, 2, 3),
+			NewConfigUpdate("kea", "host_update", 3),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -51,12 +55,8 @@ func TestAddScheduledConfigChange(t *testing.T) {
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 15),
 		UserID:     int64(user.ID),
-		Updates: []ConfigUpdate{
-			{
-				Target:    "kea",
-				Operation: "host_delete",
-				DaemonIDs: []int64{1},
-			},
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_delete", 1),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -66,12 +66,8 @@ func TestAddScheduledConfigChange(t *testing.T) {
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
 		UserID:     int64(user.ID),
-		Updates: []ConfigUpdate{
-			{
-				Target:    "kea",
-				Operation: "host_delete",
-				DaemonIDs: []int64{2},
-			},
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_delete", 2),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -133,17 +129,9 @@ func TestGetDueConfigChanges(t *testing.T) {
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
 		UserID:     int64(user.ID),
-		Updates: []ConfigUpdate{
-			{
-				Target:    "kea",
-				Operation: "host_add",
-				DaemonIDs: []int64{1, 2, 3},
-			},
-			{
-				Target:    "kea",
-				Operation: "host_update",
-				DaemonIDs: []int64{3},
-			},
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_add", 1, 2, 3),
+			NewConfigUpdate("kea", "host_update", 3),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -153,12 +141,8 @@ func TestGetDueConfigChanges(t *testing.T) {
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 15),
 		UserID:     int64(user.ID),
-		Updates: []ConfigUpdate{
-			{
-				Target:    "kea",
-				Operation: "host_delete",
-				DaemonIDs: []int64{1},
-			},
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_delete", 1),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -168,12 +152,8 @@ func TestGetDueConfigChanges(t *testing.T) {
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
 		UserID:     int64(user.ID),
-		Updates: []ConfigUpdate{
-			{
-				Target:    "kea",
-				Operation: "host_delete",
-				DaemonIDs: []int64{2},
-			},
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_delete", 2),
 		},
 	}
 	err = AddScheduledConfigChange(db, change)
@@ -221,11 +201,8 @@ func TestDeleteScheduledConfigChange(t *testing.T) {
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
 		UserID:     int64(user.ID),
-		Updates: []ConfigUpdate{
-			{
-				Target:    "kea",
-				Operation: "host_add",
-			},
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_add", 1),
 		},
 	}
 	err = AddScheduledConfigChange(db, change1)
@@ -236,11 +213,8 @@ func TestDeleteScheduledConfigChange(t *testing.T) {
 		CreatedAt:  storkutil.UTCNow(),
 		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
 		UserID:     int64(user.ID),
-		Updates: []ConfigUpdate{
-			{
-				Target:    "kea",
-				Operation: "host_update",
-			},
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_update", 1),
 		},
 	}
 	err = AddScheduledConfigChange(db, change2)

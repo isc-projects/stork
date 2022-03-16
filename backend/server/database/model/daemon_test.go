@@ -829,3 +829,35 @@ func TestGetLocalSubnetIDWithIndexing(t *testing.T) {
 	// Next, try to find the existing subnet.
 	require.EqualValues(t, 1, app.Daemons[0].GetLocalSubnetID("192.0.2.0/24"))
 }
+
+// Test DaemonTag interface implementation.
+func TestDaemonTag(t *testing.T) {
+	daemon := Daemon{
+		ID:    1,
+		Name:  "dhcp4",
+		AppID: 2,
+		App: &App{
+			Type: AppTypeKea,
+		},
+	}
+	require.EqualValues(t, 1, daemon.GetID())
+	require.Equal(t, "dhcp4", daemon.GetName())
+	require.EqualValues(t, 2, daemon.GetAppID())
+	require.Equal(t, AppTypeKea, daemon.GetAppType())
+}
+
+// Test that GetAppType() returns "kea" when KeaDaemon present.
+func TestDaemonTagKeaAppType(t *testing.T) {
+	daemon := Daemon{
+		KeaDaemon: &KeaDaemon{},
+	}
+	require.Equal(t, AppTypeKea, daemon.GetAppType())
+}
+
+// Test that GetAppType() returns "bind9" when Bind9Daemon present.
+func TestDaemonTagBind9AppType(t *testing.T) {
+	daemon := Daemon{
+		Bind9Daemon: &Bind9Daemon{},
+	}
+	require.Equal(t, AppTypeBind9, daemon.GetAppType())
+}

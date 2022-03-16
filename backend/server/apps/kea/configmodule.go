@@ -49,13 +49,7 @@ func (kea *ConfigModule) BeginHostAdd(ctx context.Context) (context.Context, err
 
 // Applies new host reservation.
 func (kea *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host) (context.Context, error) {
-	u := config.Update{
-		Target:    "kea",
-		Operation: "host_add",
-		Recipe: config.UpdateRecipe{
-			Host: host,
-		},
-	}
+	u := config.NewUpdate("kea", "host_add")
 	state := config.TransactionState{}
 	state.Updates = append(state.Updates, u)
 	ctx = context.WithValue(ctx, config.StateContextKey, state)
@@ -69,11 +63,7 @@ func (kea *ConfigModule) CommitHostAdd(ctx context.Context) (context.Context, er
 	if !ok {
 		return ctx, pkgerrors.Errorf("called CommitHostAdd() without a state")
 	}
-	for _, update := range state.Updates {
-		var host *dbmodel.Host
-		if host = update.Recipe.Host; host == nil {
-			return ctx, pkgerrors.Errorf("missing host in the context")
-		}
+	for range state.Updates {
 	}
 	return ctx, nil
 }

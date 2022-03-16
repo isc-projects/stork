@@ -73,15 +73,15 @@ func CreateEvent(level int, text string, objects ...interface{}) *dbmodel.Event 
 	relations := &dbmodel.Relations{}
 	var details string
 	for _, obj := range objects {
-		if d, ok := obj.(*dbmodel.Daemon); ok {
+		if d, ok := obj.(dbmodel.DaemonTag); ok {
 			text = strings.ReplaceAll(text, "{daemon}", daemonTag(d))
-			relations.DaemonID = d.ID
-		} else if app, ok := obj.(*dbmodel.App); ok {
+			relations.DaemonID = d.GetID()
+		} else if app, ok := obj.(dbmodel.AppTag); ok {
 			text = strings.ReplaceAll(text, "{app}", appTag(app))
-			relations.AppID = app.ID
-		} else if m, ok := obj.(*dbmodel.Machine); ok {
+			relations.AppID = app.GetID()
+		} else if m, ok := obj.(dbmodel.MachineTag); ok {
 			text = strings.ReplaceAll(text, "{machine}", machineTag(m))
-			relations.MachineID = m.ID
+			relations.MachineID = m.GetID()
 		} else if s, ok := obj.(*dbmodel.Subnet); ok {
 			text = strings.ReplaceAll(text, "{subnet}", subnetTag(s))
 			relations.SubnetID = s.ID
@@ -153,22 +153,22 @@ func (ec *eventCenter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 // Prepare a tag describing a daemon.
-func daemonTag(daemon *dbmodel.Daemon) string {
-	tag := fmt.Sprintf("<daemon id=\"%d\" name=\"%s\" appId=\"%d\" appType=\"%s\">", daemon.ID, daemon.Name, daemon.AppID, daemon.App.Type)
+func daemonTag(daemon dbmodel.DaemonTag) string {
+	tag := fmt.Sprintf("<daemon id=\"%d\" name=\"%s\" appId=\"%d\" appType=\"%s\">", daemon.GetID(), daemon.GetName(), daemon.GetAppID(), daemon.GetAppType())
 	return tag
 }
 
 // Prepare a tag describing an app.
-func appTag(app *dbmodel.App) string {
+func appTag(app dbmodel.AppTag) string {
 	tag := fmt.Sprintf("<app id=\"%d\" name=\"%s\" type=\"%s\" version=\"%s\">",
-		app.ID, app.Name, app.Type, app.Meta.Version)
+		app.GetID(), app.GetName(), app.GetType(), app.GetVersion())
 	return tag
 }
 
 // Prepare a tag describing a machine.
-func machineTag(machine *dbmodel.Machine) string {
+func machineTag(machine dbmodel.MachineTag) string {
 	tag := fmt.Sprintf("<machine id=\"%d\" address=\"%s\" hostname=\"%s\">",
-		machine.ID, machine.Address, machine.State.Hostname)
+		machine.GetID(), machine.GetAddress(), machine.GetHostname())
 	return tag
 }
 

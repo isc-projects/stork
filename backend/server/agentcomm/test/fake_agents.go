@@ -5,7 +5,6 @@ import (
 
 	keactrl "isc.org/stork/appctrl/kea"
 	"isc.org/stork/server/agentcomm"
-	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
 
@@ -131,12 +130,8 @@ func (fa *FakeAgents) GetLastCommand() *keactrl.Command {
 // function so as they can be later validated. It also returns a custom
 // response to the command by calling the function specified in the
 // call to NewFakeAgents or NewKeaFakeAgents.
-func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, dbApp *dbmodel.App, commands []*keactrl.Command, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
-	ctrlPoint, _ := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
-	caAddress := ctrlPoint.Address
-	caPort := ctrlPoint.Port
-	caUseSecureProtocol := ctrlPoint.UseSecureProtocol
-
+func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, app agentcomm.ControlledApp, commands []*keactrl.Command, cmdResponses ...interface{}) (*agentcomm.KeaCmdsResult, error) {
+	caAddress, caPort, _, caUseSecureProtocol, _ := app.GetControlAccessPoint()
 	caURL := storkutil.HostWithPortURL(caAddress, caPort, caUseSecureProtocol)
 
 	fa.RecordedURL = caURL
@@ -180,11 +175,8 @@ func (fa *FakeAgents) ForwardToNamedStats(ctx context.Context, agentAddress stri
 // so as they can be later validated. It also returns a custom response
 // to the command by calling the function specified in the call to
 // NewFakeAgents.
-func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, dbApp *dbmodel.App, command string) (*agentcomm.RndcOutput, error) {
-	ctrlPoint, _ := dbApp.GetAccessPoint(dbmodel.AccessPointControl)
-	fa.RecordedAddress = ctrlPoint.Address
-	fa.RecordedPort = ctrlPoint.Port
-	fa.RecordedKey = ctrlPoint.Key
+func (fa *FakeAgents) ForwardRndcCommand(ctx context.Context, app agentcomm.ControlledApp, command string) (*agentcomm.RndcOutput, error) {
+	fa.RecordedAddress, fa.RecordedPort, fa.RecordedKey, _, _ = app.GetControlAccessPoint()
 	fa.RecordedCommand = command
 
 	if fa.mockRndcOutput != "" {
