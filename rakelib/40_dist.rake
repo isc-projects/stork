@@ -176,19 +176,14 @@ file server_www_dir => [WEBUI_DIST_DIRECTORY, WEBUI_DIST_ARM_DIRECTORY] do
     sh "touch", server_www_dir
 end
 
+server_dist_dir_tool_part = [tool_dist_bin_file]
+server_dist_dir_man_part = [tool_dist_man_file, server_dist_man_file]
+server_dist_dir_server_part = [server_dist_bin_file, server_dist_system_service_file, server_dist_etc_dir]
+server_dist_dir_webui_part = [server_nginx_example_file, server_grafana_examples_dir, server_www_dir]
+
 server_dist_dir = "dist/server"
 directory server_dist_dir
-file server_dist_dir => [
-    server_dist_bin_file,
-    tool_dist_bin_file,
-    tool_dist_man_file,
-    server_dist_man_file,
-    server_dist_system_service_file,
-    server_dist_etc_dir,
-    server_nginx_example_file, 
-    server_grafana_examples_dir,
-    server_www_dir
-]
+file server_dist_dir => server_dist_dir_tool_part + server_dist_dir_man_part + server_dist_dir_server_part + server_dist_dir_webui_part
 
 server_hooks = FileList["etc/isc-stork-server.post*", "etc/isc-stork-server.pre*"]
 
@@ -299,3 +294,9 @@ end
 
 desc "Build server distribution directory"
 task :build_server_dist => [server_dist_dir]
+
+desc "Build server distribution directory without WebUI, doc and tool"
+task :build_server_only_dist => server_dist_dir_server_part
+
+desc "Build server distribution directory only with WebUI (without server, doc and tool)"
+task :build_webui_only_dist => server_dist_dir_webui_part

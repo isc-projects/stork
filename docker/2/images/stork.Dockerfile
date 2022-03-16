@@ -97,18 +97,24 @@ COPY etc .
 WORKDIR /app/grafana
 COPY grafana .
 WORKDIR /app/rakelib
-COPY rakelib .
+COPY rakelib/2_codebase.rake rakelib/3_build.rake rakelib/5_dist.rake ./
 WORKDIR /app/webui
 COPY webui .
 
 # Build the Stork binaries
 # It builds all components at once.
-FROM codebase AS builder
-RUN rake build_server_dist build_agent_dist
+FROM codebase AS server-builder
+RUN rake build_server_only_dist
+
+FROM codebase AS webui-builder
+RUN rake build_webui_only_dist
+
+FROM codebase AS agent-builder
+RUN rake build_agent_dist
 
 # Minimal agent container
 FROM debian-base as agent
-COPY --from=builder /app/dist/agent /
+COPY --from=agent-builder /app/dist/agent /
 ENTRYPOINT [ "/usr/bin/stork-agent" ]
 # Incoming port
 EXPOSE 8080
@@ -119,16 +125,14 @@ EXPOSE 9119
 
 # Minimal server container
 FROM debian-base AS server
-COPY --from=builder /app/dist/server/etc /etc
-COPY --from=builder /app/dist/server/lib /lib
-COPY --from=builder /app/dist/server/usr/bin/stork-server /usr/bin/
+COPY --from=server-builder /app/dist/server/ /
 ENTRYPOINT [ "/usr/bin/stork-server" ]
 EXPOSE 8080
 
 # Minimal Web UI container
 FROM nginx:1.21-alpine AS webui
 ENV CI=true
-COPY --from=builder /app/dist/server/usr/share/stork/www /usr/share/nginx/html
+COPY --from=webui-builder /app/dist/server/ /
 COPY webui/nginx.conf /tmp/nginx.conf.tpl
 ENV DOLLAR=$
 ENV API_HOST localhost
@@ -139,7 +143,8 @@ EXPOSE 80
 
 # Minimal server with webui container
 FROM debian-base AS server-webui
-COPY --from=builder /app/dist/server /
+COPY --from=server-builder /app/dist/server /
+COPY --from=webui-builder /app/dist/server /
 ENTRYPOINT [ "/usr/bin/stork-server" ]
 EXPOSE 8080
 
@@ -193,7 +198,7 @@ FROM kea-base AS keapremium-base
 ARG KEA_PREMIUM
 ARG KEA_VER
 # Execute only if the premium is enabled
-RUN [ "${KEA_PREMIUM}" != "premium" ] && : || ( \
+RUN [ "${KEA_PREMIUM}" != "premium" ] || ( \
         apt-get update \
         && apt-get install \
                 --no-install-recommends \
@@ -207,7 +212,7 @@ RUN [ "${KEA_PREMIUM}" != "premium" ] && : || ( \
 
 FROM kea${KEA_PREMIUM}-base AS kea
 # Install agent    
-COPY --from=builder /app/dist/agent /
+COPY --from=agent-builder /app/dist/agent /
 # Database
 WORKDIR /var/lib/db
 COPY docker/2/init/init_db.sh docker/2/init/init_*_db.sh docker/2/init/init_query.sql ./
@@ -259,7 +264,7 @@ RUN apt-get update \
         && chmod 640 /etc/bind/rndc.key \
         && touch /etc/bind/db.test
 # Install agent    
-COPY --from=builder /app/dist/agent /
+COPY --from=agent-builder /app/dist/agent /
 ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 # Incoming port
 EXPOSE 8080

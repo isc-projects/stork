@@ -18,7 +18,7 @@ namespace :docker do
       cache_opts.append "--no-cache"
     end
 
-    up_opts = []
+    up_opts = ["--remove-orphans"]
     additional_services = []
 
     if server == "local"
