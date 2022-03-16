@@ -131,14 +131,9 @@ namespace :docker do
         "--rmi", "local"
   end
 
-  desc 'Build and push demo images'
-  task :build_and_push_demo_images do
-    # build container images with built artifacts
-    opts, build_opts, _, _ = get_docker_opts(nil, false, [])
-    sh "docker-compose", *opts, *build_opts, "build"
-    # push built images to docker registry
-    sh "docker-compose", *opts, "push"
-  end
+  #######################
+  ### Docker registry ###
+  #######################
 
   desc 'Prepare containers that are using in GitLab CI processes'
   task :build_ci_containers do

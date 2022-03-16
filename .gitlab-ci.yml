@@ -281,58 +281,31 @@ deploy_demo:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
   allow_failure: true
-  image: docker:latest
   tags:
     - linux
-    - docker
     - amd64
     - ssd
   needs:
     - danger
-  services:
-    - docker:dind
   before_script:
     - ip -6 route del default
     - docker info
-    - apk update
-    - apk upgrade
-    - apk add docker-compose ruby-rake
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
   script:
-    # Build and push core images to public registry.
-    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
-    - rake build_and_push_demo_images
-    # Build and push core and premium images to private registry.
-    - docker login -u stork-ci -p "${STORK_CI_TOKEN_FOR_PREMIUM_REGISTRY}" "${CI_REGISTRY}"
-    - REGISTRY='registry.gitlab.isc.org/isc-private/stork' rake build_and_push_demo_images cs_repo_access_token=$CLOUDSMITH_REPO_ACCESS_TOKEN
-
-    ## start deplyment ###
-
-    # shut down old demo with deep cleanup
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml down -v --remove-orphans
-    # force network cleanup and to make sure we have clean state do restart docker service
+    # Stop all containers
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker kill $(docker ps -q)
+    # Force network cleanup and to make sure we have clean state do restart docker service
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker container prune -f
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker network prune -f
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker volume prune -f
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org sudo systemctl restart docker
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker network prune -f
-    # copy files needed for deployment
-    - scp -o StrictHostKeyChecking=no docker-compose.yaml jenkins@stork.lab.isc.org:~/deploy
-    - scp -o StrictHostKeyChecking=no docker-compose-premium.yaml jenkins@stork.lab.isc.org:~/deploy
-    - scp -o StrictHostKeyChecking=no docker/prometheus.yml jenkins@stork.lab.isc.org:~/deploy/docker/prometheus.yml
-    - scp -o StrictHostKeyChecking=no grafana/kea-dhcp4.json jenkins@stork.lab.isc.org:~/deploy/grafana/kea-dhcp4.json
-    - scp -o StrictHostKeyChecking=no grafana/kea-dhcp6.json jenkins@stork.lab.isc.org:~/deploy/grafana/kea-dhcp6.json
-    - scp -o StrictHostKeyChecking=no grafana/bind9-resolver.json jenkins@stork.lab.isc.org:~/deploy/grafana/bind9-resolver.json
-    - scp -o StrictHostKeyChecking=no docker/grafana/dashboards.yaml jenkins@stork.lab.isc.org:~/deploy/docker/grafana/dashboards.yaml
-    - scp -o StrictHostKeyChecking=no docker/grafana/datasource.yaml jenkins@stork.lab.isc.org:~/deploy/docker/grafana/datasource.yaml
-    - scp -o StrictHostKeyChecking=no docker/grafana/grafana.ini jenkins@stork.lab.isc.org:~/deploy/docker/grafana/grafana.ini
-    # pull just built docker images
-    - ssh jenkins@stork.lab.isc.org docker login -u stork-ci -p "${STORK_CI_TOKEN_FOR_PREMIUM_REGISTRY}" "${CI_REGISTRY}"
-    - ssh jenkins@stork.lab.isc.org REGISTRY='registry.gitlab.isc.org/isc-private/stork' docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml pull
-    # and start demo in the background
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org REGISTRY='registry.gitlab.isc.org/isc-private/stork' docker-compose -f deploy/docker-compose.yaml -f deploy/docker-compose-premium.yaml up -d --no-build
-    # Restart nginx to make sure it is running.
-    - ssh jenkins@stork.lab.isc.org sudo systemctl restart nginx
-
+    # Copy source code
+    - scp -o StrictHostKeyChecking=no -r . jenkins@stork.lab.isc.org:~/deploy
+    # Build Docker containers
+    - ssh jenkins@stork.lab.isc.org docker-compose --project-directory deploy -f deploy/docker/docker-compose.yaml -f deploy/docker/docker-compose-premium.yaml build
+    # Start Docker containers
+    - ssh jenkins@stork.lab.isc.org docker-compose --project-directory deploy -f deploy/docker/docker-compose.yaml -f deploy/docker/docker-compose-premium.yaml up -d
 
 ### deploy pkgs to cloudsmith.io ###
 
