@@ -367,7 +367,8 @@ services:
   postgres:
     image: postgres:11
     networks:
-      - storknet
+      storknet:
+        ipv4_address: 172.20.0.234
     environment:
       POSTGRES_USER: stork
       POSTGRES_PASSWORD: stork

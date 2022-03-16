@@ -3,6 +3,10 @@
 
 namespace :docker do
 
+  #################
+  ### Functions ###
+  #################
+
   def get_docker_opts(server, cache, services)
     opts = [
       "--project-directory", ".",
@@ -67,6 +71,10 @@ namespace :docker do
     sh "docker-compose", *opts, *build_opts, "build", *services, *additional_services
     sh "docker-compose", *opts, "up", *up_opts, *services, *additional_services
   end
+
+  ##################
+  ### Demo tasks ###
+  ##################
 
   desc 'Build containers with everything and start all services using docker-compose. Set CS_REPO_ACCESS_TOKEN to use premium features.'
   task :run_all, [:server, :cache] do |t, args|
@@ -140,4 +148,36 @@ namespace :docker do
         "-t", "registry.gitlab.isc.org/isc-projects/stork/ci-base:latest docker/2/"
     #sh 'docker push registry.gitlab.isc.org/isc-projects/stork/ci-base:latest'
   end
+end
+
+############################################
+### Local dev tasks with Docker database ###
+############################################
+
+# Internal task to setup access to the Docker database
+task :pre_docker_db, [:dbtrace] do |t, args|
+  args.with_defaults(
+    :dbtrace => "false"
+  )
+
+  ENV["STORK_DATABASE_HOST"] = "172.20.0.234"
+  ENV["STORK_DATABASE_PORT"] = "5432"
+  ENV["STORK_DATABASE_USER_NAME"] = "stork"
+  ENV["STORK_DATABASE_PASSWORD"] = "stork"
+  ENV["STORK_DATABASE_NAME"] = "stork"
+  ENV['PGPASSWORD'] = "stork"
+end
+
+desc 'Run local server with Docker database'
+task :run_server_db, [:dbtrace] => [:pre_docker_db] do |t, args|
+  Rake::MultiTask.new(:stub, t.application)
+    .enhance([:run_server, "docker:run_postgres"])
+    .invoke()
+end
+
+desc 'Run local unittests with Docker database'
+task :unittest_backend_db, [:dbtrace] => [:pre_docker_db] do |t, args|
+  Rake::MultiTask.new(:stub, t.application)
+    .enhance([:unittest_backend, "docker:run_postgres"])
+    .invoke()
 end
