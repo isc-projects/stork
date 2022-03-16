@@ -18,7 +18,11 @@ namespace :docker do
       cache_opts.append "--no-cache"
     end
 
-    up_opts = ["--remove-orphans"]
+    up_opts = [
+      "--attach-dependencies",
+      "--remove-orphans",
+      # Warining! Don't use here "--renew-anon-volumes" options. It causes conflicts between running containers. 
+    ]
     additional_services = []
 
     if server == "local"
@@ -59,6 +63,7 @@ namespace :docker do
     # But we turn on the BuildKit to build the Docker stages concurrently and skip unnecessary stages.  
     ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
     ENV["DOCKER_BUILDKIT"] = "1"
+
     sh "docker-compose", *opts, *build_opts, "build", *services, *additional_services
     sh "docker-compose", *opts, "up", *up_opts, *services, *additional_services
   end
@@ -106,6 +111,16 @@ namespace :docker do
   # Source: https://stackoverflow.com/a/45071285
   task :run_dns_proxy_server do
     docker_up_services("default", false, "dns-proxy-server")
+  end
+
+  desc 'Stop all containers'
+  task :stop_all do
+    ENV["CS_REPO_ACCESS_TOKEN"] = "stub"
+    opts, _, _, _ = get_docker_opts(nil, false, [])
+    sh "docker-compose", *opts, "down",
+        "--volumes",
+        "--remove-orphans",
+        "--rmi", "local"
   end
 
   desc 'Build and push demo images'
