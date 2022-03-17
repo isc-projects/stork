@@ -299,6 +299,7 @@ deploy_demo:
     # Stop all containers
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org "docker ps -q | xargs docker kill || true"
     # Force network cleanup and to make sure we have clean state do restart docker service
+    # They can be replaced with docker-compose down after migration from the old demo.
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker container prune -f
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker network prune -f
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker volume prune -f

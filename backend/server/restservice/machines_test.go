@@ -47,7 +47,7 @@ func TestGetVersion(t *testing.T) {
 
 	rsp := rapi.GetVersion(ctx, params)
 	p := rsp.(*general.GetVersionOK).Payload
-	// require.Regexp(t, `^\d+.\d+.\d+$`, *p.Version)
+	require.Regexp(t, `^\d+.\d+.\d+$`, *p.Version)
 	require.Equal(t, "unset", *p.Date)
 }
 
