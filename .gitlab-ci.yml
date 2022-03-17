@@ -288,8 +288,6 @@ deploy_demo:
   needs:
     - danger
   before_script:
-    - ip -6 route del default
-    - docker info
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
   script:
