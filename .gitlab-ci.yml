@@ -292,6 +292,10 @@ deploy_demo:
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
   script:
+    # Print Docker info
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker info
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker version
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose version
     # Stop all containers
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker kill $(docker ps -q) || true
     # Force network cleanup and to make sure we have clean state do restart docker service
