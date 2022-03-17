@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	pkgerrors "github.com/pkg/errors"
+	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
@@ -35,6 +36,8 @@ type contextPair struct {
 type configManagerImpl struct {
 	// Database handle used to schedule configuration changes.
 	db *pg.DB
+	// Interface to the agents that the manager communicates with.
+	agents agentcomm.ConnectedAgents
 	// Holds contexts for present transactions. The unique context
 	// identifier exchanged between the server and the client is a
 	// key of this map.
@@ -144,9 +147,10 @@ func (manager *configManagerImpl) unlock(ctx context.Context) {
 }
 
 // Creates new configuration manager instance.
-func NewManager(db *pg.DB) config.Manager {
+func NewManager(db *pg.DB, agents agentcomm.ConnectedAgents) config.Manager {
 	manager := &configManagerImpl{
 		db:       db,
+		agents:   agents,
 		contexts: make(map[int64]contextPair),
 		locks:    make(map[int64]configLock),
 		mutex:    &sync.RWMutex{},
@@ -161,6 +165,11 @@ func NewManager(db *pg.DB) config.Manager {
 // modules to access the database.
 func (manager *configManagerImpl) GetDB() *pg.DB {
 	return manager.db
+}
+
+// Returns the interface to the agents the manager communicates with.
+func (manager *configManagerImpl) GetConnectedAgents() agentcomm.ConnectedAgents {
+	return manager.agents
 }
 
 // Returns Kea configuration module of the configuration manager.

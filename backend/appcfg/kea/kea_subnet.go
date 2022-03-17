@@ -7,19 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Represents host reservation within Kea configuration.
-type Reservation struct {
-	HWAddress   string   `mapstructure:"hw-address" json:"hw-address,omitempty"`
-	DUID        string   `mapstructure:"duid" json:"duid,omitempty"`
-	CircuitID   string   `mapstructure:"circuit-id" json:"circuit-id,omitempty"`
-	ClientID    string   `mapstructure:"client-id" json:"client-id,omitempty"`
-	FlexID      string   `mapstructure:"flex-id" json:"flex-id,omitempty"`
-	IPAddress   string   `mapstructure:"ip-address" json:"ip-address,omitempty"`
-	IPAddresses []string `mapstructure:"ip-addresses" json:"ip-addresses,omitempty"`
-	Prefixes    []string `mapstructure:"prefixes" json:"prefixes,omitempty"`
-	Hostname    string   `mapstructure:"hostname" json:"hostname,omitempty"`
-}
-
 // Represents address pool structure within Kea configuration.
 type Pool struct {
 	Pool string

@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/mitchellh/mapstructure"
+	"isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
@@ -62,6 +63,8 @@ type KeaModuleCommit interface {
 type Manager interface {
 	// Returns an instance of the database handler used by the configuration manager.
 	GetDB() *pg.DB
+	// Returns an interface to the agents the manager communicates with.
+	GetConnectedAgents() agentcomm.ConnectedAgents
 	// Returns Kea configuration module.
 	GetKeaModule() KeaModule
 	// Creates new context for applying configuration changes.

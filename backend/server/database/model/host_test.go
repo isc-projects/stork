@@ -1300,3 +1300,66 @@ func TestCountOutOfPoolCounters(t *testing.T) {
 	require.EqualValues(t, 2, globalNAs)
 	require.EqualValues(t, 4, globalPDs)
 }
+
+// Test that Host properly implements keaconfig.Host interface.
+func TestKeaConfigHostInterface(t *testing.T) {
+	host := &Host{
+		Subnet: &Subnet{
+			LocalSubnets: []*LocalSubnet{
+				{
+					DaemonID:      1,
+					LocalSubnetID: 123,
+				},
+				{
+					DaemonID:      2,
+					LocalSubnetID: 234,
+				},
+			},
+		},
+		Hostname: "host.example.org",
+		HostIdentifiers: []HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+			{
+				Type:  "circuit-id",
+				Value: []byte{1, 1, 1, 1, 1},
+			},
+		},
+		IPReservations: []IPReservation{
+			{
+				Address: "192.0.2.4",
+			},
+			{
+				Address: "2001:db8:1::4",
+			},
+		},
+	}
+	ids := host.GetHostIdentifiers()
+	require.Len(t, ids, 2)
+	require.Equal(t, "hw-address", ids[0].Type)
+	require.Equal(t, []byte{1, 2, 3, 4, 5, 6}, ids[0].Value)
+	require.Equal(t, "circuit-id", ids[1].Type)
+	require.Equal(t, []byte{1, 1, 1, 1, 1}, ids[1].Value)
+	ips := host.GetIPReservations()
+	require.Len(t, ips, 2)
+	require.Equal(t, "host.example.org", host.GetHostname())
+	subnetID, err := host.GetSubnetID(1)
+	require.NoError(t, err)
+	require.EqualValues(t, 123, subnetID)
+	subnetID, err = host.GetSubnetID(2)
+	require.NoError(t, err)
+	require.EqualValues(t, 234, subnetID)
+	_, err = host.GetSubnetID(3)
+	require.Error(t, err)
+}
+
+// Test that GetSubnet() function returns zero when host reservation is
+// not associated with any subnet.
+func TestKeaConfigHostInterfaceNoSubnet(t *testing.T) {
+	host := &Host{}
+	subnetID, err := host.GetSubnetID(1)
+	require.NoError(t, err)
+	require.Zero(t, subnetID)
+}

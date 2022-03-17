@@ -841,3 +841,52 @@ func CountGlobalReservations(dbi dbops.DBI) (ipv4Addresses, ipv6Addresses, prefi
 	prefixes = res.Prefixes
 	return
 }
+
+// Implementation of the keaconfig.Host interface - used in conversions
+// between Host and keaconfig.Reservation.
+
+// Returns host identifiers.
+func (host Host) GetHostIdentifiers() (identifiers []struct {
+	Type  string
+	Value []byte
+}) {
+	for _, ids := range host.HostIdentifiers {
+		identifiers = append(identifiers, struct {
+			Type  string
+			Value []byte
+		}{
+			Type:  ids.Type,
+			Value: ids.Value,
+		})
+	}
+	return
+}
+
+// Returns reserved IP addresses and prefixes.
+func (host Host) GetIPReservations() (ips []string) {
+	for _, r := range host.IPReservations {
+		ips = append(ips, r.Address)
+	}
+	return
+}
+
+// Returns reserved hostname.
+func (host Host) GetHostname() string {
+	return host.Hostname
+}
+
+// Returns local subnet ID for a specified daemon. It returns an error
+// if the specified daemon is not associated with the host. It returns 0
+// if the host is not associated with a subnet (global host reservation case).
+func (host Host) GetSubnetID(daemonID int64) (subnetID int64, err error) {
+	if host.Subnet != nil {
+		for _, ls := range host.Subnet.LocalSubnets {
+			if ls.DaemonID == daemonID {
+				subnetID = ls.LocalSubnetID
+				return
+			}
+		}
+		err = pkgerrors.Errorf("local subnet id not found in host %d for daemon %d", host.ID, daemonID)
+	}
+	return
+}

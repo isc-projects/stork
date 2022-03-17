@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -53,15 +54,18 @@ func TestNewManager(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	manager := NewManager(db)
+	agents := &agentcommtest.FakeAgents{}
+
+	manager := NewManager(db, agents)
 	require.NotNil(t, manager)
-	require.NotNil(t, manager.GetDB())
+	require.Equal(t, db, manager.GetDB())
+	require.Equal(t, agents, manager.GetConnectedAgents())
 	require.NotNil(t, manager.GetKeaModule())
 }
 
 // Test creating new context with context ID and user ID.
 func TestCreateContext(t *testing.T) {
-	manager := NewManager(nil)
+	manager := NewManager(nil, nil)
 	require.NotNil(t, manager)
 
 	// Gather the generated context ids in the map to ensure
@@ -90,7 +94,7 @@ func TestCreateContext(t *testing.T) {
 // Test that a created context can be remembered and then recovered
 // by context ID and user ID.
 func TestRememberRecoverContext(t *testing.T) {
-	manager := NewManager(nil)
+	manager := NewManager(nil, nil)
 	require.NotNil(t, manager)
 
 	// Create first context with user ID 123.
@@ -164,7 +168,7 @@ func TestRememberRecoverContext(t *testing.T) {
 
 // Test the case when a timeout occurs during config update.
 func TestContextTimeout(t *testing.T) {
-	manager := NewManager(nil)
+	manager := NewManager(nil, nil)
 	require.NotNil(t, manager)
 
 	ctx, err := manager.CreateContext(int64(123))
@@ -211,7 +215,7 @@ func TestContextTimeout(t *testing.T) {
 // Test that calling Done() function results in removing the context and
 // unlocking the configuration.
 func TestDone(t *testing.T) {
-	manager := NewManager(nil)
+	manager := NewManager(nil, nil)
 	require.NotNil(t, manager)
 
 	ctx, err := manager.CreateContext(int64(123))
@@ -249,7 +253,7 @@ func TestDone(t *testing.T) {
 // Test that that an error is returned upon an attempt to remember the context
 // under the specific context ID when user ID doesn't match.
 func TestRememberContextWithMismatchedUserID(t *testing.T) {
-	manager := NewManager(nil)
+	manager := NewManager(nil, nil)
 	require.NotNil(t, manager)
 
 	// Create context with user ID 123.
@@ -280,7 +284,7 @@ func TestRememberContextWithMismatchedUserID(t *testing.T) {
 // Test that nil context is returned when user ID or context ID doesn't
 // match the remembered values.
 func TestRecoverContextMismatch(t *testing.T) {
-	manager := NewManager(nil)
+	manager := NewManager(nil, nil)
 	require.NotNil(t, manager)
 
 	// Create first context with user ID 123.
@@ -317,7 +321,7 @@ func TestRecoverContextMismatch(t *testing.T) {
 // Test that daemon configurations can be locked for updates and then
 // unlocked allowing for locking again.
 func TestLockUnlock(t *testing.T) {
-	manager := NewManager(nil)
+	manager := NewManager(nil, nil)
 	require.NotNil(t, manager)
 
 	// Create context and lock daemons 1, 2, 3.
@@ -351,7 +355,7 @@ func TestLockUnlock(t *testing.T) {
 // Test that the commit call is routed to the Kea module when the
 // transaction target is "kea".
 func TestCommitKeaModule(t *testing.T) {
-	manager := NewManager(nil)
+	manager := NewManager(nil, nil)
 	require.NotNil(t, manager)
 
 	// Replace the interface for committing changes in the Kea
@@ -383,7 +387,7 @@ func TestCommitKeaModule(t *testing.T) {
 // Test that an error is returned when unknown tool is specified in the
 // Kea context.
 func TestCommitUnknownTarget(t *testing.T) {
-	manager := NewManager(nil)
+	manager := NewManager(nil, nil)
 	require.NotNil(t, manager)
 
 	ctx, err := manager.CreateContext(123)
@@ -418,7 +422,7 @@ func TestCommitDue(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, user.ID)
 
-	manager := NewManager(db)
+	manager := NewManager(db, nil)
 	require.NotNil(t, manager)
 
 	// Replace the interface for committing changes in the Kea
@@ -486,7 +490,7 @@ func TestCommitDueNoChanges(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	manager := NewManager(db)
+	manager := NewManager(db, nil)
 	require.NotNil(t, manager)
 
 	// Replace the interface for committing changes in the Kea
@@ -506,7 +510,7 @@ func TestSchedule(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	manager := NewManager(db)
+	manager := NewManager(db, nil)
 	require.NotNil(t, manager)
 
 	// Create a context with a config change.
