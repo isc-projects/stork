@@ -13,7 +13,7 @@ RUN mkdir -p /tmp/flamethrower && cd /tmp/flamethrower && git clone https://gith
 
 # Install perfdhcp
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/isc/kea-2-0/cfg/setup/bash.deb.sh' | bash
-RUN apt-get update && apt-get install -y --no-install-recommends isc-kea-admin=2.0.1-isc20211214132435 isc-kea-common=2.0.1-isc20211214132435 && mkdir -p /var/run/kea/
+RUN apt-get update && apt-get install -y --no-install-recommends isc-kea-admin=2.0.2-isc20220227221539 isc-kea-common=2.0.2-isc20220227221539 && mkdir -p /var/run/kea/
 
 # Setup sim.
 COPY tests/sim/requirements.txt /sim
