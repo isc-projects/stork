@@ -1,0 +1,3 @@
+The kea-dhcp4.conf file is generated during docker-compose up by kea-config-generator service.
+
+

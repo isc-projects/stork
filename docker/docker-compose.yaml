@@ -302,7 +302,7 @@ services:
       dockerfile: docker/images/stork.Dockerfile
       target: kea-config-generator
     volumes:
-      - ${PWD}/docker/config/agent-kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ${PWD}/docker/config/agent-kea-many-subnets:/etc/kea
 
   simulator:
     build:
