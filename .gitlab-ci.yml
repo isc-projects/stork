@@ -304,12 +304,12 @@ deploy_demo:
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker volume prune -f
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org sudo systemctl restart docker
     # Copy source code
-    - ssh jenkins@stork.lab.isc.org rm -rf ~/deploy/*
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org rm -rf deploy/*
     - scp -o StrictHostKeyChecking=no -r $PWD/* jenkins@stork.lab.isc.org:~/deploy
     # Build Docker containers
-    - ssh jenkins@stork.lab.isc.org CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN docker-compose --project-directory deploy -f deploy/docker/docker-compose.yaml -f deploy/docker/docker-compose-premium.yaml build
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org CS_REPO_ACCESS_TOKEN=$CLOUDSMITH_REPO_ACCESS_TOKEN docker-compose --project-directory deploy -f deploy/docker/docker-compose.yaml -f deploy/docker/docker-compose-premium.yaml build
     # Start Docker containers
-    - ssh jenkins@stork.lab.isc.org docker-compose --project-directory deploy -f deploy/docker/docker-compose.yaml -f deploy/docker/docker-compose-premium.yaml up -d
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose --project-directory deploy -f deploy/docker/docker-compose.yaml -f deploy/docker/docker-compose-premium.yaml up -d
 
 ### deploy pkgs to cloudsmith.io ###
 
