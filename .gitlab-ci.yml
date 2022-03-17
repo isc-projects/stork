@@ -275,6 +275,7 @@ deploy_to_repo:
 
 deploy_demo:
   stage: deploy
+  image: registry.gitlab.isc.org/isc-projects/stork/ci-base:latest
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: manual
@@ -292,7 +293,7 @@ deploy_demo:
     - echo "$SSH_PRIVATE_KEY_STORK" | base64 -d | ssh-add -
   script:
     # Stop all containers
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker kill $(docker ps -q)
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker kill $(docker ps -q) || true
     # Force network cleanup and to make sure we have clean state do restart docker service
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker container prune -f
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker network prune -f
