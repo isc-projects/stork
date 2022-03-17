@@ -192,3 +192,4 @@ message TailTextFileRsp {
   // Array of lines.
   repeated string lines = 2;
 }
+
