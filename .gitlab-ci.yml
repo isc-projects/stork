@@ -275,7 +275,7 @@ deploy_to_repo:
 
 deploy_demo:
   stage: deploy
-  image: registry.gitlab.isc.org/isc-projects/stork/ci-base:latest
+  cache: []
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: manual
@@ -300,7 +300,7 @@ deploy_demo:
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker volume prune -f
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org sudo systemctl restart docker
     # Copy source code
-    - scp -o StrictHostKeyChecking=no -r . jenkins@stork.lab.isc.org:~/deploy
+    - scp -o StrictHostKeyChecking=no -r $PWD/* jenkins@stork.lab.isc.org:~/deploy
     # Build Docker containers
     - ssh jenkins@stork.lab.isc.org docker-compose --project-directory deploy -f deploy/docker/docker-compose.yaml -f deploy/docker/docker-compose-premium.yaml build
     # Start Docker containers
