@@ -297,7 +297,7 @@ deploy_demo:
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker version
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker-compose version
     # Stop all containers
-    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker ps -q | xargs docker kill
+    - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org "docker ps -q | xargs docker kill || true"
     # Force network cleanup and to make sure we have clean state do restart docker service
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker container prune -f
     - ssh -o StrictHostKeyChecking=no jenkins@stork.lab.isc.org docker network prune -f
