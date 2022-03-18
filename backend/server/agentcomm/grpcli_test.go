@@ -143,8 +143,7 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 		Return(&rsp, nil)
 
 	ctx := context.Background()
-	daemons, _ := keactrl.NewDaemons("dhcp4", "dhcp6")
-	command := keactrl.NewCommand("test-command", daemons, nil)
+	command := keactrl.NewCommand("test-command", []string{"dhcp4", "dhcp6"}, nil)
 	actualResponse := keactrl.ResponseList{}
 	dbApp := &dbmodel.App{
 		Machine: &dbmodel.Machine{
@@ -238,7 +237,7 @@ func TestForwardToKeaOverHTTPWith2Cmds(t *testing.T) {
 		Return(&rsp, nil)
 
 	ctx := context.Background()
-	daemons, _ := keactrl.NewDaemons("dhcp4", "dhcp6")
+	daemons := []string{"dhcp4", "dhcp6"}
 	command1 := keactrl.NewCommand("test-command", daemons, nil)
 	command2 := keactrl.NewCommand("test-command", daemons, nil)
 	actualResponse1 := keactrl.ResponseList{}

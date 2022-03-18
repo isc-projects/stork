@@ -66,10 +66,7 @@ func validateGetLeasesResponse(commandName string, result int, arguments interfa
 // If the lease is found, the pointer to it is returned. If the lease does not
 // exist, a nil pointer and nil error are returned.
 func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, ipaddress string) (lease *dbmodel.Lease, err error) {
-	daemons, err := keactrl.NewDaemons("dhcp4")
-	if err != nil {
-		return lease, err
-	}
+	daemons := []string{"dhcp4"}
 	arguments := map[string]interface{}{
 		"ip-address": ipaddress,
 	}
@@ -103,10 +100,7 @@ func GetLease4ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 // it is returned. If the lease does not exist, a nil pointer and nil error
 // are returned.
 func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, leaseType, ipaddress string) (lease *dbmodel.Lease, err error) {
-	daemons, err := keactrl.NewDaemons("dhcp6")
-	if err != nil {
-		return lease, err
-	}
+	daemons := []string{"dhcp6"}
 	arguments := map[string]interface{}{
 		"ip-address": ipaddress,
 		"type":       leaseType,
@@ -148,15 +142,12 @@ func GetLease6ByIPAddress(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, 
 func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, propertyValue string, commandNames ...string) (leases []dbmodel.Lease, warns bool, err error) {
 	var commands []keactrl.SerializableCommand
 	for _, commandName := range commandNames {
-		var daemons *keactrl.Daemons
+		var daemons []string
 		var propertyName string
 		sentPropertyValue := propertyValue
 		switch commandName {
 		case "lease4-get-by-hw-address":
-			daemons, err = keactrl.NewDaemons("dhcp4")
-			if err != nil {
-				return leases, false, err
-			}
+			daemons = append(daemons, "dhcp4")
 			// Searching by empty MAC address is allowed when trying to find declined leases.
 			// If the value is non-empty, it has to be properly formatted.
 			if len(sentPropertyValue) > 0 {
@@ -170,32 +161,23 @@ func getLeasesByProperties(agents agentcomm.ConnectedAgents, dbApp *dbmodel.App,
 			}
 			propertyName = "hw-address"
 		case "lease4-get-by-client-id":
-			daemons, err = keactrl.NewDaemons("dhcp4")
-			if err != nil {
-				return leases, false, err
-			}
+			daemons = append(daemons, "dhcp4")
 			propertyName = "client-id"
 		case "lease6-get-by-duid":
 			// Kea does not accept empty DUIDs. Empty DUID in Kea is represented by a zero byte.
 			if len(sentPropertyValue) == 0 {
 				sentPropertyValue = "0"
 			}
-			daemons, err = keactrl.NewDaemons("dhcp6")
-			if err != nil {
-				return leases, false, err
-			}
+			daemons = append(daemons, "dhcp6")
 			propertyName = "duid"
 		case "lease4-get-by-hostname":
-			daemons, err = keactrl.NewDaemons("dhcp4")
+			daemons = append(daemons, "dhcp4")
 			if err != nil {
 				return leases, false, err
 			}
 			propertyName = "hostname"
 		case "lease6-get-by-hostname":
-			daemons, err = keactrl.NewDaemons("dhcp6")
-			if err != nil {
-				return leases, false, err
-			}
+			daemons = append(daemons, "dhcp6")
 			propertyName = "hostname"
 		default:
 			continue

@@ -152,11 +152,7 @@ func (ka *KeaApp) DetectAllowedLogs() ([]string, error) {
 	}
 
 	// Prepare config-get command to be sent to the daemons behind CA.
-	daemons, err := keactrl.NewDaemons(daemonNames...)
-	if err != nil {
-		return nil, err
-	}
-	command = keactrl.NewCommand("config-get", daemons, nil)
+	command = keactrl.NewCommand("config-get", daemonNames, nil)
 
 	// Send config-get to the daemons behind CA.
 	responses = keactrl.ResponseList{}

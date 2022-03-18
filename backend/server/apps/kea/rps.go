@@ -96,7 +96,7 @@ func (rpsWorker *RpsWorker) AgeOffRpsIntervals() error {
 
 // Appends the statistic-get command for DHCP4 to the given command list. It returns
 // an instance of the expected response type.
-func RpsAddCmd4(cmds *[]*keactrl.Command, dhcp4Daemons *keactrl.Daemons) interface{} {
+func RpsAddCmd4(cmds *[]*keactrl.Command, dhcp4Daemons []string) interface{} {
 	dhcp4Arguments := RpsGetDhcp4Arguments()
 	*cmds = append(*cmds, &keactrl.Command{
 		Command:   "statistic-get",
@@ -108,7 +108,7 @@ func RpsAddCmd4(cmds *[]*keactrl.Command, dhcp4Daemons *keactrl.Daemons) interfa
 
 // Appends the statistic-get command for DHCP4 to the given command list. It returns
 // an instance of the expected response type.
-func RpsAddCmd6(cmds *[]*keactrl.Command, dhcp6Daemons *keactrl.Daemons) interface{} {
+func RpsAddCmd6(cmds *[]*keactrl.Command, dhcp6Daemons []string) interface{} {
 	dhcp6Arguments := RpsGetDhcp6Arguments()
 	*cmds = append(*cmds, &keactrl.Command{
 		Command:   "statistic-get",

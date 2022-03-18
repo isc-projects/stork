@@ -306,8 +306,7 @@ func rpsTestInvokeResponse4Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonR
 	cmds := []*keactrl.Command{}
 	responses := []interface{}{}
 
-	dhcp4Daemons, _ := keactrl.NewDaemons(dhcp4)
-	responses = append(responses, RpsAddCmd4(&cmds, dhcp4Daemons))
+	responses = append(responses, RpsAddCmd4(&cmds, []string{dhcp4}))
 	keactrl.UnmarshalResponseList(cmds[0], []byte(jsonResponse), responses[0])
 
 	err := rps.Response4Handler(daemon, responses[0])
@@ -319,8 +318,7 @@ func rpsTestInvokeResponse6Handler(rps *RpsWorker, daemon *dbmodel.Daemon, jsonR
 	cmds := []*keactrl.Command{}
 	responses := []interface{}{}
 
-	dhcp6Daemons, _ := keactrl.NewDaemons(dhcp6)
-	responses = append(responses, RpsAddCmd6(&cmds, dhcp6Daemons))
+	responses = append(responses, RpsAddCmd6(&cmds, []string{dhcp6}))
 	keactrl.UnmarshalResponseList(cmds[0], []byte(jsonResponse), responses[0])
 
 	err := rps.Response6Handler(daemon, responses[0])

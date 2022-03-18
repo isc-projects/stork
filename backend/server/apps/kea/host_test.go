@@ -268,8 +268,7 @@ func mockReservationGetPage(callNo int, cmdResponses []interface{}) {
         }
     ]`, len(hosts), string(hostsAsJSON), fromValue, sourceIndex))
 
-	daemons, _ := keactrl.NewDaemons(fmt.Sprintf("dhcp%d", family))
-	command := keactrl.NewCommand("reservation-get-page", daemons, nil)
+	command := keactrl.NewCommand("reservation-get-page", []string{fmt.Sprintf("dhcp%d", family)}, nil)
 
 	_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
 }
@@ -341,8 +340,7 @@ func mockReservationGetPageReduceHosts(callNo int, cmdResponses []interface{}) {
         ]`
 	}
 
-	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command := keactrl.NewCommand("reservation-get-page", daemons, nil)
+	command := keactrl.NewCommand("reservation-get-page", []string{"dhcp4"}, nil)
 
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
@@ -442,8 +440,7 @@ func mockReservationGetPagePartialChange(callNo int, cmdResponses []interface{})
         ]`
 	}
 
-	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command := keactrl.NewCommand("reservation-get-page", daemons, nil)
+	command := keactrl.NewCommand("reservation-get-page", []string{"dhcp4"}, nil)
 
 	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
 	fmt.Printf("cmdResponses[0]: %+v\n", cmdResponses[0])
@@ -497,8 +494,7 @@ func testReservationGetPageReceived(t *testing.T, iterator *hostIterator) {
 	// that has been configured.
 	require.EqualValues(t, iterator.limit, recordedArguments["limit"])
 	// Check that the service name is correct.
-	require.NotNil(t, recordedCommand.Daemons)
-	recordedDaemons := *recordedCommand.Daemons
+	recordedDaemons := recordedCommand.Daemons
 	require.Len(t, recordedDaemons, 1)
 	require.Contains(t, recordedDaemons, iterator.daemon.Name)
 }

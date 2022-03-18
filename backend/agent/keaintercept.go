@@ -112,18 +112,16 @@ func (i *keaInterceptor) asyncHandle(agent *StorkAgent, request *agentapi.KeaReq
 	}
 
 	// Check what daemons the callbacks need to be invoked for.
-	var daemons *keactrl.Daemons
-	if command.Daemons == nil || len(*command.Daemons) == 0 {
-		daemons, _ = keactrl.NewDaemons("ca")
+	var daemons []string
+	if command.Daemons == nil || len(command.Daemons) == 0 {
+		daemons = append(daemons, "ca")
 	} else {
 		daemons = command.Daemons
 	}
-	daemonsList := daemons.List()
-
 	// Invoke callbacks for each handler registered for this command.
 	for i := range target.handlers {
 		// Invoke the handler for each daemon.
-		for j := range daemonsList {
+		for j := range daemons {
 			if j < len(parsedResponse) {
 				callback := target.handlers[i].callback
 				if callback != nil {

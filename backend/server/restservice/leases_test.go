@@ -33,8 +33,7 @@ func mockLease4Get(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command := keactrl.NewCommand("lease4-get", daemons, nil)
+	command := keactrl.NewCommand("lease4-get", []string{"dhcp4"}, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -58,8 +57,7 @@ func mockLease6Get(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	daemons, _ := keactrl.NewDaemons("dhcp6")
-	command := keactrl.NewCommand("lease6-get", daemons, nil)
+	command := keactrl.NewCommand("lease6-get", []string{"dhcp6"}, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -106,8 +104,7 @@ func mockLeases6Get(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	daemons, _ := keactrl.NewDaemons("dhcp6")
-	command := keactrl.NewCommand("lease6-get-by-duid", daemons, nil)
+	command := keactrl.NewCommand("lease6-get-by-duid", []string{"dhcp6"}, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -119,8 +116,7 @@ func mockLease4GetError(callNo int, responses []interface{}) {
             "text": "Lease erred"
         }
     ]`)
-	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command := keactrl.NewCommand("lease4-get", daemons, nil)
+	command := keactrl.NewCommand("lease4-get", []string{"dhcp4"}, nil)
 	_ = keactrl.UnmarshalResponseList(command, json, responses[0])
 }
 
@@ -143,8 +139,7 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
             }
         }
     ]`)
-	daemons, _ := keactrl.NewDaemons("dhcp4")
-	command := keactrl.NewCommand("lease4-get-by-hw-address", daemons, nil)
+	command := keactrl.NewCommand("lease4-get-by-hw-address", []string{"dhcp4"}, nil)
 	_ = keactrl.UnmarshalResponseList(command, json4, responses[0])
 
 	json6 := []byte(`[
@@ -169,8 +164,7 @@ func mockLeasesGetDeclined(callNo int, responses []interface{}) {
         }
     ]`)
 
-	daemons, _ = keactrl.NewDaemons("dhcp6")
-	command = keactrl.NewCommand("lease6-get-by-duid", daemons, nil)
+	command = keactrl.NewCommand("lease6-get-by-duid", []string{"dhcp6"}, nil)
 	_ = keactrl.UnmarshalResponseList(command, json6, responses[1])
 }
 

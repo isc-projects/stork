@@ -247,17 +247,8 @@ func (statsPuller *StatsPuller) storeDaemonStats(response interface{}, subnetsMa
 }
 
 func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
-	// get active dhcp daemons
-	dhcpDaemons := make(keactrl.Daemons)
-	found := false
-	for _, d := range dbApp.Daemons {
-		if d.KeaDaemon != nil && d.Active && (d.Name == "dhcp4" || d.Name == "dhcp6") {
-			dhcpDaemons[d.Name] = true
-			found = true
-		}
-	}
-	// if no dhcp daemons found then exit
-	if !found {
+	// If no dhcp daemons found then exit.
+	if len(dbApp.GetActiveDHCPDaemonNames()) == 0 {
 		return nil
 	}
 
@@ -279,7 +270,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 			case dhcp4:
 				// Add daemon, cmd, and response for DHCP4 lease stats
 				cmdDaemons = append(cmdDaemons, d)
-				dhcp4Daemons, _ := keactrl.NewDaemons(dhcp4)
+				dhcp4Daemons := []string{dhcp4}
 				cmds = append(cmds, &keactrl.Command{
 					Command: "stat-lease4-get",
 					Daemons: dhcp4Daemons,
@@ -296,7 +287,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 
 				// Add daemon, cmd and response for DHCP6 lease stats
 				cmdDaemons = append(cmdDaemons, d)
-				dhcp6Daemons, _ := keactrl.NewDaemons(dhcp6)
+				dhcp6Daemons := []string{dhcp6}
 				cmds = append(cmds, &keactrl.Command{
 					Command: "stat-lease6-get",
 					Daemons: dhcp6Daemons,

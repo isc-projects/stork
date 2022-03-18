@@ -354,10 +354,7 @@ func newHostIterator(dbi dbops.DBI, app *dbmodel.App, daemon *dbmodel.Daemon, ag
 func (iterator *hostIterator) sendReservationGetPage() ([]keaconfig.Reservation, int, error) {
 	// Depending on the family we should set the service parameter to
 	// dhcp4 or dhcp6.
-	daemons, err := keactrl.NewDaemons(iterator.daemon.Name)
-	if err != nil {
-		return []keaconfig.Reservation{}, keactrl.ResponseError, err
-	}
+	daemons := []string{iterator.daemon.Name}
 	// We need to set subnet-id. It requires extracting the local subnet-id
 	// for the given app.
 	subnetID := int64(0)

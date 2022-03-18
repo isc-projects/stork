@@ -44,9 +44,7 @@ func TestKeaInterceptorHandle(t *testing.T) {
 
 	// Simulate sending config-get command to the DHCPv4 and DHCPv6
 	// server.
-	daemons, err := keactrl.NewDaemons("dhcp4", "dhcp6")
-	require.NoError(t, err)
-	command := keactrl.NewCommand("config-get", daemons, nil)
+	command := keactrl.NewCommand("config-get", []string{"dhcp4", "dhcp6"}, nil)
 	request := &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}
@@ -77,7 +75,7 @@ func TestKeaInterceptorHandle(t *testing.T) {
 
 	// Make sure that we can invoke different callback when using different
 	// command.
-	command = keactrl.NewCommand("subnet4-get", daemons, nil)
+	command = keactrl.NewCommand("subnet4-get", []string{"dhcp4"}, nil)
 	request = &agentapi.KeaRequest{
 		Request: command.Marshal(),
 	}

@@ -79,7 +79,7 @@ func copyOrCreateActiveKeaDaemon(dbApp *dbmodel.App, daemonName string) *dbmodel
 // It also returns:
 // - list of all Kea daemons
 // - list of DHCP daemons (dhcpv4 and/or dhcpv6).
-func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, daemonsErrors map[string]string) (keactrl.Daemons, keactrl.Daemons, error) {
+func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, daemonsErrors map[string]string) ([]string, []string, error) {
 	// prepare the command to get config and version from CA
 	cmds := []keactrl.SerializableCommand{
 		keactrl.NewCommand("version-get", nil, nil),
@@ -140,8 +140,8 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 	}
 
 	// prepare a set of available daemons
-	allDaemons := make(keactrl.Daemons)
-	dhcpDaemons := make(keactrl.Daemons)
+	allDaemons := []string{}
+	dhcpDaemons := []string{}
 
 	// Only set the new configuration if the configuration is added for the first
 	// time or the hash values aren't matching.
@@ -157,15 +157,15 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 
 	sockets := dmn.KeaDaemon.Config.GetControlSockets()
 	if sockets.Dhcp4 != nil {
-		allDaemons[dhcp4] = true
-		dhcpDaemons[dhcp4] = true
+		allDaemons = append(allDaemons, dhcp4)
+		dhcpDaemons = append(dhcpDaemons, dhcp4)
 	}
 	if sockets.Dhcp6 != nil {
-		allDaemons[dhcp6] = true
-		dhcpDaemons[dhcp6] = true
+		allDaemons = append(allDaemons, dhcp6)
+		dhcpDaemons = append(dhcpDaemons, dhcp6)
 	}
 	if sockets.D2 != nil {
-		allDaemons[d2] = true
+		allDaemons = append(allDaemons, d2)
 	}
 
 	return allDaemons, dhcpDaemons, nil
@@ -173,14 +173,14 @@ func getStateFromCA(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp
 
 // Get state of Kea application daemons (beside Control Agent) using ForwardToKeaOverHTTP function.
 // The state, that is stored into dbApp, includes: version, config and runtime state of indicated Kea daemons.
-func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, allDaemons keactrl.Daemons, dhcpDaemons keactrl.Daemons, daemonsErrors map[string]string) error {
+func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, dbApp *dbmodel.App, daemonsMap map[string]*dbmodel.Daemon, allDaemons []string, dhcpDaemons []string, daemonsErrors map[string]string) error {
 	now := storkutil.UTCNow()
 
 	// issue 3 commands to Kea daemons at once to get their state
 	cmds := []keactrl.SerializableCommand{
-		keactrl.NewCommand("version-get", &allDaemons, nil),
-		keactrl.NewCommand("status-get", &dhcpDaemons, nil),
-		keactrl.NewCommand("config-get", &allDaemons, nil),
+		keactrl.NewCommand("version-get", allDaemons, nil),
+		keactrl.NewCommand("status-get", dhcpDaemons, nil),
+		keactrl.NewCommand("config-get", allDaemons, nil),
 	}
 
 	versionGetResp := []VersionGetResponse{}
@@ -196,7 +196,7 @@ func getStateFromDaemons(ctx context.Context, agents agentcomm.ConnectedAgents, 
 	}
 
 	// first find old records of daemons in old daemons assigned to the app
-	for name := range allDaemons {
+	for _, name := range allDaemons {
 		daemonsMap[name] = copyOrCreateActiveKeaDaemon(dbApp, name)
 	}
 

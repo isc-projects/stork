@@ -24,19 +24,11 @@ type SerializableCommand interface {
 	Marshal() string
 }
 
-// Map holding names of daemons to which the command is sent. This is
-// stored in the map rather than a list to guarantee uniqueness of the
-// daemons' names. Not that daemons are called services in the Kea terms,
-// however we use Stork specific terminology here. A service means
-// something different in Stork, i.e. it is an aggregation of multiple
-// cooperating applications.
-type Daemons map[string]bool
-
 // Represents a command sent to Kea including command name, daemons list
 // (service list in Kea terms) and arguments.
 type Command struct {
 	Command   string                  `json:"command"`
-	Daemons   *Daemons                `json:"service,omitempty"`
+	Daemons   []string                `json:"service,omitempty"`
 	Arguments *map[string]interface{} `json:"arguments,omitempty"`
 }
 
@@ -78,73 +70,6 @@ type hasher struct {
 	Value *hasherValue `json:"arguments,omitempty"`
 }
 
-// Creates a map holding specified daemons names. The daemons names
-// must be unique and non-empty.
-func NewDaemons(daemonNames ...string) (*Daemons, error) {
-	keaDaemons := make(Daemons)
-	for _, name := range daemonNames {
-		if len(name) == 0 {
-			// A name must be non-empty.
-			return nil, errors.Errorf("daemon name must not be empty")
-		} else if _, exists := keaDaemons[name]; exists {
-			// Duplicates are not allowed.
-			return nil, errors.Errorf("duplicate daemon name %s", name)
-		}
-		keaDaemons[name] = true
-	}
-	return &keaDaemons, nil
-}
-
-// Checks if the daemon with the given name has been specified.
-func (s *Daemons) Contains(daemonName string) bool {
-	_, ok := (*s)[daemonName]
-	return ok
-}
-
-// Returns the daemons as a sorted list of strings.
-func (s *Daemons) List() []string {
-	var keys []string
-	for name := range *s {
-		keys = append(keys, name)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-// Implementation of the MarshalJSON which converts map of daemons into
-// a list of map keys.
-func (s *Daemons) MarshalJSON() ([]byte, error) {
-	keys := s.List()
-
-	o := "["
-	for i, key := range keys {
-		if i > 0 {
-			o += ","
-		}
-		o += "\"" + key + "\""
-	}
-	o += "]"
-	return []byte(o), nil
-}
-
-// Implementation of the UnmarshalJSON which converts daemons into a list
-// of map keys.
-func (s *Daemons) UnmarshalJSON(b []byte) error {
-	var keyList []string
-	err := json.Unmarshal(b, &keyList)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	*s = make(Daemons)
-	for i := range keyList {
-		if _, ok := (*s)[keyList[i]]; ok {
-			return errors.Errorf("duplicate daemon name %s", keyList[i])
-		}
-		(*s)[keyList[i]] = true
-	}
-	return nil
-}
-
 // Custom unmarshaller hashing arguments string with FNV128 hashing function.
 func (v *hasherValue) UnmarshalJSON(b []byte) error {
 	*v = hasherValue(storkutil.Fnv128(fmt.Sprintf("%s", b)))
@@ -152,11 +77,11 @@ func (v *hasherValue) UnmarshalJSON(b []byte) error {
 }
 
 // Creates new Kea command from specified command name, daemons list and arguments.
-func NewCommand(command string, daemons *Daemons, arguments *map[string]interface{}) *Command {
+func NewCommand(command string, daemons []string, arguments *map[string]interface{}) *Command {
 	if len(command) == 0 {
 		return nil
 	}
-
+	sort.Strings(daemons)
 	cmd := &Command{
 		Command:   command,
 		Daemons:   daemons,
@@ -188,11 +113,8 @@ func (c *Command) GetCommand() string {
 }
 
 // Returns daemon names specified within the command.
-func (c *Command) GetDaemonsList() (list []string) {
-	if c.Daemons != nil {
-		list = c.Daemons.List()
-	}
-	return
+func (c *Command) GetDaemonsList() []string {
+	return c.Daemons
 }
 
 // Parses response received from the Kea Control Agent. The "parsed" argument
