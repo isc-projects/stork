@@ -58,7 +58,7 @@ kea-admin db-init ${DB_TYPE} \
     -h ${DB_HOST}
 
 echo "Seed database"
-seed_file="${BASH_SOURCE%/*}/init_query.sql"
+seed_file="${BASH_SOURCE%/*}/init_pgsql_query.sql"
 
 PGPASSWORD=${DB_ROOT_PASSWORD} \
 psql \

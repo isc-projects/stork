@@ -32,7 +32,7 @@ services:
     volumes:
       - ./docker/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-premium/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
-      - ./docker/config/agent-kea-premium/init_query.sql:/var/lib/db/init_query.sql
+      - ./docker/config/agent-kea-premium/init_mysql_query.sql:/var/lib/db/init_mysql_query.sql
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf

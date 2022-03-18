@@ -58,7 +58,7 @@ kea-admin db-init ${DB_TYPE} \
     -h ${DB_HOST}
 
 echo "Seed database"
-seed_file="${BASH_SOURCE%/*}/init_query.sql"
+seed_file="${BASH_SOURCE%/*}/init_mysql_query.sql"
 
 mysql \
     --user=${DB_ROOT_USER} \
