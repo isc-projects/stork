@@ -151,9 +151,9 @@ end
 
 # Internal task to setup access to the Docker database
 task :pre_docker_db, [:dbtrace] do |t, args|
-  args.with_defaults(
-    :dbtrace => "false"
-  )
+  if args.dbtrace == "true"
+      ENV["STORK_DATABASE_TRACE_QUERIES"] = "run"
+  end
 
   ENV["STORK_DATABASE_HOST"] = "172.20.0.234"
   ENV["STORK_DATABASE_PORT"] = "5432"
