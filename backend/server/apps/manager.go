@@ -355,15 +355,23 @@ func (manager *configManagerImpl) CommitDue() error {
 			Scheduled: true,
 			Updates:   change.Updates,
 		}
+		var (
+			ctx context.Context
+			err error
+		)
 		// Re-create the context.
-		ctx, err := manager.CreateContext(change.UserID)
-		if err != nil {
-			return err
+		ctx, err = manager.CreateContext(change.UserID)
+		if err == nil {
+			ctx = context.WithValue(ctx, config.StateContextKey, state)
+			// Commit the changes in the monitored daemons.
+			_, err = manager.Commit(ctx)
 		}
-		ctx = context.WithValue(ctx, config.StateContextKey, state)
-		// Commit the changes in the monitored daemons.
-		_, err = manager.Commit(ctx)
+		var errtext string
 		if err != nil {
+			errtext = err.Error()
+		}
+		// Mark the current config change as executed.
+		if err = dbmodel.SetConfigChangeExecuted(manager.GetDB(), change.ID, errtext); err != nil {
 			return err
 		}
 	}

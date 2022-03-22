@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/config"
@@ -28,6 +29,7 @@ func (lackingStateError) Error() string {
 type fakeKeaModuleCommit struct {
 	contexts []context.Context
 	ops      []string
+	err      error
 }
 
 // Creates new instance of the fake Kea module.
@@ -46,7 +48,7 @@ func (fkm *fakeKeaModuleCommit) Commit(ctx context.Context) (context.Context, er
 	for _, update := range state.Updates {
 		fkm.ops = append(fkm.ops, fmt.Sprintf("%s.%s", update.Target, update.Operation))
 	}
-	return ctx, nil
+	return ctx, fkm.err
 }
 
 // Test creating new config manager instance.
@@ -486,6 +488,79 @@ func TestCommitDue(t *testing.T) {
 		state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
 		require.True(t, ok)
 		require.True(t, state.Scheduled)
+	}
+
+	// We have processed due config changes. They should no longer be returned.
+	changes, err = dbmodel.GetDueConfigChanges(db)
+	require.NoError(t, err)
+	require.Empty(t, changes)
+}
+
+// Test that errors are recorded in the database when committing due
+// config changes fails.
+func TestCommitDueErrors(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Scheduled config changes must be associated with a user.
+	user := &dbmodel.SystemUser{
+		Login:    "test",
+		Lastname: "test",
+		Name:     "test",
+		Password: "test",
+	}
+	_, err := dbmodel.CreateUser(db, user)
+	require.NoError(t, err)
+	require.NotZero(t, user.ID)
+
+	manager := NewManager(db, nil)
+	require.NotNil(t, manager)
+
+	// Replace the interface for committing changes in the Kea
+	// configuration module for the fake one.
+	impl := manager.(*configManagerImpl)
+	require.NotNil(t, impl)
+	fkm := newFakeKeaModuleCommit()
+	// Cause the Commit() function to return an error.
+	fkm.err = pkgerrors.New("custom test error")
+	impl.keaCommit = fkm
+
+	// Add three config changes to the database. The first two are due. The
+	// third one is still in the future.
+	changes := []dbmodel.ScheduledConfigChange{
+		{
+			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 10),
+			UserID:     int64(user.ID),
+			Updates: []*dbmodel.ConfigUpdate{
+				dbmodel.NewConfigUpdate("kea", "host_add"),
+			},
+		},
+		{
+			DeadlineAt: storkutil.UTCNow().Add(-time.Second * 100),
+			UserID:     int64(user.ID),
+			Updates: []*dbmodel.ConfigUpdate{
+				dbmodel.NewConfigUpdate("kea", "config_edit"),
+			},
+		},
+	}
+	for i := range changes {
+		err := dbmodel.AddScheduledConfigChange(db, &changes[i])
+		require.NoError(t, err)
+	}
+	// Commit due changes.
+	err = manager.CommitDue()
+	require.NoError(t, err)
+
+	// The changes should have been marked as executed.
+	returned, err := dbmodel.GetScheduledConfigChanges(db)
+	require.NoError(t, err)
+	require.Len(t, returned, 2)
+
+	// Make sure that the errors have been recorded and that the executed
+	// flags flipped.
+	for _, change := range returned {
+		require.True(t, change.Executed)
+		require.Equal(t, "custom test error", change.Error)
 	}
 }
 
