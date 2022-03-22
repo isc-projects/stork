@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	agentapi "isc.org/stork/api"
 	keactrl "isc.org/stork/appctrl/kea"
@@ -532,4 +533,39 @@ func TestMakeAccessPoint(t *testing.T) {
 	require.EqualValues(t, "1.2.3.4", ap.Address)
 	require.EqualValues(t, 124, ap.Port)
 	require.EqualValues(t, "abcd", ap.Key)
+}
+
+// Test getting first Kea error found in the KeaCmdsResult structure.
+func TestKeaCmdsResultGetFirstError(t *testing.T) {
+	var result *KeaCmdsResult
+
+	// For nil result there is no error.
+	require.NoError(t, result.GetFirstError())
+
+	// Same for empty result.
+	result = &KeaCmdsResult{}
+	require.NoError(t, result.GetFirstError())
+
+	// Set some errors at various levels.
+	result = &KeaCmdsResult{
+		Error: pkgerrors.New("first error"),
+		CmdsErrors: []error{
+			nil,
+			pkgerrors.New("second error"),
+			pkgerrors.New("third error"),
+		},
+	}
+	// First error goes first.
+	first := result.GetFirstError()
+	require.ErrorContains(t, first, "first error")
+
+	// Remove the first error. We should now get the second one.
+	result.Error = nil
+	first = result.GetFirstError()
+	require.ErrorContains(t, first, "second error")
+
+	// Repeat the test for next error.
+	result.CmdsErrors[1] = nil
+	first = result.GetFirstError()
+	require.ErrorContains(t, first, "third error")
 }

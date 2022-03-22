@@ -145,8 +145,11 @@ func (kea *ConfigModule) CommitHostAdd(ctx context.Context) (context.Context, er
 			}
 			// Send the command to Kea.
 			var response keactrl.Response
-			_, err := kea.manager.GetConnectedAgents().ForwardToKeaOverHTTP(context.Background(), app, []keactrl.SerializableCommand{command}, &response)
+			result, err := kea.manager.GetConnectedAgents().ForwardToKeaOverHTTP(context.Background(), app, []keactrl.SerializableCommand{command}, &response)
 			if err != nil {
+				return ctx, err
+			}
+			if err = result.GetFirstError(); err != nil {
 				return ctx, err
 			}
 		}

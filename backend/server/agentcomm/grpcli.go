@@ -376,9 +376,28 @@ func (agents *connectedAgentsData) ForwardToNamedStats(ctx context.Context, agen
 	return err
 }
 
+// Result of sending Kea commands to Kea.
 type KeaCmdsResult struct {
 	Error      error
 	CmdsErrors []error
+}
+
+// Returns first error found in the KeaCmdsResult structure or nil if no
+// error has been found.
+func (result *KeaCmdsResult) GetFirstError() error {
+	switch {
+	case result == nil:
+		return nil
+	case result.Error != nil:
+		return result.Error
+	default:
+		for _, err := range result.CmdsErrors {
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // Forwards a Kea command via the Stork Agent and Kea Control Agent and then
