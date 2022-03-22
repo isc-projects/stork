@@ -242,8 +242,8 @@ func TestSetConfigChangeExecuted(t *testing.T) {
 	require.Len(t, returned, 1)
 
 	// Make sure that certain fields were not modified.
-	require.Equal(t, change.CreatedAt, returned[0].CreatedAt)
-	require.Equal(t, change.DeadlineAt, returned[0].DeadlineAt)
+	require.WithinDuration(t, change.CreatedAt, returned[0].CreatedAt, time.Millisecond)
+	require.WithinDuration(t, change.DeadlineAt, returned[0].DeadlineAt, time.Millisecond)
 	require.Equal(t, change.UserID, returned[0].UserID)
 	require.Len(t, returned[0].Updates, 1)
 
