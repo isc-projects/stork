@@ -371,7 +371,7 @@ func (manager *configManagerImpl) CommitDue() error {
 			errtext = err.Error()
 		}
 		// Mark the current config change as executed.
-		if err = dbmodel.SetConfigChangeExecuted(manager.GetDB(), change.ID, errtext); err != nil {
+		if err = dbmodel.SetScheduledConfigChangeExecuted(manager.GetDB(), change.ID, errtext); err != nil {
 			return err
 		}
 	}

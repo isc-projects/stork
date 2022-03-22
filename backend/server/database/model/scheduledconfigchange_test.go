@@ -180,7 +180,7 @@ func TestGetDueConfigChanges(t *testing.T) {
 	require.EqualValues(t, 2, returned[1].Updates[0].DaemonIDs[0])
 
 	// Mark one of the changes as executed.
-	err = SetConfigChangeExecuted(db, returned[0].ID, "")
+	err = SetScheduledConfigChangeExecuted(db, returned[0].ID, "")
 	require.NoError(t, err)
 
 	// This time only a single (not executed) change should be returned.
@@ -228,12 +228,12 @@ func TestSetConfigChangeExecuted(t *testing.T) {
 	require.Empty(t, change.Error)
 
 	// Mark the config change executed and set the error string.
-	err = SetConfigChangeExecuted(db, change.ID, "config change error")
+	err = SetScheduledConfigChangeExecuted(db, change.ID, "config change error")
 	require.NoError(t, err)
 
 	// An attempt to modify a non-existing change should result in an
 	// error.
-	err = SetConfigChangeExecuted(db, change.ID+1, "")
+	err = SetScheduledConfigChangeExecuted(db, change.ID+1, "")
 	require.Error(t, err)
 
 	// Get the updated config change.
@@ -250,6 +250,74 @@ func TestSetConfigChangeExecuted(t *testing.T) {
 	// Make sure that the two interesting fields were modified.
 	require.True(t, returned[0].Executed)
 	require.Equal(t, "config change error", returned[0].Error)
+}
+
+// Tests getting time to next config change.
+func TestGetTimeToNextConfigChange(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Scheduled config changes must be associated with a user.
+	user := &SystemUser{
+		Login:    "test",
+		Lastname: "test",
+		Name:     "test",
+		Password: "test",
+	}
+	_, err := CreateUser(db, user)
+	require.NoError(t, err)
+	require.NotZero(t, user.ID)
+
+	// There are no scheduled config changes. It should not cause an error. Instead,
+	// the second value should be false.
+	tn, exists, err := GetTimeToNextScheduledConfigChange(db)
+	require.NoError(t, err)
+	require.False(t, exists)
+	require.Zero(t, tn)
+
+	// Schedule 3 config changes. The first one is already executed so it should
+	// be excluded from the results.
+	change := &ScheduledConfigChange{
+		CreatedAt:  storkutil.UTCNow(),
+		DeadlineAt: storkutil.UTCNow().Add(time.Second * 10),
+		UserID:     int64(user.ID),
+		Executed:   true,
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_add", 1, 2, 3),
+			NewConfigUpdate("kea", "host_update", 3),
+		},
+	}
+	err = AddScheduledConfigChange(db, change)
+	require.NoError(t, err)
+
+	change = &ScheduledConfigChange{
+		CreatedAt:  storkutil.UTCNow(),
+		DeadlineAt: storkutil.UTCNow().Add(time.Second * 25),
+		UserID:     int64(user.ID),
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_delete", 1),
+		},
+	}
+	err = AddScheduledConfigChange(db, change)
+	require.NoError(t, err)
+
+	change = &ScheduledConfigChange{
+		CreatedAt:  storkutil.UTCNow(),
+		DeadlineAt: storkutil.UTCNow().Add(time.Second * 100),
+		UserID:     int64(user.ID),
+		Updates: []*ConfigUpdate{
+			NewConfigUpdate("kea", "host_delete", 2),
+		},
+	}
+	err = AddScheduledConfigChange(db, change)
+	require.NoError(t, err)
+
+	// Get time in seconds to next scheduled config change. It should be around
+	// 25 seconds away.
+	tn, exists, err = GetTimeToNextScheduledConfigChange(db)
+	require.NoError(t, err)
+	require.True(t, exists)
+	require.InDelta(t, tn, 20, 5)
 }
 
 // Test deleting specified scheduled config change.

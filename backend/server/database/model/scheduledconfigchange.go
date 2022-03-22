@@ -109,7 +109,7 @@ func GetDueConfigChanges(dbi dbops.DBI) ([]ScheduledConfigChange, error) {
 // Marks specified config change as executed. Such changes are no longer
 // returned in queries for due config changes. The errtext specifies an optional
 // text describing an error that occurred during the config change execution.
-func SetConfigChangeExecuted(dbi dbops.DBI, changeID int64, errtext string) error {
+func SetScheduledConfigChangeExecuted(dbi dbops.DBI, changeID int64, errtext string) error {
 	change := &ScheduledConfigChange{
 		ID:       changeID,
 		Executed: true,
@@ -127,6 +127,25 @@ func SetConfigChangeExecuted(dbi dbops.DBI, changeID int64, errtext string) erro
 		return pkgerrors.Wrapf(ErrNotExists, "config change with id %d does not exist", changeID)
 	}
 	return nil
+}
+
+// Returns time in seconds to next scheduled config change.
+func GetTimeToNextScheduledConfigChange(dbi dbops.DBI) (int64, bool, error) {
+	var tm struct {
+		Duration *float64
+	}
+	_, err := dbi.QueryOne(&tm,
+		`SELECT MIN(EXTRACT(EPOCH FROM(deadline_at - now() at time zone 'UTC'))) AS duration
+             FROM scheduled_config_change
+         WHERE executed = FALSE`)
+	if err != nil {
+		return 0, false, pkgerrors.Wrapf(err, "problem with getting time to next config change")
+	}
+	if tm.Duration == nil {
+		// Scheduled config changes do not exist.
+		return 0, false, nil
+	}
+	return int64(*tm.Duration), true, err
 }
 
 // Deletes selected scheduled config change from the database.
