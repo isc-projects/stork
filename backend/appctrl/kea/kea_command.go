@@ -28,7 +28,7 @@ type SerializableCommand interface {
 // (service list in Kea terms) and arguments.
 type Command struct {
 	Command   string                  `json:"command"`
-	Daemons   []string                `json:"service,omitempty"`
+	Daemons   []string                `json:"service,omitempty" mapstructure:"service"`
 	Arguments *map[string]interface{} `json:"arguments,omitempty"`
 }
 
@@ -102,18 +102,18 @@ func NewCommandFromJSON(jsonCommand string) (*Command, error) {
 
 // Returns JSON representation of the Kea command, which can be sent to
 // the Kea servers over GRPC.
-func (c *Command) Marshal() string {
+func (c Command) Marshal() string {
 	bytes, _ := json.Marshal(c)
 	return string(bytes)
 }
 
 // Returns command name.
-func (c *Command) GetCommand() string {
+func (c Command) GetCommand() string {
 	return c.Command
 }
 
 // Returns daemon names specified within the command.
-func (c *Command) GetDaemonsList() []string {
+func (c Command) GetDaemonsList() []string {
 	return c.Daemons
 }
 

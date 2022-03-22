@@ -58,9 +58,13 @@ func TestNewManager(t *testing.T) {
 
 	manager := NewManager(db, agents)
 	require.NotNil(t, manager)
-	require.Equal(t, db, manager.GetDB())
-	require.Equal(t, agents, manager.GetConnectedAgents())
 	require.NotNil(t, manager.GetKeaModule())
+
+	impl, ok := manager.(*configManagerImpl)
+	require.True(t, ok)
+	require.NotNil(t, impl)
+	require.Equal(t, db, impl.GetDB())
+	require.Equal(t, agents, impl.GetConnectedAgents())
 }
 
 // Test creating new context with context ID and user ID.

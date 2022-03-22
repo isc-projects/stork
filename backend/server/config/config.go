@@ -6,7 +6,8 @@ import (
 
 	"github.com/go-pg/pg/v10"
 	"github.com/mitchellh/mapstructure"
-	"isc.org/stork/server/agentcomm"
+	pkgerrors "github.com/pkg/errors"
+	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
@@ -59,12 +60,8 @@ type KeaModuleCommit interface {
 	Commit(context.Context) (context.Context, error)
 }
 
-// Common configuration manager Interface.
+// Common configuration manager interface.
 type Manager interface {
-	// Returns an instance of the database handler used by the configuration manager.
-	GetDB() *pg.DB
-	// Returns an interface to the agents the manager communicates with.
-	GetConnectedAgents() agentcomm.ConnectedAgents
 	// Returns Kea configuration module.
 	GetKeaModule() KeaModule
 	// Creates new context for applying configuration changes.
@@ -87,6 +84,15 @@ type Manager interface {
 	Schedule(context.Context, time.Time) (context.Context, error)
 }
 
+// Configuration manager interface exposing functions accessing
+// its unexported fields. It is used by the config modules.
+type ManagerAccessors interface {
+	// Returns an instance of the database handler used by the configuration manager.
+	GetDB() *pg.DB
+	// Returns an interface to the agents the manager communicates with.
+	GetConnectedAgents() agentcomm.ConnectedAgents
+}
+
 // Creates new config update instance.
 func NewUpdate(target, operation string, daemonIDs ...int64) *Update {
 	return dbmodel.NewConfigUpdate(target, operation, daemonIDs...)
@@ -94,5 +100,6 @@ func NewUpdate(target, operation string, daemonIDs ...int64) *Update {
 
 // Decodes data stored as a map in the context/transaction into a custom structure.
 func DecodeContextData(input interface{}, output interface{}) error {
-	return mapstructure.Decode(input, output)
+	err := mapstructure.Decode(input, output)
+	return pkgerrors.WithStack(err)
 }

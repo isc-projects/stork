@@ -212,7 +212,7 @@ func TestGetAppStateWith1Daemon(t *testing.T) {
 
 	GetAppState(ctx, fa, &dbApp, fec)
 
-	require.Equal(t, "https://192.0.2.0:1234/", fa.RecordedURL)
+	require.Contains(t, fa.RecordedURLs, "https://192.0.2.0:1234/")
 	require.Equal(t, "version-get", fa.RecordedCommands[0].GetCommand())
 	require.Equal(t, "config-get", fa.RecordedCommands[1].GetCommand())
 }
@@ -244,7 +244,7 @@ func TestGetAppStateWith2Daemons(t *testing.T) {
 
 	GetAppState(ctx, fa, &dbApp, fec)
 
-	require.Equal(t, "http://192.0.2.0:1234/", fa.RecordedURL)
+	require.Contains(t, fa.RecordedURLs, "http://192.0.2.0:1234/")
 	require.Equal(t, "version-get", fa.RecordedCommands[0].GetCommand())
 	require.Equal(t, "config-get", fa.RecordedCommands[1].GetCommand())
 }
@@ -316,7 +316,7 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 	require.NotNil(t, state)
 	require.Empty(t, state.SameConfigDaemons)
 
-	require.Equal(t, "https://192.0.2.0:1234/", fa.RecordedURL)
+	require.Contains(t, fa.RecordedURLs, "https://192.0.2.0:1234/")
 	require.Equal(t, "version-get", fa.RecordedCommands[0].GetCommand())
 	require.Equal(t, "config-get", fa.RecordedCommands[1].GetCommand())
 

@@ -10,7 +10,7 @@ import (
 
 // Helper struct to mock Agents behavior.
 type FakeAgents struct {
-	RecordedURL      string
+	RecordedURLs     []string
 	RecordedCommands []keactrl.SerializableCommand
 	mockKeaFunc      []func(int, []interface{})
 	CallNo           int
@@ -134,7 +134,7 @@ func (fa *FakeAgents) ForwardToKeaOverHTTP(ctx context.Context, app agentcomm.Co
 	caAddress, caPort, _, caUseSecureProtocol, _ := app.GetControlAccessPoint()
 	caURL := storkutil.HostWithPortURL(caAddress, caPort, caUseSecureProtocol)
 
-	fa.RecordedURL = caURL
+	fa.RecordedURLs = append(fa.RecordedURLs, caURL)
 	result := &agentcomm.KeaCmdsResult{}
 	for _, cmd := range commands {
 		fa.RecordedCommands = append(fa.RecordedCommands, cmd)

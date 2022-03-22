@@ -31,7 +31,7 @@ type Reservation struct {
 // Represents host reservation returned and sent via Kea host commands hook library.
 type HostCmdsReservation struct {
 	Reservation
-	SubnetID int64
+	SubnetID int64 `json:"subnet-id"`
 }
 
 // Converts a host representation in Stork to Kea host reservation format used
