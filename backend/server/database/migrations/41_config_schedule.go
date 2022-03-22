@@ -12,6 +12,8 @@ func init() {
                 id BIGSERIAL NOT NULL PRIMARY KEY,
                 created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
                 deadline_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                executed BOOLEAN DEFAULT FALSE,
+                error TEXT,
                 user_id BIGINT NOT NULL,
                 updates JSONB NOT NULL,
                 CONSTRAINT scheduled_config_change_user FOREIGN KEY (user_id)

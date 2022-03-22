@@ -26,6 +26,9 @@ type ScheduledConfigChange struct {
 	User   *SystemUser `pg:"rel:has-one"`
 
 	Updates []*ConfigUpdate
+
+	Executed bool
+	Error    string
 }
 
 // Represents a single config update belonging to a config change.
@@ -86,11 +89,12 @@ func GetScheduledConfigChanges(dbi dbops.DBI) ([]ScheduledConfigChange, error) {
 	return changes, err
 }
 
-// Returns scheduled config change which deadline has expired.
+// Returns scheduled and not executed config changes which deadline has expired.
 func GetDueConfigChanges(dbi dbops.DBI) ([]ScheduledConfigChange, error) {
 	var changes []ScheduledConfigChange
 	err := dbi.Model(&changes).
 		OrderExpr("deadline_at ASC").
+		Where("executed = ?", false).
 		Where("deadline_at < now() at time zone 'UTC'").
 		Select()
 	if err != nil {
@@ -100,6 +104,29 @@ func GetDueConfigChanges(dbi dbops.DBI) ([]ScheduledConfigChange, error) {
 		err = pkgerrors.Wrapf(err, "problem with getting due config changes")
 	}
 	return changes, err
+}
+
+// Marks specified config change as executed. Such changes are no longer
+// returned in queries for due config changes. The errtext specifies an optional
+// text describing an error that occurred during the config change execution.
+func SetConfigChangeExecuted(dbi dbops.DBI, changeID int64, errtext string) error {
+	change := &ScheduledConfigChange{
+		ID:       changeID,
+		Executed: true,
+		Error:    errtext,
+	}
+	result, err := dbi.Model(change).
+		Column("executed").
+		Column("error").
+		WherePK().
+		Update()
+	if err != nil {
+		return pkgerrors.Wrapf(err, "problem with updating config change %d", changeID)
+	}
+	if result.RowsAffected() <= 0 {
+		return pkgerrors.Wrapf(ErrNotExists, "config change with id %d does not exist", changeID)
+	}
+	return nil
 }
 
 // Deletes selected scheduled config change from the database.
