@@ -220,7 +220,7 @@ func TestApplyHostAdd(t *testing.T) {
 // Test committing added host, i.e. actually sending control commands to Kea.
 func TestCommitHostAdd(t *testing.T) {
 	// Create the config manager instance "connected to" fake agents.
-	agents := &agentcommtest.FakeAgents{}
+	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(nil, agents)
 
 	// Create Kea config module.
@@ -305,12 +305,90 @@ func TestCommitHostAdd(t *testing.T) {
 	}
 }
 
+// Test that error is returned when Kea response contains error status code.
+func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
+	// Create the config manager instance "connected to" fake agents.
+	agents := agentcommtest.NewKeaFakeAgents(func(callNo int, cmdResponses []interface{}) {
+		json := []byte(`[
+            {
+                "result": 1,
+                "text": "error is error"
+            }
+        ]`)
+		command := keactrl.NewCommand("reservation-add", []string{"dhcp4"}, nil)
+		_ = keactrl.UnmarshalResponseList(command, json, cmdResponses[0])
+	})
+
+	manager := newTestManager(nil, agents)
+
+	// Create Kea config module.
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	daemonIDs := []int64{1}
+	ctx := context.WithValue(context.Background(), config.DaemonsContextKey, daemonIDs)
+
+	// Create new host reservation and store it in the context.
+	host := &dbmodel.Host{
+		ID:       1,
+		Hostname: "cool.example.org",
+		HostIdentifiers: []dbmodel.HostIdentifier{
+			{
+				Type:  "hw-address",
+				Value: []byte{1, 2, 3, 4, 5, 6},
+			},
+		},
+		LocalHosts: []dbmodel.LocalHost{
+			{
+				DaemonID: 1,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.1",
+								Port:    1234,
+							},
+						},
+						Name: "kea@192.0.2.1",
+					},
+				},
+			},
+			{
+				DaemonID: 2,
+				Daemon: &dbmodel.Daemon{
+					Name: "dhcp4",
+					App: &dbmodel.App{
+						AccessPoints: []*dbmodel.AccessPoint{
+							{
+								Type:    dbmodel.AccessPointControl,
+								Address: "192.0.2.2",
+								Port:    2345,
+							},
+						},
+						Name: "kea@192.0.2.2",
+					},
+				},
+			},
+		},
+	}
+	ctx, err := module.ApplyHostAdd(ctx, host)
+	require.NoError(t, err)
+
+	_, err = module.CommitHostAdd(ctx)
+	require.ErrorContains(t, err, "reservation-add command to kea@192.0.2.1 failed: error status (1) returned by Kea dhcp4 daemon with text: 'error is error'")
+
+	// The second command should not be sent in this case.
+	require.Len(t, agents.RecordedCommands, 1)
+}
+
 // Test schedulding config changes in the database, retrieving and committing it.
 func TestCommitScheduledHostAdd(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	agents := &agentcommtest.FakeAgents{}
+	agents := agentcommtest.NewKeaFakeAgents()
 	manager := newTestManager(db, agents)
 
 	module := NewConfigModule(manager)

@@ -59,6 +59,15 @@ type HashedResponse struct {
 // A list of responses including hash value computed from the arguments.
 type HashedResponseList []HashedResponse
 
+// An interface exposing properties of the response allowing for
+// error checking.
+type ExaminableResponse interface {
+	GetResult() int
+	GetText() string
+	GetDaemon() string
+	GetArguments() *map[string]interface{}
+}
+
 // In some cases we need to compute a hash from the arguments received
 // in a response. The arguments are passed as a string to a hashing
 // function. Capturing the arguments as string requires hooking up to
@@ -187,4 +196,64 @@ func UnmarshalResponseList(request SerializableCommand, response []byte, parsed 
 	}
 
 	return nil
+}
+
+// Returns status code.
+func (r Response) GetResult() int {
+	return r.Result
+}
+
+// Returns status text.
+func (r Response) GetText() string {
+	return r.Text
+}
+
+// Returns name of the daemon that returned the response.
+func (r Response) GetDaemon() string {
+	return r.Daemon
+}
+
+// Returns response arguments.
+func (r Response) GetArguments() *map[string]interface{} {
+	return r.Arguments
+}
+
+// Returns status code.
+func (r HashedResponse) GetResult() int {
+	return r.Result
+}
+
+// Returns status text.
+func (r HashedResponse) GetText() string {
+	return r.Text
+}
+
+// Returns name of the daemon that returned the response.
+func (r HashedResponse) GetDaemon() string {
+	return r.Daemon
+}
+
+// Returns response arguments.
+func (r HashedResponse) GetArguments() *map[string]interface{} {
+	return r.Arguments
+}
+
+// Check response status code and returns appropriate error or nil if the
+// response was successful.
+func GetResponseError(response ExaminableResponse) (err error) {
+	if response.GetResult() == ResponseError || response.GetResult() == ResponseCommandUnsupported {
+		statusName := "error"
+		if response.GetResult() == ResponseCommandUnsupported {
+			statusName = "unsupported command"
+		}
+		var daemon string
+		if len(response.GetDaemon()) > 0 {
+			daemon = "Kea " + response.GetDaemon() + " daemon"
+		} else {
+			daemon = "Kea"
+		}
+		err = errors.Errorf("%s status (%d) returned by %s with text: '%s'",
+			statusName, response.GetResult(), daemon, response.GetText())
+	}
+	return
 }

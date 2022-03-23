@@ -356,6 +356,85 @@ func TestGetCommand(t *testing.T) {
 	require.Equal(t, "list-commands", command.GetCommand())
 }
 
+// Test that Response properly implements the ExaminableResponse interface.
+func TestExaminableResponse(t *testing.T) {
+	arguments := make(map[string]interface{})
+	response := Response{
+		ResponseHeader: ResponseHeader{
+			Result: ResponseError,
+			Text:   "a response text",
+			Daemon: "dhcp4",
+		},
+		Arguments: &arguments,
+	}
+	require.EqualValues(t, 1, response.GetResult())
+	require.Equal(t, "a response text", response.GetText())
+	require.Equal(t, "dhcp4", response.GetDaemon())
+	require.Equal(t, &arguments, response.GetArguments())
+}
+
+// Test that HashedResponse properly implements the ExaminableResponse interface.
+func TestHashedExmainableResponse(t *testing.T) {
+	arguments := make(map[string]interface{})
+	response := HashedResponse{
+		ResponseHeader: ResponseHeader{
+			Result: 0,
+			Text:   "another response text",
+			Daemon: "dhcp6",
+		},
+		Arguments: &arguments,
+	}
+	require.Zero(t, response.GetResult())
+	require.Equal(t, "another response text", response.GetText())
+	require.Equal(t, "dhcp6", response.GetDaemon())
+	require.Equal(t, &arguments, response.GetArguments())
+}
+
+// Test returning an error for a response with error status.
+func TestGetResponseError(t *testing.T) {
+	response := Response{
+		ResponseHeader: ResponseHeader{
+			Result: ResponseError,
+			Text:   "another response text",
+			Daemon: "dhcp6",
+		},
+	}
+	err := GetResponseError(response)
+	require.ErrorContains(t, err, "error status (1) returned by Kea dhcp6 daemon with text: 'another response text'")
+}
+
+// Test returning an error for a response with unsupported command status.
+func TestGetResponseUnsupportedCommand(t *testing.T) {
+	response := Response{
+		ResponseHeader: ResponseHeader{
+			Result: ResponseCommandUnsupported,
+			Text:   "it is unsupported",
+		},
+	}
+	err := GetResponseError(response)
+	require.ErrorContains(t, err, "unsupported command status (2) returned by Kea with text: 'it is unsupported'")
+}
+
+// Test that no error is returned for a response with empty status.
+func TestGetResponseEmpty(t *testing.T) {
+	response := Response{
+		ResponseHeader: ResponseHeader{
+			Result: ResponseEmpty,
+		},
+	}
+	require.Nil(t, GetResponseError(response))
+}
+
+// Test that no error is returned for a response with success status.
+func TestGetResponseSuccess(t *testing.T) {
+	response := Response{
+		ResponseHeader: ResponseHeader{
+			Result: ResponseSuccess,
+		},
+	}
+	require.Nil(t, GetResponseError(response))
+}
+
 // Runs two benchmarks checking performance of Kea response unmarshalling
 // with and without hashing the response arguments.
 func BenchmarkUnmarshalHashedResponseList(b *testing.B) {

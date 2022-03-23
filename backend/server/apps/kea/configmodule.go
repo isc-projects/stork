@@ -144,12 +144,19 @@ func (kea *ConfigModule) CommitHostAdd(ctx context.Context) (context.Context, er
 				command = commandApp.Command
 			}
 			// Send the command to Kea.
-			var response keactrl.Response
+			var response keactrl.ResponseList
 			result, err := kea.manager.GetConnectedAgents().ForwardToKeaOverHTTP(context.Background(), app, []keactrl.SerializableCommand{command}, &response)
-			if err != nil {
-				return ctx, err
+			if err == nil {
+				if err = result.GetFirstError(); err == nil {
+					for _, r := range response {
+						if err = keactrl.GetResponseError(r); err != nil {
+							break
+						}
+					}
+				}
 			}
-			if err = result.GetFirstError(); err != nil {
+			if err != nil {
+				err = pkgerrors.WithMessagef(err, "%s command to %s failed", command.GetCommand(), app.GetName())
 				return ctx, err
 			}
 		}
