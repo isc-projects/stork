@@ -129,14 +129,16 @@ task :rebuild_server do
 end
 
 # Internal task that configure environment variables for server
-task :pre_run_server, [:dbtrace, :ui_mode] do |t, args|
-    if args.dbtrace == "true"
+task :pre_run_server do
+    if ENV["DB_TRACE"] == "true"
         ENV["STORK_DATABASE_TRACE"] = "run"
     end
 
+    ui_mode = ENV["UI_MODE"]
+
     use_testing_ui = false
     # If the UI mode is not provided then detect it
-    if args.ui_mode == nil
+    if ui_mode == nil
         # Enable testing mode if live build UI is active
         use_testing_ui = system "pgrep", "-f", "ng build --watch"
         # Enable testing mode if testing dir is newer then production dir
@@ -148,12 +150,12 @@ task :pre_run_server, [:dbtrace, :ui_mode] do |t, args|
             use_testing_ui = testing_time > production_time
             puts "Using testing UI - testing UI is newer than production"
         end
-    elsif args.ui_mode == "testing"
+    elsif ui_mode == "testing"
         # Check if user manually forces the UI mode
         use_testing_ui = true
         puts "Using testing UI - user choice"
-    elsif args.ui_mode != "production"
-        puts "Invalid UI mode - choose 'production' or 'testing'"
+    elsif ui_mode != "production"
+        puts "Invalid UI mode - choose 'production', 'testing' or unspecify"
         fail
     end
     if use_testing_ui
@@ -163,8 +165,11 @@ task :pre_run_server, [:dbtrace, :ui_mode] do |t, args|
     ENV["STORK_SERVER_ENABLE_METRICS"] = "true"
 end
 
-desc "Run Stork Server (release mode)"
-task :run_server, [:dbtrace, :ui_mode] => [SERVER_BINARY_FILE, :pre_run_server] do
+desc "Run Stork Server (release mode)
+    UI_MODE - WebUI mode to use, must be build separately - choose: 'production', 'testing' or unspecify
+    DB_TRACE - trace SQL queries - default: false
+"
+task :run_server => [SERVER_BINARY_FILE, :pre_run_server] do
     sh SERVER_BINARY_FILE
 end
 
@@ -179,10 +184,13 @@ task :rebuild_agent do
     Rake::Task["build_agent"].invoke()
 end
 
-desc "Run Stork Agent (release mode)"
-task :run_agent, [:port] => [AGENT_BINARY_FILE] do |t, args|
-    args.with_defaults(:port => "8888")
-    sh AGENT_BINARY_FILE, "--port", args.port
+desc "Run Stork Agent (release mode)
+    PORT - agent port to use - default: 8888"
+task :run_agent => [AGENT_BINARY_FILE] do
+    if ENV["PORT"].nil?
+        ENV["PORT"] = "8888"
+    end
+    sh AGENT_BINARY_FILE, "--port", ENV["PORT"]
 end
 
 ## Stork Tool

@@ -247,10 +247,14 @@ task :rebuild_agent_pkg do
     Rake::Task["build_agent_pkg"].invoke()
 end
 
-desc "Install agent"
-task :install_agent, [:dest] => [agent_dist_dir] do |t, args|
-    sh "mkdir", "-p", args.dest
-    sh "cp", "-a", "-f", File.join(agent_dist_dir, "."), args.dest
+desc "Install agent
+    DEST - destionation directory - default: /"
+task :install_agent => [agent_dist_dir] do
+    if ENV["DEST"].nil?
+        ENV["DEST"] = "/"
+    end
+    sh "mkdir", "-p", ENV["DEST"]
+    sh "cp", "-a", "-f", File.join(agent_dist_dir, "."), ENV["DEST"]
 end
 
 ## Server & Tool
@@ -264,8 +268,12 @@ task :rebuild_server_pkg do
     Rake::Task["build_server_pkg"].invoke()
 end
 
-desc "Install server"
-task :install_server, [:dest] => [server_dist_dir] do |t, args|
-    sh "mkdir", "-p", args.dest
-    sh "cp", "-a", "-f", File.join(server_dist_dir, "."), args.dest
+desc "Install server
+    DEST - destionation directory - default: /"
+task :install_server => [server_dist_dir] do
+    if ENV["DEST"].nil?
+        ENV["DEST"] = "/"
+    end
+    sh "mkdir", "-p", ENV["DEST"]
+    sh "cp", "-a", "-f", File.join(server_dist_dir, "."), ENV["DEST"]
 end

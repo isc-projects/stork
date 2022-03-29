@@ -59,7 +59,7 @@ task :build_all_copy_in_subdir do
         "--exclude=*~",
         "--delete", "api", "backend", "doc", "etc", "grafana", "webui",
         "Rakefile", "rakelib", "./build-root"
-  sh "rake install_server[build-root/root] install_agent[build-root/root]"
+  sh "DEST=build-root/root rake install_server install_agent"
 end
 
 desc 'Shut down all containers'

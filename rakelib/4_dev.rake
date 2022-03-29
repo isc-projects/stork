@@ -20,11 +20,12 @@ task :build_backend_live => go_codebase do
     )
 end
 
-desc 'Check backend source code'
-task :lint_go, [:fix] => [GOLANGCILINT] + go_dev_codebase do |t, args|
-    args.with_defaults(:fix => "false")
+desc 'Check backend source code
+    FIX - fix linting issues - default: false
+'
+task :lint_go => [GOLANGCILINT] + go_dev_codebase do
     opts = []
-    if args.fix == "true"
+    if ENV["FIX"] == "true"
         opts += ["--fix"]
     end
 
@@ -131,8 +132,17 @@ task :unittest_backend => [RICHGO, :db_remove_remaining, :db_migrate] + go_dev_c
     end
 end
 
-desc 'Show backend coverage of unit tests in web browser'
-task :show_backend_cov, [:dbhost, :dbport, :dbpass, :dbtrace] => [GO, :unittest_backend] do
+desc 'Show backend coverage of unit tests in web browser
+    See "db_migrate" task for the database-related parameters'
+task :show_backend_cov => [GO, :unittest_backend] do
+    if !ENV["SCOPE"].nil?
+        fail "Environment variable SCOPE cannot be specified"
+    end
+
+    if !ENV["TEST"].nil?
+        fail "Environment variable TEST cannot be specified"
+    end
+
     puts "Warning: Coverage may not work under Chrome-like browsers; use Firefox if any problems occur."
     Dir.chdir('backend') do
         sh GO, "tool", "cover", "-html=coverage.out"
@@ -169,11 +179,12 @@ task :unittest_backend_debug => [DLV, :db_remove_remaining, :db_migrate] + go_de
     end
 end
 
-desc 'Run Stork Agent (debug mode)'
-task :run_agent_debug, [:headless] => [DLV] + GO_AGENT_CODEBASE do |t, args|
+desc 'Run Stork Agent (debug mode)
+    HEADLESS - run debugger in headless mode - default: false'
+task :run_agent_debug => [DLV] + GO_AGENT_CODEBASE do
     opts = []
 
-    if args.headless == "true"
+    if ENV["HEADLESS"] == "true"
         opts = ["--headless", "-l", "0.0.0.0:45678"]
     end
 
@@ -182,10 +193,13 @@ task :run_agent_debug, [:headless] => [DLV] + GO_AGENT_CODEBASE do |t, args|
     end
 end
 
-desc 'Run Stork Server (debug mode, no doc and UI)'
-task :run_server_debug, [:headless, :ui_mode] => [DLV, :pre_run_server] + GO_SERVER_CODEBASE do |t, args|
+desc "Run Stork Server (debug mode, no doc and UI)
+    HEADLESS - run debugger in headless mode - default: false
+    UI_MODE - WebUI mode to use, must be build separately - choose: 'production', 'testing' or unspecify
+    DB_TRACE - trace SQL queries - default: false"
+task :run_server_debug => [DLV, :pre_run_server] + GO_SERVER_CODEBASE do |t, args|
     opts = []
-    if args.headless == "true"
+    if ENV["HEADLESS"] == "true"
         opts = ["--headless", "-l", "0.0.0.0:45678"]
     end
 
@@ -213,26 +227,26 @@ task :fmt_ui => [NPX] + WEBUI_CODEBASE do
   end
 end
 
-# Globs of test files to include, relative to project root.
-# There are 2 special cases:
-#   when a path to directory is provided, all spec files ending ".spec.@(ts|tsx)" will be included
-#   when a path to a file is provided, and a matching spec file exists it will be included instead
-desc 'Run unit tests for UI.'
-task :unittest_ui, [:test, :debug] => [NPX] + WEBUI_CODEBASE do |t, args|
-    args.with_defaults(
-        :debug => "false"
-    )
+desc 'Run unit tests for UI.
+    TEST - globs of test files to include, relative to project root - default: unspecified
+        There are 2 special cases:
+            when a path to directory is provided, all spec files ending ".spec.@(ts|tsx)" will be included
+            when a path to a file is provided, and a matching spec file exists it will be included instead
+    DEBUG - run the tests in debug mode (no headless) - default: false
+'
+task :unittest_ui => [NPX] + WEBUI_CODEBASE do
+    debug = ENV["DEBUG"] == "true"
 
     opts = []
-    if args.test
-        opts += ["--include", args.test]
+    if !ENV["TEST"].nil?
+        opts += ["--include", ENV["TEST"]]
     end
 
-    opts += ["--progress", args.debug]
-    opts += ["--watch", args.debug]
+    opts += ["--progress", debug]
+    opts += ["--watch", debug]
 
     opts += ["--browsers"]
-    if args.debug == "true"
+    if debug
         opts += ["Chrome"]
     else
         opts += ["ChromeNoSandboxHeadless"]
