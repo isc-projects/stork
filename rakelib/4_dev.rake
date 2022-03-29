@@ -325,7 +325,10 @@ task :db_migrate, [:dbname, :dbhost, :dbport, :dbuser, :dbpass, :dbtrace] => [TO
     ENV["STORK_DATABASE_USER_NAME"] = args.dbuser
     ENV["STORK_DATABASE_PASSWORD"] = args.dbpass
     ENV["STORK_DATABASE_NAME"] = args.dbname
-    ENV["STORK_DATABASE_TRACE"] = args.dbtrace
+
+    if args.dbtrace == "true"
+        ENV["STORK_DATABASE_TRACE"] = "true"
+    end
     
     ENV['PGPASSWORD'] = args.dbpass
     
