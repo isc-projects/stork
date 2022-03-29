@@ -227,7 +227,7 @@ task :clean_pkgs do
         fail "Environment variable PKG_NAME not specified"
     end
     pkgs = FileList[File.join(pkgs_dir, "isc-stork-#{ENV["PKG_NAME"]}*")]
-    stub = File.join(pkgs_dir, args.pkg_name + "-builded.pkg")
+    stub = File.join(pkgs_dir, ENV["PKG_NAME"] + "-builded.pkg")
     sh "rm", "-f", *pkgs, stub
 end
 

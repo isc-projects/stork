@@ -58,7 +58,7 @@ task :unittest_backend => [RICHGO, :db_remove_remaining, :db_migrate] + go_dev_c
     opts = []
 
     if !ENV["TEST"].nil?
-        opts += ["-run", args.test]
+        opts += ["-run", ENV["TEST"]]
     end
 
     if benchmark == "true"
@@ -197,7 +197,7 @@ desc "Run Stork Server (debug mode, no doc and UI)
     HEADLESS - run debugger in headless mode - default: false
     UI_MODE - WebUI mode to use, must be build separately - choose: 'production', 'testing' or unspecify
     DB_TRACE - trace SQL queries - default: false"
-task :run_server_debug => [DLV, :pre_run_server] + GO_SERVER_CODEBASE do |t, args|
+task :run_server_debug => [DLV, :pre_run_server] + GO_SERVER_CODEBASE do
     opts = []
     if ENV["HEADLESS"] == "true"
         opts = ["--headless", "-l", "0.0.0.0:45678"]
@@ -235,7 +235,10 @@ desc 'Run unit tests for UI.
     DEBUG - run the tests in debug mode (no headless) - default: false
 '
 task :unittest_ui => [NPX] + WEBUI_CODEBASE do
-    debug = ENV["DEBUG"] == "true"
+    debug = "false"
+    if ENV["DEBUG"] == "true"
+        debug = "true"
+    end
 
     opts = []
     if !ENV["TEST"].nil?
@@ -246,7 +249,7 @@ task :unittest_ui => [NPX] + WEBUI_CODEBASE do
     opts += ["--watch", debug]
 
     opts += ["--browsers"]
-    if debug
+    if debug == "true"
         opts += ["Chrome"]
     else
         opts += ["ChromeNoSandboxHeadless"]
@@ -361,7 +364,7 @@ task :db_migrate => [TOOL_BINARY_FILE] do
         "-p", dbport,
         "-U", dbuser,
         "-O", dbuser,
-        args.dbname
+        dbname
 
     sh TOOL_BINARY_FILE, "db-up",
         "-d", dbname,
