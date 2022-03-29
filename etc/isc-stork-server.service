@@ -11,6 +11,7 @@ ConfigurationDirectory=stork
 ExecStart=/usr/bin/stork-server
 ExecReload=/bin/kill -HUP $MAINPID
 EnvironmentFile=/etc/stork/server.env
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
