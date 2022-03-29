@@ -77,7 +77,8 @@ agent_hooks = FileList["etc/isc-stork-agent.post*", "etc/isc-stork-agent.pre*"]
 
 AGENT_PACKAGE_STUB_FILE = File.join(pkgs_dir, "agent-builded.pkg")
 file AGENT_PACKAGE_STUB_FILE => [FPM, agent_dist_dir, pkgs_dir] + agent_hooks do
-    Rake::Task["clean_pkgs"].invoke("agent")
+    ENV["PKG_NAME"] = "agent"
+    Rake::Task["clean_pkgs"].invoke()
 
     version = `#{AGENT_BINARY_FILE} --version`.rstrip
     pkg_type = get_pkg_type()
@@ -187,7 +188,8 @@ server_hooks = FileList["etc/isc-stork-server.post*", "etc/isc-stork-server.pre*
 
 SERVER_PACKAGE_STUB_FILE = File.join(pkgs_dir, "server-builded.pkg")
 file SERVER_PACKAGE_STUB_FILE => [FPM, server_dist_dir, pkgs_dir] + server_hooks do
-    Rake::Task["clean_pkgs"].invoke("server")
+    ENV["PKG_NAME"] = "server"
+    Rake::Task["clean_pkgs"].invoke()
 
     version = `#{SERVER_BINARY_FILE} --version`.rstrip
     pkg_type = get_pkg_type()
@@ -217,9 +219,14 @@ end
 ### Tasks ###
 #############
 
-desc "Clean all packages of a given kind (agent or server)"
-task :clean_pkgs, [:pkg_name] do |t, args|
-    pkgs = FileList[File.join(pkgs_dir, "isc-stork-#{args.pkg_name}*")]
+desc "Clean all packages of a given kind (agent or server)
+    PKG_NAME - package name - choice: 'deb' or 'rpm', required
+"
+task :clean_pkgs do
+    if ENV["PKG_NAME"].nil?
+        fail "Environment variable PKG_NAME not specified"
+    end
+    pkgs = FileList[File.join(pkgs_dir, "isc-stork-#{ENV["PKG_NAME"]}*")]
     stub = File.join(pkgs_dir, args.pkg_name + "-builded.pkg")
     sh "rm", "-f", *pkgs, stub
 end

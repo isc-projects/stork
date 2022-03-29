@@ -40,30 +40,35 @@ task :fmt_go => [GO] + go_codebase do
     end
 end
 
-desc 'Run backend unit and coverage tests'
-task :unittest_backend, [:scope, :test, :benchmark, :short,
-        :dbhost, :dbport, :dbpass, :dbtrace] => [RICHGO, :db_remove_remaining, :db_migrate] + go_dev_codebase do |t, args|
-    args.with_defaults(
-        :scope => "./...",
-        :benchmark => "false",
-        :short => "false"
-    )
+desc 'Run backend unit and coverage tests
+    SCOPE - Scope of the tests - default: all files
+    TEST - Test name pattern to run - default: empty
+    BENCHMARK - Execute benchmarks - default: false
+    SHORT - Run short test rountine - default: false
+    HEADLESS - Run in headless mode - default: false
+    See "db_migrate" task for the database-related parameters
+'
+task :unittest_backend => [RICHGO, :db_remove_remaining, :db_migrate] + go_dev_codebase do
+    scope = ENV["SCOPE"] || "./..."
+    benchmark = ENV["BENCHMARK"] || "false"
+    short = ENV["SHORT"] || "false"
+    test_pattern = ENV["TEST"] || "false"
 
     opts = []
 
-    if args.test != nil
+    if !ENV["TEST"].nil?
         opts += ["-run", args.test]
     end
 
-    if args.benchmark == "true"
+    if benchmark == "true"
         opts += ["-bench=."]
     end
 
-    if args.short == "true"
+    if short == "true"
         opts += ["-short"]
     end
 
-    with_cov_tests = args.scope == "./..." && args.test == nil
+    with_cov_tests = scope == "./..." && ENV["TEST"].nil?
 
     if with_cov_tests
         opts += ["-coverprofile=coverage.out"]
@@ -74,7 +79,7 @@ task :unittest_backend, [:scope, :test, :benchmark, :short,
     end
 
     Dir.chdir('backend') do
-        sh RICHGO, "test", *opts, "-race", "-v", args.scope
+        sh RICHGO, "test", *opts, "-race", "-v", scope
 
         if with_cov_tests
             out = `"#{GO}" tool cover -func=coverage.out`
@@ -108,7 +113,7 @@ task :unittest_backend, [:scope, :test, :benchmark, :short,
                             # this requires interacting with terminal
                             'GetSecretInTerminal',
                             ]
-                if args.short == 'true'
+                if short == 'true'
                     ignore_list.concat(['setupRootKeyAndCert', 'setupServerKeyAndCert', 'SetupServerCerts',
                                     'ExportSecret'])
                 end
@@ -143,23 +148,24 @@ task :connect_dbg => GDLV do
   sh GDLV, "connect", "127.0.0.1:45678"
 end
 
-desc 'Run backend unit tests (debug mode)'
-task :unittest_backend_debug, [:scope, :short, :headless,
-        :dbhost, :dbport, :dbpass, :dbtrace] => [DLV, :db_remove_remaining, :db_migrate] + go_dev_codebase do |t, args|
-
-    if args.scope == nil
-        puts "Scope argument is required"
-        fail
+desc 'Run backend unit tests (debug mode)
+    SCOPE - Scope of the tests - required
+    HEADLESS - Run in headless mode - default: false
+    See "db_migrate" task for the database-related parameters
+'
+task :unittest_backend_debug => [DLV, :db_remove_remaining, :db_migrate] + go_dev_codebase do
+    if ENV["SCOPE"].nil?
+        fail "Scope argument is required"
     end
 
     opts = []
 
-    if args.headless == "true"
+    if ENV["HEADLESS"] == "true"
         opts = ["--headless", "-l", "0.0.0.0:45678"]
     end
 
     Dir.chdir('backend') do
-        sh DLV, *opts, "test", args.scope
+        sh DLV, *opts, "test", ENV["SCOPE"]
     end
 end
 
@@ -303,73 +309,76 @@ task :lint_git => [DANGER] do
     sh DANGER, "--fail-on-errors=true", "--new-comment"
 end
 
-desc 'Migrate (and create) database to the newest version'
-task :db_migrate, [:dbname, :dbhost, :dbport, :dbuser, :dbpass, :dbtrace] => [TOOL_BINARY_FILE] do |t, args|
-    args.with_defaults(
-        :dbname => ENV["POSTGRES_DB"] || "storktest",
-        :dbhost => ENV["POSTGRES_ADDR"] || "localhost",
-        :dbport => "5432",
-        :dbuser => ENV["POSTGRES_USER"] || "storktest",
-        :dbpass => ENV["POSTGRES_PASSWORD"] || "storktest",
-        :dbtrace => "false"
-    )
+desc 'Migrate (and create) database to the newest version
+    DB_NAME - database name - default: env:POSTGRES_DB or storktest
+    DB_HOST - database host - default: env:POSTGRES_ADDR or localhost
+    DB_PORT - database port - default: 5432
+    DB_USER - database user - default: env:POSTGRES_USER or storktest
+    DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest
+    DB_TRACE - trace SQL queries - default: false
+'
+task :db_migrate => [TOOL_BINARY_FILE] do
+    dbname = ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
+    dbhost = ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "storktest"
+    dbport = ENV["DB_PORT"] || "5432"
+    dbuser = ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
+    dbpass = ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
+    dbtrace = ENV["DB_TRACE"] || "false"
 
-    dbhost = args.dbhost
-    dbport = args.dbport
     if dbhost.include? ':'
         dbhost, dbport = dbhost.split(':')
     end
     
     ENV["STORK_DATABASE_HOST"] = dbhost
     ENV["STORK_DATABASE_PORT"] = dbport
-    ENV["STORK_DATABASE_USER_NAME"] = args.dbuser
-    ENV["STORK_DATABASE_PASSWORD"] = args.dbpass
-    ENV["STORK_DATABASE_NAME"] = args.dbname
+    ENV["STORK_DATABASE_USER_NAME"] = dbuser
+    ENV["STORK_DATABASE_PASSWORD"] = dbpass
+    ENV["STORK_DATABASE_NAME"] = dbname
 
-    if args.dbtrace == "true"
+    if dbtrace == "true"
         ENV["STORK_DATABASE_TRACE"] = "run"
     end
     
-    ENV['PGPASSWORD'] = args.dbpass
+    ENV['PGPASSWORD'] = dbpass
     
     # Ignore error if DB already exist
     system "createdb",
         "-h", dbhost,
         "-p", dbport,
-        "-U", args.dbuser,
-        "-O", args.dbuser,
+        "-U", dbuser,
+        "-O", dbuser,
         args.dbname
 
     sh TOOL_BINARY_FILE, "db-up",
-        "-d", args.dbname,
-        "-u", args.dbuser,
+        "-d", dbname,
+        "-u", dbuser,
         "--db-host", dbhost,
         "-p", dbport
 end
 
-desc "Remove remaing test databases and users"
-task :db_remove_remaining, [:dbname, :dbhost, :dbport, :dbuser, :dbpass] do |t, args|
-    args.with_defaults(
-        :dbname => ENV["POSTGRES_DB"] || "storktest",
-        :dbhost => ENV["POSTGRES_ADDR"] || "localhost",
-        :dbport => "5432",
-        :dbuser => ENV["POSTGRES_USER"] || "storktest",
-        :dbpass => ENV["POSTGRES_PASSWORD"] || "storktest",
-        :dbtrace => "false"
-    )
+desc "Remove remaing test databases and users
+    DB_NAME - database name - default: env:POSTGRES_DB or storktest
+    DB_HOST - database host - default: env:POSTGRES_ADDR or localhost
+    DB_PORT - database port - default: 5432
+    DB_USER - database user - default: env:POSTGRES_USER or storktest
+    DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest"
+task :db_remove_remaining do
+    dbname = ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
+    dbhost = ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "storktest"
+    dbport = ENV["DB_PORT"] || "5432"
+    dbuser = ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
+    dbpass = ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
 
-    dbhost = args.dbhost
-    dbport = args.dbport
     if dbhost.include? ':'
         dbhost, dbport = dbhost.split(':')
     end
 
-    ENV['PGPASSWORD'] = args.dbpass
+    ENV['PGPASSWORD'] = dbpass
 
     psql_access_opts = [
         "-h", dbhost,
         "-p", dbport,
-        "-U", args.dbuser
+        "-U", dbuser
     ]
 
     psql_select_opts = [
@@ -380,14 +389,14 @@ task :db_remove_remaining, [:dbname, :dbhost, :dbport, :dbuser, :dbpass] do |t, 
 
     Open3.pipeline([
         "psql", *psql_select_opts, *psql_access_opts,
-        "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{args.dbname}.+'"
+        "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname}.+'"
     ], [
         "xargs", "-P", "16", "-n", "1", "dropdb", *psql_access_opts 
     ])
 
     Open3.pipeline([
         "psql", *psql_select_opts, *psql_access_opts,
-        "-c", "SELECT usename FROM pg_user WHERE usename ~ '#{args.dbname}.+'"
+        "-c", "SELECT usename FROM pg_user WHERE usename ~ '#{dbname}.+'"
     ], [
         "xargs", "-P", "16", "-n", "1", "dropuser", *psql_access_opts 
     ])
