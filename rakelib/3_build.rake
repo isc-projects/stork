@@ -131,7 +131,7 @@ end
 # Internal task that configure environment variables for server
 task :pre_run_server, [:dbtrace, :ui_mode] do |t, args|
     if args.dbtrace == "true"
-        ENV["STORK_DATABASE_TRACE_QUERIES"] = "run"
+        ENV["STORK_DATABASE_TRACE"] = "run"
     end
 
     use_testing_ui = false
