@@ -152,7 +152,7 @@ end
 # Internal task to setup access to the Docker database
 task :pre_docker_db, [:dbtrace] do |t, args|
   if args.dbtrace == "true"
-      ENV["STORK_DATABASE_TRACE_QUERIES"] = "run"
+      ENV["STORK_DATABASE_TRACE"] = "run"
   end
 
   ENV["STORK_DATABASE_HOST"] = "172.20.0.234"
