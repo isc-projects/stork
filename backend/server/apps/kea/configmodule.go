@@ -25,7 +25,7 @@ func NewConfigModule(manager config.ManagerAccessors) *ConfigModule {
 }
 
 // Commits the Kea configuration changes.
-func (kea *ConfigModule) Commit(ctx context.Context) (context.Context, error) {
+func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error) {
 	var err error
 	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
 	if !ok {
@@ -34,7 +34,7 @@ func (kea *ConfigModule) Commit(ctx context.Context) (context.Context, error) {
 	for _, pu := range state.Updates {
 		switch pu.Operation {
 		case "host_add":
-			ctx, err = kea.commitHostAdd(ctx)
+			ctx, err = module.commitHostAdd(ctx)
 		default:
 			err = pkgerrors.Errorf("unknown operation %s when called Commit()", pu.Operation)
 		}
@@ -47,13 +47,13 @@ func (kea *ConfigModule) Commit(ctx context.Context) (context.Context, error) {
 
 // Begins adding a new host reservation. Currently it is no-op but may evolve
 // in the future.
-func (kea *ConfigModule) BeginHostAdd(ctx context.Context) (context.Context, error) {
+func (module *ConfigModule) BeginHostAdd(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
 // Applies new host reservation. It prepares necessary commands to be sent
 // to Kea upon commit.
-func (kea *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host) (context.Context, error) {
+func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host) (context.Context, error) {
 	if len(host.LocalHosts) == 0 {
 		return ctx, pkgerrors.Errorf("applied host %d is not associated with any daemon", host.ID)
 	}
@@ -99,7 +99,7 @@ func (kea *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host) (
 }
 
 // Create the host reservation in the Kea servers.
-func (kea *ConfigModule) commitHostAdd(ctx context.Context) (context.Context, error) {
+func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context, error) {
 	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
 	if !ok {
 		return ctx, pkgerrors.New("context lacks state")
@@ -145,7 +145,7 @@ func (kea *ConfigModule) commitHostAdd(ctx context.Context) (context.Context, er
 			}
 			// Send the command to Kea.
 			var response keactrl.ResponseList
-			result, err := kea.manager.GetConnectedAgents().ForwardToKeaOverHTTP(context.Background(), app, []keactrl.SerializableCommand{command}, &response)
+			result, err := module.manager.GetConnectedAgents().ForwardToKeaOverHTTP(context.Background(), app, []keactrl.SerializableCommand{command}, &response)
 			if err == nil {
 				if err = result.GetFirstError(); err == nil {
 					for _, r := range response {
