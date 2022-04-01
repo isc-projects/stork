@@ -213,7 +213,7 @@ func (manager *configManagerImpl) RememberContext(ctx context.Context, timeout t
 		return pkgerrors.New("context lacks user ID")
 	}
 	manager.mutex.RLock()
-	// Check if the context has been already stored under this context id.
+	// Check if the context has been already stored under this context ID.
 	existingCtx, ok = manager.contexts[contextID]
 	manager.mutex.RUnlock()
 	if ok {
