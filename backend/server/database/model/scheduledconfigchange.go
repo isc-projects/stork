@@ -136,7 +136,7 @@ func GetTimeToNextScheduledConfigChange(dbi dbops.DBI) (int64, bool, error) {
 	}
 	_, err := dbi.QueryOne(&tm,
 		`SELECT MIN(EXTRACT(EPOCH FROM(deadline_at - now() at time zone 'UTC'))) AS duration
-             FROM scheduled_config_change
+         FROM scheduled_config_change
          WHERE executed = FALSE`)
 	if err != nil {
 		return 0, false, pkgerrors.Wrapf(err, "problem with getting time to next config change")
