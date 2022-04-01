@@ -201,7 +201,7 @@ func (manager *configManagerImpl) RememberContext(ctx context.Context, timeout t
 		existingCtx contextPair
 		ok          bool
 	)
-	// Retrieve context id from the context. It will be used as a key to access
+	// Retrieve context ID from the context. It will be used as a key to access
 	// the stored context.
 	if contextID, ok = ctx.Value(config.ContextIDKey).(int64); !ok {
 		return pkgerrors.New("context lacks context ID")
