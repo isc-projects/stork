@@ -277,7 +277,7 @@ func TestCommitHostAdd(t *testing.T) {
 	require.NoError(t, err)
 
 	// Committing the host should result in sending control commands to Kea servers.
-	_, err = module.CommitHostAdd(ctx)
+	_, err = module.commitHostAdd(ctx)
 	require.NoError(t, err)
 
 	// Make sure that the commands were sent to appropriate servers.
@@ -376,7 +376,7 @@ func TestCommitHostAddResponseWithErrorStatus(t *testing.T) {
 	ctx, err := module.ApplyHostAdd(ctx, host)
 	require.NoError(t, err)
 
-	_, err = module.CommitHostAdd(ctx)
+	_, err = module.commitHostAdd(ctx)
 	require.ErrorContains(t, err, "reservation-add command to kea@192.0.2.1 failed: error status (1) returned by Kea dhcp4 daemon with text: 'error is error'")
 
 	// The second command should not be sent in this case.
@@ -455,7 +455,7 @@ func TestCommitScheduledHostAdd(t *testing.T) {
 	require.NotNil(t, ctx)
 
 	// Try to send the command to Kea server.
-	_, err = module.CommitHostAdd(ctx)
+	_, err = module.commitHostAdd(ctx)
 	require.NoError(t, err)
 
 	// Make sure it was sent to appropriate server.

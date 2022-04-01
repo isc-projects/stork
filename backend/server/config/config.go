@@ -51,7 +51,6 @@ type LockKey int64
 type KeaModule interface {
 	BeginHostAdd(context.Context) (context.Context, error)
 	ApplyHostAdd(context.Context, *dbmodel.Host) (context.Context, error)
-	CommitHostAdd(context.Context) (context.Context, error)
 }
 
 // Interface of the Kea configuration module used by the manager to

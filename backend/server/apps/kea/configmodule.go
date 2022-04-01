@@ -34,7 +34,7 @@ func (kea *ConfigModule) Commit(ctx context.Context) (context.Context, error) {
 	for _, pu := range state.Updates {
 		switch pu.Operation {
 		case "host_add":
-			ctx, err = kea.CommitHostAdd(ctx)
+			ctx, err = kea.commitHostAdd(ctx)
 		default:
 			err = pkgerrors.Errorf("unknown operation %s when called Commit()", pu.Operation)
 		}
@@ -99,7 +99,7 @@ func (kea *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host) (
 }
 
 // Create the host reservation in the Kea servers.
-func (kea *ConfigModule) CommitHostAdd(ctx context.Context) (context.Context, error) {
+func (kea *ConfigModule) commitHostAdd(ctx context.Context) (context.Context, error) {
 	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
 	if !ok {
 		return ctx, pkgerrors.New("context lacks state")
