@@ -208,7 +208,7 @@ func (manager *configManagerImpl) RememberContext(ctx context.Context, timeout t
 	}
 	// Retrieve the user ID from the context. First, the user ID is mandatory in
 	// the stored context. Also, we have to compare the user id with the corresponding
-	// user id in the already stored context.
+	// user ID in the already stored context.
 	if userID, ok = ctx.Value(config.UserContextKey).(int64); !ok {
 		return pkgerrors.New("context lacks user ID")
 	}
