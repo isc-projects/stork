@@ -82,9 +82,10 @@ func GetScheduledConfigChanges(dbi dbops.DBI) ([]ScheduledConfigChange, error) {
 		OrderExpr("deadline_at ASC").
 		Select()
 	if err != nil {
-		if !errors.Is(err, pg.ErrNoRows) {
-			err = pkgerrors.Wrapf(err, "problem with getting scheduled config changes")
+		if errors.Is(err, pg.ErrNoRows) {
+			return changes, nil
 		}
+		err = pkgerrors.Wrapf(err, "problem with getting scheduled config changes")
 	}
 	return changes, err
 }
