@@ -131,7 +131,7 @@ func SetScheduledConfigChangeExecuted(dbi dbops.DBI, changeID int64, errtext str
 }
 
 // Returns time in seconds to next scheduled config change.
-func GetTimeToNextScheduledConfigChange(dbi dbops.DBI) (int64, bool, error) {
+func GetTimeToNextScheduledConfigChange(dbi dbops.DBI) (time.Duration, bool, error) {
 	var tm struct {
 		Duration *float64
 	}
@@ -146,7 +146,7 @@ func GetTimeToNextScheduledConfigChange(dbi dbops.DBI) (int64, bool, error) {
 		// Scheduled config changes do not exist.
 		return 0, false, nil
 	}
-	return int64(*tm.Duration), true, err
+	return time.Duration(*tm.Duration) * time.Second, true, err
 }
 
 // Deletes selected scheduled config change from the database.

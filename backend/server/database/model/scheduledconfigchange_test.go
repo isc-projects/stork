@@ -317,7 +317,8 @@ func TestGetTimeToNextConfigChange(t *testing.T) {
 	tn, exists, err = GetTimeToNextScheduledConfigChange(db)
 	require.NoError(t, err)
 	require.True(t, exists)
-	require.InDelta(t, tn, 20, 5)
+	require.GreaterOrEqual(t, tn, time.Second*15)
+	require.LessOrEqual(t, tn, time.Second*25)
 }
 
 // Test deleting specified scheduled config change.
