@@ -374,7 +374,7 @@ func TestExaminableResponse(t *testing.T) {
 }
 
 // Test that HashedResponse properly implements the ExaminableResponse interface.
-func TestHashedExmainableResponse(t *testing.T) {
+func TestHashedExaminableResponse(t *testing.T) {
 	arguments := make(map[string]interface{})
 	response := HashedResponse{
 		ResponseHeader: ResponseHeader{
