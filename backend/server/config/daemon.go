@@ -28,12 +28,15 @@ func (daemon Daemon) GetAppID() int64 {
 	return daemon.AppID
 }
 
-// Returns type of an app owning the daemon.
+// Returns type of an app owning the daemon. It returns "unknown"
+// when daemon has unrecognized name.
 func (daemon Daemon) GetAppType() string {
 	switch daemon.Name {
-	case "named":
+	case dbmodel.DaemonNameBind9:
 		return dbmodel.AppTypeBind9
-	default:
+	case dbmodel.DaemonNameDHCPv4, dbmodel.DaemonNameDHCPv6, dbmodel.DaemonNameD2, dbmodel.DaemonNameCA:
 		return dbmodel.AppTypeKea
+	default:
+		return "unknown"
 	}
 }

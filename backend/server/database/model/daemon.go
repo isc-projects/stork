@@ -19,6 +19,8 @@ const (
 	DaemonNameBind9  = "named"
 	DaemonNameDHCPv4 = "dhcp4"
 	DaemonNameDHCPv6 = "dhcp6"
+	DaemonNameD2     = "d2"
+	DaemonNameCA     = "ca"
 )
 
 // KEA
