@@ -119,8 +119,16 @@ func TestMachineDumpExecute(t *testing.T) {
 	require.Len(t, machine.Apps, 1)
 	require.Len(t, machine.Apps[0].AccessPoints, 1)
 	require.Len(t, machine.Apps[0].Daemons, 2)
-	require.Len(t, machine.Apps[0].Daemons[1].LogTargets, 2)
-	require.NotNil(t, machine.Apps[0].Daemons[0].KeaDaemon.Config)
+	// Daemons can be returned out of order from the database, so we
+	// have to iterate over them.
+	for _, daemon := range machine.Apps[0].Daemons {
+		switch daemon.Name {
+		case dbmodel.DaemonNameDHCPv4:
+			require.NotNil(t, daemon.KeaDaemon.Config)
+		case dbmodel.DaemonNameBind9:
+			require.Len(t, daemon.LogTargets, 2)
+		}
+	}
 }
 
 // Test that the dump doesn't contain the secrets.
@@ -137,9 +145,14 @@ func TestMachineDumpExecuteHideSecrets(t *testing.T) {
 
 	// Assert
 	app := machine.Apps[0]
-	daemon := app.Daemons[0]
-	config := *daemon.KeaDaemon.Config.Map
-	secret := (config["Dhcp4"]).(map[string]interface{})["secret"]
-	require.Nil(t, secret)
-	require.Empty(t, machine.AgentToken)
+	for _, daemon := range app.Daemons {
+		// Daemons can be returned out of order from the database, so we
+		// have to iterate over them.
+		if daemon.Name == dbmodel.DaemonNameDHCPv4 {
+			config := *daemon.KeaDaemon.Config.Map
+			secret := (config["Dhcp4"]).(map[string]interface{})["secret"]
+			require.Nil(t, secret)
+			require.Empty(t, machine.AgentToken)
+		}
+	}
 }
