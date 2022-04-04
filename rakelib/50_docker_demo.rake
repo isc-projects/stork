@@ -3,7 +3,7 @@
 # Warning!
 # Commands in this file aren't refactored yet! ###
 
-CLEAN.append *FileList["buid-root/**/*"], "build-root"
+CLEAN.append "build-root"
 
 # premium support
 if ENV['cs_repo_access_token']

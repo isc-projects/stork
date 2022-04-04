@@ -28,7 +28,7 @@ file ARM_DIRECTORY => DOC_CODEBASE + [SPHINX_BUILD] do
     sh SPHINX_BUILD, "-M", "html", "doc/", "doc/_build", "-v", "-E", "-a", "-W", "-j", "2"
     sh "touch", ARM_DIRECTORY
 end
-CLEAN.append *FileList[ARM_DIRECTORY + "/**/*"], ARM_DIRECTORY
+CLEAN.append ARM_DIRECTORY
 
 TOOL_MAN_FILE = "doc/man/stork-tool.8"
 file TOOL_MAN_FILE => DOC_CODEBASE + [SPHINX_BUILD] do
@@ -69,7 +69,7 @@ file WEBUI_DEBUG_DIRECTORY => WEBUI_CODEBASE + [NPX] do
     end
 end
 
-CLEAN.append *FileList["webui/dist/**/*"], "webui/dist"
+CLEAN.append "webui/dist"
 CLOBBER.append "webui/.angular"
 
 ###############

@@ -6,7 +6,21 @@
 # lists to use as pre-requirements in the next stages.
 # It installs the source code dependencies too.
 
-require 'rake/clean'
+# Ruby has a built-in solution for handle CLEAN and CLOBBER arrays and
+# delete unecessary files. But loading the 'rake' module significantly reduces
+# the performance. For these reason we implement the clean and clobber tasks
+# itself.
+#
+# Clean up the project by deleting scratch files and backup files. Add files to
+# the CLEAN FileList to have the clean target handle them.
+# Unlike the standard Rake Clean task, this implementation recursively removes
+# the directories.
+CLEAN = FileList[]
+# Clobber all generated and non-source files in a project. The task depends on
+# clean, so all the CLEAN files will be deleted as well as files in the CLOBBER
+# FileList. The intent of this task is to return a project to its pristine,
+# just unpacked state.
+CLOBBER = FileList[]
 
 ###############
 ### Swagger ###
@@ -38,7 +52,7 @@ file swagger_server_dir => [swagger_file, GOSWAGGER] do
     end
     sh "touch", swagger_server_dir
 end
-CLEAN.append *FileList[swagger_server_dir + "/**/*"], swagger_server_dir
+CLEAN.append swagger_server_dir
 
 agent_proto_file = "backend/api/agent.proto"
 agent_pb_go_file = "backend/api/agent.pb.go"
@@ -67,6 +81,7 @@ go_server_codebase = FileList[
     "backend/cmd/stork-server/*",
     swagger_server_dir
 ]
+.exclude(swagger_server_dir + "/**/*")
 
 go_agent_codebase = FileList[
     "backend/agent",
@@ -76,6 +91,7 @@ go_agent_codebase = FileList[
     "backend/server/certs/**/*",
     "backend/server/database/**/*"
 ]
+
 go_tool_codebase = FileList[
     "backend/cmd/stork-tool",
     "backend/cmd/stork-tool/*"
@@ -83,6 +99,7 @@ go_tool_codebase = FileList[
 
 go_common_codebase = FileList["backend/**/*"]
     .exclude("backend/coverage.out")
+    .exclude(swagger_server_dir + "/**/*")
     .exclude(go_server_codebase)
     .exclude(go_agent_codebase)
     .exclude(go_tool_codebase)
@@ -137,7 +154,7 @@ file open_api_generator_webui_dir => [swagger_file, OPENAPI_GENERATOR] do
     "--additional-properties", "snapshot=true,ngVersion=10.1.5,modelPropertyNaming=camelCase"
     sh "touch", open_api_generator_webui_dir
 end
-CLEAN.append *FileList[open_api_generator_webui_dir + "/**/*"], open_api_generator_webui_dir
+CLEAN.append open_api_generator_webui_dir
 
 node_module_dir = "webui/node_modules"
 file node_module_dir => [NPM, "webui/package.json", "webui/package-lock.json"] do
@@ -163,3 +180,23 @@ WEBUI_CODEBASE = FileList["webui", "webui/**/*"]
     .exclude("webui/src/assets/arm/**/*")
     .include(open_api_generator_webui_dir)
     .include(node_module_dir)
+
+#############
+### Tasks ###
+#############
+
+def remove_files(list)
+    list.each do |item|
+        FileUtils.rm_rf(item)
+    end
+end 
+
+desc 'Clean up the project by deleting scratch files and backup files'
+task :clean do
+    remove_files(CLEAN)
+end
+
+desc 'Clobber all generated and non-source files in a project.'
+task :clobber => [:clean] do
+    remove_files(CLOBBER)
+end
