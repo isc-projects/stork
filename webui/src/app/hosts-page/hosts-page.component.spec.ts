@@ -98,7 +98,7 @@ describe('HostsPageComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy()
         expect(component.tabs.length).toBe(1)
-        expect(component.activeTab).toBe(component.tabs[0])
+        expect(component.activeTabIndex).toBe(0)
         expect(component.filterText.length).toBe(0)
     })
 
@@ -177,37 +177,55 @@ describe('HostsPageComponent', () => {
         paramMapSubject.next(convertToParamMap({ id: 1 }))
         fixture.detectChanges()
         expect(component.tabs.length).toBe(2)
-        expect(component.activeTab).toBe(component.tabs[1])
+        expect(component.activeTabIndex).toBe(1)
+
+        // Open the tab for creating a host.
+        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(3)
+        expect(component.activeTabIndex).toBe(2)
 
         // Open tab with host with id 2.
         paramMapSubject.next(convertToParamMap({ id: 2 }))
         fixture.detectChanges()
-        expect(component.tabs.length).toBe(3)
-        expect(component.activeTab).toBe(component.tabs[2])
+        expect(component.tabs.length).toBe(4)
+        expect(component.activeTabIndex).toBe(3)
 
         // Navigate back to the hosts list in the first tab.
         paramMapSubject.next(convertToParamMap({}))
         fixture.detectChanges()
-        expect(component.tabs.length).toBe(3)
-        expect(component.activeTab).toBe(component.tabs[0])
+        expect(component.tabs.length).toBe(4)
+        expect(component.activeTabIndex).toBe(0)
 
         // Navigate to the existing tab with host with id 1.
         paramMapSubject.next(convertToParamMap({ id: 1 }))
         fixture.detectChanges()
-        expect(component.tabs.length).toBe(3)
-        expect(component.activeTab).toBe(component.tabs[1])
+        expect(component.tabs.length).toBe(4)
+        expect(component.activeTabIndex).toBe(1)
 
-        // Close the middle tab.
+        // navigate to the existing tab for adding new host.
+        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(4)
+        expect(component.activeTabIndex).toBe(2)
+
+        // Close the second tab.
+        component.closeHostTab(null, 1)
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(3)
+        expect(component.activeTabIndex).toBe(1)
+
+        // Close the tab for adding new host.
         component.closeHostTab(null, 1)
         fixture.detectChanges()
         expect(component.tabs.length).toBe(2)
-        expect(component.activeTab).toBe(component.tabs[0])
+        expect(component.activeTabIndex).toBe(0)
 
-        // Close the right tab.
+        // Close the remaining tab.
         component.closeHostTab(null, 1)
         fixture.detectChanges()
         expect(component.tabs.length).toBe(1)
-        expect(component.activeTab).toBe(component.tabs[0])
+        expect(component.activeTabIndex).toBe(0)
     })
 
     it('should open a tab when hosts have not been loaded', () => {

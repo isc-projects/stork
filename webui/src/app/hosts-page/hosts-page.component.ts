@@ -10,6 +10,28 @@ import { concat, of, Subscription } from 'rxjs'
 import { filter, take } from 'rxjs/operators'
 
 /**
+ * Enumeration for different host tab types displayed by the component.
+ */
+export enum HostTabType {
+    List = 1,
+    NewHost,
+    Host,
+}
+
+/**
+ * A class representing the contents of a tab displayed by the component.
+ */
+export class HostTab {
+    /**
+     * Constructor.
+     *
+     * @param tabType host tab type.
+     * @param host host information displayed in the tab.
+     */
+    constructor(public tabType: HostTabType, public host?: any) {}
+}
+
+/**
  * This component implements a page which displays hosts along with
  * their DHCP identifiers and IP reservations. The list of hosts is
  * paged and can be filtered by a reserved IP address. The list
@@ -48,9 +70,9 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     tabs: MenuItem[]
 
     /**
-     * Pointer to the currently selected tab.
+     * Enumeration for different tab types displayed in this component.
      */
-    activeTab: MenuItem
+    HostTabType = HostTabType
 
     /**
      * Selected tab index.
@@ -66,8 +88,6 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * with the hosts list is displayed, this array is empty.
      */
     openedTabs = []
-
-    selectedHost: any
 
     /**
      * Constructor.
@@ -108,8 +128,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     ngOnInit() {
         // Initially, there is only a tab with hosts list.
-        this.tabs = [{ label: 'Host Reservations', routerLink: '/dhcp/hosts' }]
-        this.activeTab = this.tabs[0]
+        this.tabs = [{ label: 'Host Reservations', routerLink: '/dhcp/hosts/all' }]
 
         // If filtering parameters are specified in the query, apply the filtering.
         this.initFilterText()
@@ -139,17 +158,20 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                 (params) => {
                     // Get host id.
                     const id = params.get('id')
-                    if (id && id !== 'all') {
-                        const numericId = parseInt(id, 10)
-                        if (!Number.isNaN(numericId)) {
-                            // The path has a numeric id indicating that we should
-                            // open a tab with selected host information or switch
-                            // to this tab if it has been already opened.
-                            this.openHostTab(numericId)
-                        }
-                    } else {
-                        // The special id 'all' means: switch to hosts list.
+                    if (!id || id === 'all') {
                         this.switchToTab(0)
+                        return
+                    }
+                    if (id === 'new') {
+                        this.openNewHostTab()
+                        return
+                    }
+                    const numericId = parseInt(id, 10)
+                    if (!Number.isNaN(numericId)) {
+                        // The path has a numeric id indicating that we should
+                        // open a tab with selected host information or switch
+                        // to this tab if it has been already opened.
+                        this.openHostTab(numericId)
                     }
                 },
                 (error) => {
@@ -213,11 +235,10 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * @param id host ID.
      */
     private openHostTab(id) {
-        for (let index = 0; index < this.openedTabs.length; index++) {
-            if (this.openedTabs[index].host.id === id) {
-                this.switchToTab(index + 1)
-                return
-            }
+        let index = this.openedTabs.findIndex((t) => t.tabType === HostTabType.Host && t.host.id === id)
+        if (index >= 0) {
+            this.switchToTab(index + 1)
+            return
         }
         // Check if the host info is already available.
         let hostInfo: any
@@ -233,12 +254,8 @@ export class HostsPageComponent implements OnInit, OnDestroy {
             .pipe(take(1))
             .subscribe(
                 (data) => {
-                    this.tabs.push({
-                        label: this.getHostLabel(data),
-                        routerLink: '/dhcp/hosts/' + id,
-                    })
-                    this.openedTabs.push({ host: data })
-                    this.switchToTab(this.tabs.length - 1)
+                    this.openedTabs.push(new HostTab(HostTabType.Host, data))
+                    this.createMenuItem(this.getHostLabel(data), `/dhcp/hosts/${id}`)
                 },
                 (err) => {
                     let msg = err.statusText
@@ -253,6 +270,19 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                     })
                 }
             )
+    }
+
+    /**
+     * Opens an existing or new host tab for creating new host.
+     */
+    private openNewHostTab() {
+        let index = this.openedTabs.findIndex((t) => t.tabType === HostTabType.NewHost)
+        if (index < 0) {
+            this.openedTabs.push(new HostTab(HostTabType.NewHost))
+            this.createMenuItem('New Host', '/dhcp/hosts/new')
+            return
+        }
+        this.switchToTab(index + 1)
     }
 
     /**
@@ -290,13 +320,24 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      * @param tabIndex index of the tab to be selected.
      */
     private switchToTab(tabIndex) {
-        this.activeTab = this.tabs[tabIndex]
-        this.activeTabIndex = tabIndex
-        if (this.activeTabIndex > 0) {
-            this.selectedHost = this.openedTabs[this.activeTabIndex - 1].host
-        } else {
-            this.selectedHost = null
+        if (this.activeTabIndex === tabIndex) {
+            return
         }
+        this.activeTabIndex = tabIndex
+    }
+
+    /**
+     * Adds a new tab.
+     *
+     * @param label tab label.
+     * @param routerLink tab router link.
+     */
+    private createMenuItem(label: string, routerLink: string): any {
+        this.tabs.push({
+            label: label,
+            routerLink: routerLink,
+        })
+        this.switchToTab(this.tabs.length - 1)
     }
 
     /**

@@ -18,7 +18,7 @@
     </div>
 </app-breadcrumbs>
 
-<p-tabMenu [model]="tabs" [activeItem]="activeTab" [style]="{ 'margin-top': '10px' }">
+<p-tabMenu [model]="tabs" [activeItem]="tabs[activeTabIndex]" [style]="{ 'margin-top': '10px' }">
     <ng-template pTemplate="item" let-item let-i="index">
         <div style="display: flex; justify-content: space-between">
             <div class="p-menuitem-icon" [ngClass]="item.icon" *ngIf="item.icon"></div>
@@ -35,56 +35,69 @@
     </ng-template>
 </p-tabMenu>
 
-<div *ngIf="activeTabIndex === 0" style="margin: 10px">
-    <div style="margin: 0 0 10px 5px">
-        <span>
-            <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
-            Filter hosts:
-            <input
-                type="text"
-                id="filter-hosts-text-field"
-                pInputText
-                [(ngModel)]="filterText"
-                placeholder="IP or identifier"
-                (keyup)="keyUpFilterText($event)"
-            />
-            <app-help-tip title="filtering" id="filtering-help-button">
-                <p>
-                    Hosts in the table below can be filtered by entering a text in the search box; the table shows all
-                    hosts matching the filter text. Currently supported fields for such filtering are:
-                </p>
-                <ul>
-                    <li>Identifier</li>
-                    <li>Identifier Type</li>
-                    <li>Address</li>
-                    <li>Hostname</li>
-                </ul>
-                <p>
-                    Hosts can be filtered by their identifier value, e.g. <b>00:01:02:03:04:05</b>; a part of the
-                    identifier (e.g. filter by the initial 3 bytes of a MAC address that denotes OUI, a unique
-                    identifier of the vendor, effectively showing all devices produced by the same vendor); or
-                    identifier type (e.g. <b>hw-address</b> to show all reservations made by a MAC address).
-                </p>
-                <p>
-                    Hosts can be also filtered by a full or partial IP address. For example, all reservations in a
-                    192.0.2.0/24 subnet can found by entering
-                    <b>192.0.2</b> as the filter text.
-                </p>
-                <p>
-                    Global hosts, i.e. the hosts valid for all subnets, can be filtered out by typing the expression
-                    <b>is:global</b>. Typing <b>not:global</b> will cause all other hosts to be returned, i.e. those
-                    that are associated with certain subnets.
-                </p>
-                <p>
-                    In addition, hosts can be filtered by an explicitly selected field using the expression:
-                    <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported field for explicit
-                    filtering is:
-                </p>
-                <ul>
-                    <li class="monospace">appId</li>
-                </ul>
-            </app-help-tip>
-        </span>
+<div *ngIf="activeTabIndex === 0; else openedTabBlock" style="margin: 10px">
+    <div class="p-mb-3" style="display: flex; justify-content: space-between">
+        <div>
+            <span>
+                <i class="fa fa-search" style="margin: 4px 4px 0 0"></i>
+                Filter hosts:
+                <input
+                    type="text"
+                    id="filter-hosts-text-field"
+                    pInputText
+                    [(ngModel)]="filterText"
+                    placeholder="IP or identifier"
+                    (keyup)="keyUpFilterText($event)"
+                />
+                <app-help-tip title="filtering" id="filtering-help-button">
+                    <p>
+                        Hosts in the table below can be filtered by entering a text in the search box; the table shows
+                        all hosts matching the filter text. Currently supported fields for such filtering are:
+                    </p>
+                    <ul>
+                        <li>Identifier</li>
+                        <li>Identifier Type</li>
+                        <li>Address</li>
+                        <li>Hostname</li>
+                    </ul>
+                    <p>
+                        Hosts can be filtered by their identifier value, e.g. <b>00:01:02:03:04:05</b>; a part of the
+                        identifier (e.g. filter by the initial 3 bytes of a MAC address that denotes OUI, a unique
+                        identifier of the vendor, effectively showing all devices produced by the same vendor); or
+                        identifier type (e.g. <b>hw-address</b> to show all reservations made by a MAC address).
+                    </p>
+                    <p>
+                        Hosts can be also filtered by a full or partial IP address. For example, all reservations in a
+                        192.0.2.0/24 subnet can found by entering
+                        <b>192.0.2</b> as the filter text.
+                    </p>
+                    <p>
+                        Global hosts, i.e. the hosts valid for all subnets, can be filtered out by typing the expression
+                        <b>is:global</b>. Typing <b>not:global</b> will cause all other hosts to be returned, i.e. those
+                        that are associated with certain subnets.
+                    </p>
+                    <p>
+                        In addition, hosts can be filtered by an explicitly selected field using the expression:
+                        <i>field:value</i>, e.g.: <i class="monospace">appId:2</i>. Currently supported field for
+                        explicit filtering is:
+                    </p>
+                    <ul>
+                        <li class="monospace">appId</li>
+                    </ul>
+                </app-help-tip>
+            </span>
+        </div>
+        <div>
+            <a
+                label="New Host"
+                icon="pi pi-plus"
+                class="p-button-primary no-underline"
+                style="display: block"
+                type="button"
+                routerLink="/dhcp/hosts/new"
+                pButton
+            ></a>
+        </div>
     </div>
     <div style="margin: 0 0 10px, 5x">
         <p-table
@@ -159,6 +172,10 @@
     </div>
 </div>
 
-<div class="p-component">
-    <app-host-tab [host]="selectedHost"></app-host-tab>
-</div>
+<ng-template #openedTabBlock>
+    <div [ngSwitch]="openedTabs[activeTabIndex - 1].tabType" class="p-component">
+        <app-host-tab *ngSwitchCase="HostTabType.Host" [host]="openedTabs[activeTabIndex - 1].host"></app-host-tab>
+        <app-host-edit-tab *ngSwitchCase="HostTabType.NewHost"></app-host-edit-tab>
+    </div>
+    <ng-template> </ng-template
+></ng-template>
