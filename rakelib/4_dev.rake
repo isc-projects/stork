@@ -358,13 +358,19 @@ task :db_migrate => [TOOL_BINARY_FILE] do
     
     ENV['PGPASSWORD'] = dbpass
     
-    # Ignore error if DB already exist
-    system "createdb",
-        "-h", dbhost,
-        "-p", dbport,
-        "-U", dbuser,
-        "-O", dbuser,
-        dbname
+    _, _, status = Open3.capture3 "psql",
+        "-h", dbhost, "-p", dbport, "-U", dbuser, "-XtAc",
+        "SELECT 1 FROM pg_database WHERE datname='#{dbname}'"
+    has_db = status == 0
+
+    if !has_db
+        sh "createdb",
+            "-h", dbhost,
+            "-p", dbport,
+            "-U", dbuser,
+            "-O", dbuser,
+            dbname
+    end
 
     sh TOOL_BINARY_FILE, "db-up",
         "-d", dbname,
@@ -406,7 +412,7 @@ task :db_remove_remaining do
 
     Open3.pipeline([
         "psql", *psql_select_opts, *psql_access_opts,
-        "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname}.+'"
+        "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname}.+?'"
     ], [
         "xargs", "-P", "16", "-n", "1", "dropdb", *psql_access_opts 
     ])
