@@ -336,7 +336,7 @@ desc 'Migrate (and create) database to the newest version
 '
 task :db_migrate => [TOOL_BINARY_FILE] do
     dbname = ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
-    dbhost = ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "storktest"
+    dbhost = ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "localhost"
     dbport = ENV["DB_PORT"] || "5432"
     dbuser = ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
     dbpass = ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
@@ -387,7 +387,7 @@ desc "Remove remaing test databases and users
     DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest"
 task :db_remove_remaining do
     dbname = ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
-    dbhost = ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "storktest"
+    dbhost = ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "localhost"
     dbport = ENV["DB_PORT"] || "5432"
     dbuser = ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
     dbpass = ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
@@ -414,13 +414,13 @@ task :db_remove_remaining do
         "psql", *psql_select_opts, *psql_access_opts,
         "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname}.+?'"
     ], [
-        "xargs", "-P", "16", "-n", "1", "dropdb", *psql_access_opts 
+        "xargs", "-P", "16", "-n", "1", "-r", "dropdb", *psql_access_opts 
     ])
 
     Open3.pipeline([
         "psql", *psql_select_opts, *psql_access_opts,
         "-c", "SELECT usename FROM pg_user WHERE usename ~ '#{dbuser}.+'"
     ], [
-        "xargs", "-P", "16", "-n", "1", "dropuser", *psql_access_opts 
+        "xargs", "-P", "16", "-n", "1", "-r", "dropuser", *psql_access_opts 
     ])
 end
