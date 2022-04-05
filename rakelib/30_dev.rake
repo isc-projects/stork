@@ -341,6 +341,7 @@ task :db_migrate => [TOOL_BINARY_FILE] do
     dbuser = ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
     dbpass = ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
     dbtrace = ENV["DB_TRACE"] || "false"
+    dbmaintenance = ENV["DB_MAINTENANCE"] || "postgres"
 
     if dbhost.include? ':'
         dbhost, dbport = dbhost.split(':')
@@ -358,10 +359,15 @@ task :db_migrate => [TOOL_BINARY_FILE] do
     
     ENV['PGPASSWORD'] = dbpass
     
-    _, _, status = Open3.capture3 "psql",
-        "-h", dbhost, "-p", dbport, "-U", dbuser, "-XtAc",
+    stdout, stderr, status = Open3.capture3 "psql",
+        "-h", dbhost, "-p", dbport, "-U", dbuser, dbmaintenance, "-XtAc",
         "SELECT 1 FROM pg_database WHERE datname='#{dbname}'"
-    has_db = status == 0
+
+    if status != 0
+        fail stderr
+    end
+
+    has_db = stdout.rstrip == "1"
 
     if !has_db
         sh "createdb",
@@ -391,6 +397,7 @@ task :db_remove_remaining do
     dbport = ENV["DB_PORT"] || "5432"
     dbuser = ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
     dbpass = ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
+    dbmaintenance = ENV["DB_MAINTENANCE"] || "postgres"
 
     if dbhost.include? ':'
         dbhost, dbport = dbhost.split(':')
@@ -410,15 +417,21 @@ task :db_remove_remaining do
         "-X",
     ]
 
+    # Don't destroy the maintanance database
+    dbname_pattern = "#{dbname}.*"
+    if dbname == dbmaintenance
+        dbname_pattern = "#{dbname}.+"
+    end
+
     Open3.pipeline([
-        "psql", *psql_select_opts, *psql_access_opts,
-        "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname}.+?'"
+        "psql", *psql_select_opts, *psql_access_opts, dbmaintenance,
+        "-c", "SELECT datname FROM pg_database WHERE datname ~ '#{dbname_pattern}'"
     ], [
         "xargs", "-P", "16", "-n", "1", "-r", "dropdb", *psql_access_opts 
     ])
 
     Open3.pipeline([
-        "psql", *psql_select_opts, *psql_access_opts,
+        "psql", *psql_select_opts, *psql_access_opts, dbmaintenance,
         "-c", "SELECT usename FROM pg_user WHERE usename ~ '#{dbuser}.+'"
     ], [
         "xargs", "-P", "16", "-n", "1", "-r", "dropuser", *psql_access_opts 
