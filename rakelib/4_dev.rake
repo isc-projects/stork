@@ -413,7 +413,7 @@ task :db_remove_remaining do
 
     Open3.pipeline([
         "psql", *psql_select_opts, *psql_access_opts,
-        "-c", "SELECT usename FROM pg_user WHERE usename ~ '#{dbname}.+'"
+        "-c", "SELECT usename FROM pg_user WHERE usename ~ '#{dbuser}.+'"
     ], [
         "xargs", "-P", "16", "-n", "1", "dropuser", *psql_access_opts 
     ])
