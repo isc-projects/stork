@@ -22,13 +22,17 @@ export enum HostTabType {
  * A class representing the contents of a tab displayed by the component.
  */
 export class HostTab {
+    form: any = {}
+
     /**
      * Constructor.
      *
      * @param tabType host tab type.
      * @param host host information displayed in the tab.
      */
-    constructor(public tabType: HostTabType, public host?: any) {}
+    constructor(public tabType: HostTabType, public host?: any) {
+        this.form = {}
+    }
 }
 
 /**
@@ -278,7 +282,8 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     private openNewHostTab() {
         let index = this.openedTabs.findIndex((t) => t.tabType === HostTabType.NewHost)
         if (index < 0) {
-            this.openedTabs.push(new HostTab(HostTabType.NewHost))
+            let tab = new HostTab(HostTabType.NewHost)
+            this.openedTabs.push(tab)
             this.createMenuItem('New Host', '/dhcp/hosts/new')
             return
         }
@@ -432,5 +437,9 @@ export class HostsPageComponent implements OnInit, OnDestroy {
                 break
         }
         return ''
+    }
+
+    onHostFormChange(index, event) {
+        this.openedTabs[index] = event
     }
 }

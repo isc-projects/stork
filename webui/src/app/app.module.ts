@@ -39,6 +39,8 @@ import { SelectButtonModule } from 'primeng/selectbutton'
 import { DividerModule } from 'primeng/divider'
 import { TagModule } from 'primeng/tag'
 import { ToggleButtonModule } from 'primeng/togglebutton'
+import { MultiSelectModule } from 'primeng/multiselect'
+import { CheckboxModule } from 'primeng/checkbox'
 
 // Generated API modules
 import { ApiModule, BASE_PATH, Configuration, ConfigurationParameters } from './backend'
@@ -183,6 +185,8 @@ export function cfgFactory() {
         DividerModule,
         TagModule,
         ToggleButtonModule,
+        MultiSelectModule,
+        CheckboxModule,
     ],
     providers: [
         {

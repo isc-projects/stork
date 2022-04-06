@@ -175,7 +175,11 @@
 <ng-template #openedTabBlock>
     <div [ngSwitch]="openedTabs[activeTabIndex - 1].tabType" class="p-component">
         <app-host-tab *ngSwitchCase="HostTabType.Host" [host]="openedTabs[activeTabIndex - 1].host"></app-host-tab>
-        <app-host-edit-tab *ngSwitchCase="HostTabType.NewHost"></app-host-edit-tab>
+        <app-host-form
+            [form]="openedTabs[activeTabIndex - 1].form"
+            (onFormChange)="onHostFormChange(activeTabIndex - 1, $event)"
+            *ngSwitchCase="HostTabType.NewHost"
+        ></app-host-form>
     </div>
     <ng-template> </ng-template
 ></ng-template>

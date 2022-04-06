@@ -1,1 +1,161 @@
-<p>host-form works!</p>
+<form [formGroup]="formGroup">
+    <p-fieldset legend="Assignments" styleClass="p-mt-4">
+        <div class="p-grid host-form-abs-width">
+            <div class="p-col-12 p-mb-3">
+                <p-checkbox label="Global reservation" formControlName="globalReservation" [binary]="true"></p-checkbox>
+            </div>
+            <div class="p-col-10 p-mb-3">
+                <span class="p-float-label">
+                    <p-multiSelect
+                        inputId="servers-select"
+                        optionLabel="label"
+                        optionValue="id"
+                        [options]="daemons"
+                        formControlName="selectedServers"
+                        display="chip"
+                        [style]="{ width: '100%' }"
+                        (onChange)="onServersChange()"
+                    >
+                    </p-multiSelect>
+                    <label for="servers-select">Servers</label>
+                </span>
+            </div>
+            <div *ngIf="!formGroup.get('globalReservation').value" class="p-col-5">
+                <span class="p-float-label">
+                    <p-dropdown
+                        inputId="subnets-dropdown"
+                        optionLabel="subnet"
+                        optionValue="id"
+                        [autoDisplayFirst]="false"
+                        [options]="form.filteredSubnets"
+                        formControlName="selectedSubnet"
+                        [style]="{ width: '100%' }"
+                    >
+                    </p-dropdown>
+                    <label for="subnets-dropdown">Subnet</label>
+                </span>
+            </div>
+        </div>
+    </p-fieldset>
+
+    <p-fieldset legend="DHCP Identifier" styleClass="p-mt-4">
+        <div formGroupName="hostIdGroup" class="p-grid host-form-abs-width">
+            <div class="p-col-3">
+                <p-dropdown [options]="hostIdTypes" formControlName="idType" [style]="{ width: '100%' }"> </p-dropdown>
+            </div>
+            <div class="p-col-3">
+                <p-dropdown [options]="hostIdFormats" formControlName="idFormat" [style]="{ width: '100%' }">
+                </p-dropdown>
+            </div>
+            <div class="p-col-6">
+                <input
+                    *ngIf="formGroup.get('hostIdGroup.idFormat').value === 'hex'; else hostIdFormatText"
+                    pInputText
+                    formControlName="idInputHex"
+                    [style]="{ width: '100%' }"
+                    placeholder="e.g. 01:02:03:04:05:06"
+                />
+                <ng-template #hostIdFormatText>
+                    <input
+                        pInputText
+                        formControlName="idInputText"
+                        [style]="{ width: '100%' }"
+                        placeholder="text identifier format"
+                    />
+                </ng-template>
+            </div>
+        </div>
+    </p-fieldset>
+
+    <p-fieldset legend="IP Reservations" styleClass="p-mt-4">
+        <div formArrayName="ipGroups" class="p-grid host-form-abs-width">
+            <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i" class="p-mt-3">
+                <ng-container [formGroup]="ipGroup" style="display: flex; align-items: start">
+                    <div class="p-col-3">
+                        <p-dropdown
+                            [options]="form.ipv6OnlyTypes ? ipTypes.slice(1) : ipTypes"
+                            formControlName="ipType"
+                            [style]="{ width: '100%' }"
+                            (onChange)="ipTypeChange()"
+                        >
+                        </p-dropdown>
+                    </div>
+                    <ng-container [ngSwitch]="ipGroup.value.ipType">
+                        <div *ngSwitchCase="'ipv4'" class="p-col-8">
+                            <input
+                                *ngSwitchCase="'ipv4'"
+                                pInputText
+                                formControlName="inputIPv4"
+                                [style]="{ width: '100%' }"
+                                placeholder="e.g. 10.0.0.1"
+                            />
+                        </div>
+                        <div *ngSwitchCase="'ia_na'" class="p-col-8">
+                            <input
+                                *ngSwitchCase="'ia_na'"
+                                pInputText
+                                formControlName="inputNA"
+                                [style]="{ width: '100%' }"
+                                placeholder="e.g. 2001:db8:1::"
+                            />
+                        </div>
+                        <ng-container *ngSwitchCase="'ia_pd'">
+                            <div class="p-col-6">
+                                <input
+                                    pInputText
+                                    formControlName="inputPD"
+                                    [style]="{ width: '100%' }"
+                                    placeholder="e.g. 3000:1::"
+                                />
+                            </div>
+                            <div class="p-col-2">
+                                <p-inputNumber
+                                    min="1"
+                                    max="128"
+                                    formControlName="inputPDLength"
+                                    [inputStyle]="{ width: '100%' }"
+                                >
+                                </p-inputNumber>
+                            </div>
+                        </ng-container>
+                    </ng-container>
+                    <div class="p-col-1">
+                        <button
+                            pButton
+                            pRipple
+                            type="button"
+                            icon="pi pi-times"
+                            class="p-mr-2 p-button-rounded p-button-danger p-button-text"
+                            style="width: 100%"
+                            (click)="deleteIPInput(i)"
+                        ></button>
+                    </div>
+                </ng-container>
+            </ng-container>
+        </div>
+        <div>
+            <button
+                pButton
+                class="p-button-rounded p-button-text p-mt-2"
+                label="Add IP Reservation"
+                [disabled]="form.addIPButtonDisabled"
+                (click)="addIPInput()"
+            ></button>
+        </div>
+    </p-fieldset>
+
+    <p-fieldset legend="Non-IP Reservations" styleClass="p-mt-4">
+        <div class="p-grid host-form-abs-width">
+            <div class="p-col-8">
+                <span class="p-float-label p-mt-3">
+                    <input id="hostname-input" pInputText [style]="{ width: '100%' }" formControlName="hostname" />
+                    <label for="hostname-input">Hostname</label>
+                </span>
+            </div>
+        </div>
+    </p-fieldset>
+
+    <div class="p-m-5">
+        <p-button label="Submit"> </p-button>
+    </div>
+</form>
