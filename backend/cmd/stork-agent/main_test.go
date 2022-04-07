@@ -55,7 +55,7 @@ func TestCommandLineSwitches(t *testing.T) {
 	os.Args[1] = "-h"
 
 	// Act
-	stdout, _, err := testutil.CaptureOutput(main)
+	stdout, _, err := testutil.CaptureOutput(main, nil, 0)
 
 	// Assert
 	require.NoError(t, err)
@@ -87,7 +87,7 @@ func TestCommandLineVersion(t *testing.T) {
 			os.Args[1] = arg
 
 			// Act
-			stdout, _, err := testutil.CaptureOutput(main)
+			stdout, _, err := testutil.CaptureOutput(main, nil, 0)
 
 			// Assert
 			require.NoError(t, err)
@@ -108,16 +108,28 @@ func TestHostAndPortParams(t *testing.T) {
 	os.Args[4] = "9876"
 
 	// Act
-	stdout, _, _ := testutil.CaptureOutput(func() {
-		go func() {
-			time.Sleep(5 * time.Second)
-			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
-		}()
-		main()
-	})
+	// The Stork Agent runs the server at the startup and waits infinitely for
+	// the requests. It causes the unit test to be blocked. We wait a short
+	// time for the head stdout and send the termination signal. The
+	// termination cannot be done too early because the Agent must register
+	// the signal handler first. Otherwise, the test will fail without any
+	// message. Unfortunately, there is no possibility to check if the handler
+	// is already registered.
+	startTime := time.Now()
+	stdout, _, _ := testutil.CaptureOutput(main, func(stdout []byte, n int) {
+		stdoutStr := string(stdout)
+		hasExpected := strings.Contains(stdoutStr, "127.1.2.3") &&
+			strings.Contains(stdoutStr, "9876")
+		isTimeExpired := time.Since(startTime) > time.Second
 
-	require.Contains(t, string(stdout), "127.1.2.3")
-	require.Contains(t, string(stdout), "9876")
+		if hasExpected || isTimeExpired {
+			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+		}
+	}, 10000)
+
+	stdoutStr := string(stdout)
+	require.Contains(t, stdoutStr, "127.1.2.3")
+	require.Contains(t, stdoutStr, "9876")
 }
 
 // This test checks if stork-agent -h reports all expected command-line switches.
@@ -128,7 +140,7 @@ func TestRegisterCommandLineSwitches(t *testing.T) {
 	os.Args[2] = "-h"
 
 	// Act
-	stdout, _, err := testutil.CaptureOutput(main)
+	stdout, _, err := testutil.CaptureOutput(main, nil, 0)
 
 	// Assert
 	require.NoError(t, err)
@@ -144,6 +156,10 @@ func TestRegistrationParams(t *testing.T) {
 	os.Args[1] = "register"
 	os.Args[2] = "--agent-host"
 	os.Args[3] = "127.4.5.6"
+
+	// The Stork Agent exists using a log.Fatal for these parameters.
+	// We replace the standard error handler with a dumb one to prevent
+	// interrupt the unit tests.
 	defer func() {
 		logrus.StandardLogger().ExitFunc = nil
 	}()
@@ -152,13 +168,7 @@ func TestRegistrationParams(t *testing.T) {
 	}
 
 	// Act
-	stdout, _, _ := testutil.CaptureOutput(func() {
-		go func() {
-			time.Sleep(5 * time.Second)
-			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
-		}()
-		main()
-	})
+	stdout, _, _ := testutil.CaptureOutput(main, nil, 0)
 
 	require.Contains(t, string(stdout), "127.4.5.6")
 }

@@ -50,7 +50,7 @@ func TestCommandLineSwitches(t *testing.T) {
 	var err error
 	stdout, _, _ := testutil.CaptureOutput(func() {
 		done, err = ss.ParseArgs()
-	})
+	}, nil, 0)
 
 	// Assert
 	require.True(t, done)
@@ -87,7 +87,7 @@ func TestCommandLineVersion(t *testing.T) {
 			var err error
 			stdout, _, _ := testutil.CaptureOutput(func() {
 				done, err = ss.ParseArgs()
-			})
+			}, nil, 0)
 
 			// Assert
 			require.NoError(t, err)
