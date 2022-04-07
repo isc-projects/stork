@@ -454,7 +454,12 @@ end
 desc 'Check that the system-level dependencies are available (install nothing)'
 task :check_env => [] do
     sh *WGET, "--version"
-    sh "java", "--version"
+    if which("java") == nil
+        puts "Missing java"
+        fail
+    else
+        puts "java ready"
+    end
     sh "rake", "--version"
     sh "python3", "--version"
     sh "pip3", "--version"
