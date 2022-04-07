@@ -363,7 +363,7 @@ task :db_migrate => [TOOL_BINARY_FILE] do
         "-h", dbhost, "-p", dbport, "-U", dbuser, dbmaintenance, "-XtAc",
         "SELECT 1 FROM pg_database WHERE datname='#{dbname}'"
 
-    if status != 0
+    if status != 0 && ENV["OLD_CI"] != "yes"
         fail stderr
     end
 
