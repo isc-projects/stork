@@ -34,7 +34,7 @@ cache:
 ### build jobs ###
 
 # common parts used in build jobs
-.base_build:
+.base_build_debian:
   stage: build
   rules:
     - when: always
@@ -49,7 +49,7 @@ cache:
     - apt-get install -y ruby-dev make
     - rake prepare_env
 
-.base_build_centos:
+.base_build_debian_centos:
   stage: build
   rules:
     - when: always
@@ -69,12 +69,12 @@ cache:
     - rake prepare_env
 
 lint_go:
-  extends: .base_build
+  extends: .base_build_debian
   script:
     - rake lint_go
 
 unittest_backend:
-  extends: .base_build
+  extends: .base_build_debian
   services:
     - name: registry.gitlab.isc.org/isc-projects/stork/ci-postgres:11
       alias: postgres
@@ -84,17 +84,17 @@ unittest_backend:
     - rake unittest_backend
 
 lint_ui:
-  extends: .base_build
+  extends: .base_build_debian
   script:
     - rake lint_ui
 
 unittest_ui:
-  extends: .base_build
+  extends: .base_build_debian
   script:
     - rake unittest_ui
 
 build_webui:
-  extends: .base_build
+  extends: .base_build_debian
   script:
     - rake build_ui
   artifacts:
@@ -104,7 +104,7 @@ build_webui:
       - webui/dist/stork/
 
 build_backend:
-  extends: .base_build
+  extends: .base_build_debian
   script:
     - rake build_backend
   artifacts:
@@ -116,7 +116,7 @@ build_backend:
       - backend/cmd/stork-db-migrate/stork-db-migrate
 
 danger:
-  extends: .base_build
+  extends: .base_build_debian
   stage: build
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -154,7 +154,7 @@ tarball:
 ### build rpm & deb packages ###
 
 build_debs:
-  extends: .base_build
+  extends: .base_build_debian
   script:
     - rake build_agent_pkg
     - rake build_server_pkg
@@ -165,7 +165,7 @@ build_debs:
     expire_in: 1 hour
 
 build_rpms:
-  extends: .base_build_centos
+  extends: .base_build_debian_centos
   script:
     - rake build_agent_pkg
     - rake build_server_pkg
