@@ -145,8 +145,14 @@ task :pre_run_server do
         if use_testing_ui == true
             puts "Using testing UI - live UI build is active"
         else
-            production_time = File.mtime(WEBUI_DIST_DIRECTORY)
-            testing_time = File.mtime(WEBUI_DEBUG_DIRECTORY)
+            production_time = Time.new(1980, 1, 1)
+            if File.exists? WEBUI_DIST_DIRECTORY
+                production_time = File.mtime(WEBUI_DIST_DIRECTORY)
+            end
+            testing_time = Time.new(1980, 1, 1)
+            if File.exists? WEBUI_DEBUG_DIRECTORY
+                testing_time = File.mtime(WEBUI_DEBUG_DIRECTORY)
+            end
             use_testing_ui = testing_time > production_time
             puts "Using testing UI - testing UI is newer than production"
         end
@@ -158,15 +164,22 @@ task :pre_run_server do
         puts "Invalid UI mode - choose 'production', 'testing' or unspecify"
         fail
     end
+
+    # Set environment variables
     if use_testing_ui
-        ENV["STORK_REST_STATIC_FILES_DIR"] = "./webui/dist/stork-debug"
+        ENV["STORK_REST_STATIC_FILES_DIR"] = WEBUI_DEBUG_DIRECTORY
+    else
+        ENV["STORK_REST_STATIC_FILES_DIR"] = WEBUI_DIST_DIRECTORY
     end
 
     ENV["STORK_SERVER_ENABLE_METRICS"] = "true"
+
+    # Build UI
+    Rake::Task[ENV["STORK_REST_STATIC_FILES_DIR"]].invoke()
 end
 
 desc "Run Stork Server (release mode)
-    UI_MODE - WebUI mode to use, must be build separately - choose: 'production', 'testing' or unspecify
+    UI_MODE - WebUI mode to use - choose: 'production', 'testing' or unspecify
     DB_TRACE - trace SQL queries - default: false
 "
 task :run_server => [SERVER_BINARY_FILE, :pre_run_server] do
