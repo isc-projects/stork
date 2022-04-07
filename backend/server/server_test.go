@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
-	"isc.org/stork"
 	"isc.org/stork/testutil"
 )
 
@@ -46,14 +46,14 @@ func TestCommandLineSwitches(t *testing.T) {
 
 	// Act
 	ss := &StorkServer{}
-	var done bool
+	var command Command
 	var err error
 	stdout, _, _ := testutil.CaptureOutput(func() {
-		done, err = ss.ParseArgs()
+		command, err = ss.ParseArgs()
 	}, nil, 0)
 
 	// Assert
-	require.True(t, done)
+	require.EqualValues(t, HelpCommand, command)
 	require.NoError(t, err)
 	// Now check that all expected command-line switches are really there.
 	require.True(t, checkOutput(string(stdout), getExpectedSwitches(), "stork-agent -h output"))
@@ -83,20 +83,102 @@ func TestCommandLineVersion(t *testing.T) {
 
 			// Act
 			ss := &StorkServer{}
-			var done bool
-			var err error
-			stdout, _, _ := testutil.CaptureOutput(func() {
-				done, err = ss.ParseArgs()
-			}, nil, 0)
+			command, err := ss.ParseArgs()
 
 			// Assert
 			require.NoError(t, err)
-			require.True(t, done)
-			// Clean up the output (remove end of line)
-			ver := strings.TrimSpace(string(stdout))
-
-			// Check if it equals expected version.
-			require.Equal(t, ver, stork.Version)
+			require.EqualValues(t, VersionCommand, command)
 		})
 	}
+}
+
+// Test that the Stork Server is constructed properly.
+func TestNewStorkServer(t *testing.T) {
+	// Arrange
+	os.Args = make([]string, 0)
+	os.Args = append(os.Args, "stork-server",
+		"-m",
+		"-d", "dbname",
+		"-u", "dbuser",
+		"--db-host", "dbhost",
+		"-p", "9876",
+		"--db-sslmode", "verify-ca",
+		"--db-sslcert", "sslcert",
+		"--db-sslkey", "sslkey",
+		"--db-sslrootcert", "sslrootcert",
+		"--db-trace-queries", "all",
+		"--rest-cleanup-timeout", "12s",
+		"--rest-graceful-timeout", "34m",
+		"--rest-max-header-size", "56",
+		"--rest-host", "resthost",
+		"--rest-port", "1234",
+		"--rest-listen-limit", "78",
+		"--rest-keep-alive", "90h",
+		"--rest-read-timeout", "98s",
+		"--rest-write-timeout", "76s",
+		"--rest-tls-certificate", "tlscert",
+		"--rest-tls-key", "tlskey",
+		"--rest-tls-ca", "tlsca",
+		"--rest-static-files-dir", "staticdir",
+	)
+
+	// Act
+	ss, command, err := NewStorkServer()
+
+	// Assert
+	require.NoError(t, err)
+	require.EqualValues(t, RunCommand, command)
+
+	require.True(t, ss.EnableMetricsEndpoint)
+	require.EqualValues(t, "dbname", ss.DBSettings.DBName)
+	require.EqualValues(t, "dbuser", ss.DBSettings.User)
+	require.EqualValues(t, "dbhost", ss.DBSettings.Host)
+	require.EqualValues(t, 9876, ss.DBSettings.Port)
+	require.EqualValues(t, "verify-ca", ss.DBSettings.SSLMode)
+	require.EqualValues(t, "sslcert", ss.DBSettings.SSLCert)
+	require.EqualValues(t, "sslkey", ss.DBSettings.SSLKey)
+	require.EqualValues(t, "sslrootcert", ss.DBSettings.SSLRootCert)
+	require.EqualValues(t, "all", ss.DBSettings.TraceSQL)
+	require.EqualValues(t, 12*time.Second, ss.RestAPISettings.CleanupTimeout)
+	require.EqualValues(t, 34*time.Minute, ss.RestAPISettings.GracefulTimeout)
+	require.EqualValues(t, 56, ss.RestAPISettings.MaxHeaderSize)
+	require.EqualValues(t, "resthost", ss.RestAPISettings.Host)
+	require.EqualValues(t, 1234, ss.RestAPISettings.Port)
+	require.EqualValues(t, 78, ss.RestAPISettings.ListenLimit)
+	require.EqualValues(t, 90*time.Hour, ss.RestAPISettings.KeepAlive)
+	require.EqualValues(t, 98*time.Second, ss.RestAPISettings.ReadTimeout)
+	require.EqualValues(t, 76*time.Second, ss.RestAPISettings.WriteTimeout)
+	require.EqualValues(t, "tlscert", ss.RestAPISettings.TLSCertificate)
+	require.EqualValues(t, "tlskey", ss.RestAPISettings.TLSCertificateKey)
+	require.EqualValues(t, "tlsca", ss.RestAPISettings.TLSCACertificate)
+	require.EqualValues(t, "staticdir", ss.RestAPISettings.StaticFilesDir)
+}
+
+// Test that the Stork Server is not constructed if the arguments are wrong.
+func TestNewStorkServerWithWrongCLIArguments(t *testing.T) {
+	// Arrange
+	os.Args = make([]string, 0)
+	os.Args = append(os.Args, "stork-server", "--foo-bar-baz")
+
+	// Act
+	ss, command, err := NewStorkServer()
+
+	// Assert
+	require.Error(t, err)
+	require.Nil(t, ss)
+	require.EqualValues(t, NoneCommand, command)
+}
+
+// Test that the Stork Server is constructed if no arguments are provided.
+func TestNewStorkServerNoArguments(t *testing.T) {
+	// Arrange
+	os.Args = []string{"stork-server"}
+
+	// Act
+	ss, command, err := NewStorkServer()
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, ss)
+	require.EqualValues(t, RunCommand, command)
 }

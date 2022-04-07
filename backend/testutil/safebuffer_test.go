@@ -85,7 +85,8 @@ func TestSafeBufferNoRace(t *testing.T) {
 	}
 
 	// Act
-	count := 10000
+	// There is a limit on 8128 simultaneously alive goroutines.
+	count := 1000
 	wg.Add(3 * count)
 	for i := 1; i <= count; i++ {
 		go writer(i)

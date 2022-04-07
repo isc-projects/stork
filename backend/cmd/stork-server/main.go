@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,12 +18,31 @@ func main() {
 	storkutil.SetupLogging()
 
 	// Initialize global state of Stork Server
-	storkServer, err := server.NewStorkServer()
+	storkServer, command, err := server.NewStorkServer()
 	if err != nil {
 		log.Fatalf("unexpected error: %+v", err)
 	}
-	if storkServer == nil {
+
+	switch command {
+	case server.HelpCommand:
+		// The help command is handled internally by flags framework.
 		return
+	case server.VersionCommand:
+		fmt.Printf("%s\n", stork.Version)
+		return
+	case server.NoneCommand:
+		// Nothing to do.
+		return
+	case server.RunCommand:
+		// Handled below.
+		break
+	default:
+		log.Fatalf("not implemented command: %s", command)
+	}
+
+	err = storkServer.Bootstrap()
+	if err != nil {
+		log.Fatalf("cannot start the Stork Server: %+v", err)
 	}
 
 	log.Printf("Starting Stork Server, version %s, build date %s", stork.Version, stork.BuildDate)

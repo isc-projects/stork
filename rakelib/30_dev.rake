@@ -106,7 +106,7 @@ task :unittest_backend => [RICHGO, :db_remove_remaining, :db_migrate] + go_dev_c
                             # Those two are tested in backend/server/server_test.go, in TestCommandLineSwitches*
                             # However, due to how it's executed (calling external binary), it's not detected
                             # by coverage.
-                            'ParseArgs', 'NewStorkServer',
+                            'ParseArgs', 'Bootstrap',
 
                             # this function requires interaction with user so it is hard to test
                             'getAgentAddrAndPortFromUser',

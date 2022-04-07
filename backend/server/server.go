@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 
 	flags "github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
@@ -19,6 +18,15 @@ import (
 	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/metrics"
 	"isc.org/stork/server/restservice"
+)
+
+type Command string
+
+const (
+	NoneCommand    Command = "none"
+	RunCommand     Command = "run"
+	HelpCommand    Command = "help"
+	VersionCommand Command = "version"
 )
 
 // Global Stork Server state.
@@ -49,9 +57,8 @@ type Settings struct {
 }
 
 // Parse the command line arguments into GO structures.
-// Returns done as true if the command is already handled (i.e. version or help)
-// and parsing is not necessary.
-func (ss *StorkServer) ParseArgs() (done bool, err error) {
+// Returns the expected command to run and error.
+func (ss *StorkServer) ParseArgs() (command Command, err error) {
 	// Process command line flags.
 	var serverSettings Settings
 	parser := flags.NewParser(&serverSettings, flags.Default)
@@ -81,50 +88,52 @@ func (ss *StorkServer) ParseArgs() (done bool, err error) {
 		var flagsError *flags.Error
 		if errors.As(err, &flagsError) {
 			if flagsError.Type == flags.ErrHelp {
-				return true, nil
+				return HelpCommand, nil
 			}
 		}
-		return false, err
+		return NoneCommand, err
 	}
 
 	ss.EnableMetricsEndpoint = serverSettings.EnableMetricsEndpoint
 
 	if serverSettings.Version {
 		// If user specified --version or -v, print the version and quit.
-		fmt.Printf("%s\n", stork.Version)
-		return true, nil
+		return VersionCommand, nil
 	}
-	return false, nil
+	return RunCommand, nil
 }
 
 // Init for Stork Server state.
-func NewStorkServer() (ss *StorkServer, err error) {
+func NewStorkServer() (ss *StorkServer, command Command, err error) {
 	ss = &StorkServer{}
-	done, err := ss.ParseArgs()
+	command, err = ss.ParseArgs()
 	if err != nil {
-		return nil, err
-	}
-	if done {
-		return nil, nil
+		return nil, command, err
 	}
 
+	return ss, command, nil
+}
+
+// Establishes a database connection, runs the background pullers, and
+// prepares the REST API.
+func (ss *StorkServer) Bootstrap() (err error) {
 	// setup database connection
 	ss.DB, err = dbops.NewPgDB(&ss.DBSettings)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// initialize stork settings
 	err = dbmodel.InitializeSettings(ss.DB)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// prepare certificates for establish secure connections
 	// between server and agents
 	caCertPEM, serverCertPEM, serverKeyPEM, err := certs.SetupServerCerts(ss.DB)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// setup event center
@@ -148,7 +157,7 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	// initialize stork statistics
 	err = dbmodel.InitializeStats(ss.DB)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	ss.Pullers = &apps.Pullers{}
@@ -156,37 +165,37 @@ func NewStorkServer() (ss *StorkServer, err error) {
 	// setup apps state puller
 	ss.Pullers.AppsStatePuller, err = apps.NewStatePuller(ss.DB, ss.Agents, ss.EventCenter, ss.ReviewDispatcher)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// setup bind9 stats puller
 	ss.Pullers.Bind9StatsPuller, err = bind9.NewStatsPuller(ss.DB, ss.Agents, ss.EventCenter)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// setup kea stats puller
 	ss.Pullers.KeaStatsPuller, err = kea.NewStatsPuller(ss.DB, ss.Agents)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Setup Kea hosts puller.
 	ss.Pullers.KeaHostsPuller, err = kea.NewHostsPuller(ss.DB, ss.Agents, ss.ReviewDispatcher)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Setup Kea HA status puller.
 	ss.Pullers.HAStatusPuller, err = kea.NewHAStatusPuller(ss.DB, ss.Agents)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if ss.EnableMetricsEndpoint {
 		ss.MetricsCollector, err = metrics.NewCollector(ss.DB)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		log.Info("the metrics endpoint is enabled (ensure that it is properly secured)")
 	} else {
@@ -208,13 +217,13 @@ func NewStorkServer() (ss *StorkServer, err error) {
 		}
 
 		ss.DB.Close()
-		return nil, err
+		return err
 	}
 	ss.RestAPI = r
 
 	ss.EventCenter.AddInfoEvent("started Stork Server", "version: "+stork.Version+"\nbuild date: "+stork.BuildDate)
 
-	return ss, nil
+	return nil
 }
 
 // Run Stork Server.
