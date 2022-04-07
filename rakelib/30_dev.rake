@@ -333,6 +333,8 @@ desc 'Migrate (and create) database to the newest version
     DB_USER - database user - default: env:POSTGRES_USER or storktest
     DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest
     DB_TRACE - trace SQL queries - default: false
+    DB_MAINTENANCE_NAME - maintanance DB name used to create the provided DB - default: postgres
+    SUPPRESS_DB_MAINTENANCE - dont run creation DB operation - default: false
 '
 task :db_migrate => [TOOL_BINARY_FILE] do
     dbname = ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
@@ -341,7 +343,7 @@ task :db_migrate => [TOOL_BINARY_FILE] do
     dbuser = ENV["DB_USER"] || ENV["POSTGRES_USER"] || "storktest"
     dbpass = ENV["DB_PASSWORD"] || ENV["POSTGRES_PASSWORD"] || "storktest"
     dbtrace = ENV["DB_TRACE"] || "false"
-    dbmaintenance = ENV["DB_MAINTENANCE"] || "postgres"
+    dbmaintenance = ENV["DB_MAINTENANCE_NAME"] || "postgres"
 
     if dbhost.include? ':'
         dbhost, dbport = dbhost.split(':')
@@ -359,23 +361,27 @@ task :db_migrate => [TOOL_BINARY_FILE] do
     
     ENV['PGPASSWORD'] = dbpass
     
-    stdout, stderr, status = Open3.capture3 "psql",
-        "-h", dbhost, "-p", dbport, "-U", dbuser, dbmaintenance, "-XtAc",
-        "SELECT 1 FROM pg_database WHERE datname='#{dbname}'"
+    if ENV["SUPPRESS_DB_MAINTENANCE"] != "true"
+        stdout, stderr, status = Open3.capture3 "psql",
+            "-h", dbhost, "-p", dbport, "-U", dbuser, dbmaintenance, "-XtAc",
+            "SELECT 1 FROM pg_database WHERE datname='#{dbname}'"
 
-    if status != 0 && ENV["OLD_CI"] != "yes"
-        fail stderr
-    end
+        if status != 0
+            fail stderr
+        end
 
-    has_db = stdout.rstrip == "1"
+        has_db = stdout.rstrip == "1"
 
-    if !has_db
-        sh "createdb",
-            "-h", dbhost,
-            "-p", dbport,
-            "-U", dbuser,
-            "-O", dbuser,
-            dbname
+        if !has_db
+            sh "createdb",
+                "-h", dbhost,
+                "-p", dbport,
+                "-U", dbuser,
+                "-O", dbuser,
+                dbname
+        end
+    else
+        puts "DB maintenance suppressed (creating)"
     end
 
     sh TOOL_BINARY_FILE, "db-up",
@@ -390,8 +396,14 @@ desc "Remove remaing test databases and users
     DB_HOST - database host - default: env:POSTGRES_ADDR or localhost
     DB_PORT - database port - default: 5432
     DB_USER - database user - default: env:POSTGRES_USER or storktest
-    DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest"
+    DB_PASSWORD - database password - default: env: POSTGRES_PASSWORD or storktest
+    SUPPRESS_DB_MAINTENANCE - dont run this stage (no removing) - default: false"
 task :db_remove_remaining do
+    if ENV["SUPPRESS_DB_MAINTENANCE"] == "true"
+        puts "DB maintenance suppressed (removing)"
+        next
+    end
+
     dbname = ENV["DB_NAME"] || ENV["POSTGRES_DB"] || "storktest"
     dbhost = ENV["DB_HOST"] || ENV["POSTGRES_ADDR"] || "localhost"
     dbport = ENV["DB_PORT"] || "5432"
