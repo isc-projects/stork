@@ -144,7 +144,7 @@ gdlv_ver='v1.7.0'
 sphinx_ver='4.4.0'
 bundler_ver='2.3.8'
 
-# System-depends variables
+# System-dependent variables
 case OS
 when "macos"
   go_suffix="darwin-amd64"
