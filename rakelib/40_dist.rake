@@ -277,3 +277,8 @@ task :install_server => [server_dist_dir] do
     sh "mkdir", "-p", ENV["DEST"]
     sh "cp", "-a", "-f", File.join(server_dist_dir, "."), ENV["DEST"]
 end
+
+desc 'Install the external dependencies related to the distribution'
+task :prepare_dist do
+    find_and_prepare_deps(__FILE__)
+end

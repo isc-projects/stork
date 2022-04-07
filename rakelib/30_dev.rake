@@ -449,3 +449,8 @@ task :db_remove_remaining do
         "xargs", "-P", "16", "-n", "1", "-r", "dropuser", *psql_access_opts 
     ])
 end
+
+desc 'Install the external dependencies related to the development'
+task :prepare_dev do
+    find_and_prepare_deps(__FILE__)
+end

@@ -23,6 +23,73 @@ def which(cmd)
     nil
 end
 
+# Searches for the tasks in the provided file
+def find_tasks(file)
+    tasks = []
+    # Iterate over all tasks
+    Rake.application.tasks.each do |t|
+        # Choose only tasks from a specific file
+        if t.actions.empty?
+            next
+        end
+        action = t.actions[0]
+        location, _ = action.source_location
+        if location != file
+            next
+        end
+        tasks.append t
+    end
+    return tasks
+end
+
+# Searches for the prerequisites tasks from the second provided file in the
+# first provided file.
+def find_prerequisites_tasks(source_tasks_file, prerequisites_file)
+    require 'set'
+    unique_prerequisites = Set[]
+
+    # Choose only tasks from a specific file
+    tasks = find_tasks(source_tasks_file)
+
+    # Iterate over tasks
+    tasks.each do |t|
+        # Iterate over prerequisites
+        t.all_prerequisite_tasks.each do |p|
+            # Select unique prerequisites
+            unique_prerequisites.add p
+        end
+    end
+
+    prerequisites_tasks = []
+
+    # Check the prerequisites
+    unique_prerequisites.each do |p|
+        # Check the location - accept only tasks from the init file
+        if p.actions.empty?
+            next
+        end
+
+        action = p.actions[0]
+        location, _ = action.source_location
+
+        if location == prerequisites_file
+            prerequisites_tasks.append p
+        end
+    end
+
+    return prerequisites_tasks
+end
+
+# Searches for the prerequisites from the init file in the provided file and
+# invoke them.
+def find_and_prepare_deps(file)
+    prerequisites_tasks = find_prerequisites_tasks(file, __FILE__)
+    prerequisites_tasks.each do |t|
+        print "Preparing: ", t, "...\n"
+        t.invoke()
+    end
+end
+
 ### Recognize the operating system
 uname=`uname -s`
 
@@ -498,7 +565,16 @@ task :check_env => [] do
     puts "All dependencies are OK!"
 end
 
-desc 'Install system-level dependencies'
-task :prepare_env => [SPHINX_BUILD, FPM, DANGER, BUNDLER, NPM, NPX, YAMLINC, OPENAPI_GENERATOR, GO, GOSWAGGER, PROTOC, GOLANGCILINT, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, RICHGO, MOCKERY, MOCKGEN, DLV, GDLV] do
+desc 'Install all system-level dependencies'
+task :prepare_all do
+    tasks = find_tasks(__FILE__)
+    # Iterate over the file tasks
+    tasks.each do |t|
+        if t.class != Rake::FileTask
+            next
+        end
+        print "Preparing", t, "...\n"
+        t.invoke()
+    end
     puts "Preparing complete!"
 end

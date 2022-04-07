@@ -200,3 +200,8 @@ desc 'Clobber all generated and non-source files in a project.'
 task :clobber => [:clean] do
     remove_files(CLOBBER)
 end
+
+desc 'Install the external dependencies related to the codebase'
+task :prepare_codebase do
+    find_and_prepare_deps(__FILE__)
+end
