@@ -38,8 +38,19 @@ task :build_all_in_container do
   # for details, see: https://github.com/golang/go/issues/35777 and https://github.com/golang/go/issues/37436
   # The workaround added --ulimit memlock=512 to docker build and --privileged to docker run.
   sh "docker build --ulimit memlock=512 -f docker/docker-builder.txt -t stork-builder ."
+  # If the host is using an OS other than Linux, e.g. macOS, the appropriate
+  # versions of tools will have to be downloaded. Thus, we don't copy the
+  # tools from the stork package. If the host OS is Linux, we copy the tools
+  # from the package because the Linux specific tools are compatible with
+  # the containers onto which they are copied.
+  exclude_volume = []
+  if OS != 'linux'
+    exclude_volume.append "-v", "/repo/tools"
+  end
+
   sh "docker", "run",
       "-v", "#{ENV["PWD"]}:/repo",
+      *exclude_volume,
       "--rm", "stork-builder",
       "rake", "build_all_copy_in_subdir"
 end
