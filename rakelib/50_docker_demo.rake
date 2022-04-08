@@ -61,13 +61,20 @@ namespace :docker do
     return opts, cache_opts, up_opts, additional_services
   end
 
-  def docker_up_services(server, cache, *services)
+  def docker_up_services(*services)
+    # Read arguments from the environment variables
+    server = ENV["SERVER"]
+    cache = ENV["CACHE"]
+
+    # Prepare the docker-compose flags
     opts, build_opts, up_opts, additional_services = get_docker_opts(server, cache, services)
+    
     # We don't use the BuildKit features in our Dockerfiles (yet).
     # But we turn on the BuildKit to build the Docker stages concurrently and skip unnecessary stages.  
     ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
     ENV["DOCKER_BUILDKIT"] = "1"
 
+    # Execute the docker-compose commands
     sh "docker-compose", *opts, *build_opts, "build", *services, *additional_services
     sh "docker-compose", *opts, "up", *up_opts, *services, *additional_services
   end
@@ -76,42 +83,54 @@ namespace :docker do
   ### Demo tasks ###
   ##################
 
-  desc 'Build containers with everything and start all services using docker-compose. Set CS_REPO_ACCESS_TOKEN to use premium features.'
-  task :run_all, [:server, :cache] do |t, args|
-    docker_up_services(args.server, args.cache == "true")
+  desc 'Build containers with everything and start all services using docker-compose. Set CS_REPO_ACCESS_TOKEN to use premium features.
+    SERVER - Server mode - choice: local, ui, no-ui, default, default: default
+      local - Do not run the server in Docker, instead use the local one (which must be run separately)
+      ui - Run server in Docker with UI
+      no-ui - Run server in Docker without UI
+      default - Use default service configuration from the compose file (default)
+    CACHE - Use the Docker cache - default: true
+  '
+  task :run_all do
+    docker_up_services()
   end
 
-  desc 'Build and run container with Stork Agent and Kea'
-  task :run_kea, [:server, :cache] do |t, args|
-    docker_up_services(args.server, args.cache == "true", "agent-kea")
+  desc 'Build and run container with Stork Agent and Kea
+    See "run_all" command for arguments.'
+  task :run_kea do
+    docker_up_services("agent-kea")
   end
 
-  desc 'Build and run container with Stork Agent and Kea DHCPv6 server'
-  task :run_kea6, [:server, :cache] do |t, args|
-    docker_up_services(args.server, args.cache == "true", "agent-kea6")
+  desc 'Build and run container with Stork Agent and Kea DHCPv6 server
+    See "run_all" command for arguments.'
+  task :run_kea6 do
+    docker_up_services("agent-kea6")
   end
 
-  desc 'Build and run two containers with Stork Agent and Kea HA pair'
-  task :run_kea_ha,[:server, :cache] do |t, args|
-    docker_up_services(args.server, args.cache == "true", "agent-kea-ha1", "agent-kea-ha2")
+  desc 'Build and run two containers with Stork Agent and Kea HA pair
+    See "run_all" command for arguments.'
+  task :run_kea_ha do
+    docker_up_services("agent-kea-ha1", "agent-kea-ha2")
   end
 
-  desc 'Build and run container with Stork Agent and Kea with host reseverations in db'
-  task :run_kea_premium,[:server, :cache] do |t, args|
+  desc 'Build and run container with Stork Agent and Kea with host reseverations in db
+    CS_REPO_ACCESS_TOKEN - CloudSmith token - required
+    See "run_all" command for more arguments.'
+  task :run_kea_premium do
     if !ENV["CS_REPO_ACCESS_TOKEN"]
-      puts 'You need to provide the CloudSmith access token in CS_REPO_ACCESS_TOKEN environment variable.'
-      fail
+      fail 'You need to provide the CloudSmith access token in CS_REPO_ACCESS_TOKEN environment variable.'
     end
-    docker_up_services(args.server, args.cache == "true", "agent-kea-premium")
+    docker_up_services("agent-kea-premium")
   end
 
-  desc 'Build and run container with Stork Agent and BIND 9'
-  task :run_bind9,[:server, :cache] do |t, args|
-    docker_up_services(args.server, args.cache == "true", "agent-bind9")
+  desc 'Build and run container with Stork Agent and BIND 9
+    See "run_all" command for arguments.'
+  task :run_bind9 do
+    docker_up_services("agent-bind9")
   end
 
   desc 'Build and run container with Postgres'
-  task :run_postgres do |t, args|
+  task :run_postgres do
     docker_up_services("default", false, "postgres")
   end
 
@@ -150,8 +169,9 @@ end
 ############################################
 
 # Internal task to setup access to the Docker database
-task :pre_docker_db, [:dbtrace] do |t, args|
-  if args.dbtrace == "true"
+# DB_TRACE - trace SQL queries - default: false
+task :pre_docker_db do
+  if ENV["DB_TRACE"] == "true"
       ENV["STORK_DATABASE_TRACE"] = "run"
   end
 
@@ -163,15 +183,17 @@ task :pre_docker_db, [:dbtrace] do |t, args|
   ENV['PGPASSWORD'] = "stork"
 end
 
-desc 'Run local server with Docker database'
-task :run_server_db, [:dbtrace] => [:pre_docker_db] do |t, args|
+desc 'Run local server with Docker database
+  DB_TRACE - trace SQL queries - default: false'
+task :run_server_db => [:pre_docker_db] do
   Rake::MultiTask.new(:stub, t.application)
     .enhance([:run_server, "docker:run_postgres"])
     .invoke()
 end
 
-desc 'Run local unittests with Docker database'
-task :unittest_backend_db, [:dbtrace] => [:pre_docker_db] do |t, args|
+desc 'Run local unittests with Docker database
+  DB_TRACE - trace SQL queries - default: false'
+task :unittest_backend_db => [:pre_docker_db] do
   Rake::MultiTask.new(:stub, t.application)
     .enhance([:unittest_backend, "docker:run_postgres"])
     .invoke()
