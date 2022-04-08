@@ -59,7 +59,7 @@ WORKDIR /app/rakelib/init_debs
 COPY rakelib/init_debs ./
 WORKDIR /app
 COPY Rakefile ./
-RUN rake prepare_all
+RUN rake prepare_env_all
 
 # Backend dependencies installation
 FROM prepare AS gopath-prepare
