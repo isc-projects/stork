@@ -61,7 +61,7 @@ the following three commands, one in each console:
 
 .. code-block:: console
 
-    $ rake serve_ui
+    $ rake build_ui_live
 
 .. code-block:: console
 
@@ -270,10 +270,9 @@ by Angular. The simplest way to run these tests is by using Rake tasks:
 
 .. code:: console
 
-   rake build_ui
-   rake ng_test
+   rake unittest_ui
 
-The tests require the Chromium (on Linux) or Chrome (on Mac) browser. The ``rake ng_test``
+The tests require the Chromium (on Linux) or Chrome (on Mac) browser. The ``rake unittest_ui``
 task attempts to locate the browser binary and launch it automatically. If the
 browser binary is not found in the default location, the Rake task returns an
 error. It is possible to set the location manually by setting the ``CHROME_BIN``
@@ -282,7 +281,7 @@ environment variable; for example:
 .. code:: console
 
    export CHROME_BIN=/usr/local/bin/chromium-browser
-   rake ng_test
+   rake unittest_ui
 
 By default, the tests launch the browser in headless mode, in which test results
 and any possible errors are printed in the console. However, in some situations it
@@ -293,7 +292,7 @@ command:
 
 .. code:: console
 
-   rake ng_test debug=true
+   rake unittest_ui debug=true
 
 That command causes a new browser window to open; the tests run there automatically.
 
@@ -305,7 +304,7 @@ be run by clicking on its name.
 
 .. code:: console
 
-    test=src/app/ha-status-panel/ha-status-panel.component.spec.ts rake ng_test
+    test=src/app/ha-status-panel/ha-status-panel.component.spec.ts rake unittest_ui
 
 By default, all tests are executed. To run only a specific test file,
 set the "test" environment variable to a relative path to any ``.spec.ts``
@@ -701,23 +700,16 @@ Packaging
 There are scripts for packaging the binary form of Stork. There are
 two supported formats: RPM and deb.
 
-The RPM package is built on the latest CentOS version. The deb package
-is built on the latest Ubuntu LTS.
+The package type is selected based on the OS that executes the command.
+Use the ``print_pkg_type`` to get the package type supported by your OS.
 
-There are two packages built for each system: a server and an agent.
-
-Rake tasks can perform the entire build procedure in a
-Docker container: ``build_rpms_in_docker`` and
-``build_debs_in_docker``. It is also possible to build packages directly
-in the current operating system; this is provided by the ``deb_agent``,
-``rpm_agent``, ``deb_server``, and ``rpm_server`` Rake tasks.
+Use ``rake build_agent_pkg`` to build the agent package and
+``rake build_server_pkg`` for server package. The package binaries are located
+in the ``dist/pkgs`` directory.
 
 Internally, these packages are built by FPM
-(https://fpm.readthedocs.io/). The containers that are used to build
-packages are prebuilt with all dependencies required, using the
-``build_fpm_containers`` Rake task. The definitions
-of these containers are placed in ``docker/pkgs/centos-8.txt`` and
-``docker/pkgs/ubuntu-18-04.txt``.
+(https://fpm.readthedocs.io/). It is installed automatically but it requires
+the ``ruby-dev`` and ``make`` to build.
 
 Implementation details
 ======================

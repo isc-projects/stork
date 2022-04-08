@@ -969,14 +969,13 @@ and the server component with this command:
 
    $ rake install_server
 
-By default, all components are installed in the ``root`` folder in the
-current directory; however, this is not useful for installation in a
-production environment. It can be customized via the ``DESTDIR``
-variable, e.g.:
+By default, all components are installed in the specific system directories;
+this is useful for installation in a production environment. For the testing
+purposes tt can be customized via the ``DEST`` variable, e.g.:
 
 .. code-block:: console
 
-   $ sudo rake install_server DESTDIR=/usr
+   $ rake install_server DEST=/home/user/stork
 
 Integration With Prometheus and Grafana
 =======================================

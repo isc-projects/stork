@@ -13,6 +13,10 @@ require 'open3'
 #
 #   which('ruby') #=> /usr/bin/ruby
 def which(cmd)
+    if File.executable?(cmd)
+        return cmd
+    end
+
     exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(';') : ['']
     ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
       exts.each do |ext|
@@ -232,7 +236,8 @@ end
 # CHROME_BIN is required for UI unit tests and system tests. If it is
 # not provided by a user, try to locate Chrome binary and set
 # environment variable to its location.
-if !ENV['CHROME_BIN']
+if !ENV['CHROME_BIN'] || ENV['CHROME_BIN'].empty?
+    ENV['CHROME_BIN'] = "chromium"
     chrome_locations = []
     if OS == 'linux'
       chrome_locations = ['/usr/bin/chromium-browser', '/snap/bin/chromium', '/usr/bin/chromium']
@@ -579,5 +584,5 @@ end
 desc 'Check all system-level dependencies'
 task :check_env_all do
     check_deps(__FILE__, "wget", "python3", "pip3", "entr", "git",
-        "createdb", "psql", "dropdb")
+        "createdb", "psql", "dropdb", ENV['CHROME_BIN'])
 end

@@ -232,7 +232,7 @@ task :clean_pkgs do
 end
 
 desc "Check package type of current OS"
-task :check_env_pkg_type do
+task :print_pkg_type do
     puts get_pkg_type()
 end
 
