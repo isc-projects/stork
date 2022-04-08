@@ -40,7 +40,7 @@ func newFakeKeaModuleCommit() *fakeKeaModuleCommit {
 // Implementation of the fake Commit() function. It records
 // the invoked commit operations and passed contexts.
 func (fkm *fakeKeaModuleCommit) Commit(ctx context.Context) (context.Context, error) {
-	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
+	state, ok := config.GetTransactionState(ctx)
 	if !ok {
 		return ctx, lackingStateError{}
 	}
@@ -84,12 +84,12 @@ func TestCreateContext(t *testing.T) {
 		require.NotNil(t, ctx)
 
 		// Make sure that the context ID exists.
-		ctxid, ok := ctx.Value(config.ContextIDKey).(int64)
+		ctxid, ok := config.GetValueAsInt64(ctx, config.ContextIDKey)
 		require.True(t, ok)
 		ids[ctxid] = true
 
 		// Make sure that the user ID exists.
-		userid, ok := ctx.Value(config.UserContextKey).(int64)
+		userid, ok := config.GetValueAsInt64(ctx, config.UserContextKey)
 		require.True(t, ok)
 		require.EqualValues(t, i, userid)
 	}
@@ -117,7 +117,7 @@ func TestRememberRecoverContext(t *testing.T) {
 
 	// Retrieve the generated context ID. It will be later needed
 	// to recover the context.
-	id1, ok := ctx1.Value(config.ContextIDKey).(int64)
+	id1, ok := config.GetValueAsInt64(ctx1, config.ContextIDKey)
 	require.True(t, ok)
 
 	// Store the context.
@@ -131,9 +131,9 @@ func TestRememberRecoverContext(t *testing.T) {
 	require.NotNil(t, cancel1)
 
 	// The context ID and user ID should be present in the recovered context.
-	_, ok = recovered1.Value(config.ContextIDKey).(int64)
+	_, ok = config.GetValueAsInt64(recovered1, config.ContextIDKey)
 	require.True(t, ok)
-	user1, ok := recovered1.Value(config.UserContextKey).(int64)
+	user1, ok := config.GetValueAsInt64(recovered1, config.UserContextKey)
 	require.True(t, ok)
 	require.EqualValues(t, 123, user1)
 
@@ -150,7 +150,7 @@ func TestRememberRecoverContext(t *testing.T) {
 	key = testContextKeyType("bar")
 	ctx2 = context.WithValue(ctx2, key, "baz")
 
-	id2, ok := ctx2.Value(config.ContextIDKey).(int64)
+	id2, ok := config.GetValueAsInt64(ctx2, config.ContextIDKey)
 	require.True(t, ok)
 
 	err = manager.RememberContext(ctx2, time.Minute*10)
@@ -161,9 +161,9 @@ func TestRememberRecoverContext(t *testing.T) {
 	require.NotNil(t, recovered2)
 	require.NotNil(t, cancel2)
 
-	_, ok = recovered2.Value(config.ContextIDKey).(int64)
+	_, ok = config.GetValueAsInt64(recovered2, config.ContextIDKey)
 	require.True(t, ok)
-	user2, ok := recovered2.Value(config.UserContextKey).(int64)
+	user2, ok := config.GetValueAsInt64(recovered2, config.UserContextKey)
 	require.True(t, ok)
 	require.EqualValues(t, 234, user2)
 
@@ -181,7 +181,7 @@ func TestContextTimeout(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, ctx)
 
-	contextID, ok := ctx.Value(config.ContextIDKey).(int64)
+	contextID, ok := config.GetValueAsInt64(ctx, config.ContextIDKey)
 	require.True(t, ok)
 
 	// Remember the context.
@@ -228,7 +228,7 @@ func TestDone(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, ctx)
 
-	contextID, ok := ctx.Value(config.ContextIDKey).(int64)
+	contextID, ok := config.GetValueAsInt64(ctx, config.ContextIDKey)
 	require.True(t, ok)
 
 	ctx, err = manager.Lock(ctx, 1)
@@ -274,7 +274,7 @@ func TestRememberContextWithMismatchedUserID(t *testing.T) {
 	// Retrieve the context ID. We are going to use this ID instead of the
 	// user ID when trying to replace the remembered context. It should
 	// cause the mismatch.
-	id, ok := ctx.Value(config.ContextIDKey).(int64)
+	id, ok := config.GetValueAsInt64(ctx, config.ContextIDKey)
 	require.True(t, ok)
 
 	// In unlikely event that both ids happen to be equal, modify the
@@ -297,7 +297,7 @@ func TestRecoverContextMismatch(t *testing.T) {
 	ctx1, err := manager.CreateContext(int64(123))
 	require.NoError(t, err)
 	require.NotNil(t, ctx1)
-	id1, ok := ctx1.Value(config.ContextIDKey).(int64)
+	id1, ok := config.GetValueAsInt64(ctx1, config.ContextIDKey)
 	require.True(t, ok)
 	err = manager.RememberContext(ctx1, time.Minute*10)
 	require.NoError(t, err)
@@ -306,7 +306,7 @@ func TestRecoverContextMismatch(t *testing.T) {
 	ctx2, err := manager.CreateContext(int64(234))
 	require.NoError(t, err)
 	require.NotNil(t, ctx2)
-	id2, ok := ctx2.Value(config.ContextIDKey).(int64)
+	id2, ok := config.GetValueAsInt64(ctx2, config.ContextIDKey)
 	require.True(t, ok)
 	err = manager.RememberContext(ctx2, time.Minute*10)
 	require.NoError(t, err)
@@ -478,14 +478,14 @@ func TestCommitDue(t *testing.T) {
 	require.Len(t, fkm.contexts, 2)
 	for _, ctx := range fkm.contexts {
 		// Ensure that context ID exists.
-		_, ok := ctx.Value(config.ContextIDKey).(int64)
+		_, ok := config.GetValueAsInt64(ctx, config.ContextIDKey)
 		require.True(t, ok)
 		// Ensure that the user ID exists.
-		userID, ok := ctx.Value(config.UserContextKey).(int64)
+		userID, ok := config.GetValueAsInt64(ctx, config.UserContextKey)
 		require.True(t, ok)
 		require.EqualValues(t, user.ID, userID)
 		// Ensure that the state exists and is correct.
-		state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
+		state, ok := config.GetTransactionState(ctx)
 		require.True(t, ok)
 		require.True(t, state.Scheduled)
 	}

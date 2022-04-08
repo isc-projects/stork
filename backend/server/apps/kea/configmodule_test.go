@@ -46,11 +46,11 @@ func (tm testManager) GetConnectedAgents() agentcomm.ConnectedAgents {
 // entry. It simulates scheduling config changes.
 func (tm testManager) scheduleAndGetChange(ctx context.Context, t *testing.T) context.Context {
 	// User ID is required to schedule a config change.
-	userID, ok := ctx.Value(config.UserContextKey).(int64)
+	userID, ok := config.GetValueAsInt64(ctx, config.UserContextKey)
 	require.True(t, ok)
 
 	// The state will be inserted into the database.
-	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
+	state, ok := config.GetTransactionState(ctx)
 	require.True(t, ok)
 
 	// Create the config change entry in the database.
@@ -155,7 +155,7 @@ func TestApplyHostAdd(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that the transaction state exists and comprises expected data.
-	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
+	state, ok := config.GetTransactionState(ctx)
 	require.True(t, ok)
 	require.False(t, state.Scheduled)
 

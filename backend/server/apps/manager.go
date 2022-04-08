@@ -106,7 +106,7 @@ func (manager *configManagerImpl) lock(ctx context.Context, daemonID int64) erro
 		return pkgerrors.Errorf("context lacks lock key")
 	}
 	// The user id should have been set in the CreateContext() function.
-	userID, ok := ctx.Value(config.UserContextKey).(int64)
+	userID, ok := config.GetValueAsInt64(ctx, config.UserContextKey)
 	if !ok {
 		return pkgerrors.Errorf("context lacks user key")
 	}
@@ -203,13 +203,13 @@ func (manager *configManagerImpl) RememberContext(ctx context.Context, timeout t
 	)
 	// Retrieve context ID from the context. It will be used as a key to access
 	// the stored context.
-	if contextID, ok = ctx.Value(config.ContextIDKey).(int64); !ok {
+	if contextID, ok = config.GetValueAsInt64(ctx, config.ContextIDKey); !ok {
 		return pkgerrors.New("context lacks context ID")
 	}
 	// Retrieve the user ID from the context. First, the user ID is mandatory in
 	// the stored context. Also, we have to compare the user id with the corresponding
 	// user ID in the already stored context.
-	if userID, ok = ctx.Value(config.UserContextKey).(int64); !ok {
+	if userID, ok = config.GetValueAsInt64(ctx, config.UserContextKey); !ok {
 		return pkgerrors.New("context lacks user ID")
 	}
 	manager.mutex.RLock()
@@ -217,7 +217,7 @@ func (manager *configManagerImpl) RememberContext(ctx context.Context, timeout t
 	existingCtx, ok = manager.contexts[contextID]
 	manager.mutex.RUnlock()
 	if ok {
-		existingUserID, ok := existingCtx.context.Value(config.UserContextKey).(int64)
+		existingUserID, ok := config.GetValueAsInt64(existingCtx.context, config.UserContextKey)
 		if !ok || existingUserID != userID {
 			return pkgerrors.New("unable to remember the context because user ID is mismatched")
 		}
@@ -253,7 +253,7 @@ func (manager *configManagerImpl) RecoverContext(contextID, userID int64) (conte
 	manager.mutex.RLock()
 	defer manager.mutex.RUnlock()
 	if ctx, ok := manager.contexts[contextID]; ok {
-		if existingUserID, ok := ctx.context.Value(config.UserContextKey).(int64); ok {
+		if existingUserID, ok := config.GetValueAsInt64(ctx.context, config.UserContextKey); ok {
 			if existingUserID == userID {
 				return ctx.context, ctx.cancel
 			}
@@ -301,7 +301,7 @@ func (manager *configManagerImpl) Unlock(ctx context.Context) {
 func (manager *configManagerImpl) Done(ctx context.Context) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
-	if contextID, ok := ctx.Value(config.ContextIDKey).(int64); ok {
+	if contextID, ok := config.GetValueAsInt64(ctx, config.ContextIDKey); ok {
 		if contextPair, ok := manager.contexts[contextID]; ok {
 			if contextPair.cancel != nil {
 				contextPair.cancel()
@@ -315,7 +315,7 @@ func (manager *configManagerImpl) Done(ctx context.Context) {
 // Sends the configuration updates queued in the context to one or multiple daemons
 // right away.
 func (manager *configManagerImpl) Commit(ctx context.Context) (context.Context, error) {
-	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
+	state, ok := config.GetTransactionState(ctx)
 	if !ok {
 		return ctx, pkgerrors.Errorf("context lacks state")
 	}
@@ -381,11 +381,11 @@ func (manager *configManagerImpl) CommitDue() error {
 // Schedules sending the changes queued in the context to one or multiple daemons.
 // The deadline parameter specifies the time when the changes should be committed.
 func (manager *configManagerImpl) Schedule(ctx context.Context, deadline time.Time) (context.Context, error) {
-	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
+	state, ok := config.GetTransactionState(ctx)
 	if !ok {
 		return ctx, pkgerrors.Errorf("context lacks state")
 	}
-	userID, ok := ctx.Value(config.UserContextKey).(int64)
+	userID, ok := config.GetValueAsInt64(ctx, config.UserContextKey)
 	if !ok {
 		return ctx, pkgerrors.Errorf("context lacks user key")
 	}

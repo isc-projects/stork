@@ -27,7 +27,7 @@ func NewConfigModule(manager config.ManagerAccessors) *ConfigModule {
 // Commits the Kea configuration changes.
 func (module *ConfigModule) Commit(ctx context.Context) (context.Context, error) {
 	var err error
-	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
+	state, ok := config.GetTransactionState(ctx)
 	if !ok {
 		return ctx, pkgerrors.Errorf("context lacks state")
 	}
@@ -100,7 +100,7 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 
 // Create the host reservation in the Kea servers.
 func (module *ConfigModule) commitHostAdd(ctx context.Context) (context.Context, error) {
-	state, ok := ctx.Value(config.StateContextKey).(config.TransactionState)
+	state, ok := config.GetTransactionState(ctx)
 	if !ok {
 		return ctx, pkgerrors.New("context lacks state")
 	}

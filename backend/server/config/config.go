@@ -11,25 +11,6 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Type of the context keys used by a config manager. The manager and the
-// functions it calls use the golang context to pass the data around and hold
-// the critical information for the config change transactions. The context
-// keys point to various types of information held in the context.
-type ContextKey int
-
-const (
-	// A context key for getting a config update state.
-	StateContextKey ContextKey = iota
-	// A context key for accessing context ID for the config change transaction.
-	ContextIDKey
-	// A context key for accessing user ID for the config change transaction.
-	UserContextKey
-	// A context key for accessing a lock for the config change transaction.
-	LockContextKey
-	// A context key for accessing a list of daemon IDs.
-	DaemonsContextKey
-)
-
 // A structure describing a single configuration update that may be applied
 // to multiple daemons.
 type Update = dbmodel.ConfigUpdate
