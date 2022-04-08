@@ -1,3 +1,10 @@
+* 202 [func] slawek
+
+    Refactored the Rakefile responsible for building, installing, and testing
+    Stork. It results in changes to the usage of some rake tasks and the
+    specification of their arguments.
+    (Gitlab #709)
+
 Stork 1.2.0 released on 2022-03-02.
 
 * 201 [bug] slawek
