@@ -86,3 +86,8 @@ task :bump_patch do
     ENV["VERSION"] = "#{major}.#{minor}.#{patch}"
     Rake::Task['bump'].invoke()
 end
+
+desc 'Check the external dependencies related to the distribution'
+task :check_env_release do
+    check_deps(__FILE__, "git")
+end

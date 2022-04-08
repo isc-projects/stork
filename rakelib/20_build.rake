@@ -237,6 +237,11 @@ desc "Build all Stork components (Server, Agent, Tool, UI, doc)"
 task :build_all => [:build_backend, :build_doc, :build_ui]
 
 desc 'Install the external dependencies related to the build'
-task :prepare_build do
+task :prepare_env_build do
     find_and_prepare_deps(__FILE__)
+end
+
+desc 'Check the external dependencies related to the build'
+task :check_env_build do
+    check_deps(__FILE__, "wget", "python3", "pip3")
 end

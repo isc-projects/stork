@@ -232,7 +232,7 @@ task :clean_pkgs do
 end
 
 desc "Check package type of current OS"
-task :check_pkg_type do
+task :check_env_pkg_type do
     puts get_pkg_type()
 end
 
@@ -279,6 +279,11 @@ task :install_server => [server_dist_dir] do
 end
 
 desc 'Install the external dependencies related to the distribution'
-task :prepare_dist do
+task :prepare_env_dist do
     find_and_prepare_deps(__FILE__)
+end
+
+desc 'Check the external dependencies related to the distribution'
+task :check_env_dist do
+    check_deps(__FILE__, "wget", "python3", "pip3")
 end

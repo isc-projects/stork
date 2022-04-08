@@ -83,10 +83,60 @@ end
 # Searches for the prerequisites from the init file in the provided file and
 # invoke them.
 def find_and_prepare_deps(file)
-    prerequisites_tasks = find_prerequisites_tasks(file, __FILE__)
+    if file == __FILE__
+        prerequisites_tasks = find_tasks(file)
+    else
+        prerequisites_tasks = find_prerequisites_tasks(file, __FILE__)
+    end
+
     prerequisites_tasks.each do |t|
+        if t.class != Rake::FileTask
+            next
+        end
         print "Preparing: ", t, "...\n"
         t.invoke()
+    end
+end
+
+# Searches for the prerequisites from the init file in the provided file and
+# checks if they exist. It accepts the system-wide dependencies list and tests
+# if they are in PATH.
+def check_deps(file, *system_deps)
+    puts "Prerequisites:"
+    
+    if file == __FILE__
+        prerequisites_tasks = find_tasks(file)
+    else
+        prerequisites_tasks = find_prerequisites_tasks(file, __FILE__)
+    end
+
+    prerequisites_tasks.each do |t|
+        if t.class != Rake::FileTask
+            next
+        end
+
+        path = t.to_s
+
+        status = "[ OK ]"
+        if !File.exist?(path)
+            status = "[MISS]"
+        end
+
+        print status, " ", path, "\n"
+
+    end
+
+    puts "System dependencies:"
+
+    system_deps.each do |d|
+        status = "[ OK ]"
+        path = which(d)
+        if path.nil?
+            status = "[MISS]"
+        else
+            path = " (" + path + ")"
+        end
+        print status, " ", d, path, "\n"
     end
 end
 
@@ -337,41 +387,44 @@ file YAMLINC => [NPM] do
     sh YAMLINC, "--version"
 end
 
-CHROME_DRV = File.join(tools_dir, "chromedriver")
-file CHROME_DRV => [tools_dir] do
-    if !ENV['CHROME_BIN']
-        puts "Missing Chrome/Chromium binary. It is required for UI unit tests and system tests."
-        next
-    end
+# Chrome driver is not currently used, but it can be needed in the UI tests.
+# This file task is ready to use after uncomment.
+#
+# CHROME_DRV = File.join(tools_dir, "chromedriver")
+# file CHROME_DRV => [tools_dir] do
+#     if !ENV['CHROME_BIN']
+#         puts "Missing Chrome/Chromium binary. It is required for UI unit tests and system tests."
+#         next
+#     end
 
-    chrome_version = `"#{ENV['CHROME_BIN']}" --version | cut -d" " -f2 | tr -d -c 0-9.`
-    chrome_drv_version = chrome_version
+#     chrome_version = `"#{ENV['CHROME_BIN']}" --version | cut -d" " -f2 | tr -d -c 0-9.`
+#     chrome_drv_version = chrome_version
 
-    if chrome_version.include? '85.'
-        chrome_drv_version = '85.0.4183.87'
-    elsif chrome_version.include? '86.'
-        chrome_drv_version = '86.0.4240.22'
-    elsif chrome_version.include? '87.'
-        chrome_drv_version = '87.0.4280.20'
-    elsif chrome_version.include? '90.'
-        chrome_drv_version = '90.0.4430.72'
-    elsif chrome_version.include? '92.'
-        chrome_drv_version = '92.0.4515.159'
-    elsif chrome_version.include? '93.'
-        chrome_drv_version = '93.0.4577.63'
-    elsif chrome_version.include? '94.'
-        chrome_drv_version = '94.0.4606.61' 
-    end
+#     if chrome_version.include? '85.'
+#         chrome_drv_version = '85.0.4183.87'
+#     elsif chrome_version.include? '86.'
+#         chrome_drv_version = '86.0.4240.22'
+#     elsif chrome_version.include? '87.'
+#         chrome_drv_version = '87.0.4280.20'
+#     elsif chrome_version.include? '90.'
+#         chrome_drv_version = '90.0.4430.72'
+#     elsif chrome_version.include? '92.'
+#         chrome_drv_version = '92.0.4515.159'
+#     elsif chrome_version.include? '93.'
+#         chrome_drv_version = '93.0.4577.63'
+#     elsif chrome_version.include? '94.'
+#         chrome_drv_version = '94.0.4606.61' 
+#     end
 
-    Dir.chdir(tools_dir) do
-        sh *WGET, "https://chromedriver.storage.googleapis.com/#{chrome_drv_version}/chromedriver_#{chrome_drv_suffix}.zip", "-O", "chromedriver.zip"
-        sh "unzip", "-o", "chromedriver.zip"
-        sh "rm", "chromedriver.zip"
-    end
+#     Dir.chdir(tools_dir) do
+#         sh *WGET, "https://chromedriver.storage.googleapis.com/#{chrome_drv_version}/chromedriver_#{chrome_drv_suffix}.zip", "-O", "chromedriver.zip"
+#         sh "unzip", "-o", "chromedriver.zip"
+#         sh "rm", "chromedriver.zip"
+#     end
 
-    sh CHROME_DRV, "--version"
-    sh "chromedriver", "--version"  # From PATH
-end
+#     sh CHROME_DRV, "--version"
+#     sh "chromedriver", "--version"  # From PATH
+# end
 
 OPENAPI_GENERATOR = File.join(tools_dir, "openapi-generator-cli.jar")
 file OPENAPI_GENERATOR => tools_dir do
@@ -518,63 +571,13 @@ end
 ### Tasks ###
 #############
 
-desc 'Check that the system-level dependencies are available (install nothing)'
-task :check_env => [] do
-    sh *WGET, "--version"
-    if which("java") == nil
-        puts "Missing java"
-        fail
-    else
-        puts "java ready"
-    end
-    sh "rake", "--version"
-    sh "python3", "--version"
-    sh "pip3", "--version"
-    if which("entr") == nil
-        puts "Missing entr"
-        fail
-    else
-        puts "entr ready"
-    end
-    sh "git", "--version"
-    sh "createdb", "--version"
-    sh "psql", "--version"
-    sh "dropdb", "--version"
-
-    sh ENV['CHROME_BIN'], "--version"
-    sh "chromedriver", "--version"
-
-    sh BUNDLER, "--version"
-    sh YAMLINC, "--version"
-    sh GOSWAGGER, "version"
-    sh PROTOC, "--version"
-    sh PROTOC_GEN_GO, "--version"
-    sh PROTOC_GEN_GO_GRPC, "--version"
-    sh RICHGO, "version"
-    sh MOCKERY, "--version"
-    sh MOCKGEN, "--version"
-    sh DLV, "version"
-    sh GDLV, "version"
-    sh FPM, "--version"
-    sh DANGER, "--version"
-    sh GOLANGCILINT, "--version"
-    sh SPHINX_BUILD, "--version"
-    sh NPM, "--version"
-    sh NPX, "--version"
-
-    puts "All dependencies are OK!"
+desc 'Install all system-level dependencies'
+task :prepare_env_all do
+    find_and_prepare_deps(__FILE__)
 end
 
-desc 'Install all system-level dependencies'
-task :prepare_all do
-    tasks = find_tasks(__FILE__)
-    # Iterate over the file tasks
-    tasks.each do |t|
-        if t.class != Rake::FileTask
-            next
-        end
-        print "Preparing", t, "...\n"
-        t.invoke()
-    end
-    puts "Preparing complete!"
+desc 'Check all system-level dependencies'
+task :check_env_all do
+    check_deps(__FILE__, "wget", "python3", "pip3", "entr", "git",
+        "createdb", "psql", "dropdb")
 end

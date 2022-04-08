@@ -451,6 +451,12 @@ task :db_remove_remaining do
 end
 
 desc 'Install the external dependencies related to the development'
-task :prepare_dev do
+task :prepare_env_dev do
     find_and_prepare_deps(__FILE__)
+end
+
+desc 'Check the external dependencies related to the development'
+task :check_env_dev do
+    check_deps(__FILE__, "wget", "python3", "pip3", "entr",
+        "createdb", "psql", "dropdb")
 end
