@@ -674,11 +674,11 @@ func TestSchedule(t *testing.T) {
 	require.Equal(t, "foo", parsedApp.GetName())
 	require.Equal(t, dbmodel.AppTypeKea, parsedApp.GetType())
 	require.Equal(t, "2.0.1", parsedApp.GetVersion())
-	require.EqualValues(t, 8080, parsedApp.GetMachinePort())
 
 	parsedMachine := parsedApp.GetMachineTag()
 	require.EqualValues(t, 1, parsedMachine.GetID())
 	require.Equal(t, "localhost", parsedMachine.GetAddress())
+	require.EqualValues(t, 8080, parsedMachine.GetAgentPort())
 	require.Equal(t, "cool.example.org", parsedMachine.GetHostname())
 
 	tags := parsedApp.GetDaemonTags()

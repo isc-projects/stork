@@ -77,7 +77,6 @@ type State struct {
 // Kea app receiving control commands is an example.
 type ControlledApp interface {
 	dbmodel.AppTag
-	GetMachinePort() int64
 	GetControlAccessPoint() (string, int64, string, bool, error)
 	GetMachineTag() dbmodel.MachineTag
 	GetDaemonTags() []dbmodel.DaemonTag
@@ -172,7 +171,7 @@ type RndcOutput struct {
 
 func (agents *connectedAgentsData) ForwardRndcCommand(ctx context.Context, app ControlledApp, command string) (*RndcOutput, error) {
 	agentAddress := app.GetMachineTag().GetAddress()
-	agentPort := app.GetMachinePort()
+	agentPort := app.GetMachineTag().GetAgentPort()
 
 	// Get rndc control settings
 	ctrlAddress, ctrlPort, _, _, err := app.GetControlAccessPoint()
@@ -405,7 +404,7 @@ func (result *KeaCmdsResult) GetFirstError() error {
 // of the Kea Control Agent to which the command should be sent.
 func (agents *connectedAgentsData) ForwardToKeaOverHTTP(ctx context.Context, app ControlledApp, commands []keactrl.SerializableCommand, cmdResponses ...interface{}) (*KeaCmdsResult, error) {
 	agentAddress := app.GetMachineTag().GetAddress()
-	agentPort := app.GetMachinePort()
+	agentPort := app.GetMachineTag().GetAgentPort()
 
 	caAddress, caPort, _, caUseSecureProtocol, err := app.GetControlAccessPoint()
 	if err != nil {

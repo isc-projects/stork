@@ -54,11 +54,6 @@ func (app App) GetVersion() string {
 	return app.Meta.Version
 }
 
-// Rerturns machine port.
-func (app App) GetMachinePort() int64 {
-	return app.Machine.AgentPort
-}
-
 // Returns app control access point including control address, port, key and
 // the flag indicating if the connection is secure.
 func (app App) GetControlAccessPoint() (address string, port int64, key string, secure bool, err error) {

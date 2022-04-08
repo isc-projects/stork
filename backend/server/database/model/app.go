@@ -525,11 +525,6 @@ func (app App) GetVersion() string {
 
 // Remaining functions for the agentcomm.ControlledApp implementation.
 
-// Returns machine port.
-func (app App) GetMachinePort() int64 {
-	return app.Machine.AgentPort
-}
-
 // Returns app control access point including control address, port and
 // the flag indicating if the connection is secure.
 func (app App) GetControlAccessPoint() (address string, port int64, key string, secure bool, err error) {

@@ -25,6 +25,11 @@ func (machine Machine) GetAddress() string {
 	return machine.Address
 }
 
+// Returns machine agent port.
+func (machine Machine) GetAgentPort() int64 {
+	return machine.AgentPort
+}
+
 // Returns hostname.
 func (machine Machine) GetHostname() string {
 	return machine.State.Hostname

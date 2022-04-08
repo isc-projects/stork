@@ -23,16 +23,6 @@ func TestAppTag(t *testing.T) {
 	require.Equal(t, "2.1.1", app.GetVersion())
 }
 
-// Test getting the machine port where an app runs.
-func TestGetMachinePort(t *testing.T) {
-	app := App{
-		Machine: Machine{
-			AgentPort: 1234,
-		},
-	}
-	require.EqualValues(t, 1234, app.GetMachinePort())
-}
-
 // Test getting control access point.
 func TestGetControlAccessPoint(t *testing.T) {
 	app := &App{}

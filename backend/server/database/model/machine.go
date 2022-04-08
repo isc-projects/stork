@@ -61,6 +61,7 @@ const (
 type MachineTag interface {
 	GetID() int64
 	GetAddress() string
+	GetAgentPort() int64
 	GetHostname() string
 }
 
@@ -263,6 +264,11 @@ func (machine *Machine) GetID() int64 {
 // Returns machine address.
 func (machine *Machine) GetAddress() string {
 	return machine.Address
+}
+
+// Returns machine agent port.
+func (machine *Machine) GetAgentPort() int64 {
+	return machine.AgentPort
 }
 
 // Returns hostname.
