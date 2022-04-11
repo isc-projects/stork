@@ -140,17 +140,21 @@ class DockerCompose(object):
             compose_file_name="docker-compose.yml",
             pull=False,
             build=False,
-            env_file=None):
-        self.filepath = filepath
-        self.compose_file_names = compose_file_name if isinstance(
+            env_file=None,
+            project_directory=".",
+            service_names=None):
+        self._filepath = filepath
+        self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
         ) else [compose_file_name]
-        self.pull = pull
-        self.build = build
-        self.env_file = env_file
+        self._pull = pull
+        self._build = build
+        self._env_file = env_file
+        self._project_directory = project_directory
+        self._service_names = service_names if service_names is not None else []
 
     def __enter__(self):
-        self.start()
+        self.start(self._service_names)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -166,22 +170,23 @@ class DockerCompose(object):
             The docker compose command parts
         """
         docker_compose_cmd = ['docker-compose']
-        for file in self.compose_file_names:
+        for file in self._compose_file_names:
             docker_compose_cmd += ['-f', file]
-        if self.env_file:
-            docker_compose_cmd += ['--env-file', self.env_file]
+        if self._env_file:
+            docker_compose_cmd += ['--env-file', self._env_file]
+        docker_compose_cmd += ["--project-directory", self._project_directory]
         return docker_compose_cmd
 
-    def start(self):
+    def start(self, service_names=[]):
         """
         Starts the docker compose environment.
         """
-        if self.pull:
-            pull_cmd = self.docker_compose_command() + ['pull']
+        if self._pull:
+            pull_cmd = self.docker_compose_command() + ['pull'] + service_names
             self._call_command(cmd=pull_cmd)
 
-        up_cmd = self.docker_compose_command() + ['up', '-d']
-        if self.build:
+        up_cmd = self.docker_compose_command() + ['up', '-d'] + service_names
+        if self._build:
             up_cmd.append('--build')
 
         self._call_command(cmd=up_cmd)
@@ -205,7 +210,7 @@ class DockerCompose(object):
         logs_cmd = self.docker_compose_command() + ["logs"]
         result = subprocess.run(
             logs_cmd,
-            cwd=self.filepath,
+            cwd=self._filepath,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
@@ -230,7 +235,7 @@ class DockerCompose(object):
         exec_cmd = self.docker_compose_command() + ['exec', '-T', service_name] + command
         result = subprocess.run(
             exec_cmd,
-            cwd=self.filepath,
+            cwd=self._filepath,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
@@ -274,7 +279,7 @@ class DockerCompose(object):
 
     def _get_service_info(self, service, port):
         port_cmd = self.docker_compose_command() + ["port", service, str(port)]
-        output = subprocess.check_output(port_cmd, cwd=self.filepath).decode("utf-8")
+        output = subprocess.check_output(port_cmd, cwd=self._filepath).decode("utf-8")
         result = str(output).rstrip().split(":")
         if len(result) == 1:
             raise NoSuchPortExposed("Port {} was not exposed for service {}"
@@ -283,7 +288,7 @@ class DockerCompose(object):
 
     def _call_command(self, cmd, filepath=None):
         if filepath is None:
-            filepath = self.filepath
+            filepath = self._filepath
         subprocess.call(cmd, cwd=filepath)
 
     @wait_container_is_ready(requests.exceptions.ConnectionError)
