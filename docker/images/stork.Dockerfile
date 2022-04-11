@@ -127,6 +127,7 @@ FROM debian-base AS server
 COPY --from=server-builder /app/dist/server/ /
 ENTRYPOINT [ "/usr/bin/stork-server" ]
 EXPOSE 8080
+HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
 # Web UI container
 FROM nginx:1.21-alpine AS webui
@@ -139,6 +140,7 @@ ENV API_PORT 5000
 ENTRYPOINT [ "/bin/sh", "-c", \
         "envsubst < /tmp/nginx.conf.tpl > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'" ]
 EXPOSE 80
+HEALTHCHECK CMD ["curl", "--fail", "http://localhost:80"]
 
 # Server with webui container
 FROM debian-base AS server-webui
@@ -146,6 +148,7 @@ COPY --from=server-builder /app/dist/server /
 COPY --from=webui-builder /app/dist/server /
 ENTRYPOINT [ "/usr/bin/stork-server" ]
 EXPOSE 8080
+HEALTHCHECK CMD [ "wget", "--delete-after", "-q", "http://localhost:8080/api/version" ]
 
 ################################
 ### Kea / Bind + Stork Agent ###
@@ -235,6 +238,7 @@ ENTRYPOINT [ "/bin/bash", "-c", \
 EXPOSE 8080
 # Prometheus Kea port
 EXPOSE 9547
+HEALTHCHECK CMD [ "supervisorctl", "status " ]
 # Configuration files:
 # Mysql database seed: /var/lib/db/init_mysql_query.sql
 # Postgres database seed: /var/lib/db/init_pgsql_query.sql
@@ -277,6 +281,7 @@ ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 EXPOSE 8080
 # Prometheus Bing9 port
 EXPOSE 9119
+HEALTHCHECK CMD [ "supervisorctl", "status " ]
 # Configuration files:
 # Supervisor: /etc/supervisor/supervisord.conf
 # Stork Agent: /etc/stork
