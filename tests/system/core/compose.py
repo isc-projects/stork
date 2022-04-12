@@ -44,6 +44,16 @@ class NoSuchPortExposed(Exception):
     pass
 
 
+class ContainerNotRunningException(Exception):
+    def __init__(self, status):
+        super().__init__("status=%s" % status)
+
+
+class ContainerUnhealthyException(Exception):
+    def __init__(self, status):
+        super().__init__("status=%s" % status)
+
+
 # Get a tuple of transient exceptions for which we'll retry. Other exceptions will be raised.
 TRANSIENT_EXCEPTIONS = (TimeoutError, ConnectionError)
 MAX_TRIES = int(os.environ.get("TC_MAX_TRIES", 120))
@@ -306,3 +316,54 @@ class DockerCompose(object):
         """
         requests.get(url)
         return self
+
+    def get_container_id(self, service_name):
+        cmd = self.docker_compose_command() + ["ps", "-q", service_name]
+        output = subprocess.check_output(cmd).decode("utf-8")
+        container_id = str(output).rstrip()
+        return container_id
+
+    def get_service_status(self, service_name):
+        """
+        Returns the container and health (if available) status for the service.
+
+        Parameters
+        ----------
+        service_name: str
+            Name of the service
+
+        Returns
+        -------
+        tuple[str, str]
+            container status, health status or None
+        """
+        container_id = self.get_container_id(service_name)
+        cmd = ["docker", "inspect", "--format",
+            r"'{{ .State.Status  }};{{ if .State.Health }}{{ .State.Health.Status }}{{ end }}'",
+            container_id
+        ]
+        status = subprocess.check_output(cmd).decode("utf-8")
+        status, health = status.split(";")
+        if health == "":
+            health = None
+        return status, health
+        
+    @wait_container_is_ready(ContainerNotRunningException)
+    def wait_for_healthy(self, service_name):
+        """
+        Waits for a healthy status of a given service. This feature was
+        introduced in docker-compose v2, but it isn't implemented for v1.
+        Note that the image of the service should provide the HEALTHCHECK
+        statement.
+
+        Parameters
+        ----------
+        service_name: str
+            Name of the service from the compose file
+        """
+        
+        status, health = self.get_service_status(service_name)
+        if status != "running":
+            raise ContainerNotRunningException(status)
+        if health is not None and health != "healthy":
+            raise ContainerUnhealthyException(health)

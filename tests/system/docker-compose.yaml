@@ -58,34 +58,37 @@ services:
         ipv4_address: 172.101.0.100
       subnet-02:
         ipv4_address: 172.102.0.100
+      subnet6-00:
+        ipv6_address: 3000:db8:1::100
+      subnet6-01:
+        ipv6_address: 3001:db8:1::100
     expose:
-      - "8080" # stork server to agent
-      - "9100" # node_exporter for prometheus
-      - "9547" # kea_exporter for prometheus
+      - "8080"  # stork server to agent
+      - "9547"  # kea_exporter for prometheus
     ports:
       # publish ports for development purposes
-      - "8888:8080" # port to agent
-      - "9001:9001" # port to supervisor xml-rpc
+      - "8886:8080"  # port to agent
     environment:
-      DB_TYPE: mysql
-      DB_HOST: mariadb
+      DB_TYPE: pgsql
+      DB_NAME: agent_kea
       DB_USER: agent_kea
       DB_PASSWORD: agent_kea
-      DB_ROOT_USER: root
-      DB_ROOT_PASSWORD: root
-      DB_NAME: agent_kea
+      DB_HOST: postgres
+      DB_ROOT_USER: stork
+      DB_ROOT_PASSWORD: stork
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea
     volumes:
-      - ./tests/system/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./tests/system/config/agent-kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
-      - ./tests/system/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
-      - ./tests/system/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
-      - ./tests/system/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
-      - ./tests/system/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
-      - ./tests/system/config/supervisor/prometheus.conf:/etc/supervisor/conf.d/prometheus.conf
+      - ./tests/system/config/agent-kea6/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ./tests/system/config/agent-kea6/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
+      - ./tests/system/config/agent-kea6/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
+      - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
+      - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
+      - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
+      - ./docker/config/supervisor/kea-dhcp6.conf:/etc/supervisor/conf.d/kea-dhcp6.conf
+      - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
     depends_on:
-      - mariadb
+      - postgres
 
   postgres:
     image: postgres:11
