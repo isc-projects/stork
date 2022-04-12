@@ -25,12 +25,14 @@ See: https://raw.githubusercontent.com/testcontainers/testcontainers-python/mast
 #    under the License.
 
 
+import functools
 import os
+from tabnanny import check
 import requests
 import subprocess
 import time
 import traceback
-from utils import setup_logger
+from core.utils import setup_logger
 
 
 logger = setup_logger(__name__)
@@ -43,6 +45,9 @@ class TimeoutException(Exception):
 class NoSuchPortExposed(Exception):
     pass
 
+
+class ContainerExitedException(Exception):
+    pass
 
 class ContainerNotRunningException(Exception):
     def __init__(self, status):
@@ -71,22 +76,24 @@ def wait_container_is_ready(*transient_exceptions):
 
     transient_exceptions = TRANSIENT_EXCEPTIONS + tuple(transient_exceptions)
 
-    def wrapper(wrapped, instance, args, kwargs):
-        exception = None
-        logger.info("Waiting to be ready...")
-        for _ in range(MAX_TRIES):
-            try:
-                return wrapped(*args, **kwargs)
-            except transient_exceptions as e:
-                logger.debug('container is not yet ready: %s', traceback.format_exc())
-                time.sleep(SLEEP_TIME)
-                exception = e
-        raise TimeoutException(
-            f'Wait time ({MAX_TRIES * SLEEP_TIME}s) exceeded for {wrapped.__name__}'
-            f'(args: {args}, kwargs {kwargs}). Exception: {exception}'
-        )
-
-    return wrapper
+    def outer_wrapper(f):
+        @functools.wraps(f)
+        def inner_wrapper(*args, **kwargs):
+            exception = None
+            logger.info("Waiting to be ready...")
+            for _ in range(MAX_TRIES):
+                try:
+                    return f(*args, **kwargs)
+                except transient_exceptions as e:
+                    logger.debug('container is not yet ready: %s', traceback.format_exc())
+                    time.sleep(SLEEP_TIME)
+                    exception = e
+            raise TimeoutException(
+                f'Wait time ({MAX_TRIES * SLEEP_TIME}s) exceeded for {f.__name__}'
+                f'(args: {args}, kwargs {kwargs}). Exception: {exception}'
+            )
+        return inner_wrapper
+    return outer_wrapper
 
 
 class DockerCompose(object):
@@ -95,7 +102,7 @@ class DockerCompose(object):
 
     Parameters
     ----------
-    filepath: str
+    project_dir: str
         The relative directory containing the docker compose configuration file
     compose_file_name: str
         The file name of the docker compose configuration file
@@ -146,22 +153,22 @@ class DockerCompose(object):
     """
     def __init__(
             self,
-            filepath,
+            project_directory,
             compose_file_name="docker-compose.yml",
             pull=False,
             build=False,
             env_file=None,
-            project_directory=".",
+            env_vars=None,
             service_names=None):
-        self._filepath = filepath
+        self._project_directory = project_directory
         self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
         ) else [compose_file_name]
         self._pull = pull
         self._build = build
         self._env_file = env_file
-        self._project_directory = project_directory
-        self._service_names = service_names if service_names is not None else []
+        self._env_vars = env_vars
+        self._service_names = list(service_names) if service_names is not None else []
 
     def __enter__(self):
         self.start(self._service_names)
@@ -179,7 +186,7 @@ class DockerCompose(object):
         list[str]
             The docker compose command parts
         """
-        docker_compose_cmd = ['docker-compose']
+        docker_compose_cmd = ['docker-compose', '--no-ansi']
         for file in self._compose_file_names:
             docker_compose_cmd += ['-f', file]
         if self._env_file:
@@ -195,9 +202,10 @@ class DockerCompose(object):
             pull_cmd = self.docker_compose_command() + ['pull'] + service_names
             self._call_command(cmd=pull_cmd)
 
-        up_cmd = self.docker_compose_command() + ['up', '-d'] + service_names
+        up_cmd = self.docker_compose_command() + ['up', '-d']
         if self._build:
             up_cmd.append('--build')
+        up_cmd += service_names
 
         self._call_command(cmd=up_cmd)
 
@@ -218,13 +226,8 @@ class DockerCompose(object):
             stdout, stderr
         """
         logs_cmd = self.docker_compose_command() + ["logs"]
-        result = subprocess.run(
-            logs_cmd,
-            cwd=self._filepath,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        return result.stdout, result.stderr
+        _, stdout, stderr = self._call_command(logs_cmd)
+        return stdout, stderr
 
     def exec_in_container(self, service_name, command):
         """
@@ -243,13 +246,10 @@ class DockerCompose(object):
             stdout, stderr, return code
         """
         exec_cmd = self.docker_compose_command() + ['exec', '-T', service_name] + command
-        result = subprocess.run(
+        return self._call_command(
             exec_cmd,
-            cwd=self._filepath,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            check=False
         )
-        return result.stdout.decode("utf-8"), result.stderr.decode("utf-8"), result.returncode
 
     def get_service_port(self, service_name, port):
         """
@@ -289,17 +289,28 @@ class DockerCompose(object):
 
     def _get_service_info(self, service, port):
         port_cmd = self.docker_compose_command() + ["port", service, str(port)]
-        output = subprocess.check_output(port_cmd, cwd=self._filepath).decode("utf-8")
-        result = str(output).rstrip().split(":")
+        _, stdout, _ = self._call_command(port_cmd)
+        result = stdout.split(":")
         if len(result) == 1:
             raise NoSuchPortExposed("Port {} was not exposed for service {}"
                                     .format(port, service))
         return result
 
-    def _call_command(self, cmd, filepath=None):
-        if filepath is None:
-            filepath = self._filepath
-        subprocess.call(cmd, cwd=filepath)
+    def _call_command(self, cmd, check=True, capture_output=True):
+        env = None
+        if self._env_vars is not None:
+            env = os.environ.copy()
+            env.update(self._env_vars)
+
+        result = subprocess.run(cmd, check=check,
+            capture_output=capture_output, env=env)
+        stdout = result.stdout
+        stderr = result.stderr
+        if capture_output:
+            stdout = stdout.decode("utf-8").rstrip()
+            stderr = stderr.decode("utf-8").rstrip()
+            return result.returncode, stdout, stderr
+        return result.returncode, None, None
 
     @wait_container_is_ready(requests.exceptions.ConnectionError)
     def wait_for(self, url):
@@ -319,8 +330,9 @@ class DockerCompose(object):
 
     def get_container_id(self, service_name):
         cmd = self.docker_compose_command() + ["ps", "-q", service_name]
-        output = subprocess.check_output(cmd).decode("utf-8")
-        container_id = str(output).rstrip()
+        _, container_id, _ = self._call_command(cmd)
+        if container_id == "":
+            return None
         return container_id
 
     def get_service_status(self, service_name):
@@ -338,11 +350,13 @@ class DockerCompose(object):
             container status, health status or None
         """
         container_id = self.get_container_id(service_name)
+        if container_id is None:
+            raise LookupError("container of the %s service not found" % service_name)
         cmd = ["docker", "inspect", "--format",
-            r"'{{ .State.Status  }};{{ if .State.Health }}{{ .State.Health.Status }}{{ end }}'",
+            r"{{ .State.Status }};{{ if .State.Health }}{{ .State.Health.Status }}{{ end }}",
             container_id
         ]
-        status = subprocess.check_output(cmd).decode("utf-8")
+        _, status, _ = self._call_command(cmd)
         status, health = status.split(";")
         if health == "":
             health = None
@@ -363,7 +377,16 @@ class DockerCompose(object):
         """
         
         status, health = self.get_service_status(service_name)
+        if status == "exited":
+            # break
+            raise ContainerExitedException()
         if status != "running":
+            # continue
             raise ContainerNotRunningException(status)
-        if health is not None and health != "healthy":
-            raise ContainerUnhealthyException(health)
+        if health is not None:
+            if health == "starting":
+                # continue
+                raise ContainerNotRunningException(health)
+            if health == "unhealthy":
+                # break
+                raise ContainerUnhealthyException(health)

@@ -14,8 +14,8 @@ services:
     # Before this change, agents sometimes listened on IP addresses dedicated for
     # DHCP communication instead.
     extra_hosts:
-      - "agent-kea:172.20.0.100"
-      - "agent-kea6:172.20.0.106"
+      - "agent-kea:172.20.42.100"
+      - "agent-kea6:172.20.42.106"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/server:latest"
     networks:
       - storknet
@@ -46,22 +46,22 @@ services:
     # Before this change, agents sometimes listened on IP addresses dedicated for
     # DHCP communication instead.
     extra_hosts:
-      - "agent-kea:172.20.0.100"
+      - "agent-kea:172.20.42.100"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea:latest"
     hostname: agent-kea
     networks:
       storknet:
-        ipv4_address: 172.20.0.100
+        ipv4_address: 172.20.42.100
       subnet-00:
-        ipv4_address: 172.100.0.100
+        ipv4_address: 172.100.42.100
       subnet-01:
-        ipv4_address: 172.101.0.100
+        ipv4_address: 172.101.42.100
       subnet-02:
-        ipv4_address: 172.102.0.100
+        ipv4_address: 172.102.42.100
       subnet6-00:
-        ipv6_address: 3000:db8:1::100
+        ipv6_address: 3000:db8:1:42::100
       subnet6-01:
-        ipv6_address: 3001:db8:1::100
+        ipv6_address: 3001:db8:1:42::100
     expose:
       - "8080"  # stork server to agent
       - "9547"  # kea_exporter for prometheus
@@ -79,9 +79,9 @@ services:
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea
     volumes:
-      - ./tests/system/config/agent-kea6/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
-      - ./tests/system/config/agent-kea6/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
-      - ./tests/system/config/agent-kea6/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
+      - ./tests/system/config/kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - ./tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+      - ./tests/system/config/kea/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
@@ -94,7 +94,7 @@ services:
     image: postgres:11
     networks:
       storknet:
-        ipv4_address: 172.20.0.234
+        ipv4_address: 172.20.42.234
     environment:
       POSTGRES_USER: stork
       POSTGRES_PASSWORD: stork
@@ -108,3 +108,37 @@ services:
       - storknet
     environment:
       MARIADB_ROOT_PASSWORD: root
+
+
+networks:
+  storknet:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.42.0/24
+        - subnet: 3009:db8:1:42::/64
+  subnet-00:
+    ipam:
+      config:
+        - subnet: 172.100.42.0/24
+  subnet-01:
+    ipam:
+      config:
+        - subnet: 172.101.42.0/24
+  subnet-02:
+    ipam:
+      config:
+        - subnet: 172.102.42.0/24
+  subnet6-00:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 3000:db8:1:42::/64
+  subnet6-01:
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 3001:db8:1:42::/64
