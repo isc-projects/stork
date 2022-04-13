@@ -243,5 +243,5 @@ end
 
 desc 'Check the external dependencies related to the build'
 task :check_env_build do
-    check_deps(__FILE__, "wget", "python3", "pip3")
+    check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
 end

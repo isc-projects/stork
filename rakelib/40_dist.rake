@@ -285,5 +285,5 @@ end
 
 desc 'Check the external dependencies related to the distribution'
 task :check_env_dist do
-    check_deps(__FILE__, "wget", "python3", "pip3")
+    check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
 end

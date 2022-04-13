@@ -457,6 +457,6 @@ end
 
 desc 'Check the external dependencies related to the development'
 task :check_env_dev do
-    check_deps(__FILE__, "wget", "python3", "pip3", "entr",
+    check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip", "entr",
         "createdb", "psql", "dropdb", ENV['CHROME_BIN'])
 end

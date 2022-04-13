@@ -114,25 +114,27 @@ def check_deps(file, *system_deps)
         prerequisites_tasks = find_prerequisites_tasks(file, __FILE__)
     end
 
-    prerequisites_tasks.each do |t|
+    prerequisites_tasks.sort_by{ |t| t.to_s().rpartition("/")[2] }.each do |t|
         if t.class != Rake::FileTask
             next
         end
 
         path = t.to_s
+        name = path
+        _, _, name = path.rpartition("/")
 
         status = "[ OK ]"
         if !File.exist?(path)
             status = "[MISS]"
         end
 
-        print status, " ", path, "\n"
+        print status, " ", name, " (", path, ")\n"
 
     end
 
     puts "System dependencies:"
 
-    system_deps.each do |d|
+    system_deps.sort.each do |d|
         status = "[ OK ]"
         path = which(d)
         if path.nil?
@@ -583,6 +585,6 @@ end
 
 desc 'Check all system-level dependencies'
 task :check_env_all do
-    check_deps(__FILE__, "wget", "python3", "pip3", "entr", "git",
+    check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip", "entr", "git",
         "createdb", "psql", "dropdb", ENV['CHROME_BIN'])
 end
