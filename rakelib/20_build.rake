@@ -110,8 +110,10 @@ CLEAN.append TOOL_BINARY_FILE
 
 ## Documentation
 
+desc "Build Stork documentation from sources"
 task :build_doc => man_files + [ARM_DIRECTORY]
 
+desc "Rebuild Stork documentation from sources"
 task :rebuild_doc do
     sh "touch", "doc"
     Rake::Task["build_doc"].invoke()

@@ -319,6 +319,7 @@ end
 ### Other ###
 #############
 
+desc "Run danger commit linter"
 task :lint_git => [DANGER] do
     if ENV["CI"] == nil
         puts "Warning! You cannot run this command locally."
