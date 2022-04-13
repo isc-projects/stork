@@ -1,6 +1,6 @@
 # Development
 # This file defines development-stage tasks,
-# e.g., unit testing, lining, or debugging.
+# e.g., unit testing, linting, or debugging.
 
 ###############
 ### Backend ###

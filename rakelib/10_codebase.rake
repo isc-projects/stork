@@ -6,10 +6,10 @@
 # lists to use as pre-requirements in the next stages.
 # It installs the source code dependencies too.
 
-# Ruby has a built-in solution for handle CLEAN and CLOBBER arrays and
-# delete unecessary files. But loading the 'rake' module significantly reduces
+# Ruby has a built-in solution for handling CLEAN and CLOBBER arrays and
+# deleting unecessary files. But loading the 'rake' module significantly reduces
 # the performance. For these reason we implement the clean and clobber tasks
-# itself.
+# ourselves.
 #
 # Clean up the project by deleting scratch files and backup files. Add files to
 # the CLEAN FileList to have the clean target handle them.

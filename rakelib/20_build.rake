@@ -128,7 +128,7 @@ task :rebuild_server do
     Rake::Task["build_server"].invoke()
 end
 
-# Internal task that configure environment variables for server
+# Internal task that configures environment variables for server
 task :pre_run_server do
     if ENV["DB_TRACE"] == "true"
         ENV["STORK_DATABASE_TRACE"] = "run"

@@ -159,7 +159,7 @@ func TestRegistrationParams(t *testing.T) {
 
 	// The Stork Agent exists using a log.Fatal for these parameters.
 	// We replace the standard error handler with a dumb one to prevent
-	// interrupt the unit tests.
+	// interrupting the unit tests.
 	defer func() {
 		logrus.StandardLogger().ExitFunc = nil
 	}()
