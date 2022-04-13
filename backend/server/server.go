@@ -103,7 +103,8 @@ func (ss *StorkServer) ParseArgs() (command Command, err error) {
 	return RunCommand, nil
 }
 
-// Init for Stork Server state.
+// Init for Stork Server state from the CLI arguments and environment variables.
+// Returns the server object (if no error occurs), command to execute and error.
 func NewStorkServer() (ss *StorkServer, command Command, err error) {
 	ss = &StorkServer{}
 	command, err = ss.ParseArgs()
