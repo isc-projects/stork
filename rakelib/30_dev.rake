@@ -53,7 +53,6 @@ task :unittest_backend => [RICHGO, :db_remove_remaining, :db_migrate] + go_dev_c
     scope = ENV["SCOPE"] || "./..."
     benchmark = ENV["BENCHMARK"] || "false"
     short = ENV["SHORT"] || "false"
-    test_pattern = ENV["TEST"] || "false"
 
     opts = []
 
