@@ -67,3 +67,5 @@ docker/config/agent-kea-many-subnets/kea-dhcp4.conf
 *.code-workspace
 /backend/api/stork/backend/api/agent/protocol/agent.pb.go
 root/
+tests/system/.env/
+test-results/
