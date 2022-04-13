@@ -69,13 +69,7 @@ services:
       # publish ports for development purposes
       - "8886:8080"  # port to agent
     environment:
-      DB_TYPE: pgsql
-      DB_NAME: agent_kea
-      DB_USER: agent_kea
-      DB_PASSWORD: agent_kea
-      DB_HOST: postgres
-      DB_ROOT_USER: stork
-      DB_ROOT_PASSWORD: stork
+      DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea
     volumes:
@@ -87,8 +81,6 @@ services:
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
       - ./docker/config/supervisor/kea-dhcp6.conf:/etc/supervisor/conf.d/kea-dhcp6.conf
       - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
-    depends_on:
-      - postgres
 
   postgres:
     image: postgres:11
@@ -101,13 +93,6 @@ services:
       POSTGRES_DB: stork
     ports:
       - "5678:5432"
-
-  mariadb:
-    image: mariadb:10.7
-    networks:
-      - storknet
-    environment:
-      MARIADB_ROOT_PASSWORD: root
 
 
 networks:
