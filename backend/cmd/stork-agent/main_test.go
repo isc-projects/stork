@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"strings"
 	"syscall"
 	"testing"
@@ -107,6 +108,12 @@ func TestHostAndPortParams(t *testing.T) {
 	os.Args[3] = "--port"
 	os.Args[4] = "9876"
 
+	// Prevents the unit test flow from being interrupted if the main signal
+	// handler fails to register. If the registration passes then the ignore
+	// handler is invalidated.
+	signal.Ignore(syscall.SIGINT)
+	defer signal.Reset(syscall.SIGINT)
+
 	// Act
 	// The Stork Agent runs the server at the startup and waits infinitely for
 	// the requests. It causes the unit test to be blocked. We wait a short
@@ -123,6 +130,12 @@ func TestHostAndPortParams(t *testing.T) {
 		isTimeExpired := time.Since(startTime) > time.Second
 
 		if hasExpected || isTimeExpired {
+			// If the main signal handler is registered, the SIGTERM
+			// interrupts the main function. Otherwise, the ignore handler
+			// safety skips it.
+			// It's safe if the time expires before the handler registration.
+			// The SIGINT will be repeated until the handler is registered,
+			// the main function returns, or the global timeout expires.
 			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 		}
 	}, 10000)
