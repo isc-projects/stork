@@ -50,7 +50,7 @@ cache:
     - apt-get install -y ruby-dev make
     - rake prepare_env_all
 
-.base_build_debian_centos:
+.base_build_centos:
   stage: build
   rules:
     - when: always
@@ -166,7 +166,7 @@ build_debs:
     expire_in: 1 hour
 
 build_rpms:
-  extends: .base_build_debian_centos
+  extends: .base_build_centos
   script:
     - rake build_agent_pkg
     - rake build_server_pkg
