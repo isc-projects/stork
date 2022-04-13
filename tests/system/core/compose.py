@@ -96,6 +96,76 @@ def wait_container_is_ready(*transient_exceptions):
     return outer_wrapper
 
 
+_INSPECT_DELIMITER = ";"
+_INSPECT_NONE_MARK = "<@NONE@>"
+_inspect_format_cache = {}
+def _construct_inspect_format(properties: tuple[str]) -> str:
+    """3
+    Prepares the format string in Docker (Go Templates) format.
+    The properties with question mark at the end are optional. It means
+    that Docker inspect will not raise exception if they are missing.
+
+    The constructed format string is cached to improve the performance. It
+    causes that the properties container must be hashable.
+
+    The property values will be delimited by the `_INSPECT_DELIMITER` delimiter.
+    None values will be indicated by the `_INSPECT_NONE_MARK` special value.
+
+    Parameters
+    ----------
+    properties : tuple[str]
+        Paths to properties to fetch
+
+    Returns
+    -------
+    str
+        The Docker inspect format string
+
+    Notes
+    -----
+    Thread safety: The function is pure. It has the same output for the same
+    input. But access to the cache isn't synchronized (yet). 
+    Race may happen, but it shouldn't have any adverse effects.
+
+    The cache isn't limited. We expect the function to be used with a small,
+    fixed set of properties.
+
+    This cache solution seems to be significant faster the `functools.lru_cache`.
+
+    Examples
+    --------
+    >>> _construct_inspect_format([".State.Status", ".State.Optional?.Status"])
+    {{ .State.Status }};{{ if index .State "Optional" }}{{ .State.Optional.Status }}{{ else }}<@NONE@>{{ end }}
+    """
+    if properties in _inspect_format_cache:
+        return _inspect_format_cache[properties]
+
+    formats = []
+    component_delimiter = "."
+    for property in properties:
+        components = property.split(component_delimiter)
+        begins = []
+        path = []
+        for component in components:
+            if component.endswith("?"):
+                component = component[:-1]
+                begins.append('{{ if index %s "%s" }}' % (
+                    component_delimiter.join(path), component
+                ))
+            path.append(component)
+
+        format_property = "%s{{ %s }}%s" % (
+            "".join(begins),
+            component_delimiter.join(path),
+            "".join(["{{ else }}%s{{ end }}" % _INSPECT_NONE_MARK,] * len(begins))
+        )
+        formats.append(format_property)
+
+    fmt = _INSPECT_DELIMITER.join(formats)
+    _inspect_format_cache[properties] = fmt
+    return fmt
+
+
 class DockerCompose(object):
     """
     Manage docker compose environments.
@@ -112,44 +182,6 @@ class DockerCompose(object):
         Whether to build images referenced in the configuration file
     env_file: str
         Path to an env file containing environment variables to pass to docker compose
-
-    Example
-    -------
-    ::
-
-        with DockerCompose("/home/project",
-                           compose_file_name=["docker-compose-1.yml", "docker-compose-2.yml"],
-                           pull=True) as compose:
-            host = compose.get_service_host("hub", 4444)
-            port = compose.get_service_port("hub", 4444)
-            driver = webdriver.Remote(
-                command_executor=("http://{}:{}/wd/hub".format(host,port)),
-                desired_capabilities=CHROME,
-            )
-            driver.get("http://automation-remarks.com")
-            stdout, stderr = compose.get_logs()
-            if stderr:
-                print("Errors\\n:{}".format(stderr))
-
-
-    .. code-block:: yaml
-
-        hub:
-        image: selenium/hub
-        ports:
-        - "4444:4444"
-        firefox:
-        image: selenium/node-firefox
-        links:
-            - hub
-        expose:
-            - "5555"
-        chrome:
-        image: selenium/node-chrome
-        links:
-            - hub
-        expose:
-            - "5555"
     """
     def __init__(
             self,
@@ -158,8 +190,7 @@ class DockerCompose(object):
             pull=False,
             build=False,
             env_file=None,
-            env_vars=None,
-            service_names=None):
+            env_vars=None):
         self._project_directory = project_directory
         self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
@@ -168,14 +199,6 @@ class DockerCompose(object):
         self._build = build
         self._env_file = env_file
         self._env_vars = env_vars
-        self._service_names = list(service_names) if service_names is not None else []
-
-    def __enter__(self):
-        self.start(self._service_names)
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.stop()
 
     def docker_compose_command(self):
         """
@@ -194,7 +217,7 @@ class DockerCompose(object):
         docker_compose_cmd += ["--project-directory", self._project_directory]
         return docker_compose_cmd
 
-    def start(self, service_names=[]):
+    def start(self, *service_names):
         """
         Starts the docker compose environment.
         """
@@ -335,6 +358,38 @@ class DockerCompose(object):
             return None
         return container_id
 
+    def inspect(self, service_name, *properties: str) -> list[str]:
+        """
+        Returns the low-level information on Docker containers.
+
+        Parameters
+        ----------
+            service_name: str
+                Name of the service
+            properties: tuple[str]
+                The properites to fetch as full path with the components
+                delimited by dot. If question mark at the end of the component
+                marks it as optional
+
+        Returns
+        -------
+        list[str | None]
+            Containers values for each property
+        """
+        # Inspect isn't supported by the docker-compose.
+        container_id = self.get_container_id(service_name)
+        if container_id is None:
+            raise LookupError("container of the %s service not found" % service_name)
+
+        format = _construct_inspect_format(properties)
+        
+        cmd = ["docker", "inspect", "--format", format, container_id]
+        _, stdout, _ = self._call_command(cmd)
+
+        # Split the values and parse none's.
+        return [i if i != _INSPECT_NONE_MARK else None
+                for i in stdout.split(_INSPECT_DELIMITER)]
+
     def get_service_status(self, service_name):
         """
         Returns the container and health (if available) status for the service.
@@ -349,26 +404,25 @@ class DockerCompose(object):
         tuple[str, str]
             container status, health status or None
         """
-        container_id = self.get_container_id(service_name)
-        if container_id is None:
-            raise LookupError("container of the %s service not found" % service_name)
-        cmd = ["docker", "inspect", "--format",
-            r"{{ .State.Status }};{{ if .State.Health }}{{ .State.Health.Status }}{{ end }}",
-            container_id
-        ]
-        _, status, _ = self._call_command(cmd)
-        status, health = status.split(";")
-        if health == "":
-            health = None
+        status, health = self.inspect(service_name, ".State.Status",
+            ".State.Health?.Status")
         return status, health
+
+    def is_operational(self, service_name):
+        """Return true if the service is in the running state and healthy
+        (if the HEALTCHECK is specified)"""
+        try:
+            status, health = self.get_service_status(service_name)
+        except LookupError:
+            return False
+        return status == "running" and (health is None or health == "healthy")
         
     @wait_container_is_ready(ContainerNotRunningException)
-    def wait_for_healthy(self, service_name):
+    def wait_for_operational(self, service_name):
         """
-        Waits for a healthy status of a given service. This feature was
-        introduced in docker-compose v2, but it isn't implemented for v1.
-        Note that the image of the service should provide the HEALTHCHECK
-        statement.
+        Waits for the running and healthy (if the HEALTHCHECK is specified)
+        status of a given service. This feature was introduced in
+        docker-compose v2, but it isn't implemented for v1.
 
         Parameters
         ----------

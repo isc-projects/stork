@@ -5,6 +5,7 @@ import sys
 import pytest as _
 
 from core.fixtures import *
+from core.compose_factory import create_docker_compose
 
 # In case of xdist the output is hidden by default.
 # The redirection below forces output to screen.
@@ -37,3 +38,10 @@ def pytest_runtest_logreport(report):
         else:
             banner = '\u001b[31;1m' + banner + '\u001b[0m'
         print(banner)
+
+
+def pytest_sessionstart(session):
+    # Stop all the running containers. The containers are stopped by default
+    # on the testing end if no interruption happened
+    compose = create_docker_compose()
+    compose.stop()

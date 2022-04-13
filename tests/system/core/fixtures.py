@@ -15,9 +15,9 @@ logger = setup_logger(__name__)
 @pytest.fixture
 def server_service():
     service_name = "server"
-    compose = create_docker_compose(service_name)
-    compose.start()
-    compose.wait_for_healthy(service_name)
+    compose = create_docker_compose()
+    compose.start(service_name)
+    compose.wait_for_operational(service_name)
     wrapper = wrappers.Server(compose, service_name)
     return wrapper
 
@@ -29,18 +29,22 @@ def kea_service(request):
         "suppress_registration": False
     }
 
-    if request.param is not None:
+    if hasattr(request, "param"):
         param.update(request.param)
 
     env_vars = None
+    server_service = None
     if param['suppress_registration']:
         env_vars = { "STORK_SERVER_URL": "" }
+    else:
+        # We need the Server to perform the registration
+        server_service = request.getfixturevalue("server_service")
 
     service_name = param['service_name']
-    compose = create_docker_compose(service_name, env_vars)
-    compose.start()
-    compose.wait_for_healthy(service_name)
-    wrapper = wrappers.Kea(compose, service_name)
+    compose = create_docker_compose(env_vars=env_vars)
+    compose.start(service_name)
+    compose.wait_for_operational(service_name)
+    wrapper = wrappers.Kea(compose, service_name, server_service)
     return wrapper
 
 

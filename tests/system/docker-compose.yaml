@@ -30,6 +30,11 @@ services:
       STORK_DATABASE_PASSWORD: stork
       STORK_DATABASE_NAME: stork
       STORK_SERVER_ENABLE_METRICS: 1
+    healthcheck:
+      interval: 2s
+      timeout: 10s
+      retries: 5
+      start_period: 0s
     depends_on:
       - postgres
 
@@ -72,6 +77,11 @@ services:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea
+    healthcheck:
+      interval: 1s
+      timeout: 10s
+      retries: 5
+      start_period: 0s
     volumes:
       - ./tests/system/config/kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
