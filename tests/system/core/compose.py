@@ -28,11 +28,12 @@ See: https://raw.githubusercontent.com/testcontainers/testcontainers-python/mast
 import functools
 import os
 from tabnanny import check
+from typing import List
 import requests
 import subprocess
 import time
 import traceback
-from core.utils import setup_logger
+from core.utils import setup_logger, memoize
 
 
 logger = setup_logger(__name__)
@@ -48,6 +49,7 @@ class NoSuchPortExposed(Exception):
 
 class ContainerExitedException(Exception):
     pass
+
 
 class ContainerNotRunningException(Exception):
     def __init__(self, status):
@@ -85,7 +87,8 @@ def wait_container_is_ready(*transient_exceptions):
                 try:
                     return f(*args, **kwargs)
                 except transient_exceptions as e:
-                    logger.debug('container is not yet ready: %s', traceback.format_exc())
+                    logger.debug('container is not yet ready: %s',
+                                 traceback.format_exc())
                     time.sleep(SLEEP_TIME)
                     exception = e
             raise TimeoutException(
@@ -98,8 +101,10 @@ def wait_container_is_ready(*transient_exceptions):
 
 _INSPECT_DELIMITER = ";"
 _INSPECT_NONE_MARK = "<@NONE@>"
-_inspect_format_cache = {}
-def _construct_inspect_format(properties: tuple[str]) -> str:
+
+
+@memoize
+def _construct_inspect_format(properties: tuple[str, ...]) -> str:
     """3
     Prepares the format string in Docker (Go Templates) format.
     The properties with question mark at the end are optional. It means
@@ -137,15 +142,12 @@ def _construct_inspect_format(properties: tuple[str]) -> str:
     >>> _construct_inspect_format([".State.Status", ".State.Optional?.Status"])
     {{ .State.Status }};{{ if index .State "Optional" }}{{ .State.Optional.Status }}{{ else }}<@NONE@>{{ end }}
     """
-    if properties in _inspect_format_cache:
-        return _inspect_format_cache[properties]
-
     formats = []
     component_delimiter = "."
     for property in properties:
         components = property.split(component_delimiter)
         begins = []
-        path = []
+        path: List[str] = []
         for component in components:
             if component.endswith("?"):
                 component = component[:-1]
@@ -157,12 +159,12 @@ def _construct_inspect_format(properties: tuple[str]) -> str:
         format_property = "%s{{ %s }}%s" % (
             "".join(begins),
             component_delimiter.join(path),
-            "".join(["{{ else }}%s{{ end }}" % _INSPECT_NONE_MARK,] * len(begins))
+            "".join(["{{ else }}%s{{ end }}" %
+                    _INSPECT_NONE_MARK, ] * len(begins))
         )
         formats.append(format_property)
 
     fmt = _INSPECT_DELIMITER.join(formats)
-    _inspect_format_cache[properties] = fmt
     return fmt
 
 
@@ -183,6 +185,7 @@ class DockerCompose(object):
     env_file: str
         Path to an env file containing environment variables to pass to docker compose
     """
+
     def __init__(
             self,
             project_directory,
@@ -190,7 +193,8 @@ class DockerCompose(object):
             pull=False,
             build=False,
             env_file=None,
-            env_vars=None):
+            env_vars=None,
+            project_name=None):
         self._project_directory = project_directory
         self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
@@ -199,6 +203,10 @@ class DockerCompose(object):
         self._build = build
         self._env_file = env_file
         self._env_vars = env_vars
+
+        if project_name is None:
+            project_name = os.path.basename(os.path.abspath(project_directory))
+        self._project_name = project_name
 
     def docker_compose_command(self):
         """
@@ -209,12 +217,13 @@ class DockerCompose(object):
         list[str]
             The docker compose command parts
         """
-        docker_compose_cmd = ['docker-compose', '--no-ansi']
+        docker_compose_cmd = ['docker-compose', '--no-ansi',
+                              "--project-directory", self._project_directory,
+                              "--project-name", self._project_name]
         for file in self._compose_file_names:
             docker_compose_cmd += ['-f', file]
         if self._env_file:
             docker_compose_cmd += ['--env-file', self._env_file]
-        docker_compose_cmd += ["--project-directory", self._project_directory]
         return docker_compose_cmd
 
     def start(self, *service_names):
@@ -268,33 +277,37 @@ class DockerCompose(object):
         tuple[str, str, int]
             stdout, stderr, return code
         """
-        exec_cmd = self.docker_compose_command() + ['exec', '-T', service_name] + command
+        exec_cmd = self.docker_compose_command(
+        ) + ['exec', '-T', service_name] + command
         return self._call_command(
             exec_cmd,
             check=False
         )
 
-    def get_service_port(self, service_name, port):
+    def get_service_ip_address(self, service_name, network_name):
         """
-        Returns the mapped port for one of the services.
+        Returns the assigned IP address for one of the services.
 
         Parameters
         ----------
         service_name: str
             Name of the docker compose service
-        port: int
-            The internal port to get the mapping for
+        network_name: str
+            Name of the network
 
         Returns
         -------
         str:
-            The mapped port on the host
+            The IP address for the service in a given network
         """
-        return self._get_service_info(service_name, port)[1]
+        prefixed_network_name = "%s_%s" % (self._project_name, network_name)
+        return self.inspect(service_name,
+                            ".NetworkSettings.Networks.%s.IPAddress"
+                            % prefixed_network_name)[0]
 
-    def get_service_host(self, service_name, port):
+    def get_service_mapped_host_and_port(self, service_name, port):
         """
-        Returns the host for one of the services.
+        Returns the mapped host and the mapped port for one of the services.
 
         Parameters
         ----------
@@ -305,18 +318,16 @@ class DockerCompose(object):
 
         Returns
         -------
-        str:
-            The hostname for the service
+        tuple[str, str]:
+            The hostname and port for the service
         """
-        return self._get_service_info(service_name, port)[0]
-
-    def _get_service_info(self, service, port):
-        port_cmd = self.docker_compose_command() + ["port", service, str(port)]
+        port_cmd = self.docker_compose_command() + ["port", service_name,
+                                                    str(port)]
         _, stdout, _ = self._call_command(port_cmd)
         result = stdout.split(":")
         if len(result) == 1:
             raise NoSuchPortExposed("Port {} was not exposed for service {}"
-                                    .format(port, service))
+                                    .format(port, service_name))
         return result
 
     def _call_command(self, cmd, check=True, capture_output=True):
@@ -326,7 +337,7 @@ class DockerCompose(object):
             env.update(self._env_vars)
 
         result = subprocess.run(cmd, check=check,
-            capture_output=capture_output, env=env)
+                                capture_output=capture_output, env=env)
         stdout = result.stdout
         stderr = result.stderr
         if capture_output:
@@ -379,10 +390,11 @@ class DockerCompose(object):
         # Inspect isn't supported by the docker-compose.
         container_id = self.get_container_id(service_name)
         if container_id is None:
-            raise LookupError("container of the %s service not found" % service_name)
+            raise LookupError(
+                "container of the %s service not found" % service_name)
 
         format = _construct_inspect_format(properties)
-        
+
         cmd = ["docker", "inspect", "--format", format, container_id]
         _, stdout, _ = self._call_command(cmd)
 
@@ -405,7 +417,7 @@ class DockerCompose(object):
             container status, health status or None
         """
         status, health = self.inspect(service_name, ".State.Status",
-            ".State.Health?.Status")
+                                      ".State.Health?.Status")
         return status, health
 
     def is_operational(self, service_name):
@@ -416,7 +428,7 @@ class DockerCompose(object):
         except LookupError:
             return False
         return status == "running" and (health is None or health == "healthy")
-        
+
     @wait_container_is_ready(ContainerNotRunningException)
     def wait_for_operational(self, service_name):
         """
@@ -429,7 +441,7 @@ class DockerCompose(object):
         service_name: str
             Name of the service from the compose file
         """
-        
+
         status, health = self.get_service_status(service_name)
         if status == "exited":
             # break

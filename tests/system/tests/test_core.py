@@ -4,6 +4,7 @@ import pytest
 
 from core.compose_factory import create_docker_compose
 from core.wrappers import Kea, Server
+from core.utils import memoize
 
 
 def test_create_compose():
@@ -35,7 +36,7 @@ def test_server_fixture(server_service):
 
 def test_kea_only_instance():
     service_name = "agent-kea"
-    env_vars = { "STORK_SERVER_URL": "" }
+    env_vars = {"STORK_SERVER_URL": ""}
     compose = create_docker_compose(env_vars=env_vars)
     compose.start(service_name)
     compose.wait_for_operational(service_name)
@@ -63,3 +64,32 @@ def test_kea_with_explicit_server_fixture(server_service: Server, kea_service: K
     assert kea_service.is_operational()
     assert kea_service.server.is_operational()
     assert server_service.is_operational()
+
+
+def test_get_ip_address(server_service: Server):
+    assert server_service.ip_address == "172.20.42.2"
+
+
+def test_memoize():
+    # Arrange
+    class Foo:
+        def __init__(self, bar):
+            self._bar = bar
+            self._call_count = 0
+
+        @memoize
+        def method(self, baz):
+            self._call_count += 1
+            return baz + self._bar
+
+    bob = Foo(1)
+    alice = Foo(2)
+
+    # Act
+    assert bob.method(3) == 4
+    assert bob.method(3) == 4
+    assert bob._call_count == 1
+
+    assert alice.method(3) == 5
+    assert alice.method(3) == 5
+    assert alice._call_count == 1

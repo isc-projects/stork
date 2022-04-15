@@ -21,8 +21,6 @@ services:
       - storknet
     expose:
       - "8080"
-    ports:
-      - "8088:8080"
     environment:
       STORK_DATABASE_HOST: postgres
       STORK_DATABASE_PORT: 5432
@@ -68,11 +66,11 @@ services:
       subnet6-01:
         ipv6_address: 3001:db8:1:42::100
     expose:
-      - "8080"  # stork server to agent
-      - "9547"  # kea_exporter for prometheus
+      - "8080" # stork server to agent
+      - "9547" # kea_exporter for prometheus
     ports:
       # publish ports for development purposes
-      - "8886:8080"  # port to agent
+      - "8886:8080" # port to agent
     environment:
       DB_TYPE: none
       STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
@@ -103,7 +101,6 @@ services:
       POSTGRES_DB: stork
     ports:
       - "5678:5432"
-
 
 networks:
   storknet:
