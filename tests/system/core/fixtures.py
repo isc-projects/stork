@@ -12,6 +12,13 @@ from core.utils import setup_logger
 logger = setup_logger(__name__)
 
 
+def kea_parametrize(service_name="agent-kea", suppress_registration=False):
+    return pytest.mark.parametrize("kea_service", [{
+        "service_name": service_name,
+        "suppress_registration": suppress_registration
+    }], indirect=True)
+
+
 @pytest.fixture
 def server_service():
     service_name = "server"
@@ -35,7 +42,7 @@ def kea_service(request):
     env_vars = None
     server_service = None
     if param['suppress_registration']:
-        env_vars = { "STORK_SERVER_URL": "" }
+        env_vars = {"STORK_SERVER_URL": ""}
     else:
         # We need the Server to perform the registration
         server_service = request.getfixturevalue("server_service")
@@ -52,6 +59,7 @@ def kea_service(request):
 def finish(request):
     """Save all logs to file and down all used containers."""
     function_name = request.function.__name__
+
     def collect_logs_and_down_all():
         logger.info('COLLECTING LOGS')
 

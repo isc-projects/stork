@@ -1,7 +1,7 @@
 
 import pytest
 
-
+from core.fixtures import kea_parametrize
 from core.compose_factory import create_docker_compose
 from core.wrappers import Kea, Server
 from core.utils import memoize
@@ -46,7 +46,7 @@ def test_kea_only_instance():
     compose.stop()
 
 
-@pytest.mark.parametrize("kea_service", [{"suppress_registration": True}], indirect=True)
+@kea_parametrize(suppress_registration=True)
 def test_kea_only_fixture(kea_service: Kea):
     assert kea_service.is_operational()
     assert kea_service.server is None
@@ -64,6 +64,11 @@ def test_kea_with_explicit_server_fixture(server_service: Server, kea_service: K
     assert kea_service.is_operational()
     assert kea_service.server.is_operational()
     assert server_service.is_operational()
+
+
+@kea_parametrize("agent-kea-many-subnets", suppress_registration=True)
+def test_kea_many_subnets_fixture(kea_service: Kea):
+    assert kea_service.is_operational()
 
 
 def test_get_ip_address(server_service: Server):

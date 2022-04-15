@@ -25,22 +25,14 @@ See: https://raw.githubusercontent.com/testcontainers/testcontainers-python/mast
 #    under the License.
 
 
-import functools
 import os
-from tabnanny import check
 from typing import List
 import requests
 import subprocess
-import time
-import traceback
-from core.utils import setup_logger, memoize
+from core.utils import setup_logger, memoize, wait_for_success
 
 
 logger = setup_logger(__name__)
-
-
-class TimeoutException(Exception):
-    pass
 
 
 class NoSuchPortExposed(Exception):
@@ -59,44 +51,6 @@ class ContainerNotRunningException(Exception):
 class ContainerUnhealthyException(Exception):
     def __init__(self, status):
         super().__init__("status=%s" % status)
-
-
-# Get a tuple of transient exceptions for which we'll retry. Other exceptions will be raised.
-TRANSIENT_EXCEPTIONS = (TimeoutError, ConnectionError)
-MAX_TRIES = int(os.environ.get("TC_MAX_TRIES", 120))
-SLEEP_TIME = int(os.environ.get("TC_POOLING_INTERVAL", 1))
-
-
-def wait_container_is_ready(*transient_exceptions):
-    """
-    Wait until container is ready.
-    Function that spawn container should be decorated by this method
-    Max wait is configured by config. Default is 120 sec.
-    Polling interval is 1 sec.
-    :return:
-    """
-
-    transient_exceptions = TRANSIENT_EXCEPTIONS + tuple(transient_exceptions)
-
-    def outer_wrapper(f):
-        @functools.wraps(f)
-        def inner_wrapper(*args, **kwargs):
-            exception = None
-            logger.info("Waiting to be ready...")
-            for _ in range(MAX_TRIES):
-                try:
-                    return f(*args, **kwargs)
-                except transient_exceptions as e:
-                    logger.debug('container is not yet ready: %s',
-                                 traceback.format_exc())
-                    time.sleep(SLEEP_TIME)
-                    exception = e
-            raise TimeoutException(
-                f'Wait time ({MAX_TRIES * SLEEP_TIME}s) exceeded for {f.__name__}'
-                f'(args: {args}, kwargs {kwargs}). Exception: {exception}'
-            )
-        return inner_wrapper
-    return outer_wrapper
 
 
 _INSPECT_DELIMITER = ";"
@@ -257,7 +211,8 @@ class DockerCompose(object):
         tuple[bytes, bytes]
             stdout, stderr
         """
-        logs_cmd = self.docker_compose_command() + ["logs"]
+        logs_cmd = self.docker_compose_command() + \
+            ["logs", "--no-color", "-t"]
         _, stdout, stderr = self._call_command(logs_cmd)
         return stdout, stderr
 
@@ -346,7 +301,7 @@ class DockerCompose(object):
             return result.returncode, stdout, stderr
         return result.returncode, None, None
 
-    @wait_container_is_ready(requests.exceptions.ConnectionError)
+    @wait_for_success(requests.exceptions.ConnectionError)
     def wait_for(self, url):
         """
         Waits for a response from a given URL. This is typically used to
@@ -429,7 +384,7 @@ class DockerCompose(object):
             return False
         return status == "running" and (health is None or health == "healthy")
 
-    @wait_container_is_ready(ContainerNotRunningException)
+    @wait_for_success(ContainerNotRunningException)
     def wait_for_operational(self, service_name):
         """
         Waits for the running and healthy (if the HEALTHCHECK is specified)

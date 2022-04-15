@@ -29,3 +29,23 @@ class Group(TypedDict):
 class GroupList(TypedDict):
     items: List[Group]
     total: int
+
+
+class Machine(TypedDict):
+    id: int
+    address: str
+    agentPort: str
+    authorized: bool
+
+
+class MachineList(TypedDict):
+    items: List[Machine]
+    total: int
+
+
+class MachineState(Machine):
+    agentToken: str
+    agentVersion: str
+    apps: List
+    cpus: int
+    lastVisitedAt: str
