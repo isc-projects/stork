@@ -101,6 +101,8 @@
     properties:
       appId:
         type: integer
+      daemonId:
+        type: integer
       appName:
         type: string
       dataSource:
@@ -144,6 +146,21 @@
       total:
         type: integer
 
+  CreateHostBeginResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      apps:
+        type: array
+        items:
+          $ref: '#/definitions/App'
+      subnets:
+        type: array
+        items:
+          $ref: '#/definitions/Subnet'
+
 # Subnet
 
   LocalSubnet:
@@ -152,6 +169,8 @@
       id:
         type: integer
       appId:
+        type: integer
+      daemonId:
         type: integer
       appName:
         type: string

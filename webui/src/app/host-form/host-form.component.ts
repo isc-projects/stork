@@ -1,7 +1,120 @@
 import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core'
-import { AbstractControl, FormBuilder, FormArray, FormGroup } from '@angular/forms'
-import { SelectItem } from 'primeng/api'
+import {
+    AbstractControl,
+    FormBuilder,
+    FormArray,
+    FormGroup,
+    ValidatorFn,
+    Validators,
+    ValidationErrors,
+} from '@angular/forms'
+import { MessageService, SelectItem } from 'primeng/api'
+import { map } from 'rxjs/operators'
 import { StorkValidators } from '../validators'
+import { DHCPService } from '../backend/api/api'
+import { stringToHex } from '../utils'
+
+/**
+ * A form validator checking if a subnet has been selected for
+ * non-global reservation.
+ *
+ * @param group top-level component form group.
+ * @returns validation errors when no subnet has been selected for
+ *          a non-global reservation.
+ */
+function subnetRequiredValidator(group: FormGroup): ValidationErrors | null {
+    if (!group.get('globalReservation').value && !group.get('selectedSubnet').value) {
+        // It is not a global reservation and no subnet has been selected.
+        const errs = {
+            err: 'subnet is required for non-global reservations',
+        }
+        // Highlight the dropdown.
+        group.get('selectedSubnet').setErrors(errs)
+        return errs
+    }
+    // Clear errors because everything seems fine.
+    group.get('selectedSubnet').setErrors(null)
+    return null
+}
+
+/**
+ * A form validator checking if a selected DHCP identifier has been specified.
+ *
+ * @param group a selected form group belonging to the ipGroups array.
+ * @returns validation errors when no value has been specified in the
+ *          idInputHex input box (when selected type is hex) or idInputText
+ *          (when selected type is text).
+ */
+function identifierRequiredValidator(group: FormGroup): ValidationErrors | null {
+    const idInputHex = group.get('idInputHex')
+    const idInputText = group.get('idInputText')
+    switch (group.get('idFormat').value) {
+        case 'hex':
+            // User selected hex format. Clear validation errors pertaining
+            // to the idInputText and set errors for idInputHex if the
+            // required value is not specified.
+            idInputText.setErrors(null)
+            if (idInputHex.valid) {
+                idInputHex.setErrors(Validators.required(idInputHex))
+            }
+            return Validators.required(idInputHex)
+        case 'text':
+            // User selected text format.
+            idInputHex.setErrors(null)
+            if (idInputText.valid) {
+                idInputText.setErrors(Validators.required(idInputText))
+            }
+            return Validators.required(idInputText)
+    }
+    return null
+}
+
+/**
+ * A form validator checking if a user specified at least one reservation.
+ *
+ * Besides IP reservations it is also possible to specify hostname
+ * reservation. This validator checks if hostname reservation has been
+ * specified. Otherwise, it checks if at least one IP reservation has been
+ * specified.
+ *
+ * @param group top-level component form group.
+ * @returns validation errors if neither hostname or IP address reservations
+ *          have been specified.
+ */
+function reservationRequiredValidator(group: FormGroup): ValidationErrors | null {
+    // The easiest check is whether the hostname reservation has been
+    // specified.
+    if (!Validators.required(group.get('hostname'))) {
+        return null
+    }
+    // Iterate over the IP reservations and see if they are specified.
+    if (group.get('ipGroups')) {
+        for (let i = 0; i < (group.get('ipGroups') as FormArray).length; i++) {
+            const ipg = (group.get('ipGroups') as FormArray).at(i)
+            switch (ipg.get('ipType').value) {
+                case 'ipv4':
+                    if (!Validators.required(ipg.get('inputIPv4'))) {
+                        return null
+                    }
+                    break
+                case 'ia_na':
+                    if (!Validators.required(ipg.get('inputNA'))) {
+                        return null
+                    }
+                    break
+                case 'ia_pd':
+                    if (!Validators.required(ipg.get('inputPD'))) {
+                        return null
+                    }
+                    break
+            }
+        }
+    }
+    // No hostname nor IP reservation found.
+    return {
+        err: 'at least one IP or hostname reservation is required',
+    }
+}
 
 /**
  * Holds the state of the form created by the HostFormComponent.
@@ -22,12 +135,44 @@ class HostForm {
     preserved: boolean = false
 
     /**
+     * A transaction id returned by the server after sending the
+     * request to begin one.
+     */
+    transactionId: number = 0
+
+    /**
+     * An error to begin the transaction returned by the server.
+     */
+    initError: string
+
+    /**
      * A form group comprising all form controls, arrays and other form
      * groups (a parent group for the HostFormComponent form).
      */
     group: FormGroup
 
+    /**
+     * A list of all daemons that can be selected from the drop down list.
+     */
+    allDaemons: any[]
+
+    /**
+     * A filtered list of daemons comprising only those that match the
+     * type of the first selected daemon.
+     *
+     * Maintaining a filtered list prevents the user from selecting the
+     * servers of different kinds, e.g. one DHCPv4 and one DHCPv6 server.
+     */
     filteredDaemons: any[]
+
+    /**
+     * A list of subnets that can be selected from the drop down list.
+     *
+     * An actual drop down list can be shorter depending on the list of
+     * selected servers. It displays only the subnets that the selected
+     * servers serve.
+     */
+    allSubnets: any[]
 
     /**
      * An array of selectable subnets according to the current form data.
@@ -38,23 +183,14 @@ class HostForm {
     filteredSubnets: any[]
 
     /**
-     * A boolean value indicating if a button for adding next IP reservation
-     * should be disabled.
-     *
-     * The button is disabled when user is adding an IPv4 reservation. The
-     * DHCP server accepts at most one IPv4 reservation.
+     * A flag set to true when DHCPv4 servers have been selected.
      */
-    addIPButtonDisabled: boolean
+    dhcpv4: boolean = false
 
     /**
-     * A boolean value indicating if the dropdown with different IP reservation
-     * types should only comprise IPv6 specific ones.
-     *
-     * This is the case when a user has already added one IPv6 reservation and
-     * is adding a second one. The reservation should not mix IPv4 and IPv6
-     * addresses and/or prefixes.
+     * A flag set to true when DHCPv6 servers have been selected.
      */
-    ipv6OnlyTypes: boolean
+    dhcpv6: boolean = false
 }
 
 /**
@@ -78,120 +214,27 @@ export class HostFormComponent implements OnInit, OnDestroy {
     @Input() form: HostForm = null
 
     /**
-     * A list of daemons that can be selected from the drop down list.
-     */
-    @Input() daemons: any = [
-        {
-            id: 1,
-            name: 'dhcp4',
-            label: 'kea@192.0.2.1/dhcp4',
-        },
-        {
-            id: 2,
-            name: 'dhcp6',
-            label: 'kea@192.0.2.1/dhcp6',
-        },
-        {
-            id: 3,
-            name: 'dhcp4',
-            label: 'kea@192.0.2.2/dhcp4',
-        },
-        {
-            id: 4,
-            name: 'dhcp6',
-            label: 'kea@192.0.2.2/dhcp6',
-        },
-    ]
-
-    /**
-     * A list of subnets that can be selected from the drop down list.
+     * An event emitter notifying that the component is destroyed.
      *
-     * An actual drop down list can be shorter depending on the list of
-     * selected servers. It displays only the subnets that the selected
-     * servers serve.
+     * A parent component receiving this event can remember the current
+     * form state.
      */
-    @Input() subnets: any = [
-        {
-            id: 1,
-            subnet: '192.0.2.0/24',
-            ipv4: true,
-            localSubnets: [
-                {
-                    daemonId: 1,
-                },
-            ],
-        },
-        {
-            id: 2,
-            subnet: '2001:db8:1::/64',
-            ipv4: false,
-            localSubnets: [
-                {
-                    daemonId: 2,
-                },
-                {
-                    daemonId: 4,
-                },
-            ],
-        },
-    ]
-
-    /**
-     * An event emitter notifying about the changes in the form.
-     *
-     * The event is emitted when the component is destroyed, so the
-     * parent component can remember the current form state.
-     */
-    @Output() onFormChange = new EventEmitter<HostForm>()
+    @Output() formDestroy = new EventEmitter<HostForm>()
 
     /**
      * Different IP reservation types listed in the drop down.
      */
-    ipTypes: SelectItem[] = [
-        {
-            label: 'IPv4 address',
-            value: 'ipv4',
-        },
-        {
-            label: 'IPv6 address',
-            value: 'ia_na',
-        },
-        {
-            label: 'IPv6 prefix',
-            value: 'ia_pd',
-        },
-    ]
+    ipTypes: SelectItem[] = []
 
     /**
      * Different host identifier types listed in the drop down.
      */
-    hostIdTypes: SelectItem[] = [
-        {
-            label: 'hw-address',
-            value: 'hw-address',
-        },
-        {
-            label: 'client-id',
-            value: 'client-id',
-        },
-        {
-            label: 'circuit-id',
-            value: 'circuit-id',
-        },
-        {
-            label: 'duid',
-            value: 'duid',
-        },
-        {
-            label: 'flex-id',
-            value: 'flex-id',
-        },
-    ]
+    hostIdTypes: SelectItem[] = []
 
     /**
      * Different identifier input formats listed in the drop down.
      */
-    public hostIdFormats = [
+    hostIdFormats = [
         {
             label: 'hex',
             value: 'hex',
@@ -206,8 +249,14 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * Constructor.
      *
      * @param _formBuilder private form builder instance.
+     * @param _dhcpApi REST API server service.
+     * @param _messageService service displaying error and success messages.
      */
-    constructor(private _formBuilder: FormBuilder) {}
+    constructor(
+        private _formBuilder: FormBuilder,
+        private _dhcpApi: DHCPService,
+        private _messageService: MessageService
+    ) {}
 
     /**
      * Component lifecycle hook invoked during initialization.
@@ -216,39 +265,123 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * component this instance is used and the initialization skipped.
      * Otherwise, the form is initialized to defaults.
      */
-    ngOnInit() {
+    ngOnInit(): void {
         // Initialize the form instance if the parent hasn't supplied one.
         if (!this.form) {
             this.form = new HostForm()
         }
+        // Initialize the options in the drop down lists.
+        this._updateHostIdTypes()
+        this._updateIPTypes()
+
         // Check if the form has been already edited and preserved in the
         // parent component. If so, use it. The user will continue making
         // edits.
         if (this.form.preserved) {
             return
         }
+
         // New form.
-        this.formGroup = this._formBuilder.group({
-            globalReservation: [false],
-            selectedServers: [],
-            selectedSubnet: [],
-            hostIdGroup: this._formBuilder.group({
-                idType: ['hw-address'],
-                idInputHex: ['', StorkValidators.hexIdentifier()],
-                idInputText: [''],
-                idFormat: ['hex'],
-            }),
-            ipGroups: this._formBuilder.array([this._createNewIPGroup()]),
-            hostname: [''],
-        })
-        // Initially, list all daemons.
-        this.form.filteredDaemons = this.daemons
-        // Initially, show all subnets.
-        this.form.filteredSubnets = this.subnets
-        // By default, we select the IPv4 address option in the drop down.
-        // We need to disable adding more IP reservations. It is only allowed
-        // in the IPv6 case.
-        this.form.addIPButtonDisabled = true
+        this.formGroup = this._formBuilder.group(
+            {
+                globalReservation: [false],
+                selectedServers: ['', Validators.required],
+                selectedSubnet: [null],
+                hostIdGroup: this._formBuilder.group(
+                    {
+                        idType: [this.hostIdTypes[0].label],
+                        idInputHex: ['', StorkValidators.hexIdentifier()],
+                        idInputText: [''],
+                        idFormat: ['hex'],
+                    },
+                    {
+                        validators: [identifierRequiredValidator],
+                    }
+                ),
+                ipGroups: this._formBuilder.array([this._createNewIPGroup()]),
+                hostname: [''],
+            },
+            {
+                validators: [subnetRequiredValidator, reservationRequiredValidator],
+            }
+        )
+
+        // Begin the transaction. It sends POST to /hosts/new/transaction/new.
+        this._createHostBegin()
+    }
+
+    /**
+     * Sends a request to the server to begin a new transaction for adding
+     * a new host reservation.
+     *
+     * If the call is successful, the form components initialized with the
+     * returned data, e.g. a list of available servers, subnets etc.
+     * If an error occurs, the error text is remembered and displayed along
+     * with the retry button.
+     */
+    private _createHostBegin(): void {
+        this._dhcpApi
+            .createHostBegin()
+            .pipe(
+                map((data) => {
+                    // We have to mangle the returned information and store them
+                    // in the format usable by the component.
+
+                    // The server returns a list of apps rather than a list of
+                    // daemons. We have to extract the daemons from that list.
+                    let daemons = []
+                    for (const a of data.apps) {
+                        for (const d of a.details.daemons) {
+                            // Only DHCP daemons are useful in this case.
+                            if (d.name.startsWith('dhcp')) {
+                                let daemon = {
+                                    id: d.id,
+                                    name: d.name,
+                                    label: `${a.name}/${d.name}`,
+                                }
+                                daemons.push(daemon)
+                            }
+                        }
+                    }
+                    const mappedData: any = {
+                        id: data.id,
+                        subnets: data.subnets,
+                        daemons: daemons,
+                    }
+                    return mappedData
+                })
+            )
+            .toPromise()
+            .then((data) => {
+                // Success. Clear any existing errors.
+                this.form.initError = null
+                // The server should return new transaction id and a current list of
+                // daemons and subnets to select.
+                this.form.transactionId = data.id
+                this.form.allDaemons = data.daemons
+                this.form.allSubnets = data.subnets
+                // Initially, list all daemons.
+                this.form.filteredDaemons = this.form.allDaemons
+                // Initially, show all subnets.
+                this.form.filteredSubnets = this.form.allSubnets
+            })
+            .catch((err) => {
+                console.info(err)
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                if (!msg) {
+                    msg = `status: ${err.status}`
+                }
+                this._messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot create new transaction',
+                    detail: 'Failed to create transaction for adding new host: ' + msg,
+                    life: 10000,
+                })
+                this.form.initError = msg
+            })
     }
 
     /**
@@ -260,9 +393,9 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * preserved flag to indicate that the form was recovered, and thus
      * skip initialization in the next ngOnInit function invocation.
      */
-    ngOnDestroy() {
+    ngOnDestroy(): void {
         this.form.preserved = true
-        this.onFormChange.emit(this.form)
+        this.formDestroy.emit(this.form)
     }
 
     /**
@@ -284,14 +417,63 @@ export class HostFormComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Updates presented list of selectable host ID types.
+     *
+     * The list depends on whether we have selected a DHCPv6 server,
+     * DHCPv4 server or no servers.
+     */
+    private _updateHostIdTypes(): void {
+        if (this.form.dhcpv6) {
+            // DHCPv6 server supports fewer identifier types.
+            this.hostIdTypes = [
+                {
+                    label: 'hw-address',
+                    value: 'hw-address',
+                },
+                {
+                    label: 'duid',
+                    value: 'duid',
+                },
+                {
+                    label: 'flex-id',
+                    value: 'flex-id',
+                },
+            ]
+            return
+        }
+        this.hostIdTypes = [
+            {
+                label: 'hw-address',
+                value: 'hw-address',
+            },
+            {
+                label: 'client-id',
+                value: 'client-id',
+            },
+            {
+                label: 'circuit-id',
+                value: 'circuit-id',
+            },
+            {
+                label: 'duid',
+                value: 'duid',
+            },
+            {
+                label: 'flex-id',
+                value: 'flex-id',
+            },
+        ]
+    }
+
+    /**
      * Adds new IP address or delegated prefix input box to the form.
      *
      * By default, the input box is for an IPv4 reservation. However, if
      * there is another box already (only possible in the IPv6 case), the
      * new box uses the type of the last box.
      */
-    addIPInput() {
-        let ipType = 'ipv4'
+    addIPInput(): void {
+        let ipType = this.form.dhcpv6 ? 'ia_na' : 'ipv4'
         // Check if some IP input boxes have been already added.
         if (this.ipGroups.length > 0) {
             // Some input boxes already exist. Use the last one's type
@@ -299,9 +481,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
             ipType = this.ipGroups.at(this.ipGroups.length - 1).get('ipType').value
         }
         this.ipGroups.push(this._createNewIPGroup(ipType))
-        // Refresh the button's disabled flag and the selectable IP types
-        // accordingly.
-        this.ipTypeChange()
     }
 
     /**
@@ -310,24 +489,36 @@ export class HostFormComponent implements OnInit, OnDestroy {
      *
      * @param index input box index beginning from 0.
      */
-    deleteIPInput(index) {
+    deleteIPInput(index): void {
         ;(this.formGroup.get('ipGroups') as FormArray).removeAt(index)
-        this.ipTypeChange()
     }
 
     /**
-     * A function invoked upon selecting an IP reservation type from the
-     * drop down or adding or deleting an IP reservation input box.
+     * Updates presented list of selectable IP reservation types.
      *
-     * It adjusts the disabled flag for the button adding new IP reservations
-     * and a list of selectable IP reservation types.
+     * The list depends on whether we have selected a DHCPv6 server,
+     * DHCPv4 server or no servers.
      */
-    ipTypeChange() {
-        const ipGroups = this.formGroup.get('ipGroups') as FormArray
-        this.form.addIPButtonDisabled = ipGroups.getRawValue().find((group) => group.ipType === 'ipv4')
-        this.form.ipv6OnlyTypes =
-            ipGroups.length > 1 &&
-            ipGroups.getRawValue().find((group) => group.ipType === 'ia_na' || group.ipType === 'ia_pd')
+    private _updateIPTypes(): void {
+        if (this.form.dhcpv6) {
+            this.ipTypes = [
+                {
+                    label: 'IPv6 address',
+                    value: 'ia_na',
+                },
+                {
+                    label: 'IPv6 prefix',
+                    value: 'ia_pd',
+                },
+            ]
+            return
+        }
+        this.ipTypes = [
+            {
+                label: 'IPv4 address',
+                value: 'ipv4',
+            },
+        ]
     }
 
     /**
@@ -351,8 +542,23 @@ export class HostFormComponent implements OnInit, OnDestroy {
             inputIPv4: ['', StorkValidators.ipv4()],
             inputNA: ['', StorkValidators.ipv6()],
             inputPD: ['', StorkValidators.ipv6()],
-            inputPDLength: ['64'],
+            inputPDLength: ['64', Validators.required],
         })
+    }
+
+    /**
+     * Clears specified IP reservations.
+     *
+     * It is used in cases when user switches between different server types,
+     * e.g. previously selected a DHCPv4 server and now switched to DHCPv6
+     * server. In that case, the specified information is no longer valid.
+     */
+    private _resetIPGroups(): void {
+        // Nothing to do if there are no IP reservations specified.
+        if (this.ipGroups.length > 0) {
+            this.ipGroups.clear()
+            this.ipGroups.push(this._createNewIPGroup(this.form.dhcpv6 ? 'ia_na' : 'ipv4'))
+        }
     }
 
     /**
@@ -365,16 +571,56 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * servers. If selected servers have no common subnets, no subnets are
      * listed.
      */
-    onServersChange() {
+    onServersChange(): void {
+        // Capture the servers selected by the user.
         const selectedServers = this.formGroup.get('selectedServers').value
+
+        // It is important to determine what type of a server the user selected.
+        // Check if any of the selected servers are DHCPv4.
+        this.form.dhcpv4 = selectedServers.some((ss) => {
+            return this.form.allDaemons.find((d) => d.id === ss && d.name === 'dhcp4')
+        })
+        if (!this.form.dhcpv4) {
+            // If user selected no DHCPv4 server, perhaps selected a DHCPv6 server?
+            this.form.dhcpv6 = selectedServers.some((ss) => {
+                return this.form.allDaemons.find((d) => d.id === ss && d.name === 'dhcp6')
+            })
+        } else {
+            // If user selected DHCPv4 server he didn't select a DHCPv6 server.
+            this.form.dhcpv6 = false
+        }
+
+        // Filter selectable other selectable servers based on the current selection.
+        if (this.form.dhcpv4) {
+            this.form.filteredDaemons = this.form.allDaemons.filter((d) => d.name === 'dhcp4')
+        } else if (this.form.dhcpv6) {
+            this.form.filteredDaemons = this.form.allDaemons.filter((d) => d.name === 'dhcp6')
+        } else {
+            this.form.filteredDaemons = this.form.allDaemons
+        }
+
+        // Selectable host identifier types depend on the selected server types.
+        this._updateHostIdTypes()
+
+        if (
+            this.ipGroups.length === 0 ||
+            (this.form.dhcpv4 && this.ipGroups.getRawValue().some((g) => g.ipType !== 'ipv4')) ||
+            (this.form.dhcpv6 && this.ipGroups.getRawValue().some((g) => g.ipType === 'ipv4'))
+        ) {
+            // The current IP reservation edits no longer match the selected server types.
+            // Let's reset current IP reservations and let the user start over.
+            this._resetIPGroups()
+            this._updateIPTypes()
+        }
+
         // We take short path when no servers are selected. Just make all
         // subnets available.
         if (selectedServers.length === 0) {
-            this.form.filteredSubnets = this.subnets
+            this.form.filteredSubnets = this.form.allSubnets
             return
         }
         // Filter subnets.
-        this.form.filteredSubnets = this.subnets.filter((s) => {
+        this.form.filteredSubnets = this.form.allSubnets.filter((s) => {
             // We will be filtering by daemonId, so we need to look into
             // the localSubnet.
             return s.localSubnets.some((ls) => {
@@ -394,5 +640,104 @@ export class HostFormComponent implements OnInit, OnDestroy {
         if (!this.form.filteredSubnets.find((fs) => fs.id === this.formGroup.get('selectedSubnet').value)) {
             this.formGroup.get('selectedSubnet').patchValue(null)
         }
+    }
+
+    /**
+     * A function called when a user attempts to submit the new host reservation.
+     *
+     * It collects the data from the form and sends the request to commit the
+     * current transaction (hosts/new/transaction/{id}/submit).
+     */
+    onSubmit(): void {
+        // Check if it is global reservation or subnet-level reservation.
+        const selectedSubnet = this.formGroup.get('globalReservation').value
+            ? 0
+            : this.formGroup.get('selectedSubnet').value
+
+        // Create associations with the daemons.
+        let localHosts: any[] = []
+        const selectedServers = this.formGroup.get('selectedServers').value
+        for (let id of selectedServers) {
+            localHosts.push({
+                daemonId: id,
+                dataSource: 'api',
+            })
+        }
+
+        // Use hex value or convert text value to hex.
+        const idHexValue =
+            this.formGroup.get('hostIdGroup.idFormat').value === 'hex'
+                ? this.formGroup.get('hostIdGroup.idInputHex').value
+                : stringToHex(this.formGroup.get('hostIdGroup.idInputText').value)
+
+        let addressReservations: any[] = []
+        let prefixReservations: any[] = []
+        for (let i = 0; i < this.ipGroups.length; i++) {
+            const group = this.ipGroups.at(i)
+            switch (group.get('ipType').value) {
+                case 'ipv4':
+                    if (group.get('inputIPv4').value.trim().length > 0) {
+                        addressReservations.push({
+                            address: `${group.get('inputIPv4').value}/32`,
+                        })
+                    }
+                    break
+                case 'ia_na':
+                    if (group.get('inputNA').value.trim().length > 0) {
+                        addressReservations.push({
+                            address: `${group.get('inputNA').value}/128`,
+                        })
+                    }
+                    break
+                case 'ia_pd':
+                    if (group.get('inputPD').value.trim().length > 0) {
+                        prefixReservations.push({
+                            address: `${group.get('inputPD').value}/${group.get('inputPDLength').value}`,
+                        })
+                    }
+                    break
+            }
+        }
+
+        // Create host.
+        let host: any = {
+            subnetId: selectedSubnet,
+            hostIdentifiers: [
+                {
+                    idType: this.formGroup.get('hostIdGroup.idType').value,
+                    idHexValue: idHexValue,
+                },
+            ],
+            addressReservations: addressReservations,
+            prefixReservations: prefixReservations,
+            hostname: this.formGroup.get('hostname').value,
+            localHosts: localHosts,
+        }
+
+        // Submit the host.
+        this._dhcpApi
+            .createHostSubmit(this.form.transactionId, host)
+            .toPromise()
+            .catch((err) => {
+                let msg = err.statusText
+                if (err.error && err.error.message) {
+                    msg = err.error.message
+                }
+                this._messageService.add({
+                    severity: 'error',
+                    summary: 'Cannot commit new host',
+                    detail: 'The transaction adding new host failed: ' + msg,
+                    life: 10000,
+                })
+            })
+    }
+
+    /**
+     * A function called when user clicks the retry button after failure to begin
+     * a new transaction.
+     */
+    onRetry(): void {
+        console.info('retry')
+        this._createHostBegin()
     }
 }

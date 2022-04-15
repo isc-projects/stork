@@ -71,7 +71,11 @@ func (manager *configManagerImpl) generateKey() config.LockKey {
 // spoofing, the ID is randomized.
 func (manager *configManagerImpl) generateContextID() (int64, error) {
 	for i := 0; i < 10; i++ {
-		r, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+		// Limit the maximum number to uint32. Previously, we tried larger
+		// values, i.e. int64, but it confused the java-based REST API
+		// client which apparently converts all numbers to float. It
+		// results in rounding the large int64 values causing mismatches.
+		r, err := rand.Int(rand.Reader, big.NewInt(math.MaxUint32))
 		if err != nil {
 			return 0, pkgerrors.Wrapf(err, "failed to generate new context id")
 		}

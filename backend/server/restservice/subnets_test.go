@@ -316,6 +316,7 @@ func TestGetSubnets(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
 	require.Equal(t, a46.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
+	require.Equal(t, a46.Daemons[0].ID, okRsp.Payload.Items[0].LocalSubnets[0].DaemonID)
 	// checking if returned subnet-ids have expected values
 	require.EqualValues(t, 3, okRsp.Payload.Items[0].LocalSubnets[0].ID)
 	require.Nil(t, okRsp.Payload.Items[0].LocalSubnets[0].Stats)
@@ -332,6 +333,7 @@ func TestGetSubnets(t *testing.T) {
 	require.EqualValues(t, 1, okRsp.Payload.Total)
 	require.Len(t, okRsp.Payload.Items[0].LocalSubnets, 1)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[0].LocalSubnets[0].AppID)
+	require.Equal(t, a4.Daemons[0].ID, okRsp.Payload.Items[0].LocalSubnets[0].DaemonID)
 	// checking if returned subnet-ids have expected values
 	require.EqualValues(t, 1, okRsp.Payload.Items[0].LocalSubnets[0].ID)
 }
@@ -514,8 +516,10 @@ func TestGetSharedNetworks(t *testing.T) {
 	require.Len(t, okRsp.Payload.Items, 2)
 	require.EqualValues(t, 2, okRsp.Payload.Total)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[0].Subnets[0].LocalSubnets[0].AppID)
+	require.Equal(t, a4.Daemons[0].ID, okRsp.Payload.Items[0].Subnets[0].LocalSubnets[0].DaemonID)
 	require.Equal(t, a4.Name, okRsp.Payload.Items[0].Subnets[0].LocalSubnets[0].AppName)
 	require.Equal(t, a4.ID, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].AppID)
+	require.Equal(t, a4.Daemons[0].ID, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].DaemonID)
 	require.Equal(t, a4.Name, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].AppName)
 	require.Nil(t, okRsp.Payload.Items[1].Subnets[0].LocalSubnets[0].Stats)
 	require.ElementsMatch(t, []string{"mouse", "frog"}, []string{okRsp.Payload.Items[0].Name, okRsp.Payload.Items[1].Name})

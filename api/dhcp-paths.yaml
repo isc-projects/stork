@@ -97,6 +97,56 @@
           schema:
             $ref: "#/definitions/ApiError"
 
+  /hosts/new/transaction/new:
+    post:
+      summary: Begin transaction for adding new host reservation.
+      description: >-
+        Creates a transaction in config manager to add a new host reservation. It returns
+        current list of the available DHCP servers and subnets. Both are required in
+        the form in which the user specifies the new host reservation.
+      operationId: createHostBegin
+      tags:
+        - DHCP
+      responses:
+        200:
+          description: New transaction successfully started.
+          schema:
+            $ref: '#/definitions/CreateHostBeginResponse'
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /host/new/transaction/{id}/submit:
+    post:
+      summary: Submit transaction adding new host reservation.
+      description: >-
+        Submits a transaction causing the server to create host reservations on
+        respective DHCP servers. It applies and submits the transactions in Stork
+        config manager.
+      operationId:
+        createHostSubmit
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+        - in: body
+          name: host
+          description: Host reservation information.
+          schema:
+            $ref: '#/definitions/Host'
+      responses:
+        200:
+          description: Host reservation successfully submitted.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
   /subnets:
     get:
       summary: Get list of DHCP subnets.

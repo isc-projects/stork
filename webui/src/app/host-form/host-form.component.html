@@ -1,4 +1,4 @@
-<form [formGroup]="formGroup">
+<form *ngIf="!form.initError; else showInitError" [formGroup]="formGroup">
     <p-fieldset legend="Assignments" styleClass="p-mt-4">
         <div class="p-grid host-form-abs-width">
             <div class="p-col-12 p-mb-3">
@@ -10,17 +10,27 @@
                         inputId="servers-select"
                         optionLabel="label"
                         optionValue="id"
-                        [options]="daemons"
+                        [options]="form.filteredDaemons"
                         formControlName="selectedServers"
                         display="chip"
+                        [showToggleAll]="false"
                         [style]="{ width: '100%' }"
                         (onChange)="onServersChange()"
                     >
                     </p-multiSelect>
                     <label for="servers-select">Servers</label>
                 </span>
+                <small
+                    *ngIf="
+                        formGroup.controls['selectedServers'].invalid &&
+                        formGroup.controls['selectedServers'].dirty &&
+                        formGroup.controls['selectedServers'].touched
+                    "
+                    class="p-error block"
+                    >At least one server must be selected.
+                </small>
             </div>
-            <div *ngIf="!formGroup.get('globalReservation').value" class="p-col-5">
+            <div *ngIf="!formGroup.get('globalReservation').value" class="p-col-8">
                 <span class="p-float-label">
                     <p-dropdown
                         inputId="subnets-dropdown"
@@ -29,11 +39,21 @@
                         [autoDisplayFirst]="false"
                         [options]="form.filteredSubnets"
                         formControlName="selectedSubnet"
+                        [showClear]="true"
                         [style]="{ width: '100%' }"
                     >
                     </p-dropdown>
                     <label for="subnets-dropdown">Subnet</label>
                 </span>
+                <small
+                    *ngIf="
+                        formGroup.controls['selectedSubnet'].invalid &&
+                        formGroup.controls['selectedSubnet'].dirty &&
+                        formGroup.controls['selectedSubnet'].touched
+                    "
+                    class="p-error block"
+                    >Subnet must be selected if the reservation is not global.
+                </small>
             </div>
         </div>
     </p-fieldset>
@@ -72,12 +92,7 @@
             <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i" class="p-mt-3">
                 <ng-container [formGroup]="ipGroup" style="display: flex; align-items: start">
                     <div class="p-col-3">
-                        <p-dropdown
-                            [options]="form.ipv6OnlyTypes ? ipTypes.slice(1) : ipTypes"
-                            formControlName="ipType"
-                            [style]="{ width: '100%' }"
-                            (onChange)="ipTypeChange()"
-                        >
+                        <p-dropdown [options]="ipTypes" formControlName="ipType" [style]="{ width: '100%' }">
                         </p-dropdown>
                     </div>
                     <ng-container [ngSwitch]="ipGroup.value.ipType">
@@ -138,7 +153,7 @@
                 pButton
                 class="p-button-rounded p-button-text p-mt-2"
                 label="Add IP Reservation"
-                [disabled]="form.addIPButtonDisabled"
+                [disabled]="ipGroups.length > 0 && ipTypes.length === 1"
                 (click)="addIPInput()"
             ></button>
         </div>
@@ -156,6 +171,33 @@
     </p-fieldset>
 
     <div class="p-m-5">
-        <p-button label="Submit"> </p-button>
+        <p-button label="Submit" [disabled]="formGroup.invalid" (onClick)="onSubmit()"></p-button>
     </div>
 </form>
+<ng-template #showInitError>
+    <p-fieldset legend="Errors" styleClass="p-mt-4">
+        <div class="p-grid host-form-abs-width">
+            <div class="p-col-12">
+                <p-messages severity="error">
+                    <ng-template pTemplate>
+                        <div class="flex flex-column">
+                            <div class="flex align-items-center p-m-4">
+                                In order to apply configuration changes, the server should begin a transaction between
+                                the user and the server. The server should also return current data required in the form
+                                where the host information is specified. Unfortunately, starting the new transaction
+                                failed with the following error:
+                            </div>
+                            <div class="flex align-items-center p-m-4 p-text-italic">
+                                {{ form.initError }}
+                            </div>
+                            <div class="flex align-items-center p-m-4">Retrying can help in some cases.</div>
+                        </div>
+                    </ng-template>
+                </p-messages>
+                <div class="p-mt-3">
+                    <p-button label="Retry" (onClick)="onRetry()"></p-button>
+                </div>
+            </div>
+        </div>
+    </p-fieldset>
+</ng-template>

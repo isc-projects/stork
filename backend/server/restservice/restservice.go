@@ -22,6 +22,7 @@ import (
 
 	"isc.org/stork/server/agentcomm"
 	"isc.org/stork/server/apps"
+	"isc.org/stork/server/config"
 	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbsession "isc.org/stork/server/database/session"
@@ -60,6 +61,7 @@ type RestAPI struct {
 	Pullers          *apps.Pullers
 	ReviewDispatcher configreview.Dispatcher
 	MetricsCollector metrics.Collector
+	ConfigManager    config.Manager
 
 	Agents agentcomm.ConnectedAgents
 
@@ -146,6 +148,10 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 		}
 		if argType.Implements(reflect.TypeOf((*metrics.Collector)(nil)).Elem()) {
 			api.MetricsCollector = arg.(metrics.Collector)
+			continue
+		}
+		if argType.Implements(reflect.TypeOf((*config.Manager)(nil)).Elem()) {
+			api.ConfigManager = arg.(config.Manager)
 			continue
 		}
 

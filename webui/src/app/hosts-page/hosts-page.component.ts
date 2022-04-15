@@ -281,13 +281,13 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      */
     private openNewHostTab() {
         let index = this.openedTabs.findIndex((t) => t.tabType === HostTabType.NewHost)
-        if (index < 0) {
-            let tab = new HostTab(HostTabType.NewHost)
-            this.openedTabs.push(tab)
-            this.createMenuItem('New Host', '/dhcp/hosts/new')
+        if (index >= 0) {
+            this.switchToTab(index + 1)
             return
         }
-        this.switchToTab(index + 1)
+        this.openedTabs.push(new HostTab(HostTabType.NewHost))
+        this.createMenuItem('New Host', '/dhcp/hosts/new')
+        return
     }
 
     /**
@@ -439,7 +439,22 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         return ''
     }
 
-    onHostFormChange(index, event) {
-        this.openedTabs[index] = event
+    /**
+     * Event handler triggered when a host form tab is being closed.
+     *
+     * The host form component is being destroyed and thus this parent
+     * component must save the updated form data in case a user re-opens
+     * the form tab.
+     *
+     * @param event an event holding updated form data.
+     */
+    onHostFormDestroy(event): void {
+        // Find the form matching the form for which the notification has
+        // been sent.
+        const tab = this.openedTabs.find((t) => t.form && t.form.transactionId === event.transactionId)
+        if (tab) {
+            // Found the matching form. Update it.
+            tab.form = event
+        }
     }
 }

@@ -317,6 +317,7 @@ func GetAllSubnets(dbi dbops.DBI, family int) ([]Subnet, error) {
 		}).
 		Relation("SharedNetwork").
 		Relation("LocalSubnets.Daemon.App.AccessPoints").
+		Relation("LocalSubnets.Daemon.App.Machine").
 		OrderExpr("id ASC")
 
 	// Let's be liberal and allow other values than 0 too. The only special

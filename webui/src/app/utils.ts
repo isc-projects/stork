@@ -366,3 +366,19 @@ export function copyToClipboard(textEl) {
 export function clamp(value: number, lower: number, upper: number): number {
     return Math.min(upper, Math.max(value, lower))
 }
+
+/**
+ * Converts a text into a string of hexadecimal digits.
+ *
+ * @param s text to convert.
+ * @param separator separator to use between groups of digits.
+ * @returns converted string.
+ */
+export function stringToHex(s: string, separator = ':'): string {
+    let output = []
+    for (let i = 0; i < s.length; i++) {
+        const hex = Number(s.charCodeAt(i)).toString(16)
+        output.push(hex)
+    }
+    return output.join(separator)
+}

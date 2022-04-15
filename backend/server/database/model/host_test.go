@@ -1363,3 +1363,142 @@ func TestKeaConfigHostInterfaceNoSubnet(t *testing.T) {
 	require.NoError(t, err)
 	require.Zero(t, subnetID)
 }
+
+// Test that daemon information can be populated to the existing
+// host instance when LocalHost instances merely contain DaemonID
+// values.
+func TestPopulateHostDaemons(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps to the database.
+	apps := addTestSubnetApps(t, db)
+
+	// Create bare host that lacks Daemon instances but has valid DaemonID values.
+	host := &Host{
+		LocalHosts: []LocalHost{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+			{
+				DaemonID: apps[1].Daemons[0].ID,
+			},
+		},
+	}
+	err := host.PopulateDaemons(db)
+	require.NoError(t, err)
+
+	// Make sure that the daemon information was assigned to the host.
+	require.Len(t, host.LocalHosts, 2)
+	require.NotNil(t, host.LocalHosts[0].Daemon)
+	require.EqualValues(t, apps[0].Daemons[0].ID, host.LocalHosts[0].Daemon.ID)
+	require.NotNil(t, host.LocalHosts[1].Daemon)
+	require.EqualValues(t, apps[1].Daemons[0].ID, host.LocalHosts[1].Daemon.ID)
+}
+
+// Test that an attempt to populate daemon information to a host fails when one
+// of the daemons does not exist.
+func TestPopulateHostDaemonsMissingDaemons(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps and hosts into the database.
+	apps := addTestSubnetApps(t, db)
+	host := &Host{
+		LocalHosts: []LocalHost{
+			{
+				DaemonID: apps[0].Daemons[0].ID,
+			},
+			{
+				DaemonID: apps[0].Daemons[0].ID + apps[1].Daemons[0].ID,
+			},
+		},
+	}
+	err := host.PopulateDaemons(db)
+	require.Error(t, err)
+
+	// The host should not be updated because of an error.
+	require.Len(t, host.LocalHosts, 2)
+	require.Nil(t, host.LocalHosts[0].Daemon)
+	require.Nil(t, host.LocalHosts[1].Daemon)
+}
+
+// Test that subnet information can be populated to the existing host
+// instance when subnet ID is available.
+func TestPopulateSubnet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Insert apps to the database.
+	apps := addTestSubnetApps(t, db)
+
+	// Insert a subnet that matches one of the subnets in the apps'
+	// configurations.
+	subnet := &Subnet{
+		ID:     1,
+		Prefix: "192.0.2.0/24",
+	}
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+	require.NotZero(t, subnet.ID)
+
+	// Associate the subnet with one of the daemons.
+	err = AddDaemonToSubnet(db, subnet, apps[0].Daemons[0])
+	require.NoError(t, err)
+
+	// Create the host under test and populate the subnet. It should
+	// fetch the subnet from the database and assign to the host struct.
+	host := &Host{
+		SubnetID: 1,
+	}
+	err = host.PopulateSubnet(db)
+	require.NoError(t, err)
+
+	// Make sure the subnet has been assigned and that it contains
+	// the association with the daemon.
+	require.NotNil(t, host.Subnet)
+	require.Len(t, host.Subnet.LocalSubnets, 1)
+	require.EqualValues(t, 123, host.Subnet.LocalSubnets[0].LocalSubnetID)
+}
+
+// Test that an error is returned when populated subnet doesn't exist.
+func TestPopulateNonExistingSubnet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	host := &Host{
+		SubnetID: 1,
+	}
+	err := host.PopulateSubnet(db)
+	require.Error(t, err)
+}
+
+// Test that subnet is not populated when subnet ID is 0.
+func TestPopulateNoSubnet(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	host := &Host{
+		SubnetID: 0,
+	}
+	err := host.PopulateSubnet(db)
+	require.NoError(t, err)
+	require.Nil(t, host.Subnet)
+}
+
+// Test that the subnet is not populated the second time.
+func TestPopulateSubnetAlreadyPopulated(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	host := &Host{
+		SubnetID: 1,
+		Subnet: &Subnet{
+			ID: 1234,
+		},
+	}
+	err := host.PopulateSubnet(db)
+	require.NoError(t, err)
+	require.NotNil(t, host.Subnet)
+	require.EqualValues(t, 1234, host.Subnet.ID)
+}

@@ -3,15 +3,30 @@ package restservice
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
+	keactrl "isc.org/stork/appctrl/kea"
+	agentcommtest "isc.org/stork/server/agentcomm/test"
+	apps "isc.org/stork/server/apps"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 )
+
+func mockStatusError(commandName string, cmdResponses []interface{}) {
+	command := keactrl.NewCommand(commandName, []string{"dhcp4"}, nil)
+	json := `[
+        {
+            "result": 1,
+            "text": "unable to communicate with the daemon"
+        }
+    ]`
+	_ = keactrl.UnmarshalResponseList(command, []byte(json), cmdResponses[0])
+}
 
 // This function creates multiple hosts used in tests which fetch and
 // filter hosts.
@@ -37,16 +52,33 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 			Active:       true,
 			AccessPoints: accessPoints,
 			Daemons: []*dbmodel.Daemon{
-				{
-					Name:   dbmodel.DaemonNameDHCPv4,
-					Active: true,
-				},
-				{
-					Name:   dbmodel.DaemonNameDHCPv6,
-					Active: true,
-				},
+				dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv4, true),
+				dbmodel.NewKeaDaemon(dbmodel.DaemonNameDHCPv6, true),
 			},
 		}
+		err = a.Daemons[0].SetConfigFromJSON(`{
+            "Dhcp4": {
+                "subnet4": [
+                    {
+                        "id": 111,
+                        "subnet": "192.0.2.0/24"
+                    }
+                ]
+            }
+        }`)
+		require.NoError(t, err)
+
+		err = a.Daemons[1].SetConfigFromJSON(`{
+            "Dhcp6": {
+                "subnet6": [
+                    {
+                        "id": 222,
+                        "subnet": "2001:db8:1::/64"
+                    }
+                ]
+            }
+        }`)
+		require.NoError(t, err)
 		apps = append(apps, a)
 	}
 
@@ -159,6 +191,11 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
 		_, err := dbmodel.AddApp(db, &app)
 		require.NoError(t, err)
 		require.NotZero(t, app.ID)
+		// Associate the daemons with the subnets.
+		for j := range apps[i].Daemons {
+			err = dbmodel.AddDaemonToSubnet(db, &subnets[j], apps[i].Daemons[j])
+			require.NoError(t, err)
+		}
 		apps[i] = app
 	}
 
@@ -335,4 +372,255 @@ func TestGetHost(t *testing.T) {
 	}
 	rsp = rapi.GetHost(ctx, params)
 	require.IsType(t, &dhcp.GetHostDefault{}, rsp)
+}
+
+// Test that the call creating a new host reservation transaction.
+func TestCreateHostBeginSubmit(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving reservation-add commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	// Create the config manager using these agents.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps in the database.
+	_, apps := addTestHosts(t, db)
+
+	// Begin transaction.
+	params := dhcp.CreateHostBeginParams{}
+	rsp := rapi.CreateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateHostBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.CreateHostBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, apps and subnets.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.Len(t, contents.Apps, 2)
+	require.Len(t, contents.Subnets, 2)
+
+	// Submit transaction.
+	params2 := dhcp.CreateHostSubmitParams{
+		ID: transactionID,
+		Host: &models.Host{
+			SubnetID: 1,
+			Hostname: "example.org",
+			LocalHosts: []*models.LocalHost{
+				{
+					DaemonID: apps[0].Daemons[0].ID,
+				},
+				{
+					DaemonID: apps[1].Daemons[0].ID,
+				},
+			},
+		},
+	}
+	rsp2 := rapi.CreateHostSubmit(ctx, params2)
+	require.IsType(t, &dhcp.CreateHostSubmitOK{}, rsp2)
+
+	// It should result in sending commands to two Kea servers.
+	require.Len(t, fa.RecordedCommands, 2)
+
+	for _, c := range fa.RecordedCommands {
+		require.JSONEq(t, `{
+            "command": "reservation-add",
+            "service": ["dhcp4"],
+            "arguments": {
+                "reservation": {
+                    "subnet-id": 111,
+                    "hostname": "example.org"
+                }
+            }
+        }`, c.Marshal())
+	}
+}
+
+// Test error case when a user attempts to begin new transaction when the
+// user has no session.
+func TestCreateHostBeginNoSession(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving reservation-add commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	// Create the config manager using these agents.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Create session manager but do not login the user.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps in the database.
+	_, _ = addTestHosts(t, db)
+
+	// Begin transaction.
+	params := dhcp.CreateHostBeginParams{}
+	rsp := rapi.CreateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateHostBeginDefault{}, rsp)
+	defaultRsp := rsp.(*dhcp.CreateHostBeginDefault)
+	require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
+}
+
+// Test error cases for submitting new host reservation.
+func TestCreateHostSubmitError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Setup fake agents that return an error in response to reservation-add
+	// command.
+	fa := agentcommtest.NewFakeAgents(func(callNo int, cmdResponses []interface{}) {
+		mockStatusError("reservation-add", cmdResponses)
+	}, nil)
+	require.NotNil(t, fa)
+
+	// Create config manager.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Start session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create a user and simulate logging in.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps in the database.
+	_, apps := addTestHosts(t, db)
+
+	// Begin transaction. It will be needed for the actual part of the
+	// test that relies on the existence of the transaction.
+	params := dhcp.CreateHostBeginParams{}
+	rsp := rapi.CreateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateHostBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.CreateHostBeginOK)
+	contents := okRsp.Payload
+
+	// Capture transaction ID.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+
+	// Submit transaction without the host information.
+	t.Run("no host", func(t *testing.T) {
+		params := dhcp.CreateHostSubmitParams{
+			ID:   transactionID,
+			Host: nil,
+		}
+		rsp := rapi.CreateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with non-matching transaction ID.
+	t.Run("wrong transaction id", func(t *testing.T) {
+		params := dhcp.CreateHostSubmitParams{
+			ID: transactionID + 1,
+			Host: &models.Host{
+				LocalHosts: []*models.LocalHost{
+					{
+						DaemonID: apps[0].Daemons[0].ID,
+					},
+					{
+						DaemonID: apps[1].Daemons[0].ID,
+					},
+				},
+			},
+		}
+		rsp := rapi.CreateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
+		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with a host that is not associated with any daemons.
+	// It simulates a failure in "apply" step which typically is caused by
+	// some internal server problem rather than malformed request.
+	t.Run("no daemons in host", func(t *testing.T) {
+		params := dhcp.CreateHostSubmitParams{
+			ID: transactionID,
+			Host: &models.Host{
+				LocalHosts: []*models.LocalHost{},
+			},
+		}
+		rsp := rapi.CreateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
+		require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with valid ID and host but expect the agent to
+	// return an error code. This is considered a conflict with the state
+	// of the Kea servers.
+	t.Run("commit failure", func(t *testing.T) {
+		params := dhcp.CreateHostSubmitParams{
+			ID: transactionID,
+			Host: &models.Host{
+				LocalHosts: []*models.LocalHost{
+					{
+						DaemonID: apps[0].Daemons[0].ID,
+					},
+				},
+			},
+		}
+		rsp := rapi.CreateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
+		require.Equal(t, http.StatusConflict, getStatusCode(*defaultRsp))
+	})
+
+	// Submit transaction with valid ID and host but the user has no
+	// session.
+	t.Run("no user session", func(t *testing.T) {
+		err = rapi.SessionManager.LogoutHandler(ctx)
+		require.NoError(t, err)
+
+		params := dhcp.CreateHostSubmitParams{
+			ID: transactionID,
+			Host: &models.Host{
+				LocalHosts: []*models.LocalHost{
+					{
+						DaemonID: apps[0].Daemons[0].ID,
+					},
+				},
+			},
+		}
+		rsp := rapi.CreateHostSubmit(ctx, params)
+		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
+		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
+	})
 }

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { HostsPageComponent } from './hosts-page.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { FormsModule } from '@angular/forms'
+import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { MessageService } from 'primeng/api'
 import { TableModule } from 'primeng/table'
 import { DHCPService } from '../backend'
@@ -23,6 +23,11 @@ import { FieldsetModule } from 'primeng/fieldset'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
 import { ToggleButtonModule } from 'primeng/togglebutton'
 import { IdentifierComponent } from '../identifier/identifier.component'
+import { ButtonModule } from 'primeng/button'
+import { CheckboxModule } from 'primeng/checkbox'
+import { DropdownModule } from 'primeng/dropdown'
+import { MultiSelectModule } from 'primeng/multiselect'
+import { HostFormComponent } from '../host-form/host-form.component'
 
 class MockParamMap {
     get(name: string): string | null {
@@ -44,7 +49,7 @@ describe('HostsPageComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                providers: [DHCPService, MessageService],
+                providers: [DHCPService, FormBuilder, MessageService],
                 imports: [
                     FormsModule,
                     TableModule,
@@ -69,6 +74,12 @@ describe('HostsPageComponent', () => {
                     FieldsetModule,
                     ProgressSpinnerModule,
                     ToggleButtonModule,
+                    ButtonModule,
+                    CheckboxModule,
+                    DropdownModule,
+                    FieldsetModule,
+                    MultiSelectModule,
+                    ReactiveFormsModule,
                 ],
                 declarations: [
                     EntityLinkComponent,
@@ -77,6 +88,7 @@ describe('HostsPageComponent', () => {
                     HelpTipComponent,
                     HostTabComponent,
                     IdentifierComponent,
+                    HostFormComponent,
                 ],
             }).compileComponents()
         })

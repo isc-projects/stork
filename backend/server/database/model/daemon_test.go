@@ -252,6 +252,8 @@ func TestGetDaemonByID(t *testing.T) {
     }`)
 	require.NoError(t, err)
 
+	accessPoints := []*AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234, false)
 	app := &App{
 		ID:        0,
 		MachineID: m.ID,
@@ -259,6 +261,7 @@ func TestGetDaemonByID(t *testing.T) {
 		Daemons: []*Daemon{
 			daemonEntry,
 		},
+		AccessPoints: accessPoints,
 	}
 	_, err = AddApp(db, app)
 	require.NoError(t, err)
@@ -275,6 +278,8 @@ func TestGetDaemonByID(t *testing.T) {
 	require.EqualValues(t, daemon.Active, dmn.Active)
 	require.NotNil(t, dmn.KeaDaemon)
 	require.NotNil(t, dmn.KeaDaemon.Config)
+	require.NotNil(t, dmn.App)
+	require.Len(t, dmn.App.AccessPoints, 1)
 }
 
 // Test selecting BIND9 daemon by ID for update which should result in locking

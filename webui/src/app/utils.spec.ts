@@ -1,4 +1,4 @@
-import { clamp, humanCount } from './utils'
+import { clamp, humanCount, stringToHex } from './utils'
 
 describe('utils', () => {
     it('clamps should return return proper number', () => {
@@ -90,5 +90,14 @@ describe('utils', () => {
         expect(clamp(Number.POSITIVE_INFINITY, 0, 1)).toBe(1)
         // Floats - bounds as infinities
         expect(clamp(3, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY)).toBe(3)
+    })
+
+    it('converts text to a string of hexadecimal digits', () => {
+        // Lower case.
+        expect(stringToHex('abcdefghi')).toBe('61:62:63:64:65:66:67:68:69')
+        // Upper case with non-default separator.
+        expect(stringToHex('MY OH MY', '-')).toBe('4d-59-20-4f-48-20-4d-59')
+        // Empty string.
+        expect(stringToHex('')).toBe('')
     })
 })

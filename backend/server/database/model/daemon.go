@@ -257,10 +257,10 @@ func NewBind9Daemon(active bool) *Daemon {
 }
 
 // Get daemon by ID.
-func GetDaemonByID(db *pg.DB, id int64) (*Daemon, error) {
+func GetDaemonByID(dbi pg.DBI, id int64) (*Daemon, error) {
 	app := Daemon{}
-	q := db.Model(&app)
-	q = q.Relation("App")
+	q := dbi.Model(&app)
+	q = q.Relation("App.AccessPoints")
 	q = q.Relation("App.Machine")
 	q = q.Relation("KeaDaemon")
 	q = q.Where("daemon.id = ?", id)

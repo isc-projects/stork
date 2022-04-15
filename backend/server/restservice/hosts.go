@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-openapi/runtime/middleware"
 	log "github.com/sirupsen/logrus"
 
+	"isc.org/stork/server/config"
 	dbmodel "isc.org/stork/server/database/model"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
@@ -16,7 +18,7 @@ import (
 
 // Converts host reservation fetched from the database to the format
 // used in REST API.
-func hostToRestAPI(dbHost *dbmodel.Host) *models.Host {
+func convertFromHost(dbHost *dbmodel.Host) *models.Host {
 	host := &models.Host{
 		ID:       dbHost.ID,
 		SubnetID: dbHost.SubnetID,
@@ -50,7 +52,7 @@ func hostToRestAPI(dbHost *dbmodel.Host) *models.Host {
 		}
 	}
 	// Append local hosts containing associations of the host with
-	// apps.
+	// daemons.
 	for _, dbLocalHost := range dbHost.LocalHosts {
 		localHost := models.LocalHost{
 			AppID:      dbLocalHost.Daemon.AppID,
@@ -58,6 +60,40 @@ func hostToRestAPI(dbHost *dbmodel.Host) *models.Host {
 			DataSource: dbLocalHost.DataSource,
 		}
 		host.LocalHosts = append(host.LocalHosts, &localHost)
+	}
+	return host
+}
+
+// Convert host reservation from the format used in REST API to a
+// database host representation.
+func convertToHost(restHost *models.Host) *dbmodel.Host {
+	host := &dbmodel.Host{
+		ID:       restHost.ID,
+		SubnetID: restHost.SubnetID,
+		Hostname: restHost.Hostname,
+	}
+	// Convert DHCP host identifiers.
+	for _, hid := range restHost.HostIdentifiers {
+		hostID := dbmodel.HostIdentifier{
+			Type:  hid.IDType,
+			Value: storkutil.HexToBytes(hid.IDHexValue),
+		}
+		host.HostIdentifiers = append(host.HostIdentifiers, hostID)
+	}
+	// Convert IP reservations.
+	for _, r := range append(restHost.PrefixReservations, restHost.AddressReservations...) {
+		ipr := dbmodel.IPReservation{
+			Address: r.Address,
+		}
+		host.IPReservations = append(host.IPReservations, ipr)
+	}
+	// Convert local hosts containing associations of the host with daemons.
+	for _, lh := range restHost.LocalHosts {
+		localHost := dbmodel.LocalHost{
+			DaemonID:   lh.DaemonID,
+			DataSource: lh.DataSource,
+		}
+		host.LocalHosts = append(host.LocalHosts, localHost)
 	}
 	return host
 }
@@ -77,7 +113,7 @@ func (r *RestAPI) getHosts(offset, limit, appID int64, subnetID *int64, filterTe
 
 	// Convert hosts fetched from the database to REST.
 	for i := range dbHosts {
-		host := hostToRestAPI(&dbHosts[i])
+		host := convertFromHost(&dbHosts[i])
 		hosts.Items = append(hosts.Items, host)
 	}
 
@@ -140,7 +176,162 @@ func (r *RestAPI) GetHost(ctx context.Context, params dhcp.GetHostParams) middle
 		return rsp
 	}
 	// Host found. Convert it to the format used in REST API.
-	host := hostToRestAPI(dbHost)
+	host := convertFromHost(dbHost)
 	rsp := dhcp.NewGetHostOK().WithPayload(host)
+	return rsp
+}
+
+// Implements the POST call to create new transaction for adding a new host
+// reservation (hosts/new/transaction/new).
+func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeginParams) middleware.Responder {
+	// A list of Kea apps will be needed in the user form, so the
+	// user can select which servers send the reservation to.
+	apps, err := dbmodel.GetAppsByType(r.DB, dbmodel.AppTypeKea)
+	if err != nil {
+		msg := "problem with fetching apps from the database"
+		log.Error(err)
+		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Host reservations are typically associated with subnets. The
+	// user needs a current list of available subnets.
+	subnets, err := dbmodel.GetAllSubnets(r.DB, 0)
+	if err != nil {
+		msg := "problem with fetching subnets from the database"
+		log.Error(err)
+		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Convert apps list to REST API format.
+	respApps := []*models.App{}
+	for i := range apps {
+		respApps = append(respApps, r.appToRestAPI(&apps[i]))
+	}
+	// Convert subnets list to REST API format.
+	respSubnets := []*models.Subnet{}
+	for i := range subnets {
+		respSubnets = append(respSubnets, subnetToRestAPI(&subnets[i]))
+	}
+	// Get the logged user's ID.
+	ok, user := r.SessionManager.Logged(ctx)
+	if !ok {
+		msg := "user is not logged in"
+		log.Error("problem with creating transaction context because user has no session")
+		rsp := dhcp.NewCreateHostBeginDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Create configuration context.
+	cctx, err := r.ConfigManager.CreateContext(int64(user.ID))
+	if err != nil {
+		msg := "problem with creating transaction context"
+		log.Error(err)
+		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Retrieve the generated context ID.
+	cctxID, ok := config.GetValueAsInt64(cctx, config.ContextIDKey)
+	if !ok {
+		msg := "problem with retrieving context ID for a transaction"
+		log.Error(msg)
+		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Remember the context, i.e. new transaction has been succcessfully created.
+	_ = r.ConfigManager.RememberContext(cctx, time.Minute*10)
+
+	// Return transaction ID, apps and subnets to the user.
+	contents := &models.CreateHostBeginResponse{
+		ID:      cctxID,
+		Apps:    respApps,
+		Subnets: respSubnets,
+	}
+	rsp := dhcp.NewCreateHostBeginOK().WithPayload(contents)
+	return rsp
+}
+
+// Implements the POST call to apply and commit host reservation (hosts/new/transaction/{id}/submit).
+func (r *RestAPI) CreateHostSubmit(ctx context.Context, params dhcp.CreateHostSubmitParams) middleware.Responder {
+	// Make sure that the host information is present.
+	if params.Host == nil {
+		msg := "host information not specified"
+		log.Errorf(msg)
+		rsp := dhcp.NewCreateHostSubmitDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Get the user ID and recover the transaction context.
+	ok, user := r.SessionManager.Logged(ctx)
+	if !ok {
+		msg := "user is not logged in"
+		log.Error("problem with recovering transaction context because user has no session")
+		rsp := dhcp.NewCreateHostSubmitDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Retrieve the context from the config manager manager.
+	cctx, _ := r.ConfigManager.RecoverContext(params.ID, int64(user.ID))
+	if cctx == nil {
+		msg := "problem with recovering transaction context"
+		log.Errorf("problem with recovering transaction context for transaction ID %d and user ID %d", params.ID, user.ID)
+		rsp := dhcp.NewCreateHostSubmitDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Convert host information from REST API to database format.
+	host := convertToHost(params.Host)
+	err := host.PopulateDaemons(r.DB)
+	if err != nil {
+		msg := "specified host is associated with daemons that no longer exist"
+		log.Error(err)
+		rsp := dhcp.NewCreateHostSubmitDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	err = host.PopulateSubnet(r.DB)
+	if err != nil {
+		msg := "problem with retrieving subnet association with the host"
+		log.Error(err)
+		rsp := dhcp.NewCreateHostSubmitDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Apply the host information (create Kea commands).
+	cctx, err = r.ConfigManager.GetKeaModule().ApplyHostAdd(cctx, host)
+	if err != nil {
+		msg := "problem with applying host information"
+		log.Error(err)
+		rsp := dhcp.NewCreateHostSubmitDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Send the commands to Kea servers.
+	cctx, err = r.ConfigManager.Commit(cctx)
+	if err != nil {
+		msg := "problem with committing host information"
+		log.Error(err)
+		rsp := dhcp.NewCreateHostSubmitDefault(http.StatusConflict).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Everything ok. Cleanup and send OK to the client.
+	r.ConfigManager.Done(cctx)
+	rsp := dhcp.NewCreateHostSubmitOK()
 	return rsp
 }

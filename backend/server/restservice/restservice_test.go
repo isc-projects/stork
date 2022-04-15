@@ -24,9 +24,10 @@ func TestNewRestAPI(t *testing.T) {
 	dispatcher := &storktestdbmodel.FakeDispatcher{}
 	pullers := &apps.Pullers{}
 	collector := storktest.NewFakeMetricsCollector()
+	configManager := apps.NewManager(db, agents)
 
 	// Specify all supported structures.
-	api, err := NewRestAPI(settings, dbs, db, agents, eventcenter, pullers, dispatcher, collector)
+	api, err := NewRestAPI(settings, dbs, db, agents, eventcenter, pullers, dispatcher, collector, configManager)
 	require.NoError(t, err)
 	require.NotNil(t, api)
 	require.Equal(t, api.Settings, settings)
@@ -36,9 +37,10 @@ func TestNewRestAPI(t *testing.T) {
 	require.Equal(t, api.Pullers, pullers)
 	require.Equal(t, api.ReviewDispatcher, dispatcher)
 	require.Equal(t, api.MetricsCollector, collector)
+	require.Equal(t, api.ConfigManager, configManager)
 
 	// Reverse their order.
-	api, err = NewRestAPI(collector, dispatcher, pullers, eventcenter, agents, db, dbs, settings)
+	api, err = NewRestAPI(configManager, collector, dispatcher, pullers, eventcenter, agents, db, dbs, settings)
 	require.NoError(t, err)
 	require.NotNil(t, api)
 	require.Equal(t, api.Settings, settings)
@@ -48,6 +50,7 @@ func TestNewRestAPI(t *testing.T) {
 	require.Equal(t, api.Pullers, pullers)
 	require.Equal(t, api.ReviewDispatcher, dispatcher)
 	require.Equal(t, api.MetricsCollector, collector)
+	require.Equal(t, api.ConfigManager, configManager)
 
 	// Specify one structure and one interface.
 	api, err = NewRestAPI(dbs, dispatcher)

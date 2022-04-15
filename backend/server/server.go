@@ -12,6 +12,7 @@ import (
 	"isc.org/stork/server/apps/bind9"
 	"isc.org/stork/server/apps/kea"
 	"isc.org/stork/server/certs"
+	"isc.org/stork/server/config"
 	"isc.org/stork/server/configreview"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
@@ -48,6 +49,8 @@ type StorkServer struct {
 	EventCenter eventcenter.EventCenter
 
 	ReviewDispatcher configreview.Dispatcher
+
+	ConfigManager config.Manager
 }
 
 // Global server settings (called application settings in go-flags nomenclature).
@@ -203,10 +206,12 @@ func (ss *StorkServer) Bootstrap() (err error) {
 		log.Warn("The metric endpoint is disabled (it can be enabled with the -m flag)")
 	}
 
+	ss.ConfigManager = apps.NewManager(ss.DB, ss.Agents)
+
 	// setup ReST API service
 	r, err := restservice.NewRestAPI(&ss.RestAPISettings, &ss.DBSettings,
 		ss.DB, ss.Agents, ss.EventCenter,
-		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector)
+		ss.Pullers, ss.ReviewDispatcher, ss.MetricsCollector, ss.ConfigManager)
 	if err != nil {
 		ss.Pullers.HAStatusPuller.Shutdown()
 		ss.Pullers.KeaHostsPuller.Shutdown()

@@ -33,6 +33,7 @@ func subnetToRestAPI(sn *dbmodel.Subnet) *models.Subnet {
 	for _, lsn := range sn.LocalSubnets {
 		localSubnet := &models.LocalSubnet{
 			AppID:            lsn.Daemon.App.ID,
+			DaemonID:         lsn.Daemon.ID,
 			AppName:          lsn.Daemon.App.Name,
 			ID:               lsn.LocalSubnetID,
 			MachineAddress:   lsn.Daemon.App.Machine.Address,

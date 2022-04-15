@@ -890,3 +890,57 @@ func (host Host) GetSubnetID(daemonID int64) (subnetID int64, err error) {
 	}
 	return
 }
+
+// Fetches daemon information for each daemon ID within the local hosts.
+// The host information can be partial when it is created from the request
+// received over the REST API. In particular, the LocalHosts can merely
+// contain DaemonID values and the Daemon pointers can be nil. In order
+// to initialize Daemon pointers, this function fetches the daemons from
+// the database and assigns them to the respective LocalHost instances.
+// If any of the daemons does not exist or an error occurs, the host
+// is not updated.
+func (host Host) PopulateDaemons(dbi dbops.DBI) error {
+	var daemons []*Daemon
+	for _, lh := range host.LocalHosts {
+		// DaemonID is required for this function to run.
+		if lh.DaemonID == 0 {
+			return pkgerrors.Errorf("problem with populating daemons: host %d lacks daemon ID", host.ID)
+		}
+		daemon, err := GetDaemonByID(dbi, lh.DaemonID)
+		if err != nil {
+			return pkgerrors.WithMessage(err, "problem with populating daemons")
+		}
+		// Daemon does not exist.
+		if daemon == nil {
+			return pkgerrors.Errorf("problem with populating daemons for host %d: daemon %d does not exist", host.ID, lh.DaemonID)
+		}
+		daemons = append(daemons, daemon)
+	}
+	// Everything fine. Assign fetched daemons to the host.
+	for i := range host.LocalHosts {
+		host.LocalHosts[i].Daemon = daemons[i]
+	}
+	return nil
+}
+
+// Fetches subnet information for a non-zero subnet ID in the host. The
+// host information can be partial when it is created from the request
+// received over the REST API. This function can be called to initialize
+// the Subnet structure in the host with the full information about the
+// subnet the host belongs to. This function is no-op when subnet ID is
+// 0 or when the Subnet pointer is already non-nil. Otherwise, it fetches
+// the relevant subnet information from the database. If the subnet
+// doesn't exist, an error is returned.
+func (host *Host) PopulateSubnet(dbi dbops.DBI) error {
+	if host.SubnetID != 0 && host.Subnet == nil {
+		subnet, err := GetSubnet(dbi, host.SubnetID)
+		if err != nil {
+			return pkgerrors.WithMessagef(err, "problem with populating subnet %d for host %d", host.SubnetID, host.ID)
+		}
+		if subnet == nil {
+			return pkgerrors.Errorf("problem with populating subnet %d for host %d because such subnet does not exist", host.SubnetID, host.ID)
+		}
+		host.Subnet = subnet
+	}
+	return nil
+}
