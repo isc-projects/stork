@@ -525,6 +525,14 @@ file SPHINX_BUILD => [python_tools_dir, sphinx_requirements_file] do
     sh SPHINX_BUILD, "--version"
 end
 
+pytests_path = File.expand_path("tools/python/bin/pytest")
+pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
+PYTEST = pytests_path
+file PYTEST => [python_tools_dir, pytests_requirements_file] do
+    Rake::Task["pip_install"].invoke(pytests_requirements_file)
+    sh PYTEST, "--version"
+end
+
 ######################
 ### Internal tasks ###
 ######################
@@ -573,5 +581,6 @@ end
 desc 'Check all system-level dependencies'
 task :check do
     check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip", "entr", "git",
-        "gem", "createdb", "psql", "dropdb", ENV['CHROME_BIN'])
+        "createdb", "psql", "dropdb", ENV['CHROME_BIN'], "docker-compose",
+        "docker", "gem")
 end
