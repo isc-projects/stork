@@ -1,6 +1,6 @@
 from datetime import datetime
 import re
-from typing import Callable
+from typing import Callable, List
 from pytest import param
 import requests
 
@@ -100,6 +100,17 @@ class Server(ComposeServiceWrapper):
                             params=params)
         return r.json()
 
+    def list_leases(self, text=None, host_id=None) -> api.LeaseList:
+        params = {}
+        if text != None:
+            params["text"] = text
+        if host_id != None:
+            params["hostId"] = host_id
+
+        r = self._fetch_api("GET", "/leases", expected_status=200,
+                            params=params)
+        return r.json()
+
     # Create
 
     def create_user(self, user_create: api.UserCreate):
@@ -172,8 +183,9 @@ class Server(ComposeServiceWrapper):
 
         return worker()
 
-    def wait_for_next_machine_state(self, machine_id: int) -> api.MachineState:
-        start = datetime.utcnow()
+    def wait_for_next_machine_state(self, machine_id: int, start=None) -> api.MachineState:
+        if start is None:
+            start = datetime.utcnow()
 
         @wait_for_success()
         def worker():
@@ -184,6 +196,16 @@ class Server(ComposeServiceWrapper):
                 raise NoSuccessException()
             return state
         return worker()
+
+    def wait_for_next_machine_states(self) -> List[api.MachineState]:
+        start = datetime.utcnow()
+        machines = self.list_machines(authorized=True)
+        states = []
+        for machine in machines["items"]:
+            state = self.wait_for_next_machine_state(
+                machine["id"], start=start)
+            states.append(state)
+        return states
 
     _pattern_added_subnets = re.compile(
         r'added (?:(?:\d+ subnets)|(?:<subnet.*>)) to <daemon '

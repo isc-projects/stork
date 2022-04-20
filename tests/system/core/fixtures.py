@@ -7,6 +7,7 @@ import pytest
 from core.compose_factory import create_docker_compose
 import core.wrappers as wrappers
 from core.utils import setup_logger
+import core.lease_generators as lease_generators
 
 
 logger = setup_logger(__name__)
@@ -47,6 +48,14 @@ def kea_service(request):
         # We need the Server to perform the registration
         server_service = request.getfixturevalue("server_service")
 
+    # Re-generate the lease files
+    config_dir = os.path.join(os.path.dirname(__file__), "../config/kea")
+    with open(os.path.join(config_dir, "kea-leases4.csv"), "wt") as f:
+        lease_generators.gen_dhcp4_lease_file(f)
+
+    with open(os.path.join(config_dir, "kea-leases6.csv"), "wt") as f:
+        lease_generators.gen_dhcp6_lease_file(f)
+
     service_name = param['service_name']
     compose = create_docker_compose(env_vars=env_vars)
     compose.start(service_name)
@@ -55,7 +64,7 @@ def kea_service(request):
     return wrapper
 
 
-@pytest.fixture(autouse=True)
+@ pytest.fixture(autouse=True)
 def finish(request):
     """Save all logs to file and down all used containers."""
     function_name = request.function.__name__

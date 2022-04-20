@@ -78,3 +78,14 @@ class Event(TypedDict):
 class EventList(TypedDict):
     items: List[Event]
     total: int
+
+
+class Lease(TypedDict):
+    ipAddress: str
+    state: int
+
+
+class LeaseList(TypedDict):
+    items: List[Lease]
+    total: int
+    conflicts: List

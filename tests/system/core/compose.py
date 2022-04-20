@@ -235,7 +235,7 @@ class DockerCompose(object):
         _, stdout, stderr = self._call_command(logs_cmd)
         return stdout, stderr
 
-    def exec_in_container(self, service_name, command):
+    def exec_in_container(self, service_name, command, check=True):
         """
         Executes a command in the container of one of the services.
 
@@ -255,7 +255,7 @@ class DockerCompose(object):
         ) + ['exec', '-T', service_name] + command
         return self._call_command(
             exec_cmd,
-            check=False
+            check=check
         )
 
     def get_service_ip_address(self, service_name, network_name):

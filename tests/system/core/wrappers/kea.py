@@ -1,3 +1,5 @@
+import csv
+import io
 from core.compose import DockerCompose
 from core.wrappers.base import ComposeServiceWrapper
 from core.wrappers.server import Server
@@ -19,6 +21,14 @@ class Kea(ComposeServiceWrapper):
             return False
         stdout, _ = self._compose.get_logs()
         return "machine registered" in stdout
+
+    def read_lease_file(self, family: int):
+        path = '/var/lib/kea/kea-leases%d.csv' % family
+        cmd = ["cat", path]
+        _, stdout, _ = self._compose.exec_in_container(
+            self._service_name, cmd)
+
+        return csv.DictReader(io.StringIO(stdout))
 
     @wait_for_success()
     def wait_for_registration(self):
