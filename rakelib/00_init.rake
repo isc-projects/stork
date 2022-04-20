@@ -526,7 +526,12 @@ file SPHINX_BUILD => [$python_tools_dir, sphinx_requirements_file] do
 end
 
 pytests_path = File.expand_path("tools/python/bin/pytest")
-pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
+if ENV["OLD_CI"] == "yes"
+    python_location = which("python3")
+    python_bin_dir = File.dirname(python_location)
+    pytests_path = File.join(python_bin_dir, "pytest")
+end
+pytests_requirements_file = File.expand_path("init_debs/pytest.txt", __dir__)
 PYTEST = pytests_path
 file PYTEST => [$python_tools_dir, pytests_requirements_file] do
     pip_install(pytests_requirements_file)
