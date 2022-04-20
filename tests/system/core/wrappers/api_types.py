@@ -50,6 +50,7 @@ class AccessPoint(TypedDict):
 class App(TypedDict):
     version: str
     accessPoints: List[AccessPoint]
+    type: str
 
 
 class MachineState(Machine):

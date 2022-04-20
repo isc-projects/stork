@@ -68,3 +68,13 @@ task :regenerate_configs do
         Rake::FileTask[f].invoke()
     end
 end
+
+desc 'Install the external dependencies related to the system tests'
+task :prepare_env_system_tests do
+    find_and_prepare_deps(__FILE__)
+end
+
+desc 'Check the external dependencies related to the system tests'
+task :check_env_system_tests do
+    check_deps(__FILE__, "python3", "pip3", "docker", "docker-compose")
+end
