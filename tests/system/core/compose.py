@@ -188,13 +188,13 @@ class DockerCompose(object):
         """
         if self._pull:
             pull_cmd = self.docker_compose_command() + ['pull'] + service_names
-            self._call_command(cmd=pull_cmd)
-
-        up_cmd = self.docker_compose_command() + ['up', '-d']
+            self._call_command(cmd=pull_cmd, capture_output=False)
 
         env = None
         if self._build:
-            up_cmd.append('--build')
+            logger.info("Begin build containers")
+            build_cmd = self.docker_compose_command() + \
+                ['build'] + service_names
 
             if self._use_build_kit:
                 env = {
@@ -202,9 +202,12 @@ class DockerCompose(object):
                     "DOCKER_BUILDKIT": "1"
                 }
 
-        up_cmd += service_names
+            self._call_command(cmd=build_cmd, env_vars=env,
+                               capture_output=False)
+            logger.info("End build containers")
 
-        self._call_command(cmd=up_cmd, env_vars=env)
+        up_cmd = self.docker_compose_command() + ['up', '-d'] + service_names
+        self._call_command(cmd=up_cmd, capture_output=False)
 
     def stop(self):
         """

@@ -13,11 +13,19 @@ import core.lease_generators as lease_generators
 logger = setup_logger(__name__)
 
 
-def kea_parametrize(service_name="agent-kea", suppress_registration=False):
-    return pytest.mark.parametrize("kea_service", [{
+def agent_parametrize(fixture_name, service_name, suppress_registration=False):
+    return pytest.mark.parametrize(fixture_name, [{
         "service_name": service_name,
         "suppress_registration": suppress_registration
     }], indirect=True)
+
+
+def kea_parametrize(service_name="agent-kea", suppress_registration=False):
+    return agent_parametrize("kea_service", service_name, suppress_registration)
+
+
+def bind_parametrize(service_name="agent-bind9", suppress_registration=False):
+    return agent_parametrize("bind_service", service_name, suppress_registration)
 
 
 @pytest.fixture
@@ -61,6 +69,32 @@ def kea_service(request):
     compose.start(service_name)
     compose.wait_for_operational(service_name)
     wrapper = wrappers.Kea(compose, service_name, server_service)
+    return wrapper
+
+
+@pytest.fixture
+def bind_service(request):
+    param = {
+        "service_name": "agent-bind9",
+        "suppress_registration": False
+    }
+
+    if hasattr(request, "param"):
+        param.update(request.param)
+
+    env_vars = None
+    server_service = None
+    if param['suppress_registration']:
+        env_vars = {"STORK_SERVER_URL": ""}
+    else:
+        # We need the Server to perform the registration
+        server_service = request.getfixturevalue("server_service")
+
+    service_name = param['service_name']
+    compose = create_docker_compose(env_vars=env_vars)
+    compose.start(service_name)
+    compose.wait_for_operational(service_name)
+    wrapper = wrappers.Bind(compose, service_name, server_service)
     return wrapper
 
 

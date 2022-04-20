@@ -39,10 +39,16 @@ task :build_system_tests_containers do
     Rake::Task["run_system_tests_compose"].invoke("build")
 end
 
-desc 'Run system tests docker-compose'
+desc 'Run system tests docker-compose
+    USE_BUILD_KIT - use BuildKit for faster build - default: true
+'
 task :run_system_tests_compose do |t, args|
-    ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
-    ENV["DOCKER_BUILDKIT"] = "1"
+    if ENV["USE_BUILD_KIT"] != "false"
+        ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
+        ENV["DOCKER_BUILDKIT"] = "1"
+    end
+
+    ENV["PWD"] = Dir.pwd
 
     sh "docker-compose",
         "-f", File.expand_path(File.join(system_tests_dir, "docker-compose.yaml")),

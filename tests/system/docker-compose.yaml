@@ -101,6 +101,32 @@ services:
     volumes:
       - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
+  agent-bind9:
+    restart: always
+    build:
+      context: .
+      dockerfile: $PWD/docker/images/stork.Dockerfile
+      target: bind
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-bind9:latest"
+    hostname: agent-bind9
+    networks:
+      storknet:
+        ipv4_address: 172.20.42.53
+    environment:
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
+      STORK_AGENT_HOST: 172.20.42.53
+    expose:
+      - "8080"
+      - "9100" # node_exporter for prometheus
+      - "9119" # bind_exporter for prometheus
+    volumes:
+      - $PWD/tests/system/config/bind/db.test:/etc/bind/db.test
+      - $PWD/tests/system/config/bind/named.conf:/etc/bind/named.conf
+      - $PWD/tests/system/config/kea/kea-leases6.csv:/var/lib/kea/kea-leases6.csv
+      - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
+      - $PWD/docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
+      - $PWD/docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
+
   postgres:
     image: postgres:11
     networks:
