@@ -148,7 +148,8 @@ class DockerCompose(object):
             build=False,
             env_file=None,
             env_vars=None,
-            project_name=None):
+            project_name=None,
+            use_build_kit=True):
         self._project_directory = project_directory
         self._compose_file_names = compose_file_name if isinstance(
             compose_file_name, (list, tuple)
@@ -157,6 +158,7 @@ class DockerCompose(object):
         self._build = build
         self._env_file = env_file
         self._env_vars = env_vars
+        self._use_build_kit = use_build_kit
 
         if project_name is None:
             project_name = os.path.basename(os.path.abspath(project_directory))
@@ -189,11 +191,20 @@ class DockerCompose(object):
             self._call_command(cmd=pull_cmd)
 
         up_cmd = self.docker_compose_command() + ['up', '-d']
+
+        env = None
         if self._build:
             up_cmd.append('--build')
+
+            if self._use_build_kit:
+                env = {
+                    "COMPOSE_DOCKER_CLI_BUILD": "1",
+                    "DOCKER_BUILDKIT": "1"
+                }
+
         up_cmd += service_names
 
-        self._call_command(cmd=up_cmd)
+        self._call_command(cmd=up_cmd, env_vars=env)
 
     def stop(self):
         """
@@ -202,17 +213,25 @@ class DockerCompose(object):
         down_cmd = self.docker_compose_command() + ['down', '-v']
         self._call_command(cmd=down_cmd)
 
-    def get_logs(self):
+    def get_logs(self, service_name: str = None):
         """
         Returns all log output from stdout and stderr
+
+        Parameters
+        ----------
+        service_name: str
+            Name of the service. If None then all logs are fetched.
 
         Returns
         -------
         tuple[bytes, bytes]
             stdout, stderr
         """
-        logs_cmd = self.docker_compose_command() + \
-            ["logs", "--no-color", "-t"]
+        opts = ["logs", "--no-color", "-t"]
+        if service_name is not None:
+            opts.append(service_name)
+
+        logs_cmd = self.docker_compose_command() + opts
         _, stdout, stderr = self._call_command(logs_cmd)
         return stdout, stderr
 
@@ -285,13 +304,15 @@ class DockerCompose(object):
                                     .format(port, service_name))
         return result
 
-    def _call_command(self, cmd, check=True, capture_output=True):
-        env = None
+    def _call_command(self, cmd, check=True, capture_output=True, env_vars=None):
+        env = os.environ.copy()
         if self._env_vars is not None:
-            env = os.environ.copy()
             env.update(self._env_vars)
+        if env_vars is not None:
+            env.update(env_vars)
+        env["PWD"] = self._project_directory
 
-        result = subprocess.run(cmd, check=check,
+        result = subprocess.run(cmd, check=check, cwd=self._project_directory,
                                 capture_output=capture_output, env=env)
         stdout = result.stdout
         stderr = result.stderr

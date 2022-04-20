@@ -31,7 +31,8 @@ def pytest_runtest_logfinish(nodeid, location):
 def pytest_runtest_logreport(report):
     if report.when == 'call':
         dt = datetime.timedelta(seconds=int(report.duration))
-        banner = '\n************ RESULT %s   %s  took %s  ' % (report.outcome.upper(), report.nodeid, dt)
+        banner = '\n************ RESULT %s   %s  took %s  ' % (
+            report.outcome.upper(), report.nodeid, dt)
         banner += '*' * (140 - len(banner))
         if report.outcome == 'passed':
             banner = '\u001b[32;1m' + banner + '\u001b[0m'

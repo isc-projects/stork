@@ -19,7 +19,7 @@ go_dev_codebase = go_codebase + [GO_SERVER_API_MOCK]
 flask_requirements_file = "tests/sim/requirements.txt"
 flask = File.expand_path("tools/python/bin/flask")
 file flask => [flask_requirements_file] do
-    Rake::Task["pip_install"].invoke(flask_requirements_file)
+    pip_install(flask_requirements_file)
 end
 
 #############

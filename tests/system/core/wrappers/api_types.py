@@ -43,9 +43,38 @@ class MachineList(TypedDict):
     total: int
 
 
+class AccessPoint(TypedDict):
+    address: str
+
+
+class App(TypedDict):
+    version: str
+    accessPoints: List[AccessPoint]
+
+
 class MachineState(Machine):
     agentToken: str
     agentVersion: str
-    apps: List
+    apps: List[App]
     cpus: int
     lastVisitedAt: str
+
+
+class Subnet(TypedDict):
+    pass
+
+
+class SubnetList(TypedDict):
+    items: List[Subnet]
+    total: int
+
+
+class Event(TypedDict):
+    createdAt: str
+    text: str
+    details: str
+
+
+class EventList(TypedDict):
+    items: List[Event]
+    total: int

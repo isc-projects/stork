@@ -26,20 +26,20 @@ CLOBBER = FileList[]
 ### Swagger ###
 ###############
 
-swagger_file = 'api/swagger.yaml'
-swagger_api_files = FileList['api/*.yaml'].exclude(swagger_file)
-file swagger_file => swagger_api_files + [YAMLINC] do
-    sh YAMLINC, "-o", swagger_file, "api/swagger.in.yaml"
+SWAGGER_FILE = 'api/swagger.yaml'
+swagger_api_files = FileList['api/*.yaml'].exclude(SWAGGER_FILE)
+file SWAGGER_FILE => swagger_api_files + [YAMLINC] do
+    sh YAMLINC, "-o", SWAGGER_FILE, "api/swagger.in.yaml"
 end
-CLEAN.append swagger_file
+CLEAN.append SWAGGER_FILE
 
 ###############
 ### Backend ###
 ###############
 
 swagger_server_dir = "backend/server/gen"
-file swagger_server_dir => [swagger_file, GOSWAGGER] do
-    swagger_abs = File.expand_path(swagger_file)
+file swagger_server_dir => [SWAGGER_FILE, GOSWAGGER] do
+    swagger_abs = File.expand_path(SWAGGER_FILE)
     Dir.chdir("backend") do
         sh GOSWAGGER, "generate", "server",
         "-m", "server/gen/models",
@@ -140,9 +140,9 @@ DOC_CODEBASE = FileList["doc", "doc/**/*"]
 ################
 
 open_api_generator_webui_dir = "webui/src/app/backend"
-file open_api_generator_webui_dir => [swagger_file, OPENAPI_GENERATOR] do
+file open_api_generator_webui_dir => [SWAGGER_FILE, OPENAPI_GENERATOR] do
     sh "java", "-jar", OPENAPI_GENERATOR, "generate",
-    "-i", swagger_file,
+    "-i", SWAGGER_FILE,
     "-g", "typescript-angular",
     "-o", open_api_generator_webui_dir,
     "--additional-properties", "snapshot=true,ngVersion=10.1.5,modelPropertyNaming=camelCase"

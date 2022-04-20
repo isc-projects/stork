@@ -560,17 +560,17 @@ func addOnCommitAppEvents(app *dbmodel.App, addedDaemons, deletedDaemons []*dbmo
 	}
 }
 
-// Adds events specific to the recent app subnets updates.
-func addOnCommitSubnetEvents(app *dbmodel.App, addedSubnets []*dbmodel.Subnet, eventCenter eventcenter.EventCenter) {
+// Adds events specific to the recent app/daemon subnets updates.
+func addOnCommitSubnetEvents(app *dbmodel.App, daemon *dbmodel.Daemon, addedSubnets []*dbmodel.Subnet, eventCenter eventcenter.EventCenter) {
 	if len(addedSubnets) > 0 {
 		// add event per subnet only if there is not more than 10 subnets
 		if len(addedSubnets) < 10 {
 			for _, sn := range addedSubnets {
-				eventCenter.AddInfoEvent("added {subnet} to {app}", app, sn)
+				eventCenter.AddInfoEvent("added {subnet} to {daemon} in {app}", sn, daemon, app)
 			}
 		}
-		t := fmt.Sprintf("added %d subnets to {app}", len(addedSubnets))
-		eventCenter.AddInfoEvent(t, app)
+		t := fmt.Sprintf("added %d subnets to {daemon} in {app}", len(addedSubnets))
+		eventCenter.AddInfoEvent(t, daemon, app)
 	}
 }
 
@@ -646,8 +646,6 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 			return err
 		}
 
-		allAddedSubnets := []*dbmodel.Subnet{}
-
 		for _, daemon := range app.Daemons {
 			// For the given daemon, iterate over the networks and subnets and update their
 			// global instances accordingly in the database.
@@ -655,17 +653,16 @@ func CommitAppIntoDB(db *dbops.PgDB, app *dbmodel.App, eventCenter eventcenter.E
 			if err != nil {
 				return err
 			}
-			allAddedSubnets = append(allAddedSubnets, addedSubnets...)
 
 			// For the given app, iterate over the global hosts and update their instances
 			// in the database or insert them into the database.
 			if err = dbmodel.CommitGlobalHostsIntoDB(tx, globalHosts[daemon.Name], daemon, "config"); err != nil {
 				return err
 			}
-		}
 
-		// Add subnet related events to the database.
-		addOnCommitSubnetEvents(app, allAddedSubnets, eventCenter)
+			// Add subnet related events to the database.
+			addOnCommitSubnetEvents(app, daemon, addedSubnets, eventCenter)
+		}
 
 		// Detect and commit discovered services for each daemon.
 		if err = detectAndCommitServices(tx, app); err != nil {

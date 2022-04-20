@@ -1,16 +1,25 @@
 from datetime import datetime
+import re
+from typing import Callable
+from pytest import param
 import requests
 
 from core.compose import DockerCompose
 from core.utils import NoSuccessException, wait_for_success
 from core.wrappers.base import ComposeServiceWrapper
 import core.wrappers.api_types as api
+from core.log_parser import GoLogEntry, split_log_messages
 
 
 class UnexpectedStatusCodeException(Exception):
     def __init__(self, expected, actual) -> None:
         super().__init__("Unexpected HTTP status. Expected: %d, got: %d"
                          % (expected, actual))
+
+
+class UnexpectedEventException(Exception):
+    def __init__(self, event: api.Event):
+        super().__init__("Unexpcted event occurs: %s" % event)
 
 
 class Server(ComposeServiceWrapper):
@@ -64,6 +73,33 @@ class Server(ComposeServiceWrapper):
                             params=params)
         return r.json()
 
+    def list_subnets(self, app_id=None, family: int = None, limit=10, offset=0) -> api.SubnetList:
+        params = dict(start=offset, limit=limit)
+        if app_id is not None:
+            params["appID"] = app_id
+        if family is not None:
+            params["dhcpVersion"] = family
+
+        r = self._fetch_api("GET", "/subnets", expected_status=200,
+                            params=params)
+        return r.json()
+
+    def list_events(self, daemon_type=None, app_type=None, machine_id=None,
+                    user_id=None, limit=10, offset=0) -> api.EventList:
+        params = dict(start=offset, limit=limit)
+        if daemon_type is not None:
+            params["daemonType"] = daemon_type
+        if app_type is not None:
+            params["appType"] = app_type
+        if machine_id is not None:
+            params["machine"] = machine_id
+        if user_id is not None:
+            params["user"] = user_id
+
+        r = self._fetch_api("GET", "/events", expected_status=200,
+                            params=params)
+        return r.json()
+
     # Create
 
     def create_user(self, user_create: api.UserCreate):
@@ -94,11 +130,47 @@ class Server(ComposeServiceWrapper):
             self.update_machine(machine)
         return machines
 
+    def _search_for_logs(self, condition: Callable[[GoLogEntry], bool]):
+        logs, _ = self._compose.get_logs(self._service_name)
+        for entry in split_log_messages(logs):
+            go_entry = entry.as_go()
+            if condition(go_entry):
+                yield go_entry
+
     # Waits
 
     @wait_for_success(UnexpectedStatusCodeException)
     def _wait_for_success_response(self, request, *args, **kwargs):
         return request(self, *args, **kwargs)
+
+    def _wait_for_event(self,
+                        expected_condition: Callable[[api.Event], bool] = None,
+                        unexpected_condition: Callable[[
+                            api.Event], bool] = None,
+                        **kwargs):
+        fetch_timestamp = datetime.min
+
+        @wait_for_success(NoSuccessException)
+        def worker():
+            nonlocal fetch_timestamp
+
+            events = self.list_events(limit=100, **kwargs)
+            for event in reversed(events["items"]):
+                # skip older events
+                timestamp = datetime.fromisoformat(
+                    event["createdAt"].rstrip("Z"))
+                if timestamp < fetch_timestamp:
+                    continue
+                fetch_timestamp = timestamp
+
+                if expected_condition is not None and expected_condition(event):
+                    return
+                if unexpected_condition is not None and unexpected_condition(event):
+                    raise UnexpectedEventException(event)
+            if expected_condition is not None:
+                raise NoSuccessException()
+
+        return worker()
 
     def wait_for_next_machine_state(self, machine_id: int) -> api.MachineState:
         start = datetime.utcnow()
@@ -112,3 +184,24 @@ class Server(ComposeServiceWrapper):
                 raise NoSuccessException()
             return state
         return worker()
+
+    _pattern_added_subnets = re.compile(
+        r'added (?:(?:\d+ subnets)|(?:<subnet.*>)) to <daemon '
+        r'id="(?P<daemon_id>\d+)" '
+        r'name="(?P<daemon_name>.*)" '
+        r'appId="(?P<app_id>\d+)"')
+
+    def wait_for_adding_subnets(self, daemon_id: int = None, daemon_name: str = None, app_id: int = None):
+        def condition(ev: api.Event):
+            match = Server._pattern_added_subnets.search(ev["text"])
+            if match is None:
+                return False
+            if daemon_id is not None and match.group("daemon_id") != str(daemon_id):
+                return False
+            if daemon_name is not None and match.group("daemon_name") != daemon_name:
+                return False
+            if app_id is not None and match.group("app_id") != str(app_id):
+                return False
+            return True
+
+        self._wait_for_event(condition)

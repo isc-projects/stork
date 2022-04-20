@@ -1,3 +1,4 @@
+import time
 from core.fixtures import kea_parametrize
 from core.wrappers import Server, Kea
 
@@ -17,3 +18,8 @@ def test_add_kea_with_many_subnets(server_service: Server, kea_service: Kea):
     assert state['apps'][0]['version'] == "2.0.2"
     assert len(state['apps'][0]['accessPoints']) == 1
     assert state['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'
+
+    server_service.wait_for_adding_subnets(daemon_name="dhcp4")
+
+    subnets = server_service.list_subnets(family=4)
+    assert subnets["total"] == 6912

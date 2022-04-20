@@ -288,11 +288,11 @@ directory ruby_tools_bin_dir
 ruby_tools_bin_bundle_dir = File.join(ruby_tools_dir, "bin_bundle")
 directory ruby_tools_bin_bundle_dir
 
-python_tools_dir = File.join(tools_dir, "python")
-directory python_tools_dir
+$python_tools_dir = File.join(tools_dir, "python")
+directory $python_tools_dir
 
-pythonpath = File.join(python_tools_dir, "lib")
-directory pythonpath
+$pythonpath = File.join($python_tools_dir, "lib")
+directory $pythonpath
 
 # Automatically created directories by tools
 ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
@@ -308,7 +308,7 @@ ENV["GOROOT"] = goroot
 ENV["GOPATH"] = gopath
 ENV["GOBIN"] = gobin
 ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
-ENV["PYTHONPATH"] = pythonpath
+ENV["PYTHONPATH"] = $pythonpath
 
 # Toolkits
 BUNDLE = File.join(ruby_tools_bin_dir, "bundle")
@@ -516,20 +516,20 @@ if ENV["OLD_CI"] == "yes"
 end
 sphinx_requirements_file = File.expand_path("init_deps/sphinx.txt", __dir__)
 SPHINX_BUILD = sphinx_path
-file SPHINX_BUILD => [python_tools_dir, sphinx_requirements_file] do
+file SPHINX_BUILD => [$python_tools_dir, sphinx_requirements_file] do
     if ENV["OLD_CI"] == "yes"
         sh "touch", "-c", SPHINX_BUILD
         next
     end
-    Rake::Task["pip_install"].invoke(sphinx_requirements_file)
+    pip_install(sphinx_requirements_file)
     sh SPHINX_BUILD, "--version"
 end
 
 pytests_path = File.expand_path("tools/python/bin/pytest")
 pytests_requirements_file = File.expand_path("init_deps/pytest.txt", __dir__)
 PYTEST = pytests_path
-file PYTEST => [python_tools_dir, pytests_requirements_file] do
-    Rake::Task["pip_install"].invoke(pytests_requirements_file)
+file PYTEST => [$python_tools_dir, pytests_requirements_file] do
+    pip_install(pytests_requirements_file)
     sh PYTEST, "--version"
 end
 
@@ -537,7 +537,11 @@ end
 ### Internal tasks ###
 ######################
 
-task :pip_install, [:requirements_file] => [python_tools_dir, pythonpath] do |t, args|
+# Install Python dependencies from requirements.txt file
+def pip_install(requirements_file)
+    Rake::FileTask[$python_tools_dir].invoke()
+    Rake::FileTask[$pythonpath].invoke()
+
     ci_opts = []
     if ENV["CI"] == "true"
         ci_opts += ["--no-cache-dir"]
@@ -551,10 +555,10 @@ task :pip_install, [:requirements_file] => [python_tools_dir, pythonpath] do |t,
             "--no-input",
             "--no-deps",
             # In Python 3.9 ang higher the target option can be used
-            "--prefix", python_tools_dir,
+            "--prefix", $python_tools_dir,
             "--ignore-installed",
-            # "--target", python_tools_dir
-            "-r", args.requirements_file
+            # "--target", $python_tools_dir
+            "-r", requirements_file
 
     # pip install "--target" option doesn't include bin
     # directory for Python < 3.9 version.
@@ -564,8 +568,8 @@ task :pip_install, [:requirements_file] => [python_tools_dir, pythonpath] do |t,
     python_version_out = `python3 --version`
     python_version = (python_version_out.split)[1]
     python_major_minor = python_version.split(".")[0,2].join(".")
-    site_packages_dir = File.join(python_tools_dir, "lib", "python" + python_major_minor, "site-packages")
-    sh "cp", "-a", site_packages_dir + "/.", pythonpath
+    site_packages_dir = File.join($python_tools_dir, "lib", "python" + python_major_minor, "site-packages")
+    sh "cp", "-a", site_packages_dir + "/.", $pythonpath
     sh "rm", "-rf", site_packages_dir
 end
 
