@@ -710,22 +710,15 @@ func TestHostAndPortParams(t *testing.T) {
 	settings := cli.NewContext(nil, flags, nil)
 	sa.Settings = settings
 
-	// We shut down the server before starting. It causes the server
+	// We shut down the server before starting. It causes the serve
 	// call fails and doesn't block the execution.
 	sa.Shutdown()
 
-	// When the serve call fails the log.Fatal is used.
-	// We replace the standard error handler with a dumb one to prevent
-	// interrupting the unit tests.
-	defer func() {
-		log.StandardLogger().ExitFunc = nil
-	}()
-	log.StandardLogger().ExitFunc = func(int) {
-		// No exit
-	}
-
 	// Act
-	stdout, _, err := testutil.CaptureOutput(sa.Serve)
+	stdout, _, err := testutil.CaptureOutput(func() {
+		err := sa.Serve()
+		require.Error(t, err)
+	})
 
 	// Assert
 	require.NoError(t, err)

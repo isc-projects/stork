@@ -408,7 +408,7 @@ func (sa *StorkAgent) TailTextFile(ctx context.Context, in *agentapi.TailTextFil
 	return response, nil
 }
 
-func (sa *StorkAgent) Serve() {
+func (sa *StorkAgent) Serve() error {
 	// Install gRPC API handlers.
 	agentapi.RegisterAgentServer(sa.server, sa)
 
@@ -416,7 +416,7 @@ func (sa *StorkAgent) Serve() {
 	addr := net.JoinHostPort(sa.Settings.String("host"), strconv.Itoa(sa.Settings.Int("port")))
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("Failed to listen on port: %+v", err)
+		return errors.Wrapf(err, "Failed to listen on: %s", addr)
 	}
 
 	// Start serving gRPC
@@ -424,8 +424,9 @@ func (sa *StorkAgent) Serve() {
 		"address": lis.Addr(),
 	}).Infof("started serving Stork Agent")
 	if err := sa.server.Serve(lis); err != nil {
-		log.Fatalf("Failed to listen on port: %+v", err)
+		return errors.Wrapf(err, "Failed to serve on: %s", addr)
 	}
+	return nil
 }
 
 func (sa *StorkAgent) Shutdown() {

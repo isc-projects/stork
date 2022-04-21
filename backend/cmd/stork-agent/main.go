@@ -59,7 +59,11 @@ func runAgent(settings *cli.Context) {
 
 	// Only start the agent service if it's enabled.
 	if !settings.Bool("listen-prometheus-only") {
-		go storkAgent.Serve()
+		go func() {
+			if err := storkAgent.Serve(); err != nil {
+				log.Fatalf("Failed to serve the Stork Agent: %+v", err)
+			}
+		}()
 		defer storkAgent.Shutdown()
 	}
 
