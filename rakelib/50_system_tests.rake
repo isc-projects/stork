@@ -53,14 +53,16 @@ task :system_tests => [PYTEST, kea_many_subnets_config_file, key_file, cert_file
     end
 end
 
+namespace :system_tests do
+
 desc 'Build the containers used in the system tests'
-task :build_system_tests_containers do
+task :build do
     Rake::Task["run_system_tests_compose"].invoke("build")
 end
 
 desc 'Run shell in the docker-compose container
     SERVICE - name of the docker-compose service - required'
-task :run_shell_in_system_tests_container do
+task :exec_shell do
     Rake::Task["run_system_tests_compose"].invoke(
         "exec", ENV["SERVICE"], "/bin/sh")
 end
@@ -68,7 +70,7 @@ end
 desc 'Run system tests docker-compose
     USE_BUILD_KIT - use BuildKit for faster build - default: true
 '
-task :run_system_tests_compose do |t, args|
+task :exec do |t, args|
     if ENV["USE_BUILD_KIT"] != "false"
         ENV["COMPOSE_DOCKER_CLI_BUILD"] = "1"
         ENV["DOCKER_BUILDKIT"] = "1"
@@ -98,6 +100,8 @@ task :regenerate_configs do
     items.each do |f|
         Rake::FileTask[f].invoke()
     end
+end
+
 end
 
 desc 'Install the external dependencies related to the system tests'
