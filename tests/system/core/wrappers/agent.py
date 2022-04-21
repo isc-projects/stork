@@ -24,3 +24,17 @@ class Agent(ComposeServiceWrapper):
     def wait_for_registration(self):
         if not self.is_registered():
             raise NoSuccessException()
+
+    def hash_cert_files(self):
+        cert_paths = [
+            '/var/lib/stork-agent/certs/key.pem',
+            '/var/lib/stork-agent/certs/cert.pem',
+            '/var/lib/stork-agent/certs/ca.pem',
+            '/var/lib/stork-agent/tokens/agent-token.txt'
+        ]
+
+        hashes = {}
+        for cert_path in cert_paths:
+            hash_ = self._hash_file(cert_path)
+            hashes[cert_path] = hash_
+        return hashes

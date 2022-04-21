@@ -13,8 +13,8 @@ class Kea(Agent):
 
     def read_lease_file(self, family: int):
         path = '/var/lib/kea/kea-leases%d.csv' % family
-        cmd = ["cat", path]
-        _, stdout, _ = self._compose.exec_in_container(
-            self._service_name, cmd)
-
+        stdout = self._read_file(path)
         return csv.DictReader(io.StringIO(stdout))
+
+    def restart_stork_agent(self):
+        self._restart_supervisor_service('stork-agent')

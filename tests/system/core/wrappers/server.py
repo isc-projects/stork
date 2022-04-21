@@ -149,13 +149,6 @@ class Server(ComposeServiceWrapper):
             self.update_machine(machine)
         return machines
 
-    def _search_for_logs(self, condition: Callable[[GoLogEntry], bool]):
-        logs, _ = self._compose.get_logs(self._service_name)
-        for entry in split_log_messages(logs):
-            go_entry = entry.as_go()
-            if condition(go_entry):
-                yield go_entry
-
     # Waits
 
     @wait_for_success(UnexpectedStatusCodeException)

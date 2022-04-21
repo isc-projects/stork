@@ -39,6 +39,13 @@ task :build_system_tests_containers do
     Rake::Task["run_system_tests_compose"].invoke("build")
 end
 
+desc 'Run shell in the docker-compose container
+    SERVICE - name of the docker-compose service - required'
+task :run_shell_in_system_tests_container do
+    Rake::Task["run_system_tests_compose"].invoke(
+        "exec", ENV["SERVICE"], "/bin/sh")
+end
+
 desc 'Run system tests docker-compose
     USE_BUILD_KIT - use BuildKit for faster build - default: true
 '

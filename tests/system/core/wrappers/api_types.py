@@ -36,6 +36,7 @@ class Machine(TypedDict):
     address: str
     agentPort: str
     authorized: bool
+    agentToken: str
 
 
 class MachineList(TypedDict):
@@ -54,7 +55,6 @@ class App(TypedDict):
 
 
 class MachineState(Machine):
-    agentToken: str
     agentVersion: str
     apps: List[App]
     cpus: int

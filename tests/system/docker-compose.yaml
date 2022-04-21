@@ -101,6 +101,15 @@ services:
     volumes:
       - $PWD/tests/system/config/kea-many-subnets/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
+  agent-kea6:
+    extends: agent-kea
+    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea6:latest"
+    networks:
+      storknet:
+        ipv6_address: 3009:db8:1:42::100
+    environment:
+      STORK_AGENT_HOST: 3000:db8:1:42::100
+
   agent-bind9:
     restart: always
     build:
