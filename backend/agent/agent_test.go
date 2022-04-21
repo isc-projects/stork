@@ -23,6 +23,7 @@ import (
 
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
+	"isc.org/stork/testutil"
 )
 
 type FakeAppMonitor struct {
@@ -696,4 +697,39 @@ func TestNewGRPCServerWithTLS(t *testing.T) {
 	srv, err := newGRPCServerWithTLS()
 	require.NoError(t, err)
 	require.NotNil(t, srv)
+}
+
+// Check if the Stork Agent prints the host and port parameters.
+func TestHostAndPortParams(t *testing.T) {
+	// Arrange
+	sa, _ := setupAgentTest()
+
+	flags := flag.NewFlagSet("test", 0)
+	flags.String("host", "127.1.2.3", "usage")
+	flags.Int("port", 9876, "usage")
+	settings := cli.NewContext(nil, flags, nil)
+	sa.Settings = settings
+
+	// We shut down the server before starting. It causes the server
+	// call fails and doesn't block the execution.
+	sa.Shutdown()
+
+	// When the serve call fails the log.Fatal is used.
+	// We replace the standard error handler with a dumb one to prevent
+	// interrupting the unit tests.
+	defer func() {
+		log.StandardLogger().ExitFunc = nil
+	}()
+	log.StandardLogger().ExitFunc = func(int) {
+		// No exit
+	}
+
+	// Act
+	stdout, _, err := testutil.CaptureOutput(sa.Serve)
+
+	// Assert
+	require.NoError(t, err)
+	stdoutStr := string(stdout)
+	require.Contains(t, stdoutStr, "127.1.2.3")
+	require.Contains(t, stdoutStr, "9876")
 }

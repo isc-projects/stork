@@ -50,7 +50,7 @@ func TestCommandLineSwitches(t *testing.T) {
 	var err error
 	stdout, _, _ := testutil.CaptureOutput(func() {
 		command, err = ss.ParseArgs()
-	}, nil, 0)
+	})
 
 	// Assert
 	require.EqualValues(t, HelpCommand, command)

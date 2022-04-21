@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 	"testing"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -56,7 +53,7 @@ func TestCommandLineSwitches(t *testing.T) {
 	os.Args[1] = "-h"
 
 	// Act
-	stdout, _, err := testutil.CaptureOutput(main, nil, 0)
+	stdout, _, err := testutil.CaptureOutput(main)
 
 	// Assert
 	require.NoError(t, err)
@@ -88,7 +85,7 @@ func TestCommandLineVersion(t *testing.T) {
 			os.Args[1] = arg
 
 			// Act
-			stdout, _, err := testutil.CaptureOutput(main, nil, 0)
+			stdout, _, err := testutil.CaptureOutput(main)
 
 			// Assert
 			require.NoError(t, err)
@@ -99,52 +96,6 @@ func TestCommandLineVersion(t *testing.T) {
 	}
 }
 
-// Check if stork-agent uses --host and --port parameters.
-func TestHostAndPortParams(t *testing.T) {
-	// Arrange
-	os.Args = make([]string, 5)
-	os.Args[1] = "--host"
-	os.Args[2] = "127.1.2.3"
-	os.Args[3] = "--port"
-	os.Args[4] = "9876"
-
-	// Prevents the unit test flow from being interrupted if the main signal
-	// handler fails to register. If the registration passes then the ignore
-	// handler is invalidated.
-	signal.Ignore(syscall.SIGINT)
-	defer signal.Reset(syscall.SIGINT)
-
-	// Act
-	// The Stork Agent runs the server at the startup and waits infinitely for
-	// the requests. It causes the unit test to be blocked. We wait a short
-	// time for the head stdout and send the termination signal. The
-	// termination cannot be done too early because the Agent must register
-	// the signal handler first. Otherwise, the test will fail without any
-	// message. Unfortunately, there is no possibility to check if the handler
-	// is already registered.
-	startTime := time.Now()
-	stdout, _, _ := testutil.CaptureOutput(main, func(stdout []byte, n int) {
-		stdoutStr := string(stdout)
-		hasExpected := strings.Contains(stdoutStr, "127.1.2.3") &&
-			strings.Contains(stdoutStr, "9876")
-		isTimeExpired := time.Since(startTime) > time.Second
-
-		if hasExpected || isTimeExpired {
-			// If the main signal handler is registered, the SIGTERM
-			// interrupts the main function. Otherwise, the ignore handler
-			// safety skips it.
-			// It's safe if the time expires before the handler registration.
-			// The SIGINT will be repeated until the handler is registered,
-			// the main function returns, or the global timeout expires.
-			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
-		}
-	}, 10000)
-
-	stdoutStr := string(stdout)
-	require.Contains(t, stdoutStr, "127.1.2.3")
-	require.Contains(t, stdoutStr, "9876")
-}
-
 // This test checks if stork-agent -h reports all expected command-line switches.
 func TestRegisterCommandLineSwitches(t *testing.T) {
 	// Arrange
@@ -153,7 +104,7 @@ func TestRegisterCommandLineSwitches(t *testing.T) {
 	os.Args[2] = "-h"
 
 	// Act
-	stdout, _, err := testutil.CaptureOutput(main, nil, 0)
+	stdout, _, err := testutil.CaptureOutput(main)
 
 	// Assert
 	require.NoError(t, err)
@@ -181,7 +132,7 @@ func TestRegistrationParams(t *testing.T) {
 	}
 
 	// Act
-	stdout, _, _ := testutil.CaptureOutput(main, nil, 0)
+	stdout, _, _ := testutil.CaptureOutput(main)
 
 	require.Contains(t, string(stdout), "127.4.5.6")
 }

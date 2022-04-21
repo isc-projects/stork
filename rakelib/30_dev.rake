@@ -107,6 +107,15 @@ task :unittest_backend => [RICHGO, :db_remove_remaining, :db_migrate] + go_dev_c
                             # by coverage.
                             'ParseArgs', 'Bootstrap',
 
+                            # We spent a lot of time to try test the main agent function. It is a problematic
+                            # function because it starts listening and blocks itself until receiving SIGINT.
+                            # Unfortunately, the signal handler isn't registered immediately after the function
+                            # begins but after a short period.
+                            # The unit tests for it were very unstable and time-depends. Additionally, the value
+                            # of these tests was relatively poor. This function shouldn't be executed by the unit
+                            # tests but rather by system tests.
+                            'runAgent',
+
                             # this function requires interaction with user so it is hard to test
                             'getAgentAddrAndPortFromUser',
 
