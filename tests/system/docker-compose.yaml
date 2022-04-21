@@ -78,6 +78,7 @@ services:
     volumes:
       - $PWD/tests/system/config/kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - $PWD/tests/system/config/kea/kea-ctrl-agent-tls.json:/etc/kea/kea-ctrl-agent-tls.json
+      - $PWD/tests/system/config/kea/kea-ctrl-agent-auth.json:/etc/kea/kea-ctrl-agent-auth.json
       - $PWD/tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
       - $PWD/tests/system/config/kea/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - $PWD/tests/system/config/kea/kea-leases4.csv:/var/lib/kea/kea-leases4.csv
@@ -131,6 +132,18 @@ services:
     extends: agent-kea
     volumes:
       - $PWD/tests/system/config/kea-config-review/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
+
+  agent-kea-basic-auth-no-credentials:
+    extends: agent-kea
+    environment:
+      STORK_AGENT_SKIP_TLS_CERT_VERIFICATION: "true"
+    volumes:
+      - $PWD/tests/system/config/kea-basic-auth/kea-ctrl-agent-auth.json:/etc/kea/kea-ctrl-agent-auth.json
+
+  agent-kea-basic-auth:
+    extends: agent-kea-basic-auth-no-credentials
+    volumes:
+      - $PWD/tests/system/config/kea-basic-auth/agent-credentials.json:/etc/stork/agent-credentials.json
 
   agent-bind9:
     restart: always

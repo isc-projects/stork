@@ -238,3 +238,16 @@ class Server(ComposeServiceWrapper):
             return True
 
         self._wait_for_event(condition)
+
+    def wait_for_failed_CA_communication(self, check_unauthorized=True):
+        def condition(ev: api.Event):
+            text = ev["text"]
+            if not text.startswith("communication with CA daemon of"):
+                return False
+            if not text.endswith("failed"):
+                return False
+
+            if check_unauthorized and "Unauthorized" not in ev["details"]:
+                return False
+            return True
+        self._wait_for_event(condition)

@@ -194,7 +194,10 @@ RUN wget -q -O- https://dl.cloudsmith.io/${KEA_REPO}/cfg/setup/bash.deb.sh | bas
                 isc-kea-common=${KEA_VER} \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
-        && mkdir -p /var/run/kea/
+        && mkdir -p /var/run/kea/ \
+        # Puts empty credentials file to allow mount it as volume.
+        && mkdir -p /etc/stork/ \
+        && echo "{}" > /etc/stork/agent-credentials.json
 
 # Install premium packages. The KEA_REPO variable must
 # be set to the private repository and include an access token.
@@ -273,6 +276,7 @@ RUN apt-get update \
         && rm -rf /var/lib/apt/lists/* \
         && chown root:bind /etc/bind/rndc.key \
         && chmod 640 /etc/bind/rndc.key \
+        # Puts empty database file to allow mount it as volume.
         && touch /etc/bind/db.test
 # Install agent    
 COPY --from=agent-builder /app/dist/agent /

@@ -93,3 +93,28 @@ def test_get_dhcp4_config_review_reports(server_service: Server, kea_service: Ke
     assert data['total'] == 1
     assert len(data['items']) == 1
     assert data['items'][0]['checker'] == 'stat_cmds_presence'
+
+
+@kea_parametrize("agent-kea-basic-auth-no-credentials")
+def test_communication_with_kea_using_basic_auth_no_credentials(server_service: Server, kea_service: Kea):
+    """The Kea CA is configured to accept requests only with Basic Auth credentials in header.
+    The Stork Agent doesn't have a credentials file. Kea shouldn't accept the requests from the Stork Agent."""
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    # trig forward command to Kea
+    server_service.wait_for_next_machine_states()
+    # The Stork Agent doesn't know the credentials.
+    # The above request should fail.
+    server_service.wait_for_failed_CA_communication()
+
+
+@kea_parametrize("agent-kea-basic-auth")
+def test_communication_with_kea_using_basic_auth(server_service: Server, kea_service: Kea):
+    """The Kea CA is configured to accept requests only with Basic Auth credentials in header.
+    The Stork Agent has a credentials file. Kea should accept the requests from the Stork Agent."""
+    server_service.log_in_as_admin()
+    server_service.authorize_all_machines()
+    server_service.wait_for_next_machine_states()
+    # Check communication
+    leases = server_service.list_leases('192.0.2.1')
+    assert leases['total'] == 1
