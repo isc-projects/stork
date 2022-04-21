@@ -178,6 +178,7 @@
         <app-host-form
             [form]="openedTabs[activeTabIndex - 1].form"
             (formDestroy)="onHostFormDestroy($event)"
+            (formSubmit)="onHostFormSubmit($event)"
             *ngSwitchCase="HostTabType.NewHost"
         ></app-host-form>
     </div>

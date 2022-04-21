@@ -222,6 +222,11 @@ export class HostFormComponent implements OnInit, OnDestroy {
     @Output() formDestroy = new EventEmitter<HostForm>()
 
     /**
+     * An event emitter notifying that the form has been submitted.
+     */
+    @Output() formSubmit = new EventEmitter<HostForm>()
+
+    /**
      * Different IP reservation types listed in the drop down.
      */
     ipTypes: SelectItem[] = []
@@ -366,7 +371,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 this.form.filteredSubnets = this.form.allSubnets
             })
             .catch((err) => {
-                console.info(err)
                 let msg = err.statusText
                 if (err.error && err.error.message) {
                     msg = err.error.message
@@ -718,6 +722,14 @@ export class HostFormComponent implements OnInit, OnDestroy {
         this._dhcpApi
             .createHostSubmit(this.form.transactionId, host)
             .toPromise()
+            .then(() => {
+                this._messageService.add({
+                    severity: 'success',
+                    summary: 'Host reservation successfully added',
+                })
+                // Notify the parent component about successful submission.
+                this.formSubmit.emit(this.form)
+            })
             .catch((err) => {
                 let msg = err.statusText
                 if (err.error && err.error.message) {
@@ -737,7 +749,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * a new transaction.
      */
     onRetry(): void {
-        console.info('retry')
         this._createHostBegin()
     }
 }

@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 
 import { HostsPageComponent } from './hosts-page.component'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
@@ -451,4 +451,116 @@ describe('HostsPageComponent', () => {
         expect(thirdIdEl.nativeElement.textContent).toContain('flex-id=(10:20:30:40:50)')
         expect(thirdIdEl.attributes.href).toBe('/dhcp/hosts/3')
     })
+
+    it('should close new host tab when form is submitted', fakeAsync(() => {
+        const createHostBeginResp: any = {
+            id: 123,
+            subnets: [
+                {
+                    id: 1,
+                    subnet: '192.0.2.0/24',
+                    localSubnets: [
+                        {
+                            daemonId: 1,
+                        },
+                    ],
+                },
+            ],
+            apps: [
+                {
+                    id: 1,
+                    name: 'first',
+                    details: {
+                        daemons: [
+                            {
+                                id: 1,
+                                name: 'dhcp4',
+                            },
+                        ],
+                    },
+                },
+            ],
+        }
+        const okResp: any = {
+            status: 200,
+        }
+
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(createHostBeginResp))
+        spyOn(dhcpApi, 'createHostDelete').and.returnValue(of(okResp))
+
+        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        tick()
+        fixture.detectChanges()
+
+        paramMapSubject.next(convertToParamMap({}))
+        tick()
+        fixture.detectChanges()
+
+        expect(component.openedTabs.length).toBe(1)
+        expect(component.openedTabs[0].form.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[0].form.transactionId).toBe(123)
+
+        component.onHostFormSubmit(component.openedTabs[0].form)
+        tick()
+        expect(component.tabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+
+        expect(dhcpApi.createHostDelete).not.toHaveBeenCalled()
+    }))
+
+    it('should cancel transaction when a tab is closed', fakeAsync(() => {
+        const createHostBeginResp: any = {
+            id: 123,
+            subnets: [
+                {
+                    id: 1,
+                    subnet: '192.0.2.0/24',
+                    localSubnets: [
+                        {
+                            daemonId: 1,
+                        },
+                    ],
+                },
+            ],
+            apps: [
+                {
+                    id: 1,
+                    name: 'first',
+                    details: {
+                        daemons: [
+                            {
+                                id: 1,
+                                name: 'dhcp4',
+                            },
+                        ],
+                    },
+                },
+            ],
+        }
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(createHostBeginResp))
+        spyOn(dhcpApi, 'createHostDelete').and.returnValue(of(okResp))
+
+        paramMapSubject.next(convertToParamMap({ id: 'new' }))
+        tick()
+        fixture.detectChanges()
+
+        paramMapSubject.next(convertToParamMap({}))
+        tick()
+        fixture.detectChanges()
+
+        expect(component.openedTabs.length).toBe(1)
+        expect(component.openedTabs[0].form.hasOwnProperty('transactionId')).toBeTrue()
+        expect(component.openedTabs[0].form.transactionId).toBe(123)
+
+        component.closeHostTab(null, 1)
+        tick()
+        fixture.detectChanges()
+        expect(component.tabs.length).toBe(1)
+        expect(component.activeTabIndex).toBe(0)
+
+        expect(dhcpApi.createHostDelete).toHaveBeenCalled()
+    }))
 })

@@ -22,7 +22,15 @@ export enum HostTabType {
  * A class representing the contents of a tab displayed by the component.
  */
 export class HostTab {
+    /**
+     * Preserves information specified in a host form.
+     */
     form: any = {}
+
+    /**
+     * Indicates if the form has been submitted.
+     */
+    submitted = false
 
     /**
      * Constructor.
@@ -301,6 +309,14 @@ export class HostsPageComponent implements OnInit, OnDestroy {
      *        greater than 1.
      */
     closeHostTab(event, tabIndex) {
+        if (
+            this.openedTabs[tabIndex - 1].tabType === HostTabType.NewHost &&
+            this.openedTabs[tabIndex - 1].form.transactionId > 0 &&
+            !this.openedTabs[tabIndex - 1].submitted
+        ) {
+            this.dhcpApi.createHostDelete(this.openedTabs[tabIndex - 1].form.transactionId).toPromise()
+        }
+
         // Remove the MenuItem representing the tab.
         this.tabs.splice(tabIndex, 1)
         // Remove host specific information associated with the tab.
@@ -440,7 +456,7 @@ export class HostsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Event handler triggered when a host form tab is being closed.
+     * Event handler triggered when a host form tab is being destroyed.
      *
      * The host form component is being destroyed and thus this parent
      * component must save the updated form data in case a user re-opens
@@ -455,6 +471,24 @@ export class HostsPageComponent implements OnInit, OnDestroy {
         if (tab) {
             // Found the matching form. Update it.
             tab.form = event
+        }
+    }
+
+    /**
+     * Event handler triggered when a host form is submitted.
+     *
+     * It marks the form as submitted to prevent the component from canceling
+     * the transaction. Next, it closes the form tab.
+     *
+     * @param event an event holding updated form data.
+     */
+    onHostFormSubmit(event): void {
+        // Find the form matching the form for which the notification has
+        // been sent.
+        const index = this.openedTabs.findIndex((t) => t.form && t.form.transactionId === event.transactionId)
+        if (index >= 0) {
+            this.openedTabs[index].submitted = true
+            this.closeHostTab(null, index + 1)
         }
     }
 }
