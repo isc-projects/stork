@@ -82,6 +82,7 @@ class EventList(TypedDict):
 
 
 class Lease(TypedDict):
+    id: int
     ipAddress: str
     state: int
 
@@ -89,4 +90,13 @@ class Lease(TypedDict):
 class LeaseList(TypedDict):
     items: List[Lease]
     total: int
-    conflicts: List
+    conflicts: List[int]
+
+
+class Host(TypedDict):
+    id: int
+
+
+class HostList(TypedDict):
+    items: List[Host]
+    total: int

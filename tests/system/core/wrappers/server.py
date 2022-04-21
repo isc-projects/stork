@@ -111,7 +111,15 @@ class Server(ComposeServiceWrapper):
                             params=params)
         return r.json()
 
-    # Create
+    def list_hosts(self, text=None) -> api.HostList:
+        params = {}
+        if text != None:
+            params["text"] = text
+        r = self._fetch_api("GET", "/hosts", expected_status=200,
+                            params=params)
+        return r.json()
+
+        # Create
 
     def create_user(self, user_create: api.UserCreate):
         self._fetch_api("POST", "/users", json=user_create,
