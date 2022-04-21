@@ -374,7 +374,8 @@ func TestGetHost(t *testing.T) {
 	require.IsType(t, &dhcp.GetHostDefault{}, rsp)
 }
 
-// Test that the call creating a new host reservation transaction.
+// Test the calls for creating transaction and submitting a new host
+// reservation.
 func TestCreateHostBeginSubmit(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -452,6 +453,14 @@ func TestCreateHostBeginSubmit(t *testing.T) {
             }
         }`, c.Marshal())
 	}
+
+	// Make sure that the transaction is done.
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// We can't use require.Nil() to test this condition because it would
+	// use reflection to extract the context details interfering with the
+	// goroutine monitoring for context cancelation and timeout and causing
+	// a race condition.
+	require.True(t, cctx == nil)
 }
 
 // Test error case when a user attempts to begin new transaction when the
@@ -621,6 +630,137 @@ func TestCreateHostSubmitError(t *testing.T) {
 		rsp := rapi.CreateHostSubmit(ctx, params)
 		require.IsType(t, &dhcp.CreateHostSubmitDefault{}, rsp)
 		defaultRsp := rsp.(*dhcp.CreateHostSubmitDefault)
+		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
+	})
+}
+
+// Test that the transaction to add a new host can be canceled, resulting
+// in the removal of this transaction from the config manager.
+func TestCreateHostBeginCancel(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving reservation-add commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	// Create the config manager using these agents.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Create session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps in the database.
+	_, _ = addTestHosts(t, db)
+
+	// Begin transaction.
+	params := dhcp.CreateHostBeginParams{}
+	rsp := rapi.CreateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateHostBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.CreateHostBeginOK)
+	contents := okRsp.Payload
+
+	// Make sure the server returned transaction ID, apps and subnets.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+	require.Len(t, contents.Apps, 2)
+	require.Len(t, contents.Subnets, 2)
+
+	// Cancel the transaction.
+	params2 := dhcp.CreateHostDeleteParams{
+		ID: transactionID,
+	}
+	rsp2 := rapi.CreateHostDelete(ctx, params2)
+	require.IsType(t, &dhcp.CreateHostDeleteOK{}, rsp2)
+
+	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
+	// We can't use require.Nil() to test this condition because it would
+	// use reflection to extract the context details interfering with the
+	// goroutine monitoring for context cancelation and timeout and causing
+	// a race condition.
+	require.True(t, cctx == nil)
+}
+
+// Test error cases for canceling new host reservation.
+func TestCreateHostDeleteError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Setup fake agents that return an error in response to reservation-add
+	// command.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	// Create config manager.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Start session manager.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create a user and simulate logging in.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Make sure we have some Kea apps in the database.
+	_, _ = addTestHosts(t, db)
+
+	// Begin transaction. It will be needed for the actual part of the
+	// test that relies on the existence of the transaction.
+	params := dhcp.CreateHostBeginParams{}
+	rsp := rapi.CreateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateHostBeginOK{}, rsp)
+	okRsp := rsp.(*dhcp.CreateHostBeginOK)
+	contents := okRsp.Payload
+
+	// Capture transaction ID.
+	transactionID := contents.ID
+	require.NotZero(t, transactionID)
+
+	// Cancel transaction with non-matching transaction ID.
+	t.Run("wrong transaction id", func(t *testing.T) {
+		params := dhcp.CreateHostDeleteParams{
+			ID: transactionID + 1,
+		}
+		rsp := rapi.CreateHostDelete(ctx, params)
+		require.IsType(t, &dhcp.CreateHostDeleteDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateHostDeleteDefault)
+		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+	})
+
+	// Cancel transaction with valid ID and host but the user has no
+	// session.
+	t.Run("no user session", func(t *testing.T) {
+		err = rapi.SessionManager.LogoutHandler(ctx)
+		require.NoError(t, err)
+
+		params := dhcp.CreateHostDeleteParams{
+			ID: transactionID,
+		}
+		rsp := rapi.CreateHostDelete(ctx, params)
+		require.IsType(t, &dhcp.CreateHostDeleteDefault{}, rsp)
+		defaultRsp := rsp.(*dhcp.CreateHostDeleteDefault)
 		require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
 	})
 }

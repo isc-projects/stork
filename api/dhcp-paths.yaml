@@ -117,7 +117,28 @@
           schema:
             $ref: '#/definitions/ApiError'
 
-  /host/new/transaction/{id}/submit:
+  /hosts/new/transaction/{id}:
+    delete:
+      summary: Cancel transaction to add new host reservation.
+      description: Cancels the transaction to add a new host reservation in the config manager.
+      operationId: createHostDelete
+      tags:
+        - DHCP
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: Transaction ID returned when the transaction was created.
+      responses:
+        200:
+          description: Transaction successfully deleted.
+        default:
+          description: generic error response
+          schema:
+            $ref: '#/definitions/ApiError'
+
+  /hosts/new/transaction/{id}/submit:
     post:
       summary: Submit transaction adding new host reservation.
       description: >-

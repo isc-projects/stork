@@ -219,7 +219,7 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 	// Get the logged user's ID.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "user is not logged in"
+		msg := "unable to begin transaction because user is not logged in"
 		log.Error("problem with creating transaction context because user has no session")
 		rsp := dhcp.NewCreateHostBeginDefault(http.StatusForbidden).WithPayload(&models.APIError{
 			Message: &msg,
@@ -273,14 +273,14 @@ func (r *RestAPI) CreateHostSubmit(ctx context.Context, params dhcp.CreateHostSu
 	// Get the user ID and recover the transaction context.
 	ok, user := r.SessionManager.Logged(ctx)
 	if !ok {
-		msg := "user is not logged in"
+		msg := "unable to submit because user is not logged in"
 		log.Error("problem with recovering transaction context because user has no session")
 		rsp := dhcp.NewCreateHostSubmitDefault(http.StatusForbidden).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
-	// Retrieve the context from the config manager manager.
+	// Retrieve the context from the config manager.
 	cctx, _ := r.ConfigManager.RecoverContext(params.ID, int64(user.ID))
 	if cctx == nil {
 		msg := "problem with recovering transaction context"
@@ -333,5 +333,33 @@ func (r *RestAPI) CreateHostSubmit(ctx context.Context, params dhcp.CreateHostSu
 	// Everything ok. Cleanup and send OK to the client.
 	r.ConfigManager.Done(cctx)
 	rsp := dhcp.NewCreateHostSubmitOK()
+	return rsp
+}
+
+// Implements the DELETE call to cancel adding new reservation (hosts/new/transaction{id}). It
+// removes the specified transaction from the config manager, if the transaction exists.
+func (r *RestAPI) CreateHostDelete(ctx context.Context, params dhcp.CreateHostDeleteParams) middleware.Responder {
+	// Get the user ID and recover the transaction context.
+	ok, user := r.SessionManager.Logged(ctx)
+	if !ok {
+		msg := "unable to cancel transaction because user is not logged in"
+		log.Error("problem with recovering transaction context because user has no session")
+		rsp := dhcp.NewCreateHostDeleteDefault(http.StatusForbidden).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Retrieve the context from the config manager.
+	cctx, _ := r.ConfigManager.RecoverContext(params.ID, int64(user.ID))
+	if cctx == nil {
+		msg := "problem with recovering transaction context"
+		log.Errorf("problem with recovering transaction context for transaction ID %d and user ID %d", params.ID, user.ID)
+		rsp := dhcp.NewCreateHostDeleteDefault(http.StatusNotFound).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	r.ConfigManager.Done(cctx)
+	rsp := dhcp.NewCreateHostDeleteOK()
 	return rsp
 }
