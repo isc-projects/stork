@@ -586,5 +586,5 @@ desc 'Check all system-level dependencies'
 task :check do
     check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip", "entr", "git",
         "createdb", "psql", "dropdb", ENV['CHROME_BIN'], "docker-compose",
-        "docker", "gem")
+        "docker", "openssl", "gem")
 end

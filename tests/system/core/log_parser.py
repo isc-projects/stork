@@ -54,6 +54,30 @@ class GoLogEntry:
         return arguments_dict
 
 
+class KeaLogEntry:
+    def __init__(self, raw: str):
+        severity, rest = raw.split(maxsplit=1)
+        rest = rest.lstrip()
+        id_, message = rest.split(maxsplit=1)
+        message = rest.strip()
+
+        self._severity = severity
+        self._message = message
+        self._id = id_
+
+    @property
+    def severity(self):
+        return self._severity
+
+    @property
+    def message_id(self):
+        return self._id
+
+    @property
+    def message(self):
+        return self._message
+
+
 class LogEntry:
     @staticmethod
     def _split_docker_compose_log_entry(raw: str, with_timestamp=True):
@@ -84,6 +108,9 @@ class LogEntry:
 
     def as_go(self):
         return GoLogEntry(self._content)
+
+    def as_kea(self):
+        return KeaLogEntry(self._content)
 
 
 def split_log_messages(stdout: str):

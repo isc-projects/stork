@@ -18,3 +18,7 @@ class Kea(Agent):
 
     def restart_stork_agent(self):
         self._restart_supervisor_service('stork-agent')
+
+    def has_failed_TLS_handshake_log_entry(self):
+        stdout, _ = self._compose.get_logs(self._service_name)
+        return "HTTP_CONNECTION_HANDSHAKE_FAILED" in stdout

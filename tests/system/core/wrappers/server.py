@@ -119,7 +119,17 @@ class Server(ComposeServiceWrapper):
                             params=params)
         return r.json()
 
-        # Create
+    def list_config_reports(self, daemon_id: int, limit=10, offset=0):
+        params = dict(limit=limit, offset=offset)
+        r = self._fetch_api(
+            "GET",
+            "/daemons/%d/config-reports?start=0&limit=10" % daemon_id,
+            expected_status=200,
+            params=params
+        )
+        return r.json()
+
+    # Create
 
     def create_user(self, user_create: api.UserCreate):
         self._fetch_api("POST", "/users", json=user_create,

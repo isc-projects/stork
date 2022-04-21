@@ -46,12 +46,23 @@ class MachineList(TypedDict):
 
 class AccessPoint(TypedDict):
     address: str
+    useSecureProtocol: bool
+
+
+class Daemon(TypedDict):
+    id: int
+    name: str
+
+
+class AppDetails(TypedDict):
+    daemons: List[Daemon]
 
 
 class App(TypedDict):
     version: str
     accessPoints: List[AccessPoint]
     type: str
+    details: AppDetails
 
 
 class MachineState(Machine):

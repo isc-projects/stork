@@ -16,7 +16,6 @@ services:
     extra_hosts:
       - "agent-kea:172.20.42.100"
       - "agent-kea6:172.20.42.106"
-    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/server:latest"
     networks:
       - storknet
     expose:
@@ -50,7 +49,6 @@ services:
     # DHCP communication instead.
     extra_hosts:
       - "agent-kea:172.20.42.100"
-    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea:latest"
     hostname: agent-kea
     networks:
       storknet:
@@ -79,6 +77,7 @@ services:
       start_period: 0s
     volumes:
       - $PWD/tests/system/config/kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
+      - $PWD/tests/system/config/kea/kea-ctrl-agent-tls.json:/etc/kea/kea-ctrl-agent-tls.json
       - $PWD/tests/system/config/kea/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
       - $PWD/tests/system/config/kea/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - $PWD/tests/system/config/kea/kea-leases4.csv:/var/lib/kea/kea-leases4.csv
@@ -91,7 +90,6 @@ services:
 
   agent-kea-many-subnets:
     extends: agent-kea
-    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea-many-subnets:latest"
     hostname: agent-kea-many-subnets
     networks:
       storknet:
@@ -103,12 +101,36 @@ services:
 
   agent-kea6:
     extends: agent-kea
-    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-kea6:latest"
     networks:
       storknet:
         ipv6_address: 3009:db8:1:42::100
     environment:
       STORK_AGENT_HOST: 3000:db8:1:42::100
+
+  agent-kea-tls-optional-client-cert-no-verify:
+    extends: agent-kea
+    volumes:
+      - $PWD/tests/system/config/kea-tls/optional-client-cert.json:/etc/kea/kea-ctrl-agent-tls.json
+      - $PWD/tests/system/config/kea-tls/cert.pem:/root/certs/cert.pem
+      - $PWD/tests/system/config/kea-tls/key.pem:/root/certs/key.pem
+      - $PWD/tests/system/config/kea-tls/CA:/root/certs/CA
+    environment:
+      STORK_AGENT_SKIP_TLS_CERT_VERIFICATION: "true"
+
+  agent-kea-tls-required-client-cert-no-verify:
+    extends: agent-kea-tls-optional-client-cert-no-verify
+    volumes:
+      - $PWD/tests/system/config/kea-tls/required-client-cert.json:/etc/kea/kea-ctrl-agent-tls.json
+
+  agent-kea-tls-optional-client-cert-verify:
+    extends: agent-kea-tls-optional-client-cert-no-verify
+    environment:
+      STORK_AGENT_SKIP_TLS_CERT_VERIFICATION: "false"
+
+  agent-kea-config-review:
+    extends: agent-kea
+    volumes:
+      - $PWD/tests/system/config/kea-config-review/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
 
   agent-bind9:
     restart: always
@@ -116,7 +138,6 @@ services:
       context: .
       dockerfile: $PWD/docker/images/stork.Dockerfile
       target: bind
-    image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/agent-bind9:latest"
     hostname: agent-bind9
     networks:
       storknet:
