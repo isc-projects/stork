@@ -79,13 +79,7 @@ func (module *ConfigModule) ApplyHostAdd(ctx context.Context, host *dbmodel.Host
 		appCommand["app"] = lh.Daemon.App
 		commands = append(commands, appCommand)
 	}
-	var (
-		daemonIDs []int64
-		ok        bool
-	)
-	if daemonIDs, ok = ctx.Value(config.DaemonsContextKey).([]int64); !ok {
-		//		return ctx, pkgerrors.New("context lacks daemons key")
-	}
+	daemonIDs, _ := ctx.Value(config.DaemonsContextKey).([]int64)
 	// Create config update to be stored in the transaction state.
 	update := config.NewUpdate("kea", "host_add", daemonIDs...)
 	update.Recipe["commands"] = commands
