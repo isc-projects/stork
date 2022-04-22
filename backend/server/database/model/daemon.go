@@ -273,6 +273,22 @@ func GetDaemonByID(dbi pg.DBI, id int64) (*Daemon, error) {
 	return &app, nil
 }
 
+// Get all Kea DHCP daemons.
+func GetKeaDHCPDaemons(dbi pg.DBI) (daemons []Daemon, err error) {
+	err = dbi.Model(&daemons).
+		Relation("App").
+		Relation("KeaDaemon.KeaDHCPDaemon").
+		Where("daemon.name ILIKE ?", "dhcp%").
+		OrderExpr("daemon.id ASC").
+		Select()
+	if errors.Is(err, pg.ErrNoRows) {
+		err = nil
+	} else {
+		err = pkgerrors.Wrapf(err, "problem with getting Kea DHCP daemons")
+	}
+	return
+}
+
 // Select one or more daemons for update. The main use case for this function is
 // to prevent modifications and deletions of the daemons while the server inserts
 // config reports for them. It must be called within a transaction and the selected

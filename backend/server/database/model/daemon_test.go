@@ -282,6 +282,73 @@ func TestGetDaemonByID(t *testing.T) {
 	require.Len(t, dmn.App.AccessPoints, 1)
 }
 
+// Test getting all Kea DHCP daemons.
+func TestGetKeaDHCPDaemons(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Getting Kea daemons when none are in the database should cause
+	// no error and return an empty list.
+	daemons, err := GetKeaDHCPDaemons(db)
+	require.NoError(t, err)
+	require.Empty(t, daemons)
+
+	// Add a machine.
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotZero(t, m.ID)
+
+	// Add an app with several Kea daemons of different type.
+	daemonNames := []string{DaemonNameDHCPv4, DaemonNameDHCPv6, DaemonNameCA, DaemonNameD2}
+	accessPoints := []*AccessPoint{}
+	accessPoints = AppendAccessPoint(accessPoints, AccessPointControl, "", "", 1234, false)
+	app := &App{
+		MachineID:    m.ID,
+		Type:         AppTypeKea,
+		AccessPoints: accessPoints,
+	}
+	for _, dn := range daemonNames {
+		app.Daemons = append(app.Daemons, NewKeaDaemon(dn, true))
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err)
+
+	// Add named app and daemon.
+	accessPoints[0].Port++
+	app = &App{
+		MachineID:    m.ID,
+		Type:         AppTypeBind9,
+		AccessPoints: accessPoints,
+		Daemons: []*Daemon{
+			NewBind9Daemon(true),
+		},
+	}
+	_, err = AddApp(db, app)
+	require.NoError(t, err)
+
+	// Try to get Kea DHCP daemons only. There should be two.
+	daemons, err = GetKeaDHCPDaemons(db)
+	require.NoError(t, err)
+	require.Len(t, daemons, 2)
+
+	// Validate returned daemons.
+	names := []string{}
+	for _, d := range daemons {
+		names = append(names, d.Name)
+		require.NotNil(t, d.App)
+		require.NotNil(t, d.KeaDaemon)
+		require.Equal(t, d.ID, d.KeaDaemon.DaemonID)
+		require.NotNil(t, d.KeaDaemon.KeaDHCPDaemon)
+	}
+	require.Contains(t, names, DaemonNameDHCPv4)
+	require.Contains(t, names, DaemonNameDHCPv6)
+}
+
 // Test selecting BIND9 daemon by ID for update which should result in locking
 // the daemon information until the transaction is committed or rolled back.
 func TestGetBind9DaemonsForUpdate(t *testing.T) {
