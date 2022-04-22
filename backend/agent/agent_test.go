@@ -705,7 +705,7 @@ func TestHostAndPortParams(t *testing.T) {
 	sa, _ := setupAgentTest()
 
 	flags := flag.NewFlagSet("test", 0)
-	flags.String("host", "127.1.2.3", "usage")
+	flags.String("host", "127.0.0.1", "usage")
 	flags.Int("port", 9876, "usage")
 	settings := cli.NewContext(nil, flags, nil)
 	sa.Settings = settings
@@ -715,14 +715,15 @@ func TestHostAndPortParams(t *testing.T) {
 	sa.Shutdown()
 
 	// Act
+	var serveErr error
 	stdout, _, err := testutil.CaptureOutput(func() {
-		err := sa.Serve()
-		require.Error(t, err)
+		serveErr = sa.Serve()
 	})
 
 	// Assert
+	require.Error(t, serveErr)
 	require.NoError(t, err)
 	stdoutStr := string(stdout)
-	require.Contains(t, stdoutStr, "127.1.2.3")
+	require.Contains(t, stdoutStr, "127.0.0.1")
 	require.Contains(t, stdoutStr, "9876")
 }
