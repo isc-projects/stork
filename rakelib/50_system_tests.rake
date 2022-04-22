@@ -81,6 +81,11 @@ task :logs do
     end
 end
 
+desc 'Run perfdhcp docker-compose service'
+task :perfdhcp do |t, args|
+    Rake::Task["system_tests:sh"].invoke("run", "perfdhcp", *args)
+end
+
 desc 'Run system tests docker-compose
     USE_BUILD_KIT - use BuildKit for faster build - default: true
 '

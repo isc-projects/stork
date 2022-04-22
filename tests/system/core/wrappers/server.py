@@ -26,9 +26,6 @@ class Server(ComposeServiceWrapper):
     def __init__(self, compose: DockerCompose, service_name: str):
         super().__init__(compose, service_name)
         self._session = requests.Session()
-        self._address = self._compose.get_service_ip_address(
-            self._service_name, "storknet"
-        )
         self._port = 8080
 
     def _fetch_api(self, method: str, endpoint: str,
@@ -38,10 +35,6 @@ class Server(ComposeServiceWrapper):
         if expected_status is not None and expected_status != r.status_code:
             raise UnexpectedStatusCodeException(expected_status, r.status_code)
         return r
-
-    @property
-    def ip_address(self):
-        return self._address
 
     # Authorize
 

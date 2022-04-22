@@ -182,32 +182,41 @@ class DockerCompose(object):
             docker_compose_cmd += ['--env-file', self._env_file]
         return docker_compose_cmd
 
+    def build(self, *service_names):
+        build_cmd = self.docker_compose_command() + \
+            ['build', *service_names]
+
+        env = None
+        if self._use_build_kit:
+            env = {
+                "COMPOSE_DOCKER_CLI_BUILD": "1",
+                "DOCKER_BUILDKIT": "1"
+            }
+
+        self._call_command(cmd=build_cmd, env_vars=env,
+                           capture_output=False)
+
+    def pull(self, *service_names):
+        pull_cmd = self.docker_compose_command() + ['pull', *service_names]
+        self._call_command(cmd=pull_cmd, capture_output=False)
+
+    def up(self, *service_names):
+        up_cmd = self.docker_compose_command() + ['up', '-d', *service_names]
+        self._call_command(cmd=up_cmd, capture_output=False)
+
     def start(self, *service_names):
         """
         Starts the docker compose environment.
         """
         if self._pull:
-            pull_cmd = self.docker_compose_command() + ['pull', *service_names]
-            self._call_command(cmd=pull_cmd, capture_output=False)
+            self.pull(*service_names)
 
-        env = None
         if self._build:
             logger.info("Begin build containers")
-            build_cmd = self.docker_compose_command() + \
-                ['build', *service_names]
-
-            if self._use_build_kit:
-                env = {
-                    "COMPOSE_DOCKER_CLI_BUILD": "1",
-                    "DOCKER_BUILDKIT": "1"
-                }
-
-            self._call_command(cmd=build_cmd, env_vars=env,
-                               capture_output=False)
+            self.build(*service_names)
             logger.info("End build containers")
 
-        up_cmd = self.docker_compose_command() + ['up', '-d', *service_names]
-        self._call_command(cmd=up_cmd, capture_output=False)
+        self.up(*service_names)
 
     def stop(self):
         """
@@ -215,6 +224,22 @@ class DockerCompose(object):
         """
         down_cmd = self.docker_compose_command() + ['down', '-v']
         self._call_command(cmd=down_cmd)
+
+    def run(self, service_name: str, *args: str):
+        """
+        Run a one-off command on a service.
+
+        Parameters
+        ----------
+        service_name : str
+            Name of the service.
+        """
+        run_cmd = self.docker_compose_command() + [
+            "--no-debs",
+            "run",
+            service_name,
+            *args]
+        self._call_command(cmd=run_cmd)
 
     def get_logs(self, service_name: str = None):
         """

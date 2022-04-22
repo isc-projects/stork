@@ -113,7 +113,15 @@ def bind_service(request):
     return wrapper
 
 
-@ pytest.fixture(autouse=True)
+@pytest.fixture
+def perfdhcp_service():
+    service_name = "perfdhcp"
+    compose = create_docker_compose()
+    wrapper = wrappers.Perfdhcp(compose, service_name)
+    return wrapper
+
+
+@pytest.fixture(autouse=True)
 def finish(request):
     """Save all logs to file and down all used containers."""
     function_name = request.function.__name__

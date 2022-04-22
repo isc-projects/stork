@@ -186,6 +186,38 @@ services:
       - $PWD/docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
       - $PWD/docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
 
+  perfdhcp:
+    restart: always
+    build:
+      context: .
+      dockerfile: $PWD/docker/images/stork.Dockerfile
+      target: kea
+    entrypoint: /usr/sbin/perfdhcp
+    # Explicitly add entries to /etc/hosts for the hosts which are connected
+    # to more than two networks. These explicit entries should be added at the
+    # beginning of the /etc/hosts file enforcing that the connections by hostname
+    # are established with the IP addresses belonging to the storknet network.
+    # Before this change, agents sometimes listened on IP addresses dedicated for
+    # DHCP communication instead.
+    extra_hosts:
+      - "agent-kea:172.20.42.100"
+    hostname: perfdhcp
+    networks:
+      storknet:
+        ipv4_address: 172.20.42.200
+      subnet-00:
+        ipv4_address: 172.100.42.200
+      subnet-01:
+        ipv4_address: 172.101.42.200
+      subnet-02:
+        ipv4_address: 172.102.42.200
+      subnet6-00:
+        ipv6_address: 3000:db8:1:42::200
+      subnet6-01:
+        ipv6_address: 3001:db8:1:42::200
+    healthcheck:
+      disable: true
+
   postgres:
     image: postgres:11
     command: -c ssl=on -c ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem -c ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
