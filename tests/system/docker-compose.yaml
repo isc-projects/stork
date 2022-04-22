@@ -70,15 +70,15 @@ services:
     networks:
       storknet:
         ipv4_address: 172.20.42.100
-      subnet-00:
+      subnet_00:
         ipv4_address: 172.100.42.100
-      subnet-01:
+      subnet_01:
         ipv4_address: 172.101.42.100
-      subnet-02:
+      subnet_02:
         ipv4_address: 172.102.42.100
-      subnet6-00:
+      subnet6_00:
         ipv6_address: 3000:db8:1:42::100
-      subnet6-01:
+      subnet6_01:
         ipv6_address: 3001:db8:1:42::100
     expose:
       - "8080" # stork server to agent
@@ -205,15 +205,15 @@ services:
     networks:
       storknet:
         ipv4_address: 172.20.42.200
-      subnet-00:
+      subnet_00:
         ipv4_address: 172.100.42.200
-      subnet-01:
+      subnet_01:
         ipv4_address: 172.101.42.200
-      subnet-02:
+      subnet_02:
         ipv4_address: 172.102.42.200
-      subnet6-00:
+      subnet6_00:
         ipv6_address: 3000:db8:1:42::200
-      subnet6-01:
+      subnet6_01:
         ipv6_address: 3001:db8:1:42::200
     healthcheck:
       disable: true
@@ -239,27 +239,25 @@ networks:
       config:
         - subnet: 172.20.42.0/24
         - subnet: 3009:db8:1:42::/64
-  subnet-00:
+  subnet_00:
     ipam:
       config:
         - subnet: 172.100.42.0/24
-  subnet-01:
+  subnet_01:
     ipam:
       config:
         - subnet: 172.101.42.0/24
-  subnet-02:
+  subnet_02:
     ipam:
       config:
         - subnet: 172.102.42.0/24
-  subnet6-00:
+  subnet6_00:
     enable_ipv6: true
-    driver: bridge
     ipam:
       config:
         - subnet: 3000:db8:1:42::/64
-  subnet6-01:
+  subnet6_01:
     enable_ipv6: true
-    driver: bridge
     ipam:
       config:
         - subnet: 3001:db8:1:42::/64

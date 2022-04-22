@@ -22,3 +22,7 @@ class Kea(Agent):
     def has_failed_TLS_handshake_log_entry(self):
         stdout, _ = self._compose.get_logs(self._service_name)
         return "HTTP_CONNECTION_HANDSHAKE_FAILED" in stdout
+
+    def get_ip_address(self, subnet_name: str):
+        return self._compose.get_service_ip_address(self._service_name,
+                                                    subnet_name)

@@ -27,6 +27,13 @@ class Server(ComposeServiceWrapper):
         super().__init__(compose, service_name)
         self._session = requests.Session()
         self._port = 8080
+        self._address = self._compose.get_service_ip_address(
+            self._service_name, "storknet"
+        )
+
+    @property
+    def ip_address(self):
+        return self._address
 
     def _fetch_api(self, method: str, endpoint: str,
                    expected_status: int = None, **kwargs):

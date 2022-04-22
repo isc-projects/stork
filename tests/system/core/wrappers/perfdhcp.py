@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from core.compose import DockerCompose
 
 
@@ -10,26 +10,33 @@ class Perfdhcp:
     def _call(self, parameters: List[str]):
         self._compose.run(self._service_name, *parameters)
 
-    def _generate_traffic_flags(self, family: int, target: str, mac_prefix: str = None,
+    def _generate_traffic_flags(self, family: int, target: Union[str, List[str]], mac_prefix: str = None,
                                 option: Tuple[str, str] = None,
                                 duid_prefix: str = None):
         flags = [
+            "-%d" % family,
             "-r", "10",
-            "-R", "10000",
-            "-l", target,
-            "-%d" % family
+            "-R", "10",
+            "-p", "10"
         ]
 
         if mac_prefix is not None:
-            flags.append("-b mac=" + mac_prefix + ":00:00:00:00")
+            flags.append("-b")
+            flags.append("mac=" + mac_prefix + ":00:00:00:00")
         if option is not None:
-            flags.append("-o %s,%s" % option)
+            flags.append("-o%s,%s" % option)
         if duid_prefix is not None:
-            flags.append("-b duid=" + duid_prefix + "00000000")
+            flags.append("-b")
+            flags.append("duid=" + duid_prefix + "00000000")
+
+        if type(target) == str:
+            flags.append(target)
+        else:
+            flags += target
 
         return flags
 
-    def generate_ipv4_traffic(self, ip_address: str, mac_prefix='00:00',
+    def generate_ipv4_traffic(self, ip_address: str, mac_prefix=None,
                               option=None):
         flags = self._generate_traffic_flags(
             family=4,
@@ -43,7 +50,7 @@ class Perfdhcp:
                               duid_prefix=None):
         flags = self._generate_traffic_flags(
             family=6,
-            target=interface,
+            target=["-l", interface],
             option=option,
             duid_prefix=duid_prefix)
         self._call(flags)

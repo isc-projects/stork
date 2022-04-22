@@ -235,8 +235,8 @@ class DockerCompose(object):
             Name of the service.
         """
         run_cmd = self.docker_compose_command() + [
-            "--no-debs",
             "run",
+            "--no-deps",
             service_name,
             *args]
         self._call_command(cmd=run_cmd)

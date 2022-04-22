@@ -7,13 +7,6 @@ class ComposeServiceWrapper:
     def __init__(self, compose: DockerCompose, service_name: str):
         self._compose = compose
         self._service_name = service_name
-        self._address = self._compose.get_service_ip_address(
-            self._service_name, "storknet"
-        )
-
-    @property
-    def ip_address(self):
-        return self._address
 
     def _restart_supervisor_service(self, name: str):
         cmd = ["supervisorctl", "restart", name]
