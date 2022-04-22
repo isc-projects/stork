@@ -1,4 +1,3 @@
-from os import stat
 from core.wrappers import Kea, Server
 from core.fixtures import kea_parametrize
 

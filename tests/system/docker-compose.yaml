@@ -1,7 +1,7 @@
 version: '2.1'
 
 services:
-  server:
+  server-base:
     restart: always
     build:
       context: .
@@ -32,6 +32,23 @@ services:
       timeout: 10s
       retries: 5
       start_period: 0s
+
+  server:
+    extends: server-base
+    depends_on:
+      - postgres
+
+  server-db-ssl-require:
+    extends: server-base
+    environment:
+      STORK_DATABASE_SSLMODE: require
+    depends_on:
+      - postgres
+
+  server-db-ssl-ca-verify:
+    extends: server-base
+    environment:
+      STORK_DATABASE_SSLMODE: ca-verify
     depends_on:
       - postgres
 
@@ -91,7 +108,6 @@ services:
 
   agent-kea-many-subnets:
     extends: agent-kea
-    hostname: agent-kea-many-subnets
     networks:
       storknet:
         ipv4_address: 172.20.42.102
@@ -112,9 +128,9 @@ services:
     extends: agent-kea
     volumes:
       - $PWD/tests/system/config/kea-tls/optional-client-cert.json:/etc/kea/kea-ctrl-agent-tls.json
-      - $PWD/tests/system/config/kea-tls/cert.pem:/root/certs/cert.pem
-      - $PWD/tests/system/config/kea-tls/key.pem:/root/certs/key.pem
-      - $PWD/tests/system/config/kea-tls/CA:/root/certs/CA
+      - $PWD/tests/system/config/certs/cert.pem:/root/certs/cert.pem
+      - $PWD/tests/system/config/certs/key.pem:/root/certs/key.pem
+      - $PWD/tests/system/config/certs/CA:/root/certs/CA
     environment:
       STORK_AGENT_SKIP_TLS_CERT_VERIFICATION: "true"
 
@@ -172,6 +188,7 @@ services:
 
   postgres:
     image: postgres:11
+    command: -c ssl=on -c ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem -c ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
     networks:
       storknet:
         ipv4_address: 172.20.42.234

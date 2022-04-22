@@ -8,6 +8,7 @@ from core.compose_factory import create_docker_compose
 import core.wrappers as wrappers
 from core.utils import setup_logger
 import core.lease_generators as lease_generators
+from core.constants import config_directory_relative
 
 
 logger = setup_logger(__name__)
@@ -28,9 +29,23 @@ def bind_parametrize(service_name="agent-bind9", suppress_registration=False):
     return agent_parametrize("bind_service", service_name, suppress_registration)
 
 
+def server_parametrize(service_name="server"):
+    return pytest.mark.parametrize("server_service", [{
+        "service_name": service_name
+    }], indirect=True)
+
+
 @pytest.fixture
-def server_service():
-    service_name = "server"
+def server_service(request):
+    param = {
+        "service_name": "server",
+    }
+
+    if hasattr(request, "param"):
+        param.update(request.param)
+
+    service_name = param["service_name"]
+
     compose = create_docker_compose()
     compose.start(service_name)
     compose.wait_for_operational(service_name)
