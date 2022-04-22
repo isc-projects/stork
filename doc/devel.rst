@@ -26,10 +26,10 @@ for detailed instructions.
 Generating Documentation
 ========================
 
-To generate documentation, simply type ``rake doc``.
+To generate documentation, simply type ``rake build_doc``.
 `Sphinx <https://www.sphinx-doc.org>`_ and `rtd-theme
 <https://github.com/readthedocs/sphinx_rtd_theme>`_ must be installed. The
-generated documentation will be available in the ``doc/singlehtml``
+generated documentation will be available in the ``doc/_build``
 directory.
 
 Setting Up the Development Environment
@@ -165,17 +165,18 @@ They can be run using Rake:
 
           $ rake unittest_backend
 
-This requires preparing a database in PostgreSQL. One way to avoid
-doing this manually is by using a Docker container with PostgreSQL,
-which is automatically created when running the following Rake task:
+This requires preparing a database in PostgreSQL. 
+.. ToDo: It will be added in the next MR
+.. One way to avoid doing this manually is by using a Docker container with PostgreSQL,
+.. which is automatically created when running the following Rake task:
 
-.. code:: console
+.. .. code:: console
 
-          $ rake unittest_backend_db
+..           $ rake unittest_backend_db
 
-This task spawns a container with PostgreSQL in the background, which
-then runs unit tests. When the tests are completed, the database is
-shut down and removed.
+.. This task spawns a container with PostgreSQL in the background, which
+.. then runs unit tests. When the tests are completed, the database is
+.. shut down and removed.
 
 Unit Tests Database
 -------------------
@@ -191,22 +192,22 @@ created:
     postgres=# ALTER ROLE storktest SUPERUSER;
     ALTER ROLE
 
-To point unit tests to a specific Stork database, set the ``POSTGRES_ADDR``
+To point unit tests to a specific Stork database, set the ``DB_HOST``
 environment variable, e.g.:
 
 .. code:: console
 
-          $ rake unittest_backend POSTGRES_ADDR=host:port
+          $ rake unittest_backend DB_HOST=host:port
 
 By default it points to ``localhost:5432``.
 
 Similarly, if the database setup requires a password other than the default
-``storktest``,  the ``STORK_DATABASE_PASSWORD`` variable can be used by issuing
+``storktest``,  the ``DB_PASSWORD`` variable can be used by issuing
 the following command:
 
 .. code:: console
 
-          $ rake unittest_backend STORK_DATABASE_PASSWORD=secret123
+          $ rake unittest_backend DB_PASSWORD=secret123
 
 Note that there is no need to create the ``storktest`` database itself; it is created
 and destroyed by the Rakefile task.
@@ -227,20 +228,20 @@ backend. Unlike unit tests, the benchmarks do not return pass/fail status.
 They measure average execution time of functions and print the results to
 the console.
 
-In order to run unit tests with benchmarks, the ``benchmark`` environment
+In order to run unit tests with benchmarks, the ``BENCHMARK`` environment
 variable must be specified as follows:
 
 .. code:: console
 
-          $ rake unittest_backend benchmark=true
+          $ rake unittest_backend BENCHMARK=true
 
 This command runs all unit tests and all benchmarks. Running benchmarks
-without unit tests is possible using the combination of the ``benchmark`` and
-``test`` environment variables:
+without unit tests is possible using the combination of the ``BENCHMARK`` and
+``TEST`` environment variables:
 
 .. code:: console
 
-          $ rake unittest_backend benchmark=true test=Bench
+          $ rake unittest_backend BENCHMARK=true TEST=Bench
 
 Benchmarks are useful to test the performance of complex functions and find
 bottlenecks. When working on improving the performance of a function, examining a
@@ -254,12 +255,12 @@ function may drive improved efficiency of the new code.
 Short Testing Mode
 ------------------
 
-It is possible to filter out long-running unit tests, by setting the ``short``
+It is possible to filter out long-running unit tests, by setting the ``SHORT``
 variable to ``true`` on the command line:
 
 .. code:: console
 
-          $ rake unittest_backend short=true
+          $ rake unittest_backend SHORT=true
 
 
 Web UI Unit Tests
@@ -287,12 +288,12 @@ By default, the tests launch the browser in headless mode, in which test results
 and any possible errors are printed in the console. However, in some situations it
 is useful to run the browser in non-headless mode because it provides debugging features
 in Chrome's graphical interface. It also allows for selectively running the tests.
-Run the tests in non-headless mode using the ``debug`` variable appended to the ``rake``
+Run the tests in non-headless mode using the ``DEBUG`` variable appended to the ``rake``
 command:
 
 .. code:: console
 
-   rake unittest_ui debug=true
+   rake unittest_ui DEBUG=true
 
 That command causes a new browser window to open; the tests run there automatically.
 
@@ -304,10 +305,10 @@ be run by clicking on its name.
 
 .. code:: console
 
-    test=src/app/ha-status-panel/ha-status-panel.component.spec.ts rake unittest_ui
+    TEST=src/app/ha-status-panel/ha-status-panel.component.spec.ts rake unittest_ui
 
 By default, all tests are executed. To run only a specific test file,
-set the "test" environment variable to a relative path to any ``.spec.ts``
+set the "TEST" environment variable to a relative path to any ``.spec.ts``
 file (relative from the bproject directory).
 
 When adding a new component or service with ``ng generate component|service ...``, the Angular framework
@@ -318,6 +319,10 @@ failing tests.
 
 System Tests
 ============
+
+.. warning::
+    The system tests are currently under construction and are unavailable in
+    this Stork version. They will be restored in the next releases.
 
 System tests for Stork are designed to test the software in a distributed environment.
 They allow several Stork servers and agents running at the same time
