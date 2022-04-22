@@ -466,17 +466,12 @@ describe('HostsPageComponent', () => {
                     ],
                 },
             ],
-            apps: [
+            daemons: [
                 {
                     id: 1,
-                    name: 'first',
-                    details: {
-                        daemons: [
-                            {
-                                id: 1,
-                                name: 'dhcp4',
-                            },
-                        ],
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
                     },
                 },
             ],
@@ -522,17 +517,12 @@ describe('HostsPageComponent', () => {
                     ],
                 },
             ],
-            apps: [
+            daemons: [
                 {
                     id: 1,
-                    name: 'first',
-                    details: {
-                        daemons: [
-                            {
-                                id: 1,
-                                name: 'dhcp4',
-                            },
-                        ],
+                    name: 'dhcp4',
+                    app: {
+                        name: 'first',
                     },
                 },
             ],

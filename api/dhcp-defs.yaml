@@ -152,10 +152,10 @@
       id:
         type: integer
         format: int64
-      apps:
+      daemons:
         type: array
         items:
-          $ref: '#/definitions/App'
+          $ref: '#/definitions/KeaDaemon'
       subnets:
         type: array
         items:

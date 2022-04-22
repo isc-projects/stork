@@ -67,49 +67,40 @@ describe('HostFormComponent', () => {
                 ],
             },
         ],
-        apps: [
+        daemons: [
             {
                 id: 1,
-                name: 'first',
-                details: {
-                    daemons: [
-                        {
-                            id: 1,
-                            name: 'dhcp4',
-                        },
-                        {
-                            id: 3,
-                            name: 'dhcp6',
-                        },
-                    ],
-                },
-            },
-            {
-                id: 2,
-                name: 'second',
-                details: {
-                    daemons: [
-                        {
-                            id: 2,
-                            name: 'dhcp4',
-                        },
-                        {
-                            id: 4,
-                            name: 'dhcp6',
-                        },
-                    ],
+                name: 'dhcp4',
+                app: {
+                    name: 'first',
                 },
             },
             {
                 id: 3,
-                name: 'third',
-                details: {
-                    daemons: [
-                        {
-                            id: 5,
-                            name: 'dhcp6',
-                        },
-                    ],
+                name: 'dhcp6',
+                app: {
+                    name: 'first',
+                },
+            },
+            {
+                id: 2,
+                name: 'dhcp4',
+                app: {
+                    name: 'second',
+                },
+            },
+            {
+                id: 4,
+                name: 'dhcp6',
+                app: {
+                    name: 'second',
+                },
+            },
+            {
+                id: 5,
+                name: 'dhcp6',
+                app: {
+                    name: 'third',
                 },
             },
         ],

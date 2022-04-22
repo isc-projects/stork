@@ -22,25 +22,16 @@ const (
 	d2    = "d2"
 )
 
-// Get list of hooks for all DHCP daemons of the given Kea application.
-func GetDaemonHooks(dbApp *dbmodel.App) map[string][]string {
-	hooksByDaemon := make(map[string][]string)
-
-	// go through response list with configs from each daemon and retrieve their hooks lists
-	for _, dmn := range dbApp.Daemons {
-		if dmn.KeaDaemon == nil || dmn.KeaDaemon.Config == nil {
-			continue
-		}
-
-		libraries := dmn.KeaDaemon.Config.GetHooksLibraries()
-		hooks := []string{}
-		for _, library := range libraries {
-			hooks = append(hooks, library.Library)
-		}
-		hooksByDaemon[dmn.Name] = hooks
+// Get list of hooks for the given Kea daemon.
+func GetDaemonHooks(dbDaemon *dbmodel.Daemon) (hooks []string) {
+	if dbDaemon.KeaDaemon == nil || dbDaemon.KeaDaemon.Config == nil {
+		return
 	}
-
-	return hooksByDaemon
+	libraries := dbDaemon.KeaDaemon.Config.GetHooksLibraries()
+	for _, library := range libraries {
+		hooks = append(hooks, library.Library)
+	}
+	return
 }
 
 // version-get response structs

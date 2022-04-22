@@ -803,8 +803,10 @@ func getKeaStorages(config keaconfig.DatabaseConfig) (files []*models.File, data
 	return files, databases
 }
 
-func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
-	app := models.App{
+// Converts App structure to REST API format, without the data specific to
+// an app type.
+func baseAppToRestAPI(dbApp *dbmodel.App) *models.App {
+	app := &models.App{
 		ID:      dbApp.ID,
 		Name:    dbApp.Name,
 		Type:    dbApp.Type,
@@ -829,6 +831,13 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		})
 	}
 	app.AccessPoints = accessPoints
+	return app
+}
+
+// Converts App structure to REST API formnat, with the data specific to
+// an app type (including daemons).
+func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
+	app := baseAppToRestAPI(dbApp)
 
 	isKeaApp := dbApp.Type == dbmodel.AppTypeKea
 	isBind9App := dbApp.Type == dbmodel.AppTypeBind9
@@ -854,46 +863,12 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		}
 		var keaDaemons []*models.KeaDaemon
 		for _, d := range dbApp.Daemons {
-			dmn := &models.KeaDaemon{
-				ID:              d.ID,
-				Pid:             int64(d.Pid),
-				Name:            d.Name,
-				Active:          d.Active,
-				Monitored:       d.Monitored,
-				Version:         d.Version,
-				ExtendedVersion: d.ExtendedVersion,
-				Uptime:          d.Uptime,
-				ReloadedAt:      strfmt.DateTime(d.ReloadedAt),
-				Hooks:           []string{},
-				AgentCommErrors: agentErrors,
-			}
+			dmn := keaDaemonToRestAPI(d)
+			dmn.AgentCommErrors = agentErrors
 			if keaStats != nil {
 				dmn.CaCommErrors = keaStats.CurrentErrorsCA
 				dmn.DaemonCommErrors = keaStats.CurrentErrorsDaemons[d.Name]
 			}
-
-			hooksByDaemon := kea.GetDaemonHooks(dbApp)
-			if hooksByDaemon != nil {
-				hooksList, ok := hooksByDaemon[d.Name]
-				if ok {
-					dmn.Hooks = hooksList
-				}
-			}
-
-			for _, logTarget := range d.LogTargets {
-				dmn.LogTargets = append(dmn.LogTargets, &models.LogTarget{
-					ID:       logTarget.ID,
-					Name:     logTarget.Name,
-					Severity: logTarget.Severity,
-					Output:   logTarget.Output,
-				})
-			}
-
-			// Files and backends.
-			if d.KeaDaemon.Config != nil {
-				dmn.Files, dmn.Backends = getKeaStorages(d.KeaDaemon.Config)
-			}
-
 			keaDaemons = append(keaDaemons, dmn)
 		}
 
@@ -963,7 +938,50 @@ func (r *RestAPI) appToRestAPI(dbApp *dbmodel.App) *models.App {
 		}
 	}
 
-	return &app
+	return app
+}
+
+// Converts KeaDaemon structure to REST API format.
+func keaDaemonToRestAPI(dbDaemon *dbmodel.Daemon) *models.KeaDaemon {
+	daemon := &models.KeaDaemon{
+		ID:              dbDaemon.ID,
+		Pid:             int64(dbDaemon.Pid),
+		Name:            dbDaemon.Name,
+		Active:          dbDaemon.Active,
+		Monitored:       dbDaemon.Monitored,
+		Version:         dbDaemon.Version,
+		ExtendedVersion: dbDaemon.ExtendedVersion,
+		Uptime:          dbDaemon.Uptime,
+		ReloadedAt:      strfmt.DateTime(dbDaemon.ReloadedAt),
+		Hooks:           []string{},
+	}
+
+	// Daemon can include App information (depending on the database query).
+	if dbDaemon.App != nil {
+		daemon.App = baseAppToRestAPI(dbDaemon.App)
+	}
+
+	// Get hooks.
+	hooks := kea.GetDaemonHooks(dbDaemon)
+	if len(hooks) > 0 {
+		daemon.Hooks = hooks
+	}
+
+	// Get log targets.
+	for _, logTarget := range dbDaemon.LogTargets {
+		daemon.LogTargets = append(daemon.LogTargets, &models.LogTarget{
+			ID:       logTarget.ID,
+			Name:     logTarget.Name,
+			Severity: logTarget.Severity,
+			Output:   logTarget.Output,
+		})
+	}
+
+	// Files and backends.
+	if dbDaemon.KeaDaemon.Config != nil {
+		daemon.Files, daemon.Backends = getKeaStorages(dbDaemon.KeaDaemon.Config)
+	}
+	return daemon
 }
 
 func (r *RestAPI) getApps(offset, limit int64, filterText *string, appType string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Apps, error) {

@@ -332,21 +332,14 @@ export class HostFormComponent implements OnInit, OnDestroy {
                     // We have to mangle the returned information and store them
                     // in the format usable by the component.
 
-                    // The server returns a list of apps rather than a list of
-                    // daemons. We have to extract the daemons from that list.
                     let daemons = []
-                    for (const a of data.apps) {
-                        for (const d of a.details.daemons) {
-                            // Only DHCP daemons are useful in this case.
-                            if (d.name.startsWith('dhcp')) {
-                                let daemon = {
-                                    id: d.id,
-                                    name: d.name,
-                                    label: `${a.name}/${d.name}`,
-                                }
-                                daemons.push(daemon)
-                            }
+                    for (const d of data.daemons) {
+                        let daemon = {
+                            id: d.id,
+                            name: d.name,
+                            label: `${d.app.name}/${d.name}`,
                         }
+                        daemons.push(daemon)
                     }
                     const mappedData: any = {
                         id: data.id,

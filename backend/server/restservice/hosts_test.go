@@ -63,6 +63,11 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
                         "id": 111,
                         "subnet": "192.0.2.0/24"
                     }
+                ],
+                "hooks-libraries": [
+                    {
+                        "library": "libdhcp_host_cmds.so"
+                    }
                 ]
             }
         }`)
@@ -74,6 +79,11 @@ func addTestHosts(t *testing.T, db *pg.DB) (hosts []dbmodel.Host, apps []dbmodel
                     {
                         "id": 222,
                         "subnet": "2001:db8:1::/64"
+                    }
+                ],
+                "hooks-libraries": [
+                    {
+                        "library": "libdhcp_host_cmds.so"
                     }
                 ]
             }
@@ -413,10 +423,10 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 	okRsp := rsp.(*dhcp.CreateHostBeginOK)
 	contents := okRsp.Payload
 
-	// Make sure the server returned transaction ID, apps and subnets.
+	// Make sure the server returned transaction ID, daemons and subnets.
 	transactionID := contents.ID
 	require.NotZero(t, transactionID)
-	require.Len(t, contents.Apps, 2)
+	require.Len(t, contents.Daemons, 4)
 	require.Len(t, contents.Subnets, 2)
 
 	// Submit transaction.
@@ -494,6 +504,43 @@ func TestCreateHostBeginNoSession(t *testing.T) {
 	require.IsType(t, &dhcp.CreateHostBeginDefault{}, rsp)
 	defaultRsp := rsp.(*dhcp.CreateHostBeginDefault)
 	require.Equal(t, http.StatusForbidden, getStatusCode(*defaultRsp))
+}
+
+// Test error case when a user attempts to begin a new transaction when
+// there are no servers with host_cmds hook library found.
+func TestCreateHostBeginNoServers(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create fake agents receiving reservation-add commands.
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	require.NotNil(t, fa)
+
+	// Create the config manager using these agents.
+	cm := apps.NewManager(db, fa)
+	require.NotNil(t, cm)
+
+	// Create API.
+	rapi, err := NewRestAPI(dbSettings, db, fa, cm)
+	require.NoError(t, err)
+
+	// Create session manager but do not login the user.
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+
+	// Create user session.
+	user := &dbmodel.SystemUser{
+		ID: 1234,
+	}
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Begin transaction.
+	params := dhcp.CreateHostBeginParams{}
+	rsp := rapi.CreateHostBegin(ctx, params)
+	require.IsType(t, &dhcp.CreateHostBeginDefault{}, rsp)
+	defaultRsp := rsp.(*dhcp.CreateHostBeginDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 }
 
 // Test error cases for submitting new host reservation.
@@ -673,10 +720,10 @@ func TestCreateHostBeginCancel(t *testing.T) {
 	okRsp := rsp.(*dhcp.CreateHostBeginOK)
 	contents := okRsp.Payload
 
-	// Make sure the server returned transaction ID, apps and subnets.
+	// Make sure the server returned transaction ID, daemons and subnets.
 	transactionID := contents.ID
 	require.NotZero(t, transactionID)
-	require.Len(t, contents.Apps, 2)
+	require.Len(t, contents.Daemons, 4)
 	require.Len(t, contents.Subnets, 2)
 
 	// Cancel the transaction.

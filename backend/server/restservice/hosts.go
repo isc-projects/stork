@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -184,13 +185,34 @@ func (r *RestAPI) GetHost(ctx context.Context, params dhcp.GetHostParams) middle
 // Implements the POST call to create new transaction for adding a new host
 // reservation (hosts/new/transaction/new).
 func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeginParams) middleware.Responder {
-	// A list of Kea apps will be needed in the user form, so the
-	// user can select which servers send the reservation to.
-	apps, err := dbmodel.GetAppsByType(r.DB, dbmodel.AppTypeKea)
+	// A list of Kea DHCP daemons will be needed in the user form,
+	// so the user can select which servers send the reservation to.
+	daemons, err := dbmodel.GetKeaDHCPDaemons(r.DB)
 	if err != nil {
-		msg := "problem with fetching apps from the database"
+		msg := "problem with fetching Kea daemons from the database"
 		log.Error(err)
 		rsp := dhcp.NewCreateHostBeginDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+	// Convert daemons list to REST API format.
+	respDaemons := []*models.KeaDaemon{}
+	for i := range daemons {
+		respDaemon := keaDaemonToRestAPI(&daemons[i])
+		// Filter the daemons with host_cmds hook library.
+		for _, hook := range respDaemon.Hooks {
+			if strings.Contains(hook, "host_cmds") {
+				respDaemons = append(respDaemons, keaDaemonToRestAPI(&daemons[i]))
+			}
+		}
+	}
+	// If there are no daemons with host_cmds hooks library loaded there is no way
+	// to add new host reservation. In that case, we don't begin a transaction.
+	if len(respDaemons) == 0 {
+		msg := "unable to begin transaction for adding new host because there are no Kea servers with host_cmds hooks library available"
+		log.Error(msg)
+		rsp := dhcp.NewCreateHostBeginDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -205,11 +227,6 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 			Message: &msg,
 		})
 		return rsp
-	}
-	// Convert apps list to REST API format.
-	respApps := []*models.App{}
-	for i := range apps {
-		respApps = append(respApps, r.appToRestAPI(&apps[i]))
 	}
 	// Convert subnets list to REST API format.
 	respSubnets := []*models.Subnet{}
@@ -252,7 +269,7 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 	// Return transaction ID, apps and subnets to the user.
 	contents := &models.CreateHostBeginResponse{
 		ID:      cctxID,
-		Apps:    respApps,
+		Daemons: respDaemons,
 		Subnets: respSubnets,
 	}
 	rsp := dhcp.NewCreateHostBeginOK().WithPayload(contents)

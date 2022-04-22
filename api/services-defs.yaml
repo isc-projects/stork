@@ -278,6 +278,8 @@
         type: array
         items:
           $ref: '#/definitions/LogTarget'
+      app:
+        $ref: '#/definitions/App'
 
   KeaDaemonConfig:
     type: object

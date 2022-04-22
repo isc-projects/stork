@@ -377,82 +377,28 @@ func TestGetAppStateForExistingApp(t *testing.T) {
 
 // Check if GetDaemonHooks returns hooks for given daemon.
 func TestGetDaemonHooksFrom1Daemon(t *testing.T) {
-	dbApp := dbmodel.App{
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": map[string]interface{}{
-							"hooks-libraries": []interface{}{
-								map[string]interface{}{
-									"library": "hook_abc.so",
-								},
-							},
+	dbDaemon := &dbmodel.Daemon{
+		Name: "dhcp4",
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+				"Dhcp4": map[string]interface{}{
+					"hooks-libraries": []interface{}{
+						map[string]interface{}{
+							"library": "hook_abc.so",
 						},
-					}),
+						map[string]interface{}{
+							"library": "hook_def.so",
+						},
+					},
 				},
-			},
+			}),
 		},
 	}
 
-	hooksMap := GetDaemonHooks(&dbApp)
-	require.NotNil(t, hooksMap)
-	hooks, ok := hooksMap["dhcp4"]
-	require.True(t, ok)
-	require.Len(t, hooks, 1)
-	require.Equal(t, "hook_abc.so", hooks[0])
-}
-
-// Check getting hooks of 2 daemons.
-func TestGetDaemonHooksFrom2Daemons(t *testing.T) {
-	dbApp := dbmodel.App{
-		Daemons: []*dbmodel.Daemon{
-			{
-				Name: "dhcp6",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp6": map[string]interface{}{
-							"hooks-libraries": []interface{}{
-								map[string]interface{}{
-									"library": "hook_abc.so",
-								},
-								map[string]interface{}{
-									"library": "hook_def.so",
-								},
-							},
-						},
-					}),
-				},
-			},
-			{
-				Name: "dhcp4",
-				KeaDaemon: &dbmodel.KeaDaemon{
-					Config: dbmodel.NewKeaConfig(&map[string]interface{}{
-						"Dhcp4": map[string]interface{}{
-							"hooks-libraries": []interface{}{
-								map[string]interface{}{
-									"library": "hook_abc.so",
-								},
-							},
-						},
-					}),
-				},
-			},
-		},
-	}
-
-	hooksMap := GetDaemonHooks(&dbApp)
-	require.NotNil(t, hooksMap)
-	hooks, ok := hooksMap["dhcp4"]
-	require.True(t, ok)
-	require.Len(t, hooks, 1)
-	require.Equal(t, "hook_abc.so", hooks[0])
-	hooks, ok = hooksMap["dhcp6"]
-	require.True(t, ok)
+	hooks := GetDaemonHooks(dbDaemon)
 	require.Len(t, hooks, 2)
-	require.Contains(t, hooks, "hook_abc.so")
-	require.Contains(t, hooks, "hook_def.so")
+	require.Equal(t, "hook_abc.so", hooks[0])
+	require.Equal(t, "hook_def.so", hooks[1])
 }
 
 // Tests that Kea can be added and then updated in the database.

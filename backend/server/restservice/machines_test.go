@@ -1993,6 +1993,55 @@ func TestAppToRestAPIForNilKeaConfig(t *testing.T) {
 	require.NotNil(t, restApp)
 }
 
+// Test conversion of a KeaDaemon to REST API format.
+func TestKeaDaemonToRestAPI(t *testing.T) {
+	daemon := &dbmodel.Daemon{
+		ID:              1,
+		Pid:             1234,
+		Name:            "dhcp4",
+		Active:          true,
+		Monitored:       true,
+		Version:         "2.1",
+		ExtendedVersion: "2.1.x",
+		Uptime:          1000,
+		ReloadedAt:      time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: dbmodel.NewKeaConfig(&map[string]interface{}{
+				"Dhcp4": map[string]interface{}{
+					"hooks-libraries": []interface{}{
+						map[string]interface{}{
+							"library": "hook_abc.so",
+						},
+						map[string]interface{}{
+							"library": "hook_def.so",
+						},
+					},
+				},
+			}),
+		},
+		App: &dbmodel.App{
+			ID:   2,
+			Name: "funny",
+		},
+	}
+	converted := keaDaemonToRestAPI(daemon)
+	require.NotNil(t, converted)
+	require.EqualValues(t, daemon.ID, converted.ID)
+	require.EqualValues(t, daemon.Pid, converted.Pid)
+	require.Equal(t, daemon.Active, converted.Active)
+	require.Equal(t, daemon.Monitored, converted.Monitored)
+	require.Equal(t, daemon.Version, converted.Version)
+	require.Equal(t, daemon.ExtendedVersion, converted.ExtendedVersion)
+	require.EqualValues(t, daemon.Uptime, converted.Uptime)
+	require.Equal(t, "2009-11-10T23:00:00.000Z", converted.ReloadedAt.String())
+	require.Len(t, converted.Hooks, 2)
+	require.Contains(t, converted.Hooks, "hook_abc.so")
+	require.Contains(t, converted.Hooks, "hook_def.so")
+	require.NotNil(t, converted.App)
+	require.EqualValues(t, daemon.App.ID, converted.App.ID)
+	require.Equal(t, daemon.App.Name, converted.App.Name)
+}
+
 // This test verifies that the lease database configuration storing the
 // leases in an SQL database is correctly recognized.
 func TestGetKeaStoragesLeaseDatabase(t *testing.T) {
