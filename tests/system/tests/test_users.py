@@ -1,4 +1,4 @@
-from core.wrappers import Server, api
+from core.wrappers import Server
 
 
 def test_users_management(server_service: Server):
