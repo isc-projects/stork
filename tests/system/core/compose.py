@@ -225,7 +225,7 @@ class DockerCompose(object):
         down_cmd = self.docker_compose_command() + ['down', '-v']
         self._call_command(cmd=down_cmd)
 
-    def run(self, service_name: str, *args: str):
+    def run(self, service_name: str, *args: str, check=True):
         """
         Run a one-off command on a service.
 
@@ -239,7 +239,7 @@ class DockerCompose(object):
             "--no-deps",
             service_name,
             *args]
-        self._call_command(cmd=run_cmd)
+        return self._call_command(cmd=run_cmd, check=check)
 
     def get_logs(self, service_name: str = None):
         """

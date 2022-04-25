@@ -21,15 +21,5 @@ def test_users_management(server_service: Server):
     assert groups['items'][0]['name'] in ['super-admin', 'admin']
     assert groups['items'][1]['name'] in ['super-admin', 'admin']
 
-    user: api.UserCreate = {
-        'user': {
-            'id': 0,
-            'login': "user",
-            'email': "a@example.org",
-            'name': "John",
-            'lastname': "Smith",
-            'groups': [],
-        },
-        'password': "password"
-    }
-    server_service.create_user(user)
+    server_service.create_user(
+        "user", "a@example.org", "John", "Smith", [], "password")

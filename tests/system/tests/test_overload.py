@@ -14,8 +14,8 @@ def test_add_kea_with_many_subnets(server_service: Server, kea_service: Kea):
     assert state['apps'] is not None
     assert len(state['apps']) == 1
     assert state['apps'][0]['version'] == "2.0.2"
-    assert len(state['apps'][0]['accessPoints']) == 1
-    assert state['apps'][0]['accessPoints'][0]['address'] == '127.0.0.1'
+    assert len(state['apps'][0]['access_points']) == 1
+    assert state['apps'][0]['access_points'][0]['address'] == '127.0.0.1'
 
     server_service.wait_for_adding_subnets(daemon_name="dhcp4")
 

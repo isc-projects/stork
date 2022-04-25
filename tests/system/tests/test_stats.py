@@ -15,7 +15,14 @@ def test_get_kea_stats(server_service: Server, kea_service: Kea, perfdhcp_servic
         mac_prefix="00:00"
     )
     perfdhcp_service.generate_ipv6_traffic(
-        interface="eth2"
+        interface="eth0"
     )
 
-    state, *_ = server_service.wait_for_next_machine_states()
+    server_service.wait_for_statistics_pulling("Kea")
+    data = server_service.overview()
+
+    # 9 leases are initialy store in the lease database
+    assert int(data['dhcp4_stats']['assignedAddresses']) > 10
+    assert data['subnets4']['items'] is not None
+    assert int(data['dhcp6_stats']['assignedNAs']) > 10
+    assert data['subnets6']['items'] is not None

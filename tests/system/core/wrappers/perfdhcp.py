@@ -1,3 +1,4 @@
+import subprocess
 from typing import List, Tuple, Union
 from core.compose import DockerCompose
 
@@ -8,14 +9,18 @@ class Perfdhcp:
         self._service_name = service_name
 
     def _call(self, parameters: List[str]):
-        self._compose.run(self._service_name, *parameters)
+        status, stdout, stderr = self._compose.run(
+            self._service_name, *parameters, check=False)
+        if status not in (0, 3):
+            raise subprocess.CalledProcessError(
+                status, "perfdhcp", stdout, stderr)
 
     def _generate_traffic_flags(self, family: int, target: Union[str, List[str]], mac_prefix: str = None,
                                 option: Tuple[str, str] = None,
                                 duid_prefix: str = None):
         flags = [
             "-%d" % family,
-            "-r", "10",
+            "-r", "1",
             "-R", "10",
             "-p", "10"
         ]

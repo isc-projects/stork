@@ -75,13 +75,13 @@ def test_get_host_leases(kea_service: Kea, server_service: Server):
     assert leases['conflicts'] is None
 
     # Find the host reservation for IPv6 address.
-    hosts = server_service.list_hosts("3001:db8:1::2")
+    hosts = server_service.list_hosts("3001:db8:1:42::2")
     host = hosts['items'][0]
 
     # Find leases for the IPv6 host reservation.
     leases = server_service.list_leases(host_id=host['id'])
     assert leases['total'] == 1
-    assert leases['items'][0]['ipAddress'] == '3001:db8:1::2'
+    assert leases['items'][0]['ipAddress'] == '3001:db8:1:42::2'
 
     # The lease was assigned to a different client. There should be
     # a conflict returned.

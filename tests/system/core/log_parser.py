@@ -1,11 +1,11 @@
 
-from datetime import datetime
+from datetime import datetime, timezone
 import shlex
 
 
 class GoLogEntry:
     def __init__(self, raw: str):
-        severity_with_timestamp, content = raw.split(" ", 1)
+        severity_with_timestamp, content = raw.split("]", 1)
 
         content = content.lstrip()
         location, content = content.split(" ", 1)
@@ -15,16 +15,30 @@ class GoLogEntry:
         self._location = location
         self._content = content
 
+    @staticmethod
+    def _remove_colors(raw: str):
+        characters = []
+        skip = 0
+        for char in raw:
+            if skip > 0:
+                skip -= 1
+                continue
+            if char == "\x1b":
+                skip = 4
+                continue
+            characters.append(char)
+        return "".join(characters)
+
     @property
     def severity(self):
-        severity, _ = self._severity_with_timestamp.split("[")
-        return severity
+        severity, _ = self._severity_with_timestamp.rsplit("[", 1)
+        return GoLogEntry._remove_colors(severity)
 
     @property
     def timestamp(self):
-        _, timestamp = self._severity_with_timestamp.split("[")
-        timestamp = timestamp.rstrip("]")
-        return datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+        _, timestamp = self._severity_with_timestamp.rsplit("[", 1)
+        dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+        return dt.replace(tzinfo=timezone.utc)
 
     @property
     def location(self):
@@ -40,12 +54,13 @@ class GoLogEntry:
 
     @property
     def message(self):
-        message, _ = self._content.split("    ")
+        message, *_ = self._content.split("    ", 1)
         return message
 
     @property
     def arguments(self):
-        _, arguments_str = self._content.split("    ")
+        _, arguments_str = self._content.split("    ", 1)
+        arguments_str = self._remove_colors(arguments_str)
         arguments_str = arguments_str.lstrip()
         arguments_dict = {}
         for argument in shlex.split(arguments_str):
@@ -81,7 +96,10 @@ class KeaLogEntry:
 class LogEntry:
     @staticmethod
     def _split_docker_compose_log_entry(raw: str, with_timestamp=True):
-        service_name, rest = raw.split("|", 1)
+        part = raw.split("|", 1)
+        if len(part) == 1:
+            return None, None, part
+        service_name, rest = part
         service_name = service_name.strip()
         rest = rest.strip()
 
@@ -104,10 +122,27 @@ class LogEntry:
 
     @property
     def timestamp(self):
-        return datetime.fromisoformat(self._timestamp.rstrip("Z"))
+        dt = datetime.fromisoformat(self._timestamp[:26])
+        return dt.replace(tzinfo=timezone.utc)
+
+    def is_service_log_entry(self):
+        return self._service_name is not None and self._timestamp is not None \
+            and self._content is not None
+
+    def is_service(self, service_name):
+        if self._service_name is None:
+            return False
+        name, _ = self._service_name.rsplit("_", 1)
+        return name == service_name
 
     def as_go(self):
         return GoLogEntry(self._content)
+
+    def as_go_safe(self):
+        try:
+            return self.as_go()
+        except:
+            return None
 
     def as_kea(self):
         return KeaLogEntry(self._content)

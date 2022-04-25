@@ -10,5 +10,5 @@ def test_bind9(server_service: Server, bind_service: Bind):
     assert len(state['apps']) == 1
     app = state['apps'][0]
     assert app['type'] == "bind9"
-    assert len(app['accessPoints']) == 2
-    assert app['accessPoints'][0]['address'] == '127.0.0.1'
+    assert len(app['access_points']) == 2
+    assert app['access_points'][0]['address'] == '127.0.0.1'

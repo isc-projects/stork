@@ -49,8 +49,9 @@ def server_service(request):
     compose = create_docker_compose()
     compose.start(service_name)
     compose.wait_for_operational(service_name)
-    wrapper = wrappers.Server(compose, service_name)
-    return wrapper
+
+    with wrappers.Server(compose, service_name) as wrapper:
+        yield wrapper
 
 
 @pytest.fixture

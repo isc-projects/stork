@@ -38,7 +38,7 @@ def test_communication_with_kea_over_secure_protocol(server_service: Server, kea
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert state['apps'][0]['accessPoints'][0]['useSecureProtocol']
+    assert state['apps'][0]['access_points'][0]['use_secure_protocol']
     leases = server_service.list_leases('192.0.2.1')
     assert leases['total'] == 1
 
@@ -52,7 +52,7 @@ def test_communication_with_kea_over_secure_protocol_nontrusted_client(server_se
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert state['apps'][0]['accessPoints'][0]['useSecureProtocol']
+    assert state['apps'][0]['access_points'][0]['use_secure_protocol']
     leases = server_service.list_leases('192.0.2.1')
     assert leases['items'] is None
     assert kea_service.has_failed_TLS_handshake_log_entry()
@@ -66,7 +66,7 @@ def test_communication_with_kea_over_secure_protocol_require_trusted_cert(server
     server_service.authorize_all_machines()
     state, *_ = server_service.wait_for_next_machine_states()
 
-    assert state['apps'][0]['accessPoints'][0]['useSecureProtocol']
+    assert state['apps'][0]['access_points'][0]['use_secure_protocol']
     leases = server_service.list_leases('192.0.2.1')
     assert leases['items'] is None
     assert kea_service.has_failed_TLS_handshake_log_entry()

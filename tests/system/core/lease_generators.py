@@ -86,7 +86,7 @@ def gen_dhcp6_lease_file(target):
             'hostname': 'host-%d.example.org' % i,
             'state': i % 2
         }
-        lease['address'] = '3001:db8:1::%d' % i
+        lease['address'] = '3001:db8:1:42::%d' % i
         lease['expire'] = '%d' % (time.time() + 600)
 
         # Only non-declined leases contain MAC address and client id.

@@ -73,3 +73,9 @@ tests/system/config/kea/kea-leases4.csv
 tests/system/config/kea/kea-leases6.csv
 tests/system/config/certs/key.pem
 tests/system/config/certs/cert.pem
+
+# OpenAPI generator files for Python
+tests/system/openapi_client/
+tests/system/.openapi-generator/
+tests/system/.openapi-generator-ignore
+tests/system/openapi_client_README.md
