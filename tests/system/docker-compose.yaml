@@ -181,7 +181,6 @@ services:
     volumes:
       - $PWD/tests/system/config/bind/db.test:/etc/bind/db.test
       - $PWD/tests/system/config/bind/named.conf:/etc/bind/named.conf
-      - $PWD/tests/system/config/kea/kea-leases6.csv:/var/lib/kea/kea-leases6.csv
       - $PWD/docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - $PWD/docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
       - $PWD/docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf
