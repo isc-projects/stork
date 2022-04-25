@@ -1,3 +1,9 @@
+* 205 [func] marcin
+
+    It is now possible to create host reservations in Kea using a
+    form on the host reservations page.
+    (Gitlab #717, #720)
+
 * 204 [build] kpfleming
 
     Enable automatic Stork services restart with systemd on failure.
