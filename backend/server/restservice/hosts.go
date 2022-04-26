@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -199,10 +198,9 @@ func (r *RestAPI) CreateHostBegin(ctx context.Context, params dhcp.CreateHostBeg
 	// Convert daemons list to REST API format.
 	respDaemons := []*models.KeaDaemon{}
 	for i := range daemons {
-		respDaemon := keaDaemonToRestAPI(&daemons[i])
-		// Filter the daemons with host_cmds hook library.
-		for _, hook := range respDaemon.Hooks {
-			if strings.Contains(hook, "host_cmds") {
+		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
+			// Filter the daemons with host_cmds hook library.
+			if _, _, exists := daemons[i].KeaDaemon.Config.GetHooksLibrary("libdhcp_host_cmds"); exists {
 				respDaemons = append(respDaemons, keaDaemonToRestAPI(&daemons[i]))
 			}
 		}
