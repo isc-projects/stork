@@ -22,8 +22,6 @@ func TestRegisterBasic(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
 
 	// redefined consts with paths to cert files
 	restoreCerts := RememberPaths()
@@ -264,8 +262,6 @@ func TestRegisterNegative(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
 
 	// redefined consts with paths to cert files
 	restoreCerts := RememberPaths()
@@ -377,8 +373,6 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "reg")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0755)
 
 	// redefined consts with paths to cert files
 	restoreCerts := RememberPaths()
