@@ -669,8 +669,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
         // Use hex value or convert text value to hex.
         const idHexValue =
             this.formGroup.get('hostIdGroup.idFormat').value === 'hex'
-                ? this.formGroup.get('hostIdGroup.idInputHex').value
-                : stringToHex(this.formGroup.get('hostIdGroup.idInputText').value)
+                ? this.formGroup.get('hostIdGroup.idInputHex').value.trim()
+                : stringToHex(this.formGroup.get('hostIdGroup.idInputText').value.trim())
 
         let addressReservations: IPReservation[] = []
         let prefixReservations: IPReservation[] = []
@@ -678,23 +678,26 @@ export class HostFormComponent implements OnInit, OnDestroy {
             const group = this.ipGroups.at(i)
             switch (group.get('ipType').value) {
                 case 'ipv4':
-                    if (group.get('inputIPv4').value.trim().length > 0) {
+                    const inputIPv4 = group.get('inputIPv4').value.trim()
+                    if (inputIPv4.length > 0) {
                         addressReservations.push({
-                            address: `${group.get('inputIPv4').value}/32`,
+                            address: `${inputIPv4}/32`,
                         })
                     }
                     break
                 case 'ia_na':
-                    if (group.get('inputNA').value.trim().length > 0) {
+                    const inputNA = group.get('inputNA').value.trim()
+                    if (inputNA.length > 0) {
                         addressReservations.push({
-                            address: `${group.get('inputNA').value}/128`,
+                            address: `${inputNA}/128`,
                         })
                     }
                     break
                 case 'ia_pd':
-                    if (group.get('inputPD').value.trim().length > 0) {
+                    const inputPD = group.get('inputPD').value.trim()
+                    if (inputPD.length > 0) {
                         prefixReservations.push({
-                            address: `${group.get('inputPD').value}/${group.get('inputPDLength').value}`,
+                            address: `${inputPD}/${group.get('inputPDLength').value}`,
                         })
                     }
                     break
@@ -712,7 +715,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
             ],
             addressReservations: addressReservations,
             prefixReservations: prefixReservations,
-            hostname: this.formGroup.get('hostname').value,
+            hostname: this.formGroup.get('hostname').value.trim(),
             localHosts: localHosts,
         }
 

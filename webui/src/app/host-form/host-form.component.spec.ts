@@ -506,7 +506,7 @@ describe('HostFormComponent', () => {
         component.formGroup.get('selectedSubnet').setValue(1)
         component.formGroup.get('hostIdGroup.idInputHex').setValue('01:02:03:04:05:06')
         component.ipGroups.at(0).get('inputIPv4').setValue('192.0.2.4')
-        component.formGroup.get('hostname').setValue('example.org')
+        component.formGroup.get('hostname').setValue(' example.org ')
         fixture.detectChanges()
 
         expect(component.formGroup.valid).toBeTrue()
@@ -563,11 +563,11 @@ describe('HostFormComponent', () => {
 
         component.formGroup.get('hostIdGroup.idType').setValue('flex-id')
         component.formGroup.get('hostIdGroup.idFormat').setValue('text')
-        component.formGroup.get('hostIdGroup.idInputText').setValue('foobar')
+        component.formGroup.get('hostIdGroup.idInputText').setValue(' foobar ')
         component.ipGroups.at(0).get('ipType').setValue('ia_na')
-        component.ipGroups.at(0).get('inputNA').setValue('2001:db8:2::100')
+        component.ipGroups.at(0).get('inputNA').setValue(' 2001:db8:2::100 ')
         component.ipGroups.at(1).get('ipType').setValue('ia_pd')
-        component.ipGroups.at(1).get('inputPD').setValue('3000::')
+        component.ipGroups.at(1).get('inputPD').setValue(' 3000:: ')
         component.ipGroups.at(1).get('inputPDLength').setValue('56')
 
         expect(component.formGroup.valid).toBeTrue()
