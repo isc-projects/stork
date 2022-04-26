@@ -97,7 +97,7 @@
           schema:
             $ref: "#/definitions/ApiError"
 
-  /hosts/new/transaction/new:
+  /hosts/new/transaction:
     post:
       summary: Begin transaction for adding new host reservation.
       description: >-
