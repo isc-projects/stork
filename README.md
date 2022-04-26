@@ -11,7 +11,7 @@ For details, please see the [Stork Administrator Reference Manual](https://stork
 # Build Instructions
 
 The easiest way to run Stork is to install it using [RPM and deb packages](https://stork.readthedocs.io/en/latest/install.html#installing-from-packages).
-The second easiest way is to use Docker (`rake docker_up`). However, it is
+The second easiest way is to use Docker (`rake docker:run_all`). However, it is
 possible to run Stork without Docker. See the Installation section of the Stork ARM.
 
 # Reporting Issues

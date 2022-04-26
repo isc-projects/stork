@@ -1,3 +1,9 @@
+* 207 [func] slawek
+
+    Refactored the Rakefile responsible for running the Stork demo. The demo
+    builds faster, uses the Docker layer caching, and produces smaller images.
+    (Gitalb #709)
+
 * 206 [bug] marcin
 
     Disable escaping special characters in the machine dumps. It improves
