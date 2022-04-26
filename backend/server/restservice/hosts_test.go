@@ -466,11 +466,14 @@ func TestCreateHostBeginSubmit(t *testing.T) {
 
 	// Make sure that the transaction is done.
 	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
-	// We can't use require.Nil() to test this condition because it would
-	// use reflection to extract the context details interfering with the
-	// goroutine monitoring for context cancelation and timeout and causing
-	// a race condition.
-	require.True(t, cctx == nil)
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
 }
 
 // Test error case when a user attempts to begin new transaction when the
@@ -734,11 +737,14 @@ func TestCreateHostBeginCancel(t *testing.T) {
 	require.IsType(t, &dhcp.CreateHostDeleteOK{}, rsp2)
 
 	cctx, _ := cm.RecoverContext(transactionID, int64(user.ID))
-	// We can't use require.Nil() to test this condition because it would
-	// use reflection to extract the context details interfering with the
-	// goroutine monitoring for context cancelation and timeout and causing
-	// a race condition.
-	require.True(t, cctx == nil)
+	// Remove the context from the config manager before testing that
+	// the returned context is nil. If it happens to be non-nil the
+	// require.Nil() would otherwise spit out errors about the concurrent
+	// access to the context in the manager's goroutine and here.
+	if cctx != nil {
+		cm.Done(cctx)
+	}
+	require.Nil(t, cctx)
 }
 
 // Test error cases for canceling new host reservation.
