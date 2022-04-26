@@ -46,7 +46,7 @@ password is necessary. It then prepares Docker images and starts them.
 
 .. code-block:: console
 
-    $ rake docker_up
+    $ rake docker:run_all
 
 Once the build process finishes, the Stork UI is available at
 http://localhost:8080/. Use any browser to connect.
@@ -63,7 +63,7 @@ customers should feel free to open a ticket for assistance if needed.
 
 .. code-block:: console
 
-   $ rake docker_up cs_repo_access_token=<access token>
+   $ rake docker:run_all CS_REPO_ACCESS_TOKEN=<access token>
 
 Demo Containers
 ---------------
@@ -112,8 +112,8 @@ These are containers with third-party services that are required by Stork:
 
 postgres
    This container is essential. It runs the PostgreSQL database that
-   is used by ``stork-server``. Without it, ``stork-server``
-   produces error messages about an unavailable database.
+   is used by ``stork-server`` and the Kea containers. Without it,
+   ``stork-server`` produces error messages about an unavailable database.
 prometheus
    Prometheus, a monitoring solution (https://prometheus.io/), uses this
    container to monitor applications. It is preconfigured
@@ -122,6 +122,9 @@ grafana
    This is a container with Grafana (https://grafana.com/), a
    dashboard for Prometheus. It is preconfigured to pull data from a
    Prometheus container and show Stork dashboards.
+mariadb
+   This container is essential. It runs the MariaDB database that
+   is used by the Kea containers.
 
 There is also a supporting container:
 
@@ -132,6 +135,11 @@ simulator
    (useful to observe non-zero statistics coming from BIND 9), and
    start and stop any service in any other container (useful to
    simulate, for example, a Kea crash).
+dns-proxy-server
+   Used only when the Stork Agent from container connects to a locally running
+   server. The Kea/Bind containers use internal Docker hostnames that the host
+   cannot resolve. We run the DNS proxy in the background that translates the
+   Docker hostnames to valid IP addresses.
 
 .. note::
 
@@ -183,13 +191,8 @@ demo setup. It can stop and start selected Stork agents and the Kea and
 BIND 9 applications. This is useful to simulate communication problems
 between applications, Stork agents, and the Stork server.
 
-The Stork Environment Simulator can be found at: http://localhost:5000/.
-
-For development purposes, the simulator can be started directly with the command:
-
-.. code-block:: console
-
-   $ rake run_sim
+The Stork Environment Simulator can be found at port 5000 when the demo is
+running.
 
 Prometheus
 ----------
