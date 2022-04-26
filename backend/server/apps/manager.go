@@ -72,7 +72,7 @@ func (manager *configManagerImpl) generateKey() config.LockKey {
 func (manager *configManagerImpl) generateContextID() (int64, error) {
 	for i := 0; i < 10; i++ {
 		// Limit the maximum number to uint32. Previously, we tried larger
-		// values, i.e. int64, but it confused the java-based REST API
+		// values, i.e. int64, but it confused the typescript-based REST API
 		// client which apparently converts all numbers to float. It
 		// results in rounding the large int64 values causing mismatches.
 		r, err := rand.Int(rand.Reader, big.NewInt(math.MaxUint32))
