@@ -7,6 +7,18 @@ namespace :docker do
   ### Functions ###
   #################
 
+  # Produces the arguments for docker-compose.
+  # Parameters:
+  # Server - server service mode, possible values:
+  #     - local (doesn't start server container, but uses locally running one)
+  #     - ui (run server and webui)
+  #     - no-ui (run server but no webui)
+  #     - none (no server and no webui)
+  #     - default
+  # Cache - doesn't rebuild the container
+  # Services - list of service names; if empty then all services are used
+  # Environment variables:
+  # CS_REPO_ACCESS_TOKEN - CloudSmith repo token, required for premium services
   def get_docker_opts(server, cache, services)
     opts = [
       "--project-directory", ".",
@@ -61,6 +73,10 @@ namespace :docker do
     return opts, cache_opts, up_opts, additional_services
   end
 
+  # Calls docker-compose up command for the given services, uses all services
+  # if the input list is empty
+  # SERVER - server mode - choice: local, ui, no-ui, none, default
+  # CACHE - doesn't rebuild the containers if present - default: false
   def docker_up_services(*services)
     # Read arguments from the environment variables
     server = ENV["SERVER"]
