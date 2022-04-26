@@ -14,7 +14,7 @@
                         formControlName="selectedServers"
                         display="chip"
                         [showToggleAll]="false"
-                        [style]="{ width: '100%' }"
+                        styleClass="full-width"
                         (onChange)="onServersChange()"
                     >
                     </p-multiSelect>
@@ -40,7 +40,7 @@
                         [options]="form.filteredSubnets"
                         formControlName="selectedSubnet"
                         [showClear]="true"
-                        [style]="{ width: '100%' }"
+                        styleClass="full-width"
                     >
                     </p-dropdown>
                     <label for="subnets-dropdown">Subnet</label>
@@ -61,25 +61,24 @@
     <p-fieldset legend="DHCP Identifier" styleClass="p-mt-4">
         <div formGroupName="hostIdGroup" class="p-grid host-form-abs-width">
             <div class="p-col-3">
-                <p-dropdown [options]="hostIdTypes" formControlName="idType" [style]="{ width: '100%' }"> </p-dropdown>
+                <p-dropdown [options]="hostIdTypes" formControlName="idType" styleClass="full-width"> </p-dropdown>
             </div>
             <div class="p-col-3">
-                <p-dropdown [options]="hostIdFormats" formControlName="idFormat" [style]="{ width: '100%' }">
-                </p-dropdown>
+                <p-dropdown [options]="hostIdFormats" formControlName="idFormat" styleClass="full-width"> </p-dropdown>
             </div>
             <div class="p-col-6">
                 <input
                     *ngIf="formGroup.get('hostIdGroup.idFormat').value === 'hex'; else hostIdFormatText"
                     pInputText
                     formControlName="idInputHex"
-                    [style]="{ width: '100%' }"
+                    class="full-width"
                     placeholder="e.g. 01:02:03:04:05:06"
                 />
                 <ng-template #hostIdFormatText>
                     <input
                         pInputText
                         formControlName="idInputText"
-                        [style]="{ width: '100%' }"
+                        class="full-width"
                         placeholder="text identifier format"
                     />
                 </ng-template>
@@ -90,10 +89,9 @@
     <p-fieldset legend="IP Reservations" styleClass="p-mt-4">
         <div formArrayName="ipGroups" class="p-grid host-form-abs-width">
             <ng-container *ngFor="let ipGroup of ipGroups.controls; index as i" class="p-mt-3">
-                <ng-container [formGroup]="ipGroup" style="display: flex; align-items: start">
+                <ng-container [formGroup]="ipGroup" class="p-d-flex p-ai-start">
                     <div class="p-col-3">
-                        <p-dropdown [options]="ipTypes" formControlName="ipType" [style]="{ width: '100%' }">
-                        </p-dropdown>
+                        <p-dropdown [options]="ipTypes" formControlName="ipType" styleClass="full-width"> </p-dropdown>
                     </div>
                     <ng-container [ngSwitch]="ipGroup.value.ipType">
                         <div *ngSwitchCase="'ipv4'" class="p-col-8">
@@ -101,7 +99,7 @@
                                 *ngSwitchCase="'ipv4'"
                                 pInputText
                                 formControlName="inputIPv4"
-                                [style]="{ width: '100%' }"
+                                class="full-width"
                                 placeholder="e.g. 10.0.0.1"
                             />
                         </div>
@@ -110,7 +108,7 @@
                                 *ngSwitchCase="'ia_na'"
                                 pInputText
                                 formControlName="inputNA"
-                                [style]="{ width: '100%' }"
+                                class="full-width"
                                 placeholder="e.g. 2001:db8:1::"
                             />
                         </div>
@@ -119,7 +117,7 @@
                                 <input
                                     pInputText
                                     formControlName="inputPD"
-                                    [style]="{ width: '100%' }"
+                                    class="full-width"
                                     placeholder="e.g. 3000:1::"
                                 />
                             </div>
@@ -135,8 +133,7 @@
                             pRipple
                             type="button"
                             icon="pi pi-times"
-                            class="p-mr-2 p-button-rounded p-button-danger p-button-text"
-                            style="width: 100%"
+                            class="full-width p-mr-2 p-button-rounded p-button-danger p-button-text"
                             (click)="deleteIPInput(i)"
                         ></button>
                     </div>
@@ -158,7 +155,7 @@
         <div class="p-grid host-form-abs-width">
             <div class="p-col-8">
                 <span class="p-float-label p-mt-3">
-                    <input id="hostname-input" pInputText [style]="{ width: '100%' }" formControlName="hostname" />
+                    <input id="hostname-input" pInputText class="full-width" formControlName="hostname" />
                     <label for="hostname-input">Hostname</label>
                 </span>
             </div>
