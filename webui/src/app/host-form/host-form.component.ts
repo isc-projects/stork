@@ -12,6 +12,11 @@ import { MessageService, SelectItem } from 'primeng/api'
 import { map } from 'rxjs/operators'
 import { StorkValidators } from '../validators'
 import { DHCPService } from '../backend/api/api'
+import { Host } from '../backend/model/host'
+import { IPReservation } from '../backend/model/iPReservation'
+import { KeaDaemon } from '../backend/model/keaDaemon'
+import { LocalHost } from '../backend/model/localHost'
+import { Subnet } from '../backend/model/subnet'
 import { stringToHex } from '../utils'
 
 /**
@@ -154,7 +159,7 @@ class HostForm {
     /**
      * A list of all daemons that can be selected from the drop down list.
      */
-    allDaemons: any[]
+    allDaemons: KeaDaemon[]
 
     /**
      * A filtered list of daemons comprising only those that match the
@@ -163,7 +168,7 @@ class HostForm {
      * Maintaining a filtered list prevents the user from selecting the
      * servers of different kinds, e.g. one DHCPv4 and one DHCPv6 server.
      */
-    filteredDaemons: any[]
+    filteredDaemons: KeaDaemon[]
 
     /**
      * A list of subnets that can be selected from the drop down list.
@@ -172,7 +177,7 @@ class HostForm {
      * selected servers. It displays only the subnets that the selected
      * servers serve.
      */
-    allSubnets: any[]
+    allSubnets: Subnet[]
 
     /**
      * An array of selectable subnets according to the current form data.
@@ -180,7 +185,7 @@ class HostForm {
      * Suppose a user selected a server in the form. In this case, this
      * array comprises only the subnets served by this server.
      */
-    filteredSubnets: any[]
+    filteredSubnets: Subnet[]
 
     /**
      * A flag set to true when DHCPv4 servers have been selected.
@@ -652,7 +657,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
             : this.formGroup.get('selectedSubnet').value
 
         // Create associations with the daemons.
-        let localHosts: any[] = []
+        let localHosts: LocalHost[] = []
         const selectedServers = this.formGroup.get('selectedServers').value
         for (let id of selectedServers) {
             localHosts.push({
@@ -667,8 +672,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 ? this.formGroup.get('hostIdGroup.idInputHex').value
                 : stringToHex(this.formGroup.get('hostIdGroup.idInputText').value)
 
-        let addressReservations: any[] = []
-        let prefixReservations: any[] = []
+        let addressReservations: IPReservation[] = []
+        let prefixReservations: IPReservation[] = []
         for (let i = 0; i < this.ipGroups.length; i++) {
             const group = this.ipGroups.at(i)
             switch (group.get('ipType').value) {
@@ -697,7 +702,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         }
 
         // Create host.
-        let host: any = {
+        let host: Host = {
             subnetId: selectedSubnet,
             hostIdentifiers: [
                 {
