@@ -367,7 +367,7 @@ func (r *RestAPI) CreateHostDelete(ctx context.Context, params dhcp.CreateHostDe
 	// Retrieve the context from the config manager.
 	cctx, _ := r.ConfigManager.RecoverContext(params.ID, int64(user.ID))
 	if cctx == nil {
-		msg := "problem with recovering transaction context"
+		msg := "transaction expired"
 		log.Errorf("problem with recovering transaction context for transaction ID %d and user ID %d", params.ID, user.ID)
 		rsp := dhcp.NewCreateHostDeleteDefault(http.StatusNotFound).WithPayload(&models.APIError{
 			Message: &msg,
