@@ -166,17 +166,17 @@ They can be run using Rake:
           $ rake unittest_backend
 
 This requires preparing a database in PostgreSQL. 
-.. ToDo: It will be added in the next MR
-.. One way to avoid doing this manually is by using a Docker container with PostgreSQL,
-.. which is automatically created when running the following Rake task:
 
-.. .. code:: console
+One way to avoid doing this manually is by using a Docker container with PostgreSQL,
+which is automatically created when running the following Rake task:
 
-..           $ rake unittest_backend_db
+.. code:: console
 
-.. This task spawns a container with PostgreSQL in the background, which
-.. then runs unit tests. When the tests are completed, the database is
-.. shut down and removed.
+          $ rake unittest_backend_db
+
+This task spawns a container with PostgreSQL in the background, which
+then runs unit tests. When the tests are completed, the database is
+shut down and removed.
 
 Unit Tests Database
 -------------------
@@ -655,34 +655,29 @@ The following ``Rake`` tasks start these containers.
    +----------------------------------------+---------------------------------------------------------------+
    | Rake Task                              | Description                                                   |
    +========================================+===============================================================+
-   | ``rake build_kea_container``           | Build a container ``agent-kea`` with a Stork agent            |
-   |                                        | and Kea with DHCPv4.                                          |
+   | ``rake docker:run_kea``                | Build and run a container ``agent-kea`` with a Stork agent    |
+   |                                        | and Kea with DHCPv4. Published port is 8888.                  |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_kea_container``             | Start an ``agent-kea`` container. Published port is 8888.     |
+   | ``rake docker:run_kea6``               | Build and run an ``agent-kea6`` container with a Stork agent  |
+   |                                        | and Kea with DHCPv6. Published port is 8886.                  |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_kea6_container``          | Build an ``agent-kea6`` container with a Stork agent          |
-   |                                        | and Kea with DHCPv6.                                          |
+   | ``rake docker:run_kea_ha``             | Build and run two containers, ``agent-kea-ha1`` and           |
+   |                                        | ``agent-kea-ha2`` that are configured to work together in     |
+   |                                        | High Availability mode, with Stork agents, and Kea DHCPv4.    |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_kea6_container``            | Start an ``agent-kea6`` container. Published port is 8886.    |
-   +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_kea_ha_containers``       | Build two containers, ``agent-kea-ha1`` and ``agent-kea-ha2``,|
-   |                                        | that are configured to work together in High                  |
-   |                                        | Availability mode, with Stork agents, and Kea with DHCPv4.    |
-   +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_kea_ha_containers``         | Start the ``agent-kea-ha1`` and ``agent-kea-ha2`` containers. |
-   |                                        | Published ports are 8881 and 8882.                            |
-   +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_kea_premium_container``   | Build an ``agent-kea-premium`` container with a Stork agent   |
-   |                                        | and Kea with DHCPv4 with host reservations stored in          |
+   | ``rake docker:run_kea_premium``        | Build and run an ``agent-kea-premium`` container with a Stork |
+   |                                        | agent and Kea with DHCPv4 with host reservations stored in    |
    |                                        | a database. This requires **premium** features.               |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_kea_premium_container``     | Start the ``agent-kea-premium`` container. This requires      |
-   |                                        | **premium** features.                                         |
+   | ``rake docker:run_bind9``              | Build and run an ``agent-bind9`` container with a Stork agent |
+   |                                        | and BIND 9. Published port is 9999.                           |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake build_bind9_container``         | Build an ``agent-bind9`` container with a Stork agent         |
-   |                                        | and BIND 9.                                                   |
+   | ``rake docker:run_postgres``           | Build and run a Postgres container.                           |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake run_bind9_container``           | Start an ``agent-bind9`` container. Published port is 9999.   |
+   | ``rake docker:run_all``                | Build and run all above containers                            |
+   +----------------------------------------+---------------------------------------------------------------+
+   | ``rake docker:down_all``               | Stop and remove all containers and all referenced volumes and |
+   |                                        | networks                                                      |
    +----------------------------------------+---------------------------------------------------------------+
 
 .. note::
@@ -698,6 +693,14 @@ The following ``Rake`` tasks start these containers.
 
     A restart may be required for the change to take effect.
 
+The Kea and Bind9 containers connect to the Stork Server container by default.
+It can be useful for developers to connect them to the locally running container.
+You can specify the target server using the SERVER environment variable with the value:
+
+- local - Do not run the server in Docker, instead use the local one (which must be run separately)
+- ui - Run server in Docker with UI
+- no-ui - Run server in Docker without UI
+- default - Use default service configuration from the compose file (default)
 
 Packaging
 =========

@@ -131,13 +131,13 @@ namespace :docker do
 
   desc 'Build and run container with Postgres'
   task :run_postgres do
-    docker_up_services("default", false, "postgres")
+    docker_up_services("postgres")
   end
 
   desc 'Build and run Docker DNS Proxy Server to resolve internal Docker hostnames'
   # Source: https://stackoverflow.com/a/45071285
   task :run_dns_proxy_server do
-    docker_up_services("default", false, "dns-proxy-server")
+    docker_up_services("dns-proxy-server")
   end
 
   desc 'Down all containers and remove all volumes'
@@ -185,7 +185,7 @@ end
 
 desc 'Run local server with Docker database
   DB_TRACE - trace SQL queries - default: false'
-task :run_server_db => [:pre_docker_db] do
+task :run_server_db => [:pre_docker_db] do |t|
   Rake::MultiTask.new(:stub, t.application)
     .enhance([:run_server, "docker:run_postgres"])
     .invoke()
@@ -193,7 +193,7 @@ end
 
 desc 'Run local unittests with Docker database
   DB_TRACE - trace SQL queries - default: false'
-task :unittest_backend_db => [:pre_docker_db] do
+task :unittest_backend_db => [:pre_docker_db] do |t|
   Rake::MultiTask.new(:stub, t.application)
     .enhance([:unittest_backend, "docker:run_postgres"])
     .invoke()
