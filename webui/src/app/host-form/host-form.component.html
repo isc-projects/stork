@@ -11,20 +11,20 @@
                         optionLabel="label"
                         optionValue="id"
                         [options]="form.filteredDaemons"
-                        formControlName="selectedServers"
+                        formControlName="selectedDaemons"
                         display="chip"
                         [showToggleAll]="false"
                         styleClass="full-width"
-                        (onChange)="onServersChange()"
+                        (onChange)="onDaemonsChange()"
                     >
                     </p-multiSelect>
-                    <label for="servers-select">Servers</label>
+                    <label for="servers-select">DHCP Servers</label>
                 </span>
                 <small
                     *ngIf="
-                        formGroup.controls['selectedServers'].invalid &&
-                        formGroup.controls['selectedServers'].dirty &&
-                        formGroup.controls['selectedServers'].touched
+                        formGroup.controls['selectedDaemons'].invalid &&
+                        formGroup.controls['selectedDaemons'].dirty &&
+                        formGroup.controls['selectedDaemons'].touched
                     "
                     class="p-error block"
                     >At least one server must be selected.

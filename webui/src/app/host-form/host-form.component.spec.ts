@@ -159,14 +159,14 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.formGroup.get('selectedServers').setValue([1])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([1])
+        component.onDaemonsChange()
         expect(component.form.filteredDaemons.length).toBe(2)
         expect(component.form.filteredDaemons[0].id).toBe(1)
         expect(component.form.filteredDaemons[1].id).toBe(2)
 
-        component.formGroup.get('selectedServers').setValue([2])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([2])
+        component.onDaemonsChange()
         expect(component.form.filteredDaemons.length).toBe(2)
         expect(component.form.filteredDaemons[0].id).toBe(1)
         expect(component.form.filteredDaemons[1].id).toBe(2)
@@ -178,8 +178,8 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.formGroup.get('selectedServers').setValue([3, 4, 5])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([3, 4, 5])
+        component.onDaemonsChange()
         expect(component.form.filteredDaemons.length).toBe(3)
         expect(component.form.filteredDaemons[0].id).toBe(3)
         expect(component.form.filteredDaemons[1].id).toBe(4)
@@ -193,12 +193,12 @@ describe('HostFormComponent', () => {
         fixture.detectChanges()
         expect(component.form.filteredSubnets.length).toBe(4)
 
-        component.formGroup.get('selectedServers').setValue([2])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([2])
+        component.onDaemonsChange()
         expect(component.form.filteredSubnets.length).toBe(2)
 
-        component.formGroup.get('selectedServers').setValue([1, 2])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([1, 2])
+        component.onDaemonsChange()
         expect(component.form.filteredSubnets.length).toBe(1)
     }))
 
@@ -209,12 +209,12 @@ describe('HostFormComponent', () => {
         fixture.detectChanges()
         expect(component.form.filteredSubnets.length).toBe(4)
 
-        component.formGroup.get('selectedServers').setValue([4])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([4])
+        component.onDaemonsChange()
         expect(component.form.filteredSubnets.length).toBe(1)
 
-        component.formGroup.get('selectedServers').setValue([4, 5])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([4, 5])
+        component.onDaemonsChange()
         expect(component.form.filteredSubnets.length).toBe(0)
     }))
 
@@ -224,18 +224,18 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.formGroup.get('selectedServers').setValue([4])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([4])
+        component.onDaemonsChange()
         fixture.detectChanges()
-        expect(component.formGroup.get('selectedServers').valid).toBeTrue()
+        expect(component.formGroup.get('selectedDaemons').valid).toBeTrue()
 
-        component.formGroup.get('selectedServers').setValue([])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([])
+        component.onDaemonsChange()
         fixture.detectChanges()
-        expect(component.formGroup.get('selectedServers').valid).toBeFalse()
+        expect(component.formGroup.get('selectedDaemons').valid).toBeFalse()
 
-        component.formGroup.get('selectedServers').markAsTouched()
-        component.formGroup.get('selectedServers').markAsDirty()
+        component.formGroup.get('selectedDaemons').markAsTouched()
+        component.formGroup.get('selectedDaemons').markAsDirty()
         fixture.detectChanges()
 
         let errmsg = fixture.debugElement.query(By.css('small'))
@@ -287,8 +287,8 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.formGroup.get('selectedServers').setValue([1])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([1])
+        component.onDaemonsChange()
 
         expect(component.hostIdTypes.length).toBe(5)
         expect(component.hostIdTypes[0].label).toBe('hw-address')
@@ -297,8 +297,8 @@ describe('HostFormComponent', () => {
         expect(component.hostIdTypes[3].label).toBe('duid')
         expect(component.hostIdTypes[4].label).toBe('flex-id')
 
-        component.formGroup.get('selectedServers').setValue([3])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([3])
+        component.onDaemonsChange()
 
         expect(component.hostIdTypes.length).toBe(3)
         expect(component.hostIdTypes[0].label).toBe('hw-address')
@@ -349,8 +349,8 @@ describe('HostFormComponent', () => {
         expect(component.ipTypes.length).toBe(1)
         expect(component.ipTypes[0].label).toBe('IPv4 address')
 
-        component.formGroup.get('selectedServers').setValue([3])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([3])
+        component.onDaemonsChange()
         fixture.detectChanges()
 
         expect(component.ipGroups.length).toBe(1)
@@ -366,8 +366,8 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.formGroup.get('selectedServers').setValue([3])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([3])
+        component.onDaemonsChange()
         component.addIPInput()
         fixture.detectChanges()
 
@@ -378,8 +378,8 @@ describe('HostFormComponent', () => {
         component.ipGroups.at(1).get('ipType').setValue('ia_na')
         component.ipGroups.at(1).get('inputNA').setValue('2001:db8:1::1')
 
-        component.formGroup.get('selectedServers').setValue([1])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([1])
+        component.onDaemonsChange()
         fixture.detectChanges()
 
         expect(component.ipGroups.length).toBe(1)
@@ -388,8 +388,8 @@ describe('HostFormComponent', () => {
 
         component.deleteIPInput(0)
 
-        component.formGroup.get('selectedServers').setValue([3])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([3])
+        component.onDaemonsChange()
         fixture.detectChanges()
 
         expect(component.ipGroups.length).toBe(0)
@@ -443,8 +443,8 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.formGroup.get('selectedServers').setValue([1])
-        component.onServersChange()
+        component.formGroup.get('selectedDaemons').setValue([1])
+        component.onDaemonsChange()
         fixture.detectChanges()
 
         component.formGroup.get('selectedSubnet').setValue(1)
@@ -502,7 +502,7 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.formGroup.get('selectedServers').setValue([1])
+        component.formGroup.get('selectedDaemons').setValue([1])
         component.formGroup.get('selectedSubnet').setValue(1)
         component.formGroup.get('hostIdGroup.idInputHex').setValue('01:02:03:04:05:06')
         component.ipGroups.at(0).get('inputIPv4').setValue('192.0.2.4')
@@ -554,9 +554,9 @@ describe('HostFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.formGroup.get('selectedServers').setValue([5])
+        component.formGroup.get('selectedDaemons').setValue([5])
         component.formGroup.get('selectedSubnet').setValue(4)
-        component.onServersChange()
+        component.onDaemonsChange()
         fixture.detectChanges()
 
         component.addIPInput()

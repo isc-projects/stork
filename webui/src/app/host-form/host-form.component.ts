@@ -295,7 +295,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
         this.formGroup = this._formBuilder.group(
             {
                 globalReservation: [false],
-                selectedServers: ['', Validators.required],
+                selectedDaemons: ['', Validators.required],
                 selectedSubnet: [null],
                 hostIdGroup: this._formBuilder.group(
                     {
@@ -564,7 +564,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * A callback invoked when selected servers have changed.
+     * A callback invoked when selected DHCP servers have changed.
      *
      * Servers selection affects available subnets. If no servers are selected,
      * all subnets are listed for selection. However, if one or more servers
@@ -573,18 +573,18 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * servers. If selected servers have no common subnets, no subnets are
      * listed.
      */
-    onServersChange(): void {
+    onDaemonsChange(): void {
         // Capture the servers selected by the user.
-        const selectedServers = this.formGroup.get('selectedServers').value
+        const selectedDaemons = this.formGroup.get('selectedDaemons').value
 
         // It is important to determine what type of a server the user selected.
         // Check if any of the selected servers are DHCPv4.
-        this.form.dhcpv4 = selectedServers.some((ss) => {
+        this.form.dhcpv4 = selectedDaemons.some((ss) => {
             return this.form.allDaemons.find((d) => d.id === ss && d.name === 'dhcp4')
         })
         if (!this.form.dhcpv4) {
             // If user selected no DHCPv4 server, perhaps selected a DHCPv6 server?
-            this.form.dhcpv6 = selectedServers.some((ss) => {
+            this.form.dhcpv6 = selectedDaemons.some((ss) => {
                 return this.form.allDaemons.find((d) => d.id === ss && d.name === 'dhcp6')
             })
         } else {
@@ -617,7 +617,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
 
         // We take short path when no servers are selected. Just make all
         // subnets available.
-        if (selectedServers.length === 0) {
+        if (selectedDaemons.length === 0) {
             this.form.filteredSubnets = this.form.allSubnets
             return
         }
@@ -630,8 +630,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
                     // At least one daemonId in the subnet should belong to
                     // the array of our selected servers AND each selected
                     // server must be associated with our subnet.
-                    selectedServers.includes(ls.daemonId) > 0 &&
-                    selectedServers.every((ss) => s.localSubnets.find((ls2) => ls2.daemonId === ss))
+                    selectedDaemons.includes(ls.daemonId) > 0 &&
+                    selectedDaemons.every((ss) => s.localSubnets.find((ls2) => ls2.daemonId === ss))
                 )
             })
         })
@@ -658,8 +658,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
 
         // Create associations with the daemons.
         let localHosts: LocalHost[] = []
-        const selectedServers = this.formGroup.get('selectedServers').value
-        for (let id of selectedServers) {
+        const selectedDaemons = this.formGroup.get('selectedDaemons').value
+        for (let id of selectedDaemons) {
             localHosts.push({
                 daemonId: id,
                 dataSource: 'api',
