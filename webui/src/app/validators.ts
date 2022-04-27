@@ -23,7 +23,10 @@ export class StorkValidators {
      * @returns validator function.
      */
     static ipv4(): ValidatorFn {
-        return Validators.pattern('^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$')
+        // See: https://github.com/ip-num/ip-num/blob/master/src/Validator.ts
+        return Validators.pattern(
+            '^(0?[0-9]?[0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.(0?[0-9]?[0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.(0?[0-9]?[0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.(0?[0-9]?[0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$'
+        )
     }
 
     /**

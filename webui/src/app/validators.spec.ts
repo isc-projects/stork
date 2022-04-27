@@ -30,6 +30,8 @@ describe('StorkValidators', () => {
         expect(StorkValidators.ipv4()(formBuilder.control('2001:db8:1::1'))).toBeTruthy()
         // Must use dots to separate the IP address bytes.
         expect(StorkValidators.ipv4()(formBuilder.control('192x0x2x1'))).toBeTruthy()
+        // Too high numbers.
+        expect(StorkValidators.ipv4()(formBuilder.control('999.999.999.999'))).toBeTruthy()
         // Valid address.
         expect(StorkValidators.ipv4()(formBuilder.control('192.0.2.1'))).toBeFalsy()
     })
