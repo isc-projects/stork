@@ -8,7 +8,6 @@ from core.compose_factory import create_docker_compose
 import core.wrappers as wrappers
 from core.utils import setup_logger
 import core.lease_generators as lease_generators
-from core.constants import config_directory_relative
 
 
 logger = setup_logger(__name__)

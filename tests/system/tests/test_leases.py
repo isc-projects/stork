@@ -12,9 +12,9 @@ def test_search_leases(kea_service: Kea, server_service: Server):
     assert data['conflicts'] is None
 
     # Search by IPv6 address.
-    data = server_service.list_leases('3001:db8:1::1')
+    data = server_service.list_leases('3001:db8:1:42::1')
     assert data['total'] == 1
-    assert data['items'][0]['ipAddress'] == '3001:db8:1::1'
+    assert data['items'][0]['ipAddress'] == '3001:db8:1:42::1'
     assert data['conflicts'] is None
 
     # Search by MAC.
@@ -27,14 +27,14 @@ def test_search_leases(kea_service: Kea, server_service: Server):
     data = server_service.list_leases('01:02:03:04')
     assert data['total'] == 2
     assert data['items'][0]['ipAddress'] == '192.0.2.4'
-    assert data['items'][1]['ipAddress'] == '3001:db8:1::4'
+    assert data['items'][1]['ipAddress'] == '3001:db8:1:42::4'
     assert data['conflicts'] is None
 
     # Search by hostname.
     data = server_service.list_leases('host-6.example.org')
     assert data['total'] == 2
     assert data['items'][0]['ipAddress'] == '192.0.2.6'
-    assert data['items'][1]['ipAddress'] == '3001:db8:1::6'
+    assert data['items'][1]['ipAddress'] == '3001:db8:1:42::6'
     assert data['conflicts'] is None
 
     # Search declined leases.
@@ -51,7 +51,7 @@ def test_search_leases(kea_service: Kea, server_service: Server):
         assert 'ipAddress' in lease
     # Sanity check addresses returned.
     assert data['items'][0]['ipAddress'] == '192.0.2.1'
-    assert data['items'][10]['ipAddress'] == '3001:db8:1::1'
+    assert data['items'][10]['ipAddress'] == '3001:db8:1:42::1'
     assert data['conflicts'] is None
 
     # Blank search text should return none leases

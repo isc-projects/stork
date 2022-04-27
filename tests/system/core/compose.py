@@ -27,8 +27,8 @@ See: https://raw.githubusercontent.com/testcontainers/testcontainers-python/mast
 
 import os
 from typing import List
-import requests
 import subprocess
+
 from core.utils import setup_logger, memoize, wait_for_success
 
 
@@ -349,22 +349,6 @@ class DockerCompose(object):
             stderr = stderr.decode("utf-8").rstrip()
             return result.returncode, stdout, stderr
         return result.returncode, None, None
-
-    @wait_for_success(requests.exceptions.ConnectionError)
-    def wait_for(self, url):
-        """
-        Waits for a response from a given URL. This is typically used to
-        block until a service in the environment has started and is responding.
-        Note that it does not assert any sort of return code, only check that
-        the connection was successful.
-
-        Parameters
-        ----------
-        url: str
-            URL from one of the services in the environment to use to wait on
-        """
-        requests.get(url)
-        return self
 
     def get_container_id(self, service_name):
         cmd = self.docker_compose_command() + ["ps", "-q", service_name]
