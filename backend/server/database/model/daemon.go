@@ -278,7 +278,7 @@ func GetKeaDHCPDaemons(dbi pg.DBI) (daemons []Daemon, err error) {
 	err = dbi.Model(&daemons).
 		Relation("App").
 		Relation("KeaDaemon.KeaDHCPDaemon").
-		Where("daemon.name ILIKE ?", "dhcp%").
+		Where("daemon.name ILIKE 'dhcp%'").
 		OrderExpr("daemon.id ASC").
 		Select()
 	if errors.Is(err, pg.ErrNoRows) {
