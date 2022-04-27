@@ -73,28 +73,3 @@ def test_kea_many_subnets_fixture(kea_service: Kea):
 
 def test_get_ip_address(server_service: Server):
     assert server_service.ip_address == "172.20.42.2"
-
-
-def test_memoize():
-    # Arrange
-    class Foo:
-        def __init__(self, bar):
-            self._bar = bar
-            self._call_count = 0
-
-        @memoize
-        def method(self, baz):
-            self._call_count += 1
-            return baz + self._bar
-
-    bob = Foo(1)
-    alice = Foo(2)
-
-    # Act
-    assert bob.method(3) == 4
-    assert bob.method(3) == 4
-    assert bob._call_count == 1
-
-    assert alice.method(3) == 5
-    assert alice.method(3) == 5
-    assert alice._call_count == 1

@@ -162,5 +162,3 @@ task :check_env_system_tests do
     check_deps(__FILE__, "python3", "pip3", "docker", "docker-compose",
         "openssl", "java")
 end
-
-task :foo => [open_api_generator_python_dir]

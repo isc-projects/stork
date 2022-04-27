@@ -1,3 +1,4 @@
+from datetime import timedelta
 import functools
 import logging
 import time
@@ -43,10 +44,6 @@ def memoize(func: Callable):
     return wrapper
 
 
-class TimeoutException(Exception):
-    pass
-
-
 class NoSuccessException(Exception):
     pass
 
@@ -57,7 +54,7 @@ logger = setup_logger(__file__)
 
 
 def wait_for_success(*transient_exceptions, wait_msg="Waiting to be ready...",
-                     max_tries=120, sleep_time=1):
+                     max_tries=120, sleep_time: timedelta = timedelta(seconds=1)):
     """
     Wait until function throws no error.
     Max wait is configured by config. Default is 120 sec.
@@ -78,9 +75,9 @@ def wait_for_success(*transient_exceptions, wait_msg="Waiting to be ready...",
                 except transient_exceptions as e:
                     logger.debug('container is not yet ready: %s',
                                  traceback.format_exc())
-                    time.sleep(sleep_time)
+                    time.sleep(sleep_time.total_seconds())
                     exception = e
-            raise TimeoutException(
+            raise TimeoutError(
                 f'Wait time ({max_tries * sleep_time}s) exceeded for {f.__name__}'
                 f'(args: {args}, kwargs {kwargs}). Exception: {exception}'
             )
