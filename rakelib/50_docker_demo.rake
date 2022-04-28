@@ -59,6 +59,8 @@ namespace :docker do
       up_opts += ["--scale", "webui=0"]
     elsif server == "none"
       up_opts += ["--scale", "server=0", "--scale", "webui=0"]
+      # Prevents the Stork Agent from the registration
+      ENV["STORK_SERVER_URL"] = ""
     elsif server == "default" || server == nil
       # Nothing
     else
@@ -80,7 +82,7 @@ namespace :docker do
   def docker_up_services(*services)
     # Read arguments from the environment variables
     server = ENV["SERVER"]
-    cache = ENV["CACHE"]
+    cache = ENV["CACHE"] == "true"
 
     # Prepare the docker-compose flags
     opts, build_opts, up_opts, additional_services = get_docker_opts(server, cache, services)
@@ -105,7 +107,7 @@ namespace :docker do
       ui - Run server in Docker with UI
       no-ui - Run server in Docker without UI
       default - Use default service configuration from the compose file (default)
-    CACHE - Use the Docker cache - default: true
+    CACHE - Use the Docker cache - default: false
   '
   task :run_all do
     docker_up_services()
