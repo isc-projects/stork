@@ -94,7 +94,7 @@ func writeAgentFile(path string, content []byte) error {
 	}
 
 	directory := filepath.Dir(path)
-	err = os.MkdirAll(directory, os.ModePerm)
+	err = os.MkdirAll(directory, 0700)
 	if err != nil {
 		return err
 	}
