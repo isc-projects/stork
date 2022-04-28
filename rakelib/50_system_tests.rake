@@ -153,7 +153,7 @@ end
 end
 
 desc 'Install the external dependencies related to the system tests'
-task :prepare_env_system_tests => volume_files do
+task :prepare_env_system_tests do
     find_and_prepare_deps(__FILE__)
 end
 

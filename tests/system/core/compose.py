@@ -128,16 +128,25 @@ class DockerCompose(object):
 
     Parameters
     ----------
-    project_dir: str
+    project_directory: str
         The relative directory containing the docker compose configuration file
-    compose_file_name: str
-        The file name of the docker compose configuration file
+    compose_file_name: str | list[str]
+        The file name or list of the file names of the docker compose
+        configuration file
     pull: bool
         Attempts to pull images before launching environment
     build: bool
         Whether to build images referenced in the configuration file
     env_file: str
-        Path to an env file containing environment variables to pass to docker compose
+        Path to an env file containing environment variables to pass to docker
+        compose
+    env_vars: dict
+        The environment variables to pass to docker compose.
+    project_name: str
+        The docker compose project name. The current working directory is
+        used by default.
+    use_build_kit: bool
+        Wheret to build images using a BuiltKit mode
     """
 
     def __init__(
@@ -161,6 +170,7 @@ class DockerCompose(object):
         self._use_build_kit = use_build_kit
 
         if project_name is None:
+            # Mimics the docker-compose convention
             project_name = os.path.basename(os.path.abspath(project_directory))
         self._project_name = project_name
 
@@ -183,6 +193,8 @@ class DockerCompose(object):
         return docker_compose_cmd
 
     def build(self, *service_names):
+        """Builds the service containers. If no arguments are provided, it
+        builds all containers. Supports BuildKit."""
         build_cmd = self.docker_compose_command() + \
             ['build', *service_names]
 
@@ -197,6 +209,7 @@ class DockerCompose(object):
                            capture_output=False)
 
     def pull(self, *service_names):
+        """Pull the images from a repository."""
         pull_cmd = self.docker_compose_command() + ['pull', *service_names]
         self._call_command(cmd=pull_cmd, capture_output=False)
 
@@ -207,6 +220,7 @@ class DockerCompose(object):
     def start(self, *service_names):
         """
         Starts the docker compose environment.
+        It can pull and build the containers if requested.
         """
         if self._pull:
             self.pull(*service_names)
