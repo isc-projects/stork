@@ -31,7 +31,7 @@ namespace :docker do
 
     cache_opts = []
     if cache
-      cache_opts.append "--no-cache"
+      cache_opts.append "--no-recreate"
     end
 
     up_opts = [
