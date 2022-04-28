@@ -694,7 +694,7 @@ The following ``Rake`` tasks start these containers.
     A restart may be required for the change to take effect.
 
 The Kea and Bind9 containers connect to the Stork Server container by default.
-It can be useful for developers to connect them to the locally running container.
+It can be useful for developers to connect them to the locally running server.
 You can specify the target server using the SERVER environment variable with the value:
 
 - local - Do not run the server in Docker, instead use the local one (which must be run separately)
