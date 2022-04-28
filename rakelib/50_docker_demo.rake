@@ -107,7 +107,7 @@ namespace :demo do
     ui - Run server in Docker with UI
     no-ui - Run server in Docker without UI
     default - Use default service configuration from the compose file (default)
-    CACHE - Use the Docker cache - default: false
+    CACHE - Use the Docker cache - default: true
     '
     task :up do
         docker_up_services()
