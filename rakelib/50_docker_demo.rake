@@ -42,6 +42,9 @@ namespace :demo do
         additional_services = []
         
         if server == "local"
+            if OS == "macos"
+                fail "dns-proxy-server doesn't support macOS"
+            end
             if !services.empty?
                 additional_services.append "dns-proxy-server"
             end
