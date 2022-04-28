@@ -655,28 +655,28 @@ The following ``Rake`` tasks start these containers.
    +----------------------------------------+---------------------------------------------------------------+
    | Rake Task                              | Description                                                   |
    +========================================+===============================================================+
-   | ``rake demo:up:kea``                | Build and run an ``agent-kea`` container with a Stork agent   |
+   | ``rake demo:up:kea``                   | Build and run an ``agent-kea`` container with a Stork agent   |
    |                                        | and Kea with DHCPv4. Published port is 8888.                  |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake demo:up:kea6``               | Build and run an ``agent-kea6`` container with a Stork agent  |
+   | ``rake demo:up:kea6``                  | Build and run an ``agent-kea6`` container with a Stork agent  |
    |                                        | and Kea with DHCPv6. Published port is 8886.                  |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake demo:up:kea_ha``             | Build and run two containers, ``agent-kea-ha1`` and           |
+   | ``rake demo:up:kea_ha``                | Build and run two containers, ``agent-kea-ha1`` and           |
    |                                        | ``agent-kea-ha2`` that are configured to work together in     |
    |                                        | High Availability mode, with Stork agents, and Kea DHCPv4.    |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake demo:up:kea_premium``        | Build and run an ``agent-kea-premium`` container with a Stork |
+   | ``rake demo:up:kea_premium``           | Build and run an ``agent-kea-premium`` container with a Stork |
    |                                        | agent and Kea with DHCPv4 with host reservations stored in    |
    |                                        | a database. This requires **premium** features.               |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake demo:up:bind9``              | Build and run an ``agent-bind9`` container with a Stork agent |
+   | ``rake demo:up:bind9``                 | Build and run an ``agent-bind9`` container with a Stork agent |
    |                                        | and BIND 9. Published port is 9999.                           |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake demo:up:postgres``           | Build and run a Postgres container.                           |
+   | ``rake demo:up:postgres``              | Build and run a Postgres container.                           |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake demo:up``                    | Build and run all above containers                            |
+   | ``rake demo:up``                       | Build and run all above containers                            |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake demo:down``                   | Stop and remove all containers and all referenced volumes and |
+   | ``rake demo:down``                     | Stop and remove all containers and all referenced volumes and |
    |                                        | networks                                                      |
    +----------------------------------------+---------------------------------------------------------------+
 
