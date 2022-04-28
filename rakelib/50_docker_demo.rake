@@ -30,8 +30,8 @@ namespace :docker do
     end
 
     cache_opts = []
-    if cache
-      cache_opts.append "--no-recreate"
+    if !cache
+      cache_opts.append "--no-cache"
     end
 
     up_opts = [
@@ -78,11 +78,11 @@ namespace :docker do
   # Calls docker-compose up command for the given services, uses all services
   # if the input list is empty
   # SERVER - server mode - choice: local, ui, no-ui, none, default
-  # CACHE - doesn't rebuild the containers if present - default: false
+  # CACHE - doesn't rebuild the containers if present - default: true
   def docker_up_services(*services)
     # Read arguments from the environment variables
     server = ENV["SERVER"]
-    cache = ENV["CACHE"] == "true"
+    cache = ENV["CACHE"] != "false"
 
     # Prepare the docker-compose flags
     opts, build_opts, up_opts, additional_services = get_docker_opts(server, cache, services)
@@ -93,7 +93,7 @@ namespace :docker do
     ENV["DOCKER_BUILDKIT"] = "1"
 
     # Execute the docker-compose commands
-    sh "docker-compose", *opts, *build_opts, "build", *services, *additional_services
+    sh "docker-compose", *opts, "build", *build_opts, *services, *additional_services
     sh "docker-compose", *opts, "up", *up_opts, *services, *additional_services
   end
 
