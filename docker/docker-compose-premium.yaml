@@ -16,9 +16,9 @@ services:
       storknet:
         ipv4_address: 172.20.0.103
     expose:
-      - "8080"  # stork server to agent
+      - "8080" # stork server to agent
     ports:
-      - "8838:8080"  # publish ports for development purposes
+      - "8838:8080" # publish ports for development purposes
     environment:
       DB_TYPE: mysql
       DB_HOST: mariadb
@@ -27,7 +27,7 @@ services:
       DB_ROOT_USER: root
       DB_ROOT_PASSWORD: root
       DB_NAME: agent_kea_premium
-      STORK_AGENT_SERVER_URL: http://server:8080
+      STORK_AGENT_SERVER_URL: ${STORK_SERVER_URL-http://server:8080}
       STORK_AGENT_HOST: agent-kea-premium
     volumes:
       - ./docker/config/agent-kea/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf

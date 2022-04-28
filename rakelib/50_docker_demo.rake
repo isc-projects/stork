@@ -117,6 +117,12 @@ namespace :docker do
     docker_up_services("agent-kea")
   end
 
+  desc 'Build and run container with Stork Agent and Kea with many subnets in the configuration.
+    See "run_all" command for arguments.'
+  task :run_kea_many_subnets do
+    docker_up_services("agent-kea-many-subnets")
+  end
+
   desc 'Build and run container with Stork Agent and Kea DHCPv6 server
     See "run_all" command for arguments.'
   task :run_kea6 do
