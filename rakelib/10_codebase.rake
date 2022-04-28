@@ -209,15 +209,15 @@ task :check_env_codebase do
     check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
 end
 
-desc 'Trig the backend (GO) dependencies installation.'
+desc 'Trigger the backend (GO) dependencies installation.'
 task :prepare_backend_deps do
     Dir.chdir("backend") do
         sh GO, "mod", "download"
     end
 end
 
-desc 'Trig the frontend (UI) dependencies installation'
+desc 'Trigger the frontend (UI) dependencies installation'
 task :prepare_ui_deps => [node_module_dir]
 
-desc 'Trig the frontend (UI) and backend (GO) dependencies installation'
+desc 'Trigger the frontend (UI) and backend (GO) dependencies installation'
 task :prepare_deps => [:prepare_ui_deps, :prepare_backend_deps]
