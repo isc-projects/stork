@@ -655,7 +655,7 @@ The following ``Rake`` tasks start these containers.
    +----------------------------------------+---------------------------------------------------------------+
    | Rake Task                              | Description                                                   |
    +========================================+===============================================================+
-   | ``rake docker:run_kea``                | Build and run a container ``agent-kea`` with a Stork agent    |
+   | ``rake docker:run_kea``                | Build and run an ``agent-kea`` container with a Stork agent   |
    |                                        | and Kea with DHCPv4. Published port is 8888.                  |
    +----------------------------------------+---------------------------------------------------------------+
    | ``rake docker:run_kea6``               | Build and run an ``agent-kea6`` container with a Stork agent  |
@@ -701,6 +701,23 @@ You can specify the target server using the SERVER environment variable with the
 - ui - Run server in Docker with UI
 - no-ui - Run server in Docker without UI
 - default - Use default service configuration from the compose file (default)
+
+For example, to connect the agent from the Docker container to the locally
+running Stork Server, you should:
+
+1. Run the Stork Server locally:
+
+.. code-block:: console
+
+    $ rake run_server
+
+2. Run a specific agent service with the SERVER parameter set to ``local``:
+
+.. code-block:: console
+
+    $ rake docker:run_kea SERVER=local
+
+3. Check the unauthorized machines page for a new machine
 
 Packaging
 =========
