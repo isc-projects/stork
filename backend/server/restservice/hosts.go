@@ -338,7 +338,7 @@ func (r *RestAPI) CreateHostSubmit(ctx context.Context, params dhcp.CreateHostSu
 	// Send the commands to Kea servers.
 	cctx, err = r.ConfigManager.Commit(cctx)
 	if err != nil {
-		msg := "problem with committing host information"
+		msg := fmt.Sprintf("problem with committing host information: %s", err)
 		log.Error(err)
 		rsp := dhcp.NewCreateHostSubmitDefault(http.StatusConflict).WithPayload(&models.APIError{
 			Message: &msg,

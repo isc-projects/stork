@@ -727,6 +727,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 this._messageService.add({
                     severity: 'success',
                     summary: 'Host reservation successfully added',
+                    detail: 'The new host reservation may appear in Stork with some delay.',
                 })
                 // Notify the parent component about successful submission.
                 this.formSubmit.emit(this.form)
