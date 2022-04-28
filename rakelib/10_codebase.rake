@@ -189,35 +189,41 @@ def remove_files(list)
     end
 end 
 
-desc 'Clean up the project by deleting scratch files and backup files'
-task :clean do
-    remove_files(CLEAN)
-end
+namespace :clean do
+    desc 'Clean up the project by deleting scratch files and backup files'
+    task :soft do
+        remove_files(CLEAN)
+    end
 
-desc 'Clobber all generated and non-source files in a project.'
-task :clobber => [:clean] do
-    remove_files(CLOBBER)
-end
-
-desc 'Install the external dependencies related to the codebase'
-task :prepare_env_codebase do
-    find_and_prepare_deps(__FILE__)
-end
-
-desc 'Check the external dependencies related to the codebase'
-task :check_env_codebase do
-    check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
-end
-
-desc 'Trigger the backend (GO) dependencies installation.'
-task :prepare_backend_deps do
-    Dir.chdir("backend") do
-        sh GO, "mod", "download"
+    desc 'Clobber all generated and non-source files in a project.'
+    task :hard => [:soft] do
+        remove_files(CLOBBER)
     end
 end
 
-desc 'Trigger the frontend (UI) dependencies installation'
-task :prepare_ui_deps => [node_module_dir]
+namespace :prepare do
+    desc 'Install the external dependencies related to the codebase'
+    task :codebase do
+        find_and_prepare_deps(__FILE__)
+    end
+    
+    desc 'Trigger the backend (GO) dependencies installation.'
+    task :backend_deps do
+        Dir.chdir("backend") do
+            sh GO, "mod", "download"
+        end
+    end
+    
+    desc 'Trigger the frontend (UI) dependencies installation'
+    task :ui_deps => [node_module_dir]
+    
+    desc 'Trigger the frontend (UI) and backend (GO) dependencies installation'
+    task :deps => [:ui_deps, :backend_deps]
+end
 
-desc 'Trigger the frontend (UI) and backend (GO) dependencies installation'
-task :prepare_deps => [:prepare_ui_deps, :prepare_backend_deps]
+namespace :check do
+    desc 'Check the external dependencies related to the codebase'
+    task :codebase do
+        check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
+    end
+end

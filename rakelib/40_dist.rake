@@ -78,7 +78,7 @@ agent_hooks = FileList["etc/isc-stork-agent.post*", "etc/isc-stork-agent.pre*"]
 AGENT_PACKAGE_STUB_FILE = File.join(pkgs_dir, "agent-builded.pkg")
 file AGENT_PACKAGE_STUB_FILE => [FPM, agent_dist_dir, pkgs_dir] + agent_hooks do
     ENV["PKG_NAME"] = "agent"
-    Rake::Task["clean_pkgs"].invoke()
+    Rake::Task["clean:pkgs"].invoke()
 
     version = `#{AGENT_BINARY_FILE} --version`.rstrip
     pkg_type = get_pkg_type()
@@ -188,7 +188,7 @@ server_hooks = FileList["etc/isc-stork-server.post*", "etc/isc-stork-server.pre*
 SERVER_PACKAGE_STUB_FILE = File.join(pkgs_dir, "server-builded.pkg")
 file SERVER_PACKAGE_STUB_FILE => [FPM, server_dist_dir, pkgs_dir] + server_hooks do
     ENV["PKG_NAME"] = "server"
-    Rake::Task["clean_pkgs"].invoke()
+    Rake::Task["clean:pkgs"].invoke()
 
     version = `#{SERVER_BINARY_FILE} --version`.rstrip
     pkg_type = get_pkg_type()
@@ -218,83 +218,101 @@ end
 ### Tasks ###
 #############
 
-desc "Clean all packages of a given kind (agent or server)
-    PKG_NAME - package name - choice: 'deb' or 'rpm', required
-"
-task :clean_pkgs do
-    if ENV["PKG_NAME"].nil?
-        fail "Environment variable PKG_NAME not specified"
+namespace :clean do
+    desc "Clean all packages of a given kind (agent or server)
+        PKG_NAME - package name - choice: 'agent' or 'server', optional
+    "
+    task :pkgs do
+        pkgs = FileList[File.join(pkgs_dir, "isc-stork-#{ENV["PKG_NAME"]}*")]
+        stub = "-builded.pkg"
+        if !ENV["PKG_NAME"].nil?
+            stub = ENV["PKG_NAME"] + stub
+        else
+            stub = "*" + stub
+        end
+        stubs = FileList[File.join(pkgs_dir, stub)]
+        files = pkgs + stubs
+        if !files.empty?
+            sh "rm", "-f", *files
+        end
     end
-    pkgs = FileList[File.join(pkgs_dir, "isc-stork-#{ENV["PKG_NAME"]}*")]
-    stub = File.join(pkgs_dir, ENV["PKG_NAME"] + "-builded.pkg")
-    sh "rm", "-f", *pkgs, stub
 end
 
-desc "Check package type of current OS"
-task :print_pkg_type do
-    puts get_pkg_type()
-end
-
-## Agent
-
-desc "Build agent package"
-task :build_agent_pkg => [AGENT_PACKAGE_STUB_FILE]
-
-desc "Rebuild agent package"
-task :rebuild_agent_pkg do
-    sh "rm", "-f", AGENT_PACKAGE_STUB_FILE
-    Rake::Task["build_agent_pkg"].invoke()
-end
-
-desc "Install agent
-    DEST - destionation directory - default: /"
-task :install_agent => [agent_dist_dir] do
-    if ENV["DEST"].nil?
-        ENV["DEST"] = "/"
+namespace :utils do
+    desc "Check package type of current OS"
+    task :print_pkg_type do
+        puts get_pkg_type()
     end
-    sh "mkdir", "-p", ENV["DEST"]
-    sh "cp", "-a", "-f", File.join(agent_dist_dir, "."), ENV["DEST"]
 end
 
-desc "Build agent distribution directory"
-task :build_agent_dist => [agent_dist_dir]
+namespace :build do
+    desc "Build agent package"
+    task :agent_pkg => [AGENT_PACKAGE_STUB_FILE]
 
-## Server & Tool
+    desc "Build agent distribution directory"
+    task :agent_dist => [agent_dist_dir]
 
-desc "Build server package"
-task :build_server_pkg => [SERVER_PACKAGE_STUB_FILE]
+    desc "Build server package"
+    task :server_pkg => [SERVER_PACKAGE_STUB_FILE]
 
-desc "Rebuild server package"
-task :rebuild_server_pkg do
-    sh "rm", "-f", SERVER_PACKAGE_STUB_FILE
-    Rake::Task["build_server_pkg"].invoke()
+    desc "Build server distribution directory"
+    task :server_dist => [server_dist_dir]
+
+    desc "Build server distribution directory without WebUI, doc and tool"
+    task :server_only_dist => server_dist_dir_server_part
+
+    desc "Build server distribution directory only with WebUI (without server, doc and tool)"
+    task :ui_only_dist => server_dist_dir_webui_part
+
 end
 
-desc "Install server
-    DEST - destionation directory - default: /"
-task :install_server => [server_dist_dir] do
-    if ENV["DEST"].nil?
-        ENV["DEST"] = "/"
+namespace :rebuild do
+    desc "Rebuild agent package"
+    task :agent_pkg do
+        sh "rm", "-f", AGENT_PACKAGE_STUB_FILE
+        Rake::Task["build:agent_pkg"].invoke()
     end
-    sh "mkdir", "-p", ENV["DEST"]
-    sh "cp", "-a", "-f", File.join(server_dist_dir, "."), ENV["DEST"]
+
+    desc "Rebuild server package"
+    task :server_pkg do
+        sh "rm", "-f", SERVER_PACKAGE_STUB_FILE
+        Rake::Task["build:server_pkg"].invoke()
+    end
 end
 
-desc 'Install the external dependencies related to the distribution'
-task :prepare_env_dist do
-    find_and_prepare_deps(__FILE__)
+namespace :install do
+    desc "Install agent
+        DEST - destionation directory - default: /"
+    task :agent => [agent_dist_dir] do
+        if ENV["DEST"].nil?
+            ENV["DEST"] = "/"
+        end
+        sh "mkdir", "-p", ENV["DEST"]
+        sh "cp", "-a", "-f", File.join(agent_dist_dir, "."), ENV["DEST"]
+    end
+
+    desc "Install server
+        DEST - destionation directory - default: /"
+    task :server => [server_dist_dir] do
+        if ENV["DEST"].nil?
+            ENV["DEST"] = "/"
+        end
+        sh "mkdir", "-p", ENV["DEST"]
+        sh "cp", "-a", "-f", File.join(server_dist_dir, "."), ENV["DEST"]
+    end
 end
 
-desc 'Check the external dependencies related to the distribution'
-task :check_env_dist do
-    check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
+
+namespace :prepare do
+    desc 'Install the external dependencies related to the distribution'
+    task :dist do
+        find_and_prepare_deps(__FILE__)
+    end
 end
 
-desc "Build server distribution directory"
-task :build_server_dist => [server_dist_dir]
-
-desc "Build server distribution directory without WebUI, doc and tool"
-task :build_server_only_dist => server_dist_dir_server_part
-
-desc "Build server distribution directory only with WebUI (without server, doc and tool)"
-task :build_webui_only_dist => server_dist_dir_webui_part
+namespace :check do
+    desc 'Check the external dependencies related to the distribution'
+    task :dist do
+        check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
+    end
+end

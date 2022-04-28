@@ -46,7 +46,7 @@ password is necessary. It then prepares Docker images and starts them.
 
 .. code-block:: console
 
-    $ rake docker:run_all
+    $ rake demo:up
 
 Once the build process finishes, the Stork UI is available at
 http://localhost:8080/. Use any browser to connect.
@@ -63,7 +63,7 @@ customers should feel free to open a ticket for assistance if needed.
 
 .. code-block:: console
 
-   $ rake docker:run_all CS_REPO_ACCESS_TOKEN=<access token>
+   $ rake demo:up CS_REPO_ACCESS_TOKEN=<access token>
 
 Demo Containers
 ---------------

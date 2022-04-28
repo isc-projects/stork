@@ -108,28 +108,6 @@ CLEAN.append TOOL_BINARY_FILE
 ### Tasks ###
 #############
 
-## Documentation
-
-desc "Build Stork documentation from sources"
-task :build_doc => man_files + [ARM_DIRECTORY]
-
-desc "Rebuild Stork documentation from sources"
-task :rebuild_doc do
-    sh "touch", "doc"
-    Rake::Task["build_doc"].invoke()
-end
-
-## Stork Server
-
-desc "Build Stork Server from sources"
-task :build_server => [SERVER_BINARY_FILE]
-
-desc "Rebuild Stork Server from sources"
-task :rebuild_server do
-    sh "touch", "backend/cmd/stork-server"
-    Rake::Task["build_server"].invoke()
-end
-
 # Internal task that configures environment variables for server
 task :pre_run_server do
     if ENV["DB_TRACE"] == "true"
@@ -180,70 +158,95 @@ task :pre_run_server do
     Rake::Task[ENV["STORK_REST_STATIC_FILES_DIR"]].invoke()
 end
 
-desc "Run Stork Server (release mode)
-    UI_MODE - WebUI mode to use - choose: 'production', 'testing' or unspecify
-    DB_TRACE - trace SQL queries - default: false
-"
-task :run_server => [SERVER_BINARY_FILE, :pre_run_server] do
-    sh SERVER_BINARY_FILE
+## Build
+
+namespace :build do
+    desc "Build Stork documentation from sources"
+    task :doc => man_files + [ARM_DIRECTORY]
+
+    desc "Build Stork Server from sources"
+    task :server => [SERVER_BINARY_FILE]
+
+    desc "Build Stork Agent from sources"
+    task :agent => [AGENT_BINARY_FILE]
+
+    desc "Build Stork Tool from sources"
+    task :tool => [TOOL_BINARY_FILE]
+
+    desc "Build Web UI (production mode)"
+    task :ui => [WEBUI_DIST_DIRECTORY, WEBUI_DIST_ARM_DIRECTORY]
+
+    desc "Build Stork Backend (Server, Agent, Tool)"
+    task :backend => [:server, :agent, :tool]
 end
-
-## Stork Agent
-
-desc "Build Stork Agent from sources"
-task :build_agent => [AGENT_BINARY_FILE]
-
-desc "Rebuild Stork Agent from sources"
-task :rebuild_agent do
-    sh "touch", "backend/cmd/stork-agent"
-    Rake::Task["build_agent"].invoke()
-end
-
-desc "Run Stork Agent (release mode)
-    PORT - agent port to use - default: 8888"
-task :run_agent => [AGENT_BINARY_FILE] do
-    if ENV["PORT"].nil?
-        ENV["PORT"] = "8888"
-    end
-    sh AGENT_BINARY_FILE, "--port", ENV["PORT"]
-end
-
-## Stork Tool
-
-desc "Build Stork Tool from sources"
-task :build_tool => [TOOL_BINARY_FILE]
-
-desc "Rebuild Stork Tool from sources"
-task :rebuild_tool do
-    sh "touch", "backend/cmd/stork-tool"
-    Rake::Task["build_tool"].invoke()
-end
-
-## Stork UI
-
-desc "Build Web UI (production mode)"
-task :build_ui => [WEBUI_DIST_DIRECTORY, WEBUI_DIST_ARM_DIRECTORY]
-
-desc "Rebuild Web UI (production mode)"
-task :rebuild_ui do
-    sh "touch", "webui"
-    Rake::Task["build_ui"].invoke()
-end
-
-## Shorthands
-
-desc "Build Stork Backend (Server, Agent, Tool)"
-task :build_backend => [:build_server, :build_agent, :build_tool]
 
 desc "Build all Stork components (Server, Agent, Tool, UI, doc)"
-task :build_all => [:build_backend, :build_doc, :build_ui]
+task :build => ["build:backend", "build:doc", "build:ui"]
 
-desc 'Install the external dependencies related to the build'
-task :prepare_env_build do
-    find_and_prepare_deps(__FILE__)
+
+## Rebuild
+namespace :rebuild do
+    desc "Rebuild Stork documentation from sources"
+    task :doc do
+        sh "touch", "doc"
+        Rake::Task["build:doc"].invoke()
+    end
+  
+    desc "Rebuild Stork Server from sources"
+    task :server do
+        sh "touch", "backend/cmd/stork-server"
+        Rake::Task["build:server"].invoke()
+    end
+
+    desc "Rebuild Stork Agent from sources"
+    task :agent do
+        sh "touch", "backend/cmd/stork-agent"
+        Rake::Task["build:agent"].invoke()
+    end
+
+    desc "Rebuild Stork Tool from sources"
+    task :tool do
+        sh "touch", "backend/cmd/stork-tool"
+        Rake::Task["build:tool"].invoke()
+    end
+
+    desc "Rebuild Web UI (production mode)"
+    task :ui do
+        sh "touch", "webui"
+        Rake::Task["build:ui"].invoke()
+    end
 end
 
-desc 'Check the external dependencies related to the build'
-task :check_env_build do
-    check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
+## Run
+namespace :run do
+    desc "Run Stork Server (release mode)
+        UI_MODE - WebUI mode to use - choose: 'production', 'testing' or unspecify
+        DB_TRACE - trace SQL queries - default: false
+    "
+    task :server => [SERVER_BINARY_FILE, :pre_run_server] do
+        sh SERVER_BINARY_FILE
+    end
+
+    desc "Run Stork Agent (release mode)
+    PORT - agent port to use - default: 8888"
+    task :agent => [AGENT_BINARY_FILE] do
+        if ENV["PORT"].nil?
+            ENV["PORT"] = "8888"
+        end
+        sh AGENT_BINARY_FILE, "--port", ENV["PORT"]
+    end
+end
+
+namespace :prepare do
+    desc 'Install the external dependencies related to the build'
+    task :build do
+        find_and_prepare_deps(__FILE__)
+    end 
+end
+
+namespace :check do
+    desc 'Check the external dependencies related to the build'
+    task :build do
+        check_deps(__FILE__, "wget", "python3", "pip3", "java", "unzip")
+    end
 end

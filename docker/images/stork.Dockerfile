@@ -58,7 +58,8 @@ WORKDIR /app/rakelib/init_debs
 COPY rakelib/init_debs ./
 WORKDIR /app
 COPY Rakefile ./
-RUN rake prepare_env_all
+# It must be splited into the separate stages
+RUN rake prepare
 
 # Backend dependencies installation
 FROM prepare AS gopath-prepare
@@ -66,7 +67,7 @@ WORKDIR /app/rakelib
 COPY rakelib/10_codebase.rake ./
 WORKDIR /app/backend
 COPY backend/go.mod backend/go.sum ./
-RUN rake prepare_backend_deps
+RUN rake prepare:backend_deps
 
 # Frontend dependencies installation
 FROM prepare AS nodemodules-prepare
@@ -74,7 +75,7 @@ WORKDIR /app/rakelib
 COPY rakelib/10_codebase.rake ./
 WORKDIR /app/webui
 COPY webui/package.json webui/package-lock.json ./
-RUN rake prepare_ui_deps
+RUN rake prepare:ui_deps
 
 # General-purpose stage for tasks: building, testing, linting, etc.
 # It contains the codebase with dependencies
@@ -102,13 +103,13 @@ COPY webui .
 
 # Build the Stork binaries
 FROM codebase AS server-builder
-RUN rake build_server_only_dist
+RUN rake build:server_only_dist
 
 FROM codebase AS webui-builder
-RUN rake build_webui_only_dist
+RUN rake build:ui_only_dist
 
 FROM codebase AS agent-builder
-RUN rake build_agent_dist
+RUN rake build:agent_dist
 
 # Agent container
 FROM debian-base as agent

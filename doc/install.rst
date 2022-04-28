@@ -76,7 +76,7 @@ built from sources:
 
 .. code-block:: console
 
-    $ rake build_tool
+    $ rake build:tool
 
 Please refer to the manual page for usage details: :ref:`man-stork-tool`.
 
@@ -955,19 +955,19 @@ All components can be built using the following command:
 
 .. code-block:: console
 
-   $ rake build_all
+   $ rake build
 
 The agent component is installed using this command:
 
 .. code-block:: console
 
-   $ rake install_agent
+   $ rake install:agent
 
 and the server component with this command:
 
 .. code-block:: console
 
-   $ rake install_server
+   $ rake install:server
 
 By default, all components are installed in the specific system directories;
 this is useful for installation in a production environment. For the testing
@@ -975,7 +975,7 @@ purposes tt can be customized via the ``DEST`` variable, e.g.:
 
 .. code-block:: console
 
-   $ rake install_server DEST=/home/user/stork
+   $ rake install:server DEST=/home/user/stork
 
 Integration With Prometheus and Grafana
 =======================================

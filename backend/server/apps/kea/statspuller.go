@@ -330,7 +330,7 @@ func (statsPuller *StatsPuller) getStatsFromApp(dbApp *dbmodel.App) error {
 }
 
 // Iterates through the commands for each daemon and processes the command responses
-// Was part of getStatsFromApp() until lint_go complained about cognitive complexity.
+// Was part of getStatsFromApp() until lint:backend complained about cognitive complexity.
 func (statsPuller *StatsPuller) processAppResponses(dbApp *dbmodel.App, cmds []*keactrl.Command, cmdDaemons []*dbmodel.Daemon, responses []interface{}) error {
 	// Lease statistic processing needs app's local subnets
 	subnets, err := dbmodel.GetAppLocalSubnets(statsPuller.DB, dbApp.ID)

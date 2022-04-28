@@ -47,8 +47,8 @@ cache:
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
     - apt-get update
     - apt-get install -y ruby-dev make
-    - rake prepare_env_all
-    - rake prepare_deps
+    - rake prepare
+    - rake prepare:deps
 
 .base_build_centos:
   stage: build
@@ -67,13 +67,13 @@ cache:
   before_script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-    - rake prepare_env_all
-    - rake prepare_deps
+    - rake prepare
+    - rake prepare:deps
 
-lint_go:
+lint_backend:
   extends: .base_build_debian
   script:
-    - rake lint_go
+    - rake lint:backend
 
 unittest_backend:
   extends: .base_build_debian
@@ -83,24 +83,24 @@ unittest_backend:
   script:
     - echo 'postgres:*:*:storktest:storktest' > ~/.pgpass
     - chmod 600 ~/.pgpass
-    - rake unittest_backend
+    - rake unittest:backend
 
 lint_ui:
   extends: .base_build_debian
   script:
-    - rake lint_ui
+    - rake lint:ui
 
 unittest_ui:
   extends: .base_build_debian
   script:
-    - rake unittest_ui
+    - rake unittest:ui
 
-build_webui:
+build_ui:
   extends: .base_build_debian
   script:
-    - rake build_ui
+    - rake build:ui
   artifacts:
-    name: "webui"
+    name: "ui"
     expire_in: 1 week
     paths:
       - webui/dist/stork/
@@ -108,7 +108,7 @@ build_webui:
 build_backend:
   extends: .base_build_debian
   script:
-    - rake build_backend
+    - rake build:backend
   artifacts:
     name: "backend"
     expire_in: 1 week
@@ -135,7 +135,7 @@ danger:
   script:
     - sysctl -w net.ipv6.conf.all.disable_ipv6=1
     - sysctl -w net.ipv6.conf.default.disable_ipv6=1
-    - rake lint_git
+    - rake lint:git
 
 tarball:
   stage: build
@@ -146,7 +146,7 @@ tarball:
     - amd64
     - ssd
   script:
-    - rake tarball
+    - rake release:tarball
   artifacts:
     paths:
       - stork-*.tar.gz
@@ -158,8 +158,8 @@ tarball:
 build_debs:
   extends: .base_build_debian
   script:
-    - rake build_agent_pkg
-    - rake build_server_pkg
+    - rake build:agent_pkg
+    - rake build:server_pkg
     - cp dist/pkgs/*.deb ./
   artifacts:
     paths:
@@ -169,8 +169,8 @@ build_debs:
 build_rpms:
   extends: .base_build_centos
   script:
-    - rake build_agent_pkg
-    - rake build_server_pkg
+    - rake build:agent_pkg
+    - rake build:server_pkg
     - cp dist/pkgs/*.rpm ./
   artifacts:
     paths:

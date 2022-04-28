@@ -26,7 +26,7 @@ for detailed instructions.
 Generating Documentation
 ========================
 
-To generate documentation, simply type ``rake build_doc``.
+To generate documentation, simply type ``rake build:doc``.
 `Sphinx <https://www.sphinx-doc.org>`_ and `rtd-theme
 <https://github.com/readthedocs/sphinx_rtd_theme>`_ must be installed. The
 generated documentation will be available in the ``doc/_build``
@@ -49,29 +49,29 @@ the command.
 
 .. code-block:: console
 
-    $ rake build_backend
-    $ rake build_ui
+    $ rake build:backend
+    $ rake build:ui
 
 The environment should be ready to run. Open three consoles and run
 the following three commands, one in each console:
 
 .. code-block:: console
 
-    $ rake run_server
+    $ rake run:server
 
 .. code-block:: console
 
-    $ rake build_ui_live
+    $ rake build:ui_live
 
 .. code-block:: console
 
-    $ rake run_agent
+    $ rake run:agent
 
 Once all three processes are running, connect to http://localhost:8080
 via a web browser. See :ref:`usage` for information on initial password creation
 or addition of new machines to the server.
 
-The ``run_agent`` runs the agent directly on the current operating
+The ``run:agent`` runs the agent directly on the current operating
 system, natively; the exposed port of the agent is 8888.
 
 There are other Rake tasks for running preconfigured agents in Docker
@@ -163,7 +163,7 @@ They can be run using Rake:
 
 .. code:: console
 
-          $ rake unittest_backend
+          $ rake unittest:backend
 
 This requires preparing a database in PostgreSQL. 
 
@@ -172,7 +172,7 @@ which is automatically created when running the following Rake task:
 
 .. code:: console
 
-          $ rake unittest_backend_db
+          $ rake unittest:backend_db
 
 This task spawns a container with PostgreSQL in the background, which
 then runs unit tests. When the tests are completed, the database is
@@ -197,7 +197,7 @@ environment variable, e.g.:
 
 .. code:: console
 
-          $ rake unittest_backend DB_HOST=host:port
+          $ rake unittest:backend DB_HOST=host:port
 
 By default it points to ``localhost:5432``.
 
@@ -207,7 +207,7 @@ the following command:
 
 .. code:: console
 
-          $ rake unittest_backend DB_PASSWORD=secret123
+          $ rake unittest:backend DB_PASSWORD=secret123
 
 Note that there is no need to create the ``storktest`` database itself; it is created
 and destroyed by the Rakefile task.
@@ -233,7 +233,7 @@ variable must be specified as follows:
 
 .. code:: console
 
-          $ rake unittest_backend BENCHMARK=true
+          $ rake unittest:backend BENCHMARK=true
 
 This command runs all unit tests and all benchmarks. Running benchmarks
 without unit tests is possible using the combination of the ``BENCHMARK`` and
@@ -241,7 +241,7 @@ without unit tests is possible using the combination of the ``BENCHMARK`` and
 
 .. code:: console
 
-          $ rake unittest_backend BENCHMARK=true TEST=Bench
+          $ rake unittest:backend BENCHMARK=true TEST=Bench
 
 Benchmarks are useful to test the performance of complex functions and find
 bottlenecks. When working on improving the performance of a function, examining a
@@ -260,7 +260,7 @@ variable to ``true`` on the command line:
 
 .. code:: console
 
-          $ rake unittest_backend SHORT=true
+          $ rake unittest:backend SHORT=true
 
 
 Web UI Unit Tests
@@ -271,9 +271,9 @@ by Angular. The simplest way to run these tests is by using Rake tasks:
 
 .. code:: console
 
-   rake unittest_ui
+   rake unittest:ui
 
-The tests require the Chromium (on Linux) or Chrome (on Mac) browser. The ``rake unittest_ui``
+The tests require the Chromium (on Linux) or Chrome (on Mac) browser. The ``rake unittest:ui``
 task attempts to locate the browser binary and launch it automatically. If the
 browser binary is not found in the default location, the Rake task returns an
 error. It is possible to set the location manually by setting the ``CHROME_BIN``
@@ -282,7 +282,7 @@ environment variable; for example:
 .. code:: console
 
    export CHROME_BIN=/usr/local/bin/chromium-browser
-   rake unittest_ui
+   rake unittest:ui
 
 By default, the tests launch the browser in headless mode, in which test results
 and any possible errors are printed in the console. However, in some situations it
@@ -293,7 +293,7 @@ command:
 
 .. code:: console
 
-   rake unittest_ui DEBUG=true
+   rake unittest:ui DEBUG=true
 
 That command causes a new browser window to open; the tests run there automatically.
 
@@ -305,7 +305,7 @@ be run by clicking on its name.
 
 .. code:: console
 
-    TEST=src/app/ha-status-panel/ha-status-panel.component.spec.ts rake unittest_ui
+    TEST=src/app/ha-status-panel/ha-status-panel.component.spec.ts rake unittest:ui
 
 By default, all tests are executed. To run only a specific test file,
 set the "TEST" environment variable to a relative path to any ``.spec.ts``
@@ -655,28 +655,28 @@ The following ``Rake`` tasks start these containers.
    +----------------------------------------+---------------------------------------------------------------+
    | Rake Task                              | Description                                                   |
    +========================================+===============================================================+
-   | ``rake docker:run_kea``                | Build and run an ``agent-kea`` container with a Stork agent   |
+   | ``rake demo:up:kea``                | Build and run an ``agent-kea`` container with a Stork agent   |
    |                                        | and Kea with DHCPv4. Published port is 8888.                  |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake docker:run_kea6``               | Build and run an ``agent-kea6`` container with a Stork agent  |
+   | ``rake demo:up:kea6``               | Build and run an ``agent-kea6`` container with a Stork agent  |
    |                                        | and Kea with DHCPv6. Published port is 8886.                  |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake docker:run_kea_ha``             | Build and run two containers, ``agent-kea-ha1`` and           |
+   | ``rake demo:up:kea_ha``             | Build and run two containers, ``agent-kea-ha1`` and           |
    |                                        | ``agent-kea-ha2`` that are configured to work together in     |
    |                                        | High Availability mode, with Stork agents, and Kea DHCPv4.    |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake docker:run_kea_premium``        | Build and run an ``agent-kea-premium`` container with a Stork |
+   | ``rake demo:up:kea_premium``        | Build and run an ``agent-kea-premium`` container with a Stork |
    |                                        | agent and Kea with DHCPv4 with host reservations stored in    |
    |                                        | a database. This requires **premium** features.               |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake docker:run_bind9``              | Build and run an ``agent-bind9`` container with a Stork agent |
+   | ``rake demo:up:bind9``              | Build and run an ``agent-bind9`` container with a Stork agent |
    |                                        | and BIND 9. Published port is 9999.                           |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake docker:run_postgres``           | Build and run a Postgres container.                           |
+   | ``rake demo:up:postgres``           | Build and run a Postgres container.                           |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake docker:run_all``                | Build and run all above containers                            |
+   | ``rake demo:up``                    | Build and run all above containers                            |
    +----------------------------------------+---------------------------------------------------------------+
-   | ``rake docker:down_all``               | Stop and remove all containers and all referenced volumes and |
+   | ``rake demo:down``                   | Stop and remove all containers and all referenced volumes and |
    |                                        | networks                                                      |
    +----------------------------------------+---------------------------------------------------------------+
 
@@ -709,13 +709,13 @@ running Stork Server, you should:
 
 .. code-block:: console
 
-    $ rake run_server
+    $ rake run:server
 
 2. Run a specific agent service with the SERVER parameter set to ``local``:
 
 .. code-block:: console
 
-    $ rake docker:run_kea SERVER=local
+    $ rake demo:up:kea SERVER=local
 
 3. Check the unauthorized machines page for a new machine
 
@@ -726,10 +726,10 @@ There are scripts for packaging the binary form of Stork. There are
 two supported formats: RPM and deb.
 
 The package type is selected based on the OS that executes the command.
-Use the ``print_pkg_type`` to get the package type supported by your OS.
+Use the ``utils:print_pkg_type`` to get the package type supported by your OS.
 
-Use ``rake build_agent_pkg`` to build the agent package and
-``rake build_server_pkg`` for server package. The package binaries are located
+Use ``rake build:agent_pkg`` to build the agent package and
+``rake build:server_pkg`` for server package. The package binaries are located
 in the ``dist/pkgs`` directory.
 
 Internally, these packages are built by FPM
