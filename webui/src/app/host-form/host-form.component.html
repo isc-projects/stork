@@ -142,10 +142,10 @@
         </div>
         <div>
             <button
+                *ngIf="ipGroups.length === 0 || ipTypes.length > 1"
                 pButton
                 class="p-button-rounded p-button-text p-mt-2"
                 label="Add IP Reservation"
-                [disabled]="ipGroups.length > 0 && ipTypes.length === 1"
                 (click)="addIPInput()"
             ></button>
         </div>

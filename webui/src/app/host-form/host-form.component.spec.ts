@@ -395,6 +395,40 @@ describe('HostFormComponent', () => {
         expect(component.ipGroups.length).toBe(0)
     }))
 
+    it('should show the button for adding next IP reservation when there are none', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.deleteIPInput(0)
+        fixture.detectChanges()
+
+        expect(fixture.debugElement.query(By.css('[label="Add IP Reservation"]'))).toBeTruthy()
+    }))
+
+    it('should show the button for adding next ip reservation for dhcpv6 server', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        component.formGroup.get('selectedDaemons').setValue([3])
+        component.onDaemonsChange()
+        fixture.detectChanges()
+
+        expect(fixture.debugElement.query(By.css('[label="Add IP Reservation"]'))).toBeTruthy()
+    }))
+
+    it('should hide the button for adding next ip reservation for dhcpv4 server', fakeAsync(() => {
+        spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(fixture.debugElement.query(By.css('[label="Add IP Reservation"]'))).toBeFalsy()
+    }))
+
     it('should validate ipv4 reservation', fakeAsync(() => {
         spyOn(dhcpApi, 'createHostBegin').and.returnValue(of(cannedResponseBegin))
         component.ngOnInit()
