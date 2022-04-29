@@ -55,8 +55,7 @@ class Perfdhcp:
             "-%d" % family,
             "-r", "1",
             "-R", "10",
-            "-p", "10",
-            "-W"
+            "-p", "10"
         ]
 
         if mac_prefix is not None:
