@@ -29,21 +29,16 @@ class UnexpectedEventException(Exception):
 
 
 class Server(ComposeServiceWrapper):
+
     def __init__(self, compose: DockerCompose, service_name: str):
         super().__init__(compose, service_name)
-        self._port = 8080
-        self._address = self._compose.get_service_ip_address(
-            self._service_name, "storknet"
-        )
-        url = "http://%s:%s/api" % (self._address, self._port)
+        port = 8080
+        address = self.get_ip_address("storknet")
+        url = "http://%s:%s/api" % (address, port)
         configuration = openapi_client.Configuration(
             host=url
         )
         self._api_client = openapi_client.ApiClient(configuration)
-
-    @property
-    def ip_address(self):
-        return self._address
 
     # Lifetime
 
