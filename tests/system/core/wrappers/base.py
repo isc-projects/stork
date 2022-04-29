@@ -1,6 +1,4 @@
-from typing import Callable
 from core.compose import DockerCompose
-from core.log_parser import split_log_messages, GoLogEntry
 
 
 class ComposeServiceWrapper:
@@ -26,10 +24,3 @@ class ComposeServiceWrapper:
 
     def is_operational(self):
         return self._compose.is_operational(self._service_name)
-
-    def search_for_logs(self, condition: Callable[[GoLogEntry], bool]):
-        logs, _ = self._compose.logs(self._service_name)
-        for entry in split_log_messages(logs):
-            go_entry = entry.as_go()
-            if condition(go_entry):
-                yield go_entry

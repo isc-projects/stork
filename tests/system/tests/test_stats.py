@@ -18,8 +18,7 @@ def test_get_kea_stats(server_service: Server, kea_service: Kea, perfdhcp_servic
         interface="eth0"
     )
 
-    server_service.wait_for_statistics_pulling("Kea")
-    data = server_service.overview()
+    data = server_service.wait_for_update_overview()
 
     # 9 leases are initialy store in the lease database
     assert int(data['dhcp4_stats']['assignedAddresses']) > 10

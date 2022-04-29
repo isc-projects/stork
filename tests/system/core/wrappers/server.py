@@ -9,11 +9,12 @@ from openapi_client.api.services_api import ServicesApi, Machine, Machines, Conf
 from openapi_client.api.dhcp_api import DHCPApi, Subnets, Leases, Hosts, DhcpOverview
 from openapi_client.api.events_api import EventsApi, Events
 from openapi_client.model.event import Event
+from openapi_client.model.subnet import Subnet
+from openapi_client.model.local_subnet import LocalSubnet
 
 from core.compose import DockerCompose
 from core.utils import NoSuccessException, wait_for_success
 from core.wrappers.base import ComposeServiceWrapper
-from core.log_parser import GoLogEntry, split_log_messages
 
 
 class UnexpectedStatusCodeException(Exception):
@@ -242,26 +243,6 @@ class Server(ComposeServiceWrapper):
 
         return worker()
 
-    def _wait_for_logs(self, expected_condition: Callable[[GoLogEntry], bool] = None, start: datetime = None):
-        if start is None:
-            start = datetime.now(timezone.utc)
-
-        @wait_for_success()
-        def worker():
-            stdout, _ = self._compose.logs(self._service_name)
-            for log_entry in split_log_messages(stdout):
-                if not log_entry.is_service(self._service_name):
-                    continue
-                if log_entry.timestamp < start:
-                    continue
-                go_entry = log_entry.as_go_safe()
-                if go_entry is None:
-                    continue
-                if expected_condition(go_entry):
-                    return go_entry
-            raise NoSuccessException("missing expected log entry")
-        return worker()
-
     def wait_for_next_machine_state(self, machine_id: int, start: datetime = None) -> Machine:
         if start is None:
             start = datetime.now(timezone.utc)
@@ -319,6 +300,22 @@ class Server(ComposeServiceWrapper):
             return True
         self._wait_for_event(condition)
 
-    def wait_for_statistics_pulling(self, app_type):
-        expected = "completed pulling lease stats from %s apps" % app_type
-        self._wait_for_logs(lambda ev: expected in ev.message)
+    def wait_for_update_overview(self) -> DhcpOverview:
+        start = datetime.now(timezone.utc)
+
+        @wait_for_success()
+        def worker():
+            overview = self.overview()
+
+            subnet: Subnet
+            for subnet in [*overview["subnets4"]["items"], *overview["subnets6"]["items"]]:
+                local_subnet: LocalSubnet
+                for local_subnet in subnet["localSubnets"]:
+                    collected_at_raw: str = local_subnet["statsCollectedAt"]
+                    collected_at = datetime.strptime(
+                        collected_at_raw, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    collected_at = collected_at.replace(tzinfo=timezone.utc)
+                    if collected_at >= start:
+                        return overview
+            raise NoSuccessException()
+        return worker()

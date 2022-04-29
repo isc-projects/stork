@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-from core.compose_factory import create_docker_compose
 from core.compose import ContainerExitedException, ContainerUnhealthyException, DockerCompose
 
 
@@ -657,7 +656,7 @@ def test_call_command_suppreses_capturing_output(patch: MagicMock):
     assert stderr is None
 
 
-@ patch("subprocess.run")
+@patch("subprocess.run")
 def test_call_command_checks_output_by_default(patch: MagicMock):
     compose = DockerCompose("project-dir")
     compose._call_command([])
@@ -666,7 +665,7 @@ def test_call_command_checks_output_by_default(patch: MagicMock):
     assert item
 
 
-@ patch("subprocess.run")
+@patch("subprocess.run")
 def test_call_command_suppresses_checking_ouput(patch: MagicMock):
     compose = DockerCompose("project-dir")
     compose._call_command([], check=False)
@@ -675,7 +674,7 @@ def test_call_command_suppresses_checking_ouput(patch: MagicMock):
     assert not item
 
 
-@ patch("subprocess.run")
+@patch("subprocess.run")
 def test_call_sets_cwd_to_project_directory(patch: MagicMock):
     compose = DockerCompose("project-dir")
     compose._call_command([])
